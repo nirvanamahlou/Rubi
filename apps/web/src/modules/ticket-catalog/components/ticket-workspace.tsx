@@ -5,6 +5,7 @@ import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
 import {
   BusFront,
   Plane,
+  Power,
   Plus,
   Ticket,
   TicketCheck,
@@ -35,7 +36,6 @@ import {
 } from '@/components/ui';
 import {
   createProduct,
-  wallTimeToUtc,
   reviseProduct,
   transitionProduct,
   type CatalogStatus,
@@ -86,7 +86,7 @@ import {
   catalogOffer,
   publishedOfferInput,
 } from '../model/published-catalog';
-import { PublishedOfferForm, tehranWallTime } from './published-offer-form';
+import { PublishedOfferForm } from './published-offer-form';
 
 const actor = 'کاربر جاری';
 const transportIcons = {
@@ -315,7 +315,7 @@ function TicketCatalogWorkspace() {
   const [capacityHold, setCapacityHold] = useState<{
     offer: TicketOfferV1;
     quantity: number;
-    expiresAt: string;
+    requesterName: string;
   }>();
   const [capacityHoldSaving, setCapacityHoldSaving] = useState(false);
   const pendingCreate = useRef<{ signature: string; ids: string[] } | null>(
@@ -329,7 +329,7 @@ function TicketCatalogWorkspace() {
       | {
           offer: TicketOfferV1;
           quantity: number;
-          expiresAt: string;
+          requesterName: string;
         }
       | undefined,
   ) => {
@@ -396,11 +396,9 @@ function TicketCatalogWorkspace() {
         throw new Error('تعداد نفرات رزرو باید حداقل ۱ باشد.');
       if (capacityHold.quantity > capacityHold.offer.remainingCapacity)
         throw new Error('تعداد واردشده از ظرفیت باقی‌مانده بیشتر است.');
-      const expiresAt = new Date(
-        wallTimeToUtc(capacityHold.expiresAt, 'Asia/Tehran', '+03:30'),
-      );
-      if (Number.isNaN(expiresAt.getTime()) || expiresAt <= new Date())
-        throw new Error('تاریخ و ساعت انقضا باید در آینده باشد.');
+      if (!capacityHold.requesterName.trim())
+        throw new Error('نام درخواست‌کننده رزرو را وارد کنید.');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
       setCapacityHoldSaving(true);
       const base = getPublicApiBaseUrl();
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
@@ -410,7 +408,11 @@ function TicketCatalogWorkspace() {
         throw new Error('شعبه مجاز برای رزرو ظرفیت پیدا نشد.');
       const result = await toursApi.temporaryHold(
         capacityHold.offer.id,
-        { quantity: capacityHold.quantity, expiresAt: expiresAt.toISOString() },
+        {
+          quantity: capacityHold.quantity,
+          expiresAt: expiresAt.toISOString(),
+          requesterName: capacityHold.requesterName.trim(),
+        },
         branchId,
         crypto.randomUUID(),
       );
@@ -1008,6 +1010,8 @@ function TicketCatalogWorkspace() {
             ویرایش
           </Button>
           <Button
+            aria-label={`حذف بلیت ${offer.serviceNumber}`}
+            title="حذف بلیت"
             size="sm"
             variant="outline"
             onClick={async () => {
@@ -1033,12 +1037,21 @@ function TicketCatalogWorkspace() {
               }
             }}
           >
-            حذف
+            <Trash2 className="size-4" aria-hidden />
           </Button>
           <Button
             size="sm"
             variant="outline"
             disabled={statusSaving === offer.id}
+            aria-label={
+              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+            }
+            title={
+              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+            }
+            className={
+              offer.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
+            }
             onClick={() =>
               void updatePublishedStatus(
                 offer,
@@ -1046,11 +1059,7 @@ function TicketCatalogWorkspace() {
               ).catch(() => undefined)
             }
           >
-            {statusSaving === offer.id
-              ? 'در حال ثبت…'
-              : offer.status === 'ACTIVE'
-                ? 'توقف فروش'
-                : 'فعال‌کردن'}
+            <Power className="size-5" aria-hidden />
           </Button>
           {offer.status === 'ACTIVE' ? (
             <Button
@@ -1061,9 +1070,7 @@ function TicketCatalogWorkspace() {
                 updateCapacityHold({
                   offer,
                   quantity: 1,
-                  expiresAt: tehranWallTime(
-                    new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-                  ),
+                  requesterName: '',
                 })
               }
             >
@@ -1555,18 +1562,21 @@ function TicketCatalogWorkspace() {
             />
           </FormField>
           <FormField
-            label="تاریخ و ساعت انقضا"
-            id="ticket-capacity-hold-expires-at"
+            label="درخواست‌کننده رزرو"
+            id="ticket-capacity-hold-requester"
             required
           >
-            <TicketDatePicker
-              id="ticket-capacity-hold-expires-at"
-              includeTime
+            <Input
+              id="ticket-capacity-hold-requester"
               required
-              value={capacityHold?.expiresAt ?? ''}
-              onChange={(expiresAt) =>
+              maxLength={160}
+              value={capacityHold?.requesterName ?? ''}
+              onChange={(event) =>
                 capacityHold &&
-                updateCapacityHold({ ...capacityHold, expiresAt })
+                updateCapacityHold({
+                  ...capacityHold,
+                  requesterName: event.target.value,
+                })
               }
             />
           </FormField>

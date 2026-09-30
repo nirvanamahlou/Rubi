@@ -42,8 +42,13 @@ const uuid = Joi.string().guid();
 const capacityHoldSchema = Joi.object({
   quantity: Joi.number().integer().min(1).max(100000).required(),
   expiresAt: Joi.string().isoDate().required(),
+  requesterName: Joi.string().trim().max(160).optional(),
 });
-type CapacityHoldInput = { quantity: number; expiresAt: string };
+type CapacityHoldInput = {
+  quantity: number;
+  expiresAt: string;
+  requesterName?: string;
+};
 const createSchema = Joi.object({
   supplyType: Joi.string()
     .valid('COMPANY', 'FLOATING', 'API')
@@ -1587,6 +1592,9 @@ export class TicketPublicService {
           branchId,
           quantity: value.quantity,
           expiresAt: expiresAt.toISOString(),
+          ...(value.requesterName
+            ? { requesterName: value.requesterName }
+            : {}),
         }),
       )
       .digest('hex');
@@ -1653,6 +1661,7 @@ export class TicketPublicService {
           offerId,
           branchId: branchId!,
           quantity: value.quantity,
+          requesterName: value.requesterName ?? null,
           expiresAt,
           createdByUserId: actor.userId,
           idempotencyKey: key!,

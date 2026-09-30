@@ -5,6 +5,8 @@ import { Button, FormField, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   companyFlightLegs,
+  validFlightLoadDates,
+  canSearchFlightLoad,
   changeFlightLoadFilter,
   isCompanyLoadOffer,
   companyReturnLegs,
@@ -52,11 +54,16 @@ export function FlightLoadGrid({
   renderActions: (offer: TicketOfferV1) => ReactNode;
 }) {
   const [filter, setFilter] = useState(initial);
+  const [searched, setSearched] = useState<FlightLoadFilter>();
+  const [validDates, setValidDates] = useState(false);
   const [outboundId, setOutboundId] = useState(''),
     [returnId, setReturnId] = useState('');
   const [sameClass, setSameClass] = useState(false);
   const company = offers.filter(isCompanyLoadOffer);
-  const outbounds = companyFlightLegs(offers, filter);
+  const searchFilter = validDates
+    ? { ...filter, ...validFlightLoadDates(offers, filter) }
+    : filter;
+  const outbounds = searched ? companyFlightLegs(offers, searched) : [];
   const outbound = outbounds.find((offer) => offer.id === outboundId);
   const returns = companyReturnLegs(
     offers,
@@ -71,7 +78,14 @@ export function FlightLoadGrid({
     ),
   ];
   const change = (field: keyof FlightLoadFilter, value: string) => {
-    setFilter((c) => changeFlightLoadFilter(c, field, value));
+    setFilter((c) => {
+      const next = changeFlightLoadFilter(c, field, value);
+      return validDates && (field === 'origin' || field === 'destination')
+        ? { ...next, ...validFlightLoadDates(offers, next) }
+        : next;
+    });
+    if (field === 'from' || field === 'to') setValidDates(false);
+    setSearched(undefined);
     setOutboundId('');
     setReturnId('');
   };
@@ -128,7 +142,7 @@ export function FlightLoadGrid({
                   'ظرفیت کل',
                   'مانده',
                   'تعداد رزرو',
-                  'فروش',
+                  'تعداد فروش',
                   'O-W',
                   'Min',
                   'Max',
@@ -143,7 +157,8 @@ export function FlightLoadGrid({
               {rows.map((offer) => (
                 <tr
                   key={offer.id}
-                  className={selected?.id === offer.id ? styles.selected : ''}
+                  className={`${selected?.id === offer.id ? styles.selected : ''} ${offer.status !== 'ACTIVE' ? styles.paused : ''}`}
+                  aria-selected={selected?.id === offer.id}
                   onClick={() => selectLeg(offer.id, back)}
                 >
                   <td>
@@ -321,14 +336,14 @@ export function FlightLoadGrid({
         <FormField label="از تاریخ" id="load-from">
           <TicketDatePicker
             id="load-from"
-            value={filter.from}
+            value={searchFilter.from}
             onChange={(value) => change('from', value)}
           />
         </FormField>
         <FormField label="تا تاریخ" id="load-to">
           <TicketDatePicker
             id="load-to"
-            value={filter.to}
+            value={searchFilter.to}
             onChange={(value) => change('to', value)}
           />
         </FormField>
@@ -365,6 +380,38 @@ export function FlightLoadGrid({
         <label>
           <input
             type="checkbox"
+            checked={validDates}
+            onChange={(event) => {
+              setValidDates(event.target.checked);
+              setFilter((c) => ({
+                ...c,
+                ...(event.target.checked
+                  ? validFlightLoadDates(offers, c)
+                  : { from: '', to: '' }),
+              }));
+              setSearched(undefined);
+              setOutboundId('');
+              setReturnId('');
+            }}
+          />{' '}
+          تاریخ‌های معتبر
+        </label>
+        <Button
+          disabled={
+            !canSearchFlightLoad(searchFilter) ||
+            Boolean(validDates && (!searchFilter.from || !searchFilter.to))
+          }
+          onClick={() => {
+            setSearched({ ...searchFilter });
+            setOutboundId('');
+            setReturnId('');
+          }}
+        >
+          جست‌وجو
+        </Button>
+        <label>
+          <input
+            type="checkbox"
             checked={sameClass}
             onChange={(event) => {
               setSameClass(event.target.checked);
@@ -377,6 +424,8 @@ export function FlightLoadGrid({
           variant="outline"
           onClick={() => {
             setFilter(initial());
+            setValidDates(false);
+            setSearched(undefined);
             setOutboundId('');
             setReturnId('');
             setSameClass(false);
@@ -385,20 +434,29 @@ export function FlightLoadGrid({
           پاک‌کردن فیلترها
         </Button>
       </div>
+      {!searched && (
+        <p className={styles.help}>
+          مبدأ، مقصد یا تاریخ را انتخاب کنید و «جست‌وجو» را بزنید.
+        </p>
+      )}
       {filter.from && filter.to && filter.from > filter.to ? (
         <p className={styles.help}>تاریخ پایان باید بعد از تاریخ شروع باشد.</p>
       ) : null}
       {!company.length && (
         <p className={styles.help}>بلیتی برای نمایش در لود وجود ندارد.</p>
       )}
-      <div className={styles.tables}>
-        {table(outbounds, false)}
-        {table(returns, true)}
-      </div>
-      <div className={styles.details}>
-        {detail(outbound, false)}
-        {detail(returning, true)}
-      </div>
+      {searched && (
+        <div className={styles.tables}>
+          {table(outbounds, false)}
+          {table(returns, true)}
+        </div>
+      )}
+      {searched && (
+        <div className={styles.details}>
+          {detail(outbound, false)}
+          {detail(returning, true)}
+        </div>
+      )}
       <p className={styles.help}>
         بلیت‌های قدیمی با نوع تأمین ثبت‌نشده نیز نمایش داده می‌شوند؛ نوع تأمین
         آن‌ها در ویرایش قابل انتخاب است. برگشت‌ها از مسیر معکوس همان شعبه و در

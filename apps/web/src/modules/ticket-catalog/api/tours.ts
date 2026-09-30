@@ -216,7 +216,7 @@ export const toursApi = {
     request<{ data: { id: string } }>('/offers', post(input, branch, key)),
   temporaryHold: (
     offerId: string,
-    input: { quantity: number; expiresAt: string },
+    input: { quantity: number; expiresAt: string; requesterName?: string },
     branch: string,
     key: string,
   ) =>

@@ -58,7 +58,7 @@
   min-width: 1080px;
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: 14px;
   white-space: nowrap;
 }
 .table th {
@@ -85,10 +85,34 @@
   background: color-mix(in srgb, var(--primary) 17%, var(--card));
   font-weight: 700;
 }
+.table th:nth-child(3),
+.table th:nth-child(4),
+.table th:nth-child(8),
+.table th:nth-child(9),
+.table th:nth-child(10),
+.table th:nth-child(11),
+.table tr:not(.selected) td:nth-child(3),
+.table tr:not(.selected) td:nth-child(4),
+.table tr:not(.selected) td:nth-child(8),
+.table tr:not(.selected) td:nth-child(9),
+.table tr:not(.selected) td:nth-child(10),
+.table tr:not(.selected) td:nth-child(11) {
+  background: var(--muted);
+}
+.table .selected td {
+  border-top: 2px solid var(--primary);
+  border-bottom: 2px solid var(--primary);
+}
+.table .selected td:first-child {
+  border-inline-start: 2px solid var(--primary);
+}
+.table .selected td:last-child {
+  border-inline-end: 2px solid var(--primary);
+}
 .empty {
   padding: 24px 12px;
   color: var(--muted-foreground);
-  font-size: 13px;
+  font-size: 15px;
 }
 .totals {
   display: flex;
@@ -111,7 +135,13 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
-  font-size: 13px;
+  font-size: 16px;
+}
+.table .paused td:first-child,
+.table .paused td:last-child {
+  background: color-mix(in srgb, #dc2626 12%, var(--surface));
+  color: #dc2626;
+  border-inline-color: #dc2626;
 }
 .details p {
   margin-top: 5px;

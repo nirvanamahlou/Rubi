@@ -4250,6 +4250,7 @@ model TicketOfferCapacityAllocation {
 }
 
 model TicketOfferCapacityHold {
+  requesterName   String?              @db.VarChar(160)
   id              String               @id @default(uuid()) @db.Uuid
   offerId         String               @db.Uuid
   branchId        String               @db.Uuid

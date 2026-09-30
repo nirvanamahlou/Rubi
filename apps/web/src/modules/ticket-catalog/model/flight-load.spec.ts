@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
   companyFlightLegs,
+  validFlightLoadDates,
+  canSearchFlightLoad,
   changeFlightLoadFilter,
   companyReturnLegs,
   flightLoadTotals,
@@ -41,6 +43,24 @@ const filter: FlightLoadFilter = {
   cabin: '',
 };
 describe('company flight load', () => {
+  it('requires route or dates and derives inclusive dates only for the selected route', () => {
+    const blank = { ...filter, from: '', to: '', origin: '', destination: '' };
+    expect(canSearchFlightLoad(blank)).toBe(false);
+    expect(canSearchFlightLoad({ ...blank, destination: 'b' })).toBe(true);
+    const rows = [
+      offer('latest', '2099-11-03'),
+      offer('first', '2099-10-02'),
+      offer('other', '2099-09-01', { destinationId: 'c' }),
+      offer('external', '2099-01-01', { supplyType: 'API' }),
+    ];
+    expect(validFlightLoadDates(rows, { ...blank, destination: 'b' })).toEqual({
+      from: '2099-10-02',
+      to: '2099-11-03',
+    });
+    expect(validFlightLoadDates(rows, { ...blank, origin: 'missing' })).toEqual(
+      { from: '', to: '' },
+    );
+  });
   it('keeps the changed date and clears only the conflicting opposite bound', () => {
     expect(changeFlightLoadFilter(filter, 'from', '2099-11-04')).toMatchObject({
       from: '2099-11-04',

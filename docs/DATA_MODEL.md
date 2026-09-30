@@ -619,3 +619,7 @@ Ticket Catalog owns TicketSaleCommissionRevision: offerId, optional returnOfferI
 ## Ticket load supply and baggage — 2026-09-30
 
 `TicketPublishedOffer.supplyType` is nullable COMPANY, FLOATING or API. COMPANY includes charter/company capacity; null retains unknown legacy provenance. `economyBaggageKg` and `businessBaggageKg` are nullable Decimal(10,2), bounded 0..9999 by database checks. No legacy row is automatically classified. Travel offer capacity projections distinguish active allocations from unexpired active holds. See `docs/tasks/TICKET-LOAD-GRID-0930.md`.
+
+## 2026-09-30 — Ticket capacity-hold requester
+
+`TicketOfferCapacityHold.requesterName` is nullable varchar(160), entered manually as reservation attribution. It does not replace `createdByUserId` or its FK. API input is optional for old clients; provided names participate in the idempotency fingerprint. The management form requires quantity and requester name only and supplies an automatic one-hour expiry, preserving the existing temporary hold lifecycle. Migration: `20260930150000_ticket_hold_requester`.
