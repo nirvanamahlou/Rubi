@@ -3829,6 +3829,9 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
 
 Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.
+## 2026-09-28 — B2B-API-FUNCTIONAL-QA-0928 — PC-B
+
+API unit/HTTP suite on latest develop: ۱۶۹۲ passed, ۱۷۵ environment-gated skipped. B2B after fix: ۱۲۷ passed, ۱۹ PostgreSQL skipped because Docker Desktop is stopped and cannot be started in this session. A replay of an old B2B agreement request ID after a newer version now returns a clear 409 instead of misreporting the newer contract as the old command result. Focused regression, lint, typecheck and API build passed. No live data, schema, migration, dependency or shared contract changed. See [task handoff](tasks/B2B-API-FUNCTIONAL-QA-0928.md).
 
 ## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
 
@@ -4001,3 +4004,4 @@ TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket
 ## 2026-09-30 — PC-A — visible ticket load follow-up
 
 TICKET-LOAD-VISIBLE-0930 fixes the empty legacy load by reading unknown-provenance offers alongside explicit company capacity, without reclassifying stored tickets. Initial dates are unrestricted; editing a conflicting date clears the opposite bound. The duplicate lower published table is removed; selected-leg details retain edit, archive, activation and hold actions. The load uses a white light-mode surface. Explicit floating/API remain excluded. No API, migration or operational data changes. Ticket Catalog tests, scoped lint/types and 55-route Web build passed.
+

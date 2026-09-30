@@ -119,7 +119,13 @@ export class B2bAgreementWorkflowRepository {
               'B2B_COMMAND_CONFLICT',
               'این شناسه درخواست قبلاً با اطلاعات متفاوت استفاده شده است.',
             );
-          return this.find(command, prior.agreementId, tx);
+          const current = await this.find(command, prior.agreementId, tx);
+          if (current.version !== prior.resultVersion)
+            fail(
+              'B2B_COMMAND_RESULT_SUPERSEDED',
+              'نتیجه این درخواست با نسخه جدیدتر قرارداد جایگزین شده است؛ پرونده را دوباره بارگذاری کنید.',
+            );
+          return current;
         }
         await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`b2b-profile:${command.organizationId}:${command.branchId}`},0))::text`;
         const row = await operation(tx);
