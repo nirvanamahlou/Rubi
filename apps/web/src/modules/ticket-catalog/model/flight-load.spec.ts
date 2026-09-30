@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
   companyFlightLegs,
+  countryFlightLoadOffers,
   currentCompanyLoadOffers,
   validFlightLoadDates,
   canSearchFlightLoad,
@@ -44,7 +45,7 @@ const filter: FlightLoadFilter = {
   cabin: '',
 };
 describe('company flight load', () => {
-  it('keeps completed flights in historical searches while valid dates include ongoing and future legs only', () => {
+  it('keeps historical legs while valid dates start today and exclude departed legs', () => {
     const rows = [
       offer('ended', '2099-10-01', { status: 'PAUSED' }),
       offer('ongoing', '2099-10-02'),
@@ -57,7 +58,6 @@ describe('company flight load', () => {
       'future',
     ]);
     expect(currentCompanyLoadOffers(rows, now).map((row) => row.id)).toEqual([
-      'ongoing',
       'future',
     ]);
     expect(validFlightLoadDates(rows, filter, now)).toEqual({
@@ -76,13 +76,23 @@ describe('company flight load', () => {
       offer('other', '2099-09-01', { destinationId: 'c' }),
       offer('external', '2099-01-01', { supplyType: 'API' }),
     ];
-    expect(validFlightLoadDates(rows, { ...blank, destination: 'b' })).toEqual({
-      from: '2099-10-02',
+    expect(
+      validFlightLoadDates(
+        rows,
+        { ...blank, destination: 'b' },
+        new Date('2099-10-01T10:00:00Z'),
+      ),
+    ).toEqual({
+      from: '2099-10-01',
       to: '2099-11-03',
     });
-    expect(validFlightLoadDates(rows, { ...blank, origin: 'missing' })).toEqual(
-      { from: '', to: '' },
-    );
+    expect(
+      validFlightLoadDates(
+        rows,
+        { ...blank, origin: 'missing' },
+        new Date('2099-10-01T10:00:00Z'),
+      ),
+    ).toEqual({ from: '2099-10-01', to: '' });
   });
   it('keeps the changed date and clears only the conflicting opposite bound', () => {
     expect(changeFlightLoadFilter(filter, 'from', '2099-11-04')).toMatchObject({
@@ -171,5 +181,37 @@ describe('company flight load', () => {
     expect(companyFlightLegs([row], { ...filter, weekday: day })).toHaveLength(
       1,
     );
+  });
+  it('filters destination country without excluding the selected flight reverse leg', () => {
+    const out = offer('out', '2000-10-01');
+    const back = offer('back', '2000-10-03', {
+      originId: 'b',
+      destinationId: 'a',
+    });
+    const refs = [
+      {
+        id: 'a',
+        kind: 'city' as const,
+        name: 'Origin',
+        active: true,
+        countryId: 'iran',
+      },
+      {
+        id: 'b',
+        kind: 'city' as const,
+        name: 'Destination',
+        active: true,
+        countryId: 'turkey',
+      },
+    ];
+    expect(countryFlightLoadOffers([out, back], refs, 'turkey')).toEqual([out]);
+    expect(companyReturnLegs([out, back], out, false)).toEqual([back]);
+    expect(countryFlightLoadOffers([out, back], refs, '')).toHaveLength(2);
+  });
+  it('uses today in Tehran even when UTC is still yesterday', () => {
+    const rows = [offer('last', '2099-10-03')];
+    expect(
+      validFlightLoadDates(rows, filter, new Date('2099-10-01T22:00:00Z')),
+    ).toEqual({ from: '2099-10-02', to: '2099-10-03' });
   });
 });

@@ -4059,3 +4059,7 @@ FLIGHT-CAPACITY-HISTORY-0930 renames the module to تعریف و ظرفیت پر
 ## 2026-09-30 — PC-A — weekly flight return Max default
 
 FLIGHT-RETURN-MAX-DEFAULT-0930 displays automatic Max from the selected return stay and saves each generated outbound with its own stay plus one day, within the existing 365-day ceiling. Manually edited Max remains authoritative, including clearing for unlimited. No API, schema, migration or dependency changes. Twelve schedule regressions cover different weekday stays, explicit manual values and unlimited compatibility.
+
+## 2026-09-30 — PC-A — charter load defaults and destination filters
+
+CHARTER-LOAD-TODAY-DEFAULT-0930 strengthens selection to a full blue row and renames the heading to «لود پرواز چارتر». Valid dates are checked on entry, begin today in Tehran, and end at the latest matching future departure; already-departed flights are excluded from this mode. Explicit search remains required. Country/city controls replace origin/destination, use Master Data destination geography, and leave matched reverse legs visible. Manual historical ranges retain the opposite displayed date and include past legs. No API/schema/migration/dependency changes.

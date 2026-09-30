@@ -1,10 +1,11 @@
 'use client';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ticketCalendarDate, type TicketOfferV1 } from '@nora/contracts';
 import { Button, FormField, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   companyFlightLegs,
+  countryFlightLoadOffers,
   currentCompanyLoadOffers,
   validFlightLoadDates,
   canSearchFlightLoad,
@@ -17,6 +18,8 @@ import {
 import { TicketDatePicker } from './ticket-date-picker';
 import { scheduleWeekdays } from '../model/weekday-schedule';
 import styles from './flight-load-grid.module.css';
+import type { Reference } from '../model/catalog';
+import { asReference, listReferences } from '../api/references';
 
 const cabinLabels = { ECONOMY: 'اکونومی', BUSINESS: 'بیزینس', FIRST: 'فرست' };
 const time = (value: string) =>
@@ -43,32 +46,69 @@ const initial = (): FlightLoadFilter => ({
 });
 export function FlightLoadGrid({
   offers,
+  references = [],
   cityName,
   refreshing,
   onRefresh,
   renderActions,
 }: {
   offers: readonly TicketOfferV1[];
+  references?: readonly Reference[];
   cityName: (id: string) => string;
   refreshing: boolean;
   onRefresh: () => void;
   renderActions: (offer: TicketOfferV1) => ReactNode;
 }) {
   const [filter, setFilter] = useState(initial);
+  const [country, setCountry] = useState('');
+  const [searchedCountry, setSearchedCountry] = useState('');
+  const [countries, setCountries] = useState<Reference[]>([]);
+  const [countryProblem, setCountryProblem] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const rows: Reference[] = [];
+      for (let page = 1; page <= 100; page++) {
+        const result = await listReferences('countries', '', page);
+        rows.push(
+          ...result.data.flatMap((record) => {
+            const ref = asReference(record);
+            return ref ? [ref] : [];
+          }),
+        );
+        if (page * result.meta.pageSize >= result.meta.total) break;
+      }
+      if (!cancelled) setCountries(rows);
+    })().catch(() => {
+      if (!cancelled)
+        setCountryProblem('دریافت کشورها ناموفق بود؛ صفحه را به‌روز کنید.');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const cityCountry = (id: string) =>
+    references.find((r) => r.kind === 'city' && r.id === id)?.countryId;
+  const countryOffers = countryFlightLoadOffers(offers, references, country);
   const [searched, setSearched] = useState<FlightLoadFilter>();
   const [searchedCurrent, setSearchedCurrent] = useState(false);
-  const [validDates, setValidDates] = useState(false);
+  const [validDates, setValidDates] = useState(true);
   const [outboundId, setOutboundId] = useState(''),
     [returnId, setReturnId] = useState('');
   const [sameClass, setSameClass] = useState(false);
   const company = offers.filter(isCompanyLoadOffer);
   const searchFilter = validDates
-    ? { ...filter, ...validFlightLoadDates(offers, filter) }
+    ? { ...filter, ...validFlightLoadDates(countryOffers, filter) }
     : filter;
   const loadOffers = searchedCurrent
     ? currentCompanyLoadOffers(offers)
     : offers;
-  const outbounds = searched ? companyFlightLegs(loadOffers, searched) : [];
+  const outbounds = searched
+    ? companyFlightLegs(
+        countryFlightLoadOffers(loadOffers, references, searchedCountry),
+        searched,
+      )
+    : [];
   const outbound = outbounds.find((offer) => offer.id === outboundId);
   const returns = companyReturnLegs(
     loadOffers,
@@ -79,14 +119,22 @@ export function FlightLoadGrid({
   const returning = returns.find((offer) => offer.id === returnId);
   const cities = [
     ...new Set(
-      company.flatMap((offer) => [offer.originId, offer.destinationId]),
+      company
+        .filter(
+          (offer) => !country || cityCountry(offer.destinationId) === country,
+        )
+        .map((offer) => offer.destinationId),
     ),
   ];
   const change = (field: keyof FlightLoadFilter, value: string) => {
     setFilter((c) => {
-      const next = changeFlightLoadFilter(c, field, value);
+      const next = changeFlightLoadFilter(
+        validDates ? { ...c, ...validFlightLoadDates(countryOffers, c) } : c,
+        field,
+        value,
+      );
       return validDates && (field === 'origin' || field === 'destination')
-        ? { ...next, ...validFlightLoadDates(offers, next) }
+        ? { ...next, ...validFlightLoadDates(countryOffers, next) }
         : next;
     });
     if (field === 'from' || field === 'to') setValidDates(false);
@@ -327,7 +375,7 @@ export function FlightLoadGrid({
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <h2>لود پروازهای ظرفیت شرکت (چارتر)</h2>
+        <h2>لود پرواز چارتر</h2>
         <Button
           size="sm"
           variant="outline"
@@ -337,6 +385,11 @@ export function FlightLoadGrid({
           {refreshing ? 'در حال دریافت…' : 'به‌روزرسانی لود'}
         </Button>
       </div>
+      {countryProblem ? (
+        <p role="alert" className={styles.help}>
+          {countryProblem}
+        </p>
+      ) : null}
       <div className={styles.filters}>
         <FormField label="از تاریخ" id="load-from">
           <TicketDatePicker
@@ -352,14 +405,26 @@ export function FlightLoadGrid({
             onChange={(value) => change('to', value)}
           />
         </FormField>
-        {selectFilter(
-          'origin',
-          'مبدأ',
-          cities.map((id) => [id, cityName(id)]),
-        )}
+        <FormField label="کشور" id="load-country">
+          <NativeSearchSelect
+            id="load-country"
+            value={country}
+            onChange={(event) => {
+              setCountry(event.target.value);
+              change('destination', '');
+            }}
+          >
+            <option value="">همه</option>
+            {countries.map((ref) => (
+              <option key={ref.id} value={ref.id}>
+                {ref.name}
+              </option>
+            ))}
+          </NativeSearchSelect>
+        </FormField>
         {selectFilter(
           'destination',
-          'مقصد',
+          'شهر',
           cities.map((id) => [id, cityName(id)]),
         )}
         {selectFilter(
@@ -391,7 +456,7 @@ export function FlightLoadGrid({
               setFilter((c) => ({
                 ...c,
                 ...(event.target.checked
-                  ? validFlightLoadDates(offers, c)
+                  ? validFlightLoadDates(countryOffers, c)
                   : { from: '', to: '' }),
               }));
               setSearched(undefined);
@@ -409,6 +474,7 @@ export function FlightLoadGrid({
           onClick={() => {
             setSearched({ ...searchFilter });
             setSearchedCurrent(validDates);
+            setSearchedCountry(country);
             setOutboundId('');
             setReturnId('');
           }}
@@ -429,6 +495,8 @@ export function FlightLoadGrid({
         <Button
           variant="outline"
           onClick={() => {
+            setCountry('');
+            setSearchedCountry('');
             setFilter(initial());
             setValidDates(false);
             setSearched(undefined);
