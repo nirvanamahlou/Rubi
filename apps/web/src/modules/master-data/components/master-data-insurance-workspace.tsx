@@ -1,6 +1,5 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -19,7 +18,6 @@ import {
   CalendarClock,
   CheckCircle2,
   CircleAlert,
-  Database,
   Eye,
   FilePenLine,
   FileSpreadsheet,
@@ -61,7 +59,7 @@ import {
   type MasterDataLogoChange,
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
-import { MasterDataLogoImage } from './master-data-logo-image';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
@@ -74,6 +72,11 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -425,11 +428,6 @@ export function MasterDataInsuranceWorkspace() {
     await loadSummary();
   }
 
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await Promise.all([load(), loadSummary()]);
-  }
-
   async function downloadExcel() {
     setExporting(true);
     try {
@@ -492,7 +490,6 @@ export function MasterDataInsuranceWorkspace() {
         <FilePenLine className="size-4" />
       </Button>
       <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
-      <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
     </div>
   );
 
@@ -506,7 +503,8 @@ export function MasterDataInsuranceWorkspace() {
           {resource === 'insurers' ? (
             <tr>
               {[
-                'لوگو و کد',
+                'کد',
+                'لوگو',
                 'نام فارسی',
                 'نام انگلیسی',
                 'سازمان مرتبط',
@@ -525,6 +523,7 @@ export function MasterDataInsuranceWorkspace() {
             <tr>
               {[
                 'کد طرح',
+                'لوگو',
                 'عنوان',
                 'بیمه‌گر',
                 'مقصد یا منطقه',
@@ -543,6 +542,7 @@ export function MasterDataInsuranceWorkspace() {
             <tr>
               {[
                 'کد پوشش',
+                'لوگو',
                 'عنوان',
                 'سقف تعهد',
                 'ارز',
@@ -577,9 +577,9 @@ export function MasterDataInsuranceWorkspace() {
                       </span>
                     </span>
                   </td>
+                  <MasterDataLogoCell record={record} />
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      <MasterDataLogoImage record={record} />
                       <button
                         className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => openProfile(record)}
@@ -610,6 +610,7 @@ export function MasterDataInsuranceWorkspace() {
                   <td className="p-4 font-mono text-xs" dir="ltr">
                     {record.code}
                   </td>
+                  <MasterDataLogoCell record={record} />
                   <td className="p-4">
                     <button
                       className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -640,6 +641,7 @@ export function MasterDataInsuranceWorkspace() {
                   <td className="p-4 font-mono text-xs" dir="ltr">
                     {record.code}
                   </td>
+                  <MasterDataLogoCell record={record} />
                   <td className="p-4">
                     <button
                       className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -882,53 +884,29 @@ export function MasterDataInsuranceWorkspace() {
           title={`پروفایل ${definition.singularLabel}`}
         >
           <div className="space-y-4">
-            <Card className="overflow-hidden">
-              <div className="grid gap-5 bg-gradient-to-l from-cyan-50 via-background to-sky-50 p-6 dark:from-cyan-950/30 dark:to-sky-950/30 md:grid-cols-[6rem_1fr_auto]">
-                <span className="relative grid size-24 place-items-center rounded-3xl bg-cyan-100 text-cyan-700 dark:bg-cyan-400/15 dark:text-cyan-300">
-                  <CurrentIcon className="size-11" />
-                  <MasterDataLogoImage
-                    className="absolute inset-0 size-24"
-                    record={selected}
-                  />
-                </span>
-                <div>
-                  <h2 className="text-2xl font-black">{selected.name}</h2>
-                  <p className="mt-1 font-mono text-muted-foreground" dir="ltr">
-                    {selected.code} · {attribute(selected, 'englishName')}
-                  </p>
-                  <div className="mt-3">{statusBadge(selected)}</div>
-                </div>
-                <div className="text-center">
-                  <small className="text-muted-foreground">Version</small>
-                  <strong className="block text-2xl">
-                    v{selected.version.toLocaleString('fa-IR')}
-                  </strong>
-                </div>
-              </div>
-            </Card>
+            <MasterDataProfileIdentity
+              eyebrow={`پروفایل ${definition.singularLabel}`}
+              record={selected}
+              title={selected.name}
+            />
             <div className="grid gap-4 lg:grid-cols-2">
-              <Card className="p-5">
-                <h3 className="mb-4 flex items-center gap-2 font-black">
-                  <Database className="size-5" /> مشخصات مرجع
-                </h3>
-                <dl className="grid gap-4 sm:grid-cols-2">
-                  {profileFields[resource].map((field) => (
-                    <div
-                      className="border-b border-border/70 pb-3"
-                      key={field.key}
-                    >
-                      <dt className="text-xs text-muted-foreground">
-                        {field.label}
-                      </dt>
-                      <dd className="mt-1 break-words font-semibold">
-                        {field.key.startsWith('valid')
-                          ? localDate(attribute(selected, field.key))
-                          : attribute(selected, field.key)}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </Card>
+              <MasterDataDetailSection title="مشخصات مرجع">
+                <MasterDataDetailItem
+                  label="نسخه"
+                  value={selected.version.toLocaleString('fa-IR')}
+                />
+                {profileFields[resource].map((field) => (
+                  <MasterDataDetailItem
+                    key={field.key}
+                    label={field.label}
+                    value={
+                      field.key.startsWith('valid')
+                        ? localDate(attribute(selected, field.key))
+                        : attribute(selected, field.key)
+                    }
+                  />
+                ))}
+              </MasterDataDetailSection>
               <Card className="p-5">
                 <h3 className="mb-4 flex items-center gap-2 font-black">
                   <ShieldCheck className="size-5" /> مرز دامنه

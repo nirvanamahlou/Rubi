@@ -1,6 +1,5 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -63,7 +62,7 @@ import {
   type MasterDataLogoChange,
 } from '../api/client';
 import { MasterDataDeleteButton } from './master-data-delete-button';
-import { MasterDataLogoImage } from './master-data-logo-image';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import {
@@ -79,6 +78,11 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
 import { MasterDataCurrencyForm } from './master-data-currency-form';
 import { MasterDataBankProfile } from './master-data-bank-profile';
 
@@ -535,11 +539,6 @@ export function MasterDataFinanceWorkspace() {
     if ((isRateTab(tab) ? rates.length : records.length) === 1 && page > 1)
       setPage(page - 1);
     else await load();
-  }
-
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await load();
   }
 
   async function decide(row: CurrencyRateRow, action: 'approve' | 'reject') {
@@ -1073,9 +1072,12 @@ export function MasterDataFinanceWorkspace() {
             {records.map((record) => (
               <Card className="p-5" key={record.id}>
                 <div className="flex items-start justify-between gap-3">
-                  <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
-                    <WalletCards className="size-5" />
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs" dir="ltr">
+                      {record.code}
+                    </span>
+                    <MasterDataLogoCell asCell={false} record={record} />
+                  </div>
                   <Badge>
                     {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                   </Badge>
@@ -1115,10 +1117,6 @@ export function MasterDataFinanceWorkspace() {
                     record={record}
                     onDeleted={afterDelete}
                   />
-                  <MasterDataPowerButton
-                    record={record}
-                    onChanged={afterStatusChange}
-                  />
                 </div>
               </Card>
             ))}
@@ -1132,6 +1130,7 @@ export function MasterDataFinanceWorkspace() {
               <thead className="bg-muted/50 text-muted-foreground">
                 <tr>
                   <th className="p-4 text-start">کد</th>
+                  <th className="p-4 text-start">لوگو</th>
                   <th className="p-4 text-start">نام فارسی</th>
                   <th className="p-4 text-start">نام انگلیسی / مرجع</th>
                   <th className="p-4 text-start">جزئیات</th>
@@ -1145,10 +1144,8 @@ export function MasterDataFinanceWorkspace() {
                     <td className="p-4 font-mono" dir="ltr">
                       {record.code}
                     </td>
+                    <MasterDataLogoCell record={record} />
                     <td className="p-4 font-semibold">
-                      {tab === 'banks' ? (
-                        <MasterDataLogoImage record={record} />
-                      ) : null}
                       {tab === 'currencies' || tab === 'banks' ? (
                         <button
                           className="text-start font-semibold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -1217,10 +1214,6 @@ export function MasterDataFinanceWorkspace() {
                         <MasterDataDeleteButton
                           record={record}
                           onDeleted={afterDelete}
-                        />
-                        <MasterDataPowerButton
-                          record={record}
-                          onChanged={afterStatusChange}
                         />
                       </div>
                     </td>
@@ -1341,7 +1334,12 @@ export function MasterDataFinanceWorkspace() {
           title={`جزئیات ارز ${selectedCurrency.code}`}
         >
           <div className="space-y-5">
-            <Card className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-5">
+            <MasterDataProfileIdentity
+              eyebrow="پروفایل ارز"
+              record={selectedCurrency}
+              title={selectedCurrency.name}
+            />
+            <MasterDataDetailSection title="مشخصات ارز">
               {[
                 ['کد ISO-4217', selectedCurrency.code],
                 ['نام فارسی', selectedCurrency.name],
@@ -1359,12 +1357,14 @@ export function MasterDataFinanceWorkspace() {
                 ],
                 ['ارز پایه', 'نامشخص — در انتظار اتصال مالی'],
               ].map(([label, value]) => (
-                <dl className="rounded-xl bg-muted/40 p-3" key={label}>
-                  <dt className="text-xs text-muted-foreground">{label}</dt>
-                  <dd className="mt-1 font-bold">{value}</dd>
-                </dl>
+                <MasterDataDetailItem
+                  key={label}
+                  label={String(label)}
+                  ltr={label === 'کد ISO-4217'}
+                  value={value}
+                />
               ))}
-            </Card>
+            </MasterDataDetailSection>
 
             <MasterDataFilterBar>
               <FormField label="جفت ارز و نوع نرخ">

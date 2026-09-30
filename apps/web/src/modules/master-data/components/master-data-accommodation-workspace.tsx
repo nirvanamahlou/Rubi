@@ -1,6 +1,5 @@
 'use client';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
-import { MasterDataPowerButton } from './master-data-power-button';
 import {
   MasterDataDateRangeFilter,
   useMasterDataDateRange,
@@ -80,7 +79,12 @@ import {
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
 import { MasterDataProfileDialog } from './master-data-profile-dialog';
-import { MasterDataLogoImage } from './master-data-logo-image';
+import {
+  MasterDataDetailItem,
+  MasterDataDetailSection,
+  MasterDataProfileIdentity,
+} from './master-data-profile-details';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 
 type AccommodationTab =
   'hotels' | 'chains' | 'meals' | 'facilities' | 'import' | 'combined';
@@ -223,12 +227,7 @@ function StatusBadge({
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-b border-border/70 pb-3">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 font-semibold">{value}</dd>
-    </div>
-  );
+  return <MasterDataDetailItem label={label} value={value} />;
 }
 
 export function MasterDataAccommodationWorkspace() {
@@ -635,11 +634,6 @@ export function MasterDataAccommodationWorkspace() {
     await loadSummary();
   }
 
-  async function afterStatusChange() {
-    setNotice('وضعیت رکورد با موفقیت تغییر کرد.');
-    await Promise.all([load(), loadSummary()]);
-  }
-
   async function downloadExcel() {
     if (tab === 'import') return;
     setExporting(true);
@@ -716,7 +710,6 @@ export function MasterDataAccommodationWorkspace() {
           <FilePenLine aria-hidden="true" className="size-4" />
         </Button>
         <MasterDataDeleteButton record={record} onDeleted={afterDelete} />
-        <MasterDataPowerButton record={record} onChanged={afterStatusChange} />
       </div>
     );
   }
@@ -864,6 +857,7 @@ export function MasterDataAccommodationWorkspace() {
       tab === 'hotels'
         ? [
             'کد',
+            'لوگو',
             'هتل',
             'کشور / شهر / منطقه',
             'زنجیره',
@@ -882,6 +876,7 @@ export function MasterDataAccommodationWorkspace() {
         : tab === 'chains'
           ? [
               'کد',
+              'لوگو',
               'نام فارسی',
               'نام انگلیسی',
               'کشور مبدأ',
@@ -894,6 +889,7 @@ export function MasterDataAccommodationWorkspace() {
           : tab === 'meals'
             ? [
                 'کد',
+                'لوگو',
                 'عنوان فارسی',
                 'عنوان انگلیسی',
                 'دسته',
@@ -904,6 +900,7 @@ export function MasterDataAccommodationWorkspace() {
               ]
             : [
                 'کد',
+                'لوگو',
                 'آیکن',
                 'عنوان فارسی',
                 'عنوان انگلیسی',
@@ -937,10 +934,10 @@ export function MasterDataAccommodationWorkspace() {
                 <td className="p-4 font-mono" dir="ltr">
                   {record.code}
                 </td>
+                <MasterDataLogoCell record={record} />
                 {tab === 'hotels' ? (
                   <>
                     <td className="p-4">
-                      <MasterDataLogoImage record={record} />
                       <button
                         className="text-start font-bold text-foreground hover:text-primary focus-visible:rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => selectProfile(record)}
@@ -995,10 +992,7 @@ export function MasterDataAccommodationWorkspace() {
                   </>
                 ) : tab === 'chains' ? (
                   <>
-                    <td className="p-4 font-semibold">
-                      <MasterDataLogoImage record={record} />
-                      {record.name}
-                    </td>
+                    <td className="p-4 font-semibold">{record.name}</td>
                     <td className="p-4" dir="ltr">
                       {attribute(record, 'englishName')}
                     </td>
@@ -1089,54 +1083,38 @@ export function MasterDataAccommodationWorkspace() {
     const stars = '★'.repeat(Number(attribute(selected, 'starRating', '0')));
     return (
       <div className="space-y-4">
-        <Card className="overflow-hidden">
-          <div className="grid gap-5 bg-gradient-to-l from-orange-50 via-background to-sky-50 p-6 dark:from-orange-950/30 dark:to-sky-950/30 md:grid-cols-[7rem_1fr_auto]">
-            <div className="relative grid size-28 place-items-center rounded-3xl bg-orange-100 text-orange-700 dark:bg-orange-400/15 dark:text-orange-300">
-              <Hotel className="size-12" />
-              <MasterDataLogoImage
-                className="absolute inset-0 size-28"
-                record={selected}
-              />
-            </div>
-            <div>
-              <h2 className="text-2xl font-black">{selected.name}</h2>
-              <p className="mt-1 text-muted-foreground" dir="ltr">
-                {attribute(selected, 'englishName')} · {selected.code}
-              </p>
-              <p className="mt-2">
-                <span className="text-amber-500">{stars}</span> ·{' '}
-                {attribute(selected, 'countryName')}،{' '}
-                {attribute(selected, 'cityName')}،{' '}
-                {attribute(selected, 'regionName')}
-              </p>
-              <div className="mt-3 flex flex-wrap justify-end gap-2">
-                <StatusBadge record={selected} saleable />
-                <Badge>{attribute(selected, 'chainName', 'مستقل')}</Badge>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <small className="text-muted-foreground">Documents</small>
-                <strong className="block text-xl">—</strong>
-              </div>
-              <div>
-                <small className="text-muted-foreground">امکانات</small>
-                <strong className="block text-xl">
-                  {attribute(selected, 'facilityNames', '')
-                    .split(',')
-                    .filter(Boolean)
-                    .length.toLocaleString('fa-IR')}
-                </strong>
-              </div>
-              <div>
-                <small className="text-muted-foreground">Version</small>
-                <strong className="block text-xl">
-                  v{selected.version.toLocaleString('fa-IR')}
-                </strong>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <MasterDataProfileIdentity
+          eyebrow="پروفایل هتل"
+          record={selected}
+          title={selected.name}
+        />
+        <MasterDataDetailSection title="خلاصه هتل">
+          <MasterDataDetailItem label="درجه" value={stars || '—'} />
+          <MasterDataDetailItem
+            label="موقعیت"
+            value={`${attribute(selected, 'countryName')}، ${attribute(selected, 'cityName')}، ${attribute(selected, 'regionName')}`}
+          />
+          <MasterDataDetailItem
+            label="زنجیره"
+            value={attribute(selected, 'chainName', 'مستقل')}
+          />
+          <MasterDataDetailItem
+            label="وضعیت فروش"
+            value={<StatusBadge record={selected} saleable />}
+          />
+          <MasterDataDetailItem
+            label="امکانات"
+            value={attribute(selected, 'facilityNames', '')
+              .split(',')
+              .filter(Boolean)
+              .length.toLocaleString('fa-IR')}
+          />
+          <MasterDataDetailItem
+            label="نسخه"
+            value={selected.version.toLocaleString('fa-IR')}
+          />
+          <MasterDataDetailItem label="Documents" value="—" />
+        </MasterDataDetailSection>
         <Alert
           title="منابع فروش در ماژول‌های مالک مدیریت می‌شوند"
           description="رزرو، موجودی، Voucher و تخصیص مسافر در Reservations و قرارداد و نرخ خرید در Procurement هستند."

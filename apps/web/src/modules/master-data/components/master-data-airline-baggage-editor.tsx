@@ -18,7 +18,7 @@ import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '../api/client';
 import { validateMasterDataDraft } from '../model/validation';
 import { MasterDataNumberInput } from './master-data-number-input';
-import { MasterDataPowerButton } from './master-data-power-button';
+import { MasterDataLogoCell } from './master-data-logo-cell';
 
 const passengerTypes = [
   { value: 'ADT', label: 'بزرگسال' },
@@ -235,9 +235,15 @@ export function MasterDataAirlineBaggageEditor({
               key={rule.id}
               className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm"
             >
-              <span>
-                {ruleLabel(rule)} · {String(rule.attributes.allowance)}{' '}
-                {rule.attributes.unit === 'KG' ? 'کیلوگرم' : 'قطعه'}
+              <span className="flex items-center gap-2">
+                <span className="font-mono text-xs" dir="ltr">
+                  {rule.code}
+                </span>
+                <MasterDataLogoCell asCell={false} record={rule} />
+                <span>
+                  {ruleLabel(rule)} · {String(rule.attributes.allowance)}{' '}
+                  {rule.attributes.unit === 'KG' ? 'کیلوگرم' : 'قطعه'}
+                </span>
               </span>
               <div className="flex items-center gap-2">
                 <Badge>{rule.status === 'active' ? 'فعال' : 'غیرفعال'}</Badge>
@@ -252,7 +258,6 @@ export function MasterDataAirlineBaggageEditor({
                     >
                       ویرایش
                     </Button>
-                    <MasterDataPowerButton record={rule} onChanged={load} />
                   </>
                 ) : null}
               </div>
