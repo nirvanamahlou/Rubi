@@ -1,4 +1,11 @@
-import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import {
+  createHash,
+  randomBytes,
+  randomUUID,
+  scrypt as scryptCallback,
+  timingSafeEqual,
+} from 'node:crypto';
+import { promisify } from 'node:util';
 import type { ActivityWindow } from '../common/organization-activity';
 import type { Readable } from 'node:stream';
 import { HrDirectoryService } from '../hr/hr-directory.service';
@@ -66,6 +73,7 @@ export interface DocumentRequestMetadata {
   userAgent?: string;
   sensitiveReason?: string;
   accessGrantToken?: string;
+  confidentialAccessGrantToken?: string;
 }
 
 export interface MasterDataLogoDocumentResult {
@@ -223,10 +231,12 @@ function mapVersion(
     versionNumber: row.versionNumber,
     originalFileName: revealMetadata ? row.originalFileName : 'سند محرمانه',
     safeDownloadName: revealMetadata ? row.safeDownloadName : 'سند محرمانه',
-    detectedMimeType: row.detectedMimeType,
-    extension: row.extension,
-    sizeBytes: Number(row.sizeBytes),
-    sha256Masked: maskHash(row.sha256),
+    detectedMimeType: revealMetadata
+      ? row.detectedMimeType
+      : 'application/octet-stream',
+    extension: revealMetadata ? row.extension : 'bin',
+    sizeBytes: revealMetadata ? Number(row.sizeBytes) : 0,
+    sha256Masked: revealMetadata ? maskHash(row.sha256) : '••••••',
     scanStatus: row.scanStatus,
     versionNote: revealMetadata ? row.versionNote : 'محرمانه',
     createdBy: revealIdentity
@@ -249,9 +259,13 @@ function canReadSensitive(
 function canRevealDocumentMetadata(
   row: DocumentListRow,
   actor: AuthenticatedActor,
+  confidentialAccessGranted = false,
 ): boolean {
   return (
     canReadSensitive(row.confidentiality, actor.permissions) &&
+    (row.confidentiality !== 'CONFIDENTIAL' ||
+      row.confidentialAccessCodeHash === null ||
+      confidentialAccessGranted) &&
     !(isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId)
   );
 }
@@ -264,6 +278,7 @@ function isWorkbenchFeedbackAttachment(row: DocumentListRow): boolean {
 }
 
 const previewableImageMimeTypes = new Set(['image/jpeg', 'image/png']);
+const scrypt = promisify(scryptCallback);
 
 const configuredMimeTypes: Readonly<Record<string, readonly string[]>> = {
   PDF: ['application/pdf'],
@@ -291,24 +306,39 @@ export interface DocumentFileDelivery {
 function mapListItem(
   row: DocumentListRow,
   actor: AuthenticatedActor,
+  confidentialAccessGranted = false,
 ): DocumentListItemV1 {
   if (!row.currentVersion) {
     throw new ConflictException('نسخه جاری سند نامعتبر است.');
   }
   const permissions = actor.permissions;
+  const hasConfidentialAccessCode = Boolean(
+    row.confidentialAccessCodeHash && row.confidentiality === 'CONFIDENTIAL',
+  );
   const sensitiveAllowed =
     canReadSensitive(row.confidentiality, permissions) &&
     (!isWorkbenchFeedbackAttachment(row) ||
       row.ownerUserId === actor.userId ||
       permissions.includes('documents.sensitive.read'));
-  const revealMetadata = canRevealDocumentMetadata(row, actor);
+  const revealMetadata = canRevealDocumentMetadata(
+    row,
+    actor,
+    confidentialAccessGranted,
+  );
   return {
     id: row.id,
-    archiveCode: row.archiveCode,
+    archiveCode: hasConfidentialAccessCode ? 'DOC-••••••' : row.archiveCode,
     title: revealMetadata ? row.title : 'سند محرمانه ••••••',
     description: revealMetadata ? row.description : null,
-    type: row.documentType,
-    category: row.category,
+    type: revealMetadata
+      ? row.documentType
+      : {
+          id: row.documentType.id,
+          code: 'PROTECTED',
+          name: 'سند محرمانه',
+          domain: 'GENERAL',
+        },
+    category: revealMetadata ? row.category : null,
     owner: revealMetadata
       ? row.owner
       : { id: '00000000-0000-0000-0000-000000000000', displayName: 'محرمانه' },
@@ -317,7 +347,8 @@ function mapListItem(
     archiveStatus: row.archiveStatus,
     isIncomplete: row.isIncomplete,
     requiresStepUpVerification: row.requiresStepUpVerification,
-    validUntil: row.validUntil?.toISOString() ?? null,
+    requiresConfidentialAccessCode: hasConfidentialAccessCode,
+    validUntil: revealMetadata ? (row.validUntil?.toISOString() ?? null) : null,
     version: row.version,
     currentVersion: mapVersion(
       row.currentVersion as DocumentDetailRow['versions'][number],
@@ -325,11 +356,15 @@ function mapListItem(
       revealMetadata,
     ),
     capabilities: {
-      viewFile: permissions.includes('documents.file.read') && sensitiveAllowed,
+      viewFile:
+        permissions.includes('documents.file.read') &&
+        sensitiveAllowed &&
+        (!hasConfidentialAccessCode || confidentialAccessGranted),
       download:
         permissions.includes('documents.file.read') &&
         permissions.includes('documents.download') &&
-        sensitiveAllowed,
+        sensitiveAllowed &&
+        (!hasConfidentialAccessCode || confidentialAccessGranted),
       uploadVersion: permissions.includes('documents.version.create'),
       editMetadata:
         permissions.includes('documents.metadata.update') &&
@@ -352,6 +387,26 @@ function mapListItem(
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+async function hashConfidentialCode(code: string) {
+  const salt = randomBytes(24);
+  const hash = (await scrypt(code, salt, 64)) as Buffer;
+  return { salt: salt.toString('hex'), hash: hash.toString('hex') };
+}
+
+async function verifyConfidentialCode(
+  code: string,
+  saltHex: string,
+  expectedHex: string,
+) {
+  const actual = (await scrypt(
+    code,
+    Buffer.from(saltHex, 'hex'),
+    64,
+  )) as Buffer;
+  const expected = Buffer.from(expectedHex, 'hex');
+  return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
 @Injectable()
@@ -1174,6 +1229,32 @@ export class DocumentsService {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    const confidentialAccessGranted = await this.hasConfidentialAccess(
+      row,
+      actor,
+      metadata,
+    );
+    if (
+      row.confidentiality === 'CONFIDENTIAL' &&
+      row.confidentialAccessCodeHash &&
+      !confidentialAccessGranted
+    ) {
+      await this.repository.appendAudit({
+        documentId: row.id,
+        ...(row.currentVersionId ? { versionId: row.currentVersionId } : {}),
+        actorUserId: actor.userId,
+        actorBranchId: row.branchId,
+        action: 'documents.metadata.view',
+        outcome: 'FAILURE',
+        reason: 'CONFIDENTIAL_CODE_REQUIRED',
+        ipSummary: summarizeIp(metadata.ipAddress),
+        userAgentSummary: summarizeUserAgent(metadata.userAgent),
+      });
+      throw new ForbiddenException({
+        code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+        message: 'برای مشاهدهٔ این سند، کد محرمانگی را وارد کنید.',
+      });
+    }
     await this.repository.appendAudit({
       documentId: row.id,
       ...(row.currentVersionId ? { versionId: row.currentVersionId } : {}),
@@ -1181,26 +1262,31 @@ export class DocumentsService {
       actorBranchId: row.branchId,
       action: 'documents.metadata.view',
       outcome: 'SUCCESS',
-      reason: canRevealDocumentMetadata(row, actor)
+      reason: canRevealDocumentMetadata(row, actor, confidentialAccessGranted)
         ? metadata.sensitiveReason?.trim() || null
         : 'SENSITIVE_METADATA_MASKED',
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
-    return { data: this.mapDetail(row, actor) };
+    return { data: this.mapDetail(row, actor, confidentialAccessGranted) };
   }
 
   private mapDetail(
     row: DocumentDetailRow,
     actor: AuthenticatedActor,
+    confidentialAccessGranted = false,
   ): DocumentDetailV1 {
     const permissions = actor.permissions;
-    const base = mapListItem(row, actor);
+    const base = mapListItem(row, actor, confidentialAccessGranted);
     const sensitive =
       row.confidentiality === 'CONFIDENTIAL' ||
       row.confidentiality === 'RESTRICTED' ||
       (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId);
-    const revealMetadata = canRevealDocumentMetadata(row, actor);
+    const revealMetadata = canRevealDocumentMetadata(
+      row,
+      actor,
+      confidentialAccessGranted,
+    );
     return {
       ...base,
       sourceModule: revealMetadata ? row.sourceModule : '',
@@ -1272,6 +1358,7 @@ export class DocumentsService {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (
       row.sourceModule === 'WORKBENCH' &&
       row.sourceEntityType === 'WorkbenchFeedback'
@@ -1280,6 +1367,22 @@ export class DocumentsService {
     }
     if (row.archiveStatus === 'DELETED') {
       throw new ConflictException('سند حذف‌شده قابل ویرایش نیست.');
+    }
+    if (
+      row.confidentialAccessCodeHash &&
+      dto.confidentiality !== 'CONFIDENTIAL'
+    ) {
+      throw new BadRequestException(
+        'تا زمانی که کد محرمانگی برقرار است، سطح سند قابل کاهش نیست.',
+      );
+    }
+    if (
+      dto.confidentiality === 'CONFIDENTIAL' &&
+      !row.confidentialAccessCodeHash
+    ) {
+      throw new BadRequestException(
+        'برای محرمانه‌کردن این سند، آن را با کد محرمانگی بارگذاری کنید.',
+      );
     }
     if (row.documentType.requiresExpiry && !dto.validUntil) {
       throw new BadRequestException(
@@ -1317,7 +1420,13 @@ export class DocumentsService {
         'سند هم‌زمان تغییر کرده است؛ اطلاعات را دوباره باز کنید.',
       );
     }
-    return { data: this.mapDetail(updated, actor) };
+    return {
+      data: this.mapDetail(
+        updated,
+        actor,
+        Boolean(row.confidentialAccessCodeHash),
+      ),
+    };
   }
 
   async archive(
@@ -1330,6 +1439,7 @@ export class DocumentsService {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (row.archiveStatus !== 'ACTIVE') {
       throw new ConflictException('فقط سند فعال قابل آرشیو است.');
     }
@@ -1348,7 +1458,13 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor) };
+    return {
+      data: this.mapDetail(
+        updated,
+        actor,
+        Boolean(row.confidentialAccessCodeHash),
+      ),
+    };
   }
 
   async restore(
@@ -1361,6 +1477,7 @@ export class DocumentsService {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (row.archiveStatus !== 'ARCHIVED') {
       throw new ConflictException('فقط سند آرشیوشده قابل بازیابی است.');
     }
@@ -1382,7 +1499,13 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor) };
+    return {
+      data: this.mapDetail(
+        updated,
+        actor,
+        Boolean(row.confidentialAccessCodeHash),
+      ),
+    };
   }
 
   async bulk(
@@ -1404,6 +1527,7 @@ export class DocumentsService {
     }
     for (const row of rows) {
       this.assertDomain(row.documentType.domain, actor.permissions);
+      await this.assertConfidentialAccess(row, actor, metadata);
       if (dto.action === 'ARCHIVE' && row.archiveStatus !== 'ACTIVE') {
         throw new ConflictException('همه اسناد انتخاب‌شده باید فعال باشند.');
       }
@@ -1445,11 +1569,13 @@ export class DocumentsService {
     id: string,
     dto: DocumentDeleteDto,
     actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata = {},
   ): Promise<void> {
     this.assertPermission(actor.permissions, 'documents.delete');
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (row.legalHoldActive) {
       throw new ConflictException(
         'سند دارای توقف حقوقی است و حذف دائمی آن مجاز نیست.',
@@ -1535,6 +1661,12 @@ export class DocumentsService {
         'پرونده انتخاب‌شده معتبر یا در دسترس شما نیست.',
       );
     }
+    const hasExplicitSource = Boolean(
+      dto.sourceModule ||
+      dto.sourceEntityType ||
+      dto.sourceEntityId ||
+      dto.sourceDisplayLabel,
+    );
     const sourceReference =
       selectedCase ??
       (personalWorkbenchUpload
@@ -1544,14 +1676,16 @@ export class DocumentsService {
             sourceEntityId: actor.userId,
             displayLabel: dto.title.trim(),
           }
-        : {
-            sourceModule: dto.sourceModule?.trim() ?? '',
-            sourceEntityType: dto.sourceEntityType?.trim() ?? '',
-            sourceEntityId: dto.sourceEntityId?.trim() ?? '',
-            displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
-          });
+        : hasExplicitSource
+          ? {
+              sourceModule: dto.sourceModule?.trim() ?? '',
+              sourceEntityType: dto.sourceEntityType?.trim() ?? '',
+              sourceEntityId: dto.sourceEntityId?.trim() ?? '',
+              displayLabel: dto.sourceDisplayLabel?.trim() ?? '',
+            }
+          : null);
     if (
-      sourceReference.sourceModule === 'HUMAN_RESOURCES' &&
+      sourceReference?.sourceModule === 'HUMAN_RESOURCES' &&
       sourceReference.sourceEntityType === 'Employee'
     ) {
       this.assertDomain('HUMAN_RESOURCES', actor.permissions);
@@ -1567,12 +1701,13 @@ export class DocumentsService {
       sourceReference.displayLabel = `${employee.name} · ${employee.personnelCode}`;
     }
     if (
-      !sourceReference.sourceModule ||
-      !sourceReference.sourceEntityType ||
-      !sourceReference.sourceEntityId ||
-      !sourceReference.displayLabel
+      sourceReference &&
+      (!sourceReference.sourceModule ||
+        !sourceReference.sourceEntityType ||
+        !sourceReference.sourceEntityId ||
+        !sourceReference.displayLabel)
     ) {
-      throw new BadRequestException('انتخاب پرونده مربوطه الزامی است.');
+      throw new BadRequestException('مشخصات پرونده مربوطه ناقص است.');
     }
     if (references.documentType.requiresExpiry && !dto.validUntil) {
       throw new BadRequestException(
@@ -1621,6 +1756,30 @@ export class DocumentsService {
           {},
         )
       : { value: {} as { classification?: unknown } };
+    const confidentiality =
+      dto.confidentiality ??
+      confidentialityFromSetting(configuredAccess.value.classification) ??
+      references.documentType.defaultConfidentiality;
+    if (confidentiality === 'CONFIDENTIAL' && !dto.confidentialAccessCode) {
+      throw new BadRequestException({
+        code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+        message: 'برای سند محرمانه، کد شش‌رقمی تعیین کنید.',
+      });
+    }
+    if (
+      dto.confidentialAccessCode &&
+      !/^\d{6}$/u.test(dto.confidentialAccessCode)
+    ) {
+      throw new BadRequestException('کد محرمانگی باید شش رقم باشد.');
+    }
+    if (confidentiality !== 'CONFIDENTIAL' && dto.confidentialAccessCode) {
+      throw new BadRequestException(
+        'کد محرمانگی فقط برای سند با دسترسی محرمانه قابل ثبت است.',
+      );
+    }
+    const confidentialCode = dto.confidentialAccessCode
+      ? await hashConfidentialCode(dto.confidentialAccessCode)
+      : null;
     await this.storage.putQuarantined(storageObjectKey, file.buffer);
     try {
       const row = await this.repository.createUploaded({
@@ -1633,15 +1792,14 @@ export class DocumentsService {
         categoryId: references.category.id,
         branchId: dto.branchId,
         ownerUserId: dto.ownerUserId,
-        sourceModule: sourceReference.sourceModule,
-        sourceEntityType: sourceReference.sourceEntityType,
-        sourceEntityId: sourceReference.sourceEntityId,
-        sourceDisplayLabel: sourceReference.displayLabel,
-        confidentiality:
-          dto.confidentiality ??
-          confidentialityFromSetting(configuredAccess.value.classification) ??
-          references.documentType.defaultConfidentiality,
+        sourceModule: sourceReference?.sourceModule ?? 'DOCUMENTS',
+        sourceEntityType: sourceReference?.sourceEntityType ?? null,
+        sourceEntityId: sourceReference?.sourceEntityId ?? null,
+        sourceDisplayLabel: sourceReference?.displayLabel ?? null,
+        confidentiality,
         requiresStepUpVerification: dto.requiresStepUpVerification ?? false,
+        confidentialAccessCodeHash: confidentialCode?.hash ?? null,
+        confidentialAccessCodeSalt: confidentialCode?.salt ?? null,
         validUntil: dto.validUntil
           ? new Date(`${dto.validUntil.slice(0, 10)}T23:59:59.999Z`)
           : null,
@@ -1722,10 +1880,35 @@ export class DocumentsService {
     };
   }
 
-  async audit(id: string, actor: AuthenticatedActor) {
+  async audit(
+    id: string,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata = {},
+  ) {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    const confidentialAccessGranted = await this.hasConfidentialAccess(
+      row,
+      actor,
+      metadata,
+    );
+    if (
+      row.confidentiality === 'CONFIDENTIAL' &&
+      row.confidentialAccessCodeHash &&
+      !confidentialAccessGranted
+    ) {
+      await this.auditAccessGrantFailure(
+        row,
+        actor,
+        metadata,
+        'CONFIDENTIAL_CODE_REQUIRED',
+      );
+      throw new ForbiddenException({
+        code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+        message: 'برای مشاهدهٔ سابقهٔ این سند، کد محرمانگی را وارد کنید.',
+      });
+    }
     if (isWorkbenchFeedbackAttachment(row) && row.ownerUserId !== actor.userId)
       throw new NotFoundException('سند پیدا نشد.');
     const events = await this.repository.audit(id);
@@ -1772,6 +1955,81 @@ export class DocumentsService {
     if (!row || !row.currentVersion)
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    if (dto.purpose === 'CONFIDENTIAL_VIEW') {
+      const state = await this.repository.confidentialAccessState(row.id);
+      if (
+        row.confidentiality !== 'CONFIDENTIAL' ||
+        !state?.confidentialAccessCodeHash ||
+        !state.confidentialAccessCodeSalt
+      ) {
+        throw new ConflictException('این سند کد محرمانگی ندارد.');
+      }
+      if (
+        !(await this.repository.beginConfidentialAccessAttempt({
+          documentId: row.id,
+          actorUserId: actor.userId,
+          actorBranchId: row.branchId,
+          ipSummary: summarizeIp(metadata.ipAddress),
+          userAgentSummary: summarizeUserAgent(metadata.userAgent),
+        }))
+      ) {
+        await this.auditAccessGrantFailure(
+          row,
+          actor,
+          metadata,
+          'CONFIDENTIAL_CODE_LOCKED',
+        );
+        throw new ForbiddenException({
+          code: 'DOCUMENT_CONFIDENTIAL_CODE_LOCKED',
+          message: 'به‌دلیل چند تلاش ناموفق، ورود کد تا ۱۵ دقیقه بسته شده است.',
+        });
+      }
+      const valid = await verifyConfidentialCode(
+        dto.code,
+        state.confidentialAccessCodeSalt,
+        state.confidentialAccessCodeHash,
+      );
+      if (!valid) {
+        await this.auditAccessGrantFailure(
+          row,
+          actor,
+          metadata,
+          'CONFIDENTIAL_CODE_INVALID',
+        );
+        throw new ForbiddenException({
+          code: 'DOCUMENT_CONFIDENTIAL_CODE_INVALID',
+          message: 'کد محرمانگی درست نیست.',
+        });
+      }
+      const token = randomBytes(32).toString('base64url');
+      const expiresAt = new Date(Date.now() + 5 * 60_000);
+      await this.repository.createAccessGrant({
+        tokenHash: createHash('sha256').update(token, 'utf8').digest('hex'),
+        documentId: row.id,
+        actorUserId: actor.userId,
+        actorSessionId: actor.sessionId,
+        purpose: 'CONFIDENTIAL_VIEW',
+        expiresAt,
+      });
+      await this.repository.appendAudit({
+        documentId: row.id,
+        versionId: row.currentVersion.id,
+        actorUserId: actor.userId,
+        actorBranchId: row.branchId,
+        action: 'documents.access_grant.create',
+        outcome: 'SUCCESS',
+        reason: 'CONFIDENTIAL_VIEW',
+        ipSummary: summarizeIp(metadata.ipAddress),
+        userAgentSummary: summarizeUserAgent(metadata.userAgent),
+      });
+      return {
+        data: {
+          token,
+          purpose: 'CONFIDENTIAL_VIEW',
+          expiresAt: expiresAt.toISOString(),
+        },
+      };
+    }
     if (!row.requiresStepUpVerification) {
       await this.auditAccessGrantFailure(
         row,
@@ -1888,11 +2146,16 @@ export class DocumentsService {
           (metadata.sensitiveReason?.trim().length ?? 0) >= 5)) &&
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN';
+    const confidentialAccessAllowed = await this.hasConfidentialAccess(
+      row,
+      actor,
+      metadata,
+    );
     const stepUpAllowed =
       baseAllowed && row.requiresStepUpVerification
         ? await this.consumeAccessGrant(row.id, actor, 'DOWNLOAD', metadata)
         : true;
-    const allowed = baseAllowed && stepUpAllowed;
+    const allowed = baseAllowed && confidentialAccessAllowed && stepUpAllowed;
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -1902,9 +2165,11 @@ export class DocumentsService {
       outcome: allowed ? 'SUCCESS' : 'FAILURE',
       reason: allowed
         ? metadata.sensitiveReason?.trim() || null
-        : baseAllowed && row.requiresStepUpVerification
-          ? 'DOWNLOAD_STEP_UP_DENIED'
-          : 'DOWNLOAD_POLICY_DENIED',
+        : baseAllowed && !confidentialAccessAllowed
+          ? 'CONFIDENTIAL_CODE_REQUIRED'
+          : baseAllowed && row.requiresStepUpVerification
+            ? 'DOWNLOAD_STEP_UP_DENIED'
+            : 'DOWNLOAD_POLICY_DENIED',
       ipSummary: summarizeIp(metadata.ipAddress),
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
@@ -1921,7 +2186,7 @@ export class DocumentsService {
         row.currentVersion.storageObjectKey,
         Number(row.currentVersion.sizeBytes),
       ),
-      fileName: canRevealDocumentMetadata(row, actor)
+      fileName: canRevealDocumentMetadata(row, actor, confidentialAccessAllowed)
         ? row.currentVersion.safeDownloadName
         : `protected-file.${row.currentVersion.extension}`,
       mimeType: row.currentVersion.detectedMimeType,
@@ -2000,20 +2265,27 @@ export class DocumentsService {
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN' &&
       previewable;
+    const confidentialAccessAllowed = await this.hasConfidentialAccess(
+      row,
+      actor,
+      metadata,
+    );
     const stepUpAllowed =
       baseAllowed && row.requiresStepUpVerification
         ? await this.consumeAccessGrant(row.id, actor, 'PREVIEW', metadata)
         : true;
-    const allowed = baseAllowed && stepUpAllowed;
+    const allowed = baseAllowed && confidentialAccessAllowed && stepUpAllowed;
 
     const denialReason =
       row.currentVersion.scanStatus !== 'CLEAN'
         ? 'PREVIEW_SCAN_BLOCKED'
         : !previewable
           ? 'PREVIEW_TYPE_UNSUPPORTED'
-          : baseAllowed && row.requiresStepUpVerification
-            ? 'PREVIEW_STEP_UP_DENIED'
-            : 'PREVIEW_POLICY_DENIED';
+          : baseAllowed && !confidentialAccessAllowed
+            ? 'CONFIDENTIAL_CODE_REQUIRED'
+            : baseAllowed && row.requiresStepUpVerification
+              ? 'PREVIEW_STEP_UP_DENIED'
+              : 'PREVIEW_POLICY_DENIED';
     await this.repository.appendAudit({
       documentId: row.id,
       versionId: row.currentVersion.id,
@@ -2045,7 +2317,7 @@ export class DocumentsService {
         row.currentVersion.storageObjectKey,
         Number(row.currentVersion.sizeBytes),
       ),
-      fileName: canRevealDocumentMetadata(row, actor)
+      fileName: canRevealDocumentMetadata(row, actor, confidentialAccessAllowed)
         ? row.currentVersion.safeDownloadName
         : `protected-file.${row.currentVersion.extension}`,
       mimeType: row.currentVersion.detectedMimeType,
@@ -2068,6 +2340,41 @@ export class DocumentsService {
       actorUserId: actor.userId,
       actorSessionId: actor.sessionId,
       purpose,
+    });
+  }
+
+  private async hasConfidentialAccess(
+    row: DocumentDetailRow,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<boolean> {
+    if (!row.confidentialAccessCodeHash) return true;
+    if (!metadata.confidentialAccessGrantToken) return false;
+    return this.repository.hasConfidentialAccessGrant({
+      tokenHash: createHash('sha256')
+        .update(metadata.confidentialAccessGrantToken, 'utf8')
+        .digest('hex'),
+      documentId: row.id,
+      actorUserId: actor.userId,
+      actorSessionId: actor.sessionId,
+    });
+  }
+
+  private async assertConfidentialAccess(
+    row: DocumentDetailRow,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<void> {
+    if (await this.hasConfidentialAccess(row, actor, metadata)) return;
+    await this.auditAccessGrantFailure(
+      row,
+      actor,
+      metadata,
+      'CONFIDENTIAL_CODE_REQUIRED',
+    );
+    throw new ForbiddenException({
+      code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+      message: 'برای انجام این عملیات، کد محرمانگی را وارد کنید.',
     });
   }
 

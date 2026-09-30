@@ -13,8 +13,8 @@ export interface DocumentUploadValues {
   ownerUserId: string;
   sourceRelationId: string;
   confidentiality: string;
+  confidentialAccessCode: string;
   validUntil: string;
-  versionNote: string;
   requiresStepUpVerification: boolean;
 }
 
@@ -27,8 +27,8 @@ export const emptyDocumentUploadValues: DocumentUploadValues = {
   ownerUserId: '',
   sourceRelationId: '',
   confidentiality: '',
+  confidentialAccessCode: '',
   validUntil: '',
-  versionNote: '',
   requiresStepUpVerification: false,
 };
 
@@ -73,7 +73,7 @@ export function validateDocumentUpload(
   values: DocumentUploadValues,
   hasFile: boolean,
   requiresExpiry: boolean,
-  allowUnlinked = false,
+  requiresConfidentialCode = false,
 ): string | null {
   if (!hasFile) return 'ابتدا فایل سند را انتخاب کنید.';
   if (!values.title.trim()) return 'عنوان سند را وارد کنید.';
@@ -81,11 +81,14 @@ export function validateDocumentUpload(
   if (!values.categoryId) return 'دسته‌بندی را انتخاب کنید.';
   if (!values.branchId) return 'شعبه را انتخاب کنید.';
   if (!values.ownerUserId) return 'مالک فایل را انتخاب کنید.';
-  if (!allowUnlinked && !values.sourceRelationId && !values.employeeId)
-    return 'پرونده مربوطه را انتخاب کنید.';
   if (values.sourceRelationId && values.employeeId)
     return 'فقط یک پرونده مرجع انتخاب کنید.';
   if (requiresExpiry && !values.validUntil)
     return 'برای این نوع سند، تاریخ اعتبار الزامی است.';
+  if (
+    requiresConfidentialCode &&
+    !/^\d{6}$/u.test(values.confidentialAccessCode)
+  )
+    return 'برای سند محرمانه، کد شش‌رقمی تعیین کنید.';
   return null;
 }

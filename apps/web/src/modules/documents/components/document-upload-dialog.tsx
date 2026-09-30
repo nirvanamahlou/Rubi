@@ -83,6 +83,11 @@ export function DocumentUploadDialog({
       options?.documentTypes.find((type) => type.id === values.documentTypeId),
     [options, values.documentTypeId],
   );
+  const confidentialCodeRequired =
+    !personalUpload &&
+    (values.confidentiality === 'CONFIDENTIAL' ||
+      (!values.confidentiality &&
+        selectedType?.defaultConfidentiality === 'CONFIDENTIAL'));
   const availableOwners = personalUpload
     ? options?.owners.filter((owner) => owner.id === options.currentUserId)
     : options?.owners;
@@ -116,7 +121,7 @@ export function DocumentUploadDialog({
       values,
       Boolean(file),
       Boolean(selectedType?.requiresExpiry),
-      personalUpload,
+      confidentialCodeRequired,
     );
     if (invalid) {
       setValidationError(invalid);
@@ -292,6 +297,33 @@ export function DocumentUploadDialog({
                   </SelectContent>
                 </Select>
               </FormField>
+              {!personalUpload ? (
+                <FormField
+                  description={
+                    confidentialCodeRequired
+                      ? 'برای دیدن اطلاعات و بازکردن یا دریافت این سند لازم است. بعداً قابل بازیابی نیست؛ آن را امن نگه دارید.'
+                      : 'اگر محرمانگی سند روی محرمانه باشد، این کد برای مشاهده و دریافت فایل لازم می‌شود.'
+                  }
+                  id="document-confidential-access-code"
+                  label="کد محرمانگی"
+                  required={confidentialCodeRequired}
+                >
+                  <Input
+                    autoComplete="new-password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    onChange={(event) =>
+                      update(
+                        'confidentialAccessCode',
+                        event.target.value.replace(/\D/gu, '').slice(0, 6),
+                      )
+                    }
+                    pattern="[0-9]{6}"
+                    type="password"
+                    value={values.confidentialAccessCode}
+                  />
+                </FormField>
+              ) : null}
               <FormField
                 label="تاریخ اعتبار"
                 required={Boolean(selectedType?.requiresExpiry)}
@@ -304,18 +336,6 @@ export function DocumentUploadDialog({
                   variant="rubi"
                 />
               </FormField>
-              {!personalUpload && (
-                <FormField id="version-note" label="یادداشت نسخه">
-                  <Input
-                    id="version-note"
-                    onChange={(event) =>
-                      update('versionNote', event.target.value)
-                    }
-                    placeholder="مثلاً بارگذاری اولیه"
-                    value={values.versionNote}
-                  />
-                </FormField>
-              )}
             </div>
             <FormField id="document-description" label="توضیحات">
               <Textarea
@@ -336,14 +356,13 @@ export function DocumentUploadDialog({
             <p className="mt-2 text-sm text-muted-foreground">
               {personalUpload
                 ? 'انتخاب پرونده اختیاری است. سند بدون پرونده در فایل‌های شما ذخیره می‌شود.'
-                : 'پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب مستقیم کارمند از منابع انسانی هم ممکن است.'}
+                : 'در صورت نیاز، پرونده موجود در آرشیو را انتخاب کنید؛ برای اسناد پرسنلی، انتخاب مستقیم کارمند از منابع انسانی هم ممکن است.'}
             </p>
             <div className="mt-4">
               <FormField
                 description="فقط پرونده‌های قابل‌دسترسی در شعبه انتخاب‌شده نمایش داده می‌شوند."
                 id="source-relation"
                 label="پرونده مربوطه"
-                required={!personalUpload}
               >
                 <DocumentCasePicker
                   branchId={values.branchId}

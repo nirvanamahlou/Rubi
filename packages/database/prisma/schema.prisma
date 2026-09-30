@@ -3196,6 +3196,7 @@ enum DocumentProcessingStatus {
 enum DocumentAccessPurpose {
   PREVIEW
   DOWNLOAD
+  CONFIDENTIAL_VIEW
 }
 
 model DocumentType {
@@ -3233,48 +3234,52 @@ model DocumentCategory {
 }
 
 model Document {
-  id                         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  archiveCode                String                       @unique @default(dbgenerated("documents_generate_archive_code()")) @map("archive_code") @db.VarChar(40)
-  title                      String                       @db.VarChar(240)
-  description                String?                      @db.VarChar(1000)
-  documentTypeId             String                       @map("document_type_id") @db.Uuid
-  categoryId                 String?                      @map("category_id") @db.Uuid
-  branchId                   String                       @map("branch_id") @db.Uuid
-  ownerUserId                String                       @map("owner_user_id") @db.Uuid
-  sourceModule               String                       @map("source_module") @db.VarChar(80)
-  sourceEntityType           String?                      @map("source_entity_type") @db.VarChar(120)
-  sourceEntityId             String?                      @map("source_entity_id") @db.VarChar(160)
-  confidentiality            DocumentConfidentiality      @default(INTERNAL)
-  archiveStatus              DocumentArchiveStatus        @default(ACTIVE) @map("archive_status")
-  validUntil                 DateTime?                    @map("valid_until") @db.Timestamptz(3)
-  currentVersionId           String?                      @unique @map("current_version_id") @db.Uuid
-  currentVersionNumber       Int                          @default(0) @map("current_version_number")
-  isIncomplete               Boolean                      @default(false) @map("is_incomplete")
-  requiresStepUpVerification Boolean                      @default(false) @map("requires_step_up_verification")
-  legalHoldActive            Boolean                      @default(false) @map("legal_hold_active")
-  deletedAt                  DateTime?                    @map("deleted_at") @db.Timestamptz(3)
-  version                    Int                          @default(1)
-  createdByUserId            String                       @map("created_by_user_id") @db.Uuid
-  updatedByUserId            String                       @map("updated_by_user_id") @db.Uuid
-  createdAt                  DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                  DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
-  documentType               DocumentType                 @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
-  category                   DocumentCategory?            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  branch                     Branch                       @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  owner                      User                         @relation("DocumentOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
-  createdBy                  User                         @relation("DocumentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  updatedBy                  User                         @relation("DocumentUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
-  versions                   DocumentVersion[]            @relation("DocumentVersions")
-  currentVersion             DocumentVersion?             @relation("CurrentDocumentVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
-  relations                  DocumentRelation[]
-  auditEvents                DocumentAuditEvent[]
-  accessGrants               DocumentAccessGrant[]
-  hrRecords                  HrRecord[]
-  hrEmployeePhotos           HrEmployee[]
-  favorites                  DocumentFavorite[]
-  messagingAttachments       MessagingMessageAttachment[]
-  workbenchCalendarImages    WorkbenchCalendarEvent[]
-  iamProfilePhotos           IamUserProfile[]             @relation("IamProfilePhoto")
+  id                               String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  archiveCode                      String                       @unique @default(dbgenerated("documents_generate_archive_code()")) @map("archive_code") @db.VarChar(40)
+  title                            String                       @db.VarChar(240)
+  description                      String?                      @db.VarChar(1000)
+  documentTypeId                   String                       @map("document_type_id") @db.Uuid
+  categoryId                       String?                      @map("category_id") @db.Uuid
+  branchId                         String                       @map("branch_id") @db.Uuid
+  ownerUserId                      String                       @map("owner_user_id") @db.Uuid
+  sourceModule                     String                       @map("source_module") @db.VarChar(80)
+  sourceEntityType                 String?                      @map("source_entity_type") @db.VarChar(120)
+  sourceEntityId                   String?                      @map("source_entity_id") @db.VarChar(160)
+  confidentiality                  DocumentConfidentiality      @default(INTERNAL)
+  archiveStatus                    DocumentArchiveStatus        @default(ACTIVE) @map("archive_status")
+  validUntil                       DateTime?                    @map("valid_until") @db.Timestamptz(3)
+  currentVersionId                 String?                      @unique @map("current_version_id") @db.Uuid
+  currentVersionNumber             Int                          @default(0) @map("current_version_number")
+  isIncomplete                     Boolean                      @default(false) @map("is_incomplete")
+  requiresStepUpVerification       Boolean                      @default(false) @map("requires_step_up_verification")
+  confidentialAccessCodeHash       String?                      @map("confidential_access_code_hash") @db.VarChar(128)
+  confidentialAccessCodeSalt       String?                      @map("confidential_access_code_salt") @db.VarChar(64)
+  confidentialAccessFailedAttempts Int                          @default(0) @map("confidential_access_failed_attempts")
+  confidentialAccessLockedUntil    DateTime?                    @map("confidential_access_locked_until") @db.Timestamptz(3)
+  legalHoldActive                  Boolean                      @default(false) @map("legal_hold_active")
+  deletedAt                        DateTime?                    @map("deleted_at") @db.Timestamptz(3)
+  version                          Int                          @default(1)
+  createdByUserId                  String                       @map("created_by_user_id") @db.Uuid
+  updatedByUserId                  String                       @map("updated_by_user_id") @db.Uuid
+  createdAt                        DateTime                     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                        DateTime                     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  documentType                     DocumentType                 @relation(fields: [documentTypeId], references: [id], onDelete: Restrict)
+  category                         DocumentCategory?            @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  branch                           Branch                       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  owner                            User                         @relation("DocumentOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  createdBy                        User                         @relation("DocumentCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy                        User                         @relation("DocumentUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  versions                         DocumentVersion[]            @relation("DocumentVersions")
+  currentVersion                   DocumentVersion?             @relation("CurrentDocumentVersion", fields: [currentVersionId], references: [id], onDelete: Restrict)
+  relations                        DocumentRelation[]
+  auditEvents                      DocumentAuditEvent[]
+  accessGrants                     DocumentAccessGrant[]
+  hrRecords                        HrRecord[]
+  hrEmployeePhotos                 HrEmployee[]
+  favorites                        DocumentFavorite[]
+  messagingAttachments             MessagingMessageAttachment[]
+  workbenchCalendarImages          WorkbenchCalendarEvent[]
+  iamProfilePhotos                 IamUserProfile[]             @relation("IamProfilePhoto")
 
   @@index([branchId, archiveStatus, updatedAt])
   @@index([documentTypeId, archiveStatus, updatedAt])

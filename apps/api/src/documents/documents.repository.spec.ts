@@ -5,6 +5,51 @@ import type { NotificationsService } from '../notifications/notifications.servic
 import { DocumentsRepository } from './documents.repository';
 
 describe('DocumentsRepository source scoping', () => {
+  it('locks confidential attempts by document and actor and denies only that actor after five attempts', async () => {
+    const queryRaw = vi.fn().mockResolvedValue([]);
+    const findFirst = vi.fn().mockResolvedValue(null);
+    const count = vi.fn().mockResolvedValue(5);
+    const create = vi.fn();
+    const transaction = vi.fn(
+      async (callback: (client: unknown) => Promise<boolean>) =>
+        callback({
+          $queryRaw: queryRaw,
+          documentAuditEvent: { findFirst, count, create },
+        }),
+    );
+    const repository = new DocumentsRepository(
+      { client: { $transaction: transaction } } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+    const allowed = await repository.beginConfidentialAccessAttempt({
+      documentId: '44444444-4444-4444-8444-444444444444',
+      actorUserId: '11111111-1111-4111-8111-111111111111',
+      actorBranchId: '33333333-3333-4333-8333-333333333333',
+      ipSummary: '',
+      userAgentSummary: '',
+    });
+    expect(allowed).toBe(false);
+    expect(queryRaw).toHaveBeenCalledOnce();
+    expect(count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          actorUserId: '11111111-1111-4111-8111-111111111111',
+        }),
+      }),
+    );
+    expect(create).not.toHaveBeenCalled();
+    count.mockResolvedValueOnce(0);
+    expect(
+      await repository.beginConfidentialAccessAttempt({
+        documentId: '44444444-4444-4444-8444-444444444444',
+        actorUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        actorBranchId: '33333333-3333-4333-8333-333333333333',
+        ipSummary: '',
+        userAgentSummary: '',
+      }),
+    ).toBe(true);
+    expect(create).toHaveBeenCalledOnce();
+  });
   it('hides sensitive documents from direct detail lookup when not authorized', async () => {
     const findFirst = vi.fn().mockResolvedValue(null);
     const repository = new DocumentsRepository(
@@ -252,6 +297,39 @@ describe('DocumentsRepository source scoping', () => {
     );
     expect(denied).toEqual({ rows: [], total: 0 });
     expect(count).toHaveBeenCalledTimes(2);
+  });
+
+  it('excludes coded documents from raw metadata search and sensitive ordering', async () => {
+    const count = vi.fn().mockResolvedValue(0);
+    const findMany = vi.fn().mockResolvedValue([]);
+    const repository = new DocumentsRepository(
+      {
+        client: {
+          document: { count, findMany },
+          $transaction: async (operations: Promise<unknown>[]) =>
+            Promise.all(operations),
+        },
+      } as unknown as DatabaseService,
+      {} as NotificationsService,
+    );
+    for (const query of [
+      { search: 'secret title', sortBy: 'updatedAt' as const },
+      { sortBy: 'title' as const },
+      { sortBy: 'archiveCode' as const },
+      { sortBy: 'sizeBytes' as const },
+      { sortBy: 'validUntil' as const },
+    ]) {
+      await repository.list(
+        { ...query, page: 1, pageSize: 20, sortDirection: 'asc' },
+        ['branch-a'],
+        ['GENERAL'],
+        'reader-a',
+        true,
+      );
+      const where = count.mock.lastCall?.[0].where;
+      expect(where.AND).toContainEqual({ confidentialAccessCodeHash: null });
+      expect(findMany.mock.lastCall?.[0].where).toEqual(where);
+    }
   });
 
   it.each([

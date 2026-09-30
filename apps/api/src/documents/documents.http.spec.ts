@@ -268,6 +268,7 @@ describe('Documents HTTP boundary', () => {
       id,
       expect.objectContaining({ version: 1 }),
       actor,
+      expect.objectContaining({ ipAddress: expect.any(String) }),
     );
   });
 

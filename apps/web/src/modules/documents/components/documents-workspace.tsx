@@ -55,6 +55,7 @@ import {
 } from '../model/archive-tools';
 import { getDocumentConnection } from '../model/document-connections';
 import { DocumentDetailDialog } from './document-detail-dialog';
+import { DocumentConfidentialAccessDialog } from './document-confidential-access-dialog';
 import { DocumentBulkActionsDialog } from './document-bulk-actions-dialog';
 import { DocumentDeleteDialog } from './document-delete-dialog';
 import { DocumentEditDialog } from './document-edit-dialog';
@@ -346,6 +347,15 @@ export function DocumentsWorkspace() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [detail, setDetail] = useState<DocumentDetailV1 | null>(null);
+  const [confidentialGateDocumentId, setConfidentialGateDocumentId] = useState<
+    string | null
+  >(null);
+  const [confidentialGateOpen, setConfidentialGateOpen] = useState(false);
+  const [confidentialGrant, setConfidentialGrant] = useState<{
+    documentId: string;
+    token: string;
+    expiresAt: number;
+  } | null>(null);
   const [audit, setAudit] = useState<readonly DocumentAuditEventV1[]>([]);
   const [personalView, setPersonalView] = useState<PersonalViewKey | null>(
     null,
@@ -586,31 +596,49 @@ export function DocumentsWorkspace() {
     }
   }
 
-  const openDetail = useCallback(async (id: string) => {
-    setDetailOpen(true);
-    setDetailLoading(true);
-    setDetailError('');
-    setDetail(null);
-    setAudit([]);
-    try {
-      const response = await documentsApi.detail(id);
-      setDetail(response.data);
-      if (response.data.capabilities.viewAudit) {
-        documentsApi
-          .audit(id)
-          .then((events) => setAudit(events.data))
-          .catch(() => undefined);
+  const openDetail = useCallback(
+    async (id: string, grantToken?: string) => {
+      setDetailOpen(true);
+      setDetailLoading(true);
+      setDetailError('');
+      setDetail(null);
+      setAudit([]);
+      try {
+        const usableGrant =
+          grantToken ??
+          (confidentialGrant?.documentId === id &&
+          confidentialGrant.expiresAt > Date.now()
+            ? confidentialGrant.token
+            : undefined);
+        const response = await documentsApi.detail(id, undefined, usableGrant);
+        setDetail(response.data);
+        if (response.data.capabilities.viewAudit) {
+          documentsApi
+            .audit(id, usableGrant)
+            .then((events) => setAudit(events.data))
+            .catch(() => undefined);
+        }
+      } catch (caught) {
+        if (
+          caught instanceof DocumentsApiError &&
+          caught.code === 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED'
+        ) {
+          setDetailOpen(false);
+          setConfidentialGateDocumentId(id);
+          setConfidentialGateOpen(true);
+          return;
+        }
+        setDetailError(
+          caught instanceof Error
+            ? caught.message
+            : 'جزئیات سند قابل دریافت نیست.',
+        );
+      } finally {
+        setDetailLoading(false);
       }
-    } catch (caught) {
-      setDetailError(
-        caught instanceof Error
-          ? caught.message
-          : 'جزئیات سند قابل دریافت نیست.',
-      );
-    } finally {
-      setDetailLoading(false);
-    }
-  }, []);
+    },
+    [confidentialGrant],
+  );
 
   async function openEdit(document: DocumentListItemV1 | DocumentDetailV1) {
     if (!document.capabilities.editMetadata) {
@@ -625,7 +653,14 @@ export function DocumentsWorkspace() {
     }
     setEditingDocument(null);
     try {
-      const response = await documentsApi.detail(document.id);
+      const response = await documentsApi.detail(
+        document.id,
+        undefined,
+        confidentialGrant?.documentId === document.id &&
+          confidentialGrant.expiresAt > Date.now()
+          ? confidentialGrant.token
+          : undefined,
+      );
       setEditingDocument(response.data);
     } catch (caught) {
       setEditError(
@@ -640,7 +675,14 @@ export function DocumentsWorkspace() {
     setEditSubmitting(true);
     setEditError('');
     try {
-      const response = await documentsApi.update(editingDocument.id, input);
+      const response = await documentsApi.update(
+        editingDocument.id,
+        input,
+        confidentialGrant?.documentId === editingDocument.id &&
+          confidentialGrant.expiresAt > Date.now()
+          ? confidentialGrant.token
+          : undefined,
+      );
       setEditingDocument(response.data);
       if (detail?.id === response.data.id) setDetail(response.data);
       setEditOpen(false);
@@ -672,10 +714,17 @@ export function DocumentsWorkspace() {
     setDeleteSubmitting(true);
     setDeleteError('');
     try {
-      await documentsApi.permanentlyDelete(deletingDocument.id, {
-        reason,
-        version: deletingDocument.version,
-      });
+      await documentsApi.permanentlyDelete(
+        deletingDocument.id,
+        {
+          reason,
+          version: deletingDocument.version,
+        },
+        confidentialGrant?.documentId === deletingDocument.id &&
+          confidentialGrant.expiresAt > Date.now()
+          ? confidentialGrant.token
+          : undefined,
+      );
       setDeleteOpen(false);
       setNotice(`سند «${deletingDocument.title}» به‌صورت دائمی حذف شد.`);
       if (detail?.id === deletingDocument.id) changeDetailOpen(false);
@@ -718,11 +767,19 @@ export function DocumentsWorkspace() {
     setBulkSubmitting(true);
     setBulkError('');
     try {
-      const response = await documentsApi.bulk({
-        ids: [...selected],
-        action,
-        reason,
-      });
+      const response = await documentsApi.bulk(
+        {
+          ids: [...selected],
+          action,
+          reason,
+        },
+        selected.size === 1 &&
+          confidentialGrant &&
+          selected.has(confidentialGrant.documentId) &&
+          confidentialGrant.expiresAt > Date.now()
+          ? confidentialGrant.token
+          : undefined,
+      );
       setBulkOpen(false);
       setNotice(
         `عملیات روی ${response.data.updatedCount.toLocaleString('fa-IR')} سند انجام شد.`,
@@ -807,16 +864,24 @@ export function DocumentsWorkspace() {
     setNotice(tool.notice);
   }
 
+  const promptForConfidentialCode = useCallback((documentId: string) => {
+    setDetailOpen(false);
+    setConfidentialGateDocumentId(documentId);
+    setConfidentialGateOpen(true);
+  }, []);
+
   async function download(
     document: DocumentDetailV1,
     sensitiveReason?: string,
     accessGrantToken?: string,
+    confidentialAccessGrantToken?: string,
   ) {
     try {
       const response = await documentsApi.download(
         document.id,
         sensitiveReason,
         accessGrantToken,
+        confidentialAccessGrantToken,
       );
       const url = URL.createObjectURL(response.blob);
       const anchor = window.document.createElement('a');
@@ -825,6 +890,12 @@ export function DocumentsWorkspace() {
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (caught) {
+      if (
+        caught instanceof DocumentsApiError &&
+        caught.code === 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED'
+      ) {
+        promptForConfidentialCode(document.id);
+      }
       setNotice(caught instanceof Error ? caught.message : 'دانلود مجاز نیست.');
       throw caught;
     }
@@ -836,16 +907,28 @@ export function DocumentsWorkspace() {
       sensitiveReason: string | undefined,
       signal: AbortSignal,
       accessGrantToken: string | undefined,
+      confidentialAccessGrantToken: string | undefined,
     ) => {
-      const response = await documentsApi.preview(
-        document.id,
-        sensitiveReason,
-        signal,
-        accessGrantToken,
-      );
-      return response.blob;
+      try {
+        const response = await documentsApi.preview(
+          document.id,
+          sensitiveReason,
+          signal,
+          accessGrantToken,
+          confidentialAccessGrantToken,
+        );
+        return response.blob;
+      } catch (caught) {
+        if (
+          caught instanceof DocumentsApiError &&
+          caught.code === 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED'
+        ) {
+          promptForConfidentialCode(document.id);
+        }
+        throw caught;
+      }
     },
-    [],
+    [promptForConfidentialCode],
   );
 
   const hasFilters = hasRecordFilters || Boolean(personalView);
@@ -2097,6 +2180,13 @@ export function DocumentsWorkspace() {
         document={detail}
         error={detailError}
         favorite={Boolean(detail && favoriteIds.has(detail.id))}
+        confidentialAccessToken={
+          detail &&
+          confidentialGrant?.documentId === detail.id &&
+          confidentialGrant.expiresAt > Date.now()
+            ? confidentialGrant.token
+            : undefined
+        }
         loading={detailLoading}
         onCopyLink={(document) => void copyInternalLink(document)}
         onDownload={download}
@@ -2113,6 +2203,25 @@ export function DocumentsWorkspace() {
         onToggleFavorite={toggleFavorite}
         open={detailOpen}
         shareLink={detail ? internalShareLink(detail.id) : ''}
+      />
+      <DocumentConfidentialAccessDialog
+        documentId={confidentialGateDocumentId}
+        onOpenChange={(nextOpen) => {
+          setConfidentialGateOpen(nextOpen);
+          if (!nextOpen) setConfidentialGateDocumentId(null);
+        }}
+        onUnlocked={async (token) => {
+          const expiresAt = Date.now() + 5 * 60_000;
+          if (confidentialGateDocumentId) {
+            setConfidentialGrant({
+              documentId: confidentialGateDocumentId,
+              token,
+              expiresAt,
+            });
+            await openDetail(confidentialGateDocumentId, token);
+          }
+        }}
+        open={confidentialGateOpen}
       />
       {editingDocument && editOpen ? (
         <DocumentEditDialog
