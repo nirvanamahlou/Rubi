@@ -33,7 +33,7 @@ function thailandSaleColumns(headers,cols){
  }
  const genericDouble=last(k=>k==='dbl'||k.startsWith('dbl'));
  const genericSingle=last(k=>k==='sgl'||k.startsWith('sgl'));
- if(saleSingle&&(!genericDouble||!genericSingle))throw Error('ستون‌های قیمت نهایی یک‌تخته و دوتخته در اکسل تایلند کامل نیستند.');
+ if(saleSingle&&(!genericDouble||!genericSingle||headers.findIndex(h=>h.col===saleSingle)>headers.findIndex(h=>h.col===genericDouble)))throw Error('ستون‌های قیمت نهایی یک‌تخته و دوتخته در اکسل تایلند کامل نیستند.');
  return {
   double:genericDouble||find(k=>k==='dbl')||cols.double,
   single:genericSingle||cols.single,
