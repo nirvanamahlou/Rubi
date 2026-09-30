@@ -4703,7 +4703,6 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-load-visible-0930` from current origin/develop. Reserve Ticket Catalog load/workspace Web components, pure load filtering and focused tests, bounded status docs. Owner requests existing tickets visible, old lower published-load table removed and new load background white. Preserve management actions on selected load legs. Legacy unknown-supply offers remain explicitly unknown but readable alongside company capacity; explicit floating/API excluded. No database classification writes, Migration, API/contract, dependency or shared UI changes.
 - Delivered: legacy unknown offers participate in both legs without provenance writes; filters initially unrestricted and date edits clear only the conflicting opposite bound; duplicate published-load table removed and its actions retained in selected-leg details; surface is white in light mode. Ticket Catalog tests, scoped lint, Web typecheck and 55-route production build pass. Bounded locks RELEASED after scoped commit. Merge/local handoff follows CI.
 
-
 ## RESERVATION-CONTRACT-COLUMNS-0930 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-contract-columns-0930` from `origin/develop@45ee590e`. Owner requests exact ordered reservation inbox columns, persisted workflow checkboxes, and merge to develop after validation.
