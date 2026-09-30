@@ -1,3 +1,7 @@
+## 2026-09-29 — DOCUMENTS-009-OVERVIEW-CONNECTIONS-REMOVAL-0929 — PC-B — READY_FOR_REVIEW
+
+سکشن کامل کارت‌های «ارتباط اسناد با بخش‌های نورا» از نمای کلی Documents حذف شد؛ شاخص‌ها، تازه‌های آرشیو، کارهای من، منوی دسته‌ها و اتصال کنار فهرست یک دامنه حفظ شدند. کد و استایل بلااستفادهٔ مخصوص کارت‌ها هم پاک شد. ۹ تست Documents، lint موردی، Web typecheck و Production Build با ۵۵ مسیر موفق‌اند. بدون API، Migration، Permission، داده، Dependency یا runtime. Branch `codex/pc-b-documents-overview-connections-removal-0929` از `origin/develop@bb4209e0`؛ برای Review به develop می‌رود و Merge خودکار نمی‌شود.
+
 ## 2026-09-29 — ADMIN-SCREEN-VISIBILITY-0929 — PC-A — READY_FOR_REVIEW
 
 Follow-up to the authorized merge/local release: active system administrators receive a derived, unassignable UI marker so all catalogued sections are visible, including pages without native operation grants. Stored markers and role titles cannot confer administrator authority. Native operation/branch guards remain authoritative. Focused API/Web/contracts tests: 13/9/4 passed; scoped lint, typechecks and contracts build checked before release. No schema/migration/dependency changes. Details: [ADMIN-SCREEN-VISIBILITY-0929](tasks/ADMIN-SCREEN-VISIBILITY-0929.md).
