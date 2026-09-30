@@ -167,7 +167,6 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'نام انگلیسی',
       'ترتیب',
       'وابستگی‌ها',
-      'نسخه',
       'آخرین تغییر',
       'وضعیت',
       'عملیات',
@@ -244,7 +243,6 @@ function recordCells(
         {attribute(record, 'regionsCount')} استان ·{' '}
         {attribute(record, 'banksCount')} بانک
       </span>,
-      `v${record.version.toLocaleString('fa-IR')}`,
       new Date(record.updatedAt).toLocaleString('fa-IR'),
       statusBadge(record),
     ];

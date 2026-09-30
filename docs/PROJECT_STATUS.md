@@ -1,3 +1,7 @@
+## 2026-09-30 — MASTER-DATA-COUNTRY-HIDE-VERSION-0930 — PC-B — READY_FOR_REVIEW
+
+Countries no longer renders the Version column or matching cell. Record versions remain in the API and mutation concurrency controls; other geography tables are unchanged. 14 focused Web tests, scoped ESLint, Prettier and diff check pass. No migration, operational data or localhost runtime change. Branch `codex/pc-b-country-hide-version-0930` for review in develop.
+
 ## 2026-09-30 — RESERVATION-MONTH-FILTER-0930 — PC-A — READY_FOR_REVIEW
 
 Reservations inbox now defaults to one previous calendar month through today's Tehran date on contract creation date, and shows both bounds in the date controls. Explicit user ranges remain authoritative; clearing filters restores this default. The existing regression test covers the lower boundary, old/future exclusions and custom history selection. 19 focused tests and scoped lint passed; Web typecheck/build verified after refreshing stale contracts outputs. No API, migration, dependencies or operational data changes. Owner authorized develop merge and existing local3100 update after CI.
