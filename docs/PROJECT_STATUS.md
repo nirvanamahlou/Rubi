@@ -3997,3 +3997,7 @@ TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket
 ## 2026-09-30 — PC-A — visible ticket load follow-up
 
 TICKET-LOAD-VISIBLE-0930 fixes the empty legacy load by reading unknown-provenance offers alongside explicit company capacity, without reclassifying stored tickets. Initial dates are unrestricted; editing a conflicting date clears the opposite bound. The duplicate lower published table is removed; selected-leg details retain edit, archive, activation and hold actions. The load uses a white light-mode surface. Explicit floating/API remain excluded. No API, migration or operational data changes. Ticket Catalog tests, scoped lint/types and 55-route Web build passed.
+
+## 2026-09-30 — PC-A — separate selected-leg actions
+
+TICKET-LOAD-LEG-ACTIONS-0930 places an independent action strip at the bottom of each selected outbound/return details box, including active/paused status and existing offer-specific edit, archive, sale activation and capacity-hold controls. Empty legs expose no actions. No API, migration or operational data changes; delivery is a PR for review.
