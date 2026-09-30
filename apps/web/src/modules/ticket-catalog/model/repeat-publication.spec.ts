@@ -67,19 +67,19 @@ describe('Repeated ticket publication', () => {
         repeatedDefinitions(source, '2026-10-05', 'weekly', count),
       ).toThrow();
   });
-  it('offers exactly three supply choices while retaining old charter records under floating', () => {
+  it('offers exactly three supply choices with charter treated as company capacity', () => {
     expect(Object.values(supplyOptions)).toEqual([
       'شناوری',
-      'ظرفیت شرکت',
+      'ظرفیت شرکت (چارتر)',
       'API',
     ]);
-    expect(selectableSupply('charter')).toBe('allotment');
+    expect(selectableSupply('charter')).toBe('company');
     const product = structuredClone(
       previewSamples('2026-08-31T00:00:00.000Z')[0]!,
     );
     product.definition.supplyType = 'charter';
     expect(
-      queryProducts([product], { ...initialQuery, supply: 'allotment' }).total,
+      queryProducts([product], { ...initialQuery, supply: 'company' }).total,
     ).toBe(1);
   });
 });

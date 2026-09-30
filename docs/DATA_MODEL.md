@@ -615,3 +615,7 @@ Ticket Catalog owns TicketSaleCommissionRevision: offerId, optional returnOfferI
 ## 2026-09-29 — Ticket return-day policy
 
 `TicketPublishedOffer.returnMinDays` / `returnMaxDays` are nullable integer limits (0..365, inclusive, Min <= Max when both exist). Null keeps legacy return selection unrestricted. The policy belongs to the outbound Ticket Catalog offer; eligible reverse-route offers are matched by authorized branch and Tehran departure-calendar day difference, with no trip-group restriction and no return before outbound arrival. Sales consumes the public search/reserve service, never reads Ticket Catalog tables directly. Optional public fields preserve old clients; omitted limits on revision preserve stored values. Migration: `20260929120000_ticket_return_window`.
+
+## Ticket load supply and baggage — 2026-09-30
+
+`TicketPublishedOffer.supplyType` is nullable COMPANY, FLOATING or API. COMPANY includes charter/company capacity; null retains unknown legacy provenance. `economyBaggageKg` and `businessBaggageKg` are nullable Decimal(10,2), bounded 0..9999 by database checks. No legacy row is automatically classified. Travel offer capacity projections distinguish active allocations from unexpired active holds. See `docs/tasks/TICKET-LOAD-GRID-0930.md`.

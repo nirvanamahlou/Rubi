@@ -1,3 +1,7 @@
+## 2026-09-29 — SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
+
+تمام گروه‌های مجاز منوی کناری از ابتدا باز می‌شوند تا لینک‌های رزرواسیون، مالی، سرمایه انسانی، اسناد و تنظیمات کنار فروش دیده شوند. کنترل باز و بسته‌کردن گروه‌ها و بررسی دسترسی هر مسیر بدون تغییر است. دو تست مرتبط، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق شدند. وب روی ۳۱۰۰ و API روی ۴۰۰۰ پس از راه‌اندازی مجدد پاسخ ۲۰۰ دادند. هیچ مجوز یا داده‌ای تغییر نکرد.
+
 ## 2026-09-30 — TICKET-SEAT-CAPACITY-FOLLOWUP-0930 — PC-A — READY_FOR_REVIEW
 
 The seat-tier editor now caps each entered seat count by the remaining capacity and disables another tier when all seats are assigned. Round-trip pricing uses the lower capacity of the outbound and return tickets, with Ticket Catalog rejecting any tier schedule above that limit. Ten focused Web tests and ten API tests pass. Scoped lint, typechecks and production builds for both applications pass. No schema, migration, contract, dependency or operational-data changes.
@@ -3961,6 +3965,10 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
+## 2026-09-29 — CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
+
+در فهرست درخواست‌های امور مشتریان، دکمهٔ ردیفی «پیگیری» پروفایل و مشخصات همان درخواست را باز می‌کند. نمای کلی اکنون «آخرین درخواست‌ها» را مستقل از «منتظر پذیرش فروش» و «پیگیری معوق» از API مجازِ شعبه می‌خواند؛ وضعیت `NEW` دیگر به‌علت فیلتر تحویل فروش حذف نمی‌شود. ۲۸ تست متمرکز، typecheck، lint محدود و build وب موفق‌اند؛ CI و بررسی runtime باقی‌اند. [جزئیات](tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
+
 
 ## 2026-09-29 — CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — READY_FOR_REVIEW
 
@@ -3969,6 +3977,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — TICKET-WEEKDAY-RETURN-WINDOW-0929 — PC-A — READY_FOR_REVIEW
 
 تعریف پرواز هفتگی با بازهٔ رفتِ شامل ابتدا و انتها، روزهای تیک‌خورده و عددِ فاصلهٔ برگشت پیاده شد؛ عدد تعداد تکرار نیست. برگشت‌ها خودکار ساخته و تاریخ‌های مشترک یک‌بار ثبت می‌شوند. Min/Max در دیتابیس و قرارداد عمومی ذخیره و در جست‌وجو پیش از صفحه‌بندی، رزرو فروش، انتخاب جفت قیمت و Load تور کنترل می‌شود. Migration فقط روی دیتابیس مصنوعی تست می‌شود؛ لوکال عملیاتی تغییر نکرده است. جزئیات و سازگاری: [TICKET-WEEKDAY-RETURN-WINDOW-0929](tasks/TICKET-WEEKDAY-RETURN-WINDOW-0929.md).
+
 ## 2026-09-30 — TICKET-SEAT-TIER-PRICING-0930 — PC-A — READY_FOR_REVIEW
 
 قیمت‌گذاری پله‌ای صندلی برای بلیت یک‌طرفه و جفت رفت‌وبرگشت در فرم قیمت فروش، revisionهای Ticket Catalog و پیش‌فاکتور قرارداد افزوده شد. نرخ‌های قدیمی بدون پله همچنان ثابت‌اند. جزئیات و آزمون‌ها در [TICKET-SEAT-TIER-PRICING-0930](tasks/TICKET-SEAT-TIER-PRICING-0930.md) ثبت می‌شوند.
@@ -3980,3 +3989,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-30 — CUSTOMER-AFFAIRS-ASSESSMENT-REPORT-DESIGN-0930 — READY_FOR_REVIEW
 
 کارت نتیجهٔ ارزیابی آمادگی فروش در پروفایل درخواست امور مشتریان با خلاصهٔ نتیجه/امتیاز/احتمال تبدیل، معیارهای تأییدشده و تأییدنشده در کارت‌های واکنش‌گرا و توضیحات تکمیلیِ دلایل ذخیره‌شده بازطراحی شد. دلایل دارای فاصلهٔ اضافی یا تکراری برای نمایش یکسان‌سازی می‌شوند. ۱۸ تست هدفمند، lint، typecheck، Prettier و build تولیدی Web موفق‌اند. API، داده، فرم ارزیابی و runtime پورت ۳۱۰۰ تغییر نکردند؛ PR به `develop` برای بازبینی ارسال می‌شود.
+
+## 2026-09-30 — PC-A — company flight load
+
+TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket Management, shared Min/Max eligible return selection, capacity totals and prices, Gregorian defaults, three supply choices and persisted manual economy/optional business baggage. An additive nullable migration preserves legacy provenance. Management Web drains paginated offers. Implementation and validation details: `docs/tasks/TICKET-LOAD-GRID-0930.md`. Operational deployment follows CI and merge to develop.

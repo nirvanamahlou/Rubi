@@ -1,3 +1,7 @@
+## SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; base `codex/pc-b-istanbul-3100-activation-0929@b1702e5b`, task branch `codex/pc-b-expand-sidebar-0929`. The central Web AppShell and focused navigation-collapse spec were reserved for this work item; lock released after scoped commit. All accessible sidebar groups now start expanded while route permission filtering and manual collapse controls remain unchanged. No IAM/API/schema/dependency/data change. Focused 2 tests, scoped ESLint, Web typecheck and 55-route production build passed. Web3100 and API4000 health returned 200 after restart.
+
 ## DOCUMENTS-009-OVERVIEW-CONNECTIONS-REMOVAL-0929 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B؛ Branch مستقل `codex/pc-b-documents-overview-connections-removal-0929` از `origin/develop@bb4209e0` در worktree جدا. درخواست تصویر ۶۶۸: حذف کامل سکشن «ارتباط اسناد با بخش‌های نورا» که در نمای کلی دورخط‌کشیده شده است.
@@ -4612,6 +4616,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - محدودهٔ رزرو: `customer-affairs-workspace.tsx`، CSS ماژول، تست چیدمان همان کامپوننت و ثبت اسناد. شاخه `codex/pc-b-ca-detail-actions-row-0929` از `origin/develop@c22e08a1`. منطق شرط‌ها، عملیات و فرم‌ها بدون تغییر؛ در viewport باریک شکست خط واکنش‌گرا مجاز است. بدون API، داده، قرارداد مشترک، Migration، Permission یا Dependency/Lockfile.
 - نتیجه: هر چهار CTA مستقیماً در یک نوار واحد پروفایل قرار گرفتند؛ در دسکتاپ یک‌ردیفه و در عرض موبایل wrap می‌شوند. تست‌های کامپوننت امور مشتریان ۴۲/۴۲، typecheck، ESLint هدفمند، Prettier و `git diff --check` موفق‌اند. Build و CI از طریق PR بررسی می‌شوند؛ build محلی اجرا نشد چون خروجی `.next` در سرویس Web فعال ۳۱۰۰ مشترک است.
 
+## CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`؛ درخواست مالک از تصویر ۶۶۷: در ردیف هر درخواست دکمهٔ «پیگیری» به پروفایل همان درخواست و مشخصات/عملیات آن برود؛ درخواست تازه‌ثبت‌شده در «نمای کلی» نیز دیده شود. شاخه `codex/pc-b-ca-followup-overview-0929` از `origin/develop@bb4209e0`.
+- محدودهٔ رزرو: فقط `apps/web/src/modules/customer-affairs/**`، در صورت نیاز منطق داشبورد خود ماژول در `apps/api/src/customer-affairs/**` و تست‌های هدفمند؛ ثبت وضعیت در اسناد مرکزی به همین Work Item محدود است. مرز دادهٔ Customers، قرارداد مشترک، Migration، Dependency/Lockfile و سرویس زندهٔ ۳۱۰۰ تغییر نمی‌کنند مگر با هماهنگی جداگانه.
+- شاخهٔ موازی `codex/pc-b-ca-customer-create-0929` فقط انتخاب‌گر مشترک را تغییر می‌دهد و در این واحد دست‌کاری نمی‌شود. پذیرش: مسیر دکمهٔ پیگیری برای هر ردیف شناسهٔ درست را باز کند؛ نمای کلی درخواست تازه را بدون اتکا به دادهٔ ثابت و بدون نقض فیلترهای شعبه/بازه نشان دهد؛ تست، typecheck، lint و build بخش متاثر موفق باشند.
+- نتیجه: ستون/دکمهٔ «پیگیری» هر ردیف درخواست به نمای پروفایل همان `leadId` می‌رود. پنل مستقل «آخرین درخواست‌ها» در نمای کلی از API فهرست بدون فیلتر مرحله بارگیری می‌شود تا درخواست تازه با وضعیت `NEW` هم دیده شود؛ پنل «منتظر پذیرش فروش» و پیگیری معوق دست‌نخورده‌اند. ۲۸ تست متمرکز، Web typecheck، lint محدود، build و diff check موفق؛ CI، بازبینی runtime و ادغام هنوز باقی‌اند. [شرح کار](docs/tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
+
 ## CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-assessment-save-0929` از `origin/develop` در worktree مستقل. درخواست مالک: رفع ذخیره‌نشدن ارزیابی آمادگی فروش، انتقال دکمه کنار «ثبت ارتباط جدید»، و نمایش نتیجه ذخیره‌شده در پایین پروفایل درخواست.
@@ -4647,3 +4658,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - `COMPUTER_ID=PC-B`؛ شاخه `codex/pc-b-ca-assessment-report-design-0930` از `origin/develop` در checkout مستقل تمیز. درخواست مالک: بازطراحی کارت «آخرین نتیجه ارزیابی آمادگی فروش» در پروفایل درخواست مطابق مشکل خوانایی تصویر ۶۷۴.
 - محدوده رزرو: فقط markup گزارش ارزیابی در `customer-affairs-workspace.tsx`، CSS اختصاصی امور مشتریان و تست‌های مستقیم، همراه ثبت وضعیت. داده، معیارهای ذخیره‌شده، فرم/گردش کار، API، Schema/Migration، Permission و Dependency/Lockfile تغییر نمی‌کنند. خروجی برای بازبینی به `develop` ارسال می‌شود؛ runtime ۳۱۰۰ بدون درخواست جداگانه تغییر نمی‌کند.
 - نتیجه: کارت گزارش با خلاصهٔ سه‌ستونه، معیارهای دو‌ستونهٔ واکنش‌گرا و وضعیت‌های خوانای متنی بازطراحی شد. دلیل آزادِ «فاقد شرایط» از دادهٔ ذخیره‌شده نیز در بخش توضیحات تکمیلی حفظ شد؛ دلایل دارای فاصلهٔ اضافی یا تکراری برای نمایش یکسان‌سازی می‌شوند. ۱۸ تست هدفمند، lint، typecheck، Prettier و build تولیدی Web موفق‌اند؛ بدون تغییر API/DB یا فعال‌سازی ۳۱۰۰.
+
+## TICKET-LOAD-GRID-0930 — PC-A — READY_FOR_REVIEW
+
+- Managed-offer pagination is reserved in the Ticket Catalog controller/service and Web API client: additive `page`/`hasMore`, default page 1 for existing callers, Web drains all pages for management/load and Sales. Producer and consumers are PC-A; no shared route removal.
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-ticket-load-grid-0930` from current origin/develop. Reserve Ticket Catalog Web/API/domain, additive Travel v1 supply/baggage/capacity projection, nullable TicketPublishedOffer supply and baggage columns with one additive migration, focused tests and bounded domain/status docs. Migration Owner and bounded shared Travel/schema/doc locks = PC-A/TICKET-LOAD-GRID-0930; the prior weekday-window and seat-tier deliveries explicitly released their locks. No dependency/lockfile or Master Data changes.
+- Owner requests paired, leg-by-leg company-capacity flight load tables above ticket management; Gregorian date defaults; supply choices company/charter, floating or API; manually entered economy baggage and optional business baggage. Producer Ticket Catalog, consumers its management/load UI and existing Sales/Reservations public offer readers; additive optional fields preserve old clients and omitted revisions preserve stored values. Legacy unclassified published offers remain unclassified until edited, not silently treated as company capacity. Load is read-only and never allocates seats or changes sale prices.
+- Validation: API/Web full lint and typecheck passed; 158 Web Ticket Catalog tests, 11 focused API tests and 4 isolated PostgreSQL integration tests passed; API build and Web production build (55 routes) passed. Fresh isolated PostgreSQL applied all 104 migrations. Implementation locks are RELEASED after this commit; operational additive migration and runtime rollout follow CI/merge. No dependency changes or legacy provenance backfill.

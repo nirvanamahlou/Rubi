@@ -11,6 +11,34 @@ const offer = (id: string, departureAt: string) =>
   ({ id, departureAt }) as TicketOfferV1;
 
 describe('tour departure ticket range', () => {
+  it('loads every management page and deduplicates offers', async () => {
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          version: 1,
+          data: [offer('a', '2099-01-01')],
+          hasMore: true,
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          version: 1,
+          data: [offer('a', '2099-01-01'), offer('b', '2099-01-02')],
+          hasMore: false,
+        }),
+      });
+    vi.stubGlobal('fetch', fetcher);
+    expect((await toursApi.managedOffers()).data.map((row) => row.id)).toEqual([
+      'a',
+      'b',
+    ]);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1]?.[0]).toContain('/offers/management?page=2');
+  });
   it('sends a versioned published-offer status change to the backend', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
     const fetcher = vi.fn().mockResolvedValue({

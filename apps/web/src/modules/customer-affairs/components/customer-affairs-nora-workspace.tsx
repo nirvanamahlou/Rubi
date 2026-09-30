@@ -29,6 +29,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { Alert, ErrorState } from '@/components/ui/surfaces';
 import { useSuppressHrConnections } from '@/modules/hr/hr-connections-visibility';
+import { customerAffairsHref } from './customer-affairs-navigation';
+import { loadCustomerAffairsOverview } from './customer-affairs-overview';
 import {
   customerAffairsApi as api,
   CustomerAffairsApiError,
@@ -118,6 +120,7 @@ const accent = (color: string) =>
 type Loaded = {
   dashboard?: CustomerAffairsDashboard;
   leads: CustomerAffairsLeadView[];
+  recentLeads: CustomerAffairsLeadView[];
   tickets: CustomerAffairsTicketView[];
   total: number;
   report?: AffairsReport;
@@ -162,6 +165,7 @@ export function CustomerAffairsNoraWorkspace() {
   const [form, setForm] = useState<'leads' | 'tickets' | null>(null);
   const [loaded, setLoaded] = useState<Loaded>({
     leads: [],
+    recentLeads: [],
     tickets: [],
     total: 0,
   });
@@ -177,9 +181,7 @@ export function CustomerAffairsNoraWorkspace() {
   const [revision, setRevision] = useState(0);
   const navigate = (next: View, detailId?: string) => {
     setForm(null);
-    const p = new URLSearchParams({ view: next });
-    if (detailId) p.set(next === 'leads' ? 'lead' : 'ticket', detailId);
-    router.push(`/customer-affairs?${p}`);
+    router.push(customerAffairsHref(next, detailId));
   };
   const change = (key: string, value: string) => {
     const p = new URLSearchParams(params.toString());
@@ -190,7 +192,12 @@ export function CustomerAffairsNoraWorkspace() {
   useEffect(() => {
     let current = true;
     async function load() {
-      const result: Loaded = { leads: [], tickets: [], total: 0 };
+      const result: Loaded = {
+        leads: [],
+        recentLeads: [],
+        tickets: [],
+        total: 0,
+      };
       const dashboard = await api.dashboard();
       const capabilities = dashboard.data.access;
       result.dashboard = dashboard.data;
@@ -207,20 +214,11 @@ export function CustomerAffairsNoraWorkspace() {
           await (tab === 'tickets' ? api.ticket(id) : api.lead(id))
         ).data as Detail;
       } else if (view === 'overview') {
-        const [leads, tickets, overdue] = await Promise.all([
-          capabilities.leadsRead
-            ? api.leads('', { stage: 'HANDOFF_PROPOSED', pageSize: 5 })
-            : Promise.resolve({ data: [] as CustomerAffairsLeadView[] }),
-          capabilities.ticketsRead
-            ? api.tickets('', 'ALL', { pageSize: 5 })
-            : Promise.resolve({ data: [] as CustomerAffairsTicketView[] }),
-          capabilities.leadsRead
-            ? api.leads('', { overdueOnly: true, pageSize: 5 })
-            : Promise.resolve({ data: [] as CustomerAffairsLeadView[] }),
-        ]);
-        if (current) setAttention(overdue.data);
-        result.leads = leads.data;
-        result.tickets = tickets.data;
+        const overview = await loadCustomerAffairsOverview(capabilities);
+        if (current) setAttention(overview.overdue);
+        result.leads = overview.handoffs;
+        result.recentLeads = overview.recent;
+        result.tickets = overview.tickets;
       } else if (view === 'reports' || view === 'satisfaction') {
         if (!capabilities.reportsRead)
           throw new CustomerAffairsApiError(
@@ -570,6 +568,7 @@ export function CustomerAffairsNoraWorkspace() {
                             {date(row.nextActionAt)}
                           </time>
                           <Button
+                            aria-label={`پیگیری درخواست ${row.trackingNumber}: ${row.title}`}
                             variant="ghost"
                             onClick={() => navigate('leads', row.id)}
                           >
@@ -579,6 +578,43 @@ export function CustomerAffairsNoraWorkspace() {
                       ))
                     ) : (
                       <p className={s.empty}>پیگیری عقب‌افتاده‌ای ندارید.</p>
+                    )}
+                  </section>
+                ) : null}
+                {access?.leadsRead ? (
+                  <section className={`${s.panel} ${s.recentRequests}`}>
+                    <div className={s.panelHead}>
+                      <h2>آخرین درخواست‌ها</h2>
+                      <Button variant="ghost" onClick={() => navigate('leads')}>
+                        مشاهده همه
+                      </Button>
+                    </div>
+                    {loaded.recentLeads.length ? (
+                      loaded.recentLeads.map((row) => (
+                        <div key={row.id} className={s.listItem}>
+                          <div className={s.grow}>
+                            <button
+                              className={s.titleButton}
+                              onClick={() => navigate('leads', row.id)}
+                            >
+                              {row.title}
+                            </button>
+                            <p className={s.muted}>{row.trackingNumber}</p>
+                          </div>
+                          {badge(stageLabel[row.stage])}
+                          <Button
+                            aria-label={`پیگیری درخواست ${row.trackingNumber}: ${row.title}`}
+                            size="sm"
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate('leads', row.id)}
+                          >
+                            پیگیری <ArrowLeft size={15} aria-hidden="true" />
+                          </Button>
+                        </div>
+                      ))
+                    ) : (
+                      <p className={s.empty}>هنوز درخواستی ثبت نشده است.</p>
                     )}
                   </section>
                 ) : null}
@@ -821,6 +857,9 @@ export function CustomerAffairsNoraWorkspace() {
                               {x}
                             </th>
                           ))}
+                          {family === 'leads' ? (
+                            <th scope="col">پیگیری</th>
+                          ) : null}
                         </tr>
                       </thead>
                       <tbody>
@@ -883,6 +922,20 @@ export function CustomerAffairsNoraWorkspace() {
                                     )}
                               </div>
                             </td>
+                            {'stage' in row ? (
+                              <td data-label="پیگیری">
+                                <Button
+                                  aria-label={`پیگیری درخواست ${row.trackingNumber}: ${row.title}`}
+                                  size="sm"
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => navigate('leads', row.id)}
+                                >
+                                  پیگیری
+                                  <ArrowLeft size={15} aria-hidden="true" />
+                                </Button>
+                              </td>
+                            ) : null}
                           </tr>
                         ))}
                       </tbody>
