@@ -2,6 +2,14 @@
 
 Countries no longer renders the Version column or matching cell. Record versions remain in the API and mutation concurrency controls; other geography tables are unchanged. 14 focused Web tests, scoped ESLint, Prettier and diff check pass. No migration, operational data or localhost runtime change. Branch `codex/pc-b-country-hide-version-0930` for review in develop.
 
+## 2026-09-30 — CONTRACT-PDF-DOWNLOAD-0930 — PC-A — READY_FOR_REVIEW
+
+Reservations contract preview now offers an authenticated PDF download with loading/error feedback instead of opening a browser tab. Saved workflow/contract changes refresh the mounted preview; both preview and downloaded PDF continue using the latest authorized Sales output and recorded operational amendments. The agreed-total area is a labeled, light bordered field with readable LTR digits and separate currency units/rows, preserving exact registered amounts. 26 output/amendment/PDF-route/preview tests and scoped lint passed; Web typecheck/build checked before PR. A real synthetic PDF was rendered and visually checked on A4, including two currencies. No migration/API/dependency or real contract-data changes. Primary unrelated PDF edits preserved; owner authorized develop merge.
+
+## 2026-09-30 — MANIFEST-LOAD-SEARCH-0930 — PC-A — READY_FOR_REVIEW
+
+Reservations manifests now search a date range and selectable contract routes before displaying separate outbound/return load tables and XLSX actions. Ticket Catalog public inventory supplies capacity, allocated sales, active holds and remaining seats; the selected template is shown. All latest received Reservation intakes participate without Finance approval, while branch/sensitive passenger permissions and assignments remain enforced. New-only does not fall back to all and return export history is independent of outbound. 39 focused API and 9 Web tests pass; scoped lint, strict types and production builds checked. Optional inventory fields and additive route-choice endpoint are v1-compatible; no migration, dependency, operational data or runtime changes. See [handoff](tasks/MANIFEST-LOAD-SEARCH-0930.md).
+
 ## 2026-09-30 — RESERVATION-MONTH-FILTER-0930 — PC-A — READY_FOR_REVIEW
 
 Reservations inbox now defaults to one previous calendar month through today's Tehran date on contract creation date, and shows both bounds in the date controls. Explicit user ranges remain authoritative; clearing filters restores this default. The existing regression test covers the lower boundary, old/future exclusions and custom history selection. 19 focused tests and scoped lint passed; Web typecheck/build verified after refreshing stale contracts outputs. No API, migration, dependencies or operational data changes. Owner authorized develop merge and existing local3100 update after CI.
@@ -4043,3 +4051,7 @@ TICKET-LOAD-LEG-ACTIONS-0930 places an independent action strip at the bottom of
 ## 2026-09-30 — PC-A — explicit flight-load search and holds
 
 TICKET-LOAD-SEARCH-HOLDS-0930 adds explicit search-gated load tables, valid-date bounds derived from the selected origin/destination, stronger selected-row borders, gray date/carrier/capacity/remaining/sold/held columns and larger flight details. Paused legs have red end cells; enable/disable uses green/red Power icons, and archive uses a trash icon. Capacity reservation requests only quantity and manual requester name, persists nullable attribution, and retains automatic one-hour temporary expiry. PostgreSQL lifecycle checks cover pause/activate, paused-offer exclusion from Sales search and failed contract capacity allocation. No operational backfill or dependency changes.
+
+## 2026-09-30 — PC-A — flight capacity view and history
+
+FLIGHT-CAPACITY-HISTORY-0930 renames the module to تعریف و ظرفیت پرواز, adds independent read-only view actions under selected outbound/return legs, and removes the duplicate lower catalog list, filters and pagination. Management supports optional includePast=true under existing branch/permission checks; default consumers remain future-only. Expired non-archived flights remain available in explicit historical searches, while valid dates derive only future or in-progress charter legs by arrival UTC. No schema, migration or dependency changes. 179 Web regressions and three isolated PostgreSQL lifecycle/HTTP tests passed; default future listings and expired Sales exclusion remain intact.

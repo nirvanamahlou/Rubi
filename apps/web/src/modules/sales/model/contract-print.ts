@@ -134,7 +134,7 @@ export function contractPrintHtml(
     ? [...passengerTotals]
         .map(
           ([code, amount]) =>
-            `<div dir="rtl"><bdi>${contractMoney(moneyDecimal(amount))}</bdi> ${e(code === 'IRR' ? 'ریال' : code)}</div>`,
+            `<div class="agreement-amount"><bdi>${contractMoney(moneyDecimal(amount))}</bdi><span class="agreement-currency">${e(code === 'IRR' ? 'ریال' : code)}</span></div>`,
         )
         .join('')
     : null;
@@ -142,7 +142,7 @@ export function contractPrintHtml(
     c.balances
       .map(
         (b) =>
-          `<div dir="rtl"><bdi>${contractMoney(b[field])}</bdi> ${e(b.currencyCode === 'IRR' ? 'ریال' : b.currencyCode)}</div>`,
+          `<div class="agreement-amount"><bdi>${contractMoney(b[field])}</bdi><span class="agreement-currency">${e(b.currencyCode === 'IRR' ? 'ریال' : b.currencyCode)}</span></div>`,
       )
       .join('');
   const kind = (k: string) =>
@@ -307,9 +307,9 @@ export function contractPrintHtml(
   .passengers .money{font-size:9pt;overflow-wrap:anywhere}
   bdi{unicode-bidi:isolate}strong{font-weight:bold}.ltr{direction:ltr}
   .financial-summary{break-inside:avoid}.note{font-size:8.5pt;color:#536b85;margin:1mm 0}
-  .summary-grid{display:grid;grid-template-columns:minmax(0,1fr);background:#eaf0f4;margin-top:1.2mm}
-  .summary-card{padding:1.2mm 2mm;text-align:center;border-left:1px solid #bbc9d7;min-width:0}.summary-card:last-child{border:0;background:#0a2c57;color:white}
-  .summary-card b{display:block;font-size:10pt;font-weight:normal;margin-bottom:.8mm}.summary-value>div{display:block;white-space:normal}.summary-value bdi{font-weight:bold;font-size:12pt}
+  .summary-grid{display:grid;grid-template-columns:minmax(0,1fr);margin-top:1.5mm}
+  .summary-card{display:flex;align-items:center;gap:4mm;padding:2mm 3mm;border:1px solid #aebccc;border-right:1.2mm solid #10386b;border-radius:1.5mm;background:#f4f7fb;color:#102d54;min-width:0}
+  .summary-card b{flex:0 0 auto;font-size:11pt;font-weight:bold}.summary-value{flex:1;display:grid;gap:1mm;padding:1.5mm 3mm;border:1px solid #cdd7e1;border-radius:1mm;background:white;min-width:0}.agreement-amount{display:flex;align-items:baseline;justify-content:center;gap:2mm;direction:ltr}.agreement-currency{font-size:10pt;direction:rtl;white-space:nowrap}.summary-value bdi{font-weight:bold;font-size:13pt;overflow-wrap:anywhere}
   .signatures{display:grid;grid-template-columns:1fr 1fr;gap:3mm;text-align:center;min-height:13mm}
   .signatures>div{border:1px solid #b8c7d8;padding:1.2mm}.signature-line{display:block;margin-top:3mm}
   .customer-terms{font-size:8.5pt;line-height:1.35;text-align:right;border-top:1px solid #486582;padding-top:1mm;margin-top:1.5mm;color:#24415f;break-inside:avoid}.customer-terms p{margin:.3mm 0}
@@ -325,7 +325,7 @@ export function contractPrintHtml(
   .meta{padding:1mm 0;margin-bottom:1mm}.meta strong{font-size:10pt}
   section{margin-top:1mm;padding-bottom:.8mm}h2{min-height:5.5mm;margin-bottom:.7mm}h2 em{font-size:12pt;padding:.6mm 1.6mm}h2 small{font-size:14pt}
   table{font-size:9.5pt}td,th{padding:.6mm}.passengers td{padding:.55mm}.fields>div{padding:.15mm 1mm}
-  .summary-card{padding:.8mm 1mm}.summary-card b{margin-bottom:.4mm}.summary-value bdi{font-size:10.5pt}
+  .summary-card{padding:1.5mm 2mm}.summary-card b{margin:0}.summary-value bdi{font-size:12pt}
   .signatures{min-height:10mm}.signatures>div{padding:.7mm}.signature-line{margin-top:1.5mm}
   .customer-terms{line-height:1.2;margin-top:1mm;padding-top:.6mm}footer{padding-top:1mm;margin-top:1mm}.contact-row{margin:.2mm 0}.footer-contact strong{font-size:11pt}
   </style></head><body><article class="document">

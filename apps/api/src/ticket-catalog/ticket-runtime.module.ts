@@ -1,5 +1,7 @@
 import {
   Body,
+  DefaultValuePipe,
+  ParseBoolPipe,
   Controller,
   Delete,
   Get,
@@ -95,8 +97,10 @@ class TicketOffersController {
   @Get('management') managed(
     @Req() req: AuthenticatedRequest,
     @Query('page') page = '1',
+    @Query('includePast', new DefaultValuePipe(false), ParseBoolPipe)
+    includePast: boolean,
   ) {
-    return this.service.managed(req.actor, Number(page));
+    return this.service.managed(req.actor, Number(page), includePast);
   }
   @Patch(':outboundOfferId/round-trip-sale-price/:returnOfferId')
   updateRoundTripSalePrice(

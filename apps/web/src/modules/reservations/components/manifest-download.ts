@@ -76,21 +76,8 @@ export async function requestManifestDownload(
       },
     );
   };
-  let response = await exportFile(input.includePreviouslyExported);
-  let retriedWithAll = false;
-  if (!response.ok) {
-    const message = await manifestResponseError(
-      response,
-      'MANIFEST آماده نشد.',
-    );
-    if (
-      !input.includePreviouslyExported &&
-      message.includes('قرارداد جدید قابل خروجی')
-    ) {
-      response = await exportFile(true);
-      retriedWithAll = true;
-    } else throw new Error(message);
-  }
+  const response = await exportFile(input.includePreviouslyExported);
+  const retriedWithAll = false;
   if (!response.ok)
     throw new Error(
       await manifestResponseError(response, 'MANIFEST آماده نشد.'),

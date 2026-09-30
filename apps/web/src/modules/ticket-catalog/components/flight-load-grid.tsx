@@ -5,6 +5,7 @@ import { Button, FormField, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   companyFlightLegs,
+  currentCompanyLoadOffers,
   validFlightLoadDates,
   canSearchFlightLoad,
   changeFlightLoadFilter,
@@ -55,6 +56,7 @@ export function FlightLoadGrid({
 }) {
   const [filter, setFilter] = useState(initial);
   const [searched, setSearched] = useState<FlightLoadFilter>();
+  const [searchedCurrent, setSearchedCurrent] = useState(false);
   const [validDates, setValidDates] = useState(false);
   const [outboundId, setOutboundId] = useState(''),
     [returnId, setReturnId] = useState('');
@@ -63,10 +65,13 @@ export function FlightLoadGrid({
   const searchFilter = validDates
     ? { ...filter, ...validFlightLoadDates(offers, filter) }
     : filter;
-  const outbounds = searched ? companyFlightLegs(offers, searched) : [];
+  const loadOffers = searchedCurrent
+    ? currentCompanyLoadOffers(offers)
+    : offers;
+  const outbounds = searched ? companyFlightLegs(loadOffers, searched) : [];
   const outbound = outbounds.find((offer) => offer.id === outboundId);
   const returns = companyReturnLegs(
-    offers,
+    loadOffers,
     outbound,
     sameClass,
     filter.carrier,
@@ -403,6 +408,7 @@ export function FlightLoadGrid({
           }
           onClick={() => {
             setSearched({ ...searchFilter });
+            setSearchedCurrent(validDates);
             setOutboundId('');
             setReturnId('');
           }}

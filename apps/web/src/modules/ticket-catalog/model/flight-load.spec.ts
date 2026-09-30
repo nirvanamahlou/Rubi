@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
   companyFlightLegs,
+  currentCompanyLoadOffers,
   validFlightLoadDates,
   canSearchFlightLoad,
   changeFlightLoadFilter,
@@ -43,6 +44,28 @@ const filter: FlightLoadFilter = {
   cabin: '',
 };
 describe('company flight load', () => {
+  it('keeps completed flights in historical searches while valid dates include ongoing and future legs only', () => {
+    const rows = [
+      offer('ended', '2099-10-01', { status: 'PAUSED' }),
+      offer('ongoing', '2099-10-02'),
+      offer('future', '2099-10-03'),
+    ];
+    const now = new Date('2099-10-02T11:00:00Z');
+    expect(companyFlightLegs(rows, filter).map((row) => row.id)).toEqual([
+      'ended',
+      'ongoing',
+      'future',
+    ]);
+    expect(currentCompanyLoadOffers(rows, now).map((row) => row.id)).toEqual([
+      'ongoing',
+      'future',
+    ]);
+    expect(validFlightLoadDates(rows, filter, now)).toEqual({
+      from: '2099-10-02',
+      to: '2099-10-03',
+    });
+  });
+
   it('requires route or dates and derives inclusive dates only for the selected route', () => {
     const blank = { ...filter, from: '', to: '', origin: '', destination: '' };
     expect(canSearchFlightLoad(blank)).toBe(false);

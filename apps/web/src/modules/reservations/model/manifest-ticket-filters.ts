@@ -9,10 +9,15 @@ export function filterManifestTickets(
   tickets: readonly ReservationManifestTicketCardV1[],
   filters: ManifestTicketRouteFilters,
 ): readonly ReservationManifestTicketCardV1[] {
+  const matches = (value: string, search?: string) =>
+    !search ||
+    value.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase());
   return tickets.filter(
     (ticket) =>
-      (!filters.originName || ticket.originName === filters.originName) &&
-      (!filters.destinationName ||
-        ticket.destinationName === filters.destinationName),
+      (matches(ticket.originName, filters.originName) &&
+        matches(ticket.destinationName, filters.destinationName)) ||
+      (ticket.direction === 'RETURN' &&
+        matches(ticket.destinationName, filters.originName) &&
+        matches(ticket.originName, filters.destinationName)),
   );
 }

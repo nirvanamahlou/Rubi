@@ -204,7 +204,7 @@ export const foundationModules: Record<
   },
   'ticket-management': {
     key: 'ticket-management',
-    title: 'مدیریت و تعریف بلیط‌ها',
+    title: 'تعریف و ظرفیت پرواز',
     description:
       'تعریف محصول بلیط، برنامه، نرخ و ظرفیت قابل فروش بدون صدور سند برای مسافر.',
     boundary:
