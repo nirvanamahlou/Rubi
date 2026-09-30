@@ -1,3 +1,7 @@
+## ROUNDTRIP-SALE-CAPACITY-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-roundtrip-sale-capacity-0930` from `origin/develop@d21b00bc`. Reserve Sales ticket picker/card and pricing helpers/tests, Ticket Catalog reservation regression tests, bounded status docs. Round-trip sale limit is the lower remaining capacity after allocations and holds. No schema, migration, shared contract, dependency or runtime changes. Previous ticket locks released; preserve all other checkouts. PR to develop only, no merge authorization for this task. Result: picker/card use the lower remaining capacity, invalid round-trip quotes clear both fare entries. 41 focused Web tests and 4 focused API tests (including 2 atomic regressions) passed, including live-hold capacity and zero partial allocations on failure. Bounded implementation/docs locks released with scoped commit.
+
 ## SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; base `codex/pc-b-istanbul-3100-activation-0929@b1702e5b`, task branch `codex/pc-b-expand-sidebar-0929`. The central Web AppShell and focused navigation-collapse spec were reserved for this work item; lock released after scoped commit. All accessible sidebar groups now start expanded while route permission filtering and manual collapse controls remain unchanged. No IAM/API/schema/dependency/data change. Focused 2 tests, scoped ESLint, Web typecheck and 55-route production build passed. Web3100 and API4000 health returned 200 after restart.
@@ -4424,6 +4428,14 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch codex/pc-a-finance-history-seat-pricing-0928, isolated clean Finance worktree from origin/develop@099dc40e. Reserve Finance API/Web/history tests, additive Sales public receipt-history and Reservations purchase-descriptor projections, Finance v1 additive history contract and bounded status/task docs. Producer Sales/Finance and consumer Finance API/Web owned PC-A; public boundaries and existing v1 clients preserved. No Procurement implementation, migration/schema/dependency/lockfile/IAM or operational data changes. Bounded Finance contract/Central Docs owner PC-A for this unit; prior Finance locks released. User explicitly authorizes implementation and merge. Preserve unrelated local edits.
 
 - Validation: 23 targeted API and 29 Web tests, scoped lint, API/Web strict typechecks and production builds (53 routes) passed. No migration or data change. Finance contract/bounded docs locks RELEASED with commit. Explicit owner merge authorization; authenticated browser clicks remain unverified.
+
+## B2B-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
+
+- درخواست مالک: اجرای آزمون‌های API و سناریوهای مرزی، به‌ویژه ثبت فرم‌ها، و اصلاح باگ‌های قطعی Backend.
+- `COMPUTER_ID=PC-B`؛ شاخه مستقل `codex/pc-b-b2b-api-qa-0928` از `origin/develop@4013211f`. Worktreeهای فعال Marketing، Customer Affairs و Workbench دست‌نخورده‌اند.
+- دامنه رزرو: ممیزی سراسری API و اجرای تست‌های موجود؛ اصلاح و تست در Backend B2B و مسیرهای فرم آژانس با مالکیت PC-B. ایرادهای مالک PC-A/PC-C برای هماهنگی گزارش می‌شوند.
+- بدون Schema/Migration، Dependency/Lockfile، قرارداد مشترک، مجوز، داده عملیاتی یا جابه‌جایی runtime مشترک. در صورت نیاز واقعی، قفل و قرارداد مربوط جداگانه رزرو می‌شود.
+- نتیجه روی آخرین `develop`: ۱۶۹۲ تست معمول API موفق و ۱۷۵ تست محیطی skip شدند؛ ۱۲۷ تست B2B پس از اصلاح موفق و ۱۹ تست PostgreSQL آن به‌دلیل توقف سرویس Docker اجرا نشدند. بازپخش requestId قدیمی پس از ایجاد نسخه جدید قرارداد اکنون به‌جای پاسخ موفقِ گمراه‌کننده، تعارض نسخه مشخص برمی‌گرداند. lint، typecheck و build API موفق؛ جزئیات در `docs/tasks/B2B-API-FUNCTIONAL-QA-0928.md`. قفل فایل‌های این واحد با Commit آزاد می‌شود.
 
 ## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
 

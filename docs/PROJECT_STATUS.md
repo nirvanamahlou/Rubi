@@ -1,3 +1,7 @@
+## 2026-09-30 — ROUNDTRIP-SALE-CAPACITY-0930 — PC-A — READY_FOR_REVIEW
+
+Round-trip ticket selection displays and enforces the lower remaining capacity of both legs. Requests above this limit clear both flight quotes. Existing row-locked server reservation rejects insufficient capacity before creating either allocation; regression tests cover outbound/return limits after allocations and active holds, rejection above the limit and acceptance exactly at it. 41 focused Web tests and 4 focused API tests pass. Scoped lint, Web/API typechecks and production builds pass after regenerating stale local contracts/Prisma outputs. No schema, migration, shared contract, dependency, operational data or local runtime changes. PR to develop for review; no automatic merge.
+
 ## 2026-09-29 — SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 تمام گروه‌های مجاز منوی کناری از ابتدا باز می‌شوند تا لینک‌های رزرواسیون، مالی، سرمایه انسانی، اسناد و تنظیمات کنار فروش دیده شوند. کنترل باز و بسته‌کردن گروه‌ها و بررسی دسترسی هر مسیر بدون تغییر است. دو تست مرتبط، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق شدند. وب روی ۳۱۰۰ و API روی ۴۰۰۰ پس از راه‌اندازی مجدد پاسخ ۲۰۰ دادند. هیچ مجوز یا داده‌ای تغییر نکرد.
@@ -3825,6 +3829,10 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
 
 Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.
+
+## 2026-09-28 — B2B-API-FUNCTIONAL-QA-0928 — PC-B
+
+API unit/HTTP suite on latest develop: ۱۶۹۲ passed, ۱۷۵ environment-gated skipped. B2B after fix: ۱۲۷ passed, ۱۹ PostgreSQL skipped because Docker Desktop is stopped and cannot be started in this session. A replay of an old B2B agreement request ID after a newer version now returns a clear 409 instead of misreporting the newer contract as the old command result. Focused regression, lint, typecheck and API build passed. No live data, schema, migration, dependency or shared contract changed. See [task handoff](tasks/B2B-API-FUNCTIONAL-QA-0928.md).
 
 ## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
 
