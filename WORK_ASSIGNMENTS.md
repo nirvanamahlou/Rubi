@@ -1,3 +1,7 @@
+## SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; base `codex/pc-b-istanbul-3100-activation-0929@b1702e5b`, task branch `codex/pc-b-expand-sidebar-0929`. The central Web AppShell and focused navigation-collapse spec were reserved for this work item; lock released after scoped commit. All accessible sidebar groups now start expanded while route permission filtering and manual collapse controls remain unchanged. No IAM/API/schema/dependency/data change. Focused 2 tests, scoped ESLint, Web typecheck and 55-route production build passed. Web3100 and API4000 health returned 200 after restart.
+
 ## DOCUMENTS-009-OVERVIEW-CONNECTIONS-REMOVAL-0929 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B؛ Branch مستقل `codex/pc-b-documents-overview-connections-removal-0929` از `origin/develop@bb4209e0` در worktree جدا. درخواست تصویر ۶۶۸: حذف کامل سکشن «ارتباط اسناد با بخش‌های نورا» که در نمای کلی دورخط‌کشیده شده است.

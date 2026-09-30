@@ -1,3 +1,7 @@
+## 2026-09-29 — SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
+
+تمام گروه‌های مجاز منوی کناری از ابتدا باز می‌شوند تا لینک‌های رزرواسیون، مالی، سرمایه انسانی، اسناد و تنظیمات کنار فروش دیده شوند. کنترل باز و بسته‌کردن گروه‌ها و بررسی دسترسی هر مسیر بدون تغییر است. دو تست مرتبط، ESLint محدوده، typecheck و build تولیدی Web با ۵۵ مسیر موفق شدند. وب روی ۳۱۰۰ و API روی ۴۰۰۰ پس از راه‌اندازی مجدد پاسخ ۲۰۰ دادند. هیچ مجوز یا داده‌ای تغییر نکرد.
+
 ## 2026-09-30 — TICKET-SEAT-CAPACITY-FOLLOWUP-0930 — PC-A — READY_FOR_REVIEW
 
 The seat-tier editor now caps each entered seat count by the remaining capacity and disables another tier when all seats are assigned. Round-trip pricing uses the lower capacity of the outbound and return tickets, with Ticket Catalog rejecting any tier schedule above that limit. Ten focused Web tests and ten API tests pass. Scoped lint, typechecks and production builds for both applications pass. No schema, migration, contract, dependency or operational-data changes.
