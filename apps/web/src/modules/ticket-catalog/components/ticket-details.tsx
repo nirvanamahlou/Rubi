@@ -189,6 +189,22 @@ export function TicketDetails({
         />
         <Detail label="نوع تأمین" value={supplyLabels[definition.supplyType]} />
         <Detail
+          label="بار اکونومی"
+          value={
+            definition.economyBaggageKg == null
+              ? 'ثبت نشده'
+              : definition.economyBaggageKg + ' کیلوگرم'
+          }
+        />
+        <Detail
+          label="بار بیزینس"
+          value={
+            definition.businessBaggageKg == null
+              ? 'ثبت نشده'
+              : definition.businessBaggageKg + ' کیلوگرم'
+          }
+        />
+        <Detail
           label="Min — حداقل روز تا برگشت"
           value={
             definition.returnMinDays == null

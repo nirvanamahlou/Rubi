@@ -11,7 +11,11 @@ import {
   TicketCheck,
   Trash2,
 } from 'lucide-react';
-import type { TicketOfferV1, TicketSalePriceTargetV1 } from '@nora/contracts';
+import type {
+  TicketOfferV1,
+  TicketSalePriceTargetV1,
+  TicketSalePriceTierV1,
+} from '@nora/contracts';
 import { eligibleTicketReturn } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { MoneyInput } from '@/components/ui/money-input';
@@ -50,7 +54,188 @@ import {
 } from '../model/ticket-price-rows';
 import { ticketPriceExportRows } from '../model/ticket-prices-export';
 import targetStyles from './ticket-price-targets.module.css';
-type Draft = { amount: string; currencyCode: string };
+type Draft = {
+  amount: string;
+  currencyCode: string;
+  tiers?: TicketSalePriceTierV1[] | undefined;
+};
+function validTierDraft(draft: Draft, capacity: number) {
+  return (
+    !draft.tiers ||
+    (draft.tiers.length > 0 &&
+      draft.tiers.every(
+        (tier) =>
+          Number.isSafeInteger(tier.seatCount) &&
+          tier.seatCount > 0 &&
+          /^\d+(?:\.\d{1,4})?$/.test(tier.amount) &&
+          Number(tier.amount) > 0,
+      ) &&
+      draft.tiers.reduce((sum, tier) => sum + tier.seatCount, 0) === capacity &&
+      draft.tiers[0]?.amount === draft.amount)
+  );
+}
+export function maxTierSeatCount(
+  tiers: readonly TicketSalePriceTierV1[],
+  index: number,
+  capacity: number,
+) {
+  const assignedToOtherTiers = tiers.reduce(
+    (sum, tier, tierIndex) =>
+      tierIndex === index ? sum : sum + (Number(tier.seatCount) || 0),
+    0,
+  );
+  return Math.max(0, capacity - assignedToOtherTiers);
+}
+export function clampTierSeatCount(
+  value: string,
+  tiers: readonly TicketSalePriceTierV1[],
+  index: number,
+  capacity: number,
+) {
+  if (!value.trim()) return 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed)
+    ? Math.min(
+        maxTierSeatCount(tiers, index, capacity),
+        Math.max(0, Math.trunc(parsed)),
+      )
+    : 0;
+}
+function TierEditor({
+  draft,
+  capacity,
+  onChange,
+}: {
+  draft: Draft;
+  capacity: number;
+  onChange: (draft: Draft) => void;
+}) {
+  const tiers = draft.tiers;
+  let first = 1;
+  const assigned =
+    tiers?.reduce((sum, tier) => sum + (Number(tier.seatCount) || 0), 0) ?? 0;
+  const remaining = Math.max(0, capacity - assigned);
+  return (
+    <div className="col-span-2 space-y-1 text-xs">
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={!!tiers}
+          onChange={(e) =>
+            onChange({
+              ...draft,
+              tiers: e.target.checked
+                ? [{ seatCount: capacity, amount: draft.amount }]
+                : undefined,
+            })
+          }
+        />
+        قیمت‌گذاری پله‌ای صندلی‌ها
+      </label>
+      {tiers?.map((tier, index) => {
+        const start = first;
+        first += Number(tier.seatCount) || 0;
+        return (
+          <div key={index} className="flex items-center gap-1">
+            <span className="shrink-0">
+              {start} تا {first - 1}
+            </span>
+            <Input
+              aria-label={`تعداد صندلی پله ${index + 1}`}
+              type="number"
+              min="1"
+              max={maxTierSeatCount(tiers, index, capacity)}
+              className="h-8 w-16"
+              value={tier.seatCount || ''}
+              onChange={(e) =>
+                onChange({
+                  ...draft,
+                  tiers: tiers.map((item, i) =>
+                    i === index
+                      ? {
+                          ...item,
+                          seatCount: clampTierSeatCount(
+                            e.target.value,
+                            tiers,
+                            index,
+                            capacity,
+                          ),
+                        }
+                      : item,
+                  ),
+                })
+              }
+            />
+            <MoneyInput
+              className="h-8 min-w-0 flex-1"
+              value={tier.amount}
+              onValueChange={(amount) =>
+                onChange({
+                  ...draft,
+                  amount: index === 0 ? amount : draft.amount,
+                  tiers: tiers.map((item, i) =>
+                    i === index ? { ...item, amount } : item,
+                  ),
+                })
+              }
+            />
+            {tiers.length > 1 ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  onChange({
+                    ...draft,
+                    tiers: tiers.filter((_, i) => i !== index),
+                  })
+                }
+              >
+                حذف
+              </Button>
+            ) : null}
+          </div>
+        );
+      })}
+      {tiers ? (
+        <>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={
+              remaining === 0 || tiers.length >= 40 || tiers.length >= capacity
+            }
+            onClick={() =>
+              onChange({
+                ...draft,
+                tiers: [
+                  ...tiers,
+                  {
+                    seatCount: remaining,
+                    amount: draft.amount,
+                  },
+                ],
+              })
+            }
+          >
+            {remaining > 0 && tiers.length < 40 && tiers.length < capacity
+              ? 'افزودن پله'
+              : 'ظرفیت تکمیل شده'}
+          </Button>
+          <p>
+            جمع:{' '}
+            {tiers.reduce(
+              (sum, tier) => sum + (Number(tier.seatCount) || 0),
+              0,
+            )}{' '}
+            از {capacity} صندلی
+          </p>
+        </>
+      ) : null}
+    </div>
+  );
+}
 const DIRECT_TARGET = '__DIRECT__';
 const faDay = new Intl.DateTimeFormat('fa-IR', {
   day: 'numeric',
@@ -122,6 +307,7 @@ export function TicketPricesWorkspace() {
             row.id,
             {
               amount: row.base?.amount ?? '',
+              tiers: row.base?.tiers?.map((tier) => ({ ...tier })),
               currencyCode:
                 row.base?.currencyCode ?? currencyRows[0]?.code ?? 'IRR',
             },
@@ -198,6 +384,17 @@ export function TicketPricesWorkspace() {
     const draft = drafts[row.id];
     if (!draft?.amount || !currencies.includes(draft.currencyCode))
       return setError('قیمت مثبت و ارز فعال را وارد کنید.');
+    if (
+      !validTierDraft(
+        draft,
+        row.returning
+          ? Math.min(row.offer.totalCapacity, row.returning.totalCapacity)
+          : row.offer.totalCapacity,
+      )
+    )
+      return setError(
+        'جمع تعداد پله‌ها باید برابر ظرفیت بلیت باشد و قیمت پله اول با قیمت پایه یکسان باشد.',
+      );
     setSaving(row.id);
     setError('');
     setNotice('');
@@ -335,6 +532,16 @@ export function TicketPricesWorkspace() {
       !currencies.includes(pairDraft.currencyCode)
     )
       return setError('بلیط رفت، برگشت، مبلغ و ارز فعال را کامل کنید.');
+    if (
+      !validTierDraft(
+        pairDraft,
+        Math.min(
+          outbound.totalCapacity,
+          offers.find((o) => o.id === returnId)?.totalCapacity ?? 0,
+        ),
+      )
+    )
+      return setError('جمع تعداد پله‌ها باید برابر ظرفیت جفت بلیت باشد.');
     setSaving('pair');
     setError('');
     setNotice('');
@@ -581,6 +788,9 @@ export function TicketPricesWorkspace() {
                 );
                 setPairDraft({
                   amount: p?.baseAmount ?? p?.amount ?? '',
+                  tiers: (p?.baseTiers ?? p?.tiers)?.map((tier) => ({
+                    ...tier,
+                  })),
                   currencyCode: p?.currencyCode ?? currencies[0] ?? 'IRR',
                 });
               }}
@@ -601,7 +811,19 @@ export function TicketPricesWorkspace() {
           <FormField label="قیمت کل رفت‌وبرگشت">
             <MoneyInput
               value={pairDraft.amount}
-              onValueChange={(amount) => setPairDraft({ ...pairDraft, amount })}
+              onValueChange={(amount) =>
+                setPairDraft({
+                  ...pairDraft,
+                  amount,
+                  ...(pairDraft.tiers?.length
+                    ? {
+                        tiers: pairDraft.tiers.map((tier, index) =>
+                          index === 0 ? { ...tier, amount } : tier,
+                        ),
+                      }
+                    : {}),
+                })
+              }
             />
           </FormField>
           <FormField label="ارز">
@@ -613,6 +835,16 @@ export function TicketPricesWorkspace() {
               }
             />
           </FormField>
+          {outbound && returnId ? (
+            <TierEditor
+              draft={pairDraft}
+              capacity={Math.min(
+                outbound.totalCapacity,
+                offers.find((o) => o.id === returnId)?.totalCapacity ?? 0,
+              )}
+              onChange={setPairDraft}
+            />
+          ) : null}
           <Button
             onClick={() => void savePair()}
             disabled={busy || !!saving}
@@ -785,7 +1017,16 @@ export function TicketPricesWorkspace() {
                           className="h-8 rounded-lg px-2 text-xs"
                           value={draft.amount}
                           onValueChange={(amount) =>
-                            updateDraft(row, { amount })
+                            updateDraft(row, {
+                              amount,
+                              ...(draft.tiers?.length
+                                ? {
+                                    tiers: draft.tiers.map((tier, i) =>
+                                      i === 0 ? { ...tier, amount } : tier,
+                                    ),
+                                  }
+                                : {}),
+                            })
                           }
                         />
                       </FormField>
@@ -955,6 +1196,20 @@ export function TicketPricesWorkspace() {
                         پس از ثبت قیمت پایه، فیلد مقصدهای فروش باز می‌شود.
                       </p>
                     )}
+                  </div>
+                  <div className="mt-2 max-w-xl rounded-lg border border-sky-100 p-2">
+                    <TierEditor
+                      draft={draft}
+                      capacity={
+                        row.returning
+                          ? Math.min(
+                              row.offer.totalCapacity,
+                              row.returning.totalCapacity,
+                            )
+                          : row.offer.totalCapacity
+                      }
+                      onChange={(next) => updateDraft(row, next)}
+                    />
                   </div>
                 </article>
               );

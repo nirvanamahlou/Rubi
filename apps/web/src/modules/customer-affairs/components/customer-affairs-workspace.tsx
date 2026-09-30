@@ -107,6 +107,69 @@ export const priorityLabel: Record<string, string> = {
   CRITICAL: 'بحرانی',
 };
 
+const qualificationCriteria = [
+  [
+    'travelNeedConfirmed',
+    'نیاز سفر مشخص و تأیید شده است',
+    'نیاز سفر تایید شده',
+  ],
+  ['destinationKnown', 'مقصد یا گزینه‌های پذیرفتنی مشخص است', 'مقصد مشخص است'],
+  ['timingKnown', 'زمان سفر یا انعطاف آن مشخص است', 'بازه سفر مشخص است'],
+  ['budgetDiscussed', 'درباره بودجه گفتگو شده است', 'بودجه بررسی شده'],
+  [
+    'decisionMakerReachable',
+    'با تصمیم‌گیرنده ارتباط داریم',
+    'تصمیم‌گیرنده در دسترس است',
+  ],
+  ['contactable', 'راه تماس مشتری معتبر است', 'مسیر تماس معتبر است'],
+] as const;
+
+function qualificationReport(value: Record<string, unknown> | null) {
+  if (!value || typeof value.score !== 'number') return null;
+  const reasons = Array.isArray(value.reasons)
+    ? [
+        ...new Set(
+          value.reasons
+            .filter((reason): reason is string => typeof reason === 'string')
+            .map((reason) => reason.trim())
+            .filter(Boolean),
+        ),
+      ]
+    : [];
+  return {
+    score: value.score,
+    state:
+      value.state === 'QUALIFIED'
+        ? 'آماده تحویل به فروش'
+        : value.state === 'NEEDS_REVIEW'
+          ? 'نیازمند تکمیل ارزیابی'
+          : 'فاقد شرایط',
+    reasons,
+    conversionProbability:
+      typeof value.conversionProbability === 'number'
+        ? value.conversionProbability
+        : null,
+    evaluatedAt:
+      typeof value.evaluatedAt === 'string' &&
+      !Number.isNaN(Date.parse(value.evaluatedAt))
+        ? value.evaluatedAt
+        : null,
+  };
+}
+
+export async function mutateAndRefreshDetail(
+  operation: () => Promise<unknown>,
+  refresh: () => Promise<void>,
+): Promise<boolean> {
+  await operation();
+  try {
+    await refresh();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function Summary({
   label,
   value,
@@ -573,14 +636,33 @@ export function DetailPanel({
   >(null);
   const [operationError, setOperationError] = useState(false);
   const stage = 'stage' in detail ? detail.stage : detail.status;
+  const assessment =
+    'stage' in detail ? qualificationReport(detail.qualification) : null;
+  const confirmedCriteriaCount = assessment
+    ? qualificationCriteria.filter(([, , reason]) =>
+        assessment.reasons.includes(reason),
+      ).length
+    : 0;
+  const additionalAssessmentReasons = assessment
+    ? assessment.reasons.filter(
+        (reason) =>
+          !qualificationCriteria.some(
+            ([, , canonicalReason]) => canonicalReason === reason,
+          ),
+      )
+    : [];
   async function run(operation: () => Promise<unknown>, success: string) {
     setBusy(true);
     setNotice('');
     setOperationError(false);
     try {
-      await operation();
-      setNotice(success);
-      await onReload();
+      const refreshed = await mutateAndRefreshDetail(operation, onReload);
+      setNotice(
+        refreshed
+          ? success
+          : `${success} اما بازخوانی پرونده انجام نشد؛ پیش از اقدام بعدی پرونده را تازه‌سازی کنید.`,
+      );
+      setOperationError(!refreshed);
       return true;
     } catch (cause) {
       setOperationError(true);
@@ -711,15 +793,6 @@ export function DetailPanel({
                 }
               >
                 <Send className="size-4" /> ارسال به فروش
-              </Button>
-              <Button
-                disabled={
-                  busy || !['NEW', 'CONTACTED', 'QUALIFYING'].includes(stage)
-                }
-                onClick={() => setAssessmentOpen((value) => !value)}
-                variant="outline"
-              >
-                <CheckCircle2 className="size-4" /> ارزیابی آمادگی فروش
               </Button>
             </>
           ) : (
@@ -907,16 +980,13 @@ export function DetailPanel({
               <p className={s.muted}>
                 فقط مواردی را تأیید کنید که در گفتگو با مشتری بررسی شده‌اند.
               </p>
-              {[
-                ['travelNeedConfirmed', 'نیاز سفر مشخص و تأیید شده است'],
-                ['destinationKnown', 'مقصد یا گزینه‌های پذیرفتنی مشخص است'],
-                ['timingKnown', 'زمان سفر یا انعطاف آن مشخص است'],
-                ['budgetDiscussed', 'درباره بودجه گفتگو شده است'],
-                ['decisionMakerReachable', 'با تصمیم‌گیرنده ارتباط داریم'],
-                ['contactable', 'راه تماس مشتری معتبر است'],
-              ].map(([key, label]) => (
+              {qualificationCriteria.map(([key, label, reason]) => (
                 <label key={key}>
-                  <input type="checkbox" name={key} />
+                  <input
+                    type="checkbox"
+                    name={key}
+                    defaultChecked={assessment?.reasons.includes(reason)}
+                  />
                   {label}
                 </label>
               ))}
@@ -1216,28 +1286,119 @@ export function DetailPanel({
           </form>
         </CustomerAffairsFormDialog>
       )}
-      {'stage' in detail &&
-        typeof detail.qualification?.conversionProbability === 'number' && (
-          <p className="text-sm text-muted-foreground">
-            احتمال تبدیل به فروش:{' '}
-            {detail.qualification.conversionProbability.toLocaleString('fa-IR')}
-            ٪ · برآورد کارشناس
-          </p>
-        )}
       {!('stage' in detail) && <TicketSms id={detail.id} onReload={onReload} />}
       <Card className={`${s.detail} ${s.profileHistory}`}>
         <div className={s.profileSectionHead}>
           <h3 className="font-black">سابقه ارتباط و رسیدگی</h3>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setOperationError(false);
-              setActivityOpen(true);
-            }}
-          >
-            ثبت ارتباط جدید
-          </Button>
+          <div className={s.profileSectionActions}>
+            {tab === 'leads' && (
+              <Button
+                disabled={
+                  busy ||
+                  !['NEW', 'CONTACTED', 'QUALIFYING', 'QUALIFIED'].includes(
+                    stage,
+                  )
+                }
+                onClick={() => {
+                  setOperationError(false);
+                  setAssessmentOpen(true);
+                }}
+                variant="outline"
+              >
+                <CheckCircle2 className="size-4" /> ارزیابی آمادگی فروش
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOperationError(false);
+                setActivityOpen(true);
+              }}
+            >
+              ثبت ارتباط جدید
+            </Button>
+          </div>
         </div>
+        {assessment && (
+          <section
+            className={s.qualificationReport}
+            aria-label="نتیجه ارزیابی آمادگی فروش"
+          >
+            <div className={s.qualificationReportHead}>
+              <div>
+                <p className={s.qualificationReportEyebrow}>گزارش ثبت‌شده</p>
+                <h4>آخرین نتیجه ارزیابی آمادگی فروش</h4>
+              </div>
+              {assessment.evaluatedAt && (
+                <time dateTime={assessment.evaluatedAt}>
+                  {new Date(assessment.evaluatedAt).toLocaleString('fa-IR')}
+                </time>
+              )}
+            </div>
+            <dl className={s.qualificationSummary}>
+              <div>
+                <dt>نتیجه آمادگی</dt>
+                <dd>{assessment.state}</dd>
+              </div>
+              <div>
+                <dt>امتیاز آمادگی</dt>
+                <dd>
+                  <strong>{assessment.score.toLocaleString('fa-IR')}</strong>
+                  <span> از ۱۰۰</span>
+                </dd>
+              </div>
+              <div>
+                <dt>احتمال تبدیل به فروش</dt>
+                <dd>
+                  {assessment.conversionProbability !== null
+                    ? `${assessment.conversionProbability.toLocaleString('fa-IR')}٪`
+                    : 'ثبت نشده'}
+                </dd>
+              </div>
+            </dl>
+            <div className={s.qualificationCriteriaHead}>
+              <h5>معیارهای ارزیابی</h5>
+              <p>
+                {confirmedCriteriaCount.toLocaleString('fa-IR')} از{' '}
+                {qualificationCriteria.length.toLocaleString('fa-IR')} معیار
+                تأیید شده
+              </p>
+            </div>
+            <ul
+              className={s.qualificationCriteria}
+              aria-label="معیارهای ارزیابی"
+            >
+              {qualificationCriteria.map(([key, label, reason]) => {
+                const confirmed = assessment.reasons.includes(reason);
+                return (
+                  <li
+                    className={s.qualificationCriterion}
+                    data-state={confirmed ? 'confirmed' : 'unconfirmed'}
+                    key={key}
+                  >
+                    <span className={s.qualificationCriterionLabel}>
+                      {label}
+                    </span>
+                    <strong className={s.qualificationCriterionStatus}>
+                      <span aria-hidden="true">{confirmed ? '✓' : '—'}</span>
+                      {confirmed ? 'تأیید شده' : 'تأیید نشده'}
+                    </strong>
+                  </li>
+                );
+              })}
+            </ul>
+            {additionalAssessmentReasons.length > 0 && (
+              <div className={s.qualificationExtraReasons}>
+                <h5>دلایل و توضیحات تکمیلی ثبت‌شده</h5>
+                <ul>
+                  {additionalAssessmentReasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </section>
+        )}
         {activityOpen && (
           <CustomerAffairsFormDialog
             title="ثبت ارتباط"

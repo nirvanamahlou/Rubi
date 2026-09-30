@@ -932,6 +932,25 @@ export class SalesService {
           row.branchId,
           row.id,
           seatCount,
+          presented.servicesDetail.some(
+            (service) => service.kind === 'HOTEL' || service.kind === 'TOUR',
+          )
+            ? undefined
+            : Object.fromEntries(
+                presented.servicesDetail
+                  .filter(
+                    (service) =>
+                      service.kind === 'FLIGHT' &&
+                      service.pricing?.[0]?.daySale.basis === 'TOTAL',
+                  )
+                  .map((service) => [
+                    service.clientKey,
+                    {
+                      amount: service.pricing![0]!.daySale.amount,
+                      currencyCode: service.pricing![0]!.currencyCode,
+                    },
+                  ]),
+              ),
         )
       : { available: true, unavailableOfferIds: [], createdAllocationIds: [] };
     if (!ticketCheck.available)

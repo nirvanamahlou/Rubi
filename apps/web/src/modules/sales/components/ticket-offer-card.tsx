@@ -51,6 +51,7 @@ export function TicketOfferCard({
   destinationLabel = 'مقصد',
   requiredSeats = 1,
   requireStandaloneFare = false,
+  roundTripOutbound,
 }: {
   offer: TicketOfferV1;
   selected: boolean;
@@ -59,9 +60,13 @@ export function TicketOfferCard({
   destinationLabel?: string;
   requiredSeats?: number;
   requireStandaloneFare?: boolean;
+  roundTripOutbound?: TicketOfferV1;
 }) {
   const departure = ticketDisplayTime(offer.departureAt);
-  const insufficient = offer.remainingCapacity < requiredSeats;
+  const availableSeats = roundTripOutbound
+    ? Math.min(offer.remainingCapacity, roundTripOutbound.remainingCapacity)
+    : offer.remainingCapacity;
+  const insufficient = availableSeats < requiredSeats;
   const missingFare = requireStandaloneFare && !offer.standaloneSalePrice;
   const arrival = ticketDisplayTime(offer.arrivalAt);
   return (
@@ -171,6 +176,12 @@ export function TicketOfferCard({
             مانده:{' '}
             {new Intl.NumberFormat('fa-IR').format(offer.remainingCapacity)} نفر
           </strong>
+          {roundTripOutbound ? (
+            <strong>
+              قابل‌فروش رفت‌وبرگشت:{' '}
+              {new Intl.NumberFormat('fa-IR').format(availableSeats)} نفر
+            </strong>
+          ) : null}
           {insufficient ? (
             <span className="w-full text-rose-600">
               برای {new Intl.NumberFormat('fa-IR').format(requiredSeats)} صندلی

@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ClockAlert,
   Copy,
+  Eye,
   FileLock2,
   Files,
   FileSearch,
@@ -52,12 +53,7 @@ import {
   type ArchiveToolDefinition,
   type ArchiveToolKey,
 } from '../model/archive-tools';
-import {
-  createDocumentConnectionHref,
-  DOCUMENT_CONNECTIONS,
-  getDocumentConnection,
-  type DocumentConnectionDefinition,
-} from '../model/document-connections';
+import { getDocumentConnection } from '../model/document-connections';
 import { DocumentDetailDialog } from './document-detail-dialog';
 import { DocumentConfidentialAccessDialog } from './document-confidential-access-dialog';
 import { DocumentBulkActionsDialog } from './document-bulk-actions-dialog';
@@ -164,27 +160,6 @@ const archiveTone = [
   'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-400/20 dark:from-emerald-950/45 dark:to-teal-950/30',
   'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-400/20 dark:from-amber-950/45 dark:to-orange-950/30',
 ] as const;
-
-const connectionTone = [
-  'border-sky-200 bg-gradient-to-br from-sky-50 to-blue-100/70 dark:border-sky-400/20 dark:from-sky-950/45 dark:to-blue-950/30',
-  'border-violet-200 bg-gradient-to-br from-violet-50 to-purple-100/70 dark:border-violet-400/20 dark:from-violet-950/45 dark:to-purple-950/30',
-  'border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-100/70 dark:border-emerald-400/20 dark:from-emerald-950/45 dark:to-teal-950/30',
-  'border-amber-200 bg-gradient-to-br from-amber-50 to-orange-100/70 dark:border-amber-400/20 dark:from-amber-950/45 dark:to-orange-950/30',
-  'border-rose-200 bg-gradient-to-br from-rose-50 to-pink-100/70 dark:border-rose-400/20 dark:from-rose-950/45 dark:to-pink-950/30',
-] as const;
-
-const connectionIcon: Readonly<Record<DocumentDomainCode, typeof Files>> = {
-  CUSTOMER_IDENTITY: UserRound,
-  SALES: ShoppingCart,
-  TRAVEL: PackageSearch,
-  PROCUREMENT: Building2,
-  FINANCE: Building2,
-  HUMAN_RESOURCES: HeartHandshake,
-  ORGANIZATION: Building2,
-  REPORTING: FileSearch,
-  BRAND: Sparkles,
-  GENERAL: Archive,
-};
 
 const defaultQuery: DocumentListQueryV1 = {
   page: 1,
@@ -295,6 +270,54 @@ function Metric({
         </div>
       </div>
     </Card>
+  );
+}
+
+function DocumentRecordActions({
+  document,
+  onDelete,
+  onEdit,
+  onView,
+}: {
+  document: DocumentListItemV1;
+  onDelete: () => void;
+  onEdit: () => void;
+  onView: () => void;
+}) {
+  return (
+    <div className="flex shrink-0 items-center gap-2" dir="ltr">
+      <Button
+        aria-label={`حذف دائمی ${document.title}`}
+        disabled={!document.capabilities.permanentDelete}
+        onClick={onDelete}
+        size="icon"
+        title="حذف دائمی"
+        variant="destructive"
+      >
+        <Trash2 aria-hidden="true" className="size-4" />
+      </Button>
+      <Button
+        aria-label={`ویرایش ${document.title}`}
+        className="border-sky-200 bg-white text-slate-800 hover:bg-sky-50 dark:border-sky-700 dark:bg-slate-900 dark:text-slate-100"
+        disabled={!document.capabilities.editMetadata}
+        onClick={onEdit}
+        size="icon"
+        title="ویرایش"
+        variant="outline"
+      >
+        <Pencil aria-hidden="true" className="size-4" />
+      </Button>
+      <Button
+        aria-label={`مشاهده ${document.title}`}
+        className="border-sky-200 bg-white text-slate-800 hover:bg-sky-50 dark:border-sky-700 dark:bg-slate-900 dark:text-slate-100"
+        onClick={onView}
+        size="icon"
+        title="مشاهده"
+        variant="outline"
+      >
+        <Eye aria-hidden="true" className="size-4" />
+      </Button>
+    </div>
   );
 }
 
@@ -504,17 +527,6 @@ export function DocumentsWorkspace() {
           ? 'HUMAN_RESOURCES'
           : null,
     );
-    setQuery(defaultQuery);
-    setSelected(new Set());
-  }
-
-  function openConnectionArchive(
-    connection: DocumentConnectionDefinition,
-  ): void {
-    setPersonalView(null);
-    setActiveArchiveToolKey(null);
-    setSection(connection.documentsSection);
-    setSectionDomain(connection.domain);
     setQuery(defaultQuery);
     setSelected(new Set());
   }
@@ -1145,16 +1157,6 @@ export function DocumentsWorkspace() {
                   <td className="px-3 py-4">
                     <div className="flex items-center gap-1">
                       <Button
-                        aria-label={`ویرایش ${document.title}`}
-                        disabled={!document.capabilities.editMetadata}
-                        onClick={() => void openEdit(document)}
-                        size="icon"
-                        title="ویرایش"
-                        variant="ghost"
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
                         aria-label={
                           document.isIncomplete
                             ? `علامت‌گذاری ${document.title} به‌عنوان کامل`
@@ -1217,17 +1219,12 @@ export function DocumentsWorkspace() {
                           <Archive aria-hidden="true" className="size-4" />
                         )}
                       </Button>
-                      <Button
-                        aria-label={`حذف دائمی ${document.title}`}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                        disabled={!document.capabilities.permanentDelete}
-                        onClick={() => openDelete(document)}
-                        size="icon"
-                        title="حذف دائمی"
-                        variant="ghost"
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                      </Button>
+                      <DocumentRecordActions
+                        document={document}
+                        onDelete={() => openDelete(document)}
+                        onEdit={() => void openEdit(document)}
+                        onView={() => void openDetail(document.id)}
+                      />
                     </div>
                   </td>
                 </tr>
@@ -1758,29 +1755,12 @@ export function DocumentsWorkspace() {
                         )}
                       </p>
                     </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        aria-label={`ویرایش ${item.title}`}
-                        disabled={!item.capabilities.editMetadata}
-                        onClick={() => void openEdit(item)}
-                        size="icon"
-                        title="ویرایش"
-                        variant="ghost"
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
-                        aria-label={`حذف دائمی ${item.title}`}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                        disabled={!item.capabilities.permanentDelete}
-                        onClick={() => openDelete(item)}
-                        size="icon"
-                        title="حذف دائمی"
-                        variant="ghost"
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                      </Button>
-                    </div>
+                    <DocumentRecordActions
+                      document={item}
+                      onDelete={() => openDelete(item)}
+                      onEdit={() => void openEdit(item)}
+                      onView={() => void openDetail(item.id)}
+                    />
                   </div>
                   <div className="mt-4 flex gap-2">
                     <Input
@@ -1850,79 +1830,6 @@ export function DocumentsWorkspace() {
               value={visibleExpired}
             />
           </section>
-          <Card className={cn('relative overflow-hidden p-5', sectionSurface)}>
-            <span className="absolute -end-16 -top-16 size-48 rounded-full bg-sky-200/45 blur-3xl dark:bg-sky-500/10" />
-            <div className="relative flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2
-                  className="flex items-center gap-2 text-lg font-black"
-                  id="documents-connections-title"
-                >
-                  <Link2 aria-hidden="true" className="size-5" />
-                  ارتباط اسناد با بخش‌های نورا
-                </h2>
-                <p className="mt-1 text-sm leading-7 text-muted-foreground">
-                  اسناد هر بخش را در آرشیو ببینید یا برای ادامه کار به ماژول
-                  مبدأ بروید.
-                </p>
-              </div>
-              <Badge>همه مسیرهای آرشیو</Badge>
-            </div>
-            <section
-              aria-labelledby="documents-connections-title"
-              className="relative mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-3"
-            >
-              {DOCUMENT_CONNECTIONS.map((connection, index) => {
-                const Icon = connectionIcon[connection.domain];
-                const moduleHref = createDocumentConnectionHref(connection);
-                return (
-                  <article
-                    className={cn(
-                      'flex min-h-52 flex-col rounded-2xl border p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md',
-                      connectionTone[index % connectionTone.length],
-                    )}
-                    key={connection.domain}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white/75 text-primary shadow-sm dark:bg-white/10">
-                        <Icon aria-hidden="true" className="size-5" />
-                      </span>
-                      <Badge>
-                        {moduleHref ? 'متصل به ماژول' : 'داخل آرشیو'}
-                      </Badge>
-                    </div>
-                    <h3 className="mt-3 font-black">
-                      {connection.sectionLabel}
-                    </h3>
-                    <p className="mt-2 flex-1 text-xs leading-6 text-muted-foreground">
-                      {connection.description}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <Button
-                        onClick={() => openConnectionArchive(connection)}
-                        size="sm"
-                        type="button"
-                        variant="outline"
-                      >
-                        <Files aria-hidden="true" className="size-4" />
-                        اسناد این بخش
-                      </Button>
-                      {moduleHref ? (
-                        <Link
-                          className={buttonVariants({ size: 'sm' })}
-                          href={moduleHref}
-                          style={{ color: '#ffffff' }}
-                        >
-                          رفتن به {connection.moduleLabel}
-                          <ChevronLeft aria-hidden="true" className="size-4" />
-                        </Link>
-                      ) : null}
-                    </div>
-                  </article>
-                );
-              })}
-            </section>
-          </Card>
           <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
             <Card className={cn('p-5', sectionSurface)}>
               <div className="flex items-center justify-between gap-3">
@@ -1973,27 +1880,12 @@ export function DocumentsWorkspace() {
                           کامل
                         </Badge>
                       )}
-                      <Button
-                        aria-label={`ویرایش ${item.title}`}
-                        disabled={!item.capabilities.editMetadata}
-                        onClick={() => void openEdit(item)}
-                        size="icon"
-                        title="ویرایش"
-                        variant="ghost"
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
-                        aria-label={`حذف دائمی ${item.title}`}
-                        className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                        disabled={!item.capabilities.permanentDelete}
-                        onClick={() => openDelete(item)}
-                        size="icon"
-                        title="حذف دائمی"
-                        variant="ghost"
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                      </Button>
+                      <DocumentRecordActions
+                        document={item}
+                        onDelete={() => openDelete(item)}
+                        onEdit={() => void openEdit(item)}
+                        onView={() => void openDetail(item.id)}
+                      />
                     </div>
                   ))}
                 </div>
@@ -2043,27 +1935,12 @@ export function DocumentsWorkspace() {
                           >
                             پیگیری
                           </button>
-                          <Button
-                            aria-label={`ویرایش ${item.title}`}
-                            disabled={!item.capabilities.editMetadata}
-                            onClick={() => void openEdit(item)}
-                            size="icon"
-                            title="ویرایش"
-                            variant="ghost"
-                          >
-                            <Pencil aria-hidden="true" className="size-4" />
-                          </Button>
-                          <Button
-                            aria-label={`حذف دائمی ${item.title}`}
-                            className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
-                            disabled={!item.capabilities.permanentDelete}
-                            onClick={() => openDelete(item)}
-                            size="icon"
-                            title="حذف دائمی"
-                            variant="ghost"
-                          >
-                            <Trash2 aria-hidden="true" className="size-4" />
-                          </Button>
+                          <DocumentRecordActions
+                            document={item}
+                            onDelete={() => openDelete(item)}
+                            onEdit={() => void openEdit(item)}
+                            onView={() => void openDetail(item.id)}
+                          />
                         </div>
                       </div>
                     );

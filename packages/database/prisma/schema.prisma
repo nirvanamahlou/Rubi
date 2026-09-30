@@ -4078,6 +4078,9 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  supplyType                  String?                             @db.VarChar(16)
+  economyBaggageKg            Decimal?                            @db.Decimal(10, 2)
+  businessBaggageKg           Decimal?                            @db.Decimal(10, 2)
   returnMinDays               Int?
   returnMaxDays               Int?
   saleCommissions             TicketSaleCommissionRevision[]      @relation("TicketCommissionOutbound")
@@ -4141,19 +4144,20 @@ model TicketSaleCommissionRevision {
 }
 
 model TicketOfferStandaloneSalePrice {
-  id                String                 @id @default(uuid()) @db.Uuid
-  offerId           String                 @db.Uuid
-  salePriceTargetId String?                @db.Uuid
+  id                String                     @id @default(uuid()) @db.Uuid
+  offerId           String                     @db.Uuid
+  salePriceTargetId String?                    @db.Uuid
   revision          Int
-  amount            Decimal                @db.Decimal(20, 4)
-  currencyCode      String                 @db.VarChar(3)
-  actorUserId       String                 @db.Uuid
-  occurredAt        DateTime               @default(now()) @db.Timestamptz(3)
-  commandKey        String                 @db.VarChar(160)
-  fingerprint       String                 @db.VarChar(64)
-  offer             TicketPublishedOffer   @relation(fields: [offerId], references: [id], onDelete: Restrict)
-  salePriceTarget   TicketSalePriceTarget? @relation(fields: [salePriceTargetId], references: [id], onDelete: Restrict)
-  actor             User                   @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  amount            Decimal                    @db.Decimal(20, 4)
+  currencyCode      String                     @db.VarChar(3)
+  actorUserId       String                     @db.Uuid
+  occurredAt        DateTime                   @default(now()) @db.Timestamptz(3)
+  commandKey        String                     @db.VarChar(160)
+  fingerprint       String                     @db.VarChar(64)
+  offer             TicketPublishedOffer       @relation(fields: [offerId], references: [id], onDelete: Restrict)
+  salePriceTarget   TicketSalePriceTarget?     @relation(fields: [salePriceTargetId], references: [id], onDelete: Restrict)
+  actor             User                       @relation("TicketStandaloneSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  tiers             TicketOfferSalePriceTier[] @relation("TicketStandaloneFareTiers")
 
   @@unique([offerId, salePriceTargetId, revision], map: "TicketStandaloneSalePrice_offer_target_revision_key")
   @@unique([offerId, commandKey])
@@ -4184,24 +4188,42 @@ model TicketSalePriceTarget {
 }
 
 model TicketOfferRoundTripSalePrice {
-  id              String               @id @default(uuid()) @db.Uuid
-  outboundOfferId String               @db.Uuid
-  returnOfferId   String               @db.Uuid
+  id              String                     @id @default(uuid()) @db.Uuid
+  outboundOfferId String                     @db.Uuid
+  returnOfferId   String                     @db.Uuid
   revision        Int
-  amount          Decimal              @db.Decimal(20, 4)
-  currencyCode    String               @db.VarChar(3)
-  actorUserId     String               @db.Uuid
-  occurredAt      DateTime             @default(now()) @db.Timestamptz(3)
-  commandKey      String               @db.VarChar(160)
-  fingerprint     String               @db.VarChar(64)
-  outboundOffer   TicketPublishedOffer @relation("TicketRoundTripOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
-  returnOffer     TicketPublishedOffer @relation("TicketRoundTripReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
-  actor           User                 @relation("TicketRoundTripSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  amount          Decimal                    @db.Decimal(20, 4)
+  currencyCode    String                     @db.VarChar(3)
+  actorUserId     String                     @db.Uuid
+  occurredAt      DateTime                   @default(now()) @db.Timestamptz(3)
+  commandKey      String                     @db.VarChar(160)
+  fingerprint     String                     @db.VarChar(64)
+  outboundOffer   TicketPublishedOffer       @relation("TicketRoundTripOutbound", fields: [outboundOfferId], references: [id], onDelete: Restrict)
+  returnOffer     TicketPublishedOffer       @relation("TicketRoundTripReturn", fields: [returnOfferId], references: [id], onDelete: Restrict)
+  actor           User                       @relation("TicketRoundTripSalePriceActor", fields: [actorUserId], references: [id], onDelete: Restrict)
+  tiers           TicketOfferSalePriceTier[] @relation("TicketRoundTripFareTiers")
 
   @@unique([outboundOfferId, returnOfferId, revision], map: "TicketRoundTripPrice_pair_revision_key")
   @@unique([outboundOfferId, returnOfferId, commandKey], map: "TicketRoundTripPrice_pair_command_key")
   @@index([outboundOfferId, returnOfferId, occurredAt])
   @@index([returnOfferId])
+}
+
+model TicketOfferSalePriceTier {
+  id                String                          @id @default(uuid()) @db.Uuid
+  standalonePriceId String?                         @db.Uuid
+  roundTripPriceId  String?                         @db.Uuid
+  tierIndex         Int
+  seatCount         Int
+  amount            Decimal                         @db.Decimal(20, 4)
+  currencyCode      String                          @db.VarChar(3)
+  standalonePrice   TicketOfferStandaloneSalePrice? @relation("TicketStandaloneFareTiers", fields: [standalonePriceId], references: [id], onDelete: Restrict)
+  roundTripPrice    TicketOfferRoundTripSalePrice?  @relation("TicketRoundTripFareTiers", fields: [roundTripPriceId], references: [id], onDelete: Restrict)
+
+  @@unique([standalonePriceId, tierIndex])
+  @@unique([roundTripPriceId, tierIndex])
+  @@index([standalonePriceId])
+  @@index([roundTripPriceId])
 }
 
 model TicketOfferAudit {

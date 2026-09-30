@@ -80,6 +80,32 @@ describe('Thailand poster spreadsheet mapping', () => {
     expect(actual).toEqual(expected);
   });
 
+  it('rejects an incomplete final sale section instead of mixing supplier prices', () => {
+    const headers = ['Hotel', 'SGL', 'DBL', 'CWB', 'SINGLE'].map(
+      (key, index) => ({
+        key: key.toLowerCase(),
+        col: String.fromCharCode(65 + index),
+      }),
+    );
+
+    expect(() => parser.thailandSaleColumns(headers, {})).toThrow(
+      'ستون‌های قیمت نهایی یک‌تخته و دوتخته در اکسل تایلند کامل نیستند.',
+    );
+  });
+
+  it('keeps a missing child sale price empty instead of using the supplier price', () => {
+    const headers = ['Hotel', 'SGL', 'DBL', 'CWB', 'SINGLE', 'DBLE'].map(
+      (key, index) => ({
+        key: key.toLowerCase(),
+        col: String.fromCharCode(65 + index),
+      }),
+    );
+
+    expect(
+      parser.thailandSaleColumns(headers, { child: 'D' }).child,
+    ).toBeUndefined();
+  });
+
   it('recognizes the under-two fare as a child price, not a services note', () => {
     const summary = load<{ kind: (text: string) => string }>(
       'summary.js',

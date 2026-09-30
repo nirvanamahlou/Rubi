@@ -75,6 +75,18 @@ export function catalogProductsFromOffers(
       day: '2-digit',
     }).format(new Date(offer.departureAt));
     definition.totalCapacity = offer.totalCapacity;
+    if (offer.supplyType) {
+      definition.supplyType =
+        offer.supplyType === 'COMPANY'
+          ? 'company'
+          : offer.supplyType === 'FLOATING'
+            ? 'allotment'
+            : 'supplier';
+      definition.companyOwned = offer.supplyType === 'COMPANY';
+      definition.entryMethod = offer.supplyType === 'API' ? 'api' : 'manual';
+    }
+    definition.economyBaggageKg = offer.economyBaggageKg ?? null;
+    definition.businessBaggageKg = offer.businessBaggageKg ?? null;
     definition.returnMinDays = offer.returnMinDays ?? null;
     definition.returnMaxDays = offer.returnMaxDays ?? null;
     definition.manifestTemplateId = offer.manifestTemplateId ?? null;
@@ -128,6 +140,9 @@ export function catalogOffer(
 
 export function publishedOfferInput(offer: TicketOfferV1) {
   return {
+    supplyType: offer.supplyType ?? null,
+    economyBaggageKg: offer.economyBaggageKg ?? null,
+    businessBaggageKg: offer.businessBaggageKg ?? null,
     returnMinDays: offer.returnMinDays ?? null,
     returnMaxDays: offer.returnMaxDays ?? null,
     originId: offer.originId,

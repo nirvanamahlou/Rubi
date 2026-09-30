@@ -27,6 +27,19 @@ Ticket Catalog owns nullable TicketPublishedOffer.manifestTemplateId with a rest
 
 ## SALES-TICKET-PRICES-0922 — نرخ فروش عمومی بلیت
 
+افزودهٔ `TICKET-SEAT-TIER-PRICING-0930`: هر revision قیمت یک‌طرفه یا جفت
+رفت‌وبرگشت می‌تواند چند `TicketOfferSalePriceTier` داشته باشد. هر ردیف دقیقاً به
+یکی از دو revision با FK محدود متصل است و `tierIndex`، `seatCount` مثبت،
+`amount Decimal(20,4)` مثبت و کد ارز را نگه می‌دارد. جمع تعداد پله‌ها باید در
+فرمان Ticket Catalog برابر ظرفیت بلیت باشد؛ برای جفت رفت‌وبرگشت ظرفیت کمتر دو
+مسیر مبناست تا هر پله فقط برای صندلی‌های قابل‌فروش در هر دو مسیر معتبر باشد.
+پلهٔ اول با مبلغ پایهٔ revision برابر است. ردیف‌های پله پس از ثبت تغییر/حذف
+نمی‌شوند. نبود پله در revisionهای قدیمی به‌معنای نرخ ثابت همهٔ صندلی‌هاست.
+Sales تعداد صندلی‌های تخصیص‌یافته و Hold فعال را از ظرفیت کم می‌کند، قیمت هر
+صندلی تازه را از پلهٔ متناظر می‌گیرد و مجموع را با دقت چهار اعشار در قرارداد
+snapshot می‌کند؛ هنگام رزرو قطعی، Ticket Catalog مبلغ پله‌ای را زیر قفل بلیت
+دوباره کنترل می‌کند. کمیسیون هر پله را جداگانه محاسبه می‌کند.
+
 `TicketOfferStandaloneSalePrice` نسخه‌های append-only مبلغ و ارز فروش یک‌طرفه
 هر `TicketPublishedOffer` را نگه می‌دارد. `TicketOfferRoundTripSalePrice` مبلغ
 واحد هر مسافر برای جفت دقیق `outboundOfferId` و `returnOfferId` را با FK محدود،
@@ -602,3 +615,7 @@ Ticket Catalog owns TicketSaleCommissionRevision: offerId, optional returnOfferI
 ## 2026-09-29 — Ticket return-day policy
 
 `TicketPublishedOffer.returnMinDays` / `returnMaxDays` are nullable integer limits (0..365, inclusive, Min <= Max when both exist). Null keeps legacy return selection unrestricted. The policy belongs to the outbound Ticket Catalog offer; eligible reverse-route offers are matched by authorized branch and Tehran departure-calendar day difference, with no trip-group restriction and no return before outbound arrival. Sales consumes the public search/reserve service, never reads Ticket Catalog tables directly. Optional public fields preserve old clients; omitted limits on revision preserve stored values. Migration: `20260929120000_ticket_return_window`.
+
+## Ticket load supply and baggage — 2026-09-30
+
+`TicketPublishedOffer.supplyType` is nullable COMPANY, FLOATING or API. COMPANY includes charter/company capacity; null retains unknown legacy provenance. `economyBaggageKg` and `businessBaggageKg` are nullable Decimal(10,2), bounded 0..9999 by database checks. No legacy row is automatically classified. Travel offer capacity projections distinguish active allocations from unexpired active holds. See `docs/tasks/TICKET-LOAD-GRID-0930.md`.

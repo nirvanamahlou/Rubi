@@ -43,6 +43,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type RefObject,
 } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -124,6 +125,7 @@ import {
   customerSensitiveRevealFeedback,
   fetchCustomerConflictSnapshot,
 } from './customer-workspace-state';
+import { isUncertainCustomerCreateFailure } from './customer-create-failure';
 
 const pageSize = 20;
 const exportPageSize = 100;
@@ -268,13 +270,15 @@ function emptyCompanionDraft(): NewCompanionDraft {
   };
 }
 
-function CustomerDrawer({
+export function CustomerDrawer({
   mode,
   customer: initialCustomer,
   activeTab,
   onTabChange,
   onClose,
   onSaved,
+  onPartiallyCreated,
+  returnFocusRef,
   calendarMode,
   onCalendarModeChange,
 }: {
@@ -284,6 +288,8 @@ function CustomerDrawer({
   onTabChange: (tab: CustomerTab) => void;
   onClose: () => void;
   onSaved: (message: string, detail: CustomerDetail) => Promise<void>;
+  onPartiallyCreated?: (detail: CustomerDetail) => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
   calendarMode: CustomerCalendarMode;
   onCalendarModeChange: (mode: CustomerCalendarMode) => void;
 }) {
@@ -295,6 +301,12 @@ function CustomerDrawer({
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [partialCustomer, setPartialCustomer] = useState<CustomerDetail | null>(
+    null,
+  );
+  const [creationOutcomeUncertain, setCreationOutcomeUncertain] =
+    useState(false);
+  const createSubmitting = useRef(false);
   const [conflictRefreshPending, setConflictRefreshPending] = useState(false);
   const [masters, setMasters] = useState<{
     organizations: readonly MasterDataRecord[];
@@ -638,7 +650,7 @@ function CustomerDrawer({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy) return;
+    if (busy || partialCustomer || creationOutcomeUncertain) return;
     if (mode === 'create' && draft.kind === 'person') {
       const entryError = validateCustomerEntryRows([
         {
@@ -800,10 +812,15 @@ function CustomerDrawer({
         'مشتری با موفقیت ویرایش شد.',
       );
     } else {
+      if (createSubmitting.current) return;
+      createSubmitting.current = true;
       setBusy(true);
       setMessage(null);
+      let createdCustomer: CustomerDetail | null = null;
+      let createAttempted = false;
       try {
-        let createdCustomer = (await customersApi.create(submittedDraft)).data;
+        createAttempted = true;
+        createdCustomer = (await customersApi.create(submittedDraft)).data;
         if (primaryPhone.trim()) {
           createdCustomer = (
             await customersApi.addContact(createdCustomer.id, {
@@ -906,10 +923,19 @@ function CustomerDrawer({
           createdCustomer,
         );
       } catch (error) {
+        if (createdCustomer) {
+          setPartialCustomer(createdCustomer);
+        }
+        const uncertain =
+          createAttempted &&
+          !createdCustomer &&
+          isUncertainCustomerCreateFailure(error);
+        if (uncertain) setCreationOutcomeUncertain(true);
         setMessage(
-          `${error instanceof Error ? error.message : 'عملیات ناموفق بود.'} اگر بخشی از ثبت انجام شده، پیش از تلاش دوباره فهرست را بررسی کنید.`,
+          `${error instanceof Error ? error.message : 'عملیات ناموفق بود.'} ${createdCustomer ? 'پروندهٔ اصلی ایجاد شده، اما تکمیل اطلاعات جانبی ناموفق بود. برای جلوگیری از ثبت تکراری، همین پرونده را انتخاب کنید یا فهرست مشتریان را بررسی کنید.' : uncertain ? 'نتیجهٔ ثبت پرونده مشخص نیست. برای جلوگیری از ثبت تکراری، فهرست مشتریان را بررسی کنید و سپس این فرم را ببندید.' : 'اطلاعات را اصلاح کنید و دوباره تلاش کنید.'}`,
         );
       } finally {
+        createSubmitting.current = false;
         setBusy(false);
       }
     }
@@ -1152,7 +1178,17 @@ function CustomerDrawer({
 
   return (
     <Dialog onOpenChange={(open) => !open && !busy && onClose()} open>
-      <DialogContent className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-[90rem] overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+      <DialogContent
+        className="start-auto left-1/2 max-h-[calc(100dvh-2rem)] max-w-[90rem] overflow-x-hidden overflow-y-auto p-4 sm:p-6"
+        onCloseAutoFocus={(event) => {
+          if (!returnFocusRef) return;
+          event.preventDefault();
+          returnFocusRef.current?.focus();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (returnFocusRef) event.stopPropagation();
+        }}
+      >
         <DialogTitle>
           {mode === 'create'
             ? 'ایجاد مشتری'
@@ -1172,6 +1208,27 @@ function CustomerDrawer({
               description={message}
               title="نتیجه عملیات"
             />
+          ) : null}
+          {partialCustomer && onPartiallyCreated ? (
+            <Button
+              className="mt-3"
+              disabled={busy}
+              onClick={() => onPartiallyCreated(partialCustomer)}
+              type="button"
+              variant="outline"
+            >
+              انتخاب پروندهٔ ایجادشده
+            </Button>
+          ) : null}
+          {creationOutcomeUncertain ? (
+            <a
+              className="mt-3 inline-block text-sm text-primary underline"
+              href="/customers"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              بررسی فهرست مشتریان و مسافران
+            </a>
           ) : null}
           {conflictRefreshPending && customer ? (
             <Button
@@ -1200,7 +1257,12 @@ function CustomerDrawer({
           onKeyDown={handleEnterNavigation}
           onSubmit={submit}
         >
-          <fieldset disabled={busy} className="space-y-4 min-w-0">
+          <fieldset
+            disabled={
+              busy || Boolean(partialCustomer) || creationOutcomeUncertain
+            }
+            className="space-y-4 min-w-0"
+          >
             {mode === 'create' ? (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">

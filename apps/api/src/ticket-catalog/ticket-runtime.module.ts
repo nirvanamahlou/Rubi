@@ -92,8 +92,11 @@ class TicketOffersController {
   ) {
     return this.service.updateSaleCommission(input, req.actor, key);
   }
-  @Get('management') managed(@Req() req: AuthenticatedRequest) {
-    return this.service.managed(req.actor);
+  @Get('management') managed(
+    @Req() req: AuthenticatedRequest,
+    @Query('page') page = '1',
+  ) {
+    return this.service.managed(req.actor, Number(page));
   }
   @Patch(':outboundOfferId/round-trip-sale-price/:returnOfferId')
   updateRoundTripSalePrice(

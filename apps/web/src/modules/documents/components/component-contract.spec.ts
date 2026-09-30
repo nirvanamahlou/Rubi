@@ -41,7 +41,20 @@ describe('documents workspace contract', () => {
   it('keeps document connection CTA labels and icons white on blue', () => {
     expect(
       documentsWorkspaceSource.match(/style=\{\{ color: '#ffffff' \}\}/g),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
+  });
+
+  it('omits the connection cards from the overview', () => {
+    for (const removedOverviewContent of [
+      'ارتباط اسناد با بخش‌های نورا',
+      'همه مسیرهای آرشیو',
+      'اسناد این بخش',
+      'DOCUMENT_CONNECTIONS.map',
+      'openConnectionArchive',
+      'connectionTone',
+      'connectionIcon',
+    ])
+      expect(documentsWorkspaceSource).not.toContain(removedOverviewContent);
   });
 
   it('renders the real operational, security and detail surfaces', () => {
@@ -67,10 +80,6 @@ describe('documents workspace contract', () => {
       'دسترسی به اسناد مجاز نیست',
       'تازه‌های آرشیو',
       'کارهای من',
-      'ارتباط اسناد با بخش‌های نورا',
-      'همه مسیرهای آرشیو',
-      'اسناد این بخش',
-      'متصل به ماژول',
       'بازگشت به نمای کلی',
       'لینک‌های داخلی اسناد',
       'اسناد من',
