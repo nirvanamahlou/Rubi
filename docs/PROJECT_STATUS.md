@@ -1,3 +1,7 @@
+## 2026-09-30 — MASTER-DATA-COUNTRY-HIDE-VERSION-0930 — PC-B — READY_FOR_REVIEW
+
+Countries no longer renders the Version column or matching cell. Record versions remain in the API and mutation concurrency controls; other geography tables are unchanged. 14 focused Web tests, scoped ESLint, Prettier and diff check pass. No migration, operational data or localhost runtime change. Branch `codex/pc-b-country-hide-version-0930` for review in develop.
+
 ## 2026-09-30 — CONTRACT-PDF-DOWNLOAD-0930 — PC-A — READY_FOR_REVIEW
 
 Reservations contract preview now offers an authenticated PDF download with loading/error feedback instead of opening a browser tab. Saved workflow/contract changes refresh the mounted preview; both preview and downloaded PDF continue using the latest authorized Sales output and recorded operational amendments. The agreed-total area is a labeled, light bordered field with readable LTR digits and separate currency units/rows, preserving exact registered amounts. 26 output/amendment/PDF-route/preview tests and scoped lint passed; Web typecheck/build checked before PR. A real synthetic PDF was rendered and visually checked on A4, including two currencies. No migration/API/dependency or real contract-data changes. Primary unrelated PDF edits preserved; owner authorized develop merge.
