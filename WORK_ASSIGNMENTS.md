@@ -1,3 +1,7 @@
+## ROUNDTRIP-SALE-CAPACITY-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-roundtrip-sale-capacity-0930` from `origin/develop@d21b00bc`. Reserve Sales ticket picker/card and pricing helpers/tests, Ticket Catalog reservation regression tests, bounded status docs. Round-trip sale limit is the lower remaining capacity after allocations and holds. No schema, migration, shared contract, dependency or runtime changes. Previous ticket locks released; preserve all other checkouts. PR to develop only, no merge authorization for this task. Result: picker/card use the lower remaining capacity, invalid round-trip quotes clear both fare entries. 41 focused Web tests and 4 focused API tests (including 2 atomic regressions) passed, including live-hold capacity and zero partial allocations on failure. Bounded implementation/docs locks released with scoped commit.
+
 ## SIDEBAR-ALL-SECTIONS-VISIBLE-0929 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; base `codex/pc-b-istanbul-3100-activation-0929@b1702e5b`, task branch `codex/pc-b-expand-sidebar-0929`. The central Web AppShell and focused navigation-collapse spec were reserved for this work item; lock released after scoped commit. All accessible sidebar groups now start expanded while route permission filtering and manual collapse controls remain unchanged. No IAM/API/schema/dependency/data change. Focused 2 tests, scoped ESLint, Web typecheck and 55-route production build passed. Web3100 and API4000 health returned 200 after restart.
