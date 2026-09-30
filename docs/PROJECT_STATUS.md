@@ -1,3 +1,7 @@
+## 2026-09-30 — TICKET-SEAT-CAPACITY-FOLLOWUP-0930 — PC-A — READY_FOR_REVIEW
+
+The seat-tier editor now caps each entered seat count by the remaining capacity and disables another tier when all seats are assigned. Round-trip pricing uses the lower capacity of the outbound and return tickets, with Ticket Catalog rejecting any tier schedule above that limit. Ten focused Web tests and ten API tests pass. Scoped lint, typechecks and production builds for both applications pass. No schema, migration, contract, dependency or operational-data changes.
+
 ## 2026-09-29 — DOCUMENTS-009-OVERVIEW-CONNECTIONS-REMOVAL-0929 — PC-B — READY_FOR_REVIEW
 
 سکشن کامل کارت‌های «ارتباط اسناد با بخش‌های نورا» از نمای کلی Documents حذف شد؛ شاخص‌ها، تازه‌های آرشیو، کارهای من، منوی دسته‌ها و اتصال کنار فهرست یک دامنه حفظ شدند. کد و استایل بلااستفادهٔ مخصوص کارت‌ها هم پاک شد. ۹ تست Documents، lint موردی، Web typecheck و Production Build با ۵۵ مسیر موفق‌اند. بدون API، Migration، Permission، داده، Dependency یا runtime. Branch `codex/pc-b-documents-overview-connections-removal-0929` از `origin/develop@bb4209e0`؛ برای Review به develop می‌رود و Merge خودکار نمی‌شود.
