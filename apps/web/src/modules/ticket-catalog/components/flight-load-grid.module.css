@@ -82,7 +82,8 @@
   background: var(--secondary);
 }
 .table .selected {
-  background: color-mix(in srgb, var(--primary) 17%, var(--card));
+  background: var(--primary);
+  color: var(--primary-foreground);
   font-weight: 700;
 }
 .table th:nth-child(3),
@@ -100,6 +101,8 @@
   background: var(--muted);
 }
 .table .selected td {
+  background: var(--primary);
+  color: var(--primary-foreground);
   border-top: 2px solid var(--primary);
   border-bottom: 2px solid var(--primary);
 }
@@ -137,8 +140,8 @@
   padding: 12px;
   font-size: 16px;
 }
-.table .paused td:first-child,
-.table .paused td:last-child {
+.table .paused:not(.selected) td:first-child,
+.table .paused:not(.selected) td:last-child {
   background: color-mix(in srgb, #dc2626 12%, var(--surface));
   color: #dc2626;
   border-inline-color: #dc2626;
