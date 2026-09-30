@@ -133,6 +133,15 @@ function fixture(
   };
   const documents = { readManifestTemplateReference: vi.fn() };
   const tickets = {
+    manifestInventory: vi.fn().mockResolvedValue([
+      {
+        offerId: 'offer',
+        totalCapacity: 50,
+        allocatedCapacity: 12,
+        reservedCapacity: 3,
+        remainingCapacity: 35,
+      },
+    ]),
     manifestSelection: vi.fn().mockResolvedValue(selectedTemplate),
   };
   const service = new ReservationManifestService(
@@ -376,8 +385,9 @@ describe('default ticket manifest', () => {
     },
   );
 
-  it('keeps ground financial approval before passenger reads', async () => {
+  it('exports ground contracts without finance approval', async () => {
     const f = fixture();
+    f.snapshot.passengerAssignments[0]!.serviceClientKeys = ['ground'];
     f.snapshot.ticketSelections = [];
     f.snapshot.serviceSelections = [
       {
@@ -389,10 +399,14 @@ describe('default ticket manifest', () => {
     ];
     f.finance.readCustomerContract.mockResolvedValue({ approved: false });
     const [card] = await f.service.listTickets(range, actor);
-    await expect(
-      f.service.exportTicket(card!.offerId, range, 'key', actor),
-    ).rejects.toThrow('تأیید مالی');
-    expect(f.customers.detail).not.toHaveBeenCalled();
+    const result = await f.service.exportTicket(
+      card!.offerId,
+      range,
+      'key',
+      actor,
+    );
+    expect(result.contractCount).toBe(1);
+    expect(f.finance.readCustomerContract).not.toHaveBeenCalled();
   });
 
   it('adds passport columns for international routes', async () => {
@@ -428,17 +442,36 @@ describe('default ticket manifest', () => {
     ).not.toHaveBeenCalled();
   });
 
-  it('keeps the financial gate before reading passengers or template files', async () => {
+  it('lists inventory and exports pending contracts without consulting Finance', async () => {
     const f = fixture();
     f.finance.readCustomerContract.mockResolvedValue({ approved: false });
-    await expect(
-      f.service.exportTicket('offer', range, 'key', actor),
-    ).rejects.toThrow('تأیید مالی');
-    expect(f.customers.detail).not.toHaveBeenCalled();
-    expect(f.documents.readManifestTemplateReference).not.toHaveBeenCalled();
+    const [card] = await f.service.listTickets(range, actor);
+    expect(card).toMatchObject({
+      contractCount: 1,
+      passengerCount: 1,
+      totalCapacity: 50,
+      allocatedCapacity: 12,
+      reservedCapacity: 3,
+      remainingCapacity: 35,
+      template: { id: 'default' },
+      unavailableReason: null,
+    });
+    const result = await f.service.exportTicket(
+      'offer',
+      range,
+      'pending',
+      actor,
+    );
+    expect(result).toMatchObject({
+      contractCount: 1,
+      passengerCount: 1,
+      skippedFinanceCount: 0,
+    });
+    expect(f.finance.readCustomerContract).not.toHaveBeenCalled();
+    expect(f.customers.detail).toHaveBeenCalled();
   });
 
-  it('counts only financially approved contracts and exports only their passengers', async () => {
+  it('includes every reservation intake regardless of finance status', async () => {
     const f = fixture();
     const first = await f.workflow.detail();
     const pending = {
@@ -451,46 +484,19 @@ describe('default ticket manifest', () => {
       first,
       pending,
     ] as never);
-    f.finance.readCustomerContract.mockImplementation(async (id: string) => ({
-      approved: id === 'contract',
-    }));
-    const [card] = await f.service.listTickets(range, actor);
-    expect(card).toMatchObject({ contractCount: 1, passengerCount: 1 });
-    const result = await f.service.exportTicket(
-      'offer',
-      range,
-      'mixed-finance',
-      actor,
+    f.workflow.detail.mockImplementation(async (id?: string) =>
+      id === 'pending-intake' ? pending : first,
     );
+    const [card] = await f.service.listTickets(range, actor);
+    expect(card).toMatchObject({ contractCount: 2, passengerCount: 2 });
+    const result = await f.service.exportTicket('offer', range, 'mixed', actor);
     expect(result).toMatchObject({
-      contractCount: 1,
-      passengerCount: 1,
-      skippedFinanceCount: 1,
+      contractCount: 2,
+      passengerCount: 2,
+      skippedFinanceCount: 0,
     });
-    expect(sheet(result.bytes)).not.toContain('PENDING-CONTRACT');
-    expect(f.workflow.detail).toHaveBeenCalledWith('intake', ['branch']);
-    expect(f.workflow.detail).not.toHaveBeenCalledWith('pending-intake', [
-      'branch',
-    ]);
-  });
-
-  it('disables a ticket with no approved contracts and excludes expired approvals', async () => {
-    const f = fixture();
-    f.finance.readCustomerContract.mockResolvedValue({ approved: false });
-    expect((await f.service.listTickets(range, actor))[0]).toMatchObject({
-      contractCount: 0,
-      passengerCount: 0,
-      template: null,
-      unavailableReason: expect.stringContaining('تأیید مالی'),
-    });
-    f.finance.readCustomerContract.mockResolvedValue({
-      approved: true,
-      exceptionExpiresAt: '2000-01-01T00:00:00Z',
-    } as never);
-    await expect(
-      f.service.exportTicket('offer', range, 'expired', actor),
-    ).rejects.toThrow('تأیید مالی');
-    expect(f.customers.detail).not.toHaveBeenCalled();
+    expect(sheet(result.bytes)).toContain('PENDING-CONTRACT');
+    expect(f.finance.readCustomerContract).not.toHaveBeenCalled();
   });
 
   it('uses the explicitly chosen clean workbook through Documents', async () => {
@@ -593,4 +599,57 @@ describe('default ticket manifest', () => {
     expect(xml).not.toContain('<f>');
     expect(() => buildDefaultManifest([], false)).toThrow('مسافری');
   });
+});
+
+it('keeps return new-only history independent from outbound exports', async () => {
+  const f = fixture();
+  const outbound = f.snapshot.ticketSelections[0]!;
+  f.snapshot.ticketSelections.push({
+    ...outbound,
+    serviceClientKey: 'return-flight',
+    direction: 'RETURN',
+    offerId: 'return-offer',
+    originId: 'destination',
+    destinationId: 'origin',
+  });
+  f.snapshot.passengerAssignments[0]!.serviceClientKeys.push('return-flight');
+  await f.service.exportTicket(
+    'offer',
+    { ...range, includePreviouslyExported: false },
+    'out-key',
+    actor,
+  );
+  await f.service.exportTicket(
+    'return-offer',
+    { ...range, includePreviouslyExported: false },
+    'return-key',
+    actor,
+  );
+  expect(
+    f.database.client.reservationManifestExportItem.findMany,
+  ).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        export: { idempotencyKey: { startsWith: 'ticket:return-offer:' } },
+      }),
+    }),
+  );
+  expect(
+    f.database.client.reservationManifestExport.create,
+  ).toHaveBeenCalledTimes(2);
+});
+
+it('loads route choices before search without reading passengers or Finance', async () => {
+  const f = fixture();
+  await expect(f.service.listRoutes(actor)).resolves.toEqual([
+    { originName: 'origin', destinationName: 'destination' },
+  ]);
+  expect(f.customers.detail).not.toHaveBeenCalled();
+  expect(f.finance.readCustomerContract).not.toHaveBeenCalled();
+  expect(f.database.client.reservationIntake.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { branchId: { in: ['branch'] } } }),
+  );
+  await expect(
+    f.service.listRoutes({ ...(actor as object), permissions: [] } as never),
+  ).rejects.toThrow('مجوز');
 });

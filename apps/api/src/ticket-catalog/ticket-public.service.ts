@@ -154,6 +154,47 @@ export class TicketPublicService {
     private readonly directory?: MasterTravelDirectory,
   ) {}
 
+  async manifestInventory(
+    offerIds: readonly string[],
+    branchIds: readonly string[],
+  ) {
+    const rows = await this.database.client.ticketPublishedOffer.findMany({
+      where: { id: { in: [...offerIds] }, branchId: { in: [...branchIds] } },
+      select: {
+        id: true,
+        totalCapacity: true,
+        capacityAllocations: {
+          where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+        capacityHolds: {
+          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          select: { quantity: true },
+        },
+      },
+    });
+    return rows.map((row) => {
+      const allocatedCapacity = row.capacityAllocations.reduce(
+        (sum, allocation) => sum + allocation.quantity,
+        0,
+      );
+      const reservedCapacity = row.capacityHolds.reduce(
+        (sum, hold) => sum + hold.quantity,
+        0,
+      );
+      return {
+        offerId: row.id,
+        totalCapacity: row.totalCapacity,
+        allocatedCapacity,
+        reservedCapacity,
+        remainingCapacity: Math.max(
+          0,
+          row.totalCapacity - allocatedCapacity - reservedCapacity,
+        ),
+      };
+    });
+  }
+
   async manifestSelection(offerId: string, branchIds: readonly string[]) {
     const row = await this.database.client.ticketPublishedOffer.findFirst({
       where: { id: offerId, branchId: { in: [...branchIds] } },

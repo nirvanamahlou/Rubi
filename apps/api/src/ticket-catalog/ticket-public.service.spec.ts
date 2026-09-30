@@ -414,3 +414,46 @@ describe('TicketPublicService offer retry', () => {
     expect(ensureOfferPurchaseRequest).not.toHaveBeenCalled();
   });
 });
+
+it('projects branch-scoped manifest inventory from active allocations and unexpired holds', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      id: 'offer',
+      totalCapacity: 50,
+      capacityAllocations: [{ quantity: 12 }],
+      capacityHolds: [{ quantity: 3 }],
+    },
+  ]);
+  const service = new TicketPublicService(
+    {
+      client: { ticketPublishedOffer: { findMany } },
+    } as unknown as DatabaseService,
+    {} as ProcurementPublicService,
+  );
+  await expect(
+    service.manifestInventory(['offer'], ['branch']),
+  ).resolves.toEqual([
+    {
+      offerId: 'offer',
+      totalCapacity: 50,
+      allocatedCapacity: 12,
+      reservedCapacity: 3,
+      remainingCapacity: 35,
+    },
+  ]);
+  expect(findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { id: { in: ['offer'] }, branchId: { in: ['branch'] } },
+      select: expect.objectContaining({
+        capacityAllocations: {
+          where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+        capacityHolds: {
+          where: { status: 'ACTIVE', expiresAt: { gt: expect.any(Date) } },
+          select: { quantity: true },
+        },
+      }),
+    }),
+  );
+});

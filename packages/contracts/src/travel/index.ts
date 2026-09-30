@@ -235,6 +235,11 @@ export interface ReservationManifestTicketTemplateV1 {
 }
 
 export interface ReservationManifestTicketCardV1 {
+  /** Ticket Catalog inventory; absent for legacy/ground tickets. */
+  totalCapacity?: number;
+  allocatedCapacity?: number;
+  reservedCapacity?: number;
+  remainingCapacity?: number;
   /** Absent in older v1 responses means FLIGHT. */
   transportType?: 'FLIGHT' | 'BUS' | 'TRAIN';
   /** False for a ground service that supplies a travel day without a departure time. */
@@ -251,6 +256,11 @@ export interface ReservationManifestTicketCardV1 {
   passengerCount: number;
   template: ReservationManifestTicketTemplateV1 | null;
   unavailableReason: string | null;
+}
+
+export interface ReservationManifestRouteV1 {
+  originName: string;
+  destinationName: string;
 }
 
 export interface ReservationManifestTicketListV1 {
