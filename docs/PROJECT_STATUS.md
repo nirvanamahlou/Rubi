@@ -17,6 +17,7 @@ Follow-up to the authorized merge/local release: active system administrators re
 ## 2026-09-28 — MASTER-DATA-RECORD-ICON-ACTIONS-0928 — PC-B — READY_FOR_REVIEW
 
 کنترل‌های عملیات رکورد در تمام workspaceهای اطلاعات پایه با الگوی فقط‌آیکون یکسان شدند؛ مشاهده و ویرایش outline و حذف قرمز. نام دسترس‌پذیر و تأیید حذف محفوظ است. ۳۶۴ تست Master Data، lint محدوده، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. این تغییر فقط Web و تست‌های مربوط را در بر می‌گیرد؛ بدون API، داده یا Migration.
+
 # 2026-09-29 — MANAGER-ACCESS-VISIBILITY-0929 — PC-A — IN_PROGRESS
 
 پیگیری محدودیت دسترسی مدیر: حساب دارای نقش فعال سیستمی administrator باید همهٔ مجوزهای native و همهٔ زیربخش‌های کاتالوگ را برای تنظیم نقش «مدیر» ببیند و واگذار کند؛ سایر اپراتورها فقط دسترسی فعلی خود را واگذار می‌کنند. کار روی IAM و فرم مدیریت کاربران رزرو شده است. بدون تغییر کاربر واقعی یا شعب؛ آزمون و handoff پس از اصلاح ثبت می‌شود.
@@ -28,6 +29,7 @@ Visibility requires native module permissions for legacy and managed accounts, a
 # 2026-09-29 — SALES-TOUR-DEFINITION-0929 — PC-A — READY_FOR_REVIEW
 
 تعریف تور از مدیریت بلیت جدا و به‌صورت آخرین گزینهٔ گروه فروش در `/sales/tours` قرار گرفت. فروش با مجوز محدود تور می‌تواند تعریف را بسازد/ویرایش کند و تور بدون نوبت را حذف کند؛ تور دارای نوبت به‌خاطر حفظ سوابق حذف نمی‌شود. ۳۰ تست API، ۵۲ تست Web، lint، typecheck و build هر دو بخش موفق‌اند. تست واقعی PostgreSQL محلی به‌دلیل نبود `TRAVEL_TEST_DATABASE_URL` غیرفعال بود. بدون Migration یا تغییر حساب‌های واقعی؛ PR [#464](https://github.com/nirvanamahlou/Rubi/pull/464)؛ پیاده‌سازی `ce100064` و ادغام develop `bfa4b4ff`. جزئیات: [SALES-TOUR-DEFINITION-0929](tasks/SALES-TOUR-DEFINITION-0929.md).
+
 # 2026-09-29 — DROPDOWN-SUBSTRING-0929 — PC-A
 
 Dropdown search always includes the displayed name plus aliases/codes and matches at any position before limiting to six results. Persian/English/code substring regressions passed; server Master Data already uses contains/insensitive. No migration or API changes. See [handoff](tasks/DROPDOWN-SUBSTRING-0929.md).
@@ -79,7 +81,6 @@ Unified one-way/round-trip pricing list, combined origin/destination/trip/date/s
 - فهرست رسمی ویرایش مستقل تعریف موجود در مرورگر و حذف را دارد. DELETE موجود علاوه بر بلیط تاریخ‌گذشته، بلیط آینده فاقد تخصیص فعال، رزرو ظرفیت فعال و تور متصل را آرشیو می‌کند؛ قفل ردیف، شعبه، نسخه و audit حفظ می‌شوند. FK و سوابق قرارداد/مالی حذف نمی‌شوند. محدودیت ۵۰۰ رکورد فهرست مدیریت و ذخیره محلی تعریف بلیط از قبل برقرار است.
 - بدون Migration، قرارداد مشترک، وابستگی یا داده عملیاتی. runtime ۳۱۰۰ و PR قبلی تورها دست‌نخورده‌اند. ۳۳ آزمون Web و ۱۱ آزمون API، lint فایل‌های متاثر، typecheck Web/API و build تولیدی Web/API با ۵۳ مسیر Web موفق‌اند.
 
-
 ## 2026-09-28 — FINANCE-TICKET-PAYMENT-0928 — PC-A — READY_FOR_REVIEW
 
 Payment-method selection uses a native accessible control with explicit failed/empty-list feedback and retry. Existing seat-count × unit-cost capture remains persisted; the invoice preview now uses exact four-decimal arithmetic. The payment dialog explains repeated partial payments and shows the invoice amount as initial remaining balance. Eleven targeted Web tests, scoped lint, Web typecheck and production build (53 routes) passed. No new migration, shared contract, dependency, permissions or operational data changes. Branch: codex/pc-a-finance-ticket-payment-0928 from origin/develop@e4eb048c. Original edits and Web3100/API4000 are unchanged; reviewed integration/runtime update remains subject to approval. See docs/tasks/FINANCE-TICKET-PAYMENT-0928.md.
@@ -110,6 +111,7 @@ Payment-method selection uses a native accessible control with explicit failed/e
 ## 2026-09-23 — WORKBENCH-QA-FIXES-0923 — PC-B — READY_FOR_REVIEW
 
 ثبت یادداشت میزکار اکنون هنگام انتظار برای ذخیره قفل می‌شود؛ کلیک یا submit تکراری دیگر درخواست دوم نمی‌سازد و دکمه‌های ذخیره، انصراف و بستن تا پایان عملیات وضعیت درست دارند. دو تست تازه رقابت هم‌زمان و آزادشدن قفل پس از خطا را پوشش می‌دهند. مجموع ۵۲ تست Workbench، lint متمرکز، typecheck و build تولیدی Web با ۵۲ route موفق‌اند. Web اصلاح‌شده روی ۳۱۰۰ و API سالم روی ۴۰۰۰ اجرا و ارتباط فرم ورود با پاسخ واقعی API بازآزمایی شد. بدون Migration، Schema، Permission، قرارداد مشترک یا تغییر دادهٔ عملیاتی.
+
 ## 2026-09-27 — TICKET-PROCUREMENT-FINANCE-PAYMENT-0927 — IN_PROGRESS
 
 درخواست خرید بلیت در کارتابل مالی به «تعداد صندلی × قیمت خرید هر صندلی» منتقل
@@ -3434,12 +3436,12 @@ Permission، دادهٔ عملیاتی و Dependency/Lockfile تغییر نکر�
 فهرست، مقدارهایی مانند «امروز»، «این هفته» و «این ماه» در سمت راست کادر نمایش
 داده شوند. تست Dashboard، lint، typecheck و build تولیدی Web موفق‌اند و Web/API
 روی پورت‌های ۳۰۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند.
+
 ## 2026-09-28 — DASHBOARD-REPORTING-FINAL-VISUAL-INTEGRATION — LOCAL_COMPLETE
 
 علت نمایش طراحی قدیمی نمودارها، عقب‌ماندن شاخهٔ runtime مشترک از تغییرات Dashboard در develop بود. طراحی نهایی قیف تصمیم، نمایش درصدی KPI/نمودار، روند جذب به تفکیک کانال، اصلاح برچسب‌های محور، جزئیات نمودار و انتقال فیلترها به فرم گزارش مرتبط همراه با aggregationهای اختصاصی Dashboard در همین Worktree وارد شدند. تغییرات تازهٔ Reports، تصاویر Light/Dark و ناوبری فعلی حفظ شدند. Typecheck و build تولیدی Web/API، ۴۴ تست هدفمند Web و ۳۸ تست هدفمند API موفق‌اند؛ Web3000 و API4000 پاسخ ۲۰۰ دارند. مشاهدهٔ احرازشدهٔ صفحه به‌دلیل ماندن مرورگر روی Login هنوز انجام نشده است. داده و Migration تغییر نکردند.
 
 در گام انتشارِ تأییدشده، `origin/develop@f52a567b` در شاخهٔ `codex/pc-c-dashboard-reporting-latest` ادغام شد. تنظیم نسخه‌دار سقف و انقضای خروجی گزارش از develop و طراحی نهایی Dashboard/Reports همین شاخه حفظ شدند. پس از تولید مجدد Prisma Client و build قراردادها، ۴۷ تست Web و ۲۴ تست API، lint، typecheck و build Web/API موفق شدند؛ هر دو سرویس ۳۰۰۰/۴۰۰۰ پاسخ ۲۰۰ دارند. دادهٔ نمونهٔ محلی در Git وارد نشد.
-
 
 ## 2026-09-21 — SYSTEM-MANAGEMENT-LIVE-CONSUMERS-004 (PC-B)
 
@@ -3645,9 +3647,11 @@ Web با ۵۲ مسیر و `git diff --check` موفق‌اند؛ ثبت و گر�
 ## 2026-09-22 — یکسان‌سازی طراحی خروجی بلیط — READY_FOR_REVIEW
 
 قالب برنددار بلیط که در دانلود مستقیم PDF فعال بود، اکنون در پیش‌نمایش و چاپ مرورگر رزرواسیون نیز نمایش داده می‌شود. جدول قدیمی با سربرگ FLIGHT TICKET، هویت مسافر و قرارداد، کارت مسیر رفت/برگشت، سایه شهرها، ساعت‌ها، وضعیت صدور و هشدار حضور سه‌ساعته جایگزین شد. پیشوند MR/MRS/CHD/INF از همان داده ذخیره‌شده خوانده می‌شود و اطلاعات صدور ساخته نمی‌شود. بارکد Code 39 شماره قرارداد پایین هر دو خروجی قرار دارد. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۰ route موفق‌اند؛ PDF ساختگی رفت‌وبرگشت یک صفحه A4 است و با Chrome/Poppler بررسی بصری شد.
+
 ## 2026-09-22 — SALES-TICKET-PRICES-0922 — READY_FOR_REVIEW
 
 زیرماژول مستقل «قیمت بلیط» زیر فروش اضافه شد: فهرست آفرهای منتشرشده، نرخ نسخه‌دار یک‌طرفه و نرخ واحد جفت رفت‌وبرگشت را مدیریت می‌کند. قیمت‌گذاری از مدیریت بلیط حذف و آنجا فقط خواندنی شد. قرارداد یک‌طرفه آخرین نرخ همان آفر و قرارداد رفت‌وبرگشت نرخ دقیق جفت را snapshot می‌کند؛ نبود نرخ جفت fail-closed است. Schema/Migration افزایشی، API idempotent و optimistic، کنترل شعبه/مسیر معکوس و ناوبری تکمیل شد. Prisma validate/generate، typecheck و lint API/Web، ۵۲ تست هدفمند و build تولیدی Web با ۵۱ route و API موفق‌اند.
+
 ## 2026-09-22 — PACKAGE-PRICING-BANNER-001 — PC-B — READY_FOR_REVIEW
 
 نسخه منتشرشده هر پکیج در مدیریت قیمت اکنون دکمه «ساخت بنر» دارد و به مسیر اختصاصی همان نوبت می‌رود. صفحه بنر داده واقعی تور، پرواز، هتل/اتاق قابل‌فروش، قیمت فروش و قالب فعال را می‌خواند، پیش‌نمایش HTML/CSS فارسی و RTL می‌سازد و با نبود مقصد، تاریخ، پرواز فعال، قیمت یا ضریب اتاق fail-closed است. اطلاعات خرید، کارگزار، کمیسیون و سود داخلی نمایش داده نمی‌شوند. خروجی تصویر/PDF تا انتشار Public Contract اسناد با پیام روشن غیرفعال است. ۱۷ تست ماژول، lint، typecheck و Production Build ۵۰ مسیر موفق‌اند؛ بدون Migration، قرارداد مشترک، Dependency یا تغییر Documents.
@@ -3657,6 +3661,7 @@ Web با ۵۲ مسیر و `git diff --check` موفق‌اند؛ ثبت و گر�
 ## 2026-09-22 — MASTER-HOTEL-INLINE-ROOM-TYPES-0922 — PC-B — READY_FOR_REVIEW
 
 نوع اتاق دیگر سکشن یا فرم مستقل اطلاعات پایه نیست. در فرم هتل، نام هر نوع اتاق با یک ورودی ساده ایجاد و همان‌جا به انتخاب چندگانه هتل اضافه می‌شود؛ فیلدهای عنوان فارسی، ظرفیت استاندارد و توضیح استفاده از جریان ایجاد حذف شدند. مرجع داخلی و Public Boundary موجود حفظ شده‌اند تا Sales و Reservations بدون تغییر Schema/Contract همچنان شناسه و نام نوع اتاق را مصرف کنند. ۳۵۸ تست Master Data Web، ۵ تست API اقامت، lint، typecheck و build تولیدی Web با ۵۰ مسیر موفق‌اند.
+
 ## 2026-09-22 — MASTER-DATA-QA-REMEDIATION-0922 — PC-B — READY_FOR_REVIEW
 
 هفت ایراد قطعی QA اطلاعات پایه رفع شدند: UI مستقل نوع اتاق با جریان inline هتل جایگزین شد؛ عرض فیلتر جغرافیا در breakpoint دسکتاپ به grid تطبیقی تغییر کرد؛ Dialogهای فرم و پروفایل فوکوس را به trigger برمی‌گردانند؛ اعتبارسنجی native انگلیسی با اعتبارسنجی فارسی موجود جایگزین و پیام خطا/راهنما به input، combobox و fieldset متصل شد؛ همه جدول‌های Master Data نام دسترس‌پذیر دارند؛ ستون سازمان و متن منسوخ از ایرلاین حذف شدند. ۳۶۲ تست Web و ۴۴۶ تست API، lint/typecheck Web، Prettier و build تولیدی ۵۰ مسیر موفق‌اند. اسکن a11y دیگر ایراد نام جدول گزارش نمی‌کند؛ دو هشدار باقی‌مانده Select مربوط به false-positive اسکنر روی Radix Root هستند و trigger هر دو نام صریح دارد. Runtime آزمایشی 3101 تا Login بالا آمد، اما نشست احراز‌شده منتقل نشد و هیچ credential یا داده عملیاتی برای دورزدن آن استفاده نشد.
@@ -3664,6 +3669,7 @@ Web با ۵۲ مسیر و `git diff --check` موفق‌اند؛ ثبت و گر�
 ## 2026-09-22 — رفع دانلود PDF قرارداد — READY_FOR_REVIEW
 
 دانلود PDF قرارداد دیگر به تعریف دستی مسیر Chrome و B Nazanin وابسته نیست: runtime مسیر صریح را در اولویت نگه می‌دارد و در نبود آن Chrome/Edge و فونت را از مسیرهای استاندارد ویندوز پیدا می‌کند. نبود فونت اختیاری باعث توقف دانلود نمی‌شود و renderer پس از پایان Chrome تا نوشته‌شدن کامل فایل منتظر می‌ماند. ۲۶ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند؛ smoke واقعی روی Windows یک فایل PDF معتبر ساخت. API، قالب قرارداد، Schema/Migration، Permission و داده عملیاتی تغییر نکردند.
+
 ## Search-first form lookups — 2026-09-27
 
 - انتخاب‌گرهای جست‌وجوییِ فرم‌ها در Customer Affairs، Documents، HR، Master Data، Organizations، Procurement، Sales و Ticket Catalog پیش از واردکردن عبارت، گزینه یا فراخوانی فهرست ندارند. با اولین عبارت جست‌وجو، همان فیلتر، صفحه‌بندی و انتخاب قبلی حفظ می‌شود.
@@ -3680,6 +3686,7 @@ MANIFEST همچنان فقط پس از تأیید مالی تحویل مدارک
 ## 2026-09-27 — TICKET-ROUNDTRIP-PRICE-CLEANUP-0927 — READY_FOR_REVIEW
 
 فهرست مدیریت بلیط اکنون قیمت نسخه‌دار رفت‌وبرگشت را برای هر دو پای جفت نشان می‌دهد. حذف امن بلیطِ منقضی همچنان آفر و سوابق قرارداد، مالی، ظرفیت و audit را حفظ می‌کند، اما قیمت‌های فروش یک‌طرفه و تمام نسخه‌های قیمت جفتِ مرتبط را در همان تراکنش حذف می‌کند. صفحهٔ مستقل «قیمت بلیط» نیز با KPIهای رنگی، وضعیت نسخهٔ فعلی و ردیف‌های کارت‌مانند بازطراحی شد. Migration، Dependency/Lockfile و دادهٔ عملیاتی تغییر نکرده‌اند؛ تست متمرکز API و Web، lint فایل‌های جدید/تغییرکرده، build API و build تولیدی Web موفق‌اند. یک lint rule قدیمیِ `react-hooks/exhaustive-deps` در فایل Ticket Workspace در config موجود نیست و تنها مانع lint خود آن فایل است.
+
 ## 2026-09-27 — MONEY-INPUT-FORMAT-0927 — READY_FOR_REVIEW
 
 ورودی مبلغ مشترک Web اکنون مقدار را هنگام تایپ با کامای سه‌رقمی نمایش می‌دهد،
@@ -3690,12 +3697,15 @@ MANIFEST همچنان فقط پس از تأیید مالی تحویل مدارک
 مانده‌اند. Migration، API contract، dependency/lockfile و داده عملیاتی تغییر
 ندارند. Prettier و `git diff --check` موفق‌اند؛ اجرای کامل lint/typecheck/test
 به دلیل خطای EACCES محیط برای دریافت بسته‌های lockfile‌شده به CI واگذار شد.
+
 ## 2026-09-27 — MERGE-CI-SALES-REFERENCES-0927 — READY_FOR_REVIEW
 
 در جریان آماده‌سازی ادغام میزکار، تعارض با آخرین `develop` باعث شده بود بارگذاری اطلاعات پایهٔ فرم قرارداد فروش به حالت all-or-nothing بازگردد و typecheck تولیدی را متوقف کند. بارگذاری دوباره مقاوم شد: هر منبع ناموفق، آرایهٔ خالی می‌گیرد و گزینه‌های موفق، از جمله هتل‌ها، قابل استفاده می‌مانند. سه fixture قدیمی تست فروش نیز صریحاً سرویس «پرواز» را اعلام می‌کنند تا با قاعدهٔ جاریِ الزام پاسپورت فقط برای پرواز خارجی منطبق باشند. API، Schema/Migration، قرارداد، Permission، وابستگی و دادهٔ عملیاتی تغییر نکرده‌اند.
+
 ## 2026-09-27 — WORKBENCH-MESSAGE-CARD-LAYOUT-0927 — READY_FOR_REVIEW
 
 پیش‌نمایش طولانی در فهرست گفت‌وگوهای میزکار می‌توانست عرض ستون کناری را بزرگ کند و روی پنل پیام‌ها بیفتد. عرض فهرست و کارت‌ها محدود شد، متن پیش‌نمایش کوتاه می‌شود و پیام‌های بلند داخل کارت خود می‌شکنند؛ برای گفت‌وگو فقط اسکرول اصلی پنل باقی مانده است. lint و typecheck وب موفق‌اند. بررسی تصویری با حساب واقعی در مرورگر خودکار به‌دلیل نشست منقضی‌شده اجرا نشد. بدون API، Schema/Migration، قرارداد، Permission، Dependency/Lockfile یا دادهٔ عملیاتی.
+
 ## 2026-09-28 — TICKET-PAIR-PRICE-VISIBILITY-0928 — READY_FOR_REVIEW
 
 ثبت‌شده‌های رفت‌وبرگشت در بالای صفحهٔ قیمت بلیط با جزئیات دو پرواز، ظرفیت، مبلغ و ویرایش نمایش داده می‌شوند. جست‌وجوی مسیر/ایرلاین/شماره پرواز و فیلتر بازهٔ تاریخ رفت اضافه شد. در قرارداد فقط بلیط، مبلغ فروش از نرخ ثبت‌شده خوانده و قفل می‌شود؛ مبلغ توافقی با همان نرخ آغاز و قابل اصلاح است. ۸ تست متمرکز، typecheck، ESLint مرتبط و build تولیدی Web با ۵۳ صفحه موفق‌اند. شاخهٔ جداگانه برای PR به develop آماده می‌شود؛ بدون تغییر API، دیتابیس، مجوز یا وابستگی.
@@ -3739,15 +3749,19 @@ MANIFEST همچنان فقط پس از تأیید مالی تحویل مدارک
 ## 2026-09-28 — WORKBENCH-FILES-UPLOADED-ONLY-0928 — READY_FOR_REVIEW
 
 تب «اسناد من» از فایل‌های میزکار حذف و «بارگذاری‌های من» نمای پیش‌فرض شد؛ فهرست اصلی اسناد تغییری نکرد. lint، typecheck و build Web موفق‌اند. تغییر در PR #413 برای بازبینی است.
+
 ## 2026-09-28 — WORKBENCH-NOTE-STARS-0928 — READY_FOR_REVIEW
 
 قابلیت ستاره‌دار کردن یادداشت‌های ذخیره‌شده و نمایش آن‌ها در کنار اسناد ستاره‌دار پیاده شد. ذخیرهٔ وضعیت از فیلد پایدار موجود یادداشت استفاده می‌کند؛ Migration لازم نیست. ۱۳ تست هدفمند Web، lint، typecheck و build تولیدی Web موفق‌اند.
+
 ## 2026-09-28 — WORKBENCH-CALENDAR-FILTER-0928 — READY_FOR_REVIEW
 
 فیلتر اولویت از نمای «تقویم من» حذف شد. اولویت ثبت‌شدهٔ رویدادها و سایر فیلترها حفظ می‌شوند. ۷ آزمون تقویم، lint، typecheck و build تولیدی Web موفق‌اند.
+
 ## 2026-09-28 — TICKET-ROUTE-TIME-FUTURE-0928 — READY_FOR_REVIEW
 
 مسیرهای بلیط به‌جای کد داخلی شهر، نام اطلاعات پایه را بازخوانی می‌کنند؛ تا زمان بازیابی نیز کد فنی نمایش داده نمی‌شود. ویرایش زمان Published Offer دارای قرارداد فقط در صورت ثابت‌ماندن مسیر، ایرلاین، شماره، کلاس و ظرفیت پذیرفته می‌شود؛ Snapshot قراردادهای قبلی دست‌نخورده است و رزرو موقت/تور همچنان مانع ویرایش‌اند. ۴۶ تست هدفمند، lint، typecheck و build Web/API موفق‌اند. تغییر Schema/Migration، قرارداد عمومی، Permission، Dependency/Lockfile و دادهٔ عملیاتی ندارد؛ پس از PR و Merge، runtime یکپارچهٔ develop باید به‌روز شود.
+
 ## Workbench calendar attachments — 2026-09-28
 
 Calendar event creation now uses an authorized branch from the authenticated Workbench calendar response when active-company loading is unavailable. Event attachments accept PDF, PNG, and JPEG (up to 10 MB) through a scoped Documents service endpoint, with owner and event source reference checked on save. No migration or permission expansion. Targeted API/Web tests, lint, typechecks, and production builds passed.
@@ -3761,6 +3775,7 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 رابط پک‌جنریتور در حالت‌های پکیج، بنر و استیکر با فونت و کنترل‌های بزرگ‌تر و پنل پهن‌تر خواناتر شد. طرح‌های پیش‌نمایش و خروجی‌ها دست‌نخورده‌اند. QA دسکتاپ و موبایل، ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. تغییر فقط CSS رابط و نسخهٔ کش آن است؛ بدون API، داده، مجوز یا Migration.
 
 پیگیری اسکرین‌شات مالک در همان شاخه و PR: نوشته‌های کمکی و کنترل‌های باقی‌مانده در هر سه حالت بزرگ‌تر شدند و چینش میانبرهای پنل برای جا گرفتن متن اصلاح شد. خروجی و تصویر قالب‌ها تغییری ندارند.
+
 ## 2026-09-28 — TOUR-MANAGEMENT-0928 — PC-A — READY_FOR_REVIEW
 
 مدیریت تورها اکنون چهار KPI بر اساس فهرست قابل مشاهده، کارت‌های نوبت جاری/آینده با مسیر و تاریخ شمسی، ظرفیت باقی‌مانده واقعی بلیت، جست‌وجوی نام/مقصد و فیلتر وضعیت دارد. تورهای تعریف‌شده فرم ویرایش پیش‌پرشده دارند و PATCH نسخه‌دار تعریف را ذخیره می‌کند. مجوز و شعبه کنترل می‌شود و تغییر هم‌زمان پاسخ 409 دارد. مسیر، هتل‌های تعریف و خدمات مرتبطِ تور دارای هر نوبت ثبت‌شده تغییر نمی‌کند؛ نام و مشخصات توصیفی قابل اصلاح‌اند. ساخت نوبت و ویرایش تعریف برای جلوگیری از race روی همان ردیف تور قفل می‌گیرند؛ موجودی و قراردادهای قبلی حفظ می‌شوند.
@@ -3802,15 +3817,19 @@ Calendar event creation now uses an authorized branch from the authenticated Wor
 ## 2026-09-28 — FINANCE-HISTORY-SEAT-PRICING-0928 — PC-A
 
 Existing unpaid ticket invoices retain the seat/unit-price editor; count, unit cost and automatic total are visible. Persistent branch-scoped receipt/payment history shows each structured installment, transfer date, account/method/reference and remaining amount, including settled requests, with cursor pagination. Request details and the bottom inbox panel refresh after Finance actions. 23 API and 29 Web tests, strict typechecks, scoped lint and API/Web production builds (53 routes) passed. No migration/data/dependency change. See [handoff](tasks/FINANCE-HISTORY-SEAT-PRICING-0928.md). Bounded Finance contract/docs locks released; owner authorizes develop merge.
+
 ## 2026-09-28 — MASTER-DATA-FINANCE-HEADING-SPACING-0928 — PC-B — READY_FOR_REVIEW
 
 متن توضیحی زیر عنوان ارزها حذف و فاصلهٔ عمودی عنوان تا فیلترهای جست‌وجو فشرده شد. شش تست متمرکز، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند؛ محدوده فقط Web و تست‌های مربوط است.
+
 ## 2026-09-28 — MASTER-DATA-CURRENCY-CREATE-NO-QUOTE-0928 — PC-B — READY_FOR_REVIEW
 
 بخش ثبت نرخ خرید و فروش از فرم تعریف ارز جدید حذف شد؛ فرم ویرایش ارز موجود و ثبت نرخ آن دست‌نخورده می‌ماند. ۱۷ تست مرتبط، lint، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند؛ بدون تغییر API، داده یا Migration.
+
 ## 2026-09-28 — Master Data English titles (PC-B)
 
 All English title fields in Master Data forms are optional. API required-field checks match the forms, cabin classes fall back to their booking code for the internal display name, and country/region/city/airport English-name columns become nullable through an additive migration. No live database migration or localhost runtime change was applied by this task.
+
 ## 2026-09-28 — Master Data logo display (PC-B)
 
 The uploaded logo ID is now resolved through a narrow authenticated Master Data image endpoint, backed by Documents source-link, active-state, branch and clean-scan checks. Saved logos appear in Master Data forms, relevant lists and profiles; pending scans retry automatically. No live runtime or operational data was changed in this task.
@@ -3818,12 +3837,15 @@ The uploaded logo ID is now resolved through a narrow authenticated Master Data 
 ## 2026-09-28 — Master Data heading helper copy (PC-B)
 
 Static guidance immediately beneath titles was removed from the Master Data hub cards, workspace headings, form/profile dialogs and relevant rate/hotel panels. Record metadata, field labels, validation and actionable status messages remain. All 370 Master Data Web tests, scoped lint, Web typecheck and the 53-route production build pass. No API, migration, data or localhost runtime change.
+
 ## 2026-09-28 — MASTER-DATA-BANK-BRANCHES-IN-PROFILE-0928 — PC-B — READY_FOR_REVIEW
 
 Bank branches now live in each bank's profile rather than a separate Finance tab. The profile reads branches by the selected bank's real `bankId`, pages results, and provides add/view/edit through the existing branch form with its bank fixed. Existing API/relations and operational records are unchanged. 373 Master Data Web tests, scoped lint, Web typecheck and a 53-route production build passed. No migration, contract, dependency or localhost update.
+
 ## 2026-09-28 — MASTER-DATA-API-FORM-QA-0928 — PC-B — READY_FOR_REVIEW
 
 Functional QA across Master Data API/form paths found a real supplier-phone clear bug: an explicit empty value preserved encrypted/masked phone fields. Backend now clears all protected fields only on explicit clear; Web supplier edit omits untouched masked phone and provides an explicit clear action. The outdated PostgreSQL partner fixture was aligned to the standalone supplier contract. Full API: 1,688 pass/175 opt-in or environment skips; Master Data HTTP: 27 pass; isolated PostgreSQL: 57 unique pass; Master Data Web: 376 pass. API/Web typechecks, scoped lint and builds passed. Demo PostgreSQL suite remains unrun because its guard requires port 55432, currently owned by the live app DB; no guard bypass or operational DB write. Details: `docs/tasks/MASTER-DATA-API-FORM-QA-0928.md`.
+
 ## 2026-09-28 — CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 
 ثبت درخواست دستی با شناسهٔ منبع ثابت می‌توانست پس از برخورد یکتایی، پروندهٔ قبلی را به‌اشتباه به‌عنوان ثبت موفق برگرداند. فرم‌ها اکنون شناسه/کلید تکرار پایدار در هر ارسال دارند و بک‌اند فقط command یکسان را replay می‌کند؛ برخورد منبع مستقل خطای 409 می‌دهد. تست‌های API ماژول ۱۰۲/۱۰۲ و Web ماژول ۵۷/۵۷، lint، typecheck و build تولیدی API/Web موفق‌اند. دیتابیس ایزوله و ارسال واقعی SMS/وب‌سایت‌ها در این واحد اجرا نشده و هیچ داده/فرآیند ۳۱۰۰ تغییر نکرده است. [گزارش QA](tasks/CUSTOMER-AFFAIRS-API-FUNCTIONAL-QA-0928.md).
@@ -3831,6 +3853,7 @@ Functional QA across Master Data API/form paths found a real supplier-phone clea
 ## 2026-09-28 — PROCUREMENT-FORM-QA-0928 — PC-B — READY_FOR_REVIEW
 
 The Procurement draft form now tolerates older saved item rows without a measurement unit when loading reusable choices, and publish validation shows the required-field error instead of crashing. A regression test reproduced the `undefined.trim()` error before the fix. The broad API suite passed 1,682 tests with 175 skipped by default guards (209 passed / 15 skipped files). An isolated PostgreSQL 18 container with all 100 migrations then enabled all 35 guarded Procurement database tests: all 92 focused Procurement API tests passed, including draft persistence, atomic publication, rollback, idempotency and workflow handoff. All 10 draft-form tests, API/Web typechecks and builds, scoped lint and Prettier passed. Other guarded integration tests and authenticated browser flows were not executed. No Backend, schema, migration, contract, dependency or operational data changed.
+
 ## 2026-09-28 — API-FUNCTIONAL-QA-0928 — PC-B — READY_FOR_REVIEW
 
 Full API regression on updated develop: 210 files and 1,701 tests passed; 175 opt-in tests skipped by default. Two confirmed backend defects were repaired: concurrent identical feedback submission now returns the committed receipt, and anonymous/sensitive Workbench attachments no longer leak identifying metadata or appear in another user's Documents catalogue/audit. Feedback creation verifies attachment confidentiality matches anonymity. Focused Workbench/Documents rerun: 118 passed; API lint, typecheck, production build passed. All 100 migrations and three form writes (meal service, facility, train type) with persistence/audit checks passed on a disposable PostgreSQL database. The opt-in PostgreSQL suites timed out in their Docker stdin helper before assertions, so they are not claimed as passing. No schema, migration, shared contract, dependency, operational data, or live runtime change. Details: [task report](tasks/API-FUNCTIONAL-QA-0928.md).
@@ -3842,6 +3865,7 @@ Shared actor-scoped repository lookups and explicit reference filtering enforce 
 ## 2026-09-29 — ISTANBUL-GENERATOR-3100-ACTIVATION — PC-B — IN_PROGRESS
 
 پیگیری قالب‌های استانبول، assetها و loaderهای Package Generator را در build محلی 3100 فعال می‌کند. تغییر مبنا commit `6c2d203f` است؛ اکنون با `origin/develop` همگام شده و منتظر بررسی‌های CI و PR است. API قیمت‌گذاری، Schema/Migration و دادهٔ عملیاتی تغییر نمی‌کنند.
+
 # 2026-09-29 — TICKET-ROUNDTRIP-RETURN-DATE-0929 — PC-A — READY_FOR_REVIEW
 
 مدیریت بلیت برای هر نرخ رفت‌وبرگشت، تاریخ و ساعت پرواز برگشت متناظر را کنار مبلغ نشان می‌دهد و با Tooltip شماره پرواز برگشت را هم توضیح می‌دهد. نرخ‌های چند برگشت یک پرواز رفت جداگانه می‌مانند؛ اگر رکورد برگشت در فهرست نباشد، مبلغ حفظ و تاریخ نامشخص اعلام می‌شود. ۶ تست متمرکز، ESLint فایل‌های متاثر، Web typecheck و build تولیدی با ۵۵ مسیر موفق‌اند. بدون تغییر API، قرارداد، Schema/Migration، Permission، Dependency یا دادهٔ عملیاتی. PR [#465](https://github.com/nirvanamahlou/Rubi/pull/465). جزئیات: [TICKET-ROUNDTRIP-RETURN-DATE-0929](tasks/TICKET-ROUNDTRIP-RETURN-DATE-0929.md).
@@ -3853,6 +3877,7 @@ Default entry and home links now open Workbench; successful login starts light a
 ## 2026-09-29 — RESERVATION-OPERATION-SUMMARY-0929 — PC-A — READY_FOR_REVIEW
 
 Selected-contract header now shows read-only financial-delivery approval, responsible name and automatic server time, alongside the latest reservation operator/time. Events no longer displays the operation box. Scoped public Finance/IAM composition, branch/permission checks and native revision/history fallback preserve owner boundaries. No schema/dependency or operational data edits. Validation and limits: [RESERVATION-OPERATION-SUMMARY-0929](tasks/RESERVATION-OPERATION-SUMMARY-0929.md). 45 scoped API tests (including 4 HTTP) and 42 Web tests, strict API/Web types and scoped lint pass; production API build passes and Web build/CI complete before integration; merge authorization for this new reservation work item is separate from prior IAM merges.
+
 # 2026-09-29 — CUSTOMER-AFFAIRS-EXPORT-COMMENTS-0929 — READY_FOR_REVIEW
 
 در شاخه مستقل PC-B، متن‌های اضافی و فیلدهای نمایشی اثر/فوریت حذف شدند، فیلترهای فهرست هم‌ردیف شدند، خروجی XLSX فیلترشده برای درخواست/تیکت، دانلود PDF قابل جست‌وجوی گزارش، فیلتر تاریخ گزارش و API امن ثبت کامنت سایت پیاده شدند. بازبینی مستقل سه مورد PDF غیرواقعی، کوئری سنگین Excel و کامنت فقط فاصله را یافت و اصلاح شدند؛ بازبینی مجدد بدون ایراد تازه بود. ۱۰۶ تست API و ۵۸ تست Web، typecheck، lint متمرکز و build تولیدی API/Web موفق‌اند. اتصال زنده به سایت‌ها بدون تنظیم connector/مجوز و آزمون PDF در مرورگر اجرا نشده؛ هیچ پیام یا داده واقعی آزمون نشده است. CI و انتشار در انتظارند.
@@ -3876,15 +3901,19 @@ Selected-contract header now shows read-only financial-delivery approval, respon
 ## 2026-09-29 — TICKET-PRICES-READABILITY-XLSX-0929 — PC-A — READY_FOR_REVIEW
 
 خلاصه پرواز و مسیر خواناتر و کنترل ارز جا‌دارتر شد. خروجی اکسل فیلترهای جاری را رعایت می‌کند و هر رفت‌وبرگشت را با جزئیات دو پرواز، قیمت پایه و مبالغ/درصد مقصدها در یک ردیف می‌آورد؛ قالب راست‌به‌چپ از رزواسیون پیروی می‌کند. Web lint، typecheck و build تولیدی (۵۵ مسیر) و تمام CI (build، quality، test و PostgreSQL) موفق‌اند. PR #470 به develop؛ ادغام با مجوز صریح مالک در انتظار انجام است. بدون API، Migration، داده عملیاتی یا Dependency. جزئیات: [TICKET-PRICES-READABILITY-XLSX-0929](tasks/TICKET-PRICES-READABILITY-XLSX-0929.md).
+
 ## 2026-09-29 — SHARED-FORM-DROPDOWNS-0929 — READY_FOR_REVIEW
 
 کنترل مشترک dropdown فرم‌ها زیر فیلد باز می‌شود و حداکثر پنج گزینهٔ اولیه یا مطابق جست‌وجو نشان می‌دهد؛ جست‌وجو در تمام گزینه‌ها باقی مانده است. قرارداد انتخاب و ارسال مقدار، API و داده تغییر نکردند. ۱۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند.
+
 ## 2026-09-29 — TICKET-TARGET-ROWS-0929 — PC-A
 
 مقصدهای قیمت بلیت در باکس‌های دو ردیفی قرار می‌گیرند؛ باکس‌ها متناسب با عرض کنار هم اضافه می‌شوند و بخش مقصدها ارتفاع محدود و اسکرول عمودی دارد. در عرض کم دکمه‌ها به خط مستقل می‌روند تا نام، درصد و قیمت روی هم نیفتند. بدون تغییر API، منطق کمیسیون، Migration یا داده. اعتبارسنجی و تحویل: [TICKET-TARGET-ROWS-0929](tasks/TICKET-TARGET-ROWS-0929.md).
+
 ## 2026-09-29 — CUSTOMER-AFFAIRS-ASSIGNEE-COMBOBOX-0929 — READY_FOR_REVIEW
 
 دو کنترل جدا در فرم‌های امور مشتریان با یک انتخاب‌گر جست‌وجودار جایگزین شدند. منوی زیر فیلد پنج کارمند دارای حساب متصل از فهرست HR نشان می‌دهد و جست‌وجوی نام/کد/واحد، شناسهٔ مسئول و محدوده شعبه حفظ شد. ۶۱ تست Web، typecheck و lint محدود موفق‌اند؛ build/CI و فعال‌سازی ۳۱۰۰ در انتظارند.
+
 ## 2026-09-29 — TICKET-TARGET-COMPACT-WIDTH-0929 — PC-A — READY_FOR_REVIEW
 
 Each two-target fare box is capped at 22rem (352px), matching the owner's hatched reference instead of stretching across the row. Auto-fill preserves side-by-side boxes and narrow viewport sizing. Two existing tests, CSS formatting and Web production build/typecheck (55 routes) pass. No calculations, API, migration or dependency changes. Local activation authorized; PR #478 targets develop; owner explicitly authorized merge on 2026-09-29.
@@ -3892,6 +3921,7 @@ Each two-target fare box is capped at 22rem (352px), matching the owner's hatche
 ## 2026-09-29 — RESERVATION-MANIFEST-ROUTE-FILTERS-0929 — PC-A — READY_FOR_REVIEW
 
 برای نتایج منیفست بازه تاریخ، فیلترهای مبدا و مقصد مستقل/ترکیبی افزوده شدند. سه تست، typecheck، lint و build تولیدی ۵۵ مسیر Web موفق‌اند. بازه تاریخ، API، منطق مالی و دانلود تغییری نکرده‌اند. جزئیات: [RESERVATION-MANIFEST-ROUTE-FILTERS-0929](tasks/RESERVATION-MANIFEST-ROUTE-FILTERS-0929.md). PR و CI در انتظار review.
+
 ## 2026-09-29 — HEADER-SELECTED-ROLE-TITLE-0929 — PC-A — READY_FOR_REVIEW
 
 نوار بالا فقط عنوان شغلی انتخاب‌شده از نقش‌های فعال IAM را نشان می‌دهد؛ برچسب عمومی مثل `Ramtin full access` یا متن ترکیبی کنار آن دیده نمی‌شود. داده نشست قدیمی نیز پیش از نمایش به یک عنوان معتبر تبدیل می‌شود. typecheck، lint و build تولیدی Web با ۵۵ مسیر موفق‌اند؛ CI پیش از merge اجرا می‌شود. بدون API، Migration، Dependency یا داده عملیاتی. جزئیات: [HEADER-SELECTED-ROLE-TITLE-0929](tasks/HEADER-SELECTED-ROLE-TITLE-0929.md).
@@ -3915,6 +3945,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — THAILAND-POSTER-XLSX-0929 — PC-B — READY_FOR_REVIEW
 
 سه اکسل پوکت، پاتایا و بانکوک–پوکت با ستون‌های فروش نهایی و بخش‌های پرواز/خدمات قالب‌های متناظر تطبیق داده شدند. بازبینی تصویری هر سه خروجی و تست نگاشت قیمت انجام شد؛ ۳۶ تست ماژول، lint، typecheck و build تولیدی موفق‌اند؛ PR در جریان است. [جزئیات](tasks/THAILAND-POSTER-XLSX-0929.md). بدون API، Migration، Dependency یا دادهٔ عملیاتی.
+
 ## 2026-09-29 — CUSTOMER-AFFAIRS-REQUEST-ACTIONS-SWAP-0929 — READY_FOR_REVIEW
 
 جای دکمه‌های ثبت مشتری و تنظیم پیگیری در پروفایل درخواست مطابق علامت‌گذاری تصویر جابه‌جا شد؛ شرط‌های مجازبودن و رفتار فرم‌ها حفظ می‌شوند. ۴۲ تست امور مشتریان، typecheck وب و قالب‌بندی موفق؛ build و CI پیش از ادغام باقی است.
@@ -3926,3 +3957,11 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
+
+## 2026-09-29 — CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — READY_FOR_REVIEW
+
+ارزیابی آمادگی فروش پس از ثبت در پرونده قابل بازخوانی و ویرایش مجدد است؛ دکمه کنار «ثبت ارتباط جدید» و گزارش آخرین نتیجه در پایین پروفایل قرار گرفت. کنترل مرحلهٔ مجاز در API و تفکیک ثبت موفق از شکست بازخوانی افزوده شد. ۲۵ تست Web و ۱۹ تست API، typecheck، lint محدود، build تولیدی و بازبینی مستقل موفق‌اند. آزمون پایگاه دادهٔ زنده و منع مجوز اجرا نشد. بدون Migration/Dependency؛ PR به develop برای بازبینی.
+
+## 2026-09-29 — TICKET-WEEKDAY-RETURN-WINDOW-0929 — PC-A — READY_FOR_REVIEW
+
+تعریف پرواز هفتگی با بازهٔ رفتِ شامل ابتدا و انتها، روزهای تیک‌خورده و عددِ فاصلهٔ برگشت پیاده شد؛ عدد تعداد تکرار نیست. برگشت‌ها خودکار ساخته و تاریخ‌های مشترک یک‌بار ثبت می‌شوند. Min/Max در دیتابیس و قرارداد عمومی ذخیره و در جست‌وجو پیش از صفحه‌بندی، رزرو فروش، انتخاب جفت قیمت و Load تور کنترل می‌شود. Migration فقط روی دیتابیس مصنوعی تست می‌شود؛ لوکال عملیاتی تغییر نکرده است. جزئیات و سازگاری: [TICKET-WEEKDAY-RETURN-WINDOW-0929](tasks/TICKET-WEEKDAY-RETURN-WINDOW-0929.md).

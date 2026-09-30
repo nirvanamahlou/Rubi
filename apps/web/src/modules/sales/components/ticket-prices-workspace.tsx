@@ -12,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { TicketOfferV1, TicketSalePriceTargetV1 } from '@nora/contracts';
+import { eligibleTicketReturn } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
@@ -177,10 +178,7 @@ export function TicketPricesWorkspace() {
   const returnOptions = outbound
     ? offers.filter(
         (o) =>
-          o.branchId === outbound.branchId &&
-          o.originId === outbound.destinationId &&
-          o.destinationId === outbound.originId &&
-          Date.parse(o.departureAt) > Date.parse(outbound.departureAt),
+          o.branchId === outbound.branchId && eligibleTicketReturn(outbound, o),
       )
     : [];
   const currentPair = outbound?.roundTripSalePrices?.find(

@@ -46,6 +46,7 @@ describe('customer affairs create HTTP contract', () => {
   const service = {
     createLead: vi.fn().mockResolvedValue({ data: { id: 'lead-1' } }),
     createTicket: vi.fn().mockResolvedValue({ data: { id: 'ticket-1' } }),
+    qualify: vi.fn().mockResolvedValue({ data: { id: 'lead-1', version: 2 } }),
   };
 
   beforeEach(async () => {
@@ -126,5 +127,39 @@ describe('customer affairs create HTTP contract', () => {
       .send({ ...ticket, description: 'x'.repeat(2001) })
       .expect(400);
     expect(service.createTicket).not.toHaveBeenCalled();
+  });
+
+  it('accepts a complete assessment POST and forwards the expected version', async () => {
+    const assessment = {
+      travelNeedConfirmed: true,
+      destinationKnown: true,
+      timingKnown: true,
+      budgetDiscussed: false,
+      decisionMakerReachable: false,
+      contactable: true,
+      conversionProbability: 60,
+      expectedVersion: 1,
+    };
+    await request(app.getHttpServer())
+      .post(
+        '/api/v1/customer-affairs/leads/11111111-1111-4111-8111-111111111111/qualification',
+      )
+      .send(assessment)
+      .expect(201);
+    expect(service.qualify).toHaveBeenCalledWith(
+      '11111111-1111-4111-8111-111111111111',
+      assessment,
+      actor,
+    );
+  });
+
+  it('rejects an incomplete assessment before the service call', async () => {
+    await request(app.getHttpServer())
+      .post(
+        '/api/v1/customer-affairs/leads/11111111-1111-4111-8111-111111111111/qualification',
+      )
+      .send({ travelNeedConfirmed: true, expectedVersion: 1 })
+      .expect(400);
+    expect(service.qualify).not.toHaveBeenCalled();
   });
 });
