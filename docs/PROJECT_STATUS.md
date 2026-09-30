@@ -1,3 +1,7 @@
+## 2026-09-29 — DOCUMENTS-009-OVERVIEW-CONNECTIONS-REMOVAL-0929 — PC-B — READY_FOR_REVIEW
+
+سکشن کامل کارت‌های «ارتباط اسناد با بخش‌های نورا» از نمای کلی Documents حذف شد؛ شاخص‌ها، تازه‌های آرشیو، کارهای من، منوی دسته‌ها و اتصال کنار فهرست یک دامنه حفظ شدند. کد و استایل بلااستفادهٔ مخصوص کارت‌ها هم پاک شد. ۹ تست Documents، lint موردی، Web typecheck و Production Build با ۵۵ مسیر موفق‌اند. بدون API، Migration، Permission، داده، Dependency یا runtime. Branch `codex/pc-b-documents-overview-connections-removal-0929` از `origin/develop@bb4209e0`؛ برای Review به develop می‌رود و Merge خودکار نمی‌شود.
+
 ## 2026-09-29 — ADMIN-SCREEN-VISIBILITY-0929 — PC-A — READY_FOR_REVIEW
 
 Follow-up to the authorized merge/local release: active system administrators receive a derived, unassignable UI marker so all catalogued sections are visible, including pages without native operation grants. Stored markers and role titles cannot confer administrator authority. Native operation/branch guards remain authoritative. Focused API/Web/contracts tests: 13/9/4 passed; scoped lint, typechecks and contracts build checked before release. No schema/migration/dependency changes. Details: [ADMIN-SCREEN-VISIBILITY-0929](tasks/ADMIN-SCREEN-VISIBILITY-0929.md).
@@ -3961,7 +3965,10 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — TICKET-WEEKDAY-RETURN-WINDOW-0929 — PC-A — READY_FOR_REVIEW
 
 تعریف پرواز هفتگی با بازهٔ رفتِ شامل ابتدا و انتها، روزهای تیک‌خورده و عددِ فاصلهٔ برگشت پیاده شد؛ عدد تعداد تکرار نیست. برگشت‌ها خودکار ساخته و تاریخ‌های مشترک یک‌بار ثبت می‌شوند. Min/Max در دیتابیس و قرارداد عمومی ذخیره و در جست‌وجو پیش از صفحه‌بندی، رزرو فروش، انتخاب جفت قیمت و Load تور کنترل می‌شود. Migration فقط روی دیتابیس مصنوعی تست می‌شود؛ لوکال عملیاتی تغییر نکرده است. جزئیات و سازگاری: [TICKET-WEEKDAY-RETURN-WINDOW-0929](tasks/TICKET-WEEKDAY-RETURN-WINDOW-0929.md).
-
 ## 2026-09-30 — TICKET-SEAT-TIER-PRICING-0930 — PC-A — READY_FOR_REVIEW
 
 قیمت‌گذاری پله‌ای صندلی برای بلیت یک‌طرفه و جفت رفت‌وبرگشت در فرم قیمت فروش، revisionهای Ticket Catalog و پیش‌فاکتور قرارداد افزوده شد. نرخ‌های قدیمی بدون پله همچنان ثابت‌اند. جزئیات و آزمون‌ها در [TICKET-SEAT-TIER-PRICING-0930](tasks/TICKET-SEAT-TIER-PRICING-0930.md) ثبت می‌شوند.
+
+## 2026-09-30 — DOCUMENTS-010-RECORD-ACTIONS-0930 — PC-B — READY_FOR_REVIEW
+
+اکشن‌های رکوردهای اسناد در نمای کلی، فهرست اصلی و اشتراک‌گذاری به دکمه‌های حذف قرمز با آیکون سفید، ویرایش و مشاهدهٔ کادردار تبدیل شدند. چشم، جزئیات سند را باز می‌کند و محدودیت‌های مجوز و مسیر پیگیری حفظ شده‌اند. ۹ تست هدفمند، lint فایل، Web typecheck، Prettier و Production Build با ۵۵ مسیر موفق‌اند. API/DB/Migration/Dependency تغییر نکرد. Branch `codex/pc-b-documents-record-actions-0930` از `origin/develop@a353bcab` برای PR به `develop` آماده است.
