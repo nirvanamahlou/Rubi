@@ -4,9 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { requestManifestDownload } from './manifest-download';
 import type {
   ReservationManifestTicketCardV1,
+  ReservationManifestRouteV1,
   ReservationManifestTicketListV1,
 } from '@nora/contracts';
-import { ArrowLeft, Plane, Bus, TrainFront } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -72,9 +72,19 @@ export function ManifestExport() {
   const [tickets, setTickets] = useState<
     readonly ReservationManifestTicketCardV1[]
   >([]);
+  const [routes, setRoutes] = useState<ReservationManifestRouteV1[]>([]);
+  const [routeError, setRouteError] = useState('');
   const [originFilter, setOriginFilter] = useState('');
   const [destinationFilter, setDestinationFilter] = useState('');
   const [loaded, setLoaded] = useState(false);
+  const [searchedDates, setSearchedDates] = useState({
+    fromDate: today,
+    toDate: today,
+  });
+  const [searchRoute, setSearchRoute] = useState({
+    originName: '',
+    destinationName: '',
+  });
   const [busy, setBusy] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
@@ -92,6 +102,40 @@ export function ManifestExport() {
     },
     [downloadLink],
   );
+
+  useEffect(() => {
+    let active = true;
+    const base = getPublicApiBaseUrl();
+    if (!base) return;
+    void authenticatedFetch(base, '/reservations/manifests/routes')
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error(
+            await responseError(response, 'مسیرها دریافت نشدند.'),
+          );
+        const payload = (await response.json()) as {
+          data: ReservationManifestRouteV1[];
+        };
+        if (active) setRoutes(payload.data);
+      })
+      .catch((reason: unknown) => {
+        if (active)
+          setRouteError(
+            reason instanceof Error ? reason.message : 'مسیرها دریافت نشدند.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const origins = [...new Set(routes.map((route) => route.originName))];
+  const destinations = [
+    ...new Set(
+      routes
+        .filter((route) => !originFilter || route.originName === originFilter)
+        .map((route) => route.destinationName),
+    ),
+  ];
 
   function validate() {
     if (!fromDate || !toDate) return 'بازه تاریخ را کامل کنید.';
@@ -121,8 +165,11 @@ export function ManifestExport() {
       const payload =
         (await response.json()) as ReservationManifestTicketListV1;
       setTickets(payload.data);
-      setOriginFilter('');
-      setDestinationFilter('');
+      setSearchedDates({ fromDate, toDate });
+      setSearchRoute({
+        originName: originFilter.trim(),
+        destinationName: destinationFilter.trim(),
+      });
       setLoaded(true);
     } catch (reason) {
       setError(
@@ -133,20 +180,7 @@ export function ManifestExport() {
     }
   }
 
-  const visibleTickets = filterManifestTickets(tickets, {
-    originName: originFilter,
-    destinationName: destinationFilter,
-  });
-  const origins = Array.from(
-    new Set(tickets.map((ticket) => ticket.originName)),
-  )
-    .filter(Boolean)
-    .sort((left, right) => left.localeCompare(right, 'fa'));
-  const destinations = Array.from(
-    new Set(tickets.map((ticket) => ticket.destinationName)),
-  )
-    .filter(Boolean)
-    .sort((left, right) => left.localeCompare(right, 'fa'));
+  const visibleTickets = filterManifestTickets(tickets, searchRoute);
 
   async function download(ticket: ReservationManifestTicketCardV1) {
     if (!ticket.template || busy || downloading.current) return;
@@ -162,12 +196,11 @@ export function ManifestExport() {
     setError('');
     setResult('');
     try {
-      const { file, contracts, passengers, skippedFinance, retriedWithAll } =
+      const { file, contracts, passengers, retriedWithAll } =
         await requestManifestDownload(
           {
             offerId: ticket.offerId,
-            fromDate,
-            toDate,
+            ...searchedDates,
             includePreviouslyExported,
           },
           (path, init) => authenticatedFetch(base, path, init),
@@ -180,7 +213,7 @@ export function ManifestExport() {
           '_',
         ) +
         '-' +
-        fromDate +
+        searchedDates.fromDate +
         '.xlsx';
       const url = URL.createObjectURL(file);
       setDownloadLink({ offerId: ticket.offerId, url, fileName });
@@ -197,10 +230,7 @@ export function ManifestExport() {
           ' مسافر در قالب «' +
           ticket.template.name +
           '» آماده شد' +
-          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.') +
-          (Number(skippedFinance) > 0
-            ? ' قراردادهای بدون تأیید مالی از فایل حذف شدند.'
-            : ''),
+          (retriedWithAll ? '؛ خروجی قبلی نیز بازیابی شد.' : '.'),
       );
     } catch (reason) {
       setError(
@@ -242,12 +272,54 @@ export function ManifestExport() {
           />
         </label>
       </div>
+      <div className="grid gap-3 sm:grid-cols-2" aria-label="فیلتر مسیر">
+        <label className="grid gap-2 text-sm font-medium">
+          مبدأ
+          <select
+            aria-label="مبدأ مسیر"
+            className="h-10 rounded-md border bg-background px-3"
+            value={originFilter}
+            onChange={(event) => {
+              setOriginFilter(event.target.value);
+              setDestinationFilter('');
+            }}
+          >
+            <option value="">همه مبدأها</option>
+            {origins.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          مقصد
+          <select
+            aria-label="مقصد مسیر"
+            className="h-10 rounded-md border bg-background px-3"
+            value={destinationFilter}
+            onChange={(event) => setDestinationFilter(event.target.value)}
+          >
+            <option value="">همه مقصدها</option>
+            {destinations.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {routeError && (
+        <p role="alert" className="text-sm text-destructive">
+          {routeError}
+        </p>
+      )}
       <Button
         type="button"
         disabled={!fromDate || !toDate || Boolean(busy)}
         onClick={() => void loadTickets()}
       >
-        {busy === 'list' ? 'در حال دریافت بلیط‌ها…' : 'نمایش بلیط‌های بازه'}
+        {busy === 'list' ? 'در حال دریافت بلیط‌ها…' : 'جست‌وجوی بلیط‌ها'}
       </Button>
 
       {loaded && tickets.length === 0 && (
@@ -258,45 +330,6 @@ export function ManifestExport() {
 
       {tickets.length > 0 && (
         <>
-          <div className="grid gap-3 sm:grid-cols-2" aria-label="فیلتر مسیر">
-            <label className="grid gap-2 text-sm font-medium">
-              فیلتر مبدا
-              <select
-                aria-label="فیلتر مبدا"
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={originFilter}
-                onChange={(event) => setOriginFilter(event.target.value)}
-              >
-                <option value="">همه مبداها</option>
-                {origins.map((origin) => (
-                  <option key={origin} value={origin}>
-                    {origin}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm font-medium">
-              فیلتر مقصد
-              <select
-                aria-label="فیلتر مقصد"
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={destinationFilter}
-                onChange={(event) => setDestinationFilter(event.target.value)}
-              >
-                <option value="">همه مقصدها</option>
-                {destinations.map((destination) => (
-                  <option key={destination} value={destination}>
-                    {destination}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          {visibleTickets.length === 0 && (
-            <p className="rounded-lg border border-dashed p-5 text-center text-sm text-muted-foreground">
-              بلیطی با این مبدا و مقصد پیدا نشد.
-            </p>
-          )}
           <fieldset className="grid gap-2 rounded-lg border border-border p-3">
             <legend className="px-1 text-sm font-semibold">محتوای خروجی</legend>
             <label className="flex cursor-pointer items-start gap-2 text-sm">
@@ -328,120 +361,120 @@ export function ManifestExport() {
               </span>
             </label>
           </fieldset>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {visibleTickets.map((ticket) => (
-              <article
-                key={ticket.offerId}
-                className="overflow-hidden rounded-xl border border-s-4 border-s-cyan-500 bg-card shadow-sm"
-              >
-                <header className="flex items-start justify-between gap-2 border-b bg-muted/35 px-3 py-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="rounded-lg bg-cyan-100 p-1.5 text-cyan-800 dark:bg-cyan-950 dark:text-cyan-200">
-                      {ticket.transportType === 'BUS' ? (
-                        <Bus className="size-4" />
-                      ) : ticket.transportType === 'TRAIN' ? (
-                        <TrainFront className="size-4" />
-                      ) : (
-                        <Plane className="size-4" />
-                      )}
-                    </span>
-                    <div className="min-w-0">
-                      <h3 className="truncate font-bold">
-                        {ticket.carrierName}
-                      </h3>
-                      <p
-                        dir="ltr"
-                        className="text-sm font-semibold text-muted-foreground"
-                      >
-                        {ticket.serviceNumber ||
-                          (ticket.transportType === 'BUS'
-                            ? 'اتوبوس'
-                            : ticket.transportType === 'TRAIN'
-                              ? 'قطار'
-                              : '')}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="rounded-full border px-2 py-1 text-xs">
-                    {ticket.direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}
-                  </span>
-                </header>
-                <div className="grid gap-2 p-3">
-                  <div
-                    className="flex items-center justify-between gap-3"
-                    dir="ltr"
-                  >
-                    <strong>{ticket.originName}</strong>
-                    <ArrowLeft className="size-4 text-muted-foreground" />
-                    <strong>{ticket.destinationName}</strong>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="rounded-lg bg-muted/50 px-2 py-1.5">
-                      <span className="block text-xs text-muted-foreground">
-                        حرکت
-                      </span>
-                      {dateTime(
-                        ticket.departureAt,
-                        ticket.departureTimeKnown !== false,
-                      )}
-                    </div>
-                    <div className="rounded-lg bg-muted/50 px-2 py-1.5">
-                      <span className="block text-xs text-muted-foreground">
-                        رسیدن
-                      </span>
-                      {ticket.transportType &&
-                      ticket.transportType !== 'FLIGHT' &&
-                      ticket.arrivalAt === ticket.departureAt
-                        ? 'ثبت نشده'
-                        : dateTime(ticket.arrivalAt)}
-                    </div>
-                  </div>
-                  <p className="text-xs">
-                    {ticket.contractCount} قرارداد با تأیید مالی ·{' '}
-                    {ticket.passengerCount} مسافر
-                  </p>
-                  {ticket.template ? (
-                    <p className="rounded-lg bg-emerald-50 px-2 py-1.5 text-xs text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200">
-                      قالب فعال: {ticket.template.name} · نسخه{' '}
-                      {ticket.template.versionNumber}
-                    </p>
-                  ) : (
-                    <p
-                      role="status"
-                      className="rounded-lg bg-destructive/10 px-2 py-1.5 text-xs text-destructive"
-                    >
-                      {ticket.unavailableReason}
-                    </p>
-                  )}
-                  <Button
-                    type="button"
-                    disabled={!ticket.template || Boolean(busy)}
-                    onClick={() => void download(ticket)}
-                  >
-                    {busy === ticket.offerId
-                      ? 'در حال ساخت…'
-                      : ticket.template
-                        ? 'دانلود MANIFEST این بلیط'
-                        : 'خروجی ممکن نیست'}
-                  </Button>
-                  {error && errorOfferId === ticket.offerId && (
-                    <p role="alert" className="text-sm text-destructive">
-                      {error}
-                    </p>
-                  )}
-                  {downloadLink?.offerId === ticket.offerId && (
-                    <a
-                      href={downloadLink.url}
-                      download={downloadLink.fileName}
-                      className="text-sm font-semibold text-primary underline"
-                    >
-                      اگر دانلود خودکار شروع نشد، فایل منیفست را دریافت کنید
-                    </a>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
+          {(['OUTBOUND', 'RETURN'] as const).map((direction) => (
+            <section
+              key={direction}
+              className="overflow-hidden rounded-xl border border-border"
+            >
+              <h3 className="border-b bg-muted/40 p-3 font-bold">
+                {direction === 'OUTBOUND'
+                  ? 'لود و منیفست رفت'
+                  : 'لود و منیفست برگشت'}
+              </h3>
+              <div className="overflow-auto">
+                <table className="w-full min-w-[1050px] border-collapse text-center text-sm [&_th]:border [&_th]:p-3 [&_td]:border [&_td]:p-3">
+                  <thead className="bg-muted/30">
+                    <tr>
+                      {[
+                        'مسیر',
+                        'ایرلاین / شماره',
+                        'حرکت',
+                        'رسیدن',
+                        'ظرفیت',
+                        'فروخته',
+                        'رزرو موقت',
+                        'مانده',
+                        'قرارداد / مسافر',
+                        'قالب خروجی',
+                        'خروجی',
+                      ].map((label) => (
+                        <th key={label} scope="col">
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleTickets
+                      .filter((ticket) => ticket.direction === direction)
+                      .map((ticket) => (
+                        <tr key={ticket.offerId}>
+                          <td>
+                            {ticket.originName} ← {ticket.destinationName}
+                          </td>
+                          <td>
+                            {ticket.carrierName}
+                            <br />
+                            {ticket.serviceNumber}
+                          </td>
+                          <td>
+                            {dateTime(
+                              ticket.departureAt,
+                              ticket.departureTimeKnown !== false,
+                            )}
+                          </td>
+                          <td>
+                            {ticket.arrivalAt === ticket.departureAt &&
+                            ticket.transportType !== 'FLIGHT'
+                              ? 'ثبت نشده'
+                              : dateTime(ticket.arrivalAt)}
+                          </td>
+                          <td>{ticket.totalCapacity ?? '—'}</td>
+                          <td>{ticket.allocatedCapacity ?? '—'}</td>
+                          <td>{ticket.reservedCapacity ?? '—'}</td>
+                          <td>{ticket.remainingCapacity ?? '—'}</td>
+                          <td>
+                            {ticket.contractCount} قرارداد ·{' '}
+                            {ticket.passengerCount} مسافر
+                          </td>
+                          <td>
+                            {ticket.template
+                              ? ticket.template.name +
+                                ' · نسخه ' +
+                                ticket.template.versionNumber
+                              : ticket.unavailableReason}
+                          </td>
+                          <td>
+                            <Button
+                              type="button"
+                              disabled={!ticket.template || Boolean(busy)}
+                              onClick={() => void download(ticket)}
+                            >
+                              {busy === ticket.offerId
+                                ? 'در حال ساخت…'
+                                : direction === 'OUTBOUND'
+                                  ? 'خروجی رفت'
+                                  : 'خروجی برگشت'}
+                            </Button>
+                            {error && errorOfferId === ticket.offerId && (
+                              <p role="alert" className="text-destructive">
+                                {error}
+                              </p>
+                            )}
+                            {downloadLink?.offerId === ticket.offerId && (
+                              <a
+                                className="block text-primary underline"
+                                href={downloadLink.url}
+                                download={downloadLink.fileName}
+                              >
+                                دریافت فایل منیفست
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+              {!visibleTickets.some(
+                (ticket) => ticket.direction === direction,
+              ) && (
+                <p className="p-4 text-sm text-muted-foreground">
+                  بلیطی برای این مسیر و بازه پیدا نشد.
+                </p>
+              )}
+            </section>
+          ))}
         </>
       )}
       {result && (

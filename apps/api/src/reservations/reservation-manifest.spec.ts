@@ -68,8 +68,8 @@ describe('Iran Airtour Antalya MANIFEST', () => {
   });
 });
 
-describe('MANIFEST financial delivery gate', () => {
-  it('stops before reading travel or passenger details while Finance is locked', async () => {
+describe('MANIFEST passenger permission gate', () => {
+  it('stops before reading details without sensitive passenger permission', async () => {
     const workflow = {
       detail: vi
         .fn()
@@ -96,11 +96,10 @@ describe('MANIFEST financial delivery gate', () => {
           'reservations.read',
           'reservations.documents.manage',
           'customers.read',
-          'customers.sensitive.read',
         ],
       } as never),
-    ).rejects.toThrow('تأیید تحویل مدارک');
-    expect(delivery.readCustomerContract).toHaveBeenCalledWith('contract');
+    ).rejects.toThrow('مجوز تهیه MANIFEST');
+    expect(delivery.readCustomerContract).not.toHaveBeenCalled();
     expect(directory.cityReference).not.toHaveBeenCalled();
     expect(customers.detail).not.toHaveBeenCalled();
   });

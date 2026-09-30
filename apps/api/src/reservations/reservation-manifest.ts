@@ -26,6 +26,7 @@ import type {
   CustomerDetail,
   ReservationIntakeV1,
   ReservationManifestTicketCardV1,
+  ReservationManifestRouteV1,
   ReservationManifestTicketExportInputV1,
 } from '@nora/contracts';
 import type { Response } from 'express';
@@ -190,7 +191,7 @@ export class ReservationManifestService {
     @Inject(MasterTravelDirectory)
     private readonly directory: MasterTravelDirectory,
     @Inject(FinanceDeliveryService)
-    private readonly delivery: FinanceDeliveryService,
+    _delivery: FinanceDeliveryService,
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Optional()
     @Inject(DocumentsService)
@@ -273,6 +274,42 @@ export class ReservationManifestService {
     );
   }
 
+  async listRoutes(
+    actor: AuthenticatedActor,
+  ): Promise<ReservationManifestRouteV1[]> {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException('مجوز مشاهده مسیرهای منیفست وجود ندارد.');
+    const routes = new Map<string, ReservationManifestRouteV1>();
+    const names = new Map<string, string>();
+    const name = async (id: string, fallback?: string) => {
+      if (fallback) return fallback;
+      if (!names.has(id)) {
+        const city = await this.directory.cityReference(id);
+        names.set(id, city.englishName || city.name);
+      }
+      return names.get(id)!;
+    };
+    for (const row of await this.latestIntakes(actor)) {
+      for (const journey of manifestJourneys(
+        row.snapshot as unknown as ReservationIntakeV1['snapshot'],
+      )) {
+        const route = {
+          originName: await name(journey.originId, journey.originName),
+          destinationName: await name(
+            journey.destinationId,
+            journey.destinationName,
+          ),
+        };
+        routes.set(JSON.stringify(route), route);
+      }
+    }
+    return [...routes.values()].sort(
+      (a, b) =>
+        a.originName.localeCompare(b.originName, 'fa') ||
+        a.destinationName.localeCompare(b.destinationName, 'fa'),
+    );
+  }
+
   async listTickets(
     input: { fromDate: string; toDate: string },
     actor: AuthenticatedActor,
@@ -280,8 +317,17 @@ export class ReservationManifestService {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException('مجوز مشاهده بلیط‌های MANIFEST وجود ندارد.');
     const cards: ReservationManifestTicketCardV1[] = [];
-    const approvalCache = new Map<string, boolean>();
-    for (const group of await this.ticketGroups(input, actor)) {
+    const groups = await this.ticketGroups(input, actor);
+    const inventory = this.tickets
+      ? await this.tickets.manifestInventory(
+          groups
+            .filter((group) => group.ticket.transportType === 'FLIGHT')
+            .map((group) => group.ticket.offerId),
+          actor.branchIds,
+        )
+      : [];
+    const loads = new Map(inventory.map((load) => [load.offerId, load]));
+    for (const group of groups) {
       const ticket = group.ticket;
       const [origin, destination, selection] = await Promise.all([
         ticket.originId
@@ -315,22 +361,10 @@ export class ReservationManifestService {
                 : 'قالب منیفست انتخاب‌شده در دسترس نیست.',
           })),
       ]);
-      const approvedRows = [];
-      for (const row of group.rows) {
-        if (!approvalCache.has(row.contractId))
-          approvalCache.set(
-            row.contractId,
-            await this.financiallyApproved(row.contractId),
-          );
-        if (approvalCache.get(row.contractId)) approvedRows.push(row);
-      }
-      const unavailableReason =
-        selection.reason ||
-        (!approvedRows.length
-          ? 'هیچ قراردادی برای این بلیط تأیید مالی ندارد.'
-          : null);
+      const unavailableReason = selection.reason;
       const template = selection.template;
       cards.push({
+        ...loads.get(ticket.offerId),
         offerId: ticket.offerId,
         transportType: ticket.transportType,
         departureTimeKnown: ticket.departureTimeKnown ?? true,
@@ -342,8 +376,8 @@ export class ReservationManifestService {
           ticket.destinationName || destination.englishName || destination.name,
         departureAt: ticket.departureAt,
         arrivalAt: ticket.arrivalAt,
-        contractCount: approvedRows.length,
-        passengerCount: approvedRows.reduce((sum, row) => {
+        contractCount: group.rows.length,
+        passengerCount: group.rows.reduce((sum, row) => {
           const snapshot =
             row.snapshot as unknown as ReservationIntakeV1['snapshot'];
           return sum + this.ticketPassengerIds(snapshot, ticket.offerId).length;
@@ -361,15 +395,6 @@ export class ReservationManifestService {
       });
     }
     return cards;
-  }
-
-  private async financiallyApproved(contractId: string) {
-    const approval = await this.delivery.readCustomerContract(contractId);
-    return (
-      approval.approved === true &&
-      (!approval.exceptionExpiresAt ||
-        Date.parse(approval.exceptionExpiresAt) > Date.now())
-    );
   }
 
   private requirePermissions(actor: AuthenticatedActor) {
@@ -603,17 +628,20 @@ export class ReservationManifestService {
           where: {
             intakeId: { in: candidates.map((row) => row.id) },
             outboundDepartureAt: new Date(ticket.departureAt),
-            ...(ticket.transportType !== 'FLIGHT'
-              ? {
-                  export: {
-                    idempotencyKey: { startsWith: 'ticket:' + offerId + ':' },
-                  },
-                }
-              : {
-                  export: {
-                    idempotencyKey: { not: { startsWith: 'ticket:ground-' } },
-                  },
-                }),
+            export:
+              ticket.transportType === 'FLIGHT' &&
+              ticket.direction === 'OUTBOUND'
+                ? {
+                    OR: [
+                      {
+                        idempotencyKey: {
+                          startsWith: 'ticket:' + offerId + ':',
+                        },
+                      },
+                      { idempotencyKey: { not: { startsWith: 'ticket:' } } },
+                    ],
+                  }
+                : { idempotencyKey: { startsWith: 'ticket:' + offerId + ':' } },
           },
           select: { intakeId: true },
           distinct: ['intakeId'],
@@ -622,22 +650,13 @@ export class ReservationManifestService {
       candidates = candidates.filter((row) => !seen.has(row.id));
     }
 
-    const selected = [];
-    let skippedFinanceCount = existing?.skippedFinanceCount ?? 0;
-    for (const row of candidates) {
-      if (!(await this.financiallyApproved(row.contractId))) {
-        skippedFinanceCount += 1;
-        continue;
-      }
-      selected.push(row);
-    }
+    const selected = candidates;
+    const skippedFinanceCount = 0;
     if (!selected.length)
       throw new BadRequestException(
-        skippedFinanceCount
-          ? 'تأیید مالی تحویل مدارک برای قراردادهای این بلیط انجام نشده است.'
-          : input.includePreviouslyExported
-            ? 'برای این بلیط قرارداد قابل خروجی وجود ندارد.'
-            : 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
+        input.includePreviouslyExported
+          ? 'برای این بلیط قرارداد قابل خروجی وجود ندارد.'
+          : 'برای این بلیط قرارداد جدید قابل خروجی وجود ندارد.',
       );
 
     let bytes: Uint8Array;
@@ -806,7 +825,7 @@ export class ReservationManifestService {
       );
 
     let selectedIds = existing?.items.map((item) => item.intakeId);
-    let skippedFinanceCount = existing?.skippedFinanceCount ?? 0;
+    const skippedFinanceCount = 0;
     let selectedMetadata:
       | {
           id: string;
@@ -871,13 +890,6 @@ export class ReservationManifestService {
 
       selectedMetadata = [];
       for (const candidate of filtered) {
-        const authorization = await this.delivery.readCustomerContract(
-          candidate.row.contractId,
-        );
-        if (!authorization.approved) {
-          skippedFinanceCount += 1;
-          continue;
-        }
         selectedMetadata.push({
           id: candidate.row.id,
           contractId: candidate.row.contractId,
@@ -890,23 +902,14 @@ export class ReservationManifestService {
 
     if (!selectedIds.length)
       throw new BadRequestException(
-        skippedFinanceCount
-          ? 'تأیید مالی تحویل مدارک قراردادهای این بازه انجام نشده است.'
-          : input.includePreviouslyExported
-            ? 'در این بازه قرارداد قابل خروجی وجود ندارد.'
-            : 'در این بازه قرارداد جدید قابل خروجی وجود ندارد.',
+        input.includePreviouslyExported
+          ? 'در این بازه قرارداد قابل خروجی وجود ندارد.'
+          : 'در این بازه قرارداد جدید قابل خروجی وجود ندارد.',
       );
 
     const rows: IranAirtourManifestRow[] = [];
     for (const id of selectedIds) {
       const intake = await this.workflow.detail(id, actor.branchIds);
-      const authorization = await this.delivery.readCustomerContract(
-        intake.contractId,
-      );
-      if (!authorization.approved)
-        throw new ForbiddenException(
-          'دریافت MANIFEST تا تأیید تحویل مدارک توسط مالی مجاز نیست.',
-        );
       rows.push(...(await this.passengerRows(intake, actor, traceId)));
     }
     const template = await readFile(
@@ -950,13 +953,6 @@ export class ReservationManifestService {
   async export(id: string, actor: AuthenticatedActor, traceId?: string) {
     this.requirePermissions(actor);
     const intake = await this.workflow.detail(id, actor.branchIds);
-    const authorization = await this.delivery.readCustomerContract(
-      intake.contractId,
-    );
-    if (!authorization.approved)
-      throw new ForbiddenException(
-        'دریافت MANIFEST تا تأیید تحویل مدارک توسط مالی مجاز نیست.',
-      );
     const destination = await this.directory.cityReference(
       intake.snapshot.hotelSelection?.cityId ??
         intake.snapshot.ticketSelections?.find(
@@ -1087,6 +1083,12 @@ export class ReservationManifestBatchController {
     @Inject(ReservationManifestService)
     private readonly service: ReservationManifestService,
   ) {}
+
+  @Get('routes')
+  @Header('Cache-Control', 'private, no-store')
+  async routes(@Req() req: AuthenticatedRequest) {
+    return { data: await this.service.listRoutes(req.actor) };
+  }
 
   @Get('tickets')
   @Header('Cache-Control', 'private, no-store')

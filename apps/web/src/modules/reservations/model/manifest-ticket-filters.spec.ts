@@ -78,3 +78,19 @@ describe('manifest ticket route filters', () => {
     ).toEqual([]);
   });
 });
+
+it('includes the reverse return leg when searching the outbound route', () => {
+  const returning = {
+    ...tickets[0]!,
+    offerId: 'return',
+    direction: 'RETURN' as const,
+    originName: 'آنتالیا',
+    destinationName: 'تهران',
+  };
+  expect(
+    filterManifestTickets([...tickets, returning], {
+      originName: 'تهران',
+      destinationName: 'آنتالیا',
+    }).map((ticket) => ticket.offerId),
+  ).toEqual(['tehran-antalya', 'return']);
+});
