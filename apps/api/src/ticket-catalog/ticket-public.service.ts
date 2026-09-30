@@ -100,6 +100,47 @@ export function validateTicketOffer(input: unknown): TicketOfferCreateV1 {
 
 @Injectable()
 export class TicketPublicService {
+  /** Historical direct-sale commissions only; never substitutes current prices for contract history. */
+  async reservationCommissions(
+    offerIds: readonly string[],
+    returnOfferId: string | null,
+    at: Date,
+    branchIds: readonly string[],
+  ) {
+    if (!offerIds.length) return [];
+    const rows =
+      await this.database.client.ticketSaleCommissionRevision.findMany({
+        where: {
+          offerId: { in: [...offerIds] },
+          salePriceTargetId: null,
+          occurredAt: { lte: at },
+          OR: [
+            { returnOfferId: null },
+            ...(returnOfferId ? [{ returnOfferId }] : []),
+          ],
+          offer: { branchId: { in: [...branchIds] } },
+        },
+        orderBy: { occurredAt: 'desc' },
+        select: {
+          scopeKey: true,
+          offerId: true,
+          returnOfferId: true,
+          percent: true,
+        },
+      });
+    const scopes = new Set<string>();
+    return rows
+      .filter((row) => {
+        if (scopes.has(row.scopeKey)) return false;
+        scopes.add(row.scopeKey);
+        return true;
+      })
+      .map((row) => ({
+        offerId: row.offerId,
+        returnOfferId: row.returnOfferId,
+        percent: row.percent.toString(),
+      }));
+  }
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(ProcurementPublicService)

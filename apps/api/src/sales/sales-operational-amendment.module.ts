@@ -10,6 +10,19 @@ import type { AuthenticatedActor, VoucherSettingsV1 } from '@nora/contracts';
 /** Public Sales boundary. The caller supplies its transaction for atomic cross-module work. */
 @Injectable()
 export class SalesOperationalAmendmentService {
+  async assertActive(
+    tx: Pick<Prisma.TransactionClient, 'salesContract'>,
+    id: string,
+    branchIds: readonly string[],
+  ) {
+    const contract = await tx.salesContract.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      select: { status: true },
+    });
+    if (!contract) throw new ForbiddenException('قرارداد در دسترس نیست.');
+    if (contract.status === 'CANCELLED')
+      throw new ConflictException('قرارداد ابطال شده است.');
+  }
   async versionFor(
     tx: Pick<Prisma.TransactionClient, 'salesContract'>,
     id: string,

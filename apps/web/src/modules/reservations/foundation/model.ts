@@ -1,3 +1,8 @@
+import type {
+  ReservationTableSummaryV1,
+  ReservationTableFlagKey,
+  ReservationTableFlagV1,
+} from '@nora/contracts';
 export const sections = [
   ['dashboard', 'داشبورد'],
   ['inbox', 'صندوق درخواست‌ها'],
@@ -43,6 +48,19 @@ export const statusLabels: Record<QueueStatus, string> = {
   CANCELLED: 'ابطال‌شده',
 };
 export interface RequestView {
+  tableSummary?: ReservationTableSummaryV1 | undefined;
+  tableFlags?:
+    | Partial<
+        Record<ReservationTableFlagKey, ReservationTableFlagV1 | undefined>
+      >
+    | undefined;
+  workflowVersion?: number | undefined;
+  transfer?: string | undefined;
+  guide?: string | undefined;
+  excursion?: string | undefined;
+  hotelStars?: string | undefined;
+  ticketKind?: string | undefined;
+  cost?: string | undefined;
   id: string;
   contractId?: string;
   contractNumber: string;

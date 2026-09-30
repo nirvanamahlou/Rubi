@@ -311,7 +311,7 @@ it('projects the latest persisted arrangement over the commercial room snapshot'
     singleRooms: 0,
     doubleRooms: 2,
     extraBeds: 1,
-    correctedAt: '2026-09-09T10:00:00Z',
+    correctedAt: undefined,
   });
 });
 it('marks notes from either the sales snapshot or reservation revisions', () => {

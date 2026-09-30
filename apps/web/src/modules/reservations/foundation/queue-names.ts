@@ -36,8 +36,12 @@ export function useQueueNames(rows: readonly RequestView[]) {
             id!,
           );
           const english = data.attributes.englishName;
-          if (resource === 'hotels')
+          if (resource === 'hotels') {
             names[`hotel-meals:${id}`] = hotelMealLabel(data.attributes);
+            const stars = data.attributes.starRating ?? data.attributes.stars;
+            if (typeof stars === 'number' || typeof stars === 'string')
+              names[`hotel-stars:${id}`] = String(stars);
+          }
           names[item] =
             typeof english === 'string' && english.trim()
               ? english.trim()
@@ -64,6 +68,7 @@ export function useQueueNames(rows: readonly RequestView[]) {
     rows: rows.map((row) => ({
       ...row,
       mealServiceName: queueMealName(row, names),
+      hotelStars: row.hotelStars || names[`hotel-stars:${row.hotelId}`],
       ...(names[`hotels:${row.hotelId}`]
         ? { hotelName: names[`hotels:${row.hotelId}`]! }
         : {}),
