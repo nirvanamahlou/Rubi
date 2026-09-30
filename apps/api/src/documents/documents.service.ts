@@ -1358,6 +1358,7 @@ export class DocumentsService {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (
       row.sourceModule === 'WORKBENCH' &&
       row.sourceEntityType === 'WorkbenchFeedback'
@@ -1366,6 +1367,14 @@ export class DocumentsService {
     }
     if (row.archiveStatus === 'DELETED') {
       throw new ConflictException('سند حذف‌شده قابل ویرایش نیست.');
+    }
+    if (
+      row.confidentialAccessCodeHash &&
+      dto.confidentiality !== 'CONFIDENTIAL'
+    ) {
+      throw new BadRequestException(
+        'تا زمانی که کد محرمانگی برقرار است، سطح سند قابل کاهش نیست.',
+      );
     }
     if (
       dto.confidentiality === 'CONFIDENTIAL' &&
@@ -1411,7 +1420,13 @@ export class DocumentsService {
         'سند هم‌زمان تغییر کرده است؛ اطلاعات را دوباره باز کنید.',
       );
     }
-    return { data: this.mapDetail(updated, actor) };
+    return {
+      data: this.mapDetail(
+        updated,
+        actor,
+        Boolean(row.confidentialAccessCodeHash),
+      ),
+    };
   }
 
   async archive(
@@ -1424,6 +1439,7 @@ export class DocumentsService {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (row.archiveStatus !== 'ACTIVE') {
       throw new ConflictException('فقط سند فعال قابل آرشیو است.');
     }
@@ -1442,7 +1458,13 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor) };
+    return {
+      data: this.mapDetail(
+        updated,
+        actor,
+        Boolean(row.confidentialAccessCodeHash),
+      ),
+    };
   }
 
   async restore(
@@ -1455,6 +1477,7 @@ export class DocumentsService {
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (row.archiveStatus !== 'ARCHIVED') {
       throw new ConflictException('فقط سند آرشیوشده قابل بازیابی است.');
     }
@@ -1476,7 +1499,13 @@ export class DocumentsService {
       userAgentSummary: summarizeUserAgent(metadata.userAgent),
     });
     if (!updated) throw new ConflictException('سند هم‌زمان تغییر کرده است.');
-    return { data: this.mapDetail(updated, actor) };
+    return {
+      data: this.mapDetail(
+        updated,
+        actor,
+        Boolean(row.confidentialAccessCodeHash),
+      ),
+    };
   }
 
   async bulk(
@@ -1498,6 +1527,7 @@ export class DocumentsService {
     }
     for (const row of rows) {
       this.assertDomain(row.documentType.domain, actor.permissions);
+      await this.assertConfidentialAccess(row, actor, metadata);
       if (dto.action === 'ARCHIVE' && row.archiveStatus !== 'ACTIVE') {
         throw new ConflictException('همه اسناد انتخاب‌شده باید فعال باشند.');
       }
@@ -1539,11 +1569,13 @@ export class DocumentsService {
     id: string,
     dto: DocumentDeleteDto,
     actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata = {},
   ): Promise<void> {
     this.assertPermission(actor.permissions, 'documents.delete');
     const row = await this.findVisibleDetail(id, actor);
     if (!row) throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
+    await this.assertConfidentialAccess(row, actor, metadata);
     if (row.legalHoldActive) {
       throw new ConflictException(
         'سند دارای توقف حقوقی است و حذف دائمی آن مجاز نیست.',
@@ -1932,7 +1964,15 @@ export class DocumentsService {
       ) {
         throw new ConflictException('این سند کد محرمانگی ندارد.');
       }
-      if (!(await this.repository.beginConfidentialAccessAttempt(row.id))) {
+      if (
+        !(await this.repository.beginConfidentialAccessAttempt({
+          documentId: row.id,
+          actorUserId: actor.userId,
+          actorBranchId: row.branchId,
+          ipSummary: summarizeIp(metadata.ipAddress),
+          userAgentSummary: summarizeUserAgent(metadata.userAgent),
+        }))
+      ) {
         await this.auditAccessGrantFailure(
           row,
           actor,
@@ -1961,7 +2001,6 @@ export class DocumentsService {
           message: 'کد محرمانگی درست نیست.',
         });
       }
-      await this.repository.resetConfidentialAccessFailures(row.id);
       const token = randomBytes(32).toString('base64url');
       const expiresAt = new Date(Date.now() + 5 * 60_000);
       await this.repository.createAccessGrant({
@@ -2310,7 +2349,6 @@ export class DocumentsService {
     metadata: DocumentRequestMetadata,
   ): Promise<boolean> {
     if (!row.confidentialAccessCodeHash) return true;
-    if (row.confidentiality !== 'CONFIDENTIAL') return true;
     if (!metadata.confidentialAccessGrantToken) return false;
     return this.repository.hasConfidentialAccessGrant({
       tokenHash: createHash('sha256')
@@ -2319,6 +2357,24 @@ export class DocumentsService {
       documentId: row.id,
       actorUserId: actor.userId,
       actorSessionId: actor.sessionId,
+    });
+  }
+
+  private async assertConfidentialAccess(
+    row: DocumentDetailRow,
+    actor: AuthenticatedActor,
+    metadata: DocumentRequestMetadata,
+  ): Promise<void> {
+    if (await this.hasConfidentialAccess(row, actor, metadata)) return;
+    await this.auditAccessGrantFailure(
+      row,
+      actor,
+      metadata,
+      'CONFIDENTIAL_CODE_REQUIRED',
+    );
+    throw new ForbiddenException({
+      code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+      message: 'برای انجام این عملیات، کد محرمانگی را وارد کنید.',
     });
   }
 

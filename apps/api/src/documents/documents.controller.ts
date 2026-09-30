@@ -54,6 +54,13 @@ function requestMetadata(
   confidentialAccessGrantToken?: string,
 ): DocumentRequestMetadata {
   const userAgent = request.headers['user-agent'];
+  const confidentialGrantHeader =
+    request.headers['x-document-confidential-grant'];
+  const confidentialGrant =
+    confidentialAccessGrantToken ??
+    (Array.isArray(confidentialGrantHeader)
+      ? confidentialGrantHeader[0]
+      : confidentialGrantHeader);
   let decodedSensitiveReason = sensitiveReason;
   if (sensitiveReason) {
     try {
@@ -71,7 +78,9 @@ function requestMetadata(
       ? { sensitiveReason: decodedSensitiveReason }
       : {}),
     ...(accessGrantToken ? { accessGrantToken } : {}),
-    ...(confidentialAccessGrantToken ? { confidentialAccessGrantToken } : {}),
+    ...(confidentialGrant
+      ? { confidentialAccessGrantToken: confidentialGrant }
+      : {}),
   };
 }
 
@@ -255,7 +264,12 @@ export class DocumentsController {
     @Body() dto: DocumentDeleteDto,
     @Req() request: AuthenticatedRequest,
   ) {
-    await this.service.permanentlyDelete(id, dto, request.actor);
+    await this.service.permanentlyDelete(
+      id,
+      dto,
+      request.actor,
+      requestMetadata(request),
+    );
   }
 
   @Get(':id/audit')

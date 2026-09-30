@@ -215,47 +215,84 @@ export const documentsApi = {
       }),
     );
   },
-  update(id: string, input: DocumentUpdateInputV1) {
+  update(id: string, input: DocumentUpdateInputV1, confidentialGrant?: string) {
     return refreshNotificationsAfter(
       request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}`, {
         method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  archive(id: string, input: DocumentArchiveActionInputV1) {
+  archive(
+    id: string,
+    input: DocumentArchiveActionInputV1,
+    confidentialGrant?: string,
+  ) {
     return refreshNotificationsAfter(
       request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/archive`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  restore(id: string, input: DocumentArchiveActionInputV1) {
+  restore(
+    id: string,
+    input: DocumentArchiveActionInputV1,
+    confidentialGrant?: string,
+  ) {
     return refreshNotificationsAfter(
       request<DocumentDetailResponseV1>(`/${encodeURIComponent(id)}/restore`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  bulk(input: DocumentBulkActionInputV1) {
+  bulk(input: DocumentBulkActionInputV1, confidentialGrant?: string) {
     return refreshNotificationsAfter(
       request<DocumentBulkActionResponseV1>('/bulk', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );
   },
-  permanentlyDelete(id: string, input: DocumentDeleteInputV1) {
+  permanentlyDelete(
+    id: string,
+    input: DocumentDeleteInputV1,
+    confidentialGrant?: string,
+  ) {
     return refreshNotificationsAfter(
       request<void>(`/${encodeURIComponent(id)}`, {
         method: 'DELETE',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(confidentialGrant
+            ? { 'x-document-confidential-grant': confidentialGrant }
+            : {}),
+        },
         body: JSON.stringify(input),
       }),
     );

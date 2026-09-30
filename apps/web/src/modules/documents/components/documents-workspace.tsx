@@ -663,7 +663,14 @@ export function DocumentsWorkspace() {
     setEditSubmitting(true);
     setEditError('');
     try {
-      const response = await documentsApi.update(editingDocument.id, input);
+      const response = await documentsApi.update(
+        editingDocument.id,
+        input,
+        confidentialGrant?.documentId === editingDocument.id &&
+          confidentialGrant.expiresAt > Date.now()
+          ? confidentialGrant.token
+          : undefined,
+      );
       setEditingDocument(response.data);
       if (detail?.id === response.data.id) setDetail(response.data);
       setEditOpen(false);
@@ -695,10 +702,17 @@ export function DocumentsWorkspace() {
     setDeleteSubmitting(true);
     setDeleteError('');
     try {
-      await documentsApi.permanentlyDelete(deletingDocument.id, {
-        reason,
-        version: deletingDocument.version,
-      });
+      await documentsApi.permanentlyDelete(
+        deletingDocument.id,
+        {
+          reason,
+          version: deletingDocument.version,
+        },
+        confidentialGrant?.documentId === deletingDocument.id &&
+          confidentialGrant.expiresAt > Date.now()
+          ? confidentialGrant.token
+          : undefined,
+      );
       setDeleteOpen(false);
       setNotice(`سند «${deletingDocument.title}» به‌صورت دائمی حذف شد.`);
       if (detail?.id === deletingDocument.id) changeDetailOpen(false);
@@ -741,11 +755,19 @@ export function DocumentsWorkspace() {
     setBulkSubmitting(true);
     setBulkError('');
     try {
-      const response = await documentsApi.bulk({
-        ids: [...selected],
-        action,
-        reason,
-      });
+      const response = await documentsApi.bulk(
+        {
+          ids: [...selected],
+          action,
+          reason,
+        },
+        selected.size === 1 &&
+          confidentialGrant &&
+          selected.has(confidentialGrant.documentId) &&
+          confidentialGrant.expiresAt > Date.now()
+          ? confidentialGrant.token
+          : undefined,
+      );
       setBulkOpen(false);
       setNotice(
         `عملیات روی ${response.data.updatedCount.toLocaleString('fa-IR')} سند انجام شد.`,

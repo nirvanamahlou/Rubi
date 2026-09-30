@@ -152,7 +152,6 @@ describe('DocumentsService security and persistence flow', () => {
     createAccessGrant: vi.fn(),
     confidentialAccessState: vi.fn(),
     beginConfidentialAccessAttempt: vi.fn(),
-    resetConfidentialAccessFailures: vi.fn(),
     hasConfidentialAccessGrant: vi.fn(),
     consumeAccessGrant: vi.fn(),
     audit: vi.fn(),
@@ -960,11 +959,12 @@ describe('DocumentsService security and persistence flow', () => {
       {},
     );
 
-    expect(repository.resetConfidentialAccessFailures).toHaveBeenCalledWith(
-      row().id,
-    );
     expect(repository.beginConfidentialAccessAttempt).toHaveBeenCalledWith(
-      row().id,
+      expect.objectContaining({
+        documentId: row().id,
+        actorUserId: protectedActor.userId,
+        actorBranchId: row().branchId,
+      }),
     );
     expect(repository.createAccessGrant).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -1639,6 +1639,110 @@ describe('DocumentsService security and persistence flow', () => {
     );
     expect(result.data.isIncomplete).toBe(true);
     expect(result.data.version).toBe(2);
+  });
+
+  it('requires the same-session code grant before every coded-document mutation', async () => {
+    const coded = row({ confidentialAccessCodeHash: 'a'.repeat(128) });
+    const mutatingActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.metadata.update',
+        'documents.delete',
+        'documents.restore',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(coded);
+    repository.findDetails.mockResolvedValue([coded]);
+    repository.hasConfidentialAccessGrant.mockResolvedValue(false);
+    const update = {
+      title: coded.title,
+      categoryId: coded.categoryId!,
+      ownerUserId: coded.ownerUserId,
+      confidentiality: 'CONFIDENTIAL' as const,
+      isIncomplete: false,
+      version: coded.version,
+    };
+    const operations = [
+      () => service.update(coded.id, update, mutatingActor, {}),
+      () =>
+        service.archive(
+          coded.id,
+          { reason: 'archive reason', version: 1 },
+          mutatingActor,
+          {},
+        ),
+      () =>
+        service.restore(
+          coded.id,
+          { reason: 'restore reason', version: 1 },
+          mutatingActor,
+          {},
+        ),
+      () =>
+        service.bulk(
+          {
+            ids: [coded.id],
+            action: 'MARK_INCOMPLETE',
+            reason: 'incomplete reason',
+          },
+          mutatingActor,
+          {},
+        ),
+      () =>
+        service.permanentlyDelete(
+          coded.id,
+          { reason: 'permanent delete reason', version: 1 },
+          mutatingActor,
+          {},
+        ),
+    ];
+    for (const operation of operations) {
+      await expect(operation()).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+        }),
+      });
+    }
+    expect(repository.updateMetadata).not.toHaveBeenCalled();
+    expect(repository.changeArchiveStatus).not.toHaveBeenCalled();
+    expect(repository.bulkAction).not.toHaveBeenCalled();
+    expect(repository.permanentlyDelete).not.toHaveBeenCalled();
+    expect(storage.removeQuarantined).not.toHaveBeenCalled();
+  });
+
+  it('rejects downgrading a coded document even with a valid same-session grant', async () => {
+    const coded = row({ confidentialAccessCodeHash: 'a'.repeat(128) });
+    const mutatingActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.metadata.update',
+        'documents.sensitive.read',
+      ],
+    };
+    repository.findDetail.mockResolvedValue(coded);
+    repository.hasConfidentialAccessGrant.mockResolvedValue(true);
+    await expect(
+      service.update(
+        coded.id,
+        {
+          title: coded.title,
+          categoryId: coded.categoryId!,
+          ownerUserId: coded.ownerUserId,
+          confidentiality: 'INTERNAL',
+          isIncomplete: false,
+          version: coded.version,
+        },
+        mutatingActor,
+        { confidentialAccessGrantToken: 'valid-grant' },
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.hasConfidentialAccessGrant).toHaveBeenCalledWith(
+      expect.objectContaining({ actorSessionId: mutatingActor.sessionId }),
+    );
+    expect(repository.updateMetadata).not.toHaveBeenCalled();
   });
 
   it('restores only an archived document without legal hold', async () => {

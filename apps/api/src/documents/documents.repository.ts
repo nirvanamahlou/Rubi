@@ -370,6 +370,23 @@ export class DocumentsRepository {
         { confidentiality: { notIn: ['CONFIDENTIAL', 'RESTRICTED'] } },
       ];
     }
+    // A masked row still leaks its raw title, filename or size through
+    // matching, total counts and ordering. Keep coded rows out of those views.
+    if (
+      query.search ||
+      (query.sortBy &&
+        query.sortBy !== 'updatedAt' &&
+        query.sortBy !== 'createdAt') ||
+      query.validity ||
+      query.attention
+    ) {
+      const existingConditions = where.AND
+        ? Array.isArray(where.AND)
+          ? where.AND
+          : [where.AND]
+        : [];
+      where.AND = [...existingConditions, { confidentialAccessCodeHash: null }];
+    }
     const direction = query.sortDirection;
     const orderBy: Prisma.DocumentOrderByWithRelationInput =
       query.sortBy === 'sizeBytes'
@@ -1148,47 +1165,56 @@ export class DocumentsRepository {
       select: {
         confidentialAccessCodeHash: true,
         confidentialAccessCodeSalt: true,
-        confidentialAccessLockedUntil: true,
       },
     });
   }
 
-  async beginConfidentialAccessAttempt(documentId: string): Promise<boolean> {
-    const rows = await this.database.client.$queryRaw<
-      { allowed: boolean }[]
-    >`WITH attempt AS (
-      UPDATE "documents"
-      SET "confidential_access_failed_attempts" = CASE
-            WHEN "confidential_access_locked_until" IS NOT NULL
-              AND "confidential_access_locked_until" <= NOW() THEN 1
-            ELSE "confidential_access_failed_attempts" + 1
-          END,
-          "confidential_access_locked_until" = CASE
-            WHEN CASE
-              WHEN "confidential_access_locked_until" IS NOT NULL
-                AND "confidential_access_locked_until" <= NOW() THEN 1
-              ELSE "confidential_access_failed_attempts" + 1
-            END >= 5 THEN NOW() + INTERVAL '15 minutes'
-            ELSE NULL
-          END
-      WHERE "id" = ${documentId}::uuid
-        AND (
-          "confidential_access_locked_until" IS NULL
-          OR "confidential_access_locked_until" <= NOW()
-          OR "confidential_access_failed_attempts" < 5
-        )
-      RETURNING 1
-    ) SELECT EXISTS (SELECT 1 FROM attempt) AS allowed`;
-    return rows[0]?.allowed ?? false;
-  }
-
-  async resetConfidentialAccessFailures(documentId: string): Promise<void> {
-    await this.database.client.document.update({
-      where: { id: documentId },
-      data: {
-        confidentialAccessFailedAttempts: 0,
-        confidentialAccessLockedUntil: null,
-      },
+  async beginConfidentialAccessAttempt(input: {
+    documentId: string;
+    actorUserId: string;
+    actorBranchId: string;
+    ipSummary: string;
+    userAgentSummary: string;
+  }): Promise<boolean> {
+    return this.database.client.$transaction(async (transaction) => {
+      // Serialize attempts only for this document and actor, across API workers.
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.documentId}), hashtext(${input.actorUserId}))`;
+      const since = new Date(Date.now() - 15 * 60_000);
+      const lastSuccess = await transaction.documentAuditEvent.findFirst({
+        where: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          action: 'documents.access_grant.create',
+          outcome: 'SUCCESS',
+          reason: 'CONFIDENTIAL_VIEW',
+          occurredAt: { gte: since },
+        },
+        orderBy: { occurredAt: 'desc' },
+        select: { occurredAt: true },
+      });
+      const attempts = await transaction.documentAuditEvent.count({
+        where: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          action: 'documents.access_grant.create',
+          reason: 'CONFIDENTIAL_CODE_ATTEMPT',
+          occurredAt: { gt: lastSuccess?.occurredAt ?? since },
+        },
+      });
+      if (attempts >= 5) return false;
+      await transaction.documentAuditEvent.create({
+        data: {
+          documentId: input.documentId,
+          actorUserId: input.actorUserId,
+          actorBranchId: input.actorBranchId,
+          action: 'documents.access_grant.create',
+          outcome: 'FAILURE',
+          reason: 'CONFIDENTIAL_CODE_ATTEMPT',
+          ipSummary: input.ipSummary,
+          userAgentSummary: input.userAgentSummary,
+        },
+      });
+      return true;
     });
   }
 
