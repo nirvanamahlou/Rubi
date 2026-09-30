@@ -4754,3 +4754,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch `codex/pc-a-contract-pdf-download-0930` from origin/develop. Reserve Reservations contract PDF preview/component spec, Sales contract print model/existing print and amendment tests, bounded status docs. Owner requests actual PDF download instead of opening a tab, a readable agreed-total field and saved contract corrections in output, then develop merge. Existing Sales saved-output boundary is retained; no API/schema/dependency changes. Primary reservation-pdf-html/spec local modifications are outside this scope and preserved. Prior Reservations locks released.
 
 - Delivered real authenticated download with inline errors, preview refresh after recorded amendments, and a light bordered agreed-total field with isolated readable digits and separate currency units. Existing saved amendment projection and commercial arithmetic retained. 26 tests/scoped lint passed; typecheck/build checked before PR and real synthetic two-currency PDF visually reviewed on A4. No API/migration/dependency/data changes; bounded locks release with scoped commit, authorized merge follows CI.
+
+## FLIGHT-RETURN-MAX-DEFAULT-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; reserve flight-schedule-form, weekday-schedule model/tests and bounded docs on codex/pc-a-flight-return-max-default-0930. Default Max to generated return stay plus one day, within existing 365-day ceiling; explicit manual Max (including clearing to unlimited) remains authoritative. No API/schema/dependency changes. Merge/local update authorized; prior Ticket locks released.
+
+- Automatic Max is displayed in the weekly form and saved per outbound based on its own generated return, plus one day. Explicit edits, including unlimited, remain authoritative. Twelve schedule regression tests and scoped lint passed; Web typecheck/build and CI follow. No migration; bounded locks release with commit.

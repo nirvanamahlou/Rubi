@@ -4055,3 +4055,7 @@ TICKET-LOAD-SEARCH-HOLDS-0930 adds explicit search-gated load tables, valid-date
 ## 2026-09-30 — PC-A — flight capacity view and history
 
 FLIGHT-CAPACITY-HISTORY-0930 renames the module to تعریف و ظرفیت پرواز, adds independent read-only view actions under selected outbound/return legs, and removes the duplicate lower catalog list, filters and pagination. Management supports optional includePast=true under existing branch/permission checks; default consumers remain future-only. Expired non-archived flights remain available in explicit historical searches, while valid dates derive only future or in-progress charter legs by arrival UTC. No schema, migration or dependency changes. 179 Web regressions and three isolated PostgreSQL lifecycle/HTTP tests passed; default future listings and expired Sales exclusion remain intact.
+
+## 2026-09-30 — PC-A — weekly flight return Max default
+
+FLIGHT-RETURN-MAX-DEFAULT-0930 displays automatic Max from the selected return stay and saves each generated outbound with its own stay plus one day, within the existing 365-day ceiling. Manually edited Max remains authoritative, including clearing for unlimited. No API, schema, migration or dependency changes. Twelve schedule regressions cover different weekday stays, explicit manual values and unlimited compatibility.
