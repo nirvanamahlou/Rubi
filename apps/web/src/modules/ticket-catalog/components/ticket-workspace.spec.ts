@@ -123,22 +123,16 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('repeatedDefinitions(');
     expect(source).toContain('publishRepeatedProducts(');
     expect(source).toContain('setRepeat(');
-    expect(source).toContain('قیمت فروش یک‌طرفه');
-    expect(source).toContain('قیمت فروش رفت‌وبرگشت');
-    expect(source).toContain('roundTripPricesByOutbound');
-    expect(source).toContain('TooltipContent');
-    expect(source).toContain('برگشت:');
     expect(source).toContain('removedPriceRevisions');
-    expect(source).toContain('در فروش قیمت‌گذاری نشده');
     expect(source).not.toContain('updateStandaloneSalePrice(');
     expect(source).toContain('updateOfferStatus(');
-    expect(source).toContain("? 'منقضی'");
     expect(source).not.toContain('listActiveCurrencyReferences()');
     expect(source).toContain('<SelectItem');
     expect(source).not.toContain('maxLength={3}');
-    expect(source).toContain(
-      'className="block whitespace-nowrap text-right tabular-nums"',
-    );
+    expect(source).not.toContain('بلیط‌های ثبت‌شده برای فروش و قرارداد');
+    expect(source).toContain('renderActions={renderOfferActions}');
+    expect(source).toContain('setOfferForm({ offer, readOnly: false })');
+    expect(source).toContain('updateCapacityHold({');
   });
 
   it('publishes a multi-segment flight as one complete contract offer', () => {

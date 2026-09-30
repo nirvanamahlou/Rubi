@@ -13,6 +13,23 @@ export interface FlightLoadFilter {
   weekday: string;
   cabin: string;
 }
+// Unknown legacy provenance stays unknown; do not hide existing tickets or
+// silently rewrite their supply. Explicit floating/API offers stay excluded.
+export const isCompanyLoadOffer = (offer: TicketOfferV1) =>
+  offer.supplyType == null || offer.supplyType === 'COMPANY';
+
+export function changeFlightLoadFilter(
+  current: FlightLoadFilter,
+  field: keyof FlightLoadFilter,
+  value: string,
+): FlightLoadFilter {
+  const next = { ...current, [field]: value };
+  if (next.from && next.to && next.from > next.to) {
+    if (field === 'from') next.to = '';
+    if (field === 'to') next.from = '';
+  }
+  return next;
+}
 export function companyFlightLegs(
   offers: readonly TicketOfferV1[],
   filter: FlightLoadFilter,
@@ -22,7 +39,7 @@ export function companyFlightLegs(
       const date = ticketCalendarDate(offer.departureAt);
       const weekday = new Date(date + 'T00:00:00Z').getUTCDay().toString();
       return (
-        offer.supplyType === 'COMPANY' &&
+        isCompanyLoadOffer(offer) &&
         (!filter.from || date >= filter.from) &&
         (!filter.to || date <= filter.to) &&
         (!filter.origin || offer.originId === filter.origin) &&
@@ -54,7 +71,7 @@ export function companyReturnLegs(
     .filter(
       (offer) =>
         offer.id !== outbound.id &&
-        offer.supplyType === 'COMPANY' &&
+        isCompanyLoadOffer(offer) &&
         offer.branchId === outbound.branchId &&
         eligibleTicketReturn(outbound, offer) &&
         (!sameClass || offer.cabinClassCode === outbound.cabinClassCode) &&

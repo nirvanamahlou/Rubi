@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
   companyFlightLegs,
+  changeFlightLoadFilter,
   companyReturnLegs,
   flightLoadTotals,
   type FlightLoadFilter,
@@ -40,7 +41,40 @@ const filter: FlightLoadFilter = {
   cabin: '',
 };
 describe('company flight load', () => {
-  it('includes only company capacity, inclusive dates and substring flight search', () => {
+  it('keeps the changed date and clears only the conflicting opposite bound', () => {
+    expect(changeFlightLoadFilter(filter, 'from', '2099-11-04')).toMatchObject({
+      from: '2099-11-04',
+      to: '',
+    });
+    expect(changeFlightLoadFilter(filter, 'to', '2099-06-30')).toMatchObject({
+      from: '',
+      to: '2099-06-30',
+    });
+    expect(changeFlightLoadFilter(filter, 'to', '2099-10-15')).toMatchObject({
+      from: '2099-10-01',
+      to: '2099-10-15',
+    });
+  });
+  it('shows unknown legacy reverse legs without changing their provenance', () => {
+    const outbound = offer('old-out', '2099-10-01', {
+      supplyType: null,
+      returnMinDays: 2,
+      returnMaxDays: 5,
+    });
+    const returning = offer('old-return', '2099-10-03', {
+      supplyType: null,
+      originId: 'b',
+      destinationId: 'a',
+    });
+    expect(companyReturnLegs([returning], outbound, false)).toEqual([
+      returning,
+    ]);
+    expect(returning.supplyType).toBeNull();
+    expect(
+      companyFlightLegs([outbound], { ...filter, from: '', to: '' }),
+    ).toEqual([outbound]);
+  });
+  it('includes company and unknown legacy capacity, excludes explicit external supply, respects filters', () => {
     const rows = [
       offer('first', '2099-10-01'),
       offer('last', '2099-10-30'),
@@ -51,6 +85,7 @@ describe('company flight load', () => {
     ];
     expect(companyFlightLegs(rows, filter).map((row) => row.id)).toEqual([
       'first',
+      'legacy',
       'last',
     ]);
   });

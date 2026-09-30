@@ -3965,10 +3965,10 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-29 — LOGIN-COMPANY-CAPTIONS-0929 — PC-A — READY_FOR_REVIEW
 
 نام نمایشی زیر لوگوهای شرکت در صفحه ورود حذف می‌شود؛ خود لوگو، متن جایگزین دسترس‌پذیری و عنوان بخش حفظ شده‌اند. تغییر محدود به Web است؛ بدون API، Migration، داده یا Dependency. اعتبارسنجی CI پیش از merge انجام می‌شود. جزئیات: [LOGIN-COMPANY-CAPTIONS-0929](tasks/LOGIN-COMPANY-CAPTIONS-0929.md).
+
 ## 2026-09-29 — CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
 
 در فهرست درخواست‌های امور مشتریان، دکمهٔ ردیفی «پیگیری» پروفایل و مشخصات همان درخواست را باز می‌کند. نمای کلی اکنون «آخرین درخواست‌ها» را مستقل از «منتظر پذیرش فروش» و «پیگیری معوق» از API مجازِ شعبه می‌خواند؛ وضعیت `NEW` دیگر به‌علت فیلتر تحویل فروش حذف نمی‌شود. ۲۸ تست متمرکز، typecheck، lint محدود و build وب موفق‌اند؛ CI و بررسی runtime باقی‌اند. [جزئیات](tasks/CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929.md).
-
 
 ## 2026-09-29 — CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — READY_FOR_REVIEW
 
@@ -3989,3 +3989,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 ## 2026-09-30 — PC-A — company flight load
 
 TICKET-LOAD-GRID-0930 adds side-by-side outbound/return load tables above Ticket Management, shared Min/Max eligible return selection, capacity totals and prices, Gregorian defaults, three supply choices and persisted manual economy/optional business baggage. An additive nullable migration preserves legacy provenance. Management Web drains paginated offers. Implementation and validation details: `docs/tasks/TICKET-LOAD-GRID-0930.md`. Operational deployment follows CI and merge to develop.
+
+## 2026-09-30 — PC-A — visible ticket load follow-up
+
+TICKET-LOAD-VISIBLE-0930 fixes the empty legacy load by reading unknown-provenance offers alongside explicit company capacity, without reclassifying stored tickets. Initial dates are unrestricted; editing a conflicting date clears the opposite bound. The duplicate lower published table is removed; selected-leg details retain edit, archive, activation and hold actions. The load uses a white light-mode surface. Explicit floating/API remain excluded. No API, migration or operational data changes. Ticket Catalog tests, scoped lint/types and 55-route Web build passed.

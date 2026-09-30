@@ -2,7 +2,7 @@
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
-  background: var(--card);
+  background: var(--surface);
 }
 .header {
   display: flex;
@@ -10,7 +10,7 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
 .header h2 {
@@ -47,7 +47,7 @@
   font-size: 15px;
   font-weight: 800;
   padding: 10px;
-  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  background: var(--surface);
 }
 .scroller {
   max-height: 330px;
@@ -65,7 +65,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--secondary);
+  background: var(--surface);
   font-weight: 800;
 }
 .table th,
