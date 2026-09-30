@@ -39,25 +39,25 @@ describe('Customers and passengers picker', () => {
     expect(html).toContain('noopener noreferrer');
   });
 
-  it('loads five accessible records before search, then queries all roles with pagination', () => {
+  it('waits for a search before loading accessible records, then queries all roles with pagination', () => {
     const source = readFileSync(
       new URL('./customer-picker.tsx', import.meta.url),
       'utf8',
     );
     expect(source).toContain("role: 'all'");
     expect(source).not.toContain("role: 'customer'");
-    expect(source).toContain('customerPickerPagination(search, page)');
+    expect(source).toContain('customerPickerPagination(page)');
     expect(source).toContain('customerPickerVisibleRecords(');
-    expect(source).not.toContain('if (!search.trim()) return;');
+    expect(source).toContain('if (!search.trim()) return;');
     expect(source).toContain(
-      "const [state, setState] = useState<LookupState>('loading')",
+      "const [state, setState] = useState<LookupState>('idle')",
     );
     expect(source).toContain('response.meta.total');
     expect(source).toContain('page * pagination.displayPageSize >= total');
     expect(source).toContain('if (signal?.aborted) return;');
     expect(source).toContain('setPage(1)');
     expect(source).toContain('maxLength={100}');
-    expect(source).toContain('setSearch(customer.displayName.slice(0, 100))');
+    expect(source).toContain("setSearch('')");
     expect(source).toContain('onSelect(customer)');
     expect(source).toContain('onClose={() => setCreating(false)}');
     expect(source).toContain('ref={createButtonRef}');

@@ -3968,7 +3968,7 @@ Owner-confirmed synthetic local catalog snapshot: 20 offers (11 visible, 9 alrea
 
 ## 2026-09-29 — CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929 — PC-B — READY_FOR_REVIEW
 
-فرم‌های درخواست و تیکت امور مشتریان به فهرست مشتریان/مسافران موجود و فرم ایجاد مرجع Customers متصل شدند. پنج گزینهٔ اولیه با صفحه‌بندی سازگار با حداقل ۱۰تایی API، جست‌وجو، ثبت مشتری جدید و انتخاب خودکار پروندهٔ ایجادشده فراهم است؛ داده در Customers می‌ماند و امور مشتریان فقط شناسه را ثبت می‌کند. ۲۶ تست متمرکز، typecheck، lint و build وب موفق‌اند. بررسی runtime، CI و review مالک Customers پیش از ادغام باقی است. جزئیات و ریسک پاسخ نامطمئن API: [CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md).
+فرم‌های درخواست و تیکت امور مشتریان به جست‌وجوی مشتریان/مسافران موجود و فرم ایجاد مرجع Customers متصل شدند. پیش از جست‌وجو هیچ گزینه‌ای یا درخواست فهرست ندارند؛ سپس نتایج ده‌تایی صفحه‌بندی می‌شوند. ثبت مشتری جدید و انتخاب خودکار پروندهٔ ایجادشده فراهم است؛ داده در Customers می‌ماند و امور مشتریان فقط شناسه را ثبت می‌کند. بررسی runtime، CI و review مالک Customers پیش از ادغام باقی است. جزئیات و ریسک پاسخ نامطمئن API: [CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929](tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md).
 ## 2026-09-29 — CUSTOMER-AFFAIRS-ASSESSMENT-SAVE-0929 — READY_FOR_REVIEW
 
 ارزیابی آمادگی فروش پس از ثبت در پرونده قابل بازخوانی و ویرایش مجدد است؛ دکمه کنار «ثبت ارتباط جدید» و گزارش آخرین نتیجه در پایین پروفایل قرار گرفت. کنترل مرحلهٔ مجاز در API و تفکیک ثبت موفق از شکست بازخوانی افزوده شد. ۲۵ تست Web و ۱۹ تست API، typecheck، lint محدود، build تولیدی و بازبینی مستقل موفق‌اند. آزمون پایگاه دادهٔ زنده و منع مجوز اجرا نشد. بدون Migration/Dependency؛ PR به develop برای بازبینی.

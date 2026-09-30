@@ -1,8 +1,8 @@
 const apiPageSize = 10;
 
 /** The Customers API requires at least ten rows per request. */
-export function customerPickerPagination(search: string, page: number) {
-  const displayPageSize = search.trim() ? 10 : 5;
+export function customerPickerPagination(page: number) {
+  const displayPageSize = 10;
   const firstIndex = (page - 1) * displayPageSize;
   return {
     displayPageSize,

@@ -52,7 +52,13 @@ const CustomerCreateDialog = dynamic(
 );
 
 type LookupState =
-  'loading' | 'ready' | 'empty' | 'error' | 'unauthorized' | 'forbidden';
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'empty'
+  | 'error'
+  | 'unauthorized'
+  | 'forbidden';
 
 export function CustomerPicker({
   disabled = false,
@@ -74,12 +80,9 @@ export function CustomerPicker({
   const [current, setCurrent] = useState<CustomerSummary | null>(null);
   const [currentError, setCurrentError] = useState(false);
   const [records, setRecords] = useState<readonly CustomerSummary[]>([]);
-  const [state, setState] = useState<LookupState>('loading');
+  const [state, setState] = useState<LookupState>('idle');
   const [creating, setCreating] = useState(false);
-  const pagination = useMemo(
-    () => customerPickerPagination(search, page),
-    [search, page],
-  );
+  const pagination = useMemo(() => customerPickerPagination(page), [page]);
   const chosen =
     selected ?? (current?.id === initialCustomerId ? current : null);
 
@@ -141,11 +144,9 @@ export function CustomerPicker({
   );
 
   useEffect(() => {
+    if (!search.trim()) return;
     const controller = new AbortController();
-    const timer = window.setTimeout(
-      () => void load(controller.signal),
-      search.trim() ? 300 : 0,
-    );
+    const timer = window.setTimeout(() => void load(controller.signal), 300);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
@@ -203,7 +204,9 @@ export function CustomerPicker({
             onChange={(event) => {
               setSearch(event.target.value);
               setPage(1);
-              setState('loading');
+              setRecords([]);
+              setTotal(0);
+              setState(event.target.value.trim() ? 'loading' : 'idle');
             }}
             placeholder="نام مشتری یا مسافر"
             value={search}
@@ -211,7 +214,11 @@ export function CustomerPicker({
         </div>
       </FormField>
       <div aria-busy={state === 'loading'} aria-live="polite">
-        {state === 'loading' ? (
+        {state === 'idle' ? (
+          <p className="text-sm text-muted-foreground">
+            برای نمایش مشتریان یا مسافران، نام آن‌ها را جست‌وجو کنید.
+          </p>
+        ) : state === 'loading' ? (
           <div aria-label="در حال جست‌وجوی مشتریان" className="space-y-2">
             <Skeleton className="h-14 w-full" />
             <Skeleton className="h-14 w-full" />
@@ -246,11 +253,7 @@ export function CustomerPicker({
           />
         ) : state === 'empty' ? (
           <EmptyState
-            description={
-              search.trim()
-                ? 'با عبارت فعلی مشتری یا مسافر فعالی پیدا نشد.'
-                : 'مشتری یا مسافر فعالی برای نمایش وجود ندارد.'
-            }
+            description={'با عبارت فعلی مشتری یا مسافر فعالی پیدا نشد.'}
             title="نتیجه‌ای وجود ندارد"
           />
         ) : (
@@ -311,40 +314,42 @@ export function CustomerPicker({
           </div>
         )}
       </div>
-      <div className="flex items-center justify-between gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={disabled || state === 'loading' || page === 1}
-          onClick={() => {
-            setPage((value) => value - 1);
-            setState('loading');
-          }}
-        >
-          قبلی
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          صفحه {page.toLocaleString('fa-IR')} · {total.toLocaleString('fa-IR')}{' '}
-          نتیجه
-        </span>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={
-            disabled ||
-            state !== 'ready' ||
-            page * pagination.displayPageSize >= total
-          }
-          onClick={() => {
-            setPage((value) => value + 1);
-            setState('loading');
-          }}
-        >
-          بعدی
-        </Button>
-      </div>
+      {search.trim() ? (
+        <div className="flex items-center justify-between gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled || state === 'loading' || page === 1}
+            onClick={() => {
+              setPage((value) => value - 1);
+              setState('loading');
+            }}
+          >
+            قبلی
+          </Button>
+          <span className="text-xs text-muted-foreground">
+            صفحه {page.toLocaleString('fa-IR')} ·{' '}
+            {total.toLocaleString('fa-IR')} نتیجه
+          </span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={
+              disabled ||
+              state !== 'ready' ||
+              page * pagination.displayPageSize >= total
+            }
+            onClick={() => {
+              setPage((value) => value + 1);
+              setState('loading');
+            }}
+          >
+            بعدی
+          </Button>
+        </div>
+      ) : null}
       {chosen ? (
         <Alert
           description={`${chosen.displayName} · ${chosen.maskedPrimaryContact ?? 'بدون تماس'}`}
@@ -383,10 +388,11 @@ export function CustomerPicker({
           onCreated={(customer) => {
             onSelect(customer);
             setCreating(false);
-            setSearch(customer.displayName.slice(0, 100));
+            setSearch('');
             setPage(1);
-            setState('loading');
-            setRetry((value) => value + 1);
+            setRecords([]);
+            setTotal(0);
+            setState('idle');
           }}
         />
       ) : null}
