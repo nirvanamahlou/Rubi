@@ -223,7 +223,9 @@ export function FlightLoadGrid({
     );
   };
   const detail = (offer: TicketOfferV1 | undefined, back: boolean) => (
-    <section>
+    <section
+      aria-label={back ? 'بلیت برگشت انتخاب‌شده' : 'بلیت رفت انتخاب‌شده'}
+    >
       <strong>{back ? 'مشخصات و قیمت برگشت' : 'مشخصات و قیمت رفت'}</strong>
       {offer ? (
         <>
@@ -248,7 +250,6 @@ export function FlightLoadGrid({
             نوع تأمین:{' '}
             {offer.supplyType === 'COMPANY' ? 'ظرفیت شرکت (چارتر)' : 'ثبت نشده'}
           </p>
-          {renderActions(offer)}
           <p>
             قیمت یک‌طرفه:{' '}
             {offer.standaloneSalePrice
@@ -288,6 +289,15 @@ export function FlightLoadGrid({
               }
             </p>
           )}
+          <div
+            className={styles.actions}
+            aria-label={back ? 'عملیات بلیت برگشت' : 'عملیات بلیت رفت'}
+          >
+            <span className={styles.status}>
+              وضعیت: {offer.status === 'ACTIVE' ? 'فعال' : 'غیرفعال'}
+            </span>
+            {renderActions(offer)}
+          </div>
         </>
       ) : (
         <p>پرواز را از جدول انتخاب کنید.</p>
