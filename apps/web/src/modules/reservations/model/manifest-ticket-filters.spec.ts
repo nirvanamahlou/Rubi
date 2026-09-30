@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ReservationManifestTicketCardV1 } from '@nora/contracts';
-import { filterManifestTickets } from './manifest-ticket-filters';
+import {
+  filterManifestTickets,
+  manifestDisplayDirection,
+  manifestRouteChoices,
+} from './manifest-ticket-filters';
 
 const tickets: ReservationManifestTicketCardV1[] = [
   {
@@ -93,4 +97,51 @@ it('includes the reverse return leg when searching the outbound route', () => {
       destinationName: 'آنتالیا',
     }).map((ticket) => ticket.offerId),
   ).toEqual(['tehran-antalya', 'return']);
+});
+
+it('orients outbound and return by the selected reverse city/country route without mutating stored direction', () => {
+  const outbound = {
+    ...tickets[0]!,
+    originId: 'tehran',
+    destinationId: 'antalya',
+    originCountryId: 'ir',
+    destinationCountryId: 'tr',
+    originCountryName: 'ایران',
+    destinationCountryName: 'ترکیه',
+  };
+  const returning = {
+    ...outbound,
+    offerId: 'return',
+    direction: 'RETURN' as const,
+    originId: 'antalya',
+    destinationId: 'tehran',
+    originCountryId: 'tr',
+    destinationCountryId: 'ir',
+    originCountryName: 'ترکیه',
+    destinationCountryName: 'ایران',
+    originName: 'آنتالیا',
+    destinationName: 'تهران',
+  };
+  const filters = {
+    originId: 'antalya',
+    destinationId: 'tehran',
+    originCountryId: 'tr',
+    destinationCountryId: 'ir',
+  };
+  expect(
+    filterManifestTickets([outbound, returning, tickets[1]!], filters),
+  ).toEqual([outbound, returning]);
+  expect(manifestDisplayDirection(returning, filters)).toBe('OUTBOUND');
+  expect(manifestDisplayDirection(outbound, filters)).toBe('RETURN');
+  expect(outbound.direction).toBe('OUTBOUND');
+  expect(returning.direction).toBe('RETURN');
+  expect(manifestDisplayDirection(returning, {})).toBe('RETURN');
+  const choices = manifestRouteChoices([outbound], {
+    originCountryId: 'tr',
+    destinationCountryId: 'ir',
+  });
+  expect(choices.origins.map((c) => c.id)).toEqual(['antalya']);
+  expect(choices.destinations.map((c) => c.id)).toEqual(['tehran']);
+  expect(choices.countries.map((c) => c.id).sort()).toEqual(['ir', 'tr']);
+  expect(filterManifestTickets(tickets, { originCountryId: 'tr' })).toEqual([]);
 });

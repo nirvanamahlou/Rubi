@@ -11,7 +11,12 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { filterManifestTickets } from '../model/manifest-ticket-filters';
+import {
+  filterManifestTickets,
+  manifestDisplayDirection,
+  manifestRouteChoices,
+  type ManifestTicketRouteFilters,
+} from '../model/manifest-ticket-filters';
 
 function todayInTehran() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -74,6 +79,8 @@ export function ManifestExport() {
   >([]);
   const [routes, setRoutes] = useState<ReservationManifestRouteV1[]>([]);
   const [routeError, setRouteError] = useState('');
+  const [originCountry, setOriginCountry] = useState('');
+  const [destinationCountry, setDestinationCountry] = useState('');
   const [originFilter, setOriginFilter] = useState('');
   const [destinationFilter, setDestinationFilter] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -81,7 +88,7 @@ export function ManifestExport() {
     fromDate: today,
     toDate: today,
   });
-  const [searchRoute, setSearchRoute] = useState({
+  const [searchRoute, setSearchRoute] = useState<ManifestTicketRouteFilters>({
     originName: '',
     destinationName: '',
   });
@@ -128,15 +135,10 @@ export function ManifestExport() {
       active = false;
     };
   }, []);
-  const origins = [...new Set(routes.map((route) => route.originName))];
-  const destinations = [
-    ...new Set(
-      routes
-        .filter((route) => !originFilter || route.originName === originFilter)
-        .map((route) => route.destinationName),
-    ),
-  ];
-
+  const choices = manifestRouteChoices(routes, {
+    originCountryId: originCountry,
+    destinationCountryId: destinationCountry,
+  });
   function validate() {
     if (!fromDate || !toDate) return 'بازه تاریخ را کامل کنید.';
     if (fromDate > toDate) return 'تاریخ شروع باید قبل از تاریخ پایان باشد.';
@@ -166,9 +168,23 @@ export function ManifestExport() {
         (await response.json()) as ReservationManifestTicketListV1;
       setTickets(payload.data);
       setSearchedDates({ fromDate, toDate });
+      const origin = choices.cities.find((city) => city.key === originFilter);
+      const destination = choices.cities.find(
+        (city) => city.key === destinationFilter,
+      );
       setSearchRoute({
-        originName: originFilter.trim(),
-        destinationName: destinationFilter.trim(),
+        originCountryId: originCountry,
+        destinationCountryId: destinationCountry,
+        ...(origin?.id
+          ? { originId: origin.id }
+          : origin
+            ? { originName: origin.name }
+            : {}),
+        ...(destination?.id
+          ? { destinationId: destination.id }
+          : destination
+            ? { destinationName: destination.name }
+            : {}),
       });
       setLoaded(true);
     } catch (reason) {
@@ -272,38 +288,76 @@ export function ManifestExport() {
           />
         </label>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2" aria-label="فیلتر مسیر">
+      <div
+        className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+        aria-label="فیلتر مسیر"
+      >
         <label className="grid gap-2 text-sm font-medium">
-          مبدأ
+          کشور مبدأ
           <select
-            aria-label="مبدأ مسیر"
+            aria-label="کشور مبدأ"
             className="h-10 rounded-md border bg-background px-3"
-            value={originFilter}
+            value={originCountry}
             onChange={(event) => {
-              setOriginFilter(event.target.value);
-              setDestinationFilter('');
+              setOriginCountry(event.target.value);
+              setOriginFilter('');
             }}
           >
-            <option value="">همه مبدأها</option>
-            {origins.map((name) => (
-              <option key={name} value={name}>
-                {name}
+            <option value="">همه کشورها</option>
+            {choices.countries.map((country) => (
+              <option key={country.id} value={country.id}>
+                {country.name}
               </option>
             ))}
           </select>
         </label>
         <label className="grid gap-2 text-sm font-medium">
-          مقصد
+          شهر مبدأ
           <select
-            aria-label="مقصد مسیر"
+            aria-label="شهر مبدأ مسیر"
+            className="h-10 rounded-md border bg-background px-3"
+            value={originFilter}
+            onChange={(event) => setOriginFilter(event.target.value)}
+          >
+            <option value="">همه شهرها</option>
+            {choices.origins.map((city) => (
+              <option key={city.key} value={city.key}>
+                {city.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          کشور مقصد
+          <select
+            aria-label="کشور مقصد"
+            className="h-10 rounded-md border bg-background px-3"
+            value={destinationCountry}
+            onChange={(event) => {
+              setDestinationCountry(event.target.value);
+              setDestinationFilter('');
+            }}
+          >
+            <option value="">همه کشورها</option>
+            {choices.countries.map((country) => (
+              <option key={country.id} value={country.id}>
+                {country.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="grid gap-2 text-sm font-medium">
+          شهر مقصد
+          <select
+            aria-label="شهر مقصد مسیر"
             className="h-10 rounded-md border bg-background px-3"
             value={destinationFilter}
             onChange={(event) => setDestinationFilter(event.target.value)}
           >
-            <option value="">همه مقصدها</option>
-            {destinations.map((name) => (
-              <option key={name} value={name}>
-                {name}
+            <option value="">همه شهرها</option>
+            {choices.destinations.map((city) => (
+              <option key={city.key} value={city.key}>
+                {city.name}
               </option>
             ))}
           </select>
@@ -396,7 +450,11 @@ export function ManifestExport() {
                   </thead>
                   <tbody>
                     {visibleTickets
-                      .filter((ticket) => ticket.direction === direction)
+                      .filter(
+                        (ticket) =>
+                          manifestDisplayDirection(ticket, searchRoute) ===
+                          direction,
+                      )
                       .map((ticket) => (
                         <tr key={ticket.offerId}>
                           <td>

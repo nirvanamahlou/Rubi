@@ -4761,6 +4761,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Automatic Max is displayed in the weekly form and saved per outbound based on its own generated return, plus one day. Explicit edits, including unlimited, remain authoritative. Twelve schedule regression tests and scoped lint passed; Web typecheck/build and CI follow. No migration; bounded locks release with commit.
 
+## MANIFEST-COUNTRY-ROUTE-0930 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-manifest-country-route-0930` from origin/develop. Reserve Reservations manifest API/routes, Web manifest component/filter model/tests and foundation introduction, additive optional Travel manifest geography fields and bounded status docs. Owner requests country/city origin/destination filters, selected-route-relative outbound/return grouping and removal of old airline-specific introduction, then develop merge. Producer Reservations uses existing public Master Data services for non-sensitive geography; no Master Data implementation/table changes, migration, dependencies or operational data changes. Old v1 clients ignore optional geography; legacy name-only routes remain usable without guessed countries. Prior manifest locks released after PR #510.
+
+- Delivered four dependent country/city filters, bidirectional endpoint choices and display grouping relative to selected route without changing stored contract direction or export IDs. City/country IDs and labels come through public Master Data references; legacy unknown countries stay unknown. Removed old airline-specific introduction. 24 Web and 32 API tests/scoped lint passed; contracts build and API/Web typecheck/build checked before PR (stale local Prisma output regenerated without a database connection). No migration/dependencies/data changes. Bounded locks release with commit and authorized develop merge follows CI.
+
 ## CHARTER-LOAD-TODAY-DEFAULT-0930 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-charter-load-today-default-0930 from origin/develop. Reserve Ticket flight-load UI/CSS/model/tests and bounded docs. Valid dates checked by default; explicit search remains required, range starts today in Tehran and ends at latest matching not-yet-departed charter flight. Exclude departed/in-progress flights from valid mode; manual history retains both legs. Full blue selected rows and shorter charter load title. No API/schema/migration/dependency changes. Prior locks released; merge/local update authorized.
