@@ -4642,6 +4642,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - API، Permission، Prisma/Migration، Seed، دادهٔ واقعی مشتری، Dependency/Lockfile و سرویس زندهٔ ۳۱۰۰ در مرحلهٔ پیاده‌سازی تغییر نمی‌کنند. اگر قرارداد تازهٔ Backend یا تغییر مالکیت داده لازم شد، پیش از اجرا هماهنگی جداگانه ثبت می‌شود.
 - نتیجهٔ اصلاح: انتخاب‌گر مشترک درخواست/تیکت تا ورود عبارت جست‌وجو هیچ گزینه‌ای یا درخواست فهرست ندارد؛ نتایج با صفحه‌های ده‌تایی API نمایش می‌یابند. ایجاد پرونده از فرم مرجع Customers انجام و خروجی همان پرونده خودکار انتخاب می‌شود؛ در خطای نامطمئنِ ایجاد، تلاش تکراری تا زمان بستن فرم قفل می‌شود. دکمهٔ ایجاد به `customers.create` وابسته است. مسیر عمومی `customers/public/entry` مرز مجاز UI است؛ بازبینی runtime و review مالک Customers پیش از ادغام باقی است. ریسک idempotency سمت API در [شرح کار](docs/tasks/CUSTOMER-AFFAIRS-CUSTOMER-CREATE-0929.md) ثبت شده است.
 
+## CUSTOMER-AFFAIRS-CUSTOMER-CREATE-RUNTIME-0930 — PC-B — COMPLETE
+
+- با درخواست صریح مالک، PR #493 پس از حل تعارض و سبزشدن هر چهار gate در `develop@5c340730` ادغام شد. تست محلی Web: ۳۰۶ فایل/۱۸۸۵ تست موفق، ۳ skipped؛ lint، typecheck و build تولیدی ۵۵ مسیر موفق.
+- Web build `unified--Uq6hJYbfm0sJzDs5KwKo` از `develop@5c340730` روی پورت داخلی ۳۱۱۷ فعال و درگاه ۳۱۰۰ به آن وصل شد. Web login=200، مسیر محافظت‌شدهٔ امور مشتریان=307 به login، API ۴۰۰۰ health=200 و endpoint هویت runtime تطابق commit/build را تأیید کردند. وب قبلی ۳۱۱۶ برای rollback روشن ماند؛ API و دادهٔ مشتری تغییر نکردند. آزمون احرازشدهٔ فرم یا ثبت دادهٔ واقعی در این تحویل انجام نشد.
+
 ## CUSTOMER-AFFAIRS-FOLLOWUP-OVERVIEW-0929 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`؛ درخواست مالک از تصویر ۶۶۷: در ردیف هر درخواست دکمهٔ «پیگیری» به پروفایل همان درخواست و مشخصات/عملیات آن برود؛ درخواست تازه‌ثبت‌شده در «نمای کلی» نیز دیده شود. شاخه `codex/pc-b-ca-followup-overview-0929` از `origin/develop@bb4209e0`.
