@@ -902,7 +902,7 @@ export class TicketPublicService {
           validatePriceTiers(
             input.tiers,
             input.amount,
-            Math.max(outbound.totalCapacity, returning.totalCapacity),
+            Math.min(outbound.totalCapacity, returning.totalCapacity),
           );
           const replay = await tx.ticketOfferRoundTripSalePrice.findUnique({
             where: {
