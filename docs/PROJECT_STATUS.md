@@ -1,3 +1,7 @@
+## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
+
+The owner's screenshot confirmed the previous redesign was deployed but the horizontal agreed-total strip still did not satisfy the requested field layout. The shared Sales print renderer now labels the field قیمت توافق‌شده قرارداد above a white amount area, with separate clearly divided amount/currency rows. Preview and PDF use the same renderer; exact existing Decimal arithmetic and legacy balance fallback are retained. 22 focused tests and synthetic A4 PDF visual review pass. No API/schema/dependency/data changes; local correction follows develop merge and CI.
+
 ## 2026-10-01 — GREGORIAN-NAVIGATION-1001 — PC-A — READY_FOR_REVIEW
 
 Gregorian calendar headers now place previous on the left and next on the right, independently of Persian/English labels or surrounding RTL form direction. Shared picker (including Sales), Ticket, Customers, flight ranges and Marketing calendars follow the same rule for month, year and year-grid navigation. Persian mode retains its existing direction. 34 targeted tests, scoped lint, Web typecheck and 55-route production build passed; full CI is required before the owner-authorized develop merge. No API, migration, dependency, operational data or local runtime change.
