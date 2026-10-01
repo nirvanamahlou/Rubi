@@ -4809,3 +4809,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch `codex/pc-a-contract-agreed-price-design-1001` from origin/develop. Reserve Sales contract print HTML/styles and existing regression test, bounded docs and clean local Web rollout. User screenshot confirms current agreed-total strip is insufficient; redesign as explicit labelled agreed-price field in shared preview/PDF renderer. No arithmetic/API/schema/dependency changes, preserve all unrelated primary edits. Prior print locks released with PR512. Continued merge/local correction authorized in this conversation.
 
 - Delivered explicit agreed-price heading above independent currency rows in one white field. Shared renderer serves preview and downloadable PDF. 22 focused tests pass, synthetic two-currency A4 PDF visually verified with Poppler; lint/typecheck/build precede CI and owner-authorized merge/local correction. No migration or arithmetic change. Bounded source locks release with commit.
+
+## CONTRACT-PRICE-COMPACT-1001 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-contract-price-compact-1001` from origin/develop. Owner requests compact agreed-price field with separate amounts per currency; follow-up to merged PR522. Reserve only shared Sales contract print styles/label and bounded status docs, local Web correction after authorized continued develop merge. No active overlapping print locks. Existing monetary grouping/arithmetic unchanged; no API/schema/dependency/data changes. Preserve unrelated primary checkout edits.
+
+- Delivered a compact one-line title with separate amount/currency chips that wrap safely when needed, matching normal table typography. 22 focused tests/scoped lint pass and synthetic multi-currency A4 PDF visually reviewed. Full Web typecheck/build/CI precede continued authorized merge/local correction. Bounded source locks released with commit.
