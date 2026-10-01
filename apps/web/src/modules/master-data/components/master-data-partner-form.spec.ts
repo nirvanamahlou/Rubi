@@ -20,6 +20,7 @@ import { MasterDataLiveForm } from './master-data-live-form';
 function render(
   resource: 'suppliers' | 'brokers' | 'organizations',
   mode: 'create' | 'edit' | 'view' = 'create',
+  lockedFields: readonly string[] = [],
 ) {
   const record: MasterDataRecord = {
     id: 'partner-test',
@@ -42,6 +43,7 @@ function render(
       definition: getMasterDataDefinition(resource),
       mode,
       open: true,
+      lockedFields,
       ...(mode !== 'create' ? { record } : {}),
       onOpenChange: () => undefined,
       onPersist: async () => undefined,
@@ -68,10 +70,12 @@ describe('real partner form fields', () => {
         expect(html).not.toContain('سازمان تأمین‌کننده');
         expect(html).toContain('تماس اصلی');
         expect(html).not.toContain('ثبت سازمان جدید');
+        expect(html).toContain('افزودن خدمت');
       } else {
         expect(html).toContain('تماس اصلی');
         expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
         expect(html).toContain('id="live-brokers-organizationId"');
+        expect(html).not.toContain('افزودن خدمت');
       }
       expect(html).toContain(`id="live-${resource}-serviceCodes"`);
       expect(html.match(/<form\b/g)).toHaveLength(1);
@@ -100,13 +104,20 @@ describe('real partner form fields', () => {
     expect(html).toContain('id="live-organizations-personType"');
     expect(html).toContain('پاک‌کردن نوع شخصیت');
   });
-  it('does not expose editor controls in read-only profiles', () => {
-    const html = render('brokers', 'view');
-    expect(html).toContain('Test Partner');
-    expect(html).toContain('<dl');
-    expect(html).not.toContain('<input');
-    expect(html).not.toContain('افزودن سازمان');
-    expect(html).not.toContain('افزودن مخاطب');
+  it.each(['suppliers', 'brokers'] as const)(
+    'does not expose editor controls in read-only %s profiles',
+    (resource) => {
+      const html = render(resource, 'view');
+      expect(html).toContain('آزمون');
+      expect(html).toContain('<dl');
+      expect(html).not.toContain('<input');
+      expect(html).not.toContain('افزودن سازمان');
+      expect(html).not.toContain('افزودن مخاطب');
+      expect(html).not.toContain('افزودن خدمت');
+    },
+  );
+  it('does not expose supplier service creation when the field is locked', () => {
+    const html = render('suppliers', 'create', ['serviceCodes']);
     expect(html).not.toContain('افزودن خدمت');
   });
 });
