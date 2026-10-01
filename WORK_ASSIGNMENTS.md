@@ -1,3 +1,8 @@
+## TOUR-TYPE-HIDE-LAST-CHANGE-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-tour-type-hide-last-change-1001` from origin/develop. Reserve only Tour Types last-change table header/cell in travel-services workspace, existing regression spec and own bounded status entries. Preserve form/View metadata, export/API/backend/audit and other resource tables. No active overlapping owner; prior scoped locks released. No migration/dependency/runtime/database changes. User authorizes push/develop merge after checks; preserve unrelated primary edits.
+- The Tour Types list now omits only the last-change header and matching value cell, leaving nine exact aligned columns. Last-change metadata remains in the Tour Type form/View, export still includes `updatedAt`, and every other travel-service table is unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed; bounded locks release with the scoped commit.
+
 ## SALES-REFERENCE-PROFILE-CLEANUP-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-sales-reference-profile-cleanup-1001` from local b65a6a1b atop develop. Reserve only Sales References View detail rows version/Persian title, focused existing spec and own bounded docs. Preserve identity heading, English title/other profile fields, forms/internal version/CAS/API/export/backend and other profiles. Prior scoped locks released; no active overlap. No migration/dependency/runtime/database changes. User authorizes push/develop merge including preceding local table-column deletion; preserve unrelated primary edits.
