@@ -2,6 +2,10 @@
 
 An explicit tier-price save button now appears beside each enabled tier editor, for single and round-trip prices. It invokes the existing versioned save API with the current tiers; incomplete capacity schedules and in-flight saves disable it. Existing focused tests, scoped lint, typecheck and production build checked. No API/schema/migration/dependency/runtime change. Owner requests merge to develop after checks.
 
+## 2026-10-01 — GREGORIAN-NAVIGATION-1001 — PC-A — READY_FOR_REVIEW
+
+Gregorian calendar headers now place previous on the left and next on the right, independently of Persian/English labels or surrounding RTL form direction. Shared picker (including Sales), Ticket, Customers, flight ranges and Marketing calendars follow the same rule for month, year and year-grid navigation. Persian mode retains its existing direction. 34 targeted tests, scoped lint, Web typecheck and 55-route production build passed; full CI is required before the owner-authorized develop merge. No API, migration, dependency, operational data or local runtime change.
+
 ## 2026-09-30 — MASTER-DATA-VIEW-DESIGN-0930 — PC-B — READY_FOR_REVIEW
 
 Read/view presentation redesign covers all Master Data profiles and view-capable forms. User follow-ups add inline country-child expansion and terminal-list Last Change column removal; audit/backend remain intact. Existing data, permissions and create/edit workflows remain unchanged. Global Worker Orchestrator bootstrap and configuration stay outside Rubi. No migration, dependency, database or local runtime changes.
