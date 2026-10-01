@@ -1,3 +1,8 @@
+## ACQUAINTANCE-HIDE-ENGLISH-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-acquaintance-hide-english-filter-1001` from origin/develop@8d7abcd6. Reserve only local Sales References workspace acquaintance English-name filter visibility/effective list-export filters, focused existing spec and own bounded docs. Preserve general search, code filter, Sales Channels/other resources, forms/profile/API/schema/backend. No active overlapping owner; prior scoped locks released. No shared contracts/dependencies/migration/runtime/database changes. User authorizes push/develop merge after review/checks; preserve unrelated primary edits.
+- Acquaintance Methods now displays only its code-specific filter and strips any hidden/stale English-name `columnFilter2` from both list and export requests. Sales Channels still displays and sends both canonical filters; general search and English-name form/profile data remain unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed; bounded locks release with the scoped commit.
+
 ## ACQUAINTANCE-HIDE-ORDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-acquaintance-hide-order-column-1001` from origin/develop@e7484542. Reserve only Sales References workspace acquaintance-methods display-order header/cell, focused existing spec and own bounded docs. Preserve sales-channels table, forms/profile/order logic/API/export/backend. No active overlapping owner; prior scoped locks released. No schema/migration/dependency/runtime/database change. User authorizes push/develop merge after checks; preserve unrelated primary edits.
