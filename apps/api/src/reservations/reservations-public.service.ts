@@ -79,6 +79,15 @@ function present(
         supplierName: purchase.supplierNameSnapshot,
         amount: purchase.amount.toString(),
         currencyCode: purchase.currencyCode,
+        passengerPrices: Array.isArray(purchase.passengerPrices)
+          ? (purchase.passengerPrices as unknown as {
+              customerId: string;
+              passengerName: string;
+              nightlyAmount: string;
+              nights: number;
+              totalAmount: string;
+            }[])
+          : [],
         actorUserId: purchase.actorUserId,
         createdAt: purchase.createdAt.toISOString(),
         finance: finance

@@ -1,5 +1,4 @@
 'use client';
-import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -56,6 +55,21 @@ export const reservationPurchaseServices = (
     },
   ];
 };
+
+export const reservationHotelPassengers = (
+  snapshot: ReservationIntakeV1['snapshot'],
+  serviceClientKey: string,
+) =>
+  snapshot.passengerAssignments?.length
+    ? snapshot.passengerAssignments
+        .filter((passenger) =>
+          passenger.serviceClientKeys.includes(serviceClientKey),
+        )
+        .map((passenger) => ({
+          id: passenger.customerId,
+          name: passenger.displayNameSnapshot || passenger.customerId,
+        }))
+    : snapshot.passengerIds.map((id) => ({ id, name: id }));
 export function hotelPurchaseTotal(
   amount: string,
   basis: 'NIGHT' | 'TOTAL',
@@ -117,11 +131,15 @@ function ServicePurchaseCard({
   service,
   purchase,
   onSaved,
+  defaultSupplier,
+  onSupplierChange,
 }: {
   request: PurchaseRequest;
   service: PurchasableService;
   purchase: ReservationServicePurchaseV1 | undefined;
   onSaved: () => void;
+  defaultSupplier?: Option | null;
+  onSupplierChange?: (supplier: Option | null) => void;
 }) {
   const [supplier, setSupplier] = useState<Option | null>(
     purchase
@@ -129,17 +147,42 @@ function ServicePurchaseCard({
           id: purchase.supplierOrganizationId,
           name: purchase.supplierName,
         }
-      : null,
+      : (defaultSupplier ?? null),
   );
-  const [amount, setAmount] = useState(purchase?.amount ?? '');
-  const [basis, setBasis] = useState<'NIGHT' | 'TOTAL'>('TOTAL');
-  const [code, setCode] = useState(
-    purchase?.currencyCode ?? service.pricing?.[0]?.currencyCode ?? 'IRR',
+  const [amount, setAmount] = useState(
+    service.kind === 'TRANSFER' ? (purchase?.amount ?? '') : '',
+  );
+  const [currency, setCurrency] = useState<Option | null>(
+    purchase?.currencyCode
+      ? { id: purchase.currencyCode, name: purchase.currencyCode }
+      : service.pricing?.[0]?.currencyCode
+        ? {
+            id: service.pricing[0].currencyCode,
+            name: service.pricing[0].currencyCode,
+          }
+        : null,
   );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const attempt = useRef<{ payload: string; key: string } | null>(null);
   const hotel = service.kind === 'HOTEL';
+  const passengers = hotel
+    ? reservationHotelPassengers(request.snapshot, service.clientKey)
+    : [];
+  const [passengerAmounts, setPassengerAmounts] = useState<
+    Record<string, string>
+  >(() =>
+    Object.fromEntries(
+      passengers.map((passenger) => [
+        passenger.id,
+        purchase?.passengerPrices.find(
+          (price) => price.customerId === passenger.id,
+        )?.nightlyAmount ?? '',
+      ]),
+    ),
+  );
+  const selectedSupplier =
+    supplier ?? (!purchase ? (defaultSupplier ?? null) : null);
   const checkIn =
     request.workflow?.sentSupplierFormSettings?.text.checkIn ||
     request.snapshot.hotelSelection?.checkInDate ||
@@ -154,22 +197,49 @@ function ServicePurchaseCard({
   } catch {
     // A total can still be recorded when the stay dates are incomplete.
   }
-  let totalPreview = '';
+  const passengerTotals = passengers.map((passenger) => {
+    const nightlyAmount = passengerAmounts[passenger.id] ?? '';
+    let totalAmount = '';
+    try {
+      if (nightlyAmount && nights)
+        totalAmount = hotelPurchaseTotal(
+          nightlyAmount,
+          'NIGHT',
+          checkIn,
+          checkOut,
+        );
+    } catch {
+      // The save action reports invalid amount or dates.
+    }
+    return { ...passenger, nightlyAmount, totalAmount };
+  });
+  let hotelTotal = '';
   try {
-    if (hotel && amount && (basis === 'TOTAL' || nights))
-      totalPreview = hotelPurchaseTotal(amount, basis, checkIn, checkOut);
+    hotelTotal = moneyDecimal(
+      passengerTotals.reduce(
+        (sum, passenger) =>
+          sum +
+          (passenger.totalAmount ? moneyUnits(passenger.totalAmount) : 0n),
+        0n,
+      ),
+    );
   } catch {
-    // The save action reports invalid amount or dates.
+    // Invalid input is surfaced on save.
   }
   async function save() {
     if (busy) return;
     setBusy(true);
     setMessage('');
     try {
-      if (!supplier) throw new Error('کارگزار این خدمت را انتخاب کنید.');
-      const total = hotel
-        ? hotelPurchaseTotal(amount, basis, checkIn, checkOut)
-        : amount;
+      if (!selectedSupplier)
+        throw new Error('کارگزار این خدمت را انتخاب کنید.');
+      if (!currency) throw new Error('ارز خرید را از فهرست انتخاب کنید.');
+      if (
+        hotel &&
+        passengerTotals.some((passenger) => !passenger.nightlyAmount)
+      )
+        throw new Error('قیمت هر شب تمام مسافران هتل را وارد کنید.');
+      const total = hotel ? hotelTotal : amount;
       if (moneyUnits(total) <= 0n) throw new Error('مبلغ خرید باید مثبت باشد.');
       const base = getPublicApiBaseUrl();
       if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
@@ -177,9 +247,17 @@ function ServicePurchaseCard({
         version: 1,
         expectedVersion: request.purchaseVersion ?? 0,
         serviceClientKey: service.clientKey,
-        supplierOrganizationId: supplier.id,
+        supplierOrganizationId: selectedSupplier.id,
         amount: total,
-        currencyCode: code,
+        currencyCode: currency.id,
+        ...(hotel
+          ? {
+              passengerPrices: passengerTotals.map((passenger) => ({
+                customerId: passenger.id,
+                nightlyAmount: passenger.nightlyAmount,
+              })),
+            }
+          : {}),
       });
       if (attempt.current?.payload !== payload)
         attempt.current = { payload, key: crypto.randomUUID() };
@@ -243,67 +321,82 @@ function ServicePurchaseCard({
           <Lookup
             kind="organizations"
             label="کارگزار"
-            value={supplier}
-            onChange={setSupplier}
+            value={selectedSupplier}
+            onChange={(next) => {
+              setSupplier(next);
+              onSupplierChange?.(next);
+            }}
           />
         </FormField>
-        {hotel && (
-          <fieldset className="flex flex-wrap gap-4 rounded-xl border border-border p-3">
-            <legend className="px-1 text-sm font-semibold">
-              روش ورود قیمت هتل
-            </legend>
-            {(['TOTAL', 'NIGHT'] as const).map((choice) => (
-              <label key={choice} className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name={`hotel-price-${service.clientKey}`}
-                  checked={basis === choice}
-                  disabled={choice === 'NIGHT' && !nights}
-                  onChange={() => {
-                    setBasis(choice);
-                    setAmount('');
-                  }}
-                />
-                {choice === 'NIGHT' ? 'قیمت هر شب' : 'جمع کل اقامت'}
-              </label>
+        {hotel ? (
+          <div className="grid gap-3 rounded-xl border border-border p-3">
+            <strong className="text-sm">
+              قیمت هر مسافر ({nights ? `${nights} شب` : 'تاریخ اقامت ناقص'})
+            </strong>
+            {passengerTotals.map((passenger) => (
+              <div
+                key={passenger.id}
+                className="grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]"
+              >
+                <p className="pb-3 text-sm font-semibold">{passenger.name}</p>
+                <FormField label="قیمت هر شب">
+                  <MoneyInput
+                    aria-label={`قیمت هر شب ${passenger.name}`}
+                    value={passenger.nightlyAmount}
+                    onValueChange={(value) =>
+                      setPassengerAmounts((current) => ({
+                        ...current,
+                        [passenger.id]: value,
+                      }))
+                    }
+                  />
+                </FormField>
+                <FormField label="جمع این مسافر">
+                  <Input
+                    aria-label={`جمع خرید ${passenger.name}`}
+                    readOnly
+                    value={
+                      passenger.totalAmount
+                        ? formatSalesMoney(passenger.totalAmount)
+                        : ''
+                    }
+                  />
+                </FormField>
+              </div>
             ))}
-          </fieldset>
-        )}
-        <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-          <FormField
-            label={hotel && basis === 'NIGHT' ? 'قیمت هر شب' : 'مبلغ خرید'}
-          >
+            <p className="text-sm font-bold">
+              جمع خرید هتل: {hotelTotal ? formatSalesMoney(hotelTotal) : '—'}{' '}
+              {currency?.id ?? ''}
+            </p>
+          </div>
+        ) : (
+          <FormField label="مبلغ خرید ترانسفر">
             <MoneyInput
               aria-label={`مبلغ خرید ${service.titleSnapshot}`}
               value={amount}
               onValueChange={setAmount}
             />
           </FormField>
-          <FormField label="ارز خرید">
-            <Input
-              aria-label={`ارز خرید ${service.titleSnapshot}`}
-              dir="ltr"
-              maxLength={3}
-              value={code}
-              onChange={(event) => setCode(event.target.value.toUpperCase())}
-            />
-          </FormField>
-        </div>
-        {hotel && basis === 'NIGHT' && (
-          <p className="text-sm text-muted-foreground">
-            {nights
-              ? `${nights} شب · جمع خرید: ${totalPreview ? formatSalesMoney(totalPreview) : 'مبلغ هر شب را وارد کنید'} ${code}`
-              : 'تاریخ ورود و خروج هتل را تکمیل کنید.'}
-          </p>
         )}
+        <FormField label="ارز خرید">
+          <Lookup
+            kind="currencies"
+            label="ارز خرید"
+            value={currency}
+            onChange={setCurrency}
+          />
+        </FormField>
         <Button
           type="button"
           className="w-full sm:w-auto sm:justify-self-end"
           disabled={
             busy ||
-            !supplier ||
-            !amount ||
-            (hotel && basis === 'NIGHT' && !nights)
+            !selectedSupplier ||
+            !currency ||
+            (hotel
+              ? !nights ||
+                passengerTotals.some((passenger) => !passenger.nightlyAmount)
+              : !amount)
           }
           onClick={() => void save()}
         >
@@ -328,53 +421,55 @@ export function ReservationHotelPurchase({
   request: PurchaseRequest;
   onSaved: () => void;
 }) {
-  const services = reservationPurchaseServices(request.snapshot);
-  const [selectedServiceKey, setSelectedServiceKey] = useState(
-    services[0]?.clientKey ?? '',
+  const services = [...reservationPurchaseServices(request.snapshot)].sort(
+    (left, right) =>
+      (left.kind === 'HOTEL' ? 0 : 1) - (right.kind === 'HOTEL' ? 0 : 1),
   );
-  const selectedService =
-    services.find((service) => service.clientKey === selectedServiceKey) ??
-    services[0];
+  const hotelService = services.find((service) => service.kind === 'HOTEL');
+  const savedHotelPurchase = request.servicePurchases?.find(
+    (purchase) => purchase.serviceClientKey === hotelService?.clientKey,
+  );
+  const [hotelSupplier, setHotelSupplier] = useState<Option | null>(
+    savedHotelPurchase
+      ? {
+          id: savedHotelPurchase.supplierOrganizationId,
+          name: savedHotelPurchase.supplierName,
+        }
+      : null,
+  );
 
   return (
     <div className="mt-4 space-y-4 rounded-xl border bg-muted/20 p-4">
       <div>
         <h3 className="font-bold">خرید خدمات و ارسال به مالی</h3>
         <p className="text-xs text-muted-foreground">
-          ابتدا خدمت هتل یا ترانسفر را انتخاب کنید؛ سپس کارگزار، مبلغ و ارز خرید
-          را ثبت کنید. هر ثبت، نسخهٔ خریدِ قابل پرداخت را به کارتابل مالی
-          می‌فرستد.
+          هتل خریداری‌شده و مسافران آن از قرارداد نمایش داده می‌شوند. قیمت هر شب
+          را برای هر مسافر وارد کنید؛ جمع هر مسافر و جمع کل بر اساس تعداد شب‌ها
+          محاسبه می‌شود. ترانسفر قرارداد نیز زیر هتل باز است و کارگزار هتل را
+          به‌صورت پیش‌فرض می‌گیرد. هر ثبت به کارتابل مالی ارسال می‌شود.
         </p>
       </div>
       <SupplierFormPurchaseContext request={request} />
       {services.length ? (
-        <>
-          <FormField label="خدمت مورد خرید">
-            <NativeSearchSelect
-              className="h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm"
-              value={selectedService?.clientKey ?? ''}
-              onChange={(event) => setSelectedServiceKey(event.target.value)}
-            >
-              {services.map((service) => (
-                <option key={service.clientKey} value={service.clientKey}>
-                  {service.kind === 'HOTEL' ? 'هتل' : 'ترانسفر'} ·{' '}
-                  {service.titleSnapshot}
-                </option>
-              ))}
-            </NativeSearchSelect>
-          </FormField>
-          {selectedService ? (
+        <div className="grid gap-4">
+          {services.map((service) => (
             <ServicePurchaseCard
-              key={`${selectedService.clientKey}:${request.purchaseVersion ?? 0}`}
+              key={`${service.clientKey}:${request.purchaseVersion ?? 0}`}
               request={request}
-              service={selectedService}
+              service={service}
               purchase={request.servicePurchases?.find(
-                (item) => item.serviceClientKey === selectedService.clientKey,
+                (item) => item.serviceClientKey === service.clientKey,
               )}
+              defaultSupplier={
+                service.kind === 'TRANSFER' ? hotelSupplier : null
+              }
+              {...(service.kind === 'HOTEL'
+                ? { onSupplierChange: setHotelSupplier }
+                : {})}
               onSaved={onSaved}
             />
-          ) : null}
-        </>
+          ))}
+        </div>
       ) : (
         <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
           در این قرارداد هتل یا ترانسفر ثبت نشده است. ابتدا خدمت را در قرارداد

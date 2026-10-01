@@ -10,7 +10,7 @@ export class MasterTravelDirectory {
 
   /** Public non-sensitive choices for Reservations purchase rate capture. */
   async hotelRateChoices(
-    kind: 'hotels' | 'organizations',
+    kind: 'hotels' | 'organizations' | 'currencies',
     search: string,
     page: number,
   ) {
@@ -27,11 +27,13 @@ export class MasterTravelDirectory {
     });
     return {
       data: result.data.map((row) => ({
-        id: row.id,
+        id: kind === 'currencies' ? row.code : row.id,
         name:
           kind === 'hotels'
             ? String(row.attributes.englishName || row.name)
-            : row.name,
+            : kind === 'currencies'
+              ? `${row.name} (${row.code})`
+              : row.name,
       })),
       meta: result.meta,
     };
@@ -149,6 +151,23 @@ export class MasterTravelDirectory {
         'کارگزار باید فعال و دارای نقش کارگزار باشد.',
       );
     return { id: broker.id, name: broker.name };
+  }
+
+  async currencyReference(code: string) {
+    const result = await this.master.list('currencies', {
+      page: 1,
+      pageSize: 1,
+      sortBy: 'name',
+      sortDirection: 'asc',
+      search: code,
+      status: 'active',
+    });
+    const currency = result.data.find((row) => row.code === code);
+    if (!currency)
+      throw new BadRequestException(
+        'ارز خرید باید از ارزهای فعال اطلاعات پایه باشد.',
+      );
+    return { code: currency.code, name: currency.name };
   }
 
   async cityReference(cityId: string) {

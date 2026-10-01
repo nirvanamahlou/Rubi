@@ -4522,6 +4522,7 @@ model ReservationServicePurchase {
   version                Int
   amount                 Decimal                          @db.Decimal(24, 4)
   currencyCode           String                           @db.VarChar(3)
+  passengerPrices        Json?
   actorUserId            String                           @db.Uuid
   actor                  User                             @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
   idempotencyKey         String                           @db.VarChar(160)
