@@ -1,3 +1,8 @@
+## COMPOSITE-HIDE-CONTRACT-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-composite-hide-contract-column-1001` from `origin/develop@101386d6`. Reserve composite hotels table header/cell in accommodation workspace, focused existing spec and own bounded docs. Remove only visible contract-reference column; preserve forms/profile/API/export/stored reference and all other columns. Previous UI locks released after merge; no overlapping active owner. No schema/migration/dependency/runtime/database change. User authorizes push/develop merge. Preserve dirty primary checkout.
+- The composite member table now contains four aligned columns: priority, member hotel, city/region and status. Only the visible contract-reference placeholder header/cell was removed; the composite form's usage condition and all API/export/backend behavior remain unchanged. Focused accommodation regression (9), all 434 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no authenticated browser/runtime QA was performed.
+
 ## HOTEL-PRICING-WHITE-TEXT-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-hotel-pricing-white-text-1001` from `origin/develop@524def9b`. Reserve only hotel-pricing header Link in accommodation workspace, focused existing spec and own bounded status entries. Make its label white in both themes/hover without changing shared button tokens or behavior. Previous Master Data UI locks released after merge; no active overlapping owner. No API/schema/migration/dependency/data/runtime change. User authorizes push/develop merge. Preserve dirty primary checkout.

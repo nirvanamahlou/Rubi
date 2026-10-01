@@ -1,3 +1,7 @@
+## 2026-10-01 — COMPOSITE-HIDE-CONTRACT-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+The composite-hotel member table no longer displays the contract-reference placeholder column. Its remaining four headers and row cells stay aligned, while usage condition, forms, profile behavior, API/export and backend data remain unchanged. Focused accommodation regression (9), all 434 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no schema, dependency, database or runtime change was made.
+
 ## 2026-10-01 — HOTEL-PRICING-WHITE-TEXT-1001 — PC-B — READY_FOR_REVIEW
 
 The accommodation header's `قیمت‌گذاری هتل‌ها` action now keeps an explicit white foreground in both themes and on hover. The override is local to that link; shared primary-button tokens and the neighboring all-sections outline action are unchanged. Focused action/visual regressions (19), all 433 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no API, schema, dependency, data or runtime change was made.
