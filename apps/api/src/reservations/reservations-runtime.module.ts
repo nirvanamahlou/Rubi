@@ -152,6 +152,16 @@ export class ReservationRequestsController {
       },
     };
   }
+  @Get(':id/document-choices')
+  @Header('Cache-Control', 'private, no-store')
+  documentChoices(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('brokerId') brokerId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.workflow.documentChoices(id, req.actor, brokerId, search);
+  }
   @Get(':id/workflow')
   @Header('Cache-Control', 'private, no-store')
   async workflowDetail(

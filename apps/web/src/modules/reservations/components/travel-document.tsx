@@ -60,10 +60,12 @@ export function TravelDocument({
   intake,
   voucher = false,
   historical = false,
+  blocked = false,
 }: {
   intake: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
   voucher?: boolean;
   historical?: boolean;
+  blocked?: boolean;
 }) {
   const { logo, error } = useTravelLogo(intake.workflow.branding);
   const [printing, setPrinting] = useState(false);
@@ -72,6 +74,11 @@ export function TravelDocument({
   const state = intake.workflow;
   const formReferences = useReservationFormReferences(intake, true);
   const enabled =
+    !blocked &&
+    (voucher ||
+      historical ||
+      state.supplierFormPrepared ||
+      state.supplierStatus !== 'NEW') &&
     (!!logo ||
       (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&
     !!state.branding &&

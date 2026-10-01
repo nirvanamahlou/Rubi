@@ -15,6 +15,7 @@ const intake = {
   workflow: {
     version: 1,
     supplierStatus: 'NEW',
+    supplierFormPrepared: true,
     voucherIssued: false,
     roomOrder: [],
     ageOverrides: {},

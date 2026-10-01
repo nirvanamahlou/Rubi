@@ -100,6 +100,29 @@ export function transitionTravelWorkflow(
       };
       break;
     }
+    case 'PREPARE_SUPPLIER_FORM': {
+      if (!['NEW', 'REQUESTED'].includes(current.supplierStatus))
+        throw new Error('آماده‌سازی فرم در این وضعیت ممکن نیست.');
+      const settings = validateVoucherSettings(
+        command.voucherSettings,
+        passengerIds,
+      );
+      if (!settings.references?.brokerId)
+        throw new Error('کارگزار را انتخاب کنید.');
+      if (
+        ![
+          settings.flags.hotel,
+          settings.flags.transfer,
+          settings.flags.tourLeader,
+          settings.flags.excursion,
+        ].some(Boolean)
+      )
+        throw new Error('حداقل یک خدمت را انتخاب کنید.');
+      next.supplierFormSettings = settings;
+      next.supplierFormPrepared = true;
+      delete next.voucherSettings;
+      break;
+    }
     case 'SUPPLIER_FORM_SETTINGS':
       if (typeof command.applyToContractAndVoucher !== 'boolean')
         throw new Error('مقصد تغییرات را انتخاب کنید.');
@@ -153,6 +176,16 @@ export function transitionTravelWorkflow(
         command.acknowledgeMissingInsurance !== true
       )
         throw new Error('بیمه صادر نشده است؛ ادامه بدون بیمه را تأیید کنید.');
+      if (
+        current.supplierFormPrepared &&
+        current.supplierFormSettings?.flags.tourLeader &&
+        !current.voucherSettings?.references?.leaderId
+      )
+        throw new Error('تورلیدر کارگزار را برای واچر انتخاب و ثبت کنید.');
+      if (current.supplierFormPrepared && !next.voucherSettings)
+        next.voucherSettings = structuredClone(
+          current.sentSupplierFormSettings ?? current.supplierFormSettings!,
+        );
       next.voucherIssued = true;
       next.insuranceWarningAcknowledged = !current.insuranceIssued;
       next.supplierStatus = 'CONFIRMED';
@@ -187,6 +220,16 @@ export function transitionTravelWorkflow(
         command.acknowledgeMissingInsurance !== true
       )
         throw new Error('بیمه صادر نشده است؛ ادامه بدون بیمه را تأیید کنید.');
+      if (
+        current.supplierFormPrepared &&
+        current.supplierFormSettings?.flags.tourLeader &&
+        !current.voucherSettings?.references?.leaderId
+      )
+        throw new Error('تورلیدر کارگزار را برای واچر انتخاب و ثبت کنید.');
+      if (current.supplierFormPrepared && !next.voucherSettings)
+        next.voucherSettings = structuredClone(
+          current.sentSupplierFormSettings ?? current.supplierFormSettings!,
+        );
       next.voucherIssued = true;
       next.insuranceWarningAcknowledged = !current.insuranceIssued;
       break;

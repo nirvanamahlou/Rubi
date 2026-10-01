@@ -71,6 +71,7 @@ export function defaultVoucherSettings(
   };
   if (!saved) return defaults;
   return {
+    ...(saved.references ? { references: { ...saved.references } } : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((key) => [key, saved.text?.[key] ?? text[key]]),
@@ -178,7 +179,8 @@ export function voucherFormData(
     (Date.parse(v.text.checkOut) - Date.parse(v.text.checkIn)) / 86400000;
   return {
     ...d,
-    hotel: v.text.hotel || '-',
+    supplier: v.text.broker || d.supplier,
+    hotel: v.flags.hotel ? v.text.hotel || '-' : '-',
     destination: v.text.city || '-',
     stars: v.text.stars || '-',
     meal: v.text.meal || '-',
@@ -243,4 +245,17 @@ export function supplierFormData(
         refs,
       )
     : reservationFormData(intake, refs);
+}
+
+export function serviceChecklist(flags: VoucherSettingsV1['flags']) {
+  return (
+    [
+      ['hotel', 'HOTEL'],
+      ['transfer', 'TRANSFER'],
+      ['tourLeader', 'TOUR LEADER'],
+      ['excursion', 'EXCURSION'],
+    ] as const
+  )
+    .map(([key, label]) => `${flags[key] ? '☑' : '☐'} ${label}`)
+    .join('   ·   ');
 }

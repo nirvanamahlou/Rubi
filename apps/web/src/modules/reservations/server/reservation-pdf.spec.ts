@@ -26,6 +26,7 @@ const intake = {
   workflow: {
     version: 1,
     supplierStatus: 'NEW',
+    supplierFormPrepared: true,
     roomOrder: [],
     ageOverrides: {},
     note: '<script>alert(1)</script>',
@@ -208,4 +209,59 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).toContain('ROOM TYPE');
   expect(html).toContain('STAMP');
   expect(html).not.toContain('<img');
+});
+
+it('blocks a new form PDF until broker and services are confirmed', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({
+          data: {
+            ...intake,
+            workflow: { ...intake.workflow, supplierFormPrepared: false },
+          },
+        }),
+      ),
+  );
+  expect(
+    (await GET(request(), { params: Promise.resolve({ id }) })).status,
+  ).toBe(409);
+  expect(renderer).not.toHaveBeenCalled();
+});
+it('prints operational service flags, broker, leader contact and board from the saved voucher', () => {
+  const source = structuredClone(intake);
+  source.snapshot.passengerIds = ['p'];
+  source.snapshot.passengerAssignments = [
+    {
+      customerId: 'p',
+      displayNameSnapshot: 'SYNTHETIC PASSENGER',
+      ageCategory: 'ADT',
+      serviceClientKeys: [],
+    },
+  ];
+  const settings = defaultVoucherSettings(source, {});
+  settings.text.broker = 'SAVED BROKER';
+  settings.text.leaderName = 'SAVED LEADER';
+  settings.text.leaderPhone = '+905550000000';
+  settings.text.transferBoard = 'SAVED BOARD';
+  settings.flags.transfer = true;
+  settings.flags.tourLeader = true;
+  source.workflow.voucherSettings = settings;
+  const html = reservationPdfHtml(
+    source,
+    {},
+    'data:image/png;base64,c2FmZQ==',
+    '',
+    true,
+  );
+  for (const value of [
+    'SAVED BROKER',
+    'SAVED LEADER',
+    '+905550000000',
+    'SAVED BOARD',
+    'INCLUDED',
+  ])
+    expect(html).toContain(value);
 });

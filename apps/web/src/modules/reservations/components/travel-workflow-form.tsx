@@ -16,6 +16,7 @@ import { agencyClient } from '@/modules/organizations/api/agency-client';
 import type { MasterDataRecord } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
+import { ReservationDocumentSetup } from './reservation-document-setup';
 import { ReservationTickets } from './reservation-tickets';
 
 export async function travelRequest<T>(
@@ -259,12 +260,28 @@ export function TravelWorkflowForm({
           onClose={() => setTicket(false)}
         />
       )}
-      {(action === 'رزرواسیون' ||
+      {!closed &&
+        (action === 'رزرواسیون' ||
+          (action === 'واچر' && state.supplierStatus !== 'NEW')) && (
+          <ReservationDocumentSetup
+            key={`setup:${id}:${state.version}:${action}`}
+            intake={intake}
+            voucher={action === 'واچر'}
+            onDirty={() => setSettingsDirty(true)}
+            onSaved={(workflow) => {
+              setIntake({ ...intake, workflow });
+              setSettingsDirty(false);
+            }}
+          />
+        )}
+      {((action === 'رزرواسیون' &&
+        (state.supplierFormPrepared || state.supplierStatus !== 'NEW')) ||
         action === 'واچر' ||
         (action === 'Confirmation' && state.voucherIssued)) && (
         <TravelDocument
           intake={intake}
           voucher={action === 'واچر' || action === 'Confirmation'}
+          blocked={settingsDirty}
         />
       )}
       {action === 'رزرواسیون' && (
@@ -394,6 +411,7 @@ export function TravelWorkflowForm({
                 disabled={
                   busy ||
                   settingsDirty ||
+                  !state.supplierFormPrepared ||
                   !['NEW', 'REQUESTED'].includes(state.supplierStatus)
                 }
                 onClick={() => void run('REQUEST_SUPPLIER')}
