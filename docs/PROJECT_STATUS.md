@@ -1,3 +1,7 @@
+## 2026-10-01 — BROKER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+Only the visible «محدودیت خرید» header and matching placeholder cell were removed from the Brokers list. The remaining nine headers and row cells stay aligned; the Suppliers table and the purchase-restriction field in forms/profiles remain unchanged. Focused regression (6), all 452 Master Data Web tests, scoped lint, Web typecheck and the lead-owned 55-route production build pass. No authenticated browser/runtime QA was performed; no API, export, backend, schema, dependency, database or runtime change was made. Bounded implementation locks release with the scoped commit.
+
 ## 2026-10-01 — TRANSPORT-REPLACE-COMPLETION-KPIS-1001 — PC-B — READY_FOR_REVIEW
 
 Six Transport «نیازمند تکمیل» cards now use the approved canonical global distinct metrics for airline origin countries, aircraft body types, rail-company countries, train categories, bus-company countries and bus service classes. The cards state their global scope; a valid empty summary renders zero, while loading/error, malformed pagination or a stalled page render unavailable. Late responses from a previous tab cannot overwrite the current summary. First-three KPIs and the Cabin review/Manifest publication cards remain unchanged. Focused KPI regressions (21), all 452 Master Data Web tests, scoped lint and Web typecheck pass. Final production build and authenticated browser QA remain lead-owned; no API, schema, contract, dependency, database or runtime change was made.
