@@ -1,3 +1,8 @@
+## TERMINAL-REPLACE-REVIEW-KPI-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-terminal-replace-review-kpi-1001` from origin/develop. Reserve geography workspace, module-local KPI helper/spec and this item's status entries. Replace only terminal review KPI with explicit maintenance count in current visible page using existing projected flags. Prior bounded scopes released. No API/schema/migration/dependency/data/runtime changes. User authorizes push/develop merge and available related worker. Preserve primary dirty files.
+- The fourth terminal KPI is now `در حال تعمیرات`, with an explicit `در صفحه جاری` hint. Its pure helper counts only records whose projected `isUnderMaintenance` value is the boolean `true`; false, missing, malformed string/number and null values are not counted, and an empty page returns zero. SSR coverage verifies the real four-card grid, preserves the original total/active/international values and excludes the old review label. Authenticated browser QA remains unverified; no runtime was changed.
+
 ## SUPPLIER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-supplier-hide-purchase-column-1001` from latest origin/develop. Reserve suppliers workspace, focused regression test and this item's bounded status entries. Remove purchase-restriction column/cell from Suppliers list only; preserve Brokers, profile/forms, export, backend policy and stored data. Prior scope released; no active overlapping owner. No API, migration, schema, dependency or runtime change. User explicitly authorizes push/develop merge; prior approval permits the available related worker. Preserve primary dirty files and running3100.
