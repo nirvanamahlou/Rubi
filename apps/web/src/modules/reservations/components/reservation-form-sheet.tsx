@@ -1,6 +1,10 @@
 'use client';
 import Image from 'next/image';
-import { voucherFormData, supplierFormData } from '../model/voucher-settings';
+import {
+  serviceChecklist,
+  voucherFormData,
+  supplierFormData,
+} from '../model/voucher-settings';
 import { useEffect, useState } from 'react';
 import type { MasterDataResource } from '@nora/contracts';
 import { salesContractFlights } from '@nora/contracts';
@@ -177,6 +181,11 @@ export function ReservationFormSheet({
                 </div>
               ))}
             </div>
+            {settings && (
+              <p className={styles.voucherDetails}>
+                {serviceChecklist(settings.flags)}
+              </p>
+            )}
             <section className={styles.bookingSection}>
               <Heading
                 number="01"
@@ -338,8 +347,12 @@ export function ReservationFormSheet({
                 <tr>
                   {voucher && (
                     <td>
-                      {intake.snapshot.serviceSelections.some(
-                        (service) => service.kind === 'TRANSFER',
+                      {(
+                        settings
+                          ? settings.flags.transfer
+                          : intake.snapshot.serviceSelections.some(
+                              (service) => service.kind === 'TRANSFER',
+                            )
                       )
                         ? 'INCLUDED'
                         : '-'}
@@ -361,6 +374,10 @@ export function ReservationFormSheet({
                     ]
                       .filter(Boolean)
                       .join(' / ') || '-'
+                  : '-'}{' '}
+                · Welcome board:{' '}
+                {settings.flags.tourLeader
+                  ? settings.text.transferBoard || '-'
                   : '-'}{' '}
                 · Guide:{' '}
                 {settings.flags.tourLeader

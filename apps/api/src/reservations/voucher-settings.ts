@@ -15,6 +15,13 @@ export function validateVoucherSettings(
   };
   if (!value || typeof value !== 'object') return fail();
   const v = value as VoucherSettingsV1;
+  if (
+    v.references &&
+    (!/^[0-9a-f-]{36}$/i.test(v.references.brokerId) ||
+      (v.references.leaderId !== undefined &&
+        !/^[0-9a-f-]{36}$/i.test(v.references.leaderId)))
+  )
+    return fail();
   if (!v.text || !v.numbers || !v.flags || !Array.isArray(v.passengers))
     return fail();
   if (
@@ -106,6 +113,16 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.references
+      ? {
+          references: {
+            brokerId: v.references.brokerId,
+            ...(v.references.leaderId
+              ? { leaderId: v.references.leaderId }
+              : {}),
+          },
+        }
+      : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((k) => [k, v.text[k].trim()]),

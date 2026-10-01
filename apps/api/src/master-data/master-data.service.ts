@@ -1132,6 +1132,99 @@ export class MasterDataService {
     return { data: toMasterDataRecord(resource, row) };
   }
 
+  /** Purpose-bound public projection for a branch-authorized Reservations voucher. */
+  async voucherLeaderChoices(brokerId: string, search = '') {
+    const rows = [];
+    for (let page = 1; page <= 100; page++) {
+      const result = await this.list('leaders', {
+        page,
+        pageSize: 100,
+        sortBy: 'name',
+        sortDirection: 'asc',
+        status: 'active',
+        search,
+      });
+      rows.push(
+        ...result.data
+          .filter((leader) => {
+            const ids = [
+              leader.attributes.brokerId,
+              leader.attributes.brokerOrganizationId,
+              leader.attributes.brokerIds,
+            ].flatMap((value) =>
+              Array.isArray(value)
+                ? value.map(String)
+                : String(value ?? '').split(','),
+            );
+            return ids.includes(brokerId);
+          })
+          .map((leader) => ({
+            id: leader.id,
+            name: String(leader.attributes.englishName || leader.name),
+          })),
+      );
+      if (page * 100 >= result.meta.total) break;
+    }
+    return { data: rows };
+  }
+  async voucherLeaderReference(
+    id: string,
+    brokerId: string,
+    actor: AuthenticatedActor,
+    branchId: string,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.documents.manage') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException();
+    const row = await this.repository.find('leaders', id);
+    if (!row || !row.isActive)
+      throw new NotFoundException('تورلیدر فعال یافت نشد.');
+    const item = toMasterDataRecord('leaders', row);
+    const ids = [
+      item.attributes.brokerId,
+      item.attributes.brokerOrganizationId,
+      item.attributes.brokerIds,
+    ].flatMap((value) =>
+      Array.isArray(value) ? value.map(String) : String(value ?? '').split(','),
+    );
+    if (!ids.includes(brokerId))
+      throw new BadRequestException('تورلیدر به این کارگزار متصل نیست.');
+    const phone = (prefix: string) =>
+      this.contactCrypto.decrypt('phone', {
+        encrypted:
+          typeof row[`${prefix}Encrypted`] === 'string'
+            ? (row[`${prefix}Encrypted`] as string)
+            : null,
+        encryptionIv:
+          typeof row[`${prefix}EncryptionIv`] === 'string'
+            ? (row[`${prefix}EncryptionIv`] as string)
+            : null,
+        encryptionAuthTag:
+          typeof row[`${prefix}EncryptionAuthTag`] === 'string'
+            ? (row[`${prefix}EncryptionAuthTag`] as string)
+            : null,
+        encryptionKeyVersion:
+          typeof row[`${prefix}EncryptionKeyVersion`] === 'number'
+            ? (row[`${prefix}EncryptionKeyVersion`] as number)
+            : null,
+      });
+    const contact = phone('roamingPhone') || phone('primaryPhone') || '';
+    await this.repository.recordVoucherLeaderRead({
+      leaderId: id,
+      actorUserId: actor.userId,
+      actorBranchId: branchId,
+    });
+    return {
+      id,
+      name: String(item.attributes.englishName || item.name),
+      phone: contact,
+      board: String(item.attributes.welcomeSignCode || ''),
+      language: String(item.attributes.languages || ''),
+    };
+  }
+
   async unmaskOrganizationContact(
     id: string,
     actor: AuthenticatedActor,

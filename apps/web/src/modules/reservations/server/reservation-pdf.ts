@@ -1,5 +1,12 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, writeFile, rm, access } from 'node:fs/promises';
+import {
+  mkdtemp,
+  readFile,
+  writeFile,
+  rm,
+  access,
+  stat,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, isAbsolute, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -73,6 +80,22 @@ export async function renderReservationPdf(
       ],
       { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
     );
+    // Windows Chrome can hand work to its headless process before the file is complete.
+    const deadline = Date.now() + 10000;
+    let previousSize = -1;
+    let complete = false;
+    while (Date.now() < deadline) {
+      const size = await stat(result)
+        .then((entry) => entry.size)
+        .catch(() => 0);
+      if (size > 0 && size === previousSize) {
+        complete = true;
+        break;
+      }
+      previousSize = size;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (!complete) throw new Error('PDF_NOT_CREATED');
     const bytes = await readFile(result);
     if (
       bytes.subarray(0, 5).toString() !== '%PDF-' ||

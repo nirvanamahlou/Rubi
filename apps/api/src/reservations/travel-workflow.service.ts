@@ -1,3 +1,7 @@
+import { validateVoucherSettings } from './voucher-settings';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
+import { MasterDataService } from '../master-data/master-data.service';
+import { Optional } from '@nestjs/common';
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
@@ -35,7 +39,33 @@ export class TravelWorkflowService {
     private readonly notifications: NotificationsService,
     @Inject(SalesOperationalAmendmentService)
     private readonly amendments: SalesOperationalAmendmentService,
+    @Optional()
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
+    @Optional()
+    @Inject(MasterDataService)
+    private readonly master?: MasterDataService,
   ) {}
+  async documentChoices(
+    id: string,
+    actor: AuthenticatedActor,
+    brokerId?: string,
+    search = '',
+  ) {
+    if (!actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException();
+    await this.detail(id, actor.branchIds);
+    if (!this.directory || !this.master)
+      throw new BadRequestException('اطلاعات پایه در دسترس نیست.');
+    if (!brokerId)
+      return this.directory.hotelRateChoices(
+        'organizations',
+        search.slice(0, 160),
+        1,
+      );
+    await this.directory.brokerReference(brokerId);
+    return this.master.voucherLeaderChoices(brokerId, search.slice(0, 160));
+  }
   async detail(id: string, branchIds: readonly string[]) {
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new NotFoundException();
     const row = await this.database.client.reservationIntake.findFirst({
@@ -112,6 +142,58 @@ export class TravelWorkflowService {
     if (!actor.permissions.includes('reservations.documents.manage'))
       throw new ForbiddenException('مجوز عملیات مدارک وجود ندارد.');
     const intake = await this.detail(id, actor.branchIds);
+    if (
+      [
+        'PREPARE_SUPPLIER_FORM',
+        'SUPPLIER_FORM_SETTINGS',
+        'VOUCHER_SETTINGS',
+      ].includes(command?.action) &&
+      command?.voucherSettings?.references
+    ) {
+      if (!this.directory || !this.master)
+        throw new BadRequestException('اطلاعات پایه در دسترس نیست.');
+      let settings;
+      try {
+        settings = validateVoucherSettings(
+          command.voucherSettings,
+          intake.snapshot.passengerIds,
+        );
+      } catch {
+        throw new BadRequestException('تنظیمات فرم معتبر نیست.');
+      }
+      const broker = await this.directory.brokerReference(
+        settings.references!.brokerId,
+      );
+      settings.text.broker = broker.name;
+      if (settings.flags.tourLeader && settings.references!.leaderId) {
+        const leader = await this.master.voucherLeaderReference(
+          settings.references!.leaderId,
+          broker.id,
+          actor,
+          intake.branchId,
+        );
+        settings.text.leaderName = leader.name;
+        settings.text.leaderPhone = leader.phone;
+        settings.text.leaderLanguage = leader.language;
+        settings.text.transferBoard = leader.board;
+      } else {
+        delete settings.references!.leaderId;
+        settings.text.leaderName = '';
+        settings.text.leaderPhone = '';
+        settings.text.leaderLanguage = '';
+        settings.text.transferBoard = '';
+      }
+      command = { ...command, voucherSettings: settings };
+    }
+    if (
+      command?.action === 'VOUCHER_SETTINGS' &&
+      intake.workflow.supplierFormPrepared &&
+      command.voucherSettings?.references?.brokerId !==
+        intake.workflow.supplierFormSettings?.references?.brokerId
+    )
+      throw new BadRequestException(
+        'کارگزار واچر باید همان کارگزار فرم رزرواسیون باشد.',
+      );
     let branding: TravelWorkflowStateV1['branding'] = null;
     if (command?.action === 'BRANDING') {
       if (command.branding?.kind === 'OWN') {
@@ -165,6 +247,34 @@ export class TravelWorkflowService {
           intake.contractId,
           actor.branchIds,
         );
+      if (
+        command.action === 'REQUEST_SUPPLIER' &&
+        state.supplierStatus === 'NEW' &&
+        !state.supplierFormPrepared
+      )
+        throw new BadRequestException(
+          'ابتدا کارگزار و خدمات فرم را تأیید کنید.',
+        );
+      if (
+        ['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(command.action) &&
+        state.supplierFormPrepared
+      ) {
+        if (
+          JSON.stringify(state.supplierFormSettings) !==
+          JSON.stringify(state.sentSupplierFormSettings)
+        )
+          throw new BadRequestException(
+            'فرم اصلاح‌شده را دوباره برای کارگزار ارسال و ثبت کنید.',
+          );
+        if (
+          state.voucherSettings &&
+          state.voucherSettings.references?.brokerId !==
+            state.sentSupplierFormSettings?.references?.brokerId
+        )
+          throw new BadRequestException(
+            'تورلیدر و واچر باید متعلق به کارگزار فرم ارسال‌شده باشند.',
+          );
+      }
       let next: TravelWorkflowStateV1;
       try {
         next = transitionTravelWorkflow(

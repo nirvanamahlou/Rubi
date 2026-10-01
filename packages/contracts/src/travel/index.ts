@@ -416,6 +416,7 @@ export interface TravelWorkflowStateV1 {
   branding: TravelBrandingV1 | null;
   roomOrder: string[];
   ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  supplierFormPrepared?: boolean;
   supplierFormSettings?: VoucherSettingsV1;
   sentSupplierFormSettings?: VoucherSettingsV1;
   sentSupplierFormVersion?: number;
@@ -440,7 +441,8 @@ export interface TravelWorkflowCommandV1 {
     | 'ARRANGEMENT'
     | 'NOTE'
     | 'VOUCHER_SETTINGS'
-    | 'SUPPLIER_FORM_SETTINGS';
+    | 'SUPPLIER_FORM_SETTINGS'
+    | 'PREPARE_SUPPLIER_FORM';
   note: string;
   tableFlag?: ReservationTableFlagKey;
   checked?: boolean;
@@ -507,6 +509,8 @@ export const voucherFlagKeys = [
   'specialRoom',
 ] as const;
 export interface VoucherSettingsV1 {
+  /** Validated Master Data identifiers; display fields remain a versioned snapshot. */
+  references?: { brokerId: string; leaderId?: string };
   text: Record<(typeof voucherTextKeys)[number], string> & {
     contractPartyName?: string;
   };

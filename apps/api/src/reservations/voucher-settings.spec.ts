@@ -190,3 +190,90 @@ it('allows a versioned reservation-form correction after voucher issuance', () =
   expect(next.voucherSettings?.numbers.singleRooms).toBe(0);
   expect(state.voucherSettings.text.checkIn).toBe('');
 });
+
+it('requires selected broker and services for preparation and preserves the sent service snapshot', () => {
+  const draft = settings();
+  draft.references = { brokerId: '11111111-1111-4111-8111-111111111111' };
+  const start = initialTravelWorkflow();
+  const command = {
+    action: 'PREPARE_SUPPLIER_FORM' as const,
+    expectedVersion: 0,
+    note: 'Prepare',
+    voucherSettings: draft,
+  };
+  const prepared = transition(start, command, ['p']);
+  expect(prepared.supplierFormPrepared).toBe(true);
+  expect(prepared.supplierFormSettings?.references).toEqual(draft.references);
+  const sent = transition(
+    prepared,
+    {
+      action: 'REQUEST_SUPPLIER',
+      expectedVersion: prepared.version,
+      note: 'Send',
+    },
+    ['p'],
+  );
+  expect(sent.sentSupplierFormSettings).toEqual(prepared.supplierFormSettings);
+  expect(() =>
+    transition(
+      sent,
+      {
+        action: 'CONFIRM_SUPPLIER',
+        expectedVersion: sent.version,
+        note: 'Confirm',
+        supplierReference: 'SYNTHETIC',
+        acknowledgeMissingInsurance: true,
+      },
+      ['p'],
+    ),
+  ).toThrow('تورلیدر');
+  const bad = structuredClone(draft);
+  delete bad.references;
+  expect(() =>
+    transition(start, { ...command, voucherSettings: bad }, ['p']),
+  ).toThrow('کارگزار');
+  for (const flag of voucherFlagKeys) bad.flags[flag] = false;
+  bad.references = draft.references;
+  expect(() =>
+    transition(start, { ...command, voucherSettings: bad }, ['p']),
+  ).toThrow('خدمت');
+  expect(start.supplierFormSettings).toBeUndefined();
+});
+it('carries the prepared service flags into voucher and clears stale guide after broker preparation', () => {
+  const draft = settings();
+  draft.references = { brokerId: '11111111-1111-4111-8111-111111111111' };
+  draft.flags.tourLeader = false;
+  draft.flags.transfer = true;
+  let state = transition(
+    initialTravelWorkflow(),
+    {
+      action: 'PREPARE_SUPPLIER_FORM',
+      expectedVersion: 0,
+      note: 'Prepare',
+      voucherSettings: draft,
+    },
+    ['p'],
+  );
+  state = transition(
+    state,
+    {
+      action: 'REQUEST_SUPPLIER',
+      expectedVersion: state.version,
+      note: 'Send',
+    },
+    ['p'],
+  );
+  const issued = transition(
+    state,
+    {
+      action: 'CONFIRM_SUPPLIER',
+      expectedVersion: state.version,
+      note: 'Confirm',
+      supplierReference: 'SYNTHETIC',
+      acknowledgeMissingInsurance: true,
+    },
+    ['p'],
+  );
+  expect(issued.voucherSettings?.flags.transfer).toBe(true);
+  expect(issued.voucherSettings?.references).toEqual(draft.references);
+});

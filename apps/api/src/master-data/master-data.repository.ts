@@ -1360,6 +1360,23 @@ export class MasterDataRepository {
     });
   }
 
+  async recordVoucherLeaderRead(input: {
+    leaderId: string;
+    actorUserId: string;
+    actorBranchId: string;
+  }) {
+    await this.database.client.masterDataAuditEvent.create({
+      data: {
+        actorUserId: input.actorUserId,
+        actorBranchId: input.actorBranchId,
+        action: 'master_data.leader.voucher_contact_read',
+        resource: 'leaders',
+        entityId: input.leaderId,
+        outcome: AuditOutcome.SUCCESS,
+        afterSnapshot: { disclosure: 'VOUCHER_CONTACT_READ' },
+      },
+    });
+  }
   async recordSensitiveContactRead(input: {
     contactId: string;
     actorUserId: string;

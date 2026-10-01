@@ -1,4 +1,8 @@
-import { supplierFormData, voucherFormData } from '../model/voucher-settings';
+import {
+  serviceChecklist,
+  supplierFormData,
+  voucherFormData,
+} from '../model/voucher-settings';
 import {
   reservationPassengerPages,
   type ReservationFormIntake,
@@ -80,6 +84,7 @@ export function reservationPdfHtml(
       ],
       'meta',
     )}
+    ${settings ? `<p class="voucherDetails">${escape(serviceChecklist(settings.flags))}</p>` : ''}
     <section class="bookingSection">${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
       [
         ['ADULTS', data.adults],
@@ -105,8 +110,8 @@ export function reservationPdfHtml(
       ${table(['DBL · DOUBLE', 'SGL · SINGLE', 'EXT · EXTRA BED'], [[data.double, data.single, data.extra]], 'roomCounts').replace('<thead>', '<caption>ROOM QUANTITIES BY TYPE</caption><thead>')}
     </div>
     ${settings ? `<p class="voucherDetails">Country: ${escape(settings.text.country || '-')} · Website: ${escape(settings.text.website || '-')} · CUSTOM: ${settings.numbers.customRooms} · Special room: ${settings.flags.specialRoom ? 'YES' : 'NO'} · Broker: ${escape(settings.text.broker || '-')}</p>` : ''}
-    ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table([...(voucher ? ['TRANSFER'] : []), 'TOUR LEADER', 'EXCURSION'], [[...(voucher ? [intake.snapshot.serviceSelections.some((service) => service.kind === 'TRANSFER') ? 'INCLUDED' : '-'] : []), data.leader, data.excursion]])}
-    ${settings ? `<p class="voucherDetails">Transfer: ${escape(settings.flags.transfer ? [settings.text.transferKind, settings.text.transferBoard, settings.text.transferPhone].filter(Boolean).join(' / ') || '-' : '-')} · Guide: ${escape(settings.flags.tourLeader ? [settings.text.leaderLanguage, settings.text.leaderPhone].filter(Boolean).join(' / ') || '-' : '-')}</p>` : ''}
+    ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table([...(voucher ? ['TRANSFER'] : []), 'TOUR LEADER', 'EXCURSION'], [[...(voucher ? [(settings ? settings.flags.transfer : intake.snapshot.serviceSelections.some((service) => service.kind === 'TRANSFER')) ? 'INCLUDED' : '-'] : []), data.leader, data.excursion]])}
+    ${settings ? `<p class="voucherDetails">Transfer: ${escape(settings.flags.transfer ? [settings.text.transferKind, settings.text.transferBoard, settings.text.transferPhone].filter(Boolean).join(' / ') || '-' : '-')} · Welcome board: ${escape(settings.flags.tourLeader ? settings.text.transferBoard || '-' : '-')} · Guide: ${escape(settings.flags.tourLeader ? [settings.text.leaderLanguage, settings.text.leaderPhone].filter(Boolean).join(' / ') || '-' : '-')}</p>` : ''}
     ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(voucher ? ['ROOM TYPE'] : [])], rows.length ? rows : [voucher ? ['-', '-', '-', '-', '-'] : ['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
     <footer class="footer"><div><strong dir="auto">${escape(data.brand)}</strong><span>${voucher ? 'Hotel voucher - present at check-in.' : 'Reservation request - subject to supplier confirmation.'}</span></div><b>${index + 1} / ${pages.length}</b></footer></article>`;
