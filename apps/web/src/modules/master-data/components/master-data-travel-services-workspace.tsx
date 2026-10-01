@@ -145,7 +145,6 @@ const headers: Record<TravelResource, readonly string[]> = {
     'دامنه',
     'شرح',
     'استفاده',
-    'آخرین تغییر',
     'وضعیت',
     'عملیات',
   ],
@@ -665,7 +664,6 @@ export function MasterDataTravelServicesWorkspace() {
         <Badge key="scope">{translated(record, 'scope')}</Badge>,
         attribute(record, 'description'),
         tourTypeUsageLabel(record),
-        tourTypeUpdatedLabel(record, tourActorNames),
       ];
     if (resource === 'transfer-types')
       return [

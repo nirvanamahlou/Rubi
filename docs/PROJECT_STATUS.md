@@ -1,3 +1,7 @@
+## 2026-10-01 — TOUR-TYPE-HIDE-LAST-CHANGE-1001 — PC-B — READY_FOR_REVIEW
+
+Only the visible «آخرین تغییر» header and matching value cell were removed from the Tour Types list. Its remaining nine headers and row cells stay aligned. The Tour Type form/View still exposes last-change metadata, Excel export still includes `updatedAt`, and the API, backend, audit behavior and other travel-service tables remain unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-01 — SALES-REFERENCE-PROFILE-CLEANUP-1001 — PC-B — READY_FOR_REVIEW
 
 The shared Acquaintance Methods and Sales Channels View profile no longer repeats version or Persian title in its detail section. The identity header still names the selected record, and English title, display order and description remain visible. Forms, internal version/CAS, API, export and backend behavior are unchanged. The shared view regression was narrowed only for these two resources; all other specialized profiles retain their visible-version assertion. Focused regressions (15), all 455 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
