@@ -1,3 +1,8 @@
+## ACQUAINTANCE-HIDE-ORDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-acquaintance-hide-order-column-1001` from origin/develop@e7484542. Reserve only Sales References workspace acquaintance-methods display-order header/cell, focused existing spec and own bounded docs. Preserve sales-channels table, forms/profile/order logic/API/export/backend. No active overlapping owner; prior scoped locks released. No schema/migration/dependency/runtime/database change. User authorizes push/develop merge after checks; preserve unrelated primary edits.
+- Only the Acquaintance Methods list hides the display-order header and matching row cell; Sales Channels retains both and each resource remains structurally aligned. The order field remains in form/profile and all persistence/API/export paths are unchanged. Focused AST regression (5), scoped lint, all 453 Master Data tests, Web typecheck and 55-route production build pass. No authenticated browser/runtime QA was performed; bounded locks release with the scoped commit. Final documentation-only verification update does not change product or build inputs.
+
 ## BROKER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-broker-hide-purchase-column-1001` from origin/develop. Reserve only Brokers purchase-restriction header/cell, supplier workspace regression and own bounded status entries. Preserve forms/profile/API/export/backend and Suppliers table. Prior scoped locks released; no active overlapping owner. No migration, dependency, runtime or database changes. User authorizes push and develop merge after review/checks; preserve unrelated primary edits.
