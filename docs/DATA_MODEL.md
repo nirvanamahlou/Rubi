@@ -628,3 +628,7 @@ Ticket Catalog owns TicketSaleCommissionRevision: offerId, optional returnOfferI
 ## Manifest inclusion policy — 2026-09-30
 
 Owner-approved MANIFEST-LOAD-SEARCH-0930 removes Finance approval from manifest listing and XLSX exports for contracts already received by Reservations. Sensitive passenger permissions, branch scope and ticket-specific assignments remain mandatory. This supersedes previous manifest approval requirements only; financial release of passenger documents outside manifest remains owned by Finance. Inventory is read through Ticket Catalog public projection; no table ownership or schema change.
+
+### 2026-10-01 selected published flight airports
+
+TicketPublishedOffer optionally references originAirportId and destinationAirportId through real MasterAirport FKs (RESTRICT delete). The catalog validates each selected active airport against its route city using Master Data's public service. Nullable fields preserve old clients and legacy rows. Published projection and revisions preserve selected IDs; document-details exposes only route/airport IDs and cabin baggage under existing permission and branch scope. Reservation print uses saved route/class and validates the returned IDs before enriching it; unknown legacy airports remain unspecified, never inferred from city codes. Migration: 20261001103000_ticket_selected_airports.

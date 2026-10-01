@@ -7,6 +7,10 @@ export type ReservationPdfTicket = Omit<FlightTicketSheetData, 'offers'> & {
   ageCategory: 'ADT' | 'CHD' | 'INF';
   gender?: 'M' | 'F' | null;
   offers: readonly (FlightTicketSheetData['offers'][number] & {
+    offerId?: string | undefined;
+    baggageKg?: string | null | undefined;
+    originAirport?: { code: string; name: string } | undefined;
+    destinationAirport?: { code: string; name: string } | undefined;
     arrivalAt?: string;
     direction: 'OUTBOUND' | 'RETURN';
   })[];
@@ -40,6 +44,7 @@ export function reservationTickets(
               : 1,
         )
         .map((ticket) => ({
+          offerId: ticket.offerId,
           id: `${ticket.serviceClientKey}-${ticket.offerId ?? 'contract-only'}`,
           contractOnly: ticket.source === 'CONTRACT_ONLY',
           originId: ticket.originId,

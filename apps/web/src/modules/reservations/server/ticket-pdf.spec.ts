@@ -320,7 +320,7 @@ describe('reservation ticket PDF', () => {
     expect(html).not.toContain('<Passenger>');
     expect(html).toContain('@page{size:A4 portrait');
     expect(html).toContain('TEST-01');
-    expect(html).toContain('aria-label="Barcode SC-TEST-01"');
+    expect(html).toContain('aria-label="Booking reference QR"');
     expect(html).toContain('<figcaption>SC-TEST-01</figcaption>');
     expect(html).toContain('ISSUED');
     expect(html).not.toContain('DRAFT');
@@ -348,6 +348,15 @@ describe('reservation ticket PDF', () => {
       ],
     } as ReservationIntakeV1['snapshot']);
     tickets[0]!.gender = 'M';
+    for (const ticket of tickets)
+      ticket.offers = ticket.offers.map((offer) => ({
+        ...offer,
+        originAirport: {
+          code: 'IKA',
+          name: 'Imam Khomeini International Airport',
+        },
+        destinationAirport: { code: 'AYT', name: 'Antalya Airport' },
+      }));
     const html = ticketPdfHtml(
       tickets,
       {

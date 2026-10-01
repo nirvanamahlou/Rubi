@@ -22,6 +22,10 @@ Only the «محدودیت خرید» column and matching placeholder cell were r
 
 The terminal workspace replaces only the misleading «نیازمند بازبینی» KPI with «در حال تعمیرات», explicitly scoped to the current page. It counts only the existing projected boolean `isUnderMaintenance === true`; false, missing and malformed values do not contribute. The total, active and international terminal KPIs and every other geography resource remain unchanged. Pure helper and real KPI-grid SSR regressions cover empty, multiple and malformed flag cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not run.
 
+## 2026-10-01 — TERMINAL-REMOVE-AIRPORT-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+The terminal list airport filter, its local state, scoped-query field and reset wiring are removed together, so no selected airport can remain as a hidden stale filter. Terminal-type and all shared filters remain. The airport FK, nested airport children, inline creation and race-safe standalone parent selection are unchanged. A focused source regression verifies the removed list-filter path and retained creation relation. No API, schema, migration, contract, dependency, data or runtime changes; authenticated browser QA was not run.
+
 ## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
 
 The owner's screenshot confirmed the previous redesign was deployed but the horizontal agreed-total strip still did not satisfy the requested field layout. The shared Sales print renderer now labels the field قیمت توافق‌شده قرارداد above a white amount area, with separate clearly divided amount/currency rows. Preview and PDF use the same renderer; exact existing Decimal arithmetic and legacy balance fallback are retained. 22 focused tests and synthetic A4 PDF visual review pass. No API/schema/dependency/data changes; local correction follows develop merge and CI.
@@ -4121,3 +4125,7 @@ Final independent verification exposed only a breadcrumb-test false positive: th
 ## 2026-10-01 — LOGIN-LAN-HYDRATION-1001 — PC-A — READY_FOR_REVIEW
 
 LAN login page rendering without working form submission is traced to Next.js development-origin blocking of JavaScript resources. An environment-controlled allowed-origin list enables the local LAN host, while the login form's native fallback uses POST to keep credentials out of query strings. Scope is IAM Web login and Next development configuration only; no migration, dependency or API contract change. Sixteen focused login tests, scoped lint, Web typecheck, Prettier, diff check and 55-route production build pass. Local runtime rollout and browser smoke follow review/merge.
+
+## 2026-10-01 — PC-A — reference flight ticket
+
+FLIGHT-TICKET-REFERENCE-1001 shares one reference-style A4 ticket renderer between preview and PDF: Niyayesh and uploaded carrier marks, passenger/contract identity, outbound navy and return teal route cards, selected airport IATA/name, saved departure/arrival, class-specific baggage and independently verified booking-reference QR. No fabricated airport, allowance, flight duration or issuance identifiers. Additive nullable airport FKs and authorized branch-scoped catalog document details retain selected airports at publication. Legacy offers require re-saving the actual definition; no guessed backfill. Existing finance and cancellation gates remain. Synthetic two-leg PDF visually reviewed as one A4 page. Apply migration 20261001103000_ticket_selected_airports before API rollout. No dependency changes or operational data writes.
