@@ -597,14 +597,6 @@ export function MasterDataSalesReferencesWorkspace() {
             <div className="grid gap-4 lg:grid-cols-2">
               <MasterDataDetailSection title="مشخصات مرجع">
                 <MasterDataDetailItem
-                  label="نسخه"
-                  value={selected.version.toLocaleString('fa-IR')}
-                />
-                <MasterDataDetailItem
-                  label="عنوان فارسی"
-                  value={selected.name}
-                />
-                <MasterDataDetailItem
                   label="عنوان انگلیسی"
                   ltr
                   value={attribute(selected, 'englishName')}

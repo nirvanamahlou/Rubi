@@ -183,4 +183,20 @@ describe('sales references workspace', () => {
     expect(source).toContain('label="ترتیب نمایش"');
     expect(source).toContain("selected, 'displayOrder', '0'");
   });
+
+  it('removes only version and Persian title from shared View details', () => {
+    const profile = source.slice(
+      source.indexOf('{selected ? ('),
+      source.lastIndexOf('</MasterDataProfileDialog>'),
+    );
+
+    expect(profile).not.toContain('label="نسخه"');
+    expect(profile).not.toContain('label="عنوان فارسی"');
+    expect(profile).not.toContain('selected.version.toLocaleString');
+    expect(profile).toContain('title={selected.name}');
+    for (const label of ['عنوان انگلیسی', 'ترتیب نمایش', 'توضیحات'])
+      expect(profile).toContain(`label="${label}"`);
+    expect(source).toContain('version: selected.version');
+    expect(source).toContain('<MasterDataLiveForm');
+  });
 });

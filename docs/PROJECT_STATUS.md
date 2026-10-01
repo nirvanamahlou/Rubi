@@ -1,3 +1,7 @@
+## 2026-10-01 — SALES-REFERENCE-PROFILE-CLEANUP-1001 — PC-B — READY_FOR_REVIEW
+
+The shared Acquaintance Methods and Sales Channels View profile no longer repeats version or Persian title in its detail section. The identity header still names the selected record, and English title, display order and description remain visible. Forms, internal version/CAS, API, export and backend behavior are unchanged. The shared view regression was narrowed only for these two resources; all other specialized profiles retain their visible-version assertion. Focused regressions (15), all 455 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-01 — SALES-REFERENCE-HIDE-METADATA-1001 — PC-B — READY_FOR_REVIEW
 
 The shared Acquaintance Methods and Sales Channels table now omits the visible display-order, record-usage and last-change columns. Both resources render the same seven exact headers with seven aligned row cells. Display order remains in create/edit and profile views, and all query, export, persistence, API and backend behavior is unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.

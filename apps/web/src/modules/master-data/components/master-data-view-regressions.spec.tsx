@@ -124,7 +124,6 @@ describe('Master Data view and geography follow-up regressions', () => {
       'master-data-transportation-workspace.tsx',
       'master-data-travel-services-workspace.tsx',
       'master-data-insurance-workspace.tsx',
-      'master-data-sales-references-workspace.tsx',
     ]) {
       const profile = componentSource(fileName);
       expect(profile, `${fileName}: section`).toContain(
@@ -135,6 +134,14 @@ describe('Master Data view and geography follow-up regressions', () => {
         /label="نسخه"[\s\S]*selected\.version\.toLocaleString/,
       );
     }
+
+    const salesReferences = componentSource(
+      'master-data-sales-references-workspace.tsx',
+    );
+    expect(salesReferences).not.toContain('label="نسخه"');
+    expect(salesReferences).not.toContain('label="عنوان فارسی"');
+    expect(salesReferences).toContain('title={selected.name}');
+    expect(salesReferences).toContain('version: selected.version');
 
     expect(componentSource('master-data-accommodation-workspace.tsx')).toMatch(
       /label="وضعیت فروش"[\s\S]*<StatusBadge record=\{selected\} saleable/,
