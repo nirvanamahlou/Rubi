@@ -1,3 +1,8 @@
+## TERMINAL-REMOVE-AIRPORT-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-terminal-remove-airport-filter-1001` from origin/develop. Reserve geography workspace, focused regression and own status entries. Remove only terminal list airport filter/state/query wiring, preserve creation FK, airport children, other filters and backend. Prior scopes released. No schema/migration/contracts/dependency/data/runtime changes. User authorizes push/develop merge with available related worker. Primary dirty files preserved.
+- The terminal list no longer renders or retains state for an airport filter. Its scoped query cannot carry a hidden stale airport ID, while terminal type, search/status/date/column filters and pagination remain unchanged. Airport-backed nested loading, the required creation FK, inline airport creation and the guarded standalone parent-airport pre-step are preserved. A new focused workspace regression at the pinned `.spec.ts` path verifies both absence and preservation. Authenticated browser QA remains unverified; no runtime was changed.
+
 ## TERMINAL-REPLACE-REVIEW-KPI-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-terminal-replace-review-kpi-1001` from origin/develop. Reserve geography workspace, module-local KPI helper/spec and this item's status entries. Replace only terminal review KPI with explicit maintenance count in current visible page using existing projected flags. Prior bounded scopes released. No API/schema/migration/dependency/data/runtime changes. User authorizes push/develop merge and available related worker. Preserve primary dirty files.

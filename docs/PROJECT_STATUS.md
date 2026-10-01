@@ -14,6 +14,10 @@ Only the «محدودیت خرید» column and matching placeholder cell were r
 
 The terminal workspace replaces only the misleading «نیازمند بازبینی» KPI with «در حال تعمیرات», explicitly scoped to the current page. It counts only the existing projected boolean `isUnderMaintenance === true`; false, missing and malformed values do not contribute. The total, active and international terminal KPIs and every other geography resource remain unchanged. Pure helper and real KPI-grid SSR regressions cover empty, multiple and malformed flag cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not run.
 
+## 2026-10-01 — TERMINAL-REMOVE-AIRPORT-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+The terminal list airport filter, its local state, scoped-query field and reset wiring are removed together, so no selected airport can remain as a hidden stale filter. Terminal-type and all shared filters remain. The airport FK, nested airport children, inline creation and race-safe standalone parent selection are unchanged. A focused source regression verifies the removed list-filter path and retained creation relation. No API, schema, migration, contract, dependency, data or runtime changes; authenticated browser QA was not run.
+
 ## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
 
 The owner's screenshot confirmed the previous redesign was deployed but the horizontal agreed-total strip still did not satisfy the requested field layout. The shared Sales print renderer now labels the field قیمت توافق‌شده قرارداد above a white amount area, with separate clearly divided amount/currency rows. Preview and PDF use the same renderer; exact existing Decimal arithmetic and legacy balance fallback are retained. 22 focused tests and synthetic A4 PDF visual review pass. No API/schema/dependency/data changes; local correction follows develop merge and CI.
