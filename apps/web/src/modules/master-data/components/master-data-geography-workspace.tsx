@@ -369,7 +369,6 @@ export function MasterDataGeographyWorkspace() {
   const [countryId, setCountryId] = useState('all');
   const [regionId, setRegionId] = useState('all');
   const [cityId, setCityId] = useState('all');
-  const [airportId, setAirportId] = useState('all');
   const [expandedCountryId, setExpandedCountryId] = useState<string | null>(
     null,
   );
@@ -431,12 +430,11 @@ export function MasterDataGeographyWorkspace() {
           : {}
         : {}),
       ...(resource === 'airports' && cityId !== 'all' ? { cityId } : {}),
-      ...(resource === 'terminals' && airportId !== 'all' ? { airportId } : {}),
       ...(resource === 'terminals' && terminalType !== 'all'
         ? { terminalType }
         : {}),
     }),
-    [airportId, cityId, countryId, regionId, resource, terminalType],
+    [cityId, countryId, regionId, resource, terminalType],
   );
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
@@ -611,7 +609,6 @@ export function MasterDataGeographyWorkspace() {
     setCountryId('all');
     setRegionId('all');
     setCityId('all');
-    setAirportId('all');
     setTerminalType('all');
     setSelected(undefined);
     setExpandedCountryId(null);
@@ -1224,49 +1221,26 @@ export function MasterDataGeographyWorkspace() {
           </FormField>
         ) : null}
         {resource === 'terminals' ? (
-          <>
-            <FormField label="فرودگاه">
-              <Select
-                onValueChange={(value) => {
-                  setAirportId(value);
-                  setPage(1);
-                }}
-                value={airportId}
-              >
-                <SelectTrigger aria-label="فیلتر فرودگاه">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه فرودگاه‌ها</SelectItem>
-                  {references.airports.map((record) => (
-                    <SelectItem key={record.id} value={record.id}>
-                      {record.code} · {record.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-            <FormField label="نوع ترمینال">
-              <Select
-                onValueChange={(value) => {
-                  setTerminalType(value as typeof terminalType);
-                  setPage(1);
-                }}
-                value={terminalType}
-              >
-                <SelectTrigger aria-label="فیلتر نوع ترمینال">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه انواع</SelectItem>
-                  <SelectItem value="DOMESTIC">داخلی</SelectItem>
-                  <SelectItem value="INTERNATIONAL">بین‌المللی</SelectItem>
-                  <SelectItem value="MIXED">مشترک</SelectItem>
-                  <SelectItem value="VIP">VIP</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormField>
-          </>
+          <FormField label="نوع ترمینال">
+            <Select
+              onValueChange={(value) => {
+                setTerminalType(value as typeof terminalType);
+                setPage(1);
+              }}
+              value={terminalType}
+            >
+              <SelectTrigger aria-label="فیلتر نوع ترمینال">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه انواع</SelectItem>
+                <SelectItem value="DOMESTIC">داخلی</SelectItem>
+                <SelectItem value="INTERNATIONAL">بین‌المللی</SelectItem>
+                <SelectItem value="MIXED">مشترک</SelectItem>
+                <SelectItem value="VIP">VIP</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
         ) : null}
         <MasterDataFilterActions
           onClear={() => {
@@ -1278,7 +1252,6 @@ export function MasterDataGeographyWorkspace() {
             setCountryId('all');
             setRegionId('all');
             setCityId('all');
-            setAirportId('all');
             setTerminalType('all');
             setPage(1);
           }}
