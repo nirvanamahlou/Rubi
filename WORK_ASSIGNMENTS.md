@@ -1,3 +1,7 @@
+## VOUCHER-DOWNLOAD-SUMMARY-1001 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-download-summary-1001` from origin/develop. Reserve Reservations TravelDocument/form sheet CSS, existing PDF route/renderer/HTML/tests and bounded docs. Add direct issued-voucher download via existing authenticated PDF pipeline and visually separate Booking Summary header from metadata in preview/PDF. No API shared contract, schema/migration/dependency/runtime change. Previous Reservations locks released. Owner authorizes develop merge after checks. Result: direct issued-voucher PDF action, saved voucher settings/booking reference/room types and a separated navy Booking Summary heading in preview/PDF. 13 focused tests, scoped lint, Web typecheck and production build checked before handoff. Bounded locks released with scoped commit.
+
 ## SUPPLIER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-supplier-hide-purchase-column-1001` from latest origin/develop. Reserve suppliers workspace, focused regression test and this item's bounded status entries. Remove purchase-restriction column/cell from Suppliers list only; preserve Brokers, profile/forms, export, backend policy and stored data. Prior scope released; no active overlapping owner. No API, migration, schema, dependency or runtime change. User explicitly authorizes push/develop merge; prior approval permits the available related worker. Preserve primary dirty files and running3100.
