@@ -653,7 +653,6 @@ export function MasterDataSuppliersWorkspace() {
                   'تأمین‌کننده',
                   'کشور / شهر',
                   'خدمات قابل ارائه',
-                  'محدودیت خرید',
                   'Provider ID',
                   'وضعیت همکاری',
                   'عملیات',
@@ -692,7 +691,6 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4">
                     <ServiceChips value={text(record, 'serviceNames', '')} />
                   </td>
-                  <td className="p-4 text-muted-foreground">—</td>
                   <td className="p-4 font-mono" dir="ltr">
                     {text(record, 'externalProviderReference')}
                   </td>

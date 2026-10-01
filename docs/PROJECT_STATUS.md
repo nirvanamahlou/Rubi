@@ -6,6 +6,10 @@ The airport workspace now renders a fourth KPI, `ترمینال‌های مرت�
 
 Owner requested a smaller agreed-price presentation after reviewing PR522 locally. The title and currency-specific amounts now share a compact strip with table-sized numeric text, soft individual currency chips and safe wrapping; the tall heading and large rows are removed. Same shared preview/PDF renderer and exact amounts retained. 22 tests, scoped lint and synthetic A4 visual QA pass; no API/schema/dependency/data changes. Continued authorized merge/local correction follows full CI.
 
+## 2026-10-01 — SUPPLIER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+Only the «محدودیت خرید» column and matching placeholder cell were removed from the Suppliers list. The Brokers list still shows the column, the shared supplier/broker profile still shows its purchase-restriction detail, and forms, exports, actions, backend policy and stored data remain unchanged. A structural TSX regression validates exact header/row alignment for both tables; authenticated browser QA was not run and no runtime was changed.
+
 ## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
 
 The owner's screenshot confirmed the previous redesign was deployed but the horizontal agreed-total strip still did not satisfy the requested field layout. The shared Sales print renderer now labels the field قیمت توافق‌شده قرارداد above a white amount area, with separate clearly divided amount/currency rows. Preview and PDF use the same renderer; exact existing Decimal arithmetic and legacy balance fallback are retained. 22 focused tests and synthetic A4 PDF visual review pass. No API/schema/dependency/data changes; local correction follows develop merge and CI.
