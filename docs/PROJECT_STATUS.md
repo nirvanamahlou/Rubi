@@ -1,3 +1,7 @@
+## 2026-10-01 — HOTEL-HIDE-PROVIDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
+
 ## 2026-10-01 — RESERVATION-REFERENCE-EDIT-1001 — PC-A — READY_FOR_REVIEW
 
 Reservation operational editing now selects active outbound/return airlines, hotels and brokers through searchable Master Data dropdowns; room details and remaining operational fields stay manual. Operational corrections can no longer amend or appear in Sales contracts, legacy correction metadata is ignored by the print projection, child rows use a clean کودک label, and selected edit tabs stay readable on hover. Manifest origin/destination country and country-scoped city filters also use the standard searchable Master Data dropdown with canonical IDs. 47 focused Web/API tests, scoped lint, both typechecks and the full production build with 55 Web routes pass. No schema, migration, shared-contract, dependency, operational-data or runtime change. Owner authorized develop merge after CI.
