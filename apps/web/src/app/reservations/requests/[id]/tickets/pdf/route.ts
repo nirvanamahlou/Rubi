@@ -1,3 +1,4 @@
+import { readTicketDocumentFacts } from '@/modules/ticket-catalog/public/document-details';
 import type {
   MasterDataListResponse,
   MasterDataRecord,
@@ -134,6 +135,16 @@ export async function GET(
             ticket.gender = person.gender;
         }
     }
+
+    const facts = await readTicketDocumentFacts(
+      tickets.flatMap((ticket) => ticket.offers),
+      get,
+    );
+    for (const ticket of tickets)
+      ticket.offers = ticket.offers.map((offer) => ({
+        ...offer,
+        ...(offer.offerId ? facts[offer.offerId] : {}),
+      }));
 
     const cityIds = [
       ...new Set(

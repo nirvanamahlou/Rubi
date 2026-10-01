@@ -1,19 +1,23 @@
 'use client';
 import { SalesThemedSelect } from './sales-themed-select';
 
-import Image from 'next/image';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plane } from 'lucide-react';
 import type { MasterDataRecord, TicketOfferV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import type { SalesFormState } from '../model/sales-form';
 import { salesDirections, salesFlightSelection } from '../model/sales-form';
-import { ticketBarcode } from '../public/ticket-barcode';
+import {
+  ticketPageHtml,
+  ticketLayoutStyles,
+  type TicketLayoutFlight,
+  type TicketLayoutAirline,
+} from '@/components/travel/flight-ticket-layout';
 import styles from './flight-ticket-preview.module.css';
 
 export interface FlightTicketSheetData {
-  branding?: { name: string; logo: string };
+  branding?: { name: string; logo: string; companyCode?: string };
+  airlines?: Readonly<Record<string, TicketLayoutAirline>>;
   issued?: boolean;
   passengerName: string;
   ageCategory?: 'ADT' | 'CHD' | 'INF';
@@ -30,6 +34,10 @@ export interface FlightTicketSheetData {
     | 'carrierName'
     | 'serviceNumber'
   > & {
+    offerId?: string | undefined;
+    originAirport?: TicketLayoutFlight['originAirport'];
+    destinationAirport?: TicketLayoutFlight['destinationAirport'];
+    baggageKg?: string | null | undefined;
     cabinClassCode: string;
     businessOutput?: boolean;
     contractOnly?: boolean;
@@ -96,224 +104,32 @@ export function FlightTicketSheet({
   data: FlightTicketSheetData;
   cityName: (id: string) => string;
 }) {
-  const { offers, passengerName } = data;
-  const passengerPrefix =
-    data.ageCategory === 'INF'
-      ? 'INF'
-      : data.ageCategory === 'CHD'
-        ? 'CHD'
-        : data.gender === 'F'
-          ? 'MRS'
-          : data.gender === 'M'
-            ? 'MR'
-            : '';
-  const passengerLabel = [passengerPrefix, passengerName]
-    .filter(Boolean)
-    .join(' ');
-  const barcode = data.contractNumber
-    ? ticketBarcode(data.contractNumber)
-    : null;
-  const formatDate = (value: string) =>
-    new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Tehran',
-      weekday: 'short',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-      .format(new Date(value))
-      .toUpperCase();
-  const formatTime = (value: string) =>
-    new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Tehran',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    }).format(new Date(value));
-  const demo =
-    offers.length > 0 &&
-    offers.every(
-      (offer) =>
-        !offer.contractOnly &&
-        /^TEST-AYT-0[1-4]$/.test(offer.serviceNumber) &&
-        /^TEST AIRLINE(?:\s|$)/i.test(offer.carrierName.trim()),
-    );
+  const cities = Object.fromEntries(
+    data.offers
+      .flatMap((offer) => [offer.originId, offer.destinationId])
+      .map((id) => [id, cityName(id)]),
+  );
+  const brand = {
+    name: data.branding?.name ?? 'Niyayesh Seir',
+    logoDataUrl: data.branding?.logo ?? '/brand/niyayesh-seir-full.png',
+    companyCode: data.branding?.companyCode ?? 'NIYAYESH_SEIR_SAHAR',
+  };
+  const pages = Array.from(
+    { length: Math.max(1, Math.ceil(data.offers.length / 2)) },
+    (_, page) =>
+      ticketPageHtml(
+        data,
+        cities,
+        brand,
+        data.airlines,
+        data.offers.slice(page * 2, page * 2 + 2),
+      ),
+  ).join('');
   return (
-    <article className={styles.paper} dir="ltr">
-      <header className={styles.header}>
-        <div>
-          <h1>FLIGHT TICKET</h1>
-          <p>ELECTRONIC TICKET / ITINERARY</p>
-        </div>
-        {(!data.branding || data.branding.logo) && (
-          <Image
-            src={data.branding?.logo ?? '/brand/niyayesh-seir-full.png'}
-            alt={data.branding?.name ?? 'Niyayesh Seir'}
-            width={210}
-            height={140}
-            loading="eager"
-            unoptimized
-          />
-        )}
-      </header>
-      {!data.issued ? (
-        <p className={styles.draft}>
-          DRAFT — NOT VALID FOR TRAVEL / پیش‌نمایش، فاقد اعتبار سفر
-        </p>
-      ) : null}
-      <div className={styles.airlineBrand}>
-        {demo ? (
-          <span
-            className={styles.airlineLogo}
-            role="img"
-            aria-label="TEST AIRLINE — لوگوی آزمایشی"
-          >
-            <Plane size={42} strokeWidth={1.6} />
-          </span>
-        ) : null}
-        <h2 className={styles.airline}>
-          {[...new Set(offers.map((item) => item.carrierName))].join(' / ') ||
-            'AIRLINE'}
-        </h2>
-      </div>
-      {demo && !data.issued ? (
-        <p className={styles.sample}>
-          SAMPLE DATA — نمونهٔ نمایشی؛ شماره‌ها واقعی و صادرشده نیستند.
-        </p>
-      ) : null}
-      <section className={styles.identity}>
-        <div>
-          <span>PASSENGER</span>
-          <strong>{passengerLabel || '—'}</strong>
-        </div>
-        <div>
-          <span>BOOKING REFERENCE / RLOC</span>
-          <strong>{data.contractNumber || (demo ? 'DEMO01' : '—')}</strong>
-        </div>
-        {!data.issued ? (
-          <div className={styles.draftMeta}>
-            <span>E-Ticket No</span>
-            <strong>{demo ? '7143' : '—'}</strong>
-          </div>
-        ) : null}
-      </section>
-      <p className={styles.outputFlags}>
-        {data.businessOutput || offers.some((offer) => offer.businessOutput) ? (
-          <b className={styles.business}>BUSINESS</b>
-        ) : null}
-      </p>
-      {data.transferDirections.length ? (
-        <p className={styles.passenger}>
-          TRANSFER INCLUDED:{' '}
-          <strong>{data.transferDirections.join(' / ')}</strong>
-        </p>
-      ) : null}
-      <div className={styles.legs}>
-        {offers.map((offer, index) => {
-          const direction =
-            offer.direction === 'RETURN'
-              ? 'RETURN'
-              : index === 0
-                ? 'OUTBOUND'
-                : 'FLIGHT';
-          const cabin = offer.businessOutput
-            ? 'BUSINESS'
-            : offer.cabinClassCode;
-          return (
-            <section
-              key={offer.id}
-              className={`${styles.leg} ${direction === 'RETURN' ? styles.returnLeg : ''}`}
-            >
-              <div className={styles.legHead}>
-                <strong>✈ &nbsp; {direction}</strong>
-                <span>{formatDate(offer.departureAt)}</span>
-                <span>{cabin} CLASS</span>
-              </div>
-              <div className={styles.route}>
-                <div className={styles.place}>
-                  <span>FROM</span>
-                  <strong>{cityName(offer.originId)}</strong>
-                  <b>{formatTime(offer.departureAt)}</b>
-                </div>
-                <div className={styles.flightPath}>
-                  <Plane size={32} strokeWidth={1.7} />
-                  <i />
-                  <small>
-                    {offer.carrierName} · {offer.serviceNumber || '—'}
-                  </small>
-                </div>
-                <div className={`${styles.place} ${styles.destination}`}>
-                  <span>TO</span>
-                  <strong>{cityName(offer.destinationId)}</strong>
-                  <b>{offer.arrivalAt ? formatTime(offer.arrivalAt) : '—'}</b>
-                </div>
-              </div>
-              <div className={styles.legFoot}>
-                <div>
-                  <span>CLASS</span>
-                  <strong>{cabin}</strong>
-                </div>
-                <div>
-                  <span>STATUS</span>
-                  <strong>
-                    {data.issued
-                      ? 'ISSUED'
-                      : offer.contractOnly
-                        ? 'PENDING RESERVATION'
-                        : 'DRAFT'}
-                  </strong>
-                </div>
-                <div>
-                  <span>FLIGHT NO.</span>
-                  <strong>{offer.serviceNumber || '—'}</strong>
-                </div>
-              </div>
-            </section>
-          );
-        })}
-      </div>
-      {!data.issued ? (
-        <p className={styles.notice}>
-          FLIGHT INFORMATION / NOTICE — All times are shown in Tehran time.
-          Reservation confirmation, ticket number, airport codes and baggage
-          must come from the issuing system.
-        </p>
-      ) : null}
-      <div className={styles.warning}>
-        <strong>
-          PRESENCE 03:00 BEFORE FLIGHT TIME AT THE AIRPORT IS MANDATORY
-        </strong>
-        <strong dir="rtl">
-          حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.
-        </strong>
-      </div>
-      {barcode ? (
-        <figure className={styles.barcode}>
-          <svg
-            viewBox={`0 0 ${barcode.width} 54`}
-            role="img"
-            aria-label={`Barcode ${barcode.value}`}
-            preserveAspectRatio="none"
-          >
-            {barcode.bars.map((bar) => (
-              <rect
-                key={`${bar.x}-${bar.width}`}
-                x={bar.x}
-                y="0"
-                width={bar.width}
-                height="42"
-                fill="currentColor"
-              />
-            ))}
-          </svg>
-          <figcaption>{barcode.value}</figcaption>
-        </figure>
-      ) : null}
-      <footer className={styles.footer}>
-        <span>FLY FURTHER TOGETHER</span>
-        <span>{data.branding?.name ?? 'NIYAYESH SEIR SAHAR'}</span>
-      </footer>
-    </article>
+    <div dir="ltr">
+      <style>{ticketLayoutStyles}</style>
+      <div dangerouslySetInnerHTML={{ __html: pages }} />
+    </div>
   );
 }
 
