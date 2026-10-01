@@ -192,7 +192,10 @@ export function FlightDateRangeFilter({
               </button>
             ))}
           </div>
-          <div className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground">
+          <div
+            dir={system === 'gregorian' ? 'ltr' : 'rtl'}
+            className="mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground"
+          >
             <button
               type="button"
               className="grid size-9 place-items-center rounded-lg hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-white"
@@ -206,7 +209,7 @@ export function FlightDateRangeFilter({
               onClick={() => navigate(-1)}
             >
               <ChevronRight
-                className={`size-5 ${english ? 'rotate-180' : ''}`}
+                className={`size-5 ${system === 'gregorian' ? 'rotate-180' : ''}`}
               />
             </button>
             <div className="flex flex-1 justify-center gap-1">
@@ -254,7 +257,7 @@ export function FlightDateRangeFilter({
               onClick={() => navigate(1)}
             >
               <ChevronLeft
-                className={`size-5 ${english ? 'rotate-180' : ''}`}
+                className={`size-5 ${system === 'gregorian' ? 'rotate-180' : ''}`}
               />
             </button>
           </div>

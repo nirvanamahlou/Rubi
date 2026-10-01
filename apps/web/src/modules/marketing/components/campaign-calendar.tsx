@@ -98,7 +98,10 @@ export function CampaignCalendar({
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div
+          dir={system === 'gregorian' ? 'ltr' : 'rtl'}
+          className="flex flex-wrap items-center gap-2"
+        >
           <Select
             value={system}
             onValueChange={(value) => setSystem(value as CalendarSystem)}
@@ -119,7 +122,10 @@ export function CampaignCalendar({
             size="icon"
             variant="outline"
           >
-            <ChevronRight aria-hidden="true" className="size-4" />
+            <ChevronRight
+              aria-hidden="true"
+              className={`size-4 ${system === 'gregorian' ? 'rotate-180' : ''}`}
+            />
           </Button>
           <Button
             onClick={() => setAnchor(new Date(2026, 8, 2, 12))}
@@ -136,7 +142,10 @@ export function CampaignCalendar({
             size="icon"
             variant="outline"
           >
-            <ChevronLeft aria-hidden="true" className="size-4" />
+            <ChevronLeft
+              aria-hidden="true"
+              className={`size-4 ${system === 'gregorian' ? 'rotate-180' : ''}`}
+            />
           </Button>
         </div>
       </Card>

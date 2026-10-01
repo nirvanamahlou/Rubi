@@ -61,6 +61,26 @@ describe('shared date picker contract', () => {
     expect(pickerSource).toContain('backdrop-blur-xl');
   });
 
+  it('keeps Gregorian navigation independent of Persian or English labels in every dual-calendar header', () => {
+    for (const [path, system] of [
+      ['components/ui/date-picker.tsx', 'calendarSystem'],
+      [
+        'modules/ticket-catalog/components/ticket-date-picker.tsx',
+        'calendarSystem',
+      ],
+      ['modules/customers/components/customer-date-field.tsx', 'mode'],
+      ['modules/sales/components/flight-date-range.tsx', 'system'],
+      ['modules/marketing/components/campaign-calendar.tsx', 'system'],
+    ]) {
+      const source = readFileSync(join(sourceRoot, path!), 'utf8');
+      expect(source).toContain(
+        `dir={${system} === 'gregorian' ? 'ltr' : 'rtl'}`,
+      );
+      expect(source).toContain(`${system} === 'gregorian' ? 'rotate-180' : ''`);
+      expect(source).not.toContain("english ? 'rotate-180'");
+    }
+  });
+
   it('prevents raw browser calendars from returning to application forms', () => {
     expect(productionTsx(sourceRoot)).not.toMatch(
       /type=["'](?:date|datetime-local)["']/,
