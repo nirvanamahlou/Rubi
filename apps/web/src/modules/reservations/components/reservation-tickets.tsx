@@ -1,4 +1,11 @@
 'use client';
+import { readTicketAirlineMarks } from '@/modules/ticket-catalog/public/airline-marks';
+import type { TicketLayoutAirline } from '@/components/travel/flight-ticket-layout';
+
+import {
+  readTicketDocumentFacts,
+  type TicketDocumentFacts,
+} from '@/modules/ticket-catalog/public/document-details';
 import { useEffect, useState } from 'react';
 import { createPortal, flushSync } from 'react-dom';
 import { useTravelLogo } from './travel-document';
@@ -36,7 +43,64 @@ export function ReservationTickets({
   const [passengerNames, setPassengerNames] = useState<Record<string, string>>(
     {},
   );
-  const tickets = reservationTickets(request.snapshot, passengerNames);
+  const [airlineMarks, setAirlineMarks] = useState<
+    Record<string, TicketLayoutAirline>
+  >({});
+  const [passengerGender, setPassengerGender] = useState<
+    Record<string, 'M' | 'F' | null>
+  >({});
+  const [ticketFacts, setTicketFacts] = useState<
+    Record<string, TicketDocumentFacts>
+  >({});
+  const [factsReady, setFactsReady] = useState<ReservationIntakeV1 | null>(
+    null,
+  );
+  const [passengersReady, setPassengersReady] = useState('');
+  const tickets = reservationTickets(request.snapshot, passengerNames).map(
+    (ticket) => ({
+      ...ticket,
+      gender: passengerGender[ticket.passengerId] ?? null,
+      airlines: airlineMarks,
+      offers: ticket.offers.map((offer) => ({
+        ...offer,
+        ...(offer.offerId ? ticketFacts[offer.offerId] : {}),
+      })),
+    }),
+  );
+  useEffect(() => {
+    let active = true;
+    const base = getPublicApiBaseUrl();
+    if (!base) {
+      void Promise.resolve().then(() => {
+        if (active) setFactsReady(request);
+      });
+      return;
+    }
+    void readTicketAirlineMarks(
+      reservationTickets(request.snapshot).flatMap((ticket) =>
+        ticket.offers.map((offer) => offer.carrierName),
+      ),
+      (path) =>
+        fetch(base + path, { credentials: 'include', cache: 'no-store' }),
+    ).then((marks) => {
+      if (active) setAirlineMarks(marks);
+    });
+    void readTicketDocumentFacts(
+      reservationTickets(request.snapshot).flatMap((ticket) => ticket.offers),
+      (path) =>
+        fetch(base + path, { credentials: 'include', cache: 'no-store' }),
+    ).then((facts) => {
+      if (active) {
+        setTicketFacts(facts);
+        void Promise.resolve().then(() => {
+          if (active) setFactsReady(request);
+        });
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [request]);
   const [selected, setSelected] = useState(tickets[0]?.passengerId ?? '');
   const [names, setNames] = useState<Record<string, string>>({});
   const [ready, setReady] = useState(false);
@@ -85,13 +149,29 @@ export function ReservationTickets({
     void passengerFilesRequest<PassengersResponse>(request.id, 'passengers')
       .then(({ data }) => {
         if (!active) return;
+        setPassengerGender(
+          Object.fromEntries(
+            data.map((passenger) => [passenger.id, passenger.gender]),
+          ),
+        );
         setPassengerNames(
           Object.fromEntries(
-            data.map((passenger) => [passenger.id, passenger.displayName]),
+            data.map((passenger) => [
+              passenger.id,
+              [
+                passenger.passportFirstName?.trim(),
+                passenger.passportLastName?.trim(),
+              ]
+                .filter(Boolean)
+                .join(' ') || passenger.displayName,
+            ]),
           ),
         );
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setPassengersReady(request.id);
+      });
     return () => {
       active = false;
     };
@@ -204,27 +284,49 @@ export function ReservationTickets({
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button
-                  disabled={!ready || downloading || !ticket}
+                  disabled={
+                    !ready ||
+                    factsReady !== request ||
+                    passengersReady !== request.id ||
+                    downloading ||
+                    !ticket
+                  }
                   onClick={() => void download(false)}
                 >
                   {downloading ? 'در حال ساخت PDF…' : 'دانلود PDF این مسافر'}
                 </Button>
                 <Button
-                  disabled={!ready || downloading}
+                  disabled={
+                    !ready ||
+                    factsReady !== request ||
+                    passengersReady !== request.id ||
+                    downloading
+                  }
                   onClick={() => void download(true)}
                 >
                   دانلود PDF همهٔ مسافران
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={!ready || printing || !ticket}
+                  disabled={
+                    !ready ||
+                    factsReady !== request ||
+                    passengersReady !== request.id ||
+                    printing ||
+                    !ticket
+                  }
                   onClick={() => void print(false)}
                 >
                   چاپ این مسافر
                 </Button>
                 <Button
                   variant="outline"
-                  disabled={!ready || printing}
+                  disabled={
+                    !ready ||
+                    factsReady !== request ||
+                    passengersReady !== request.id ||
+                    printing
+                  }
                   onClick={() => void print(true)}
                 >
                   چاپ همهٔ مسافران
@@ -240,8 +342,16 @@ export function ReservationTickets({
                   <FlightTicketSheet
                     data={{
                       ...ticket,
+                      gender: passengerGender[ticket.passengerId] ?? null,
+                      airlines: airlineMarks,
                       ...(branding
-                        ? { branding: { name: branding.name, logo } }
+                        ? {
+                            branding: {
+                              name: branding.name,
+                              logo,
+                              companyCode: branding.companyCode ?? '',
+                            },
+                          }
                         : {}),
                     }}
                     cityName={name}
@@ -270,7 +380,13 @@ export function ReservationTickets({
                 data={{
                   ...item,
                   ...(branding
-                    ? { branding: { name: branding.name, logo } }
+                    ? {
+                        branding: {
+                          name: branding.name,
+                          logo,
+                          companyCode: branding.companyCode ?? '',
+                        },
+                      }
                     : {}),
                 }}
                 cityName={name}

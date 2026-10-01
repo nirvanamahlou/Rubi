@@ -66,6 +66,9 @@ export function catalogProductsFromOffers(
       : emptyInput();
     const first = definition.segments[0]!;
     const last = definition.segments.at(-1)!;
+    if (offer.originAirportId) first.originAirportId = offer.originAirportId;
+    if (offer.destinationAirportId)
+      last.destinationAirportId = offer.destinationAirportId;
     definition.title = offer.carrierName + ' · ' + offer.serviceNumber;
     definition.transport = 'flight';
     definition.serviceDate = new Intl.DateTimeFormat('en-CA', {
@@ -140,6 +143,8 @@ export function catalogOffer(
 
 export function publishedOfferInput(offer: TicketOfferV1) {
   return {
+    originAirportId: offer.originAirportId ?? null,
+    destinationAirportId: offer.destinationAirportId ?? null,
     supplyType: offer.supplyType ?? null,
     economyBaggageKg: offer.economyBaggageKg ?? null,
     businessBaggageKg: offer.businessBaggageKg ?? null,

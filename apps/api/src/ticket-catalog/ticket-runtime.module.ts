@@ -94,6 +94,12 @@ class TicketOffersController {
   ) {
     return this.service.updateSaleCommission(input, req.actor, key);
   }
+  @Get(':offerId/document-details') documentDetails(
+    @Param('offerId') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.documentDetails(id, req.actor);
+  }
   @Get('management') managed(
     @Req() req: AuthenticatedRequest,
     @Query('page') page = '1',
