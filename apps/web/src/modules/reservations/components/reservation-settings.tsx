@@ -7,6 +7,7 @@ import {
   type TravelWorkflowStateV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import {
   Input,
   Select,
@@ -29,8 +30,17 @@ import {
 import { travelRequest } from './travel-workflow-form';
 import { useReservationFormReferences } from './reservation-form-sheet';
 import { DatePicker } from '@/components/ui/date-picker';
+import { masterDataApi } from '@/modules/master-data/api/client';
 import { ReservationFiles } from '../passenger-files/files';
 import { TravelDocument } from './travel-document';
+import {
+  findReservationEditReference,
+  reservationEditReferenceOption,
+  reservationEditReferenceResource,
+  type ReservationEditReferenceKey,
+  type ReservationEditReferenceOption,
+  type ReservationEditReferenceResource,
+} from '../model/reservation-edit-references';
 import styles from './reservation-settings.module.css';
 
 export type ReservationSettingsSection =
@@ -46,6 +56,39 @@ const sectionLabels: Record<ReservationSettingsSection, string> = {
 };
 
 const emptySelectValue = '__UNSELECTED__';
+
+const referenceKeysBySection: Record<
+  ReservationSettingsSection,
+  readonly ReservationEditReferenceKey[]
+> = {
+  ALL: ['arrivalAirline', 'departureAirline', 'hotel', 'broker'],
+  PARTY: [],
+  FLIGHT: ['arrivalAirline', 'departureAirline'],
+  HOTEL: ['hotel'],
+  OTHER: ['broker'],
+  PASSENGERS: [],
+};
+
+async function loadReservationEditReferences(
+  resource: ReservationEditReferenceResource,
+) {
+  const records = [];
+  for (let page = 1; ; page++) {
+    const response = await masterDataApi.list(resource, {
+      search: '',
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page,
+      pageSize: 100,
+    });
+    records.push(...response.data);
+    if (!response.data.length || records.length >= response.meta.total)
+      return records.map((record) =>
+        reservationEditReferenceOption(resource, record),
+      );
+  }
+}
 
 type ReservationSelectOption = { value: string; label: string };
 
@@ -106,8 +149,13 @@ function ReservationSettingsForm({
       settings.text.contractPartyName = partyName;
     return settings;
   });
-  const [applyToContractAndVoucher, setApplyToContractAndVoucher] =
-    useState(false);
+  const [directory, setDirectory] = useState<{
+    key: string;
+    options: Partial<
+      Record<ReservationEditReferenceResource, ReservationEditReferenceOption[]>
+    >;
+    error: string;
+  }>({ key: '', options: {}, error: '' });
   const [error, setError] = useState(''),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false);
@@ -116,6 +164,53 @@ function ReservationSettingsForm({
   >([]);
   const [past, setPast] = useState<TravelWorkflowStateV1>();
   const [showFiles, setShowFiles] = useState(false);
+  const referenceKeys = referenceKeysBySection[section];
+  const referenceResourceKey = [
+    ...new Set(
+      referenceKeys.map((key) => reservationEditReferenceResource[key]),
+    ),
+  ].join(',');
+  const activeDirectory =
+    directory.key === referenceResourceKey
+      ? { ...directory, loading: false }
+      : {
+          key: referenceResourceKey,
+          options: {},
+          loading: Boolean(referenceResourceKey),
+          error: '',
+        };
+  useEffect(() => {
+    const resources = referenceResourceKey
+      .split(',')
+      .filter(Boolean) as ReservationEditReferenceResource[];
+    if (!resources.length) return;
+    let live = true;
+    void Promise.all(
+      resources.map(
+        async (resource) =>
+          [resource, await loadReservationEditReferences(resource)] as const,
+      ),
+    )
+      .then((entries) => {
+        if (live)
+          setDirectory({
+            key: referenceResourceKey,
+            options: Object.fromEntries(entries),
+            error: '',
+          });
+      })
+      .catch(() => {
+        if (live)
+          setDirectory({
+            key: referenceResourceKey,
+            options: {},
+            error: 'دریافت فهرست ایرلاین، هتل یا کارگزار انجام نشد.',
+          });
+      });
+    return () => {
+      live = false;
+    };
+  }, [referenceResourceKey]);
   useEffect(() => {
     let live = true;
     void travelRequest<{ data: typeof history }>(
@@ -133,6 +228,28 @@ function ReservationSettingsForm({
   }, [intake.id, intake.workflow.version]);
   async function save() {
     if (busy) return;
+    if (activeDirectory.loading || activeDirectory.error) {
+      setError(
+        activeDirectory.error ||
+          'تا دریافت کامل فهرست‌های اطلاعات پایه صبر کنید.',
+      );
+      return;
+    }
+    const invalidReferenceKey = referenceKeys.find((key) => {
+      const value = draft.text[key]?.trim();
+      if (!value) return false;
+      const resource = reservationEditReferenceResource[key];
+      return !findReservationEditReference(
+        value,
+        activeDirectory.options[resource] ?? [],
+      );
+    });
+    if (invalidReferenceKey) {
+      setError(
+        `${voucherTextLabels[invalidReferenceKey]} را از فهرست اطلاعات پایه انتخاب کنید.`,
+      );
+      return;
+    }
     const childWithoutHotelBand = draft.passengers.some(
       (passenger) =>
         passenger.selected &&
@@ -153,12 +270,9 @@ function ReservationSettingsForm({
         `reservations/requests/${intake.id}/workflow`,
         {
           action: 'SUPPLIER_FORM_SETTINGS',
-          applyToContractAndVoucher,
-          expectedContractVersion: intake.contractEditVersion,
+          applyToContractAndVoucher: false,
           expectedVersion: intake.workflow.version,
-          note: applyToContractAndVoucher
-            ? sectionLabels[section] + ' و اعمال در قرارداد و واچر'
-            : sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
+          note: sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
           voucherSettings: draft,
         },
       );
@@ -220,45 +334,86 @@ function ReservationSettingsForm({
     PASSENGERS: [],
   };
   const sectionTextKeys = textKeysBySection[section];
-  const textField = (key: VoucherTextFieldKey) => (
-    <label key={key}>
-      {voucherTextLabels[key]}
-      {['checkIn', 'checkOut', 'arrivalDate', 'departureDate'].includes(key) ? (
-        <DatePicker
-          defaultCalendarSystem="gregorian"
-          gregorianEnglish
-          value={draft.text[key] ?? ''}
-          onChange={(value) =>
-            update({ ...draft, text: { ...draft.text, [key]: value } })
-          }
-        />
-      ) : (
-        <Input
-          value={draft.text[key] ?? ''}
-          maxLength={
-            [
-              'stayNotes',
-              'remarks',
-              'excursionDescription',
-              'extraServices',
-            ].includes(key)
-              ? 500
-              : 200
-          }
-          placeholder={key === 'website' ? 'https://' : undefined}
-          type={
-            ['arrivalTime', 'departureTime'].includes(key) ? 'time' : 'text'
-          }
-          onChange={(event) =>
-            update({
-              ...draft,
-              text: { ...draft.text, [key]: event.target.value },
-            })
-          }
-        />
-      )}
-    </label>
-  );
+  const textField = (key: VoucherTextFieldKey) => {
+    const referenceKey = Object.hasOwn(reservationEditReferenceResource, key)
+      ? (key as ReservationEditReferenceKey)
+      : undefined;
+    if (referenceKey) {
+      const resource = reservationEditReferenceResource[referenceKey];
+      const options = activeDirectory.options[resource] ?? [];
+      const selectedOption = findReservationEditReference(
+        draft.text[referenceKey] ?? '',
+        options,
+      );
+      return (
+        <label key={key}>
+          {voucherTextLabels[key]}
+          <SearchCombobox
+            value={selectedOption?.id ?? ''}
+            options={options.map((option) => ({
+              value: option.id,
+              label: option.label,
+              searchText: option.searchText,
+            }))}
+            selectedLabel={draft.text[referenceKey] || undefined}
+            label={voucherTextLabels[key]}
+            placeholder={`انتخاب ${voucherTextLabels[key]}`}
+            loading={activeDirectory.loading}
+            error={activeDirectory.error || undefined}
+            onValueChange={(id) => {
+              const option = options.find((item) => item.id === id);
+              if (option)
+                update({
+                  ...draft,
+                  text: { ...draft.text, [referenceKey]: option.label },
+                });
+            }}
+          />
+        </label>
+      );
+    }
+    return (
+      <label key={key}>
+        {voucherTextLabels[key]}
+        {['checkIn', 'checkOut', 'arrivalDate', 'departureDate'].includes(
+          key,
+        ) ? (
+          <DatePicker
+            defaultCalendarSystem="gregorian"
+            gregorianEnglish
+            value={draft.text[key] ?? ''}
+            onChange={(value) =>
+              update({ ...draft, text: { ...draft.text, [key]: value } })
+            }
+          />
+        ) : (
+          <Input
+            value={draft.text[key] ?? ''}
+            maxLength={
+              [
+                'stayNotes',
+                'remarks',
+                'excursionDescription',
+                'extraServices',
+              ].includes(key)
+                ? 500
+                : 200
+            }
+            placeholder={key === 'website' ? 'https://' : undefined}
+            type={
+              ['arrivalTime', 'departureTime'].includes(key) ? 'time' : 'text'
+            }
+            onChange={(event) =>
+              update({
+                ...draft,
+                text: { ...draft.text, [key]: event.target.value },
+              })
+            }
+          />
+        )}
+      </label>
+    );
+  };
   return (
     <section className={styles.form}>
       <header className={styles.formHeader}>
@@ -564,20 +719,14 @@ function ReservationSettingsForm({
             {sectionTextKeys.map(textField)}
           </div>
         </details>
-        <label className="rounded-xl border border-primary/30 bg-primary/5 p-3">
-          <input
-            type="checkbox"
-            checked={applyToContractAndVoucher}
-            onChange={(event) =>
-              setApplyToContractAndVoucher(event.target.checked)
-            }
-          />{' '}
-          همین تغییرات در خروجی قرارداد و واچر هتل هم اعمال شود
-          <span className="mt-1 block text-xs text-muted-foreground">
-            اگر تیک نزنید، تغییر فقط در فرم رزواسیون و مبنای خرید ثبت می‌شود.
-          </span>
-        </label>
-        <Button onClick={() => void save()} disabled={busy || !selected.length}>
+        <p className={styles.operationalNotice}>
+          این اصلاح فقط در فرم رزواسیون و مبنای خرید ثبت می‌شود و قرارداد فروش
+          را تغییر نمی‌دهد.
+        </p>
+        <Button
+          onClick={() => void save()}
+          disabled={busy || activeDirectory.loading || !selected.length}
+        >
           {busy ? 'در حال ذخیره…' : 'ثبت نسخهٔ جدید فرم رزواسیون'}
         </Button>
       </fieldset>

@@ -18,6 +18,26 @@ const command = (
   ...extra,
 });
 describe('travel workflow', () => {
+  it('keeps supplier-form corrections out of the sales contract and voucher', () => {
+    const state = initialTravelWorkflow();
+    const settings = {
+      text: {},
+      numbers: {},
+      flags: {},
+      passengers: [],
+    } as never;
+    expect(() =>
+      transition(
+        state,
+        command(state, 'SUPPLIER_FORM_SETTINGS', {
+          applyToContractAndVoucher: true,
+          voucherSettings: settings,
+        }),
+        [],
+      ),
+    ).toThrow('قرارداد فروش را تغییر نمی‌دهد');
+  });
+
   it('requires supplier confirmation before voucher and preserves state on rejection', () => {
     const state = initialTravelWorkflow();
     expect(() =>
