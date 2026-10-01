@@ -1,3 +1,7 @@
+## 2026-10-01 — HOTEL-REPLACE-COMPLETION-KPI-1001 — PC-B — READY_FOR_REVIEW
+
+The Hotels KPI grid replaces only «نیازمند تکمیل» with «هتل‌های زنجیره‌ای», using the existing canonical global count of hotels whose chain reference is present. The card states its global scope explicitly; real zero renders as zero, while loading and invalid/missing runtime values render unavailable rather than a fabricated count. The remaining hotel KPIs and all other accommodation tabs are unchanged. Focused rendered-grid regressions, all 432 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no API, schema, contract, dependency, database or runtime change was made.
+
 ## 2026-10-01 — SUPPLIER-INLINE-SERVICE-CREATE-1001 — PC-B — READY_FOR_REVIEW
 
 The Supplier services selector now shows Add Service without requiring a search. It reuses the canonical travel-service form and validation, then appends the returned service code—not its ID—without replacing prior selections or the rest of the supplier draft. Broker and unrelated selector behavior remain unchanged; read-only and locked fields expose no creation action. Focused SSR/state-helper regressions, all 422 Master Data Web tests, scoped lint and Web typecheck pass. No browser/runtime, API, schema, contract, dependency or database change was made; final production build remains lead-owned.

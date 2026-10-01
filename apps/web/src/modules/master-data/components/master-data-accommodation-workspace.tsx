@@ -157,6 +157,48 @@ const emptySummary: MasterAccommodationSummary = {
   },
 };
 
+export function hotelKpiItems(
+  summary: MasterAccommodationSummary,
+  summaryLoaded: boolean,
+): readonly MasterDataKpiItem[] {
+  const chainMemberHotels = summary.chains.memberHotels;
+  const chainMemberValue =
+    summaryLoaded &&
+    typeof chainMemberHotels === 'number' &&
+    Number.isSafeInteger(chainMemberHotels) &&
+    chainMemberHotels >= 0
+      ? chainMemberHotels
+      : '—';
+
+  return [
+    {
+      label: 'کل هتل‌ها',
+      value: summary.hotels.total,
+      icon: Hotel,
+      tone: 'sky',
+    },
+    {
+      label: 'فروش‌پذیر',
+      value: summary.hotels.saleable,
+      icon: CheckCircle2,
+      tone: 'emerald',
+    },
+    {
+      label: 'کشورها / شهرها',
+      value: `${summary.hotels.countries.toLocaleString('fa-IR')} / ${summary.hotels.cities.toLocaleString('fa-IR')}`,
+      icon: MapPin,
+      tone: 'violet',
+    },
+    {
+      label: 'هتل‌های زنجیره‌ای',
+      value: chainMemberValue,
+      icon: Link2,
+      tone: 'amber',
+      hint: 'در کل اطلاعات پایه',
+    },
+  ];
+}
+
 function resourceFor(tab: AccommodationTab): MasterDataResource {
   if (tab === 'chains') return 'hotel-chains';
   if (tab === 'meals') return 'meal-services';
@@ -235,6 +277,7 @@ export function MasterDataAccommodationWorkspace() {
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [summary, setSummary] =
     useState<MasterAccommodationSummary>(emptySummary);
+  const [summaryLoaded, setSummaryLoaded] = useState(false);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<
@@ -304,11 +347,14 @@ export function MasterDataAccommodationWorkspace() {
   );
 
   const loadSummary = useCallback(async () => {
+    setSummaryLoaded(false);
     try {
       const response = await masterDataApi.accommodationSummary();
       setSummary(response.data);
+      setSummaryLoaded(true);
     } catch {
       setSummary(emptySummary);
+      setSummaryLoaded(false);
     }
   }, []);
 
@@ -413,33 +459,7 @@ export function MasterDataAccommodationWorkspace() {
   }, [load]);
 
   const kpis = useMemo<readonly MasterDataKpiItem[]>(() => {
-    if (tab === 'hotels')
-      return [
-        {
-          label: 'کل هتل‌ها',
-          value: summary.hotels.total,
-          icon: Hotel,
-          tone: 'sky',
-        },
-        {
-          label: 'فروش‌پذیر',
-          value: summary.hotels.saleable,
-          icon: CheckCircle2,
-          tone: 'emerald',
-        },
-        {
-          label: 'کشورها / شهرها',
-          value: `${summary.hotels.countries.toLocaleString('fa-IR')} / ${summary.hotels.cities.toLocaleString('fa-IR')}`,
-          icon: MapPin,
-          tone: 'violet',
-        },
-        {
-          label: 'نیازمند تکمیل',
-          value: summary.hotels.incomplete,
-          icon: CircleAlert,
-          tone: 'amber',
-        },
-      ];
+    if (tab === 'hotels') return hotelKpiItems(summary, summaryLoaded);
     if (tab === 'chains')
       return [
         {
@@ -549,7 +569,7 @@ export function MasterDataAccommodationWorkspace() {
         },
       ];
     return [];
-  }, [summary, tab]);
+  }, [summary, summaryLoaded, tab]);
 
   function changeTab(next: AccommodationTab) {
     setTab(next);
