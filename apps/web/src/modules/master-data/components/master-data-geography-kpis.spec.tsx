@@ -4,7 +4,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   airportKpiItems,
+  currentPageMaintenanceTotal,
   currentPageTerminalTotal,
+  terminalKpiItems,
 } from './master-data-geography-kpis';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
 
@@ -25,6 +27,18 @@ function airport(
       cityName,
       ...(terminalCount === undefined ? {} : { terminalCount }),
     },
+  };
+}
+
+function terminal(
+  isUnderMaintenance?: string | number | boolean | null,
+): MasterDataRecord {
+  return {
+    ...airport(),
+    resource: 'terminals',
+    code: 'TERMINAL_TEST',
+    name: 'ترمینال آزمون',
+    attributes: isUnderMaintenance === undefined ? {} : { isUnderMaintenance },
   };
 }
 
@@ -87,5 +101,47 @@ describe('airport terminal KPI', () => {
     expect(html).toContain('ترمینال‌های مرتبط');
     expect(html).toContain('در صفحه جاری');
     expect(html).toContain('>۳<');
+  });
+});
+
+describe('terminal maintenance KPI', () => {
+  it('returns zero for an empty current page', () => {
+    expect(currentPageMaintenanceTotal([])).toBe(0);
+  });
+
+  it('counts only explicit boolean true flags on the current page', () => {
+    expect(
+      currentPageMaintenanceTotal([
+        terminal(true),
+        terminal(true),
+        terminal(false),
+        terminal(),
+        terminal('true'),
+        terminal(1),
+        terminal(null),
+      ]),
+    ).toBe(2);
+  });
+
+  it('renders the maintenance card while preserving the first three terminal KPIs', () => {
+    const items = terminalKpiItems(
+      [terminal(true), terminal(false), terminal('true')],
+      18,
+      12,
+      5,
+    );
+    const html = renderToStaticMarkup(
+      <MasterDataKpiGrid items={items} label="شاخص‌های ترمینال‌ها" />,
+    );
+
+    expect(items.map(({ label, value }) => ({ label, value }))).toEqual([
+      { label: 'کل ترمینال‌ها', value: 18 },
+      { label: 'ترمینال فعال', value: 12 },
+      { label: 'بین‌المللی', value: 5 },
+      { label: 'در حال تعمیرات', value: 1 },
+    ]);
+    expect(html).toContain('در حال تعمیرات');
+    expect(html).toContain('در صفحه جاری');
+    expect(html).not.toContain('نیازمند بازبینی');
   });
 });

@@ -10,6 +10,10 @@ Owner requested a smaller agreed-price presentation after reviewing PR522 locall
 
 Only the «محدودیت خرید» column and matching placeholder cell were removed from the Suppliers list. The Brokers list still shows the column, the shared supplier/broker profile still shows its purchase-restriction detail, and forms, exports, actions, backend policy and stored data remain unchanged. A structural TSX regression validates exact header/row alignment for both tables; authenticated browser QA was not run and no runtime was changed.
 
+## 2026-10-01 — TERMINAL-REPLACE-REVIEW-KPI-1001 — PC-B — READY_FOR_REVIEW
+
+The terminal workspace replaces only the misleading «نیازمند بازبینی» KPI with «در حال تعمیرات», explicitly scoped to the current page. It counts only the existing projected boolean `isUnderMaintenance === true`; false, missing and malformed values do not contribute. The total, active and international terminal KPIs and every other geography resource remain unchanged. Pure helper and real KPI-grid SSR regressions cover empty, multiple and malformed flag cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not run.
+
 ## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
 
 The owner's screenshot confirmed the previous redesign was deployed but the horizontal agreed-total strip still did not satisfy the requested field layout. The shared Sales print renderer now labels the field قیمت توافق‌شده قرارداد above a white amount area, with separate clearly divided amount/currency rows. Preview and PDF use the same renderer; exact existing Decimal arithmetic and legacy balance fallback are retained. 22 focused tests and synthetic A4 PDF visual review pass. No API/schema/dependency/data changes; local correction follows develop merge and CI.
