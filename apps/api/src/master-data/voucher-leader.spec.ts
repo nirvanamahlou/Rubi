@@ -21,23 +21,19 @@ const row = (id: string, attributes: Record<string, unknown> = {}) => ({
   ...attributes,
 });
 function fixture() {
-  const find = vi
-    .fn()
-    .mockResolvedValue(
-      row('leader', {
-        brokerId: broker,
-        englishName: 'Saved leader',
-        welcomeSignCode: 'SYNTHETIC BOARD',
-        languages: ['English'],
-        primaryPhoneEncrypted: 'phone',
-      }),
-    );
-  const list = vi
-    .fn()
-    .mockResolvedValue({
-      rows: [row('linked', { brokerId: broker }), row('unlinked')],
-      total: 2,
-    });
+  const find = vi.fn().mockResolvedValue(
+    row('leader', {
+      brokerId: broker,
+      englishName: 'Saved leader',
+      welcomeSignCode: 'SYNTHETIC BOARD',
+      languages: ['English'],
+      primaryPhoneEncrypted: 'phone',
+    }),
+  );
+  const list = vi.fn().mockResolvedValue({
+    rows: [row('linked', { brokerId: broker }), row('unlinked')],
+    total: 2,
+  });
   const recordVoucherLeaderRead = vi.fn();
   const decrypt = vi
     .fn()

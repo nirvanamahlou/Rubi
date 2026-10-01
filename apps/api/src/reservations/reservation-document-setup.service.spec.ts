@@ -52,15 +52,13 @@ function fixture() {
   const brokerReference = vi
     .fn()
     .mockResolvedValue({ id, name: 'CANONICAL BROKER' });
-  const voucherLeaderReference = vi
-    .fn()
-    .mockResolvedValue({
-      id: leaderId,
-      name: 'CANONICAL GUIDE',
-      phone: '+905550000000',
-      board: 'CANONICAL BOARD',
-      language: 'English',
-    });
+  const voucherLeaderReference = vi.fn().mockResolvedValue({
+    id: leaderId,
+    name: 'CANONICAL GUIDE',
+    phone: '+905550000000',
+    board: 'CANONICAL BOARD',
+    language: 'English',
+  });
   const service = new TravelWorkflowService(
     database as never,
     {} as never,

@@ -214,16 +214,14 @@ it('renders voucher booking references and a separated summary without letterhea
 it('blocks a new form PDF until broker and services are confirmed', async () => {
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({
-          data: {
-            ...intake,
-            workflow: { ...intake.workflow, supplierFormPrepared: false },
-          },
-        }),
-      ),
+    vi.fn().mockResolvedValue(
+      Response.json({
+        data: {
+          ...intake,
+          workflow: { ...intake.workflow, supplierFormPrepared: false },
+        },
+      }),
+    ),
   );
   expect(
     (await GET(request(), { params: Promise.resolve({ id }) })).status,
