@@ -1,3 +1,7 @@
+## 2026-10-01 — VOUCHER-DOWNLOAD-SUMMARY-1001 — PC-A — READY_FOR_REVIEW
+
+Issued hotel vouchers now have a direct authenticated PDF download using saved voucher settings, supplier booking reference, selected passenger room types and the existing isolated renderer. Unissued/cancelled vouchers are rejected, and no-letterhead settings avoid logo retrieval. Booking Summary uses a separate bordered section, spacing and navy/teal header in preview and downloaded PDFs. 13 targeted tests, scoped lint, Web typecheck/build checked. No API contract, migration, dependency, operational data or runtime change. Owner requests develop merge after checks.
+
 ## 2026-10-01 — AIRPORT-TERMINAL-KPI-1001 — PC-B — READY_FOR_REVIEW
 
 The airport workspace now renders a fourth KPI, `ترمینال‌های مرتبط`, scoped explicitly to the current visible page. It uses the existing projected `terminalCount` values and refuses to present a partial total when any row is missing a canonical nonnegative safe integer; empty pages remain a real zero. The original airport KPIs, filters, rows, status behavior and all other geography resources are unchanged. Pure calculation and real KPI-grid SSR regressions cover empty, multiple, missing, invalid, fractional, unsafe and overflow cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not available.
@@ -9,6 +13,14 @@ Owner requested a smaller agreed-price presentation after reviewing PR522 locall
 ## 2026-10-01 — SUPPLIER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 Only the «محدودیت خرید» column and matching placeholder cell were removed from the Suppliers list. The Brokers list still shows the column, the shared supplier/broker profile still shows its purchase-restriction detail, and forms, exports, actions, backend policy and stored data remain unchanged. A structural TSX regression validates exact header/row alignment for both tables; authenticated browser QA was not run and no runtime was changed.
+
+## 2026-10-01 — TERMINAL-REPLACE-REVIEW-KPI-1001 — PC-B — READY_FOR_REVIEW
+
+The terminal workspace replaces only the misleading «نیازمند بازبینی» KPI with «در حال تعمیرات», explicitly scoped to the current page. It counts only the existing projected boolean `isUnderMaintenance === true`; false, missing and malformed values do not contribute. The total, active and international terminal KPIs and every other geography resource remain unchanged. Pure helper and real KPI-grid SSR regressions cover empty, multiple and malformed flag cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not run.
+
+## 2026-10-01 — TERMINAL-REMOVE-AIRPORT-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+The terminal list airport filter, its local state, scoped-query field and reset wiring are removed together, so no selected airport can remain as a hidden stale filter. Terminal-type and all shared filters remain. The airport FK, nested airport children, inline creation and race-safe standalone parent selection are unchanged. A focused source regression verifies the removed list-filter path and retained creation relation. No API, schema, migration, contract, dependency, data or runtime changes; authenticated browser QA was not run.
 
 ## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
 

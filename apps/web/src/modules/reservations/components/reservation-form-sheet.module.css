@@ -276,3 +276,22 @@
   font-size: 8px;
   overflow-wrap: anywhere;
 }
+
+.bookingSection {
+  margin-top: 4mm;
+  margin-bottom: 3mm;
+  border: 1px solid #b7cbdc;
+  break-inside: avoid;
+}
+.bookingSection .heading {
+  background: #10386b;
+  color: #fff;
+  border-bottom: 2px solid #15999e;
+  padding: 4px 0;
+}
+.bookingSection .heading > span {
+  color: #e2edf7;
+}
+.bookingSection .summary {
+  background: #fff;
+}
