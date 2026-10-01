@@ -6,6 +6,7 @@ import {
   airportKpiItems,
   currentPageMaintenanceTotal,
   currentPageTerminalTotal,
+  railTerminalKpiItems,
   terminalKpiItems,
 } from './master-data-geography-kpis';
 import { MasterDataKpiGrid } from './master-data-kpi-grid';
@@ -101,6 +102,44 @@ describe('airport terminal KPI', () => {
     expect(html).toContain('ترمینال‌های مرتبط');
     expect(html).toContain('در صفحه جاری');
     expect(html).toContain('>۳<');
+  });
+});
+
+describe('rail terminal KPI', () => {
+  it('counts distinct linked cities and only valid defined hours on the current page', () => {
+    const records = [terminal(), terminal(), terminal(), terminal()].map(
+      (record, index) => ({
+        ...record,
+        resource: 'rail-terminals' as const,
+        attributes:
+          index === 0
+            ? { cityId: 'city-1', operatingHoursMode: 'FULL_TIME' }
+            : index === 1
+              ? {
+                  cityId: 'city-1',
+                  operatingHoursMode: 'LIMITED',
+                  opensAt: '08:00',
+                  closesAt: '18:00',
+                }
+              : index === 2
+                ? {
+                    cityId: 'city-2',
+                    operatingHoursMode: 'LIMITED',
+                    opensAt: 'bad',
+                    closesAt: '18:00',
+                  }
+                : { cityId: null, operatingHoursMode: 'UNKNOWN' },
+      }),
+    );
+    const items = railTerminalKpiItems(records, 9, 7);
+    expect(
+      items.map(({ label, value, hint }) => ({ label, value, hint })),
+    ).toEqual([
+      { label: 'کل ترمینال‌ها', value: 9, hint: undefined },
+      { label: 'ترمینال فعال', value: 7, hint: undefined },
+      { label: 'شهرهای مرتبط', value: 2, hint: 'در صفحه جاری' },
+      { label: 'ساعت فعالیت تعریف‌شده', value: 2, hint: 'در صفحه جاری' },
+    ]);
   });
 });
 

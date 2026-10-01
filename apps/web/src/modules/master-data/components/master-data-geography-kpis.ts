@@ -107,3 +107,54 @@ export function terminalKpiItems(
     },
   ];
 }
+
+export function railTerminalKpiItems(
+  records: readonly MasterDataRecord[],
+  total: number,
+  activeTotal: number,
+): readonly MasterDataKpiItem[] {
+  const linkedCities = new Set(
+    records
+      .map((record) => record.attributes.cityId)
+      .filter(
+        (value): value is string =>
+          typeof value === 'string' && value.trim().length > 0,
+      ),
+  ).size;
+  const definedHours = records.filter((record) => {
+    const mode = record.attributes.operatingHoursMode;
+    return (
+      mode === 'FULL_TIME' ||
+      (mode === 'LIMITED' &&
+        /^([01]\d|2[0-3]):[0-5]\d$/.test(
+          String(record.attributes.opensAt ?? ''),
+        ) &&
+        /^([01]\d|2[0-3]):[0-5]\d$/.test(
+          String(record.attributes.closesAt ?? ''),
+        ))
+    );
+  }).length;
+  return [
+    { label: 'کل ترمینال‌ها', value: total, icon: SquareStack, tone: 'sky' },
+    {
+      label: 'ترمینال فعال',
+      value: activeTotal,
+      icon: CheckCircle2,
+      tone: 'emerald',
+    },
+    {
+      label: 'شهرهای مرتبط',
+      value: linkedCities,
+      icon: MapPin,
+      tone: 'violet',
+      hint: 'در صفحه جاری',
+    },
+    {
+      label: 'ساعت فعالیت تعریف‌شده',
+      value: definedHours,
+      icon: SquareStack,
+      tone: 'amber',
+      hint: 'در صفحه جاری',
+    },
+  ];
+}

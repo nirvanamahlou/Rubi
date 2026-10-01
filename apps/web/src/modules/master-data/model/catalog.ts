@@ -4,6 +4,7 @@ export const masterDataResourceKeys = [
   'cities',
   'airports',
   'terminals',
+  'rail-terminals',
   'currencies',
   'exchange-rates',
   'banks',
@@ -307,6 +308,69 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       airportId: 'airport_thr',
       terminalType: 'DOMESTIC',
     },
+  },
+  {
+    key: 'rail-terminals',
+    label: 'ترمینال‌های ریلی',
+    singularLabel: 'ترمینال ریلی',
+    group: 'جغرافیا',
+    description:
+      'ایستگاه یا ترمینال مستقل شبکه ریلی، با شهر و ساعت فعالیت اختیاری.',
+    fields: [
+      nameField,
+      {
+        key: 'englishName',
+        label: 'عنوان انگلیسی',
+        type: 'text',
+        placeholder: 'Tehran Railway Station',
+      },
+      { key: 'cityId', label: 'شهر', type: 'text', placeholder: '' },
+      {
+        key: 'operatingHoursMode',
+        label: 'ساعت فعالیت',
+        type: 'select',
+        placeholder: '',
+        options: [
+          { value: 'FULL_TIME', label: '۲۴ ساعته' },
+          { value: 'LIMITED', label: 'بازه ساعت' },
+        ],
+      },
+      {
+        key: 'opensAt',
+        label: 'شروع فعالیت',
+        type: 'text',
+        placeholder: '05:00',
+      },
+      {
+        key: 'closesAt',
+        label: 'پایان فعالیت',
+        type: 'text',
+        placeholder: '23:00',
+      },
+      {
+        key: 'displayOrder',
+        label: 'ترتیب نمایش',
+        type: 'number',
+        placeholder: '0',
+      },
+      {
+        key: 'logoFileReference',
+        label: 'لوگو',
+        type: 'text',
+        placeholder: '',
+      },
+      {
+        key: 'status',
+        label: 'وضعیت',
+        type: 'select',
+        placeholder: '',
+        options: [
+          { value: 'active', label: 'فعال' },
+          { value: 'inactive', label: 'غیرفعال' },
+        ],
+      },
+    ],
+    preview: { name: 'راه‌آهن تهران', englishName: 'Tehran Railway Station' },
   },
   {
     key: 'currencies',
