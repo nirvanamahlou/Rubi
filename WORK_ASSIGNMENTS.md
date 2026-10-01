@@ -1,3 +1,7 @@
+## TIER-SAVE-BUTTON-1001 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-tier-save-button-1001` from origin/develop. Reserve Sales ticket price workspace only, bounded status docs. Add explicit save action next to tier editor for single and round-trip prices using existing validated revision API. No schema, migration, contracts, dependencies or runtime change. Previous pricing locks released. User authorizes develop merge after checks. Dedicated tier-save buttons use existing saveBase/savePair revision endpoints and existing full-capacity validation; loading locks duplicate saves. Two focused render tests, scoped lint, Web typecheck and build checked. Bounded locks released with scoped commit.
+
 ## MASTER-DATA-VIEW-DESIGN-0930 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-view-design-0930` from `origin/develop@965ef593`. Reserve Master Data Web read/view forms, profile shell/primitives and their specialized profile consumers, scoped tests and only this item's status entries. Redesign read-only presentation in the existing Rubi theme with responsive RTL identity header and grouped labeled details; preserve create/edit, API, permissions, stored data and concurrency. No migration, shared contract, dependency/lockfile, database or runtime changes.
