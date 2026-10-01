@@ -294,6 +294,8 @@ export interface ReservationManifestTicketExportInputV1 {
 
 export interface ReservationServicePurchaseV1 {
   id: string;
+  batchId?: string | null;
+  coveredServiceClientKeys?: readonly string[];
   version: number;
   serviceClientKey: string;
   serviceKind: string;
@@ -328,8 +330,9 @@ export interface ReservationServicePurchaseV1 {
 export interface ReservationPassengerPurchasePriceV1 {
   customerId: string;
   passengerName: string;
-  nightlyAmount: string;
-  nights: number;
+  nightlyAmount?: string;
+  nights?: number;
+  unitAmount?: string;
   totalAmount: string;
 }
 
@@ -344,6 +347,17 @@ export interface ReservationServicePurchaseInputV1 {
     customerId: string;
     nightlyAmount: string;
   }[];
+  coveredServiceClientKeys?: readonly string[];
+  transferUnitAmount?: string;
+}
+
+export interface ReservationPurchaseBatchInputV1 {
+  version: 1;
+  expectedVersion: number;
+  purchases: readonly Omit<
+    ReservationServicePurchaseInputV1,
+    'version' | 'expectedVersion'
+  >[];
 }
 
 export interface FinanceSupplierPaymentCommandV1 {

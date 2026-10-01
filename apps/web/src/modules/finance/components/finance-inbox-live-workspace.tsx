@@ -978,6 +978,55 @@ export function FinanceInboxLiveWorkspace() {
                 </p>
               </div>
               <div className="space-y-4 p-5">
+                {selected.reservationPurchase ? (
+                  <div className="space-y-3 rounded-xl border border-border p-3">
+                    <strong className="text-sm">خریدهای این درخواست</strong>
+                    {selected.reservationPurchase.lines.map((line) => (
+                      <div
+                        key={line.purchaseId}
+                        className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm"
+                      >
+                        <span>
+                          {line.serviceTitle} · {line.supplierName}
+                        </span>
+                        <span dir="ltr">
+                          {line.amount} {line.currencyCode}
+                        </span>
+                        {line.status !== 'PAID' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              openSupplierPayment({
+                                ...selected,
+                                sourceReference: line.purchaseId,
+                                title: line.serviceTitle,
+                                amount: {
+                                  amount: line.amount,
+                                  currencyCode: line.currencyCode,
+                                },
+                                settlement: {
+                                  paidAmount: line.paidAmount,
+                                  remainingAmount: line.remainingAmount,
+                                },
+                                sourceVersion: line.financeVersion,
+                              })
+                            }
+                          >
+                            ثبت پرداخت این خرید
+                          </Button>
+                        ) : (
+                          <span>پرداخت‌شده</span>
+                        )}
+                      </div>
+                    ))}
+                    {selected.reservationPurchase.totals.map((total) => (
+                      <p key={total.currencyCode} className="text-sm font-bold">
+                        جمع درخواست: {total.amount} {total.currencyCode}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
                 {[
                   ['شماره منبع', selected.sourceReference],
                   ['قرارداد', selected.contractReference ?? '—'],
@@ -1056,7 +1105,8 @@ export function FinanceInboxLiveWorkspace() {
                   </div>
                 ) : null}
                 {selected.kind === 'PAYMENT_REQUEST' &&
-                selected.source === 'RESERVATIONS' ? (
+                selected.source === 'RESERVATIONS' &&
+                !selected.reservationPurchase ? (
                   <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
                     <p className="text-xs leading-5 text-muted-foreground">
                       پرداخت به کارگزار با انتخاب حساب مبدأ و روش پرداخت ثبت
@@ -1072,7 +1122,8 @@ export function FinanceInboxLiveWorkspace() {
                   </div>
                 ) : null}
                 {selected.kind === 'PAYMENT_REQUEST' &&
-                selected.source === 'RESERVATIONS' ? (
+                selected.source === 'RESERVATIONS' &&
+                !selected.reservationPurchase ? (
                   <FinanceHistoryPanel
                     requestId={selected.sourceReference}
                     source="RESERVATIONS"

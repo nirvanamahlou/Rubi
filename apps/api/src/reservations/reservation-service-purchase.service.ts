@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -13,6 +13,7 @@ import {
   moneyUnits,
   type AuthenticatedActor,
   type ReservationServicePurchaseInputV1,
+  type ReservationPurchaseBatchInputV1,
   type SalesReservationRequestV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
@@ -64,6 +65,8 @@ export function validateServicePurchase(
           'amount',
           'currencyCode',
           'passengerPrices',
+          'coveredServiceClientKeys',
+          'transferUnitAmount',
         ].includes(key),
     ) ||
     (input.passengerPrices !== undefined &&
@@ -170,6 +173,237 @@ export class ReservationServicePurchaseService {
     private readonly directory: MasterTravelDirectory,
   ) {}
 
+  async recordBatch(
+    intakeId: string,
+    input: ReservationPurchaseBatchInputV1,
+    actor: AuthenticatedActor,
+    key?: string,
+  ) {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !actor.permissions.includes('reservations.hotel_purchase.write')
+    )
+      throw new ForbiddenException('مجوز ثبت خرید خدمات وجود ندارد.');
+    if (!UUID.test(intakeId) || !key?.trim() || key.length > 140)
+      throw new BadRequestException('شناسه درخواست و کلید ثبت معتبر لازم است.');
+    if (
+      input?.version !== 1 ||
+      !Number.isSafeInteger(input.expectedVersion) ||
+      input.expectedVersion < 0 ||
+      !Array.isArray(input.purchases) ||
+      input.purchases.length < 1 ||
+      input.purchases.length > 2 ||
+      Object.keys(input).some(
+        (field) => !['version', 'expectedVersion', 'purchases'].includes(field),
+      )
+    )
+      throw new BadRequestException('درخواست خرید قرارداد معتبر نیست.');
+    const intake = await this.database.client.reservationIntake.findUnique({
+      where: { id: intakeId },
+      include: { workflowRevisions: { orderBy: { version: 'desc' }, take: 1 } },
+    });
+    if (!intake || !actor.branchIds.includes(intake.branchId))
+      throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
+    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const hotelKey = snapshot.hotelSelection?.serviceClientKey;
+    const transferKeys = snapshot.serviceSelections
+      .filter((service) => service.kind === 'TRANSFER')
+      .map((service) => service.clientKey);
+    const expectedKeys = [hotelKey, ...transferKeys].filter(
+      (value): value is string => Boolean(value),
+    );
+    const rows = input.purchases.map((purchase) => {
+      const full = {
+        ...purchase,
+        version: 1 as const,
+        expectedVersion: input.expectedVersion,
+      };
+      validateServicePurchase(full);
+      return full;
+    });
+    const covered = rows.flatMap((row) => row.coveredServiceClientKeys ?? []);
+    if (
+      !expectedKeys.length ||
+      covered.length !== expectedKeys.length ||
+      new Set(covered).size !== covered.length ||
+      expectedKeys.some((serviceKey) => !covered.includes(serviceKey)) ||
+      rows.some(
+        (row) => !row.coveredServiceClientKeys?.includes(row.serviceClientKey),
+      ) ||
+      rows.filter((row) => row.serviceClientKey === hotelKey).length !==
+        Number(Boolean(hotelKey)) ||
+      rows.filter((row) => transferKeys.includes(row.serviceClientKey))
+        .length !== Number(transferKeys.length > 0)
+    )
+      throw new BadRequestException(
+        'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
+      );
+    const state = intake.workflowRevisions[0]?.state as
+      | { sentSupplierFormSettings?: { text?: Record<string, string> } }
+      | undefined;
+    const dates = {
+      ...(state?.sentSupplierFormSettings?.text?.checkIn
+        ? { checkIn: state.sentSupplierFormSettings.text.checkIn }
+        : {}),
+      ...(state?.sentSupplierFormSettings?.text?.checkOut
+        ? { checkOut: state.sentSupplierFormSettings.text.checkOut }
+        : {}),
+    };
+    const prepared = await Promise.all(
+      rows.map(async (row) => {
+        const service = purchasableReservationService(
+          snapshot,
+          row.serviceClientKey,
+        );
+        if (!service || !['HOTEL', 'TRANSFER'].includes(service.kind))
+          throw new BadRequestException('خدمت خرید متعلق به قرارداد نیست.');
+        const [broker] = await Promise.all([
+          this.directory.brokerReference(row.supplierOrganizationId),
+          this.directory.currencyReference(row.currencyCode),
+        ]);
+        let amount: string;
+        let passengerPrices: Prisma.InputJsonValue | undefined;
+        if (service.kind === 'HOTEL') {
+          if (
+            row.coveredServiceClientKeys?.length !== 1 ||
+            row.transferUnitAmount
+          )
+            throw new BadRequestException('ردیف خرید هتل معتبر نیست.');
+          const pricing = hotelPassengerPurchase(
+            snapshot,
+            row.serviceClientKey,
+            row.passengerPrices ?? [],
+            dates,
+          );
+          amount = pricing.amount;
+          passengerPrices = pricing.passengerPrices as Prisma.InputJsonValue;
+        } else {
+          if (
+            row.passengerPrices ||
+            row.coveredServiceClientKeys?.length !== transferKeys.length ||
+            transferKeys.some(
+              (serviceKey) =>
+                !row.coveredServiceClientKeys?.includes(serviceKey),
+            ) ||
+            typeof row.transferUnitAmount !== 'string'
+          )
+            throw new BadRequestException('ردیف خرید ترانسفر معتبر نیست.');
+          const passengers = snapshot.passengerAssignments?.length
+            ? snapshot.passengerAssignments.filter((passenger) =>
+                passenger.serviceClientKeys.some((serviceKey) =>
+                  transferKeys.includes(serviceKey),
+                ),
+              )
+            : snapshot.passengerIds.map((customerId) => ({
+                customerId,
+                displayNameSnapshot: customerId,
+              }));
+          if (!passengers.length)
+            throw new BadRequestException(
+              'مسافر ترانسفر در قرارداد ثبت نشده است.',
+            );
+          let unit: bigint;
+          try {
+            unit = moneyUnits(row.transferUnitAmount);
+            if (unit <= 0n) throw new Error();
+          } catch {
+            throw new BadRequestException('قیمت ترانسفر هر مسافر معتبر نیست.');
+          }
+          amount = moneyDecimal(unit * BigInt(passengers.length));
+          passengerPrices = passengers.map((passenger) => ({
+            customerId: passenger.customerId,
+            passengerName:
+              passenger.displayNameSnapshot || passenger.customerId,
+            unitAmount: moneyDecimal(unit),
+            totalAmount: moneyDecimal(unit),
+          }));
+        }
+        if (moneyUnits(row.amount) !== moneyUnits(amount))
+          throw new BadRequestException(
+            'جمع ردیف خرید با قیمت مسافران یکسان نیست.',
+          );
+        return { row, service, broker, amount, passengerPrices };
+      }),
+    );
+    const fingerprint = createHash('sha256')
+      .update(JSON.stringify({ intakeId, ...input }))
+      .digest('hex');
+    const firstKey = `${key}:0`;
+    const unique = {
+      actorUserId_idempotencyKey: {
+        actorUserId: actor.userId,
+        idempotencyKey: firstKey,
+      },
+    };
+    const replay =
+      await this.database.client.reservationServicePurchase.findUnique({
+        where: unique,
+      });
+    if (replay) {
+      if (replay.fingerprint !== fingerprint)
+        throw new ConflictException(
+          'کلید ثبت قبلاً برای اطلاعات دیگری استفاده شده است.',
+        );
+      return { version: 1 as const, data: { batchId: replay.batchId } };
+    }
+    try {
+      return await this.database.client.$transaction(async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${intakeId}, 0))`,
+        );
+        const updated = await tx.reservationIntake.updateMany({
+          where: {
+            id: intakeId,
+            branchId: { in: actor.branchIds },
+            purchaseVersion: input.expectedVersion,
+          },
+          data: { purchaseVersion: { increment: prepared.length } },
+        });
+        if (updated.count !== 1)
+          throw new ConflictException(
+            'خرید قرارداد هم‌زمان تغییر کرده است؛ اطلاعات را تازه کنید.',
+          );
+        const batchId = randomUUID();
+        for (const [index, item] of prepared.entries()) {
+          await tx.reservationServicePurchase.create({
+            data: {
+              intakeId,
+              batchId,
+              coveredServiceClientKeys: item.row
+                .coveredServiceClientKeys as Prisma.InputJsonValue,
+              serviceClientKey: item.service.clientKey,
+              serviceKind: item.service.kind,
+              serviceTitleSnapshot:
+                item.service.kind === 'HOTEL'
+                  ? snapshot.hotelSelection!.hotelNameSnapshot
+                  : transferKeys.length > 1
+                    ? 'ترانسفر رفت‌وبرگشت'
+                    : item.service.titleSnapshot,
+              supplierOrganizationId: item.broker.id,
+              supplierNameSnapshot: item.broker.name,
+              version: input.expectedVersion + index + 1,
+              amount: item.amount,
+              currencyCode: item.row.currencyCode,
+              passengerPrices: item.passengerPrices!,
+              actorUserId: actor.userId,
+              idempotencyKey: `${key}:${index}`,
+              fingerprint,
+            },
+          });
+        }
+        return { version: 1 as const, data: { batchId } };
+      });
+    } catch (error) {
+      const saved =
+        await this.database.client.reservationServicePurchase.findUnique({
+          where: unique,
+        });
+      if (saved && saved.fingerprint === fingerprint)
+        return { version: 1 as const, data: { batchId: saved.batchId } };
+      throw error;
+    }
+  }
+
   async record(
     intakeId: string,
     input: ReservationServicePurchaseInputV1,
@@ -184,6 +418,10 @@ export class ReservationServicePurchaseService {
     if (!UUID.test(intakeId) || !key?.trim() || key.length > 160)
       throw new BadRequestException('شناسه درخواست و کلید ثبت معتبر لازم است.');
     validateServicePurchase(input);
+    if (input.coveredServiceClientKeys || input.transferUnitAmount)
+      throw new BadRequestException(
+        'خرید مشترک فقط از مسیر درخواست خرید قرارداد ثبت می‌شود.',
+      );
     const intake = await this.database.client.reservationIntake.findUnique({
       where: { id: intakeId },
       include: { workflowRevisions: { orderBy: { version: 'desc' }, take: 1 } },
