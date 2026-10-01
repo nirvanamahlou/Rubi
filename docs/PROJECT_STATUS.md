@@ -4117,3 +4117,7 @@ Final independent verification exposed only a breadcrumb-test false positive: th
 ## 2026-10-01 — LOGIN-LAN-HYDRATION-1001 — PC-A — READY_FOR_REVIEW
 
 LAN login page rendering without working form submission is traced to Next.js development-origin blocking of JavaScript resources. An environment-controlled allowed-origin list enables the local LAN host, while the login form's native fallback uses POST to keep credentials out of query strings. Scope is IAM Web login and Next development configuration only; no migration, dependency or API contract change. Sixteen focused login tests, scoped lint, Web typecheck, Prettier, diff check and 55-route production build pass. Local runtime rollout and browser smoke follow review/merge.
+## 2026-10-01 — RESERVATION-DASHBOARD-DATE-FILTER-1001 — PC-A
+
+Reservation operations no longer exposes a separate events tab. The dashboard now has date-basis, start-date and end-date controls, and its metrics reflect the active date range. The existing reservation foundation render regression was updated; no API, schema, migration, dependency or runtime change.
+

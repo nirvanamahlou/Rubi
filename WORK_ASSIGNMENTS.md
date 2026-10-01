@@ -4834,3 +4834,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch `codex/pc-a-contract-price-compact-1001` from origin/develop. Owner requests compact agreed-price field with separate amounts per currency; follow-up to merged PR522. Reserve only shared Sales contract print styles/label and bounded status docs, local Web correction after authorized continued develop merge. No active overlapping print locks. Existing monetary grouping/arithmetic unchanged; no API/schema/dependency/data changes. Preserve unrelated primary checkout edits.
 
 - Delivered a compact one-line title with separate amount/currency chips that wrap safely when needed, matching normal table typography. 22 focused tests/scoped lint pass and synthetic multi-currency A4 PDF visually reviewed. Full Web typecheck/build/CI precede continued authorized merge/local correction. Bounded source locks released with commit.
+## RESERVATION-DASHBOARD-DATE-FILTER-1001 — PC-A — READY_FOR_REVIEW
+
+- Reserve Reservations foundation workspace and its focused presentation test. Remove the dedicated reservation events tab and add date-basis/from/to filters to the reservation dashboard; dashboard metrics use the filtered request set. No API, schema, migration, dependency or runtime change.
+

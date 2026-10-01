@@ -234,16 +234,6 @@ it('protects operation and audit projections independently of visible customer r
       fields: [],
     },
   ];
-  const timeline = [
-    {
-      id: 'event-test',
-      requestId: 'test-request',
-      actorLabel: 'Test auditor',
-      actionLabel: 'Test audit event',
-      occurredAt: now,
-      outcome: 'ALLOWED' as const,
-    },
-  ];
   const html = renderToStaticMarkup(
     <ReservationOperationsWorkspace
       state="SUCCESS"
@@ -256,33 +246,7 @@ it('protects operation and audit projections independently of visible customer r
   );
   expect(html).toContain('Test hotel operation');
   expect(html).not.toContain('Outside branch operation');
-  const denied = renderToStaticMarkup(
-    <ReservationOperationsWorkspace
-      state="SUCCESS"
-      rows={[row()]}
-      now={now}
-      access={access}
-      timeline={timeline}
-      initialSection="timeline"
-    />,
-  );
-  expect(denied).not.toContain('Test audit event');
-  const allowed = renderToStaticMarkup(
-    <ReservationOperationsWorkspace
-      state="SUCCESS"
-      rows={[row()]}
-      now={now}
-      access={{
-        ...access,
-        permissions: [...access.permissions, 'reservations.audit.read'],
-      }}
-      timeline={timeline}
-      initialSection="timeline"
-    />,
-  );
-  expect(allowed).toContain('Test audit event');
-  expect(allowed).not.toContain('عملیات قرارداد انتخاب‌شده');
-  expect(allowed).not.toContain('قرارداد انتخاب‌شده');
+  expect(html).not.toContain('رویدادهای درخواست');
 });
 
 it('renders workflow colors with readable statuses and accessible arrival alert', () => {
