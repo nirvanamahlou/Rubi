@@ -145,18 +145,19 @@ it('isolates supplier form edits and freezes sent details for purchase', () => {
   expect(sent.sentSupplierFormSettings?.text.roomType).toBe('SGL');
   single.text.roomType = 'NEXT';
   expect(sent.sentSupplierFormSettings?.text.roomType).toBe('SGL');
-  const both = transition(
-    state,
-    {
-      action: 'SUPPLIER_FORM_SETTINGS',
-      expectedVersion: 0,
-      note: 'Both',
-      voucherSettings: single,
-      applyToContractAndVoucher: true,
-    },
-    ['p'],
-  );
-  expect(both.voucherSettings?.text.roomType).toBe('NEXT');
+  expect(() =>
+    transition(
+      state,
+      {
+        action: 'SUPPLIER_FORM_SETTINGS',
+        expectedVersion: 0,
+        note: 'Both',
+        voucherSettings: single,
+        applyToContractAndVoucher: true,
+      },
+      ['p'],
+    ),
+  ).toThrow('قرارداد فروش را تغییر نمی‌دهد');
   expect(state.voucherSettings.text.roomType).toBe('DBL');
 });
 
@@ -179,14 +180,14 @@ it('allows a versioned reservation-form correction after voucher issuance', () =
       expectedVersion: 4,
       note: 'Reservation form correction',
       voucherSettings: correction,
-      applyToContractAndVoucher: true,
+      applyToContractAndVoucher: false,
     },
     ['p'],
   );
   expect(next.version).toBe(5);
   expect(next.voucherIssued).toBe(true);
   expect(next.supplierFormSettings?.text.checkIn).toBe('2026-10-02');
-  expect(next.voucherSettings?.numbers.singleRooms).toBe(1);
+  expect(next.voucherSettings?.numbers.singleRooms).toBe(0);
   expect(state.voucherSettings.text.checkIn).toBe('');
 });
 

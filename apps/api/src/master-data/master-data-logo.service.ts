@@ -18,6 +18,7 @@ const logoResources = new Set([
   'insurers',
   'airlines',
   'rail-companies',
+  'rail-terminals',
   'bus-companies',
   'hotels',
   'hotel-chains',

@@ -866,4 +866,168 @@ describe('MasterDataService', () => {
       actor.branchIds[0],
     );
   });
+
+  it('creates an independent rail terminal from name only with a generated code', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn().mockImplementation(async (_resource, data) => ({
+        ...row,
+        ...data,
+        isActive: true,
+      })),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.create('rail-terminals', { name: 'راه‌آهن تهران' }, actor);
+    expect(repository.create).toHaveBeenCalledWith(
+      'rail-terminals',
+      expect.objectContaining({
+        name: 'راه‌آهن تهران',
+        code: expect.stringMatching(/^RAIL_TERMINAL_[A-Z0-9]{12}$/),
+        displayOrder: 0,
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('clears optional rail terminal fields without weakening optimistic update', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        operatingHoursMode: 'FULL_TIME',
+      }),
+      update: vi.fn().mockResolvedValue({ ...row, code: 'RAIL_TERMINAL_TEST' }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.update(
+      'rail-terminals',
+      row.id,
+      { cityId: null, englishName: null, operatingHoursMode: null },
+      3,
+      actor,
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'rail-terminals',
+      row.id,
+      expect.objectContaining({
+        cityId: null,
+        englishName: null,
+        operatingHoursMode: null,
+      }),
+      3,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('rejects an unknown or inactive rail terminal city reference', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue(null),
+      create: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await expect(
+      service.create(
+        'rail-terminals',
+        {
+          name: 'راه‌آهن تست',
+          cityId: '55555555-5555-4555-8555-555555555555',
+        },
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('preserves complete limited hours on a name-only rail terminal patch', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        operatingHoursMode: 'LIMITED',
+        opensAt: '08:00',
+        closesAt: '18:00',
+      }),
+      update: vi.fn().mockResolvedValue({ ...row, name: 'نام تازه' }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.update(
+      'rail-terminals',
+      row.id,
+      { name: 'نام تازه' },
+      1,
+      actor,
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'rail-terminals',
+      row.id,
+      { name: 'نام تازه' },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it('clearing the rail hours mode also clears prior endpoints', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue({
+        ...row,
+        operatingHoursMode: 'LIMITED',
+        opensAt: '08:00',
+        closesAt: '18:00',
+      }),
+      update: vi.fn().mockResolvedValue(row),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await service.update(
+      'rail-terminals',
+      row.id,
+      { operatingHoursMode: null },
+      1,
+      actor,
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'rail-terminals',
+      row.id,
+      { operatingHoursMode: null, opensAt: null, closesAt: null },
+      1,
+      actor.userId,
+      actor.branchIds[0],
+    );
+  });
+
+  it.each([
+    { operatingHoursMode: 'LIMITED', opensAt: '08:00' },
+    { operatingHoursMode: 'LIMITED', closesAt: '18:00' },
+    { opensAt: '08:00', closesAt: '18:00' },
+  ])('rejects incoherent rail terminal hours: %o', async (values) => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      create: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await expect(
+      service.create(
+        'rail-terminals',
+        { name: 'راه‌آهن تست', ...values },
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a client-supplied rail terminal code on update', async () => {
+    const repository = { update: vi.fn() } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await expect(
+      service.update(
+        'rail-terminals',
+        row.id,
+        { code: 'CLIENT_CODE' },
+        1,
+        actor,
+      ),
+    ).rejects.toMatchObject({ status: 400 });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
 });

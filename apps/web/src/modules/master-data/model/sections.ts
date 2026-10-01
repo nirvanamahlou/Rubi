@@ -34,6 +34,7 @@ export const unlistedMasterDataResources = [
   'room-types',
   'lost-reasons',
   'tags',
+  'terminals',
 ] as const satisfies readonly MasterDataResourceKey[];
 
 export const masterDataSections: readonly MasterDataSectionDefinition[] = [
@@ -56,7 +57,7 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
     title: 'جغرافیا',
     description:
       'کشورها، نمای یکپارچه شهرها و استان‌ها، فرودگاه‌ها و ترمینال‌ها',
-    resources: ['countries', 'regions', 'cities', 'airports', 'terminals'],
+    resources: ['countries', 'regions', 'cities', 'airports', 'rail-terminals'],
     tone: 'sky',
   },
   {

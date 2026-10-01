@@ -96,6 +96,7 @@ const delegateNames: Record<MasterDataResource, string> = {
   cities: 'masterCity',
   airports: 'masterAirport',
   terminals: 'masterTerminal',
+  'rail-terminals': 'masterRailTerminal',
   currencies: 'masterCurrency',
   'exchange-rates': 'masterDraftExchangeRate',
   banks: 'masterBank',
@@ -143,6 +144,7 @@ const nameFields: Record<MasterDataResource, string> = {
   countries: 'name',
   airports: 'name',
   terminals: 'name',
+  'rail-terminals': 'name',
   cities: 'name',
   currencies: 'name',
   'exchange-rates': 'source',
@@ -192,6 +194,7 @@ const codeFields: Record<MasterDataResource, string> = {
   cities: 'code',
   airports: 'iataCode',
   terminals: 'code',
+  'rail-terminals': 'code',
   currencies: 'code',
   'exchange-rates': 'observedAt',
   banks: 'code',
@@ -240,6 +243,7 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   cities: ['name', 'englishName', 'code'],
   airports: ['name', 'englishName', 'iataCode', 'icaoCode', 'ianaTimezone'],
   terminals: ['name', 'englishName', 'code'],
+  'rail-terminals': ['name', 'englishName', 'code'],
   currencies: ['name', 'englishName', 'code'],
   'exchange-rates': ['source'],
   banks: ['name', 'englishName', 'code', 'swiftCode'],
@@ -408,7 +412,7 @@ function relations(resource: MasterDataResource): object | undefined {
     return {
       country: true,
       region: true,
-      _count: { select: { airports: true } },
+      _count: { select: { airports: true, railTerminals: true } },
     };
   if (resource === 'airports')
     return {
@@ -416,6 +420,7 @@ function relations(resource: MasterDataResource): object | undefined {
       _count: { select: { terminals: true } },
     };
   if (resource === 'terminals') return { airport: { include: { city: true } } };
+  if (resource === 'rail-terminals') return { city: true };
   if (resource === 'banks')
     return { country: true, _count: { select: { branches: true } } };
   if (resource === 'bank-branches') return { bank: true, city: true };
@@ -604,6 +609,7 @@ export function toMasterDataRecord(
   }
   if (resource === 'cities') {
     attributes.airportCount = count ? Number(count.airports) : null;
+    attributes.railTerminalCount = count ? Number(count.railTerminals) : null;
     attributes.countryCode = String(country?.code ?? '');
     attributes.countryName = String(country?.name ?? '');
     attributes.regionName = String(region?.name ?? '');
@@ -628,6 +634,9 @@ export function toMasterDataRecord(
     );
     attributes.ianaTimezone = String(airport?.ianaTimezone ?? '');
     attributes.updatedByUserId = String(row.updatedByUserId ?? '');
+  }
+  if (resource === 'rail-terminals') {
+    attributes.cityName = String(city?.name ?? '');
   }
   if (resource === 'banks') {
     attributes.countryName = String(country?.name ?? '');

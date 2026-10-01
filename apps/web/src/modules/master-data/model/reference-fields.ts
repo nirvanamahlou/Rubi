@@ -41,6 +41,9 @@ const configs: Partial<
   terminals: {
     airportId: { target: 'airports', payload: 'id' },
   },
+  'rail-terminals': {
+    cityId: { target: 'cities', payload: 'id', optional: true },
+  },
   banks: {
     countryId: { target: 'countries', payload: 'id' },
   },

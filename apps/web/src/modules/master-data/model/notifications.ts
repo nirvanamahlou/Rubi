@@ -38,6 +38,7 @@ const specialResources: Record<
 const unlistedOwners: Partial<
   Record<MasterDataResourceKey, MasterDataSectionSlug>
 > = {
+  terminals: 'geography',
   'meal-services': 'accommodation',
   facilities: 'accommodation',
   'cip-services': 'tours-travel-services',

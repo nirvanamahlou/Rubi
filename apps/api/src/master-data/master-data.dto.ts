@@ -248,6 +248,7 @@ export class MasterDataExportDto {
     'cities',
     'airports',
     'terminals',
+    'rail-terminals',
     'currencies',
     'exchange-rates',
     'banks',

@@ -70,6 +70,7 @@ const resourceCodePrefixes: Record<MasterDataResource, string> = {
   cities: 'CITY',
   airports: 'AIRPORT',
   terminals: 'TERMINAL',
+  'rail-terminals': 'RAIL_TERMINAL',
   currencies: 'CUR',
   'exchange-rates': 'RATE',
   banks: 'BANK',
@@ -297,6 +298,16 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'operatingHoursMode',
     'opensAt',
     'closesAt',
+  ],
+  'rail-terminals': [
+    'name',
+    'englishName',
+    'cityId',
+    'logoFileReference',
+    'operatingHoursMode',
+    'opensAt',
+    'closesAt',
+    'displayOrder',
   ],
   currencies: [
     'code',
@@ -620,6 +631,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   cities: ['name', 'countryId'],
   airports: ['name', 'countryId', 'cityId', 'iataCode'],
   terminals: ['name', 'airportId', 'terminalType'],
+  'rail-terminals': ['name'],
   currencies: ['code', 'name'],
   'exchange-rates': ['fromCurrencyCode', 'toCurrencyCode', 'rate'],
   banks: ['code', 'name', 'countryId'],
@@ -1782,6 +1794,7 @@ export class MasterDataService {
         'customer-types',
         'tags',
         'campaign-types',
+        'rail-terminals',
       ].includes(resource)
     ) {
       for (const field of [
@@ -2038,6 +2051,53 @@ export class MasterDataService {
       if (!terminalTypes.has(terminalType))
         throw new BadRequestException('نوع ترمینال معتبر نیست.');
       data.terminalType = terminalType;
+    }
+    if (resource === 'rail-terminals') {
+      if (data.cityId === '') data.cityId = null;
+      const existing =
+        partial && entityId
+          ? await this.repository.find('rail-terminals', entityId)
+          : null;
+      if (Object.hasOwn(data, 'operatingHoursMode')) {
+        const mode = String(data.operatingHoursMode ?? '')
+          .trim()
+          .toUpperCase();
+        if (mode && mode !== 'FULL_TIME' && mode !== 'LIMITED')
+          throw new BadRequestException('نوع ساعت فعالیت معتبر نیست.');
+        data.operatingHoursMode = mode || null;
+      }
+      for (const field of ['opensAt', 'closesAt']) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
+        if (value && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value))
+          throw new BadRequestException('ساعت فعالیت باید با قالب HH:mm باشد.');
+        data[field] = value || null;
+      }
+      const mode = Object.hasOwn(data, 'operatingHoursMode')
+        ? data.operatingHoursMode
+        : existing?.operatingHoursMode;
+      if (mode === 'FULL_TIME') {
+        data.opensAt = null;
+        data.closesAt = null;
+      }
+      if (mode === 'LIMITED') {
+        const opensAt = Object.hasOwn(data, 'opensAt')
+          ? data.opensAt
+          : existing?.opensAt;
+        const closesAt = Object.hasOwn(data, 'closesAt')
+          ? data.closesAt
+          : existing?.closesAt;
+        if (!opensAt || !closesAt)
+          throw new BadRequestException('ساعت شروع و پایان فعالیت الزامی است.');
+      }
+      if (!mode) {
+        if (data.opensAt || data.closesAt)
+          throw new BadRequestException(
+            'برای ثبت ساعت، نوع ساعت فعالیت را انتخاب کنید.',
+          );
+        data.opensAt = null;
+        data.closesAt = null;
+      }
     }
     if (resource === 'aircraft-types' && data.bodyType !== undefined) {
       const bodyType = String(data.bodyType).trim().toUpperCase();
@@ -3052,6 +3112,7 @@ export class MasterDataService {
       cities: { field: 'countryId', target: 'countries' },
       regions: { field: 'countryId', target: 'countries' },
       terminals: { field: 'airportId', target: 'airports' },
+      'rail-terminals': { field: 'cityId', target: 'cities' },
       banks: { field: 'countryId', target: 'countries' },
       'bank-branches': { field: 'bankId', target: 'banks' },
       hotels: { field: 'cityId', target: 'cities' },

@@ -287,19 +287,6 @@ export class TravelWorkflowService {
           error instanceof Error ? error.message : 'عملیات نامعتبر',
         );
       }
-      if (
-        command.action === 'SUPPLIER_FORM_SETTINGS' &&
-        command.applyToContractAndVoucher
-      )
-        next.appliedContractVersion = await this.amendments.apply(
-          tx,
-          intake.contractId,
-          intake.contractVersion,
-          next.supplierFormSettings!,
-          actor,
-          command.note,
-          command.expectedContractVersion,
-        );
       if (branding) next.branding = branding;
       if (
         ['REQUEST_SUPPLIER', 'CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(

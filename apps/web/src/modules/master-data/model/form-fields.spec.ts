@@ -2,12 +2,33 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
+import type { MasterDataRecord } from '@nora/contracts';
 
+import { masterDataFormValuesFrom } from '../components/master-data-live-form';
 import { getMasterDataDefinition, masterDataCatalog } from './catalog';
 import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('payment-method form fields', () => {
+  it('hydrates an inactive rail terminal without defaulting it back to active', () => {
+    const record: MasterDataRecord = {
+      id: '11111111-1111-4111-8111-111111111111',
+      resource: 'rail-terminals',
+      code: 'RAIL_TERMINAL_TEST',
+      name: 'راه‌آهن تست',
+      status: 'inactive',
+      attributes: { cityId: null, operatingHoursMode: null },
+      version: 2,
+      createdAt: '2026-10-01T00:00:00.000Z',
+      updatedAt: '2026-10-01T00:00:00.000Z',
+    };
+    expect(
+      masterDataFormValuesFrom(
+        getMasterDataDefinition('rail-terminals'),
+        record,
+      ).status,
+    ).toBe('inactive');
+  });
   it('keeps every English title optional across Master Data forms', () => {
     for (const definition of masterDataCatalog) {
       for (const field of getMasterDataFormFields(definition)) {

@@ -1,4 +1,4 @@
-export const MASTER_DATA_CONTRACT_VERSION = 13 as const;
+export const MASTER_DATA_CONTRACT_VERSION = 14 as const;
 export const MASTER_DATA_API_PREFIX = '/api/v1/master-data' as const;
 
 export const MASTER_DATA_RESOURCES = [
@@ -7,6 +7,7 @@ export const MASTER_DATA_RESOURCES = [
   'cities',
   'airports',
   'terminals',
+  'rail-terminals',
   'currencies',
   'exchange-rates',
   'banks',
