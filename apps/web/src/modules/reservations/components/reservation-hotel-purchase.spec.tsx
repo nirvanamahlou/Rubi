@@ -7,6 +7,7 @@ import type {
 } from '@nora/contracts';
 import {
   hotelPurchaseTotal,
+  reservationHotelPassengers,
   reservationPurchaseServices,
   SupplierFormPurchaseContext,
 } from './reservation-hotel-purchase';
@@ -105,4 +106,29 @@ it('offers a legacy hotel selection even when its old snapshot lacks services', 
       (service) => service.clientKey,
     ),
   ).toEqual(['hotel-legacy']);
+});
+
+it('lists only passengers assigned to the purchased hotel', () => {
+  expect(
+    reservationHotelPassengers(
+      {
+        passengerIds: ['one', 'two'],
+        passengerAssignments: [
+          {
+            customerId: 'one',
+            displayNameSnapshot: 'مسافر اول',
+            ageCategory: 'ADL',
+            serviceClientKeys: ['hotel'],
+          },
+          {
+            customerId: 'two',
+            displayNameSnapshot: 'مسافر دوم',
+            ageCategory: 'ADL',
+            serviceClientKeys: ['transfer'],
+          },
+        ],
+      } as unknown as ReservationIntakeV1['snapshot'],
+      'hotel',
+    ),
+  ).toEqual([{ id: 'one', name: 'مسافر اول' }]);
 });

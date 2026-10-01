@@ -302,6 +302,7 @@ export interface ReservationServicePurchaseV1 {
   supplierName: string;
   amount: string;
   currencyCode: string;
+  passengerPrices: readonly ReservationPassengerPurchasePriceV1[];
   actorUserId: string;
   createdAt: string;
   finance: {
@@ -324,6 +325,14 @@ export interface ReservationServicePurchaseV1 {
   };
 }
 
+export interface ReservationPassengerPurchasePriceV1 {
+  customerId: string;
+  passengerName: string;
+  nightlyAmount: string;
+  nights: number;
+  totalAmount: string;
+}
+
 export interface ReservationServicePurchaseInputV1 {
   version: 1;
   expectedVersion: number;
@@ -331,6 +340,10 @@ export interface ReservationServicePurchaseInputV1 {
   supplierOrganizationId: string;
   amount: string;
   currencyCode: string;
+  passengerPrices?: readonly {
+    customerId: string;
+    nightlyAmount: string;
+  }[];
 }
 
 export interface FinanceSupplierPaymentCommandV1 {
