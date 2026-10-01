@@ -1,3 +1,7 @@
+## 2026-10-01 — ACQUAINTANCE-HIDE-ORDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+The Acquaintance Methods table now omits only the visible display-order header and matching cell. The shared Sales Channels table retains that column, and an AST regression evaluates both resource shapes to verify aligned headers/rows while preserving the form/profile order field. Focused regression (5), scoped lint, all 453 Master Data tests, Web typecheck and 55-route production build pass; no authenticated browser/runtime QA was performed. No API, export, backend, schema, dependency, database or runtime change was made, and bounded locks release with the scoped commit. Final documentation-only verification update does not change product or build inputs.
+
 ## 2026-10-01 — BROKER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 Only the visible «محدودیت خرید» header and matching placeholder cell were removed from the Brokers list. The remaining nine headers and row cells stay aligned; the Suppliers table and the purchase-restriction field in forms/profiles remain unchanged. Focused regression (6), all 452 Master Data Web tests, scoped lint, Web typecheck and the lead-owned 55-route production build pass. No authenticated browser/runtime QA was performed; no API, export, backend, schema, dependency, database or runtime change was made. Bounded implementation locks release with the scoped commit.
