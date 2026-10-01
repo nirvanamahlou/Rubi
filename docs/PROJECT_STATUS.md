@@ -1,3 +1,7 @@
+## 2026-10-01 — HOTEL-HIDE-PROVIDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
+
 ## 2026-10-01 — RESERVATION-PASSENGER-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
 Reservation purchase now shows the contract hotel and its assigned passengers directly, records a nightly hotel amount per passenger, calculates each stay total from the sent reservation-form dates, and sends only the server-recalculated aggregate to Finance. Hotel/transfer broker and currency choices are active searchable Master Data references. Contract transfers appear immediately below the hotel, default to its broker and can be changed independently. The additive nullable JSON passenger breakdown preserves legacy purchase rows. 11 focused tests, scoped lint, API/Web typechecks, Prisma validation and the full six-task production build with 55 Web routes pass. No dependency, permission, seed, operational-data or runtime change. Owner requested develop merge after CI.

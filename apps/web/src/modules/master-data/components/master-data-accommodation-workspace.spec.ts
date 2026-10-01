@@ -26,6 +26,46 @@ const referenceSelectorSource = readFileSync(
 );
 
 describe('accommodation workspace', () => {
+  it('omits only the HOTEL_PROVIDER column from hotel rows and keeps alignment', () => {
+    const tableStart = source.indexOf('function table()');
+    const hotelHeadersStart = source.indexOf("tab === 'hotels'", tableStart);
+    const headersSource = source.slice(
+      source.indexOf('? [', hotelHeadersStart),
+      source.indexOf(": tab === 'chains'", hotelHeadersStart),
+    );
+    const headers = [...headersSource.matchAll(/'([^']+)'/g)].map(
+      (match) => match[1],
+    );
+    const hotelCells = source.slice(
+      source.indexOf("{tab === 'hotels' ? (", source.indexOf('<tbody>')),
+      source.indexOf(") : tab === 'chains' ? (", source.indexOf('<tbody>')),
+    );
+    const visibleCellCount = (hotelCells.match(/<td\b/g) ?? []).length + 3; // shared code + logo + actions cells
+
+    expect(headers).toEqual([
+      'کد',
+      'لوگو',
+      'هتل',
+      'کشور / شهر / منطقه',
+      'زنجیره',
+      'درجه',
+      'امکانات منتخب',
+      'فروش‌پذیری',
+      'وعده و سرویس',
+      'نوع اتاق',
+      'وب‌سایت',
+      'ساعت ورود / خروج',
+      'آدرس',
+      'آخرین تغییر',
+      'عملیات',
+    ]);
+    expect(visibleCellCount).toBe(headers.length);
+    expect(source).toContain('{records.map((record) => (');
+    expect(source).not.toContain('تأمین‌کننده HOTEL_PROVIDER');
+    expect(source).toContain('<MasterDataProfileIdentity');
+    expect(source).toContain('function profile()');
+  });
+
   it('implements the catalog tabs and opens hotel profiles from the list', () => {
     for (const label of [
       'هتل‌ها',
