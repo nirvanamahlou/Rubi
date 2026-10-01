@@ -57,7 +57,7 @@ import {
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
-function valuesFrom(
+export function masterDataFormValuesFrom(
   definition: MasterDataCatalogItem,
   record?: MasterDataRecord,
 ): Record<string, string> {
@@ -83,26 +83,33 @@ function valuesFrom(
       const value =
         field.key === 'code'
           ? record.code
-          : field.key === 'name' || field.key === 'displayName'
-            ? record.name
-            : field.key === 'fromCurrencyCode'
-              ? fromCurrencyCode
-              : field.key === 'toCurrencyCode'
-                ? toCurrencyCode
-                : field.key === 'airlineCodes'
-                  ? [record.code, record.attributes.icaoCode]
-                      .filter(Boolean)
-                      .join(' / ')
-                  : field.key === 'manufacturerModel'
-                    ? [record.attributes.manufacturer, record.attributes.model]
+          : field.key === 'status'
+            ? record.status
+            : field.key === 'name' || field.key === 'displayName'
+              ? record.name
+              : field.key === 'fromCurrencyCode'
+                ? fromCurrencyCode
+                : field.key === 'toCurrencyCode'
+                  ? toCurrencyCode
+                  : field.key === 'airlineCodes'
+                    ? [record.code, record.attributes.icaoCode]
                         .filter(Boolean)
                         .join(' / ')
-                    : field.key === 'includedMeals'
-                      ? record.attributes.includedMealsJson
-                      : field.key === 'transportStatus'
-                        ? (record.attributes.transportStatus ??
-                          (record.status === 'active' ? 'ACTIVE' : 'INACTIVE'))
-                        : record.attributes[field.key];
+                    : field.key === 'manufacturerModel'
+                      ? [
+                          record.attributes.manufacturer,
+                          record.attributes.model,
+                        ]
+                          .filter(Boolean)
+                          .join(' / ')
+                      : field.key === 'includedMeals'
+                        ? record.attributes.includedMealsJson
+                        : field.key === 'transportStatus'
+                          ? (record.attributes.transportStatus ??
+                            (record.status === 'active'
+                              ? 'ACTIVE'
+                              : 'INACTIVE'))
+                          : record.attributes[field.key];
       return [
         field.key,
         value === null || value === undefined ? '' : String(value),
@@ -159,7 +166,7 @@ function GenericMasterDataLiveForm({
   lockedFields?: readonly string[];
 }) {
   const [values, setValues] = useState(() => ({
-    ...valuesFrom(definition, record),
+    ...masterDataFormValuesFrom(definition, record),
     ...initialValues,
   }));
   const [referenceForm, setReferenceForm] = useState<{

@@ -981,6 +981,7 @@ model MasterCity {
   region                      MasterRegion?               @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
   hotels                      MasterHotel[]
   airports                    MasterAirport[]
+  railTerminals               MasterRailTerminal[]
   bankBranches                MasterBankBranch[]
   suppliers                   MasterSupplier[]
   brokers                     MasterBroker[]
@@ -1084,6 +1085,32 @@ model MasterTerminal {
   @@unique([airportId, code])
   @@index([airportId, terminalType, isActive, name])
   @@map("master_terminals")
+}
+
+model MasterRailTerminal {
+  id                  String      @id @default(uuid()) @db.Uuid
+  cityId              String?     @db.Uuid
+  code                String      @unique @db.VarChar(32)
+  name                String      @db.VarChar(160)
+  englishName         String?     @db.VarChar(160)
+  logoFileReference   String?     @db.Uuid
+  operatingHoursMode  String?     @db.VarChar(16)
+  opensAt             String?     @db.Char(5)
+  closesAt            String?     @db.Char(5)
+  displayOrder        Int         @default(0)
+  isActive            Boolean     @default(true)
+  version             Int         @default(1)
+  createdByUserId     String      @db.Uuid
+  updatedByUserId     String      @db.Uuid
+  deactivatedByUserId String?     @db.Uuid
+  deactivatedAt       DateTime?   @db.Timestamptz(3)
+  createdAt           DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime    @updatedAt @db.Timestamptz(3)
+  city                MasterCity? @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@index([cityId, isActive, displayOrder, name])
+  @@index([isActive, displayOrder, name])
+  @@map("master_rail_terminals")
 }
 
 model MasterCurrency {

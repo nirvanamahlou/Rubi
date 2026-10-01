@@ -67,6 +67,7 @@ describe('master data sections', () => {
       'room-types',
       'lost-reasons',
       'tags',
+      'terminals',
     ]);
     for (const resource of unlistedMasterDataResources) {
       expect(masterDataResourceKeys).toContain(resource);
