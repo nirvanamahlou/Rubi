@@ -99,7 +99,7 @@ function tableContract(label: string) {
 }
 
 describe('organizations and suppliers workspace', () => {
-  it('removes only the supplier purchase restriction column and keeps rows aligned', () => {
+  it('removes the purchase restriction columns only from supplier and broker lists', () => {
     const suppliers = tableContract('فهرست تأمین‌کنندگان');
     const brokers = tableContract('فهرست کارگزاران');
 
@@ -114,7 +114,18 @@ describe('organizations and suppliers workspace', () => {
       'عملیات',
     ]);
     expect(suppliers.cells).toBe(suppliers.headers.length);
-    expect(brokers.headers).toContain('محدودیت خرید');
+    expect(brokers.headers).toEqual([
+      'کد',
+      'لوگو',
+      'کارگزار',
+      'سازمان / نوع',
+      'کشور / شهر',
+      'تماس اصلی',
+      'خدمات',
+      'وضعیت',
+      'عملیات',
+    ]);
+    expect(brokers.headers).not.toContain('محدودیت خرید');
     expect(brokers.cells).toBe(brokers.headers.length);
     expect(source).toContain('label="محدودیت خرید"');
   });
