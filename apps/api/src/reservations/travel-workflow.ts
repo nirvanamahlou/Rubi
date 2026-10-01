@@ -101,14 +101,14 @@ export function transitionTravelWorkflow(
       break;
     }
     case 'SUPPLIER_FORM_SETTINGS':
-      if (typeof command.applyToContractAndVoucher !== 'boolean')
-        throw new Error('مقصد تغییرات را انتخاب کنید.');
+      if (command.applyToContractAndVoucher)
+        throw new Error(
+          'اصلاح عملیاتی فقط در فرم رزواسیون ثبت می‌شود و قرارداد فروش را تغییر نمی‌دهد.',
+        );
       next.supplierFormSettings = validateVoucherSettings(
         command.voucherSettings,
         passengerIds,
       );
-      if (command.applyToContractAndVoucher)
-        next.voucherSettings = structuredClone(next.supplierFormSettings);
       break;
     case 'VOUCHER_SETTINGS':
       if (current.supplierStatus === 'CANCELLED')

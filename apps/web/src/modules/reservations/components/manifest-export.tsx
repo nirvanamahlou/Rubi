@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { requestManifestDownload } from './manifest-download';
 import type {
+  MasterDataRecord,
   ReservationManifestTicketCardV1,
-  ReservationManifestRouteV1,
   ReservationManifestTicketListV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,9 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
   filterManifestTickets,
   manifestDisplayDirection,
-  manifestRouteChoices,
   type ManifestTicketRouteFilters,
 } from '../model/manifest-ticket-filters';
+import { ManifestReferenceFilter } from './manifest-reference-filter';
 
 function todayInTehran() {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -77,12 +77,12 @@ export function ManifestExport() {
   const [tickets, setTickets] = useState<
     readonly ReservationManifestTicketCardV1[]
   >([]);
-  const [routes, setRoutes] = useState<ReservationManifestRouteV1[]>([]);
-  const [routeError, setRouteError] = useState('');
-  const [originCountry, setOriginCountry] = useState('');
-  const [destinationCountry, setDestinationCountry] = useState('');
-  const [originFilter, setOriginFilter] = useState('');
-  const [destinationFilter, setDestinationFilter] = useState('');
+  const [originCountry, setOriginCountry] = useState<MasterDataRecord>();
+  const [destinationCountry, setDestinationCountry] =
+    useState<MasterDataRecord>();
+  const [originFilter, setOriginFilter] = useState<MasterDataRecord>();
+  const [destinationFilter, setDestinationFilter] =
+    useState<MasterDataRecord>();
   const [loaded, setLoaded] = useState(false);
   const [searchedDates, setSearchedDates] = useState({
     fromDate: today,
@@ -110,35 +110,6 @@ export function ManifestExport() {
     [downloadLink],
   );
 
-  useEffect(() => {
-    let active = true;
-    const base = getPublicApiBaseUrl();
-    if (!base) return;
-    void authenticatedFetch(base, '/reservations/manifests/routes')
-      .then(async (response) => {
-        if (!response.ok)
-          throw new Error(
-            await responseError(response, 'مسیرها دریافت نشدند.'),
-          );
-        const payload = (await response.json()) as {
-          data: ReservationManifestRouteV1[];
-        };
-        if (active) setRoutes(payload.data);
-      })
-      .catch((reason: unknown) => {
-        if (active)
-          setRouteError(
-            reason instanceof Error ? reason.message : 'مسیرها دریافت نشدند.',
-          );
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  const choices = manifestRouteChoices(routes, {
-    originCountryId: originCountry,
-    destinationCountryId: destinationCountry,
-  });
   function validate() {
     if (!fromDate || !toDate) return 'بازه تاریخ را کامل کنید.';
     if (fromDate > toDate) return 'تاریخ شروع باید قبل از تاریخ پایان باشد.';
@@ -168,23 +139,13 @@ export function ManifestExport() {
         (await response.json()) as ReservationManifestTicketListV1;
       setTickets(payload.data);
       setSearchedDates({ fromDate, toDate });
-      const origin = choices.cities.find((city) => city.key === originFilter);
-      const destination = choices.cities.find(
-        (city) => city.key === destinationFilter,
-      );
       setSearchRoute({
-        originCountryId: originCountry,
-        destinationCountryId: destinationCountry,
-        ...(origin?.id
-          ? { originId: origin.id }
-          : origin
-            ? { originName: origin.name }
-            : {}),
-        ...(destination?.id
-          ? { destinationId: destination.id }
-          : destination
-            ? { destinationName: destination.name }
-            : {}),
+        ...(originCountry ? { originCountryId: originCountry.id } : {}),
+        ...(destinationCountry
+          ? { destinationCountryId: destinationCountry.id }
+          : {}),
+        ...(originFilter ? { originId: originFilter.id } : {}),
+        ...(destinationFilter ? { destinationId: destinationFilter.id } : {}),
       });
       setLoaded(true);
     } catch (reason) {
@@ -292,82 +253,43 @@ export function ManifestExport() {
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
         aria-label="فیلتر مسیر"
       >
-        <label className="grid gap-2 text-sm font-medium">
-          کشور مبدأ
-          <select
-            aria-label="کشور مبدأ"
-            className="h-10 rounded-md border bg-background px-3"
-            value={originCountry}
-            onChange={(event) => {
-              setOriginCountry(event.target.value);
-              setOriginFilter('');
-            }}
-          >
-            <option value="">همه کشورها</option>
-            {choices.countries.map((country) => (
-              <option key={country.id} value={country.id}>
-                {country.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          شهر مبدأ
-          <select
-            aria-label="شهر مبدأ مسیر"
-            className="h-10 rounded-md border bg-background px-3"
-            value={originFilter}
-            onChange={(event) => setOriginFilter(event.target.value)}
-          >
-            <option value="">همه شهرها</option>
-            {choices.origins.map((city) => (
-              <option key={city.key} value={city.key}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          کشور مقصد
-          <select
-            aria-label="کشور مقصد"
-            className="h-10 rounded-md border bg-background px-3"
-            value={destinationCountry}
-            onChange={(event) => {
-              setDestinationCountry(event.target.value);
-              setDestinationFilter('');
-            }}
-          >
-            <option value="">همه کشورها</option>
-            {choices.countries.map((country) => (
-              <option key={country.id} value={country.id}>
-                {country.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-2 text-sm font-medium">
-          شهر مقصد
-          <select
-            aria-label="شهر مقصد مسیر"
-            className="h-10 rounded-md border bg-background px-3"
-            value={destinationFilter}
-            onChange={(event) => setDestinationFilter(event.target.value)}
-          >
-            <option value="">همه شهرها</option>
-            {choices.destinations.map((city) => (
-              <option key={city.key} value={city.key}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <ManifestReferenceFilter
+          id="manifest-origin-country"
+          label="کشور مبدأ"
+          resource="countries"
+          value={originCountry}
+          onSelect={(country) => {
+            setOriginCountry(country);
+            setOriginFilter(undefined);
+          }}
+        />
+        <ManifestReferenceFilter
+          id="manifest-origin-city"
+          label="شهر مبدأ"
+          resource="cities"
+          value={originFilter}
+          countryId={originCountry?.id}
+          onSelect={setOriginFilter}
+        />
+        <ManifestReferenceFilter
+          id="manifest-destination-country"
+          label="کشور مقصد"
+          resource="countries"
+          value={destinationCountry}
+          onSelect={(country) => {
+            setDestinationCountry(country);
+            setDestinationFilter(undefined);
+          }}
+        />
+        <ManifestReferenceFilter
+          id="manifest-destination-city"
+          label="شهر مقصد"
+          resource="cities"
+          value={destinationFilter}
+          countryId={destinationCountry?.id}
+          onSelect={setDestinationFilter}
+        />
       </div>
-      {routeError && (
-        <p role="alert" className="text-sm text-destructive">
-          {routeError}
-        </p>
-      )}
       <Button
         type="button"
         disabled={!fromDate || !toDate || Boolean(busy)}

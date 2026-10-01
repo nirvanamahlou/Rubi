@@ -45,6 +45,16 @@
   font-weight: 600;
 }
 
+.operationalNotice {
+  margin: 0;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+  color: var(--foreground);
+  font-size: 13px;
+}
+
 .sectionCard {
   display: grid;
   gap: 12px;

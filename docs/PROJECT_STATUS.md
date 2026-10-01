@@ -1,3 +1,7 @@
+## 2026-10-01 — RESERVATION-REFERENCE-EDIT-1001 — PC-A — READY_FOR_REVIEW
+
+Reservation operational editing now selects active outbound/return airlines, hotels and brokers through searchable Master Data dropdowns; room details and remaining operational fields stay manual. Operational corrections can no longer amend or appear in Sales contracts, legacy correction metadata is ignored by the print projection, child rows use a clean کودک label, and selected edit tabs stay readable on hover. Manifest origin/destination country and country-scoped city filters also use the standard searchable Master Data dropdown with canonical IDs. 47 focused Web/API tests, scoped lint, both typechecks and the full production build with 55 Web routes pass. No schema, migration, shared-contract, dependency, operational-data or runtime change. Owner authorized develop merge after CI.
+
 ## 2026-10-01 — VOUCHER-DOWNLOAD-SUMMARY-1001 — PC-A — READY_FOR_REVIEW
 
 Issued hotel vouchers now have a direct authenticated PDF download using saved voucher settings, supplier booking reference, selected passenger room types and the existing isolated renderer. Unissued/cancelled vouchers are rejected, and no-letterhead settings avoid logo retrieval. Booking Summary uses a separate bordered section, spacing and navy/teal header in preview and downloaded PDFs. 13 targeted tests, scoped lint, Web typecheck/build checked. No API contract, migration, dependency, operational data or runtime change. Owner requests develop merge after checks.

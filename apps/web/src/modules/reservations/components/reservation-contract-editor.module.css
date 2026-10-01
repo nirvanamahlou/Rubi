@@ -109,6 +109,12 @@
   box-shadow: 0 5px 12px rgb(30 94 183 / 24%);
 }
 
+.activeTab:hover {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
 .activeTab .tabNumber {
   background: rgb(255 255 255 / 18%);
   color: inherit;

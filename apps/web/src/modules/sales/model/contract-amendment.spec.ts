@@ -1,28 +1,25 @@
 import { expect, it } from 'vitest';
-import {
-  voucherTextKeys,
-  voucherNumberKeys,
-  voucherFlagKeys,
-  type VoucherSettingsV1,
-} from '@nora/contracts';
 import { contractPrintHtml } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
-it('renders the recorded operational hotel amendment while preserving commercial totals and base data', () => {
+it('keeps recorded operational reservation data out of the sales contract', () => {
   const settings = {
-    text: Object.fromEntries(voucherTextKeys.map((k) => [k, ''])),
-    numbers: Object.fromEntries(voucherNumberKeys.map((k) => [k, 0])),
-    flags: Object.fromEntries(voucherFlagKeys.map((k) => [k, true])),
-    passengers: [],
-  } as unknown as VoucherSettingsV1;
-  Object.assign(settings.text, {
-    contractPartyName: 'AMENDED CONTRACT PARTY',
-    hotel: 'AMENDED HOTEL',
-    roomType: 'SGL AMENDMENT',
-    meal: 'UALL AMENDMENT',
-    checkIn: '2026-10-01',
-    checkOut: '2026-10-03',
-  });
-  settings.numbers.singleRooms = 1;
+    text: {
+      contractPartyName: 'AMENDED CONTRACT PARTY',
+      hotel: 'AMENDED HOTEL',
+      roomType: 'SGL AMENDMENT',
+      meal: 'UALL AMENDMENT',
+      checkIn: '2026-10-01',
+      checkOut: '2026-10-03',
+    },
+    numbers: { singleRooms: 1 },
+    passengers: [] as Array<{
+      id: string;
+      selected: boolean;
+      roomType: string;
+      age: string;
+      hotelChildAgeBand: string;
+    }>,
+  };
   const output = structuredClone(printFixture);
   settings.passengers = [
     {
@@ -38,14 +35,13 @@ it('renders the recorded operational hotel amendment while preserving commercial
     reservationFormAmendment: JSON.stringify({ version: 1, settings }),
   };
   const html = contractPrintHtml(output, printReferences);
-  expect(html).toContain('AMENDED CONTRACT PARTY');
-  expect(html).toContain('AMENDED HOTEL');
-  expect(html).toContain('SGL AMENDMENT');
-  expect(html).toContain('UALL AMENDMENT');
-  expect(html).toContain('کودک · ۲ تا ۶ سال');
-  expect(html).toContain(
-    'مبالغ و تعهدات مالی قرارداد با این اصلاح تغییر نکرده‌اند.',
-  );
+  expect(html).toContain('مشتری نمونه');
+  expect(html).not.toContain('AMENDED CONTRACT PARTY');
+  expect(html).not.toContain('AMENDED HOTEL');
+  expect(html).not.toContain('SGL AMENDMENT');
+  expect(html).not.toContain('UALL AMENDMENT');
+  expect(html).not.toContain('کودک · ۲ تا ۶ سال');
+  expect(html).not.toContain('اصلاحات عملیاتی ثبت‌شده در قرارداد');
   expect(output.contract.hotelSelection).toEqual(original);
   expect(output.contract.priceComponents).toEqual(
     printFixture.contract.priceComponents,
