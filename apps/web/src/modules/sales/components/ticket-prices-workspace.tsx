@@ -105,10 +105,14 @@ function TierEditor({
   draft,
   capacity,
   onChange,
+  onSave,
+  saving,
 }: {
   draft: Draft;
   capacity: number;
   onChange: (draft: Draft) => void;
+  onSave: () => void;
+  saving: boolean;
 }) {
   const tiers = draft.tiers;
   let first = 1;
@@ -232,6 +236,18 @@ function TierEditor({
             از {capacity} صندلی
           </p>
         </>
+      ) : null}
+      {tiers ? (
+        <Button
+          type="button"
+          size="sm"
+          className="mt-2 w-full"
+          onClick={onSave}
+          disabled={saving || !validTierDraft(draft, capacity)}
+          loading={saving}
+        >
+          ثبت قیمت پله‌ای
+        </Button>
       ) : null}
     </div>
   );
@@ -842,6 +858,8 @@ export function TicketPricesWorkspace() {
                 outbound.totalCapacity,
                 offers.find((o) => o.id === returnId)?.totalCapacity ?? 0,
               )}
+              onSave={() => void savePair()}
+              saving={busy || !!saving}
               onChange={setPairDraft}
             />
           ) : null}
@@ -1208,6 +1226,8 @@ export function TicketPricesWorkspace() {
                             )
                           : row.offer.totalCapacity
                       }
+                      onSave={() => void saveBase(row)}
+                      saving={!!saving || !currencies.length}
                       onChange={(next) => updateDraft(row, next)}
                     />
                   </div>
