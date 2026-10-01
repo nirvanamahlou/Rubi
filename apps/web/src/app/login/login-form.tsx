@@ -58,7 +58,7 @@ export function LoginForm() {
     }
   }
   return (
-    <form className="mt-8 grid gap-5" onSubmit={submit}>
+    <form className="mt-8 grid gap-5" method="post" onSubmit={submit}>
       <FormField id="username" label="نام کاربری" required>
         <Input
           autoComplete="username"
