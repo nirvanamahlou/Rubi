@@ -19,6 +19,8 @@ export interface FlightTicketSheetData {
   branding?: { name: string; logo: string; companyCode?: string };
   airlines?: Readonly<Record<string, TicketLayoutAirline>>;
   issued?: boolean;
+  eTicketNumber?: string;
+  issuedAt?: string;
   passengerName: string;
   ageCategory?: 'ADT' | 'CHD' | 'INF';
   gender?: 'M' | 'F' | null;

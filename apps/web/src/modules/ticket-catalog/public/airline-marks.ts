@@ -46,7 +46,10 @@ export async function readTicketAirlineMarks(
             );
         }
         if (!item) return;
-        marks[name] = { name: item.attributes.englishName || item.name };
+        marks[name] = {
+          name: item.attributes.englishName || item.name,
+          code: item.code,
+        };
         const id = item.attributes.logoFileReference;
         if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return;
         const logo = await get(`/documents/${id}/preview`);

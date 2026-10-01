@@ -4148,3 +4148,7 @@ FLIGHT-TICKET-REFERENCE-1001 shares one reference-style A4 ticket renderer betwe
 ## 2026-10-01 — Legacy ticket airport compatibility (PC-A)
 
 Missing selected airport code/name render as blank in shared preview and PDF; city labels and all other stored flight facts remain visible. No inferred airport or old-ticket resave/backfill. Local deployment applies only the existing additive selected-airports migration, preserving ticket rows and unrelated pending migrations.
+
+## 2026-10-01 — Ticket visual polish and persistent identity (PC-A)
+
+Shared ticket preview/PDF has Tehran Milad/Azadi and world-landmark silhouettes, geographic world watermark, aligned carrier/company marks, improved airplane and date typography, and a larger bilingual notice. E-Ticket No, canonical carrier code plus saved contract carrier, English-route RLOC and original UTC issue date are displayed. COMPANY allocations receive immutable unique six-digit numbers; floating/API/unknown supply uses explicit six-digit manual entry. New migration `20261001150000_reservation_ticket_documents` is additive and required before deployment; no production/local operational migration or number backfill performed. Draft/old outputs without stored identity keep identifier/date blank.

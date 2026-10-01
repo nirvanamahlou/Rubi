@@ -41,6 +41,7 @@ export class TravelWorkflowService {
     const row = await this.database.client.reservationIntake.findFirst({
       where: { id, branchId: { in: [...branchIds] } },
       include: {
+        ticketDocuments: true,
         workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
         arrangements: { orderBy: { version: 'desc' }, take: 1 },
       },
@@ -50,6 +51,12 @@ export class TravelWorkflowService {
       TravelWorkflowStateV1 | undefined;
     const arrangement = row.arrangements[0];
     return {
+      ticketDocuments: (row.ticketDocuments ?? []).map((doc) => ({
+        customerId: doc.customerId,
+        number: doc.number,
+        source: doc.source as 'AUTO' | 'MANUAL',
+        issuedAt: doc.issuedAt.toISOString(),
+      })),
       contractEditVersion: await this.amendments.versionFor(
         this.database.client,
         row.contractId,

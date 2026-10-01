@@ -120,6 +120,43 @@ describe('reservation ticket PDF', () => {
     });
   });
 
+  it('prints the persisted six-digit number and original issue date with the English itinerary', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockImplementation((url: string) =>
+          Promise.resolve(
+            Response.json({
+              data: url.endsWith('/workflow')
+                ? {
+                    ...intake,
+                    ticketDocuments: [
+                      {
+                        customerId: passengerId,
+                        number: '100123',
+                        source: 'AUTO',
+                        issuedAt: '2026-10-01T08:00:00Z',
+                      },
+                    ],
+                  }
+                : {
+                    name: url.includes(cityOne) ? 'TEHRAN' : 'ANTALYA',
+                    attributes: {},
+                  },
+            }),
+          ),
+        ),
+    );
+    const response = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(response.status).toBe(200);
+    const html = renderer.mock.calls[0]![0] as string;
+    expect(html).toContain('100123');
+    expect(html).toContain('01 OCT 2026');
+    expect(html).toContain('TEHRAN → ANTALYA');
+    expect(html).toContain('TEST AIR');
+  });
+
   it('still renders when optional city metadata is unavailable', async () => {
     const fetcher = vi.fn().mockImplementation((url: string) => {
       if (url.endsWith(`/reservations/requests/${id}/workflow`))

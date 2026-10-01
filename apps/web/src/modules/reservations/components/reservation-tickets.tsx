@@ -1,4 +1,6 @@
 'use client';
+import { travelRequest } from './travel-workflow-form';
+import type { ReservationTicketDocumentV1 } from '@nora/contracts';
 import { readTicketAirlineMarks } from '@/modules/ticket-catalog/public/airline-marks';
 import type { TicketLayoutAirline } from '@/components/travel/flight-ticket-layout';
 
@@ -40,6 +42,38 @@ export function ReservationTickets({
   onClose: () => void;
 }) {
   const { logo, error: logoError } = useTravelLogo(branding);
+  const [documents, setDocuments] = useState<
+    readonly ReservationTicketDocumentV1[]
+  >(request.ticketDocuments ?? []);
+  const [numberChoices, setNumberChoices] = useState<
+    Array<{
+      customerId: string;
+      automatic: boolean;
+      document: ReservationTicketDocumentV1 | null;
+    }>
+  >([]);
+  const [manualNumbers, setManualNumbers] = useState<Record<string, string>>(
+    {},
+  );
+  const [issuing, setIssuing] = useState(false);
+  useEffect(() => {
+    let active = true;
+    void travelRequest<{ data: typeof numberChoices }>(
+      `reservations/requests/${request.id}/ticket-documents`,
+    )
+      .then(({ data }) => {
+        if (active && Array.isArray(data)) {
+          setNumberChoices(data);
+          setDocuments(
+            data.flatMap((row) => (row.document ? [row.document] : [])),
+          );
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [request.id]);
   const [passengerNames, setPassengerNames] = useState<Record<string, string>>(
     {},
   );
@@ -59,6 +93,16 @@ export function ReservationTickets({
   const tickets = reservationTickets(request.snapshot, passengerNames).map(
     (ticket) => ({
       ...ticket,
+      ...(documents.find((doc) => doc.customerId === ticket.passengerId)
+        ? {
+            eTicketNumber: documents.find(
+              (doc) => doc.customerId === ticket.passengerId,
+            )!.number,
+            issuedAt: documents.find(
+              (doc) => doc.customerId === ticket.passengerId,
+            )!.issuedAt,
+          }
+        : {}),
       gender: passengerGender[ticket.passengerId] ?? null,
       airlines: airlineMarks,
       offers: ticket.offers.map((offer) => ({
@@ -176,7 +220,57 @@ export function ReservationTickets({
       active = false;
     };
   }, [request.id]);
+  async function ensureNumbers(all: boolean) {
+    const targets = all ? tickets : ticket ? [ticket] : [];
+    const saved = [...documents];
+    for (const target of targets) {
+      if (saved.some((doc) => doc.customerId === target.passengerId)) continue;
+      const choice = numberChoices.find(
+        (row) => row.customerId === target.passengerId,
+      );
+      if (!choice)
+        throw new Error('اطلاعات شماره‌گذاری آماده نیست؛ دوباره تلاش کنید.');
+      if (
+        !choice.automatic &&
+        !/^[0-9]{6}$/.test(manualNumbers[target.passengerId] ?? '')
+      )
+        throw new Error(
+          `شماره شش‌رقمی بلیط ${target.passengerName} را وارد کنید.`,
+        );
+      const { data } = await travelRequest<{
+        data: ReservationTicketDocumentV1;
+      }>(`reservations/requests/${request.id}/ticket-documents`, {
+        customerId: target.passengerId,
+        ...(!choice.automatic
+          ? { number: manualNumbers[target.passengerId] }
+          : {}),
+      });
+      saved.push(data);
+      flushSync(() => setDocuments([...saved]));
+    }
+  }
+  async function registerNumber() {
+    setIssuing(true);
+    setWarning('');
+    try {
+      await ensureNumbers(false);
+    } catch (error) {
+      setWarning(
+        error instanceof Error ? error.message : 'ثبت شماره انجام نشد.',
+      );
+    } finally {
+      setIssuing(false);
+    }
+  }
   async function print(all: boolean) {
+    try {
+      await ensureNumbers(all);
+    } catch (error) {
+      setWarning(
+        error instanceof Error ? error.message : 'ثبت شماره انجام نشد.',
+      );
+      return;
+    }
     if (branding && (!logo || logoError)) {
       setWarning(logoError || 'در حال دریافت لوگو');
       return;
@@ -206,6 +300,7 @@ export function ReservationTickets({
     setDownloading(true);
     setWarning('');
     try {
+      await ensureNumbers(all);
       const parameters = new URLSearchParams();
       if (passengerId) parameters.set('passengerId', passengerId);
       if (salesContractId) parameters.set('salesContractId', salesContractId);
@@ -282,6 +377,57 @@ export function ReservationTickets({
                   </Button>
                 ))}
               </div>
+              {ticket && (
+                <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3">
+                  <span className="text-sm">E-Ticket No</span>
+                  {documents.find(
+                    (doc) => doc.customerId === ticket.passengerId,
+                  ) ? (
+                    <strong dir="ltr">
+                      {
+                        documents.find(
+                          (doc) => doc.customerId === ticket.passengerId,
+                        )!.number
+                      }
+                    </strong>
+                  ) : (
+                    <>
+                      {numberChoices.find(
+                        (row) => row.customerId === ticket.passengerId,
+                      )?.automatic ? (
+                        <span className="text-sm text-muted-foreground">
+                          شماره ظرفیت شرکت به‌صورت خودکار صادر می‌شود.
+                        </span>
+                      ) : (
+                        <input
+                          aria-label="شماره شش‌رقمی بلیط شناور"
+                          dir="ltr"
+                          inputMode="numeric"
+                          maxLength={6}
+                          placeholder="000000"
+                          className="rounded-lg border border-border bg-surface px-3 py-2"
+                          value={manualNumbers[ticket.passengerId] ?? ''}
+                          onChange={(event) =>
+                            setManualNumbers({
+                              ...manualNumbers,
+                              [ticket.passengerId]: event.target.value.replace(
+                                /[^0-9]/g,
+                                '',
+                              ),
+                            })
+                          }
+                        />
+                      )}
+                      <Button
+                        disabled={issuing || !numberChoices.length}
+                        onClick={() => void registerNumber()}
+                      >
+                        {issuing ? 'در حال ثبت…' : 'ثبت شماره و تاریخ صدور'}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button
                   disabled={

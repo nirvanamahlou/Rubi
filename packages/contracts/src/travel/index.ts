@@ -215,7 +215,14 @@ export interface ReservationArrangementUpdateV1 {
   reason: string;
 }
 
+export interface ReservationTicketDocumentV1 {
+  customerId: string;
+  number: string;
+  source: 'AUTO' | 'MANUAL';
+  issuedAt: string;
+}
 export interface ReservationIntakeV1 {
+  ticketDocuments?: readonly ReservationTicketDocumentV1[];
   contractEditVersion?: number;
   purchaseVersion?: number;
   hotelPurchases?: readonly ReservationHotelPurchaseV1[];

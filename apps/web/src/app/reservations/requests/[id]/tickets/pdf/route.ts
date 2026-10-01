@@ -93,7 +93,17 @@ export async function GET(
         );
       }
     }
-    const allTickets = reservationTickets(intake.snapshot, passengerNames);
+    const allTickets = reservationTickets(intake.snapshot, passengerNames).map(
+      (ticket) => {
+        const doc = intake.ticketDocuments?.find(
+          (d) => d.customerId === ticket.passengerId,
+        );
+        return {
+          ...ticket,
+          ...(doc ? { eTicketNumber: doc.number, issuedAt: doc.issuedAt } : {}),
+        };
+      },
+    );
     const tickets = passengerId
       ? allTickets.filter((ticket) => ticket.passengerId === passengerId)
       : allTickets;
@@ -175,8 +185,10 @@ export async function GET(
       }),
     );
 
-    const airlineLogos: Record<string, { name: string; logoDataUrl?: string }> =
-      {};
+    const airlineLogos: Record<
+      string,
+      { name: string; code?: string; logoDataUrl?: string }
+    > = {};
     const carrierNames = [
       ...new Set(
         tickets.flatMap(({ offers }) =>
@@ -221,6 +233,7 @@ export async function GET(
         if (!airline) return;
         airlineLogos[carrierName] = {
           name: String(airline.attributes.englishName || airline.name),
+          code: airline.code,
         };
         const logoId = airline.attributes.logoFileReference;
         if (typeof logoId !== 'string' || !uuid.test(logoId)) return;
