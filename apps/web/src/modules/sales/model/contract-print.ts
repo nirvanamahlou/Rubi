@@ -308,8 +308,8 @@ export function contractPrintHtml(
   bdi{unicode-bidi:isolate}strong{font-weight:bold}.ltr{direction:ltr}
   .financial-summary{break-inside:avoid}.note{font-size:8.5pt;color:#536b85;margin:1mm 0}
   .summary-grid{display:grid;grid-template-columns:minmax(0,1fr);margin-top:1.5mm}
-  .summary-card{overflow:hidden;border:1px solid #aebccc;border-radius:1.5mm;background:white;color:#102d54;min-width:0}
-  .summary-card> b{display:block;margin:0;padding:1.5mm 3mm;background:#eaf0f4;border-bottom:1px solid #cdd7e1;font-size:12pt;font-weight:bold;text-align:right}.summary-value{display:grid;padding:0 3mm;min-width:0}.agreement-amount{display:grid;grid-template-columns:minmax(0,1fr) 22mm;align-items:center;gap:3mm;direction:rtl;min-height:10mm;padding:1.5mm 0}.agreement-amount+.agreement-amount{border-top:1px solid #dfe6ee}.agreement-currency{font-size:11pt;direction:rtl;text-align:center;white-space:nowrap;border-right:1px solid #dfe6ee}.summary-value bdi{font-weight:bold;font-size:15pt;text-align:center;overflow-wrap:anywhere}
+  .summary-card{display:flex;align-items:center;gap:3mm;padding:1.2mm 2mm;border:1px solid #b8c7d8;border-radius:1mm;background:white;color:#102d54;min-width:0}
+  .summary-card> b{margin:0;font-size:10.5pt;font-weight:bold;white-space:nowrap}.summary-value{display:flex;flex-wrap:wrap;align-items:center;gap:1mm 2mm;flex:1;min-width:0}.agreement-amount{display:inline-flex;align-items:baseline;gap:1.5mm;direction:ltr;padding:.7mm 2mm;background:#f4f7fb;border-radius:.7mm;max-width:100%}.agreement-currency{font-size:10pt;direction:rtl;white-space:nowrap}.summary-value bdi{font-weight:bold;font-size:10.5pt;overflow-wrap:anywhere}
   .signatures{display:grid;grid-template-columns:1fr 1fr;gap:3mm;text-align:center;min-height:13mm}
   .signatures>div{border:1px solid #b8c7d8;padding:1.2mm}.signature-line{display:block;margin-top:3mm}
   .customer-terms{font-size:8.5pt;line-height:1.35;text-align:right;border-top:1px solid #486582;padding-top:1mm;margin-top:1.5mm;color:#24415f;break-inside:avoid}.customer-terms p{margin:.3mm 0}
@@ -325,7 +325,7 @@ export function contractPrintHtml(
   .meta{padding:1mm 0;margin-bottom:1mm}.meta strong{font-size:10pt}
   section{margin-top:1mm;padding-bottom:.8mm}h2{min-height:5.5mm;margin-bottom:.7mm}h2 em{font-size:12pt;padding:.6mm 1.6mm}h2 small{font-size:14pt}
   table{font-size:9.5pt}td,th{padding:.6mm}.passengers td{padding:.55mm}.fields>div{padding:.15mm 1mm}
-  .summary-card b{margin:0}.summary-value bdi{font-size:15pt}
+  .summary-card b{margin:0}.summary-value bdi{font-size:10.5pt}
   .signatures{min-height:10mm}.signatures>div{padding:.7mm}.signature-line{margin-top:1.5mm}
   .customer-terms{line-height:1.2;margin-top:1mm;padding-top:.6mm}footer{padding-top:1mm;margin-top:1mm}.contact-row{margin:.2mm 0}.footer-contact strong{font-size:11pt}
   </style></head><body><article class="document">
