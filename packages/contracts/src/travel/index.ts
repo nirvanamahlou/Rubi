@@ -95,6 +95,9 @@ export {
 } from './ticket-return-window';
 
 export interface TicketOfferV1 {
+  /** Actual airports chosen in ticket definition; absent on legacy offers. */
+  originAirportId?: string | null;
+  destinationAirportId?: string | null;
   /** Null/absent means an older offer has not been classified. */
   supplyType?: 'COMPANY' | 'FLOATING' | 'API' | null;
   economyBaggageKg?: string | null;

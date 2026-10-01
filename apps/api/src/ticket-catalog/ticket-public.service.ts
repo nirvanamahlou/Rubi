@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import * as Joi from 'joi';
 import { priceTierCreate, validatePriceTiers } from './ticket-sale-tiers';
@@ -29,6 +30,7 @@ import type {
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
+import { MasterDataService } from '../master-data/master-data.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
 import {
@@ -50,6 +52,8 @@ type CapacityHoldInput = {
   requesterName?: string;
 };
 const createSchema = Joi.object({
+  originAirportId: uuid.allow(null).optional(),
+  destinationAirportId: uuid.allow(null).optional(),
   supplyType: Joi.string()
     .valid('COMPANY', 'FLOATING', 'API')
     .allow(null)
@@ -152,7 +156,52 @@ export class TicketPublicService {
     private readonly purchases: ProcurementPublicService,
     @Inject(MasterTravelDirectory)
     private readonly directory?: MasterTravelDirectory,
+    @Optional()
+    @Inject(MasterDataService)
+    private readonly master?: MasterDataService,
   ) {}
+
+  private async validateAirports(value: TicketOfferCreateV1) {
+    for (const [id, cityId] of [
+      [value.originAirportId, value.originId],
+      [value.destinationAirportId, value.destinationId],
+    ]) {
+      if (!id) continue;
+      if (!this.master)
+        throw new BadRequestException('مرجع فرودگاه در دسترس نیست.');
+      const { data } = await this.master.detail('airports', id);
+      if (data.status !== 'active' || data.attributes.cityId !== cityId)
+        throw new BadRequestException(
+          'فرودگاه انتخاب‌شده با شهر مسیر مطابقت ندارد.',
+        );
+    }
+  }
+
+  async documentDetails(id: string, actor: AuthenticatedActor) {
+    this.require(actor, 'ticket_catalog.read');
+    if (uuid.validate(id).error)
+      throw new BadRequestException('شناسه بلیت معتبر نیست.');
+    const row = await this.database.client.ticketPublishedOffer.findFirst({
+      where: { id, branchId: { in: actor.branchIds } },
+      select: {
+        id: true,
+        originId: true,
+        destinationId: true,
+        originAirportId: true,
+        destinationAirportId: true,
+        economyBaggageKg: true,
+        businessBaggageKg: true,
+      },
+    });
+    if (!row) throw new ForbiddenException('بلیط در شعبه مجاز شما نیست.');
+    return {
+      data: {
+        ...row,
+        economyBaggageKg: row.economyBaggageKg?.toString() ?? null,
+        businessBaggageKg: row.businessBaggageKg?.toString() ?? null,
+      },
+    };
+  }
 
   async manifestInventory(
     offerIds: readonly string[],
@@ -247,6 +296,8 @@ export class TicketPublicService {
   }
 
   private offerView(row: {
+    originAirportId?: string | null;
+    destinationAirportId?: string | null;
     supplyType?: string | null;
     economyBaggageKg?: Prisma.Decimal | null;
     businessBaggageKg?: Prisma.Decimal | null;
@@ -297,6 +348,8 @@ export class TicketPublicService {
     return applySaleCommissions(
       {
         id: row.id,
+        originAirportId: row.originAirportId ?? null,
+        destinationAirportId: row.destinationAirportId ?? null,
         supplyType: (row.supplyType ?? null) as Exclude<
           TicketOfferV1['supplyType'],
           undefined
@@ -604,6 +657,7 @@ export class TicketPublicService {
       throw new BadRequestException('کلید درخواست معتبر لازم است.');
     const value = validateTicketOffer(input);
     await this.validateManifest(value);
+    await this.validateAirports(value);
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
       .digest('hex');
@@ -644,6 +698,9 @@ export class TicketPublicService {
         (value.businessBaggageKg == null
           ? null
           : new Prisma.Decimal(value.businessBaggageKg).toString()) &&
+      (row.originAirportId ?? null) === (value.originAirportId ?? null) &&
+      (row.destinationAirportId ?? null) ===
+        (value.destinationAirportId ?? null) &&
       row.branchId === branchId &&
       row.originId === value.originId &&
       row.destinationId === value.destinationId &&
@@ -1185,6 +1242,7 @@ export class TicketPublicService {
       throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
     const value = validateTicketOffer(input.offer);
     await this.validateManifest(value);
+    await this.validateAirports(value);
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
         Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
@@ -1236,7 +1294,19 @@ export class TicketPublicService {
           : value.returnMaxDays;
       if (!validReturnWindow(min, max))
         throw new BadRequestException('بازه روزهای برگشت معتبر نیست.');
+      const originAirportId =
+        value.originAirportId === undefined
+          ? row.originAirportId
+          : value.originAirportId;
+      const destinationAirportId =
+        value.destinationAirportId === undefined
+          ? row.destinationAirportId
+          : value.destinationAirportId;
       const scheduleOnlyRevision =
+        (row.originAirportId == null ||
+          row.originAirportId === originAirportId) &&
+        (row.destinationAirportId == null ||
+          row.destinationAirportId === destinationAirportId) &&
         (row.supplyType ?? null) === (supplyType ?? null) &&
         baggageValue(row.economyBaggageKg) === baggageValue(economyBaggageKg) &&
         baggageValue(row.businessBaggageKg) ===
@@ -1270,6 +1340,8 @@ export class TicketPublicService {
         where: { id },
         data: {
           ...value,
+          originAirportId,
+          destinationAirportId,
           supplyType,
           economyBaggageKg,
           businessBaggageKg,
