@@ -2,6 +2,10 @@
 
 The airport workspace now renders a fourth KPI, `ترمینال‌های مرتبط`, scoped explicitly to the current visible page. It uses the existing projected `terminalCount` values and refuses to present a partial total when any row is missing a canonical nonnegative safe integer; empty pages remain a real zero. The original airport KPIs, filters, rows, status behavior and all other geography resources are unchanged. Pure calculation and real KPI-grid SSR regressions cover empty, multiple, missing, invalid, fractional, unsafe and overflow cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not available.
 
+## 2026-10-01 — CONTRACT-PRICE-COMPACT-1001 — PC-A — READY_FOR_REVIEW
+
+Owner requested a smaller agreed-price presentation after reviewing PR522 locally. The title and currency-specific amounts now share a compact strip with table-sized numeric text, soft individual currency chips and safe wrapping; the tall heading and large rows are removed. Same shared preview/PDF renderer and exact amounts retained. 22 tests, scoped lint and synthetic A4 visual QA pass; no API/schema/dependency/data changes. Continued authorized merge/local correction follows full CI.
+
 ## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
 
 The owner's screenshot confirmed the previous redesign was deployed but the horizontal agreed-total strip still did not satisfy the requested field layout. The shared Sales print renderer now labels the field قیمت توافق‌شده قرارداد above a white amount area, with separate clearly divided amount/currency rows. Preview and PDF use the same renderer; exact existing Decimal arithmetic and legacy balance fallback are retained. 22 focused tests and synthetic A4 PDF visual review pass. No API/schema/dependency/data changes; local correction follows develop merge and CI.
