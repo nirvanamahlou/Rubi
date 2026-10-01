@@ -88,6 +88,34 @@ describe('accommodation workspace', () => {
     expect(source).toContain('setProfileOpen(true)');
   });
 
+  it('keeps the hotel pricing header action white without changing the adjacent outline action', () => {
+    const pricingHref = 'href="/master-data/accommodation/hotel-rates"';
+    const pricingLinkStart = source.lastIndexOf(
+      '<Link',
+      source.indexOf(pricingHref),
+    );
+    const pricingLink = source.slice(
+      pricingLinkStart,
+      source.indexOf('</Link>', pricingLinkStart),
+    );
+    expect(pricingLink).toContain("buttonVariants({ variant: 'primary' })");
+    expect(pricingLink).toContain('!text-white hover:!text-white');
+    expect(pricingLink).toContain('قیمت‌گذاری هتل‌ها');
+
+    const masterDataHref = 'href="/master-data"';
+    const outlineLinkStart = source.lastIndexOf(
+      '<Link',
+      source.indexOf(masterDataHref, pricingLinkStart),
+    );
+    const outlineLink = source.slice(
+      outlineLinkStart,
+      source.indexOf('</Link>', outlineLinkStart),
+    );
+    expect(outlineLink).toContain("buttonVariants({ variant: 'outline' })");
+    expect(outlineLink).toContain('همه بخش‌ها');
+    expect(outlineLink).not.toContain('text-white');
+  });
+
   it('keeps every accommodation KPI label identical to the mockup', () => {
     for (const label of [
       'کل هتل‌ها',

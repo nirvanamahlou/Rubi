@@ -1,3 +1,7 @@
+## 2026-10-01 — HOTEL-PRICING-WHITE-TEXT-1001 — PC-B — READY_FOR_REVIEW
+
+The accommodation header's `قیمت‌گذاری هتل‌ها` action now keeps an explicit white foreground in both themes and on hover. The override is local to that link; shared primary-button tokens and the neighboring all-sections outline action are unchanged. Focused action/visual regressions (19), all 433 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no API, schema, dependency, data or runtime change was made.
+
 ## 2026-10-01 — HOTEL-EXCEL-TEMPLATE-1001 — PC-B — CHECK_BLOCKED
 
 The Hotel Excel parser now accepts the supplied canonical formatted workbook, including namespace-prefixed OOXML, its exact title/guidance preamble, row-four headers and blank formatted rows. Physical row numbers remain 5/6/7, while formulas, hyperlinks, DTD/entities, external relationships and existing archive limits remain rejected regardless of namespace prefix. The external workbook itself stays outside Git and was read only; it produces three rows, no blocking issues and the existing explicit unsupported-field warnings. Existing reference resolution, commit, audit, permissions and idempotency are unchanged. Focused tests, all 476 Master Data API tests and scoped lint pass; final typecheck/build await regeneration of the stale Prisma client because this checkout has no `DATABASE_URL`. No schema, contract, dependency, database or runtime change was made.
