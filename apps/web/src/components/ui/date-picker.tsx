@@ -391,6 +391,7 @@ export function DatePicker({
               </div>
 
               <div
+                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
                 className={cn(
                   'mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground',
                   rubiCalendar &&
@@ -405,7 +406,7 @@ export function DatePicker({
                 >
                   <ChevronRight
                     aria-hidden="true"
-                    className={`size-5 ${english ? 'rotate-180' : ''}`}
+                    className={`size-5 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
                   />
                 </button>
                 <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
@@ -454,7 +455,7 @@ export function DatePicker({
                 >
                   <ChevronLeft
                     aria-hidden="true"
-                    className={`size-5 ${english ? 'rotate-180' : ''}`}
+                    className={`size-5 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
                   />
                 </button>
               </div>

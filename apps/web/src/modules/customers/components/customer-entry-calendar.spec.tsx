@@ -61,6 +61,38 @@ describe('Direct table calendar', () => {
     expect(html).toContain('نوع تقویم Customers');
     expect(html).toContain('overflow-y-auto');
   });
+  it.each(['gregorian', 'persian'] as const)(
+    'keeps month navigation in %s calendar direction inside an RTL form',
+    (mode) => {
+      const html = renderToStaticMarkup(
+        <div dir="rtl">
+          <CustomerDateField
+            initialOpen
+            id="navigation"
+            label="تاریخ"
+            mode={mode}
+            onModeChange={vi.fn()}
+            onChange={vi.fn()}
+            value="2026-12-15"
+          />
+        </div>,
+      );
+      const header = html.match(
+        /<div dir="(ltr|rtl)" class="flex items-center justify-between rounded-xl[^]*?(?=<div class="mt-3 grid)/,
+      )?.[0];
+      expect(header).toBeDefined();
+      expect(header).toContain(`dir="${mode === 'gregorian' ? 'ltr' : 'rtl'}"`);
+      expect(header!.indexOf('aria-label="بازه قبل"')).toBeLessThan(
+        header!.indexOf('aria-label="بازه بعد"'),
+      );
+      expect(header).toContain('lucide-chevron-right');
+      expect(header).toContain('lucide-chevron-left');
+      if (mode === 'gregorian')
+        expect(header!.match(/rotate-180/g)).toHaveLength(2);
+      else expect(header).not.toContain('rotate-180');
+    },
+  );
+
   it('cannot expose a calendar while a row is disabled, including initially open fields', () => {
     const html = renderToStaticMarkup(
       <CustomerDateField

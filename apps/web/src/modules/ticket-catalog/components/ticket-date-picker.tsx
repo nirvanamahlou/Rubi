@@ -322,7 +322,10 @@ export function TicketDatePicker({
                 }),
               }}
             >
-              <div className="flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground">
+              <div
+                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                className="flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground"
+              >
                 <Button
                   aria-label="بازه قبل"
                   className="size-8 p-0 text-primary-foreground hover:bg-white/15 hover:text-primary-foreground"
@@ -330,7 +333,9 @@ export function TicketDatePicker({
                   type="button"
                   variant="ghost"
                 >
-                  <ChevronRight className="size-4" />
+                  <ChevronRight
+                    className={`size-4 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
+                  />
                 </Button>
                 <div className="flex items-center gap-1 text-sm font-bold">
                   <button
@@ -358,7 +363,9 @@ export function TicketDatePicker({
                   type="button"
                   variant="ghost"
                 >
-                  <ChevronLeft className="size-4" />
+                  <ChevronLeft
+                    className={`size-4 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
+                  />
                 </Button>
               </div>
 
