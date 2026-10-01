@@ -86,6 +86,25 @@ const tabs = [
 
 type SalesReferenceResource = (typeof tabs)[number]['resource'];
 
+type SalesReferenceColumnFilters = Readonly<{
+  columnFilter1?: string;
+  columnFilter2?: string;
+}>;
+
+export function effectiveSalesReferenceColumnFilters(
+  resource: SalesReferenceResource,
+  filters: SalesReferenceColumnFilters,
+): SalesReferenceColumnFilters {
+  if (resource !== 'acquaintance-methods') return filters;
+  return filters.columnFilter1 ? { columnFilter1: filters.columnFilter1 } : {};
+}
+
+export function visibleSalesReferenceColumnFilterIndexes(
+  resource: SalesReferenceResource,
+) {
+  return resource === 'acquaintance-methods' ? [0] : [0, 1];
+}
+
 function attribute(record: MasterDataRecord, key: string, fallback = '—') {
   const value = record.attributes[key];
   return value === null || value === undefined || value === ''
@@ -116,6 +135,15 @@ export function MasterDataSalesReferencesWorkspace() {
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
+  const effectiveColumnFilters = useMemo(
+    () => effectiveSalesReferenceColumnFilters(resource, columnFilters),
+    [columnFilters, resource],
+  );
+  const visibleColumnFilterIndexes =
+    visibleSalesReferenceColumnFilterIndexes(resource);
+  const visibleColumnFilterControls = columnFilterControls.filter((_, index) =>
+    visibleColumnFilterIndexes.includes(index),
+  );
   const {
     filters: dateFilters,
     props: dateRangeProps,
@@ -126,7 +154,7 @@ export function MasterDataSalesReferencesWorkspace() {
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
-        ...columnFilters,
+        ...effectiveColumnFilters,
         ...dateFilters,
         search,
         status,
@@ -146,7 +174,7 @@ export function MasterDataSalesReferencesWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, dateFilters, page, resource, search, status]);
+  }, [dateFilters, effectiveColumnFilters, page, resource, search, status]);
 
   const loadSummary = useCallback(async () => {
     try {
@@ -260,7 +288,7 @@ export function MasterDataSalesReferencesWorkspace() {
         resource,
         format: 'xlsx',
         filters: {
-          ...columnFilters,
+          ...effectiveColumnFilters,
           ...dateFilters,
           search,
           status,
@@ -484,7 +512,7 @@ export function MasterDataSalesReferencesWorkspace() {
       </Card>
       <MasterDataKpiGrid items={kpis} label={`شاخص‌های ${definition.label}`} />
       <MasterDataFilterBar>
-        {columnFilterControls}
+        {visibleColumnFilterControls}
         <MasterDataDateRangeFilter
           idPrefix="sales-references-created"
           {...dateRangeProps}

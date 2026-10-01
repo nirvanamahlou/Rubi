@@ -1,3 +1,7 @@
+## 2026-10-01 — ACQUAINTANCE-HIDE-ENGLISH-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+Acquaintance Methods now exposes only its dedicated code filter; the English-name filter is absent and a stale hidden `columnFilter2` cannot reach list or Excel-export requests. Sales Channels retains both canonical filters, while general search, English-name form/profile fields and all API/schema/backend behavior remain unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-01 — ACQUAINTANCE-HIDE-ORDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 The Acquaintance Methods table now omits only the visible display-order header and matching cell. The shared Sales Channels table retains that column, and an AST regression evaluates both resource shapes to verify aligned headers/rows while preserving the form/profile order field. Focused regression (5), scoped lint, all 453 Master Data tests, Web typecheck and 55-route production build pass; no authenticated browser/runtime QA was performed. No API, export, backend, schema, dependency, database or runtime change was made, and bounded locks release with the scoped commit. Final documentation-only verification update does not change product or build inputs.
