@@ -24,7 +24,7 @@ const demoOffer: TicketOfferV1 = {
 };
 
 describe('flight ticket output template', () => {
-  it('shows explicitly marked demo identifiers and airline logo for test flights only', () => {
+  it('keeps test flights as drafts without fabricating issuance identifiers', () => {
     const html = renderToStaticMarkup(
       <FlightTicketDocument
         state={{
@@ -37,14 +37,14 @@ describe('flight ticket output template', () => {
         passengerName="Synthetic Passenger"
       />,
     );
-    expect(html).toContain('7143');
-    expect(html).toContain('DEMO01');
-    expect(html).toContain('SAMPLE DATA');
+    expect(html).not.toContain('7143');
+    expect(html).not.toContain('DEMO01');
+    expect(html).toContain('TEST AIRLINE');
     expect(html).toContain('NOT VALID FOR TRAVEL');
-    expect(html).toContain('لوگوی آزمایشی');
+    expect(html).toContain('Synthetic Passenger');
     expect(html).not.toContain('PAYMENT');
     expect(html).not.toContain('Fare Base');
-    expect(html).toContain('width="210"');
+    expect(html).toContain('/brand/niyayesh-seir-full.png');
   });
   it.each([
     { ...demoOffer, carrierName: 'Real airline' },
@@ -91,11 +91,9 @@ describe('flight ticket output template', () => {
     );
     for (const label of [
       'FLIGHT TICKET',
-      'FLIGHT INFORMATION',
-      'NOTICE',
+      'ELECTRONIC TICKET / ITINERARY',
       'DRAFT',
-      'RLOC',
-      'E-Ticket No',
+      'BOOKING REFERENCE',
       'Synthetic Passenger',
     ])
       expect(html).toContain(label);
@@ -107,7 +105,13 @@ describe('flight ticket output template', () => {
   it('prints BUSINESS only when the output checkbox is selected', () => {
     const html = renderToStaticMarkup(
       <FlightTicketDocument
-        state={{ ...emptySalesForm, businessOutput: true }}
+        state={{
+          ...emptySalesForm,
+          serviceKinds: ['FLIGHT'],
+          serviceDirections: { FLIGHT: ['OUTBOUND'] },
+          outboundOffer: demoOffer,
+          businessOutput: true,
+        }}
         cities={[]}
         passengerName="Synthetic Passenger"
       />,
@@ -134,7 +138,7 @@ describe('flight ticket output template', () => {
     expect(html).toContain('PRESENCE 03:00 BEFORE FLIGHT TIME');
     expect(html).not.toContain('<table');
   });
-  it('prints a scannable contract barcode at the bottom of an issued ticket', () => {
+  it('prints a scannable booking-reference QR at the bottom of an issued ticket', () => {
     const html = renderToStaticMarkup(
       <FlightTicketSheet
         data={{
@@ -146,7 +150,7 @@ describe('flight ticket output template', () => {
         cityName={() => '—'}
       />,
     );
-    expect(html).toContain('aria-label="Barcode SC-2026-000003"');
+    expect(html).toContain('aria-label="Booking reference QR"');
     expect(html).toContain('<figcaption>SC-2026-000003</figcaption>');
     expect(html).toContain('<rect');
   });

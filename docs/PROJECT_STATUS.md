@@ -1,3 +1,7 @@
+## 2026-10-01 — RESERVATION-REFERENCE-EDIT-1001 — PC-A — READY_FOR_REVIEW
+
+Reservation operational editing now selects active outbound/return airlines, hotels and brokers through searchable Master Data dropdowns; room details and remaining operational fields stay manual. Operational corrections can no longer amend or appear in Sales contracts, legacy correction metadata is ignored by the print projection, child rows use a clean کودک label, and selected edit tabs stay readable on hover. Manifest origin/destination country and country-scoped city filters also use the standard searchable Master Data dropdown with canonical IDs. 47 focused Web/API tests, scoped lint, both typechecks and the full production build with 55 Web routes pass. No schema, migration, shared-contract, dependency, operational-data or runtime change. Owner authorized develop merge after CI.
+
 ## 2026-10-01 — VOUCHER-DOWNLOAD-SUMMARY-1001 — PC-A — READY_FOR_REVIEW
 
 Issued hotel vouchers now have a direct authenticated PDF download using saved voucher settings, supplier booking reference, selected passenger room types and the existing isolated renderer. Unissued/cancelled vouchers are rejected, and no-letterhead settings avoid logo retrieval. Booking Summary uses a separate bordered section, spacing and navy/teal header in preview and downloaded PDFs. 13 targeted tests, scoped lint, Web typecheck/build checked. No API contract, migration, dependency, operational data or runtime change. Owner requests develop merge after checks.
@@ -17,6 +21,10 @@ Only the «محدودیت خرید» column and matching placeholder cell were r
 ## 2026-10-01 — TERMINAL-REPLACE-REVIEW-KPI-1001 — PC-B — READY_FOR_REVIEW
 
 The terminal workspace replaces only the misleading «نیازمند بازبینی» KPI with «در حال تعمیرات», explicitly scoped to the current page. It counts only the existing projected boolean `isUnderMaintenance === true`; false, missing and malformed values do not contribute. The total, active and international terminal KPIs and every other geography resource remain unchanged. Pure helper and real KPI-grid SSR regressions cover empty, multiple and malformed flag cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not run.
+
+## 2026-10-01 — TERMINAL-REMOVE-AIRPORT-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+The terminal list airport filter, its local state, scoped-query field and reset wiring are removed together, so no selected airport can remain as a hidden stale filter. Terminal-type and all shared filters remain. The airport FK, nested airport children, inline creation and race-safe standalone parent selection are unchanged. A focused source regression verifies the removed list-filter path and retained creation relation. No API, schema, migration, contract, dependency, data or runtime changes; authenticated browser QA was not run.
 
 ## 2026-10-01 — CONTRACT-AGREED-PRICE-DESIGN-1001 — PC-A — READY_FOR_REVIEW
 
@@ -4121,3 +4129,10 @@ LAN login page rendering without working form submission is traced to Next.js de
 
 Reservation operations no longer exposes a separate events tab. The dashboard now has date-basis, start-date and end-date controls, and its metrics reflect the active date range. The existing reservation foundation render regression was updated; no API, schema, migration, dependency or runtime change.
 
+## 2026-10-01 — INDEPENDENT-RAIL-TERMINALS-1001 — PC-B — READY_FOR_REVIEW
+
+The visible Geography terminal catalog now uses a new additive independent rail-terminal resource; legacy aviation terminals remain available only within airport children with their existing schema, API and counts. Rail records require only a name and receive an immutable generated code; optional city FK, English name, coherent local hours, display order, authenticated logo and status are supported. KPI totals use global list totals while distinct cities and valid defined hours are explicitly scoped to the current page. The migration creates only the new table and nullable restrictive city FK; no legacy rows are converted and no operational database/runtime was changed.
+
+## 2026-10-01 — PC-A — reference flight ticket
+
+FLIGHT-TICKET-REFERENCE-1001 shares one reference-style A4 ticket renderer between preview and PDF: Niyayesh and uploaded carrier marks, passenger/contract identity, outbound navy and return teal route cards, selected airport IATA/name, saved departure/arrival, class-specific baggage and independently verified booking-reference QR. No fabricated airport, allowance, flight duration or issuance identifiers. Additive nullable airport FKs and authorized branch-scoped catalog document details retain selected airports at publication. Legacy offers require re-saving the actual definition; no guessed backfill. Existing finance and cancellation gates remain. Synthetic two-leg PDF visually reviewed as one A4 page. Apply migration 20261001103000_ticket_selected_airports before API rollout. No dependency changes or operational data writes.

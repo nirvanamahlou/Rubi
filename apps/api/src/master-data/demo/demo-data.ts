@@ -71,6 +71,13 @@ export function masterDataDemoRecords(): DemoRecord[] {
       name: name(`شهر نمونه ${n}`),
       englishName: `Demo City ${n}`,
     }));
+    add(`rail-terminal-${n}`, 'rail-terminals', (id) => ({
+      name: name(`ترمینال ریلی ${n === 1 ? 'مرکزی' : 'ساحلی'}`),
+      englishName: `Test Rail ${n === 1 ? 'Central' : 'Coastal'} Terminal`,
+      cityId: id(`city-${n}`),
+      operatingHoursMode: 'FULL_TIME',
+      displayOrder: n,
+    }));
     add(`bank-${n}`, 'banks', (id) => ({
       code: `DEMO_BANK_${n}`,
       name: name(`بانک نمونه ${n}`),

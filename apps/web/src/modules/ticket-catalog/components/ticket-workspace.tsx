@@ -118,6 +118,8 @@ export function flightOfferInput(
       ? 'BUSINESS'
       : 'ECONOMY';
   return {
+    originAirportId: firstSegment.originAirportId || null,
+    destinationAirportId: lastSegment.destinationAirportId || null,
     originId: firstSegment.originCityId,
     destinationId: lastSegment.destinationCityId,
     departureAt: firstSegment.departureAt,

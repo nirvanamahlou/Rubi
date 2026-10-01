@@ -53,7 +53,11 @@ import {
   PaginationShell,
   Skeleton,
 } from '@/components/ui/surfaces';
-import { masterDataApi, MasterDataApiError } from '../api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+  type MasterDataLogoChange,
+} from '../api/client';
 import { loadTourTypeActorNames as loadActorNames } from '../api/tour-type-actors';
 import {
   terminalHoursLabel,
@@ -80,12 +84,18 @@ import {
 } from './master-data-kpi-grid';
 import {
   airportKpiItems,
+  railTerminalKpiItems,
   terminalKpiItems,
 } from './master-data-geography-kpis';
 
 type GeographyResource = Extract<
   MasterDataResourceKey,
-  'countries' | 'regions' | 'cities' | 'airports' | 'terminals'
+  | 'countries'
+  | 'regions'
+  | 'cities'
+  | 'airports'
+  | 'terminals'
+  | 'rail-terminals'
 >;
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
@@ -105,7 +115,7 @@ const geographyTabs: readonly {
     icon: PlaneTakeoff,
   },
   {
-    resource: 'terminals',
+    resource: 'rail-terminals',
     label: 'ترمینال‌ها',
     icon: SquareStack,
   },
@@ -218,6 +228,18 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'وضعیت',
       'عملیات',
     ];
+  if (resource === 'rail-terminals')
+    return [
+      'کد',
+      'لوگو',
+      'نام فارسی',
+      'نام انگلیسی',
+      'شهر',
+      'ساعت فعالیت',
+      'ترتیب',
+      'وضعیت',
+      'عملیات',
+    ];
   return [
     'کد/عنوان',
     'لوگو',
@@ -308,6 +330,19 @@ function recordCells(
       </span>,
       statusBadge(record),
     ];
+  if (resource === 'rail-terminals')
+    return [
+      <span className="font-mono text-xs font-black" dir="ltr" key="code">
+        {record.code}
+      </span>,
+      <MasterDataLogoCell asCell={false} key="logo" record={record} />,
+      record.name,
+      attribute(record, 'englishName'),
+      attribute(record, 'cityName'),
+      terminalHoursLabel(record),
+      attribute(record, 'displayOrder'),
+      statusBadge(record),
+    ];
   return [
     <div key="terminal">
       <p className="font-bold">{record.name}</p>
@@ -369,7 +404,6 @@ export function MasterDataGeographyWorkspace() {
   const [countryId, setCountryId] = useState('all');
   const [regionId, setRegionId] = useState('all');
   const [cityId, setCityId] = useState('all');
-  const [airportId, setAirportId] = useState('all');
   const [expandedCountryId, setExpandedCountryId] = useState<string | null>(
     null,
   );
@@ -431,12 +465,11 @@ export function MasterDataGeographyWorkspace() {
           : {}
         : {}),
       ...(resource === 'airports' && cityId !== 'all' ? { cityId } : {}),
-      ...(resource === 'terminals' && airportId !== 'all' ? { airportId } : {}),
       ...(resource === 'terminals' && terminalType !== 'all'
         ? { terminalType }
         : {}),
     }),
-    [airportId, cityId, countryId, regionId, resource, terminalType],
+    [cityId, countryId, regionId, resource, terminalType],
   );
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
@@ -611,7 +644,6 @@ export function MasterDataGeographyWorkspace() {
     setCountryId('all');
     setRegionId('all');
     setCityId('all');
-    setAirportId('all');
     setTerminalType('all');
     setSelected(undefined);
     setExpandedCountryId(null);
@@ -620,10 +652,56 @@ export function MasterDataGeographyWorkspace() {
     setNotice(null);
   }
 
-  async function persist(values: Record<string, string>) {
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
     const target = formResource ?? resource;
     const targetDefinition = getMasterDataDefinition(target);
-    if (formMode === 'edit' && selected) {
+    if (target === 'rail-terminals') {
+      const requestedStatus =
+        values.status === 'inactive' ? 'inactive' : 'active';
+      const mutationValues = { ...values };
+      delete mutationValues.status;
+      const response = await masterDataApi.persistWithLogo({
+        resource: target,
+        values: mutationValues,
+        title:
+          `${targetDefinition.singularLabel} ${values.name ?? selected?.name ?? ''}`.trim(),
+        ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+        ...(logoChange ? { logoChange } : {}),
+      });
+      if (response.warning) {
+        setSelected(response.data);
+        setFormMode('edit');
+        setNotice(response.warning);
+        await load();
+        return;
+      }
+      if (response.data.status !== requestedStatus) {
+        try {
+          await masterDataApi.setStatus(
+            target,
+            response.data.id,
+            requestedStatus,
+            response.data.version,
+          );
+        } catch (error) {
+          setSelected(response.data);
+          setFormMode('edit');
+          setNotice(
+            `رکورد ذخیره شد، اما تغییر وضعیت انجام نشد: ${
+              error instanceof Error ? error.message : 'خطای نامشخص'
+            }`,
+          );
+          await load();
+          return;
+        }
+      }
+      setNotice(
+        `${targetDefinition.singularLabel} با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
+      );
+    } else if (formMode === 'edit' && selected) {
       await masterDataApi.update(target, selected.id, {
         values,
         version: selected.version,
@@ -845,7 +923,9 @@ export function MasterDataGeographyWorkspace() {
           ]
         : resource === 'airports'
           ? airportKpiItems(records, total, activeTotal)
-          : terminalKpiItems(records, total, activeTotal, internationalTotal);
+          : resource === 'rail-terminals'
+            ? railTerminalKpiItems(records, total, activeTotal)
+            : terminalKpiItems(records, total, activeTotal, internationalTotal);
 
   const columns = geographyColumns(resource);
 
@@ -1224,49 +1304,26 @@ export function MasterDataGeographyWorkspace() {
           </FormField>
         ) : null}
         {resource === 'terminals' ? (
-          <>
-            <FormField label="فرودگاه">
-              <Select
-                onValueChange={(value) => {
-                  setAirportId(value);
-                  setPage(1);
-                }}
-                value={airportId}
-              >
-                <SelectTrigger aria-label="فیلتر فرودگاه">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه فرودگاه‌ها</SelectItem>
-                  {references.airports.map((record) => (
-                    <SelectItem key={record.id} value={record.id}>
-                      {record.code} · {record.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FormField>
-            <FormField label="نوع ترمینال">
-              <Select
-                onValueChange={(value) => {
-                  setTerminalType(value as typeof terminalType);
-                  setPage(1);
-                }}
-                value={terminalType}
-              >
-                <SelectTrigger aria-label="فیلتر نوع ترمینال">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه انواع</SelectItem>
-                  <SelectItem value="DOMESTIC">داخلی</SelectItem>
-                  <SelectItem value="INTERNATIONAL">بین‌المللی</SelectItem>
-                  <SelectItem value="MIXED">مشترک</SelectItem>
-                  <SelectItem value="VIP">VIP</SelectItem>
-                </SelectContent>
-              </Select>
-            </FormField>
-          </>
+          <FormField label="نوع ترمینال">
+            <Select
+              onValueChange={(value) => {
+                setTerminalType(value as typeof terminalType);
+                setPage(1);
+              }}
+              value={terminalType}
+            >
+              <SelectTrigger aria-label="فیلتر نوع ترمینال">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">همه انواع</SelectItem>
+                <SelectItem value="DOMESTIC">داخلی</SelectItem>
+                <SelectItem value="INTERNATIONAL">بین‌المللی</SelectItem>
+                <SelectItem value="MIXED">مشترک</SelectItem>
+                <SelectItem value="VIP">VIP</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
         ) : null}
         <MasterDataFilterActions
           onClear={() => {
@@ -1278,7 +1335,6 @@ export function MasterDataGeographyWorkspace() {
             setCountryId('all');
             setRegionId('all');
             setCityId('all');
-            setAirportId('all');
             setTerminalType('all');
             setPage(1);
           }}

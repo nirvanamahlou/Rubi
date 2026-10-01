@@ -54,6 +54,36 @@ describe('Saved contract print output', () => {
     expect(missing).toContain('نام مرجع در دسترس نیست');
     expect(missing).not.toContain('DBL');
   });
+  it('ignores legacy operational reservation amendments in the sales contract', () => {
+    const output = structuredClone(printFixture);
+    output.contract.servicesDetail[0]!.metadata = {
+      reservationFormAmendment: JSON.stringify({
+        settings: {
+          text: {
+            contractPartyName: 'طرف عملیاتی ساختگی',
+            hotel: 'OPERATIONAL HOTEL',
+            roomType: 'OPERATIONAL ROOM',
+          },
+          passengers: [
+            {
+              id: output.contract.passengersDetail[1]!.customerId,
+              selected: true,
+              age: 'CHD',
+              hotelChildAgeBand: 'CHD_2_TO_6',
+            },
+          ],
+        },
+      }),
+    };
+    const html = contractPrintHtml(output, printReferences);
+    expect(html).toContain('مشتری نمونه');
+    expect(html).toContain('<td>کودک</td>');
+    expect(html).not.toContain('کودک ·');
+    expect(html).not.toContain('طرف عملیاتی ساختگی');
+    expect(html).not.toContain('OPERATIONAL HOTEL');
+    expect(html).not.toContain('اصلاحات عملیاتی ثبت‌شده در قرارداد');
+    expect((html.match(/<section/g) || []).length).toBe(6);
+  });
   it('does not assign Niyayesh contact details to another issuer', () => {
     const output = structuredClone(printFixture);
     output.company.code = 'JAHAN_BASTAN';

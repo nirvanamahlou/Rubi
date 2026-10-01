@@ -981,6 +981,7 @@ model MasterCity {
   region                      MasterRegion?               @relation(fields: [regionId, countryId], references: [id, countryId], onDelete: Restrict)
   hotels                      MasterHotel[]
   airports                    MasterAirport[]
+  railTerminals               MasterRailTerminal[]
   bankBranches                MasterBankBranch[]
   suppliers                   MasterSupplier[]
   brokers                     MasterBroker[]
@@ -1031,25 +1032,27 @@ model MasterRegion {
 }
 
 model MasterAirport {
-  id                  String             @id @default(uuid()) @db.Uuid
-  cityId              String             @db.Uuid
-  iataCode            String             @unique @db.Char(3)
-  icaoCode            String?            @unique @db.Char(4)
-  name                String             @db.VarChar(160)
-  englishName         String?            @db.VarChar(160)
-  ianaTimezone        String?            @db.VarChar(80)
-  latitude            Decimal?           @db.Decimal(9, 6)
-  longitude           Decimal?           @db.Decimal(9, 6)
-  displayOrder        Int                @default(0)
-  isActive            Boolean            @default(true)
-  version             Int                @default(1)
-  createdByUserId     String             @db.Uuid
-  updatedByUserId     String             @db.Uuid
-  deactivatedByUserId String?            @db.Uuid
-  deactivatedAt       DateTime?          @db.Timestamptz(3)
-  createdAt           DateTime           @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
-  city                MasterCity         @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  ticketOrigins       TicketPublishedOffer[] @relation("TicketOriginAirport")
+  ticketDestinations  TicketPublishedOffer[] @relation("TicketDestinationAirport")
+  id                  String                 @id @default(uuid()) @db.Uuid
+  cityId              String                 @db.Uuid
+  iataCode            String                 @unique @db.Char(3)
+  icaoCode            String?                @unique @db.Char(4)
+  name                String                 @db.VarChar(160)
+  englishName         String?                @db.VarChar(160)
+  ianaTimezone        String?                @db.VarChar(80)
+  latitude            Decimal?               @db.Decimal(9, 6)
+  longitude           Decimal?               @db.Decimal(9, 6)
+  displayOrder        Int                    @default(0)
+  isActive            Boolean                @default(true)
+  version             Int                    @default(1)
+  createdByUserId     String                 @db.Uuid
+  updatedByUserId     String                 @db.Uuid
+  deactivatedByUserId String?                @db.Uuid
+  deactivatedAt       DateTime?              @db.Timestamptz(3)
+  createdAt           DateTime               @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime               @updatedAt @db.Timestamptz(3)
+  city                MasterCity             @relation(fields: [cityId], references: [id], onDelete: Restrict)
   terminals           MasterTerminal[]
   cipServices         MasterCipService[]
 
@@ -1084,6 +1087,32 @@ model MasterTerminal {
   @@unique([airportId, code])
   @@index([airportId, terminalType, isActive, name])
   @@map("master_terminals")
+}
+
+model MasterRailTerminal {
+  id                  String      @id @default(uuid()) @db.Uuid
+  cityId              String?     @db.Uuid
+  code                String      @unique @db.VarChar(32)
+  name                String      @db.VarChar(160)
+  englishName         String?     @db.VarChar(160)
+  logoFileReference   String?     @db.Uuid
+  operatingHoursMode  String?     @db.VarChar(16)
+  opensAt             String?     @db.Char(5)
+  closesAt            String?     @db.Char(5)
+  displayOrder        Int         @default(0)
+  isActive            Boolean     @default(true)
+  version             Int         @default(1)
+  createdByUserId     String      @db.Uuid
+  updatedByUserId     String      @db.Uuid
+  deactivatedByUserId String?     @db.Uuid
+  deactivatedAt       DateTime?   @db.Timestamptz(3)
+  createdAt           DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime    @updatedAt @db.Timestamptz(3)
+  city                MasterCity? @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@index([cityId, isActive, displayOrder, name])
+  @@index([isActive, displayOrder, name])
+  @@map("master_rail_terminals")
 }
 
 model MasterCurrency {
@@ -4078,6 +4107,10 @@ model TourDeparture {
 }
 
 model TicketPublishedOffer {
+  originAirportId             String?                             @db.Uuid
+  destinationAirportId        String?                             @db.Uuid
+  originAirport               MasterAirport?                      @relation("TicketOriginAirport", fields: [originAirportId], references: [id], onDelete: Restrict)
+  destinationAirport          MasterAirport?                      @relation("TicketDestinationAirport", fields: [destinationAirportId], references: [id], onDelete: Restrict)
   supplyType                  String?                             @db.VarChar(16)
   economyBaggageKg            Decimal?                            @db.Decimal(10, 2)
   businessBaggageKg           Decimal?                            @db.Decimal(10, 2)
