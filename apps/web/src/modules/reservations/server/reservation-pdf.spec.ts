@@ -154,3 +154,58 @@ describe('reservation PDF route', () => {
     ).toThrow();
   });
 });
+
+it('rejects unissued direct voucher downloads before rendering', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(Response.json({ data: intake })),
+  );
+  const response = await GET(new Request(request().url + '?kind=voucher'), {
+    params: Promise.resolve({ id }),
+  });
+  expect(response.status).toBe(409);
+  expect(renderer).not.toHaveBeenCalled();
+});
+it('downloads an issued voucher using saved voucher settings and a voucher filename', async () => {
+  const value = {
+    ...intake,
+    workflow: { ...intake.workflow, voucherIssued: true },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(Response.json({ data: value })),
+  );
+  const response = await GET(new Request(request().url + '?kind=voucher'), {
+    params: Promise.resolve({ id }),
+  });
+  expect(response.status).toBe(200);
+  expect(response.headers.get('Content-Disposition')).toContain(
+    'hotel-voucher-QA.pdf',
+  );
+  expect(renderer).toHaveBeenCalledWith(
+    value,
+    {},
+    expect.stringContaining('data:image/png;base64,'),
+    expect.anything(),
+    true,
+  );
+});
+it('renders voucher booking references and a separated summary without letterhead', () => {
+  const value = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      voucherIssued: true,
+      supplierReference: 'VOUCHER-REF',
+    },
+  };
+  value.workflow.voucherSettings = defaultVoucherSettings(value, {});
+  value.workflow.voucherSettings.flags.withLetterhead = false;
+  const html = reservationPdfHtml(value, {}, '', '', true);
+  expect(html).toContain('HOTEL VOUCHER');
+  expect(html).toContain('VOUCHER-REF');
+  expect(html).toContain('<section class="bookingSection">');
+  expect(html).toContain('ROOM TYPE');
+  expect(html).toContain('STAMP');
+  expect(html).not.toContain('<img');
+});

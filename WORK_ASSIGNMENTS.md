@@ -1,3 +1,7 @@
+## VOUCHER-DOWNLOAD-SUMMARY-1001 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-download-summary-1001` from origin/develop. Reserve Reservations TravelDocument/form sheet CSS, existing PDF route/renderer/HTML/tests and bounded docs. Add direct issued-voucher download via existing authenticated PDF pipeline and visually separate Booking Summary header from metadata in preview/PDF. No API shared contract, schema/migration/dependency/runtime change. Previous Reservations locks released. Owner authorizes develop merge after checks. Result: direct issued-voucher PDF action, saved voucher settings/booking reference/room types and a separated navy Booking Summary heading in preview/PDF. 13 focused tests, scoped lint, Web typecheck and production build checked before handoff. Bounded locks released with scoped commit.
+
 ## TERMINAL-REPLACE-REVIEW-KPI-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-terminal-replace-review-kpi-1001` from origin/develop. Reserve geography workspace, module-local KPI helper/spec and this item's status entries. Replace only terminal review KPI with explicit maintenance count in current visible page using existing projected flags. Prior bounded scopes released. No API/schema/migration/dependency/data/runtime changes. User authorizes push/develop merge and available related worker. Preserve primary dirty files.

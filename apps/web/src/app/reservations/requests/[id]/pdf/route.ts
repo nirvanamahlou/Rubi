@@ -20,6 +20,9 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+  const kind = new URL(request.url).searchParams.get('kind');
+  if (kind && kind !== 'voucher') return fail('نوع سند معتبر نیست.', 400);
+  const voucher = kind === 'voucher';
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
   )
@@ -43,12 +46,19 @@ export async function GET(
     const { data: intake } = (await response.json()) as {
       data: ReservationFormIntake;
     };
+    if (voucher && !intake.workflow.voucherIssued)
+      return fail('واچر هنوز صادر نشده است.', 409);
     const branding = intake.workflow.branding;
     if (!branding) return fail('ابتدا سربرگ فرم را ثبت کنید.', 400);
     if (intake.workflow.supplierStatus === 'CANCELLED')
       return fail('درخواست ابطال شده است.', 409);
     let logo: string;
-    if (branding.logoFileId) {
+    if (
+      voucher &&
+      intake.workflow.voucherSettings?.flags.withLetterhead === false
+    ) {
+      logo = '';
+    } else if (branding.logoFileId) {
       const logoResponse = await get(
         `/documents/${encodeURIComponent(branding.logoFileId)}/preview`,
       );
@@ -111,13 +121,13 @@ export async function GET(
       ),
       'utf8',
     );
-    const bytes = await renderReservationPdf(intake, refs, logo, css);
+    const bytes = await renderReservationPdf(intake, refs, logo, css, voucher);
     const name = intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_');
     return new Response(new Uint8Array(bytes), {
       headers: {
         ...headers,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="reservation-form-${name}.pdf"`,
+        'Content-Disposition': `attachment; filename="${voucher ? 'hotel-voucher' : 'reservation-form'}-${name}.pdf"`,
       },
     });
   } catch (error) {

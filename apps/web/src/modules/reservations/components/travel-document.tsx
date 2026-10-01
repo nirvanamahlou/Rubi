@@ -118,10 +118,13 @@ export function TravelDocument({
     setPrintError('');
     try {
       const send = () =>
-        fetch(`/reservations/requests/${encodeURIComponent(intake.id)}/pdf`, {
-          credentials: 'include',
-          cache: 'no-store',
-        });
+        fetch(
+          `/reservations/requests/${encodeURIComponent(intake.id)}/pdf${voucher ? '?kind=voucher' : ''}`,
+          {
+            credentials: 'include',
+            cache: 'no-store',
+          },
+        );
       let response = await send();
       const base = getPublicApiBaseUrl();
       if (
@@ -139,7 +142,7 @@ export function TravelDocument({
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
       link.href = url;
-      link.download = `reservation-form-${intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}.pdf`;
+      link.download = `${voucher ? 'hotel-voucher' : 'reservation-form'}-${intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_')}.pdf`;
       document.body.append(link);
       link.click();
       link.remove();
@@ -153,14 +156,16 @@ export function TravelDocument({
   return (
     <div className="grid min-w-0 gap-3">
       {(error || printError) && <p role="alert">{error || printError}</p>}
-      {!voucher && !historical && (
+      {!historical && (
         <Button
           disabled={downloading || !enabled}
           onClick={() => void downloadPdf()}
         >
           {downloading
             ? 'در حال آماده‌سازی PDF…'
-            : 'دانلود مستقیم PDF فرم رزرواسیون'}
+            : voucher
+              ? 'دانلود واچر'
+              : 'دانلود مستقیم PDF فرم رزرواسیون'}
         </Button>
       )}
       <Button
