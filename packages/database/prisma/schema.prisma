@@ -4537,27 +4537,27 @@ model FinanceProcurementInvoiceRevision {
 }
 
 model ReservationServicePurchase {
-  id                     String                           @id @default(uuid()) @db.Uuid
-  batchId                String?                          @db.Uuid
+  id                       String                           @id @default(uuid()) @db.Uuid
+  batchId                  String?                          @db.Uuid
   coveredServiceClientKeys Json?
-  intakeId               String                           @db.Uuid
-  intake                 ReservationIntake                @relation(fields: [intakeId], references: [id], onDelete: Restrict)
-  serviceClientKey       String                           @db.VarChar(160)
-  serviceKind            String                           @db.VarChar(32)
-  serviceTitleSnapshot   String                           @db.VarChar(300)
-  supplierOrganizationId String                           @db.Uuid
-  supplierOrganization   MasterOrganization               @relation(fields: [supplierOrganizationId], references: [id], onDelete: Restrict)
-  supplierNameSnapshot   String                           @db.VarChar(200)
-  version                Int
-  amount                 Decimal                          @db.Decimal(24, 4)
-  currencyCode           String                           @db.VarChar(3)
-  passengerPrices        Json?
-  actorUserId            String                           @db.Uuid
-  actor                  User                             @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
-  idempotencyKey         String                           @db.VarChar(160)
-  fingerprint            String                           @db.Char(64)
-  createdAt              DateTime                         @default(now()) @db.Timestamptz(3)
-  financeRevisions       FinanceSupplierPaymentRevision[]
+  intakeId                 String                           @db.Uuid
+  intake                   ReservationIntake                @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  serviceClientKey         String                           @db.VarChar(160)
+  serviceKind              String                           @db.VarChar(32)
+  serviceTitleSnapshot     String                           @db.VarChar(300)
+  supplierOrganizationId   String                           @db.Uuid
+  supplierOrganization     MasterOrganization               @relation(fields: [supplierOrganizationId], references: [id], onDelete: Restrict)
+  supplierNameSnapshot     String                           @db.VarChar(200)
+  version                  Int
+  amount                   Decimal                          @db.Decimal(24, 4)
+  currencyCode             String                           @db.VarChar(3)
+  passengerPrices          Json?
+  actorUserId              String                           @db.Uuid
+  actor                    User                             @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  idempotencyKey           String                           @db.VarChar(160)
+  fingerprint              String                           @db.Char(64)
+  createdAt                DateTime                         @default(now()) @db.Timestamptz(3)
+  financeRevisions         FinanceSupplierPaymentRevision[]
 
   @@unique([intakeId, version])
   @@unique([actorUserId, idempotencyKey])
