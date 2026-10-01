@@ -18,6 +18,7 @@ export async function renderReservationPdf(
   refs: ReservationFormReferences,
   logo: string,
   css: string,
+  voucher = false,
 ): Promise<Buffer> {
   const chrome = process.env.SALES_PDF_CHROME_PATH;
   const font = process.env.SALES_PDF_NAZANIN_PATH;
@@ -31,7 +32,7 @@ export async function renderReservationPdf(
     const fontBytes = await readFile(font);
     if (!fontBytes.length || fontBytes.length > 5_000_000)
       throw new Error('PDF_FONT_INVALID');
-    const html = reservationPdfHtml(output, refs, logo, css).replace(
+    const html = reservationPdfHtml(output, refs, logo, css, voucher).replace(
       '</style>',
       '@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,' +
         fontBytes.toString('base64') +

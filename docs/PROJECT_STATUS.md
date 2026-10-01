@@ -1,3 +1,7 @@
+## 2026-10-01 — VOUCHER-DOWNLOAD-SUMMARY-1001 — PC-A — READY_FOR_REVIEW
+
+Issued hotel vouchers now have a direct authenticated PDF download using saved voucher settings, supplier booking reference, selected passenger room types and the existing isolated renderer. Unissued/cancelled vouchers are rejected, and no-letterhead settings avoid logo retrieval. Booking Summary uses a separate bordered section, spacing and navy/teal header in preview and downloaded PDFs. 13 targeted tests, scoped lint, Web typecheck/build checked. No API contract, migration, dependency, operational data or runtime change. Owner requests develop merge after checks.
+
 ## 2026-10-01 — AIRPORT-TERMINAL-KPI-1001 — PC-B — READY_FOR_REVIEW
 
 The airport workspace now renders a fourth KPI, `ترمینال‌های مرتبط`, scoped explicitly to the current visible page. It uses the existing projected `terminalCount` values and refuses to present a partial total when any row is missing a canonical nonnegative safe integer; empty pages remain a real zero. The original airport KPIs, filters, rows, status behavior and all other geography resources are unchanged. Pure calculation and real KPI-grid SSR regressions cover empty, multiple, missing, invalid, fractional, unsafe and overflow cases. No API, schema, migration, dependency, data or runtime changes; authenticated browser QA was not available.

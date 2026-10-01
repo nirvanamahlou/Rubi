@@ -49,6 +49,7 @@ describe('travel output branding and readiness', () => {
       />,
     );
     expect(html).toContain('HOTEL VOUCHER');
+    expect(html).toContain('دانلود واچر');
     expect(html).toContain('SUPPLIER-TEST');
     expect(html).toContain('STAMP');
     expect(html).toContain('ROOM QUANTITIES BY TYPE');
