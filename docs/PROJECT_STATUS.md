@@ -4144,4 +4144,3 @@ FLIGHT-TICKET-REFERENCE-1001 shares one reference-style A4 ticket renderer betwe
 ## 2026-10-01 — Legacy ticket airport compatibility (PC-A)
 
 Missing selected airport code/name render as blank in shared preview and PDF; city labels and all other stored flight facts remain visible. No inferred airport or old-ticket resave/backfill. Local deployment applies only the existing additive selected-airports migration, preserving ticket rows and unrelated pending migrations.
-
