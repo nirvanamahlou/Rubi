@@ -4845,6 +4845,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered a compact one-line title with separate amount/currency chips that wrap safely when needed, matching normal table typography. 22 focused tests/scoped lint pass and synthetic multi-currency A4 PDF visually reviewed. Full Web typecheck/build/CI precede continued authorized merge/local correction. Bounded source locks released with commit.
 
+## RESERVATION-DASHBOARD-DATE-FILTER-1001 — PC-A — READY_FOR_REVIEW
+
+- Reserve Reservations foundation workspace and its focused presentation test. Remove the dedicated reservation events tab and add date-basis/from/to filters to the reservation dashboard; dashboard metrics use the filtered request set. No API, schema, migration, dependency or runtime change.
+
 # RESERVATION-REFERENCE-EDIT-1001 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-reference-edit-1001` from `origin/develop@139b1267`. User requests operational Reservation edits to select outbound/return airlines, hotel and broker only from active Master Data, while room type/counts and the remaining fields stay manual. Reserve Reservation settings/editor UI and focused tests, Travel workflow/service regressions, Sales contract print model/tests and bounded status docs. Operational edits must remain Reservation/supplier-form snapshots and must never alter or render in the Sales contract. Existing legacy amendment metadata stays readable in storage but is ignored by contract output. No schema/migration, shared contract, dependency/lockfile, permission, operational data or runtime change. User explicitly requests merge after verification; preserve the primary `G:\Rubi` checkout and unrelated worktrees.

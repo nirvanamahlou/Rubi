@@ -12,7 +12,6 @@ export const sections = [
   ['insurance', 'بیمه سامان'],
   ['manifests', 'MANIFEST'],
   ['costs', 'هزینه خرید'],
-  ['timeline', 'رویدادها'],
 ] as const;
 export type Section = (typeof sections)[number][0];
 export type ViewState =
