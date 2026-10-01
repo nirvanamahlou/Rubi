@@ -6,7 +6,7 @@ describe('Saved contract print output', () => {
     const output = structuredClone(printFixture);
     const before = structuredClone(output);
     const html = contractPrintHtml(output, printReferences);
-    expect(html).toContain('مبلغ توافق‌شده قرارداد');
+    expect(html).toContain('قیمت توافق‌شده قرارداد');
     expect(html).not.toContain('پرداخت تأییدشده مالی:');
     expect(html).not.toContain('مانده:');
     expect(html.match(/class="summary-card"/g)).toHaveLength(1);
@@ -30,7 +30,7 @@ describe('Saved contract print output', () => {
       labels.map((label) => body.indexOf(label)).sort((a, b) => a - b),
     );
     expect(body).toContain('نشانی:');
-    expect(body).toContain('مبلغ توافق‌شده قرارداد');
+    expect(body).toContain('قیمت توافق‌شده قرارداد');
     expect(body).toContain('021-72075000');
     expect(body).toContain('support@niyayeshseir.com');
     expect(body).toContain('<em>01</em>');
