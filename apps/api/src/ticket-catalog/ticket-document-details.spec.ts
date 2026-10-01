@@ -25,33 +25,27 @@ const input = {
   totalCapacity: 10,
 };
 function fixture() {
-  const findFirst = vi
-    .fn()
-    .mockResolvedValue({
-      id,
-      originId: id,
-      destinationId: input.destinationId,
-      originAirportId: input.originAirportId,
-      destinationAirportId: null,
-      economyBaggageKg: { toString: () => '20' },
-      businessBaggageKg: { toString: () => '30' },
-    });
-  const upsert = vi
-    .fn()
-    .mockResolvedValue({
-      ...input,
-      id,
-      version: 1,
-      branchId: id,
-      departureAt: new Date(input.departureAt),
-      arrivalAt: new Date(input.arrivalAt),
-      fingerprint: '',
-    });
-  const detail = vi
-    .fn()
-    .mockResolvedValue({
-      data: { status: 'active', attributes: { cityId: id } },
-    });
+  const findFirst = vi.fn().mockResolvedValue({
+    id,
+    originId: id,
+    destinationId: input.destinationId,
+    originAirportId: input.originAirportId,
+    destinationAirportId: null,
+    economyBaggageKg: { toString: () => '20' },
+    businessBaggageKg: { toString: () => '30' },
+  });
+  const upsert = vi.fn().mockResolvedValue({
+    ...input,
+    id,
+    version: 1,
+    branchId: id,
+    departureAt: new Date(input.departureAt),
+    arrivalAt: new Date(input.arrivalAt),
+    fingerprint: '',
+  });
+  const detail = vi.fn().mockResolvedValue({
+    data: { status: 'active', attributes: { cityId: id } },
+  });
   const service = new TicketPublicService(
     {
       client: { ticketPublishedOffer: { findFirst, upsert } },
