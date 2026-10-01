@@ -4840,7 +4840,6 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered a compact one-line title with separate amount/currency chips that wrap safely when needed, matching normal table typography. 22 focused tests/scoped lint pass and synthetic multi-currency A4 PDF visually reviewed. Full Web typecheck/build/CI precede continued authorized merge/local correction. Bounded source locks released with commit.
 
-
 ## FLIGHT-TICKET-REFERENCE-1001 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-flight-ticket-reference-1001` from origin/develop. Owner requests supplied A4 ticket reference, existing Niyayesh logo, correct saved fields and develop merge. Reserve shared presentation-only flight-ticket layout/QR helper, Sales public sheet seam and tests, Reservations PDF wrapper/model/route and tests, bounded docs. Producer and consumers coordinated within PC-A; shared layout additive, existing permission/Finance gates retained. No active overlapping source lock; no API/schema/dependency changes. Missing airport/baggage/stops are not invented. Primary dirty reservation PDF files outside this ticket scope remain untouched.
