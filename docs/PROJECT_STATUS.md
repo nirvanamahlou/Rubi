@@ -1,3 +1,7 @@
+## 2026-10-01 — SALES-REFERENCE-HIDE-METADATA-1001 — PC-B — READY_FOR_REVIEW
+
+The shared Acquaintance Methods and Sales Channels table now omits the visible display-order, record-usage and last-change columns. Both resources render the same seven exact headers with seven aligned row cells. Display order remains in create/edit and profile views, and all query, export, persistence, API and backend behavior is unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-01 — ACQUAINTANCE-HIDE-ENGLISH-FILTER-1001 — PC-B — READY_FOR_REVIEW
 
 Acquaintance Methods now exposes only its dedicated code filter; the English-name filter is absent and a stale hidden `columnFilter2` cannot reach list or Excel-export requests. Sales Channels retains both canonical filters, while general search, English-name form/profile fields and all API/schema/backend behavior remain unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.

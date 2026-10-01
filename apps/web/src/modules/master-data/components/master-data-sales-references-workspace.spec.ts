@@ -46,39 +46,30 @@ function firstElement(root: ts.Node, tag: string): ts.JsxElement {
   return result;
 }
 
-function unwrap(node: ts.Expression): ts.Expression {
-  return ts.isParenthesizedExpression(node) ? unwrap(node.expression) : node;
-}
-
-function visibleCells(row: ts.JsxElement, showDisplayOrder: boolean) {
+function visibleCells(row: ts.JsxElement) {
   return row.children.flatMap((child): string[] => {
     if (ts.isJsxElement(child)) return [jsxName(child.openingElement.tagName)];
     if (ts.isJsxSelfClosingElement(child)) return [jsxName(child.tagName)];
-    if (!ts.isJsxExpression(child) || !child.expression) return [];
-    const expression = unwrap(child.expression);
-    if (
-      !ts.isConditionalExpression(expression) ||
-      expression.condition.getText(sourceFile) !== 'showDisplayOrder'
-    )
-      return [];
-    const branch = unwrap(
-      showDisplayOrder ? expression.whenTrue : expression.whenFalse,
-    );
-    return ts.isJsxElement(branch)
-      ? [jsxName(branch.openingElement.tagName)]
-      : [];
+    return [];
   });
 }
 
-function tableShape(showDisplayOrder: boolean) {
+function tableShape() {
   const table = firstElement(sourceFile, 'table');
   const headerRow = firstElement(firstElement(table, 'thead'), 'tr');
   const bodyRow = firstElement(firstElement(table, 'tbody'), 'tr');
+  const headers = headerRow.children
+    .filter(ts.isJsxElement)
+    .filter((element) => jsxName(element.openingElement.tagName) === 'th')
+    .map((element) =>
+      element.children
+        .filter(ts.isJsxText)
+        .map((text) => text.text.trim())
+        .join(''),
+    );
   return {
-    headers: visibleCells(headerRow, showDisplayOrder).filter(
-      (name) => name === 'th',
-    ).length,
-    cells: visibleCells(bodyRow, showDisplayOrder).filter(
+    headers,
+    cells: visibleCells(bodyRow).filter(
       (name) => name === 'td' || name === 'MasterDataLogoCell',
     ).length,
   };
@@ -177,19 +168,18 @@ describe('sales references workspace', () => {
     expect(source).toContain("value={attribute(selected, 'englishName')}");
   });
 
-  it('removes display order only from acquaintance rows while keeping both tables aligned', () => {
-    expect(tableShape(false)).toEqual({ headers: 9, cells: 9 });
-    expect(tableShape(true)).toEqual({ headers: 10, cells: 10 });
-    expect(source.match(/showDisplayOrder \? \(/g)).toHaveLength(2);
-    expect(source).toContain(
-      "const showDisplayOrder = resource === 'sales-channels';",
+  it('removes table metadata columns from both resources and keeps rows aligned', () => {
+    expect(tableShape()).toEqual({
+      headers: ['ردیف', 'کد', 'لوگو', 'عنوان', 'توضیحات', 'وضعیت', 'عملیات'],
+      cells: 7,
+    });
+    const table = source.slice(
+      source.indexOf('<table'),
+      source.indexOf('</table>'),
     );
-    expect(source).toMatch(
-      /showDisplayOrder \? \(\s*<th[^>]*>ترتیب نمایش<\/th>/,
-    );
-    expect(source).toMatch(
-      /showDisplayOrder \? \([\s\S]*?<td[^>]*>[\s\S]*?attribute\(record, 'displayOrder', '0'\)[\s\S]*?<\/td>/,
-    );
+    for (const label of ['ترتیب نمایش', 'استفاده در رکوردها', 'آخرین تغییر'])
+      expect(table).not.toContain(label);
+    expect(source).not.toContain('showDisplayOrder');
     expect(source).toContain('label="ترتیب نمایش"');
     expect(source).toContain("selected, 'displayOrder', '0'");
   });

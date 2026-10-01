@@ -127,7 +127,6 @@ export function MasterDataSalesReferencesWorkspace() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const showDisplayOrder = resource === 'sales-channels';
   const [exporting, setExporting] = useState(false);
   const definition = getMasterDataDefinition(resource);
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
@@ -366,11 +365,6 @@ export function MasterDataSalesReferencesWorkspace() {
               <th className="p-4 text-start">لوگو</th>
               <th className="p-4 text-start">عنوان</th>
               <th className="p-4 text-start">توضیحات</th>
-              {showDisplayOrder ? (
-                <th className="p-4 text-start">ترتیب نمایش</th>
-              ) : null}
-              <th className="p-4 text-start">استفاده در رکوردها</th>
-              <th className="p-4 text-start">آخرین تغییر</th>
               <th className="p-4 text-start">وضعیت</th>
               <th className="p-4 text-start">عملیات</th>
             </tr>
@@ -399,17 +393,6 @@ export function MasterDataSalesReferencesWorkspace() {
                 </td>
                 <td className="max-w-64 p-4 text-muted-foreground">
                   {attribute(record, 'description')}
-                </td>
-                {showDisplayOrder ? (
-                  <td className="p-4">
-                    {Number(
-                      attribute(record, 'displayOrder', '0'),
-                    ).toLocaleString('fa-IR')}
-                  </td>
-                ) : null}
-                <td className="p-4 text-muted-foreground">—</td>
-                <td className="p-4">
-                  {new Date(record.updatedAt).toLocaleString('fa-IR')}
                 </td>
                 <td className="p-4">
                   <Badge

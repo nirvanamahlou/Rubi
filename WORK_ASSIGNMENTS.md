@@ -1,3 +1,8 @@
+## SALES-REFERENCE-HIDE-METADATA-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-sales-reference-hide-metadata-1001` from origin/develop. Reserve only Sales References table display-order/usage/last-change headers and matching cells in both resources, existing spec and own bounded status docs. Preserve form/profile/persistence/order/query/API/export; no active overlapping owner, preceding scoped locks released. No schema/dependency/runtime/database change. No push or merge requested in this work item. Preserve unrelated primary edits.
+- Both Acquaintance Methods and Sales Channels tables now omit only display order, record usage and last change, leaving seven exact aligned headers/cells. The obsolete resource-specific display-order condition was removed; display order remains available in forms/profiles and query/export/persistence behavior is unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed; bounded locks release with the scoped commit.
+
 ## ACQUAINTANCE-HIDE-ENGLISH-FILTER-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-acquaintance-hide-english-filter-1001` from origin/develop@8d7abcd6. Reserve only local Sales References workspace acquaintance English-name filter visibility/effective list-export filters, focused existing spec and own bounded docs. Preserve general search, code filter, Sales Channels/other resources, forms/profile/API/schema/backend. No active overlapping owner; prior scoped locks released. No shared contracts/dependencies/migration/runtime/database changes. User authorizes push/develop merge after review/checks; preserve unrelated primary edits.
