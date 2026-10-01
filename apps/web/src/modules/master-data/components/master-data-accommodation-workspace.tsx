@@ -1339,7 +1339,7 @@ export function MasterDataAccommodationWorkspace() {
         actions={
           <>
             <Link
-              className={`${buttonVariants({ variant: 'primary' })} ms-auto`}
+              className={`${buttonVariants({ variant: 'primary' })} !text-white hover:!text-white ms-auto`}
               href="/master-data/accommodation/hotel-rates"
             >
               <TableProperties className="size-4" /> قیمت‌گذاری هتل‌ها
