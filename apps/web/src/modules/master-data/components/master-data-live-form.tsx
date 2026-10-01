@@ -361,6 +361,9 @@ function GenericMasterDataLiveForm({
                   ['mealServiceIds', 'roomTypeIds', 'facilityIds'].includes(
                     field.key,
                   );
+                const isSupplierInlineService =
+                  definition.key === 'suppliers' &&
+                  field.key === 'serviceCodes';
                 const updateValue = (value: string) => {
                   if (
                     definition.key === 'suppliers' &&
@@ -438,7 +441,9 @@ function GenericMasterDataLiveForm({
                                       }
                                     : reference.target === 'regions'
                                       ? { countryId: values.countryId ?? '' }
-                                      : isHotelInlineReference && searchQuery
+                                      : (isHotelInlineReference ||
+                                            isSupplierInlineService) &&
+                                          searchQuery
                                         ? { name: searchQuery }
                                         : {},
                             });
@@ -450,7 +455,9 @@ function GenericMasterDataLiveForm({
                       mode === 'create' &&
                       field.key === 'organizationId'
                     }
-                    alwaysShowCreate={isHotelInlineReference}
+                    alwaysShowCreate={
+                      isHotelInlineReference || isSupplierInlineService
+                    }
                     id={controlId}
                     {...(describedBy ? { ariaDescribedby: describedBy } : {})}
                     invalid={Boolean(error)}
