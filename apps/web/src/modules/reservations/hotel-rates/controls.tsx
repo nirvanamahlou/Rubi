@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import {
@@ -83,7 +84,7 @@ export function Lookup({
   value,
   onChange,
 }: {
-  kind: 'hotels' | 'organizations';
+  kind: 'hotels' | 'organizations' | 'currencies';
   label: string;
   value: Option | null;
   onChange: (value: Option) => void;
@@ -124,24 +125,24 @@ export function Lookup({
       : options;
   return (
     <div className="grid min-w-0 gap-2">
-      <input
-        className="h-11 w-full min-w-0 rounded-xl border border-input bg-surface px-3 text-foreground"
-        aria-label={`جست‌وجوی ${label}`}
-        placeholder={`جست‌وجوی ${label}`}
-        value={search}
-        onChange={(e) => {
-          setSearch(e.target.value);
-          setPage(1);
-        }}
-      />
-      <Choice
+      <SearchCombobox
         label={label}
         value={value?.id ?? ''}
-        onChange={(id) => {
+        selectedLabel={value?.name}
+        placeholder={`جست‌وجو و انتخاب ${label}`}
+        remote
+        onSearchChange={(query) => {
+          setSearch(query);
+          setPage(1);
+        }}
+        onValueChange={(id) => {
           const found = choices.find((o) => o.id === id);
           if (found) onChange(found);
         }}
-        options={choices}
+        options={choices.map((option) => ({
+          value: option.id,
+          label: option.name,
+        }))}
       />
       {total > 50 && (
         <div>

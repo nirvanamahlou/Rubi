@@ -44,6 +44,7 @@ export class FinanceDeliveryService {
     supplierNameSnapshot: string;
     amount: { toString(): string };
     currencyCode: string;
+    passengerPrices: unknown;
     actorUserId: string;
     createdAt: Date;
     financeRevisions: Array<{
@@ -77,6 +78,9 @@ export class FinanceDeliveryService {
       supplierName: row.supplierNameSnapshot,
       amount: row.amount.toString(),
       currencyCode: row.currencyCode,
+      passengerPrices: Array.isArray(row.passengerPrices)
+        ? (row.passengerPrices as ReservationServicePurchaseV1['passengerPrices'])
+        : [],
       actorUserId: row.actorUserId,
       createdAt: row.createdAt.toISOString(),
       finance: finance

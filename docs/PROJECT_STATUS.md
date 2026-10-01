@@ -2,6 +2,10 @@
 
 Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
 
+## 2026-10-01 — RESERVATION-PASSENGER-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
+
+Reservation purchase now shows the contract hotel and its assigned passengers directly, records a nightly hotel amount per passenger, calculates each stay total from the sent reservation-form dates, and sends only the server-recalculated aggregate to Finance. Hotel/transfer broker and currency choices are active searchable Master Data references. Contract transfers appear immediately below the hotel, default to its broker and can be changed independently. The additive nullable JSON passenger breakdown preserves legacy purchase rows. 11 focused tests, scoped lint, API/Web typechecks, Prisma validation and the full six-task production build with 55 Web routes pass. No dependency, permission, seed, operational-data or runtime change. Owner requested develop merge after CI.
+
 ## 2026-10-01 — RESERVATION-REFERENCE-EDIT-1001 — PC-A — READY_FOR_REVIEW
 
 Reservation operational editing now selects active outbound/return airlines, hotels and brokers through searchable Master Data dropdowns; room details and remaining operational fields stay manual. Operational corrections can no longer amend or appear in Sales contracts, legacy correction metadata is ignored by the print projection, child rows use a clean کودک label, and selected edit tabs stay readable on hover. Manifest origin/destination country and country-scoped city filters also use the standard searchable Master Data dropdown with canonical IDs. 47 focused Web/API tests, scoped lint, both typechecks and the full production build with 55 Web routes pass. No schema, migration, shared-contract, dependency, operational-data or runtime change. Owner authorized develop merge after CI.
@@ -4129,6 +4133,10 @@ Final independent verification exposed only a breadcrumb-test false positive: th
 ## 2026-10-01 — LOGIN-LAN-HYDRATION-1001 — PC-A — READY_FOR_REVIEW
 
 LAN login page rendering without working form submission is traced to Next.js development-origin blocking of JavaScript resources. An environment-controlled allowed-origin list enables the local LAN host, while the login form's native fallback uses POST to keep credentials out of query strings. Scope is IAM Web login and Next development configuration only; no migration, dependency or API contract change. Sixteen focused login tests, scoped lint, Web typecheck, Prettier, diff check and 55-route production build pass. Local runtime rollout and browser smoke follow review/merge.
+## 2026-10-01 — RESERVATION-DASHBOARD-DATE-FILTER-1001 — PC-A
+
+Reservation operations no longer exposes a separate events tab. The dashboard now has date-basis, start-date and end-date controls, and its metrics reflect the active date range. The existing reservation foundation render regression was updated; no API, schema, migration, dependency or runtime change.
+
 ## 2026-10-01 — INDEPENDENT-RAIL-TERMINALS-1001 — PC-B — READY_FOR_REVIEW
 
 The visible Geography terminal catalog now uses a new additive independent rail-terminal resource; legacy aviation terminals remain available only within airport children with their existing schema, API and counts. Rail records require only a name and receive an immutable generated code; optional city FK, English name, coherent local hours, display order, authenticated logo and status are supported. KPI totals use global list totals while distinct cities and valid defined hours are explicitly scoped to the current page. The migration creates only the new table and nullable restrictive city FK; no legacy rows are converted and no operational database/runtime was changed.

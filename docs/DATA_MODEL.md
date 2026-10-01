@@ -567,6 +567,17 @@ Viewهای پیشنهادی: `reporting_sales_contract_facts` (یک ردیف/ق�
 واژه‌نامه entityها در [DATA_DICTIONARY.md](DATA_DICTIONARY.md) و KPIها در
 [KPI_DICTIONARY.md](KPI_DICTIONARY.md) است.
 
+## Reservations passenger hotel purchase (RESERVATION-PASSENGER-PURCHASE-1001)
+
+`ReservationServicePurchase.passengerPrices` یک JSON nullable و افزایشی برای
+snapshot قیمت خرید هتل است. هر ردیف، شناسه و نام snapshot مسافر، مبلغ Decimal
+هر شب، تعداد شب و جمع همان مسافر را نگه می‌دارد. API رزرواسیون تطابق دقیق
+مسافران تخصیص‌یافته به هتل را کنترل، تعداد شب را از آخرین فرم واقعاً ارسال‌شده
+به کارگزار محاسبه و مبلغ اصلی خرید را از جمع ردیف‌ها بازسازی می‌کند؛ مبلغ جمع
+ارسالی مرورگر مرجع اعتماد نیست. ردیف‌های قدیمی با مقدار null همچنان با breakdown
+خالی خوانده می‌شوند. ارز و کارگزار هنگام ثبت از مراجع فعال Master Data اعتبارسنجی
+می‌شوند.
+
 # Package Pricing (PACKAGE-PRICING-001)
 
 `package_pricing_packages` ریشه branch-scoped و صادرکننده‌محور است. هر Package چند

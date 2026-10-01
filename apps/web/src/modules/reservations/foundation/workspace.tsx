@@ -37,7 +37,6 @@ import {
   type ViewAccess,
   type ViewState,
   type OperationView,
-  type TimelineView,
 } from './model';
 import styles from './workspace.module.css';
 import { ManifestExport } from '../components/manifest-export';
@@ -48,7 +47,7 @@ const noAccess: ViewAccess = {
   branchIds: [],
 };
 const operationContent: Record<
-  Exclude<Section, 'dashboard' | 'inbox' | 'timeline'>,
+  Exclude<Section, 'dashboard' | 'inbox'>,
   { title: string; fields: string[]; action: string; note: string }
 > = {
   tickets: {
@@ -138,7 +137,6 @@ export interface ReservationWorkspaceProps {
   state?: ViewState;
   rows?: readonly RequestView[];
   operations?: readonly OperationView[];
-  timeline?: readonly TimelineView[];
   access?: ViewAccess;
   now?: string;
   initialSection?: Section;
@@ -152,7 +150,6 @@ export function ReservationOperationsWorkspace({
   state = 'NOT_CONFIGURED',
   rows = [],
   operations = [],
-  timeline = [],
   access = noAccess,
   now = '1970-01-01T00:00:00.000Z',
   initialSection = 'dashboard',
@@ -180,7 +177,7 @@ export function ReservationOperationsWorkspace({
   const [exportError, setExportError] = useState('');
   const effectiveQuery = reservationWindowQuery(query, now);
   const result = queryRows(visibleRows, effectiveQuery);
-  const metrics = dashboard(visibleRows, now);
+  const metrics = dashboard(result.filteredRows, now);
   const selected =
     result.filteredRows.find((r) => r.id === selectedId) ??
     result.filteredRows[0];
@@ -192,13 +189,6 @@ export function ReservationOperationsWorkspace({
       result.filteredRows.some((row) => row.id === op.requestId) &&
       (!selected || op.requestId === selected.id),
   );
-  const visibleTimeline = access.permissions.includes('reservations.audit.read')
-    ? timeline.filter(
-        (event) =>
-          result.filteredRows.some((row) => row.id === event.requestId) &&
-          (!selected || event.requestId === selected.id),
-      )
-    : [];
   function changeQuery(patch: Partial<Query>) {
     setQuery((current) => ({ ...current, ...patch, page: 1 }));
   }
@@ -303,6 +293,54 @@ export function ReservationOperationsWorkspace({
           )}
           {section === 'dashboard' && (
             <>
+              <section
+                className={styles.panel}
+                aria-label="فیلتر تاریخ داشبورد"
+              >
+                <div className={styles.panelTitle}>
+                  <h2>بازهٔ زمانی داشبورد</h2>
+                  <span>نمایش آمار بر اساس تاریخ انتخاب‌شده</span>
+                </div>
+                <div className={styles.filters}>
+                  <label>
+                    مبنای تاریخ
+                    <Select
+                      dir="rtl"
+                      value={query.dateBasis}
+                      onValueChange={(value) =>
+                        changeQuery({ dateBasis: value as Query['dateBasis'] })
+                      }
+                    >
+                      <SelectTrigger
+                        aria-label="مبنای تاریخ"
+                        className="min-w-0 text-xs"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="createdAt">تاریخ ایجاد</SelectItem>
+                        <SelectItem value="receivedAt">تاریخ دریافت</SelectItem>
+                        <SelectItem value="travelDate">تاریخ سفر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label>
+                    از تاریخ
+                    <DatePicker
+                      value={effectiveQuery.fromDate}
+                      onChange={(fromDate) => changeQuery({ fromDate })}
+                    />
+                  </label>
+                  <label>
+                    تا تاریخ
+                    <DatePicker
+                      value={effectiveQuery.toDate}
+                      onChange={(toDate) => changeQuery({ toDate })}
+                    />
+                  </label>
+                </div>
+                {result.dateError && <p role="alert">{result.dateError}</p>}
+              </section>
               <section className={styles.metrics} aria-label="خلاصه رزرواسیون">
                 {(Object.keys(statusLabels) as (keyof typeof statusLabels)[])
                   .filter(
@@ -709,102 +747,73 @@ export function ReservationOperationsWorkspace({
               )}
             </section>
           )}
-          {section !== 'dashboard' &&
-            section !== 'inbox' &&
-            section !== 'timeline' && (
-              <section className={styles.panel}>
-                <div className={styles.panelTitle}>
-                  <h2>{operationContent[section].title}</h2>
-                  {section !== 'manifests' && (
-                    <span className={styles.badge}>در انتظار اتصال</span>
+          {section !== 'dashboard' && section !== 'inbox' && (
+            <section className={styles.panel}>
+              <div className={styles.panelTitle}>
+                <h2>{operationContent[section].title}</h2>
+                {section !== 'manifests' && (
+                  <span className={styles.badge}>در انتظار اتصال</span>
+                )}
+              </div>
+              {operationContent[section].note && (
+                <p>{operationContent[section].note}</p>
+              )}
+              {section !== 'manifests' &&
+                visibleOperations.map((operation) => (
+                  <article key={operation.id} aria-label={operation.title}>
+                    <div className={styles.panelTitle}>
+                      <h3>{operation.title}</h3>
+                      <span>{operation.statusLabel}</span>
+                    </div>
+                    <dl className={styles.details}>
+                      {operation.fields.map((field) => (
+                        <div key={field.label}>
+                          <dt>{field.label}</dt>
+                          <dd>{field.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </article>
+                ))}
+              {section === 'manifests' ? (
+                <ManifestExport />
+              ) : (
+                <dl className={styles.details}>
+                  {operationContent[section].fields.map((label) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd>—</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {section !== 'manifests' && (
+                <div className={styles.actions}>
+                  <button type="button" disabled>
+                    {operationContent[section].action}
+                  </button>
+                  {section === 'tickets' && (
+                    <>
+                      <label>
+                        دلیل توقف
+                        <input placeholder="دلیل توقف بلیط" disabled />
+                      </label>
+                      <button type="button" disabled>
+                        توقف صدور
+                      </button>
+                    </>
+                  )}
+                  {['tickets', 'vouchers', 'insurance'].includes(section) && (
+                    <button type="button" disabled>
+                      تحویل مدارک · نیازمند تأیید مالی
+                    </button>
                   )}
                 </div>
-                {operationContent[section].note && (
-                  <p>{operationContent[section].note}</p>
-                )}
-                {section !== 'manifests' &&
-                  visibleOperations.map((operation) => (
-                    <article key={operation.id} aria-label={operation.title}>
-                      <div className={styles.panelTitle}>
-                        <h3>{operation.title}</h3>
-                        <span>{operation.statusLabel}</span>
-                      </div>
-                      <dl className={styles.details}>
-                        {operation.fields.map((field) => (
-                          <div key={field.label}>
-                            <dt>{field.label}</dt>
-                            <dd>{field.value}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </article>
-                  ))}
-                {section === 'manifests' ? (
-                  <ManifestExport />
-                ) : (
-                  <dl className={styles.details}>
-                    {operationContent[section].fields.map((label) => (
-                      <div key={label}>
-                        <dt>{label}</dt>
-                        <dd>—</dd>
-                      </div>
-                    ))}
-                  </dl>
-                )}
-                {section !== 'manifests' && (
-                  <div className={styles.actions}>
-                    <button type="button" disabled>
-                      {operationContent[section].action}
-                    </button>
-                    {section === 'tickets' && (
-                      <>
-                        <label>
-                          دلیل توقف
-                          <input placeholder="دلیل توقف بلیط" disabled />
-                        </label>
-                        <button type="button" disabled>
-                          توقف صدور
-                        </button>
-                      </>
-                    )}
-                    {['tickets', 'vouchers', 'insurance'].includes(section) && (
-                      <button type="button" disabled>
-                        تحویل مدارک · نیازمند تأیید مالی
-                      </button>
-                    )}
-                  </div>
-                )}
-              </section>
-            )}
-          {section === 'timeline' && (
-            <section className={styles.panel}>
-              <h2>رویدادهای درخواست</h2>
-              {visibleTimeline.length > 0 && (
-                <ol>
-                  {visibleTimeline.map((event) => (
-                    <li key={event.id}>
-                      <strong>{event.actionLabel}</strong> · {event.actorLabel}{' '}
-                      · {event.outcome === 'ALLOWED' ? 'انجام‌شده' : 'ردشده'}
-                      <time dateTime={event.occurredAt}>
-                        {' '}
-                        · {new Date(event.occurredAt).toLocaleString('fa-IR')}
-                      </time>
-                    </li>
-                  ))}
-                </ol>
               )}
-              <p className={styles.empty}>
-                {!preview &&
-                !access.permissions.includes('reservations.audit.read')
-                  ? 'مجوز مشاهده رویدادها لازم است.'
-                  : visibleTimeline.length
-                    ? ''
-                    : 'تاریخچه عملیات پس از اتصال نمایش داده می‌شود.'}
-              </p>
             </section>
           )}
         </div>
-        {section !== 'manifests' && section !== 'timeline' && (
+        {section !== 'manifests' && (
           <ContractActionPanel
             key={selected?.id ?? 'unselected'}
             request={selected}

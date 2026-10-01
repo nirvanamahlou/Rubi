@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import {
   ReservationServicePurchaseService,
+  hotelPassengerPurchase,
   purchasableReservationService,
   validateServicePurchase,
 } from './reservation-service-purchase.service';
@@ -27,6 +28,55 @@ describe('service purchase validation', () => {
     expect(() =>
       validateServicePurchase({ ...valid, currencyCode: 'irr' }),
     ).toThrow(BadRequestException);
+  });
+});
+
+it('calculates and preserves a nightly hotel total for every assigned passenger', () => {
+  expect(
+    hotelPassengerPurchase(
+      {
+        passengerIds: [
+          '11111111-1111-4111-8111-111111111111',
+          '22222222-2222-4222-8222-222222222222',
+        ],
+        passengerAssignments: [
+          {
+            customerId: '11111111-1111-4111-8111-111111111111',
+            displayNameSnapshot: 'مسافر اول',
+            ageCategory: 'ADL',
+            serviceClientKeys: ['hotel-1'],
+          },
+          {
+            customerId: '22222222-2222-4222-8222-222222222222',
+            displayNameSnapshot: 'مسافر دوم',
+            ageCategory: 'CHD',
+            serviceClientKeys: ['hotel-1'],
+          },
+        ],
+        hotelSelection: {
+          serviceClientKey: 'hotel-1',
+          checkInDate: '2026-10-01',
+          checkOutDate: '2026-10-04',
+        },
+      } as never,
+      'hotel-1',
+      [
+        {
+          customerId: '11111111-1111-4111-8111-111111111111',
+          nightlyAmount: '100',
+        },
+        {
+          customerId: '22222222-2222-4222-8222-222222222222',
+          nightlyAmount: '50',
+        },
+      ],
+    ),
+  ).toMatchObject({
+    amount: '450',
+    passengerPrices: [
+      { passengerName: 'مسافر اول', nights: 3, totalAmount: '300' },
+      { passengerName: 'مسافر دوم', nights: 3, totalAmount: '150' },
+    ],
   });
 });
 
