@@ -24,6 +24,7 @@ import type {
   FinanceCustomerDocumentDeliveryCommandV1,
   HrConnectionStatus,
 } from '@nora/contracts';
+import { moneyDecimal, moneyUnits } from '@nora/contracts';
 
 import { HrConnectionsService } from '../hr/hr-connections.service';
 import { DatabaseService } from '../database/database.service';
@@ -97,11 +98,23 @@ export class FinanceInboxService {
     const hrItems = hrResult.status === 'fulfilled' ? hrResult.value.items : [];
     const reservationItems =
       reservationsResult.status === 'fulfilled'
-        ? reservationsResult.value.flatMap((intake) =>
-            (intake.servicePurchases ?? [])
-              .filter(({ finance }) => finance.status !== 'PAID')
-              .map((purchase) => ({ intake, purchase })),
-          )
+        ? reservationsResult.value.flatMap((intake) => {
+            const groups = new Map<
+              string,
+              NonNullable<typeof intake.servicePurchases>[number][]
+            >();
+            for (const purchase of intake.servicePurchases ?? []) {
+              const groupId = purchase.batchId ?? purchase.id;
+              groups.set(groupId, [...(groups.get(groupId) ?? []), purchase]);
+            }
+            return [...groups]
+              .filter(([, purchases]) =>
+                purchases.some(
+                  (purchase) => purchase.finance.status !== 'PAID',
+                ),
+              )
+              .map(([groupId, purchases]) => ({ intake, groupId, purchases }));
+          })
         : [];
     const ticketItems =
       ticketResult.status === 'fulfilled' ? ticketResult.value : [];
@@ -172,38 +185,91 @@ export class FinanceInboxService {
         sourceVersion: item.version,
         origin: 'PERSISTED_SOURCE',
       })),
-      ...reservationItems.map(({ intake, purchase }): FinanceInboxItemV1 => ({
-        version: 1,
-        id: `reservations:${purchase.id}`,
-        source: 'RESERVATIONS',
-        kind: 'PAYMENT_REQUEST',
-        sourceReference: purchase.id,
-        sourceContextReference: intake.id,
-        contractReference: intake.snapshot.contractNumber,
-        title: `پرداخت ${purchase.serviceTitle}`,
-        partyDisplaySnapshot: purchase.supplierName,
-        description: `خرید خدمت ${purchase.serviceTitle} برای قرارداد ${intake.snapshot.contractNumber}`,
-        amount: {
-          amount: purchase.amount,
-          currencyCode: purchase.currencyCode,
+      ...reservationItems.map(
+        ({ intake, groupId, purchases }): FinanceInboxItemV1 => {
+          const totals = new Map<string, bigint>();
+          for (const purchase of purchases)
+            totals.set(
+              purchase.currencyCode,
+              (totals.get(purchase.currencyCode) ?? 0n) +
+                moneyUnits(purchase.amount),
+            );
+          const amounts = [...totals].map(([currencyCode, amount]) => ({
+            currencyCode,
+            amount: moneyDecimal(amount),
+          }));
+          const first = purchases[0]!;
+          return {
+            version: 1,
+            id: `reservations:${groupId}`,
+            source: 'RESERVATIONS',
+            kind: 'PAYMENT_REQUEST',
+            sourceReference: groupId,
+            sourceContextReference: intake.id,
+            contractReference: intake.snapshot.contractNumber,
+            title: `درخواست خرید قرارداد ${intake.snapshot.contractNumber}`,
+            partyDisplaySnapshot: purchases
+              .map((purchase) => purchase.supplierName)
+              .filter((value, index, all) => all.indexOf(value) === index)
+              .join('، '),
+            description: `${purchases.length} خرید برای قرارداد ${intake.snapshot.contractNumber}: ${purchases.map((purchase) => purchase.serviceTitle).join('، ')}`,
+            amount: amounts.length === 1 ? amounts[0]! : null,
+            settlement: {
+              paidAmount:
+                amounts.length === 1
+                  ? moneyDecimal(
+                      purchases.reduce(
+                        (sum, purchase) =>
+                          sum + moneyUnits(purchase.finance.paidAmount),
+                        0n,
+                      ),
+                    )
+                  : '0',
+              remainingAmount:
+                amounts.length === 1
+                  ? moneyDecimal(
+                      purchases.reduce(
+                        (sum, purchase) =>
+                          sum + moneyUnits(purchase.finance.remainingAmount),
+                        0n,
+                      ),
+                    )
+                  : '0',
+            },
+            status: purchases.some(
+              (purchase) => purchase.finance.status === 'REJECTED',
+            )
+              ? 'CORRECTION_REQUIRED'
+              : purchases.some(
+                    (purchase) =>
+                      purchase.finance.status === 'PARTIALLY_PAID' ||
+                      purchase.finance.status === 'PAID',
+                  )
+                ? 'PAYING'
+                : 'READY_FOR_PAYMENT',
+            dueAt: null,
+            createdAt: first.createdAt,
+            requesterDisplaySnapshot: null,
+            branchReference: intake.branchId,
+            sourceVersion: first.finance.version,
+            origin: 'PERSISTED_SOURCE',
+            reservationPurchase: {
+              lines: purchases.map((purchase) => ({
+                purchaseId: purchase.id,
+                serviceTitle: purchase.serviceTitle,
+                supplierName: purchase.supplierName,
+                amount: purchase.amount,
+                currencyCode: purchase.currencyCode,
+                paidAmount: purchase.finance.paidAmount,
+                remainingAmount: purchase.finance.remainingAmount,
+                financeVersion: purchase.finance.version,
+                status: purchase.finance.status,
+              })),
+              totals: amounts,
+            },
+          };
         },
-        settlement: {
-          paidAmount: purchase.finance.paidAmount,
-          remainingAmount: purchase.finance.remainingAmount,
-        },
-        status:
-          purchase.finance.status === 'REJECTED'
-            ? 'CORRECTION_REQUIRED'
-            : purchase.finance.status === 'PARTIALLY_PAID'
-              ? 'PAYING'
-              : 'READY_FOR_PAYMENT',
-        dueAt: null,
-        createdAt: purchase.createdAt,
-        requesterDisplaySnapshot: null,
-        branchReference: intake.branchId,
-        sourceVersion: purchase.finance.version,
-        origin: 'PERSISTED_SOURCE',
-      })),
+      ),
       ...ticketItems.map((purchase): FinanceInboxItemV1 => ({
         version: 1,
         id: 'purchases:' + purchase.id,

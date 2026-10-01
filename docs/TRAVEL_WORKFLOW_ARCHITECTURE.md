@@ -245,3 +245,6 @@ The Reservations header composes Finance's existing delivery-authorization revis
 ## Manifest inclusion policy — 2026-09-30
 
 Owner-approved MANIFEST-LOAD-SEARCH-0930 removes Finance approval from manifest listing and XLSX exports for contracts already received by Reservations. Sensitive passenger permissions, branch scope and ticket-specific assignments remain mandatory. This supersedes previous manifest approval requirements only; financial release of passenger documents outside manifest remains owned by Finance. Inventory is read through Ticket Catalog public projection; no table ownership or schema change.
+### خرید یک‌جای خدمات قرارداد رزرواسیون
+
+در فرم خرید، هتل با نام snapshot و مسافران تخصیص‌یافته، رده سنی، نرخ هر شب و جمع اقامت هر مسافر نمایش داده می‌شود. ترانسفر رفت و برگشت، در صورت وجود، یک ردیف خرید با یک کارگزار و یک نرخ کل برای هر مسافر دارد؛ مسافری که در هر دو جهت حضور دارد فقط یک بار محاسبه می‌شود. ثبت هتل و ترانسفر یک درخواست اتمیک با `batchId` مشترک است. سرور پوشش دقیق کلیدهای خدمات، نرخ‌های مسافران و جمع مبالغ را بازحساب می‌کند. کارتابل مالی درخواست را با شماره قرارداد، ردیف‌های خرید و جمع به تفکیک ارز باز می‌کند؛ پرداخت و سابقه مالی همچنان برای هر ردیف مستقل باقی می‌ماند. ردیف‌های قدیمی بدون `batchId` به صورت درخواست تک‌ردیفی سازگار هستند.

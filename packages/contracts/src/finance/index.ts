@@ -399,6 +399,21 @@ export interface FinanceInboxItemV1 {
   branchReference: string;
   sourceVersion: number;
   origin: 'PERSISTED_SOURCE';
+  /** Atomic Reservations submission; absent on legacy single-service purchases. */
+  reservationPurchase?: {
+    lines: readonly {
+      purchaseId: string;
+      serviceTitle: string;
+      supplierName: string;
+      amount: string;
+      currencyCode: string;
+      paidAmount: string;
+      remainingAmount: string;
+      financeVersion: number;
+      status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'REJECTED';
+    }[];
+    totals: readonly { amount: string; currencyCode: string }[];
+  };
   /** Present only for the Ticket Catalog purchase envelope. */
   ticketPurchase?: {
     seatCount: number | null;

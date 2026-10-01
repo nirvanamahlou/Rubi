@@ -4538,6 +4538,8 @@ model FinanceProcurementInvoiceRevision {
 
 model ReservationServicePurchase {
   id                     String                           @id @default(uuid()) @db.Uuid
+  batchId                String?                          @db.Uuid
+  coveredServiceClientKeys Json?
   intakeId               String                           @db.Uuid
   intake                 ReservationIntake                @relation(fields: [intakeId], references: [id], onDelete: Restrict)
   serviceClientKey       String                           @db.VarChar(160)
@@ -4560,6 +4562,7 @@ model ReservationServicePurchase {
   @@unique([intakeId, version])
   @@unique([actorUserId, idempotencyKey])
   @@index([intakeId, serviceClientKey, version])
+  @@index([batchId])
   @@index([supplierOrganizationId, createdAt])
 }
 

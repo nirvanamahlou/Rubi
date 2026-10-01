@@ -643,3 +643,6 @@ Owner-approved MANIFEST-LOAD-SEARCH-0930 removes Finance approval from manifest 
 ### 2026-10-01 selected published flight airports
 
 TicketPublishedOffer optionally references originAirportId and destinationAirportId through real MasterAirport FKs (RESTRICT delete). The catalog validates each selected active airport against its route city using Master Data's public service. Nullable fields preserve old clients and legacy rows. Published projection and revisions preserve selected IDs; document-details exposes only route/airport IDs and cabin baggage under existing permission and branch scope. Reservation print uses saved route/class and validates the returned IDs before enriching it; unknown legacy airports remain unspecified, never inferred from city codes. Migration: 20261001103000_ticket_selected_airports.
+### گروه خرید قرارداد رزرواسیون
+
+`ReservationServicePurchase.batchId` یک UUID اختیاری برای ثبت اتمیک ردیف‌های هتل و ترانسفر همان قرارداد است. `coveredServiceClientKeys` آرایه اختیاری کلیدهای خدماتی است که ردیف می‌پوشاند؛ ردیف ترانسفر می‌تواند هر دو جهت را پوشش دهد. برای داده قدیمی، `serviceClientKey` پوشش پیش‌فرض و شناسه همان خرید گروه تک‌ردیفی است. `passengerPrices` نرخ شبانه/تعداد شب/جمع هتل یا نرخ کل ترانسفر برای هر مسافر را نگه می‌دارد؛ پرداخت مالی به شناسه خود ردیف خرید متصل می‌ماند و جمع گروه به تفکیک ارز محاسبه می‌شود.

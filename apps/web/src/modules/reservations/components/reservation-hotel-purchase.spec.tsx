@@ -8,6 +8,7 @@ import type {
 import {
   hotelPurchaseTotal,
   reservationHotelPassengers,
+  reservationTransferPassengers,
   reservationPurchaseServices,
   SupplierFormPurchaseContext,
 } from './reservation-hotel-purchase';
@@ -130,5 +131,31 @@ it('lists only passengers assigned to the purchased hotel', () => {
       } as unknown as ReservationIntakeV1['snapshot'],
       'hotel',
     ),
-  ).toEqual([{ id: 'one', name: 'مسافر اول' }]);
+  ).toEqual([{ id: 'one', name: 'مسافر اول', age: 'ADL' }]);
+});
+
+it('counts a passenger assigned to both transfer directions only once', () => {
+  const snapshot = {
+    passengerIds: ['one', 'two'],
+    passengerAssignments: [
+      {
+        customerId: 'one',
+        displayNameSnapshot: 'مسافر اول',
+        ageCategory: 'ADT',
+        serviceClientKeys: ['outbound', 'return'],
+      },
+      {
+        customerId: 'two',
+        displayNameSnapshot: 'مسافر دوم',
+        ageCategory: 'CHD',
+        serviceClientKeys: ['return'],
+      },
+    ],
+  } as unknown as ReservationIntakeV1['snapshot'];
+  expect(
+    reservationTransferPassengers(snapshot, ['outbound', 'return']),
+  ).toEqual([
+    { id: 'one', name: 'مسافر اول', age: 'ADT' },
+    { id: 'two', name: 'مسافر دوم', age: 'CHD' },
+  ]);
 });

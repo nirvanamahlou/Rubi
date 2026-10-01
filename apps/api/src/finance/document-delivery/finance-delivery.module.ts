@@ -36,6 +36,8 @@ export class FinanceDeliveryService {
 
   private presentPurchase(row: {
     id: string;
+    batchId?: string | null;
+    coveredServiceClientKeys?: unknown;
     version: number;
     serviceClientKey: string;
     serviceKind: string;
@@ -70,6 +72,12 @@ export class FinanceDeliveryService {
     const legacyPaid = finance?.status === 'PAID' && !finance.cumulativePaid;
     return {
       id: row.id,
+      batchId: row.batchId ?? null,
+      coveredServiceClientKeys: Array.isArray(row.coveredServiceClientKeys)
+        ? row.coveredServiceClientKeys.filter(
+            (key): key is string => typeof key === 'string',
+          )
+        : [row.serviceClientKey],
       version: row.version,
       serviceClientKey: row.serviceClientKey,
       serviceKind: row.serviceKind,
@@ -151,8 +159,12 @@ export class FinanceDeliveryService {
     const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
     const latest = new Map<string, (typeof intake.servicePurchases)[number]>();
     for (const purchase of intake.servicePurchases)
-      if (!latest.has(purchase.serviceClientKey))
-        latest.set(purchase.serviceClientKey, purchase);
+      for (const key of Array.isArray(purchase.coveredServiceClientKeys)
+        ? purchase.coveredServiceClientKeys.filter(
+            (value): value is string => typeof value === 'string',
+          )
+        : [purchase.serviceClientKey])
+        if (!latest.has(key)) latest.set(key, purchase);
     const requiredServices = brokerPurchaseServices(snapshot);
     const requiredKeys = new Set(
       requiredServices.map((service) => service.clientKey),
@@ -160,9 +172,9 @@ export class FinanceDeliveryService {
     const missingServiceTitles = requiredServices
       .filter((service) => !latest.has(service.clientKey))
       .map((service) => service.titleSnapshot);
-    const purchases = [...latest.values()].map((row) =>
-      this.presentPurchase(row),
-    );
+    const purchases = [
+      ...new Map([...latest.values()].map((row) => [row.id, row])).values(),
+    ].map((row) => this.presentPurchase(row));
     const unpaidServiceTitles = purchases
       .filter(
         (purchase) =>
@@ -564,8 +576,12 @@ export class FinanceDeliveryService {
           (typeof intake.servicePurchases)[number]
         >();
         for (const purchase of intake.servicePurchases)
-          if (!latest.has(purchase.serviceClientKey))
-            latest.set(purchase.serviceClientKey, purchase);
+          for (const key of Array.isArray(purchase.coveredServiceClientKeys)
+            ? purchase.coveredServiceClientKeys.filter(
+                (value): value is string => typeof value === 'string',
+              )
+            : [purchase.serviceClientKey])
+            if (!latest.has(key)) latest.set(key, purchase);
         const requiredServices = brokerPurchaseServices(snapshot);
         const requiredKeys = new Set(
           requiredServices.map((service) => service.clientKey),

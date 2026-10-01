@@ -23,6 +23,56 @@ const emptyTicketCosts = () => ({
 });
 
 describe('FinanceInboxService', () => {
+  it('shows hotel and transfer as one contract request with the summed amount', async () => {
+    const purchase = (id: string, title: string, amount: string) => ({
+      id,
+      batchId: 'batch-1',
+      serviceTitle: title,
+      supplierName: 'کارگزار',
+      amount,
+      currencyCode: 'IRR',
+      createdAt: '2026-10-01T10:00:00.000Z',
+      finance: {
+        version: 0,
+        status: 'PENDING',
+        paidAmount: '0',
+        remainingAmount: amount,
+      },
+    });
+    const result = await new FinanceInboxService(
+      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
+      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      {
+        list: vi
+          .fn()
+          .mockResolvedValue([
+            {
+              id: 'intake-1',
+              branchId: 'branch-a',
+              snapshot: { contractNumber: 'CNT-100' },
+              servicePurchases: [
+                purchase('hotel', 'هتل رویال', '450'),
+                purchase('transfer', 'ترانسفر رفت‌وبرگشت', '80'),
+              ],
+            },
+          ]),
+      } as never,
+      {} as never,
+      {} as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    ).list(actor);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      title: 'درخواست خرید قرارداد CNT-100',
+      amount: { amount: '530', currencyCode: 'IRR' },
+      reservationPurchase: {
+        lines: [{ purchaseId: 'hotel' }, { purchaseId: 'transfer' }],
+        totals: [{ amount: '530', currencyCode: 'IRR' }],
+      },
+    });
+  });
+
   it('combines persisted Sales, HR, Procurement and Reservations sources', async () => {
     const sales = {
       financeInbox: vi.fn().mockResolvedValue([

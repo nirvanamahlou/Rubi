@@ -54,9 +54,16 @@ function present(
     string,
     (typeof row.servicePurchases)[number]
   >();
-  for (const purchase of row.servicePurchases)
-    if (!latestServicePurchases.has(purchase.serviceClientKey))
-      latestServicePurchases.set(purchase.serviceClientKey, purchase);
+  for (const purchase of row.servicePurchases) {
+    const covered = Array.isArray(purchase.coveredServiceClientKeys)
+      ? purchase.coveredServiceClientKeys.filter(
+          (key): key is string => typeof key === 'string',
+        )
+      : [purchase.serviceClientKey];
+    for (const key of covered)
+      if (!latestServicePurchases.has(key))
+        latestServicePurchases.set(key, purchase);
+  }
   return {
     workflow: row.workflowRevisions?.[0]?.state ?? null,
     salesOwnerUserId: row.salesOwnerUserId,
@@ -66,11 +73,26 @@ function present(
       amount: cost.amount.toString(),
       createdAt: cost.createdAt.toISOString(),
     })),
-    servicePurchases: [...latestServicePurchases.values()].map((purchase) => {
+    servicePurchases: [
+      ...new Map(
+        [...latestServicePurchases.values()].map((purchase) => [
+          purchase.id,
+          purchase,
+        ]),
+      ).values(),
+    ].map((purchase) => {
       const finance = purchase.financeRevisions[0];
       const legacyPaid = finance?.status === 'PAID' && !finance.cumulativePaid;
       return {
         id: purchase.id,
+        batchId: purchase.batchId,
+        coveredServiceClientKeys: Array.isArray(
+          purchase.coveredServiceClientKeys,
+        )
+          ? purchase.coveredServiceClientKeys.filter(
+              (key): key is string => typeof key === 'string',
+            )
+          : [purchase.serviceClientKey],
         version: purchase.version,
         serviceClientKey: purchase.serviceClientKey,
         serviceKind: purchase.serviceKind,
@@ -83,8 +105,9 @@ function present(
           ? (purchase.passengerPrices as unknown as {
               customerId: string;
               passengerName: string;
-              nightlyAmount: string;
-              nights: number;
+              nightlyAmount?: string;
+              nights?: number;
+              unitAmount?: string;
               totalAmount: string;
             }[])
           : [],
