@@ -13,6 +13,13 @@ const source = readFileSync(
   ),
   'utf8',
 );
+const travelReferenceModelSource = readFileSync(
+  resolve(
+    process.cwd(),
+    'src/modules/master-data/model/travel-reference-form.ts',
+  ),
+  'utf8',
+);
 
 const sourceFile = ts.createSourceFile(
   'master-data-travel-services-workspace.tsx',
@@ -22,39 +29,79 @@ const sourceFile = ts.createSourceFile(
   ts.ScriptKind.TSX,
 );
 
-function tourTableContract() {
-  let headers: string[] | undefined;
-  let cells: number | undefined;
+const resources = [
+  'leaders',
+  'tour-types',
+  'transfer-types',
+  'visa-services',
+] as const;
+
+function travelTableContracts() {
+  const headers = new Map<string, string[]>();
+  const cells = new Map<string, number>();
   const visit = (node: ts.Node) => {
-    if (ts.isPropertyAssignment(node)) {
-      const name = node.name.getText(sourceFile).replaceAll("'", '');
-      if (
-        name === 'tour-types' &&
-        ts.isArrayLiteralExpression(node.initializer) &&
-        node.initializer.elements.every(ts.isStringLiteral)
-      )
-        headers = node.initializer.elements
-          .filter(ts.isStringLiteral)
-          .map((element) => element.text);
+    if (
+      ts.isVariableDeclaration(node) &&
+      node.name.getText(sourceFile) === 'headers' &&
+      node.initializer &&
+      ts.isObjectLiteralExpression(node.initializer)
+    ) {
+      for (const property of node.initializer.properties) {
+        if (
+          !ts.isPropertyAssignment(property) ||
+          !ts.isArrayLiteralExpression(property.initializer) ||
+          !property.initializer.elements.every(ts.isStringLiteral)
+        )
+          continue;
+        headers.set(
+          property.name.getText(sourceFile).replaceAll("'", ''),
+          property.initializer.elements.map((element) =>
+            ts.isStringLiteral(element) ? element.text : '',
+          ),
+        );
+      }
     }
     if (
-      ts.isIfStatement(node) &&
-      node.expression.getText(sourceFile) === "resource === 'tour-types'"
+      ts.isFunctionDeclaration(node) &&
+      node.name?.getText(sourceFile) === 'cells' &&
+      node.body
     ) {
-      const returnStatement = node.thenStatement;
-      if (
-        ts.isReturnStatement(returnStatement) &&
-        returnStatement.expression &&
-        ts.isArrayLiteralExpression(returnStatement.expression)
-      )
-        cells = returnStatement.expression.elements.length;
+      for (const statement of node.body.statements) {
+        if (
+          ts.isIfStatement(statement) &&
+          ts.isReturnStatement(statement.thenStatement) &&
+          statement.thenStatement.expression &&
+          ts.isArrayLiteralExpression(statement.thenStatement.expression)
+        ) {
+          const match = statement.expression
+            .getText(sourceFile)
+            .match(/^resource === '([^']+)'$/);
+          if (match?.[1])
+            cells.set(
+              match[1],
+              statement.thenStatement.expression.elements.length + 3,
+            );
+        }
+        if (
+          ts.isReturnStatement(statement) &&
+          statement.expression &&
+          ts.isArrayLiteralExpression(statement.expression)
+        )
+          cells.set('visa-services', statement.expression.elements.length + 3);
+      }
     }
     ts.forEachChild(node, visit);
   };
   visit(sourceFile);
-  if (!headers || cells === undefined)
-    throw new Error('Tour Types table contract not found');
-  return { headers, cells: cells + 3 };
+  return Object.fromEntries(
+    resources.map((resource) => {
+      const resourceHeaders = headers.get(resource);
+      const resourceCells = cells.get(resource);
+      if (!resourceHeaders || resourceCells === undefined)
+        throw new Error(`${resource} table contract not found`);
+      return [resource, { headers: resourceHeaders, cells: resourceCells }];
+    }),
+  );
 }
 
 describe('travel services workspace', () => {
@@ -110,23 +157,77 @@ describe('travel services workspace', () => {
     expect(source).not.toMatch(/value:\s*(?:86|74|48|41|26|23)\b/);
   });
 
-  it('removes only the Tour Types last-change table column', () => {
-    const table = tourTableContract();
-    expect(table).toEqual({
-      headers: [
-        'کد',
-        'لوگو',
-        'عنوان فارسی',
-        'عنوان انگلیسی',
-        'دامنه',
-        'شرح',
-        'استفاده',
-        'وضعیت',
-        'عملیات',
-      ],
-      cells: 9,
+  it('removes Usage from every travel table while preserving exact alignment', () => {
+    const tables = travelTableContracts();
+    expect(tables).toEqual({
+      leaders: {
+        headers: [
+          'کد',
+          'لوگو',
+          'نام فارسی / انگلیسی',
+          'کشور و شهر فعالیت',
+          'تماس',
+          'زبان‌ها',
+          'تخصص و مقصد',
+          'مدارک',
+          'وضعیت',
+          'عملیات',
+        ],
+        cells: 10,
+      },
+      'tour-types': {
+        headers: [
+          'کد',
+          'لوگو',
+          'عنوان فارسی',
+          'عنوان انگلیسی',
+          'دامنه',
+          'شرح',
+          'وضعیت',
+          'عملیات',
+        ],
+        cells: 8,
+      },
+      'transfer-types': {
+        headers: [
+          'کد',
+          'لوگو',
+          'عنوان',
+          'وسیله',
+          'شیوه سرویس',
+          'ظرفیت پیشنهادی',
+          'شرح',
+          'وضعیت',
+          'عملیات',
+        ],
+        cells: 9,
+      },
+      'visa-services': {
+        headers: [
+          'کد',
+          'لوگو',
+          'عنوان',
+          'کشور مقصد',
+          'نوع ویزا',
+          'Provider',
+          'مدت اعتبار مرجع',
+          'مدارک راهنما',
+          'وضعیت',
+          'عملیات',
+        ],
+        cells: 10,
+      },
     });
-    expect(table.headers).not.toContain('آخرین تغییر');
+    for (const table of Object.values(tables)) {
+      expect(table.headers).not.toContain('استفاده');
+      expect(table.cells).toBe(table.headers.length);
+    }
+    expect(tables['tour-types']?.headers).not.toContain('آخرین تغییر');
+    expect(source).toContain('label="استفاده"');
+    expect(source).toContain('tourTypeUsageLabel(selected)');
+    expect(travelReferenceModelSource).toContain(
+      'export function transferUsageLabel',
+    );
     expect(source).toContain('label="آخرین تغییر"');
     expect(source).toContain('tourTypeUpdatedLabel(selected, tourActorNames)');
     expect(source).toContain("'updatedAt',");

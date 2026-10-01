@@ -1,3 +1,8 @@
+## TRAVEL-HIDE-USAGE-COLUMNS-1001 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-travel-hide-usage-columns-1001` from origin/develop. Reserve Travel Services visible usage headers/cells (Tour Types and Transfer Types), existing workspace spec and own bounded status entries. Leaders/Visa have no usage column and remain unchanged. Preserve forms/View/export/API/backend/usage metadata. No active overlapping owner; prior scoped locks released. No migration/dependency/runtime/database changes. User authorizes push/develop merge after checks; preserve unrelated primary edits.
+- The Tour Types and Transfer Types lists now omit only their visible usage headers and matching value cells; Leaders and Visa Services remain unchanged, and all four table shapes retain exact header/row alignment. Usage metadata remains available in the Tour Type View and existing model helpers, while forms, exports, API and backend behavior are unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed; bounded locks release with the scoped commit.
+
 ## TOUR-TYPE-HIDE-LAST-CHANGE-1001 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-tour-type-hide-last-change-1001` from origin/develop. Reserve only Tour Types last-change table header/cell in travel-services workspace, existing regression spec and own bounded status entries. Preserve form/View metadata, export/API/backend/audit and other resource tables. No active overlapping owner; prior scoped locks released. No migration/dependency/runtime/database changes. User authorizes push/develop merge after checks; preserve unrelated primary edits.
