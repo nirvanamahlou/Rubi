@@ -123,30 +123,28 @@ describe('reservation ticket PDF', () => {
   it('prints the persisted six-digit number and original issue date with the English itinerary', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockImplementation((url: string) =>
-          Promise.resolve(
-            Response.json({
-              data: url.endsWith('/workflow')
-                ? {
-                    ...intake,
-                    ticketDocuments: [
-                      {
-                        customerId: passengerId,
-                        number: '100123',
-                        source: 'AUTO',
-                        issuedAt: '2026-10-01T08:00:00Z',
-                      },
-                    ],
-                  }
-                : {
-                    name: url.includes(cityOne) ? 'TEHRAN' : 'ANTALYA',
-                    attributes: {},
-                  },
-            }),
-          ),
+      vi.fn().mockImplementation((url: string) =>
+        Promise.resolve(
+          Response.json({
+            data: url.endsWith('/workflow')
+              ? {
+                  ...intake,
+                  ticketDocuments: [
+                    {
+                      customerId: passengerId,
+                      number: '100123',
+                      source: 'AUTO',
+                      issuedAt: '2026-10-01T08:00:00Z',
+                    },
+                  ],
+                }
+              : {
+                  name: url.includes(cityOne) ? 'TEHRAN' : 'ANTALYA',
+                  attributes: {},
+                },
+          }),
         ),
+      ),
     );
     const response = await GET(request(), { params: Promise.resolve({ id }) });
     expect(response.status).toBe(200);
