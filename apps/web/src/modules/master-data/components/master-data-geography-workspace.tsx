@@ -20,7 +20,6 @@ import {
   FilePenLine,
   FileSpreadsheet,
   Globe2,
-  History,
   Layers3,
   Link2,
   LockKeyhole,
@@ -79,7 +78,10 @@ import {
   MasterDataKpiGrid,
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
-import { airportKpiItems } from './master-data-geography-kpis';
+import {
+  airportKpiItems,
+  terminalKpiItems,
+} from './master-data-geography-kpis';
 
 type GeographyResource = Extract<
   MasterDataResourceKey,
@@ -790,7 +792,6 @@ export function MasterDataGeographyWorkspace() {
     }
   }
 
-  const inactiveTotal = Math.max(0, total - activeTotal);
   const kpis: readonly MasterDataKpiItem[] =
     resource === 'countries'
       ? [
@@ -844,33 +845,7 @@ export function MasterDataGeographyWorkspace() {
           ]
         : resource === 'airports'
           ? airportKpiItems(records, total, activeTotal)
-          : [
-              {
-                label: 'کل ترمینال‌ها',
-                value: total,
-                icon: SquareStack,
-                tone: 'sky',
-              },
-              {
-                label: 'ترمینال فعال',
-                value: activeTotal,
-                icon: CheckCircle2,
-                tone: 'emerald',
-              },
-              {
-                label: 'بین‌المللی',
-                value: internationalTotal,
-                icon: Globe2,
-                tone: 'violet',
-              },
-              {
-                label: 'نیازمند بازبینی',
-                value: inactiveTotal,
-                icon: History,
-                tone: 'amber',
-                hint: 'رکوردهای غیرفعال در دامنه فعلی',
-              },
-            ];
+          : terminalKpiItems(records, total, activeTotal, internationalTotal);
 
   const columns = geographyColumns(resource);
 
