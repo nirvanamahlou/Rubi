@@ -79,6 +79,7 @@ import {
   MasterDataKpiGrid,
   type MasterDataKpiItem,
 } from './master-data-kpi-grid';
+import { airportKpiItems } from './master-data-geography-kpis';
 
 type GeographyResource = Extract<
   MasterDataResourceKey,
@@ -790,12 +791,6 @@ export function MasterDataGeographyWorkspace() {
   }
 
   const inactiveTotal = Math.max(0, total - activeTotal);
-  const coveredCities = new Set(
-    records
-      .map((record) => record.attributes.cityName)
-      .filter((value): value is string => typeof value === 'string' && !!value),
-  ).size;
-
   const kpis: readonly MasterDataKpiItem[] =
     resource === 'countries'
       ? [
@@ -848,27 +843,7 @@ export function MasterDataGeographyWorkspace() {
             },
           ]
         : resource === 'airports'
-          ? [
-              {
-                label: 'کل فرودگاه‌ها',
-                value: total,
-                icon: PlaneTakeoff,
-                tone: 'sky',
-              },
-              {
-                label: 'فرودگاه فعال',
-                value: activeTotal,
-                icon: CheckCircle2,
-                tone: 'emerald',
-              },
-              {
-                label: 'شهرهای مرتبط',
-                value: coveredCities,
-                icon: MapPin,
-                tone: 'violet',
-                hint: 'در صفحه جاری',
-              },
-            ]
+          ? airportKpiItems(records, total, activeTotal)
           : [
               {
                 label: 'کل ترمینال‌ها',

@@ -128,7 +128,10 @@ describe('Master Data visual polish contract', () => {
   });
 
   it('keeps geography KPI names aligned with the approved mockup', () => {
-    const geography = source('master-data-geography-workspace.tsx');
+    const geography = [
+      source('master-data-geography-workspace.tsx'),
+      source('master-data-geography-kpis.ts'),
+    ].join('\n');
     for (const label of [
       'کل کشورها',
       'کشور فعال',
@@ -141,6 +144,7 @@ describe('Master Data visual polish contract', () => {
       'کل فرودگاه‌ها',
       'فرودگاه فعال',
       'شهرهای مرتبط',
+      'ترمینال‌های مرتبط',
       'کل ترمینال‌ها',
       'ترمینال فعال',
       'بین‌المللی',
