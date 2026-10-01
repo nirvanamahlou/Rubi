@@ -123,6 +123,7 @@ const resourceLabels: Record<MasterDataResource, string> = {
   cities: 'شهرها',
   airports: 'فرودگاه‌ها',
   terminals: 'ترمینال‌ها',
+  'rail-terminals': 'ترمینال‌های ریلی',
   currencies: 'ارزها',
   'exchange-rates': 'نرخ ارز',
   banks: 'بانک‌ها',
