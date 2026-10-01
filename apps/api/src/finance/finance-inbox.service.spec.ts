@@ -43,19 +43,17 @@ describe('FinanceInboxService', () => {
       { financeInbox: vi.fn().mockResolvedValue([]) } as never,
       { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
       {
-        list: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              id: 'intake-1',
-              branchId: 'branch-a',
-              snapshot: { contractNumber: 'CNT-100' },
-              servicePurchases: [
-                purchase('hotel', 'هتل رویال', '450'),
-                purchase('transfer', 'ترانسفر رفت‌وبرگشت', '80'),
-              ],
-            },
-          ]),
+        list: vi.fn().mockResolvedValue([
+          {
+            id: 'intake-1',
+            branchId: 'branch-a',
+            snapshot: { contractNumber: 'CNT-100' },
+            servicePurchases: [
+              purchase('hotel', 'هتل رویال', '450'),
+              purchase('transfer', 'ترانسفر رفت‌وبرگشت', '80'),
+            ],
+          },
+        ]),
       } as never,
       {} as never,
       {} as never,
