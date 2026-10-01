@@ -57,6 +57,29 @@ import {
 
 export type MasterDataFormMode = 'create' | 'view' | 'edit';
 
+export function appendMasterDataReferenceValue(
+  currentValue: string | undefined,
+  selectedValue: string,
+) {
+  return [
+    ...new Set([
+      ...(currentValue ?? '').split(',').filter(Boolean),
+      selectedValue,
+    ]),
+  ].join(',');
+}
+
+export function withAppendedMasterDataReference(
+  current: Record<string, string>,
+  field: string,
+  selectedValue: string,
+) {
+  return {
+    ...current,
+    [field]: appendMasterDataReferenceValue(current[field], selectedValue),
+  };
+}
+
 export function masterDataFormValuesFrom(
   definition: MasterDataCatalogItem,
   record?: MasterDataRecord,
@@ -243,46 +266,6 @@ function GenericMasterDataLiveForm({
     }
   }
 
-  async function createHotelRoomType(field: string, input = '') {
-    const name = input.trim();
-    if (!name) {
-      setErrors((current) => ({
-        ...current,
-        [field]: 'نام نوع اتاق را وارد کنید.',
-      }));
-      return;
-    }
-    setSaving(true);
-    try {
-      const response = await masterDataApi.create('room-types', {
-        values: { name },
-      });
-      setValues((current) => ({
-        ...current,
-        [field]: [
-          ...new Set([
-            ...(current[field] ?? '').split(',').filter(Boolean),
-            response.data.id,
-          ]),
-        ].join(','),
-      }));
-      setErrors((current) => {
-        const next = { ...current };
-        delete next[field];
-        return next;
-      });
-      setReferenceRevision((revision) => revision + 1);
-    } catch (error) {
-      setErrors((current) => ({
-        ...current,
-        [field]:
-          error instanceof Error ? error.message : 'افزودن نوع اتاق انجام نشد.',
-      }));
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <>
       <Dialog onOpenChange={onOpenChange} open={open}>
@@ -373,6 +356,11 @@ function GenericMasterDataLiveForm({
                   definition.key,
                   field.key,
                 );
+                const isHotelInlineReference =
+                  definition.key === 'hotels' &&
+                  ['mealServiceIds', 'roomTypeIds', 'facilityIds'].includes(
+                    field.key,
+                  );
                 const updateValue = (value: string) => {
                   if (
                     definition.key === 'suppliers' &&
@@ -424,17 +412,6 @@ function GenericMasterDataLiveForm({
                             related?: MasterDataRecord,
                             searchQuery?: string,
                           ) => {
-                            if (
-                              definition.key === 'hotels' &&
-                              field.key === 'roomTypeIds' &&
-                              !related
-                            ) {
-                              void createHotelRoomType(
-                                field.key,
-                                searchQuery ?? '',
-                              );
-                              return;
-                            }
                             setReferenceForm({
                               field: field.key,
                               definition: getMasterDataDefinition(
@@ -461,18 +438,19 @@ function GenericMasterDataLiveForm({
                                       }
                                     : reference.target === 'regions'
                                       ? { countryId: values.countryId ?? '' }
-                                      : {},
+                                      : isHotelInlineReference && searchQuery
+                                        ? { name: searchQuery }
+                                        : {},
                             });
                           },
                         }
                       : {})}
                     createOnlyWhenEmpty={
-                      (definition.key === 'suppliers' &&
-                        mode === 'create' &&
-                        field.key === 'organizationId') ||
-                      (definition.key === 'hotels' &&
-                        field.key === 'roomTypeIds')
+                      definition.key === 'suppliers' &&
+                      mode === 'create' &&
+                      field.key === 'organizationId'
                     }
+                    alwaysShowCreate={isHotelInlineReference}
                     id={controlId}
                     {...(describedBy ? { ariaDescribedby: describedBy } : {})}
                     invalid={Boolean(error)}
@@ -683,21 +661,18 @@ function GenericMasterDataLiveForm({
             const config = getReferenceFieldConfig(definition.key, field)!;
             const selectedValue =
               config.payload === 'code' ? response.data.code : response.data.id;
-            setValues((current) => ({
-              ...current,
-              [field]: config.multiple
-                ? [
-                    ...new Set([
-                      ...(current[field] ?? '').split(',').filter(Boolean),
-                      selectedValue,
-                    ]),
-                  ].join(',')
-                : selectedValue,
-              ...(field === 'organizationId' &&
-              current.organizationId !== selectedValue
-                ? { primaryContactId: '' }
-                : {}),
-            }));
+            setValues((current) =>
+              config.multiple
+                ? withAppendedMasterDataReference(current, field, selectedValue)
+                : {
+                    ...current,
+                    [field]: selectedValue,
+                    ...(field === 'organizationId' &&
+                    current.organizationId !== selectedValue
+                      ? { primaryContactId: '' }
+                      : {}),
+                  },
+            );
             setReferenceRevision((revision) => revision + 1);
             if (
               definition.key === 'suppliers' &&

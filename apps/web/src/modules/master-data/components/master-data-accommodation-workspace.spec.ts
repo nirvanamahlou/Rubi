@@ -144,12 +144,16 @@ describe('accommodation workspace', () => {
     expect(source).toContain('facilityCategory');
   });
 
-  it('creates multiple room types inline from the hotel form without a nested form', () => {
-    expect(liveFormSource).toContain("masterDataApi.create('room-types'");
-    expect(liveFormSource).toContain('values: { name }');
-    expect(liveFormSource).toContain("field.key === 'roomTypeIds'");
-    expect(liveFormSource).toContain('createHotelRoomType');
+  it('routes all hotel references through their canonical nested forms', () => {
+    expect(liveFormSource).not.toContain("masterDataApi.create('room-types'");
+    expect(liveFormSource).not.toContain('createHotelRoomType');
+    expect(liveFormSource).toContain('alwaysShowCreate');
+    expect(liveFormSource).toContain(
+      "'mealServiceIds', 'roomTypeIds', 'facilityIds'",
+    );
+    expect(liveFormSource).toContain('definition: getMasterDataDefinition(');
     expect(referenceSelectorSource).toContain('افزودن نوع اتاق');
-    expect(referenceSelectorSource).toContain('نام نوع اتاق را بنویسید');
+    expect(referenceSelectorSource).toContain('افزودن وعده/سرویس');
+    expect(referenceSelectorSource).toContain('افزودن امکان');
   });
 });
