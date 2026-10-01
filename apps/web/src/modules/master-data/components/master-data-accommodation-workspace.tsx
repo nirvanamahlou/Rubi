@@ -863,7 +863,6 @@ export function MasterDataAccommodationWorkspace() {
             'زنجیره',
             'درجه',
             'امکانات منتخب',
-            'تأمین‌کننده HOTEL_PROVIDER',
             'فروش‌پذیری',
             'وعده و سرویس',
             'نوع اتاق',
@@ -963,9 +962,6 @@ export function MasterDataAccommodationWorkspace() {
                     </td>
                     <td className="p-4">
                       {chips(attribute(record, 'facilityNames', ''))}
-                    </td>
-                    <td className="p-4">
-                      {attribute(record, 'organizationName')}
                     </td>
                     <td className="p-4">
                       <StatusBadge record={record} saleable />
