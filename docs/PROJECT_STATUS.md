@@ -1,3 +1,7 @@
+## 2026-10-01 — HOTEL-INLINE-REFERENCE-CREATE-1001 — PC-B — READY_FOR_REVIEW
+
+Hotel meal/service, room-type and facility selectors now expose a clear Add action without requiring a search first. Each action reuses the canonical source form and validation; room type remains name-only, meal/service retains required code/name/category, and facility retains its existing optional free-text category. A saved child is appended to the existing IDs without replacing the parent hotel draft, while cancel/failure and read-only/locked states remain safe. Focused SSR/state-helper regressions, all 418 Master Data Web tests, scoped lint and Web typecheck pass. The repository has no DOM interaction-test dependency, so callback behavior is covered through the production state helper and real SSR structure rather than claimed browser interaction; authenticated browser/runtime QA was not run. Final production build is delegated to lead verification.
+
 ## 2026-10-01 — HOTEL-HIDE-PROVIDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
