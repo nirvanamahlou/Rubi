@@ -43,12 +43,12 @@ describe('transportation workspace', () => {
     expect(source).toContain('setProfileOpen(true)');
   });
 
-  it('keeps the KPI names aligned with the supplied mockup', () => {
+  it('keeps the unchanged KPI names and maps all six replacement metrics', () => {
     for (const label of [
       'کل ایرلاین‌ها',
       'ایرلاین فعال',
       'Connection فعال',
-      'نیازمند تکمیل برند',
+      'کشورهای مبدأ',
       'انواع هواپیما',
       'نوع فعال',
       'سازندگان',
@@ -59,8 +59,31 @@ describe('transportation workspace', () => {
       'نسخه فعال',
       'فرمت‌های فایل',
       'در انتظار انتشار',
+      'انواع بدنه',
+      'کشورهای ثبت‌شده',
+      'دسته‌های قطار',
+      'کلاس‌های خدمات',
     ])
       expect(source).toContain(label);
+  });
+
+  it('loads the replacement summaries from every unfiltered global page', () => {
+    const summary = source.slice(
+      source.indexOf('const loadSummary'),
+      source.indexOf('useEffect(() =>', source.indexOf('const loadSummary')),
+    );
+    expect(summary).toContain('for (let summaryPage = 1; ; summaryPage += 1)');
+    expect(summary).toContain("search: ''");
+    expect(summary).toContain("status: 'all'");
+    expect(summary).toContain('page: summaryPage');
+    expect(summary).toContain('pageSize: 100');
+    expect(summary).toContain('const requestId = ++summaryRequestRef.current');
+    expect(summary).toContain(
+      'if (requestId !== summaryRequestRef.current) return;',
+    );
+    expect(source).toContain(
+      'function changeResource(next: TransportResource) {\n    summaryRequestRef.current += 1;',
+    );
   });
 
   it('does not include provider secrets or mockup fixtures', () => {
