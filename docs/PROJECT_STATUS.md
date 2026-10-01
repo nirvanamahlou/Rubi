@@ -1,3 +1,7 @@
+## 2026-10-01 — TRANSPORT-REPLACE-COMPLETION-KPIS-1001 — PC-B — READY_FOR_REVIEW
+
+Six Transport «نیازمند تکمیل» cards now use the approved canonical global distinct metrics for airline origin countries, aircraft body types, rail-company countries, train categories, bus-company countries and bus service classes. The cards state their global scope; a valid empty summary renders zero, while loading/error, malformed pagination or a stalled page render unavailable. Late responses from a previous tab cannot overwrite the current summary. First-three KPIs and the Cabin review/Manifest publication cards remain unchanged. Focused KPI regressions (21), all 452 Master Data Web tests, scoped lint and Web typecheck pass. Final production build and authenticated browser QA remain lead-owned; no API, schema, contract, dependency, database or runtime change was made.
+
 ## 2026-10-01 — COMPOSITE-HIDE-CONTRACT-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 The composite-hotel member table no longer displays the contract-reference placeholder column. Its remaining four headers and row cells stay aligned, while usage condition, forms, profile behavior, API/export and backend data remain unchanged. Focused accommodation regression (9), all 434 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no schema, dependency, database or runtime change was made.
