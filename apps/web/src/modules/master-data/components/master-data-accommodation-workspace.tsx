@@ -1243,17 +1243,13 @@ export function MasterDataAccommodationWorkspace() {
                 >
                   <thead className="bg-muted/50 text-muted-foreground">
                     <tr>
-                      {[
-                        'اولویت',
-                        'هتل عضو',
-                        'شهر / منطقه',
-                        'مرجع قرارداد',
-                        'وضعیت',
-                      ].map((head) => (
-                        <th className="p-3 text-start" key={head}>
-                          {head}
-                        </th>
-                      ))}
+                      {['اولویت', 'هتل عضو', 'شهر / منطقه', 'وضعیت'].map(
+                        (head) => (
+                          <th className="p-3 text-start" key={head}>
+                            {head}
+                          </th>
+                        ),
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -1267,9 +1263,6 @@ export function MasterDataAccommodationWorkspace() {
                         </td>
                         <td className="p-3 font-semibold">{name}</td>
                         <td className="p-3">{cities[index] || '—'}</td>
-                        <td className="p-3 text-muted-foreground">
-                          — · Procurement
-                        </td>
                         <td className="p-3">
                           <Badge>
                             {backups.has(ids[index] ?? '') ? 'پشتیبان' : 'فعال'}
