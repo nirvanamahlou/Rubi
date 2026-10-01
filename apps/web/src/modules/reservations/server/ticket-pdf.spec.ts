@@ -380,6 +380,26 @@ describe('reservation ticket PDF', () => {
     expect(html).not.toContain('>20<');
   });
 
+  it('renders legacy tickets without airport data or a resave and leaves airport fields blank', () => {
+    const tickets = reservationTickets(intake.snapshot);
+    expect(tickets.length).toBeGreaterThan(0);
+    const html = ticketPdfHtml(
+      tickets,
+      {
+        [cityOne]: { name: 'TEHRAN', code: 'IKA' },
+        [cityTwo]: { name: 'ANTALYA', code: 'AYT' },
+      },
+      { name: 'Niyayesh', logoDataUrl: 'data:image/png;base64,c2FmZQ==' },
+    );
+    expect(html).toContain('TEHRAN');
+    expect(html).toContain('ANTALYA');
+    expect(html).toContain('class="airport-code"></strong>');
+    expect(html).toContain('class="airport-name" dir="auto"></span>');
+    expect(html).not.toContain('class="airport-code">IKA');
+    expect(html).not.toContain('class="airport-code">AYT');
+    expect(html).not.toContain('class="airport-name" dir="auto">—');
+  });
+
   it('uses the finance-gated Sales endpoint for a Sales download', async () => {
     const contractId = intake.snapshot.contractId;
     const fetcher = vi

@@ -138,7 +138,7 @@ export function ticketPageHtml(
         airport: TicketLayoutFlight['originAirport'],
         departing: boolean,
       ) =>
-        `<div class="place ${departing ? '' : 'destination'}"><b class="city" dir="auto">${escape(name)}</b><strong class="airport-code">${escape(airport?.code || '—')}</strong><span class="airport-name" dir="auto">${escape(airport?.name || '—')}</span>${departing ? `<strong class="clock">${time(offer.departureAt)}</strong><b class="flight-date">${day(offer.departureAt)}</b>` : offer.arrivalAt ? `<span class="arrival">${time(offer.arrivalAt)} · ${day(offer.arrivalAt)}</span>` : ''}</div>`;
+        `<div class="place ${departing ? '' : 'destination'}"><b class="city" dir="auto">${escape(name)}</b><strong class="airport-code">${escape(airport?.code || '')}</strong><span class="airport-name" dir="auto">${escape(airport?.name || '')}</span>${departing ? `<strong class="clock">${time(offer.departureAt)}</strong><b class="flight-date">${day(offer.departureAt)}</b>` : offer.arrivalAt ? `<span class="arrival">${time(offer.arrivalAt)} · ${day(offer.arrivalAt)}</span>` : ''}</div>`;
       const baggage =
         offer.baggageKg != null && /^\d+(\.\d+)?$/.test(offer.baggageKg)
           ? `${escape(offer.baggageKg)} KG`

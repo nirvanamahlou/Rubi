@@ -4140,3 +4140,8 @@ The visible Geography terminal catalog now uses a new additive independent rail-
 ## 2026-10-01 — PC-A — reference flight ticket
 
 FLIGHT-TICKET-REFERENCE-1001 shares one reference-style A4 ticket renderer between preview and PDF: Niyayesh and uploaded carrier marks, passenger/contract identity, outbound navy and return teal route cards, selected airport IATA/name, saved departure/arrival, class-specific baggage and independently verified booking-reference QR. No fabricated airport, allowance, flight duration or issuance identifiers. Additive nullable airport FKs and authorized branch-scoped catalog document details retain selected airports at publication. Legacy offers require re-saving the actual definition; no guessed backfill. Existing finance and cancellation gates remain. Synthetic two-leg PDF visually reviewed as one A4 page. Apply migration 20261001103000_ticket_selected_airports before API rollout. No dependency changes or operational data writes.
+
+## 2026-10-01 — Legacy ticket airport compatibility (PC-A)
+
+Missing selected airport code/name render as blank in shared preview and PDF; city labels and all other stored flight facts remain visible. No inferred airport or old-ticket resave/backfill. Local deployment applies only the existing additive selected-airports migration, preserving ticket rows and unrelated pending migrations.
+
