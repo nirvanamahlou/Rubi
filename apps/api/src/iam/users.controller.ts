@@ -2,7 +2,10 @@ import {
   Body,
   Controller,
   Get,
+  ForbiddenException,
   Inject,
+  HttpCode,
+  ParseUUIDPipe,
   Param,
   Patch,
   Post,
@@ -13,6 +16,7 @@ import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { AuthGuard } from './auth.guard';
 import { requestMetadata } from './auth.controller';
+import { ResetUserPasswordDto } from './dto/reset-user-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserAccessDto } from './dto/update-user-access.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
@@ -40,6 +44,25 @@ export class UsersController {
   @RequirePermissions('iam.users.manage')
   create(@Body() dto: CreateUserDto, @Req() req: AuthenticatedRequest) {
     return this.iam.createUser(dto, req.actor, requestMetadata(req));
+  }
+  @Patch(':id/password')
+  @HttpCode(200)
+  @ApiBody({ type: ResetUserPasswordDto })
+  @RequirePermissions('iam.users.manage')
+  async password(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ResetUserPasswordDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (req.headers['x-nora-password-change'] !== '1')
+      throw new ForbiddenException('درخواست تغییر رمز معتبر نیست.');
+    await this.iam.resetUserPassword(
+      id,
+      dto.newPassword,
+      req.actor,
+      requestMetadata(req),
+    );
+    return { success: true };
   }
   @Patch(':id/access')
   @ApiBody({ type: UpdateUserAccessDto })

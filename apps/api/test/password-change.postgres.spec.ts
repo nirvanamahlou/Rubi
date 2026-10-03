@@ -139,6 +139,113 @@ describe.skipIf(!enabled)(
       if (created && /^nora_password_test_[a-f0-9]{32}$/.test(databaseName))
         sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
     });
+    async function administratorFixture() {
+      const f = await fixture();
+      const role = await client.role.upsert({
+        where: { code: 'administrator' },
+        create: { code: 'administrator', name: 'Synthetic administrator' },
+        update: {},
+      });
+      const permission = await client.permission.upsert({
+        where: { code: 'iam.users.manage' },
+        create: {
+          code: 'iam.users.manage',
+          name: 'Synthetic user management',
+          module: 'iam',
+        },
+        update: {},
+      });
+      await client.rolePermission.upsert({
+        where: {
+          roleId_permissionId: { roleId: role.id, permissionId: permission.id },
+        },
+        create: { roleId: role.id, permissionId: permission.id },
+        update: {},
+      });
+      await client.userRole.create({
+        data: { userId: f.user.id, roleId: role.id },
+      });
+      return { ...f, actor: await f.auth.authenticate(f.login.accessToken) };
+    }
+    it('administrator reset revokes target access/refresh, keeps administrator session and allows only the new credential', async () => {
+      const administrator = await administratorFixture();
+      const target = await fixture();
+      await administrator.auth.resetUserPassword(
+        target.user.id,
+        newPassword,
+        administrator.actor,
+        {},
+      );
+      const stored = await client.user.findUniqueOrThrow({
+        where: { id: target.user.id },
+      });
+      expect(await verify(stored.passwordHash, newPassword)).toBe(true);
+      await expect(
+        target.auth.authenticate(target.login.accessToken),
+      ).rejects.toThrow();
+      await expect(
+        target.auth.refresh(target.login.refreshToken, {}),
+      ).rejects.toThrow();
+      await expect(
+        target.auth.login(target.user.username, oldPassword, {}),
+      ).rejects.toThrow();
+      await expect(
+        target.auth.login(target.user.username, newPassword, {}),
+      ).resolves.toBeDefined();
+      await expect(
+        administrator.auth.authenticate(administrator.login.accessToken),
+      ).resolves.toBeDefined();
+      const audits = await client.auditEvent.findMany({
+        where: {
+          actorUserId: administrator.user.id,
+          entityId: target.user.id,
+          action: 'iam.user.password.reset',
+        },
+      });
+      expect(audits).toHaveLength(1);
+      expect(JSON.stringify(audits)).not.toContain(newPassword);
+      expect(JSON.stringify(audits)).not.toContain(stored.passwordHash);
+    });
+    it('administrator reset rolls back credentials and session revocation when audit fails', async () => {
+      const administrator = await administratorFixture();
+      const target = await fixture();
+      const db = new Proxy(client, {
+        get(db, key) {
+          if (key !== '$transaction') return Reflect.get(db, key);
+          return (fn: (tx: unknown) => Promise<unknown>) =>
+            client.$transaction((tx) =>
+              fn(
+                new Proxy(tx, {
+                  get(tx, key) {
+                    if (key === 'auditEvent')
+                      return {
+                        create: async () => {
+                          throw new Error('fixture audit failure');
+                        },
+                      };
+                    return Reflect.get(tx, key);
+                  },
+                }),
+              ),
+            );
+        },
+      });
+      await expect(
+        service(db).resetUserPassword(
+          target.user.id,
+          newPassword,
+          administrator.actor,
+          {},
+        ),
+      ).rejects.toThrow('fixture audit failure');
+      expect(
+        (await client.user.findUniqueOrThrow({ where: { id: target.user.id } }))
+          .passwordHash,
+      ).toBe(target.user.passwordHash);
+      await expect(
+        target.auth.authenticate(target.login.accessToken),
+      ).resolves.toBeDefined();
+    });
     it('changes only the current user, revokes every session, rejects old login and retains secret-free audit', async () => {
       const { user, actor, auth, login } = await fixture();
       const other = await fixture();

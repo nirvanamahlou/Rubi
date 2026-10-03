@@ -1,3 +1,7 @@
+## 2026-10-03 — INSURANCE-NESTED-PLANS-1003 — PC-B — READY_FOR_REVIEW
+
+Insurance Plans are now nested immediately beneath expandable Insurer rows while Coverage remains a top-level tab. Child rows retain logo, coverage, status and View/Edit/Delete actions; the existing plan form locks and force-binds the parent insurer. Generation guards reject stale child responses, and successful CRUD refreshes both the child page and parent summary without clearing the expanded insurer identity. Focused 26 and all 536 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. Tests cover async helper/state boundaries and SSR/source structure; authenticated browser/runtime QA was not performed. No API/schema/organization-model change; bounded locks release with commit.
+
 ## 2026-10-03 — VISA-HIDE-VALIDITY-MODE-1003 — PC-B — READY_FOR_REVIEW
 
 Visa Services create/edit no longer renders the reference-validity-mode selector. New mutations keep the canonical `DAYS` mode; edits preserve supported stored modes by using them only for days-field behavior and omitting mode from PATCH. `DAYS` keeps the optional validated day field, while legacy `PASSPORT_EXPIRY` keeps it hidden. View/table/backend remain unchanged and Excel retains `referenceValidityMode` immediately before `referenceValidityDays`. Focused 32 and all 534 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
@@ -4298,6 +4302,10 @@ Reservation request table minimum body-row height decreases from 46px to 36px wh
 
 Removed the read-only initial status display from step one of the cooperation registration wizard as requested. Draft/submission lifecycle and validation remain unchanged. No API, schema, dependency, permission, data or runtime change; targeted checks and CI precede authorized develop merge.
 
+## 2026-10-03 — B2B-HIDE-WARNING-COLUMN-1003 — PC-B — READY_FOR_APPROVED_MERGE
+
+The Organizations desktop list no longer displays the warning header or its matching placeholder cell. Credit, remaining header/body alignment, mobile cards and row operations are unchanged. All 133 Organizations tests, scoped lint, Web typecheck and the 55-route production build pass. The first typecheck exposed stale local contracts output after branch reuse; rebuilding current contracts source resolved it without tracked shared/source edits. No API, migration/dependency, data or runtime change. Owner explicitly authorized push and develop merge; normal CI gates the merge. Same native task owner implemented the bounded two-line removal; lead inspected the exact diff. Usage telemetry unavailable.
+
 ## 2026-10-03 — B2B-EXCEL-EXPORT-1003 — PC-B
 
 Organizations directory, commercial and dossier exports now use one attached download target with deferred Blob URL cleanup. Existing XLSX artifacts and authorized server filters are preserved. Regression checks cover workbook text/ZIP contents, exact artifact delivery and download cleanup. No API, schema, permission or dependency changes.
@@ -4337,3 +4345,11 @@ Reservations Manifest now renders Gregorian Tehran-local dates and explicit orig
 ## 2026-10-03 — PURCHASE-CUSTOMER-DATE-RANGE-1003 — PC-A — READY_FOR_REVIEW
 
 Sales new purchase now collects buyer name, phone, address and postal code above passengers, supports a separate canonical buyer/payer and stores an encrypted immutable contract contact snapshot for authorized printable output. New separate buyers use merged customer-only four-field creation without national ID or passenger passport; passenger identity validation is retained. Ticket results require a confirmed valid range, both legs respect its bounds, and changes invalidate prior catalog selections/quotes. 121 Sales/Customers API + 268 Web + 1 PostgreSQL regression passed (1 existing Web test skipped), affected lint/typechecks and API/Web production builds passed; Prisma validate/generate and all 113 migrations passed on a disposable PostgreSQL 18 database. The additive nullable Sales JSONB migration must precede API rollout; existing configured contact encryption keys are reused with domain separation. Primary dirty checkout and running local services remain unchanged. Scoped locks RELEASED; no merge/local rollout requested. See docs/tasks/PURCHASE-CUSTOMER-DATE-RANGE-1003.md.
+
+## USER-CREATE-PASSWORD-RESET-1003 — PC-A — READY_FOR_REVIEW
+
+User creation now saves the current explicit access selections even while optional role suggestions are open; weak initial passwords receive clear validation feedback. Canonical system administrators can reset another user using a confirmed password form. IAM rechecks active administrator membership and session, hashes credentials, revokes target sessions and records secret-free audit atomically. Self-service password changes remain unchanged. No schema, migration, dependency or actual user/password change.
+
+84 focused IAM/HTTP tests and 34 Web tests pass; scoped lint, both typechecks and production API/Web builds (55 routes) pass. All 9 isolated PostgreSQL password/reset regressions pass, including old login/access/refresh rejection, administrator session preservation and audit-failure rollback. User authorizes CI-gated develop merge. See [task handoff](tasks/USER-CREATE-PASSWORD-RESET-1003.md).
+
+- Delivery: implementation `a0a1afd4`, [PR #586](https://github.com/nirvanamahlou/Rubi/pull/586) targets develop. Other PCs should fetch the reviewed merge; no migration/dependency step is introduced by this task. Local rollout follows owner authorization while preserving current LAN origins, document storage and unrelated runtime files.

@@ -747,7 +747,6 @@ export function OrganizationsWorkspace() {
                       'قرارداد فعال',
                       'اعتبار قابل استفاده',
                       'وضعیت',
-                      'هشدار',
                       'عملیات',
                     ].map((head) => (
                       <th className="p-4 text-start" key={head}>
@@ -806,7 +805,6 @@ export function OrganizationsWorkspace() {
                           {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                         </Badge>
                       </td>
-                      <td className="unavailable-value">در دسترس نیست</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <Button
