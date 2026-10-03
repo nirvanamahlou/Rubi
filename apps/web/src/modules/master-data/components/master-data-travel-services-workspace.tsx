@@ -612,7 +612,7 @@ export function MasterDataTravelServicesWorkspace() {
   }
 
   const actions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -708,7 +708,12 @@ export function MasterDataTravelServicesWorkspace() {
         <thead className="bg-muted/50 text-muted-foreground">
           <tr>
             {headers[resource].map((label) => (
-              <th className="p-4 text-start" key={label}>
+              <th
+                className={
+                  label === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                }
+                key={label}
+              >
                 {label}
               </th>
             ))}
@@ -733,7 +738,7 @@ export function MasterDataTravelServicesWorkspace() {
                 ),
               )}
               <td className="p-4">{statusBadge(record)}</td>
-              <td className="p-4">{actions(record)}</td>
+              <td className="p-4 text-center">{actions(record)}</td>
             </tr>
           ))}
         </tbody>

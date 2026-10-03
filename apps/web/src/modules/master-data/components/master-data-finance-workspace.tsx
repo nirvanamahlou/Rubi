@@ -984,7 +984,7 @@ export function MasterDataFinanceWorkspace() {
                   <th className="p-4 text-start">منبع</th>
                   <th className="p-4 text-start">وضعیت</th>
                   <th className="p-4 text-start">مسئول ثبت</th>
-                  <th className="p-4 text-start">عملیات</th>
+                  <th className="p-4 text-center">عملیات</th>
                 </tr>
               </thead>
               <tbody>
@@ -1004,8 +1004,8 @@ export function MasterDataFinanceWorkspace() {
                     <td className="p-4 font-mono text-xs" dir="ltr">
                       {row.createdByUserId}
                     </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap justify-end gap-2">
+                    <td className="p-4 text-center">
+                      <div className="flex flex-wrap justify-center gap-2">
                         <Button
                           aria-label={`مشاهده ${row.fromCurrencyCode}/${row.toCurrencyCode}`}
                           onClick={() => {
@@ -1135,7 +1135,7 @@ export function MasterDataFinanceWorkspace() {
                   <th className="p-4 text-start">نام انگلیسی / مرجع</th>
                   <th className="p-4 text-start">جزئیات</th>
                   <th className="p-4 text-start">وضعیت</th>
-                  <th className="p-4 text-start">عملیات</th>
+                  <th className="p-4 text-center">عملیات</th>
                 </tr>
               </thead>
               <tbody>
@@ -1180,8 +1180,8 @@ export function MasterDataFinanceWorkspace() {
                         {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                       </Badge>
                     </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap justify-end gap-2">
+                    <td className="p-4 text-center">
+                      <div className="flex flex-wrap justify-center gap-2">
                         <Button
                           aria-label={`مشاهده ${record.name}`}
                           onClick={() => {
@@ -1471,7 +1471,7 @@ export function MasterDataFinanceWorkspace() {
                         <th className="p-4 text-start">زمان UTC</th>
                         <th className="p-4 text-start">وضعیت</th>
                         <th className="p-4 text-start">مسئول ثبت</th>
-                        <th className="p-4 text-start">عملیات</th>
+                        <th className="p-4 text-center">عملیات</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1492,22 +1492,24 @@ export function MasterDataFinanceWorkspace() {
                           <td className="p-4 font-mono text-xs" dir="ltr">
                             {row.createdByUserId}
                           </td>
-                          <td className="p-4">
-                            {row.status === 'DRAFT' ? (
-                              <MasterDataDeleteButton
-                                record={rateRecord(row)}
-                                onDeleted={loadCurrencyHistory}
-                              />
-                            ) : null}
-                            <Button
-                              aria-label="مشاهده جزئیات رخداد"
-                              onClick={() => void showAudit(row)}
-                              size="icon"
-                              title="مشاهده جزئیات رخداد"
-                              variant="ghost"
-                            >
-                              <Eye aria-hidden="true" className="size-4" />
-                            </Button>
+                          <td className="p-4 text-center">
+                            <div className="flex flex-wrap justify-center gap-2">
+                              {row.status === 'DRAFT' ? (
+                                <MasterDataDeleteButton
+                                  record={rateRecord(row)}
+                                  onDeleted={loadCurrencyHistory}
+                                />
+                              ) : null}
+                              <Button
+                                aria-label="مشاهده جزئیات رخداد"
+                                onClick={() => void showAudit(row)}
+                                size="icon"
+                                title="مشاهده جزئیات رخداد"
+                                variant="ghost"
+                              >
+                                <Eye aria-hidden="true" className="size-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}

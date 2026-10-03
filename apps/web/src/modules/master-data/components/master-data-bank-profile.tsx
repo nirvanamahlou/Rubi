@@ -142,7 +142,7 @@ export function MasterDataBankProfile({
                       <th className="p-3 text-start">نشانی</th>
                       <th className="p-3 text-start">تلفن</th>
                       <th className="p-3 text-start">وضعیت</th>
-                      <th className="p-3 text-start">عملیات</th>
+                      <th className="p-3 text-center">عملیات</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -165,32 +165,34 @@ export function MasterDataBankProfile({
                         <td className="p-3">
                           {branch.status === 'active' ? 'فعال' : 'غیرفعال'}
                         </td>
-                        <td className="flex gap-2 p-3">
-                          <Button
-                            aria-label={`مشاهده ${branch.name}`}
-                            onClick={() => {
-                              setSelectedBranch(branch);
-                              setFormMode('view');
-                            }}
-                            size="icon"
-                            variant="outline"
-                          >
-                            <Eye aria-hidden="true" className="size-4" />
-                          </Button>
-                          <Button
-                            aria-label={`ویرایش ${branch.name}`}
-                            onClick={() => {
-                              setSelectedBranch(branch);
-                              setFormMode('edit');
-                            }}
-                            size="icon"
-                            variant="outline"
-                          >
-                            <FilePenLine
-                              aria-hidden="true"
-                              className="size-4"
-                            />
-                          </Button>
+                        <td className="p-3 text-center">
+                          <div className="flex justify-center gap-2">
+                            <Button
+                              aria-label={`مشاهده ${branch.name}`}
+                              onClick={() => {
+                                setSelectedBranch(branch);
+                                setFormMode('view');
+                              }}
+                              size="icon"
+                              variant="outline"
+                            >
+                              <Eye aria-hidden="true" className="size-4" />
+                            </Button>
+                            <Button
+                              aria-label={`ویرایش ${branch.name}`}
+                              onClick={() => {
+                                setSelectedBranch(branch);
+                                setFormMode('edit');
+                              }}
+                              size="icon"
+                              variant="outline"
+                            >
+                              <FilePenLine
+                                aria-hidden="true"
+                                className="size-4"
+                              />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
