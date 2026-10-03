@@ -171,7 +171,10 @@ it('keeps Tehran to Antalya in outbound and Antalya to Tehran in return for the 
     originCountryId: 'ir',
     destinationCountryId: 'tr',
   };
-  const visible = filterManifestTickets([outbound, tickets[1]!, returning], filters);
+  const visible = filterManifestTickets(
+    [outbound, tickets[1]!, returning],
+    filters,
+  );
   expect(visible.map(({ offerId }) => offerId)).toEqual([
     'tehran-antalya',
     'antalya-tehran',
