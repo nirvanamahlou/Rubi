@@ -13,6 +13,44 @@ vi.mock('@/lib/auth-session', () => ({ refreshAuthenticatedSession: vi.fn() }));
 afterEach(() => vi.restoreAllMocks());
 
 describe('agency public Master Data adapter', () => {
+  it('keeps challenge, verify and verified contact in the dedicated no-store B2B namespace', async () => {
+    const fetch = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ challengeId: 'challenge' }), {
+          status: 200,
+        }),
+    );
+    const context = {
+      registrationId: 'registration',
+      branchId: 'branch',
+      role: 'AGENCY' as const,
+      organizationId: 'organization',
+      phone: '09121234567',
+    };
+    await agencyClient.requestPhoneChallenge(context);
+    expect(fetch).toHaveBeenLastCalledWith(
+      'http://localhost:4999/api/v1/b2b/cooperation/phone-verification/challenges',
+      expect.objectContaining({ method: 'POST', cache: 'no-store' }),
+    );
+    await agencyClient.verifyPhoneChallenge('challenge / id', {
+      ...context,
+      code: '123456',
+    });
+    expect(fetch).toHaveBeenLastCalledWith(
+      'http://localhost:4999/api/v1/b2b/cooperation/phone-verification/challenges/challenge%20%2F%20id/verify',
+      expect.objectContaining({ method: 'POST', cache: 'no-store' }),
+    );
+    await agencyClient.saveVerifiedContact({
+      ...context,
+      grant: 'grant',
+      fullName: 'Synthetic',
+    });
+    expect(fetch).toHaveBeenLastCalledWith(
+      'http://localhost:4999/api/v1/b2b/cooperation/phone-verification/contacts',
+      expect.objectContaining({ method: 'POST', cache: 'no-store' }),
+    );
+  });
+
   it('loads CRM connections through the backend B2B query endpoint', async () => {
     const payload = {
       version: 1,

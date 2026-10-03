@@ -27,6 +27,11 @@ import type {
   B2bPortalIdentity,
   B2bPortalSection,
   B2bCrmConnectionsV1,
+  B2bPhoneChallengeV1,
+  B2bPhoneVerificationGrantV1,
+  CreateB2bPhoneChallengeRequestV1,
+  CreateVerifiedB2bContactRequestV1,
+  VerifyB2bPhoneChallengeRequestV1,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -94,6 +99,27 @@ async function b2bRequest<T>(
 }
 
 export const agencyClient = {
+  requestPhoneChallenge(input: CreateB2bPhoneChallengeRequestV1) {
+    return b2bRequest<B2bPhoneChallengeV1>(
+      '/cooperation/phone-verification/challenges',
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  },
+  verifyPhoneChallenge(
+    challengeId: string,
+    input: VerifyB2bPhoneChallengeRequestV1,
+  ) {
+    return b2bRequest<B2bPhoneVerificationGrantV1>(
+      `/cooperation/phone-verification/challenges/${encodeURIComponent(challengeId)}/verify`,
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  },
+  saveVerifiedContact(input: CreateVerifiedB2bContactRequestV1) {
+    return b2bRequest<{ data: MasterDataRecord }>(
+      '/cooperation/phone-verification/contacts',
+      { method: 'POST', body: JSON.stringify(input) },
+    );
+  },
   crmConnections(
     organizationId: string,
     branchId?: string,

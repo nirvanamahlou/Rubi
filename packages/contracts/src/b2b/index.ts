@@ -10,6 +10,7 @@ import type {
 export const B2B_CONTRACT_VERSION = 1 as const;
 export * from './agreement-workflow';
 export * from './agreement-validation';
+export * from './phone-verification';
 export const B2B_API_PREFIX = '/api/v1/b2b' as const;
 
 export type AgencyOperationalStatus =

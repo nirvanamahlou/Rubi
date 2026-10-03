@@ -2,10 +2,12 @@
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
+  B2bPhoneChallengeV1,
   BranchReference,
   IamPermissionCode,
   MasterDataRecord,
 } from '@nora/contracts';
+import { normalizeIranianMobile } from '@nora/contracts';
 import { ArrowLeft, Check, FileText, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -22,16 +24,30 @@ import {
   blankCooperationDraft,
   cooperationIssue,
   CooperationSaveError,
+  normalizeOtpCode,
   saveCooperation,
   type CooperationDraft,
 } from '../model/cooperation-draft';
+import { PhoneVerificationRequestGate } from '../model/phone-verification-lifecycle';
 
 const steps = [
   ['هویت و نقش', 'انتخاب سازمان موجود یا جدید'],
   ['اشخاص و دسترسی', 'نماینده و نشانی همکاری'],
+  ['تأیید شماره', 'کد یک‌بارمصرف شماره همراه'],
   ['قرارداد و اعتبار', 'شرایط تجاری و پیش‌نویس'],
   ['اسناد و تأیید', 'بازبینی و ثبت پرونده'],
 ];
+
+function freshDraft(role: CooperationDraft['role'], branchId = '') {
+  return {
+    ...blankCooperationDraft,
+    role,
+    branchId,
+    agreementTerms: blankAgreementTerms(),
+    agreementRequestId: crypto.randomUUID(),
+    registrationId: crypto.randomUUID(),
+  } satisfies CooperationDraft;
+}
 export function CooperationWizard({
   role,
   permissions,
@@ -43,12 +59,7 @@ export function CooperationWizard({
   onClose: () => void;
   onSaved: (record: MasterDataRecord) => void;
 }) {
-  const [draft, setDraft] = useState<CooperationDraft>(() => ({
-    ...blankCooperationDraft,
-    role,
-    agreementTerms: blankAgreementTerms(),
-    agreementRequestId: crypto.randomUUID(),
-  }));
+  const [draft, setDraft] = useState<CooperationDraft>(() => freshDraft(role));
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'new' | 'existing'>('existing');
   const [existing, setExisting] = useState<MasterDataRecord>();
@@ -65,6 +76,10 @@ export function CooperationWizard({
   const [uploading, setUploading] = useState(false);
   const [stopped, setStopped] = useState(false);
   const [partial, setPartial] = useState<MasterDataRecord>();
+  const [phoneChallenge, setPhoneChallenge] = useState<B2bPhoneChallengeV1>();
+  const [phoneCode, setPhoneCode] = useState('');
+  const [phoneBusy, setPhoneBusy] = useState(false);
+  const phoneRequests = useRef(new PhoneVerificationRequestGate());
   const heading = useRef<HTMLHeadingElement>(null);
   const set = (field: keyof CooperationDraft, value: string | boolean) =>
     setDraft((current) => ({ ...current, [field]: value }));
@@ -76,7 +91,14 @@ export function CooperationWizard({
     void agencyClient
       .branches()
       .then((items) => {
-        if (active) setBranches(items);
+        if (active) {
+          setBranches(items);
+          setDraft((current) =>
+            current.branchId || !items[0]
+              ? current
+              : { ...current, branchId: items[0].id },
+          );
+        }
       })
       .catch(() => {
         if (active) setError('دریافت شعب مجاز ناموفق بود.');
@@ -85,6 +107,106 @@ export function CooperationWizard({
       active = false;
     };
   }, []);
+  useEffect(
+    () => () => {
+      phoneRequests.current.invalidate();
+    },
+    [],
+  );
+  useEffect(() => {
+    if (!draft.phoneVerificationExpiresAt) return;
+    const remaining = Date.parse(draft.phoneVerificationExpiresAt) - Date.now();
+    const timer = window.setTimeout(
+      () => {
+        setDraft((current) => ({
+          ...current,
+          phoneVerificationGrant: undefined,
+          phoneVerificationExpiresAt: undefined,
+        }));
+      },
+      Number.isFinite(remaining) ? Math.max(0, remaining) : 0,
+    );
+    return () => window.clearTimeout(timer);
+  }, [draft.phoneVerificationExpiresAt]);
+
+  function changeIdentity(
+    update: (current: CooperationDraft) => CooperationDraft,
+  ) {
+    phoneRequests.current.invalidate();
+    setPhoneBusy(false);
+    setPhoneChallenge(undefined);
+    setPhoneCode('');
+    setDraft((current) => ({
+      ...update(current),
+      registrationId: crypto.randomUUID(),
+      phoneVerificationGrant: undefined,
+      phoneVerificationExpiresAt: undefined,
+    }));
+  }
+
+  function verificationInput(current = draft) {
+    return {
+      registrationId: current.registrationId,
+      branchId: current.branchId,
+      role: current.role,
+      organizationId: existing?.id ?? null,
+      phone: current.phone,
+    };
+  }
+
+  async function requestPhoneCode() {
+    const issue = cooperationIssue(draft, 2);
+    if (issue) return setError(issue);
+    if (!draft.branchId) return setError('شعبه ثبت شماره را انتخاب کنید.');
+    const requestId = phoneRequests.current.begin();
+    setPhoneBusy(true);
+    setError('');
+    try {
+      const challenge =
+        await agencyClient.requestPhoneChallenge(verificationInput());
+      if (!phoneRequests.current.isCurrent(requestId)) return;
+      setPhoneChallenge(challenge);
+      setPhoneCode('');
+      setDraft((current) => ({
+        ...current,
+        phoneVerificationGrant: undefined,
+        phoneVerificationExpiresAt: undefined,
+      }));
+    } catch (caught) {
+      if (phoneRequests.current.isCurrent(requestId))
+        setError(
+          caught instanceof Error ? caught.message : 'ارسال کد ناموفق بود.',
+        );
+    } finally {
+      if (phoneRequests.current.settle(requestId)) setPhoneBusy(false);
+    }
+  }
+
+  async function verifyPhoneCode() {
+    if (!phoneChallenge) return setError('ابتدا کد آزمایشی دریافت کنید.');
+    const requestId = phoneRequests.current.begin();
+    setPhoneBusy(true);
+    setError('');
+    try {
+      const verified = await agencyClient.verifyPhoneChallenge(
+        phoneChallenge.challengeId,
+        { ...verificationInput(), code: phoneCode.trim() },
+      );
+      if (!phoneRequests.current.isCurrent(requestId)) return;
+      setDraft((current) => ({
+        ...current,
+        phoneVerificationGrant: verified.grant,
+        phoneVerificationExpiresAt: verified.expiresAt,
+      }));
+    } catch (caught) {
+      if (phoneRequests.current.isCurrent(requestId))
+        setError(
+          caught instanceof Error ? caught.message : 'تأیید کد ناموفق بود.',
+        );
+    } finally {
+      if (phoneRequests.current.settle(requestId)) setPhoneBusy(false);
+    }
+  }
   useEffect(() => {
     let active = true;
     if (!query.trim() || mode !== 'existing') return;
@@ -175,7 +297,7 @@ export function CooperationWizard({
       return;
     }
     setError('');
-    setStep((current) => Math.min(4, current + 1));
+    setStep((current) => Math.min(5, current + 1));
   }
   async function save() {
     if (busy || uploading || stopped) return;
@@ -210,7 +332,14 @@ export function CooperationWizard({
         placeholder={
           key === 'code' ? 'پس از ثبت، خودکار تولید می‌شود' : undefined
         }
-        onChange={(event) => set(key, event.target.value)}
+        onChange={(event) =>
+          key === 'phone'
+            ? changeIdentity((current) => ({
+                ...current,
+                phone: event.target.value,
+              }))
+            : set(key, event.target.value)
+        }
       />
     </label>
   );
@@ -219,6 +348,7 @@ export function CooperationWizard({
   ).every((permission) => permissions.includes(permission));
   function close() {
     if (busy || uploading) return;
+    phoneRequests.current.invalidate();
     if (partial) onSaved(partial);
     else onClose();
   }
@@ -268,6 +398,7 @@ export function CooperationWizard({
                 [
                   'هویت سازمان و نقش همکاری',
                   'اشخاص کلیدی و نشانی همکاری',
+                  'تأیید شماره همراه نماینده',
                   'قرارداد چارچوب و سیاست اعتبار',
                   'بازبینی اطلاعات و ثبت پرونده',
                 ][step - 1]
@@ -286,9 +417,13 @@ export function CooperationWizard({
                       name="identityMode"
                       checked={mode === 'existing'}
                       onChange={() => {
+                        phoneRequests.current.invalidate();
+                        setPhoneBusy(false);
                         setMode('existing');
                         setExisting(undefined);
-                        setDraft({ ...blankCooperationDraft, role });
+                        setPhoneChallenge(undefined);
+                        setPhoneCode('');
+                        setDraft(freshDraft(role, branches[0]?.id));
                       }}
                     />{' '}
                     سازمان موجود
@@ -300,9 +435,13 @@ export function CooperationWizard({
                       checked={mode === 'new'}
                       disabled={!permissions.includes('master_data.create')}
                       onChange={() => {
+                        phoneRequests.current.invalidate();
+                        setPhoneBusy(false);
                         setMode('new');
                         setExisting(undefined);
-                        setDraft({ ...blankCooperationDraft, role });
+                        setPhoneChallenge(undefined);
+                        setPhoneCode('');
+                        setDraft(freshDraft(role, branches[0]?.id));
                       }}
                     />{' '}
                     سازمان جدید
@@ -336,9 +475,16 @@ export function CooperationWizard({
                               existing?.id === record.id ? 'selected' : ''
                             }
                             onClick={() => {
+                              phoneRequests.current.invalidate();
+                              setPhoneBusy(false);
                               setExisting(record);
+                              setPhoneChallenge(undefined);
+                              setPhoneCode('');
                               setDraft((current) => ({
                                 ...current,
+                                registrationId: crypto.randomUUID(),
+                                phoneVerificationGrant: undefined,
+                                phoneVerificationExpiresAt: undefined,
                                 legalName: record.name,
                                 code: record.code,
                                 nationalId: String(
@@ -377,7 +523,7 @@ export function CooperationWizard({
                       className="input"
                       value={draft.role}
                       onChange={(event) =>
-                        setDraft((current) => ({
+                        changeIdentity((current) => ({
                           ...current,
                           role: event.target.value as CooperationDraft['role'],
                           withAgreement: false,
@@ -539,6 +685,117 @@ export function CooperationWizard({
             ) : null}
             {step === 3 ? (
               <>
+                {!draft.phone.trim() ? (
+                  <div className="boundary-note">
+                    شماره همراه اختیاری است. چون شماره‌ای وارد نشده، می‌توانید
+                    بدون تأیید شماره ادامه دهید.
+                  </div>
+                ) : (
+                  <div className="form-grid">
+                    <label className="field">
+                      <span>شماره همراه</span>
+                      <input
+                        className="input"
+                        value={
+                          normalizeIranianMobile(draft.phone) ?? draft.phone
+                        }
+                        readOnly
+                      />
+                      <small className="panel-note">
+                        قالب پشتیبانی‌شده: 09xxxxxxxxx یا معادل +98/0098
+                      </small>
+                    </label>
+                    <label className="field">
+                      <span>شعبه ثبت شماره *</span>
+                      <NativeSearchSelect
+                        className="input"
+                        value={draft.branchId}
+                        disabled={
+                          phoneBusy || Boolean(draft.phoneVerificationGrant)
+                        }
+                        onChange={(event) =>
+                          changeIdentity((current) => ({
+                            ...current,
+                            branchId: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">انتخاب شعبه</option>
+                        {branches.map((branch) => (
+                          <option value={branch.id} key={branch.id}>
+                            {branch.name}
+                          </option>
+                        ))}
+                      </NativeSearchSelect>
+                    </label>
+                    <div className="field">
+                      <span>ارسال کد</span>
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={
+                          phoneBusy || Boolean(draft.phoneVerificationGrant)
+                        }
+                        onClick={() => void requestPhoneCode()}
+                      >
+                        {phoneChallenge
+                          ? 'ارسال دوباره کد'
+                          : 'دریافت کد آزمایشی'}
+                      </button>
+                    </div>
+                    {phoneChallenge ? (
+                      <>
+                        {phoneChallenge.developmentCode ? (
+                          <div className="boundary-note" role="status">
+                            کد آزمایشی؛ پیامک واقعی ارسال نشده:{' '}
+                            <bdi>{phoneChallenge.developmentCode}</bdi>
+                          </div>
+                        ) : null}
+                        <label className="field">
+                          <span>کد شش‌رقمی</span>
+                          <input
+                            className="input"
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
+                            maxLength={6}
+                            disabled={
+                              phoneBusy || Boolean(draft.phoneVerificationGrant)
+                            }
+                            value={phoneCode}
+                            onChange={(event) =>
+                              setPhoneCode(normalizeOtpCode(event.target.value))
+                            }
+                          />
+                        </label>
+                        <div className="field">
+                          <span>بررسی کد</span>
+                          <button
+                            type="button"
+                            className="btn primary"
+                            disabled={
+                              phoneBusy ||
+                              phoneCode.length !== 6 ||
+                              Boolean(draft.phoneVerificationGrant)
+                            }
+                            onClick={() => void verifyPhoneCode()}
+                          >
+                            تأیید شماره
+                          </button>
+                        </div>
+                      </>
+                    ) : null}
+                    {draft.phoneVerificationGrant ? (
+                      <div className="boundary-note" role="status">
+                        شماره برای همین پیش‌نویس تأیید شد. این تأیید، احراز هویت
+                        شرکت یا حساب کاربری نیست.
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </>
+            ) : null}
+            {step === 4 ? (
+              <>
                 <div className="agreement-row-title">
                   <label className="check">
                     <input
@@ -566,6 +823,7 @@ export function CooperationWizard({
                   <span>شعبه قرارداد *</span>
                   <NativeSearchSelect
                     className="input"
+                    disabled={Boolean(draft.phoneVerificationGrant)}
                     value={draft.branchId}
                     onChange={(event) => set('branchId', event.target.value)}
                   >
@@ -606,7 +864,7 @@ export function CooperationWizard({
                 />
               </>
             ) : null}
-            {step === 4 ? (
+            {step === 5 ? (
               <>
                 <div className="summary-list">
                   {[
@@ -618,6 +876,14 @@ export function CooperationWizard({
                       draft.role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی',
                     ],
                     ['نماینده', draft.fullName || 'ثبت نمی‌شود'],
+                    [
+                      'شماره همراه',
+                      draft.phone
+                        ? draft.phoneVerificationGrant
+                          ? 'تأیید شده برای ثبت این مخاطب'
+                          : 'نیازمند تأیید'
+                        : 'ثبت نمی‌شود',
+                    ],
                     ['نشانی', draft.addressLine || 'ثبت نمی‌شود'],
                     [
                       'قرارداد',
@@ -697,11 +963,11 @@ export function CooperationWizard({
                 <button
                   className="btn primary"
                   disabled={busy || uploading || stopped}
-                  onClick={() => (step < 4 ? next() : void save())}
+                  onClick={() => (step < 5 ? next() : void save())}
                 >
                   {busy
                     ? 'در حال ذخیره…'
-                    : step === 4
+                    : step === 5
                       ? 'ذخیره پرونده'
                       : 'مرحله بعد'}
                   <ArrowLeft size={18} />
