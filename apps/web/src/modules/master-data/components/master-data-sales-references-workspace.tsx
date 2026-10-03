@@ -13,11 +13,11 @@ import type {
 import {
   ArrowRight,
   CheckCircle2,
-  CircleAlert,
   Eye,
   FilePenLine,
   FileSpreadsheet,
   Link2,
+  Languages,
   Plus,
   RefreshCw,
   Search,
@@ -26,7 +26,7 @@ import {
   UserRoundSearch,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -85,6 +85,7 @@ const tabs = [
 }[];
 
 type SalesReferenceResource = (typeof tabs)[number]['resource'];
+export type SalesReferenceSummaryState = 'loading' | 'ready' | 'error';
 
 type SalesReferenceColumnFilters = Readonly<{
   columnFilter1?: string;
@@ -105,6 +106,89 @@ export function visibleSalesReferenceColumnFilterIndexes(
   return resource === 'acquaintance-methods' ? [0] : [0, 1];
 }
 
+export function countEnglishTitles(records: readonly MasterDataRecord[]) {
+  return records.filter((record) => {
+    const value = record.attributes.englishName;
+    return typeof value === 'string' && value.trim().length > 0;
+  }).length;
+}
+
+export function hasValidSalesReferenceSummaryProgress(
+  pageLength: number,
+  collected: number,
+  total: number,
+) {
+  return (
+    Number.isSafeInteger(total) &&
+    total >= 0 &&
+    collected <= total &&
+    (collected >= total || pageLength > 0)
+  );
+}
+
+export function appendUniqueSalesReferenceSummaryPage(
+  target: MasterDataRecord[],
+  seenIds: Set<string>,
+  page: readonly MasterDataRecord[],
+) {
+  const pageIds = page.map((record) => record.id);
+  if (
+    pageIds.some((id) => !id || seenIds.has(id)) ||
+    new Set(pageIds).size !== pageIds.length
+  )
+    return false;
+  for (const record of page) {
+    seenIds.add(record.id);
+    target.push(record);
+  }
+  return true;
+}
+
+export function isCurrentSalesReferenceSummaryRequest(
+  requestId: number,
+  currentRequestId: number,
+  requestedResource: SalesReferenceResource,
+  currentResource: SalesReferenceResource,
+) {
+  return (
+    requestId === currentRequestId && requestedResource === currentResource
+  );
+}
+
+export function salesReferenceKpiItems(
+  resource: SalesReferenceResource,
+  allRecords: readonly MasterDataRecord[],
+  summaryState: SalesReferenceSummaryState,
+): readonly MasterDataKpiItem[] {
+  const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
+  const active = allRecords.filter(
+    (record) => record.status === 'active',
+  ).length;
+  return [
+    {
+      label: 'کل موارد',
+      value: allRecords.length,
+      icon: currentTab.icon,
+      tone: 'sky',
+    },
+    { label: 'فعال', value: active, icon: CheckCircle2, tone: 'emerald' },
+    {
+      label: 'استفاده‌شده',
+      value: '—',
+      icon: Link2,
+      tone: 'violet',
+      hint: 'در انتظار قرارداد Aggregate ماژول مصرف‌کننده',
+    },
+    {
+      label: 'دارای عنوان انگلیسی',
+      value: summaryState === 'ready' ? countEnglishTitles(allRecords) : '—',
+      icon: Languages,
+      tone: 'amber',
+      hint: 'در کل اطلاعات پایه',
+    },
+  ];
+}
+
 function attribute(record: MasterDataRecord, key: string, fallback = '—') {
   const value = record.attributes[key];
   return value === null || value === undefined || value === ''
@@ -118,6 +202,10 @@ export function MasterDataSalesReferencesWorkspace() {
   );
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [allRecords, setAllRecords] = useState<readonly MasterDataRecord[]>([]);
+  const [summaryState, setSummaryState] =
+    useState<SalesReferenceSummaryState>('loading');
+  const summaryRequestRef = useRef(0);
+  const summaryResourceRef = useRef(resource);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
@@ -176,8 +264,12 @@ export function MasterDataSalesReferencesWorkspace() {
   }, [dateFilters, effectiveColumnFilters, page, resource, search, status]);
 
   const loadSummary = useCallback(async () => {
+    const requestId = ++summaryRequestRef.current;
+    const requestedResource = resource;
+    setSummaryState('loading');
     try {
       const rows: MasterDataRecord[] = [];
+      const seenIds = new Set<string>();
       for (let summaryPage = 1; ; summaryPage += 1) {
         const response = await masterDataApi.list(resource, {
           search: '',
@@ -187,12 +279,52 @@ export function MasterDataSalesReferencesWorkspace() {
           page: summaryPage,
           pageSize: 100,
         });
-        rows.push(...response.data);
+        if (
+          !isCurrentSalesReferenceSummaryRequest(
+            requestId,
+            summaryRequestRef.current,
+            requestedResource,
+            summaryResourceRef.current,
+          )
+        )
+          return;
+        if (
+          !appendUniqueSalesReferenceSummaryPage(rows, seenIds, response.data)
+        )
+          throw new Error('Duplicate sales reference summary records');
+        if (
+          !hasValidSalesReferenceSummaryProgress(
+            response.data.length,
+            rows.length,
+            response.meta.total,
+          )
+        )
+          throw new Error('Invalid sales reference summary pagination');
         if (rows.length >= response.meta.total) break;
       }
+      if (
+        !isCurrentSalesReferenceSummaryRequest(
+          requestId,
+          summaryRequestRef.current,
+          requestedResource,
+          summaryResourceRef.current,
+        )
+      )
+        return;
       setAllRecords(rows);
+      setSummaryState('ready');
     } catch {
+      if (
+        !isCurrentSalesReferenceSummaryRequest(
+          requestId,
+          summaryRequestRef.current,
+          requestedResource,
+          summaryResourceRef.current,
+        )
+      )
+        return;
       setAllRecords([]);
+      setSummaryState('error');
     }
   }, [resource]);
 
@@ -203,43 +335,23 @@ export function MasterDataSalesReferencesWorkspace() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadSummary(), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      summaryRequestRef.current += 1;
+    };
   }, [loadSummary]);
 
-  const kpis = useMemo<readonly MasterDataKpiItem[]>(() => {
-    const active = allRecords.filter(
-      (record) => record.status === 'active',
-    ).length;
-    const needsReview = allRecords.filter(
-      (record) =>
-        !record.attributes.englishName || !record.attributes.description,
-    ).length;
-    return [
-      {
-        label: 'کل موارد',
-        value: allRecords.length,
-        icon: CurrentIcon,
-        tone: 'sky',
-      },
-      { label: 'فعال', value: active, icon: CheckCircle2, tone: 'emerald' },
-      {
-        label: 'استفاده‌شده',
-        value: '—',
-        icon: Link2,
-        tone: 'violet',
-        hint: 'در انتظار قرارداد Aggregate ماژول مصرف‌کننده',
-      },
-      {
-        label: 'نیازمند بازبینی',
-        value: needsReview,
-        icon: CircleAlert,
-        tone: 'amber',
-      },
-    ];
-  }, [CurrentIcon, allRecords]);
+  const kpis = useMemo(
+    () => salesReferenceKpiItems(resource, allRecords, summaryState),
+    [allRecords, resource, summaryState],
+  );
 
   function changeResource(next: SalesReferenceResource) {
+    summaryRequestRef.current += 1;
+    summaryResourceRef.current = next;
     setResource(next);
+    setAllRecords([]);
+    setSummaryState('loading');
     setSearch('');
     resetColumnFilters();
     setStatus('active');
