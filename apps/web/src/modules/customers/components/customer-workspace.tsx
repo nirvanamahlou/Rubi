@@ -657,7 +657,10 @@ export function CustomerDrawer({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const submittedCompanions = customerOnlyEntry ? [] : newCompanions;
-    if (customerOnlyEntry && (!primaryPhone.trim() || !address.trim())) {
+    if (
+      customerOnlyEntry &&
+      (!primaryPhone.trim() || address.trim().length < 2)
+    ) {
       setMessage('شماره تماس و نشانی مشتری را تکمیل کنید.');
       return;
     }

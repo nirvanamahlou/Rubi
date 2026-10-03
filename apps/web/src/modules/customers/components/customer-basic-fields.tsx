@@ -31,7 +31,8 @@ export function CustomerBasicFields({
             disabled={disabled}
             required
             value={values[field]}
-            maxLength={field === 'address' ? 120 : field === 'phone' ? 16 : 120}
+            minLength={field === 'address' ? 2 : undefined}
+            maxLength={field === 'address' ? 240 : field === 'phone' ? 16 : 120}
             type={field === 'phone' ? 'tel' : 'text'}
             dir={field === 'phone' ? 'ltr' : undefined}
             pattern={field === 'phone' ? '[+]?[0-9]{10,15}' : undefined}
