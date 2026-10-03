@@ -4443,3 +4443,7 @@ Calendar right arrows now advance and left arrows go back across shared DatePick
 ## 2026-10-03 — MASTER-DATA-REVIEW-KPIS-1003 — PC-B — READY_FOR_REVIEW
 
 Seven remaining review/completion KPI cards now use validated global-summary metrics across Accommodation, Finance, Suppliers, Travel Services and Transportation. Invalid/loading/error/missing values remain unavailable rather than becoming fabricated zero; genuinely ready empty summaries show zero, and stale summary responses are ignored. Focused 65 and all 561 Master Data tests, scoped ESLint, Web typecheck, scoped Prettier and the 55-route production build pass. API/schema/backend remain unchanged. No authenticated browser/runtime QA; bounded locks release with commit.
+
+## 2026-10-03 — AIRCRAFT-MODEL-KPI-1003 — PC-B — READY_FOR_REVIEW
+
+Aircraft Types now replaces `انواع بدنه` with `مدل‌های یکتا`, counted from trimmed nonblank canonical `model` values across the existing complete unfiltered global summary. The first three cards, other resources and existing stale/loading/error/pagination guards remain unchanged. Focused 18 and all 562 Master Data tests, scoped ESLint, Web typecheck, scoped Prettier and the 55-route production build pass. No API/schema/backend/data/runtime change or authenticated browser QA; bounded locks release with commit.

@@ -234,7 +234,7 @@ const replacementMetrics: Partial<
   Record<TransportResource, { label: string; attribute: string }>
 > = {
   airlines: { label: 'کشورهای مبدأ', attribute: 'countryId' },
-  'aircraft-types': { label: 'انواع بدنه', attribute: 'bodyType' },
+  'aircraft-types': { label: 'مدل‌های یکتا', attribute: 'model' },
   'rail-companies': { label: 'کشورهای ثبت‌شده', attribute: 'countryId' },
   'train-types': { label: 'دسته‌های قطار', attribute: 'category' },
   'bus-companies': { label: 'کشورهای ثبت‌شده', attribute: 'countryId' },

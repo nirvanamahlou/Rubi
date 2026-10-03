@@ -32,7 +32,7 @@ function record(
 
 const replacements = [
   ['airlines', 'countryId', 'کشورهای مبدأ'],
-  ['aircraft-types', 'bodyType', 'انواع بدنه'],
+  ['aircraft-types', 'model', 'مدل‌های یکتا'],
   ['rail-companies', 'countryId', 'کشورهای ثبت‌شده'],
   ['train-types', 'category', 'دسته‌های قطار'],
   ['bus-companies', 'countryId', 'کشورهای ثبت‌شده'],
@@ -106,6 +106,31 @@ describe('transport KPI replacements', () => {
     expect(html).toContain('کشورهای مبدأ');
     expect(html).toContain('در کل اطلاعات پایه');
     expect(html).not.toContain('نیازمند تکمیل برند');
+  });
+
+  it('preserves the first three aircraft cards and replaces only body types', () => {
+    const items = transportKpiItems(
+      'aircraft-types',
+      [
+        record('aircraft-types', { manufacturer: 'Airbus', model: 'A320' }, 1),
+        record(
+          'aircraft-types',
+          { manufacturer: 'Airbus', model: ' A320 ' },
+          2,
+        ),
+        record('aircraft-types', { manufacturer: 'Boeing', model: '777' }, 3),
+      ],
+      'ready',
+    );
+
+    expect(items.map(({ label }) => label)).toEqual([
+      'انواع هواپیما',
+      'نوع فعال',
+      'سازندگان',
+      'مدل‌های یکتا',
+    ]);
+    expect(items.map(({ value }) => value)).toEqual([3, 3, 2, 2]);
+    expect(items.some(({ label }) => label === 'انواع بدنه')).toBe(false);
   });
 
   it('replaces the cabin review card and preserves manifest publication', () => {
