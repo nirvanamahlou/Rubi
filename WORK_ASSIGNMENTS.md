@@ -5019,3 +5019,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## LOGIN-HIGGSFIELD-BACKGROUND-1003 — local handoff
 
 - Local preview verified on port 3100; 16 tests, scoped lint and production build with TypeScript pass. Desktop/mobile verified; video ends at 12 seconds without looping. Source locks released with this commit. Draft PR #555 remains unmerged; API/data unchanged.
+
+## LOGIN-TAILWIND-FOLLOWUP-1003 — PC-A — IN_PROGRESS
+
+- Resume existing login feature branch for the user's TAILWIND passenger-aircraft and vapor NOORA correction. Reserve only two background media assets, login cache-version references/tests, task/status entries and local visual verification. Prior login locks released; no auth/API/schema/dependency changes. Preserve generated next-env.d.ts and other worktrees.
+
+- TAILWIND local revision delivered; media/form separation and mobile verified. 16 tests, lint, TypeScript and 55-route build pass. Scoped source locks released with commit; no merge. Further camera-angle clarification remains with the user.

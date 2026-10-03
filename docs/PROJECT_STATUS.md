@@ -4255,3 +4255,7 @@ In the selected-contract panel, «فرم رزواسیون» now sits under «ع�
 ## 2026-10-03 — LOGIN-HIGGSFIELD-BACKGROUND-1003 — LOCAL_PREVIEW
 
 Successful Higgsfield composite replaces the previously blocked media draft: exact NOORA lettering, upper-right aircraft, clean sky, silent one-shot 12-second playback, static poster and reduced-motion fallback. User requested local rollout. Feature branch incorporates origin/develop; no authentication, API, schema or data change. PR #555 remains unmerged. Sixteen login tests and scoped lint pass.
+
+## 2026-10-03 — LOGIN-TAILWIND-FOLLOWUP-1003 — PC-A
+
+Updated the local login video to a TAILWIND passenger aircraft with a subtle upper-tail vapor trail and exact cloud-textured NOORA. Final Higgsfield composite is 12 seconds at 1280x720; one-shot playback, matching poster and mobile layout verified. 16 login tests and scoped lint pass. No API, authentication, schema or data changes. Existing draft PR remains unmerged.

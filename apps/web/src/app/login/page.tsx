@@ -65,8 +65,8 @@ export default function LoginPage() {
     >
       <LoginBackgroundStory
         video={{
-          src: '/brand/login-noora.mp4',
-          poster: '/brand/login-noora-poster.png',
+          src: '/brand/login-noora.mp4?v=tailwind-1',
+          poster: '/brand/login-noora-poster.png?v=tailwind-1',
         }}
       />
       <section className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl border border-white/50 bg-surface/95 shadow-2xl shadow-blue-950/20 backdrop-blur-sm lg:grid-cols-[1.1fr_1fr]">

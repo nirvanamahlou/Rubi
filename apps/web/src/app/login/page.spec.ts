@@ -19,8 +19,10 @@ describe('login background', () => {
   );
 
   it('keeps the selected B2 aviation image as a fixed page background', () => {
-    expect(source).toContain("src: '/brand/login-noora.mp4'");
-    expect(source).toContain("poster: '/brand/login-noora-poster.png'");
+    expect(source).toContain("src: '/brand/login-noora.mp4?v=tailwind-1'");
+    expect(source).toContain(
+      "poster: '/brand/login-noora-poster.png?v=tailwind-1'",
+    );
     expect(backgroundStyles).toContain(
       "background-image: url('/brand/login-airline-b2.png')",
     );
