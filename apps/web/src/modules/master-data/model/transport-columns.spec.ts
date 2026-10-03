@@ -29,7 +29,7 @@ describe('mockup column coverage', () => {
     'bus-types',
   ] as const)('has individual columns and two filters for %s', (resource) => {
     expect(transportColumns(resource).length).toBeGreaterThanOrEqual(
-      resource === 'airlines' ? 4 : 5,
+      resource === 'aircraft-types' ? 3 : resource === 'airlines' ? 4 : 5,
     );
     expect(getMasterDataColumnFilters(resource)).toHaveLength(2);
     expect(new Set(transportColumns(resource).map(([key]) => key)).size).toBe(
@@ -65,13 +65,11 @@ describe('mockup column coverage', () => {
     expect(transportColumns('airlines')).toHaveLength(4);
     expect(
       transportColumns('aircraft-types').map(([, label]) => label),
-    ).toEqual([
-      'کد',
-      'سازنده و مدل',
-      'عنوان انگلیسی',
-      'نوع بدنه',
-      'ظرفیت',
-      'ترتیب نمایش',
+    ).toEqual(['کد', 'سازنده و مدل', 'عنوان انگلیسی']);
+    expect(transportColumns('aircraft-types').map(([key]) => key)).toEqual([
+      'code',
+      'manufacturerModel',
+      'englishName',
     ]);
     expect(
       transportColumns('aircraft-types').map(([, label]) => label),

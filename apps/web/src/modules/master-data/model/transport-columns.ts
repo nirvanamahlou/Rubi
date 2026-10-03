@@ -23,9 +23,6 @@ export function transportColumns(
         ['code', 'کد'],
         ['manufacturerModel', 'سازنده و مدل'],
         ['englishName', 'عنوان انگلیسی'],
-        ['bodyType', 'نوع بدنه'],
-        ['capacity', 'ظرفیت'],
-        ['displayOrder', 'ترتیب نمایش'],
       ];
     case 'cabin-classes':
       return [
