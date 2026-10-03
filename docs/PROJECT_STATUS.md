@@ -4344,3 +4344,11 @@ Sales new purchase now collects buyer name, phone, address and postal code above
 ## 2026-10-03 — INSURANCE-KPI-REPLACEMENTS-1003 — PC-B — READY_FOR_REVIEW
 
 Insurance fourth cards now show `دارای طرح بیمه` and `متصل به طرح‌ها`, computed from existing numeric `planCount` projections over complete unfiltered pagination. Empty ready data renders zero; loading, errors or malformed projections render unavailable. Stale resource responses, duplicate rows, changing/invalid totals and incomplete pages are rejected, and CRUD plus explicit Refresh reload the relation summary. Focused 8 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. One unrelated date-range test timed out on the first full run, then its isolated 10 tests and the full rerun passed. No authenticated browser/runtime QA or API/schema/runtime/database change; bounded locks release with commit.
+
+## USER-CREATE-PASSWORD-RESET-1003 — PC-A — READY_FOR_REVIEW
+
+User creation now saves the current explicit access selections even while optional role suggestions are open; weak initial passwords receive clear validation feedback. Canonical system administrators can reset another user using a confirmed password form. IAM rechecks active administrator membership and session, hashes credentials, revokes target sessions and records secret-free audit atomically. Self-service password changes remain unchanged. No schema, migration, dependency or actual user/password change.
+
+84 focused IAM/HTTP tests and 34 Web tests pass; scoped lint, both typechecks and production API/Web builds (55 routes) pass. All 9 isolated PostgreSQL password/reset regressions pass, including old login/access/refresh rejection, administrator session preservation and audit-failure rollback. User authorizes CI-gated develop merge. See [task handoff](tasks/USER-CREATE-PASSWORD-RESET-1003.md).
+
+- Delivery: implementation `a0a1afd4`, [PR #586](https://github.com/nirvanamahlou/Rubi/pull/586) targets develop. Other PCs should fetch the reviewed merge; no migration/dependency step is introduced by this task. Local rollout follows owner authorization while preserving current LAN origins, document storage and unrelated runtime files.
