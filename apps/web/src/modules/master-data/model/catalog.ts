@@ -894,10 +894,17 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       'کد رزرو و Cabin مرجع؛ قیمت و موجودی صندلی در Ticket Catalog/Reservations می‌ماند.',
     fields: [
       {
-        key: 'englishName',
-        label: 'نام انگلیسی',
-        type: 'text',
-        placeholder: 'Economy',
+        key: 'cabinType',
+        label: 'نوع کلاس',
+        type: 'select',
+        placeholder: '',
+        required: true,
+        options: [
+          { value: 'ECONOMY', label: 'Economy' },
+          { value: 'PREMIUM_ECONOMY', label: 'Premium Economy' },
+          { value: 'BUSINESS', label: 'Business' },
+          { value: 'FIRST', label: 'First Class' },
+        ],
       },
       {
         key: 'bookingCode',

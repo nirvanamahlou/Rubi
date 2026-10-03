@@ -4,7 +4,10 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { MasterDataRecord } from '@nora/contracts';
 
-import { masterDataFormValuesFrom } from '../components/master-data-live-form';
+import {
+  masterDataFormValuesFrom,
+  masterDataRecordTitle,
+} from '../components/master-data-live-form';
 import { getMasterDataDefinition, masterDataCatalog } from './catalog';
 import { getMasterDataFormFields } from './form-fields';
 import { validateMasterDataDraft } from './validation';
@@ -97,7 +100,7 @@ describe('payment-method form fields', () => {
       suppliers: ['displayName'],
       brokers: ['displayName'],
       airlines: ['organizationId', 'iataCode', 'icaoCode'],
-      'cabin-classes': ['name', 'bodyType', 'cabinType'],
+      'cabin-classes': ['name', 'bodyType', 'englishName'],
       'baggage-rules': ['name', 'validFrom', 'validTo'],
       'bus-companies': ['supplierId'],
       'visa-services': [
@@ -181,21 +184,68 @@ describe('payment-method form fields', () => {
     }
   });
 
-  it('allows an omitted English-only title for cabin classes', () => {
+  it('saves the canonical Cabin type without mutating the legacy English name', () => {
     const definition = getMasterDataDefinition('cabin-classes');
     const fields = getMasterDataFormFields(definition);
-    const englishName = fields.find((field) => field.key === 'englishName');
+    const cabinType = fields.find((field) => field.key === 'cabinType');
 
     expect(fields.map((field) => field.key)).not.toContain('name');
-    expect(englishName?.required).not.toBe(true);
+    expect(fields.map((field) => field.key)).not.toContain('englishName');
+    expect(cabinType).toMatchObject({
+      label: 'نوع کلاس',
+      type: 'select',
+      required: true,
+    });
     expect(
-      validateMasterDataDraft('cabin-classes', { bookingCode: 'Y' }).errors,
-    ).not.toHaveProperty('englishName');
-    expect(
-      validateMasterDataDraft('cabin-classes', {
-        englishName: 'Economy',
-        bookingCode: 'Y',
-      }).success,
-    ).toBe(true);
+      cabinType?.options?.map(({ value, label }) => [value, label]),
+    ).toEqual([
+      ['ECONOMY', 'Economy'],
+      ['PREMIUM_ECONOMY', 'Premium Economy'],
+      ['BUSINESS', 'Business'],
+      ['FIRST', 'First Class'],
+    ]);
+    expect(masterDataFormValuesFrom(definition)).toMatchObject({
+      cabinType: 'ECONOMY',
+      bookingCode: '',
+    });
+
+    const record = {
+      id: '11111111-1111-4111-8111-111111111111',
+      resource: 'cabin-classes',
+      code: 'BUSINESS',
+      name: 'C',
+      status: 'active',
+      version: 2,
+      createdAt: '2026-10-03T00:00:00Z',
+      updatedAt: '2026-10-03T00:00:00Z',
+      attributes: {
+        englishName: 'Legacy Business Label',
+        cabinType: 'BUSINESS',
+        bookingCode: 'C',
+      },
+    } satisfies MasterDataRecord;
+    const editValues = masterDataFormValuesFrom(definition, record);
+    expect(editValues).toMatchObject({
+      cabinType: 'BUSINESS',
+      bookingCode: 'C',
+    });
+    expect(editValues).not.toHaveProperty('englishName');
+    expect(masterDataRecordTitle(definition, record)).toBe('Business');
+
+    const createPayload = validateMasterDataDraft('cabin-classes', {
+      ...masterDataFormValuesFrom(definition),
+      bookingCode: 'Y',
+    });
+    expect(createPayload.success).toBe(true);
+    expect(createPayload.values).toMatchObject({
+      cabinType: 'ECONOMY',
+      bookingCode: 'Y',
+    });
+    expect(createPayload.values).not.toHaveProperty('englishName');
+
+    const editPayload = validateMasterDataDraft('cabin-classes', editValues);
+    expect(editPayload.success).toBe(true);
+    expect(editPayload.values).toMatchObject({ cabinType: 'BUSINESS' });
+    expect(editPayload.values).not.toHaveProperty('englishName');
   });
 });

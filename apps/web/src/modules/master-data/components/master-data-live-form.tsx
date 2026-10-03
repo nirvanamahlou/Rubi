@@ -90,14 +90,16 @@ export function masterDataFormValuesFrom(
         field.key,
         definition.key === 'payment-methods' && field.key === 'channel'
           ? 'OTHER'
-          : field.key === 'displayOrder'
-            ? '0'
-            : field.key === 'collaborationStatus' ||
-                field.key === 'transportStatus'
-              ? 'ACTIVE'
-              : field.key === 'referenceValidityMode'
-                ? 'DAYS'
-                : '',
+          : definition.key === 'cabin-classes' && field.key === 'cabinType'
+            ? 'ECONOMY'
+            : field.key === 'displayOrder'
+              ? '0'
+              : field.key === 'collaborationStatus' ||
+                  field.key === 'transportStatus'
+                ? 'ACTIVE'
+                : field.key === 'referenceValidityMode'
+                  ? 'DAYS'
+                  : '',
       ]),
     );
   const [fromCurrencyCode = '', toCurrencyCode = ''] = record.code.split('/');
@@ -138,6 +140,21 @@ export function masterDataFormValuesFrom(
         value === null || value === undefined ? '' : String(value),
       ];
     }),
+  );
+}
+
+export function masterDataRecordTitle(
+  definition: MasterDataCatalogItem,
+  record?: MasterDataRecord,
+) {
+  if (definition.key !== 'cabin-classes' || !record)
+    return record?.name ?? definition.singularLabel;
+  const cabinType = String(record.attributes.cabinType ?? '');
+  return (
+    definition.fields
+      .find((field) => field.key === 'cabinType')
+      ?.options?.find((option) => option.value === cabinType)?.label ??
+    record.name
   );
 }
 
@@ -293,7 +310,7 @@ function GenericMasterDataLiveForm({
               <MasterDataProfileIdentity
                 eyebrow={`پروفایل ${definition.singularLabel}`}
                 {...(record ? { record } : {})}
-                title={record?.name ?? definition.singularLabel}
+                title={masterDataRecordTitle(definition, record)}
               />
               <MasterDataDetailSection title="مشخصات ثبت‌شده">
                 {fields.map((field) => (

@@ -81,16 +81,38 @@ describe('mockup column coverage', () => {
   });
   it('shows only the required English title for cabin classes', () => {
     expect(transportColumns('cabin-classes').map(([, label]) => label)).toEqual(
-      ['کد', 'عنوان انگلیسی', 'کد رزرو'],
+      ['کد', 'نوع کلاس', 'کد رزرو'],
     );
     expect(transportColumns('cabin-classes').map(([key]) => key)).toEqual([
       'code',
-      'englishName',
+      'cabinType',
       'bookingCode',
     ]);
     expect(
       transportColumns('cabin-classes').map(([, label]) => label),
     ).not.toContain('عنوان فارسی');
+    for (const [value, label] of [
+      ['ECONOMY', 'Economy'],
+      ['PREMIUM_ECONOMY', 'Premium Economy'],
+      ['BUSINESS', 'Business'],
+      ['FIRST', 'First Class'],
+    ] as const)
+      expect(
+        transportColumnValue(
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            resource: 'cabin-classes',
+            code: value,
+            name: label,
+            status: 'active',
+            version: 1,
+            createdAt: '2026-10-03T00:00:00Z',
+            updatedAt: '2026-10-03T00:00:00Z',
+            attributes: { cabinType: value },
+          },
+          'cabinType',
+        ),
+      ).toBe(label);
   });
   it('removes combined audit columns while preserving independent versions', () => {
     for (const resource of [
