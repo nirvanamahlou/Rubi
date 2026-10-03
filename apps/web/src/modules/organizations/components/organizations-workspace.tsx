@@ -690,7 +690,7 @@ export function OrganizationsWorkspace() {
                     {commercial[record.id]?.manager ?? 'در حال دریافت…'}
                   </p>
                   <p className="text-sm">
-                    قرارداد فعال:{' '}
+                    قرارداد چارچوب فعال:{' '}
                     {commercial[record.id]?.agreements ?? 'در حال دریافت…'}
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -744,7 +744,7 @@ export function OrganizationsWorkspace() {
                       'نوع طرف',
                       'کد سازمان',
                       'مدیر حساب',
-                      'قرارداد فعال',
+                      'قرارداد چارچوب فعال',
                       'اعتبار قابل استفاده',
                       'وضعیت',
                       'عملیات',

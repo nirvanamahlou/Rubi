@@ -7,10 +7,13 @@ import {
 import type {
   AuthenticatedActor,
   B2bCrmConnectionsV1,
+  B2bCrmPaymentDocumentV1,
+  B2bCrmPaymentDocumentsV1,
   B2bCrmReservationV1,
   B2bCrmSalesContractV1,
   B2bCrmSalesPaymentV1,
   CustomerSummary,
+  CustomerListQuery,
   B2bFinanceExposureV1,
   FinancePartyExposurePortV1,
   IamPermissionCode,
@@ -19,6 +22,7 @@ import type {
 } from '@nora/contracts';
 
 import { CustomerService } from '../customers/customer.service';
+import { DocumentsService } from '../documents/documents.service';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
 import { SalesService } from '../sales/sales.service';
@@ -75,6 +79,35 @@ function presentContract(row: SalesContractSummary): B2bCrmSalesContractV1 {
   };
 }
 
+function presentPaymentDocument(row: {
+  id: string;
+  title: string;
+  type: { code: string; name: string };
+  confidentiality: B2bCrmPaymentDocumentV1['confidentiality'];
+  currentVersion: B2bCrmPaymentDocumentV1['currentVersion'];
+  capabilities: B2bCrmPaymentDocumentV1['capabilities'];
+  updatedAt: string;
+}): B2bCrmPaymentDocumentV1 {
+  return {
+    id: row.id,
+    title: row.title,
+    type: { code: row.type.code, name: row.type.name },
+    confidentiality: row.confidentiality,
+    currentVersion: {
+      originalFileName: row.currentVersion.originalFileName,
+      safeDownloadName: row.currentVersion.safeDownloadName,
+      detectedMimeType: row.currentVersion.detectedMimeType,
+      sizeBytes: row.currentVersion.sizeBytes,
+      scanStatus: row.currentVersion.scanStatus,
+    },
+    capabilities: {
+      viewFile: row.capabilities.viewFile,
+      download: row.capabilities.download,
+    },
+    updatedAt: row.updatedAt,
+  };
+}
+
 function presentPayments(row: SalesContractDetail): B2bCrmSalesPaymentV1[] {
   return row.payments.map((payment) => ({
     id: payment.id,
@@ -118,6 +151,7 @@ export class B2bCrmConnectionsService {
   constructor(
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(SalesService) private readonly sales: SalesService,
+    @Inject(DocumentsService) private readonly documents: DocumentsService,
     @Inject(ReservationsPublicService)
     private readonly reservations: ReservationsPublicService,
     @Inject(MasterOrganizationDirectory)
@@ -138,8 +172,13 @@ export class B2bCrmConnectionsService {
       throw new NotFoundException('آژانس یا مشتری سازمانی یافت نشد.');
   }
 
-  private async allCustomers(actor: AuthenticatedActor, branchId: string) {
+  private async allCustomers(
+    actor: AuthenticatedActor,
+    branchId: NonNullable<CustomerListQuery['branchId']>,
+  ) {
     const result: CustomerSummary[] = [];
+    const ids = new Set<string>();
+    let expectedTotal: number | undefined;
     for (let page = 1; page <= maxPages; page += 1) {
       const response = await this.customers.list(
         {
@@ -155,18 +194,85 @@ export class B2bCrmConnectionsService {
         },
         actor,
       );
-      result.push(...response.data);
       if (
-        result.length >= response.meta.total ||
-        response.data.length < pageSize
+        (expectedTotal !== undefined &&
+          response.meta.total !== expectedTotal) ||
+        response.data.some((row) => ids.has(row.id))
       )
-        return result;
+        throw new Error('CUSTOMERS_PAGE_INCONSISTENT');
+      expectedTotal ??= response.meta.total;
+      response.data.forEach((row) => ids.add(row.id));
+      result.push(...response.data);
+      if (result.length === expectedTotal) return result;
+      if (!response.data.length || result.length > expectedTotal)
+        throw new Error('CUSTOMERS_PAGE_INCOMPLETE');
     }
     throw new Error('CUSTOMERS_PAGE_LIMIT');
   }
 
+  private async organizationCustomers(
+    organizationId: string,
+    actor: AuthenticatedActor,
+  ) {
+    return (await this.allCustomers(actor, 'all')).filter(
+      (customer) => customer.organizationId === organizationId,
+    );
+  }
+
+  private async paymentDocumentsFor(
+    paymentId: string,
+    actor: AuthenticatedActor,
+    branchId: string,
+  ): Promise<B2bCrmPaymentDocumentV1[]> {
+    const result: B2bCrmPaymentDocumentV1[] = [];
+    const ids = new Set<string>();
+    let expectedTotal: number | undefined;
+    for (let page = 1; page <= maxPages; page += 1) {
+      const response = await this.documents.list(
+        {
+          sourceModule: 'sales',
+          sourceEntityType: 'SalesContractPaymentEntry',
+          sourceEntityId: paymentId,
+          branchId,
+          domain: 'FINANCE',
+          archiveStatus: 'ACTIVE',
+          sortBy: 'createdAt',
+          sortDirection: 'desc',
+          page,
+          pageSize,
+        },
+        actor,
+      );
+      if (
+        response.meta.page !== page ||
+        (expectedTotal !== undefined && response.meta.total !== expectedTotal)
+      )
+        throw new Error('DOCUMENTS_PAGE_INCONSISTENT');
+      expectedTotal ??= response.meta.total;
+      for (const row of response.data) {
+        if (
+          row.branchId !== branchId ||
+          row.type.domain !== 'FINANCE' ||
+          ids.has(row.id)
+        )
+          throw new Error('DOCUMENTS_PAGE_INCONSISTENT');
+        ids.add(row.id);
+        result.push(presentPaymentDocument(row));
+      }
+      if (page >= response.meta.totalPages) {
+        if (result.length !== expectedTotal)
+          throw new Error('DOCUMENTS_PAGE_INCOMPLETE');
+        return result;
+      }
+      if (!response.data.length) throw new Error('DOCUMENTS_PAGE_INCOMPLETE');
+    }
+    throw new Error('DOCUMENTS_PAGE_LIMIT');
+  }
+
   private async allSales(actor: AuthenticatedActor, branchId: string) {
     const result: SalesContractSummary[] = [];
+    const ids = new Set<string>();
+    let expectedTotal: number | undefined;
     for (let page = 1; page <= maxPages; page += 1) {
       const response = await this.sales.list(
         {
@@ -178,12 +284,21 @@ export class B2bCrmConnectionsService {
         },
         actor,
       );
-      result.push(...response.data);
       if (
-        result.length >= response.meta.total ||
-        response.data.length < pageSize
+        response.meta.page !== page ||
+        (expectedTotal !== undefined &&
+          response.meta.total !== expectedTotal) ||
+        response.data.some(
+          (row) => row.branchId !== branchId || ids.has(row.id),
+        )
       )
-        return result;
+        throw new Error('SALES_PAGE_INCONSISTENT');
+      expectedTotal ??= response.meta.total;
+      response.data.forEach((row) => ids.add(row.id));
+      result.push(...response.data);
+      if (result.length === expectedTotal) return result;
+      if (!response.data.length || result.length > expectedTotal)
+        throw new Error('SALES_PAGE_INCOMPLETE');
     }
     throw new Error('SALES_PAGE_LIMIT');
   }
@@ -233,18 +348,21 @@ export class B2bCrmConnectionsService {
     let payments: B2bCrmSalesPaymentV1[] = [];
     let reservations: B2bCrmReservationV1[] = [];
 
+    let organizationCustomers: CustomerSummary[] = [];
     if (actor.permissions.includes('customers.read')) {
       try {
-        linkedCustomers = (await this.allCustomers(actor, branchId)).filter(
-          (customer) => customer.organizationId === organizationId,
+        organizationCustomers = await this.organizationCustomers(
+          organizationId,
+          actor,
+        );
+        linkedCustomers = organizationCustomers.filter(
+          (customer) => customer.ownerBranchId === branchId,
         );
       } catch {
         unavailableSources.CUSTOMERS =
           'دریافت مشتریان سازمانی از سرویس مالک ناموفق بود.';
       }
-    } else {
-      unavailableSources.CUSTOMERS = 'مجوز مشاهده مشتریان موجود نیست.';
-    }
+    } else unavailableSources.CUSTOMERS = 'مجوز مشاهده مشتریان موجود نیست.';
 
     if (unavailableSources.CUSTOMERS) {
       unavailableSources.SALES =
@@ -255,7 +373,9 @@ export class B2bCrmConnectionsService {
         'تطبیق رزرو بدون مرجع مشتری و قرارداد فروش ممکن نیست.';
     } else if (hasAny(actor, salesReadPermissions)) {
       try {
-        const customerIds = new Set(linkedCustomers.map((row) => row.id));
+        const customerIds = new Set(
+          organizationCustomers.map((customer) => customer.id),
+        );
         linkedContracts = (await this.allSales(actor, branchId)).filter(
           (contract) => customerIds.has(contract.customerId),
         );
@@ -342,6 +462,47 @@ export class B2bCrmConnectionsService {
       reservations,
       financeExposure,
       unavailableSources,
+      observedAt: new Date().toISOString(),
+    };
+  }
+
+  async paymentDocuments(
+    organizationId: string,
+    contractId: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ): Promise<B2bCrmPaymentDocumentsV1> {
+    if (!actor.permissions.includes('b2b.agency.read'))
+      throw new ForbiddenException('مجوز مشاهده پرونده سازمان را ندارید.');
+    const branchId = branchOf(actor, requestedBranch);
+    await this.assertOrganization(organizationId);
+    const organizationCustomers = actor.permissions.includes('customers.read')
+      ? await this.organizationCustomers(organizationId, actor)
+      : [];
+    const customerIds = new Set(organizationCustomers.map((row) => row.id));
+    const { data: contract } = await this.sales.detail(contractId, actor);
+    if (contract.branchId !== branchId || !customerIds.has(contract.customerId))
+      throw new NotFoundException('قرارداد فروش مرتبط یافت نشد.');
+    if (
+      !actor.permissions.includes('sales.payments.read') ||
+      !actor.permissions.includes('documents.list') ||
+      !actor.permissions.includes('documents.finance.read')
+    )
+      throw new ForbiddenException('مجوز مشاهده مدارک پرداخت موجود نیست.');
+    const payments = await limitedMap(
+      contract.payments,
+      4,
+      async (payment) => ({
+        paymentId: payment.id,
+        documents: await this.paymentDocumentsFor(payment.id, actor, branchId),
+      }),
+    );
+    return {
+      version: 1,
+      organizationId,
+      branchId,
+      contractId,
+      payments,
       observedAt: new Date().toISOString(),
     };
   }

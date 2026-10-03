@@ -74,7 +74,7 @@ export function AgencyDossierSummary({
                   : 'برای این نقش تعریف نشده',
         },
         {
-          label: 'قراردادهای ثبت‌شده',
+          label: 'قراردادهای چارچوب ثبت‌شده',
           value:
             agreements.status === 'rejected'
               ? unavailable

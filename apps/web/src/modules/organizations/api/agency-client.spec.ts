@@ -49,6 +49,38 @@ describe('agency public Master Data adapter', () => {
     );
   });
 
+  it('loads payment metadata only through the branch-bound B2B relation endpoint', async () => {
+    const payload = {
+      version: 1,
+      organizationId: 'organization-id',
+      branchId: 'branch-id',
+      contractId: 'contract-id',
+      payments: [],
+      observedAt: '2026-10-03T00:00:00.000Z',
+    } as const;
+    const fetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify(payload), { status: 200 }),
+      );
+
+    await expect(
+      agencyClient.crmPaymentDocuments(
+        'organization-id',
+        'contract-id',
+        'branch-id',
+      ),
+    ).resolves.toEqual(payload);
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:4999/api/v1/b2b/agencies/organization-id/crm-connections/contracts/contract-id/payment-documents',
+      expect.objectContaining({
+        cache: 'no-store',
+        credentials: 'include',
+        headers: expect.objectContaining({ 'x-branch-id': 'branch-id' }),
+      }),
+    );
+  });
+
   it('pins new contacts to the selected canonical organization', async () => {
     const create = vi
       .spyOn(masterDataApi, 'create')

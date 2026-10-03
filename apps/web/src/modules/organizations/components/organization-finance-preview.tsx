@@ -25,6 +25,7 @@ import { downloadOrganizationXlsx } from '../model/organization-xlsx';
 import { moneyLabel } from '../model/presentation';
 import { OrganizationDocumentsPanel } from './organization-documents-panel';
 import { useOrganizationCrmConnections } from './use-organization-crm-connections';
+import { useDossierBranch } from './use-dossier-branch';
 
 const titles: Record<ConnectedFinanceTab, string> = {
   statement: 'گردش و مانده قراردادهای فروش',
@@ -64,8 +65,12 @@ export function OrganizationFinancePreview({
   organization?: MasterDataRecord;
 }) {
   const current = isFinanceTab(tab) ? tab : 'statement';
+  const { branchId, setBranchId, branches, sessionContextKey, sessionError } =
+    useDossierBranch();
   const { data, loading, error, refresh } = useOrganizationCrmConnections(
     organization?.id ?? '',
+    branchId,
+    sessionContextKey,
   );
   const [filter, setFilter] = useState({
     currency: '',
@@ -98,11 +103,30 @@ export function OrganizationFinancePreview({
             سازمان دریافت می‌شوند.
           </p>
         </div>
-        <Badge className="bg-emerald-100 text-emerald-800">
-          منبع زنده فروش
-        </Badge>
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="field">
+            <span>شعبه داده‌های فروش</span>
+            <NativeSearchSelect
+              className="input"
+              value={branchId}
+              onChange={(event) => setBranchId(event.target.value)}
+            >
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </NativeSearchSelect>
+          </label>
+          <Badge className="bg-emerald-100 text-emerald-800">
+            منبع زنده فروش
+          </Badge>
+        </div>
       </header>
       <div className="panel-body space-y-4">
+        {sessionError ? (
+          <Alert title="نشست" description={sessionError} />
+        ) : null}
         {organization ? (
           <OrganizationDocumentsPanel
             key={`${organization.id}:${current}`}

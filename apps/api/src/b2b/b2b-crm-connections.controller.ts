@@ -38,4 +38,22 @@ export class B2bCrmConnectionsController {
   ) {
     return this.service.get(organizationId, request.actor, branchId);
   }
+
+  @Get('contracts/:contractId/payment-documents')
+  @RequirePermissions('b2b.agency.read')
+  @Header('Cache-Control', 'private, no-store')
+  @Header('Vary', 'Cookie, X-Branch-Id')
+  paymentDocuments(
+    @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
+    @Param('contractId', new ParseUUIDPipe()) contractId: string,
+    @Headers('x-branch-id') branchId: string | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.paymentDocuments(
+      organizationId,
+      contractId,
+      request.actor,
+      branchId,
+    );
+  }
 }
