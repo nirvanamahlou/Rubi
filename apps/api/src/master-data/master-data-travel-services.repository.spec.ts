@@ -2,11 +2,55 @@ import type { DatabaseService } from '../database/database.service';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  countMultilingualLeaders,
   MasterDataRepository,
   toMasterDataRecord,
 } from './master-data.repository';
 
 describe('MasterDataRepository travel services', () => {
+  it('counts each leader once only with two distinct normalized languages', () => {
+    expect(countMultilingualLeaders([])).toBe(0);
+    expect(countMultilingualLeaders([{ languages: ['فارسی'] }])).toBe(0);
+    expect(
+      countMultilingualLeaders([{ languages: [' English ', 'english', ''] }]),
+    ).toBe(0);
+    expect(
+      countMultilingualLeaders([
+        { languages: [] },
+        { languages: [' فارسی ', '', 'فارسی'] },
+        { languages: ['English', ' english ', 'فارسی'] },
+        { languages: ['Türkçe', 'فارسی', 'English'] },
+      ]),
+    ).toBe(2);
+  });
+
+  it('reads languages in the existing global query and retains compatibility', async () => {
+    const leaderFindMany = vi
+      .fn()
+      .mockResolvedValue([
+        { destinations: [], languages: ['English', 'فارسی'] },
+      ]);
+    const model = {
+      count: vi.fn().mockResolvedValue(0),
+      findMany: vi.fn().mockResolvedValue([]),
+    };
+    const client = new Proxy(
+      { masterLeader: { ...model, findMany: leaderFindMany } },
+      { get: (target, key) => Reflect.get(target, key) ?? model },
+    );
+    const repository = new MasterDataRepository({
+      client,
+    } as unknown as DatabaseService);
+    const summary = await repository.travelServicesSummary();
+    expect(leaderFindMany).toHaveBeenCalledWith({
+      select: { destinations: true, languages: true },
+    });
+    expect(summary.leaders).toMatchObject({
+      multilingual: 1,
+      incompleteDocuments: null,
+    });
+  });
+
   it('filters CIP services by airport and includes provider references', async () => {
     const airportId = '11111111-1111-4111-8111-111111111111';
     const findMany = vi.fn().mockResolvedValue([]);

@@ -497,7 +497,7 @@
   margin-top: 12px;
 }
 .requestTable tbody tr {
-  height: 46px;
+  height: 36px;
 }
 .requestTable {
   border-collapse: separate;
@@ -578,4 +578,13 @@
 }
 .exportBar small {
   color: var(--muted-foreground);
+}
+
+/* Keep saved status actor/time beside the checkbox within compact rows. */
+.requestTable td > span:has(> small) {
+  flex-direction: row;
+  gap: 6px;
+}
+.requestTable td > span > small {
+  line-height: 12px;
 }

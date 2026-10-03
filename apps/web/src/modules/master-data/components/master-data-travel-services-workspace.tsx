@@ -22,6 +22,7 @@ import {
   FileSpreadsheet,
   FileText,
   Globe2,
+  Languages,
   Link2,
   LockKeyhole,
   MapPin,
@@ -103,6 +104,10 @@ const tabs = [
 }[];
 
 type TravelResource = (typeof tabs)[number]['resource'];
+
+export function availableTravelKpiValue(value: number | null | undefined) {
+  return value ?? '—';
+}
 
 const rules: Record<TravelResource, { title: string; text: string }> = {
   leaders: {
@@ -389,6 +394,7 @@ export function MasterDataTravelServicesWorkspace() {
       thirdValue: number | null | undefined;
       fourthLabel: string;
       fourthValue: number | null | undefined;
+      fourthHint?: string;
       thirdIcon?: typeof Globe2;
       fourthIcon?: typeof CircleAlert;
     }): readonly MasterDataKpiItem[] => [
@@ -417,9 +423,10 @@ export function MasterDataTravelServicesWorkspace() {
       },
       {
         label: input.fourthLabel,
-        value: input.fourthValue ?? '—',
+        value: availableTravelKpiValue(input.fourthValue),
         icon: input.fourthIcon ?? CircleAlert,
         tone: 'amber',
+        ...(input.fourthHint ? { hint: input.fourthHint } : {}),
       },
     ];
     if (resource === 'leaders')
@@ -428,8 +435,10 @@ export function MasterDataTravelServicesWorkspace() {
         active: summary?.leaders.active,
         thirdLabel: 'مقصدها',
         thirdValue: summary?.leaders.destinations,
-        fourthLabel: 'مدرک ناقص',
-        fourthValue: summary?.leaders.incompleteDocuments,
+        fourthLabel: 'لیدرهای چندزبانه',
+        fourthValue: summary?.leaders.multilingual,
+        fourthHint: 'در کل اطلاعات پایه',
+        fourthIcon: Languages,
       });
     if (resource === 'tour-types')
       return common({

@@ -193,6 +193,7 @@ it('downloads an issued voucher using saved voucher settings and a voucher filen
     expect.stringContaining('data:image/png;base64,'),
     expect.anything(),
     true,
+    'http://localhost',
   );
 });
 it('renders voucher booking references and a separated summary without letterhead', () => {
@@ -261,4 +262,38 @@ it('keeps six regular passengers on one supplier form page', () => {
   expect(html).toContain('1 / 1');
   expect(html).not.toContain('<th>LEG</th>');
   expect(html).not.toContain('<span>TOUR LEADER</span>');
+});
+
+it('includes contact and a URL QR without repeating complete forms for many passengers', () => {
+  const people = Array.from({ length: 14 }, (_, i) => ({
+    customerId: 'qa' + i,
+    displayNameSnapshot: 'SYNTHETIC ' + i,
+    ageCategory: 'ADT',
+  }));
+  const value = {
+    ...intake,
+    snapshot: {
+      ...intake.snapshot,
+      passengerIds: people.map((p) => p.customerId),
+      passengerAssignments: people,
+    },
+    workflow: {
+      ...intake.workflow,
+      roomOrder: people.map((p) => p.customerId),
+    },
+  } as unknown as ReservationFormIntake;
+  value.workflow.supplierFormSettings = defaultVoucherSettings(value, {});
+  const html = reservationPdfHtml(
+    value,
+    {},
+    'data:image/png;base64,c2FmZQ==',
+    '',
+    false,
+    'https://niyayehseir.com',
+  );
+  expect(html.match(/<article /g)).toHaveLength(1);
+  expect(html).toContain('Reservation@niyayehseir.com');
+  expect(html).toContain('https://niyayehseir.com/r/' + id);
+  expect(html).toContain('aria-label="Reservation form QR"');
+  expect(html).toContain('SYNTHETIC 13');
 });

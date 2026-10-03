@@ -898,6 +898,19 @@ export function toMasterDataRecord(
   };
 }
 
+export function countMultilingualLeaders(
+  leaders: readonly { languages: readonly string[] }[],
+) {
+  return leaders.filter(
+    ({ languages }) =>
+      new Set(
+        languages
+          .map((language) => language.trim().toLowerCase())
+          .filter(Boolean),
+      ).size >= 2,
+  ).length;
+}
+
 @Injectable()
 export class MasterDataRepository {
   constructor(
@@ -1689,7 +1702,9 @@ export class MasterDataRepository {
     ] = await Promise.all([
       client.masterLeader.count(),
       client.masterLeader.count({ where: { isActive: true } }),
-      client.masterLeader.findMany({ select: { destinations: true } }),
+      client.masterLeader.findMany({
+        select: { destinations: true, languages: true },
+      }),
       client.masterTourType.count(),
       client.masterTourType.count({ where: { isActive: true } }),
       client.masterTourType.count({ where: { scope: 'DOMESTIC' } }),
@@ -1744,6 +1759,7 @@ export class MasterDataRepository {
         destinations: new Set(
           leaderDestinations.flatMap(({ destinations }) => destinations),
         ).size,
+        multilingual: countMultilingualLeaders(leaderDestinations),
         incompleteDocuments: null,
       },
       tourTypes: {

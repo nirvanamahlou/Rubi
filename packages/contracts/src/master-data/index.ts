@@ -415,6 +415,7 @@ export interface MasterTravelServicesSummary {
     total: number;
     active: number;
     destinations: number;
+    multilingual?: number;
     incompleteDocuments: null;
   };
   tourTypes: {
