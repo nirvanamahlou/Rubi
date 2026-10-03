@@ -40,6 +40,7 @@ import { SalesThemedSelect } from './sales-themed-select';
 import { ContractPayments } from './contract-payments';
 import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
+import { ContractTableScroll } from './contract-table-scroll';
 
 export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
@@ -51,17 +52,17 @@ export function ContractListContactRouteDate({
 }) {
   return (
     <>
-      <td className="px-4 py-3 whitespace-nowrap">
+      <td className="px-3 py-2 whitespace-nowrap">
         <bdi dir="ltr">{contract.customerPhone || '—'}</bdi>
       </td>
-      <td className="px-4 py-3 whitespace-nowrap">
+      <td className="px-3 py-2 whitespace-nowrap">
         <span dir="ltr" className="inline-flex items-center gap-2">
           <bdi>{contract.originName || '—'}</bdi>
           <span aria-hidden="true">→</span>
           <bdi>{contract.destinationName || '—'}</bdi>
         </span>
       </td>
-      <td className="px-4 py-3 whitespace-nowrap">
+      <td className="px-3 py-2 whitespace-nowrap">
         {new Date(contract.createdAt).toLocaleDateString('fa-IR', {
           timeZone: 'Asia/Tehran',
         })}
@@ -485,8 +486,8 @@ export function SalesWorkspace() {
         />
       ) : null}
       {contracts.length && !loading ? (
-        <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
-          <div className="overflow-x-auto">
+        <Card className="rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
+          <ContractTableScroll>
             <table className="w-full min-w-[88rem] text-sm">
               <caption className="sr-only">
                 فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
@@ -507,7 +508,7 @@ export function SalesWorkspace() {
                     'عملیات',
                   ].map((label) => (
                     <th
-                      className="px-4 py-3 text-start whitespace-nowrap first:pr-5 last:pl-5"
+                      className="px-3 py-2 text-start whitespace-nowrap first:pr-4 last:pl-4"
                       key={label}
                     >
                       {label}
@@ -521,15 +522,15 @@ export function SalesWorkspace() {
                     className="group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]"
                     key={contract.id}
                   >
-                    <td className="px-4 py-3 font-bold first:pr-5">
-                      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
-                        <FileText className="size-3.5" />
+                    <td className="px-3 py-2 font-bold whitespace-nowrap first:pr-4">
+                      <div className="inline-flex items-center gap-1.5 rounded-lg border border-primary/15 bg-primary/[0.055] px-2 py-1 text-xs text-primary">
+                        <FileText className="size-3.5 shrink-0" />
                         <span dir="ltr">{contract.contractNumber}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
+                        <span className="grid size-7 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
                           {contract.customerNameSnapshot.slice(0, 1)}
                         </span>
                         <span className="max-w-40 truncate font-semibold text-foreground">
@@ -538,7 +539,7 @@ export function SalesWorkspace() {
                       </div>
                     </td>
                     <ContractListContactRouteDate contract={contract} />
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2">
                       <div className="flex items-center gap-1.5 font-semibold text-foreground">
                         <UsersRound className="size-4 text-primary" />
                         <p>
@@ -548,7 +549,7 @@ export function SalesWorkspace() {
                           مسافر
                         </p>
                       </div>
-                      <p className="mt-1 max-w-52 text-xs leading-5 text-muted-foreground">
+                      <p className="text-xs leading-4 whitespace-nowrap text-muted-foreground">
                         {contract.services
                           .map(
                             (kind) =>
@@ -568,8 +569,8 @@ export function SalesWorkspace() {
                           .join('، ')}
                       </p>
                     </td>
-                    <td className="px-4 py-3">
-                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2.5 py-1 text-primary shadow-sm">
+                    <td className="px-3 py-2">
+                      <Badge className="rounded-full border border-primary/10 bg-primary/[0.07] px-2 py-0.5 whitespace-nowrap text-primary">
                         {
                           {
                             DRAFT: 'پیش‌نویس',
@@ -583,12 +584,12 @@ export function SalesWorkspace() {
                         }
                       </Badge>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-2">
                       <Badge
                         className={
                           contract.settlementStatus === 'SETTLED'
-                            ? 'bg-emerald-500/10 text-emerald-700'
-                            : 'bg-amber-500/10 text-amber-700'
+                            ? 'bg-emerald-500/10 py-0.5 whitespace-nowrap text-emerald-700'
+                            : 'bg-amber-500/10 py-0.5 whitespace-nowrap text-amber-700'
                         }
                       >
                         {contract.settlementStatus === 'SETTLED' ? (
@@ -605,8 +606,8 @@ export function SalesWorkspace() {
                           contract.settlementStatus}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-foreground">
-                      <div className="max-w-44 text-xs leading-5">
+                    <td className="px-3 py-2 font-semibold text-foreground">
+                      <div className="max-w-44 text-xs leading-4">
                         {contract.balances
                           .map((balance) =>
                             formatMoney(
@@ -617,10 +618,10 @@ export function SalesWorkspace() {
                           .join(' + ')}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
+                    <td className="px-3 py-2 text-xs whitespace-nowrap text-muted-foreground">
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
-                    <td className="px-4 py-3 last:pl-5">
+                    <td className="px-3 py-2 last:pl-4">
                       <div className="grid min-w-72 grid-cols-3 gap-1.5">
                         <Button
                           permission="sales.payments.read"
@@ -648,7 +649,7 @@ export function SalesWorkspace() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ContractTableScroll>
         </Card>
       ) : null}
       {!loading &&

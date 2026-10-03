@@ -2,6 +2,10 @@
 
 Aircraft Types now renders code, manufacturer/model and English title from its resource-specific column model, plus the renderer's independent authenticated logo, status and operations columns. Body type, capacity and display order are hidden only from this table; forms, View, export, backend data and all other resources remain unchanged. Focused 18 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
 
+## 2026-10-03 — SALES-TABLE-SCROLL-COMPACT-1003 — PC-A — READY_FOR_REVIEW
+
+Sales contract list now has a synchronized top scrollbar and labelled horizontal direction buttons that remain below the app header while scrolling long lists. Rows use smaller vertical spacing, one-line contract identities/statuses/services and smaller avatars. Existing contract actions and permissions remain intact. All 13 focused tests, scoped lint, Web typecheck and the 55-route production build pass; no authenticated browser QA or runtime update was performed. No API, migration, contract or dependency change. Bounded locks released; PR targets develop.
+
 ## 2026-10-03 — VOUCHER-SUPPLIER-ZERO-LEADER-PICKER-1003 — PC-A — READY_FOR_REVIEW
 
 Voucher preview and PDF now show `SUPPLIER` as `0` and omit the lower reservation-recipient name. Before issuance, the voucher action has a tour leader selector above preview, scoped to the chosen broker and loading the full phone from Master Data. Reservation form supplier remains unchanged. 20 focused tests, scoped lint, Web typecheck and the 55-route production build pass; no authenticated runtime/browser QA or database change. PR targets develop.
