@@ -576,7 +576,7 @@ function GenericMasterDataWorkspace({
                     <th className="p-4 text-start">لوگو</th>
                     <th className="p-4 text-start">عنوان</th>
                     <th className="p-4 text-start">وضعیت</th>
-                    <th className="p-4 text-start">عملیات</th>
+                    <th className="p-4 text-center">عملیات</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -598,8 +598,8 @@ function GenericMasterDataWorkspace({
                           {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                         </Badge>
                       </td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap justify-end gap-2">
+                      <td className="p-4 text-center">
+                        <div className="flex flex-wrap justify-center gap-2">
                           <Button
                             aria-label={`مشاهده ${record.name}`}
                             onClick={() => openForm('view', record)}
