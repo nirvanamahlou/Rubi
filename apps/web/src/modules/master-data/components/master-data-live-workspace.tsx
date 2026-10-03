@@ -576,7 +576,6 @@ function GenericMasterDataWorkspace({
                     <th className="p-4 text-start">لوگو</th>
                     <th className="p-4 text-start">عنوان</th>
                     <th className="p-4 text-start">وضعیت</th>
-                    <th className="p-4 text-start">آخرین تغییر</th>
                     <th className="p-4 text-start">عملیات</th>
                   </tr>
                 </thead>
@@ -598,9 +597,6 @@ function GenericMasterDataWorkspace({
                         >
                           {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                         </Badge>
-                      </td>
-                      <td className="p-4">
-                        {new Date(record.updatedAt).toLocaleString('fa-IR')}
                       </td>
                       <td className="p-4">
                         <div className="flex flex-wrap justify-end gap-2">

@@ -60,7 +60,6 @@ describe('accommodation workspace', () => {
       'وب‌سایت',
       'ساعت ورود / خروج',
       'آدرس',
-      'آخرین تغییر',
       'عملیات',
     ]);
     expect(visibleCellCount).toBe(headers.length);
@@ -68,6 +67,34 @@ describe('accommodation workspace', () => {
     expect(source).not.toContain('تأمین‌کننده HOTEL_PROVIDER');
     expect(source).toContain('<MasterDataProfileIdentity');
     expect(source).toContain('function profile()');
+
+    const chainHeadersSource = source.slice(
+      source.indexOf('? [', source.indexOf(": tab === 'chains'")),
+      source.indexOf(": tab === 'meals'", source.indexOf(": tab === 'chains'")),
+    );
+    const chainHeaders = [...chainHeadersSource.matchAll(/'([^']+)'/g)].map(
+      (match) => match[1],
+    );
+    const chainCells = source.slice(
+      source.indexOf(") : tab === 'chains' ? (", source.indexOf('<tbody>')),
+      source.indexOf(") : tab === 'meals' ? (", source.indexOf('<tbody>')),
+    );
+    expect(chainHeaders).toEqual([
+      'کد',
+      'لوگو',
+      'نام فارسی',
+      'نام انگلیسی',
+      'کشور مبدأ',
+      'وب‌سایت',
+      'تعداد هتل عضو',
+      'وضعیت',
+      'عملیات',
+    ]);
+    expect((chainCells.match(/<td\b/g) ?? []).length + 3).toBe(
+      chainHeaders.length,
+    );
+    expect(headers).not.toContain('آخرین تغییر');
+    expect(chainHeaders).not.toContain('آخرین تغییر');
   });
 
   it('omits only the contract-reference column from composite hotel rows', () => {

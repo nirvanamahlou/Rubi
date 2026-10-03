@@ -11,6 +11,7 @@ import {
   reservationTransferPassengers,
   reservationPurchaseServices,
   SupplierFormPurchaseContext,
+  ReservationHotelPurchase,
 } from './reservation-hotel-purchase';
 
 const request = (workflow?: TravelWorkflowStateV1) =>
@@ -53,6 +54,44 @@ it('shows the frozen supplier form as the purchase-price context', () => {
   expect(html).toContain('DBL:');
   expect(html).toContain('CHD:');
   expect(html).toContain('نسخهٔ ارسال‌شده 7');
+});
+
+it('shows service-level base and factor inputs and contract nights without passenger price fields', () => {
+  const html = renderToStaticMarkup(
+    <ReservationHotelPurchase
+      request={
+        {
+          id: 'request',
+          snapshot: {
+            contractNumber: 'SC-TEST',
+            passengerIds: [],
+            serviceSelections: [
+              { clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' },
+              {
+                clientKey: 'transfer',
+                kind: 'TRANSFER',
+                titleSnapshot: 'Transfer',
+              },
+            ],
+            hotelSelection: {
+              serviceClientKey: 'hotel',
+              hotelNameSnapshot: 'Hotel',
+              checkInDate: '2026-10-01',
+              checkOutDate: '2026-10-05',
+            },
+          },
+        } as unknown as ReservationIntakeV1
+      }
+      onSaved={() => {}}
+    />,
+  );
+  expect(html).toContain('قیمت پایه هتل');
+  expect(html).toContain('ضریب هتل');
+  expect(html).toContain('قیمت پایه ترانسفر');
+  expect(html).toContain('ضریب ترانسفر');
+  expect(html).toContain('تعداد شب اقامت: 4');
+  expect(html).not.toContain('قیمت هر شب');
+  expect(html).not.toContain('ترانسفر هر مسافر');
 });
 
 it('does not present an unsent draft as purchase context', () => {

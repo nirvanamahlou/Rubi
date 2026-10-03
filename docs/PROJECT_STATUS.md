@@ -1,3 +1,7 @@
+## 2026-10-03 — MASTER-DATA-HIDE-AUDIT-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
+
+Visible Last Change/Audit table columns were removed across all current Master Data renderers: Hotels, Hotel Chains, Countries, Regions, Insurers, Airlines, Cabin Classes, Rail Companies, Bus Companies and the generic fallback. Combined `Version / Audit` columns were removed as a whole; independent record/template Version columns remain. Finance Audit operations/timelines, transport profile audit, View/form timestamps, sorting, exports, persistence, optimistic concurrency and backend audit records are unchanged. Focused regressions (42), all 461 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-01 — TRAVEL-HIDE-USAGE-COLUMNS-1001 — PC-B — READY_FOR_REVIEW
 
 The Tour Types and Transfer Types lists no longer display their usage columns. Leaders and Visa Services were already without that column and remain unchanged; AST regressions verify exact headers, matching row-cell counts and the retained prior Tour Types last-change removal across all four tables. Tour Type View usage, model metadata, forms, exports, API and backend behavior remain unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
@@ -4216,3 +4220,7 @@ Reservations purchase now prepares one atomic hotel-and-transfer request per con
 ### TICKET-NUMBER-CHARTER-FIX-1003 — PC-A
 
 Fixed ticket identity issuance returning PostgreSQL void through Prisma: both advisory locks now return a supported integer column. COMPANY (charter) remains automatic and FLOATING/API/unknown supply remains manual. Airline and agency raster logos fit within the header without overlapping passenger details. Ten API regressions including rollback-only real PostgreSQL locks passed; Web focused tests, lint/typechecks and both production builds passed. Synthetic two-leg A4 PDF visually verified as one page. Two explicitly confirmed local legacy offers classified as COMPANY with actor audit; no passenger ticket number issued during repair. No migration/dependency change.
+
+## 2026-10-03 — SERVICE-PURCHASE-FACTOR-1003 — PC-A
+
+Hotel and transfer purchase entry now uses one base amount and factor per service. Contract check-in/check-out supplies nights, with exact four-decimal arithmetic and a single final rounding. API independently recalculates and rejects altered totals before atomic Finance submission. Calculation inputs and resolved nights are preserved in the existing nullable JSON purchase breakdown; legacy passenger arrays remain readable and previous clients remain accepted. No migration, dependencies or operational data changes. Scoped tests/lint, both typechecks and Web/API production builds verified. Owner requests develop merge after checks.
