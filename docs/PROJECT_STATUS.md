@@ -4266,13 +4266,17 @@ The supplied two-page travel-contract terms PDF replaces the previous static fil
 
 Reservation request table minimum body-row height decreases from 46px to 36px while the existing 440px scroll viewport and columns remain unchanged. Saved status actor/time renders beside its checkbox so populated flags do not force tall rows; no audit information, permissions or operations are removed. Synthetic browser layout confirms roughly two more complete contracts. Twenty existing foundation/status tests, scoped lint and Web typecheck passed; production build and CI gate the explicitly requested develop merge. No API/schema/migration/dependency/data change.
 
+## 2026-10-03 — B2B-EXCEL-EXPORT-1003 — PC-B
+
+Organizations directory, commercial and dossier exports now use one attached download target with deferred Blob URL cleanup. Existing XLSX artifacts and authorized server filters are preserved. Regression checks cover workbook text/ZIP contents, exact artifact delivery and download cleanup. No API, schema, permission or dependency changes.
+
 ## 2026-10-03 — B2B-REGISTRATION-COPY-1003 — PC-B
 
 Removed the visible registration title and explanatory paragraph from the Organizations directory toolbar at the owner's request. Registration and Excel actions retain their existing handlers and the region retains its accessible name. No API, data, migration or runtime change. Validation and user-authorized develop merge are recorded in the matching Work Item.
 
-## 2026-10-03 — B2B-EXCEL-EXPORT-1003 — PC-B
+## 2026-10-03 — RESERVATION-SELECTION-BLUE-1003 — PC-A
 
-Organizations directory, commercial and dossier exports now use one attached download target with deferred Blob URL cleanup. Existing XLSX artifacts and authorized server filters are preserved. Regression checks cover workbook text/ZIP contents, exact artifact delivery and download cleanup. No API, schema, permission or dependency changes.
+Selected Reservation request rows now use the exact screenshot color #0078D7 with white text across all cells and status tones, in light and dark modes. The pink identity-cell override no longer masks selection; unselected status presentation remains intact. Compact row height, viewport, controls and keyboard selection are preserved. Nineteen existing foundation tests and synthetic Chrome computed-style QA pass. Scoped lint/typecheck/build and CI precede user-authorized merge. No API/schema/migration/dependency/data change.
 
 ## 2026-10-03 — CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B
 

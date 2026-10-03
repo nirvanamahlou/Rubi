@@ -5035,16 +5035,22 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered 36px minimum table body rows with the existing 440px viewport preserved. Saved status actor/time sits beside its checkbox, retaining both text and tooltip. Synthetic browser layout shows approximately two additional complete contracts; no clipping or data/UI-action loss. Twenty existing foundation/status tests passed (15s runner timeout for local load), scoped lint and Web typecheck verified. Production build and CI precede authorized develop merge; source lock releases with scoped commit.
 
+## B2B-EXCEL-EXPORT-1003 — PC-B — IN_PROGRESS
+
+- Owner requests repair of B2B Excel export, push and develop merge. Reserve Organizations export UI/client and module-local backend/tests if needed, plus bounded status/task docs. Reuse clean B2B checkout; no migration, dependency, shared contract or permission changes without coordination. Preserve authorized data scope. No active overlapping export owner found. Lead integrates and merges after checks.
+- Delivered unified attached download target with deferred Blob cleanup for directory/commercial/360 exports. Organizations tests 133/133, Master Data export tests 35/35, scoped lint, Web typecheck and 55-route build pass. No schema/API/dependency/permission change. Native worker implemented; lead reviewed lifecycle and data scope. Bounded source reservation releases with commit; authorized develop merge follows CI.
+
 ## B2B-REGISTRATION-COPY-1003 — PC-B — READY_FOR_REVIEW
 
 - Owner requests removal of the visible registration title and explanatory sentence, followed by push and merge to develop. Branch `codex/pc-b-b2b-registration-copy-1003` from `origin/develop@67092be4`; reuse the clean B2B checkout and installed dependencies.
 - Reserve only the Organizations directory registration toolbar text in `organizations-workspace.tsx` and bounded task/status entries. Preserve registration/import/export actions and accessible region label. No API, schema, migration, dependency, permission, data or runtime change. Prior dated B2B source tasks are superseded by merged develop; no active owner of this text found. Scoped reservation releases with commit.
 - Delivered the visible text removal. Seven existing Organizations workspace tests and scoped ESLint pass; shared-contract build artifacts refreshed after detecting stale local exports. Full quality/typecheck/build CI gates must pass before the explicitly authorized develop merge. No new test or dependency/source expansion required for this cosmetic deletion.
 
-## B2B-EXCEL-EXPORT-1003 — PC-B — IN_PROGRESS
+## RESERVATION-SELECTION-BLUE-1003 — PC-A — READY_FOR_REVIEW
 
-- Owner requests repair of B2B Excel export, push and develop merge. Reserve Organizations export UI/client and module-local backend/tests if needed, plus bounded status/task docs. Reuse clean B2B checkout; no migration, dependency, shared contract or permission changes without coordination. Preserve authorized data scope. No active overlapping export owner found. Lead integrates and merges after checks.
-- Delivered unified attached download target with deferred Blob cleanup for directory/commercial/360 exports. Organizations tests 133/133, Master Data export tests 35/35, scoped lint, Web typecheck and 55-route build pass. No schema/API/dependency/permission change. Native worker implemented; lead reviewed lifecycle and data scope. Bounded source reservation releases with commit; authorized develop merge follows CI.
+- COMPUTER_ID=PC-A; branch codex/pc-a-reservation-selection-blue-1003 from origin/develop. Reserve only Reservations foundation/workspace.module.css and bounded assignment/status docs. Match selected request-row fill to supplied screenshot RGB(0,120,215), with white text across all status tones and both themes. Keep existing compact rows, table dimensions, actions and keyboard selection. Prior stylesheet scope merged and released; no overlapping active owner. No API/schema/migration/dependency/data change. User authorizes develop merge and local rollout remains authorized.
+
+- Delivered screenshot-extracted #0078D7 selection fill and white text in every selected table cell, including pink identity cells and dark-mode status rows. Status colors remain available on unselected rows. Nineteen existing foundation tests passed; synthetic Chrome computed styles verified the exact RGB across five tones in both themes. Lint, typecheck, production build and CI gate authorized merge; bounded source lock releases with reviewed commit. No operational data change.
 
 ## CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B — READY_FOR_REVIEW
 
