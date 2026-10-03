@@ -1,7 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  bindInsurancePlanParent,
+  fetchInsurerPlanPage,
+  INSURER_PLAN_PAGE_SIZE,
+  refreshInsurancePlanViews,
+} from './master-data-insurance-workspace';
 
 const source = readFileSync(
   resolve(
@@ -12,6 +18,77 @@ const source = readFileSync(
 );
 
 describe('insurance workspace', () => {
+  it('nests plans under insurers and binds every write to the expanded parent', () => {
+    const tabs = source.slice(
+      source.indexOf('const tabs'),
+      source.indexOf('const rules'),
+    );
+    expect(tabs).not.toContain("resource: 'insurance-plans'");
+    expect(source).toContain('fetchInsurerPlanPage(');
+    expect(source).toContain('masterDataApi.list,');
+    expect(source).toContain('insurerId: insurer.id');
+    expect(source).toContain('generation !== requestGeneration.current');
+    expect(source).toContain('requestGeneration.current += 1');
+    expect(source).toContain('expandedInsurerId === record.id');
+    expect(source).toContain('<MasterDataInsurerPlans');
+    expect(source).toContain('colSpan={9}');
+    expect(source).toContain('initialValues={{ insurerId: insurer.id }}');
+    expect(source).toContain("lockedFields={['insurerId']}");
+    expect(source).toContain('aria-controls={`insurer-plans-${record.id}`}');
+    expect(source).toContain('<MasterDataLogoCell record={plan} />');
+    expect(source).toContain("attribute(plan, 'coverageNames')");
+    expect(INSURER_PLAN_PAGE_SIZE).toBeGreaterThanOrEqual(10);
+    expect(source).toContain('pageSize: INSURER_PLAN_PAGE_SIZE');
+    expect(source).toContain('page * INSURER_PLAN_PAGE_SIZE >= total');
+    expect(
+      bindInsurancePlanParent({ name: 'طرح', insurerId: 'forged' }, 'parent'),
+    ).toEqual({
+      name: 'طرح',
+      insurerId: 'parent',
+    });
+  });
+
+  it('rejects stale child responses and refreshes child and parent after CRUD', async () => {
+    let resolveList!: (value: {
+      data: readonly [];
+      meta: { total: number };
+    }) => void;
+    const list = vi.fn(
+      () =>
+        new Promise<{ data: readonly []; meta: { total: number } }>(
+          (resolve) => {
+            resolveList = resolve;
+          },
+        ),
+    );
+    const pending = fetchInsurerPlanPage(
+      list,
+      {
+        insurerId: 'insurer-1',
+        page: 1,
+        pageSize: INSURER_PLAN_PAGE_SIZE,
+        search: '',
+        status: 'all',
+        sortBy: 'name',
+        sortDirection: 'asc',
+      },
+      1,
+      (generation) => generation === 2,
+    );
+    resolveList({ data: [], meta: { total: 0 } });
+    await expect(pending).resolves.toBeNull();
+    expect(list).toHaveBeenCalledWith(
+      'insurance-plans',
+      expect.objectContaining({ insurerId: 'insurer-1' }),
+    );
+
+    const load = vi.fn(async () => undefined);
+    const onChanged = vi.fn(async () => undefined);
+    await refreshInsurancePlanViews(load, onChanged);
+    expect(load).toHaveBeenCalledOnce();
+    expect(onChanged).toHaveBeenCalledOnce();
+  });
+
   it('keeps insurer headers and cells aligned without last change', () => {
     const headersSource = source.slice(
       source.indexOf("{resource === 'insurers' ? ("),
