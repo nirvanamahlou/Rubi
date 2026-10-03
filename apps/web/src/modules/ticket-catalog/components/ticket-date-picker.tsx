@@ -323,7 +323,7 @@ export function TicketDatePicker({
               }}
             >
               <div
-                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                dir="ltr"
                 className="flex items-center justify-between rounded-xl bg-primary px-2 py-2 text-primary-foreground"
               >
                 <Button
@@ -333,9 +333,7 @@ export function TicketDatePicker({
                   type="button"
                   variant="ghost"
                 >
-                  <ChevronRight
-                    className={`size-4 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronLeft className="size-4" />
                 </Button>
                 <div className="flex items-center gap-1 text-sm font-bold">
                   <button
@@ -363,17 +361,15 @@ export function TicketDatePicker({
                   type="button"
                   variant="ghost"
                 >
-                  <ChevronLeft
-                    className={`size-4 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronRight className="size-4" />
                 </Button>
               </div>
 
               {calendarView === 'days' ? (
                 <>
                   <div
+                    dir="ltr"
                     className="mt-3 grid grid-cols-7 text-center text-[11px] font-semibold text-muted-foreground"
-                    dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
                   >
                     {weekdayLabels[calendarSystem].map((day, index) => (
                       <span
@@ -386,10 +382,7 @@ export function TicketDatePicker({
                       </span>
                     ))}
                   </div>
-                  <div
-                    className="mt-1 grid grid-cols-7 gap-0.5"
-                    dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
-                  >
+                  <div dir="ltr" className="mt-1 grid grid-cols-7 gap-0.5">
                     {days.map((day, index) =>
                       day.isCurrentMonth ? (
                         <button
