@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { Client, Pool } from 'pg';
 import { describe, expect, it } from 'vitest';
 
@@ -17,9 +18,9 @@ describe.skipIf(process.env.SALES_NUMBER_TEST !== '1')(
       const pool = new Pool({ connectionString: url.toString(), max: 8 });
       await client.connect();
       const sql = readFileSync(
-        new URL(
+        join(
+          __dirname,
           '../prisma/migrations/20261003170000_sales_six_digit_contract_numbers/migration.sql',
-          import.meta.url,
         ),
         'utf8',
       );
