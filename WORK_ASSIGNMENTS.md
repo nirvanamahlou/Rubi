@@ -5063,6 +5063,10 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered 36px minimum table body rows with the existing 440px viewport preserved. Saved status actor/time sits beside its checkbox, retaining both text and tooltip. Synthetic browser layout shows approximately two additional complete contracts; no clipping or data/UI-action loss. Twenty existing foundation/status tests passed (15s runner timeout for local load), scoped lint and Web typecheck verified. Production build and CI precede authorized develop merge; source lock releases with scoped commit.
 
+## B2B-INITIAL-STATUS-1003 — PC-B — IN_PROGRESS
+
+- User requests removal of read-only initial status field from cooperation registration wizard and authorizes push/develop merge. Branch codex/pc-b-b2b-initial-status-1003 from origin/develop@a92a50f2. Reserve only cooperation-wizard.tsx plus bounded task/status docs. No state transition, API, schema, dependency, permission or runtime change. Prior B2B tasks merged and locks released; native worker owns UI deletion and checks, lead reviews/integrates.
+
 ## B2B-EXCEL-EXPORT-1003 — PC-B — IN_PROGRESS
 
 - Owner requests repair of B2B Excel export, push and develop merge. Reserve Organizations export UI/client and module-local backend/tests if needed, plus bounded status/task docs. Reuse clean B2B checkout; no migration, dependency, shared contract or permission changes without coordination. Preserve authorized data scope. No active overlapping export owner found. Lead integrates and merges after checks.

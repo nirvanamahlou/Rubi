@@ -4286,6 +4286,10 @@ The supplied two-page travel-contract terms PDF replaces the previous static fil
 
 Reservation request table minimum body-row height decreases from 46px to 36px while the existing 440px scroll viewport and columns remain unchanged. Saved status actor/time renders beside its checkbox so populated flags do not force tall rows; no audit information, permissions or operations are removed. Synthetic browser layout confirms roughly two more complete contracts. Twenty existing foundation/status tests, scoped lint and Web typecheck passed; production build and CI gate the explicitly requested develop merge. No API/schema/migration/dependency/data change.
 
+## 2026-10-03 — B2B-INITIAL-STATUS-1003 — PC-B
+
+Removed the read-only initial status display from step one of the cooperation registration wizard as requested. Draft/submission lifecycle and validation remain unchanged. No API, schema, dependency, permission, data or runtime change; targeted checks and CI precede authorized develop merge.
+
 ## 2026-10-03 — B2B-EXCEL-EXPORT-1003 — PC-B
 
 Organizations directory, commercial and dossier exports now use one attached download target with deferred Blob URL cleanup. Existing XLSX artifacts and authorized server filters are preserved. Regression checks cover workbook text/ZIP contents, exact artifact delivery and download cleanup. No API, schema, permission or dependency changes.
