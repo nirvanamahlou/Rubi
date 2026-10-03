@@ -7,7 +7,6 @@ import {
   ChartNoAxesCombined,
   FileText,
   Info,
-  KeyRound,
   LayoutDashboard,
   Pencil,
   Trash2,
@@ -51,18 +50,6 @@ const sections = [
       ['representatives', 'نمایندگان'],
       ['signatories', 'امضاداران'],
       ['manager', 'مدیر حساب'],
-    ],
-  },
-  {
-    id: 'access',
-    title: 'کاربران و دسترسی',
-    icon: KeyRound,
-    accent: '#7958db',
-    tint: '#f1edff',
-    description: 'کاربران سازمان، نقش‌ها، بخش‌های مجاز و تاریخچه دسترسی',
-    tabs: [
-      ['users', 'کاربران سازمان'],
-      ['history', 'تاریخچه دسترسی'],
     ],
   },
   {
@@ -181,7 +168,6 @@ export function CorporateProfile({
   canDelete,
   contacts,
   signatories,
-  access,
   operations,
   logo,
   overview,
@@ -194,7 +180,6 @@ export function CorporateProfile({
   canDelete: boolean;
   contacts: ReactNode;
   signatories?: ReactNode;
-  access?: (tab: string) => ReactNode;
   operations: (
     view: OperationalView,
     onReviewCooperation: () => void,
@@ -583,8 +568,6 @@ export function CorporateProfile({
                 {signatories}
               </div>
             </section>
-          ) : screen === 'access' && access ? (
-            access(tab)
           ) : screen === 'reports' ? (
             <OrganizationActivityPanel
               key={organization.id}
@@ -612,9 +595,7 @@ export function CorporateProfile({
                   ? 'اطلاعات مالی هنوز در دسترس نیست؛ صورت‌حساب و تسویه پس از اتصال سرویس مالی نمایش داده می‌شوند.'
                   : inCredit
                     ? 'ثبت و تأیید درخواست اعتبار و تضمین هنوز آماده نیست.'
-                    : screen === 'access'
-                      ? 'دسترسی کاربران این سازمان هنوز به سامانه هویت و تأیید متصل نشده است.'
-                      : undefined
+                    : undefined
               }
             />
           )}

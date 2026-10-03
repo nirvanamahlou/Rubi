@@ -17,6 +17,13 @@ export function readDossierHistory(state: unknown): DossierHistory | null {
   )
     return null;
   const history = item as unknown as DossierHistory;
+  if (history.screen === 'access')
+    return {
+      ...history,
+      screen: 'home',
+      tab: 'profile',
+      creditTab: 'policy',
+    };
   return history.screen === 'reports' &&
     (history.tab === 'audit' || history.tab === 'export')
     ? { ...history, tab: 'reports' }

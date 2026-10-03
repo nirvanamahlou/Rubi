@@ -4456,6 +4456,9 @@ Seven remaining review/completion KPI cards now use validated global-summary met
 
 Aircraft Types now replaces `انواع بدنه` with `مدل‌های یکتا`, counted from trimmed nonblank canonical `model` values across the existing complete unfiltered global summary. The first three cards, other resources and existing stale/loading/error/pagination guards remain unchanged. Focused 18 and all 562 Master Data tests, scoped ESLint, Web typecheck, scoped Prettier and the 55-route production build pass. No API/schema/backend/data/runtime change or authenticated browser QA; bounded locks release with commit.
 
+## 2026-10-03 — B2B-REMOVE-ACCESS-SECTION-1003 — PC-B
+
+Removed the Users and Access section/card from agency360 and its workspace panel mount. Legacy browser access history resolves to the dossier home, preserving browser navigation. Stored users, security permissions, global system users and historical activity reporting remain unchanged. Organizations159 tests, scoped lint/typecheck/format and production build validation; lead bounded diff review and CI precede user-authorized push/develop merge. No API/schema/dependency/runtime change. PC-A can fetch develop after merge.
 ## 2026-10-03 — RAIL-HIDE-EXTRA-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 Rail Companies now displays code, company, country and organization from its resource-specific column model, plus the renderer's independent authenticated Logo, status and operations columns. Logo Reference, Integration Connection and `انواع قطار` are hidden only from this table; Version / Audit remains absent, and forms/View/export/backend plus every other resource remain unchanged. Focused 15 and all 563 Master Data tests, scoped ESLint, Web typecheck, scoped Prettier and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
