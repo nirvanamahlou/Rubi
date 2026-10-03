@@ -1,5 +1,6 @@
 import { it, expect } from 'vitest';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { defaultVoucherSettings } from '../model/voucher-settings';
@@ -59,6 +60,12 @@ it.runIf(process.env.RESERVATION_PDF_RUNTIME_SMOKE === '1')(
         {},
         `data:image/png;base64,${logo.toString('base64')}`,
         css,
+        false,
+        'https://niyayehseir.com',
+      );
+      await writeFile(
+        join(tmpdir(), 'reservation-single-form-footer.pdf'),
+        pdf,
       );
       expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
       const info = spawnSync('pdfinfo', ['-'], {
