@@ -1,7 +1,8 @@
 'use client';
+import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 import Image from 'next/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { MasterDataResource } from '@nora/contracts';
 import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -88,6 +89,9 @@ function Heading({
     </div>
   );
 }
+const subscribeOrigin = () => () => {};
+const browserOrigin = () => window.location.origin;
+const serverOrigin = () => '';
 export function ReservationFormSheet({
   intake,
   logo,
@@ -105,15 +109,22 @@ export function ReservationFormSheet({
   const settings = voucher
     ? intake.workflow.voucherSettings
     : intake.workflow.supplierFormSettings;
-  const pages = reservationPassengerPages(
-    data.passengers,
-    settings
-      ? Math.max(
-          6,
-          8 - Math.ceil(Object.values(settings.text).join('').length / 350),
-        )
-      : 10,
+  const origin = useSyncExternalStore(
+    subscribeOrigin,
+    browserOrigin,
+    serverOrigin,
   );
+  const pages = voucher
+    ? reservationPassengerPages(
+        data.passengers,
+        settings
+          ? Math.max(
+              6,
+              8 - Math.ceil(Object.values(settings.text).join('').length / 350),
+            )
+          : 10,
+      )
+    : [data.passengers];
   return (
     <div className={styles.document}>
       {pages.map((people, page) => {
@@ -431,6 +442,14 @@ export function ReservationFormSheet({
               )}
             </div>
             <footer className={styles.footer}>
+              {!voucher && (
+                <div
+                  data-reservation-footer
+                  dangerouslySetInnerHTML={{
+                    __html: reservationFormFooterHtml(intake.id, origin),
+                  }}
+                />
+              )}
               <div>
                 {voucher && <strong dir="auto">{data.brand}</strong>}
                 <span>

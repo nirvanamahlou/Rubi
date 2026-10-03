@@ -20,6 +20,7 @@ export async function renderReservationPdf(
   logo: string,
   css: string,
   voucher = false,
+  origin = '',
 ): Promise<Buffer> {
   const { chromePath: chrome, fontPath: font } =
     await resolveTicketPdfRuntime();
@@ -28,7 +29,7 @@ export async function renderReservationPdf(
   active++;
   let directory: string | undefined;
   try {
-    let html = reservationPdfHtml(output, refs, logo, css, voucher);
+    let html = reservationPdfHtml(output, refs, logo, css, voucher, origin);
     if (font) {
       const fontBytes = await readFile(font);
       if (fontBytes.length && fontBytes.length <= 5_000_000)

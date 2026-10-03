@@ -1,3 +1,4 @@
+import { defaultVoucherSettings } from '../model/voucher-settings';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type {
@@ -82,4 +83,16 @@ describe('travel output branding and readiness', () => {
     expect(html).not.toContain('/brand/niyayesh-seir-full.png');
     expect(html).toContain('disabled');
   });
+});
+
+it('applies an unsaved selected broker immediately without adding a manual supplier input', () => {
+  const settings = defaultVoucherSettings(intake, {});
+  settings.text.broker = 'SELECTED BROKER';
+  const html = renderToStaticMarkup(
+    <TravelDocument intake={intake} previewSettings={settings} dirty />,
+  );
+  expect(html).toContain('SELECTED BROKER');
+  expect(html).not.toContain('reservation-supplier-name');
+  expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
+  expect(html).toContain('Reservation@niyayehseir.com');
 });

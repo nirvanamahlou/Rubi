@@ -5009,6 +5009,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Branch codex/pc-a-reservation-form-supplier-pdf-1003 from origin/develop. Scope: Reservations supplier form/settings, PDF render/runtime, focused tests and bounded docs. No migration, dependencies, operational data or shared runtime. PC-A owns this slice until handoff.
 
+## RESERVATION-SINGLE-FORM-FOOTER-1003 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-reservation-single-form-footer-1003 from origin/develop. Reserve Reservations document/settings/workflow renderer, shared QR utility, form viewer route, focused specs and bounded docs. Remove redundant free-text supplier entry; existing active Master Data broker combobox updates a single live form preview, with settings below and persisted revisions retained. Add requested reservation contact email and QR linking to an authenticated form viewer. Keep all passengers in one logical supplier form rather than repeated forms; long documents can paginate physically. No API/schema/migration/dependency changes or public passenger access. User authorizes develop merge; prior panel scope released.
+
+- Delivered one supplier form containing all passengers, live broker/settings preview from active reference lists, settings below the preview and an authenticated QR viewer. Saved outputs require a persisted revision; drafts cannot be sent or downloaded. Footer email is Reservation@niyayehseir.com. No schema/API/dependency or operational data changes. Focused regressions, independent QR golden comparison, scoped lint, typecheck and Web production build verified; six-passenger A4 layout checked. Bounded source locks release with reviewed commit; user authorizes merge and local rollout.
+
 ## RESERVATION-CONTRACT-TERMS-FINANCE-1003 — PC-A — READY_FOR_REVIEW
 
 - درخواست مالک محصول در 2026-10-03: PDF بازطراحی‌شدهٔ مفاد در گزینهٔ «مفاد» رزرواسیون دانلود شود و در پنجرهٔ «مدارک» قرارداد فروش، کاربرِ دارای دسترسی مالی نیز بتواند همان فایل را دریافت کند.

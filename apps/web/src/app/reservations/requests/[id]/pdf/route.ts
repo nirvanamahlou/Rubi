@@ -126,7 +126,14 @@ export async function GET(
       ),
       'utf8',
     );
-    const bytes = await renderReservationPdf(intake, refs, logo, css, voucher);
+    const bytes = await renderReservationPdf(
+      intake,
+      refs,
+      logo,
+      css,
+      voucher,
+      new URL(request.url).origin,
+    );
     const name = intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_');
     return new Response(new Uint8Array(bytes), {
       headers: {

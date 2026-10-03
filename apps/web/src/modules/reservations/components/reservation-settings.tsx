@@ -5,6 +5,7 @@ import {
   voucherNumberKeys,
   voucherFlagKeys,
   type TravelWorkflowStateV1,
+  type VoucherSettingsV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { SearchCombobox } from '@/components/ui/search-combobox';
@@ -129,6 +130,7 @@ function ReservationSettingsForm({
   refs,
   onSaved,
   onDirty,
+  onPreview,
   section = 'ALL',
   partyName,
 }: {
@@ -136,6 +138,7 @@ function ReservationSettingsForm({
   refs: ReservationFormReferences;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
+  onPreview?: (settings: VoucherSettingsV1) => void;
   section?: ReservationSettingsSection;
   partyName?: string;
 }) {
@@ -155,7 +158,8 @@ function ReservationSettingsForm({
       Record<ReservationEditReferenceResource, ReservationEditReferenceOption[]>
     >;
     error: string;
-  }>({ key: '', options: {}, error: '' });
+    loading: boolean;
+  }>({ key: '', options: {}, error: '', loading: false });
   const [error, setError] = useState(''),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false);
@@ -172,7 +176,7 @@ function ReservationSettingsForm({
   ].join(',');
   const activeDirectory =
     directory.key === referenceResourceKey
-      ? { ...directory, loading: false }
+      ? directory
       : {
           key: referenceResourceKey,
           options: {},
@@ -186,10 +190,22 @@ function ReservationSettingsForm({
     if (!resources.length) return;
     let live = true;
     void Promise.all(
-      resources.map(
-        async (resource) =>
-          [resource, await loadReservationEditReferences(resource)] as const,
-      ),
+      resources.map(async (resource) => {
+        const options = await loadReservationEditReferences(resource);
+        if (live)
+          setDirectory((previous) => ({
+            key: referenceResourceKey,
+            options: {
+              ...(previous.key === referenceResourceKey
+                ? previous.options
+                : {}),
+              [resource]: options,
+            },
+            error: previous.key === referenceResourceKey ? previous.error : '',
+            loading: true,
+          }));
+        return [resource, options] as const;
+      }),
     )
       .then((entries) => {
         if (live)
@@ -197,15 +213,19 @@ function ReservationSettingsForm({
             key: referenceResourceKey,
             options: Object.fromEntries(entries),
             error: '',
+            loading: false,
           });
       })
       .catch(() => {
-        if (live)
+        if (live) {
+          live = false;
           setDirectory({
             key: referenceResourceKey,
             options: {},
             error: 'دریافت فهرست ایرلاین، هتل یا کارگزار انجام نشد.',
+            loading: false,
           });
+        }
       });
     return () => {
       live = false;
@@ -287,6 +307,7 @@ function ReservationSettingsForm({
   }
   const update = (next: typeof draft) => {
     setDraft(next);
+    onPreview?.(next);
     onDirty();
   };
   const selected = draft.passengers.filter((p) => p.selected);
@@ -358,7 +379,9 @@ function ReservationSettingsForm({
             selectedLabel={draft.text[referenceKey] || undefined}
             label={voucherTextLabels[key]}
             placeholder={`انتخاب ${voucherTextLabels[key]}`}
-            loading={activeDirectory.loading}
+            loading={
+              activeDirectory.loading && !activeDirectory.options[resource]
+            }
             error={activeDirectory.error || undefined}
             onValueChange={(id) => {
               const option = options.find((item) => item.id === id);
@@ -449,6 +472,7 @@ function ReservationSettingsForm({
         disabled={busy || intake.workflow.supplierStatus === 'CANCELLED'}
         className="grid gap-4"
       >
+        {(section === 'ALL' || section === 'OTHER') && textField('broker')}
         <div
           className={
             section === 'ALL' || section === 'HOTEL' ? 'grid gap-4' : 'hidden'
@@ -716,7 +740,7 @@ function ReservationSettingsForm({
               ))}
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {sectionTextKeys.map(textField)}
+            {sectionTextKeys.filter((key) => key !== 'broker').map(textField)}
           </div>
         </details>
         <p className={styles.operationalNotice}>
@@ -786,6 +810,7 @@ export function ReservationSettings(props: {
   intake: ReservationFormIntake;
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
+  onPreview?: (settings: VoucherSettingsV1) => void;
   section?: ReservationSettingsSection;
   partyName?: string;
 }) {
