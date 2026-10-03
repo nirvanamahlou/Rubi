@@ -4,6 +4,7 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  background: #8dc6eb;
 }
 
 .aviationBackground {
@@ -51,9 +52,17 @@
   opacity: 1;
 }
 
-@media (orientation: portrait) {
+@media (max-aspect-ratio: 854/480) {
   .videoPoster {
     background-image: var(--portrait-poster);
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+  }
+}
+
+@media (max-aspect-ratio: 854/480) {
+  .video {
+    object-fit: contain;
   }
 }
 

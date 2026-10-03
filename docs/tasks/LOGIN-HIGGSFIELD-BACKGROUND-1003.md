@@ -1,29 +1,21 @@
 # LOGIN-HIGGSFIELD-BACKGROUND-1003
 
-Status: media production blocked; draft implementation only.
+Status: local preview requested; PR #555 remains unmerged.
 
-User decision: Higgsfield only; retain the draft until generation access is resolved. Do not substitute local composition as the producer. Existing login tests (16), scoped ESLint, Web typecheck and the 55-route production build pass. Actual media playback and visual acceptance cannot be completed without output. No live runtime change or merge.
+PC-A resumed the bounded login-background work after successful Higgsfield production and the user's explicit local-rollout request. No API, authentication, dependency, migration or database changes.
 
-The requested deliverable is a photorealistic 10–12 second silent sky video: one white passenger aircraft enters left, trails vapor spelling exactly NOORA above the login card, banks left and finishes small in the upper-right. No browser, form, logos or other screenshot UI may enter the video. The final frame must hold, with a matching still for loading, unsupported playback and reduced motion.
+## Media
 
-## Generation evidence
+Final silent Higgsedit composite: fca8afd6-5db1-4a9d-a49b-5c8cb53bf22b. Matching final-frame poster: 79deb646-6a09-4c4a-8d44-ea81a5dcb320. Both are stored as local public assets. Duration 12 seconds, 854 by 480, 24 fps. The final four seconds hold the completed composition.
 
-- Supplied screenshot uploaded to Higgsfield as media `cb4042b2-fda3-4e0b-8d33-91330280b6bb`.
-- Seedance 2.5, 12 seconds, 1080p, silent: estimated 144 credits; submission rejected with `Requires plus plan or higher`.
-- Connected account reports Free with 10 credits and no available unlimited/free generations.
-- Seedance 2.0 Mini, 10 seconds, 720p, silent: estimated 10 credits; submission rejected with `Requires basic plan or higher`.
-- MiniMax H3 Max, 10 seconds, 768p: estimated 25 credits, above the available 10; no submission attempted.
-- After the user authorized any model within the 10-credit balance, Kling 2.6 (10s, silent) and Grok Video 1.5 Lite (10s, 480p) each quoted exactly 10 credits. Both submissions were rejected with `Requires basic plan or higher`.
-- None of the rejected submissions created a job. No video was generated, downloaded, composited or represented as finished.
+Earlier model outputs misspelled NOORA or placed unwanted smoke in front of the aircraft. The accepted correction uses native Higgsfield editing with a clean sky, an extracted airplane and precisely spelled soft white lettering revealed behind its movement. Motion is a composited translation, not a fully natural banking maneuver. The upper-right plane and upper-sky NOORA stay above the login card.
 
-## Prepared integration
+## Integration
 
-The login background accepts an optional local video and matching final-frame poster, with optional portrait assets. With no media supplied, the current static background remains active and no missing URL is requested. Playback is muted, inline, automatic and non-looping. The video is revealed only after playback starts; errors leave its poster visible. Reduced-motion preference prevents initial source loading, pauses an active video, and resumes from its existing position if the preference changes back. An ended video is not restarted.
+Muted inline automatic playback runs once without controls or looping. Playback errors or refusal leave the matching final-frame poster visible. Reduced-motion users receive a static poster and no initial video source. Portrait screens contain the full landscape composition at the top over a matching blue background; the form gets upper clearance. Form fields, logos and authentication behavior are preserved.
 
-## Completion gate
+## Validation
 
-1. Obtain successful Higgsfield output through an account with generation access, or a user-supplied Higgsfield result.
-2. Inspect the full movement and exact NOORA spelling. Composite vapor lettering if needed; do not accept malformed generated text.
-3. Strip audio, encode a compact web MP4, extract its exact final frame, and provide portrait-safe media if landscape cropping hides the aircraft or lettering.
-4. Supply the verified local assets to `LoginBackgroundStory` in the page. Preserve form layout and reserve sufficient visible sky above it where needed.
-5. Verify desktop/mobile, actual autoplay rejection, final-frame hold and reduced-motion behavior in a browser before marking the PR ready. No merge or live runtime change while assets are missing.
+All 16 existing login tests and scoped lint pass. Production build, Web typecheck and local browser verification are recorded in the final handoff. Local Web uses the existing operational environment; the API remains in its existing process. No develop merge is part of this local-preview request.
+
+Verified locally: Web production build completed all 55 routes with successful TypeScript after rebuilding the updated shared contracts. Browser video reports duration=12, currentTime=12, ended=true, muted=true, loop=false, controls=false. Desktop 1440x900 and mobile 390x844 show NOORA and the airplane above the form. Local Web PID 15684 launched from this feature worktree on localhost:3100; original API process retained. Reduced-motion path was inspected in source, not emulated in the browser.
