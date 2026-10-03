@@ -1,4 +1,5 @@
 'use client';
+import { flightCabinCode } from '../model/flight-cabins';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
@@ -111,12 +112,7 @@ export function flightOfferInput(
       reference.kind === 'flightClass' &&
       reference.id === definition.flightClassId,
   );
-  const classText = `${cabin?.code ?? ''} ${cabin?.name ?? ''}`.toUpperCase();
-  const cabinClassCode = classText.includes('FIRST')
-    ? 'FIRST'
-    : classText.includes('BUSINESS')
-      ? 'BUSINESS'
-      : 'ECONOMY';
+  const cabinClassCode = flightCabinCode(cabin);
   return {
     originAirportId: firstSegment.originAirportId || null,
     destinationAirportId: lastSegment.destinationAirportId || null,
@@ -1122,6 +1118,7 @@ function TicketCatalogWorkspace() {
                   onSave={save}
                   onCancel={() => setForm(null)}
                   allowRoundTrip={form.mode === 'create' && !form.initial}
+                  allowMultipleClasses={form.mode === 'create'}
                 />
               )}
               {form.product ? (

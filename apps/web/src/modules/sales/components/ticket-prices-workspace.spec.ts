@@ -51,6 +51,67 @@ describe('ticket price workspace', () => {
     );
     expect(html).not.toContain('قیمت‌های رفت‌وبرگشت ثبت‌شده');
   });
+  it('renders both cabin prices and their own capacities below the same flight', () => {
+    const base = {
+      id: 'economy',
+      branchId: 'branch',
+      originId: 'a',
+      destinationId: 'b',
+      departureAt: '2099-01-01T10:00:00Z',
+      arrivalAt: '2099-01-01T12:00:00Z',
+      carrierName: 'Air',
+      serviceNumber: '12',
+      cabinClassCode: 'ECONOMY',
+      totalCapacity: 20,
+      remainingCapacity: 20,
+      status: 'ACTIVE',
+      version: 1,
+      standaloneSalePrice: { amount: '100', currencyCode: 'IRR', revision: 1 },
+    };
+    const business = {
+      ...base,
+      id: 'business',
+      cabinClassCode: 'BUSINESS',
+      totalCapacity: 5,
+      remainingCapacity: 5,
+      standaloneSalePrice: { amount: '300', currencyCode: 'IRR', revision: 1 },
+    };
+    state.values = [
+      [business, base],
+      [],
+      '',
+      '',
+      {},
+      {},
+      ['IRR'],
+      { a: 'Origin', b: 'Destination' },
+      '',
+      '',
+      '',
+      'ALL',
+      '',
+      '',
+      '',
+      '',
+      { amount: '', currencyCode: 'IRR' },
+      false,
+      false,
+      '',
+      '',
+      '',
+    ];
+    state.index = 0;
+    const html = renderToStaticMarkup(createElement(TicketPricesWorkspace));
+    const articles = html.match(/<article[\s\S]*?<\/article>/g)!;
+    expect(articles).toHaveLength(2);
+    expect(articles[0]).toContain('اکونومی');
+    expect(articles[0]).toContain('۲۰');
+    expect(articles[0]).toContain('100 IRR');
+    expect(articles[1]).toContain('بیزینس');
+    expect(articles[1]).toContain('۵');
+    expect(articles[1]).toContain('300 IRR');
+    state.values = null;
+  });
   it('renders compact pair and single rows with all target fields, persisted percentages and exact net prices', () => {
     const base = {
       version: 1,

@@ -26,6 +26,11 @@ import {
 } from './ticket-form';
 import type { PublishedResource } from '../api/references';
 import styles from './flight-schedule-form.module.css';
+import { FlightCabinCapacities } from './flight-cabin-capacities';
+import {
+  expandFlightCabins,
+  type FlightCabinCapacity,
+} from '../model/flight-cabins';
 
 export function FlightScheduleForm({
   references,
@@ -41,6 +46,9 @@ export function FlightScheduleForm({
   ) => void | Promise<void>;
   onCancel: () => void;
 }) {
+  const [additionalCabins, setAdditionalCabins] = useState<
+    FlightCabinCapacity[]
+  >([]);
   const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(null);
   const [advanced, setAdvanced] = useState(false);
   const [maxEdited, setMaxEdited] = useState(false);
@@ -160,15 +168,19 @@ export function FlightScheduleForm({
         batchId.current,
         scheduleToUtc,
         !maxEdited,
-      ).map((definition) =>
-        withDisplaySnapshot(
-          {
-            ...definition,
-            title: buildAutomaticTicketTitle(definition, references),
-          },
-          references,
-        ),
-      );
+      )
+        .flatMap((definition) =>
+          expandFlightCabins(definition, additionalCabins, references),
+        )
+        .map((definition) =>
+          withDisplaySnapshot(
+            {
+              ...definition,
+              title: buildAutomaticTicketTitle(definition, references),
+            },
+            references,
+          ),
+        );
       await onSave(definitions, 'تعریف برنامه هفتگی پرواز');
     } catch (error) {
       setProblem(
@@ -193,6 +205,7 @@ export function FlightScheduleForm({
           onSave={onSave}
           onCancel={onCancel}
           allowRoundTrip
+          allowMultipleClasses
         />
       </div>
     );
@@ -579,7 +592,11 @@ export function FlightScheduleForm({
             فاصلهٔ برگشت است و می‌توانید آن را تغییر دهید.
           </p>
           <div className={styles.options}>
-            <FormField label="ظرفیت هر پرواز" id="schedule-capacity" required>
+            <FormField
+              label="ظرفیت کلاس انتخاب‌شده در هر پرواز"
+              id="schedule-capacity"
+              required
+            >
               <Input
                 id="schedule-capacity"
                 type="number"
@@ -639,6 +656,15 @@ export function FlightScheduleForm({
               }
             />
           </div>
+          <FlightCabinCapacities
+            cabins={additionalCabins}
+            primaryCapacity={input.totalCapacity}
+            references={references}
+            onReference={onReference}
+            onChange={setAdditionalCabins}
+            roundTrip={mode === 'round-trip'}
+            disabled={saving}
+          />
           {previewError ? <Alert tone="error" title={previewError} /> : null}
           {preview.length ? (
             <div className={styles.preview}>
