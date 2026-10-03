@@ -32,6 +32,8 @@ const intake = {
     branding: { kind: 'OWN', companyCode: 'NIYAYESH_SEIR_SAHAR', name: 'QA' },
   },
 } as unknown as ReservationFormIntake;
+intake.workflow.supplierFormSettings = defaultVoucherSettings(intake, {});
+intake.workflow.supplierFormSettings.text.broker = 'Synthetic Supplier';
 const request = () =>
   new Request(`http://localhost/reservations/requests/${id}/pdf`, {
     headers: { cookie: 'test-session' },
@@ -139,8 +141,11 @@ describe('reservation PDF route', () => {
     expect(html).toContain('OLDER CHILD');
   });
   it('escapes saved text and refuses external logos in the isolated HTML', () => {
+    const withMarkup = structuredClone(intake);
+    withMarkup.workflow.supplierFormSettings!.text.remarks =
+      '<script>alert(1)</script>';
     const html = reservationPdfHtml(
-      intake,
+      withMarkup,
       {},
       'data:image/png;base64,c2FmZQ==',
       '',
@@ -208,4 +213,52 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).toContain('ROOM TYPE');
   expect(html).toContain('STAMP');
   expect(html).not.toContain('<img');
+});
+
+it('requires a saved recipient before issuing the supplier reservation PDF', async () => {
+  const value = {
+    ...intake,
+    workflow: { ...intake.workflow, supplierFormSettings: undefined },
+  };
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(Response.json({ data: value })),
+  );
+  const response = await GET(request(), { params: Promise.resolve({ id }) });
+  expect(response.status).toBe(409);
+  expect(renderer).not.toHaveBeenCalled();
+});
+
+it('keeps six regular passengers on one supplier form page', () => {
+  const ids = Array.from({ length: 6 }, (_, index) => `passenger-${index + 1}`);
+  const value = {
+    ...intake,
+    snapshot: {
+      ...intake.snapshot,
+      passengerIds: ids,
+      passengerAssignments: ids.map((customerId, index) => ({
+        customerId,
+        displayNameSnapshot: `SYNTHETIC PASSENGER ${index + 1}`,
+        ageCategory: 'ADL',
+      })),
+    },
+    workflow: {
+      ...intake.workflow,
+      roomOrder: ids,
+      supplierFormSettings: undefined,
+    },
+  } as unknown as ReservationFormIntake;
+  value.workflow.supplierFormSettings = defaultVoucherSettings(value, {});
+  value.workflow.supplierFormSettings.text.broker = 'Synthetic Supplier';
+  const html = reservationPdfHtml(
+    value,
+    {},
+    'data:image/png;base64,c2FmZQ==',
+    '',
+  );
+  expect(html.match(/<article class="page"/g)).toHaveLength(1);
+  expect(html).toContain('06</td>');
+  expect(html).toContain('1 / 1');
+  expect(html).not.toContain('<th>LEG</th>');
+  expect(html).not.toContain('<span>TOUR LEADER</span>');
 });

@@ -263,7 +263,9 @@ export function TravelWorkflowForm({
         action === 'واچر' ||
         (action === 'Confirmation' && state.voucherIssued)) && (
         <TravelDocument
+          key={`${intake.id}:${state.version}`}
           intake={intake}
+          onSaved={(workflow) => setIntake({ ...intake, workflow })}
           voucher={action === 'واچر' || action === 'Confirmation'}
         />
       )}

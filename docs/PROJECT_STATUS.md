@@ -1,6 +1,11 @@
-## 2026-10-03 — RESERVATION-CONTRACT-TERMS-FINANCE-1003 — PC-A — READY_FOR_REVIEW
+## 2026-10-03 — LEADER-HIDE-DOCUMENTS-1003 — PC-B — READY_FOR_REVIEW
 
-The supplied two-page travel-contract terms PDF replaces the previous static file byte-for-byte (SHA256 `8ED0C34F4E94F9802A5CA4F9F0CF45DE9AE49FCB92E1018B4AE30D56206767DC`). Reservations’ existing selected-contract «مفاد» action still downloads that shared asset. Sales’ «مدارک» dialog now includes «دانلود مفاد قرارداد» only after the existing server-side finance-authorized travel-document read succeeds; the API’s financial release checks remain the access gate for the dialog. 13 focused Sales/Reservations tests, scoped lint, Web typecheck and the 55-route production build pass. The PDF was rendered and visually checked, and the copied file hash matches the supplied source. No API, permission, database, migration or runtime change. See `docs/tasks/RESERVATION-CONTRACT-TERMS-FINANCE-1003.md`.
+The Leader list now omits only the visible Documents header and its placeholder cell, leaving nine aligned columns. Visa guide documents and all Leader form, View, export, API, database and document behavior remain unchanged. Focused regression (5), all 464 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-03 — SALES-REFERENCE-EXCEL-EXPORT-1003 — PC-B — READY_FOR_REVIEW
+
+Excel download for both Acquaintance Methods and Sales Channels now submits the exact unique canonical columns `code`, `name`, `englishName`, `description`, `displayOrder`, `status` and `updatedAt`. The existing resource and effective filter payload, export permission, API validation and workbook contract remain unchanged. A safe in-memory diagnostic built and unzipped both resource workbooks, confirming seven header cells, seven populated data cells and the expected sample values. Focused regression (10), all 464 Master Data Web tests, the API XLSX fixture (2), scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-03 — SALES-REFERENCE-CENTER-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 The shared Sales References table now centers the Code header/value and Operations header/cell/action group on both Acquaintance Methods and Sales Channels. Code keeps its LTR monospaced semantics, action order and callbacks remain View, Edit and Delete, and all other columns retain start alignment. Focused regression (9), all 463 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
@@ -4239,3 +4244,12 @@ Hotel and transfer purchase entry now uses one base amount and factor per servic
 ## RESERVATION-CONTRACT-FORM-BUTTONS-1003 — PC-A
 
 In the selected-contract panel, «فرم رزواسیون» now sits under «عملیات قرارداد» and opens the existing reservation workflow. «مشاهده» now sits under «اطلاعات قرارداد» and continues to open the Sales contract PDF preview. Other contract actions and workflow behavior are unchanged. A focused panel regression covers group placement, the form route and contract preview. No API, schema, migration, dependency or operational-data change.
+
+## 2026-10-03 — RESERVATION-SUPPLIER-PDF-1003 — PC-A — READY_FOR_REVIEW
+
+فرم رزواسیون پیش از چاپ/دانلود نام کارگزار گیرنده را در نسخهٔ گردش‌کار ثبت می‌کند و نام در SUPPLIER هر دو پیش‌نمایش و PDF نمایش داده می‌شود؛ مسیر دانلود مستقیم نیز بدون نام ثبت‌شده 409 می‌دهد. متن راهنما در تنظیمات فرم ویرایش‌پذیر و پیش‌فرض آن Persian است. فیلد راهنمای خلاصه، ستون LEG پرواز و نام برند از پایین فرم ارسالی حذف شدند؛ واچر بدون تغییر ماند. خلاصه بوکینگ فشرده شد و PDF واقعی Chrome برای شش مسافر مصنوعی در یک صفحه A4 بررسی شد. موتور PDF مسیر Chrome/Edge را خودکار پیدا می‌کند، نبود فونت سفارشی را تحمل می‌کند و برای تکمیل فایل روی Windows صبر می‌کند. 17 تست هدفمند و lint فایل‌های تغییرکرده موفق‌اند. پس از بازسازی قراردادهای مشترک، Typecheck سراسری Web نیز بدون خطا موفق شد. بدون Migration، داده عملیاتی یا تغییر مجوز.
+## 2026-10-03 — RESERVATION-CONTRACT-TERMS-FINANCE-1003 — PC-A — READY_FOR_REVIEW
+
+The supplied two-page travel-contract terms PDF replaces the previous static file byte-for-byte (SHA256 `8ED0C34F4E94F9802A5CA4F9F0CF45DE9AE49FCB92E1018B4AE30D56206767DC`). Reservations’ existing selected-contract «مفاد» action still downloads that shared asset. Sales’ «مدارک» dialog now includes «دانلود مفاد قرارداد» only after the existing server-side finance-authorized travel-document read succeeds; the API’s financial release checks remain the access gate for the dialog. 13 focused Sales/Reservations tests, scoped lint, Web typecheck and the 55-route production build passed before updating from develop; re-run after merge. The PDF was rendered and visually checked, and the copied file hash matches the supplied source. No API, permission, database, migration or runtime change. See `docs/tasks/RESERVATION-CONTRACT-TERMS-FINANCE-1003.md`.
+
+\r\n

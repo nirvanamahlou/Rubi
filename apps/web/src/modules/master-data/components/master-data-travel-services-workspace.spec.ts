@@ -169,11 +169,10 @@ describe('travel services workspace', () => {
           'تماس',
           'زبان‌ها',
           'تخصص و مقصد',
-          'مدارک',
           'وضعیت',
           'عملیات',
         ],
-        cells: 10,
+        cells: 9,
       },
       'tour-types': {
         headers: [
@@ -222,6 +221,8 @@ describe('travel services workspace', () => {
       expect(table.headers).not.toContain('استفاده');
       expect(table.cells).toBe(table.headers.length);
     }
+    expect(tables.leaders?.headers).not.toContain('مدارک');
+    expect(tables['visa-services']?.headers).toContain('مدارک راهنما');
     expect(tables['tour-types']?.headers).not.toContain('آخرین تغییر');
     expect(source).toContain('label="استفاده"');
     expect(source).toContain('tourTypeUsageLabel(selected)');

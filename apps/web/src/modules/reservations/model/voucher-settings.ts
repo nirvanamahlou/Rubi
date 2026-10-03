@@ -26,6 +26,7 @@ export function defaultVoucherSettings(
     checkOut: h?.checkOutDate ?? '',
     broker: d.supplier === '-' ? '' : d.supplier,
     leaderName: d.leader === '-' ? '' : d.leader,
+    leaderLanguage: 'Persian',
     excursionDescription: d.excursion === '-' ? '' : d.excursion,
   });
   for (const [prefix, f] of [
@@ -77,6 +78,7 @@ export function defaultVoucherSettings(
       ) as VoucherSettingsV1['text']),
       contractPartyName:
         saved.text.contractPartyName ?? text.contractPartyName ?? '',
+      leaderLanguage: saved.text.leaderLanguage || 'Persian',
     },
     numbers: Object.fromEntries(
       (Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]).map(
@@ -109,7 +111,7 @@ export const voucherTextLabels: Record<VoucherTextFieldKey, string> = {
   website: 'وب‌سایت هتل',
   stayNotes: 'توضیح اقامت',
   broker: 'کارگزار',
-  leaderLanguage: 'زبان راهنما',
+  leaderLanguage: 'متن راهنما در فرم (پیش‌فرض Persian)',
   leaderName: 'نام راهنما',
   leaderPhone: 'تلفن راهنما',
   transferBoard: 'تابلوی ترانسفر',
@@ -235,12 +237,16 @@ export function supplierFormData(
 ) {
   const settings = intake.workflow.supplierFormSettings;
   return settings
-    ? voucherFormData(
-        {
-          ...intake,
-          workflow: { ...intake.workflow, voucherSettings: settings },
-        },
-        refs,
-      )
-    : reservationFormData(intake, refs);
+    ? {
+        ...voucherFormData(
+          {
+            ...intake,
+            workflow: { ...intake.workflow, voucherSettings: settings },
+          },
+          refs,
+        ),
+        supplier: settings.text.broker?.trim() || '-',
+        leader: settings.text.leaderLanguage?.trim() || 'Persian',
+      }
+    : { ...reservationFormData(intake, refs), leader: 'Persian' };
 }
