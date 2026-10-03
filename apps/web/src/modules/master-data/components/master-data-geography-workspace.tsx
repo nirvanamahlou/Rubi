@@ -181,7 +181,6 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'نام انگلیسی',
       'ترتیب',
       'وابستگی‌ها',
-      'آخرین تغییر',
       'وضعیت',
       'عملیات',
     ];
@@ -194,7 +193,6 @@ function geographyColumns(resource: GeographyResource): readonly string[] {
       'کشور',
       'نوع ساختار',
       'تعداد شهر',
-      'آخرین تغییر',
       'نسخه',
       'وضعیت',
       'عملیات',
@@ -270,7 +268,6 @@ function recordCells(
         {attribute(record, 'regionsCount')} استان ·{' '}
         {attribute(record, 'banksCount')} بانک
       </span>,
-      new Date(record.updatedAt).toLocaleString('fa-IR'),
       statusBadge(record),
     ];
   if (resource === 'regions')
@@ -284,7 +281,6 @@ function recordCells(
       attribute(record, 'countryName'),
       regionLabels[attribute(record, 'type')] ?? attribute(record, 'type'),
       attribute(record, 'cityCount'),
-      new Date(record.updatedAt).toLocaleString('fa-IR'),
       `v${record.version.toLocaleString('fa-IR')}`,
       statusBadge(record),
     ];

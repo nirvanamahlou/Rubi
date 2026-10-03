@@ -1,3 +1,23 @@
+## 2026-10-03 — LEADER-HIDE-DOCUMENTS-1003 — PC-B — READY_FOR_REVIEW
+
+The Leader list now omits only the visible Documents header and its placeholder cell, leaving nine aligned columns. Visa guide documents and all Leader form, View, export, API, database and document behavior remain unchanged. Focused regression (5), all 464 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-03 — SALES-REFERENCE-EXCEL-EXPORT-1003 — PC-B — READY_FOR_REVIEW
+
+Excel download for both Acquaintance Methods and Sales Channels now submits the exact unique canonical columns `code`, `name`, `englishName`, `description`, `displayOrder`, `status` and `updatedAt`. The existing resource and effective filter payload, export permission, API validation and workbook contract remain unchanged. A safe in-memory diagnostic built and unzipped both resource workbooks, confirming seven header cells, seven populated data cells and the expected sample values. Focused regression (10), all 464 Master Data Web tests, the API XLSX fixture (2), scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-03 — SALES-REFERENCE-CENTER-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
+
+The shared Sales References table now centers the Code header/value and Operations header/cell/action group on both Acquaintance Methods and Sales Channels. Code keeps its LTR monospaced semantics, action order and callbacks remain View, Edit and Delete, and all other columns retain start alignment. Focused regression (9), all 463 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-03 — SALES-REFERENCE-REPLACE-REVIEW-KPI-1003 — PC-B — READY_FOR_REVIEW
+
+The fourth KPI on both Acquaintance Methods and Sales Channels is now `دارای عنوان انگلیسی`, backed by the existing unfiltered global list and an explicit `در کل اطلاعات پایه` hint. Only nonblank string English titles count; duplicate titles on separate records count separately. Loading/error render `—`, valid empty renders zero, and stale resources, malformed/incomplete pagination or duplicate record IDs cannot publish a misleading total. The first three cards, filters, forms, profiles, API and backend remain unchanged. Focused regression (8), all 462 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-03 — MASTER-DATA-HIDE-AUDIT-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
+
+Visible Last Change/Audit table columns were removed across all current Master Data renderers: Hotels, Hotel Chains, Countries, Regions, Insurers, Airlines, Cabin Classes, Rail Companies, Bus Companies and the generic fallback. Combined `Version / Audit` columns were removed as a whole; independent record/template Version columns remain. Finance Audit operations/timelines, transport profile audit, View/form timestamps, sorting, exports, persistence, optimistic concurrency and backend audit records are unchanged. Focused regressions (42), all 461 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-01 — TRAVEL-HIDE-USAGE-COLUMNS-1001 — PC-B — READY_FOR_REVIEW
 
 The Tour Types and Transfer Types lists no longer display their usage columns. Leaders and Visa Services were already without that column and remain unchanged; AST regressions verify exact headers, matching row-cell counts and the retained prior Tour Types last-change removal across all four tables. Tour Type View usage, model metadata, forms, exports, API and backend behavior remain unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
@@ -4215,3 +4235,19 @@ Reservations purchase now prepares one atomic hotel-and-transfer request per con
 ## 2026-10-03 — LOGIN-HIGGSFIELD-BACKGROUND-1003 — PC-A — MEDIA_BLOCKED
 
 Prepared optional single-play login video support with matching poster fallback and reduced-motion source suppression. Higgsfield rejected Seedance 2.5, Mini, Kling 2.6 and Grok Lite for account-plan access, including alternatives quoting exactly the available 10 credits; no generation job or video exists. User chose Higgsfield only and to retain a draft. Sixteen login tests, scoped lint, Web typecheck and the 55-route build pass. NOORA compositing and desktop/mobile visual acceptance remain pending. Current login background and local runtime remain unchanged; no merge before verified media. See [task handoff](tasks/LOGIN-HIGGSFIELD-BACKGROUND-1003.md).
+
+### TICKET-NUMBER-CHARTER-FIX-1003 — PC-A
+
+Fixed ticket identity issuance returning PostgreSQL void through Prisma: both advisory locks now return a supported integer column. COMPANY (charter) remains automatic and FLOATING/API/unknown supply remains manual. Airline and agency raster logos fit within the header without overlapping passenger details. Ten API regressions including rollback-only real PostgreSQL locks passed; Web focused tests, lint/typechecks and both production builds passed. Synthetic two-leg A4 PDF visually verified as one page. Two explicitly confirmed local legacy offers classified as COMPANY with actor audit; no passenger ticket number issued during repair. No migration/dependency change.
+
+## 2026-10-03 — SERVICE-PURCHASE-FACTOR-1003 — PC-A
+
+Hotel and transfer purchase entry now uses one base amount and factor per service. Contract check-in/check-out supplies nights, with exact four-decimal arithmetic and a single final rounding. API independently recalculates and rejects altered totals before atomic Finance submission. Calculation inputs and resolved nights are preserved in the existing nullable JSON purchase breakdown; legacy passenger arrays remain readable and previous clients remain accepted. No migration, dependencies or operational data changes. Scoped tests/lint, both typechecks and Web/API production builds verified. Owner requests develop merge after checks.
+
+## RESERVATION-CONTRACT-FORM-BUTTONS-1003 — PC-A
+
+In the selected-contract panel, «فرم رزواسیون» now sits under «عملیات قرارداد» and opens the existing reservation workflow. «مشاهده» now sits under «اطلاعات قرارداد» and continues to open the Sales contract PDF preview. Other contract actions and workflow behavior are unchanged. A focused panel regression covers group placement, the form route and contract preview. No API, schema, migration, dependency or operational-data change.
+
+## 2026-10-03 — RESERVATION-SUPPLIER-PDF-1003 — PC-A — READY_FOR_REVIEW
+
+فرم رزواسیون پیش از چاپ/دانلود نام کارگزار گیرنده را در نسخهٔ گردش‌کار ثبت می‌کند و نام در SUPPLIER هر دو پیش‌نمایش و PDF نمایش داده می‌شود؛ مسیر دانلود مستقیم نیز بدون نام ثبت‌شده 409 می‌دهد. متن راهنما در تنظیمات فرم ویرایش‌پذیر و پیش‌فرض آن Persian است. فیلد راهنمای خلاصه، ستون LEG پرواز و نام برند از پایین فرم ارسالی حذف شدند؛ واچر بدون تغییر ماند. خلاصه بوکینگ فشرده شد و PDF واقعی Chrome برای شش مسافر مصنوعی در یک صفحه A4 بررسی شد. موتور PDF مسیر Chrome/Edge را خودکار پیدا می‌کند، نبود فونت سفارشی را تحمل می‌کند و برای تکمیل فایل روی Windows صبر می‌کند. 17 تست هدفمند و lint فایل‌های تغییرکرده موفق‌اند. پس از بازسازی قراردادهای مشترک، Typecheck سراسری Web نیز بدون خطا موفق شد. بدون Migration، داده عملیاتی یا تغییر مجوز.

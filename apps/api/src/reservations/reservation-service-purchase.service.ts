@@ -11,6 +11,7 @@ import {
   hotelNights,
   moneyDecimal,
   moneyUnits,
+  reservationServicePurchaseTotal,
   type AuthenticatedActor,
   type ReservationServicePurchaseInputV1,
   type ReservationPurchaseBatchInputV1,
@@ -67,6 +68,7 @@ export function validateServicePurchase(
           'passengerPrices',
           'coveredServiceClientKeys',
           'transferUnitAmount',
+          'pricingCalculation',
         ].includes(key),
     ) ||
     (input.passengerPrices !== undefined &&
@@ -97,6 +99,28 @@ export function validateServicePurchase(
       throw new BadRequestException(
         'قیمت هر شب هر مسافر باید مبلغی مثبت باشد.',
       );
+    }
+  }
+  if (input.pricingCalculation !== undefined) {
+    const calculation = input.pricingCalculation;
+    if (
+      !calculation ||
+      typeof calculation !== 'object' ||
+      Object.keys(calculation).some(
+        (key) => !['baseAmount', 'factor'].includes(key),
+      ) ||
+      input.passengerPrices !== undefined ||
+      input.transferUnitAmount !== undefined
+    )
+      throw new BadRequestException('فرمول خرید خدمت معتبر نیست.');
+    try {
+      if (
+        moneyUnits(calculation.baseAmount) <= 0n ||
+        moneyUnits(calculation.factor) <= 0n
+      )
+        throw new Error();
+    } catch {
+      throw new BadRequestException('قیمت پایه و ضریب خرید معتبر نیست.');
     }
   }
 }
@@ -263,7 +287,39 @@ export class ReservationServicePurchaseService {
         ]);
         let amount: string;
         let passengerPrices: Prisma.InputJsonValue | undefined;
-        if (service.kind === 'HOTEL') {
+        if (row.pricingCalculation) {
+          if (
+            service.kind === 'HOTEL'
+              ? row.coveredServiceClientKeys?.length !== 1
+              : row.coveredServiceClientKeys?.length !== transferKeys.length ||
+                transferKeys.some(
+                  (key) => !row.coveredServiceClientKeys?.includes(key),
+                )
+          )
+            throw new BadRequestException('خدمات فرمول خرید معتبر نیست.');
+          try {
+            const nights = hotelNights(
+              snapshot.hotelSelection?.checkInDate ?? '',
+              snapshot.hotelSelection?.checkOutDate ?? '',
+            );
+            amount = reservationServicePurchaseTotal(
+              row.pricingCalculation.baseAmount,
+              row.pricingCalculation.factor,
+              nights,
+            );
+            passengerPrices = {
+              calculation: {
+                ...row.pricingCalculation,
+                nights,
+                totalAmount: amount,
+              },
+            };
+          } catch {
+            throw new BadRequestException(
+              'قیمت پایه، ضریب یا تعداد شب قرارداد معتبر نیست.',
+            );
+          }
+        } else if (service.kind === 'HOTEL') {
           if (
             row.coveredServiceClientKeys?.length !== 1 ||
             row.transferUnitAmount
@@ -320,7 +376,7 @@ export class ReservationServicePurchaseService {
         }
         if (moneyUnits(row.amount) !== moneyUnits(amount))
           throw new BadRequestException(
-            'جمع ردیف خرید با قیمت مسافران یکسان نیست.',
+            'مبلغ کل خرید با محاسبهٔ خدمت یکسان نیست.',
           );
         return { row, service, broker, amount, passengerPrices };
       }),
@@ -418,7 +474,11 @@ export class ReservationServicePurchaseService {
     if (!UUID.test(intakeId) || !key?.trim() || key.length > 160)
       throw new BadRequestException('شناسه درخواست و کلید ثبت معتبر لازم است.');
     validateServicePurchase(input);
-    if (input.coveredServiceClientKeys || input.transferUnitAmount)
+    if (
+      input.coveredServiceClientKeys ||
+      input.transferUnitAmount ||
+      input.pricingCalculation
+    )
       throw new BadRequestException(
         'خرید مشترک فقط از مسیر درخواست خرید قرارداد ثبت می‌شود.',
       );

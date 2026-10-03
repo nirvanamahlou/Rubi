@@ -19,7 +19,6 @@ export function transportColumns(
         ['countryName', 'کشور'],
         ['logoFileReference', 'لوگو Reference'],
         ['integrationConnectionReference', 'Integration Connection'],
-        ['versionAudit', 'Version / Audit'],
       ];
     case 'aircraft-types':
       return [
@@ -37,7 +36,6 @@ export function transportColumns(
         ['bookingCode', 'کد رزرو'],
         ['displayOrder', 'ترتیب'],
         ['usage', 'استفاده در Ticket Catalog'],
-        ['versionAudit', 'Version / Audit'],
       ];
     case 'baggage-rules':
       return [
@@ -73,7 +71,6 @@ export function transportColumns(
         ['name', 'شرکت ریلی'],
         ...operator,
         ['vehicleTypeCount', 'انواع قطار'],
-        ['versionAudit', 'Version / Audit'],
       ];
     case 'bus-companies':
       return [
@@ -83,7 +80,6 @@ export function transportColumns(
         ['logoFileReference', 'لوگو Reference'],
         ['integrationConnectionReference', 'Integration Connection'],
         ['vehicleTypeCount', 'انواع اتوبوس'],
-        ['versionAudit', 'Version / Audit'],
       ];
     case 'train-types':
       return [
@@ -141,8 +137,6 @@ export function transportColumnValue(
   if (key === 'code') return record.code;
   if (key === 'name') return record.name;
   if (key === 'version') return `v${record.version}`;
-  if (key === 'versionAudit')
-    return `v${record.version} · ${new Date(record.updatedAt).toLocaleString('fa-IR')}`;
   if (key === 'capacity') return 'در پیکربندی ناوگان / سرویس';
   if (key === 'usage') return '— · در انتظار اتصال';
   if (key === 'routeClass')

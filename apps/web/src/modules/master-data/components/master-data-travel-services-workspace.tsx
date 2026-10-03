@@ -132,7 +132,6 @@ const headers: Record<TravelResource, readonly string[]> = {
     'تماس',
     'زبان‌ها',
     'تخصص و مقصد',
-    'مدارک',
     'وضعیت',
     'عملیات',
   ],
@@ -647,9 +646,6 @@ export function MasterDataTravelServicesWorkspace() {
         </span>,
         chips(attribute(record, 'languages')),
         `${attribute(record, 'expertise')} · ${attribute(record, 'destinations')}`,
-        <Badge className="bg-muted text-muted-foreground" key="docs">
-          —
-        </Badge>,
       ];
     if (resource === 'tour-types')
       return [

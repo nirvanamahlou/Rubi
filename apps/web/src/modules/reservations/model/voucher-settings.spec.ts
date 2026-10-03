@@ -55,8 +55,15 @@ it('uses saved voucher settings, selected passengers and service flags without r
   expect(output.nights).toBe(3);
   expect(output.children).toBe(1);
   expect(output.passengers[0]?.age).toBe('CHD (2-6)');
+  settings.text.broker = 'Agency receiving the form';
   intake.workflow.supplierFormSettings = settings;
   expect(supplierFormData(intake, {}).passengers[0]?.age).toBe('CHD (2-6)');
+  expect(supplierFormData(intake, {}).supplier).toBe(
+    'Agency receiving the form',
+  );
+  expect(supplierFormData(intake, {}).leader).toBe('Persian');
+  settings.text.leaderLanguage = 'Arabic';
+  expect(supplierFormData(intake, {}).leader).toBe('Arabic');
   const passenger = output.passengers[0];
   expect(
     passenger && 'hotelChildAgeBand' in passenger
