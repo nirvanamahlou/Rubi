@@ -15,6 +15,20 @@ import { travelRequest } from '@/modules/reservations/components/travel-workflow
 import { TravelDocument } from '@/modules/reservations/components/travel-document';
 import { ReservationTickets } from '@/modules/reservations/components/reservation-tickets';
 type Intake = ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+
+export function SalesContractTermsDownload() {
+  return (
+    <a
+      href="/contracts/terms.pdf"
+      download="مفاد-قرارداد.pdf"
+      aria-label="دانلود PDF مفاد قرارداد"
+      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-primary/25 bg-background px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      دانلود مفاد قرارداد
+    </a>
+  );
+}
+
 export function SalesTravelDocuments({
   contractId,
   className,
@@ -83,6 +97,21 @@ export function SalesTravelDocuments({
           </DialogDescription>
           {intake && (
             <>
+              <section
+                aria-labelledby="sales-contract-terms-title"
+                className="rounded-xl border border-border bg-muted/30 p-4"
+              >
+                <h3
+                  id="sales-contract-terms-title"
+                  className="text-sm font-bold"
+                >
+                  مفاد قرارداد
+                </h3>
+                <p className="mt-1 mb-3 text-xs text-muted-foreground">
+                  نسخهٔ مرجع مفاد قرارداد را می‌توانید دریافت کنید.
+                </p>
+                <SalesContractTermsDownload />
+              </section>
               <Button
                 disabled={busy || !intake.workflow.branding}
                 onClick={() => void load(true)}
