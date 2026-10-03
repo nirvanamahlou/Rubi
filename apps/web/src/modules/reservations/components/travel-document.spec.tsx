@@ -75,7 +75,8 @@ describe('travel output branding and readiness', () => {
     );
     expect(html).toContain('HOTEL VOUCHER');
     expect(html).toContain('دانلود واچر');
-    expect(html).toContain('SYNTHETIC BROKER');
+    expect(html).toMatch(/SUPPLIER<\/span><b[^>]*>0<\/b>/);
+    expect(html).not.toContain('SYNTHETIC BROKER');
     expect(html).toContain('STAMP');
     expect(html).toContain('ROOM QUANTITIES BY TYPE');
     expect(html).not.toContain('subject to supplier confirmation');

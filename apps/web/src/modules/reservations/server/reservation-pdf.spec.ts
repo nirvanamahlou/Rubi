@@ -214,10 +214,10 @@ it('renders voucher booking references and a separated summary without letterhea
   value.workflow.voucherSettings.flags.tourLeader = true;
   const html = reservationPdfHtml(value, {}, '', '', true);
   expect(html).toContain('HOTEL VOUCHER');
-  expect(html).toContain('SYNTHETIC BROKER');
+  expect(html).toMatch(/SUPPLIER<\/span><b dir="auto">0<\/b>/);
+  expect(html).not.toContain('SYNTHETIC BROKER');
   expect(html).toContain('<section class="bookingSection">');
   expect(html).toContain('ROOM TYPE');
-  expect(html).toContain('SYNTHETIC BROKER');
   expect(html).toContain('Board: BROKER BOARD');
   expect(html).toContain('SYNTHETIC LEADER / +989000000000');
   expect(html).not.toContain('<th>LEG</th>');

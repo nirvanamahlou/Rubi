@@ -61,6 +61,7 @@ it('uses saved voucher settings, selected passengers and service flags without r
   expect(supplierFormData(intake, {}).supplier).toBe(
     'Agency receiving the form',
   );
+  expect(voucherFormData(intake, {}).supplier).toBe('0');
   expect(supplierFormData(intake, {}).leader).toBe('Persian');
   settings.text.leaderLanguage = 'Arabic';
   expect(supplierFormData(intake, {}).leader).toBe('Arabic');

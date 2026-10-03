@@ -1,3 +1,7 @@
+## 2026-10-03 — VOUCHER-SUPPLIER-ZERO-LEADER-PICKER-1003 — PC-A — READY_FOR_REVIEW
+
+Voucher preview and PDF now show `SUPPLIER` as `0` and omit the lower reservation-recipient name. Before issuance, the voucher action has a tour leader selector above preview, scoped to the chosen broker and loading the full phone from Master Data. Reservation form supplier remains unchanged. 20 focused tests, scoped lint, Web typecheck and the 55-route production build pass; no authenticated runtime/browser QA or database change. PR targets develop.
+
 ## 2026-10-03 — MARKETING-SETTINGS-SYSTEM-1003 — PC-B — READY_FOR_REVIEW
 
 Marketing Settings now lives under System Management → Marketing. The Marketing hub no longer offers Settings, and `/marketing?section=settings` redirects to `/system?module=marketing`. The six original channel/site/role/alert/general/log views retain their interactions and detail dialogs, while existing persisted Marketing settings remain in place. 39 focused tests, scoped lint, Web typecheck and a 55-route webpack production build pass. Default Turbopack is blocked only by the reused dependency junction. No API, migration, permissions, dependency, operational data or local runtime change; bounded locks are released. See `docs/tasks/MARKETING-SETTINGS-SYSTEM-1003.md`.
