@@ -4372,3 +4372,7 @@ User creation now saves the current explicit access selections even while option
 ## 2026-10-03 — SALES-DASHBOARD-NEGATIVE-BALANCE-1003 — PC-A — READY_FOR_REVIEW
 
 Sales dashboard aggregation now accepts legitimate negative computed balances from overpayment while rejecting negative payment input. The failing regression was reproduced before the fix; all 88 Sales API tests, scoped lint, formatting, Contracts/Database builds, API typecheck and production build pass. Prisma Client was regenerated locally without database access. No schema, permission, dependency or operational-data change.
+
+## 2026-10-03 — PROFILE-AVATAR-SAVE-1003 — PC-B
+
+Personal profile photo upload now accepts the edited name and contact details and links the stored document through the existing IAM profile service before responding. The Web form consumes the returned profile, eliminating its second save request after photo upload. Older file-only clients remain supported. No schema, migration, permission, dependency, or operational-data change. Local port 3100 was unavailable during verification, so live account behavior remains unverified; focused tests and build checks gate delivery.

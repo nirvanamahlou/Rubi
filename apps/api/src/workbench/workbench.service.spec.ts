@@ -171,9 +171,24 @@ describe('WorkbenchService backend boundaries', () => {
   });
 
   it('routes profile photo uploads through the Documents owner boundary', async () => {
+    const documentId = '44444444-4444-4444-8444-444444444444';
     const uploadOwnProfilePhoto = vi.fn().mockResolvedValue({
-      id: '44444444-4444-4444-8444-444444444444',
+      id: documentId,
       scanStatus: 'PENDING_SCAN',
+    });
+    const assertWorkbenchOwnedAttachments = vi
+      .fn()
+      .mockResolvedValue([{ id: documentId, title: 'عکس پروفایل' }]);
+    const personalProfile = vi.fn().mockResolvedValue({
+      displayName: 'نام پیشین',
+      email: null,
+      profile: { phone: null },
+    });
+    const updatedAt = new Date('2026-10-03T08:00:00.000Z');
+    const updateOwnProfile = vi.fn().mockResolvedValue({
+      displayName: 'نام جدید',
+      email: 'qa@example.com',
+      profile: { phone: null, photoDocumentId: documentId, updatedAt },
     });
     const file = {
       buffer: Buffer.from([137, 80, 78, 71]),
@@ -183,9 +198,16 @@ describe('WorkbenchService backend boundaries', () => {
     };
     const result = await service(
       {},
-      { uploadOwnProfilePhoto },
+      { uploadOwnProfilePhoto, assertWorkbenchOwnedAttachments },
+      undefined,
+      { recordSelfActivity: vi.fn(), personalProfile, updateOwnProfile },
     ).uploadProfilePhoto(
-      { branchId: actor.branchIds[0]!, title: 'عکس پروفایل' },
+      {
+        branchId: actor.branchIds[0]!,
+        title: 'عکس پروفایل',
+        displayName: 'نام جدید',
+        email: 'qa@example.com',
+      },
       file,
       actor,
       { ipAddress: '127.0.0.1' },
@@ -196,7 +218,26 @@ describe('WorkbenchService backend boundaries', () => {
       actor,
       { ipAddress: '127.0.0.1' },
     );
-    expect(result.data.id).toBe('44444444-4444-4444-8444-444444444444');
+    expect(assertWorkbenchOwnedAttachments).toHaveBeenCalledWith(
+      [documentId],
+      'IamProfile',
+      actor.userId,
+      actor.branchIds[0],
+      actor,
+    );
+    expect(updateOwnProfile).toHaveBeenCalledWith(
+      actor,
+      expect.objectContaining({
+        displayName: 'نام جدید',
+        email: 'qa@example.com',
+        photoDocumentId: documentId,
+        photoBranchId: actor.branchIds[0],
+      }),
+    );
+    expect(result.data).toMatchObject({
+      id: documentId,
+      profile: { photoDocumentId: documentId },
+    });
   });
 
   it('loads the stored profile photo through the Documents owner boundary', async () => {
