@@ -315,7 +315,6 @@ export function CorporateProfile({
           <h1 ref={heading} tabIndex={-1}>
             {title}
           </h1>
-          {current?.description && <p>{current.description}</p>}
         </div>
         <div className="actions">
           <button
