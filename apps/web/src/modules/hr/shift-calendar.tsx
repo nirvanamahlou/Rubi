@@ -53,9 +53,9 @@ export function ShiftCalendar({ shifts }: { shifts: HrPreviewDataset }) {
   );
   return (
     <div className={ui.spaced}>
-      <div className={ui.calendarHeader}>
+      <div dir="ltr" className={ui.calendarHeader}>
         <HrButton size="sm" onClick={() => setMonth(shiftMonth(-1))}>
-          <ChevronRight size={16} aria-hidden="true" /> ماه قبل
+          <ChevronLeft size={16} aria-hidden="true" /> ماه قبل
         </HrButton>
         <strong aria-live="polite">
           {first.toLocaleDateString('fa-IR-u-ca-persian', {
@@ -64,7 +64,7 @@ export function ShiftCalendar({ shifts }: { shifts: HrPreviewDataset }) {
           })}
         </strong>
         <HrButton size="sm" onClick={() => setMonth(shiftMonth(1))}>
-          ماه بعد <ChevronLeft size={16} aria-hidden="true" />
+          ماه بعد <ChevronRight size={16} aria-hidden="true" />
         </HrButton>
       </div>
       <div
@@ -73,7 +73,7 @@ export function ShiftCalendar({ shifts }: { shifts: HrPreviewDataset }) {
         role="region"
         aria-label="تقویم شیفت کارکنان"
       >
-        <div className={ui.shiftGrid}>
+        <div dir="ltr" className={ui.shiftGrid}>
           {[
             'شنبه',
             'یکشنبه',

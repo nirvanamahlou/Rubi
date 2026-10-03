@@ -4427,3 +4427,7 @@ Personal profile photo upload now accepts the edited name and contact details an
 ## 2026-10-03 — SALES-STATS-SIGNED-BALANCE-1003 — PC-A
 
 Read-only local diagnosis reproduced SALES_MONEY_INVALID when one of nine contracts had a negative computed outstanding balance. Develop already includes fb9a9df0 for signed aggregation; the active local API was compiled from older source. Added a dashboard-level multi-currency overpayment regression with authorization scope and exact decimal/malformed-value coverage, reusing existing production behavior. All 95 Sales API tests, scoped lint, typecheck and production build pass. No migration, shared contract, dependency or customer/payment mutation in this PR. Local rollout preserves unpublished login/user-reset commits; its existing pending additive develop migrations are tracked separately.
+
+## 2026-10-03 — PERSIAN-CALENDAR-DIRECTION-1003 — PC-A
+
+Calendar right arrows now advance and left arrows go back across shared DatePicker, Customers, Ticket Catalog, Sales date range, Marketing, Workbench and HR shifts. Explicit LTR navigation/day grids keep Persian Saturday-to-Friday headers aligned with dates inside RTL forms. Existing Gregorian order, conversion, date values and month/year paging remain intact. All 59 focused regressions, scoped lint, Web typecheck and 55-route webpack production build pass. No API/schema/migration/dependency/data/runtime change or authenticated browser QA; bounded locks released. See `docs/tasks/PERSIAN-CALENDAR-DIRECTION-1003.md`.

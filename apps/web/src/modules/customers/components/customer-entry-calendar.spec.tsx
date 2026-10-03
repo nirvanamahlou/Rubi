@@ -78,18 +78,19 @@ describe('Direct table calendar', () => {
         </div>,
       );
       const header = html.match(
-        /<div dir="(ltr|rtl)" class="flex items-center justify-between rounded-xl[^]*?(?=<div class="mt-3 grid)/,
+        /<div dir="(ltr|rtl)" class="flex items-center justify-between rounded-xl[^]*?(?=<div dir="ltr" class="mt-3 grid)/,
       )?.[0];
       expect(header).toBeDefined();
-      expect(header).toContain(`dir="${mode === 'gregorian' ? 'ltr' : 'rtl'}"`);
+      expect(header).toContain('dir="ltr"');
       expect(header!.indexOf('aria-label="بازه قبل"')).toBeLessThan(
         header!.indexOf('aria-label="بازه بعد"'),
       );
       expect(header).toContain('lucide-chevron-right');
       expect(header).toContain('lucide-chevron-left');
-      if (mode === 'gregorian')
-        expect(header!.match(/rotate-180/g)).toHaveLength(2);
-      else expect(header).not.toContain('rotate-180');
+      expect(header).not.toContain('rotate-180');
+      expect(header!.indexOf('lucide-chevron-left')).toBeLessThan(
+        header!.indexOf('lucide-chevron-right'),
+      );
     },
   );
 
