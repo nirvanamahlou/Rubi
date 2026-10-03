@@ -4471,4 +4471,3 @@ Removed secondary explanatory text beneath colored KPI values in the agency dire
 ## 2026-10-03 — TRAIN-INLINE-FACILITIES-1003 — PC-B — READY_FOR_REVIEW
 
 Train Types create/edit now provides `افزودن امکان` beside the existing Facilities selector and reuses the canonical Facilities nested form/public API. Successful saves append/deduplicate the returned ID, refresh choices and preserve all other parent draft values; View, locked, saving/disabled and Bus Types behavior remains unchanged. Focused 29 and all 569 Master Data tests, scoped ESLint/Prettier, Web typecheck after refreshing existing Contracts output, and the 55-route production build pass. Coverage is SSR/helper rather than mounted/authenticated browser QA. No API/schema/database/dependency/runtime change; bounded locks release with commit.
-
