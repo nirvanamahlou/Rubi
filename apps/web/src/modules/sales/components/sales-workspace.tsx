@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type {
   SalesContractListQuery,
+  SalesContractSummary,
   SalesContractPage,
   SalesDashboard,
 } from '@nora/contracts';
@@ -42,6 +43,32 @@ import { ContractOutputButton } from './contract-output';
 
 export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
+
+export function ContractListContactRouteDate({
+  contract,
+}: {
+  contract: SalesContractSummary;
+}) {
+  return (
+    <>
+      <td className="px-4 py-3 whitespace-nowrap">
+        <bdi dir="ltr">{contract.customerPhone || '—'}</bdi>
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap">
+        <span dir="ltr" className="inline-flex items-center gap-2">
+          <bdi>{contract.originName || '—'}</bdi>
+          <span aria-hidden="true">→</span>
+          <bdi>{contract.destinationName || '—'}</bdi>
+        </span>
+      </td>
+      <td className="px-4 py-3 whitespace-nowrap">
+        {new Date(contract.createdAt).toLocaleDateString('fa-IR', {
+          timeZone: 'Asia/Tehran',
+        })}
+      </td>
+    </>
+  );
+}
 
 export function hasContractDateFilter(query: SalesContractListQuery): boolean {
   return Boolean(query.createdFrom || query.createdTo);
@@ -460,7 +487,7 @@ export function SalesWorkspace() {
       {contracts.length && !loading ? (
         <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[71rem] text-sm">
+            <table className="w-full min-w-[88rem] text-sm">
               <caption className="sr-only">
                 فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
               </caption>
@@ -469,6 +496,9 @@ export function SalesWorkspace() {
                   {[
                     'شماره',
                     'مشتری',
+                    'شماره تلفن مشتری',
+                    'مسیر',
+                    'تاریخ بستن قرارداد',
                     'مسافران و خدمات',
                     'وضعیت',
                     'تسویه',
@@ -507,6 +537,7 @@ export function SalesWorkspace() {
                         </span>
                       </div>
                     </td>
+                    <ContractListContactRouteDate contract={contract} />
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 font-semibold text-foreground">
                         <UsersRound className="size-4 text-primary" />

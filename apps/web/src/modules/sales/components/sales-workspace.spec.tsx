@@ -1,15 +1,49 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { salesApi } from '../api/client';
+import type { SalesContractSummary } from '@nora/contracts';
 import {
   formatMoney,
   hasContractDateFilter,
   loadSalesWorkspace,
   paymentReferenceSearchQuery,
   SalesWorkspace,
+  ContractListContactRouteDate,
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('renders customer phone and route with the original contract date rather than its last edit', () => {
+    const createdAt = '2026-09-01T12:00:00.000Z';
+    const contract = {
+      customerPhone: '09900000001',
+      originName: 'تهران',
+      destinationName: 'آنتالیا',
+      createdAt,
+      updatedAt: '2026-10-03T12:00:00.000Z',
+    } as SalesContractSummary;
+    const html = renderToStaticMarkup(
+      <table>
+        <tbody>
+          <tr>
+            <ContractListContactRouteDate contract={contract} />
+          </tr>
+        </tbody>
+      </table>,
+    );
+    expect(html).toContain('<bdi dir="ltr">09900000001</bdi>');
+    expect(html).toContain('تهران');
+    expect(html).toContain('آنتالیا');
+    expect(html).toContain(
+      new Date(createdAt).toLocaleDateString('fa-IR', {
+        timeZone: 'Asia/Tehran',
+      }),
+    );
+    expect(html).not.toContain(
+      new Date(contract.updatedAt).toLocaleDateString('fa-IR', {
+        timeZone: 'Asia/Tehran',
+      }),
+    );
+  });
   it('places the Excel export beside the contract list with a full-results hint', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);
     expect(html).toContain('خروجی Excel');

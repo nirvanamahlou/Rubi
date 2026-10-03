@@ -204,7 +204,7 @@ describe('Contract-only flights remain outside ticket inventory', () => {
     const create = vi.fn().mockResolvedValue({ id: 'service' }),
       ticketCreate = vi.fn();
     const tx = {
-      $queryRaw: vi.fn().mockResolvedValue([{ value: 1n }]),
+      $queryRaw: vi.fn().mockResolvedValue([{ value: 120123n }]),
       salesContract: { create: vi.fn().mockResolvedValue({ id: 'contract' }) },
       salesContractService: { create },
       salesContractPassenger: {
@@ -230,6 +230,9 @@ describe('Contract-only flights remain outside ticket inventory', () => {
       input.services[0]!.metadata,
     );
     expect(ticketCreate).not.toHaveBeenCalled();
+    expect(tx.salesContract.create.mock.calls[0]![0].data.contractNumber).toBe(
+      '120123',
+    );
     expect(presentSalesContract(row()).servicesDetail[0]?.metadata).toEqual(
       input.services[0]!.metadata,
     );

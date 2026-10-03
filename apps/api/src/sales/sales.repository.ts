@@ -370,10 +370,14 @@ export class SalesRepository {
       async (tx) => {
         const [sequence] = await tx.$queryRaw<
           Array<{ value: bigint }>
-        >`SELECT nextval('sales_contract_number_seq') AS value`;
+        >`SELECT nextval('sales_contract_public_number_seq') AS value`;
         if (!sequence)
           throw new Error('Sales contract sequence did not return a value.');
-        const contractNumber = `SC-${new Date().getUTCFullYear()}-${sequence.value.toString().padStart(6, '0')}`;
+        const contractNumber = sequence.value.toString();
+        if (!/^[0-9]{6}$/.test(contractNumber))
+          throw new InternalServerErrorException(
+            'Contract number must contain six digits.',
+          );
         const contract = await tx.salesContract.create({
           data: {
             contractNumber,
