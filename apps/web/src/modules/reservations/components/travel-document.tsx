@@ -9,15 +9,13 @@ import type {
   ReservationIntakeV1,
   TravelBrandingV1,
   TravelWorkflowStateV1,
+  VoucherSettingsV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { documentsApi } from '@/modules/documents/api/client';
 import { DocumentPreview } from './document-preview';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
-import { Input } from '@/components/ui/form-controls';
-import { defaultVoucherSettings } from '../model/voucher-settings';
-import { travelRequest } from './travel-workflow-form';
 export function useTravelLogo(branding: TravelBrandingV1 | null) {
   const [loaded, setLoaded] = useState<{
     id: string;
@@ -63,21 +61,19 @@ export function TravelDocument({
   intake,
   voucher = false,
   historical = false,
-  onSaved,
+  previewSettings,
+  dirty = false,
 }: {
   intake: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
   voucher?: boolean;
   historical?: boolean;
-  onSaved?: (state: TravelWorkflowStateV1) => void;
+  previewSettings?: VoucherSettingsV1 | undefined;
+  dirty?: boolean;
 }) {
   const { logo, error } = useTravelLogo(intake.workflow.branding);
   const [printing, setPrinting] = useState(false);
   const [printError, setPrintError] = useState('');
   const [downloading, setDownloading] = useState(false);
-  const [supplierName, setSupplierName] = useState(
-    intake.workflow.supplierFormSettings?.text.broker ?? '',
-  );
-  const [savingSupplier, setSavingSupplier] = useState(false);
   const state = intake.workflow;
   const formReferences = useReservationFormReferences(intake, true);
   const savedSupplier = state.supplierFormSettings?.text.broker?.trim() ?? '';
@@ -88,51 +84,30 @@ export function TravelDocument({
     !!state.branding &&
     state.supplierStatus !== 'CANCELLED' &&
     (!voucher || state.voucherIssued);
+  const previewIntake =
+    previewSettings && !voucher
+      ? {
+          ...intake,
+          workflow: { ...state, supplierFormSettings: previewSettings },
+        }
+      : intake;
   const sheet = (
     <ReservationFormSheet
-      intake={intake}
+      intake={previewIntake}
       logo={logo}
       references={formReferences.references}
       voucher={voucher}
     />
   );
-  async function saveSupplier() {
-    const name = supplierName.trim();
-    if (!name || savingSupplier || !formReferences.ready) return;
-    setSavingSupplier(true);
-    setPrintError('');
-    try {
-      const source = structuredClone(intake);
-      if (source.workflow.supplierFormSettings)
-        source.workflow.voucherSettings = source.workflow.supplierFormSettings;
-      else delete source.workflow.voucherSettings;
-      const settings = defaultVoucherSettings(
-        source,
-        formReferences.references,
-      );
-      settings.text.broker = name;
-      const response = await travelRequest<{ data: TravelWorkflowStateV1 }>(
-        `reservations/requests/${intake.id}/workflow`,
-        {
-          action: 'SUPPLIER_FORM_SETTINGS',
-          applyToContractAndVoucher: false,
-          expectedVersion: state.version,
-          note: 'نام کارگزار گیرنده فرم رزرواسیون',
-          voucherSettings: settings,
-        },
-      );
-      onSaved?.(response.data);
-      window.dispatchEvent(new Event('reservation-workflow-changed'));
-    } catch (error) {
-      setPrintError(
-        error instanceof Error ? error.message : 'ثبت کارگزار انجام نشد.',
-      );
-    } finally {
-      setSavingSupplier(false);
-    }
-  }
   async function print() {
-    if (printing || !enabled || !supplierReady || !formReferences.ready) return;
+    if (
+      printing ||
+      !enabled ||
+      !supplierReady ||
+      dirty ||
+      !formReferences.ready
+    )
+      return;
     setPrintError('');
     const previousTitle = document.title;
     document.title = `${voucher ? 'voucher' : 'reservation-form'}-${intake.snapshot.contractNumber}-v${state.version}`;
@@ -159,7 +134,7 @@ export function TravelDocument({
     }
   }
   async function downloadPdf() {
-    if (downloading || !enabled || !supplierReady) return;
+    if (downloading || !enabled || !supplierReady || dirty) return;
     setDownloading(true);
     setPrintError('');
     try {
@@ -202,45 +177,9 @@ export function TravelDocument({
   return (
     <div className="grid min-w-0 gap-3">
       {(error || printError) && <p role="alert">{error || printError}</p>}
-      {!voucher && !historical && (
-        <div className="grid gap-2">
-          <label htmlFor="reservation-supplier-name">
-            نام کارگزار گیرنده فرم رزرواسیون
-          </label>
-          <div className="flex gap-2">
-            <Input
-              id="reservation-supplier-name"
-              value={supplierName}
-              maxLength={200}
-              onChange={(event) => setSupplierName(event.target.value)}
-              placeholder="نام کارگزار را وارد کنید"
-            />
-            <Button
-              type="button"
-              disabled={
-                !supplierName.trim() ||
-                savingSupplier ||
-                !formReferences.ready ||
-                supplierName.trim() === savedSupplier
-              }
-              onClick={() => void saveSupplier()}
-            >
-              {savingSupplier ? 'در حال ثبت…' : 'ثبت کارگزار'}
-            </Button>
-          </div>
-          {!supplierReady && (
-            <p>برای صدور فرم، ابتدا نام کارگزار گیرنده را ثبت کنید.</p>
-          )}
-        </div>
-      )}
       {!historical && (
         <Button
-          disabled={
-            downloading ||
-            !enabled ||
-            !supplierReady ||
-            supplierName.trim() !== savedSupplier
-          }
+          disabled={downloading || !enabled || !supplierReady || dirty}
           onClick={() => void downloadPdf()}
         >
           {downloading
@@ -255,7 +194,7 @@ export function TravelDocument({
           printing ||
           !enabled ||
           !supplierReady ||
-          supplierName.trim() !== savedSupplier ||
+          dirty ||
           !formReferences.ready
         }
         onClick={() => void print()}

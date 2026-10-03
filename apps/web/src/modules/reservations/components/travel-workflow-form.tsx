@@ -7,6 +7,7 @@ import type {
   TravelDeliveryAuthorizationV1,
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
+  VoucherSettingsV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
@@ -153,6 +154,7 @@ export function TravelWorkflowForm({
       setBusy(false);
     }
   }
+  const [supplierDraft, setSupplierDraft] = useState<VoucherSettingsV1>();
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
@@ -265,7 +267,8 @@ export function TravelWorkflowForm({
         <TravelDocument
           key={`${intake.id}:${state.version}`}
           intake={intake}
-          onSaved={(workflow) => setIntake({ ...intake, workflow })}
+          previewSettings={supplierDraft}
+          dirty={action === 'رزرواسیون' && settingsDirty}
           voucher={action === 'واچر' || action === 'Confirmation'}
         />
       )}
@@ -274,6 +277,7 @@ export function TravelWorkflowForm({
           key={`${id}:${state.version}`}
           intake={intake}
           onDirty={() => setSettingsDirty(true)}
+          onPreview={setSupplierDraft}
           onSaved={(workflow) => {
             setIntake({
               ...intake,
@@ -283,6 +287,7 @@ export function TravelWorkflowForm({
                 : {}),
             });
             setSettingsDirty(false);
+            setSupplierDraft(undefined);
           }}
         />
       )}
