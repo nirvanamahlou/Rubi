@@ -5107,6 +5107,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Delivered four required customer-only create fields (first name, last name, phone, address). Passenger identity entry, companions and acquaintance controls stay in the full passenger flow; inactive hidden drafts are not submitted by customer-only creation. Saves phone/contact and primary home address through existing versioned APIs with partial-create safeguards. Customer-only API creation no longer requires national ID; passenger and combined-role creation still do. Forty-nine focused Web and thirty-four API tests passed, including four-field rendering and identity-free customer creation. Scoped lint and Web/API typecheck/build gate owner-authorized develop merge. No migration/dependency/operational data changes; source locks release with scoped commit.
 
 ## RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
+
 - Branch: `codex/pc-a-reservation-supplier-preview-fix-1003`; base: origin/develop e0149279.
 - Scope/locks: Reservations reservation-settings.tsx, travel-workflow-form.tsx, travel-document.tsx and focused tests; appended task/status documentation only.
 - Fix supplier selection placement and reference loading; keep one preview including history/print. No migration, dependency or shared UI changes.
