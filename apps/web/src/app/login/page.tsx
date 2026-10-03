@@ -68,7 +68,7 @@ export default function LoginPage() {
         <div className="hidden bg-[linear-gradient(145deg,#123f8c,#092354)] p-12 text-white lg:flex lg:flex-col lg:justify-between">
           <CompanyLogos />
           <div>
-            <h1 className="text-3xl font-black">سامانه یکپارچه آژانس</h1>
+            <h1 className="text-3xl font-black">سامانه یکپارچه آژانس نورا</h1>
             <p className="mt-3 text-blue-100">
               ورود امن کارکنان و مدیریت دسترسی مبتنی بر نقش و شعبه
             </p>
@@ -78,6 +78,9 @@ export default function LoginPage() {
           <div className="mb-8 lg:hidden">
             <CompanyLogos compact />
           </div>
+          <h1 className="mb-3 text-xl font-black lg:hidden">
+            سامانه یکپارچه آژانس نورا
+          </h1>
           <h2 className="text-2xl font-black">ورود به سامانه</h2>
           <p className="mt-2 text-sm text-muted-foreground">
             نام کاربری اختصاص‌یافته توسط مدیر و رمز عبور خود را وارد کنید.
