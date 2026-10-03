@@ -35,7 +35,7 @@ import {
   UtensilsCrossed,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -66,6 +66,7 @@ import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
+import { masterDataComplementKpi } from '../model/kpi-complement';
 import {
   HotelImportPanel,
   type HotelImportCompleted,
@@ -277,6 +278,7 @@ export function MasterDataAccommodationWorkspace() {
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [summary, setSummary] =
     useState<MasterAccommodationSummary>(emptySummary);
+  const summaryRequestRef = useRef(0);
   const [summaryLoaded, setSummaryLoaded] = useState(false);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
@@ -347,12 +349,15 @@ export function MasterDataAccommodationWorkspace() {
   );
 
   const loadSummary = useCallback(async () => {
+    const requestId = ++summaryRequestRef.current;
     setSummaryLoaded(false);
     try {
       const response = await masterDataApi.accommodationSummary();
+      if (requestId !== summaryRequestRef.current) return;
       setSummary(response.data);
       setSummaryLoaded(true);
     } catch {
+      if (requestId !== summaryRequestRef.current) return;
       setSummary(emptySummary);
       setSummaryLoaded(false);
     }
@@ -481,8 +486,12 @@ export function MasterDataAccommodationWorkspace() {
           tone: 'violet',
         },
         {
-          label: 'نیازمند تکمیل',
-          value: summary.chains.incomplete,
+          label: 'زنجیره غیرفعال',
+          value: masterDataComplementKpi(
+            summary.chains.total,
+            summary.chains.active,
+            summaryLoaded ? 'ready' : 'loading',
+          ),
           icon: CircleAlert,
           tone: 'amber',
         },
@@ -508,8 +517,12 @@ export function MasterDataAccommodationWorkspace() {
           tone: 'violet',
         },
         {
-          label: 'نیازمند بازبینی',
-          value: summary.mealServices.needsReview,
+          label: 'سرویس‌ها',
+          value: masterDataComplementKpi(
+            summary.mealServices.total,
+            summary.mealServices.mealPlans,
+            summaryLoaded ? 'ready' : 'loading',
+          ),
           icon: CircleAlert,
           tone: 'amber',
         },
@@ -562,8 +575,12 @@ export function MasterDataAccommodationWorkspace() {
           tone: 'violet',
         },
         {
-          label: 'نیازمند بازبینی',
-          value: summary.compositeHotels.needsReview,
+          label: 'هتل ترکیبی غیرفعال',
+          value: masterDataComplementKpi(
+            summary.compositeHotels.total,
+            summary.compositeHotels.active,
+            summaryLoaded ? 'ready' : 'loading',
+          ),
           icon: CircleAlert,
           tone: 'amber',
         },

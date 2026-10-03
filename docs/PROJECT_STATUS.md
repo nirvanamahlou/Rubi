@@ -4439,3 +4439,7 @@ Read-only local diagnosis reproduced SALES_MONEY_INVALID when one of nine contra
 ## 2026-10-03 — PERSIAN-CALENDAR-DIRECTION-1003 — PC-A
 
 Calendar right arrows now advance and left arrows go back across shared DatePicker, Customers, Ticket Catalog, Sales date range, Marketing, Workbench and HR shifts. Explicit LTR navigation/day grids keep Persian Saturday-to-Friday headers aligned with dates inside RTL forms. Existing Gregorian order, conversion, date values and month/year paging remain intact. All 59 focused regressions, scoped lint, Web typecheck and 55-route webpack production build pass. No API/schema/migration/dependency/data/runtime change or authenticated browser QA; bounded locks released. See `docs/tasks/PERSIAN-CALENDAR-DIRECTION-1003.md`.
+
+## 2026-10-03 — MASTER-DATA-REVIEW-KPIS-1003 — PC-B — READY_FOR_REVIEW
+
+Seven remaining review/completion KPI cards now use validated global-summary metrics across Accommodation, Finance, Suppliers, Travel Services and Transportation. Invalid/loading/error/missing values remain unavailable rather than becoming fabricated zero; genuinely ready empty summaries show zero, and stale summary responses are ignored. Focused 65 and all 561 Master Data tests, scoped ESLint, Web typecheck, scoped Prettier and the 55-route production build pass. API/schema/backend remain unchanged. No authenticated browser/runtime QA; bounded locks release with commit.

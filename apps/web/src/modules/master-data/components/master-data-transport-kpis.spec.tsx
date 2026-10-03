@@ -108,9 +108,13 @@ describe('transport KPI replacements', () => {
     expect(html).not.toContain('نیازمند تکمیل برند');
   });
 
-  it('preserves the cabin review and manifest publication cards', () => {
+  it('replaces the cabin review card and preserves manifest publication', () => {
     expect(transportKpiItems('cabin-classes', [], 'ready')[3]?.label).toBe(
-      'نیازمند بازبینی',
+      'کلاس غیرفعال',
+    );
+    expect(transportKpiItems('cabin-classes', [], 'ready')[3]?.value).toBe(0);
+    expect(transportKpiItems('cabin-classes', [], 'loading')[3]?.value).toBe(
+      '—',
     );
     expect(transportKpiItems('manifest-templates', [], 'ready')[3]?.label).toBe(
       'در انتظار انتشار',

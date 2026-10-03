@@ -36,7 +36,14 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -75,6 +82,7 @@ import { MasterDataLogoCell } from './master-data-logo-cell';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
+import { masterDataComplementKpi } from '../model/kpi-complement';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
@@ -132,7 +140,9 @@ export function travelServicesExportColumns(resource: TravelResource) {
   return [...new Set(['code', ...exportableFields, 'status', 'updatedAt'])];
 }
 
-export function availableTravelKpiValue(value: number | null | undefined) {
+export function availableTravelKpiValue(
+  value: number | '—' | null | undefined,
+) {
   return value ?? '—';
 }
 
@@ -309,6 +319,7 @@ export function MasterDataTravelServicesWorkspace() {
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [summary, setSummary] = useState<MasterTravelServicesSummary>();
+  const summaryRequestRef = useRef(0);
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
@@ -382,10 +393,14 @@ export function MasterDataTravelServicesWorkspace() {
   ]);
 
   const loadSummary = useCallback(async () => {
+    const requestId = ++summaryRequestRef.current;
+    setSummary(undefined);
     try {
       const response = await masterDataApi.travelServicesSummary();
+      if (requestId !== summaryRequestRef.current) return;
       setSummary(response.data);
     } catch {
+      if (requestId !== summaryRequestRef.current) return;
       setSummary(undefined);
     }
   }, []);
@@ -420,7 +435,7 @@ export function MasterDataTravelServicesWorkspace() {
       thirdLabel: string;
       thirdValue: number | null | undefined;
       fourthLabel: string;
-      fourthValue: number | null | undefined;
+      fourthValue: number | '—' | null | undefined;
       fourthHint?: string;
       thirdIcon?: typeof Globe2;
       fourthIcon?: typeof CircleAlert;
@@ -492,8 +507,12 @@ export function MasterDataTravelServicesWorkspace() {
       active: summary?.visaServices.active,
       thirdLabel: 'کشورها',
       thirdValue: summary?.visaServices.countries,
-      fourthLabel: 'مدرک ناقص',
-      fourthValue: summary?.visaServices.incompleteGuidance,
+      fourthLabel: 'دارای راهنمای مدارک',
+      fourthValue: masterDataComplementKpi(
+        summary?.visaServices.total,
+        summary?.visaServices.incompleteGuidance,
+        summary ? 'ready' : 'loading',
+      ),
       fourthIcon: FileQuestion,
     });
   }, [CurrentIcon, resource, summary]);
