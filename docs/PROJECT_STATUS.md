@@ -4224,3 +4224,7 @@ Fixed ticket identity issuance returning PostgreSQL void through Prisma: both ad
 ## 2026-10-03 — SERVICE-PURCHASE-FACTOR-1003 — PC-A
 
 Hotel and transfer purchase entry now uses one base amount and factor per service. Contract check-in/check-out supplies nights, with exact four-decimal arithmetic and a single final rounding. API independently recalculates and rejects altered totals before atomic Finance submission. Calculation inputs and resolved nights are preserved in the existing nullable JSON purchase breakdown; legacy passenger arrays remain readable and previous clients remain accepted. No migration, dependencies or operational data changes. Scoped tests/lint, both typechecks and Web/API production builds verified. Owner requests develop merge after checks.
+
+## RESERVATION-CONTRACT-FORM-BUTTONS-1003 — PC-A
+
+In the selected-contract panel, «فرم رزواسیون» now sits under «عملیات قرارداد» and opens the existing reservation workflow. «مشاهده» now sits under «اطلاعات قرارداد» and continues to open the Sales contract PDF preview. Other contract actions and workflow behavior are unchanged. A focused panel regression covers group placement, the form route and contract preview. No API, schema, migration, dependency or operational-data change.
