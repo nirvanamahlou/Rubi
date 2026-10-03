@@ -4259,3 +4259,9 @@ Successful Higgsfield composite replaces the previously blocked media draft: exa
 ## 2026-10-03 — LOGIN-TAILWIND-FOLLOWUP-1003 — PC-A
 
 Updated the local login video to a TAILWIND passenger aircraft with a subtle upper-tail vapor trail and exact cloud-textured NOORA. Final Higgsfield composite is 12 seconds at 1280x720; one-shot playback, matching poster and mobile layout verified. 16 login tests and scoped lint pass. No API, authentication, schema or data changes. Existing draft PR remains unmerged.
+
+## 2026-10-03 — LOGIN-ENGINE-VAPOR-1003 — PC-A
+
+Login media now preserves the approved TAILWIND aircraft while emitting animated, independently drifting vapor from both engines; the previous rigid trail was removed. NOORA is centered above the login form. Local assets and cache versions updated; 16 login tests pass. No auth/API/schema/dependency/data changes.
+
+Follow-up visual correction: replace the sparse puffs with denser white continuous turbulent engine plumes. Same approved airliner, centered NOORA and one-shot silent playback. Full Web build/TypeScript, lint and 16 login tests passed; final media rendered and visually inspected.

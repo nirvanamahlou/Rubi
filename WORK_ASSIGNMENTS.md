@@ -5025,3 +5025,9 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Resume existing login feature branch for the user's TAILWIND passenger-aircraft and vapor NOORA correction. Reserve only two background media assets, login cache-version references/tests, task/status entries and local visual verification. Prior login locks released; no auth/API/schema/dependency changes. Preserve generated next-env.d.ts and other worktrees.
 
 - TAILWIND local revision delivered; media/form separation and mobile verified. 16 tests, lint, TypeScript and 55-route build pass. Scoped source locks released with commit; no merge. Further camera-angle clarification remains with the user.
+
+## LOGIN-ENGINE-VAPOR-1003 — PC-A — IN_PROGRESS
+
+- Reserve existing login background assets and version references/tests plus bounded docs. Preserve approved TAILWIND aircraft; replace rigid trail with independently emitted engine vapor and center NOORA over form. Local preview authorized by ongoing request. No API/auth/schema/dependency work. Previous media locks released.
+
+- Completed with continuous white engine plumes after user's visual feedback, preserving approved aircraft and centering NOORA. Rendered frames, HTTP media delivery, 16 tests, lint and 55-route build/TypeScript verified. Source locks released with commit; no merge.
