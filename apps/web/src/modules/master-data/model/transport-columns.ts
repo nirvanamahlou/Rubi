@@ -64,9 +64,6 @@ export function transportColumns(
         ['code', 'کد'],
         ['name', 'شرکت اتوبوس'],
         ['countryName', 'کشور'],
-        ['logoFileReference', 'لوگو Reference'],
-        ['integrationConnectionReference', 'Integration Connection'],
-        ['vehicleTypeCount', 'انواع اتوبوس'],
       ];
     case 'train-types':
       return [

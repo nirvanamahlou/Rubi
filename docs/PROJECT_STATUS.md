@@ -1,3 +1,7 @@
+## 2026-10-03 — BUS-HIDE-EXTRA-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
+
+Bus Companies now renders code, company and country from its resource-specific column model, plus the renderer's independent authenticated logo, status and operations columns. Logo Reference, Integration Connection and bus-type count are hidden only from this table, and Version / Audit remains absent; forms, View, export, backend data and all other resources remain unchanged. Focused 16 and all 570 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
+
 ## 2026-10-03 — CABIN-TYPE-SELECT-1003 — PC-B — READY_FOR_REVIEW
 
 Cabin Classes now uses the existing canonical `cabinType` selector labeled «نوع کلاس», with Economy, Premium Economy, Business and First Class. New forms default to Economy and edits hydrate the stored enum; create/edit payloads omit legacy `englishName`, preserving existing stored data. Table links, View details, identity/action titles and completion checks use the selected enum. Existing API generation of required internal `name` from bookingCode remains unchanged. Focused 49 and all 539 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; no API/schema/export/backend change; bounded locks release with commit.
