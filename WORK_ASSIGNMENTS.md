@@ -5041,6 +5041,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Reserve only the Organizations directory registration toolbar text in `organizations-workspace.tsx` and bounded task/status entries. Preserve registration/import/export actions and accessible region label. No API, schema, migration, dependency, permission, data or runtime change. Prior dated B2B source tasks are superseded by merged develop; no active owner of this text found. Scoped reservation releases with commit.
 - Delivered the visible text removal. Seven existing Organizations workspace tests and scoped ESLint pass; shared-contract build artifacts refreshed after detecting stale local exports. Full quality/typecheck/build CI gates must pass before the explicitly authorized develop merge. No new test or dependency/source expansion required for this cosmetic deletion.
 
+## RESERVATION-SELECTION-BLUE-1003 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-reservation-selection-blue-1003 from origin/develop. Reserve only Reservations foundation/workspace.module.css and bounded assignment/status docs. Match selected request-row fill to supplied screenshot RGB(0,120,215), with white text across all status tones and both themes. Keep existing compact rows, table dimensions, actions and keyboard selection. Prior stylesheet scope merged and released; no overlapping active owner. No API/schema/migration/dependency/data change. User authorizes develop merge and local rollout remains authorized.
+
+- Delivered screenshot-extracted #0078D7 selection fill and white text in every selected table cell, including pink identity cells and dark-mode status rows. Status colors remain available on unselected rows. Nineteen existing foundation tests passed; synthetic Chrome computed styles verified the exact RGB across five tones in both themes. Lint, typecheck, production build and CI gate authorized merge; bounded source lock releases with reviewed commit. No operational data change.
+
 ## CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-ca-report-meta-copy-1003` from `origin/develop@977266e2`. Reserve only the Customer Affairs report-panel presentation, its focused test, and bounded status/assignment notes. Remove the report header's fetched-at/access/date-range copy while preserving report filters and PDF export. No API, data, permission, migration, dependency/lockfile, or live runtime change. No conflicting active Customer Affairs report-panel owner found; preserve all other edits.
