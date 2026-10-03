@@ -24,6 +24,10 @@ const referenceSelectorSource = readFileSync(
   ),
   'utf8',
 );
+const catalogSource = readFileSync(
+  resolve(process.cwd(), 'src/modules/master-data/model/catalog.ts'),
+  'utf8',
+);
 
 describe('accommodation workspace', () => {
   it('omits only the HOTEL_PROVIDER column from hotel rows and keeps alignment', () => {
@@ -66,6 +70,30 @@ describe('accommodation workspace', () => {
     expect(source).toContain('function profile()');
   });
 
+  it('omits only the contract-reference column from composite hotel rows', () => {
+    const combinedStart = source.indexOf('function combined()');
+    const combinedEnd = source.indexOf('const content =', combinedStart);
+    const combinedSource = source.slice(combinedStart, combinedEnd);
+    const headerList = combinedSource.slice(
+      combinedSource.indexOf('{['),
+      combinedSource.indexOf('].map('),
+    );
+    const headers = [...headerList.matchAll(/'([^']+)'/g)].map(
+      (match) => match[1],
+    );
+    const memberRow = combinedSource.slice(
+      combinedSource.indexOf('<tr', combinedSource.indexOf('names.map')),
+      combinedSource.indexOf('</tr>', combinedSource.indexOf('names.map')),
+    );
+
+    expect(headers).toEqual(['اولویت', 'هتل عضو', 'شهر / منطقه', 'وضعیت']);
+    expect(memberRow.match(/<td\b/g)).toHaveLength(headers.length);
+    expect(combinedSource).not.toContain('مرجع قرارداد');
+    expect(combinedSource).not.toContain('— · Procurement');
+    expect(combinedSource).toContain("attribute(record, 'usageCondition')");
+    expect(catalogSource).toContain("key: 'usageCondition'");
+  });
+
   it('implements the catalog tabs and opens hotel profiles from the list', () => {
     for (const label of [
       'هتل‌ها',
@@ -86,6 +114,34 @@ describe('accommodation workspace', () => {
     expect(source).not.toContain("tab === 'room-types'");
     expect(source).toContain('<MasterDataProfileDialog');
     expect(source).toContain('setProfileOpen(true)');
+  });
+
+  it('keeps the hotel pricing header action white without changing the adjacent outline action', () => {
+    const pricingHref = 'href="/master-data/accommodation/hotel-rates"';
+    const pricingLinkStart = source.lastIndexOf(
+      '<Link',
+      source.indexOf(pricingHref),
+    );
+    const pricingLink = source.slice(
+      pricingLinkStart,
+      source.indexOf('</Link>', pricingLinkStart),
+    );
+    expect(pricingLink).toContain("buttonVariants({ variant: 'primary' })");
+    expect(pricingLink).toContain('!text-white hover:!text-white');
+    expect(pricingLink).toContain('قیمت‌گذاری هتل‌ها');
+
+    const masterDataHref = 'href="/master-data"';
+    const outlineLinkStart = source.lastIndexOf(
+      '<Link',
+      source.indexOf(masterDataHref, pricingLinkStart),
+    );
+    const outlineLink = source.slice(
+      outlineLinkStart,
+      source.indexOf('</Link>', outlineLinkStart),
+    );
+    expect(outlineLink).toContain("buttonVariants({ variant: 'outline' })");
+    expect(outlineLink).toContain('همه بخش‌ها');
+    expect(outlineLink).not.toContain('text-white');
   });
 
   it('keeps every accommodation KPI label identical to the mockup', () => {
@@ -114,7 +170,8 @@ describe('accommodation workspace', () => {
     expect(source).toContain('accommodationSummary');
     expect(source).toContain('<HotelImportPanel');
     expect(source).toContain('<MasterDataKpiGrid');
-    expect(source).toContain('— · Procurement');
+    expect(source).toContain("attribute(record, 'usageCondition')");
+    expect(source).not.toContain('— · Procurement');
     expect(source).toContain('در انتظار اتصال Documents');
     expect(source).not.toContain('هتل اسپیناس پالاس');
     expect(source).not.toContain('CTR-881');
@@ -144,12 +201,16 @@ describe('accommodation workspace', () => {
     expect(source).toContain('facilityCategory');
   });
 
-  it('creates multiple room types inline from the hotel form without a nested form', () => {
-    expect(liveFormSource).toContain("masterDataApi.create('room-types'");
-    expect(liveFormSource).toContain('values: { name }');
-    expect(liveFormSource).toContain("field.key === 'roomTypeIds'");
-    expect(liveFormSource).toContain('createHotelRoomType');
+  it('routes all hotel references through their canonical nested forms', () => {
+    expect(liveFormSource).not.toContain("masterDataApi.create('room-types'");
+    expect(liveFormSource).not.toContain('createHotelRoomType');
+    expect(liveFormSource).toContain('alwaysShowCreate');
+    expect(liveFormSource).toContain(
+      "'mealServiceIds', 'roomTypeIds', 'facilityIds'",
+    );
+    expect(liveFormSource).toContain('definition: getMasterDataDefinition(');
     expect(referenceSelectorSource).toContain('افزودن نوع اتاق');
-    expect(referenceSelectorSource).toContain('نام نوع اتاق را بنویسید');
+    expect(referenceSelectorSource).toContain('افزودن وعده/سرویس');
+    expect(referenceSelectorSource).toContain('افزودن امکان');
   });
 });

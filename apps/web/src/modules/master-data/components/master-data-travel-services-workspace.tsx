@@ -67,7 +67,6 @@ import { MasterDataTourTypeForm } from './master-data-tour-type-form';
 import { MasterDataTravelReferenceForm } from './master-data-travel-reference-form';
 import {
   transferCapacityLabel,
-  transferUsageLabel,
   visaValidityLabel,
 } from '../model/travel-reference-form';
 import { MasterDataDeleteButton } from './master-data-delete-button';
@@ -144,8 +143,6 @@ const headers: Record<TravelResource, readonly string[]> = {
     'عنوان انگلیسی',
     'دامنه',
     'شرح',
-    'استفاده',
-    'آخرین تغییر',
     'وضعیت',
     'عملیات',
   ],
@@ -157,7 +154,6 @@ const headers: Record<TravelResource, readonly string[]> = {
     'شیوه سرویس',
     'ظرفیت پیشنهادی',
     'شرح',
-    'استفاده',
     'وضعیت',
     'عملیات',
   ],
@@ -664,8 +660,6 @@ export function MasterDataTravelServicesWorkspace() {
         </span>,
         <Badge key="scope">{translated(record, 'scope')}</Badge>,
         attribute(record, 'description'),
-        tourTypeUsageLabel(record),
-        tourTypeUpdatedLabel(record, tourActorNames),
       ];
     if (resource === 'transfer-types')
       return [
@@ -675,7 +669,6 @@ export function MasterDataTravelServicesWorkspace() {
         <Badge key="mode">{translated(record, 'serviceMode')}</Badge>,
         transferCapacityLabel(record),
         attribute(record, 'description'),
-        transferUsageLabel(record),
       ];
     return [
       code,

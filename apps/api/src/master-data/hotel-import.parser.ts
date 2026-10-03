@@ -33,6 +33,10 @@ const MAX_ROWS = 10_000;
 const MAX_COLUMNS = 100;
 const MAX_CELL_LENGTH = 2_000;
 const codePattern = /^[A-Z0-9][A-Z0-9_-]{1,31}$/;
+const xmlPrefix = '(?:[A-Za-z_][\\w.-]*:)?';
+const HOTEL_IMPORT_TITLE = 'قالب ورود اطلاعات پایه هتل‌ها — نیایش سیر';
+const HOTEL_IMPORT_GUIDANCE =
+  'هر هتل یک ردیف؛ شناسه هتل ثابت و یکتا باشد. ستون‌های چندمقداری را با | جدا کنید.';
 const activeContentEntry =
   /(^|\/)(?:vbaProject|embeddings|activeX|ctrlProps|customUI|macrosheets?)(?:\/|\.|$)|oleObject/i;
 const externalDataEntry =
@@ -133,6 +137,25 @@ function decodeXml(value: string) {
     .replace(/&amp;/g, '&');
 }
 
+function xmlElement(name: string, flags = 'gi') {
+  return new RegExp(
+    `<${xmlPrefix}${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${xmlPrefix}${name}>`,
+    flags,
+  );
+}
+
+function xmlStart(name: string, flags = 'i') {
+  return new RegExp(`<${xmlPrefix}${name}(?=\\s|/?>)`, flags);
+}
+
+function rejectXmlEntities(text: string) {
+  if (/<!DOCTYPE\b|<!ENTITY\b/i.test(text))
+    throw new BadRequestException({
+      code: 'HOTEL_IMPORT_XML_ENTITY_FORBIDDEN',
+      message: 'DTD و XML Entity در OOXML مجاز نیست.',
+    });
+}
+
 function relationshipAttribute(source: string, name: string) {
   const expression = new RegExp(
     `\\b${name}\\s*=\\s*(["'])([\\s\\S]*?)\\1`,
@@ -152,7 +175,11 @@ function inspectExternalRelationships(files: Record<string, Uint8Array>) {
         code: 'HOTEL_IMPORT_XML_ENTITY_FORBIDDEN',
         message: 'DTD و XML Entity در OOXML مجاز نیست.',
       });
-    for (const match of xml.matchAll(/<Relationship\b([^>]*)\/?\s*>/gi)) {
+    const relationshipExpression = new RegExp(
+      `<${xmlPrefix}Relationship\\b([^>]*)\\/?\\s*>`,
+      'gi',
+    );
+    for (const match of xml.matchAll(relationshipExpression)) {
       const attributes = match[1] ?? '';
       const targetMode = relationshipAttribute(
         attributes,
@@ -196,13 +223,13 @@ function cellText(
   cellType: string | undefined,
   sharedStrings: readonly string[],
 ) {
-  const formula = /<f(?:\s|>)/i.test(cellXml);
+  const formula = xmlStart('f').test(cellXml);
   if (formula) fail('فایل دارای Formula است و قابل اعتماد نیست.');
-  const inline = [...cellXml.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gi)]
+  const inline = [...cellXml.matchAll(xmlElement('t'))]
     .map((match) => decodeXml(match[1] ?? ''))
     .join('');
   if (cellType === 'inlineStr' || inline) return inline;
-  const value = cellXml.match(/<v>([\s\S]*?)<\/v>/i)?.[1] ?? '';
+  const value = cellXml.match(xmlElement('v', 'i'))?.[1] ?? '';
   if (cellType === 's') return sharedStrings[Number(value)] ?? '';
   if (cellType === 'b') return value === '1' ? 'TRUE' : 'FALSE';
   return decodeXml(value);
@@ -211,28 +238,40 @@ function cellText(
 function parseSharedStrings(xml?: Uint8Array) {
   if (!xml) return [];
   const text = strFromU8(xml);
-  return [...text.matchAll(/<si(?:\s[^>]*)?>([\s\S]*?)<\/si>/gi)].map((match) =>
-    [...(match[1] ?? '').matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/gi)]
+  rejectXmlEntities(text);
+  return [...text.matchAll(xmlElement('si'))].map((match) =>
+    [...(match[1] ?? '').matchAll(xmlElement('t'))]
       .map((part) => decodeXml(part[1] ?? ''))
       .join(''),
   );
 }
 
+interface ParsedSheetRow {
+  rowNumber: number;
+  values: string[];
+}
+
 function parseSheet(xml: Uint8Array, sharedStrings: readonly string[]) {
   const text = strFromU8(xml);
-  if (/<f(?:\s|>)/i.test(text)) fail('Formula در Sheet داده مجاز نیست.');
-  if (/<hyperlink(?:\s|>)/i.test(text))
+  rejectXmlEntities(text);
+  if (xmlStart('f').test(text)) fail('Formula در Sheet داده مجاز نیست.');
+  if (xmlStart('hyperlink').test(text))
     fail('Hyperlink در Sheet داده مجاز نیست.');
-  const parsedRows: string[][] = [];
-  for (const rowMatch of text.matchAll(
-    /<row(?:\s[^>]*)?>([\s\S]*?)<\/row>/gi,
-  )) {
+  const parsedRows: ParsedSheetRow[] = [];
+  const rowExpression = new RegExp(
+    `<${xmlPrefix}row(?:\\s([^>]*))?>([\\s\\S]*?)<\\/${xmlPrefix}row>`,
+    'gi',
+  );
+  const cellExpression = new RegExp(
+    `<${xmlPrefix}c\\s+([^>]*?)(?:\\/>|>([\\s\\S]*?)<\\/${xmlPrefix}c>)`,
+    'gi',
+  );
+  let previousRowNumber = 0;
+  for (const rowMatch of text.matchAll(rowExpression)) {
     if (parsedRows.length >= MAX_ROWS + 1)
       fail('تعداد ردیف‌ها از سقف ۱۰٬۰۰۰ بیشتر است.');
     const values: string[] = [];
-    for (const cellMatch of (rowMatch[1] ?? '').matchAll(
-      /<c\s+([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/gi,
-    )) {
+    for (const cellMatch of (rowMatch[2] ?? '').matchAll(cellExpression)) {
       const attributes = cellMatch[1] ?? '';
       const reference = attributes.match(/\br="([A-Z]+\d+)"/i)?.[1] ?? '';
       const column = cellColumn(reference);
@@ -246,9 +285,62 @@ function parseSheet(xml: Uint8Array, sharedStrings: readonly string[]) {
         fail(`طول Cell ${reference} از سقف ۲٬۰۰۰ کاراکتر بیشتر است.`);
       values[column - 1] = value;
     }
-    parsedRows.push(values);
+    const declaredRowNumber = Number(
+      (rowMatch[1] ?? '').match(/\br="(\d+)"/i)?.[1],
+    );
+    const rowNumber =
+      Number.isSafeInteger(declaredRowNumber) && declaredRowNumber > 0
+        ? declaredRowNumber
+        : previousRowNumber + 1;
+    if (rowNumber <= previousRowNumber)
+      fail('شماره ردیف‌های Sheet Hotels باید یکتا و صعودی باشد.');
+    parsedRows.push({ rowNumber, values });
+    previousRowNumber = rowNumber;
   }
   return parsedRows;
+}
+
+function isBlankRow(row: ParsedSheetRow) {
+  return row.values.every((value) => !normalize(value ?? ''));
+}
+
+function isHeaderRow(row: ParsedSheetRow) {
+  return (
+    row.values.length === HOTEL_IMPORT_HEADERS.length &&
+    HOTEL_IMPORT_HEADERS.every(
+      (header, index) => normalize(row.values[index] ?? '') === header,
+    )
+  );
+}
+
+function dataRowsAfterCanonicalHeader(rows: readonly ParsedSheetRow[]) {
+  const headerIndexes = rows.flatMap((row, index) =>
+    isHeaderRow(row) ? [index] : [],
+  );
+  if (headerIndexes.length !== 1)
+    fail('Headerهای Sheet Hotels با HOTEL_IMPORT_V1 مطابقت ندارند.');
+
+  const headerIndex = headerIndexes[0] ?? -1;
+  const preamble = rows.slice(0, headerIndex);
+  const nonBlankPreamble = preamble.filter((row) => !isBlankRow(row));
+  const directHeader = nonBlankPreamble.length === 0;
+  const formattedTemplatePreamble =
+    nonBlankPreamble.length === 2 &&
+    nonBlankPreamble[0]?.rowNumber === 1 &&
+    normalize(nonBlankPreamble[0]?.values[0] ?? '') === HOTEL_IMPORT_TITLE &&
+    nonBlankPreamble[0]?.values
+      .slice(1)
+      .every((value) => !normalize(value ?? '')) &&
+    nonBlankPreamble[1]?.rowNumber === 2 &&
+    normalize(nonBlankPreamble[1]?.values[0] ?? '') === HOTEL_IMPORT_GUIDANCE &&
+    nonBlankPreamble[1]?.values
+      .slice(1)
+      .every((value) => !normalize(value ?? '')) &&
+    rows[headerIndex]?.rowNumber === 4;
+  if (!directHeader && !formattedTemplatePreamble)
+    fail('ساختار عنوان و راهنمای HOTEL_IMPORT_V1 معتبر نیست.');
+
+  return rows.slice(headerIndex + 1).filter((row) => !isBlankRow(row));
 }
 
 function optional(value: string | undefined) {
@@ -342,6 +434,7 @@ export function parseHotelImportWorkbook(input: {
   if (!workbookXml || !hotelSheet)
     fail('ساختار Workbook یا Sheet Hotels یافت نشد.');
   const workbookText = strFromU8(workbookXml);
+  rejectXmlEntities(workbookText);
   if (
     !/name="Hotels"/i.test(workbookText) ||
     !/name="راهنما"/i.test(workbookText)
@@ -350,16 +443,9 @@ export function parseHotelImportWorkbook(input: {
   if (/\bDDE\b|WEBSERVICE\s*\(|HYPERLINK\s*\(/i.test(workbookText))
     fail('Remote Reference یا DDE در Workbook مجاز نیست.');
 
-  const rows = parseSheet(
-    hotelSheet,
-    parseSharedStrings(files['xl/sharedStrings.xml']),
+  const rows = dataRowsAfterCanonicalHeader(
+    parseSheet(hotelSheet, parseSharedStrings(files['xl/sharedStrings.xml'])),
   );
-  const headers = rows.shift()?.map(normalize) ?? [];
-  if (
-    headers.length !== HOTEL_IMPORT_HEADERS.length ||
-    HOTEL_IMPORT_HEADERS.some((header, index) => headers[index] !== header)
-  )
-    fail('Headerهای Sheet Hotels با HOTEL_IMPORT_V1 مطابقت ندارند.');
 
   const issues: HotelImportValidationIssue[] = [];
   const warnings: HotelImportValidationIssue[] = [];
@@ -367,9 +453,7 @@ export function parseHotelImportWorkbook(input: {
   const result: HotelImportSourceRow[] = [];
   const expectedCity = normalize(input.expectedCityName);
 
-  rows.forEach((cells, index) => {
-    const rowNumber = index + 2;
-
+  rows.forEach(({ values: cells, rowNumber }) => {
     const englishName = normalize(cells[1] ?? '');
     const city = normalize(cells[3] ?? '');
     const suppliedCode = normalize(cells[0] ?? '').toUpperCase();

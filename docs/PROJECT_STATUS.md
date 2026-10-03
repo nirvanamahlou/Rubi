@@ -1,3 +1,59 @@
+## 2026-10-01 — TRAVEL-HIDE-USAGE-COLUMNS-1001 — PC-B — READY_FOR_REVIEW
+
+The Tour Types and Transfer Types lists no longer display their usage columns. Leaders and Visa Services were already without that column and remain unchanged; AST regressions verify exact headers, matching row-cell counts and the retained prior Tour Types last-change removal across all four tables. Tour Type View usage, model metadata, forms, exports, API and backend behavior remain unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-01 — TOUR-TYPE-HIDE-LAST-CHANGE-1001 — PC-B — READY_FOR_REVIEW
+
+Only the visible «آخرین تغییر» header and matching value cell were removed from the Tour Types list. Its remaining nine headers and row cells stay aligned. The Tour Type form/View still exposes last-change metadata, Excel export still includes `updatedAt`, and the API, backend, audit behavior and other travel-service tables remain unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-01 — SALES-REFERENCE-PROFILE-CLEANUP-1001 — PC-B — READY_FOR_REVIEW
+
+The shared Acquaintance Methods and Sales Channels View profile no longer repeats version or Persian title in its detail section. The identity header still names the selected record, and English title, display order and description remain visible. Forms, internal version/CAS, API, export and backend behavior are unchanged. The shared view regression was narrowed only for these two resources; all other specialized profiles retain their visible-version assertion. Focused regressions (15), all 455 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-01 — SALES-REFERENCE-HIDE-METADATA-1001 — PC-B — READY_FOR_REVIEW
+
+The shared Acquaintance Methods and Sales Channels table now omits the visible display-order, record-usage and last-change columns. Both resources render the same seven exact headers with seven aligned row cells. Display order remains in create/edit and profile views, and all query, export, persistence, API and backend behavior is unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-01 — ACQUAINTANCE-HIDE-ENGLISH-FILTER-1001 — PC-B — READY_FOR_REVIEW
+
+Acquaintance Methods now exposes only its dedicated code filter; the English-name filter is absent and a stale hidden `columnFilter2` cannot reach list or Excel-export requests. Sales Channels retains both canonical filters, while general search, English-name form/profile fields and all API/schema/backend behavior remain unchanged. Focused regression (6), all 454 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
+## 2026-10-01 — ACQUAINTANCE-HIDE-ORDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+The Acquaintance Methods table now omits only the visible display-order header and matching cell. The shared Sales Channels table retains that column, and an AST regression evaluates both resource shapes to verify aligned headers/rows while preserving the form/profile order field. Focused regression (5), scoped lint, all 453 Master Data tests, Web typecheck and 55-route production build pass; no authenticated browser/runtime QA was performed. No API, export, backend, schema, dependency, database or runtime change was made, and bounded locks release with the scoped commit. Final documentation-only verification update does not change product or build inputs.
+
+## 2026-10-01 — BROKER-HIDE-PURCHASE-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+Only the visible «محدودیت خرید» header and matching placeholder cell were removed from the Brokers list. The remaining nine headers and row cells stay aligned; the Suppliers table and the purchase-restriction field in forms/profiles remain unchanged. Focused regression (6), all 452 Master Data Web tests, scoped lint, Web typecheck and the lead-owned 55-route production build pass. No authenticated browser/runtime QA was performed; no API, export, backend, schema, dependency, database or runtime change was made. Bounded implementation locks release with the scoped commit.
+
+## 2026-10-01 — TRANSPORT-REPLACE-COMPLETION-KPIS-1001 — PC-B — READY_FOR_REVIEW
+
+Six Transport «نیازمند تکمیل» cards now use the approved canonical global distinct metrics for airline origin countries, aircraft body types, rail-company countries, train categories, bus-company countries and bus service classes. The cards state their global scope; a valid empty summary renders zero, while loading/error, malformed pagination or a stalled page render unavailable. Late responses from a previous tab cannot overwrite the current summary. First-three KPIs and the Cabin review/Manifest publication cards remain unchanged. Focused KPI regressions (21), all 452 Master Data Web tests, scoped lint and Web typecheck pass. Final production build and authenticated browser QA remain lead-owned; no API, schema, contract, dependency, database or runtime change was made.
+
+## 2026-10-01 — COMPOSITE-HIDE-CONTRACT-COLUMN-1001 — PC-B — READY_FOR_REVIEW
+
+The composite-hotel member table no longer displays the contract-reference placeholder column. Its remaining four headers and row cells stay aligned, while usage condition, forms, profile behavior, API/export and backend data remain unchanged. Focused accommodation regression (9), all 434 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no schema, dependency, database or runtime change was made.
+
+## 2026-10-01 — HOTEL-PRICING-WHITE-TEXT-1001 — PC-B — READY_FOR_REVIEW
+
+The accommodation header's `قیمت‌گذاری هتل‌ها` action now keeps an explicit white foreground in both themes and on hover. The override is local to that link; shared primary-button tokens and the neighboring all-sections outline action are unchanged. Focused action/visual regressions (19), all 433 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no API, schema, dependency, data or runtime change was made.
+
+## 2026-10-01 — HOTEL-EXCEL-TEMPLATE-1001 — PC-B — CHECK_BLOCKED
+
+The Hotel Excel parser now accepts the supplied canonical formatted workbook, including namespace-prefixed OOXML, its exact title/guidance preamble, row-four headers and blank formatted rows. Physical row numbers remain 5/6/7, while formulas, hyperlinks, DTD/entities, external relationships and existing archive limits remain rejected regardless of namespace prefix. The external workbook itself stays outside Git and was read only; it produces three rows, no blocking issues and the existing explicit unsupported-field warnings. Existing reference resolution, commit, audit, permissions and idempotency are unchanged. Focused tests, all 476 Master Data API tests and scoped lint pass; final typecheck/build await regeneration of the stale Prisma client because this checkout has no `DATABASE_URL`. No schema, contract, dependency, database or runtime change was made.
+
+## 2026-10-01 — HOTEL-REPLACE-COMPLETION-KPI-1001 — PC-B — READY_FOR_REVIEW
+
+The Hotels KPI grid replaces only «نیازمند تکمیل» with «هتل‌های زنجیره‌ای», using the existing canonical global count of hotels whose chain reference is present. The card states its global scope explicitly; real zero renders as zero, while loading and invalid/missing runtime values render unavailable rather than a fabricated count. The remaining hotel KPIs and all other accommodation tabs are unchanged. Focused rendered-grid regressions, all 432 Master Data Web tests, scoped lint and Web typecheck pass. Final production build remains lead-owned; no API, schema, contract, dependency, database or runtime change was made.
+
+## 2026-10-01 — SUPPLIER-INLINE-SERVICE-CREATE-1001 — PC-B — READY_FOR_REVIEW
+
+The Supplier services selector now shows Add Service without requiring a search. It reuses the canonical travel-service form and validation, then appends the returned service code—not its ID—without replacing prior selections or the rest of the supplier draft. Broker and unrelated selector behavior remain unchanged; read-only and locked fields expose no creation action. Focused SSR/state-helper regressions, all 422 Master Data Web tests, scoped lint and Web typecheck pass. No browser/runtime, API, schema, contract, dependency or database change was made; final production build remains lead-owned.
+
+## 2026-10-01 — HOTEL-INLINE-REFERENCE-CREATE-1001 — PC-B — READY_FOR_REVIEW
+
+Hotel meal/service, room-type and facility selectors now expose a clear Add action without requiring a search first. Each action reuses the canonical source form and validation; room type remains name-only, meal/service retains required code/name/category, and facility retains its existing optional free-text category. A saved child is appended to the existing IDs without replacing the parent hotel draft, while cancel/failure and read-only/locked states remain safe. Focused SSR/state-helper regressions, all 418 Master Data Web tests, scoped lint and Web typecheck pass. The repository has no DOM interaction-test dependency, so callback behavior is covered through the production state helper and real SSR structure rather than claimed browser interaction; authenticated browser/runtime QA was not run. Final production build is delegated to lead verification.
+
 ## 2026-10-01 — HOTEL-HIDE-PROVIDER-COLUMN-1001 — PC-B — READY_FOR_REVIEW
 
 Only the `HOTEL_PROVIDER` supplier column and matching row cell were removed from the Hotels table. The hotel profile/form, supplier relation, API/export and stored data remain unchanged. A focused structural regression verifies the exact header and visible row-cell alignment; all 414 Master Data Web tests, scoped lint and Web typecheck pass. No build was duplicated because final integration build belongs to the lead, and no runtime or authenticated browser QA was performed.
@@ -4152,3 +4208,7 @@ Missing selected airport code/name render as blank in shared preview and PDF; ci
 ## 2026-10-01 — Ticket visual polish and persistent identity (PC-A)
 
 Shared ticket preview/PDF has Tehran Milad/Azadi and world-landmark silhouettes, geographic world watermark, aligned carrier/company marks, improved airplane and date typography, and a larger bilingual notice. E-Ticket No, canonical carrier code plus saved contract carrier, English-route RLOC and original UTC issue date are displayed. COMPANY allocations receive immutable unique six-digit numbers; floating/API/unknown supply uses explicit six-digit manual entry. New migration `20261001150000_reservation_ticket_documents` is additive and required before deployment; no production/local operational migration or number backfill performed. Draft/old outputs without stored identity keep identifier/date blank.
+
+## 2026-10-01 — RESERVATION-BUNDLED-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
+
+Reservations purchase now prepares one atomic hotel-and-transfer request per contract. Outbound/return transfers share a broker and a per-passenger all-directions price; the hotel panel shows its name, assigned passenger age categories and nightly rates. Finance groups the resulting rows under the contract number and displays each purchase and totals by currency, while preserving individual settlement records. The schema change is additive and prior single purchases remain readable. Focused API/Web tests, scoped lint, both typechecks, Prisma validation and the six-task production build pass. No operational database or runtime change; apply migration before API rollout. User requested develop merge after CI.

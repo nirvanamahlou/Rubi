@@ -29,6 +29,7 @@ import {
 import type {
   FinanceSupplierPaymentCommandV1,
   ReservationServicePurchaseInputV1,
+  ReservationPurchaseBatchInputV1,
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
 } from '@nora/contracts';
@@ -256,6 +257,16 @@ export class ReservationRequestsController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.servicePurchase.record(id, input, req.actor, key);
+  }
+  @Post(':id/purchase-batches')
+  @Header('Cache-Control', 'private, no-store')
+  recordPurchaseBatch(
+    @Param('id') id: string,
+    @Body() input: ReservationPurchaseBatchInputV1,
+    @Req() req: AuthenticatedRequest,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.servicePurchase.recordBatch(id, input, req.actor, key);
   }
   @Patch(':id/service-purchases/:purchaseId/payment')
   @Header('Cache-Control', 'private, no-store')

@@ -33,6 +33,7 @@ export function MasterDataReferenceSelector({
   refreshKey = 0,
   onManage,
   createOnlyWhenEmpty = false,
+  alwaysShowCreate = false,
   invalid = false,
 }: {
   ariaDescribedby?: string;
@@ -47,6 +48,7 @@ export function MasterDataReferenceSelector({
   refreshKey?: number;
   onManage?: (record?: MasterDataRecord, query?: string) => void;
   createOnlyWhenEmpty?: boolean;
+  alwaysShowCreate?: boolean;
   closeOnSelect?: boolean;
   invalid?: boolean;
 }) {
@@ -177,9 +179,10 @@ export function MasterDataReferenceSelector({
     [config, options, selectedValues],
   );
   const canCreateReference =
-    Boolean(query.trim()) &&
     Boolean(onManage) &&
-    (!createOnlyWhenEmpty || lookupState === 'empty');
+    (alwaysShowCreate ||
+      (Boolean(query.trim()) &&
+        (!createOnlyWhenEmpty || lookupState === 'empty')));
 
   function choose(optionValue: string) {
     if (!config.multiple) {
@@ -248,9 +251,13 @@ export function MasterDataReferenceSelector({
                 ? 'ثبت سازمان جدید'
                 : config.target === 'organization-contacts'
                   ? 'افزودن مخاطب'
-                  : config.target === 'room-types'
-                    ? 'افزودن نوع اتاق'
-                    : 'افزودن خدمت'}
+                  : config.target === 'meal-services'
+                    ? 'افزودن وعده/سرویس'
+                    : config.target === 'room-types'
+                      ? 'افزودن نوع اتاق'
+                      : config.target === 'facilities'
+                        ? 'افزودن امکان'
+                        : 'افزودن خدمت'}
             </Button>
           ) : null}
           {!config.multiple && selected ? (

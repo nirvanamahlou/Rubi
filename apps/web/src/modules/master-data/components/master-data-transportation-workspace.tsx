@@ -39,7 +39,14 @@ import {
   TrainFront,
 } from 'lucide-react';
 import Link from 'next/link';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -110,7 +117,8 @@ const tabs = [
   icon: typeof Plane;
 }[];
 
-type TransportResource = (typeof tabs)[number]['resource'];
+export type TransportResource = (typeof tabs)[number]['resource'];
+export type TransportSummaryState = 'loading' | 'ready' | 'error';
 
 const attributeLabels: Record<string, string> = {
   englishName: 'نام انگلیسی',
@@ -203,10 +211,147 @@ function needsCompletion(record: MasterDataRecord) {
   return record.status === 'inactive';
 }
 
+function distinctStringAttribute(
+  records: readonly MasterDataRecord[],
+  key: string,
+) {
+  return new Set(
+    records.flatMap((record) => {
+      const value = record.attributes[key];
+      return typeof value === 'string' && value.trim() ? [value.trim()] : [];
+    }),
+  ).size;
+}
+
+const replacementMetrics: Partial<
+  Record<TransportResource, { label: string; attribute: string }>
+> = {
+  airlines: { label: 'کشورهای مبدأ', attribute: 'countryId' },
+  'aircraft-types': { label: 'انواع بدنه', attribute: 'bodyType' },
+  'rail-companies': { label: 'کشورهای ثبت‌شده', attribute: 'countryId' },
+  'train-types': { label: 'دسته‌های قطار', attribute: 'category' },
+  'bus-companies': { label: 'کشورهای ثبت‌شده', attribute: 'countryId' },
+  'bus-types': { label: 'کلاس‌های خدمات', attribute: 'serviceClass' },
+};
+
+export function transportKpiItems(
+  resource: TransportResource,
+  allRecords: readonly MasterDataRecord[],
+  summaryState: TransportSummaryState,
+): readonly MasterDataKpiItem[] {
+  const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
+  const active = allRecords.filter(
+    (record) => record.status === 'active',
+  ).length;
+  const incomplete = allRecords.filter(needsCompletion).length;
+  const distinct = (key: string) => distinctStringAttribute(allRecords, key);
+  const replacement = replacementMetrics[resource];
+  const fourth = replacement
+    ? {
+        label: replacement.label,
+        value:
+          summaryState === 'ready'
+            ? distinct(replacement.attribute)
+            : ('—' as const),
+        icon: Link2,
+        tone: 'amber' as const,
+        hint: 'در کل اطلاعات پایه',
+      }
+    : null;
+  const common = (
+    first: string,
+    second: string,
+    third: string,
+    thirdValue: string | number,
+    finalCard: MasterDataKpiItem,
+  ): readonly MasterDataKpiItem[] => [
+    {
+      label: first,
+      value: allRecords.length,
+      icon: currentTab.icon,
+      tone: 'sky',
+    },
+    { label: second, value: active, icon: CheckCircle2, tone: 'emerald' },
+    { label: third, value: thirdValue, icon: Link2, tone: 'violet' },
+    finalCard,
+  ];
+  if (resource === 'airlines')
+    return common(
+      'کل ایرلاین‌ها',
+      'ایرلاین فعال',
+      'Connection فعال',
+      '—',
+      fourth!,
+    );
+  if (resource === 'aircraft-types')
+    return common(
+      'انواع هواپیما',
+      'نوع فعال',
+      'سازندگان',
+      distinct('manufacturer'),
+      fourth!,
+    );
+  if (resource === 'cabin-classes')
+    return common('کلاس‌ها', 'فعال', 'Cabinها', distinct('cabinType'), {
+      label: 'نیازمند بازبینی',
+      value: incomplete,
+      icon: CircleAlert,
+      tone: 'amber',
+    });
+  if (resource === 'manifest-templates')
+    return common(
+      'کل قالب‌ها',
+      'نسخه فعال',
+      'فرمت‌های فایل',
+      distinct('fileFormat'),
+      {
+        label: 'در انتظار انتشار',
+        value: incomplete,
+        icon: CircleAlert,
+        tone: 'amber',
+      },
+    );
+  if (resource === 'rail-companies')
+    return common('شرکت‌های ریلی', 'فعال', 'Connection فعال', '—', fourth!);
+  if (resource === 'train-types')
+    return common(
+      'انواع قطار',
+      'فعال',
+      'سازندگان',
+      distinct('manufacturer'),
+      fourth!,
+    );
+  if (resource === 'bus-companies')
+    return common('شرکت‌های اتوبوس', 'فعال', 'Connection فعال', '—', fourth!);
+  return common(
+    'انواع اتوبوس',
+    'فعال',
+    'سازندگان',
+    distinct('manufacturer'),
+    fourth!,
+  );
+}
+
+export function hasValidTransportSummaryProgress(
+  pageLength: number,
+  collected: number,
+  total: number,
+) {
+  return (
+    Number.isSafeInteger(total) &&
+    total >= 0 &&
+    collected <= total &&
+    (collected >= total || pageLength > 0)
+  );
+}
+
 export function MasterDataTransportationWorkspace() {
   const [resource, setResource] = useState<TransportResource>('airlines');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [allRecords, setAllRecords] = useState<readonly MasterDataRecord[]>([]);
+  const [summaryState, setSummaryState] =
+    useState<TransportSummaryState>('loading');
+  const summaryRequestRef = useRef(0);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
@@ -268,6 +413,8 @@ export function MasterDataTransportationWorkspace() {
   ]);
 
   const loadSummary = useCallback(async () => {
+    const requestId = ++summaryRequestRef.current;
+    setSummaryState('loading');
     try {
       const rows: MasterDataRecord[] = [];
       for (let summaryPage = 1; ; summaryPage += 1) {
@@ -279,12 +426,25 @@ export function MasterDataTransportationWorkspace() {
           page: summaryPage,
           pageSize: 100,
         });
+        if (requestId !== summaryRequestRef.current) return;
         rows.push(...response.data);
+        if (
+          !hasValidTransportSummaryProgress(
+            response.data.length,
+            rows.length,
+            response.meta.total,
+          )
+        )
+          throw new Error('Invalid transport summary pagination');
         if (rows.length >= response.meta.total) break;
       }
+      if (requestId !== summaryRequestRef.current) return;
       setAllRecords(rows);
+      setSummaryState('ready');
     } catch {
+      if (requestId !== summaryRequestRef.current) return;
       setAllRecords([]);
+      setSummaryState('error');
     }
   }, [resource]);
 
@@ -298,108 +458,16 @@ export function MasterDataTransportationWorkspace() {
     return () => window.clearTimeout(timer);
   }, [loadSummary]);
 
-  const kpis = useMemo<readonly MasterDataKpiItem[]>(() => {
-    const active = allRecords.filter(
-      (record) => record.status === 'active',
-    ).length;
-    const incomplete = allRecords.filter(needsCompletion).length;
-    const distinct = (key: string) =>
-      new Set(
-        allRecords.map((record) => attribute(record, key, '')).filter(Boolean),
-      ).size;
-    const common = (
-      first: string,
-      second: string,
-      third: string,
-      thirdValue: string | number,
-      fourth: string,
-      fourthValue: string | number,
-    ): readonly MasterDataKpiItem[] => [
-      {
-        label: first,
-        value: allRecords.length,
-        icon: currentTab.icon,
-        tone: 'sky',
-      },
-      { label: second, value: active, icon: CheckCircle2, tone: 'emerald' },
-      { label: third, value: thirdValue, icon: Link2, tone: 'violet' },
-      { label: fourth, value: fourthValue, icon: CircleAlert, tone: 'amber' },
-    ];
-    if (resource === 'airlines')
-      return common(
-        'کل ایرلاین‌ها',
-        'ایرلاین فعال',
-        'Connection فعال',
-        '—',
-        'نیازمند تکمیل برند',
-        incomplete,
-      );
-    if (resource === 'aircraft-types')
-      return common(
-        'انواع هواپیما',
-        'نوع فعال',
-        'سازندگان',
-        distinct('manufacturer'),
-        'نیازمند تکمیل',
-        incomplete,
-      );
-    if (resource === 'cabin-classes')
-      return common(
-        'کلاس‌ها',
-        'فعال',
-        'Cabinها',
-        distinct('cabinType'),
-        'نیازمند بازبینی',
-        incomplete,
-      );
-    if (resource === 'manifest-templates')
-      return common(
-        'کل قالب‌ها',
-        'نسخه فعال',
-        'فرمت‌های فایل',
-        distinct('fileFormat'),
-        'در انتظار انتشار',
-        incomplete,
-      );
-    if (resource === 'rail-companies')
-      return common(
-        'شرکت‌های ریلی',
-        'فعال',
-        'Connection فعال',
-        '—',
-        'نیازمند تکمیل',
-        incomplete,
-      );
-    if (resource === 'train-types')
-      return common(
-        'انواع قطار',
-        'فعال',
-        'سازندگان',
-        distinct('manufacturer'),
-        'نیازمند تکمیل',
-        incomplete,
-      );
-    if (resource === 'bus-companies')
-      return common(
-        'شرکت‌های اتوبوس',
-        'فعال',
-        'Connection فعال',
-        '—',
-        'نیازمند تکمیل',
-        incomplete,
-      );
-    return common(
-      'انواع اتوبوس',
-      'فعال',
-      'سازندگان',
-      distinct('manufacturer'),
-      'نیازمند تکمیل',
-      incomplete,
-    );
-  }, [allRecords, currentTab.icon, resource]);
+  const kpis = useMemo(
+    () => transportKpiItems(resource, allRecords, summaryState),
+    [allRecords, resource, summaryState],
+  );
 
   function changeResource(next: TransportResource) {
+    summaryRequestRef.current += 1;
     setResource(next);
+    setAllRecords([]);
+    setSummaryState('loading');
     setSearch('');
     resetColumnFilters();
     setStatus('active');

@@ -727,7 +727,6 @@ export function MasterDataSuppliersWorkspace() {
                   'کشور / شهر',
                   'تماس اصلی',
                   'خدمات',
-                  'محدودیت خرید',
                   'وضعیت',
                   'عملیات',
                 ].map((head) => (
@@ -781,7 +780,6 @@ export function MasterDataSuppliersWorkspace() {
                   <td className="p-4">
                     <ServiceChips value={text(record, 'serviceNames', '')} />
                   </td>
-                  <td className="p-4 text-muted-foreground">—</td>
                   <td className="p-4">
                     <CollaborationBadge
                       value={
