@@ -120,6 +120,9 @@ export class WorkbenchController {
         file: { type: 'string', format: 'binary' },
         branchId: { type: 'string', format: 'uuid' },
         title: { type: 'string', maxLength: 240 },
+        displayName: { type: 'string', maxLength: 160 },
+        email: { type: 'string', maxLength: 320 },
+        phone: { type: 'string', maxLength: 32 },
       },
     },
   })

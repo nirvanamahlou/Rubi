@@ -28,10 +28,8 @@ import { useDossierBranch } from './use-dossier-branch';
 
 export function OrganizationActivityPanel({
   organizationId,
-  tab,
 }: {
   organizationId: string;
-  tab: string;
 }) {
   const { branchId, setBranchId, branches, sessionError } = useDossierBranch();
   const [filter, setFilter] = useState<OrganizationActivityQuery>({});
@@ -137,13 +135,7 @@ export function OrganizationActivityPanel({
     <section className="panel" aria-label="گزارش فعالیت پرونده">
       <header className="panel-head">
         <div>
-          <h2 className="panel-title">
-            {tab === 'audit'
-              ? 'تاریخچه فعالیت‌ها'
-              : tab === 'export'
-                ? 'خروجی گزارش فعالیت‌ها'
-                : 'گزارش فعالیت پرونده'}
-          </h2>
+          <h2 className="panel-title">گزارش فعالیت پرونده</h2>
           <p className="hint">
             سوابق ثبت‌شده در سامانه؛ تاریخ‌ها بر اساس ساعت تهران هستند.
           </p>
@@ -288,35 +280,30 @@ export function OrganizationActivityPanel({
               </strong>
               <span className="hint">تا {activityDate(report.asOf)}</span>
             </div>
-            {tab === 'reports' && (
-              <div className="grid gap-3 md:grid-cols-3">
-                {counts.map((item) => (
-                  <button
-                    key={item.key}
-                    className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 text-right"
-                    onClick={() =>
-                      setFilter({
-                        ...filter,
-                        category:
-                          item.key as OrganizationActivityQuery['category'],
-                      })
-                    }
-                  >
-                    <span>{item.title}</span>
-                    <strong className="mt-2 block text-xl">
-                      {item.count.toLocaleString('fa-IR')}
-                    </strong>
-                  </button>
-                ))}
-              </div>
-            )}
-            {tab === 'export' && (
-              <p className="notice">
-                خروجی اکسل شامل تمام {rows.length.toLocaleString('fa-IR')}{' '}
-                رویدادِ فیلترشده است، همراه زمان، انجام‌دهنده، نتیجه و فیلدهای
-                تغییرکرده.
-              </p>
-            )}
+            <div className="grid gap-3 md:grid-cols-3">
+              {counts.map((item) => (
+                <button
+                  key={item.key}
+                  className="rounded-xl border border-blue-100 bg-blue-50/40 p-4 text-right"
+                  onClick={() =>
+                    setFilter({
+                      ...filter,
+                      category:
+                        item.key as OrganizationActivityQuery['category'],
+                    })
+                  }
+                >
+                  <span>{item.title}</span>
+                  <strong className="mt-2 block text-xl">
+                    {item.count.toLocaleString('fa-IR')}
+                  </strong>
+                </button>
+              ))}
+            </div>
+            <p className="notice">
+              خروجی اکسل شامل تمام {rows.length.toLocaleString('fa-IR')} رویدادِ
+              فیلترشده است، همراه زمان، انجام‌دهنده، نتیجه و فیلدهای تغییرکرده.
+            </p>
             <div className="overflow-x-auto">
               <table className="table w-full">
                 <thead>

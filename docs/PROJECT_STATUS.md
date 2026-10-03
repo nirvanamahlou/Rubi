@@ -4306,6 +4306,10 @@ The supplied two-page travel-contract terms PDF replaces the previous static fil
 
 Reservation request table minimum body-row height decreases from 46px to 36px while the existing 440px scroll viewport and columns remain unchanged. Saved status actor/time renders beside its checkbox so populated flags do not force tall rows; no audit information, permissions or operations are removed. Synthetic browser layout confirms roughly two more complete contracts. Twenty existing foundation/status tests, scoped lint and Web typecheck passed; production build and CI gate the explicitly requested develop merge. No API/schema/migration/dependency/data change.
 
+## 2026-10-03 — B2B-UNIFIED-REPORT-SECTION-1003 — PC-B — READY_FOR_APPROVED_MERGE
+
+Organizations 360 Reports/Audit/Export now form one «گزارش فعالیت‌ها» section, showing category summaries and export guidance alongside the unchanged branch/date filters, activity table, details and authorized-row Excel output. Old Audit/Export browser-history aliases normalize only within Reports; the canonical destination does not add a duplicate history entry. Focused history/activity-export regressions (7), all Organizations tests (135), scoped lint, Web typecheck and 55-route production build pass. Local generated contracts were refreshed from unchanged source. No API/contract, permission, migration/dependency, data or shared-runtime change; no authenticated browser QA. Same native implementation owner completed the bounded four-file UI/history change; lead inspected the exact diff. Usage unavailable. CI gates owner-authorized develop merge; scoped locks release with commit.
+
 ## 2026-10-03 — B2B-INITIAL-STATUS-1003 — PC-B
 
 Removed the read-only initial status display from step one of the cooperation registration wizard as requested. Draft/submission lifecycle and validation remain unchanged. No API, schema, dependency, permission, data or runtime change; targeted checks and CI precede authorized develop merge.
@@ -4371,3 +4375,7 @@ Sales dashboard aggregation now accepts legitimate negative computed balances fr
 ## 2026-10-03 — AIRLINE-HIDE-REFERENCE-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 The Airlines list now omits Logo Reference and Integration Connection while preserving IATA, ICAO, airline name, country, the independent authenticated Logo column, status and all actions. Version / Audit was already absent and remains absent; forms, View, Excel, API, audit and integration data are unchanged. Focused 18 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA.
+
+## 2026-10-03 — PROFILE-AVATAR-SAVE-1003 — PC-B
+
+Personal profile photo upload now accepts the edited name and contact details and links the stored document through the existing IAM profile service before responding. The Web form consumes the returned profile, eliminating its second save request after photo upload. Older file-only clients remain supported. No schema, migration, permission, dependency, or operational-data change. Local port 3100 was unavailable during verification, so live account behavior remains unverified; focused tests and build checks gate delivery.
