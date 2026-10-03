@@ -44,7 +44,7 @@ const sections = [
     icon: Building2,
     accent: '#1674e8',
     tint: '#eaf3ff',
-    description: 'مشخصات، نقش‌ها، شعب، نمایندگان، امضاداران و مدیر حساب',
+    description: undefined,
     tabs: [
       ['profile', 'مشخصات و نقش‌ها'],
       ['branches', 'شعب'],
