@@ -5807,7 +5807,11 @@ export function MarketingReferenceSection({
               />
             ) : null}
             {section === 'settings' ? (
-              <MarketingSettingsPage onNotice={onNotice} onOpen={onOpen} tab={key} />
+              <MarketingSettingsPage
+                onNotice={onNotice}
+                onOpen={onOpen}
+                tab={key}
+              />
             ) : null}
           </TabsContent>
         ))}

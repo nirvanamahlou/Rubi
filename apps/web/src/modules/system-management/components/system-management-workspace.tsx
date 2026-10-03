@@ -1137,7 +1137,9 @@ export function SystemManagementWorkspace() {
       >
         <DialogContent>
           <DialogTitle>{marketingDetailItem?.title ?? 'جزئیات'}</DialogTitle>
-          <DialogDescription>{marketingDetailItem?.description}</DialogDescription>
+          <DialogDescription>
+            {marketingDetailItem?.description}
+          </DialogDescription>
           {marketingDetailItem ? (
             <dl className="mt-5 grid gap-3 rounded-xl bg-muted/50 p-4 text-sm">
               <div>
