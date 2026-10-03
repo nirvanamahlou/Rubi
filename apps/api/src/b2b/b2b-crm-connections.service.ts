@@ -17,6 +17,7 @@ import type {
   B2bFinanceExposureV1,
   FinancePartyExposurePortV1,
   IamPermissionCode,
+  DocumentListItemV1,
   SalesContractDetail,
   SalesContractSummary,
 } from '@nora/contracts';
@@ -106,6 +107,15 @@ function presentPaymentDocument(row: {
     },
     updatedAt: row.updatedAt,
   };
+}
+
+function isOwnerProtectedDocumentProjection(row: DocumentListItemV1) {
+  return (
+    row.type.code === 'PROTECTED' &&
+    row.type.domain === 'GENERAL' &&
+    (row.confidentiality === 'CONFIDENTIAL' ||
+      row.confidentiality === 'RESTRICTED')
+  );
 }
 
 function presentPayments(row: SalesContractDetail): B2bCrmSalesPaymentV1[] {
@@ -252,7 +262,8 @@ export class B2bCrmConnectionsService {
       for (const row of response.data) {
         if (
           row.branchId !== branchId ||
-          row.type.domain !== 'FINANCE' ||
+          (row.type.domain !== 'FINANCE' &&
+            !isOwnerProtectedDocumentProjection(row)) ||
           ids.has(row.id)
         )
           throw new Error('DOCUMENTS_PAGE_INCONSISTENT');

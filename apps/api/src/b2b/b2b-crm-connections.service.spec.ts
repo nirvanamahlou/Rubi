@@ -247,8 +247,29 @@ describe('B2B CRM backend connection query', () => {
           capabilities: { viewFile: true, download: true },
           updatedAt: '2026-10-03T00:00:00.000Z',
         },
+        {
+          id: `protected-${query.sourceEntityId}`,
+          title: 'سند محرمانه ••••••',
+          type: {
+            id: 'protected-type',
+            code: 'PROTECTED',
+            name: 'سند محرمانه',
+            domain: 'GENERAL',
+          },
+          branchId,
+          confidentiality: 'CONFIDENTIAL',
+          currentVersion: {
+            originalFileName: '',
+            safeDownloadName: 'document.bin',
+            detectedMimeType: '',
+            sizeBytes: 0,
+            scanStatus: 'CLEAN',
+          },
+          capabilities: { viewFile: false, download: false },
+          updatedAt: '2026-10-03T00:00:00.000Z',
+        },
       ],
-      meta: { page: 1, pageSize: 100, total: 1, totalPages: 1 },
+      meta: { page: 1, pageSize: 100, total: 2, totalPages: 1 },
     }));
     const securedActor = {
       ...actor,
@@ -271,6 +292,17 @@ describe('B2B CRM backend connection query', () => {
       'payment-2',
     ]);
     expect(fixture.documents.list).toHaveBeenCalledTimes(2);
+    expect(result.payments[0]?.documents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'protected-payment-1',
+          title: 'سند محرمانه ••••••',
+          type: { code: 'PROTECTED', name: 'سند محرمانه' },
+          confidentiality: 'CONFIDENTIAL',
+          capabilities: { viewFile: false, download: false },
+        }),
+      ]),
+    );
     expect(fixture.documents.list).toHaveBeenCalledWith(
       expect.objectContaining({
         branchId,

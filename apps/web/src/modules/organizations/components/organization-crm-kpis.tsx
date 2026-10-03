@@ -75,6 +75,9 @@ export function OrganizationCrmKpis({
         !['VOUCHER_ISSUED', 'CANCELLED'].includes(reservation.status),
     ).length ?? 0;
   const pending = loading ? '…' : '—';
+  const customersAvailable = data && !data.unavailableSources.CUSTOMERS;
+  const salesAvailable = data && !data.unavailableSources.SALES;
+  const reservationsAvailable = data && !data.unavailableSources.RESERVATIONS;
 
   return (
     <>
@@ -111,7 +114,11 @@ export function OrganizationCrmKpis({
       <section className="kpis" aria-label="شاخص‌های متصل پرونده سازمان">
         <Metric
           label="مشتری سازمانی مرتبط"
-          value={data ? data.customers.length.toLocaleString('fa-IR') : pending}
+          value={
+            customersAvailable
+              ? data.customers.length.toLocaleString('fa-IR')
+              : pending
+          }
           icon={Building2}
           tone="green"
           note={
@@ -122,14 +129,22 @@ export function OrganizationCrmKpis({
         />
         <Metric
           label="قرارداد فروش مرتبط"
-          value={data ? data.contracts.length.toLocaleString('fa-IR') : pending}
+          value={
+            salesAvailable
+              ? data.contracts.length.toLocaleString('fa-IR')
+              : pending
+          }
           icon={FileText}
           tone="purple"
           note={data?.unavailableSources.SALES || 'داده زنده Backend فروش'}
         />
         <Metric
           label="سفارش باز"
-          value={data ? openReservations.toLocaleString('fa-IR') : pending}
+          value={
+            reservationsAvailable
+              ? openReservations.toLocaleString('fa-IR')
+              : pending
+          }
           icon={ShoppingCart}
           note={
             data?.unavailableSources.RESERVATIONS ||
@@ -138,7 +153,7 @@ export function OrganizationCrmKpis({
         />
         <Metric
           label="مانده قراردادهای فروش"
-          value={data ? outstandingLabel(outstanding) : pending}
+          value={salesAvailable ? outstandingLabel(outstanding) : pending}
           icon={Wallet}
           tone="amber"
           note={
