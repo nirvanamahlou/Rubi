@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CustomerDetail, CustomerMutationRequest } from '@nora/contracts';
-import { emptySalesForm, type SalesFormState } from './sales-form';
+import {
+  emptySalesForm,
+  salesPayload,
+  type SalesFormState,
+} from './sales-form';
 import { CustomersApiError } from '@/modules/customers/public/entry';
 import {
   emptyPeopleValues,
@@ -309,7 +313,7 @@ describe('fixed Sales people-entry slots', () => {
       const previousId = draft.rows.p0!.values.nationalId;
       const values = {
         ...draft.rows.p0!.values,
-        nationalId: national('009000009'),
+        nationalId: '',
         firstName: 'Corrected',
       };
       draft.rows.p0 = {
@@ -898,5 +902,165 @@ describe('fixed Sales people-entry slots', () => {
     expect(() => validateSalesPeopleDraft(foreign, filled())).toThrow(
       'نام و نام خانوادگی لاتین پاسپورت الزامی است',
     );
+  });
+});
+
+describe('contract buyer independent from passengers', () => {
+  it('keeps a separate buyer as customer and payer on international travel without requiring a buyer passport', async () => {
+    const travel = {
+      ...state,
+      originCountryCode: 'IR',
+      destinationCountryCode: 'TR',
+      originCountryId: 'iran',
+      destinationCountryId: 'turkey',
+      serviceKinds: ['FLIGHT' as const],
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const passenger = filled().rows.p0!;
+    passenger.values = {
+      ...passenger.values,
+      passportFirstName: 'SYNTHETIC',
+      passportLastName: 'PASSENGER',
+      passportNumber: 'A1234567',
+      passportExpiryDate: '2029-01-01',
+      gender: 'M',
+    };
+    const buyerContact = {
+      name: 'Synthetic Buyer',
+      phone: '09120000000',
+      address: 'Synthetic address',
+      postalCode: '0012345678',
+    };
+    const draft: SalesPeopleDraft = {
+      ...initialSalesPeopleDraft(travel),
+      mode: 'person',
+      separateCustomer: true,
+      buyerContact,
+      rows: {
+        p0: passenger,
+        primary: {
+          values: {
+            ...emptyPeopleValues(),
+            firstName: 'Synthetic',
+            lastName: 'Buyer',
+            nationalId: '',
+          },
+        },
+      },
+    };
+    let index = 0;
+    const create = vi.fn(async (input: CustomerMutationRequest) => ({
+      data: detail('created-' + index++, {
+        ...input,
+        kind: 'person',
+        contacts: [],
+        addresses: [],
+      } as Partial<CustomerDetail>),
+    }));
+    const result = await saveSalesPeopleDraft(travel, draft, vi.fn(), {
+      create,
+      addContact: vi.fn(),
+    });
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]![0]).toMatchObject({
+      roles: ['customer'],
+      firstName: 'Synthetic',
+      lastName: 'Buyer',
+    });
+    expect(create.mock.calls[0]![0].passportNumber).toBeUndefined();
+    expect(create.mock.calls[0]![0].nationalId).toBeUndefined();
+    expect(create.mock.calls[1]![0]).toMatchObject({
+      roles: ['passenger'],
+      passportNumber: 'A1234567',
+    });
+    expect(result.patch).toMatchObject({
+      customerId: 'created-0',
+      firstPassengerIsCustomer: false,
+      buyerContact,
+    });
+    expect(result.patch.passengers?.[0]?.customerId).toBe('created-1');
+    const payload = salesPayload({ ...travel, ...result.patch });
+    expect(payload).toMatchObject({
+      customerId: 'created-0',
+      payerCustomerId: 'created-0',
+      buyerContact,
+    });
+  });
+  it('rejects incomplete buyer contact information before creating any customer', async () => {
+    const draft = {
+      ...filled(),
+      buyerContact: {
+        name: 'Synthetic Buyer',
+        phone: '123',
+        address: 'Synthetic address',
+        postalCode: '123',
+      },
+    };
+    const create = vi.fn();
+    await expect(
+      saveSalesPeopleDraft(state, draft, vi.fn(), {
+        create,
+        addContact: vi.fn(),
+      }),
+    ).rejects.toThrow('کد پستی');
+    expect(create).not.toHaveBeenCalled();
+  });
+});
+
+describe('customer-only purchase identity safety', () => {
+  it('requires passenger identity when promoting a customer-only record into a passenger slot', () => {
+    const one = {
+      ...state,
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const person = detail('buyer-only', {
+      roles: ['customer'],
+      maskedNationalId: null,
+      nationalId: null,
+    });
+    const draft = {
+      ...initialSalesPeopleDraft(one),
+      rows: { p0: selectedPeopleRow(person) },
+    };
+    expect(() => validateSalesPeopleDraft(one, draft)).toThrow('کد ملی');
+  });
+  it('does not retry an uncertain customer-only creation without a safe identity match', async () => {
+    const one = {
+      ...state,
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const draft: SalesPeopleDraft = {
+      ...filled(),
+      mode: 'person',
+      separateCustomer: true,
+      buyerContact: {
+        name: 'Synthetic Buyer',
+        phone: '09120000000',
+        address: 'Synthetic address',
+        postalCode: '0012345678',
+      },
+      rows: {
+        p0: filled().rows.p0!,
+        primary: {
+          values: {
+            ...emptyPeopleValues(),
+            firstName: 'Synthetic',
+            lastName: 'Buyer',
+          },
+          reviewRequired: true,
+        },
+      },
+    };
+    const create = vi.fn();
+    const registrationLookup = vi.fn();
+    await expect(
+      saveSalesPeopleDraft(one, draft, vi.fn(), {
+        create,
+        registrationLookup,
+        addContact: vi.fn(),
+      }),
+    ).rejects.toThrow('پرونده موجود');
+    expect(create).not.toHaveBeenCalled();
+    expect(registrationLookup).not.toHaveBeenCalled();
   });
 });

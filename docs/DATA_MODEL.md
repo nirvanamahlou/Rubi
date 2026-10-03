@@ -651,3 +651,8 @@ TicketPublishedOffer optionally references originAirportId and destinationAirpor
 ### گروه خرید قرارداد رزرواسیون
 
 `ReservationServicePurchase.batchId` یک UUID اختیاری برای ثبت اتمیک ردیف‌های هتل و ترانسفر همان قرارداد است. `coveredServiceClientKeys` آرایه اختیاری کلیدهای خدماتی است که ردیف می‌پوشاند؛ ردیف ترانسفر می‌تواند هر دو جهت را پوشش دهد. برای داده قدیمی، `serviceClientKey` پوشش پیش‌فرض و شناسه همان خرید گروه تک‌ردیفی است. `passengerPrices` نرخ شبانه/تعداد شب/جمع هتل یا نرخ کل ترانسفر برای هر مسافر را نگه می‌دارد؛ پرداخت مالی به شناسه خود ردیف خرید متصل می‌ماند و جمع گروه به تفکیک ارز محاسبه می‌شود.
+
+
+## Sales buyer contact snapshot — PURCHASE-CUSTOMER-DATE-RANGE-1003
+
+`sales_contracts.buyer_contact` is a nullable JSONB AES-256-GCM envelope for contract-entered buyer name, phone, address and postal code. Ciphertext, nonce, auth tag, envelope version and key version are stored; the domain-separated key derives from the existing configured Customer contact root. Sales owns the snapshot and exposes decoded values only through its scoped contract API/output. Customer and payer retain their canonical public Customers IDs, independent of passenger allocation; `customer_name_snapshot` remains the contract party name. Legacy contracts remain null. Later Customer profile edits do not rewrite a saved snapshot; old-client same-buyer contract edits preserve it, while changing buyer clears it unless a new snapshot is supplied. No national ID/passport or operational Customer record is copied into this field.
