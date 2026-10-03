@@ -7,6 +7,7 @@ import {
   calculateSalesBalances,
   passengerAgeCategory,
   salesFingerprint,
+  sumSalesDecimals,
   validateSalesContract,
   validateSalesPayment,
 } from './sales.domain';
@@ -416,6 +417,26 @@ describe('Sales contract domain', () => {
         outstanding: '650',
       },
     ]);
+  });
+
+  it('aggregates a negative computed balance without accepting a negative payment', () => {
+    const balances = calculateSalesBalances(
+      [{ type: 'BASE', title: 'قیمت', amount: '100', currencyCode: 'IRR' }],
+      [{ amount: '120', currencyCode: 'IRR', status: 'FINANCE_CONFIRMED' }],
+    );
+    expect(balances[0]?.outstanding).toBe('-20');
+    expect(
+      sumSalesDecimals(balances.map(({ outstanding }) => outstanding)),
+    ).toBe('-20');
+    expect(sumSalesDecimals(['-20', '50'])).toBe('30');
+    expect(() =>
+      validateSalesPayment({
+        amount: '-20',
+        currencyCode: 'IRR',
+        dueAt: '2026-10-01T00:00:00Z',
+        method: 'CASH',
+      }),
+    ).toThrow('مبلغ Decimal معتبر نیست');
   });
 
   it('derives passenger category at departure date', () => {
