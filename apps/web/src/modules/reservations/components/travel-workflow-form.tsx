@@ -79,6 +79,7 @@ export function TravelWorkflowForm({
   action: string;
 }) {
   const [settingsDirty, setSettingsDirty] = useState(false);
+  const [leaderEditorOpen, setLeaderEditorOpen] = useState(false);
   const [intake, setIntake] = useState<WorkflowIntake>();
   const [delivery, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
   const [brandKind, setBrandKind] = useState<'OWN' | 'AGENCY'>('OWN');
@@ -262,11 +263,42 @@ export function TravelWorkflowForm({
       )}
       {(action === 'واچر' ||
         (action === 'Confirmation' && state.voucherIssued)) && (
-        <TravelDocument
-          key={`${intake.id}:${state.version}`}
-          intake={intake}
-          voucher={action === 'واچر' || action === 'Confirmation'}
-        />
+        <>
+          {!closed && (
+            <section className="grid gap-2 rounded border border-border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <strong>تورلیدر واچر</strong>
+                  <p className="text-sm text-muted-foreground">
+                    {state.voucherSettings?.text.leaderName
+                      ? `${state.voucherSettings.text.leaderName} · ${state.voucherSettings.text.leaderPhone || 'شماره ثبت نشده'}`
+                      : 'تورلیدری انتخاب نشده است.'}
+                  </p>
+                </div>
+                <Button onClick={() => setLeaderEditorOpen((open) => !open)}>
+                  {leaderEditorOpen ? 'بستن انتخاب تورلیدر' : 'انتخاب تورلیدر'}
+                </Button>
+              </div>
+              {leaderEditorOpen && (
+                <VoucherLeaderEditor
+                  key={`${intake.id}:${state.version}`}
+                  intake={intake}
+                  onDirty={() => setSettingsDirty(true)}
+                  onSaved={(workflow) => {
+                    setIntake({ ...intake, workflow });
+                    setSettingsDirty(false);
+                    setLeaderEditorOpen(false);
+                  }}
+                />
+              )}
+            </section>
+          )}
+          <TravelDocument
+            key={`${intake.id}:${state.version}`}
+            intake={intake}
+            voucher={action === 'واچر' || action === 'Confirmation'}
+          />
+        </>
       )}
       {action === 'رزرواسیون' && (
         <ReservationSettings
@@ -286,7 +318,7 @@ export function TravelWorkflowForm({
           }}
         />
       )}
-      {(action === 'واچر' || action === 'Confirmation') && !closed && (
+      {action === 'Confirmation' && !closed && (
         <VoucherLeaderEditor
           key={`${intake.id}:${state.version}`}
           intake={intake}

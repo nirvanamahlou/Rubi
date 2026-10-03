@@ -1,3 +1,8 @@
+## VOUCHER-SUPPLIER-ZERO-LEADER-PICKER-1003 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-voucher-supplier-zero-leader-picker-1003` from origin/develop. Reserve Reservations voucher projection, preview/PDF renderer, voucher workflow leader picker and focused regressions, plus bounded status entries. Show `SUPPLIER` as `0` in voucher only, without displaying the reservation recipient below; place the broker-scoped Master Data tour leader selector above voucher preview and show its fetched phone. Keep reservation supplier form and saved broker identity unchanged. No API, schema/migration, shared contract, dependency or lockfile change. Reservations owner PC-A; no overlapping active lock found.
+- Delivered voucher-only supplier projection and omitted the lower broker name from preview/PDF. Voucher action now exposes a tour leader button above preview, using the existing broker-scoped Master Data selector and full contact lookup. 20 focused tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated runtime/browser QA or database changes. Bounded locks RELEASED with this commit; PR targets develop.
+
 ## MARKETING-SETTINGS-SYSTEM-1003 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-marketing-settings-system-1003` from `origin/develop@4d67795c`. Owner explicitly requests moving Marketing settings into System Management → Marketing, then push/develop merge. Reserve Marketing Web section/navigation/route, bounded System Management Marketing presentation, focused regressions, and own status/task entries. Prior System Management PC-B work establishes the existing public settings UI; this unit only hosts the existing Marketing settings areas there.
