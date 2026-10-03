@@ -1,4 +1,7 @@
-import { b2bAgreementTermsIssue } from '@nora/contracts';
+import {
+  b2bAgreementTermsIssue,
+  normalizeIranianMobile,
+} from '@nora/contracts';
 import type {
   B2bAgreementTermsV1,
   IamPermissionCode,
@@ -18,6 +21,9 @@ import {
 } from './organization-import';
 
 export interface CooperationDraft {
+  registrationId: string;
+  phoneVerificationGrant?: string | undefined;
+  phoneVerificationExpiresAt?: string | undefined;
   agreementTerms: B2bAgreementTermsV1;
   agreementRequestId?: string;
   legalName: string;
@@ -38,6 +44,7 @@ export interface CooperationDraft {
   pendingGuaranteeDocuments: (StagedOrganizationDocument | null)[];
 }
 export const blankCooperationDraft: CooperationDraft = {
+  registrationId: '',
   agreementTerms: blankAgreementTerms(),
   legalName: '',
   code: '',
@@ -89,8 +96,24 @@ export function cooperationIssue(
       return 'نام نماینده را وارد کنید.';
     if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email))
       return 'ایمیل نماینده معتبر نیست.';
+    if (draft.phone && !normalizeIranianMobile(draft.phone))
+      return 'شماره همراه را به‌شکل 09xxxxxxxxx یا معادل +98/0098 آن وارد کنید.';
   }
-  if (step === 3 && draft.withAgreement) {
+  if (step === 3 && draft.phone) {
+    if (!draft.registrationId) return 'شناسه پیش‌نویس ثبت همکاری معتبر نیست.';
+    if (!draft.branchId) return 'شعبه ثبت شماره را انتخاب کنید.';
+    if (!draft.phoneVerificationGrant)
+      return 'شماره همراه را با کد یک‌بارمصرف تأیید کنید.';
+    const verificationExpiresAt = Date.parse(
+      draft.phoneVerificationExpiresAt ?? '',
+    );
+    if (
+      !Number.isFinite(verificationExpiresAt) ||
+      Date.now() >= verificationExpiresAt
+    )
+      return 'مهلت تأیید شماره تمام شده است؛ کد جدید دریافت کنید.';
+  }
+  if (step === 4 && draft.withAgreement) {
     if (!draft.branchId) return 'شعبه قرارداد را انتخاب کنید.';
     if (!draft.agreementTerms.paymentMethodId)
       return 'روش پرداخت قرارداد را از اطلاعات پایه انتخاب کنید.';
@@ -124,12 +147,23 @@ export class CooperationSaveError extends Error {
     super(message);
   }
 }
+export function normalizeOtpCode(value: string) {
+  return value
+    .replace(/[\u06f0-\u06f9]/g, (digit) =>
+      String(digit.charCodeAt(0) - 0x06f0),
+    )
+    .replace(/[\u0660-\u0669]/g, (digit) =>
+      String(digit.charCodeAt(0) - 0x0660),
+    )
+    .replace(/\D/g, '')
+    .slice(0, 6);
+}
 export async function saveCooperation(
   draft: CooperationDraft,
   permissions: readonly IamPermissionCode[],
   existing?: MasterDataRecord,
 ) {
-  for (const step of [1, 2, 3]) {
+  for (const step of [1, 2, 3, 4]) {
     const issue = cooperationIssue(draft, step);
     if (issue) throw new Error(issue);
   }
@@ -197,18 +231,28 @@ export async function saveCooperation(
         })
       ).data;
     }
-    if (draft.fullName.trim())
-      await agencyClient.saveContact(organization.id, {
-        fullName: draft.fullName.trim(),
-        jobTitle: draft.jobTitle.trim(),
-        phone: draft.phone.trim(),
-        email: draft.email.trim(),
-        preferredChannel: draft.phone.trim()
-          ? 'PHONE'
-          : draft.email.trim()
-            ? 'EMAIL'
-            : 'OTHER',
-      });
+    if (draft.fullName.trim()) {
+      if (draft.phone.trim())
+        await agencyClient.saveVerifiedContact({
+          registrationId: draft.registrationId,
+          branchId: draft.branchId,
+          role: draft.role,
+          organizationId: organization.id,
+          phone: draft.phone,
+          grant: draft.phoneVerificationGrant ?? '',
+          fullName: draft.fullName.trim(),
+          jobTitle: draft.jobTitle.trim(),
+          ...(draft.email.trim() ? { email: draft.email.trim() } : {}),
+        });
+      else
+        await agencyClient.saveContact(organization.id, {
+          fullName: draft.fullName.trim(),
+          jobTitle: draft.jobTitle.trim(),
+          phone: '',
+          email: draft.email.trim(),
+          preferredChannel: draft.email.trim() ? 'EMAIL' : 'OTHER',
+        });
+    }
     if (draft.addressLine.trim())
       await masterDataApi.createOrganizationAddress(organization.id, {
         countryId: draft.countryId,
