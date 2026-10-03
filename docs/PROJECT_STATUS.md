@@ -4302,6 +4302,10 @@ Reservation request table minimum body-row height decreases from 46px to 36px wh
 
 Removed the read-only initial status display from step one of the cooperation registration wizard as requested. Draft/submission lifecycle and validation remain unchanged. No API, schema, dependency, permission, data or runtime change; targeted checks and CI precede authorized develop merge.
 
+## 2026-10-03 — B2B-HIDE-WARNING-COLUMN-1003 — PC-B — READY_FOR_APPROVED_MERGE
+
+The Organizations desktop list no longer displays the warning header or its matching placeholder cell. Credit, remaining header/body alignment, mobile cards and row operations are unchanged. All 133 Organizations tests, scoped lint, Web typecheck and the 55-route production build pass. The first typecheck exposed stale local contracts output after branch reuse; rebuilding current contracts source resolved it without tracked shared/source edits. No API, migration/dependency, data or runtime change. Owner explicitly authorized push and develop merge; normal CI gates the merge. Same native task owner implemented the bounded two-line removal; lead inspected the exact diff. Usage telemetry unavailable.
+
 ## 2026-10-03 — B2B-EXCEL-EXPORT-1003 — PC-B
 
 Organizations directory, commercial and dossier exports now use one attached download target with deferred Blob URL cleanup. Existing XLSX artifacts and authorized server filters are preserved. Regression checks cover workbook text/ZIP contents, exact artifact delivery and download cleanup. No API, schema, permission or dependency changes.
