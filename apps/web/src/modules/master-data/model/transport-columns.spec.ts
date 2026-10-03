@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 import {
   getMasterDataColumnFilters,
@@ -5,6 +8,14 @@ import {
 } from '@nora/contracts';
 import { transportColumns, transportColumnValue } from './transport-columns';
 import { serializeMasterDataListQuery } from '../api/contracts';
+
+const workspaceSource = readFileSync(
+  resolve(
+    process.cwd(),
+    'src/modules/master-data/components/master-data-transportation-workspace.tsx',
+  ),
+  'utf8',
+);
 describe('mockup column coverage', () => {
   it.each([
     'airlines',
@@ -17,7 +28,9 @@ describe('mockup column coverage', () => {
     'bus-companies',
     'bus-types',
   ] as const)('has individual columns and two filters for %s', (resource) => {
-    expect(transportColumns(resource).length).toBeGreaterThanOrEqual(5);
+    expect(transportColumns(resource).length).toBeGreaterThanOrEqual(
+      resource === 'airlines' ? 4 : 5,
+    );
     expect(getMasterDataColumnFilters(resource)).toHaveLength(2);
     expect(new Set(transportColumns(resource).map(([key]) => key)).size).toBe(
       transportColumns(resource).length,
@@ -29,12 +42,27 @@ describe('mockup column coverage', () => {
       'ICAO',
       'ایرلاین',
       'کشور',
-      'لوگو Reference',
-      'Integration Connection',
     ]);
     expect(
       transportColumns('airlines').map(([, label]) => label),
     ).not.toContain('سازمان');
+    for (const hidden of [
+      'لوگو Reference',
+      'Integration Connection',
+      'Version / Audit',
+    ])
+      expect(
+        transportColumns('airlines').map(([, label]) => label),
+      ).not.toContain(hidden);
+    expect(workspaceSource).toContain("{key === 'code' ? (");
+    expect(workspaceSource).toContain('<MasterDataLogoCell record={record} />');
+    expect(workspaceSource).toMatch(
+      /<td className="p-4 text-center">\s*<div className="flex flex-wrap justify-center gap-2">/,
+    );
+    for (const action of ['مشاهده', 'ویرایش'])
+      expect(workspaceSource).toContain(`aria-label={\`${action} \${`);
+    expect(workspaceSource).toContain('<MasterDataDeleteButton');
+    expect(transportColumns('airlines')).toHaveLength(4);
     expect(
       transportColumns('aircraft-types').map(([, label]) => label),
     ).toEqual([
