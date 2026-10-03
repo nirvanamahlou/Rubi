@@ -4,6 +4,8 @@
 
 - Delivered optional-proposal save unblock and password validation feedback, canonical administrator-only reset with explicit JSON header, atomic credential/session/audit writes and separate confirmation form. 84 IAM/HTTP and 34 Web tests, scoped lint, both typechecks and production API/Web builds pass. All 9 isolated PostgreSQL regressions pass; full CI required before owner-authorized merge. Scoped locks release with this reviewed commit. No actual account/password mutation.
 
+- Delivery: implementation `a0a1afd4`, [PR #586](https://github.com/nirvanamahlou/Rubi/pull/586) targets develop. Other PCs should fetch the reviewed merge; no migration/dependency step is introduced by this task. Local rollout follows owner authorization while preserving current LAN origins, document storage and unrelated runtime files.
+
 ## VISA-HIDE-VALIDITY-MODE-1003 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-visa-hide-validity-mode-1003` from origin/develop@d89b4f3a. Reserve Visa form/catalog/model, focused Travel Reference regressions, Travel Services export helper/existing regression required to preserve canonical legacy columns, and own top status entries. Remove only the visible `referenceValidityMode` selector; new forms retain hidden canonical `DAYS`, edits preserve existing modes without submitting an overwrite, and remaining days behavior follows the existing mode. View, table, Excel order, API and backend remain unchanged. No overlapping Web owner; active Hotel API lock is non-overlapping. No API/contract/schema/migration/dependency/runtime/database changes. User authorizes lead-owned push/develop merge after review.

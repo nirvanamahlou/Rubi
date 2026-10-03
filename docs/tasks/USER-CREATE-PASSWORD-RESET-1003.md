@@ -11,3 +11,5 @@ Credentials are Argon2id hashes. Locks follow stable user ordering before sessio
 Producer: PC-A IAM; consumer: PC-A Web user management. Older clients retain existing user/access/status endpoints. Existing self-password change is unchanged. The Web password form has confirmation, policy feedback, double-submit protection and clears credentials after success.
 
 Validation: targeted IAM and HTTP tests, Web password/form/proposal tests, lint, typecheck and affected production builds. Isolated PostgreSQL coverage verifies old access/refresh/login rejection and atomic rollback on audit failure; operational databases are excluded by existing randomized-database/local-target guards.
+
+Validation completed: 84 IAM/HTTP, 34 Web and 9 isolated PostgreSQL tests passed; both typechecks, scoped lint and API/Web production builds passed. Implementation commit `a0a1afd4`; PR #586 targets develop. Isolated test container and anonymous test volume were removed after successful cleanup. No operational data was touched.
