@@ -32,6 +32,23 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('does not disclose a voucher leader contact from another broker', async () => {
+    const repository = {
+      find: vi
+        .fn()
+        .mockImplementation(async (resource: string) =>
+          resource === 'brokers'
+            ? { isActive: true }
+            : { isActive: true, brokerId: 'different-broker' },
+        ),
+      recordLeaderContactRead: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    await expect(
+      service.voucherLeaderContact('broker-1', 'leader-1', actor),
+    ).rejects.toMatchObject({ status: 404 });
+    expect(repository.recordLeaderContactRead).not.toHaveBeenCalled();
+  });
   it('rejects an inverted list date range before querying persistence', async () => {
     const repository = { list: vi.fn() } as unknown as MasterDataRepository;
     const service = new MasterDataService(repository);

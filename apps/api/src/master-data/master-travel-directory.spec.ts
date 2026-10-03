@@ -2,6 +2,35 @@ import { describe, expect, it, vi } from 'vitest';
 import { MasterTravelDirectory } from './master-travel-directory';
 import type { MasterDataService } from './master-data.service';
 
+it('creates an inline voucher leader under the selected broker and its city', async () => {
+  const detail = vi.fn().mockImplementation(async (resource: string) => ({
+    data:
+      resource === 'brokers'
+        ? { status: 'active', attributes: { cityId: 'city-1' } }
+        : { status: 'active', name: 'Tehran' },
+  }));
+  const create = vi.fn().mockResolvedValue({ data: { id: 'leader-1' } });
+  const directory = new MasterTravelDirectory({ detail, create } as never);
+  const actor = { userId: 'synthetic-user' } as never;
+  await directory.addVoucherLeader(
+    'broker-1',
+    undefined,
+    'Synthetic Leader',
+    '+989000000000',
+    actor,
+  );
+  expect(create).toHaveBeenCalledWith(
+    'leaders',
+    expect.objectContaining({
+      brokerId: 'broker-1',
+      cityId: 'city-1',
+      name: 'Synthetic Leader',
+      primaryPhone: '+989000000000',
+    }),
+    actor,
+  );
+});
+
 describe('explicit manifest template public boundary', () => {
   const record = {
     id: 'template',

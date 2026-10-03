@@ -579,6 +579,9 @@ export const voucherFlagKeys = [
   'specialRoom',
 ] as const;
 export interface VoucherSettingsV1 {
+  /** Registered supplier and leader used for this immutable output revision. */
+  brokerId?: string;
+  leaderId?: string;
   text: Record<(typeof voucherTextKeys)[number], string> & {
     contractPartyName?: string;
   };
