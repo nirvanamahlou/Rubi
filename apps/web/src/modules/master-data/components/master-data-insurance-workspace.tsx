@@ -89,6 +89,8 @@ import {
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
 
+export const INSURER_PLAN_PAGE_SIZE = 10;
+
 export function bindInsurancePlanParent(
   values: Record<string, string>,
   insurerId: string,
@@ -235,7 +237,7 @@ function MasterDataInsurerPlans({
           sortBy: 'name',
           sortDirection: 'asc',
           page,
-          pageSize: 5,
+          pageSize: INSURER_PLAN_PAGE_SIZE,
         },
         generation,
         (candidate) => candidate === requestGeneration.current,
@@ -479,7 +481,7 @@ function MasterDataInsurerPlans({
             قبلی
           </Button>
           <Button
-            disabled={page * 5 >= total}
+            disabled={page * INSURER_PLAN_PAGE_SIZE >= total}
             onClick={() => setPage((value) => value + 1)}
             size="sm"
             variant="outline"

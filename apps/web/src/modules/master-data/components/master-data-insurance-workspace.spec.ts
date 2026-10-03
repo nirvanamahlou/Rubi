@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   bindInsurancePlanParent,
   fetchInsurerPlanPage,
+  INSURER_PLAN_PAGE_SIZE,
   refreshInsurancePlanViews,
 } from './master-data-insurance-workspace';
 
@@ -36,6 +37,9 @@ describe('insurance workspace', () => {
     expect(source).toContain('aria-controls={`insurer-plans-${record.id}`}');
     expect(source).toContain('<MasterDataLogoCell record={plan} />');
     expect(source).toContain("attribute(plan, 'coverageNames')");
+    expect(INSURER_PLAN_PAGE_SIZE).toBeGreaterThanOrEqual(10);
+    expect(source).toContain('pageSize: INSURER_PLAN_PAGE_SIZE');
+    expect(source).toContain('page * INSURER_PLAN_PAGE_SIZE >= total');
     expect(
       bindInsurancePlanParent({ name: 'طرح', insurerId: 'forged' }, 'parent'),
     ).toEqual({
@@ -62,7 +66,7 @@ describe('insurance workspace', () => {
       {
         insurerId: 'insurer-1',
         page: 1,
-        pageSize: 5,
+        pageSize: INSURER_PLAN_PAGE_SIZE,
         search: '',
         status: 'all',
         sortBy: 'name',
