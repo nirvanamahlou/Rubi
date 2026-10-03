@@ -4349,3 +4349,7 @@ User creation now saves the current explicit access selections even while option
 84 focused IAM/HTTP tests and 34 Web tests pass; scoped lint, both typechecks and production API/Web builds (55 routes) pass. All 9 isolated PostgreSQL password/reset regressions pass, including old login/access/refresh rejection, administrator session preservation and audit-failure rollback. User authorizes CI-gated develop merge. See [task handoff](tasks/USER-CREATE-PASSWORD-RESET-1003.md).
 
 - Delivery: implementation `a0a1afd4`, [PR #586](https://github.com/nirvanamahlou/Rubi/pull/586) targets develop. Other PCs should fetch the reviewed merge; no migration/dependency step is introduced by this task. Local rollout follows owner authorization while preserving current LAN origins, document storage and unrelated runtime files.
+
+## 2026-10-03 — SALES-DASHBOARD-NEGATIVE-BALANCE-1003 — PC-A — READY_FOR_REVIEW
+
+Sales dashboard aggregation now accepts legitimate negative computed balances from overpayment while rejecting negative payment input. The failing regression was reproduced before the fix; all 88 Sales API tests, scoped lint, formatting, Contracts/Database builds, API typecheck and production build pass. Prisma Client was regenerated locally without database access. No schema, permission, dependency or operational-data change.

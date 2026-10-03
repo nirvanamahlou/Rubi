@@ -68,7 +68,14 @@ function unitsDecimal(value: bigint): string {
 
 export function sumSalesDecimals(values: readonly string[]): string {
   return unitsDecimal(
-    values.reduce((sum, value) => sum + decimalUnits(value), 0n),
+    values.reduce(
+      (sum, value) =>
+        sum +
+        (value.startsWith('-')
+          ? -decimalUnits(value.slice(1))
+          : decimalUnits(value)),
+      0n,
+    ),
   );
 }
 
