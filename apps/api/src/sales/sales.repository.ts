@@ -1,4 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
+import {
+  Inject,
+  Injectable,
+  Optional,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import type {
   SalesContractCreateRequest,
   SalesContractListQuery,
@@ -55,6 +61,9 @@ function endOfDay(value: string): Date {
 export class SalesRepository {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(SalesBuyerContactCrypto)
+    private readonly buyerCrypto?: SalesBuyerContactCrypto,
   ) {}
 
   findById(id: string): Promise<SalesContractRow | null> {
@@ -340,6 +349,16 @@ export class SalesRepository {
     });
   }
 
+  private buyerContactJson(
+    input: NonNullable<SalesContractCreateRequest['buyerContact']>,
+  ): Prisma.InputJsonValue {
+    if (!this.buyerCrypto)
+      throw new InternalServerErrorException(
+        'Buyer contact encryption is unavailable.',
+      );
+    return json(this.buyerCrypto.protect(input));
+  }
+
   async create(
     input: SalesContractCreateRequest,
     customerNameSnapshot: string,
@@ -363,7 +382,11 @@ export class SalesRepository {
             assignedUserId: input.assignedUserId ?? null,
             customerId: input.customerId,
             payerCustomerId: input.payerCustomerId ?? input.customerId,
-            customerNameSnapshot,
+            customerNameSnapshot:
+              input.buyerContact?.name.trim() ?? customerNameSnapshot,
+            buyerContact: input.buyerContact
+              ? this.buyerContactJson(input.buyerContact)
+              : Prisma.DbNull,
             tripType: input.tripType,
             originId: input.originId,
             destinationId: input.destinationId,
@@ -544,7 +567,15 @@ export class SalesRepository {
           data: {
             customerId: input.customerId,
             payerCustomerId: input.payerCustomerId ?? input.customerId,
-            customerNameSnapshot,
+            customerNameSnapshot:
+              input.buyerContact?.name.trim() ?? customerNameSnapshot,
+            ...(input.buyerContact !== undefined
+              ? {
+                  buyerContact: input.buyerContact
+                    ? this.buyerContactJson(input.buyerContact)
+                    : Prisma.DbNull,
+                }
+              : {}),
             assignedUserId: input.assignedUserId ?? null,
             tripType: input.tripType,
             originId: input.originId,

@@ -38,7 +38,7 @@ describe('Master Data Operations table alignment', () => {
     ['master-data-accommodation-workspace.tsx', 0, 1, 1],
     ['master-data-finance-workspace.tsx', 3, 0, 3],
     ['master-data-geography-workspace.tsx', 0, 1, 1],
-    ['master-data-insurance-workspace.tsx', 0, 3, 1],
+    ['master-data-insurance-workspace.tsx', 0, 4, 2],
     ['master-data-live-workspace.tsx', 1, 0, 1],
     ['master-data-suppliers-workspace.tsx', 0, 2, 2],
     ['master-data-transportation-workspace.tsx', 1, 0, 1],

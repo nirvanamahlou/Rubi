@@ -214,7 +214,7 @@ export function TravelDocument({
       {enabled && <DocumentPreview>{sheet}</DocumentPreview>}
       {printing &&
         createPortal(
-          <div data-travel-document>
+          <div data-travel-document style={{ display: 'none' }}>
             <style media="print">
               {`@page{size:A4;margin:0}body>:not([data-travel-document]){display:none!important}html,body{overflow:visible!important;height:auto!important;margin:0!important} [data-travel-document]{display:block!important;width:100%!important;zoom:1!important}`}
             </style>

@@ -46,7 +46,7 @@ import {
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { CreateRoleDto } from './dto/create-role.dto';
 import type { UpdateUserAccessDto } from './dto/update-user-access.dto';
-import { assertStrongPassword } from './password-policy';
+import { assertStrongPassword, passwordPolicyErrors } from './password-policy';
 import { classifyRefreshFailure } from './refresh-token-policy';
 import type { RequestMetadata } from './iam.types';
 import type { IamStepUpPort } from './iam-step-up.port';
@@ -276,6 +276,108 @@ export class IamService implements IamStepUpPort {
       currentPassword,
       newPassword,
       metadata,
+    );
+  }
+
+  async resetUserPassword(
+    userId: string,
+    newPassword: string,
+    actor: AuthenticatedActor,
+    metadata: RequestMetadata,
+  ): Promise<void> {
+    if (!actor.permissions.includes('iam.users.manage') || !actor.sessionId)
+      throw new ForbiddenException(
+        'تغییر رمز کاربران فقط برای مدیر سامانه مجاز است.',
+      );
+    if (!(await this.isSystemAdministrator(actor)))
+      throw new ForbiddenException(
+        'تغییر رمز کاربران فقط برای مدیر سامانه مجاز است.',
+      );
+    if (userId === actor.userId)
+      throw new BadRequestException(
+        'برای تغییر رمز خودتان از بخش تغییر رمز حساب استفاده کنید.',
+      );
+    const errors = passwordPolicyErrors(newPassword);
+    if (errors.length || newPassword.length > 200)
+      throw new BadRequestException({
+        code: 'IAM_PASSWORD_POLICY',
+        message: errors.join(' ') || 'رمز باید حداکثر ۲۰۰ نویسه باشد.',
+      });
+    const passwordHash = await hash(newPassword, {
+      type: 2,
+      memoryCost: 65_536,
+      timeCost: 3,
+      parallelism: 1,
+    });
+    await this.database.client.$transaction(
+      async (tx) => {
+        // Stable user ordering also protects simultaneous administrator resets.
+        for (const id of [actor.userId, userId].sort())
+          await lockIamUser(tx, id);
+        const administrator = await tx.user.findUnique({
+          where: { id: actor.userId },
+          select: {
+            status: true,
+            roles: {
+              where: { role: { isActive: true } },
+              select: { role: { select: { code: true } } },
+            },
+          },
+        });
+        const now = new Date();
+        if (
+          administrator?.status !== UserStatus.ACTIVE ||
+          !administrator.roles.some(({ role }) => role.code === 'administrator')
+        )
+          throw new ForbiddenException(
+            'تغییر رمز کاربران فقط برای مدیر سامانه مجاز است.',
+          );
+        const session = await tx.session.findFirst({
+          where: {
+            id: actor.sessionId,
+            userId: actor.userId,
+            status: SessionStatus.ACTIVE,
+            expiresAt: { gt: now },
+          },
+        });
+        if (!session) throw new UnauthorizedException();
+        const target = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true },
+        });
+        if (!target) throw new NotFoundException('کاربر یافت نشد.');
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            passwordHash,
+            passwordChangedAt: now,
+            failedLoginAttempts: 0,
+            lockedUntil: null,
+          },
+        });
+        await tx.session.updateMany({
+          where: {
+            userId,
+            status: { in: [SessionStatus.ACTIVE, SessionStatus.ROTATED] },
+          },
+          data: {
+            status: SessionStatus.REVOKED,
+            revokedAt: now,
+            revokedReason: 'administrator-password-reset',
+          },
+        });
+        await tx.auditEvent.create({
+          data: {
+            ...metadata,
+            actorUserId: actor.userId,
+            action: 'iam.user.password.reset',
+            entityType: 'User',
+            entityId: userId,
+            outcome: AuditOutcome.SUCCESS,
+          },
+        });
+      },
+      { timeout: 10000 },
     );
   }
 
@@ -1120,7 +1222,12 @@ export class IamService implements IamStepUpPort {
   ) {
     const profile = await this.managedAccess(dto, actor);
     await this.assertRolesAssignable(dto.roleIds, actor);
-    assertStrongPassword(dto.password);
+    const passwordErrors = passwordPolicyErrors(dto.password);
+    if (passwordErrors.length || dto.password.length > 200)
+      throw new BadRequestException({
+        code: 'IAM_PASSWORD_POLICY',
+        message: passwordErrors.join(' ') || 'رمز باید حداکثر ۲۰۰ نویسه باشد.',
+      });
     const username = dto.username.trim().toLowerCase();
     const email = dto.email?.trim().toLowerCase() || null;
     const exists = await this.database.client.user.findFirst({

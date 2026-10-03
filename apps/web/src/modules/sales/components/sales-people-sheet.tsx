@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Plus, Check, Search } from 'lucide-react';
 import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
-import { FormField } from '@/components/ui/form-controls';
+import { Input, FormField } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import {
   CustomerEntrySheet,
@@ -153,7 +153,25 @@ export function SalesPeopleSheet({
           throw reason;
         detail = (await customersApi.detail(person.id)).data;
       }
-      change(editPeopleRow(draft, key, selectedPeopleRow(detail)));
+      let next = editPeopleRow(draft, key, selectedPeopleRow(detail));
+      if (
+        (draft.mode === 'person' && key === 'primary') ||
+        (draft.mode === 'first-passenger' && key === 'p0')
+      ) {
+        const phone = selectedPeopleRow(detail).values.phone;
+        next = {
+          ...next,
+          buyerContact: {
+            name: detail.displayName,
+            phone: phone.includes('*') ? '' : phone,
+            address:
+              detail.addresses?.find((address) => address.isPrimary)?.label ??
+              '',
+            postalCode: '',
+          },
+        };
+      }
+      change(next);
       setLookup(null);
       requestAnimationFrame(() => {
         document.getElementById('sales-entry-' + key + '-first-name')?.focus();
@@ -175,7 +193,11 @@ export function SalesPeopleSheet({
     onBusyChange(true);
     setError('');
     try {
-      const result = await saveSalesPeopleDraft(state, draft, onDraftChange);
+      const result = await saveSalesPeopleDraft(
+        state,
+        { ...draft, buyerContact },
+        onDraftChange,
+      );
       onDraftChange(result.draft);
       onConfirmed(result.patch);
       setConfirmed(true);
@@ -188,7 +210,52 @@ export function SalesPeopleSheet({
       onBusyChange(false);
     }
   };
-  const keys = slots;
+  const buyerKey = draft.mode === 'person' ? 'primary' : 'p0';
+  const buyerRow = peopleRow(draft, buyerKey);
+  const buyerContact = draft.buyerContact ?? {
+    name:
+      draft.mode === 'organization'
+        ? (draft.organization?.displayName ?? '')
+        : (buyerRow.person?.displayName ??
+          [buyerRow.values.firstName, buyerRow.values.lastName]
+            .filter(Boolean)
+            .join(' ')),
+    phone: buyerRow.values.phone.includes('*') ? '' : buyerRow.values.phone,
+    address:
+      buyerRow.profile?.addresses?.find((address) => address.isPrimary)
+        ?.label ?? '',
+    postalCode: '',
+  };
+  const changeBuyer = (field: keyof typeof buyerContact, value: string) => {
+    const normalized =
+      field === 'phone' || field === 'postalCode'
+        ? value.replace(/[۰-۹٠-٩]/g, (digit) =>
+            String(
+              '۰۱۲۳۴۵۶۷۸۹'.includes(digit)
+                ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)
+                : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit),
+            ),
+          )
+        : value;
+    let next: SalesPeopleDraft = {
+      ...draft,
+      buyerContact: { ...buyerContact, [field]: normalized },
+    };
+    if (draft.mode === 'person' && !buyerRow.person && field === 'name') {
+      const [firstName = '', ...last] = normalized.trim().split(/\s+/);
+      next = editPeopleRow(next, 'primary', {
+        ...buyerRow,
+        values: { ...buyerRow.values, firstName, lastName: last.join(' ') },
+      });
+    }
+    if (draft.mode === 'person' && field === 'phone')
+      next = editPeopleRow(next, 'primary', {
+        ...peopleRow(next, 'primary'),
+        values: { ...peopleRow(next, 'primary').values, phone: normalized },
+      });
+    change(next);
+  };
+  const keys = draft.mode === 'person' ? ['primary', ...slots] : slots;
   const rows: CustomerEntryRow[] = keys.map((key) => {
     const row = peopleRow(draft, key);
     const label =
@@ -325,6 +392,12 @@ export function SalesPeopleSheet({
               normalizeSalesPeopleDraft({
                 ...draft,
                 mode: 'first-passenger',
+                buyerContact: {
+                  name: peopleRow(draft, 'p0').person?.displayName ?? '',
+                  phone: '',
+                  address: '',
+                  postalCode: '',
+                },
                 ...(draft.rows.primary
                   ? { previousSeparateCustomer: draft.rows.primary }
                   : {}),
@@ -340,14 +413,24 @@ export function SalesPeopleSheet({
           size="sm"
           variant={draft.mode === 'organization' ? 'primary' : 'outline'}
           disabled={busy}
-          onClick={() => change({ ...draft, mode: 'organization' })}
+          onClick={() =>
+            change({
+              ...draft,
+              mode: 'organization',
+              buyerContact: {
+                name: draft.organization?.displayName ?? '',
+                phone: '',
+                address: '',
+                postalCode: '',
+              },
+            })
+          }
         >
           حقوقی / آژانس
         </Button>
         {draft.mode !== 'organization' ? (
           <p className="text-sm text-primary">
-            قرارداد به نام مسافر اول ثبت می‌شود؛ اطلاعات او را فقط یک‌بار وارد
-            کنید.
+            مشتری طرف حساب را در بخش بالای جدول مسافران مشخص کنید.
           </p>
         ) : null}
       </div>
@@ -409,6 +492,12 @@ export function SalesPeopleSheet({
             onSelected={(person) =>
               change({
                 ...draft,
+                buyerContact: {
+                  name: person.displayName,
+                  phone: '',
+                  address: '',
+                  postalCode: '',
+                },
                 organization: {
                   id: person.id,
                   displayName: person.displayName,
@@ -539,8 +628,105 @@ export function SalesPeopleSheet({
           </div>
         </div>
       ) : null}
+      <section
+        className="grid gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4"
+        aria-label="مشخصات مشتری طرف حساب"
+      >
+        <h3 className="font-bold sm:col-span-2">مشتری و طرف حساب قرارداد</h3>
+        {draft.mode !== 'organization' ? (
+          <label className="flex items-center gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={draft.mode === 'first-passenger'}
+              disabled={busy}
+              onChange={(event) =>
+                change({
+                  ...draft,
+                  mode: event.target.checked ? 'first-passenger' : 'person',
+                  separateCustomer: !event.target.checked,
+                  buyerContact: {
+                    name: '',
+                    phone: '',
+                    address: '',
+                    postalCode: '',
+                  },
+                  rows: {
+                    ...draft.rows,
+                    primary: event.target.checked
+                      ? peopleRow(draft, 'p0')
+                      : (draft.previousSeparateCustomer ?? {
+                          values: emptyPeopleValues(),
+                        }),
+                  },
+                })
+              }
+            />
+            مشتری طرف حساب همان مسافر اول است
+          </label>
+        ) : null}
+        {draft.mode === 'person' ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => setLookup('primary')}
+          >
+            <Search className="size-4" />
+            انتخاب مشتری موجود
+          </Button>
+        ) : null}
+        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
+          <FormField label="نام مشتری" id="sales-buyer-name">
+            <Input
+              id="sales-buyer-name"
+              value={buyerContact.name}
+              maxLength={200}
+              disabled={busy}
+              onChange={(event) => changeBuyer('name', event.target.value)}
+            />
+          </FormField>
+          <FormField label="شماره مشتری" id="sales-buyer-phone">
+            <Input
+              id="sales-buyer-phone"
+              type="tel"
+              dir="ltr"
+              value={buyerContact.phone}
+              maxLength={16}
+              disabled={busy}
+              onChange={(event) => changeBuyer('phone', event.target.value)}
+            />
+          </FormField>
+          <FormField label="آدرس مشتری" id="sales-buyer-address">
+            <Input
+              id="sales-buyer-address"
+              value={buyerContact.address}
+              maxLength={1000}
+              disabled={busy}
+              onChange={(event) => changeBuyer('address', event.target.value)}
+            />
+          </FormField>
+          <FormField label="کد پستی مشتری" id="sales-buyer-postal">
+            <Input
+              id="sales-buyer-postal"
+              inputMode="numeric"
+              dir="ltr"
+              value={buyerContact.postalCode}
+              maxLength={10}
+              disabled={busy}
+              onChange={(event) =>
+                changeBuyer('postalCode', event.target.value)
+              }
+            />
+          </FormField>
+        </div>
+        <p className="text-xs text-muted-foreground sm:col-span-2">
+          نام و نام خانوادگی کامل مشتری را وارد کنید. این مشخصات در قرارداد
+          ذخیره می‌شود و مشتری طرف حساب خواهد بود.
+        </p>
+      </section>
+
       <CustomerEntrySheet
-        rows={rows}
+        rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
         showPassportExpiry={passportIdentity}
         visibleFields={visibleEntryFields}
         columnLabels={
