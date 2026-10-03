@@ -70,4 +70,29 @@ describe('dossier browser history', () => {
       expect(history.pushState).not.toHaveBeenCalled();
     },
   );
+  it('restores the removed access section to the dossier home without adding history', () => {
+    const state = {
+      noraOrganizationDossier: {
+        organizationId: 'org',
+        screen: 'access',
+        tab: 'history',
+        creditTab: 'temporary',
+      },
+    };
+    const history = { state, pushState: vi.fn() };
+    vi.stubGlobal('window', {
+      history,
+      location: { href: 'http://localhost:3100/organizations' },
+    });
+    const dossierHome = {
+      organizationId: 'org',
+      screen: 'home',
+      tab: 'profile',
+      creditTab: 'policy',
+    };
+
+    expect(readDossierHistory(state)).toEqual(dossierHome);
+    pushDossierHistory(dossierHome);
+    expect(history.pushState).not.toHaveBeenCalled();
+  });
 });
