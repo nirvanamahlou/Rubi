@@ -1,3 +1,7 @@
+## 2026-10-03 — LEADER-HIDE-DOCUMENTS-1003 — PC-B — READY_FOR_REVIEW
+
+The Leader list now omits only the visible Documents header and its placeholder cell, leaving nine aligned columns. Visa guide documents and all Leader form, View, export, API, database and document behavior remain unchanged. Focused regression (5), all 464 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-03 — SALES-REFERENCE-EXCEL-EXPORT-1003 — PC-B — READY_FOR_REVIEW
 
 Excel download for both Acquaintance Methods and Sales Channels now submits the exact unique canonical columns `code`, `name`, `englishName`, `description`, `displayOrder`, `status` and `updatedAt`. The existing resource and effective filter payload, export permission, API validation and workbook contract remain unchanged. A safe in-memory diagnostic built and unzipped both resource workbooks, confirming seven header cells, seven populated data cells and the expected sample values. Focused regression (10), all 464 Master Data Web tests, the API XLSX fixture (2), scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed, and bounded locks release with the scoped commit.
