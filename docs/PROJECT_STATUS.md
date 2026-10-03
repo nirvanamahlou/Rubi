@@ -4276,6 +4276,9 @@ Shared ticket preview/PDF has Tehran Milad/Azadi and world-landmark silhouettes,
 ## 2026-10-01 — RESERVATION-BUNDLED-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
 Reservations purchase now prepares one atomic hotel-and-transfer request per contract. Outbound/return transfers share a broker and a per-passenger all-directions price; the hotel panel shows its name, assigned passenger age categories and nightly rates. Finance groups the resulting rows under the contract number and displays each purchase and totals by currency, while preserving individual settlement records. The schema change is additive and prior single purchases remain readable. Focused API/Web tests, scoped lint, both typechecks, Prisma validation and the six-task production build pass. No operational database or runtime change; apply migration before API rollout. User requested develop merge after CI.
+## 2026-10-03 — LOGIN-HIGGSFIELD-BACKGROUND-1003 — PC-A — MEDIA_BLOCKED
+
+Prepared optional single-play login video support with matching poster fallback and reduced-motion source suppression. Higgsfield rejected Seedance 2.5, Mini, Kling 2.6 and Grok Lite for account-plan access, including alternatives quoting exactly the available 10 credits; no generation job or video exists. User chose Higgsfield only and to retain a draft. Sixteen login tests, scoped lint, Web typecheck and the 55-route build pass. NOORA compositing and desktop/mobile visual acceptance remain pending. Current login background and local runtime remain unchanged; no merge before verified media. See [task handoff](tasks/LOGIN-HIGGSFIELD-BACKGROUND-1003.md).
 
 ### TICKET-NUMBER-CHARTER-FIX-1003 — PC-A
 
@@ -4292,6 +4295,20 @@ In the selected-contract panel, «فرم رزواسیون» now sits under «ع�
 ## 2026-10-03 — RESERVATION-SUPPLIER-PDF-1003 — PC-A — READY_FOR_REVIEW
 
 فرم رزواسیون پیش از چاپ/دانلود نام کارگزار گیرنده را در نسخهٔ گردش‌کار ثبت می‌کند و نام در SUPPLIER هر دو پیش‌نمایش و PDF نمایش داده می‌شود؛ مسیر دانلود مستقیم نیز بدون نام ثبت‌شده 409 می‌دهد. متن راهنما در تنظیمات فرم ویرایش‌پذیر و پیش‌فرض آن Persian است. فیلد راهنمای خلاصه، ستون LEG پرواز و نام برند از پایین فرم ارسالی حذف شدند؛ واچر بدون تغییر ماند. خلاصه بوکینگ فشرده شد و PDF واقعی Chrome برای شش مسافر مصنوعی در یک صفحه A4 بررسی شد. موتور PDF مسیر Chrome/Edge را خودکار پیدا می‌کند، نبود فونت سفارشی را تحمل می‌کند و برای تکمیل فایل روی Windows صبر می‌کند. 17 تست هدفمند و lint فایل‌های تغییرکرده موفق‌اند. پس از بازسازی قراردادهای مشترک، Typecheck سراسری Web نیز بدون خطا موفق شد. بدون Migration، داده عملیاتی یا تغییر مجوز.
+
+## 2026-10-03 — LOGIN-HIGGSFIELD-BACKGROUND-1003 — LOCAL_PREVIEW
+
+Successful Higgsfield composite replaces the previously blocked media draft: exact NOORA lettering, upper-right aircraft, silent one-shot 12-second playback, static poster and reduced-motion fallback. User requested local rollout. Feature branch incorporates origin/develop; no authentication, API, schema or data change. PR #555 contains the final media revision. Sixteen login tests and scoped lint pass.
+
+## 2026-10-03 — LOGIN-TAILWIND-FOLLOWUP-1003 — PC-A
+
+Updated the local login video to a TAILWIND passenger aircraft and exact cloud-textured NOORA. Final Higgsfield composite is 12 seconds at 1280x720; one-shot playback, matching poster and mobile layout verified. 16 login tests and scoped lint pass. All aircraft vapor was later removed at the user's direction. The final smokeless revision is in PR #555.
+
+## 2026-10-03 — LOGIN-ENGINE-VAPOR-1003 — PC-A
+
+Login media now preserves the approved TAILWIND aircraft while emitting animated, independently drifting vapor from both engines; the previous rigid trail was removed. NOORA is centered above the login form. Local assets and cache versions updated; 16 login tests pass. No auth/API/schema/dependency/data changes.
+
+Follow-up visual correction: replace the sparse puffs with denser white continuous turbulent engine plumes. Same approved airliner, centered NOORA and one-shot silent playback. Full Web build/TypeScript, lint and 16 login tests passed; final media rendered and visually inspected.
 ## 2026-10-03 — RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
 
 Supplier selection now precedes the reservation preview and uses the existing paginated reservation-scoped active broker directory. Reference loading preserves successful lists when another resource fails; loaded pickers remain searchable. Reference pickers no longer wrap interactive options in a label, preventing label activation from reopening selection. The current and historical forms share one preview slot; the print portal is hidden on screen and exposed only by print CSS. Four focused suites / 14 tests pass. Scoped source lint and the 55-route production build (including TypeScript) pass; no migration, dependency, API contract or operational data changes. PR #578 targets develop; user authorizes merge after CI. Scoped source locks release with the reviewed commit. Primary checkout and the running login-video worktree remain untouched.
@@ -4345,6 +4362,7 @@ Removed the fetched-at/access/date-range metadata line from the Customer Affairs
 
 واچر هتل نام کارگزار را در SUPPLIER و Board او را در TRANSFER نشان می‌دهد. پیش از صدور، کاربر کارگزار و تورلیدر وابسته به او را انتخاب می‌کند یا تورلیدر را با تلفن در اطلاعات پایهٔ همان کارگزار ثبت می‌کند. شمارهٔ کامل تنها در مسیر مجوزدار سند واچر خوانده و ممیزی می‌شود. فیلدهای علامت‌خوردهٔ خلاصه، پرواز، مسافران، توضیحات و پایین واچر حذف و خلاصه فشرده شد. رابطهٔ nullable تورلیدر به کارگزار با migration افزایشی اضافه شده؛ رکوردهای تاریخی بدون کارگزار باقی می‌مانند. Migration عملیاتی اجرا نشده و پیش از rollout API باید اعمال شود.
 
+LOGIN-NO-SMOKE-1003: removed all aircraft vapor from the login video at the user's request. Approved aircraft and centered NOORA retained. Native 12-second video render and mid-flight visual QA passed; local media endpoint serves HTTP 200. No source/API/data/migration changes.
 ## 2026-10-03 — RESERVATION-SEARCH-BUTTON-1003 — PC-A
 
 Reservations inbox includes a search submit button and native Enter submission. Keyword entry is applied on submission; existing status/service/date/sort filters continue to apply immediately, and clear resets both entry and filters to the default previous-month window. Default bounds now respect the selected contract/received/travel date basis instead of silently forcing contract date. Search normalizes Persian/Arabic digits and Yeh/Kaf consistently across supported fields. Twenty-two foundation regressions cover combined filters, invalid dates, normalized keywords, default date-basis behavior and accessible submit controls. No API/schema/migration/dependency/data change; review PR precedes integration.

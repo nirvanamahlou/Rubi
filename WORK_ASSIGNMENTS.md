@@ -5055,6 +5055,14 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-bundled-purchase` from current `origin/develop`. Reserve Reservations purchase API/Web, Finance inbox/payment presentation, travel/finance shared contracts, additive Prisma migration and bounded tests/docs. Producer Reservations and consumers Finance/Web coordinate through optional batch fields so existing single-purchase clients remain compatible. PC-A owns this migration; no dependency or operational-data change. User explicitly requests develop merge after checks.
 - One reservation submission atomically records hotel and transfer rows with a shared batch ID. Both transfer directions use one broker and one per-passenger amount; Finance shows the contract-number group, individual purchase lines and currency totals. Hotel name, passenger ages and per-night hotel prices are visible in the purchase form. Focused API/Web tests, scoped lint, API/Web typechecks, Prisma validation and six-task production build pass. No operational database or runtime change; apply the additive migration before API rollout.
 
+## LOGIN-HIGGSFIELD-BACKGROUND-1003 — PC-A — LOCAL_PREVIEW
+
+- Resumed with successful Higgsfield composite. User now authorizes local rollout. Reserve login page wiring, responsive background CSS, local media assets and bounded Web port 3100 restart; preserve API/data and other worktrees. No develop merge requested for this delivery.
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-login-higgsfield-background-1003` from `origin/develop@4cdb5d4e`. Reserve only login background component/CSS, bounded login tests, eventual aviation media assets and this task's status entries. IAM belongs to PC-A; earlier login locks are released. Preserve primary checkout changes. No API, authentication, schema, dependency or migration changes.
+- User requests a realistic 10–12s silent Higgsfield aviation background with vapor NOORA, one-shot playback, final-frame hold, responsive poster fallback and reduced-motion support. Seedance 2.5 submission was rejected for plan entitlement; the 10-credit Seedance Mini alternative was also rejected. No generation job exists. Prepare optional playback infrastructure while keeping the current background active; media production and visual acceptance remain blocked by the connected account.
+- User later signed in with another Higgsfield account and completed the video. The final TAILWIND airliner and centered NOORA were approved; all vapor was removed at the user's direction. The final silent 12-second video and matching poster are wired into login with one-shot playback, final-frame hold, responsive fallback and reduced-motion handling. Sixteen tests, lint, Web typecheck and 55-route build pass; desktop/mobile playback was verified. PR #555 is ready for develop merge after CI.
+
 ## TICKET-NUMBER-CHARTER-FIX-1003 — PC-A — IN_PROGRESS
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-ticket-number-charter-fix-1003 from origin/develop@4cdb5d4e. Reserve Reservations ticket identity service/UI, Ticket Catalog public supply projection if needed, shared ticket logo layout and focused regression tests, bounded status docs and local rollout. Fix confirmed Prisma void-result advisory-lock failure, automatic charter numbering and logo overlap. Previous source locks released; no migration/dependency or passenger backfill. Preserve unrelated primary/runtime edits.
@@ -5074,6 +5082,22 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 ## RESERVATION-SUPPLIER-PDF-1003 — PC-A — READY_FOR_REVIEW
 
 - Branch codex/pc-a-reservation-form-supplier-pdf-1003 from origin/develop. Scope: Reservations supplier form/settings, PDF render/runtime, focused tests and bounded docs. No migration, dependencies, operational data or shared runtime. PC-A owns this slice until handoff.
+
+## LOGIN-HIGGSFIELD-BACKGROUND-1003 — local handoff
+
+- Local preview verified on port 3100; 16 tests, scoped lint and production build with TypeScript pass. Desktop/mobile verified; video ends at 12 seconds without looping. Final smokeless video is in PR #555; user requests develop merge after CI. API/data unchanged.
+
+## LOGIN-TAILWIND-FOLLOWUP-1003 — PC-A — IN_PROGRESS
+
+- Resume existing login feature branch for the user's TAILWIND passenger-aircraft and vapor NOORA correction. Reserve only two background media assets, login cache-version references/tests, task/status entries and local visual verification. Prior login locks released; no auth/API/schema/dependency changes. Preserve generated next-env.d.ts and other worktrees.
+
+- TAILWIND local revision delivered; media/form separation and mobile verified. 16 tests, lint, TypeScript and 55-route build pass. Scoped source locks released with commit; no merge. Further camera-angle clarification remains with the user.
+
+## LOGIN-ENGINE-VAPOR-1003 — PC-A — IN_PROGRESS
+
+- Reserve existing login background assets and version references/tests plus bounded docs. Preserve approved TAILWIND aircraft; replace rigid trail with independently emitted engine vapor and center NOORA over form. Local preview authorized by ongoing request. No API/auth/schema/dependency work. Previous media locks released.
+
+- Completed with continuous white engine plumes after user's visual feedback, preserving approved aircraft and centering NOORA. Rendered frames, HTTP media delivery, 16 tests, lint and 55-route build/TypeScript verified. Source locks released with commit; no merge.
 
 ## SALES-CONTRACT-COLUMNS-NUMBERING-1003 — PC-A — READY_FOR_REVIEW
 
@@ -5140,6 +5164,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Owner request 2026-10-03: show supplier name on hotel voucher; remove marked voucher-only summary/flight/passenger/notice/footer text; show transfer Board; select a tour leader and full phone from the selected broker's Master Data or add that leader here for the broker before voucher issuance. Compact booking summary and merge to develop.
 - Branch `codex/pc-a-voucher-broker-leader-1003` from `origin/develop@380174c9`; COMPUTER_ID=PC-A. Scope: Reservations voucher workflow/UI/renderers/tests; additive Master Data leader→broker relation and public Reservations-facing leader list/create contract, Prisma migration, shared Travel optional IDs, bounded docs. Producer Master Data and consumer Reservations are coordinated in this one owner-requested slice; PC-B's active leader document-visibility UI files are excluded. Existing leader phone encryption and audit policy must be preserved. Migration Owner/schema/shared-contract/central-doc lock: PC-A/VOUCHER-BROKER-LEADER-1003 until commit. No dependency/lockfile or operational data change; historical leaders remain broker-unassigned and historical vouchers readable.
 - Focused API/Web regression tests and Prisma validation passed; full typecheck passed. Production build and lint are the final checks before owner-requested develop merge. Additive migration is not applied to operational data and must run before deploying the API.
+
+## LOGIN-NO-SMOKE-1003 — PC-A — IN_PROGRESS
+
+- User requests removal of all aircraft smoke. Reserve only the login public video and bounded task/status notes on existing feature branch. Preserve approved aircraft, centered NOORA, poster and playback code. No auth/API/schema/dependency change. Prior login scopes released.
+
+- Completed: both smoke layers removed; native media render and mid-flight QA passed, local HTTP 200. No executable source change; scoped media locks released with commit.
 
 ## RESERVATION-SEARCH-BUTTON-1003 — PC-A — READY_FOR_REVIEW
 
