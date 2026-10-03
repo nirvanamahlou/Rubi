@@ -4296,3 +4296,7 @@ Removed the fetched-at/access/date-range metadata line from the Customer Affairs
 ## 2026-10-03 — RESERVATION-SEARCH-BUTTON-1003 — PC-A
 
 Reservations inbox includes a search submit button and native Enter submission. Keyword entry is applied on submission; existing status/service/date/sort filters continue to apply immediately, and clear resets both entry and filters to the default previous-month window. Default bounds now respect the selected contract/received/travel date basis instead of silently forcing contract date. Search normalizes Persian/Arabic digits and Yeh/Kaf consistently across supported fields. Twenty-two foundation regressions cover combined filters, invalid dates, normalized keywords, default date-basis behavior and accessible submit controls. No API/schema/migration/dependency/data change; review PR precedes integration.
+
+## 2026-10-03 — LOGIN-NORA-TITLE-1003 — PC-A
+
+عنوان نمایان صفحهٔ ورود در دسکتاپ و موبایل «سامانه یکپارچه آژانس نورا» است. عنوان تب موجود «ورود امن نورا» حفظ شد. تغییر فقط متن UI است؛ API، داده، مجوز، Migration و وابستگی تغییر نکردند.

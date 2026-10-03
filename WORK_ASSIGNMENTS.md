@@ -5080,4 +5080,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-reservation-search-button-1003 from origin/develop. Reserve Reservations foundation workspace/model and focused tests, bounded docs. Add explicit search submit with keyboard Enter; verify combined filters and requested date basis, preserving default calendar-month bounds, permissions and existing row presentation. No active overlapping owner; prior stylesheet work merged and released. No API/schema/migration/dependency/data change.
 
-- Delivered accessible search form/submit (Enter), separate pending keyword and immediate existing non-keyword filters, plus reset of both keyword and filters. Fixed date-basis fallback silently overriding selected travel/received dates in the default month window. Search normalizes Persian/Arabic digits and Yeh/Kaf across searchable fields. Twenty-two foundation tests pass, including combined filters, invalid range and all date bases; scoped lint verified. Typecheck/build refresh shared-contract artifacts locally; no source contract or data change. Source locks release with scoped commit; PR targets develop for review.
+- Delivered accessible search form/submit (Enter), separate pending keyword and immediate existing non-keyword filters, plus reset of both keyword and filters. Fixed date-basis fallback silently overriding selected travel/received dates in the default month window. Search normalizes Persian/Arabic digits and Yeh/Kaf across searchable fields. Twenty-two foundation tests pass, including combined filters, invalid range and all date bases; scoped lint verified. Typecheck and production build pass after refreshing shared-contract artifacts locally; no source contract or data change. Source locks release with scoped commit; PR targets develop for review.
+
+## LOGIN-NORA-TITLE-1003 — PC-A — READY_FOR_REVIEW
+
+- Owner request 2026-10-03: show «سامانه یکپارچه آژانس نورا» on the login page and merge to develop. `COMPUTER_ID=PC-A`; branch `codex/pc-a-login-nora-title-1003` from `origin/develop@4323e71f`.
+- Reserve only `apps/web/src/app/login/page.tsx` and bounded work/status entries. IAM login presentation belongs to PC-A; no active overlapping login source owner found. No API, schema, migration, dependency, permission or operational-data change. User explicitly authorizes the develop merge after checks.
+- Existing login-page tests, Web lint, typecheck, production build, Prettier and diff checks pass. CI gates the owner-requested develop merge; no local runtime or operational data changed.
+
+- Owner explicitly authorized develop merge and local rollout of PR #574 after reviewable implementation. CI gates integration; no database migration is required.
