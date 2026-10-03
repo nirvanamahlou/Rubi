@@ -493,13 +493,6 @@ export function OrganizationsWorkspace() {
           className="mb-5 flex flex-col gap-4 border-primary/25 bg-primary/[0.04] p-5 text-foreground xl:flex-row xl:items-center xl:justify-between"
           role="region"
         >
-          <div className="min-w-0">
-            <p className="text-lg font-bold">ثبت آژانس و مشتری سازمانی</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              اطلاعات سازمان، نمایندگان و شرایط همکاری را در یک جریان مرحله‌ای
-              وارد کنید.
-            </p>
-          </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button
               disabled={
