@@ -133,7 +133,6 @@ export function reservationWindowQuery(query: Query, now: string): Query {
   if (!today) return query;
   return {
     ...query,
-    dateBasis: 'createdAt',
     fromDate: subtractCalendarMonths(today, 1),
     toDate: today,
   };
@@ -162,8 +161,18 @@ export function accessibleRows(
     return [];
   return rows.filter((row) => access.branchIds.includes(row.branchId));
 }
+function normalizeSearch(value: string) {
+  return value
+    .normalize('NFKC')
+    .replace(/[۰-۹]/g, (digit) => String(digit.charCodeAt(0) - 0x06f0))
+    .replace(/[٠-٩]/g, (digit) => String(digit.charCodeAt(0) - 0x0660))
+    .replace(/ي/g, 'ی')
+    .replace(/ك/g, 'ک')
+    .trim()
+    .toLocaleLowerCase('fa');
+}
 export function queryRows(rows: readonly RequestView[], query: Query) {
-  const search = query.search.trim().toLocaleLowerCase('fa');
+  const search = normalizeSearch(query.search);
   const priority = { UNSPECIFIED: -1, NORMAL: 0, HIGH: 1, URGENT: 2 };
   const dateError = validateDateRange(query.fromDate, query.toDate);
   const filtered = rows.filter(
@@ -185,7 +194,7 @@ export function queryRows(rows: readonly RequestView[], query: Query) {
         r.mealServiceName ?? '',
         r.hotelNotes ?? '',
         ...(r.serviceTitles ?? []),
-      ].some((v) => v.toLocaleLowerCase('fa').includes(search)),
+      ].some((v) => normalizeSearch(v).includes(search)),
   );
   filtered.sort((a, b) => {
     const order =
