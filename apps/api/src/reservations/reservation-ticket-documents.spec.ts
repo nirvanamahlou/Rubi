@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createDatabaseClient } from '@nora/database';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { ReservationTicketDocumentsService } from './reservation-ticket-documents';
 const actor = {
@@ -18,7 +19,11 @@ function fixture(automatic = true) {
   let counter = 100000n;
   const tx = {
     $queryRaw: vi.fn(async (sql: { strings: readonly string[] }) =>
-      sql.strings.join('').includes('nextval') ? [{ value: counter++ }] : [],
+      sql.strings.join('').includes('nextval')
+        ? [{ value: counter++ }]
+        : sql.strings.join('').includes('SELECT 1 AS locked FROM')
+          ? [{ locked: 1 }]
+          : Promise.reject(new Error('Cannot deserialize PostgreSQL void')),
     ),
     reservationIntake: {
       findFirst: vi.fn(async () => ({ workflowRevisions: [] })),
@@ -67,7 +72,7 @@ function fixture(automatic = true) {
   vi.spyOn(service, 'choices').mockResolvedValue([
     { customerId: 'passenger', automatic, document: null },
   ]);
-  return { service, tx, rows };
+  return { service, tx, rows, database };
 }
 describe('persisted ticket numbering', () => {
   it('replays concurrent company issuance with the same six-digit number and original UTC issue time', async () => {
@@ -138,5 +143,84 @@ describe('persisted ticket numbering', () => {
       service.issue('a', { customerId: 'other' }, actor),
     ).rejects.toThrow('تخصیص');
     expect(tx.$queryRaw).not.toHaveBeenCalled();
+  });
+});
+
+describe('ticket supply numbering choices', () => {
+  it.each([
+    ['COMPANY', true],
+    ['FLOATING', false],
+    ['API', false],
+    [null, false],
+  ])('uses saved %s supply for automatic=%s', async (supply, automatic) => {
+    const catalog = { documentSupply: vi.fn().mockResolvedValue(supply) };
+    const workflow = {
+      detail: vi.fn().mockResolvedValue({
+        workflow: { supplierStatus: 'PENDING' },
+        snapshot: {
+          serviceSelections: [],
+          ticketSelections: [
+            {
+              offerId: 'offer',
+              serviceClientKey: 'out',
+              direction: 'OUTBOUND',
+              departureAt: '2026-10-03T10:00:00Z',
+            },
+          ],
+          passengerIds: ['passenger'],
+          passengerAssignments: [
+            { customerId: 'passenger', serviceClientKeys: ['out'] },
+          ],
+        },
+        ticketDocuments: [],
+      }),
+    };
+    const service = new ReservationTicketDocumentsService(
+      {} as never,
+      workflow as never,
+      catalog as never,
+    );
+    expect(await service.choices('intake', actor)).toEqual([
+      { customerId: 'passenger', automatic, document: null },
+    ]);
+    expect(catalog.documentSupply).toHaveBeenCalledWith(
+      'offer',
+      actor.branchIds,
+    );
+  });
+});
+
+const testDatabaseUrl = process.env.TICKET_DOCUMENTS_TEST_DATABASE_URL;
+describe.skipIf(!testDatabaseUrl)('ticket issuance locks on PostgreSQL', () => {
+  it('registers a manual number through real Prisma advisory locks without void decoding', async () => {
+    if (
+      !testDatabaseUrl ||
+      !['localhost', '127.0.0.1'].includes(new URL(testDatabaseUrl).hostname)
+    )
+      throw new Error('Local test database required');
+    const client = createDatabaseClient(testDatabaseUrl);
+    const { service, tx, database } = fixture(false);
+    const rollback = new Error('ROLLBACK_ONLY');
+    try {
+      await expect(
+        client.$transaction(async (pgTx) => {
+          database.client.$transaction.mockImplementationOnce(async (fn) =>
+            fn({ ...tx, $queryRaw: pgTx.$queryRaw.bind(pgTx) } as typeof tx),
+          );
+          expect(
+            (
+              await service.issue(
+                'intake',
+                { customerId: 'passenger', number: '250415' },
+                actor,
+              )
+            ).number,
+          ).toBe('250415');
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+    } finally {
+      await client.$disconnect();
+    }
   });
 });

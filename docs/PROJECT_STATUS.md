@@ -4216,6 +4216,11 @@ Shared ticket preview/PDF has Tehran Milad/Azadi and world-landmark silhouettes,
 ## 2026-10-01 — RESERVATION-BUNDLED-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
 Reservations purchase now prepares one atomic hotel-and-transfer request per contract. Outbound/return transfers share a broker and a per-passenger all-directions price; the hotel panel shows its name, assigned passenger age categories and nightly rates. Finance groups the resulting rows under the contract number and displays each purchase and totals by currency, while preserving individual settlement records. The schema change is additive and prior single purchases remain readable. Focused API/Web tests, scoped lint, both typechecks, Prisma validation and the six-task production build pass. No operational database or runtime change; apply migration before API rollout. User requested develop merge after CI.
+
+### TICKET-NUMBER-CHARTER-FIX-1003 — PC-A
+
+Fixed ticket identity issuance returning PostgreSQL void through Prisma: both advisory locks now return a supported integer column. COMPANY (charter) remains automatic and FLOATING/API/unknown supply remains manual. Airline and agency raster logos fit within the header without overlapping passenger details. Ten API regressions including rollback-only real PostgreSQL locks passed; Web focused tests, lint/typechecks and both production builds passed. Synthetic two-leg A4 PDF visually verified as one page. Two explicitly confirmed local legacy offers classified as COMPANY with actor audit; no passenger ticket number issued during repair. No migration/dependency change.
+
 ## 2026-10-03 — SERVICE-PURCHASE-FACTOR-1003 — PC-A
 
 Hotel and transfer purchase entry now uses one base amount and factor per service. Contract check-in/check-out supplies nights, with exact four-decimal arithmetic and a single final rounding. API independently recalculates and rejects altered totals before atomic Finance submission. Calculation inputs and resolved nights are preserved in the existing nullable JSON purchase breakdown; legacy passenger arrays remain readable and previous clients remain accepted. No migration, dependencies or operational data changes. Scoped tests/lint, both typechecks and Web/API production builds verified. Owner requests develop merge after checks.
