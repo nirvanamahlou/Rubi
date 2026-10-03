@@ -208,6 +208,7 @@ export function CustomerEntrySheet({
   disabled = false,
   showPassportExpiry = false,
   visibleFields,
+  columnOrder,
   columnLabels,
 }: {
   rows: readonly CustomerEntryRow[];
@@ -217,9 +218,19 @@ export function CustomerEntrySheet({
   showPassportExpiry?: boolean;
   /** Lets a host show the identity fields required for its workflow. */
   visibleFields?: readonly EntryField[];
+  /** Optional leading fields; all other visible columns retain their default order. */
+  columnOrder?: readonly EntryField[];
   columnLabels?: Partial<Record<EntryField, string>>;
 }) {
-  const visibleColumns = columns.filter(
+  const orderedColumns = columnOrder
+    ? [
+        ...columns
+          .filter(([field]) => columnOrder.includes(field))
+          .sort(([a], [b]) => columnOrder.indexOf(a) - columnOrder.indexOf(b)),
+        ...columns.filter(([field]) => !columnOrder.includes(field)),
+      ]
+    : columns;
+  const visibleColumns = orderedColumns.filter(
     ([field]) =>
       (field !== 'passportExpiryDate' || showPassportExpiry) &&
       (!visibleFields || visibleFields.includes(field)),
