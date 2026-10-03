@@ -4373,6 +4373,12 @@ User creation now saves the current explicit access selections even while option
 
 Sales dashboard aggregation now accepts legitimate negative computed balances from overpayment while rejecting negative payment input. The failing regression was reproduced before the fix; all 88 Sales API tests, scoped lint, formatting, Contracts/Database builds, API typecheck and production build pass. Prisma Client was regenerated locally without database access. No schema, permission, dependency or operational-data change.
 
+## 2026-10-03 — TRANSFER-PASSENGER-PRICING-1003 — PC-A
+
+Transfer purchase now calculates editable chargeable passenger count times unit price, independent of stay nights. Optional split mode stores each transfer leg with its own broker/currency/count/price in one atomic financial batch. Coverage, server totals, CAS and idempotency remain validated; historical purchase amounts are preserved. No migration/dependency/database changes. See docs/tasks/TRANSFER-PASSENGER-PRICING-1003.md for compatibility and validation.
+
+Validation completed: full Reservations API/Web regressions, shared arithmetic, final focused purchase tests, scoped lint/typechecks and affected production builds pass (55 Web routes). Bounded locks released; PR/develop merge follows owner authorization and CI.
+
 ## 2026-10-03 — PROFILE-AVATAR-SAVE-1003 — PC-B
 
 Personal profile photo upload now accepts the edited name and contact details and links the stored document through the existing IAM profile service before responding. The Web form consumes the returned profile, eliminating its second save request after photo upload. Older file-only clients remain supported. No schema, migration, permission, dependency, or operational-data change. Local port 3100 was unavailable during verification, so live account behavior remains unverified; focused tests and build checks gate delivery.
