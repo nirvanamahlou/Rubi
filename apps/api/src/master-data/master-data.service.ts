@@ -553,6 +553,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
   leaders: [
     'code',
     'name',
+    'brokerId',
     'englishName',
     'cityId',
     'languages',
@@ -1130,6 +1131,56 @@ export class MasterDataService {
     const row = await this.repository.find(resource, id);
     if (!row) throw new NotFoundException('رکورد اطلاعات پایه یافت نشد.');
     return { data: toMasterDataRecord(resource, row) };
+  }
+
+  async voucherLeaders(brokerId: string) {
+    const broker = await this.repository.find('brokers', brokerId);
+    if (!broker?.isActive)
+      throw new NotFoundException('کارگزار فعال یافت نشد.');
+    const leaders = await this.repository.leadersForBroker(brokerId);
+    return {
+      data: leaders.map((leader) => ({
+        id: leader.id,
+        name: leader.name,
+        phoneMasked: leader.primaryPhoneMasked,
+      })),
+    };
+  }
+
+  async voucherLeaderContact(
+    brokerId: string,
+    leaderId: string,
+    actor: AuthenticatedActor,
+    requestedBranch?: string,
+  ) {
+    const broker = await this.repository.find('brokers', brokerId);
+    const leader = await this.repository.find('leaders', leaderId);
+    if (!broker?.isActive || !leader?.isActive || leader.brokerId !== brokerId)
+      throw new NotFoundException('تورلیدر این کارگزار یافت نشد.');
+    const phone = this.contactCrypto.decrypt('phone', {
+      encrypted:
+        typeof leader.primaryPhoneEncrypted === 'string'
+          ? leader.primaryPhoneEncrypted
+          : null,
+      encryptionIv:
+        typeof leader.primaryPhoneEncryptionIv === 'string'
+          ? leader.primaryPhoneEncryptionIv
+          : null,
+      encryptionAuthTag:
+        typeof leader.primaryPhoneEncryptionAuthTag === 'string'
+          ? leader.primaryPhoneEncryptionAuthTag
+          : null,
+      encryptionKeyVersion:
+        typeof leader.primaryPhoneEncryptionKeyVersion === 'number'
+          ? leader.primaryPhoneEncryptionKeyVersion
+          : null,
+    });
+    await this.repository.recordLeaderContactRead({
+      leaderId,
+      actorUserId: actor.userId,
+      actorBranchId: branchOf(actor, requestedBranch),
+    });
+    return { data: { id: leaderId, name: String(leader.name), phone } };
   }
 
   async unmaskOrganizationContact(
@@ -1903,6 +1954,7 @@ export class MasterDataService {
     if (resource === 'insurance-plans' && data.maximumAge === '')
       data.maximumAge = null;
     if (resource === 'leaders' && data.cityId === '') data.cityId = null;
+    if (resource === 'leaders' && data.brokerId === '') data.brokerId = null;
     if (
       (resource === 'cip-services' || resource === 'visa-services') &&
       data.supplierId === ''
@@ -2837,6 +2889,11 @@ export class MasterDataService {
       data.starRating = null;
     }
     if (resource === 'leaders') {
+      if (typeof data.brokerId === 'string') {
+        const broker = await this.repository.find('brokers', data.brokerId);
+        if (!broker?.isActive)
+          throw new BadRequestException('کارگزار فعال برای تورلیدر یافت نشد.');
+      }
       if (data.cityId === null)
         throw new BadRequestException('شهر فعالیت لیدر الزامی است.');
       for (const [field, label] of [

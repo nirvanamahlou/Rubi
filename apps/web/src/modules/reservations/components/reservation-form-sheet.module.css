@@ -294,6 +294,9 @@
 }
 .bookingSection .summary {
   background: #fff;
+  min-height: 36px;
+  padding: 4px 10px;
+  gap: 5px;
 }
 
 .footer [data-reservation-footer] {

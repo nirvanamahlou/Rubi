@@ -21,6 +21,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { LegalEntitiesModule } from '../legal-entities/legal-entities.module';
 import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import { MasterDataModule } from '../master-data/master-data.module';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { TravelWorkflowService } from './travel-workflow.service';
 import {
   FinanceDeliveryModule,
@@ -40,6 +41,7 @@ import {
   Param,
   Post,
   ForbiddenException,
+  BadRequestException,
   NotFoundException,
   Get,
   Header,
@@ -88,7 +90,82 @@ export class ReservationRequestsController {
     @Optional()
     @Inject(ReservationTicketDocumentsService)
     private readonly ticketDocuments?: ReservationTicketDocumentsService,
+    @Optional()
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
   ) {}
+  @Get(':id/voucher-brokers')
+  @Header('Cache-Control', 'private, no-store')
+  async voucherBrokers(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('search') search = '',
+    @Query('page') page = '1',
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    await this.workflow.detail(id, req.actor.branchIds);
+    const pageNumber = Number(page);
+    if (
+      !Number.isSafeInteger(pageNumber) ||
+      pageNumber < 1 ||
+      pageNumber > 1000
+    )
+      throw new BadRequestException('صفحه معتبر نیست.');
+    return this.directory!.voucherBrokers(search.slice(0, 100), pageNumber);
+  }
+
+  @Get(':id/voucher-brokers/:brokerId/leaders')
+  @Header('Cache-Control', 'private, no-store')
+  async voucherLeaders(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('brokerId', ParseUUIDPipe) brokerId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    await this.workflow.detail(id, req.actor.branchIds);
+    return this.directory!.voucherLeaders(brokerId);
+  }
+
+  @Get(':id/voucher-brokers/:brokerId/leaders/:leaderId/contact')
+  @Header('Cache-Control', 'private, no-store')
+  async voucherLeaderContact(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('brokerId', ParseUUIDPipe) brokerId: string,
+    @Param('leaderId', ParseUUIDPipe) leaderId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException();
+    await this.workflow.detail(id, req.actor.branchIds);
+    return this.directory!.voucherLeaderContact(brokerId, leaderId, req.actor);
+  }
+
+  @Post(':id/voucher-brokers/:brokerId/leaders')
+  @Header('Cache-Control', 'private, no-store')
+  async addVoucherLeader(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('brokerId', ParseUUIDPipe) brokerId: string,
+    @Body() input: { name?: unknown; phone?: unknown },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.documents.manage'))
+      throw new ForbiddenException();
+    const intake = await this.workflow.detail(id, req.actor.branchIds);
+    const name = typeof input?.name === 'string' ? input.name.trim() : '';
+    const phone = typeof input?.phone === 'string' ? input.phone.trim() : '';
+    if (!name || name.length > 160 || !/^\+?[0-9\s().-]{7,30}$/.test(phone))
+      throw new BadRequestException('نام و شمارهٔ معتبر تورلیدر لازم است.');
+    return this.directory!.addVoucherLeader(
+      brokerId,
+      intake.snapshot.hotelSelection?.cityId,
+      name,
+      phone,
+      req.actor,
+    );
+  }
+
   @Get(':id/ticket-documents')
   @Header('Cache-Control', 'private, no-store')
   async ticketDocumentChoices(
@@ -204,6 +281,28 @@ export class ReservationRequestsController {
     @Body() input: TravelWorkflowCommandV1,
     @Req() req: AuthenticatedRequest,
   ) {
+    if (
+      input.action === 'VOUCHER_SETTINGS' &&
+      input.voucherSettings?.brokerId
+    ) {
+      await this.workflow.detail(id, req.actor.branchIds);
+      const settings = input.voucherSettings;
+      const brokerId = settings.brokerId!;
+      const brokerName = await this.directory!.voucherBrokerName(brokerId);
+      settings.text.broker = brokerName;
+      if (settings.leaderId) {
+        if (!req.actor.permissions.includes('reservations.documents.manage'))
+          throw new ForbiddenException();
+        const { data: leader } = await this.directory!.voucherLeaderContact(
+          brokerId,
+          settings.leaderId,
+          req.actor,
+        );
+        settings.text.leaderName = leader.name;
+        settings.text.leaderPhone = leader.phone || '';
+        settings.flags.tourLeader = true;
+      }
+    }
     return { data: await this.workflow.update(id, input, req.actor) };
   }
   @Get(':id/delivery')

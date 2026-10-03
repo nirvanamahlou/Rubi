@@ -17,6 +17,13 @@ export function validateVoucherSettings(
   const v = value as VoucherSettingsV1;
   if (!v.text || !v.numbers || !v.flags || !Array.isArray(v.passengers))
     return fail();
+  const uuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (
+    (v.brokerId !== undefined && !uuid.test(v.brokerId)) ||
+    (v.leaderId !== undefined && (!v.brokerId || !uuid.test(v.leaderId)))
+  )
+    return fail();
   if (
     v.text.contractPartyName !== undefined &&
     (typeof v.text.contractPartyName !== 'string' ||
@@ -106,6 +113,8 @@ export function validateVoucherSettings(
       return fail();
   }
   return {
+    ...(v.brokerId ? { brokerId: v.brokerId } : {}),
+    ...(v.leaderId ? { leaderId: v.leaderId } : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((k) => [k, v.text[k].trim()]),

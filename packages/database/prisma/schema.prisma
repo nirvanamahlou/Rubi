@@ -2456,6 +2456,7 @@ model MasterBroker {
   country             MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
   city                MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
   services            MasterBrokerService[]
+  leaders             MasterLeader[]
   primaryContact      MasterOrganizationContact? @relation("BrokerPrimaryContact", fields: [primaryContactId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([primaryContactId, organizationId])
@@ -2468,6 +2469,7 @@ model MasterBroker {
 model MasterLeader {
   id                               String      @id @default(uuid()) @db.Uuid
   cityId                           String?     @db.Uuid
+  brokerId                         String?     @db.Uuid
   code                             String      @unique @db.VarChar(32)
   name                             String      @db.VarChar(160)
   englishName                      String?     @db.VarChar(160)
@@ -2498,9 +2500,11 @@ model MasterLeader {
   createdAt                        DateTime    @default(now()) @db.Timestamptz(3)
   updatedAt                        DateTime    @updatedAt @db.Timestamptz(3)
   city                             MasterCity? @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  broker                           MasterBroker? @relation(fields: [brokerId], references: [id], onDelete: Restrict)
 
   @@index([isActive, name])
   @@index([cityId, isActive, name])
+  @@index([brokerId, isActive, name])
   @@map("master_leaders")
 }
 

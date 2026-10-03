@@ -18,6 +18,7 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';
+import { VoucherLeaderEditor } from './voucher-leader-editor';
 
 export async function travelRequest<T>(
   path: string,
@@ -291,6 +292,17 @@ export function TravelWorkflowForm({
           }}
         />
       )}
+      {(action === 'واچر' || action === 'Confirmation') && !closed && (
+        <VoucherLeaderEditor
+          key={`${intake.id}:${state.version}`}
+          intake={intake}
+          onDirty={() => setSettingsDirty(true)}
+          onSaved={(workflow) => {
+            setIntake({ ...intake, workflow });
+            setSettingsDirty(false);
+          }}
+        />
+      )}
       {settingsDirty && (
         <p role="status">
           تنظیمات تغییر کرده؛ قبل از ارسال یا صدور ذخیره کنید.
@@ -417,6 +429,8 @@ export function TravelWorkflowForm({
                 <Button
                   disabled={
                     busy ||
+                    settingsDirty ||
+                    !state.voucherSettings?.brokerId ||
                     state.supplierStatus !== 'REQUESTED' ||
                     (!state.insuranceIssued && !acknowledge)
                   }
@@ -439,6 +453,7 @@ export function TravelWorkflowForm({
                 disabled={
                   busy ||
                   settingsDirty ||
+                  !state.voucherSettings?.brokerId ||
                   !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)
                 }
