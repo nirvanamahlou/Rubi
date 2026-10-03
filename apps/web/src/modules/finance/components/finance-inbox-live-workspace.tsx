@@ -1,0 +1,1680 @@
+import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  BarChart3,
+  Building2,
+  CheckCircle2,
+  ChevronLeft,
+  CircleAlert,
+  Clock3,
+  FileUp,
+  Landmark,
+  ListFilter,
+  PlusCircle,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  ShieldCheck,
+  TrendingUp,
+  WalletCards,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { FinanceHistoryPanel } from './finance-history-panel';
+import { ticketPurchaseTotal } from '../model/ticket-purchase-total';
+import type {
+  FinanceInboxItemV1,
+  FinanceInboxSource,
+  FinanceInboxV1,
+  FinanceBankOptionV1,
+  FinancePaymentMethodOptionV1,
+  FinanceRequestStatus,
+  FinanceSettlementAccountKind,
+  FinanceSettlementAccountV1,
+  FinanceCustomerDocumentDeliveryBasisV1,
+} from '@nora/contracts';
+
+import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
+import { MoneyInput } from '@/components/ui/money-input';
+import {
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Textarea,
+} from '@/components/ui/form-controls';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/overlays';
+import { Alert, Badge, Card, EmptyState } from '@/components/ui/surfaces';
+import {
+  FinanceInboxApiError,
+  financeInboxApi,
+} from '../api/finance-inbox-api';
+import { documentsApi } from '@/modules/documents/api/client';
+
+const sourceLabels: Record<FinanceInboxSource, string> = {
+  SALES: 'فروش',
+  HR: 'منابع انسانی',
+  RESERVATIONS: 'رزرواسیون',
+  PURCHASES: 'خرید و تأمین',
+};
+const statusLabels: Partial<Record<FinanceRequestStatus, string>> = {
+  NEW: 'جدید',
+  UNDER_REVIEW: 'در حال بررسی',
+  APPROVED: 'پاسخ داده‌شده',
+  READY_FOR_PAYMENT: 'آماده پرداخت',
+  PAYING: 'در حال پرداخت',
+  PAID: 'پرداخت‌شده',
+  RECEIPT_CONFIRMED: 'دریافت تأییدشده',
+  CORRECTION_REQUIRED: 'نیازمند اصلاح',
+  REJECTED: 'ردشده',
+  CANCELLED: 'لغوشده',
+};
+const closed = new Set<FinanceRequestStatus>([
+  'APPROVED',
+  'PAID',
+  'RECEIPT_CONFIRMED',
+  'REJECTED',
+  'CANCELLED',
+]);
+
+function faDate(value: string | null) {
+  if (!value) return 'بدون سررسید';
+  return new Date(value).toLocaleString('fa-IR', {
+    timeZone: 'Asia/Tehran',
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+}
+
+function money(item: FinanceInboxItemV1) {
+  if (!item.amount) return 'بدون مبلغ مالی';
+  return `${item.amount.amount.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')} ${item.amount.currencyCode}`;
+}
+
+function sourceTone(source: FinanceInboxSource) {
+  return {
+    SALES:
+      'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/40 dark:text-blue-200',
+    HR: 'border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-200',
+    RESERVATIONS:
+      'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200',
+    PURCHASES:
+      'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200',
+  }[source];
+}
+
+export function FinanceInboxLiveWorkspace() {
+  const [revision, setRevision] = useState(0);
+  const [state, setState] = useState<{
+    revision: number;
+    data: FinanceInboxV1 | null;
+    error: string;
+  } | null>(null);
+  const [search, setSearch] = useState('');
+  const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
+  const [status, setStatus] = useState<'ALL' | 'OPEN' | 'CLOSED'>('OPEN');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [accounts, setAccounts] = useState<
+    readonly FinanceSettlementAccountV1[]
+  >([]);
+  const [methods, setMethods] = useState<
+    readonly FinancePaymentMethodOptionV1[]
+  >([]);
+  const [methodsError, setMethodsError] = useState('');
+  const [banks, setBanks] = useState<readonly FinanceBankOptionV1[]>([]);
+  const [actionItem, setActionItem] = useState<FinanceInboxItemV1 | null>(null);
+  const [actionKind, setActionKind] = useState<
+    'APPROVE' | 'CORRECTION_REQUIRED' | 'PAYMENT' | 'TICKET_COST' | null
+  >(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState('');
+  const [reason, setReason] = useState('');
+  const [issueDocumentDelivery, setIssueDocumentDelivery] = useState(false);
+  const [documentDeliveryBasis, setDocumentDeliveryBasis] =
+    useState<FinanceCustomerDocumentDeliveryBasisV1>('AFTER_RECEIPT');
+  const [documentDeliveryReason, setDocumentDeliveryReason] =
+    useState('تأیید دریافت مشتری');
+  const [documentDeliverySecondApprover, setDocumentDeliverySecondApprover] =
+    useState('');
+  const [documentDeliveryExpiresAt, setDocumentDeliveryExpiresAt] =
+    useState('');
+  const [accountId, setAccountId] = useState('');
+  const [paymentMethodId, setPaymentMethodId] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
+  const [exchangeRate, setExchangeRate] = useState('');
+  const [paidAt, setPaidAt] = useState(new Date().toISOString());
+  const [paymentReference, setPaymentReference] = useState('');
+  const [ticketReceiptFile, setTicketReceiptFile] = useState<File | null>(null);
+  const [ticketSeatCount, setTicketSeatCount] = useState('');
+  const [ticketUnitCost, setTicketUnitCost] = useState('');
+  const [ticketCurrency, setTicketCurrency] = useState('IRR');
+  const [accountDialog, setAccountDialog] = useState(false);
+  const [accountTitle, setAccountTitle] = useState('');
+  const [accountKind, setAccountKind] =
+    useState<FinanceSettlementAccountKind>('BANK');
+  const [accountBankId, setAccountBankId] = useState('');
+  const [accountMaskedId, setAccountMaskedId] = useState('');
+  const loading = state?.revision !== revision;
+  const data = loading ? null : state.data;
+  const error = loading ? '' : state.error;
+  const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
+
+  useEffect(() => {
+    let active = true;
+    void financeInboxApi
+      .list()
+      .then((value) => {
+        if (active) setState({ revision, data: value, error: '' });
+      })
+      .catch((reason: unknown) => {
+        if (active)
+          setState({
+            revision,
+            data: null,
+            error:
+              reason instanceof FinanceInboxApiError
+                ? reason.message
+                : 'دریافت کارتابل مالی ناموفق بود.',
+          });
+      });
+    void Promise.allSettled([
+      financeInboxApi.accounts(),
+      financeInboxApi.methods(),
+      financeInboxApi.banks(),
+    ]).then(([accountResult, methodResult, bankResult]) => {
+      if (!active) return;
+      if (accountResult.status === 'fulfilled')
+        setAccounts(accountResult.value);
+      if (methodResult.status === 'fulfilled') {
+        setMethods(methodResult.value);
+        setMethodsError(
+          methodResult.value.length
+            ? ''
+            : 'روش پرداخت خروجی فعالی تعریف نشده است؛ در اطلاعات پایه روش پرداخت را فعال کنید.',
+        );
+      } else {
+        setMethods([]);
+        setMethodsError(
+          methodResult.reason instanceof FinanceInboxApiError
+            ? methodResult.reason.message
+            : 'دریافت روش‌های پرداخت ناموفق بود.',
+        );
+      }
+      if (bankResult.status === 'fulfilled') setBanks(bankResult.value);
+    });
+    return () => {
+      active = false;
+    };
+  }, [revision]);
+
+  const items = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('fa');
+    return (data?.items ?? []).filter((item) => {
+      const matchesSource = source === 'ALL' || item.source === source;
+      const matchesStatus =
+        status === 'ALL' ||
+        (status === 'OPEN'
+          ? !closed.has(item.status)
+          : closed.has(item.status));
+      const createdAt = new Date(item.createdAt).getTime();
+      const matchesFrom =
+        !fromDate || createdAt >= new Date(fromDate).getTime();
+      const matchesTo = !toDate || createdAt <= new Date(toDate).getTime();
+      const haystack = [
+        item.title,
+        item.sourceReference,
+        item.contractReference,
+        item.partyDisplaySnapshot,
+        item.description,
+        item.requesterDisplaySnapshot,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase('fa');
+      return (
+        matchesSource &&
+        matchesStatus &&
+        matchesFrom &&
+        matchesTo &&
+        (!query || haystack.includes(query))
+      );
+    });
+  }, [data, fromDate, search, source, status, toDate]);
+  const dashboard = useMemo(() => {
+    const openItems = items.filter((item) => !closed.has(item.status));
+    const receiptItems = openItems.filter((item) => item.source === 'SALES');
+    const paymentItems = openItems.filter((item) => item.source !== 'SALES');
+    const dueItems = [...openItems]
+      .filter((item) => item.dueAt)
+      .sort((left, right) =>
+        (left.dueAt ?? '').localeCompare(right.dueAt ?? ''),
+      )
+      .slice(0, 3);
+    const sourceSummary = (Object.keys(sourceLabels) as FinanceInboxSource[])
+      .map((key) => ({
+        source: key,
+        count: openItems.filter((item) => item.source === key).length,
+      }))
+      .filter((item) => item.count > 0);
+    return {
+      receiptCount: receiptItems.length,
+      paymentCount: paymentItems.length,
+      dueItems,
+      sourceSummary,
+      activeAccountCount: accounts.filter((account) => account.isActive).length,
+    };
+  }, [accounts, items]);
+  const selected =
+    items.find(({ id }) => id === selectedId) ?? items[0] ?? null;
+  const openCount = items.filter((item) => !closed.has(item.status)).length;
+  const overdueCount = items.filter(
+    (item) =>
+      !closed.has(item.status) &&
+      item.dueAt !== null &&
+      (data?.generatedAt ?? '') > item.dueAt,
+  ).length;
+  const availableSources = (data?.sources ?? []).filter(
+    ({ connection }) => connection !== 'NOT_CONNECTED',
+  );
+  const kpis = [
+    {
+      label: 'دریافت‌های در انتظار',
+      helper: 'نیازمند تعیین حساب مقصد',
+      value: dashboard.receiptCount,
+      icon: ArrowDownLeft,
+      tone: 'from-emerald-500 to-teal-600',
+    },
+    {
+      label: 'پرداخت‌های قابل اقدام',
+      helper: 'کارگزار، خرید و رزرواسیون',
+      value: dashboard.paymentCount,
+      icon: ArrowUpRight,
+      tone: 'from-blue-600 to-indigo-700',
+    },
+    {
+      label: 'ریسک سررسید',
+      helper: 'درخواست‌های گذشته از موعد',
+      value: overdueCount,
+      icon: CircleAlert,
+      tone: 'from-rose-500 to-pink-600',
+    },
+    {
+      label: 'حساب‌های فعال',
+      helper: 'حساب مبدأ و مقصد قابل انتخاب',
+      value: dashboard.activeAccountCount,
+      icon: Landmark,
+      tone: 'from-violet-600 to-purple-700',
+    },
+  ];
+
+  function openReceiptAction(
+    item: FinanceInboxItemV1,
+    kind: 'APPROVE' | 'CORRECTION_REQUIRED',
+  ) {
+    const eligibleAccounts = accounts.filter(
+      (account) =>
+        account.branchId === item.branchReference &&
+        account.currencyCode === item.amount?.currencyCode,
+    );
+    setActionItem(item);
+    setActionKind(kind);
+    setAccountId(kind === 'APPROVE' ? (eligibleAccounts[0]?.id ?? '') : '');
+    setReason('');
+    setIssueDocumentDelivery(false);
+    setDocumentDeliveryBasis('AFTER_RECEIPT');
+    setDocumentDeliveryReason('تأیید دریافت مشتری');
+    setDocumentDeliverySecondApprover('');
+    setDocumentDeliveryExpiresAt('');
+    setActionError('');
+  }
+
+  function openSupplierPayment(item: FinanceInboxItemV1) {
+    const eligibleAccounts = accounts.filter(
+      (account) =>
+        account.branchId === item.branchReference &&
+        account.currencyCode === item.amount?.currencyCode,
+    );
+    setActionItem(item);
+    setActionKind('PAYMENT');
+    setAccountId(eligibleAccounts[0]?.id ?? '');
+    setPaymentMethodId(methods[0]?.id ?? '');
+    setPaidAmount(
+      item.settlement?.remainingAmount ?? item.amount?.amount ?? '',
+    );
+    setExchangeRate(item.amount?.currencyCode === 'IRR' ? '1' : '');
+    setPaidAt(new Date().toISOString());
+    setPaymentReference('');
+    setTicketReceiptFile(null);
+    setReason('');
+    setActionError('');
+  }
+
+  function openTicketCost(item: FinanceInboxItemV1) {
+    setActionItem(item);
+    setActionKind('TICKET_COST');
+    setTicketSeatCount(item.ticketPurchase?.seatCount?.toString() ?? '');
+    setTicketUnitCost(item.ticketPurchase?.unitCost ?? '');
+    setTicketCurrency('IRR');
+    setReason('');
+    setActionError('');
+  }
+
+  async function uploadTicketPaymentReceipt(
+    file: File,
+    paymentId: string,
+    item: FinanceInboxItemV1,
+  ) {
+    const options = (await documentsApi.options()).data;
+    const documentType = options.documentTypes.find(
+      (type) => type.domain === 'FINANCE',
+    );
+    const category = options.categories[0];
+    const owner =
+      options.owners.find(
+        (candidate) => candidate.id === options.currentUserId,
+      ) ?? options.owners[0];
+    if (!documentType || !category || !owner)
+      throw new Error('تنظیمات اسناد مالی برای بارگذاری رسید کامل نیست.');
+    const form = new FormData();
+    form.set('file', file);
+    form.set('title', `رسید پرداخت ${item.title} · ${file.name}`.slice(0, 240));
+    form.set('description', 'رسید پرداخت ثبت‌شده در کارتابل مالی');
+    form.set('documentTypeId', documentType.id);
+    form.set('categoryId', category.id);
+    form.set('branchId', item.branchReference);
+    form.set('ownerUserId', owner.id);
+    form.set('sourceModule', 'FINANCE');
+    form.set('sourceEntityType', 'FinanceTicketPurchasePayment');
+    form.set('sourceEntityId', paymentId);
+    form.set('sourceDisplayLabel', `${item.title} · رسید پرداخت`);
+    form.set('confidentiality', documentType.defaultConfidentiality);
+    form.set('versionNote', 'بارگذاری از پرداخت خرید بلیت');
+    await documentsApi.upload(form);
+  }
+
+  async function submitAction() {
+    if (!actionItem || !actionKind) return;
+    setActionBusy(true);
+    setActionError('');
+    try {
+      if (actionKind === 'TICKET_COST') {
+        await financeInboxApi.recordTicketCost(actionItem.sourceReference, {
+          version: 1,
+          seatCount: Number(ticketSeatCount),
+          unitCost: ticketUnitCost,
+          currencyCode: ticketCurrency.toUpperCase().trim(),
+        });
+      } else if (actionKind === 'PAYMENT' && actionItem.ticketPurchase) {
+        const payment = await financeInboxApi.payTicket(
+          actionItem.sourceReference,
+          {
+            version: 1,
+            costRevisionId: actionItem.sourceContextReference,
+            accountId,
+            paymentMethodId,
+            paidAmount,
+            exchangeRateToIrr: exchangeRate,
+            transferAt: paidAt,
+            paymentReference: paymentReference.trim() || null,
+          },
+        );
+        if (ticketReceiptFile)
+          await uploadTicketPaymentReceipt(
+            ticketReceiptFile,
+            payment.id,
+            actionItem,
+          );
+      } else if (actionKind === 'PAYMENT') {
+        await financeInboxApi.paySupplier(
+          actionItem.sourceContextReference,
+          actionItem.sourceReference,
+          {
+            expectedVersion: actionItem.sourceVersion,
+            status: 'PAID',
+            accountId,
+            paymentMethodId,
+            paidAmount,
+            exchangeRateToIrr: exchangeRate,
+            transferAt: paidAt,
+            paymentReference: paymentReference.trim() || null,
+            reason,
+          },
+        );
+      } else {
+        await financeInboxApi.decideReceipt(actionItem.sourceReference, {
+          version: 1,
+          contractId: actionItem.sourceContextReference,
+          action: actionKind,
+          accountId: actionKind === 'APPROVE' ? accountId : null,
+          reason: reason.trim() || null,
+          ...(actionKind === 'APPROVE' && issueDocumentDelivery
+            ? {
+                documentDelivery: {
+                  approved: true,
+                  basis: documentDeliveryBasis,
+                  reason: documentDeliveryReason.trim(),
+                  secondApproverReference:
+                    documentDeliveryBasis === 'MANAGER_EXCEPTION'
+                      ? documentDeliverySecondApprover.trim() || null
+                      : null,
+                  exceptionExpiresAt:
+                    documentDeliveryBasis === 'MANAGER_EXCEPTION'
+                      ? documentDeliveryExpiresAt
+                        ? new Date(documentDeliveryExpiresAt).toISOString()
+                        : null
+                      : null,
+                },
+              }
+            : {}),
+        });
+      }
+      window.dispatchEvent(new Event('finance-transactions-changed'));
+      setActionItem(null);
+      setActionKind(null);
+      setRevision((value) => value + 1);
+    } catch (cause) {
+      setActionError(
+        cause instanceof FinanceInboxApiError
+          ? cause.message
+          : 'ثبت عملیات مالی ناموفق بود.',
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function createAccount() {
+    if (!actionItem) return;
+    setActionBusy(true);
+    setActionError('');
+    try {
+      const created = await financeInboxApi.createAccount({
+        version: 1,
+        branchId: actionItem.branchReference,
+        title: accountTitle,
+        kind: accountKind,
+        currencyCode: actionItem.amount?.currencyCode ?? 'IRR',
+        bankId: accountKind === 'BANK' ? accountBankId : null,
+        maskedIdentifier: accountMaskedId.trim() || null,
+      });
+      setAccounts((current) => [...current, created]);
+      setAccountId(created.id);
+      setAccountDialog(false);
+      setAccountTitle('');
+      setAccountBankId('');
+      setAccountMaskedId('');
+    } catch (cause) {
+      setActionError(
+        cause instanceof FinanceInboxApiError
+          ? cause.message
+          : 'تعریف حساب مالی ناموفق بود.',
+      );
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  return (
+    <section className="space-y-5" aria-label="کارتابل یکپارچه مالی">
+      <Card className="overflow-hidden border-0 bg-gradient-to-l from-slate-950 via-blue-950 to-indigo-900 p-0 text-white shadow-xl shadow-primary/10">
+        <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-white/20 bg-white/10 text-white">
+                <BarChart3 className="size-3.5" />
+                مرکز کنترل مالی
+              </Badge>
+              <span className="text-xs text-blue-200">
+                داده‌های عملیاتی ·{' '}
+                {data ? faDate(data.generatedAt) : 'در حال دریافت'}
+              </span>
+            </div>
+            <h2 className="mt-4 text-2xl font-black sm:text-3xl">
+              امروز چه چیزی نیاز به تصمیم مالی دارد؟
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-blue-100">
+              دریافت‌ها را به حساب مقصد متصل کنید، پرداخت‌های کارگزار را از حساب
+              مبدأ ثبت کنید و موارد سررسیددار را پیش از تأخیر ببندید.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20"
+              disabled={loading}
+              onClick={() => setRevision((value) => value + 1)}
+              size="sm"
+              variant="outline"
+            >
+              <RefreshCw
+                className={`size-4 ${loading ? 'animate-spin' : ''}`}
+              />
+              به‌روزرسانی
+            </Button>
+            <Button
+              className="bg-white text-slate-900 hover:bg-blue-50"
+              onClick={() => {
+                setStatus('OPEN');
+                setSource('ALL');
+              }}
+              size="sm"
+            >
+              <ListFilter className="size-4" />
+              مشاهده موارد باز
+            </Button>
+          </div>
+        </div>
+        <div className="grid border-t border-white/10 sm:grid-cols-3">
+          <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-l">
+            <p className="text-xs text-blue-200">صف کارتابل</p>
+            <p className="mt-1 text-2xl font-black">{items.length}</p>
+          </div>
+          <div className="border-b border-white/10 p-4 sm:border-b-0 sm:border-l">
+            <p className="text-xs text-blue-200">نیازمند اقدام امروز</p>
+            <p className="mt-1 text-2xl font-black">{openCount}</p>
+          </div>
+          <div className="p-4">
+            <p className="text-xs text-blue-200">اولویت سررسید</p>
+            <p className="mt-1 text-2xl font-black">{overdueCount}</p>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {kpis.map(({ label, helper, value, icon: Icon, tone }) => (
+          <Card className="group overflow-hidden p-0" key={label}>
+            <div className={`h-1 bg-gradient-to-l ${tone}`} />
+            <div className="flex items-start justify-between gap-3 p-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {label}
+                </p>
+                <p className="mt-2 text-3xl font-black">{String(value)}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{helper}</p>
+              </div>
+              <span
+                className={`rounded-2xl bg-gradient-to-br p-3 text-white shadow-lg ${tone}`}
+              >
+                <Icon className="size-5" />
+              </span>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+        <Card className="p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-black">جریان کارتابل بر اساس واحد</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                حجم درخواست‌های باز در هر واحد عملیاتی
+              </p>
+            </div>
+            <TrendingUp className="size-5 text-primary" />
+          </div>
+          <div className="mt-5 space-y-4">
+            {dashboard.sourceSummary.length ? (
+              dashboard.sourceSummary.map(({ source: sourceName, count }) => {
+                const ratio = openCount
+                  ? Math.round((count / openCount) * 100)
+                  : 0;
+                return (
+                  <div key={sourceName}>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-semibold">
+                        {sourceLabels[sourceName]}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {count} مورد · {ratio}٪
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-l from-primary to-cyan-400"
+                        style={{ width: `${Math.max(ratio, 6)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
+                درخواستی برای نمایش در بازه و فیلتر فعلی وجود ندارد.
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <Card className="p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-black">اولویت‌های نزدیک</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                موارد باز با نزدیک‌ترین سررسید
+              </p>
+            </div>
+            <Clock3 className="size-5 text-rose-500" />
+          </div>
+          <div className="mt-4 space-y-2">
+            {dashboard.dueItems.length ? (
+              dashboard.dueItems.map((item) => (
+                <button
+                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border p-3 text-start transition hover:border-primary/40 hover:bg-muted/40"
+                  key={item.id}
+                  onClick={() => setSelectedId(item.id)}
+                  type="button"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold">
+                      {item.title}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {sourceLabels[item.source]} · {faDate(item.dueAt)}
+                    </span>
+                  </span>
+                  <ChevronLeft className="size-4 shrink-0 text-primary" />
+                </button>
+              ))
+            ) : (
+              <p className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                هیچ سررسید بازی در فیلتر فعلی وجود ندارد.
+              </p>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+        <Card className="p-5">
+          <div className="flex items-center gap-3">
+            <span className="rounded-2xl bg-violet-100 p-3 text-violet-700 dark:bg-violet-950/40 dark:text-violet-200">
+              <Building2 className="size-5" />
+            </span>
+            <div>
+              <p className="text-sm font-black">حساب‌های قابل استفاده</p>
+              <p className="text-xs text-muted-foreground">
+                برای ثبت دریافت و پرداخت
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            {accounts
+              .filter((account) => account.isActive)
+              .slice(0, 3)
+              .map((account) => (
+                <div
+                  className="flex items-center justify-between gap-2 rounded-xl bg-muted/60 px-3 py-2.5"
+                  key={account.id}
+                >
+                  <span className="truncate text-sm font-semibold">
+                    {account.title}
+                  </span>
+                  <Badge>{account.currencyCode}</Badge>
+                </div>
+              ))}
+            {!accounts.filter((account) => account.isActive).length ? (
+              <p className="text-sm text-muted-foreground">
+                حساب فعالی برای شعبه انتخاب‌شده دریافت نشد.
+              </p>
+            ) : null}
+          </div>
+        </Card>
+
+        <Card className="flex flex-col justify-between gap-4 bg-gradient-to-l from-primary/10 via-surface to-cyan-500/10 p-5">
+          <div className="flex items-start gap-3">
+            <span className="rounded-2xl bg-primary p-3 text-primary-foreground">
+              <ShieldCheck className="size-5" />
+            </span>
+            <div>
+              <p className="font-black">راهنمای اقدام مالی</p>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                برای دریافت قرارداد، حساب مقصد را تعیین کن؛ برای پرداخت کارگزار،
+                حساب مبدأ، روش پرداخت و شماره پیگیری را ثبت کن.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={() => {
+                setSource('SALES');
+                setStatus('OPEN');
+              }}
+              size="sm"
+            >
+              <ArrowDownLeft className="size-4" />
+              دریافت‌های فروش
+            </Button>
+            <Button
+              onClick={() => {
+                setSource('RESERVATIONS');
+                setStatus('OPEN');
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <ArrowUpRight className="size-4" />
+              پرداخت کارگزار
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="p-4">
+        <div className="mb-4 flex items-center gap-2">
+          <ListFilter className="size-4 text-primary" />
+          <div>
+            <h3 className="text-sm font-black">فیلتر و جست‌وجوی کارتابل</h3>
+            <p className="text-xs text-muted-foreground">
+              تمام کارت‌ها و اولویت‌ها با فیلترهای زیر همگام می‌شوند.
+            </p>
+          </div>
+        </div>
+        <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="relative">
+            <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
+            <Input
+              className="pe-10"
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="جست‌وجوی قرارداد، طرف‌حساب، شرح یا شماره درخواست"
+              aria-label="جست‌وجوی درخواست‌های مالی"
+              value={search}
+            />
+          </div>
+          <Select
+            onValueChange={(value) => setSource(value as typeof source)}
+            value={source}
+          >
+            <SelectTrigger aria-label="فیلتر واحد ارسال‌کننده">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">همه واحدها</SelectItem>
+              {availableSources.map(({ source: value }) => (
+                <SelectItem key={value} value={value}>
+                  {sourceLabels[value]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            onValueChange={(value) => setStatus(value as typeof status)}
+            value={status}
+          >
+            <SelectTrigger aria-label="فیلتر وضعیت درخواست">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="OPEN">درخواست‌های باز</SelectItem>
+              <SelectItem value="CLOSED">درخواست‌های بسته</SelectItem>
+              <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+            </SelectContent>
+          </Select>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            از تاریخ ثبت درخواست
+            <DatePicker onChange={setFromDate} value={fromDate} />
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            تا تاریخ ثبت درخواست
+            <DatePicker onChange={setToDate} value={toDate} />
+          </label>
+          <Button
+            onClick={() => {
+              setSearch('');
+              setSource('ALL');
+              setStatus('OPEN');
+              setFromDate('');
+              setToDate('');
+            }}
+            variant="outline"
+          >
+            پاک‌کردن فیلترها
+          </Button>
+        </div>
+      </Card>
+
+      {error ? (
+        <Alert tone="warning" title="کارتابل دریافت نشد" description={error} />
+      ) : null}
+      {loading ? (
+        <div className="grid gap-3 xl:grid-cols-[1.35fr_0.65fr]">
+          <div className="space-y-3">
+            {Array.from({ length: 3 }, (_, index) => (
+              <Card className="h-36 animate-pulse bg-muted/60" key={index} />
+            ))}
+          </div>
+          <Card className="h-96 animate-pulse bg-muted/60" />
+        </div>
+      ) : null}
+      {!loading && !error && !items.length ? (
+        <EmptyState
+          title="درخواستی با این فیلتر پیدا نشد"
+          description="فیلترها را تغییر دهید یا کارتابل را به‌روزرسانی کنید."
+        />
+      ) : null}
+      {!loading && !error && items.length ? (
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(21rem,0.65fr)]">
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-3">
+              <h3 className="font-bold">فهرست درخواست‌ها</h3>
+              <span className="text-xs text-muted-foreground">
+                {items.length.toLocaleString('fa-IR')} درخواست · برای بررسی، یک
+                مورد را انتخاب کنید
+              </span>
+            </div>
+            {items.map((item) => {
+              const active = selected?.id === item.id;
+              const overdue = Boolean(
+                data &&
+                item.dueAt &&
+                !closed.has(item.status) &&
+                data.generatedAt > item.dueAt,
+              );
+              return (
+                <button
+                  aria-pressed={active}
+                  aria-controls="finance-request-details"
+                  className={`w-full border-b border-border border-s-4 p-4 text-start transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    if (window.matchMedia('(max-width: 1279px)').matches) {
+                      document
+                        .getElementById('finance-request-details')
+                        ?.scrollIntoView({ block: 'start' });
+                    }
+                  }}
+                  type="button"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge className={sourceTone(item.source)}>
+                          {sourceLabels[item.source]}
+                        </Badge>
+                        <Badge>
+                          {statusLabels[item.status] ?? item.status}
+                        </Badge>
+                        {overdue ? (
+                          <Badge className="bg-rose-100 text-rose-700">
+                            سررسید گذشته
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <h3 className="mt-2 break-words text-sm font-bold leading-6">
+                        {item.title}
+                      </h3>
+                    </div>
+                    <p
+                      className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums text-primary"
+                      dir="ltr"
+                    >
+                      {money(item)}
+                    </p>
+                  </div>
+                  {item.ticketPurchase ? (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      تعداد صندلی:{' '}
+                      {item.ticketPurchase.seatCount?.toLocaleString('fa-IR') ??
+                        '—'}{' '}
+                      · قیمت تکی:{' '}
+                      {item.ticketPurchase.unitCost
+                        ? item.ticketPurchase.unitCost +
+                          ' ' +
+                          (item.amount?.currencyCode ?? '')
+                        : 'ثبت نشده'}
+                    </p>
+                  ) : null}
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+                    <bdi className="break-all">
+                      {item.contractReference ?? item.sourceReference}
+                    </bdi>
+                    <span>
+                      {item.partyDisplaySnapshot ?? 'طرف‌حساب درج نشده'}
+                    </span>
+                    <span>سررسید: {faDate(item.dueAt)}</span>
+                    <span className="ms-auto inline-flex items-center gap-1 font-semibold text-primary">
+                      {active ? 'در حال مشاهده' : 'بررسی درخواست'}
+                      <ChevronLeft aria-hidden="true" className="size-4" />
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {selected ? (
+            <Card
+              id="finance-request-details"
+              className="scroll-mt-24 overflow-hidden p-0 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto"
+              aria-label="جزئیات درخواست انتخاب‌شده"
+            >
+              <div className="border-b border-border bg-primary/5 p-5">
+                <p className="mb-3 text-xs font-bold text-primary">
+                  جزئیات درخواست انتخاب‌شده
+                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <Badge className={sourceTone(selected.source)}>
+                    {sourceLabels[selected.source]}
+                  </Badge>
+                  <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                    <CheckCircle2 className="size-4" />
+                    {selected.origin === 'PERSISTED_SOURCE'
+                      ? 'منبع ثبت‌شده'
+                      : 'منبع نامشخص'}
+                  </span>
+                </div>
+                <h3 className="mt-4 text-lg font-black">{selected.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {selected.description}
+                </p>
+              </div>
+              <div className="space-y-4 p-5">
+                {selected.reservationPurchase ? (
+                  <div className="space-y-3 rounded-xl border border-border p-3">
+                    <strong className="text-sm">خریدهای این درخواست</strong>
+                    {selected.reservationPurchase.lines.map((line) => (
+                      <div
+                        key={line.purchaseId}
+                        className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm"
+                      >
+                        <span>
+                          {line.serviceTitle} · {line.supplierName}
+                        </span>
+                        <span dir="ltr">
+                          {line.amount} {line.currencyCode}
+                        </span>
+                        {line.status !== 'PAID' ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              openSupplierPayment({
+                                ...selected,
+                                sourceReference: line.purchaseId,
+                                title: line.serviceTitle,
+                                amount: {
+                                  amount: line.amount,
+                                  currencyCode: line.currencyCode,
+                                },
+                                settlement: {
+                                  paidAmount: line.paidAmount,
+                                  remainingAmount: line.remainingAmount,
+                                },
+                                sourceVersion: line.financeVersion,
+                              })
+                            }
+                          >
+                            ثبت پرداخت این خرید
+                          </Button>
+                        ) : (
+                          <span>پرداخت‌شده</span>
+                        )}
+                      </div>
+                    ))}
+                    {selected.reservationPurchase.totals.map((total) => (
+                      <p key={total.currencyCode} className="text-sm font-bold">
+                        جمع درخواست: {total.amount} {total.currencyCode}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                {[
+                  ['شماره منبع', selected.sourceReference],
+                  ['قرارداد', selected.contractReference ?? '—'],
+                  ['طرف‌حساب / کارمند', selected.partyDisplaySnapshot ?? '—'],
+                  ['مبلغ', money(selected)],
+                  ...(selected.ticketPurchase
+                    ? [
+                        [
+                          'تعداد صندلی',
+                          selected.ticketPurchase.seatCount?.toLocaleString(
+                            'fa-IR',
+                          ) ?? 'در انتظار تعیین مالی',
+                        ],
+                        [
+                          'قیمت خرید هر صندلی',
+                          selected.ticketPurchase.unitCost
+                            ? selected.ticketPurchase.unitCost +
+                              ' ' +
+                              (selected.amount?.currencyCode ?? '')
+                            : 'ثبت نشده',
+                        ],
+                        [
+                          'پرداخت‌های ثبت‌شده',
+                          selected.ticketPurchase.paymentCount.toLocaleString(
+                            'fa-IR',
+                          ),
+                        ],
+                      ]
+                    : []),
+                  ...(selected.settlement
+                    ? [
+                        [
+                          'پرداخت‌شده',
+                          `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
+                        ],
+                        [
+                          'مانده',
+                          `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
+                        ],
+                      ]
+                    : []),
+                  ['درخواست‌کننده', selected.requesterDisplaySnapshot ?? '—'],
+                  ['تاریخ ایجاد', faDate(selected.createdAt)],
+                  ['تاریخ سررسید', faDate(selected.dueAt)],
+                  ['نسخه منبع', selected.sourceVersion.toLocaleString('fa-IR')],
+                ].map(([label, value]) => (
+                  <div
+                    className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-0"
+                    key={label}
+                  >
+                    <span className="text-xs text-muted-foreground">
+                      {label}
+                    </span>
+                    <strong className="max-w-[65%] break-words text-end text-sm [overflow-wrap:anywhere]">
+                      {value}
+                    </strong>
+                  </div>
+                ))}
+                {selected.kind === 'RECEIPT_VERIFICATION' ? (
+                  <div className="grid grid-cols-2 gap-2 pt-2">
+                    <Button
+                      onClick={() => openReceiptAction(selected, 'APPROVE')}
+                    >
+                      <CheckCircle2 className="size-4" />
+                      تأیید دریافت
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        openReceiptAction(selected, 'CORRECTION_REQUIRED')
+                      }
+                    >
+                      <RotateCcw className="size-4" />
+                      درخواست اصلاح
+                    </Button>
+                  </div>
+                ) : null}
+                {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'RESERVATIONS' &&
+                !selected.reservationPurchase ? (
+                  <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      پرداخت به کارگزار با انتخاب حساب مبدأ و روش پرداخت ثبت
+                      می‌شود. پرداخت جزئی نیز مجاز است.
+                    </p>
+                    <Button
+                      className="w-full"
+                      onClick={() => openSupplierPayment(selected)}
+                    >
+                      <WalletCards className="size-4" />
+                      ثبت پرداخت کارگزار
+                    </Button>
+                  </div>
+                ) : null}
+                {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'RESERVATIONS' &&
+                !selected.reservationPurchase ? (
+                  <FinanceHistoryPanel
+                    requestId={selected.sourceReference}
+                    source="RESERVATIONS"
+                    compact
+                  />
+                ) : null}
+                {selected.kind === 'PAYMENT_REQUEST' &&
+                selected.source === 'PURCHASES' &&
+                selected.ticketPurchase ? (
+                  <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      ابتدا تعداد صندلی و قیمت خرید هر صندلی را ثبت کنید؛ جمع
+                      فاکتور خودکار محاسبه می‌شود. سپس هر پرداخت از حساب و روش
+                      انتخابی ثبت می‌شود و تا تسویهٔ کامل می‌توان پرداخت بعدی
+                      افزود.
+                    </p>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      disabled={selected.ticketPurchase.paymentCount > 0}
+                      onClick={() => openTicketCost(selected)}
+                    >
+                      {selected.amount
+                        ? 'تکمیل / اصلاح تعداد و قیمت خرید هر صندلی'
+                        : 'ثبت تعداد و قیمت خرید هر صندلی'}
+                    </Button>
+                    {selected.ticketPurchase.paymentCount > 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        قیمت خرید پس از شروع پرداخت قابل اصلاح نیست.
+                      </p>
+                    ) : null}
+                    {selected.amount ? (
+                      <Button
+                        className="w-full"
+                        onClick={() => openSupplierPayment(selected)}
+                      >
+                        <WalletCards className="size-4" />
+                        ثبت پرداخت خرید بلیت
+                      </Button>
+                    ) : null}
+                    <FinanceHistoryPanel
+                      requestId={selected.sourceReference}
+                      source="TICKET"
+                      compact
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </Card>
+          ) : null}
+        </div>
+      ) : null}
+
+      <Dialog
+        open={actionItem !== null && actionKind !== null}
+        onOpenChange={(open) => {
+          if (!open && !actionBusy) {
+            setActionItem(null);
+            setActionKind(null);
+          }
+        }}
+      >
+        <DialogContent dir="rtl">
+          <DialogTitle>
+            {actionKind === 'APPROVE'
+              ? 'تأیید دریافت مسافر'
+              : actionKind === 'CORRECTION_REQUIRED'
+                ? 'ارسال برای اصلاح'
+                : actionKind === 'TICKET_COST'
+                  ? 'ثبت قیمت خرید بلیت توسط مالی'
+                  : actionItem?.ticketPurchase
+                    ? 'ثبت پرداخت خرید بلیت'
+                    : 'ثبت پرداخت کارگزار'}
+          </DialogTitle>
+          <DialogDescription>
+            {actionItem?.title} · {actionItem && money(actionItem)}
+          </DialogDescription>
+          <form
+            className="mt-4 grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitAction();
+            }}
+          >
+            {actionKind === 'TICKET_COST' ? (
+              <>
+                <div className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20 sm:grid-cols-2">
+                  <label className="grid gap-2">
+                    <span>تعداد صندلی خریداری‌شده</span>
+                    <Input
+                      required
+                      dir="ltr"
+                      inputMode="numeric"
+                      min="1"
+                      value={ticketSeatCount}
+                      onChange={(event) =>
+                        setTicketSeatCount(
+                          event.target.value.replace(/[^0-9]/g, ''),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    <span>قیمت خرید هر صندلی</span>
+                    <MoneyInput
+                      required
+                      value={ticketUnitCost}
+                      onValueChange={setTicketUnitCost}
+                    />
+                  </label>
+                  <div className="sm:col-span-2 rounded-xl bg-background/80 p-3 text-sm">
+                    <span className="text-muted-foreground">
+                      جمع فاکتور محاسبه‌شده
+                    </span>
+                    <strong className="mt-1 block text-lg" dir="ltr">
+                      {ticketInvoice ?? '—'} {ticketCurrency}
+                    </strong>
+                  </div>
+                </div>
+                <label className="grid gap-2">
+                  <span>کد ارز خرید</span>
+                  <Input
+                    required
+                    dir="ltr"
+                    maxLength={3}
+                    value={ticketCurrency}
+                    onChange={(event) =>
+                      setTicketCurrency(event.target.value.toUpperCase())
+                    }
+                  />
+                </label>
+              </>
+            ) : null}
+            {actionKind === 'PAYMENT' ? (
+              <>
+                <label className="grid gap-2">
+                  <span>حساب پرداخت‌کننده</span>
+                  <Select value={accountId} onValueChange={setAccountId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="انتخاب حساب مبدأ" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {accounts
+                        .filter(
+                          (account) =>
+                            account.branchId === actionItem?.branchReference &&
+                            account.currencyCode ===
+                              actionItem?.amount?.currencyCode,
+                        )
+                        .map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.title} · {account.currencyCode}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setAccountDialog(true);
+                      setActionError('');
+                    }}
+                  >
+                    <PlusCircle className="size-4" />
+                    تعریف حساب جدید
+                  </Button>
+                </label>
+                <label className="grid gap-2">
+                  <span>روش پرداخت</span>
+                  <NativeSearchSelect
+                    aria-label="روش پرداخت"
+                    required
+                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                    value={paymentMethodId}
+                    onChange={(event) => setPaymentMethodId(event.target.value)}
+                  >
+                    <option value="" disabled>
+                      انتخاب روش پرداخت
+                    </option>
+                    {methods.map((method) => (
+                      <option key={method.id} value={method.id}>
+                        {method.name}
+                      </option>
+                    ))}
+                  </NativeSearchSelect>
+                  {methodsError ? (
+                    <span role="alert" className="text-sm text-destructive">
+                      {methodsError}
+                    </span>
+                  ) : null}
+                  {methodsError ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRevision((value) => value + 1)}
+                    >
+                      دریافت مجدد روش‌های پرداخت
+                    </Button>
+                  ) : null}
+                </label>
+                <label className="grid gap-2">
+                  <span>مبلغ این پرداخت</span>
+                  <MoneyInput
+                    required
+                    value={paidAmount}
+                    onValueChange={setPaidAmount}
+                  />
+                  <small className="text-muted-foreground">
+                    مانده فعلی:{' '}
+                    {actionItem?.settlement?.remainingAmount ??
+                      actionItem?.amount?.amount ??
+                      '—'}{' '}
+                    {actionItem?.amount?.currencyCode}
+                  </small>
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  می‌توانید بخشی از مبلغ را پرداخت کنید و مانده را در پرداخت‌های
+                  بعدی ثبت کنید؛ پس از هر ثبت، مانده به‌روز می‌شود.
+                </p>
+                {actionItem?.amount?.currencyCode !== 'IRR' ? (
+                  <label className="grid gap-2">
+                    <span>نرخ روز ارز به ریال</span>
+                    <MoneyInput
+                      required
+                      value={exchangeRate}
+                      onValueChange={setExchangeRate}
+                    />
+                  </label>
+                ) : null}
+                <label className="grid gap-2">
+                  <span>تاریخ و ساعت پرداخت</span>
+                  <DatePicker includeTime value={paidAt} onChange={setPaidAt} />
+                </label>
+                <label className="grid gap-2">
+                  <span>شماره پیگیری (اختیاری)</span>
+                  <Input
+                    dir="ltr"
+                    maxLength={160}
+                    value={paymentReference}
+                    onChange={(event) =>
+                      setPaymentReference(event.target.value)
+                    }
+                  />
+                </label>
+                {actionItem?.ticketPurchase ? (
+                  <label className="grid gap-2 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3">
+                    <span className="flex items-center gap-2 font-semibold">
+                      <FileUp className="size-4 text-primary" />
+                      رسید پرداخت (اختیاری)
+                    </span>
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={(event) =>
+                        setTicketReceiptFile(event.target.files?.[0] ?? null)
+                      }
+                    />
+                    <small className="text-muted-foreground">
+                      پس از ثبت پرداخت، فایل در اسناد مالی با مرجع همین پرداخت
+                      ذخیره می‌شود.
+                    </small>
+                  </label>
+                ) : null}
+              </>
+            ) : null}
+            {actionKind === 'APPROVE' ? (
+              <label className="grid gap-2">
+                <span>واریز به حساب</span>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب حساب مقصد" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts
+                      .filter(
+                        (account) =>
+                          account.branchId === actionItem?.branchReference &&
+                          account.currencyCode ===
+                            actionItem?.amount?.currencyCode,
+                      )
+                      .map((account) => (
+                        <SelectItem key={account.id} value={account.id}>
+                          {account.title} · {account.currencyCode}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setAccountDialog(true);
+                    setActionError('');
+                  }}
+                >
+                  <PlusCircle className="size-4" />
+                  تعریف حساب جدید
+                </Button>
+              </label>
+            ) : null}
+            {actionKind === 'APPROVE' ? (
+              <div className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                <label className="flex cursor-pointer items-start gap-3 text-sm font-bold">
+                  <input
+                    className="mt-1 size-4 accent-primary"
+                    type="checkbox"
+                    checked={issueDocumentDelivery}
+                    onChange={(event) =>
+                      setIssueDocumentDelivery(event.target.checked)
+                    }
+                  />
+                  <span>
+                    هم‌زمان مجوز تحویل مدارک به مشتری صادر شود
+                    <small className="mt-1 block font-normal leading-5 text-muted-foreground">
+                      این مجوز مستقل از خرید کارگزار و رزرواسیون است.
+                    </small>
+                  </span>
+                </label>
+                {issueDocumentDelivery ? (
+                  <>
+                    <label className="grid gap-2">
+                      <span>مبنای مجوز تحویل مدارک</span>
+                      <Select
+                        value={documentDeliveryBasis}
+                        onValueChange={(value) =>
+                          setDocumentDeliveryBasis(
+                            value as FinanceCustomerDocumentDeliveryBasisV1,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="AFTER_RECEIPT">
+                            پس از تأیید همین دریافت مشتری
+                          </SelectItem>
+                          <SelectItem value="FULL_SETTLEMENT">
+                            فقط در صورت تسویه کامل قرارداد
+                          </SelectItem>
+                          <SelectItem value="MANAGER_EXCEPTION">
+                            استثنای مدیر
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </label>
+                    {documentDeliveryBasis === 'MANAGER_EXCEPTION' ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <label className="grid gap-2">
+                          <span>شناسه تأییدکننده دوم</span>
+                          <Input
+                            required
+                            dir="ltr"
+                            placeholder="UUID"
+                            value={documentDeliverySecondApprover}
+                            onChange={(event) =>
+                              setDocumentDeliverySecondApprover(
+                                event.target.value,
+                              )
+                            }
+                          />
+                        </label>
+                        <label className="grid gap-2">
+                          <span>انقضای استثنا (UTC)</span>
+                          <DatePicker
+                            required
+                            withinDialog
+                            includeTime
+                            defaultCalendarSystem="gregorian"
+                            gregorianEnglish
+                            value={documentDeliveryExpiresAt}
+                            onChange={setDocumentDeliveryExpiresAt}
+                            aria-label="تاریخ و ساعت انقضای استثنا"
+                          />
+                        </label>
+                      </div>
+                    ) : null}
+                    <label className="grid gap-2">
+                      <span>دلیل مجوز در Audit</span>
+                      <Input
+                        required
+                        maxLength={500}
+                        value={documentDeliveryReason}
+                        onChange={(event) =>
+                          setDocumentDeliveryReason(event.target.value)
+                        }
+                      />
+                    </label>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+            {actionKind !== 'TICKET_COST' &&
+            !(actionKind === 'PAYMENT' && actionItem?.ticketPurchase) ? (
+              <label className="grid gap-2">
+                <span>
+                  {actionKind === 'CORRECTION_REQUIRED'
+                    ? 'دلیل اصلاح (الزامی)'
+                    : 'توضیح مالی (اختیاری)'}
+                </span>
+                <Textarea
+                  required={actionKind === 'CORRECTION_REQUIRED'}
+                  maxLength={500}
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                />
+              </label>
+            ) : null}
+            {actionError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={
+                  actionBusy ||
+                  (actionKind === 'APPROVE' && !accountId) ||
+                  (actionKind === 'PAYMENT' &&
+                    (!accountId || !paymentMethodId || !paidAmount)) ||
+                  (actionKind === 'TICKET_COST' &&
+                    (!ticketSeatCount ||
+                      !ticketUnitCost ||
+                      !ticketInvoice ||
+                      !ticketCurrency))
+                }
+              >
+                {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={actionBusy}
+                onClick={() => {
+                  setActionItem(null);
+                  setActionKind(null);
+                }}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={accountDialog} onOpenChange={setAccountDialog}>
+        <DialogContent dir="rtl">
+          <DialogTitle>
+            {actionKind === 'APPROVE'
+              ? 'تعریف حساب دریافت'
+              : 'تعریف حساب پرداخت'}
+          </DialogTitle>
+          <DialogDescription>
+            این حساب فقط برای شعبه و ارز همین درخواست قابل انتخاب است.
+          </DialogDescription>
+          <form
+            className="mt-4 grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void createAccount();
+            }}
+          >
+            <label className="grid gap-2">
+              <span>عنوان حساب</span>
+              <Input
+                required
+                maxLength={160}
+                placeholder="مثلاً حساب جاری شرکت"
+                value={accountTitle}
+                onChange={(event) => setAccountTitle(event.target.value)}
+              />
+            </label>
+            <label className="grid gap-2">
+              <span>نوع حساب</span>
+              <Select
+                value={accountKind}
+                onValueChange={(value) =>
+                  setAccountKind(value as FinanceSettlementAccountKind)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BANK">حساب بانکی</SelectItem>
+                  <SelectItem value="CASH">صندوق نقدی</SelectItem>
+                  <SelectItem value="POS">دستگاه پوز</SelectItem>
+                  <SelectItem value="GATEWAY">درگاه پرداخت</SelectItem>
+                </SelectContent>
+              </Select>
+            </label>
+            {accountKind === 'BANK' ? (
+              <label className="grid gap-2">
+                <span>بانک</span>
+                <Select value={accountBankId} onValueChange={setAccountBankId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب بانک" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {banks.map((bank) => (
+                      <SelectItem key={bank.id} value={bank.id}>
+                        {bank.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+            ) : null}
+            <label className="grid gap-2">
+              <span>شناسه پوشیده حساب (اختیاری)</span>
+              <Input
+                dir="ltr"
+                maxLength={80}
+                placeholder="IR••••1234"
+                value={accountMaskedId}
+                onChange={(event) => setAccountMaskedId(event.target.value)}
+              />
+            </label>
+            {actionError ? (
+              <p className="text-sm text-destructive" role="alert">
+                {actionError}
+              </p>
+            ) : null}
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={
+                  actionBusy ||
+                  !accountTitle.trim() ||
+                  (accountKind === 'BANK' && !accountBankId)
+                }
+              >
+                ذخیره حساب
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={actionBusy}
+                onClick={() => setAccountDialog(false)}
+              >
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}

@@ -5,8 +5,8 @@ import { parseCommaSeparatedList, parseRedisUrl } from '../src';
 describe('shared configuration helpers', () => {
   it('normalizes comma-separated values', () => {
     expect(
-      parseCommaSeparatedList('http://localhost:3000, https://rubi.test '),
-    ).toEqual(['http://localhost:3000', 'https://rubi.test']);
+      parseCommaSeparatedList('http://localhost:3000, https://nora.test '),
+    ).toEqual(['http://localhost:3000', 'https://nora.test']);
   });
 
   it('parses authenticated Redis URLs without exposing credentials', () => {

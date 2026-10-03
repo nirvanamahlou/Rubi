@@ -1,0 +1,110 @@
+import { reservationFormFooterHtml } from '../model/reservation-form-footer';
+import { supplierFormData, voucherFormData } from '../model/voucher-settings';
+import {
+  reservationPassengerPages,
+  type ReservationFormIntake,
+  type ReservationFormReferences,
+} from '../model/reservation-form';
+const escape = (value: unknown) =>
+  String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+export function reservationPdfHtml(
+  intake: ReservationFormIntake,
+  refs: ReservationFormReferences,
+  logo: string,
+  css: string,
+  voucher = false,
+  origin = '',
+) {
+  const settings = voucher
+    ? intake.workflow.voucherSettings
+    : intake.workflow.supplierFormSettings;
+  const withLetterhead = settings?.flags.withLetterhead !== false;
+  if (
+    withLetterhead &&
+    !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(logo)
+  )
+    throw new Error('PDF_LOGO_INVALID');
+  const data = voucher
+    ? voucherFormData(intake, refs)
+    : supplierFormData(intake, refs);
+  const pages = voucher
+    ? reservationPassengerPages(
+        data.passengers,
+        settings
+          ? Math.max(
+              6,
+              8 - Math.ceil(Object.values(settings.text).join('').length / 350),
+            )
+          : 10,
+      )
+    : [data.passengers];
+  const heading = (n: string, title: string, note: string) =>
+    `<div class="heading"><b>${n}</b><strong>${title}</strong><span>${note}</span></div>`;
+  const fields = (items: unknown[][], cls: string) =>
+    `<div class="${cls}">${items.map(([k, v]) => `<div><span>${escape(k)}</span><b dir="auto">${escape(v)}</b></div>`).join('')}</div>`;
+  const table = (heads: string[], rows: unknown[][], extra = '') =>
+    `<table class="table ${extra}"><thead><tr>${heads.map((h) => `<th>${escape(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((v) => `<td dir="auto">${escape(v)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  let first = 0;
+  const sheets = pages
+    .map((people, index) => {
+      const rows = people.map((p, i) => {
+        return [
+          String(first + i + 1).padStart(2, '0'),
+          p.name,
+          p.sex,
+          p.age === 'CHD (2-6)'
+            ? 'CHD 2-6'
+            : p.age === 'CHD (6-12)'
+              ? 'CHD 6-12'
+              : p.age,
+        ];
+      });
+      first += people.length;
+      return `<article class="page" dir="ltr"><header class="${withLetterhead ? 'header' : 'plainHeader'}"><div><h1>${voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1><p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p></div><div class="brand">${withLetterhead ? `<img class="${intake.workflow.branding?.kind === 'OWN' ? 'logo' : 'agencyLogo'}" src="${logo}" alt=""/>` : ''}</div></header>
+    ${fields(
+      [
+        [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
+        ['SUPPLIER', data.supplier],
+        [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
+        ['SERVICES', data.services],
+      ],
+      'meta',
+    )}
+    <section class="bookingSection">${heading('01', 'BOOKING SUMMARY', 'Reservation details')}${fields(
+      [
+        ['ADULTS', data.adults],
+        ['CHILDREN 6-12', data.children6To12],
+        ['CHILDREN 2-6', data.children2To6],
+        ...(data.childrenUnclassified
+          ? [['CHILDREN (UNSPECIFIED)', data.childrenUnclassified]]
+          : []),
+        ['INFANTS', data.infants],
+        ['DESTINATION', data.destination],
+        ['ROOMS / NIGHTS', `${data.rooms} ROOMS / ${data.nights} NIGHTS`],
+      ],
+      'summary',
+    )}
+    </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
+    ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
+      ['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'],
+      [[data.hotel, data.destination, data.stars, data.meal, data.roomType]],
+    )}
+    <div class="accommodationBreakdown">
+      ${table(['CHECK-IN', 'CHECK-OUT'], [[data.checkIn, data.checkOut]]).replace('<thead>', '<caption>STAY DATES</caption><thead>')}
+      ${table(['DBL · DOUBLE', 'SGL · SINGLE', 'EXT · EXTRA BED'], [[data.double, data.single, data.extra]], 'roomCounts').replace('<thead>', '<caption>ROOM QUANTITIES BY TYPE</caption><thead>')}
+    </div>
+    ${settings ? `<p class="voucherDetails">Country: ${escape(settings.text.country || '-')} · Website: ${escape(settings.text.website || '-')} · CUSTOM: ${settings.numbers.customRooms} · Special room: ${settings.flags.specialRoom ? 'YES' : 'NO'}${voucher ? '' : ` · Broker: ${escape(settings.text.broker || '-')}`}</p>` : ''}
+    ${heading('04', 'TOUR SERVICES', 'Leader & excursion')}${table([...(voucher ? ['TRANSFER'] : []), 'TOUR LEADER', 'EXCURSION'], [[...(voucher ? ['Board: ' + (settings?.text.transferBoard?.trim() || '-')] : []), data.leader, data.excursion]])}
+    ${settings ? `<p class="voucherDetails">Transfer: ${escape(settings.flags.transfer ? [settings.text.transferKind, settings.text.transferBoard, settings.text.transferPhone].filter(Boolean).join(' / ') || '-' : '-')} · Guide: ${escape(settings.flags.tourLeader ? [settings.text.leaderLanguage, settings.text.leaderPhone].filter(Boolean).join(' / ') || '-' : '-')}</p>` : ''}
+    ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE'], rows.length ? rows : [['-', '-', '-', '-']], 'passengers')}
+    ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${voucher ? '&nbsp;' : escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
+    <footer class="footer">${!voucher ? `<div data-reservation-footer>${reservationFormFooterHtml(intake.id, origin)}</div>` : ''}<div><span>${voucher ? 'Hotel voucher - present at check-in.' : 'Reservation request - subject to supplier confirmation.'}</span></div><b>${index + 1} / ${pages.length}</b></footer></article>`;
+    })
+    .join('');
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:"><title>${escape(data.request)}</title><style>${css}\n@page{size:A4;margin:0}html,body{margin:0;padding:0}.page{margin:0;break-after:page}.page:last-child{break-after:auto}.passengers th:nth-child(2){width:56%}</style></head><body>${sheets}</body></html>`;
+}
