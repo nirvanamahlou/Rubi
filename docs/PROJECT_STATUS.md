@@ -4306,6 +4306,10 @@ The supplied two-page travel-contract terms PDF replaces the previous static fil
 
 Reservation request table minimum body-row height decreases from 46px to 36px while the existing 440px scroll viewport and columns remain unchanged. Saved status actor/time renders beside its checkbox so populated flags do not force tall rows; no audit information, permissions or operations are removed. Synthetic browser layout confirms roughly two more complete contracts. Twenty existing foundation/status tests, scoped lint and Web typecheck passed; production build and CI gate the explicitly requested develop merge. No API/schema/migration/dependency/data change.
 
+## 2026-10-03 — B2B-UNIFIED-REPORT-SECTION-1003 — PC-B — READY_FOR_APPROVED_MERGE
+
+Organizations 360 Reports/Audit/Export now form one «گزارش فعالیت‌ها» section, showing category summaries and export guidance alongside the unchanged branch/date filters, activity table, details and authorized-row Excel output. Old Audit/Export browser-history aliases normalize only within Reports; the canonical destination does not add a duplicate history entry. Focused history/activity-export regressions (7), all Organizations tests (135), scoped lint, Web typecheck and 55-route production build pass. Local generated contracts were refreshed from unchanged source. No API/contract, permission, migration/dependency, data or shared-runtime change; no authenticated browser QA. Same native implementation owner completed the bounded four-file UI/history change; lead inspected the exact diff. Usage unavailable. CI gates owner-authorized develop merge; scoped locks release with commit.
+
 ## 2026-10-03 — B2B-INITIAL-STATUS-1003 — PC-B
 
 Removed the read-only initial status display from step one of the cooperation registration wizard as requested. Draft/submission lifecycle and validation remain unchanged. No API, schema, dependency, permission, data or runtime change; targeted checks and CI precede authorized develop merge.
@@ -4374,3 +4378,7 @@ Sales dashboard aggregation now accepts legitimate negative computed balances fr
 Transfer purchase now calculates editable chargeable passenger count times unit price, independent of stay nights. Optional split mode stores each transfer leg with its own broker/currency/count/price in one atomic financial batch. Coverage, server totals, CAS and idempotency remain validated; historical purchase amounts are preserved. No migration/dependency/database changes. See docs/tasks/TRANSFER-PASSENGER-PRICING-1003.md for compatibility and validation.
 
 Validation completed: full Reservations API/Web regressions, shared arithmetic, final focused purchase tests, scoped lint/typechecks and affected production builds pass (55 Web routes). Bounded locks released; PR/develop merge follows owner authorization and CI.
+
+## 2026-10-03 — PROFILE-AVATAR-SAVE-1003 — PC-B
+
+Personal profile photo upload now accepts the edited name and contact details and links the stored document through the existing IAM profile service before responding. The Web form consumes the returned profile, eliminating its second save request after photo upload. Older file-only clients remain supported. No schema, migration, permission, dependency, or operational-data change. Local port 3100 was unavailable during verification, so live account behavior remains unverified; focused tests and build checks gate delivery.
