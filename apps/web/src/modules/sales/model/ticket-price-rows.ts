@@ -18,10 +18,49 @@ export type TicketPriceRow = {
       }
     | undefined;
 };
+export function ticketCabinLabel(code: TicketOfferV1['cabinClassCode']) {
+  return (
+    ({ ECONOMY: 'اکونومی', BUSINESS: 'بیزینس', FIRST: 'فرست' } as const)[
+      code
+    ] ?? code
+  );
+}
+
+function flightKey(offer: TicketOfferV1) {
+  return JSON.stringify([
+    offer.branchId,
+    offer.originId,
+    offer.destinationId,
+    offer.originAirportId,
+    offer.destinationAirportId,
+    offer.carrierName,
+    offer.serviceNumber,
+    offer.departureAt,
+    offer.arrivalAt,
+    offer.supplyType,
+  ]);
+}
+
+/** Preserve flight order while putting its independently priced cabins together. */
+export function orderFlightCabins(offers: readonly TicketOfferV1[]) {
+  const groups = new Map<string, TicketOfferV1[]>();
+  for (const offer of offers) {
+    const key = flightKey(offer);
+    const group = groups.get(key) ?? [];
+    group.push(offer);
+    groups.set(key, group);
+  }
+  const rank = { ECONOMY: 0, BUSINESS: 1, FIRST: 2 };
+  return [...groups.values()].flatMap((group) =>
+    group.sort(
+      (a, b) => (rank[a.cabinClassCode] ?? 3) - (rank[b.cabinClassCode] ?? 3),
+    ),
+  );
+}
 export function ticketPriceRows(
   offers: readonly TicketOfferV1[],
 ): TicketPriceRow[] {
-  return offers.flatMap((offer) => [
+  return orderFlightCabins(offers).flatMap((offer) => [
     {
       id: offer.id,
       offer,

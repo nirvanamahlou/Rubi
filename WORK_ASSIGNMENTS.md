@@ -1,3 +1,9 @@
+## FLIGHT-MULTIPLE-CABINS-1003 — PC-A — IN_PROGRESS
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-flight-multiple-cabins-1003` from `origin/develop@977266e2`. Owner requests multiple cabin classes with independent capacity in new-flight entry and adjacent per-class Sales ticket pricing, then develop merge after checks.
+- Reserve Ticket Catalog Web ticket-form, flight-schedule-form, shared module-local cabin capacity UI, module-local cabin expansion/validation and focused tests; Sales ticket-price row ordering/class labels and focused tests; bounded task, assignment and status docs. Preserve dirty primary checkout, especially reference-picker/reference-browser and Reservations/Sales unrelated edits. No conflicting active owner found for these scoped files.
+- Compatibility: expand the form into existing single-cabin ProductInput/TicketOfferCreateV1 records through the existing idempotent publication flow. Each offer retains its own FK identity, cabin code, inventory, prices, commissions, reservations and Finance purchase request. No shared API/event contract or schema/migration/dependency/permission change; Central Docs held for this bounded task only. Migration and Dependency/Lockfile remain unassigned.
+
 ## LEADER-HIDE-DOCUMENTS-1003 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-leader-hide-documents-1003` from origin/develop@380174c9. Reserve only Leader Documents header/matching table cell in travel-services workspace and existing regression spec, own bounded status docs. Preserve other columns, Visa Services guide documents, form/View/export/API/backend/document storage. No active overlapping owner; no migrations/contracts/dependencies/runtime/database changes. User authorizes push/develop merge after checks.
