@@ -300,10 +300,11 @@ export function transportKpiItems(
     );
   if (resource === 'cabin-classes')
     return common('کلاس‌ها', 'فعال', 'Cabinها', distinct('cabinType'), {
-      label: 'نیازمند بازبینی',
-      value: incomplete,
+      label: 'کلاس غیرفعال',
+      value: summaryState === 'ready' ? allRecords.length - active : '—',
       icon: CircleAlert,
       tone: 'amber',
+      hint: 'در کل اطلاعات پایه',
     });
   if (resource === 'manifest-templates')
     return common(

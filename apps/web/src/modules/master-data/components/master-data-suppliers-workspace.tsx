@@ -64,6 +64,7 @@ import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
+import { masterDataComplementKpi } from '../model/kpi-complement';
 import {
   groupSupplierCollaborationRecords,
   loadSupplierCollaborationPage,
@@ -210,8 +211,10 @@ export function MasterDataSuppliersWorkspace() {
   >([]);
   const [collaborationPageCount, setCollaborationPageCount] = useState(1);
   const loadSequence = useRef(0);
+  const summaryRequestRef = useRef(0);
   const [summary, setSummary] =
     useState<MasterOrganizationSupplierSummary>(emptySummary);
+  const [summaryLoaded, setSummaryLoaded] = useState(false);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
@@ -232,11 +235,17 @@ export function MasterDataSuppliersWorkspace() {
   );
 
   const loadSummary = useCallback(async () => {
+    const requestId = ++summaryRequestRef.current;
+    setSummaryLoaded(false);
     try {
       const response = await masterDataApi.organizationSupplierSummary();
+      if (requestId !== summaryRequestRef.current) return;
       setSummary(response.data);
+      setSummaryLoaded(true);
     } catch {
+      if (requestId !== summaryRequestRef.current) return;
       setSummary(emptySummary);
+      setSummaryLoaded(false);
     }
   }, []);
 
@@ -350,8 +359,12 @@ export function MasterDataSuppliersWorkspace() {
           tone: 'violet' as const,
         },
         {
-          label: 'نیازمند تکمیل',
-          value: summary.brokers.incomplete,
+          label: 'پروفایل غیرفعال',
+          value: masterDataComplementKpi(
+            summary.brokers.total,
+            summary.brokers.active,
+            summaryLoaded ? 'ready' : 'loading',
+          ),
           icon: AlertTriangle,
           tone: 'amber' as const,
         },
@@ -382,7 +395,7 @@ export function MasterDataSuppliersWorkspace() {
         tone: 'rose' as const,
       },
     ];
-  }, [summary, tab]);
+  }, [summary, summaryLoaded, tab]);
 
   function changeTab(next: SupplierTab) {
     if (next === tab) return;
