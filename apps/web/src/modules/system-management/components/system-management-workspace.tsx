@@ -1,5 +1,15 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/overlays';
 
 import {
   ArrowLeft,
@@ -56,6 +66,11 @@ import {
   SystemManagementApiError,
   type SystemAuditRecord,
 } from '../api/client';
+import { MarketingSettingsPage } from '@/modules/marketing/components/marketing-reference-pages';
+import {
+  marketingSectionTabs,
+  type MarketingPreviewItem,
+} from '@/modules/marketing/model/reference-data';
 import {
   settingsModules,
   type SettingField,
@@ -355,6 +370,9 @@ export function SystemManagementWorkspace() {
   const [moduleTab, setModuleTab] = useState<'history' | 'settings'>(
     'settings',
   );
+  const [marketingSettingsTab, setMarketingSettingsTab] = useState('channels');
+  const [marketingDetailItem, setMarketingDetailItem] =
+    useState<MarketingPreviewItem | null>(null);
   const [settings, setSettings] = useState<SystemSettingV1[]>([]);
   const [audit, setAudit] = useState<SystemAuditRecord[]>([]);
   const [editing, setEditing] = useState<{
@@ -799,6 +817,38 @@ export function SystemManagementWorkspace() {
             {copy.history}
           </button>
         </div>
+        {selectedModule.id === 'marketing' && moduleTab === 'settings' ? (
+          <section className="mt-5 grid gap-4" aria-label="تنظیمات مارکتینگ">
+            <Tabs
+              className="grid gap-4"
+              dir={preferences.direction}
+              onValueChange={setMarketingSettingsTab}
+              value={marketingSettingsTab}
+            >
+              <TabsList
+                aria-label="بخش‌های تنظیمات مارکتینگ"
+                className={`${styles.sectionbar} h-auto w-full flex-wrap justify-start`}
+              >
+                {marketingSectionTabs.settings.map(([key, label]) => (
+                  <TabsTrigger
+                    className={`${styles.tab} ${marketingSettingsTab === key ? styles.tabActive : ''}`}
+                    key={key}
+                    value={key}
+                  >
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+              <TabsContent value={marketingSettingsTab}>
+                <MarketingSettingsPage
+                  onNotice={(message) => setToast(message)}
+                  onOpen={(item) => setMarketingDetailItem(item)}
+                  tab={marketingSettingsTab}
+                />
+              </TabsContent>
+            </Tabs>
+          </section>
+        ) : null}
         {moduleTab === 'history' ? (
           renderHistory(moduleAudit)
         ) : (
@@ -1078,6 +1128,36 @@ export function SystemManagementWorkspace() {
           </section>
         </div>
       ) : null}
+
+      <Dialog
+        open={Boolean(marketingDetailItem)}
+        onOpenChange={(open) => {
+          if (!open) setMarketingDetailItem(null);
+        }}
+      >
+        <DialogContent>
+          <DialogTitle>{marketingDetailItem?.title ?? 'جزئیات'}</DialogTitle>
+          <DialogDescription>{marketingDetailItem?.description}</DialogDescription>
+          {marketingDetailItem ? (
+            <dl className="mt-5 grid gap-3 rounded-xl bg-muted/50 p-4 text-sm">
+              <div>
+                <dt className="text-muted-foreground">وضعیت</dt>
+                <dd className="font-bold">{marketingDetailItem.status}</dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">شناسه آزمایشی</dt>
+                <dd className="break-all font-mono text-xs" dir="ltr">
+                  {marketingDetailItem.id}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-muted-foreground">آخرین تغییر</dt>
+                <dd>{formatDate(marketingDetailItem.updatedAt, language)}</dd>
+              </div>
+            </dl>
+          ) : null}
+        </DialogContent>
+      </Dialog>
       {toast ? (
         <div className={styles.toast} role="status">
           {toast}

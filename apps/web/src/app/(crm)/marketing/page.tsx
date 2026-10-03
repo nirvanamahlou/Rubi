@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 import { MarketingWorkspace } from '@/modules/marketing/components/marketing-workspace';
 
@@ -14,6 +15,10 @@ export default async function Page({
 }) {
   const { section } = await searchParams;
   const initialSection = typeof section === 'string' ? section : null;
+
+  // Marketing settings are owned by System Management. Keep old bookmarks
+  // working while ensuring the hub never renders a duplicate settings UI.
+  if (initialSection === 'settings') redirect('/system?module=marketing');
 
   return (
     <MarketingWorkspace
