@@ -323,7 +323,10 @@ export function peopleCreateInput(
   )
     throw new Error('نام و نام خانوادگی لاتین پاسپورت را کامل کنید.');
   const nationalId = normalizeNationalId(v.nationalId);
-  if (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
+  if (
+    (passenger || nationalId) &&
+    (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
+  )
     throw new Error('کد ملی معتبر ۱۰رقمی وارد کنید.');
   if (passenger && !v.birthDate)
     throw new Error('تاریخ تولد مسافر الزامی است.');
@@ -350,7 +353,7 @@ export function peopleCreateInput(
     displayName: passportIdentity
       ? `${v.passportFirstName.trim().toUpperCase()} ${v.passportLastName.trim().toUpperCase()}`
       : `${v.firstName.trim()} ${v.lastName.trim()}`,
-    nationalId,
+    ...(nationalId ? { nationalId } : {}),
     ...(v.acquaintanceMethodId
       ? { acquaintanceMethodId: v.acquaintanceMethodId }
       : {}),
@@ -415,6 +418,15 @@ export function validateSalesPeopleDraft(
         `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
       );
     validatePassport(row);
+    if (
+      key !== 'primary' &&
+      row.profile &&
+      !row.profile.roles?.includes('passenger') &&
+      !row.values.nationalId.trim()
+    )
+      throw new Error(
+        `${label}: برای ثبت مشتری به‌عنوان مسافر، کد ملی معتبر را وارد کنید.`,
+      );
     if (international && key !== 'primary') {
       const v = row.values;
       if (
@@ -443,11 +455,11 @@ export function validateSalesPeopleDraft(
     }
     if (row.person) {
       validateExistingPerson(row, international && key !== 'primary');
-      if (ids.has(row.person.id))
+      if (key !== 'primary' && ids.has(row.person.id))
         throw new Error(
           'یک شخص دوبار انتخاب شده؛ مشتری حقیقی همان مسافر اول است و ردیف جدا نمی‌خواهد.',
         );
-      ids.add(row.person.id);
+      if (key !== 'primary') ids.add(row.person.id);
     } else {
       try {
         peopleCreateInput(
@@ -465,11 +477,11 @@ export function validateSalesPeopleDraft(
         );
       }
       const nationalId = normalizeNationalId(row.values.nationalId);
-      if (nationalIds.has(nationalId))
+      if (nationalId && nationalIds.has(nationalId))
         throw new Error(
           'کد ملی تکراری است؛ هر مسافر باید یک ردیف مستقل داشته باشد.',
         );
-      nationalIds.add(nationalId);
+      if (nationalId) nationalIds.add(nationalId);
     }
   }
   const passengers = keys.map((key) => ({
@@ -532,6 +544,14 @@ export async function saveSalesPeopleDraft(
   ]) {
     let row = peopleRow(current, key);
     if (!row.reviewRequired) continue;
+    if (
+      key === 'primary' &&
+      !row.person &&
+      !normalizeNationalId(row.values.nationalId)
+    )
+      throw new Error(
+        'نتیجه ثبت مشتری قطعی نیست؛ پرونده موجود مشتری را انتخاب کنید تا ثبت تکراری انجام نشود.',
+      );
     if (row.person ? !api.detail : !api.registrationLookup)
       throw new Error(
         'نتیجه ثبت قبلی نیازمند بررسی است؛ اتصال بازیابی در دسترس نیست.',

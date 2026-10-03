@@ -313,7 +313,7 @@ describe('fixed Sales people-entry slots', () => {
       const previousId = draft.rows.p0!.values.nationalId;
       const values = {
         ...draft.rows.p0!.values,
-        nationalId: national('009000009'),
+        nationalId: '',
         firstName: 'Corrected',
       };
       draft.rows.p0 = {
@@ -943,7 +943,7 @@ describe('contract buyer independent from passengers', () => {
             ...emptyPeopleValues(),
             firstName: 'Synthetic',
             lastName: 'Buyer',
-            nationalId: national('009000009'),
+            nationalId: '',
           },
         },
       },
@@ -968,6 +968,7 @@ describe('contract buyer independent from passengers', () => {
       lastName: 'Buyer',
     });
     expect(create.mock.calls[0]![0].passportNumber).toBeUndefined();
+    expect(create.mock.calls[0]![0].nationalId).toBeUndefined();
     expect(create.mock.calls[1]![0]).toMatchObject({
       roles: ['passenger'],
       passportNumber: 'A1234567',
@@ -1003,5 +1004,63 @@ describe('contract buyer independent from passengers', () => {
       }),
     ).rejects.toThrow('کد پستی');
     expect(create).not.toHaveBeenCalled();
+  });
+});
+
+describe('customer-only purchase identity safety', () => {
+  it('requires passenger identity when promoting a customer-only record into a passenger slot', () => {
+    const one = {
+      ...state,
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const person = detail('buyer-only', {
+      roles: ['customer'],
+      maskedNationalId: null,
+      nationalId: null,
+    });
+    const draft = {
+      ...initialSalesPeopleDraft(one),
+      rows: { p0: selectedPeopleRow(person) },
+    };
+    expect(() => validateSalesPeopleDraft(one, draft)).toThrow('کد ملی');
+  });
+  it('does not retry an uncertain customer-only creation without a safe identity match', async () => {
+    const one = {
+      ...state,
+      passengerComposition: { adults: 1, children: 0, infants: 0 },
+    };
+    const draft: SalesPeopleDraft = {
+      ...filled(),
+      mode: 'person',
+      separateCustomer: true,
+      buyerContact: {
+        name: 'Synthetic Buyer',
+        phone: '09120000000',
+        address: 'Synthetic address',
+        postalCode: '0012345678',
+      },
+      rows: {
+        p0: filled().rows.p0!,
+        primary: {
+          values: {
+            ...emptyPeopleValues(),
+            firstName: 'Synthetic',
+            lastName: 'Buyer',
+          },
+          reviewRequired: true,
+        },
+      },
+    };
+    const create = vi.fn();
+    const registrationLookup = vi.fn();
+    await expect(
+      saveSalesPeopleDraft(one, draft, vi.fn(), {
+        create,
+        registrationLookup,
+        addContact: vi.fn(),
+      }),
+    ).rejects.toThrow('پرونده موجود');
+    expect(create).not.toHaveBeenCalled();
+    expect(registrationLookup).not.toHaveBeenCalled();
   });
 });

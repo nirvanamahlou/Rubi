@@ -664,6 +664,17 @@ export function SalesPeopleSheet({
             مشتری طرف حساب همان مسافر اول است
           </label>
         ) : null}
+        {draft.mode === 'person' ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => setLookup('primary')}
+          >
+            <Search className="size-4" />
+            انتخاب مشتری موجود
+          </Button>
+        ) : null}
         <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
           <FormField label="نام مشتری" id="sales-buyer-name">
             <Input
@@ -709,19 +720,11 @@ export function SalesPeopleSheet({
           </FormField>
         </div>
         <p className="text-xs text-muted-foreground sm:col-span-2">
-          این مشخصات در قرارداد ثبت می‌شود. برای مشتری جدا از مسافران، پرونده
-          موجود را انتخاب کنید یا کد ملی او را در ردیف مشتری اصلی وارد کنید.
+          نام و نام خانوادگی کامل مشتری را وارد کنید. این مشخصات در قرارداد
+          ذخیره می‌شود و مشتری طرف حساب خواهد بود.
         </p>
       </section>
-      {draft.mode === 'person' ? (
-        <CustomerEntrySheet
-          rows={rows.filter((row) => row.key === 'sales-entry-primary')}
-          visibleFields={['firstName', 'lastName', 'nationalId']}
-          calendarMode={calendar}
-          onCalendarModeChange={setCalendar}
-          disabled={busy}
-        />
-      ) : null}
+
       <CustomerEntrySheet
         rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
         showPassportExpiry={passportIdentity}
