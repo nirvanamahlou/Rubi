@@ -4269,3 +4269,7 @@ Reservation request table minimum body-row height decreases from 46px to 36px wh
 ## 2026-10-03 — B2B-REGISTRATION-COPY-1003 — PC-B
 
 Removed the visible registration title and explanatory paragraph from the Organizations directory toolbar at the owner's request. Registration and Excel actions retain their existing handlers and the region retains its accessible name. No API, data, migration or runtime change. Validation and user-authorized develop merge are recorded in the matching Work Item.
+
+## 2026-10-03 — RESERVATION-SELECTION-BLUE-1003 — PC-A
+
+Selected Reservation request rows now use the exact screenshot color #0078D7 with white text across all cells and status tones, in light and dark modes. The pink identity-cell override no longer masks selection; unselected status presentation remains intact. Compact row height, viewport, controls and keyboard selection are preserved. Nineteen existing foundation tests and synthetic Chrome computed-style/visual QA pass. Scoped lint/typecheck/build and CI precede user-authorized merge. No API/schema/migration/dependency/data change.
