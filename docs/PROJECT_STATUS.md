@@ -1,3 +1,7 @@
+## 2026-10-03 — SALES-REFERENCE-CENTER-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
+
+The shared Sales References table now centers the Code header/value and Operations header/cell/action group on both Acquaintance Methods and Sales Channels. Code keeps its LTR monospaced semantics, action order and callbacks remain View, Edit and Delete, and all other columns retain start alignment. Focused regression (9), all 463 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-03 — SALES-REFERENCE-REPLACE-REVIEW-KPI-1003 — PC-B — READY_FOR_REVIEW
 
 The fourth KPI on both Acquaintance Methods and Sales Channels is now `دارای عنوان انگلیسی`, backed by the existing unfiltered global list and an explicit `در کل اطلاعات پایه` hint. Only nonblank string English titles count; duplicate titles on separate records count separately. Loading/error render `—`, valid empty renders zero, and stale resources, malformed/incomplete pagination or duplicate record IDs cannot publish a misleading total. The first three cards, filters, forms, profiles, API and backend remain unchanged. Focused regression (8), all 462 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.

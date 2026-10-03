@@ -60,6 +60,17 @@ function visibleCells(row: ts.JsxElement) {
   });
 }
 
+function className(element: ts.JsxElement) {
+  const attribute = element.openingElement.attributes.properties.find(
+    (property): property is ts.JsxAttribute =>
+      ts.isJsxAttribute(property) &&
+      property.name.getText(sourceFile) === 'className',
+  );
+  return attribute?.initializer && ts.isStringLiteral(attribute.initializer)
+    ? attribute.initializer.text
+    : '';
+}
+
 function tableShape() {
   const table = firstElement(sourceFile, 'table');
   const headerRow = firstElement(firstElement(table, 'thead'), 'tr');
@@ -298,6 +309,49 @@ describe('sales references workspace', () => {
     expect(source).not.toContain('showDisplayOrder');
     expect(source).toContain('label="ترتیب نمایش"');
     expect(source).toContain("selected, 'displayOrder', '0'");
+  });
+
+  it('centers only code and operations while preserving action behavior', () => {
+    const table = firstElement(sourceFile, 'table');
+    const headerRow = firstElement(firstElement(table, 'thead'), 'tr');
+    const headers = headerRow.children.filter(ts.isJsxElement);
+    const codeHeader = headers.find((element) =>
+      element.getText(sourceFile).includes('>کد<'),
+    )!;
+    const operationsHeader = headers.find((element) =>
+      element.getText(sourceFile).includes('>عملیات<'),
+    )!;
+    const bodyRow = firstElement(firstElement(table, 'tbody'), 'tr');
+    const cells = bodyRow.children.filter(
+      (child): child is ts.JsxElement | ts.JsxSelfClosingElement =>
+        ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child),
+    );
+    const codeCell = cells[1] as ts.JsxElement;
+    const operationsCell = cells[6] as ts.JsxElement;
+    const actions = firstElement(operationsCell, 'div');
+
+    expect(className(codeHeader)).toContain('text-center');
+    expect(className(operationsHeader)).toContain('text-center');
+    expect(className(codeCell)).toContain('text-center');
+    expect(codeCell.openingElement.attributes.getText(sourceFile)).toContain(
+      'dir="ltr"',
+    );
+    expect(className(operationsCell)).toContain('text-center');
+    expect(className(actions)).toContain('justify-center');
+
+    const actionSource = operationsCell.getText(sourceFile);
+    expect(actionSource.indexOf('openProfile(record)')).toBeLessThan(
+      actionSource.indexOf("setFormMode('edit')"),
+    );
+    expect(actionSource.indexOf("setFormMode('edit')")).toBeLessThan(
+      actionSource.indexOf('<MasterDataDeleteButton'),
+    );
+    for (const label of ['ردیف', 'لوگو', 'عنوان', 'توضیحات', 'وضعیت']) {
+      const header = headers.find((element) =>
+        element.getText(sourceFile).includes(`>${label}<`),
+      )!;
+      expect(className(header)).toContain('text-start');
+    }
   });
 
   it('removes only version and Persian title from shared View details', () => {
