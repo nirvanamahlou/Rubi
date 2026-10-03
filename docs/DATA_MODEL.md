@@ -643,6 +643,11 @@ Owner-approved MANIFEST-LOAD-SEARCH-0930 removes Finance approval from manifest 
 ### 2026-10-01 selected published flight airports
 
 TicketPublishedOffer optionally references originAirportId and destinationAirportId through real MasterAirport FKs (RESTRICT delete). The catalog validates each selected active airport against its route city using Master Data's public service. Nullable fields preserve old clients and legacy rows. Published projection and revisions preserve selected IDs; document-details exposes only route/airport IDs and cabin baggage under existing permission and branch scope. Reservation print uses saved route/class and validates the returned IDs before enriching it; unknown legacy airports remain unspecified, never inferred from city codes. Migration: 20261001103000_ticket_selected_airports.
+
+## Reservation ticket document identity — 2026-10-01
+
+`ReservationTicketDocument` owns one immutable document number per intake/passenger, with restrictive intake/customer/actor foreign keys, UTC issue timestamp and AUTO/MANUAL provenance. A global unique six-digit number spans company-generated and manual floating numbers. The bounded noncycling PostgreSQL sequence starts at 100000; allocation uses transaction locks and skips previously assigned manual values. Repeated generation returns the original number and time; canceled and branch-inaccessible intakes cannot allocate. No ticket identifiers are invented during GET/PDF rendering. This is the CRM ticket document identity, with no external airline issuance side effect.
+
 ### گروه خرید قرارداد رزرواسیون
 
 `ReservationServicePurchase.batchId` یک UUID اختیاری برای ثبت اتمیک ردیف‌های هتل و ترانسفر همان قرارداد است. `coveredServiceClientKeys` آرایه اختیاری کلیدهای خدماتی است که ردیف می‌پوشاند؛ ردیف ترانسفر می‌تواند هر دو جهت را پوشش دهد. برای داده قدیمی، `serviceClientKey` پوشش پیش‌فرض و شناسه همان خرید گروه تک‌ردیفی است. `passengerPrices` نرخ شبانه/تعداد شب/جمع هتل یا نرخ کل ترانسفر برای هر مسافر را نگه می‌دارد؛ پرداخت مالی به شناسه خود ردیف خرید متصل می‌ماند و جمع گروه به تفکیک ارز محاسبه می‌شود.

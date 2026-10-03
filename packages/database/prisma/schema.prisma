@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  reservationTicketDocuments                       ReservationTicketDocument[]
   ticketSaleCommissions                            TicketSaleCommissionRevision[]
   tourPricingDraftsCreated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftCreator")
   tourPricingDraftsUpdated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftUpdater")
@@ -2836,6 +2837,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  reservationTicketDocuments ReservationTicketDocument[]
   id                         String                       @id @default(uuid()) @db.Uuid
   kind                       CustomerKind
   organizationId             String?                      @db.Uuid
@@ -4399,6 +4401,7 @@ model FinanceTicketPurchasePaymentRevision {
 }
 
 model ReservationIntake {
+  ticketDocuments     ReservationTicketDocument[]
   salesOwnerUserId    String?                          @db.Uuid
   salesOwner          User?                            @relation("TravelSalesOwner", fields: [salesOwnerUserId], references: [id], onDelete: Restrict)
   workflowRevisions   ReservationWorkflowRevision[]
@@ -6474,4 +6477,20 @@ model SystemAuditEvent {
   @@index([actorUserId, createdAt])
   @@index([entityType, entityId, createdAt])
   @@map("system_audit_events")
+}
+
+model ReservationTicketDocument {
+  id          String            @id @default(uuid()) @db.Uuid
+  intakeId    String            @db.Uuid
+  customerId  String            @db.Uuid
+  number      String            @unique @db.VarChar(6)
+  source      String            @db.VarChar(16)
+  issuedAt    DateTime          @default(now()) @db.Timestamptz(3)
+  actorUserId String            @db.Uuid
+  intake      ReservationIntake @relation(fields: [intakeId], references: [id], onDelete: Restrict)
+  customer    Customer          @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  actor       User              @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@unique([intakeId, customerId])
+  @@map("reservation_ticket_documents")
 }

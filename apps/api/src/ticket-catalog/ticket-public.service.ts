@@ -177,6 +177,16 @@ export class TicketPublicService {
     }
   }
 
+  /** Reservations document numbering consumes only the assigned offer's supply type. */
+  async documentSupply(id: string, branchIds: readonly string[]) {
+    const row = await this.database.client.ticketPublishedOffer.findFirst({
+      where: { id, branchId: { in: [...branchIds] } },
+      select: { supplyType: true },
+    });
+    if (!row) throw new ForbiddenException('بلیط در شعبه مجاز نیست.');
+    return row.supplyType;
+  }
+
   async documentDetails(id: string, actor: AuthenticatedActor) {
     this.require(actor, 'ticket_catalog.read');
     if (uuid.validate(id).error)

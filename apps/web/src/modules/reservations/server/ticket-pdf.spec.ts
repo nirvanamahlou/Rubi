@@ -120,6 +120,41 @@ describe('reservation ticket PDF', () => {
     });
   });
 
+  it('prints the persisted six-digit number and original issue date with the English itinerary', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) =>
+        Promise.resolve(
+          Response.json({
+            data: url.endsWith('/workflow')
+              ? {
+                  ...intake,
+                  ticketDocuments: [
+                    {
+                      customerId: passengerId,
+                      number: '100123',
+                      source: 'AUTO',
+                      issuedAt: '2026-10-01T08:00:00Z',
+                    },
+                  ],
+                }
+              : {
+                  name: url.includes(cityOne) ? 'TEHRAN' : 'ANTALYA',
+                  attributes: {},
+                },
+          }),
+        ),
+      ),
+    );
+    const response = await GET(request(), { params: Promise.resolve({ id }) });
+    expect(response.status).toBe(200);
+    const html = renderer.mock.calls[0]![0] as string;
+    expect(html).toContain('100123');
+    expect(html).toContain('01 OCT 2026');
+    expect(html).toContain('TEHRAN → ANTALYA');
+    expect(html).toContain('TEST AIR');
+  });
+
   it('still renders when optional city metadata is unavailable', async () => {
     const fetcher = vi.fn().mockImplementation((url: string) => {
       if (url.endsWith(`/reservations/requests/${id}/workflow`))
@@ -378,6 +413,26 @@ describe('reservation ticket PDF', () => {
     expect(html).toContain('حضور در فرودگاه ۳ ساعت قبل از پرواز الزامی است.');
     expect(html).toContain('class="airline-logo"');
     expect(html).not.toContain('>20<');
+  });
+
+  it('renders legacy tickets without airport data or a resave and leaves airport fields blank', () => {
+    const tickets = reservationTickets(intake.snapshot);
+    expect(tickets.length).toBeGreaterThan(0);
+    const html = ticketPdfHtml(
+      tickets,
+      {
+        [cityOne]: { name: 'TEHRAN', code: 'IKA' },
+        [cityTwo]: { name: 'ANTALYA', code: 'AYT' },
+      },
+      { name: 'Niyayesh', logoDataUrl: 'data:image/png;base64,c2FmZQ==' },
+    );
+    expect(html).toContain('TEHRAN');
+    expect(html).toContain('ANTALYA');
+    expect(html).toContain('class="airport-code"></strong>');
+    expect(html).toContain('class="airport-name" dir="auto"></span>');
+    expect(html).not.toContain('class="airport-code">IKA');
+    expect(html).not.toContain('class="airport-code">AYT');
+    expect(html).not.toContain('class="airport-name" dir="auto">—');
   });
 
   it('uses the finance-gated Sales endpoint for a Sales download', async () => {

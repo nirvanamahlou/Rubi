@@ -1,3 +1,4 @@
+import { ReservationTicketDocumentsService } from './reservation-ticket-documents';
 import {
   SalesReservationTableModule,
   SalesReservationTableService,
@@ -84,7 +85,27 @@ export class ReservationRequestsController {
     @Optional()
     @Inject(SalesReservationTableService)
     private readonly table?: SalesReservationTableService,
+    @Optional()
+    @Inject(ReservationTicketDocumentsService)
+    private readonly ticketDocuments?: ReservationTicketDocumentsService,
   ) {}
+  @Get(':id/ticket-documents')
+  @Header('Cache-Control', 'private, no-store')
+  async ticketDocumentChoices(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return { data: await this.ticketDocuments!.choices(id, req.actor) };
+  }
+  @Patch(':id/ticket-documents')
+  @Header('Cache-Control', 'private, no-store')
+  async issueTicketDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: { customerId?: unknown; number?: unknown },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return { data: await this.ticketDocuments!.issue(id, input, req.actor) };
+  }
   @Get('delivery-queue')
   @Header('Cache-Control', 'private, no-store')
   async deliveryQueue(
@@ -413,6 +434,7 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    ReservationTicketDocumentsService,
     AuthGuard,
     ReservationOperationInterceptor,
     PermissionGuard,

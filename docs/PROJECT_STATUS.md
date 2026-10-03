@@ -4200,6 +4200,15 @@ The visible Geography terminal catalog now uses a new additive independent rail-
 ## 2026-10-01 — PC-A — reference flight ticket
 
 FLIGHT-TICKET-REFERENCE-1001 shares one reference-style A4 ticket renderer between preview and PDF: Niyayesh and uploaded carrier marks, passenger/contract identity, outbound navy and return teal route cards, selected airport IATA/name, saved departure/arrival, class-specific baggage and independently verified booking-reference QR. No fabricated airport, allowance, flight duration or issuance identifiers. Additive nullable airport FKs and authorized branch-scoped catalog document details retain selected airports at publication. Legacy offers require re-saving the actual definition; no guessed backfill. Existing finance and cancellation gates remain. Synthetic two-leg PDF visually reviewed as one A4 page. Apply migration 20261001103000_ticket_selected_airports before API rollout. No dependency changes or operational data writes.
+
+## 2026-10-01 — Legacy ticket airport compatibility (PC-A)
+
+Missing selected airport code/name render as blank in shared preview and PDF; city labels and all other stored flight facts remain visible. No inferred airport or old-ticket resave/backfill. Local deployment applies only the existing additive selected-airports migration, preserving ticket rows and unrelated pending migrations.
+
+## 2026-10-01 — Ticket visual polish and persistent identity (PC-A)
+
+Shared ticket preview/PDF has Tehran Milad/Azadi and world-landmark silhouettes, geographic world watermark, aligned carrier/company marks, improved airplane and date typography, and a larger bilingual notice. E-Ticket No, canonical carrier code plus saved contract carrier, English-route RLOC and original UTC issue date are displayed. COMPANY allocations receive immutable unique six-digit numbers; floating/API/unknown supply uses explicit six-digit manual entry. New migration `20261001150000_reservation_ticket_documents` is additive and required before deployment; no production/local operational migration or number backfill performed. Draft/old outputs without stored identity keep identifier/date blank.
+
 ## 2026-10-01 — RESERVATION-BUNDLED-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
 Reservations purchase now prepares one atomic hotel-and-transfer request per contract. Outbound/return transfers share a broker and a per-passenger all-directions price; the hotel panel shows its name, assigned passenger age categories and nightly rates. Finance groups the resulting rows under the contract number and displays each purchase and totals by currency, while preserving individual settlement records. The schema change is additive and prior single purchases remain readable. Focused API/Web tests, scoped lint, both typechecks, Prisma validation and the six-task production build pass. No operational database or runtime change; apply migration before API rollout. User requested develop merge after CI.
