@@ -35,7 +35,6 @@ describe('Customer Affairs report layout', () => {
     expect(html).toContain('۳٫۵');
     expect(html).toContain('تکمیل‌شده');
     expect(html).toContain('اقدام اصلاحی در جریان');
-    expect(html).toContain('همه تاریخ‌ها');
     expect(html).not.toContain('DONE');
   });
   it('does not invent an average or percentage with no data', () => {
@@ -54,15 +53,27 @@ describe('Customer Affairs report layout', () => {
   it('keeps the legacy satisfaction view without request distribution', () => {
     expect(render(report, false)).not.toContain('وضعیت درخواست‌های مشتریان');
   });
-  it('removes the redundant report heading while retaining freshness context', () => {
+  it('omits header metadata while retaining PDF export and its date range', () => {
     const source = readFileSync(
       new URL('./affairs-report-panel.tsx', import.meta.url),
       'utf8',
     );
-    expect(render(report, true)).not.toContain('گزارش امور مشتریان');
+    const html = render(report, true);
+    expect(html).not.toContain('گزارش امور مشتریان');
+    expect(html).not.toContain('آخرین دریافت');
+    expect(html).not.toContain('در محدوده دسترسی شما');
+    expect(html).not.toContain('همه تاریخ‌ها');
+    expect(html).toContain('خروجی PDF');
     expect(source).not.toContain(
       'نمای وضعیت درخواست‌ها، رسیدگی و بازخورد مشتریان',
     );
-    expect(source).toContain('آخرین دریافت');
+    expect(source).toContain('downloadAffairsReportPdf(report, dateRangeLabel)');
+    const workspace = readFileSync(
+      new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(workspace).toContain("if (from) next.set('createdFrom', from)");
+    expect(workspace).toContain("if (to) next.set('createdTo', to)");
+    expect(workspace).toContain('dateRangeLabel={');
   });
 });

@@ -4264,3 +4264,7 @@ The supplied two-page travel-contract terms PDF replaces the previous static fil
 ## 2026-10-03 — B2B-REGISTRATION-COPY-1003 — PC-B
 
 Removed the visible registration title and explanatory paragraph from the Organizations directory toolbar at the owner's request. Registration and Excel actions retain their existing handlers and the region retains its accessible name. No API, data, migration or runtime change. Validation and user-authorized develop merge are recorded in the matching Work Item.
+
+## 2026-10-03 — CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B
+
+Removed the fetched-at/access/date-range metadata line from the Customer Affairs report header. Date filters and the selected range passed to PDF export remain unchanged. Four focused component tests, scoped lint, Web typecheck and production build pass. No API, schema, permission, dependency, operational data, or live runtime change.
