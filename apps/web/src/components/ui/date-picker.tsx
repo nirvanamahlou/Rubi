@@ -391,7 +391,7 @@ export function DatePicker({
               </div>
 
               <div
-                dir={calendarSystem === 'gregorian' ? 'ltr' : 'rtl'}
+                dir="ltr"
                 className={cn(
                   'mb-3 flex items-center justify-between gap-2 rounded-xl bg-primary px-2 py-2 text-primary-foreground',
                   rubiCalendar &&
@@ -404,10 +404,7 @@ export function DatePicker({
                   onClick={navigateBackward}
                   type="button"
                 >
-                  <ChevronRight
-                    aria-hidden="true"
-                    className={`size-5 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronLeft aria-hidden="true" className="size-5" />
                 </button>
                 <div className="flex min-w-0 flex-1 items-center justify-center gap-1">
                   {calendarView === 'years' ? (
@@ -453,10 +450,7 @@ export function DatePicker({
                   onClick={navigateForward}
                   type="button"
                 >
-                  <ChevronLeft
-                    aria-hidden="true"
-                    className={`size-5 ${calendarSystem === 'gregorian' ? 'rotate-180' : ''}`}
-                  />
+                  <ChevronRight aria-hidden="true" className="size-5" />
                 </button>
               </div>
 
@@ -528,7 +522,7 @@ export function DatePicker({
                   ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-7 gap-1 text-center">
+                <div dir="ltr" className="grid grid-cols-7 gap-1 text-center">
                   {(english
                     ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
                     : weekdayLabels[calendarSystem]

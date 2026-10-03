@@ -319,8 +319,8 @@ export function ReservationFormSheet({
                     Country: {settings.text.country || '-'} · Website:{' '}
                     {settings.text.website || '-'} · CUSTOM:{' '}
                     {settings.numbers.customRooms} · Special room:{' '}
-                    {settings.flags.specialRoom ? 'YES' : 'NO'} · Broker:{' '}
-                    {settings.text.broker || '-'}
+                    {settings.flags.specialRoom ? 'YES' : 'NO'}
+                    {!voucher && <> · Broker: {settings.text.broker || '-'}</>}
                   </p>
                 )}
               </>

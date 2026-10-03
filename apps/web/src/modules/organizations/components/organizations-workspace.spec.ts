@@ -73,9 +73,8 @@ describe('agency to Master Organization integration', () => {
   });
 
   it('keeps the five-stage phone workflow stale-safe and development-only explicit', () => {
-    expect(cooperationWizard).toContain(
-      "['تأیید شماره', 'کد یک‌بارمصرف شماره همراه']",
-    );
+    expect(cooperationWizard).toContain("'تأیید شماره',");
+    expect(cooperationWizard).not.toContain('کد یک‌بارمصرف شماره همراه');
     expect(cooperationWizard).toContain('کد آزمایشی؛ پیامک واقعی ارسال نشده');
     expect(cooperationWizard).toContain('PhoneVerificationRequestGate');
     expect(cooperationWizard).toContain('phoneRequests.current.invalidate()');

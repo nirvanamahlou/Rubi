@@ -32,6 +32,7 @@ import type {
   CreateB2bPhoneChallengeRequestV1,
   CreateVerifiedB2bContactRequestV1,
   VerifyB2bPhoneChallengeRequestV1,
+  B2bCrmPaymentDocumentsV1,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -129,6 +130,20 @@ export const agencyClient = {
       `/agencies/${encodeURIComponent(organizationId)}/crm-connections`,
       {
         ...(branchId ? { headers: { 'x-branch-id': branchId } } : {}),
+        ...(signal ? { signal } : {}),
+      },
+    );
+  },
+  crmPaymentDocuments(
+    organizationId: string,
+    contractId: string,
+    branchId: string,
+    signal?: AbortSignal,
+  ) {
+    return b2bRequest<B2bCrmPaymentDocumentsV1>(
+      `/agencies/${encodeURIComponent(organizationId)}/crm-connections/contracts/${encodeURIComponent(contractId)}/payment-documents`,
+      {
+        headers: { 'x-branch-id': branchId },
         ...(signal ? { signal } : {}),
       },
     );

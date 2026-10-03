@@ -487,14 +487,14 @@ export function WorkbenchCalendar({
               ))}
             </div>
             {view !== 'undated' ? (
-              <div className="flex items-center gap-2">
+              <div dir="ltr" className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="icon"
                   aria-label={view === 'week' ? 'هفته قبل' : 'ماه قبل'}
                   onClick={() => move(-1)}
                 >
-                  <ChevronRight aria-hidden="true" className="size-4" />
+                  <ChevronLeft aria-hidden="true" className="size-4" />
                 </Button>
                 <Button variant="outline" onClick={goToday}>
                   امروز
@@ -505,7 +505,7 @@ export function WorkbenchCalendar({
                   aria-label={view === 'week' ? 'هفته بعد' : 'ماه بعد'}
                   onClick={() => move(1)}
                 >
-                  <ChevronLeft aria-hidden="true" className="size-4" />
+                  <ChevronRight aria-hidden="true" className="size-4" />
                 </Button>
               </div>
             ) : null}
@@ -517,7 +517,7 @@ export function WorkbenchCalendar({
         {view === 'month' || view === 'week' ? (
           <div className="overflow-x-auto">
             <div className="min-w-[560px] px-4 pb-4">
-              <div className="grid grid-cols-7">
+              <div dir="ltr" className="grid grid-cols-7">
                 {weekdays.map((day) => (
                   <div
                     key={day}
@@ -527,7 +527,10 @@ export function WorkbenchCalendar({
                   </div>
                 ))}
               </div>
-              <div className="grid grid-cols-7 overflow-hidden rounded-2xl border border-border">
+              <div
+                dir="ltr"
+                className="grid grid-cols-7 overflow-hidden rounded-2xl border border-border"
+              >
                 {days.map((date) => {
                   const iso = toIsoDate(date);
                   const parts = calendarParts(date, 'persian');

@@ -10,11 +10,24 @@ export function readDossierHistory(state: unknown): DossierHistory | null {
   const value = (state as Record<string, unknown>)[key];
   if (!value || typeof value !== 'object') return null;
   const item = value as Record<string, unknown>;
-  return ['organizationId', 'screen', 'tab', 'creditTab'].every(
-    (name) => typeof item[name] === 'string',
+  if (
+    !['organizationId', 'screen', 'tab', 'creditTab'].every(
+      (name) => typeof item[name] === 'string',
+    )
   )
-    ? (item as unknown as DossierHistory)
-    : null;
+    return null;
+  const history = item as unknown as DossierHistory;
+  if (history.screen === 'access')
+    return {
+      ...history,
+      screen: 'home',
+      tab: 'profile',
+      creditTab: 'policy',
+    };
+  return history.screen === 'reports' &&
+    (history.tab === 'audit' || history.tab === 'export')
+    ? { ...history, tab: 'reports' }
+    : history;
 }
 export function pushDossierHistory(value: DossierHistory | null) {
   if (

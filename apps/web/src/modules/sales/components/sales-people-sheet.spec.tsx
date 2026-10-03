@@ -91,6 +91,19 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     );
     expect(html).toContain('نام انگلیسی مطابق پاسپورت');
     expect(html).toContain('نام خانوادگی انگلیسی مطابق پاسپورت');
+    const headers = [...html.matchAll(/<th\b[^>]*>(.*?)<\/th>/gs)].map(
+      (match) => match[1]!.replace(/<[^>]*>/g, ''),
+    );
+    expect(headers.slice(1, 4)).toEqual([
+      'نام انگلیسی مطابق پاسپورت *',
+      'نام خانوادگی انگلیسی مطابق پاسپورت *',
+      'کد ملی *',
+    ]);
+    expect(html).toMatch(/id="sales-entry-p\d+-passport-first-name"/);
+    expect(html).toMatch(/id="sales-entry-p\d+-national-id"/);
+    expect(
+      html.search(/id="sales-entry-p\d+-passport-first-name"/),
+    ).toBeLessThan(html.search(/id="sales-entry-p\d+-national-id"/));
     expect(html).toContain('شماره پاسپورت');
     expect(html).toContain('انقضای پاسپورت');
     expect(html).not.toContain('نام *');

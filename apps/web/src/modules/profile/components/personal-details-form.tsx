@@ -116,6 +116,7 @@ export function PersonalDetailsForm({
         },
         photo,
       );
+      setPhoto(null);
       setSaved(true);
     } catch (reason) {
       setError(

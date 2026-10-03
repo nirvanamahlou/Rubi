@@ -98,10 +98,7 @@ export function CampaignCalendar({
             </p>
           </div>
         </div>
-        <div
-          dir={system === 'gregorian' ? 'ltr' : 'rtl'}
-          className="flex flex-wrap items-center gap-2"
-        >
+        <div dir="ltr" className="flex flex-wrap items-center gap-2">
           <Select
             value={system}
             onValueChange={(value) => setSystem(value as CalendarSystem)}
@@ -122,10 +119,7 @@ export function CampaignCalendar({
             size="icon"
             variant="outline"
           >
-            <ChevronRight
-              aria-hidden="true"
-              className={`size-4 ${system === 'gregorian' ? 'rotate-180' : ''}`}
-            />
+            <ChevronLeft aria-hidden="true" className="size-4" />
           </Button>
           <Button
             onClick={() => setAnchor(new Date(2026, 8, 2, 12))}
@@ -142,17 +136,17 @@ export function CampaignCalendar({
             size="icon"
             variant="outline"
           >
-            <ChevronLeft
-              aria-hidden="true"
-              className={`size-4 ${system === 'gregorian' ? 'rotate-180' : ''}`}
-            />
+            <ChevronRight aria-hidden="true" className="size-4" />
           </Button>
         </div>
       </Card>
 
       {monthCampaigns.length ? (
         <Card className="overflow-hidden">
-          <div className="grid grid-cols-7 border-b border-border bg-muted/55 text-center text-[10px] font-bold text-muted-foreground sm:text-xs">
+          <div
+            dir="ltr"
+            className="grid grid-cols-7 border-b border-border bg-muted/55 text-center text-[10px] font-bold text-muted-foreground sm:text-xs"
+          >
             {weekdayLabels[system].map((label) => (
               <div className="px-1 py-3" key={label}>
                 <span className="sm:hidden">{label.slice(0, 1)}</span>
@@ -160,7 +154,7 @@ export function CampaignCalendar({
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7">
+          <div dir="ltr" className="grid grid-cols-7">
             {days.map((day) => {
               const events = campaignsOnDay(campaigns, day.isoDate);
               return (

@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 import {
   getMasterDataColumnFilters,
@@ -5,6 +8,14 @@ import {
 } from '@nora/contracts';
 import { transportColumns, transportColumnValue } from './transport-columns';
 import { serializeMasterDataListQuery } from '../api/contracts';
+
+const workspaceSource = readFileSync(
+  resolve(
+    process.cwd(),
+    'src/modules/master-data/components/master-data-transportation-workspace.tsx',
+  ),
+  'utf8',
+);
 describe('mockup column coverage', () => {
   it.each([
     'airlines',
@@ -17,7 +28,17 @@ describe('mockup column coverage', () => {
     'bus-companies',
     'bus-types',
   ] as const)('has individual columns and two filters for %s', (resource) => {
-    expect(transportColumns(resource).length).toBeGreaterThanOrEqual(5);
+    expect(transportColumns(resource).length).toBeGreaterThanOrEqual(
+      resource === 'aircraft-types' ||
+        resource === 'cabin-classes' ||
+        resource === 'bus-companies'
+        ? 3
+        : resource === 'airlines'
+          ? 4
+          : resource === 'rail-companies'
+            ? 4
+            : 5,
+    );
     expect(getMasterDataColumnFilters(resource)).toHaveLength(2);
     expect(new Set(transportColumns(resource).map(([key]) => key)).size).toBe(
       transportColumns(resource).length,
@@ -29,21 +50,34 @@ describe('mockup column coverage', () => {
       'ICAO',
       'ایرلاین',
       'کشور',
-      'لوگو Reference',
-      'Integration Connection',
     ]);
     expect(
       transportColumns('airlines').map(([, label]) => label),
     ).not.toContain('سازمان');
+    for (const hidden of [
+      'لوگو Reference',
+      'Integration Connection',
+      'Version / Audit',
+    ])
+      expect(
+        transportColumns('airlines').map(([, label]) => label),
+      ).not.toContain(hidden);
+    expect(workspaceSource).toContain("{key === 'code' ? (");
+    expect(workspaceSource).toContain('<MasterDataLogoCell record={record} />');
+    expect(workspaceSource).toMatch(
+      /<td className="p-4 text-center">\s*<div className="flex flex-wrap justify-center gap-2">/,
+    );
+    for (const action of ['مشاهده', 'ویرایش'])
+      expect(workspaceSource).toContain(`aria-label={\`${action} \${`);
+    expect(workspaceSource).toContain('<MasterDataDeleteButton');
+    expect(transportColumns('airlines')).toHaveLength(4);
     expect(
       transportColumns('aircraft-types').map(([, label]) => label),
-    ).toEqual([
-      'کد',
-      'سازنده و مدل',
-      'عنوان انگلیسی',
-      'نوع بدنه',
-      'ظرفیت',
-      'ترتیب نمایش',
+    ).toEqual(['کد', 'سازنده و مدل', 'عنوان انگلیسی']);
+    expect(transportColumns('aircraft-types').map(([key]) => key)).toEqual([
+      'code',
+      'manufacturerModel',
+      'englishName',
     ]);
     expect(
       transportColumns('aircraft-types').map(([, label]) => label),
@@ -51,11 +85,71 @@ describe('mockup column coverage', () => {
   });
   it('shows only the required English title for cabin classes', () => {
     expect(transportColumns('cabin-classes').map(([, label]) => label)).toEqual(
-      ['کد', 'عنوان انگلیسی', 'کد رزرو', 'ترتیب', 'استفاده در Ticket Catalog'],
+      ['کد', 'نوع کلاس', 'کد رزرو'],
     );
+    expect(transportColumns('cabin-classes').map(([key]) => key)).toEqual([
+      'code',
+      'cabinType',
+      'bookingCode',
+    ]);
     expect(
       transportColumns('cabin-classes').map(([, label]) => label),
     ).not.toContain('عنوان فارسی');
+    for (const [value, label] of [
+      ['ECONOMY', 'Economy'],
+      ['PREMIUM_ECONOMY', 'Premium Economy'],
+      ['BUSINESS', 'Business'],
+      ['FIRST', 'First Class'],
+    ] as const)
+      expect(
+        transportColumnValue(
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            resource: 'cabin-classes',
+            code: value,
+            name: label,
+            status: 'active',
+            version: 1,
+            createdAt: '2026-10-03T00:00:00Z',
+            updatedAt: '2026-10-03T00:00:00Z',
+            attributes: { cabinType: value },
+          },
+          'cabinType',
+        ),
+      ).toBe(label);
+  });
+  it('keeps only the approved Rail Companies reference columns', () => {
+    expect(transportColumns('rail-companies')).toEqual([
+      ['code', 'کد'],
+      ['name', 'شرکت ریلی'],
+      ['countryName', 'کشور'],
+      ['organizationName', 'سازمان'],
+    ]);
+    for (const hidden of [
+      'لوگو Reference',
+      'Integration Connection',
+      'انواع قطار',
+      'Version / Audit',
+    ])
+      expect(
+        transportColumns('rail-companies').map(([, label]) => label),
+      ).not.toContain(hidden);
+  });
+  it('keeps only the approved Bus Companies reference columns', () => {
+    expect(transportColumns('bus-companies')).toEqual([
+      ['code', 'کد'],
+      ['name', 'شرکت اتوبوس'],
+      ['countryName', 'کشور'],
+    ]);
+    for (const hidden of [
+      'لوگو Reference',
+      'Integration Connection',
+      'انواع اتوبوس',
+      'Version / Audit',
+    ])
+      expect(
+        transportColumns('bus-companies').map(([, label]) => label),
+      ).not.toContain(hidden);
   });
   it('removes combined audit columns while preserving independent versions', () => {
     for (const resource of [

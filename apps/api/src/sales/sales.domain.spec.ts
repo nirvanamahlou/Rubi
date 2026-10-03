@@ -7,6 +7,7 @@ import {
   calculateSalesBalances,
   passengerAgeCategory,
   salesFingerprint,
+  sumSalesDecimals,
   validateSalesContract,
   validateSalesPayment,
 } from './sales.domain';
@@ -418,9 +419,44 @@ describe('Sales contract domain', () => {
     ]);
   });
 
+  it('aggregates a negative computed balance without accepting a negative payment', () => {
+    const balances = calculateSalesBalances(
+      [{ type: 'BASE', title: 'قیمت', amount: '100', currencyCode: 'IRR' }],
+      [{ amount: '120', currencyCode: 'IRR', status: 'FINANCE_CONFIRMED' }],
+    );
+    expect(balances[0]?.outstanding).toBe('-20');
+    expect(
+      sumSalesDecimals(balances.map(({ outstanding }) => outstanding)),
+    ).toBe('-20');
+    expect(sumSalesDecimals(['-20', '50'])).toBe('30');
+    expect(() =>
+      validateSalesPayment({
+        amount: '-20',
+        currencyCode: 'IRR',
+        dueAt: '2026-10-01T00:00:00Z',
+        method: 'CASH',
+      }),
+    ).toThrow('مبلغ Decimal معتبر نیست');
+  });
+
   it('derives passenger category at departure date', () => {
     expect(passengerAgeCategory('2025-01-01', '2026-10-01')).toBe('INF');
     expect(passengerAgeCategory('2020-01-01', '2026-10-01')).toBe('CHD');
     expect(passengerAgeCategory('2000-01-01', '2026-10-01')).toBe('ADT');
+  });
+});
+
+describe('signed calculated Sales balance aggregation', () => {
+  it('nets overpayments precisely without changing nonnegative input parsing', () => {
+    expect(sumSalesDecimals(['10.25', '-15.2501', '0.0001'])).toBe('-5');
+    expect(
+      sumSalesDecimals(['999999999999999999.9999', '-999999999999999999.9998']),
+    ).toBe('0.0001');
+    expect(sumSalesDecimals([])).toBe('0');
+  });
+  it('still rejects malformed calculated amounts', () => {
+    for (const amount of ['--1', '-1e3', '-NaN', '-1.12345', '+1']) {
+      expect(() => sumSalesDecimals([amount])).toThrow('Decimal');
+    }
   });
 });

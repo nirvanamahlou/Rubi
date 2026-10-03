@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import type {
   AuthenticatedActor,
   SalesTicketSelectionInput,
@@ -92,6 +97,27 @@ export class SalesCustomersPublicAdapter {
   constructor(
     @Inject(CustomerService) private readonly customers: CustomerService,
   ) {}
+
+  async resolvePhone(customerId: string, actor: AuthenticatedActor) {
+    try {
+      const response = actor.permissions.includes('customers.sensitive.read')
+        ? await this.customers.detail(
+            customerId,
+            actor,
+            undefined,
+            'customer-verification',
+          )
+        : await this.customers.maskedDetail(customerId, actor);
+      const phones = response.data.contacts.filter(
+        (contact) => contact.type === 'phone',
+      );
+      const phone = phones.find((contact) => contact.isPrimary) ?? phones[0];
+      return phone?.value ?? phone?.maskedValue ?? null;
+    } catch (error) {
+      if (error instanceof NotFoundException) return null;
+      throw error;
+    }
+  }
 
   async resolveSnapshot(customerId: string, actor: AuthenticatedActor) {
     const response = await this.customers.maskedDetail(customerId, actor);

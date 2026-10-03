@@ -71,6 +71,13 @@ export function validateServicePurchase(
           'pricingCalculation',
         ].includes(key),
     ) ||
+    (input.coveredServiceClientKeys !== undefined &&
+      (!Array.isArray(input.coveredServiceClientKeys) ||
+        !input.coveredServiceClientKeys.length ||
+        input.coveredServiceClientKeys.length > 100 ||
+        input.coveredServiceClientKeys.some(
+          (key) => typeof key !== 'string' || !key.trim() || key.length > 160,
+        ))) ||
     (input.passengerPrices !== undefined &&
       (!Array.isArray(input.passengerPrices) ||
         input.passengerPrices.length === 0 ||
@@ -107,8 +114,12 @@ export function validateServicePurchase(
       !calculation ||
       typeof calculation !== 'object' ||
       Object.keys(calculation).some(
-        (key) => !['baseAmount', 'factor'].includes(key),
+        (key) =>
+          !['baseAmount', 'factor', 'chargeablePassengerCount'].includes(key),
       ) ||
+      (calculation.chargeablePassengerCount !== undefined &&
+        (!Number.isSafeInteger(calculation.chargeablePassengerCount) ||
+          calculation.chargeablePassengerCount <= 0)) ||
       input.passengerPrices !== undefined ||
       input.transferUnitAmount !== undefined
     )
@@ -216,7 +227,7 @@ export class ReservationServicePurchaseService {
       input.expectedVersion < 0 ||
       !Array.isArray(input.purchases) ||
       input.purchases.length < 1 ||
-      input.purchases.length > 2 ||
+      input.purchases.length > 100 ||
       Object.keys(input).some(
         (field) => !['version', 'expectedVersion', 'purchases'].includes(field),
       )
@@ -256,8 +267,13 @@ export class ReservationServicePurchaseService {
       ) ||
       rows.filter((row) => row.serviceClientKey === hotelKey).length !==
         Number(Boolean(hotelKey)) ||
-      rows.filter((row) => transferKeys.includes(row.serviceClientKey))
-        .length !== Number(transferKeys.length > 0)
+      rows.some((row) =>
+        row.coveredServiceClientKeys?.some((key: string) =>
+          row.serviceClientKey === hotelKey
+            ? key !== hotelKey
+            : !transferKeys.includes(key),
+        ),
+      )
     )
       throw new BadRequestException(
         'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
@@ -289,34 +305,49 @@ export class ReservationServicePurchaseService {
         let passengerPrices: Prisma.InputJsonValue | undefined;
         if (row.pricingCalculation) {
           if (
-            service.kind === 'HOTEL'
-              ? row.coveredServiceClientKeys?.length !== 1
-              : row.coveredServiceClientKeys?.length !== transferKeys.length ||
-                transferKeys.some(
-                  (key) => !row.coveredServiceClientKeys?.includes(key),
-                )
+            service.kind === 'HOTEL' &&
+            (row.coveredServiceClientKeys?.length !== 1 ||
+              row.pricingCalculation.chargeablePassengerCount !== undefined)
           )
             throw new BadRequestException('خدمات فرمول خرید معتبر نیست.');
           try {
-            const nights = hotelNights(
-              snapshot.hotelSelection?.checkInDate ?? '',
-              snapshot.hotelSelection?.checkOutDate ?? '',
-            );
+            const count =
+              service.kind === 'TRANSFER'
+                ? (row.pricingCalculation.chargeablePassengerCount ??
+                  Number(row.pricingCalculation.factor))
+                : undefined;
+            if (
+              count !== undefined &&
+              (!Number.isSafeInteger(count) || count <= 0)
+            )
+              throw new Error();
+            const nights =
+              service.kind === 'HOTEL'
+                ? hotelNights(
+                    snapshot.hotelSelection?.checkInDate ?? '',
+                    snapshot.hotelSelection?.checkOutDate ?? '',
+                  )
+                : 1;
             amount = reservationServicePurchaseTotal(
               row.pricingCalculation.baseAmount,
-              row.pricingCalculation.factor,
+              count !== undefined
+                ? String(count)
+                : row.pricingCalculation.factor,
               nights,
             );
             passengerPrices = {
               calculation: {
                 ...row.pricingCalculation,
+                ...(count !== undefined
+                  ? { chargeablePassengerCount: count, factor: String(count) }
+                  : {}),
                 nights,
                 totalAmount: amount,
               },
             };
           } catch {
             throw new BadRequestException(
-              'قیمت پایه، ضریب یا تعداد شب قرارداد معتبر نیست.',
+              'قیمت یا تعداد نفرات ترانسفر یا فرمول هتل معتبر نیست.',
             );
           }
         } else if (service.kind === 'HOTEL') {
@@ -432,7 +463,7 @@ export class ReservationServicePurchaseService {
               serviceTitleSnapshot:
                 item.service.kind === 'HOTEL'
                   ? snapshot.hotelSelection!.hotelNameSnapshot
-                  : transferKeys.length > 1
+                  : (item.row.coveredServiceClientKeys?.length ?? 0) > 1
                     ? 'ترانسفر رفت‌وبرگشت'
                     : item.service.titleSnapshot,
               supplierOrganizationId: item.broker.id,

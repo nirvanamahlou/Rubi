@@ -69,6 +69,7 @@ import {
   getMasterDataDefinition,
   type MasterDataResourceKey,
 } from '../model/catalog';
+import { masterDataComplementKpi } from '../model/kpi-complement';
 import {
   MasterDataLiveForm,
   type MasterDataFormMode,
@@ -280,6 +281,7 @@ export function MasterDataFinanceWorkspace() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [activeTotal, setActiveTotal] = useState(0);
+  const [globalTotal, setGlobalTotal] = useState<number>();
   const [latestReferenceUpdatedAt, setLatestReferenceUpdatedAt] = useState<
     string | null
   >(null);
@@ -351,6 +353,7 @@ export function MasterDataFinanceWorkspace() {
         setRecords([]);
         setTotal(response.meta.total);
       } else {
+        setGlobalTotal(undefined);
         const baseQuery: MasterDataListQuery = {
           ...columnFilters,
           ...dateFilters,
@@ -379,6 +382,7 @@ export function MasterDataFinanceWorkspace() {
         setRates([]);
         setKpiRates([]);
         setActiveTotal(activeResponse.meta.total);
+        setGlobalTotal(latestResponse.meta.total);
         setLatestReferenceUpdatedAt(latestResponse.data[0]?.updatedAt ?? null);
         setTotal(response.meta.total);
       }
@@ -637,11 +641,6 @@ export function MasterDataFinanceWorkspace() {
       durations.reduce((sum, value) => sum + value, 0) / durations.length,
     ).toLocaleString('fa-IR')} دقیقه`;
   })();
-  const missingBankDetails = records.filter(
-    (row) =>
-      tab === 'banks' &&
-      (!row.attributes.englishName || !row.attributes.swiftCode),
-  ).length;
   const kpis: readonly MasterDataKpiItem[] =
     tab === 'currencies'
       ? [
@@ -721,11 +720,15 @@ export function MasterDataFinanceWorkspace() {
                 hint: 'در مالکیت Finance',
               },
               {
-                label: 'نیازمند تکمیل اطلاعات',
-                value: missingBankDetails,
+                label: 'بانک غیرفعال',
+                value: masterDataComplementKpi(
+                  globalTotal,
+                  activeTotal,
+                  requestState === 'ready' ? 'ready' : 'loading',
+                ),
                 icon: FilePenLine,
                 tone: 'amber',
-                hint: 'در صفحه جاری',
+                hint: 'در کل اطلاعات پایه',
               },
             ]
           : [

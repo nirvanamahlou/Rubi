@@ -62,7 +62,7 @@ describe('shared date picker contract', () => {
   });
 
   it('keeps Gregorian navigation independent of Persian or English labels in every dual-calendar header', () => {
-    for (const [path, system] of [
+    for (const [path] of [
       ['components/ui/date-picker.tsx', 'calendarSystem'],
       [
         'modules/ticket-catalog/components/ticket-date-picker.tsx',
@@ -73,10 +73,8 @@ describe('shared date picker contract', () => {
       ['modules/marketing/components/campaign-calendar.tsx', 'system'],
     ]) {
       const source = readFileSync(join(sourceRoot, path!), 'utf8');
-      expect(source).toContain(
-        `dir={${system} === 'gregorian' ? 'ltr' : 'rtl'}`,
-      );
-      expect(source).toContain(`${system} === 'gregorian' ? 'rotate-180' : ''`);
+      expect(source).toContain('dir="ltr"');
+      expect(source).not.toContain('rotate-180');
       expect(source).not.toContain("english ? 'rotate-180'");
     }
   });

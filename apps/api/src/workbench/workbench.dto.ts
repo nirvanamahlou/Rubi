@@ -63,6 +63,9 @@ export class WorkbenchProfileDto {
 export class WorkbenchProfilePhotoDto {
   @IsUUID() branchId!: string;
   @IsString() @Length(1, 240) title!: string;
+  @IsOptional() @IsString() @Length(2, 160) displayName?: string;
+  @IsOptional() @IsString() @Length(0, 320) email?: string | null;
+  @IsOptional() @IsString() @Length(0, 32) phone?: string | null;
 }
 
 export class WorkbenchCalendarAttachmentDto {

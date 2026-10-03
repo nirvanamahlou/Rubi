@@ -59,7 +59,7 @@ describe('transportation workspace', () => {
       'نسخه فعال',
       'فرمت‌های فایل',
       'در انتظار انتشار',
-      'انواع بدنه',
+      'مدل‌های یکتا',
       'کشورهای ثبت‌شده',
       'دسته‌های قطار',
       'کلاس‌های خدمات',
@@ -91,5 +91,26 @@ describe('transportation workspace', () => {
     expect(source).toContain('Credential');
     expect(source).not.toContain('apiKey');
     expect(source).not.toContain('ماهان');
+  });
+
+  it('uses the canonical Cabin type for list links, completion and profile presentation', () => {
+    expect(source).toContain("cabinType: 'نوع کلاس'");
+    expect(source).toContain(
+      "if (record.resource === 'cabin-classes')\n    return transportColumnValue(record, 'cabinType');",
+    );
+    expect(source).toContain(
+      "if (record.resource === 'cabin-classes') return !record.attributes.cabinType;",
+    );
+    expect(source).toContain(
+      "resource === 'cabin-classes' && key === 'cabinType'",
+    );
+    const cabinProfile = source.slice(
+      source.indexOf("if (record.resource === 'cabin-classes')\n    return ["),
+      source.indexOf("if (record.resource !== 'aircraft-types')"),
+    );
+    expect(cabinProfile).toContain(
+      "['cabinType', transportColumnValue(record, 'cabinType')]",
+    );
+    expect(cabinProfile).toContain("key !== 'englishName'");
   });
 });

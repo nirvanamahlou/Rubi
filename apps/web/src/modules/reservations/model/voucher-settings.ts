@@ -161,8 +161,7 @@ export function voucherFormData(
   if (!v)
     return {
       ...d,
-      supplier:
-        intake.workflow.supplierFormSettings?.text.broker?.trim() || d.supplier,
+      supplier: '0',
     };
   const passengers = d.passengers
     .filter((p) => v.passengers.some((s) => s.id === p.id && s.selected))
@@ -187,7 +186,7 @@ export function voucherFormData(
     (Date.parse(v.text.checkOut) - Date.parse(v.text.checkIn)) / 86400000;
   return {
     ...d,
-    supplier: v.text.broker || '-',
+    supplier: '0',
     hotel: v.text.hotel || '-',
     destination: v.text.city || '-',
     stars: v.text.stars || '-',

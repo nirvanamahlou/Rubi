@@ -90,14 +90,16 @@ export function masterDataFormValuesFrom(
         field.key,
         definition.key === 'payment-methods' && field.key === 'channel'
           ? 'OTHER'
-          : field.key === 'displayOrder'
-            ? '0'
-            : field.key === 'collaborationStatus' ||
-                field.key === 'transportStatus'
-              ? 'ACTIVE'
-              : field.key === 'referenceValidityMode'
-                ? 'DAYS'
-                : '',
+          : definition.key === 'cabin-classes' && field.key === 'cabinType'
+            ? 'ECONOMY'
+            : field.key === 'displayOrder'
+              ? '0'
+              : field.key === 'collaborationStatus' ||
+                  field.key === 'transportStatus'
+                ? 'ACTIVE'
+                : field.key === 'referenceValidityMode'
+                  ? 'DAYS'
+                  : '',
       ]),
     );
   const [fromCurrencyCode = '', toCurrencyCode = ''] = record.code.split('/');
@@ -138,6 +140,21 @@ export function masterDataFormValuesFrom(
         value === null || value === undefined ? '' : String(value),
       ];
     }),
+  );
+}
+
+export function masterDataRecordTitle(
+  definition: MasterDataCatalogItem,
+  record?: MasterDataRecord,
+) {
+  if (definition.key !== 'cabin-classes' || !record)
+    return record?.name ?? definition.singularLabel;
+  const cabinType = String(record.attributes.cabinType ?? '');
+  return (
+    definition.fields
+      .find((field) => field.key === 'cabinType')
+      ?.options?.find((option) => option.value === cabinType)?.label ??
+    record.name
   );
 }
 
@@ -293,7 +310,7 @@ function GenericMasterDataLiveForm({
               <MasterDataProfileIdentity
                 eyebrow={`پروفایل ${definition.singularLabel}`}
                 {...(record ? { record } : {})}
-                title={record?.name ?? definition.singularLabel}
+                title={masterDataRecordTitle(definition, record)}
               />
               <MasterDataDetailSection title="مشخصات ثبت‌شده">
                 {fields.map((field) => (
@@ -361,6 +378,9 @@ function GenericMasterDataLiveForm({
                   ['mealServiceIds', 'roomTypeIds', 'facilityIds'].includes(
                     field.key,
                   );
+                const isTransportInlineFacility =
+                  ['train-types', 'bus-types'].includes(definition.key) &&
+                  field.key === 'facilityIds';
                 const isSupplierInlineService =
                   definition.key === 'suppliers' &&
                   field.key === 'serviceCodes';
@@ -393,6 +413,7 @@ function GenericMasterDataLiveForm({
                       'serviceCodes',
                     ].includes(field.key)) ||
                     (definition.key === 'cities' && field.key === 'regionId') ||
+                    isTransportInlineFacility ||
                     (definition.key === 'hotels' &&
                       ['mealServiceIds', 'facilityIds', 'roomTypeIds'].includes(
                         field.key,
@@ -442,6 +463,7 @@ function GenericMasterDataLiveForm({
                                     : reference.target === 'regions'
                                       ? { countryId: values.countryId ?? '' }
                                       : (isHotelInlineReference ||
+                                            isTransportInlineFacility ||
                                             isSupplierInlineService) &&
                                           searchQuery
                                         ? { name: searchQuery }
@@ -456,7 +478,9 @@ function GenericMasterDataLiveForm({
                       field.key === 'organizationId'
                     }
                     alwaysShowCreate={
-                      isHotelInlineReference || isSupplierInlineService
+                      isHotelInlineReference ||
+                      isTransportInlineFacility ||
+                      isSupplierInlineService
                     }
                     id={controlId}
                     {...(describedBy ? { ariaDescribedby: describedBy } : {})}

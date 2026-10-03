@@ -6,6 +6,11 @@ import type {
   SalesServiceKind,
   SalesSettlementStatus,
 } from '../sales';
+import type {
+  DocumentCapabilitiesV1,
+  DocumentConfidentialityCode,
+  DocumentScanStatusCode,
+} from '../documents';
 
 export const B2B_CONTRACT_VERSION = 1 as const;
 export * from './agreement-workflow';
@@ -266,6 +271,39 @@ export interface B2bCrmConnectionsV1 {
   observedAt: string;
 }
 
+export interface B2bCrmPaymentDocumentV1 {
+  id: string;
+  title: string;
+  type: {
+    code: string;
+    name: string;
+  };
+  confidentiality: DocumentConfidentialityCode;
+  currentVersion: {
+    originalFileName: string;
+    safeDownloadName: string;
+    detectedMimeType: string;
+    sizeBytes: number;
+    scanStatus: DocumentScanStatusCode;
+  };
+  capabilities: Pick<DocumentCapabilitiesV1, 'viewFile' | 'download'>;
+  updatedAt: string;
+}
+
+export interface B2bCrmPaymentDocumentGroupV1 {
+  paymentId: string;
+  documents: readonly B2bCrmPaymentDocumentV1[];
+}
+
+export interface B2bCrmPaymentDocumentsV1 {
+  version: 1;
+  organizationId: string;
+  branchId: string;
+  contractId: string;
+  payments: readonly B2bCrmPaymentDocumentGroupV1[];
+  observedAt: string;
+}
+
 export const b2bEndpoints = {
   agency: (organizationId: string) =>
     `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}` as const,
@@ -279,4 +317,6 @@ export const b2bEndpoints = {
     `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}/agreed-rates` as const,
   agencyCrmConnections: (organizationId: string) =>
     `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}/crm-connections` as const,
+  agencyCrmPaymentDocuments: (organizationId: string, contractId: string) =>
+    `${B2B_API_PREFIX}/agencies/${encodeURIComponent(organizationId)}/crm-connections/contracts/${encodeURIComponent(contractId)}/payment-documents` as const,
 };

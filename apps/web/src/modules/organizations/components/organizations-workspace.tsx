@@ -59,7 +59,6 @@ import { AgreementWorkflowPanel } from './agreement-workflow-panel';
 import { OrganizationAddressesPanel } from './organization-addresses-panel';
 import { AgencyProfilePanel } from './agency-profile-panel';
 import { OrganizationSignatoriesPanel } from './organization-signatories-panel';
-import { OrganizationUsersPanel } from './organization-users-panel';
 import { AgencyDossierSummary } from './agency-dossier-summary';
 import { loadCommercialSummary } from '../model/commercial-summary';
 import {
@@ -394,10 +393,6 @@ export function OrganizationsWorkspace() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const metricValue = (value: number | undefined) =>
     metricsState === 'loading' ? '…' : (value?.toLocaleString('fa-IR') ?? '—');
-  const metricNote =
-    metricsState === 'error'
-      ? 'دریافت آمار ناموفق؛ دوباره تازه‌سازی کنید'
-      : 'مطابق جست‌وجو و وضعیت؛ همه صفحات';
 
   async function exportExcel() {
     if (exporting) return;
@@ -462,25 +457,18 @@ export function OrganizationsWorkspace() {
             value={metricValue(metrics?.agencies)}
             icon={Users}
             tone="purple"
-            note={metricNote}
           />
           <CorporateMetric
             label="مشتری سازمانی"
             value={metricValue(metrics?.corporateCustomers)}
             icon={Building2}
             tone="green"
-            note={metricNote}
           />
           <CorporateMetric
             label="نیازمند تکمیل هویت"
             value={metricValue(metrics?.incompleteIdentity)}
             icon={TriangleAlert}
             tone="amber"
-            note={
-              metricsState === 'error'
-                ? metricNote
-                : 'نوع شخصیت یا شناسه ملی شرکت ثبت نشده'
-            }
           />
         </section>
 
@@ -690,7 +678,7 @@ export function OrganizationsWorkspace() {
                     {commercial[record.id]?.manager ?? 'در حال دریافت…'}
                   </p>
                   <p className="text-sm">
-                    قرارداد فعال:{' '}
+                    قرارداد چارچوب فعال:{' '}
                     {commercial[record.id]?.agreements ?? 'در حال دریافت…'}
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -744,10 +732,9 @@ export function OrganizationsWorkspace() {
                       'نوع طرف',
                       'کد سازمان',
                       'مدیر حساب',
-                      'قرارداد فعال',
+                      'قرارداد چارچوب فعال',
                       'اعتبار قابل استفاده',
                       'وضعیت',
-                      'هشدار',
                       'عملیات',
                     ].map((head) => (
                       <th className="p-4 text-start" key={head}>
@@ -806,7 +793,6 @@ export function OrganizationsWorkspace() {
                           {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                         </Badge>
                       </td>
-                      <td className="unavailable-value">در دسترس نیست</td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <Button
@@ -1037,13 +1023,6 @@ export function OrganizationsWorkspace() {
               onAddContact={() => setContactForm({ mode: 'create' })}
             />
           }
-          access={(view) => (
-            <OrganizationUsersPanel
-              key={selected.id + view}
-              organizationId={selected.id}
-              view={view}
-            />
-          )}
           operations={(view, onReviewCooperation) =>
             view === 'address' ? (
               <OrganizationAddressesPanel

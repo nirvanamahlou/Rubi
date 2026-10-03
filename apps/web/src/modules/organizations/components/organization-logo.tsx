@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import {
   canViewOrganizationLogo,
-  organizationLogoPreview,
+  watchOrganizationLogoPreview,
 } from '../model/organization-logo';
 
 export function OrganizationLogo({
@@ -19,41 +19,33 @@ export function OrganizationLogo({
   const reference = String(
     organization.attributes.logoFileReference ?? '',
   ).trim();
-  const [image, setImage] = useState<{ reference: string; url: string }>();
+  const permissionKey = permissions.join('\u0000');
+  const identity = `${organization.id}\u0000${reference}\u0000${organization.version}\u0000${permissionKey}`;
+  const [image, setImage] = useState<{ identity: string; url: string }>();
   const [imageNotice, setImageNotice] = useState('');
   useEffect(() => {
     if (!reference) return;
-    const controller = new AbortController();
-    let objectUrl: string | undefined;
-    void organizationLogoPreview(reference, permissions, controller.signal)
-      .then((result) => {
-        if (controller.signal.aborted) return;
-        if ('blob' in result) {
-          objectUrl = URL.createObjectURL(result.blob);
-          setImage({ reference, url: objectUrl });
+    const currentPermissions = permissionKey
+      .split('\u0000')
+      .filter(Boolean) as IamPermissionCode[];
+    return watchOrganizationLogoPreview({
+      documentId: reference,
+      permissions: currentPermissions,
+      onState: (state) => {
+        if ('imageUrl' in state) {
+          setImage({ identity, url: state.imageUrl });
           setImageNotice('');
         } else {
           setImage(undefined);
-          setImageNotice(result.reason);
+          setImageNotice(state.reason);
         }
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setImage(undefined);
-          setImageNotice(
-            'تصویر لوگو اکنون قابل دریافت نیست؛ وضعیت فایل را در آرشیو بررسی کنید.',
-          );
-        }
-      });
-    return () => {
-      controller.abort();
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [reference, permissions, organization.version]);
+      },
+    });
+  }, [identity, permissionKey, reference]);
   const visibleImage =
     canViewOrganizationLogo(permissions) &&
     reference &&
-    image?.reference === reference
+    image?.identity === identity
       ? image.url
       : undefined;
   return (

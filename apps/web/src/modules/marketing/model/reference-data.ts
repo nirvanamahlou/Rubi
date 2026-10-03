@@ -92,13 +92,6 @@ export const marketingSections: readonly MarketingSectionDefinition[] = [
     highlights: ['سفر', 'اتوماسیون', 'سناریو'],
     tone: 'violet',
   },
-  {
-    key: 'settings',
-    title: 'تنظیمات',
-    description: 'کانال‌ها، سایت‌ها، دسترسی‌ها، هشدارها و لاگ‌های امن',
-    highlights: ['کانال', 'دو سایت', 'دسترسی', 'هشدار'],
-    tone: 'emerald',
-  },
 ] as const;
 
 export const marketingSectionTabs = {

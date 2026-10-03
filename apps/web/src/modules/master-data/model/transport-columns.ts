@@ -4,12 +4,6 @@ export type TransportColumn = readonly [key: string, label: string];
 export function transportColumns(
   resource: MasterDataResource,
 ): readonly TransportColumn[] {
-  const operator: readonly TransportColumn[] = [
-    ['countryName', 'کشور'],
-    ['organizationName', 'سازمان'],
-    ['logoFileReference', 'لوگو Reference'],
-    ['integrationConnectionReference', 'Integration Connection'],
-  ];
   switch (resource) {
     case 'airlines':
       return [
@@ -17,25 +11,18 @@ export function transportColumns(
         ['icaoCode', 'ICAO'],
         ['name', 'ایرلاین'],
         ['countryName', 'کشور'],
-        ['logoFileReference', 'لوگو Reference'],
-        ['integrationConnectionReference', 'Integration Connection'],
       ];
     case 'aircraft-types':
       return [
         ['code', 'کد'],
         ['manufacturerModel', 'سازنده و مدل'],
         ['englishName', 'عنوان انگلیسی'],
-        ['bodyType', 'نوع بدنه'],
-        ['capacity', 'ظرفیت'],
-        ['displayOrder', 'ترتیب نمایش'],
       ];
     case 'cabin-classes':
       return [
         ['code', 'کد'],
-        ['englishName', 'عنوان انگلیسی'],
+        ['cabinType', 'نوع کلاس'],
         ['bookingCode', 'کد رزرو'],
-        ['displayOrder', 'ترتیب'],
-        ['usage', 'استفاده در Ticket Catalog'],
       ];
     case 'baggage-rules':
       return [
@@ -69,17 +56,14 @@ export function transportColumns(
       return [
         ['code', 'کد'],
         ['name', 'شرکت ریلی'],
-        ...operator,
-        ['vehicleTypeCount', 'انواع قطار'],
+        ['countryName', 'کشور'],
+        ['organizationName', 'سازمان'],
       ];
     case 'bus-companies':
       return [
         ['code', 'کد'],
         ['name', 'شرکت اتوبوس'],
         ['countryName', 'کشور'],
-        ['logoFileReference', 'لوگو Reference'],
-        ['integrationConnectionReference', 'Integration Connection'],
-        ['vehicleTypeCount', 'انواع اتوبوس'],
       ];
     case 'train-types':
       return [
@@ -125,6 +109,10 @@ const labels: Record<string, string> = {
   DRAFT: 'پیش‌نویس',
   ACTIVE: 'فعال',
   EXPIRED: 'منقضی',
+  ECONOMY: 'Economy',
+  PREMIUM_ECONOMY: 'Premium Economy',
+  BUSINESS: 'Business',
+  FIRST: 'First Class',
 };
 export function transportColumnValue(
   record: MasterDataRecord,

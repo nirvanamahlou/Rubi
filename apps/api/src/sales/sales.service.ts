@@ -1,4 +1,5 @@
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
+import { MasterDataService } from '../master-data/master-data.service';
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
@@ -22,6 +23,7 @@ import type {
   SalesContractCreateRequest,
   SalesContractDetail,
   SalesContractListQuery,
+  SalesContractPage,
   SalesContractSummary,
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
@@ -371,6 +373,9 @@ export class SalesService {
     @Optional()
     @Inject(SalesBuyerContactCrypto)
     private readonly buyerCrypto?: SalesBuyerContactCrypto,
+    @Optional()
+    @Inject(MasterDataService)
+    private readonly references?: MasterDataService,
   ) {}
 
   async availableHotelRoomRates(
@@ -544,7 +549,7 @@ export class SalesService {
     query: SalesContractListQuery,
     actor: AuthenticatedActor,
     exportLimit?: number,
-  ) {
+  ): Promise<SalesContractPage> {
     if (
       query.search != null &&
       (typeof query.search !== 'string' || query.search.length > 160)
@@ -572,10 +577,52 @@ export class SalesService {
       has(actor, 'sales.payments.read'),
       ...(exportLimit ? [exportLimit] : []),
     );
-    return {
-      data: result.data.map((row) =>
-        summary(presentSalesContract(row, undefined, this.buyerCrypto)),
+    const details = result.data.map((row) =>
+      presentSalesContract(row, undefined, this.buyerCrypto),
+    );
+    const cityNames = new Map<string, string | null>();
+    const phones = new Map<string, string | null>();
+    const cityIds = [
+      ...new Set(
+        details.flatMap((item) => [item.originId, item.destinationId]),
       ),
+    ];
+    const customerIds = [
+      ...new Set(
+        details
+          .filter((item) => !item.buyerContact?.phone)
+          .map((item) => item.customerId),
+      ),
+    ];
+    const lookups = [
+      ...cityIds.map((id) => async () => {
+        const city = this.references
+          ? await this.references.detail('cities', id)
+          : null;
+        cityNames.set(id, city?.data.name ?? null);
+      }),
+      ...customerIds.map((id) => async () => {
+        phones.set(
+          id,
+          (await this.customers.resolvePhone?.(id, actor)) ?? null,
+        );
+      }),
+    ];
+    // Bound directory/contact requests even for a date-filtered large result set.
+    let nextLookup = 0;
+    await Promise.all(
+      Array.from({ length: Math.min(8, lookups.length) }, async () => {
+        while (nextLookup < lookups.length) await lookups[nextLookup++]!();
+      }),
+    );
+    return {
+      data: details.map((detail) => ({
+        ...summary(detail),
+        customerPhone:
+          detail.buyerContact?.phone ?? phones.get(detail.customerId) ?? null,
+        originName: cityNames.get(detail.originId) ?? null,
+        destinationName: cityNames.get(detail.destinationId) ?? null,
+      })),
       meta: {
         page: result.page,
         pageSize: result.pageSize,
