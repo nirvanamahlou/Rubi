@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { Download, FileText } from 'lucide-react';
+import { downloadOrganizationFile } from '../model/organization-download';
 import {
   commercialWorkbookRows,
   type CommercialReport,
@@ -43,7 +44,8 @@ export function CommercialExportActions({
         bytes = createOrganizationXlsx(commercialWorkbookRows(report));
       }
       if (!alive.current) return;
-      const url = URL.createObjectURL(
+      downloadOrganizationFile(
+        `نورا-${report.title}-${new Date().toISOString().slice(0, 10)}.${format}`,
         new Blob([new Uint8Array(bytes)], {
           type:
             format === 'pdf'
@@ -51,11 +53,6 @@ export function CommercialExportActions({
               : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         }),
       );
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `نورا-${report.title}-${new Date().toISOString().slice(0, 10)}.${format}`;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (caught) {
       if (alive.current)
         setError(

@@ -8,6 +8,73 @@ export class MasterTravelDirectory {
     @Inject(MasterDataService) private readonly master: MasterDataService,
   ) {}
 
+  async voucherBrokers(search: string, page: number) {
+    const result = await this.master.list('brokers', {
+      search,
+      page,
+      pageSize: 100,
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+    });
+    return {
+      data: result.data.map((row) => ({ id: row.id, name: row.name })),
+      meta: result.meta,
+    };
+  }
+
+  /** Registered broker contacts for a permission-scoped voucher workflow. */
+  voucherLeaders(brokerId: string) {
+    return this.master.voucherLeaders(brokerId);
+  }
+
+  voucherLeaderContact(
+    brokerId: string,
+    leaderId: string,
+    actor: Parameters<MasterDataService['voucherLeaderContact']>[2],
+  ) {
+    return this.master.voucherLeaderContact(brokerId, leaderId, actor);
+  }
+
+  async voucherBrokerName(brokerId: string) {
+    const { data } = await this.master.detail('brokers', brokerId);
+    if (data.status !== 'active')
+      throw new BadRequestException('کارگزار فعال لازم است.');
+    return data.name;
+  }
+
+  async addVoucherLeader(
+    brokerId: string,
+    cityId: string | undefined,
+    name: string,
+    phone: string,
+    actor: Parameters<MasterDataService['create']>[2],
+  ) {
+    const { data: broker } = await this.master.detail('brokers', brokerId);
+    if (broker.status !== 'active')
+      throw new BadRequestException('کارگزار فعال لازم است.');
+    const resolvedCityId = String(broker.attributes.cityId || cityId || '');
+    if (!resolvedCityId)
+      throw new BadRequestException(
+        'برای ثبت تورلیدر، شهر کارگزار یا شهر قرارداد لازم است.',
+      );
+    const { data: city } = await this.master.detail('cities', resolvedCityId);
+    if (city.status !== 'active')
+      throw new BadRequestException('شهر فعال لازم است.');
+    return this.master.create(
+      'leaders',
+      {
+        brokerId,
+        cityId: resolvedCityId,
+        name: name.trim(),
+        primaryPhone: phone.trim(),
+        languages: ['Persian'],
+        destinations: [city.name],
+      },
+      actor,
+    );
+  }
+
   /** Public non-sensitive choices for Reservations purchase rate capture. */
   async hotelRateChoices(
     kind: 'hotels' | 'organizations' | 'currencies',

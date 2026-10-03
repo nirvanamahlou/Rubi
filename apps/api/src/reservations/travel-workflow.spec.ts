@@ -56,9 +56,27 @@ describe('travel workflow', () => {
       ),
     ).toThrow();
   });
+  it('requires a saved broker before supplier confirmation issues a voucher', () => {
+    const requested = transition(
+      initialTravelWorkflow(),
+      command(initialTravelWorkflow(), 'REQUEST_SUPPLIER'),
+      [],
+    );
+    expect(() =>
+      transition(
+        requested,
+        command(requested, 'CONFIRM_SUPPLIER', {
+          supplierReference: 'OK',
+          acknowledgeMissingInsurance: true,
+        }),
+        [],
+      ),
+    ).toThrow('کارگزار');
+  });
   it('allows optional insurance only after explicit acknowledgement and closes voucher', () => {
     let state = initialTravelWorkflow();
     state = transition(state, command(state, 'REQUEST_SUPPLIER'), ['p']);
+    state.voucherSettings = { brokerId: 'synthetic-broker' } as never;
     expect(() =>
       transition(
         state,
@@ -85,6 +103,7 @@ describe('travel workflow', () => {
   });
   it('issues with a recorded insurance reference without extra acknowledgement', () => {
     let state = initialTravelWorkflow();
+    state.voucherSettings = { brokerId: 'synthetic-broker' } as never;
     for (const action of [
       'REQUEST_SUPPLIER',
       'INSURANCE',
@@ -105,6 +124,7 @@ describe('travel workflow', () => {
     const state = {
       ...initialTravelWorkflow(),
       supplierStatus: 'CONFIRMED' as const,
+      voucherSettings: { brokerId: 'synthetic-broker' } as never,
     };
     expect(
       transition(

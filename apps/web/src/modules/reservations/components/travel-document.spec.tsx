@@ -1,3 +1,4 @@
+import { defaultVoucherSettings } from '../model/voucher-settings';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type {
@@ -34,6 +35,9 @@ describe('travel output branding and readiness', () => {
     expect(html).toContain('SYNTHETIC');
   });
   it('renders an issued hotel voucher with booking reference and stamp in the shared theme', () => {
+    const settings = defaultVoucherSettings(intake, {});
+    settings.text.broker = 'SYNTHETIC BROKER';
+    settings.flags.hotel = true;
     const html = renderToStaticMarkup(
       <TravelDocument
         intake={{
@@ -43,6 +47,7 @@ describe('travel output branding and readiness', () => {
             voucherIssued: true,
             supplierStatus: 'CONFIRMED',
             supplierReference: 'SUPPLIER-TEST',
+            voucherSettings: settings,
           },
         }}
         voucher
@@ -50,7 +55,7 @@ describe('travel output branding and readiness', () => {
     );
     expect(html).toContain('HOTEL VOUCHER');
     expect(html).toContain('دانلود واچر');
-    expect(html).toContain('SUPPLIER-TEST');
+    expect(html).toContain('SYNTHETIC BROKER');
     expect(html).toContain('STAMP');
     expect(html).toContain('ROOM QUANTITIES BY TYPE');
     expect(html).not.toContain('subject to supplier confirmation');
@@ -82,4 +87,16 @@ describe('travel output branding and readiness', () => {
     expect(html).not.toContain('/brand/niyayesh-seir-full.png');
     expect(html).toContain('disabled');
   });
+});
+
+it('applies an unsaved selected broker immediately without adding a manual supplier input', () => {
+  const settings = defaultVoucherSettings(intake, {});
+  settings.text.broker = 'SELECTED BROKER';
+  const html = renderToStaticMarkup(
+    <TravelDocument intake={intake} previewSettings={settings} dirty />,
+  );
+  expect(html).toContain('SELECTED BROKER');
+  expect(html).not.toContain('reservation-supplier-name');
+  expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
+  expect(html).toContain('Reservation@niyayehseir.com');
 });

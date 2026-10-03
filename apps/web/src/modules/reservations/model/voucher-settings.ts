@@ -72,6 +72,8 @@ export function defaultVoucherSettings(
   };
   if (!saved) return defaults;
   return {
+    ...(saved.brokerId ? { brokerId: saved.brokerId } : {}),
+    ...(saved.leaderId ? { leaderId: saved.leaderId } : {}),
     text: {
       ...(Object.fromEntries(
         voucherTextKeys.map((key) => [key, saved.text?.[key] ?? text[key]]),
@@ -156,7 +158,12 @@ export function voucherFormData(
 ) {
   const d = reservationFormData(intake, refs),
     v = intake.workflow.voucherSettings;
-  if (!v) return d;
+  if (!v)
+    return {
+      ...d,
+      supplier:
+        intake.workflow.supplierFormSettings?.text.broker?.trim() || d.supplier,
+    };
   const passengers = d.passengers
     .filter((p) => v.passengers.some((s) => s.id === p.id && s.selected))
     .map((p) => {
@@ -180,6 +187,7 @@ export function voucherFormData(
     (Date.parse(v.text.checkOut) - Date.parse(v.text.checkIn)) / 86400000;
   return {
     ...d,
+    supplier: v.text.broker || '-',
     hotel: v.text.hotel || '-',
     destination: v.text.city || '-',
     stars: v.text.stars || '-',
@@ -194,7 +202,8 @@ export function voucherFormData(
     extra: v.numbers.extraBeds,
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: v.flags.tourLeader
-      ? v.text.leaderName || v.text.leaderLanguage || '-'
+      ? [v.text.leaderName, v.text.leaderPhone].filter(Boolean).join(' / ') ||
+        '-'
       : '-',
     excursion: v.flags.excursion ? v.text.excursionDescription || '-' : '-',
     notes: [v.text.stayNotes, v.text.remarks].filter(Boolean).join('\n'),

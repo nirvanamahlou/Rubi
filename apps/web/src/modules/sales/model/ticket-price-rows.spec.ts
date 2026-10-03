@@ -165,3 +165,57 @@ describe('saved commission refresh', () => {
     ).toEqual({ 'upper:direct': '9' });
   });
 });
+
+describe('flight cabins in ticket pricing', () => {
+  it('places economy then business below the same flight while preserving independent prices and seats', () => {
+    const economy = {
+      ...outbound,
+      id: 'economy',
+      cabinClassCode: 'ECONOMY' as const,
+      totalCapacity: 20,
+      roundTripSalePrices: [],
+    };
+    const business = {
+      ...economy,
+      id: 'business',
+      cabinClassCode: 'BUSINESS' as const,
+      totalCapacity: 5,
+      standaloneSalePrice: { amount: '300', currencyCode: 'IRR', revision: 1 },
+    };
+    const source = [business, returning, economy];
+    const rows = ticketPriceRows(source);
+    expect(rows.map((row) => row.id)).toEqual(['economy', 'business', 'back']);
+    expect(rows[0]!.base?.amount).toBe('100');
+    expect(rows[1]!.base?.amount).toBe('300');
+    expect(rows.slice(0, 2).map((row) => row.offer.totalCapacity)).toEqual([
+      20, 5,
+    ]);
+    expect(source.map((offer) => offer.id)).toEqual([
+      'business',
+      'back',
+      'economy',
+    ]);
+  });
+  it('keeps distinct branches and departures in their original flight group', () => {
+    const business = {
+      ...outbound,
+      id: 'business',
+      cabinClassCode: 'BUSINESS' as const,
+      roundTripSalePrices: [],
+    };
+    const other = { ...business, id: 'other', branchId: 'another' };
+    const later = {
+      ...business,
+      id: 'later',
+      departureAt: '2027-01-02T21:00:00Z',
+    };
+    const economy = {
+      ...business,
+      id: 'economy',
+      cabinClassCode: 'ECONOMY' as const,
+    };
+    expect(
+      ticketPriceRows([business, other, later, economy]).map((row) => row.id),
+    ).toEqual(['economy', 'business', 'other', 'later']);
+  });
+});

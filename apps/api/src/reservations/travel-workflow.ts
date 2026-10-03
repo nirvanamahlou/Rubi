@@ -142,6 +142,10 @@ export function transitionTravelWorkflow(
     case 'CONFIRM_SUPPLIER':
       if (current.supplierStatus !== 'REQUESTED')
         throw new Error('ابتدا ارسال درخواست برای کارگزار را ثبت کنید.');
+      if (!current.voucherSettings?.brokerId)
+        throw new Error(
+          'پیش از صدور واچر، کارگزار را در تنظیمات واچر ثبت کنید.',
+        );
       if (
         typeof command.supplierReference !== 'string' ||
         !command.supplierReference.trim() ||
@@ -182,6 +186,10 @@ export function transitionTravelWorkflow(
     case 'ISSUE_VOUCHER':
       if (current.supplierStatus !== 'CONFIRMED')
         throw new Error('ابتدا تأیید کارگزار را ثبت کنید.');
+      if (!current.voucherSettings?.brokerId)
+        throw new Error(
+          'پیش از صدور واچر، کارگزار را در تنظیمات واچر ثبت کنید.',
+        );
       if (
         !current.insuranceIssued &&
         command.acknowledgeMissingInsurance !== true

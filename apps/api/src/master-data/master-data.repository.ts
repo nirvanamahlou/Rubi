@@ -898,6 +898,19 @@ export function toMasterDataRecord(
   };
 }
 
+export function countMultilingualLeaders(
+  leaders: readonly { languages: readonly string[] }[],
+) {
+  return leaders.filter(
+    ({ languages }) =>
+      new Set(
+        languages
+          .map((language) => language.trim().toLowerCase())
+          .filter(Boolean),
+      ).size >= 2,
+  ).length;
+}
+
 @Injectable()
 export class MasterDataRepository {
   constructor(
@@ -1360,6 +1373,33 @@ export class MasterDataRepository {
     });
   }
 
+  async leadersForBroker(brokerId: string) {
+    return this.database.client.masterLeader.findMany({
+      where: { brokerId, isActive: true },
+      orderBy: { name: 'asc' },
+      take: 100,
+      select: { id: true, name: true, primaryPhoneMasked: true },
+    });
+  }
+
+  async recordLeaderContactRead(input: {
+    leaderId: string;
+    actorUserId: string;
+    actorBranchId: string;
+  }) {
+    await this.database.client.masterDataAuditEvent.create({
+      data: {
+        actorUserId: input.actorUserId,
+        actorBranchId: input.actorBranchId,
+        action: 'master_data.leader.phone_for_voucher',
+        resource: 'leaders',
+        entityId: input.leaderId,
+        outcome: AuditOutcome.SUCCESS,
+        afterSnapshot: { disclosure: 'LEADER_PHONE_FOR_VOUCHER' },
+      },
+    });
+  }
+
   async recordSensitiveContactRead(input: {
     contactId: string;
     actorUserId: string;
@@ -1689,7 +1729,9 @@ export class MasterDataRepository {
     ] = await Promise.all([
       client.masterLeader.count(),
       client.masterLeader.count({ where: { isActive: true } }),
-      client.masterLeader.findMany({ select: { destinations: true } }),
+      client.masterLeader.findMany({
+        select: { destinations: true, languages: true },
+      }),
       client.masterTourType.count(),
       client.masterTourType.count({ where: { isActive: true } }),
       client.masterTourType.count({ where: { scope: 'DOMESTIC' } }),
@@ -1744,6 +1786,7 @@ export class MasterDataRepository {
         destinations: new Set(
           leaderDestinations.flatMap(({ destinations }) => destinations),
         ).size,
+        multilingual: countMultilingualLeaders(leaderDestinations),
         incompleteDocuments: null,
       },
       tourTypes: {

@@ -7,6 +7,7 @@ import type {
   TravelDeliveryAuthorizationV1,
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
+  VoucherSettingsV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input, Textarea } from '@/components/ui/form-controls';
@@ -17,6 +18,7 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';
+import { VoucherLeaderEditor } from './voucher-leader-editor';
 
 export async function travelRequest<T>(
   path: string,
@@ -153,6 +155,7 @@ export function TravelWorkflowForm({
       setBusy(false);
     }
   }
+  const [supplierDraft, setSupplierDraft] = useState<VoucherSettingsV1>();
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
@@ -265,7 +268,8 @@ export function TravelWorkflowForm({
         <TravelDocument
           key={`${intake.id}:${state.version}`}
           intake={intake}
-          onSaved={(workflow) => setIntake({ ...intake, workflow })}
+          previewSettings={supplierDraft}
+          dirty={action === 'رزرواسیون' && settingsDirty}
           voucher={action === 'واچر' || action === 'Confirmation'}
         />
       )}
@@ -274,6 +278,7 @@ export function TravelWorkflowForm({
           key={`${id}:${state.version}`}
           intake={intake}
           onDirty={() => setSettingsDirty(true)}
+          onPreview={setSupplierDraft}
           onSaved={(workflow) => {
             setIntake({
               ...intake,
@@ -282,6 +287,18 @@ export function TravelWorkflowForm({
                 ? { contractEditVersion: workflow.appliedContractVersion }
                 : {}),
             });
+            setSettingsDirty(false);
+            setSupplierDraft(undefined);
+          }}
+        />
+      )}
+      {(action === 'واچر' || action === 'Confirmation') && !closed && (
+        <VoucherLeaderEditor
+          key={`${intake.id}:${state.version}`}
+          intake={intake}
+          onDirty={() => setSettingsDirty(true)}
+          onSaved={(workflow) => {
+            setIntake({ ...intake, workflow });
             setSettingsDirty(false);
           }}
         />
@@ -412,6 +429,8 @@ export function TravelWorkflowForm({
                 <Button
                   disabled={
                     busy ||
+                    settingsDirty ||
+                    !state.voucherSettings?.brokerId ||
                     state.supplierStatus !== 'REQUESTED' ||
                     (!state.insuranceIssued && !acknowledge)
                   }
@@ -434,6 +453,7 @@ export function TravelWorkflowForm({
                 disabled={
                   busy ||
                   settingsDirty ||
+                  !state.voucherSettings?.brokerId ||
                   !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)
                 }

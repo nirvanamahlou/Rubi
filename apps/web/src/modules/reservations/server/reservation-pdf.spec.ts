@@ -193,6 +193,7 @@ it('downloads an issued voucher using saved voucher settings and a voucher filen
     expect.stringContaining('data:image/png;base64,'),
     expect.anything(),
     true,
+    'http://localhost',
   );
 });
 it('renders voucher booking references and a separated summary without letterhead', () => {
@@ -206,11 +207,24 @@ it('renders voucher booking references and a separated summary without letterhea
   };
   value.workflow.voucherSettings = defaultVoucherSettings(value, {});
   value.workflow.voucherSettings.flags.withLetterhead = false;
+  value.workflow.voucherSettings.text.broker = 'SYNTHETIC BROKER';
+  value.workflow.voucherSettings.text.transferBoard = 'BROKER BOARD';
+  value.workflow.voucherSettings.text.leaderName = 'SYNTHETIC LEADER';
+  value.workflow.voucherSettings.text.leaderPhone = '+989000000000';
+  value.workflow.voucherSettings.flags.tourLeader = true;
   const html = reservationPdfHtml(value, {}, '', '', true);
   expect(html).toContain('HOTEL VOUCHER');
-  expect(html).toContain('VOUCHER-REF');
+  expect(html).toContain('SYNTHETIC BROKER');
   expect(html).toContain('<section class="bookingSection">');
   expect(html).toContain('ROOM TYPE');
+  expect(html).toContain('SYNTHETIC BROKER');
+  expect(html).toContain('Board: BROKER BOARD');
+  expect(html).toContain('SYNTHETIC LEADER / +989000000000');
+  expect(html).not.toContain('<th>LEG</th>');
+  expect(html).not.toContain(
+    '<th>ROOM TYPE</th></tr></thead><tbody><tr><td>01',
+  );
+  expect(html).not.toContain('<span>TOUR LEADER</span>');
   expect(html).toContain('STAMP');
   expect(html).not.toContain('<img');
 });
@@ -261,4 +275,74 @@ it('keeps six regular passengers on one supplier form page', () => {
   expect(html).toContain('1 / 1');
   expect(html).not.toContain('<th>LEG</th>');
   expect(html).not.toContain('<span>TOUR LEADER</span>');
+});
+
+it('includes contact and a URL QR without repeating complete forms for many passengers', () => {
+  const people = Array.from({ length: 14 }, (_, i) => ({
+    customerId: 'qa' + i,
+    displayNameSnapshot: 'SYNTHETIC ' + i,
+    ageCategory: 'ADT',
+  }));
+  const value = {
+    ...intake,
+    snapshot: {
+      ...intake.snapshot,
+      passengerIds: people.map((p) => p.customerId),
+      passengerAssignments: people,
+    },
+    workflow: {
+      ...intake.workflow,
+      roomOrder: people.map((p) => p.customerId),
+    },
+  } as unknown as ReservationFormIntake;
+  value.workflow.supplierFormSettings = defaultVoucherSettings(value, {});
+  const html = reservationPdfHtml(
+    value,
+    {},
+    'data:image/png;base64,c2FmZQ==',
+    '',
+    false,
+    'https://niyayehseir.com',
+  );
+  expect(html.match(/<article /g)).toHaveLength(1);
+  expect(html).toContain('Reservation@niyayehseir.com');
+  expect(html).toContain('https://niyayehseir.com/r/' + id);
+  expect(html).toContain('aria-label="Reservation form QR"');
+  expect(html).toContain('SYNTHETIC 13');
+});
+
+it('keeps six selected passengers on one compact hotel voucher page', () => {
+  const ids = Array.from(
+    { length: 6 },
+    (_, index) => `voucher-passenger-${index + 1}`,
+  );
+  const value = {
+    ...intake,
+    snapshot: {
+      ...intake.snapshot,
+      passengerIds: ids,
+      passengerAssignments: ids.map((customerId) => ({
+        customerId,
+        displayNameSnapshot: customerId.toUpperCase(),
+        ageCategory: 'ADL',
+      })),
+    },
+    workflow: {
+      ...intake.workflow,
+      roomOrder: ids,
+      voucherSettings: undefined,
+    },
+  } as unknown as ReservationFormIntake;
+  value.workflow.voucherSettings = defaultVoucherSettings(value, {});
+  value.workflow.voucherSettings.text.broker = 'SYNTHETIC BROKER';
+  const html = reservationPdfHtml(
+    value,
+    {},
+    'data:image/png;base64,c2FmZQ==',
+    '',
+    true,
+  );
+  expect(html.match(/<article class="page"/g)).toHaveLength(1);
+  expect(html).toContain('VOUCHER-PASSENGER-6');
+  expect(html).toContain('1 / 1');
 });

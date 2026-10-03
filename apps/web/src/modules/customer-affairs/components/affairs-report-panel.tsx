@@ -200,11 +200,6 @@ export function AffairsReportPanel({
   return (
     <div className={s.report}>
       <header className={s.heading}>
-        <p className={s.timestamp}>
-          آخرین دریافت: {new Date(report.generatedAt).toLocaleString('fa-IR')}
-          <br />
-          در محدوده دسترسی شما · {dateRangeLabel}
-        </p>
         <Button
           variant="outline"
           disabled={pdfBusy}

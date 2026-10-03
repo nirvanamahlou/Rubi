@@ -1,7 +1,8 @@
 'use client';
+import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 import Image from 'next/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { MasterDataResource } from '@nora/contracts';
 import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -88,6 +89,9 @@ function Heading({
     </div>
   );
 }
+const subscribeOrigin = () => () => {};
+const browserOrigin = () => window.location.origin;
+const serverOrigin = () => '';
 export function ReservationFormSheet({
   intake,
   logo,
@@ -105,15 +109,22 @@ export function ReservationFormSheet({
   const settings = voucher
     ? intake.workflow.voucherSettings
     : intake.workflow.supplierFormSettings;
-  const pages = reservationPassengerPages(
-    data.passengers,
-    settings
-      ? Math.max(
-          6,
-          8 - Math.ceil(Object.values(settings.text).join('').length / 350),
-        )
-      : 10,
+  const origin = useSyncExternalStore(
+    subscribeOrigin,
+    browserOrigin,
+    serverOrigin,
   );
+  const pages = voucher
+    ? reservationPassengerPages(
+        data.passengers,
+        settings
+          ? Math.max(
+              6,
+              8 - Math.ceil(Object.values(settings.text).join('').length / 350),
+            )
+          : 10,
+      )
+    : [data.passengers];
   return (
     <div className={styles.document}>
       {pages.map((people, page) => {
@@ -162,12 +173,7 @@ export function ReservationFormSheet({
             <div className={styles.meta}>
               {[
                 [voucher ? 'BOOKING NO.' : 'REQUEST NO.', data.request],
-                [
-                  voucher ? 'SUPPLIER BOOKING NO.' : 'SUPPLIER',
-                  voucher
-                    ? intake.workflow.supplierReference || '-'
-                    : data.supplier,
-                ],
+                ['SUPPLIER', data.supplier],
                 [voucher ? 'BOOKING DATE' : 'DATE OF ISSUE', data.issueDate],
                 ['SERVICES', data.services],
               ].map(([label, value]) => (
@@ -197,7 +203,6 @@ export function ReservationFormSheet({
                     'ROOMS / NIGHTS',
                     `${data.rooms} ROOMS / ${data.nights} NIGHTS`,
                   ],
-                  ...(voucher ? [['TOUR LEADER', data.leader]] : []),
                 ].map(([label, value]) => (
                   <div key={label}>
                     <span>{label}</span>
@@ -214,13 +219,7 @@ export function ReservationFormSheet({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {[
-                    ...(voucher ? ['LEG'] : []),
-                    'AIRLINE',
-                    'FLIGHT NO.',
-                    'DATE',
-                    'TIME',
-                  ].map((t) => (
+                  {['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'].map((t) => (
                     <th key={t}>{t}</th>
                   ))}
                 </tr>
@@ -239,7 +238,6 @@ export function ReservationFormSheet({
                     ]
                 ).map((f, i) => (
                   <tr key={i}>
-                    {voucher && <td>{f.leg}</td>}
                     <td dir="auto">{f.airline}</td>
                     <td>{f.number}</td>
                     <td>{f.date}</td>
@@ -344,11 +342,7 @@ export function ReservationFormSheet({
                 <tr>
                   {voucher && (
                     <td>
-                      {intake.snapshot.serviceSelections.some(
-                        (service) => service.kind === 'TRANSFER',
-                      )
-                        ? 'INCLUDED'
-                        : '-'}
+                      Board: {settings?.text.transferBoard?.trim() || '-'}
                     </td>
                   )}
                   <td dir="auto">{data.leader}</td>
@@ -380,10 +374,9 @@ export function ReservationFormSheet({
             <table className={`${styles.table} ${styles.passengers}`}>
               <colgroup>
                 <col style={{ width: '6%' }} />
-                <col style={{ width: voucher ? '40%' : '56%' }} />
+                <col style={{ width: '56%' }} />
                 <col style={{ width: '17%' }} />
                 <col style={{ width: '21%' }} />
-                {voucher && <col style={{ width: '16%' }} />}
               </colgroup>
               <thead>
                 <tr>
@@ -391,7 +384,6 @@ export function ReservationFormSheet({
                   <th>SURNAME / NAME</th>
                   <th>SEX</th>
                   <th>AGE RATE</th>
-                  {voucher && <th>ROOM TYPE</th>}
                 </tr>
               </thead>
               <tbody>
@@ -402,17 +394,11 @@ export function ReservationFormSheet({
                       <td dir="auto">{p.name}</td>
                       <td>{p.sex}</td>
                       <td>{p.age}</td>
-                      {voucher && (
-                        <td>
-                          {settings?.passengers.find((s) => s.id === p.id)
-                            ?.roomType || '-'}
-                        </td>
-                      )}
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={voucher ? 5 : 4}>-</td>
+                    <td colSpan={4}>-</td>
                   </tr>
                 )}
               </tbody>
@@ -421,7 +407,7 @@ export function ReservationFormSheet({
             <div className={voucher ? styles.voucherClosing : undefined}>
               <div className={styles.notice}>
                 <span>SPECIAL REQUESTS / REMARKS</span>
-                <p dir="auto">{data.notes || '\u00a0'}</p>
+                <p dir="auto">{voucher ? '\u00a0' : data.notes || '\u00a0'}</p>
                 <div />
               </div>
               {voucher && (
@@ -431,8 +417,15 @@ export function ReservationFormSheet({
               )}
             </div>
             <footer className={styles.footer}>
+              {!voucher && (
+                <div
+                  data-reservation-footer
+                  dangerouslySetInnerHTML={{
+                    __html: reservationFormFooterHtml(intake.id, origin),
+                  }}
+                />
+              )}
               <div>
-                {voucher && <strong dir="auto">{data.brand}</strong>}
                 <span>
                   {voucher
                     ? 'Hotel voucher - present at check-in.'
