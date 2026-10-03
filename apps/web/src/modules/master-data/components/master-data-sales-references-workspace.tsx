@@ -106,6 +106,17 @@ export function visibleSalesReferenceColumnFilterIndexes(
   return resource === 'acquaintance-methods' ? [0] : [0, 1];
 }
 
+export function salesReferenceExportColumns(
+  fields: readonly { key: string }[],
+) {
+  return [
+    'code',
+    ...new Set(fields.map((field) => field.key)),
+    'status',
+    'updatedAt',
+  ];
+}
+
 export function countEnglishTitles(records: readonly MasterDataRecord[]) {
   return records.filter((record) => {
     const value = record.attributes.englishName;
@@ -406,13 +417,7 @@ export function MasterDataSalesReferencesWorkspace() {
           sortBy: 'name',
           sortDirection: 'asc',
         },
-        columns: [
-          'code',
-          'name',
-          ...definition.fields.map((field) => field.key),
-          'status',
-          'updatedAt',
-        ],
+        columns: salesReferenceExportColumns(definition.fields),
         locale: 'fa-IR',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
