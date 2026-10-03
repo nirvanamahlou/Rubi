@@ -6,6 +6,7 @@ import type {
   TravelWorkflowStateV1,
 } from '@nora/contracts';
 import { TravelDocument } from './travel-document';
+import { ReservationSettingsForm } from './reservation-settings';
 const intake = {
   snapshot: {
     contractNumber: 'SYNTHETIC',
@@ -29,6 +30,25 @@ const intake = {
   },
 } as unknown as ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
 describe('travel output branding and readiness', () => {
+  it('places one supplier picker before the single reservation preview', () => {
+    const html = renderToStaticMarkup(
+      <ReservationSettingsForm
+        intake={intake}
+        refs={{}}
+        showDocument
+        onDirty={() => {}}
+        onSaved={() => {}}
+      />,
+    );
+    expect(html.match(/data-document-preview/g)).toHaveLength(1);
+    expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
+    expect(html.indexOf('role="combobox"')).toBeLessThan(
+      html.indexOf('data-document-preview'),
+    );
+    expect(html).not.toMatch(
+      /<label[^>]*>[^<]*<span[^>]*>[^<]*<\/span><div[^>]*[^]*?role="combobox"/,
+    );
+  });
   it('uses the registered own-company code for its real bundled logo', () => {
     const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
     expect(html).toContain('/brand/niyayesh.png');

@@ -4304,3 +4304,7 @@ Reservations inbox includes a search submit button and native Enter submission. 
 ## 2026-10-03 — LOGIN-NORA-TITLE-1003 — PC-A
 
 عنوان نمایان صفحهٔ ورود در دسکتاپ و موبایل «سامانه یکپارچه آژانس نورا» است. عنوان تب موجود «ورود امن نورا» حفظ شد. تغییر فقط متن UI است؛ API، داده، مجوز، Migration و وابستگی تغییر نکردند.
+
+## 2026-10-03 — RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — VALIDATING
+
+Supplier selection now precedes the reservation preview and uses the existing paginated reservation-scoped active broker directory. Reference loading preserves successful lists when another resource fails; loaded pickers remain searchable. Reference pickers no longer wrap interactive options in a label, preventing label activation from reopening selection. The current and historical forms share one preview slot; the print portal is hidden on screen and exposed only by print CSS. Four focused suites / 14 tests pass. Scoped lint, final typecheck and production build are pending; no migration, dependency, API contract or operational data changes. User authorizes merge to develop after checks. Primary checkout and the running login-video worktree remain untouched.
