@@ -4376,3 +4376,7 @@ Sales dashboard aggregation now accepts legitimate negative computed balances fr
 ## 2026-10-03 — PROFILE-AVATAR-SAVE-1003 — PC-B
 
 Personal profile photo upload now accepts the edited name and contact details and links the stored document through the existing IAM profile service before responding. The Web form consumes the returned profile, eliminating its second save request after photo upload. Older file-only clients remain supported. No schema, migration, permission, dependency, or operational-data change. Local port 3100 was unavailable during verification, so live account behavior remains unverified; focused tests and build checks gate delivery.
+
+## 2026-10-03 — SALES-STATS-SIGNED-BALANCE-1003 — PC-A
+
+Read-only local diagnosis reproduced SALES_MONEY_INVALID when one of nine contracts had a negative computed outstanding balance. Develop already includes fb9a9df0 for signed aggregation; the active local API was compiled from older source. Added a dashboard-level multi-currency overpayment regression with authorization scope and exact decimal/malformed-value coverage, reusing existing production behavior. All 95 Sales API tests, scoped lint, typecheck and production build pass. No migration, shared contract, dependency or customer/payment mutation in this PR. Local rollout preserves unpublished login/user-reset commits; its existing pending additive develop migrations are tracked separately.

@@ -445,3 +445,18 @@ describe('Sales contract domain', () => {
     expect(passengerAgeCategory('2000-01-01', '2026-10-01')).toBe('ADT');
   });
 });
+
+describe('signed calculated Sales balance aggregation', () => {
+  it('nets overpayments precisely without changing nonnegative input parsing', () => {
+    expect(sumSalesDecimals(['10.25', '-15.2501', '0.0001'])).toBe('-5');
+    expect(
+      sumSalesDecimals(['999999999999999999.9999', '-999999999999999999.9998']),
+    ).toBe('0.0001');
+    expect(sumSalesDecimals([])).toBe('0');
+  });
+  it('still rejects malformed calculated amounts', () => {
+    for (const amount of ['--1', '-1e3', '-NaN', '-1.12345', '+1']) {
+      expect(() => sumSalesDecimals([amount])).toThrow('Decimal');
+    }
+  });
+});
