@@ -1,3 +1,4 @@
+import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
@@ -169,6 +170,7 @@ function capacityExceeded(
 export function presentSalesContract(
   row: SalesContractRow,
   paymentCreatorNames: ReadonlyMap<string, string> = new Map(),
+  buyerCrypto?: SalesBuyerContactCrypto,
 ): SalesContractDetail {
   const priceComponents = row.priceComponents.map((item) => ({
     type: item.type,
@@ -320,6 +322,10 @@ export function presentSalesContract(
           }
         : null,
     pricingNotes: row.pricingNotes,
+    buyerContact:
+      row.buyerContact != null
+        ? (buyerCrypto?.decrypt(row.buyerContact) ?? null)
+        : null,
   };
 }
 
@@ -362,6 +368,9 @@ export class SalesService {
     @Optional()
     @Inject(HotelPurchaseRatesPublicService)
     private readonly hotelRates?: HotelPurchaseRatesPublicService,
+    @Optional()
+    @Inject(SalesBuyerContactCrypto)
+    private readonly buyerCrypto?: SalesBuyerContactCrypto,
   ) {}
 
   async availableHotelRoomRates(
@@ -564,7 +573,9 @@ export class SalesService {
       ...(exportLimit ? [exportLimit] : []),
     );
     return {
-      data: result.data.map((row) => summary(presentSalesContract(row))),
+      data: result.data.map((row) =>
+        summary(presentSalesContract(row, undefined, this.buyerCrypto)),
+      ),
       meta: {
         page: result.page,
         pageSize: result.pageSize,
@@ -710,6 +721,7 @@ export class SalesService {
       new Map(
         creators.map(({ id: userId, displayName }) => [userId, displayName]),
       ),
+      this.buyerCrypto,
     );
     return {
       data: mayReadPayments ? detail : { ...detail, payments: [] },
@@ -740,7 +752,7 @@ export class SalesService {
           message: 'این کلید با درخواست متفاوت استفاده شده است.',
         });
       return {
-        data: presentSalesContract(existing),
+        data: presentSalesContract(existing, undefined, this.buyerCrypto),
         meta: { idempotentReplay: true },
       };
     }
@@ -760,7 +772,7 @@ export class SalesService {
       this.context(actor, branchId, traceId),
     );
     return {
-      data: presentSalesContract(row),
+      data: presentSalesContract(row, undefined, this.buyerCrypto),
       meta: { idempotentReplay: false },
     };
   }
@@ -823,9 +835,20 @@ export class SalesService {
       actor,
     );
     await this.customers.assertPassengers(input.passengers, actor);
+    const updateInput: SalesContractCreateRequest =
+      input.buyerContact === undefined
+        ? {
+            ...input,
+            buyerContact:
+              row.customerId === input.customerId
+                ? (this.buyerCrypto?.decrypt(row.buyerContact) ?? null)
+                : null,
+          }
+        : input;
+    domainCall(() => validateSalesContract(updateInput));
     const changed = await this.repository.updateDraft(
       id,
-      input,
+      updateInput,
       input.version,
       customer.displayName,
       this.context(actor, row.branchId, traceId),
@@ -915,13 +938,13 @@ export class SalesService {
           message: 'کلید تأیید با درخواست متفاوت استفاده شده است.',
         });
       return {
-        data: presentSalesContract(row),
+        data: presentSalesContract(row, undefined, this.buyerCrypto),
         meta: { idempotentReplay: true },
       };
     }
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
-    const presented = presentSalesContract(row);
+    const presented = presentSalesContract(row, undefined, this.buyerCrypto);
     await this.assertPresentedHotelRoomCapacity(presented);
     const seatCount = presented.passengersDetail.filter(
       ({ ageCategory }) => ageCategory !== 'INF',
@@ -1090,7 +1113,9 @@ export class SalesService {
         message: 'مجوز داشبورد فروش وجود ندارد.',
       });
     const rows = await this.repository.dashboardRows(scope);
-    const details = rows.map((row) => presentSalesContract(row));
+    const details = rows.map((row) =>
+      presentSalesContract(row, undefined, this.buyerCrypto),
+    );
     const today = new Date().toISOString().slice(0, 10);
     const balances = details.flatMap((item) => item.balances);
     const currencyCodes = [

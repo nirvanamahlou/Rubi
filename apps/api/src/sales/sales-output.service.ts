@@ -68,7 +68,12 @@ export class SalesOutputService {
         null,
       customer: {
         kind: customer.kind,
-        address: customer.addresses.find((a) => a.isPrimary)?.label ?? null,
+        address:
+          contract.buyerContact?.address ??
+          customer.addresses.find((a) => a.isPrimary)?.label ??
+          null,
+        phone: contract.buyerContact?.phone ?? null,
+        postalCode: contract.buyerContact?.postalCode ?? null,
       },
       company: {
         id: branding.legalEntityId,
