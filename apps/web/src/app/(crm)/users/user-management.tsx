@@ -17,6 +17,8 @@ import { AccessGroupCard } from './access-group-card';
 import styles from './user-management.module.css';
 import { recommendRoleAccess } from './role-access-presets';
 import { RoleAccessProposal } from './role-access-proposal';
+import { UserPasswordReset } from './user-password-reset';
+import { userPasswordError } from './user-password-policy';
 interface Permission {
   id: string;
   code: string;
@@ -67,11 +69,13 @@ async function request(path: string, init?: RequestInit) {
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     throw Error(
-      typeof body?.message === 'string'
-        ? body.message
-        : typeof body?.error?.message === 'string'
-          ? body.error.message
-          : 'دریافت یا ذخیره اطلاعات انجام نشد.',
+      Array.isArray(body?.message)
+        ? body.message.join(' ')
+        : typeof body?.message === 'string'
+          ? body.message
+          : typeof body?.error?.message === 'string'
+            ? body.error.message
+            : 'دریافت یا ذخیره اطلاعات انجام نشد.',
     );
   }
   return response.json();
@@ -218,11 +222,20 @@ export function UserManagement() {
       : items.filter((id) => !ids.includes(id));
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving.current || !canManage || proposalOpen) return;
+    if (saving.current || !canManage) return;
+    const fields = new FormData(event.currentTarget);
+    if (!selected) {
+      const passwordError = userPasswordError(
+        String(fields.get('password') ?? ''),
+      );
+      if (passwordError) {
+        setMessage(passwordError);
+        return;
+      }
+    }
     saving.current = true;
     setBusy(true);
     setMessage('');
-    const fields = new FormData(event.currentTarget);
     const access = {
       accessTitle: title,
       permissionIds,
@@ -363,211 +376,244 @@ export function UserManagement() {
                 </div>
               ))}
           </aside>
-          <form ref={form} onSubmit={save} className={styles.editor}>
-            <h2 className={styles.editorTitle}>
-              {selected ? 'دسترسی ' + selected.displayName : 'تعریف کاربر جدید'}
-            </h2>
-            <fieldset disabled={!canManage || busy} className="grid gap-4">
-              {!selected && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label>
-                    نام و نام خانوادگی
-                    <Input required minLength={2} name="displayName" />
-                  </label>
-                  <label>
-                    نام کاربری
-                    <Input
-                      required
-                      minLength={3}
-                      pattern="[a-zA-Z0-9._-]+"
-                      dir="ltr"
-                      name="username"
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label>
-                    ایمیل (اختیاری)
-                    <Input name="email" type="email" dir="ltr" />
-                  </label>
-                  <label>
-                    رمز اولیه
-                    <Input
-                      name="password"
-                      type="password"
-                      minLength={10}
-                      required
-                      autoComplete="new-password"
-                    />
-                    <small>
-                      حداقل ۱۰ نویسه شامل حرف بزرگ، کوچک، رقم و علامت
-                    </small>
-                  </label>
-                </div>
-              )}
-              <label className="grid gap-2">
-                نقش کاربر
-                <NativeSearchSelect
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    setProposalOpen(true);
-                  }}
-                  className={styles.roleSelect}
-                >
-                  {USER_JOB_TITLES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </NativeSearchSelect>
-              </label>
-              {canManage &&
-                (proposalOpen ? (
-                  <RoleAccessProposal
-                    title={title}
-                    proposal={proposal}
-                    onApply={applyProposal}
-                    onKeep={() => setProposalOpen(false)}
-                  />
-                ) : (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setProposalOpen(true)}
+          <div className={styles.editor}>
+            <form ref={form} onSubmit={save} className="grid gap-4">
+              <h2 className={styles.editorTitle}>
+                {selected
+                  ? 'دسترسی ' + selected.displayName
+                  : 'تعریف کاربر جدید'}
+              </h2>
+              <fieldset disabled={!canManage || busy} className="grid gap-4">
+                {!selected && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label>
+                      نام و نام خانوادگی
+                      <Input required minLength={2} name="displayName" />
+                    </label>
+                    <label>
+                      نام کاربری
+                      <Input
+                        required
+                        minLength={3}
+                        pattern="[a-zA-Z0-9._\-]+"
+                        dir="ltr"
+                        name="username"
+                        autoComplete="off"
+                      />
+                    </label>
+                    <label>
+                      ایمیل (اختیاری)
+                      <Input name="email" type="email" dir="ltr" />
+                    </label>
+                    <label>
+                      رمز اولیه
+                      <Input
+                        name="password"
+                        type="password"
+                        minLength={10}
+                        maxLength={200}
+                        required
+                        autoComplete="new-password"
+                      />
+                      <small>
+                        حداقل ۱۰ نویسه شامل حرف بزرگ، کوچک، رقم و علامت
+                      </small>
+                    </label>
+                  </div>
+                )}
+                <label className="grid gap-2">
+                  نقش کاربر
+                  <NativeSearchSelect
+                    value={title}
+                    onChange={(e) => {
+                      setTitle(e.target.value);
+                      setProposalOpen(true);
+                    }}
+                    className={styles.roleSelect}
                   >
-                    نمایش پیشنهاد دسترسی این نقش
-                  </Button>
-                ))}
-              <fieldset className={styles.branches}>
-                <legend className="font-bold">شعب مجاز</legend>
-                {options.branches.map((branch) => (
-                  <Check
-                    key={branch.id}
-                    label={branch.name}
-                    checked={branchIds.includes(branch.id)}
-                    onChange={(v) =>
-                      setBranchIds(change(branchIds, [branch.id], v))
-                    }
-                  />
-                ))}
-              </fieldset>
-              <div className={styles.accessHeading}>
-                <strong>دسترسی به بخش‌های سامانه</strong>
-                <span>
-                  تیک بخش را بزنید، سپس دسترسی زیربخش‌ها را تنظیم کنید.
-                </span>
-              </div>
-              <div
-                ref={accessGrid}
-                tabIndex={-1}
-                aria-label="سفارشی‌سازی دسترسی‌ها"
-                className={styles.accessGrid}
-              >
-                {USER_ACCESS_GROUPS.map((group) => {
-                  const screens = USER_ACCESS_SCREENS.filter(
-                    (s) => s.group === group.id,
-                  );
-                  const permissions = options.permissions.filter((p) =>
-                    group.prefixes.some(
-                      (prefix) =>
-                        p.code.startsWith(prefix + '.') ||
-                        p.code.startsWith(prefix + '-'),
-                    ),
-                  );
-                  const allowedScreens = screens.filter((s) =>
-                    options.assignableScreenIds.includes(s.id),
-                  );
-                  const allowedPermissions = permissions.filter(
-                    (p) =>
-                      options.canAssignAll ||
-                      actor?.permissions.some((code) => code === p.code),
-                  );
-                  const total =
-                    allowedScreens.length + allowedPermissions.length;
-                  const count =
-                    allowedScreens.filter((s) => screenIds.includes(s.id))
-                      .length +
-                    allowedPermissions.filter((p) =>
-                      permissionIds.includes(p.id),
-                    ).length;
-                  return (
-                    <AccessGroupCard
-                      key={group.id}
-                      id={group.id}
-                      title={group.title}
-                      count={count}
-                      total={total}
-                      onChange={(v) => {
-                        setScreenIds(
-                          change(
-                            screenIds,
-                            allowedScreens.map((s) => s.id),
-                            v,
-                          ),
-                        );
-                        setPermissionIds(
-                          change(
-                            permissionIds,
-                            allowedPermissions.map((p) => p.id),
-                            v,
-                          ),
-                        );
-                      }}
+                    {USER_JOB_TITLES.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </NativeSearchSelect>
+                </label>
+                {canManage &&
+                  (proposalOpen ? (
+                    <RoleAccessProposal
+                      title={title}
+                      proposal={proposal}
+                      onApply={applyProposal}
+                      onKeep={() => setProposalOpen(false)}
+                    />
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setProposalOpen(true)}
                     >
-                      <fieldset className={styles.childSection}>
-                        <legend className="text-sm font-bold">
-                          بخش‌های قابل مشاهده
-                        </legend>
-                        {screens.map((s) => (
-                          <Check
-                            key={s.id}
-                            label={s.title}
-                            checked={screenIds.includes(s.id)}
-                            disabled={
-                              !options.assignableScreenIds.includes(s.id)
-                            }
-                            onChange={(v) =>
-                              setScreenIds(change(screenIds, [s.id], v))
-                            }
-                          />
-                        ))}
-                      </fieldset>
-                      <fieldset className={styles.childSection}>
-                        <legend className="text-sm font-bold">
-                          مجوزهای عملیات
-                        </legend>
-                        {permissions.map((p) => (
-                          <Check
-                            key={p.id}
-                            label={p.name}
-                            checked={permissionIds.includes(p.id)}
-                            disabled={
-                              !options.canAssignAll &&
-                              !actor?.permissions.some(
-                                (code) => code === p.code,
-                              )
-                            }
-                            onChange={(v) =>
-                              setPermissionIds(change(permissionIds, [p.id], v))
-                            }
-                          />
-                        ))}
-                      </fieldset>
-                    </AccessGroupCard>
-                  );
-                })}
-              </div>
-              {canManage && (
-                <Button
-                  type="submit"
-                  disabled={busy || proposalOpen}
-                  className={styles.saveButton}
+                      نمایش پیشنهاد دسترسی این نقش
+                    </Button>
+                  ))}
+                <fieldset className={styles.branches}>
+                  <legend className="font-bold">شعب مجاز</legend>
+                  {options.branches.map((branch) => (
+                    <Check
+                      key={branch.id}
+                      label={branch.name}
+                      checked={branchIds.includes(branch.id)}
+                      onChange={(v) =>
+                        setBranchIds(change(branchIds, [branch.id], v))
+                      }
+                    />
+                  ))}
+                </fieldset>
+                <div className={styles.accessHeading}>
+                  <strong>دسترسی به بخش‌های سامانه</strong>
+                  <span>
+                    تیک بخش را بزنید، سپس دسترسی زیربخش‌ها را تنظیم کنید.
+                  </span>
+                </div>
+                <div
+                  ref={accessGrid}
+                  tabIndex={-1}
+                  aria-label="سفارشی‌سازی دسترسی‌ها"
+                  className={styles.accessGrid}
                 >
-                  {busy ? 'در حال ذخیره…' : 'ذخیره کاربر و دسترسی‌ها'}
-                </Button>
+                  {USER_ACCESS_GROUPS.map((group) => {
+                    const screens = USER_ACCESS_SCREENS.filter(
+                      (s) => s.group === group.id,
+                    );
+                    const permissions = options.permissions.filter((p) =>
+                      group.prefixes.some(
+                        (prefix) =>
+                          p.code.startsWith(prefix + '.') ||
+                          p.code.startsWith(prefix + '-'),
+                      ),
+                    );
+                    const allowedScreens = screens.filter((s) =>
+                      options.assignableScreenIds.includes(s.id),
+                    );
+                    const allowedPermissions = permissions.filter(
+                      (p) =>
+                        options.canAssignAll ||
+                        actor?.permissions.some((code) => code === p.code),
+                    );
+                    const total =
+                      allowedScreens.length + allowedPermissions.length;
+                    const count =
+                      allowedScreens.filter((s) => screenIds.includes(s.id))
+                        .length +
+                      allowedPermissions.filter((p) =>
+                        permissionIds.includes(p.id),
+                      ).length;
+                    return (
+                      <AccessGroupCard
+                        key={group.id}
+                        id={group.id}
+                        title={group.title}
+                        count={count}
+                        total={total}
+                        onChange={(v) => {
+                          setScreenIds(
+                            change(
+                              screenIds,
+                              allowedScreens.map((s) => s.id),
+                              v,
+                            ),
+                          );
+                          setPermissionIds(
+                            change(
+                              permissionIds,
+                              allowedPermissions.map((p) => p.id),
+                              v,
+                            ),
+                          );
+                        }}
+                      >
+                        <fieldset className={styles.childSection}>
+                          <legend className="text-sm font-bold">
+                            بخش‌های قابل مشاهده
+                          </legend>
+                          {screens.map((s) => (
+                            <Check
+                              key={s.id}
+                              label={s.title}
+                              checked={screenIds.includes(s.id)}
+                              disabled={
+                                !options.assignableScreenIds.includes(s.id)
+                              }
+                              onChange={(v) =>
+                                setScreenIds(change(screenIds, [s.id], v))
+                              }
+                            />
+                          ))}
+                        </fieldset>
+                        <fieldset className={styles.childSection}>
+                          <legend className="text-sm font-bold">
+                            مجوزهای عملیات
+                          </legend>
+                          {permissions.map((p) => (
+                            <Check
+                              key={p.id}
+                              label={p.name}
+                              checked={permissionIds.includes(p.id)}
+                              disabled={
+                                !options.canAssignAll &&
+                                !actor?.permissions.some(
+                                  (code) => code === p.code,
+                                )
+                              }
+                              onChange={(v) =>
+                                setPermissionIds(
+                                  change(permissionIds, [p.id], v),
+                                )
+                              }
+                            />
+                          ))}
+                        </fieldset>
+                      </AccessGroupCard>
+                    );
+                  })}
+                </div>
+                {proposalOpen && (
+                  <p className="text-sm text-muted-foreground">
+                    ذخیره، تیک‌های فعلی شما را ثبت می‌کند؛ برای استفاده از
+                    پیشنهاد نقش، ابتدا «تأیید و اعمال پیشنهاد» را بزنید.
+                  </p>
+                )}
+                {canManage && (
+                  <Button
+                    type="submit"
+                    disabled={busy}
+                    className={styles.saveButton}
+                  >
+                    {busy ? 'در حال ذخیره…' : 'ذخیره کاربر و دسترسی‌ها'}
+                  </Button>
+                )}
+              </fieldset>
+            </form>
+            {selected &&
+              canManage &&
+              options.canAssignAll &&
+              selected.id !== actor?.userId && (
+                <UserPasswordReset
+                  key={selected.id}
+                  name={selected.displayName}
+                  disabled={busy}
+                  onReset={async (newPassword) => {
+                    await request('/iam/users/' + selected.id + '/password', {
+                      method: 'PATCH',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'X-Nora-Password-Change': '1',
+                      },
+                      body: JSON.stringify({ newPassword }),
+                    });
+                  }}
+                />
               )}
-            </fieldset>
-          </form>
+          </div>
         </div>
       )}
     </div>

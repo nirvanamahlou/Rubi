@@ -1,3 +1,9 @@
+## USER-CREATE-PASSWORD-RESET-1003 — PC-A — READY_FOR_REVIEW
+
+User creation now saves the current explicit access selections even while optional role suggestions are open; weak initial passwords receive clear validation feedback. Canonical system administrators can reset another user using a confirmed password form. IAM rechecks active administrator membership and session, hashes credentials, revokes target sessions and records secret-free audit atomically. Self-service password changes remain unchanged. No schema, migration, dependency or actual user/password change.
+
+84 focused IAM/HTTP tests and 34 Web tests pass; scoped lint, both typechecks and production API/Web builds (55 routes) pass. All 9 isolated PostgreSQL password/reset regressions pass, including old login/access/refresh rejection, administrator session preservation and audit-failure rollback. User authorizes CI-gated develop merge. See [task handoff](tasks/USER-CREATE-PASSWORD-RESET-1003.md).
+
 ## 2026-10-03 — VISA-HIDE-VALIDITY-MODE-1003 — PC-B — READY_FOR_REVIEW
 
 Visa Services create/edit no longer renders the reference-validity-mode selector. New mutations keep the canonical `DAYS` mode; edits preserve supported stored modes by using them only for days-field behavior and omitting mode from PATCH. `DAYS` keeps the optional validated day field, while legacy `PASSPORT_EXPIRY` keeps it hidden. View/table/backend remain unchanged and Excel retains `referenceValidityMode` immediately before `referenceValidityDays`. Focused 32 and all 534 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.

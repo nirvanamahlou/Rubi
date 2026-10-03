@@ -266,3 +266,22 @@ describe('managed account creation', () => {
     expect(f.client.$transaction).toHaveBeenCalledOnce();
   });
 });
+
+describe('user creation credential feedback', () => {
+  it('reports weak initial password as a validation error rather than an unexpected server error', async () => {
+    const f = fixture();
+    await expect(
+      f.service.createUser(
+        {
+          ...access,
+          username: 'synthetic',
+          displayName: 'Synthetic',
+          password: 'alllowercase123!',
+        },
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(f.client.user.create).not.toHaveBeenCalled();
+  });
+});
