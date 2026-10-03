@@ -10,6 +10,7 @@ import {
   ORGANIZATION_LOGO_MAX_BYTES,
   organizationLogoPreview,
   saveOrganizationLogo,
+  watchOrganizationLogoPreview,
 } from './organization-logo';
 
 const organization = {
@@ -44,10 +45,23 @@ const detail = () =>
       confidentiality: 'INTERNAL',
       requiresStepUpVerification: false,
       capabilities: { viewFile: true },
-      currentVersion: { scanStatus: 'CLEAN' },
+      currentVersion: {
+        scanStatus: 'CLEAN',
+        detectedMimeType: 'image/png',
+        sizeBytes: 9,
+      },
     },
   }) as DocumentDetailResponseV1;
-afterEach(() => vi.restoreAllMocks());
+const pendingDetail = () => {
+  const response = detail();
+  Object.assign(response.data.currentVersion, { scanStatus: 'PENDING_SCAN' });
+  return response;
+};
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('organization header logo save', () => {
   it.each(uploadGrants)('requires %s before any owner write', (grant) => {
@@ -213,5 +227,198 @@ describe('organization header logo preview', () => {
       organizationLogoPreview('logo-document', readGrants, controller.signal),
     ).rejects.toMatchObject({ name: 'AbortError' });
     expect(preview).not.toHaveBeenCalled();
+  });
+
+  it('rechecks pending metadata and exposes the clean image in the same load', async () => {
+    vi.useFakeTimers();
+    const metadata = vi
+      .spyOn(documentsApi, 'detail')
+      .mockResolvedValueOnce(pendingDetail())
+      .mockResolvedValueOnce(detail());
+    const blob = new Blob(['synthetic'], { type: 'image/png' });
+    const preview = vi
+      .spyOn(documentsApi, 'preview')
+      .mockResolvedValue({ blob, disposition: null });
+    const createObjectURL = vi.fn(() => 'blob:organization-logo');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+    const states: Array<{ imageUrl: string } | { reason: string }> = [];
+
+    const stop = watchOrganizationLogoPreview({
+      documentId: 'logo-document',
+      permissions: readGrants,
+      onState: (state) => states.push(state),
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(metadata).toHaveBeenCalledOnce();
+    expect(preview).not.toHaveBeenCalled();
+    expect(states.at(-1)).toHaveProperty('reason');
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(metadata).toHaveBeenCalledTimes(2);
+    expect(preview).toHaveBeenCalledExactlyOnceWith(
+      'logo-document',
+      undefined,
+      expect.any(AbortSignal),
+    );
+    expect(createObjectURL).toHaveBeenCalledExactlyOnceWith(blob);
+    expect(states.at(-1)).toEqual({ imageUrl: 'blob:organization-logo' });
+
+    stop();
+    expect(revokeObjectURL).toHaveBeenCalledExactlyOnceWith(
+      'blob:organization-logo',
+    );
+  });
+
+  it('stops after four bounded retries while metadata stays pending', async () => {
+    vi.useFakeTimers();
+    const metadata = vi
+      .spyOn(documentsApi, 'detail')
+      .mockImplementation(async () => pendingDetail());
+    const preview = vi.spyOn(documentsApi, 'preview');
+    const states: Array<{ imageUrl: string } | { reason: string }> = [];
+
+    const stop = watchOrganizationLogoPreview({
+      documentId: 'logo-document',
+      permissions: readGrants,
+      onState: (state) => states.push(state),
+    });
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(metadata).toHaveBeenCalledTimes(5);
+    expect(preview).not.toHaveBeenCalled();
+    expect(states).toHaveLength(5);
+    expect(vi.getTimerCount()).toBe(0);
+    stop();
+  });
+
+  it.each([
+    ['a permanent scan rejection', { response: { scanStatus: 'INFECTED' } }],
+    ['a metadata authorization error', { error: new Error('403 Forbidden') }],
+  ])('does not retry %s', async (_label, outcome) => {
+    vi.useFakeTimers();
+    const metadata = vi.spyOn(documentsApi, 'detail');
+    if ('error' in outcome) metadata.mockRejectedValue(outcome.error);
+    else {
+      const response = detail();
+      Object.assign(response.data.currentVersion, {
+        scanStatus: outcome.response.scanStatus as 'INFECTED',
+      });
+      metadata.mockResolvedValue(response);
+    }
+    const preview = vi.spyOn(documentsApi, 'preview');
+    const stop = watchOrganizationLogoPreview({
+      documentId: 'logo-document',
+      permissions: readGrants,
+      onState: vi.fn(),
+    });
+
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(metadata).toHaveBeenCalledOnce();
+    expect(preview).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    stop();
+  });
+
+  it.each([
+    ['confidential', { confidentiality: 'CONFIDENTIAL' }],
+    ['step-up protected', { requiresStepUpVerification: true }],
+    ['a non-image', { detectedMimeType: 'application/pdf' }],
+    ['an oversized image', { sizeBytes: ORGANIZATION_LOGO_MAX_BYTES + 1 }],
+  ])(
+    'does not retry pending metadata when it is also %s',
+    async (_label, restriction) => {
+      vi.useFakeTimers();
+      const response = pendingDetail();
+      if ('detectedMimeType' in restriction || 'sizeBytes' in restriction)
+        Object.assign(response.data.currentVersion, restriction);
+      else Object.assign(response.data, restriction);
+      const metadata = vi
+        .spyOn(documentsApi, 'detail')
+        .mockResolvedValue(response);
+      const preview = vi.spyOn(documentsApi, 'preview');
+      const stop = watchOrganizationLogoPreview({
+        documentId: 'logo-document',
+        permissions: readGrants,
+        onState: vi.fn(),
+      });
+
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(metadata).toHaveBeenCalledOnce();
+      expect(preview).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+      stop();
+    },
+  );
+
+  it('cancels a pending retry before another metadata or file request', async () => {
+    vi.useFakeTimers();
+    const metadata = vi
+      .spyOn(documentsApi, 'detail')
+      .mockResolvedValue(pendingDetail());
+    const preview = vi.spyOn(documentsApi, 'preview');
+    const onState = vi.fn();
+    const stop = watchOrganizationLogoPreview({
+      documentId: 'logo-document',
+      permissions: readGrants,
+      onState,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(metadata).toHaveBeenCalledOnce();
+
+    stop();
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(metadata).toHaveBeenCalledOnce();
+    expect(preview).not.toHaveBeenCalled();
+    expect(onState).toHaveBeenCalledOnce();
+  });
+
+  it('ignores a late response after identity cleanup and revokes only the active image', async () => {
+    vi.useFakeTimers();
+    let resolveOld: ((value: DocumentDetailResponseV1) => void) | undefined;
+    const oldResponse = new Promise<DocumentDetailResponseV1>((resolve) => {
+      resolveOld = resolve;
+    });
+    vi.spyOn(documentsApi, 'detail')
+      .mockReturnValueOnce(oldResponse)
+      .mockResolvedValueOnce(detail());
+    const blob = new Blob(['new'], { type: 'image/png' });
+    const preview = vi
+      .spyOn(documentsApi, 'preview')
+      .mockResolvedValue({ blob, disposition: null });
+    const createObjectURL = vi.fn(() => 'blob:new-logo');
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
+    const oldState = vi.fn();
+    const newState = vi.fn();
+
+    const stopOld = watchOrganizationLogoPreview({
+      documentId: 'old-logo',
+      permissions: readGrants,
+      onState: oldState,
+    });
+    stopOld();
+    const stopNew = watchOrganizationLogoPreview({
+      documentId: 'new-logo',
+      permissions: readGrants,
+      onState: newState,
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    resolveOld?.(detail());
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(oldState).not.toHaveBeenCalled();
+    expect(preview).toHaveBeenCalledExactlyOnceWith(
+      'new-logo',
+      undefined,
+      expect.any(AbortSignal),
+    );
+    expect(newState).toHaveBeenCalledExactlyOnceWith({
+      imageUrl: 'blob:new-logo',
+    });
+    expect(revokeObjectURL).not.toHaveBeenCalled();
+
+    stopNew();
+    expect(revokeObjectURL).toHaveBeenCalledExactlyOnceWith('blob:new-logo');
   });
 });
