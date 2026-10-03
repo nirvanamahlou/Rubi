@@ -1,3 +1,11 @@
+## RESERVATION-CONTRACT-TERMS-FINANCE-1003 — PC-A — READY_FOR_REVIEW
+
+- درخواست مالک محصول در 2026-10-03: PDF بازطراحی‌شدهٔ مفاد در گزینهٔ «مفاد» رزرواسیون دانلود شود و در پنجرهٔ «مدارک» قرارداد فروش، کاربرِ دارای دسترسی مالی نیز بتواند همان فایل را دریافت کند.
+- `COMPUTER_ID=PC-A`; branch `codex/pc-a-reservation-contract-terms-1003`, based on `origin/develop@bd9b4e5e`.
+- Scope: replace `apps/web/public/contracts/terms.pdf` byte-for-byte with supplied PDF; add a clear download action in the existing Sales travel-documents dialog after its existing permission-gated API load; focused Web tests and bounded task/status docs. Existing Reservations action already links to this path and remains selected-contract gated.
+- No API/shared contract, Documents service, schema/migration, permission, dependency/lockfile, finance transaction, data, or runtime changes. Sales uses the existing Reservations travel-document endpoint for authorization; no new visibility bypass. Migration, Dependency/Lockfile and IAM locks remain RELEASED. Central docs reserved only for this task until commit.
+- Delivered: replaced the shared PDF with the supplied two-page source (SHA256 `8ED0C34F4E94F9802A5CA4F9F0CF45DE9AE49FCB92E1018B4AE30D56206767DC`) and added “دانلود مفاد قرارداد” inside the Sales travel-documents dialog, rendered only after the existing authorized server read succeeds. Reservations keeps its existing selected-contract download link.
+- Validation: 13 focused Sales/Reservations tests, scoped ESLint, Web TypeScript check and 55-route production build pass; supplied PDF visually reviewed and source/asset hashes match. No schema, API, permission or runtime changes. `Central docs`, `Migration`, `Dependency/Lockfile` and IAM reservations release with this review-ready commit.
 ## SALES-REFERENCE-CENTER-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-sales-reference-center-columns-1003` from origin/develop@7ec6e2ff. Reserve Sales References shared table code and operations header/cell centering, action-container alignment, existing spec and own bounded docs. Both tabs covered; preserve all other columns and callbacks/button order/RTL-LTR semantics. No active overlapping Web owner; no API/schema/dependency/runtime/database changes. User authorizes push/develop merge after checks.
