@@ -20,7 +20,7 @@ export function MasterDataFilterActions({
     <div
       aria-label="عملیات فیلتر"
       className={cn(
-        'col-span-full mt-1 flex w-full flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-3',
+        'col-span-full mt-1 flex w-full flex-wrap items-center justify-end gap-2 border-t border-border/70 pt-2 xl:col-auto xl:mt-0 xl:w-auto xl:border-t-0 xl:pt-0',
         className,
       )}
       role="group"
