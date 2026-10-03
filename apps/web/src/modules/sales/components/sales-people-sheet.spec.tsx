@@ -19,12 +19,23 @@ describe('Sales uses the Customers entry spreadsheet', () => {
       />,
     );
     expect(html).toContain('جدول ورود اطلاعات مشتری و مسافران');
+    for (const field of [
+      'sales-buyer-name',
+      'sales-buyer-phone',
+      'sales-buyer-address',
+      'sales-buyer-postal',
+    ]) {
+      expect(html).toContain(`id="${field}"`);
+      expect(html.indexOf(`id="${field}"`)).toBeLessThan(
+        html.indexOf('id="sales-entry-p0-first-name"'),
+      );
+    }
     expect(html.match(/id="sales-entry-p\d+-first-name"/g)).toHaveLength(4);
     expect(html).not.toContain('sales-entry-primary-first-name');
     expect(
       html.match(/aria-label="نحوه آشنایی برای کل قرارداد"/g),
     ).toHaveLength(1);
-    expect(html).not.toContain('type="checkbox"');
+    expect(html).toContain('مشتری طرف حساب همان مسافر اول است');
     expect(html).not.toContain('شماره پاسپورت');
     expect(html).toContain('تلفن');
     expect(html).toContain('ایمیل');
@@ -52,7 +63,9 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('مشتری و مسافر اول');
     expect(html).not.toContain('sales-entry-primary-first-name');
     expect(html).not.toContain('انقضای پاسپورت');
-    expect(html).toContain('قرارداد به نام مسافر اول ثبت می‌شود');
+    expect(html).toContain(
+      'مشتری طرف حساب را در بخش بالای جدول مسافران مشخص کنید',
+    );
     expect(html).not.toContain('این مشتری مسافر اول هم هست');
     expect(html.match(/id="sales-entry-p\d+-first-name"/g)).toHaveLength(1);
   });

@@ -1,4 +1,8 @@
 'use client';
+import {
+  salesFlightRangeReady,
+  resetSalesTicketRange,
+} from '../model/sales-flight-range';
 import { moneyDecimal, moneyUnits, passengerOverSixty } from '@nora/contracts';
 import { PassengerCountField } from './passenger-count-field';
 import { ContractOutputButton } from './contract-output';
@@ -1039,6 +1043,13 @@ export function SalesContractForm() {
                   />
                   این بلیط بیزینس است — درج در خروجی
                 </label>
+                <FlightDateRangeFilter
+                  value={flightRange}
+                  onChange={(range) => {
+                    setFlightRange(range);
+                    patchState(resetSalesTicketRange(state));
+                  }}
+                />
                 <div className="grid items-start gap-5 lg:grid-cols-2">
                   {flightDirections.includes('OUTBOUND') ? (
                     <section className="grid gap-3 min-w-0">
@@ -1053,11 +1064,8 @@ export function SalesContractForm() {
                       />
                       {!state.contractFlights?.OUTBOUND ? (
                         <>
-                          <FlightDateRangeFilter
-                            value={flightRange}
-                            onChange={setFlightRange}
-                          />
                           <TicketOfferPicker
+                            enabled={salesFlightRangeReady(flightRange)}
                             originLabel={
                               references.cities.find(
                                 (city) => city.id === state.originId,
@@ -1131,19 +1139,14 @@ export function SalesContractForm() {
                       />
                       {!state.contractFlights?.RETURN ? (
                         <>
-                          {!flightDirections.includes('OUTBOUND') ? (
-                            <FlightDateRangeFilter
-                              value={flightRange}
-                              onChange={setFlightRange}
-                            />
-                          ) : null}
                           <p className="text-sm text-muted-foreground">
-                            همه بلیط‌های مقصد به مبدأ از تاریخ بلیط رفت به بعد
-                            نمایش داده می‌شوند؛ سقف تاریخ ندارند.
+                            بلیط‌های برگشت در بازه انتخابی و پس از رسیدن بلیط
+                            رفت نمایش داده می‌شوند.
                           </p>
                           {!flightDirections.includes('OUTBOUND') ||
                           salesFlightSelection(state, 'OUTBOUND') ? (
                             <TicketOfferPicker
+                              enabled={salesFlightRangeReady(flightRange)}
                               originLabel={
                                 references.cities.find(
                                   (city) => city.id === state.destinationId,
@@ -1154,23 +1157,25 @@ export function SalesContractForm() {
                                   (city) => city.id === state.originId,
                                 )?.name ?? 'مبدأ'
                               }
-                              key={`return-${salesFlightSelection(state, 'OUTBOUND')?.departureAt ?? futureFrom}-${!flightDirections.includes('OUTBOUND') ? flightRange.from + '-' + flightRange.to : ''}`}
+                              key={`return-${salesFlightSelection(state, 'OUTBOUND')?.departureAt ?? futureFrom}-${flightRange.from + '-' + flightRange.to}`}
                               query={{
                                 originId: state.destinationId,
                                 destinationId: state.originId,
                                 departureFrom: flightDirections.includes(
                                   'OUTBOUND',
                                 )
-                                  ? salesReturnSearchFrom(state) >
-                                    futureFrom.slice(0, 10)
-                                    ? salesReturnSearchFrom(state)
-                                    : futureFrom
+                                  ? [
+                                      salesReturnSearchFrom(state),
+                                      flightRange.from,
+                                      futureFrom,
+                                    ]
+                                      .sort()
+                                      .at(-1)!
                                   : flightRange.from &&
                                       flightRange.from > futureFrom.slice(0, 10)
                                     ? flightRange.from
                                     : futureFrom,
-                                ...(!flightDirections.includes('OUTBOUND') &&
-                                flightRange.to
+                                ...(flightRange.to
                                   ? { departureTo: flightRange.to }
                                   : {}),
                               }}

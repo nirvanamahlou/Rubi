@@ -7,6 +7,7 @@ import type {
 } from '@nora/contracts';
 import {
   hotelPurchaseTotal,
+  transferPurchaseTotal,
   reservationHotelPassengers,
   reservationTransferPassengers,
   reservationPurchaseServices,
@@ -87,8 +88,10 @@ it('shows service-level base and factor inputs and contract nights without passe
   );
   expect(html).toContain('قیمت پایه هتل');
   expect(html).toContain('ضریب هتل');
-  expect(html).toContain('قیمت پایه ترانسفر');
-  expect(html).toContain('ضریب ترانسفر');
+  expect(html).toContain('قیمت ترانسفر هر نفر');
+  expect(html).toContain('تعداد نفرات محاسبه‌شونده');
+  expect(html).not.toContain('ضریب ترانسفر');
+  expect(html).not.toContain('تعداد شب قرارداد');
   expect(html).toContain('تعداد شب اقامت: 4');
   expect(html).not.toContain('قیمت هر شب');
   expect(html).not.toContain('ترانسفر هر مسافر');
@@ -197,4 +200,79 @@ it('counts a passenger assigned to both transfer directions only once', () => {
     { id: 'one', name: 'مسافر اول', age: 'ADT' },
     { id: 'two', name: 'مسافر دوم', age: 'CHD' },
   ]);
+});
+
+it('calculates transfer by integer passenger count with exact money arithmetic', () => {
+  expect(transferPurchaseTotal('25.5', '3')).toBe('76.5');
+  expect(transferPurchaseTotal('9007199254740993', '2')).toBe(
+    '18014398509481986',
+  );
+  for (const count of ['0', '-1', '1.5', '', 'NaN', '1e2'])
+    expect(() => transferPurchaseTotal('25', count)).toThrow();
+});
+
+it('restores separate brokers and separate per-leg amounts without hotel dates', () => {
+  const html = renderToStaticMarkup(
+    <ReservationHotelPurchase
+      request={
+        {
+          id: 'request',
+          snapshot: {
+            contractNumber: 'SC-TEST',
+            passengerIds: ['one', 'two'],
+            serviceSelections: [
+              {
+                clientKey: 'out',
+                kind: 'TRANSFER',
+                titleSnapshot: 'ترانسفر رفت',
+              },
+              {
+                clientKey: 'back',
+                kind: 'TRANSFER',
+                titleSnapshot: 'ترانسفر برگشت',
+              },
+            ],
+          },
+          servicePurchases: [
+            {
+              serviceClientKey: 'out',
+              coveredServiceClientKeys: ['out'],
+              supplierOrganizationId: 'broker-a',
+              supplierName: 'Broker A',
+              amount: '50',
+              currencyCode: 'USD',
+              pricingCalculation: {
+                baseAmount: '25',
+                factor: '2',
+                nights: 1,
+                chargeablePassengerCount: 2,
+              },
+            },
+            {
+              serviceClientKey: 'back',
+              coveredServiceClientKeys: ['back'],
+              supplierOrganizationId: 'broker-b',
+              supplierName: 'Broker B',
+              amount: '90',
+              currencyCode: 'EUR',
+              pricingCalculation: {
+                baseAmount: '30',
+                factor: '3',
+                nights: 1,
+                chargeablePassengerCount: 3,
+              },
+            },
+          ],
+        } as unknown as ReservationIntakeV1
+      }
+      onSaved={() => {}}
+    />,
+  );
+  expect(html).toContain('کارگزار جدا برای ترانسفر رفت و برگشت');
+  expect(html).toContain('checked=""');
+  expect(html).toContain('Broker A');
+  expect(html).toContain('Broker B');
+  expect(html).toContain('50');
+  expect(html).toContain('90');
+  expect(html).not.toContain('disabled=""');
 });

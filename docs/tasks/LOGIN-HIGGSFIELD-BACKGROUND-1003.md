@@ -1,6 +1,6 @@
 # LOGIN-HIGGSFIELD-BACKGROUND-1003
 
-Status: local preview requested; PR #555 remains unmerged.
+Status: final user-approved media is wired and verified; PR #555 is ready for develop merge after CI.
 
 PC-A resumed the bounded login-background work after successful Higgsfield production and the user's explicit local-rollout request. No API, authentication, dependency, migration or database changes.
 

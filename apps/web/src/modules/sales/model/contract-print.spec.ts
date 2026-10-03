@@ -2,6 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('prints and escapes all four buyer fields independently from passenger names', () => {
+    const output = structuredClone(printFixture);
+    output.contract.customerNameSnapshot = 'Synthetic <Buyer>';
+    output.customer = {
+      kind: 'person',
+      address: 'Saved <Address>',
+      phone: '09120000000',
+      postalCode: '0012345678',
+    };
+    const html = contractPrintHtml(output, printReferences);
+    expect(html).toContain('Synthetic &lt;Buyer&gt;');
+    expect(html).toContain('Saved &lt;Address&gt;');
+    expect(html).toContain('09120000000');
+    expect(html).toContain('0012345678');
+    expect(html).not.toContain('Synthetic <Buyer>');
+  });
   it('keeps agreed total but omits paid and outstanding cards from customer output', () => {
     const output = structuredClone(printFixture);
     const before = structuredClone(output);

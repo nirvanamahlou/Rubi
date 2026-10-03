@@ -105,6 +105,33 @@ const tabs = [
 
 type TravelResource = (typeof tabs)[number]['resource'];
 
+const nonExportableLeaderFields = new Set(['primaryPhone', 'roamingPhone']);
+
+export function travelServicesExportColumns(resource: TravelResource) {
+  const definition = getMasterDataDefinition(resource);
+  const definitionFields = definition.fields
+    .map((field) => field.key)
+    .filter(
+      (field) =>
+        resource !== 'leaders' || !nonExportableLeaderFields.has(field),
+    );
+  const exportableFields =
+    resource === 'transfer-types'
+      ? definitionFields.flatMap((field) =>
+          field === 'suggestedCapacity'
+            ? [field, 'suggestedCapacityMin']
+            : [field],
+        )
+      : resource === 'visa-services'
+        ? definitionFields.flatMap((field) =>
+            field === 'referenceValidityDays'
+              ? ['referenceValidityMode', field]
+              : [field],
+          )
+        : definitionFields;
+  return [...new Set(['code', ...exportableFields, 'status', 'updatedAt'])];
+}
+
 export function availableTravelKpiValue(value: number | null | undefined) {
   return value ?? '—';
 }
@@ -574,13 +601,7 @@ export function MasterDataTravelServicesWorkspace() {
         resource,
         format: 'xlsx',
         filters,
-        columns: [
-          'code',
-          'name',
-          ...definition.fields.map((field) => field.key),
-          'status',
-          'updatedAt',
-        ],
+        columns: travelServicesExportColumns(resource),
         locale: 'fa-IR',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
@@ -599,7 +620,7 @@ export function MasterDataTravelServicesWorkspace() {
   }
 
   const actions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -695,7 +716,12 @@ export function MasterDataTravelServicesWorkspace() {
         <thead className="bg-muted/50 text-muted-foreground">
           <tr>
             {headers[resource].map((label) => (
-              <th className="p-4 text-start" key={label}>
+              <th
+                className={
+                  label === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                }
+                key={label}
+              >
                 {label}
               </th>
             ))}
@@ -720,7 +746,7 @@ export function MasterDataTravelServicesWorkspace() {
                 ),
               )}
               <td className="p-4">{statusBadge(record)}</td>
-              <td className="p-4">{actions(record)}</td>
+              <td className="p-4 text-center">{actions(record)}</td>
             </tr>
           ))}
         </tbody>

@@ -179,7 +179,16 @@ export interface SalesPaymentInput extends SalesMoney {
   } | null;
 }
 
+/** Immutable buyer contact details entered for this contract. */
+export interface SalesBuyerContactV1 {
+  name: string;
+  phone: string;
+  address: string;
+  postalCode: string;
+}
+
 export interface SalesContractCreateRequest {
+  buyerContact?: SalesBuyerContactV1 | null;
   customerId: string;
   payerCustomerId?: string | null;
   assignedUserId?: string | null;
@@ -249,6 +258,9 @@ export interface SalesContractSummary {
   customerId: string;
   customerNameSnapshot: string;
   passengerNames: readonly string[];
+  customerPhone?: string | null;
+  originName?: string | null;
+  destinationName?: string | null;
   ownerUserId: string;
   assignedUserId: string | null;
   branchId: string;
@@ -267,6 +279,7 @@ export interface SalesContractSummary {
 }
 
 export interface SalesContractDetail extends SalesContractSummary {
+  buyerContact?: SalesBuyerContactV1 | null;
   tripType: SalesTripType;
   payerCustomerId: string;
   servicesDetail: readonly SalesServiceInput[];
@@ -294,7 +307,12 @@ export interface SalesContractOutputV1 {
   version: 1;
   generatedAt: string;
   contract: SalesContractDetail;
-  customer: { kind: 'person' | 'organization'; address: string | null };
+  customer: {
+    kind: 'person' | 'organization';
+    address: string | null;
+    phone?: string | null;
+    postalCode?: string | null;
+  };
   ownerName: string | null;
   company: {
     id: string;

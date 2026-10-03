@@ -7,6 +7,7 @@ import {
   calculateSalesBalances,
   passengerAgeCategory,
   salesFingerprint,
+  sumSalesDecimals,
   validateSalesContract,
   validateSalesPayment,
 } from './sales.domain';
@@ -19,7 +20,11 @@ const draft: SalesContractCreateRequest = {
   departureDate: '2026-10-01',
   returnNotBefore: '2026-10-08',
   services: [
-    { clientKey: 'flight', kind: 'FLIGHT', titleSnapshot: 'پرواز رفت‌وبرگشت' },
+    {
+      clientKey: 'flight',
+      kind: 'FLIGHT',
+      titleSnapshot: 'پرواز رفت‌وبرگشت',
+    },
   ],
   passengers: [
     {
@@ -68,6 +73,40 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('accepts explicit buyer contact and rejects invalid or mismatched payer details', () => {
+    const buyerContact = {
+      name: 'Synthetic Buyer',
+      phone: '09120000000',
+      address: 'Synthetic address',
+      postalCode: '0012345678',
+    };
+    expect(() =>
+      validateSalesContract({
+        ...draft,
+        buyerContact,
+        payerCustomerId: draft.customerId,
+      }),
+    ).not.toThrow();
+    for (const change of [
+      { phone: 'bad' },
+      { postalCode: '123' },
+      { name: ' ' },
+      { address: ' ' },
+    ])
+      expect(() =>
+        validateSalesContract({
+          ...draft,
+          buyerContact: { ...buyerContact, ...change },
+        }),
+      ).toThrow('طرف حساب');
+    expect(() =>
+      validateSalesContract({
+        ...draft,
+        buyerContact,
+        payerCustomerId: draft.destinationId,
+      }),
+    ).toThrow('طرف حساب');
+  });
   it('rejects accommodation without a hotel allocation', () => {
     const input = structuredClone(draft);
     input.passengers[0]!.accommodationKind = 'DBL';
@@ -178,7 +217,11 @@ describe('Sales contract domain', () => {
         metadata: {
           direction: item.direction,
           ...(item.kind === 'TRANSFER'
-            ? { date: '2026-10-10', pickup: 'هتل', dropoff: 'فرودگاه' }
+            ? {
+                date: '2026-10-10',
+                pickup: 'هتل',
+                dropoff: 'فرودگاه',
+              }
             : {}),
         },
       }));
@@ -270,7 +313,11 @@ describe('Sales contract domain', () => {
       const input = structuredClone(draft);
       input.services = [
         ...input.services,
-        { clientKey: 'other-transport', kind, titleSnapshot: 'وسیله دیگر' },
+        {
+          clientKey: 'other-transport',
+          kind,
+          titleSnapshot: 'وسیله دیگر',
+        },
       ];
       expect(() => validateSalesContract(input)).toThrow(
         'پرواز با قطار یا اتوبوس',
@@ -339,7 +386,12 @@ describe('Sales contract domain', () => {
     expect(
       calculateSalesBalances(
         [
-          { type: 'BASE', title: 'قیمت', amount: '1000', currencyCode: 'IRR' },
+          {
+            type: 'BASE',
+            title: 'قیمت',
+            amount: '1000',
+            currencyCode: 'IRR',
+          },
           {
             type: 'DISCOUNT',
             title: 'تخفیف',
@@ -365,6 +417,26 @@ describe('Sales contract domain', () => {
         outstanding: '650',
       },
     ]);
+  });
+
+  it('aggregates a negative computed balance without accepting a negative payment', () => {
+    const balances = calculateSalesBalances(
+      [{ type: 'BASE', title: 'قیمت', amount: '100', currencyCode: 'IRR' }],
+      [{ amount: '120', currencyCode: 'IRR', status: 'FINANCE_CONFIRMED' }],
+    );
+    expect(balances[0]?.outstanding).toBe('-20');
+    expect(
+      sumSalesDecimals(balances.map(({ outstanding }) => outstanding)),
+    ).toBe('-20');
+    expect(sumSalesDecimals(['-20', '50'])).toBe('30');
+    expect(() =>
+      validateSalesPayment({
+        amount: '-20',
+        currencyCode: 'IRR',
+        dueAt: '2026-10-01T00:00:00Z',
+        method: 'CASH',
+      }),
+    ).toThrow('مبلغ Decimal معتبر نیست');
   });
 
   it('derives passenger category at departure date', () => {

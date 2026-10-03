@@ -10,6 +10,7 @@ import { TicketOfferCard } from './ticket-offer-card';
 
 export function TicketOfferPicker({
   query,
+  enabled = true,
   selectedId,
   onSelect,
   originLabel,
@@ -20,6 +21,7 @@ export function TicketOfferPicker({
   acceptAnyRoundTripFare = false,
 }: {
   query: TicketOfferSearchV1;
+  enabled?: boolean;
   selectedId: string;
   onSelect: (offer: TicketOfferV1) => void;
   originLabel?: string;
@@ -40,6 +42,7 @@ export function TicketOfferPicker({
   });
   const page = pagination.filters === filters ? pagination.page : 1;
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setBusy(true);
@@ -91,7 +94,13 @@ export function TicketOfferPicker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [filters, page]);
+  }, [filters, page, enabled]);
+  if (!enabled)
+    return (
+      <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+        ابتدا بازه تاریخ را انتخاب و تأیید کنید تا بلیط‌ها نمایش داده شوند.
+      </p>
+    );
   return (
     <div className="grid gap-3">
       <p className="text-[11px] text-muted-foreground">

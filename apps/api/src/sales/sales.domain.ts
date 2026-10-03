@@ -68,7 +68,14 @@ function unitsDecimal(value: bigint): string {
 
 export function sumSalesDecimals(values: readonly string[]): string {
   return unitsDecimal(
-    values.reduce((sum, value) => sum + decimalUnits(value), 0n),
+    values.reduce(
+      (sum, value) =>
+        sum +
+        (value.startsWith('-')
+          ? -decimalUnits(value.slice(1))
+          : decimalUnits(value)),
+      0n,
+    ),
   );
 }
 
@@ -152,6 +159,26 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
         'SALES_REFERENCE_INVALID',
         `شناسه ${label} معتبر نیست.`,
       );
+  if (input.buyerContact != null) {
+    const buyer = input.buyerContact;
+    if (
+      typeof buyer !== 'object' ||
+      !['name', 'phone', 'address', 'postalCode'].every(
+        (key) => typeof buyer[key as keyof typeof buyer] === 'string',
+      ) ||
+      !buyer.name.trim() ||
+      buyer.name.length > 200 ||
+      !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
+      !buyer.address.trim() ||
+      buyer.address.length > 1000 ||
+      !/^[0-9]{10}$/.test(buyer.postalCode.trim()) ||
+      (input.payerCustomerId && input.payerCustomerId !== input.customerId)
+    )
+      throw new SalesDomainError(
+        'SALES_CONTRACT_INVALID',
+        'مشخصات مشتری طرف حساب را کامل و معتبر وارد کنید.',
+      );
+  }
   if (input.originId === input.destinationId)
     throw new SalesDomainError(
       'SALES_ROUTE_INVALID',

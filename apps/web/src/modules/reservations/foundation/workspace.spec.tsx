@@ -308,3 +308,84 @@ it('does not render generic reservation operation cards on the MANIFEST pane', (
   expect(html).not.toContain('قرارداد انتخاب‌شده');
   expect(html).not.toContain('عملیات قرارداد انتخاب‌شده');
 });
+
+describe('reservation search submission and filter combinations', () => {
+  it('provides an accessible submit button and reset in the inbox filter form', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[row()]}
+        access={access}
+        now={now}
+        initialSection="inbox"
+      />,
+    );
+    expect(html).toMatch(/<form[^>]*aria-label="جستجوی درخواست‌های رزواسیون"/);
+    expect(html).toMatch(/<button[^>]*type="submit"[^>]*>جستجو<\/button>/);
+    expect(html).toContain('پاک‌کردن فیلترها');
+  });
+  it('combines normalized search, status, service and date bounds', () => {
+    const target = {
+      ...row('match'),
+      contractNumber: 'SC-2026-000123',
+      customerName: 'علی کریمی',
+      hotelName: 'ROYAL WINGS',
+      destination: 'Antalya',
+    };
+    const rows = [
+      target,
+      { ...target, id: 'status', status: 'ERROR' as const },
+      {
+        ...target,
+        id: 'service',
+        services: ['BUS'] as RequestView['services'],
+      },
+      { ...target, id: 'date', createdAt: '2026-08-01T00:00:00.000Z' },
+    ];
+    for (const search of [
+      '۰۰۰۱۲۳',
+      '٠٠٠١٢٣',
+      'علي كريمي',
+      'royal wings',
+      'ANTALYA',
+    ]) {
+      expect(
+        queryRows(rows, {
+          ...defaultQuery,
+          search,
+          status: 'NEW',
+          service: 'HOTEL',
+          fromDate: '2026-09-08',
+          toDate: '2026-09-08',
+        }).filteredRows.map((r) => r.id),
+      ).toEqual(['match']);
+    }
+    expect(
+      queryRows(rows, {
+        ...defaultQuery,
+        fromDate: '2026-09-09',
+        toDate: '2026-09-08',
+      }).dateError,
+    ).toBeTruthy();
+  });
+  it('respects the selected date basis within the default one-month window', () => {
+    const rows = [
+      {
+        ...row('travel'),
+        createdAt: '2026-07-01T00:00:00.000Z',
+        travelDate: '2026-09-08',
+        receivedAt: '2026-09-08T09:00:00.000Z',
+      },
+    ];
+    for (const dateBasis of ['receivedAt', 'travelDate'] as const) {
+      const query = reservationWindowQuery({ ...defaultQuery, dateBasis }, now);
+      expect(query.dateBasis).toBe(dateBasis);
+      expect(queryRows(rows, query).filteredRows.map((r) => r.id)).toEqual([
+        'travel',
+      ]);
+    }
+    expect(
+      queryRows(rows, reservationWindowQuery(defaultQuery, now)).total,
+    ).toBe(0);
+  });
+});

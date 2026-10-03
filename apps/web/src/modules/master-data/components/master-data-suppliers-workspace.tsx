@@ -490,7 +490,7 @@ export function MasterDataSuppliersWorkspace() {
   };
 
   const rowActions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -657,7 +657,12 @@ export function MasterDataSuppliersWorkspace() {
                   'وضعیت همکاری',
                   'عملیات',
                 ].map((head) => (
-                  <th className="p-4 text-start" key={head}>
+                  <th
+                    className={
+                      head === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                    }
+                    key={head}
+                  >
                     {head}
                   </th>
                 ))}
@@ -703,7 +708,7 @@ export function MasterDataSuppliersWorkspace() {
                       }
                     />
                   </td>
-                  <td className="p-4">{rowActions(record)}</td>
+                  <td className="p-4 text-center">{rowActions(record)}</td>
                 </tr>
               ))}
             </tbody>
@@ -730,7 +735,12 @@ export function MasterDataSuppliersWorkspace() {
                   'وضعیت',
                   'عملیات',
                 ].map((head) => (
-                  <th className="p-4 text-start" key={head}>
+                  <th
+                    className={
+                      head === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                    }
+                    key={head}
+                  >
                     {head}
                   </th>
                 ))}
@@ -789,7 +799,7 @@ export function MasterDataSuppliersWorkspace() {
                       }
                     />
                   </td>
-                  <td className="p-4">{rowActions(record)}</td>
+                  <td className="p-4 text-center">{rowActions(record)}</td>
                 </tr>
               ))}
             </tbody>

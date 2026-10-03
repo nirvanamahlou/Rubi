@@ -1,3 +1,5 @@
+import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
+import { MasterDataService } from '../master-data/master-data.service';
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
@@ -21,6 +23,7 @@ import type {
   SalesContractCreateRequest,
   SalesContractDetail,
   SalesContractListQuery,
+  SalesContractPage,
   SalesContractSummary,
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
@@ -169,6 +172,7 @@ function capacityExceeded(
 export function presentSalesContract(
   row: SalesContractRow,
   paymentCreatorNames: ReadonlyMap<string, string> = new Map(),
+  buyerCrypto?: SalesBuyerContactCrypto,
 ): SalesContractDetail {
   const priceComponents = row.priceComponents.map((item) => ({
     type: item.type,
@@ -320,6 +324,10 @@ export function presentSalesContract(
           }
         : null,
     pricingNotes: row.pricingNotes,
+    buyerContact:
+      row.buyerContact != null
+        ? (buyerCrypto?.decrypt(row.buyerContact) ?? null)
+        : null,
   };
 }
 
@@ -362,6 +370,12 @@ export class SalesService {
     @Optional()
     @Inject(HotelPurchaseRatesPublicService)
     private readonly hotelRates?: HotelPurchaseRatesPublicService,
+    @Optional()
+    @Inject(SalesBuyerContactCrypto)
+    private readonly buyerCrypto?: SalesBuyerContactCrypto,
+    @Optional()
+    @Inject(MasterDataService)
+    private readonly references?: MasterDataService,
   ) {}
 
   async availableHotelRoomRates(
@@ -535,7 +549,7 @@ export class SalesService {
     query: SalesContractListQuery,
     actor: AuthenticatedActor,
     exportLimit?: number,
-  ) {
+  ): Promise<SalesContractPage> {
     if (
       query.search != null &&
       (typeof query.search !== 'string' || query.search.length > 160)
@@ -563,8 +577,52 @@ export class SalesService {
       has(actor, 'sales.payments.read'),
       ...(exportLimit ? [exportLimit] : []),
     );
+    const details = result.data.map((row) =>
+      presentSalesContract(row, undefined, this.buyerCrypto),
+    );
+    const cityNames = new Map<string, string | null>();
+    const phones = new Map<string, string | null>();
+    const cityIds = [
+      ...new Set(
+        details.flatMap((item) => [item.originId, item.destinationId]),
+      ),
+    ];
+    const customerIds = [
+      ...new Set(
+        details
+          .filter((item) => !item.buyerContact?.phone)
+          .map((item) => item.customerId),
+      ),
+    ];
+    const lookups = [
+      ...cityIds.map((id) => async () => {
+        const city = this.references
+          ? await this.references.detail('cities', id)
+          : null;
+        cityNames.set(id, city?.data.name ?? null);
+      }),
+      ...customerIds.map((id) => async () => {
+        phones.set(
+          id,
+          (await this.customers.resolvePhone?.(id, actor)) ?? null,
+        );
+      }),
+    ];
+    // Bound directory/contact requests even for a date-filtered large result set.
+    let nextLookup = 0;
+    await Promise.all(
+      Array.from({ length: Math.min(8, lookups.length) }, async () => {
+        while (nextLookup < lookups.length) await lookups[nextLookup++]!();
+      }),
+    );
     return {
-      data: result.data.map((row) => summary(presentSalesContract(row))),
+      data: details.map((detail) => ({
+        ...summary(detail),
+        customerPhone:
+          detail.buyerContact?.phone ?? phones.get(detail.customerId) ?? null,
+        originName: cityNames.get(detail.originId) ?? null,
+        destinationName: cityNames.get(detail.destinationId) ?? null,
+      })),
       meta: {
         page: result.page,
         pageSize: result.pageSize,
@@ -710,6 +768,7 @@ export class SalesService {
       new Map(
         creators.map(({ id: userId, displayName }) => [userId, displayName]),
       ),
+      this.buyerCrypto,
     );
     return {
       data: mayReadPayments ? detail : { ...detail, payments: [] },
@@ -740,7 +799,7 @@ export class SalesService {
           message: 'این کلید با درخواست متفاوت استفاده شده است.',
         });
       return {
-        data: presentSalesContract(existing),
+        data: presentSalesContract(existing, undefined, this.buyerCrypto),
         meta: { idempotentReplay: true },
       };
     }
@@ -760,7 +819,7 @@ export class SalesService {
       this.context(actor, branchId, traceId),
     );
     return {
-      data: presentSalesContract(row),
+      data: presentSalesContract(row, undefined, this.buyerCrypto),
       meta: { idempotentReplay: false },
     };
   }
@@ -823,9 +882,20 @@ export class SalesService {
       actor,
     );
     await this.customers.assertPassengers(input.passengers, actor);
+    const updateInput: SalesContractCreateRequest =
+      input.buyerContact === undefined
+        ? {
+            ...input,
+            buyerContact:
+              row.customerId === input.customerId
+                ? (this.buyerCrypto?.decrypt(row.buyerContact) ?? null)
+                : null,
+          }
+        : input;
+    domainCall(() => validateSalesContract(updateInput));
     const changed = await this.repository.updateDraft(
       id,
-      input,
+      updateInput,
       input.version,
       customer.displayName,
       this.context(actor, row.branchId, traceId),
@@ -915,13 +985,13 @@ export class SalesService {
           message: 'کلید تأیید با درخواست متفاوت استفاده شده است.',
         });
       return {
-        data: presentSalesContract(row),
+        data: presentSalesContract(row, undefined, this.buyerCrypto),
         meta: { idempotentReplay: true },
       };
     }
     await this.customers.resolveSnapshot(row.customerId, actor);
     await this.customers.assertPassengers(row.passengers, actor);
-    const presented = presentSalesContract(row);
+    const presented = presentSalesContract(row, undefined, this.buyerCrypto);
     await this.assertPresentedHotelRoomCapacity(presented);
     const seatCount = presented.passengersDetail.filter(
       ({ ageCategory }) => ageCategory !== 'INF',
@@ -1090,7 +1160,9 @@ export class SalesService {
         message: 'مجوز داشبورد فروش وجود ندارد.',
       });
     const rows = await this.repository.dashboardRows(scope);
-    const details = rows.map((row) => presentSalesContract(row));
+    const details = rows.map((row) =>
+      presentSalesContract(row, undefined, this.buyerCrypto),
+    );
     const today = new Date().toISOString().slice(0, 10);
     const balances = details.flatMap((item) => item.balances);
     const currencyCodes = [

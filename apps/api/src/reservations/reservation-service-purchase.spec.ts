@@ -162,7 +162,7 @@ it('accepts the hotel embedded in a legacy reservation snapshot', () => {
   });
 });
 
-it.each([false, true])(
+it.each([false, true, 'split'])(
   'records hotel and both transfer directions atomically (formula=%s)',
   async (formula) => {
     const create = vi.fn().mockResolvedValue({});
@@ -235,10 +235,7 @@ it.each([false, true])(
       },
     };
     const directory = {
-      brokerReference: vi.fn().mockResolvedValue({
-        id: valid.supplierOrganizationId,
-        name: 'کارگزار',
-      }),
+      brokerReference: vi.fn(async (id: string) => ({ id, name: 'کارگزار' })),
       currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
     };
     const service = new ReservationServicePurchaseService(
@@ -258,11 +255,31 @@ it.each([false, true])(
         serviceClientKey: 'outbound',
         coveredServiceClientKeys: ['outbound', 'return'],
         supplierOrganizationId: valid.supplierOrganizationId,
-        amount: '150',
+        amount: '50',
         currencyCode: 'IRR',
-        pricingCalculation: { baseAmount: '25', factor: '2' },
+        pricingCalculation: {
+          baseAmount: '25',
+          factor: '2',
+          chargeablePassengerCount: 2,
+        },
       },
     ];
+    if (formula === 'split') {
+      purchases[1]!.coveredServiceClientKeys = ['outbound'];
+      purchases.push({
+        ...purchases[1]!,
+        serviceClientKey: 'return',
+        coveredServiceClientKeys: ['return'],
+        supplierOrganizationId: '33333333-3333-4333-8333-333333333333',
+        currencyCode: 'USD',
+        amount: '90',
+        pricingCalculation: {
+          baseAmount: '30',
+          factor: '3',
+          chargeablePassengerCount: 3,
+        },
+      });
+    }
     if (formula) {
       await expect(
         service.recordBatch(
@@ -329,15 +346,29 @@ it.each([false, true])(
     );
     expect(result.data.batchId).toMatch(/^[0-9a-f-]{36}$/);
     expect(updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { purchaseVersion: { increment: 2 } } }),
+      expect.objectContaining({
+        data: { purchaseVersion: { increment: formula === 'split' ? 3 : 2 } },
+      }),
     );
-    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenCalledTimes(formula === 'split' ? 3 : 2);
     const hotel = create.mock.calls[0]![0].data;
     const transfer = create.mock.calls[1]![0].data;
     expect(hotel.batchId).toBe(transfer.batchId);
     expect(hotel.serviceTitleSnapshot).toBe('Royal Wings');
-    expect(transfer.serviceTitleSnapshot).toBe('ترانسفر رفت‌وبرگشت');
-    expect(transfer.amount).toBe(formula ? '150' : '80');
+    expect(transfer.serviceTitleSnapshot).toBe(
+      formula === 'split' ? 'Outbound' : 'ترانسفر رفت‌وبرگشت',
+    );
+    if (formula === 'split') {
+      const back = create.mock.calls[2]![0].data;
+      expect(back.amount).toBe('90');
+      expect(back.currencyCode).toBe('USD');
+      expect(back.supplierOrganizationId).not.toBe(
+        transfer.supplierOrganizationId,
+      );
+      expect(back.coveredServiceClientKeys).toEqual(['return']);
+      expect(back.batchId).toBe(hotel.batchId);
+    }
+    expect(transfer.amount).toBe(formula ? '50' : '80');
     if (formula) {
       expect(hotel.passengerPrices).toEqual({
         calculation: {
@@ -351,10 +382,105 @@ it.each([false, true])(
         calculation: {
           baseAmount: '25',
           factor: '2',
-          nights: 3,
-          totalAmount: '150',
+          chargeablePassengerCount: 2,
+          nights: 1,
+          totalAmount: '50',
         },
       });
     } else expect(transfer.passengerPrices).toHaveLength(2);
   },
 );
+
+it('records transfer-only split purchases without stay dates and rejects invalid coverage/counts before writing', async () => {
+  const create = vi.fn().mockResolvedValue({});
+  const db = {
+    client: {
+      reservationIntake: {
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: 'branch-1',
+          snapshot: {
+            passengerIds: [],
+            serviceSelections: [
+              { clientKey: 'out', kind: 'TRANSFER', titleSnapshot: 'Out' },
+              { clientKey: 'back', kind: 'TRANSFER', titleSnapshot: 'Back' },
+            ],
+          },
+          workflowRevisions: [],
+        }),
+      },
+      reservationServicePurchase: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      $transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) =>
+        run({
+          $queryRaw: vi.fn(),
+          reservationIntake: {
+            updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+          },
+          reservationServicePurchase: { create },
+        }),
+      ),
+    },
+  };
+  const service = new ReservationServicePurchaseService(
+    db as never,
+    {
+      brokerReference: vi.fn(async (id: string) => ({ id, name: id })),
+      currencyReference: vi.fn(),
+    } as never,
+  );
+  const actor = {
+    userId: 'actor',
+    branchIds: ['branch-1'],
+    permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+  } as never;
+  const rows = ['out', 'back'].map((key) => ({
+    serviceClientKey: key,
+    coveredServiceClientKeys: [key],
+    supplierOrganizationId: valid.supplierOrganizationId,
+    amount: '75',
+    currencyCode: 'IRR',
+    pricingCalculation: {
+      baseAmount: '25',
+      factor: '3',
+      chargeablePassengerCount: 3,
+    },
+  }));
+  for (const purchases of [
+    [rows[0]!],
+    [rows[0]!, { ...rows[1]!, coveredServiceClientKeys: ['out', 'back'] }],
+    [
+      rows[0]!,
+      {
+        ...rows[1]!,
+        pricingCalculation: {
+          baseAmount: '25',
+          factor: '1.5',
+          chargeablePassengerCount: 1.5,
+        },
+      },
+    ],
+    [rows[0]!, { ...rows[1]!, amount: '225' }],
+  ]) {
+    await expect(
+      service.recordBatch(
+        'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+        { version: 1, expectedVersion: 0, purchases },
+        actor,
+        'invalid',
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(create).not.toHaveBeenCalled();
+  }
+  await service.recordBatch(
+    'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    { version: 1, expectedVersion: 0, purchases: rows },
+    actor,
+    'valid',
+  );
+  expect(create).toHaveBeenCalledTimes(2);
+  expect(create.mock.calls[0]![0].data.amount).toBe('75');
+  expect(create.mock.calls[0]![0].data.passengerPrices.calculation.nights).toBe(
+    1,
+  );
+});

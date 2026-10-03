@@ -154,7 +154,12 @@ function prepareMutation(
     throw new BadRequestException(
       'مرجع Organization برای مشتری سازمانی الزامی است.',
     );
-  if (!update && input.kind === 'person' && !protectedNationalId)
+  if (
+    !update &&
+    input.kind === 'person' &&
+    roles.has('passenger') &&
+    !protectedNationalId
+  )
     throw new BadRequestException({
       code: 'CUSTOMER_NATIONAL_ID_REQUIRED',
       message: 'کد ملی مشتری یا مسافر الزامی است.',

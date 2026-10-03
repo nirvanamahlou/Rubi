@@ -626,7 +626,7 @@ export function MasterDataTransportationWorkspace() {
                 </Fragment>
               ))}
               <th className="p-4 text-start">وضعیت</th>
-              <th className="p-4 text-start">عملیات</th>
+              <th className="p-4 text-center">عملیات</th>
             </tr>
           </thead>
           <tbody>
@@ -694,8 +694,8 @@ export function MasterDataTransportationWorkspace() {
                         : 'غیرفعال'}
                   </Badge>
                 </td>
-                <td className="p-4">
-                  <div className="flex flex-wrap justify-end gap-2">
+                <td className="p-4 text-center">
+                  <div className="flex flex-wrap justify-center gap-2">
                     <Button
                       aria-label={`مشاهده ${transportDisplayName(record)}`}
                       onClick={() => openProfile(record)}

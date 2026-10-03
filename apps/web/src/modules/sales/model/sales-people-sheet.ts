@@ -1,4 +1,8 @@
-import type { CustomerDetail, CustomerMutationRequest } from '@nora/contracts';
+import type {
+  CustomerDetail,
+  CustomerMutationRequest,
+  SalesBuyerContactV1,
+} from '@nora/contracts';
 import {
   customersApi,
   CustomersApiError,
@@ -29,6 +33,8 @@ export interface PeopleRow {
 }
 export interface SalesPeopleDraft {
   mode: 'person' | 'first-passenger' | 'organization';
+  separateCustomer?: boolean;
+  buyerContact?: SalesBuyerContactV1;
   /** Chosen once for this contract, then saved on every person created/updated from it. */
   acquaintanceMethodId?: string;
   rows: Record<string, PeopleRow>;
@@ -80,8 +86,15 @@ export function initialSalesPeopleDraft(
     mode:
       state.customerKind === 'organization'
         ? 'organization'
-        : 'first-passenger',
+        : state.firstPassengerIsCustomer === false && state.buyerContact
+          ? 'person'
+          : 'first-passenger',
     rows,
+    separateCustomer:
+      state.firstPassengerIsCustomer === false &&
+      Boolean(state.buyerContact) &&
+      state.customerKind !== 'organization',
+    ...(state.buyerContact ? { buyerContact: state.buyerContact } : {}),
     organization:
       state.customerKind === 'organization' && state.customerId
         ? {
@@ -95,7 +108,11 @@ export function initialSalesPeopleDraft(
 export function normalizeSalesPeopleDraft(
   draft: SalesPeopleDraft,
 ): SalesPeopleDraft {
-  if (draft.mode === 'organization') return draft;
+  if (
+    draft.mode === 'organization' ||
+    (draft.mode === 'person' && draft.separateCustomer)
+  )
+    return draft;
   const first = draft.rows.p0;
   const hasFirst =
     first && (first.person || Object.values(first.values).some(Boolean));
@@ -224,6 +241,7 @@ export function linkCustomerAsFirst(
     return {
       ...draft,
       mode: 'first-passenger',
+      separateCustomer: false,
       displacedFirst: peopleRow(draft, 'p0'),
       rows: { ...draft.rows, p0: peopleRow(draft, 'primary') },
     };
@@ -231,6 +249,7 @@ export function linkCustomerAsFirst(
   return {
     ...draft,
     mode: 'person',
+    separateCustomer: true,
     rows: {
       ...draft.rows,
       primary: peopleRow(draft, 'p0'),
@@ -304,7 +323,10 @@ export function peopleCreateInput(
   )
     throw new Error('نام و نام خانوادگی لاتین پاسپورت را کامل کنید.');
   const nationalId = normalizeNationalId(v.nationalId);
-  if (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
+  if (
+    (passenger || nationalId) &&
+    (!/^\d{10}$/.test(nationalId) || !isValidIranianNationalId(nationalId))
+  )
     throw new Error('کد ملی معتبر ۱۰رقمی وارد کنید.');
   if (passenger && !v.birthDate)
     throw new Error('تاریخ تولد مسافر الزامی است.');
@@ -331,7 +353,7 @@ export function peopleCreateInput(
     displayName: passportIdentity
       ? `${v.passportFirstName.trim().toUpperCase()} ${v.passportLastName.trim().toUpperCase()}`
       : `${v.firstName.trim()} ${v.lastName.trim()}`,
-    nationalId,
+    ...(nationalId ? { nationalId } : {}),
     ...(v.acquaintanceMethodId
       ? { acquaintanceMethodId: v.acquaintanceMethodId }
       : {}),
@@ -365,6 +387,20 @@ export function validateSalesPeopleDraft(
 ) {
   const keys = passengerSlotKeys(state);
   if (!keys.length) throw new Error('تعداد مسافران را در مرحله اول مشخص کنید.');
+  if (draft.buyerContact) {
+    const buyer = draft.buyerContact;
+    if (
+      !buyer.name.trim() ||
+      buyer.name.length > 200 ||
+      !/^\+?[0-9]{10,15}$/.test(buyer.phone.trim()) ||
+      !buyer.address.trim() ||
+      buyer.address.length > 1000 ||
+      !/^[0-9]{10}$/.test(buyer.postalCode.trim())
+    )
+      throw new Error(
+        'نام، شماره تلفن، آدرس و کد پستی ۱۰رقمی مشتری را کامل و معتبر وارد کنید.',
+      );
+  }
   if (draft.mode === 'organization' && !draft.organization)
     throw new Error('مشتری حقوقی / آژانس را انتخاب کنید.');
   const international = salesRequiresPassportIdentity(state);
@@ -382,7 +418,16 @@ export function validateSalesPeopleDraft(
         `${label}: نتیجه ثبت قبلی نیازمند بررسی است؛ پرونده موجود را انتخاب کنید.`,
       );
     validatePassport(row);
-    if (international) {
+    if (
+      key !== 'primary' &&
+      row.profile &&
+      !row.profile.roles?.includes('passenger') &&
+      !row.values.nationalId.trim()
+    )
+      throw new Error(
+        `${label}: برای ثبت مشتری به‌عنوان مسافر، کد ملی معتبر را وارد کنید.`,
+      );
+    if (international && key !== 'primary') {
       const v = row.values;
       if (
         !/^[A-Za-z][A-Za-z '-]*$/.test(v.passportFirstName.trim()) ||
@@ -409,12 +454,12 @@ export function validateSalesPeopleDraft(
         );
     }
     if (row.person) {
-      validateExistingPerson(row, international);
-      if (ids.has(row.person.id))
+      validateExistingPerson(row, international && key !== 'primary');
+      if (key !== 'primary' && ids.has(row.person.id))
         throw new Error(
           'یک شخص دوبار انتخاب شده؛ مشتری حقیقی همان مسافر اول است و ردیف جدا نمی‌خواهد.',
         );
-      ids.add(row.person.id);
+      if (key !== 'primary') ids.add(row.person.id);
     } else {
       try {
         peopleCreateInput(
@@ -422,7 +467,7 @@ export function validateSalesPeopleDraft(
           key === 'primary' ||
             (draft.mode === 'first-passenger' && key === 'p0'),
           key !== 'primary',
-          international,
+          international && key !== 'primary',
         );
       } catch (reason) {
         throw new Error(
@@ -432,11 +477,11 @@ export function validateSalesPeopleDraft(
         );
       }
       const nationalId = normalizeNationalId(row.values.nationalId);
-      if (nationalIds.has(nationalId))
+      if (nationalId && nationalIds.has(nationalId))
         throw new Error(
           'کد ملی تکراری است؛ هر مسافر باید یک ردیف مستقل داشته باشد.',
         );
-      nationalIds.add(nationalId);
+      if (nationalId) nationalIds.add(nationalId);
     }
   }
   const passengers = keys.map((key) => ({
@@ -499,6 +544,14 @@ export async function saveSalesPeopleDraft(
   ]) {
     let row = peopleRow(current, key);
     if (!row.reviewRequired) continue;
+    if (
+      key === 'primary' &&
+      !row.person &&
+      !normalizeNationalId(row.values.nationalId)
+    )
+      throw new Error(
+        'نتیجه ثبت مشتری قطعی نیست؛ پرونده موجود مشتری را انتخاب کنید تا ثبت تکراری انجام نشود.',
+      );
     if (row.person ? !api.detail : !api.registrationLookup)
       throw new Error(
         'نتیجه ثبت قبلی نیازمند بررسی است؛ اتصال بازیابی در دسترس نیست.',
@@ -702,7 +755,7 @@ export async function saveSalesPeopleDraft(
             key === 'primary' ||
               (draft.mode === 'first-passenger' && key === 'p0'),
             key !== 'primary',
-            passportIdentity,
+            passportIdentity && key !== 'primary',
           ),
         )
       ).data;
@@ -836,7 +889,17 @@ export async function saveSalesPeopleDraft(
     patch: {
       passengers,
       customerId: customer.id,
-      customerName: customer.displayName,
+      customerName: draft.buyerContact?.name.trim() ?? customer.displayName,
+      ...(draft.buyerContact
+        ? {
+            buyerContact: Object.fromEntries(
+              Object.entries(draft.buyerContact).map(([key, value]) => [
+                key,
+                value.trim(),
+              ]),
+            ) as SalesBuyerContactV1,
+          }
+        : {}),
       customerKind:
         draft.mode === 'organization'
           ? ('organization' as const)

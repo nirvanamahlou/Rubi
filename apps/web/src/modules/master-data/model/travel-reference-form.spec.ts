@@ -57,7 +57,7 @@ describe('travel reference form values', () => {
       expect(payload).not.toHaveProperty('status');
     },
   );
-  it('round-trips a stored capacity range and only submits changed status', () => {
+  it('preserves a stored minimum by omitting it from edit values and mutations', () => {
     const existing = record({
       ...transfer,
       suggestedCapacityMin: 4,
@@ -65,10 +65,13 @@ describe('travel reference form values', () => {
     });
     const values = travelReferenceFormValues('transfer-types', existing);
     expect(values).toMatchObject({
-      suggestedCapacityMin: '4',
       suggestedCapacity: '8',
       status: 'inactive',
     });
+    expect(values).not.toHaveProperty('suggestedCapacityMin');
+    expect(
+      travelReferenceMutationValues('transfer-types', values, existing),
+    ).not.toHaveProperty('suggestedCapacityMin');
     expect(
       travelReferenceMutationValues('transfer-types', values, existing),
     ).not.toHaveProperty('status');
@@ -81,11 +84,7 @@ describe('travel reference form values', () => {
     ).toBe('active');
   });
   it.each([
-    { suggestedCapacityMin: '9' },
-    { suggestedCapacity: '' },
     { suggestedCapacity: '101' },
-    { suggestedCapacityMin: '-1' },
-    { suggestedCapacityMin: '1.5' },
     { serviceMode: '' },
     { serviceMode: 'VIP' },
     { vehicleType: '' },
@@ -118,13 +117,44 @@ describe('travel reference form values', () => {
         referenceValidityMode: 'PASSPORT_EXPIRY',
         referenceValidityDays: '',
       }).success,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       travelReferenceFormValues(
         'visa-services',
         record({ referenceValidityDays: 90 }),
       ).referenceValidityMode,
     ).toBe('DAYS');
+    const legacy = record({
+      countryId: visa.countryId,
+      visaType: visa.visaType,
+      referenceValidityMode: 'PASSPORT_EXPIRY',
+      referenceValidityDays: null,
+    });
+    const legacyValues = travelReferenceFormValues('visa-services', legacy);
+    expect(legacyValues.referenceValidityMode).toBe('PASSPORT_EXPIRY');
+    expect(
+      travelReferenceMutationValues('visa-services', legacyValues, legacy),
+    ).not.toHaveProperty('referenceValidityMode');
+    expect(
+      travelReferenceMutationValues('visa-services', visa)
+        .referenceValidityMode,
+    ).toBe('DAYS');
+    const dayRecord = record({
+      referenceValidityMode: 'DAYS',
+      referenceValidityDays: 90,
+    });
+    const dayValues = travelReferenceFormValues('visa-services', dayRecord);
+    expect(
+      travelReferenceMutationValues(
+        'visa-services',
+        {
+          ...dayValues,
+          countryId: visa.countryId,
+          visaType: visa.visaType,
+        },
+        dayRecord,
+      ),
+    ).not.toHaveProperty('referenceValidityMode');
     expect(visaValidityLabel(record({ referenceValidityMode: 'DAYS' }))).toBe(
       'مشخص نشده',
     );

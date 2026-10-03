@@ -159,6 +159,7 @@ export function ReservationOperationsWorkspace({
 }: ReservationWorkspaceProps) {
   const [section, setSection] = useState<Section>(initialSection);
   const [query, setQuery] = useState<Query>(defaultQuery);
+  const [searchText, setSearchText] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const effectiveState = preview
     ? 'NOT_CONFIGURED'
@@ -492,159 +493,181 @@ export function ReservationOperationsWorkspace({
                   </button>
                 ))}
               </div>
-              <div className={styles.filters}>
-                <label>
-                  جست‌وجو
-                  <input
-                    value={query.search}
-                    maxLength={100}
-                    placeholder="شماره قرارداد، مسافر، هتل یا مسیر"
-                    onChange={(e) => changeQuery({ search: e.target.value })}
-                  />
-                </label>
-                <label>
-                  وضعیت
-                  <Select
-                    dir="rtl"
-                    value={query.status}
-                    onValueChange={(value) =>
-                      changeQuery({ status: value as Query['status'] })
-                    }
-                  >
-                    <SelectTrigger
-                      aria-label="وضعیت"
-                      className="min-w-0 text-xs"
+              <form
+                aria-label="جستجوی درخواست‌های رزواسیون"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  changeQuery({ search: searchText });
+                }}
+              >
+                <div className={styles.filters}>
+                  <label>
+                    جست‌وجو
+                    <input
+                      value={searchText}
+                      maxLength={100}
+                      placeholder="شماره قرارداد، مسافر، هتل یا مسیر"
+                      onChange={(e) => setSearchText(e.target.value)}
+                    />
+                  </label>
+                  <label>
+                    وضعیت
+                    <Select
+                      dir="rtl"
+                      value={query.status}
+                      onValueChange={(value) =>
+                        changeQuery({ status: value as Query['status'] })
+                      }
                     >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent
-                      align="start"
-                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                      <SelectTrigger
+                        aria-label="وضعیت"
+                        className="min-w-0 text-xs"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent
+                        align="start"
+                        className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                      >
+                        <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+                        {Object.entries(statusLabels)
+                          .filter(([key]) => key !== 'SUPPLIER_CONFIRMED')
+                          .map(([key, label]) => (
+                            <SelectItem value={key} key={key}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label>
+                    خدمت
+                    <Select
+                      dir="rtl"
+                      value={query.service}
+                      onValueChange={(value) => changeQuery({ service: value })}
                     >
-                      <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
-                      {Object.entries(statusLabels)
-                        .filter(([key]) => key !== 'SUPPLIER_CONFIRMED')
-                        .map(([key, label]) => (
+                      <SelectTrigger
+                        aria-label="خدمت"
+                        className="min-w-0 text-xs"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent
+                        align="start"
+                        className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                      >
+                        <SelectItem value="ALL">همه خدمات</SelectItem>
+                        {Object.entries(serviceLabels).map(([key, label]) => (
                           <SelectItem value={key} key={key}>
                             {label}
                           </SelectItem>
                         ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label>
-                  خدمت
-                  <Select
-                    dir="rtl"
-                    value={query.service}
-                    onValueChange={(value) => changeQuery({ service: value })}
-                  >
-                    <SelectTrigger
-                      aria-label="خدمت"
-                      className="min-w-0 text-xs"
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label>
+                    مرتب‌سازی
+                    <Select
+                      dir="rtl"
+                      value={query.sort}
+                      onValueChange={(value) =>
+                        changeQuery({ sort: value as Query['sort'] })
+                      }
                     >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent
-                      align="start"
-                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
-                    >
-                      <SelectItem value="ALL">همه خدمات</SelectItem>
-                      {Object.entries(serviceLabels).map(([key, label]) => (
-                        <SelectItem value={key} key={key}>
-                          {label}
+                      <SelectTrigger
+                        aria-label="مرتب‌سازی"
+                        className="min-w-0 text-xs"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent
+                        align="start"
+                        className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                      >
+                        <SelectItem value="deadline">
+                          نزدیک‌ترین مهلت
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label>
-                  مرتب‌سازی
-                  <Select
-                    dir="rtl"
-                    value={query.sort}
-                    onValueChange={(value) =>
-                      changeQuery({ sort: value as Query['sort'] })
-                    }
-                  >
-                    <SelectTrigger
-                      aria-label="مرتب‌سازی"
-                      className="min-w-0 text-xs"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent
-                      align="start"
-                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
-                    >
-                      <SelectItem value="deadline">نزدیک‌ترین مهلت</SelectItem>
-                      <SelectItem value="newest">جدیدترین درخواست</SelectItem>
-                      <SelectItem value="priority">بیشترین اولویت</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </label>
-              </div>
-              <div className={styles.dateFilters}>
-                <label>
-                  مبنای تاریخ
-                  <Select
-                    dir="rtl"
-                    value={query.dateBasis}
-                    onValueChange={(value) =>
-                      changeQuery({
-                        dateBasis: value as Query['dateBasis'],
-                      })
-                    }
-                  >
-                    <SelectTrigger
-                      aria-label="مبنای تاریخ"
-                      className="min-w-0 text-xs"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent
-                      align="start"
-                      className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
-                    >
-                      <SelectItem value="createdAt">تاریخ قرارداد</SelectItem>
-                      <SelectItem value="receivedAt">
-                        ورود به رزرواسیون
-                      </SelectItem>
-                      <SelectItem value="travelDate">تاریخ سفر</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </label>
-                <div>
-                  <label htmlFor="reservation-from">از تاریخ</label>
-                  <DatePicker
-                    defaultCalendarSystem="gregorian"
-                    gregorianEnglish
-                    id="reservation-from"
-                    value={effectiveQuery.fromDate}
-                    onChange={(fromDate) => changeQuery({ fromDate })}
-                    aria-invalid={Boolean(result.dateError)}
-                    aria-describedby="reservation-date-help"
-                  />
+                        <SelectItem value="newest">جدیدترین درخواست</SelectItem>
+                        <SelectItem value="priority">بیشترین اولویت</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
                 </div>
-                <div>
-                  <label htmlFor="reservation-to">تا تاریخ</label>
-                  <DatePicker
-                    defaultCalendarSystem="gregorian"
-                    gregorianEnglish
-                    id="reservation-to"
-                    value={effectiveQuery.toDate}
-                    onChange={(toDate) => changeQuery({ toDate })}
-                    aria-invalid={Boolean(result.dateError)}
-                    aria-describedby="reservation-date-help"
-                  />
+                <div className={styles.dateFilters}>
+                  <label>
+                    مبنای تاریخ
+                    <Select
+                      dir="rtl"
+                      value={query.dateBasis}
+                      onValueChange={(value) =>
+                        changeQuery({
+                          dateBasis: value as Query['dateBasis'],
+                        })
+                      }
+                    >
+                      <SelectTrigger
+                        aria-label="مبنای تاریخ"
+                        className="min-w-0 text-xs"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent
+                        align="start"
+                        className="max-h-[var(--radix-select-content-available-height)] overflow-y-auto"
+                      >
+                        <SelectItem value="createdAt">تاریخ قرارداد</SelectItem>
+                        <SelectItem value="receivedAt">
+                          ورود به رزرواسیون
+                        </SelectItem>
+                        <SelectItem value="travelDate">تاریخ سفر</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <div>
+                    <label htmlFor="reservation-from">از تاریخ</label>
+                    <DatePicker
+                      defaultCalendarSystem="gregorian"
+                      gregorianEnglish
+                      id="reservation-from"
+                      value={effectiveQuery.fromDate}
+                      onChange={(fromDate) => changeQuery({ fromDate })}
+                      aria-invalid={Boolean(result.dateError)}
+                      aria-describedby="reservation-date-help"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="reservation-to">تا تاریخ</label>
+                    <DatePicker
+                      defaultCalendarSystem="gregorian"
+                      gregorianEnglish
+                      id="reservation-to"
+                      value={effectiveQuery.toDate}
+                      onChange={(toDate) => changeQuery({ toDate })}
+                      aria-invalid={Boolean(result.dateError)}
+                      aria-describedby="reservation-date-help"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={!available}
+                      className="bg-primary text-primary-foreground"
+                    >
+                      جستجو
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuery({ ...defaultQuery });
+                        setSearchText('');
+                      }}
+                    >
+                      پاک‌کردن فیلترها
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setQuery({ ...defaultQuery })}
-                >
-                  پاک‌کردن فیلترها
-                </button>
-              </div>
+              </form>
               <p id="reservation-date-help" className={styles.filterHelp}>
                 {result.dateError ??
                   (query.fromDate || query.toDate

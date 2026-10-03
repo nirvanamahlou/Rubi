@@ -1,4 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
+import {
+  Inject,
+  Injectable,
+  Optional,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import type {
   SalesContractCreateRequest,
   SalesContractListQuery,
@@ -55,6 +61,9 @@ function endOfDay(value: string): Date {
 export class SalesRepository {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(SalesBuyerContactCrypto)
+    private readonly buyerCrypto?: SalesBuyerContactCrypto,
   ) {}
 
   findById(id: string): Promise<SalesContractRow | null> {
@@ -340,6 +349,16 @@ export class SalesRepository {
     });
   }
 
+  private buyerContactJson(
+    input: NonNullable<SalesContractCreateRequest['buyerContact']>,
+  ): Prisma.InputJsonValue {
+    if (!this.buyerCrypto)
+      throw new InternalServerErrorException(
+        'Buyer contact encryption is unavailable.',
+      );
+    return json(this.buyerCrypto.protect(input));
+  }
+
   async create(
     input: SalesContractCreateRequest,
     customerNameSnapshot: string,
@@ -351,10 +370,14 @@ export class SalesRepository {
       async (tx) => {
         const [sequence] = await tx.$queryRaw<
           Array<{ value: bigint }>
-        >`SELECT nextval('sales_contract_number_seq') AS value`;
+        >`SELECT nextval('sales_contract_public_number_seq') AS value`;
         if (!sequence)
           throw new Error('Sales contract sequence did not return a value.');
-        const contractNumber = `SC-${new Date().getUTCFullYear()}-${sequence.value.toString().padStart(6, '0')}`;
+        const contractNumber = sequence.value.toString();
+        if (!/^[0-9]{6}$/.test(contractNumber))
+          throw new InternalServerErrorException(
+            'Contract number must contain six digits.',
+          );
         const contract = await tx.salesContract.create({
           data: {
             contractNumber,
@@ -363,7 +386,11 @@ export class SalesRepository {
             assignedUserId: input.assignedUserId ?? null,
             customerId: input.customerId,
             payerCustomerId: input.payerCustomerId ?? input.customerId,
-            customerNameSnapshot,
+            customerNameSnapshot:
+              input.buyerContact?.name.trim() ?? customerNameSnapshot,
+            buyerContact: input.buyerContact
+              ? this.buyerContactJson(input.buyerContact)
+              : Prisma.DbNull,
             tripType: input.tripType,
             originId: input.originId,
             destinationId: input.destinationId,
@@ -544,7 +571,15 @@ export class SalesRepository {
           data: {
             customerId: input.customerId,
             payerCustomerId: input.payerCustomerId ?? input.customerId,
-            customerNameSnapshot,
+            customerNameSnapshot:
+              input.buyerContact?.name.trim() ?? customerNameSnapshot,
+            ...(input.buyerContact !== undefined
+              ? {
+                  buyerContact: input.buyerContact
+                    ? this.buyerContactJson(input.buyerContact)
+                    : Prisma.DbNull,
+                }
+              : {}),
             assignedUserId: input.assignedUserId ?? null,
             tripType: input.tripType,
             originId: input.originId,

@@ -1,3 +1,7 @@
+## SALES-CONTRACT-COLUMNS-NUMBERING-1003 (2026-10-03)
+
+Sales owns `sales_contract_public_number_seq`, an independent non-cycling INTEGER sequence starting at 120123 with maximum 999999. New contract numbers are six-digit decimal strings; existing numbers remain immutable and the contract-number unique constraint remains authoritative. Initialization skips above any existing six-digit imported number. Numbers are global, do not reset annually, and may have normal sequence gaps after transaction rollback. Deployment must apply the additive migration before the new API; exhaustion fails safely without wraparound. Route/contact list fields are optional public projections, not new stored columns; registration date is the existing UTC `createdAt`.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 (2026-09-28)
 
 Ticket Catalog owns nullable TicketPublishedOffer.manifestTemplateId with a restrictive FK to master_manifest_templates and an index. Historical offers stay null and use the built-in default; no rows are backfilled or operational passenger data changed. Reservations reads only the branch-scoped public Ticket selection and the public Master Data template/country projection; it never queries their tables. The existing offer optimistic revision/audit protects selector updates. An omitted field in old update clients preserves the prior selection; null clears it. Explicit file reads continue through Documents' CLEAN/audit boundary. Default XLSX is generated from authorized passenger details and carries string cells for identifiers.
@@ -651,3 +655,12 @@ TicketPublishedOffer optionally references originAirportId and destinationAirpor
 ### گروه خرید قرارداد رزرواسیون
 
 `ReservationServicePurchase.batchId` یک UUID اختیاری برای ثبت اتمیک ردیف‌های هتل و ترانسفر همان قرارداد است. `coveredServiceClientKeys` آرایه اختیاری کلیدهای خدماتی است که ردیف می‌پوشاند؛ ردیف ترانسفر می‌تواند هر دو جهت را پوشش دهد. برای داده قدیمی، `serviceClientKey` پوشش پیش‌فرض و شناسه همان خرید گروه تک‌ردیفی است. `passengerPrices` نرخ شبانه/تعداد شب/جمع هتل یا نرخ کل ترانسفر برای هر مسافر را نگه می‌دارد؛ پرداخت مالی به شناسه خود ردیف خرید متصل می‌ماند و جمع گروه به تفکیک ارز محاسبه می‌شود.
+
+
+## Sales buyer contact snapshot — PURCHASE-CUSTOMER-DATE-RANGE-1003
+
+`sales_contracts.buyer_contact` is a nullable JSONB AES-256-GCM envelope for contract-entered buyer name, phone, address and postal code. Ciphertext, nonce, auth tag, envelope version and key version are stored; the domain-separated key derives from the existing configured Customer contact root. Sales owns the snapshot and exposes decoded values only through its scoped contract API/output. Customer and payer retain their canonical public Customers IDs, independent of passenger allocation; `customer_name_snapshot` remains the contract party name. Legacy contracts remain null. Later Customer profile edits do not rewrite a saved snapshot; old-client same-buyer contract edits preserve it, while changing buyer clears it unless a new snapshot is supplied. No national ID/passport or operational Customer record is copied into this field.
+
+## TRANSFER-PASSENGER-PRICING-1003
+
+Reservations purchase calculation snapshots optionally retain `chargeablePassengerCount` in existing JSON. Transfer total is unit price times a positive integer count, independent of hotel dates; hotel formula is unchanged. Per-direction purchase rows retain their existing supplier FK, covered service keys, actor UTC timestamp and shared batch ID. No schema migration; historical revisions remain immutable.

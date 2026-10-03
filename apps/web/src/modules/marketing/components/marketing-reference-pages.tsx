@@ -4941,7 +4941,7 @@ function ChannelSettings({ onNotice }: { onNotice: NoticeHandler }) {
   );
 }
 
-function SettingsPage({
+export function MarketingSettingsPage({
   tab,
   onOpen,
   onNotice,
@@ -5807,7 +5807,11 @@ export function MarketingReferenceSection({
               />
             ) : null}
             {section === 'settings' ? (
-              <SettingsPage onNotice={onNotice} onOpen={onOpen} tab={key} />
+              <MarketingSettingsPage
+                onNotice={onNotice}
+                onOpen={onOpen}
+                tab={key}
+              />
             ) : null}
           </TabsContent>
         ))}

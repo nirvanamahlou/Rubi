@@ -1,3 +1,35 @@
+## 2026-10-03 — MARKETING-SETTINGS-SYSTEM-1003 — PC-B — READY_FOR_REVIEW
+
+Marketing Settings now lives under System Management → Marketing. The Marketing hub no longer offers Settings, and `/marketing?section=settings` redirects to `/system?module=marketing`. The six original channel/site/role/alert/general/log views retain their interactions and detail dialogs, while existing persisted Marketing settings remain in place. 39 focused tests, scoped lint, Web typecheck and a 55-route webpack production build pass. Default Turbopack is blocked only by the reused dependency junction. No API, migration, permissions, dependency, operational data or local runtime change; bounded locks are released. See `docs/tasks/MARKETING-SETTINGS-SYSTEM-1003.md`.
+
+## 2026-10-03 — INSURANCE-NESTED-PLANS-1003 — PC-B — READY_FOR_REVIEW
+
+Insurance Plans are now nested immediately beneath expandable Insurer rows while Coverage remains a top-level tab. Child rows retain logo, coverage, status and View/Edit/Delete actions; the existing plan form locks and force-binds the parent insurer. Generation guards reject stale child responses, and successful CRUD refreshes both the child page and parent summary without clearing the expanded insurer identity. Focused 26 and all 536 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. Tests cover async helper/state boundaries and SSR/source structure; authenticated browser/runtime QA was not performed. No API/schema/organization-model change; bounded locks release with commit.
+
+## 2026-10-03 — VISA-HIDE-VALIDITY-MODE-1003 — PC-B — READY_FOR_REVIEW
+
+Visa Services create/edit no longer renders the reference-validity-mode selector. New mutations keep the canonical `DAYS` mode; edits preserve supported stored modes by using them only for days-field behavior and omitting mode from PATCH. `DAYS` keeps the optional validated day field, while legacy `PASSPORT_EXPIRY` keeps it hidden. View/table/backend remain unchanged and Excel retains `referenceValidityMode` immediately before `referenceValidityDays`. Focused 32 and all 534 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
+
+## 2026-10-03 — SALES-CONTRACT-COLUMNS-NUMBERING-1003 — PC-A
+
+Sales list adds customer telephone, origin/destination route and original registration date. Optional additive summary fields use public Master Data/Customers services with existing sensitive-contact permission, audit and branch rules; encrypted buyer snapshots take precedence. New contract numbers use a separate PostgreSQL non-cycling sequence starting 120123, preserving old numbers. All 91 Sales API and 10 workspace tests pass; 114 migrations and real concurrency/import/exhaustion regressions pass on disposable PostgreSQL 18. See `docs/tasks/SALES-CONTRACT-COLUMNS-NUMBERING-1003.md` for rollout and compatibility. Final quality/build and PR results are recorded in the work item.
+
+## 2026-10-03 — TRANSFER-HIDE-MIN-CAPACITY-1003 — PC-B — READY_FOR_REVIEW
+
+Transfer Type create/edit no longer renders the minimum suggested capacity control. The edit mutation omits that legacy attribute, allowing the API's existing partial-update merge to retain the stored value; View/table/backend remain unchanged and Excel still exports `suggestedCapacityMin` immediately after `suggestedCapacity`. Focused form/model/export regression (31), all 533 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
+
+## 2026-10-03 — MASTER-DATA-TIGHT-SEARCH-FILTERS-1003 — PC-B — READY_FOR_REVIEW
+
+All dedicated English-name filter controls are removed across Master Data while English fields in forms, View, stored data and general search remain unchanged. The shared projection drops stale hidden English values from list and Excel requests and preserves each remaining filter's original backend slot; both Sales References tabs now use this same path. The module-local filter layout is compact and responsive with readable date ranges and compact desktop actions. Focused 70 and all 536 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed; bounded locks release with commit.
+
+## 2026-10-03 — MASTER-DATA-CENTER-OPERATIONS-1003 — PC-B — READY_FOR_REVIEW
+
+Every actual Master Data Operations table header, cell and immediate action group is now centered with renderer-local utilities. Coverage includes Accommodation, three Finance tables, Geography, Insurance, the generic live fallback, Suppliers/Brokers, Transportation, Travel Services and nested Bank Branches; the already-centered Sales References table is unchanged. Button order, callbacks, permission guards, accessible labels, focus behavior, RTL and all non-Operations cells remain intact. AST regression covers 20 structural/behavior cases; all 487 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. Local contracts output was refreshed from unchanged tracked source after the initial typecheck exposed a stale dist. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
+
+## 2026-10-03 — TRAVEL-SERVICES-EXCEL-EXPORT-1003 — PC-B — READY_FOR_REVIEW
+
+Excel download for Leaders, Tour Types, Transfer Types and Visa Services now submits each canonical column once. Leader exports intentionally omit the unavailable raw phone input fields rather than exposing decrypted data or expanding the API with masked fields. The existing selected resource, effective filters, permission boundary and workbook contract remain unchanged. Focused regression (8), all 467 Master Data Web tests, scoped ESLint, Web typecheck and the 55-route production build pass. Safe in-memory diagnostics generated and unzipped all four workbooks, confirming the exact ordered header labels and every sample field value across 11/8/11/12 aligned header/data cells. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
+
 ## 2026-10-03 — FLIGHT-MULTIPLE-CABINS-1003 — PC-A — READY_FOR_REVIEW
 
 Weekly and advanced flight creation now accept multiple cabin classes with their own capacities, for example 20 Economy seats and 5 Business seats, and show the combined total. Each class publishes an independent existing inventory/offer; duplicates and invalid capacities fail before publication, and recurring/shared-return flights and retries preserve per-cabin identity. Sales ticket pricing groups the same flight's cabins below each other, labels the class and its total/remaining seats, and keeps independent price/tier/commission editors. 199 tests, full/scoped Web lint, typecheck and the 55-route Webpack production build pass; GitHub's normal production build also passes. No migration, shared API, dependency, permission, operational-data or primary-runtime change. PR #571 targets develop; final CI gates owner-authorized merge. Scoped locks release with the handoff commit. See docs/tasks/FLIGHT-MULTIPLE-CABINS-1003.md.
@@ -4262,17 +4294,20 @@ In the selected-contract panel, «فرم رزواسیون» now sits under «ع�
 
 ## 2026-10-03 — LOGIN-HIGGSFIELD-BACKGROUND-1003 — LOCAL_PREVIEW
 
-Successful Higgsfield composite replaces the previously blocked media draft: exact NOORA lettering, upper-right aircraft, clean sky, silent one-shot 12-second playback, static poster and reduced-motion fallback. User requested local rollout. Feature branch incorporates origin/develop; no authentication, API, schema or data change. PR #555 remains unmerged. Sixteen login tests and scoped lint pass.
+Successful Higgsfield composite replaces the previously blocked media draft: exact NOORA lettering, upper-right aircraft, silent one-shot 12-second playback, static poster and reduced-motion fallback. User requested local rollout. Feature branch incorporates origin/develop; no authentication, API, schema or data change. PR #555 contains the final media revision. Sixteen login tests and scoped lint pass.
 
 ## 2026-10-03 — LOGIN-TAILWIND-FOLLOWUP-1003 — PC-A
 
-Updated the local login video to a TAILWIND passenger aircraft with a subtle upper-tail vapor trail and exact cloud-textured NOORA. Final Higgsfield composite is 12 seconds at 1280x720; one-shot playback, matching poster and mobile layout verified. 16 login tests and scoped lint pass. No API, authentication, schema or data changes. Existing draft PR remains unmerged.
+Updated the local login video to a TAILWIND passenger aircraft and exact cloud-textured NOORA. Final Higgsfield composite is 12 seconds at 1280x720; one-shot playback, matching poster and mobile layout verified. 16 login tests and scoped lint pass. All aircraft vapor was later removed at the user's direction. The final smokeless revision is in PR #555.
 
 ## 2026-10-03 — LOGIN-ENGINE-VAPOR-1003 — PC-A
 
 Login media now preserves the approved TAILWIND aircraft while emitting animated, independently drifting vapor from both engines; the previous rigid trail was removed. NOORA is centered above the login form. Local assets and cache versions updated; 16 login tests pass. No auth/API/schema/dependency/data changes.
 
 Follow-up visual correction: replace the sparse puffs with denser white continuous turbulent engine plumes. Same approved airliner, centered NOORA and one-shot silent playback. Full Web build/TypeScript, lint and 16 login tests passed; final media rendered and visually inspected.
+## 2026-10-03 — RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
+
+Supplier selection now precedes the reservation preview and uses the existing paginated reservation-scoped active broker directory. Reference loading preserves successful lists when another resource fails; loaded pickers remain searchable. Reference pickers no longer wrap interactive options in a label, preventing label activation from reopening selection. The current and historical forms share one preview slot; the print portal is hidden on screen and exposed only by print CSS. Four focused suites / 14 tests pass. Scoped source lint and the 55-route production build (including TypeScript) pass; no migration, dependency, API contract or operational data changes. PR #578 targets develop; user authorizes merge after CI. Scoped source locks release with the reviewed commit. Primary checkout and the running login-video worktree remain untouched.
 
 ## 2026-10-03 — RESERVATION-SINGLE-FORM-FOOTER-1003 — PC-A
 
@@ -4287,6 +4322,18 @@ The supplied two-page travel-contract terms PDF replaces the previous static fil
 ## 2026-10-03 — RESERVATION-COMPACT-ROWS-1003 — PC-A
 
 Reservation request table minimum body-row height decreases from 46px to 36px while the existing 440px scroll viewport and columns remain unchanged. Saved status actor/time renders beside its checkbox so populated flags do not force tall rows; no audit information, permissions or operations are removed. Synthetic browser layout confirms roughly two more complete contracts. Twenty existing foundation/status tests, scoped lint and Web typecheck passed; production build and CI gate the explicitly requested develop merge. No API/schema/migration/dependency/data change.
+
+## 2026-10-03 — B2B-UNIFIED-REPORT-SECTION-1003 — PC-B — READY_FOR_APPROVED_MERGE
+
+Organizations 360 Reports/Audit/Export now form one «گزارش فعالیت‌ها» section, showing category summaries and export guidance alongside the unchanged branch/date filters, activity table, details and authorized-row Excel output. Old Audit/Export browser-history aliases normalize only within Reports; the canonical destination does not add a duplicate history entry. Focused history/activity-export regressions (7), all Organizations tests (135), scoped lint, Web typecheck and 55-route production build pass. Local generated contracts were refreshed from unchanged source. No API/contract, permission, migration/dependency, data or shared-runtime change; no authenticated browser QA. Same native implementation owner completed the bounded four-file UI/history change; lead inspected the exact diff. Usage unavailable. CI gates owner-authorized develop merge; scoped locks release with commit.
+
+## 2026-10-03 — B2B-INITIAL-STATUS-1003 — PC-B
+
+Removed the read-only initial status display from step one of the cooperation registration wizard as requested. Draft/submission lifecycle and validation remain unchanged. No API, schema, dependency, permission, data or runtime change; targeted checks and CI precede authorized develop merge.
+
+## 2026-10-03 — B2B-HIDE-WARNING-COLUMN-1003 — PC-B — READY_FOR_APPROVED_MERGE
+
+The Organizations desktop list no longer displays the warning header or its matching placeholder cell. Credit, remaining header/body alignment, mobile cards and row operations are unchanged. All 133 Organizations tests, scoped lint, Web typecheck and the 55-route production build pass. The first typecheck exposed stale local contracts output after branch reuse; rebuilding current contracts source resolved it without tracked shared/source edits. No API, migration/dependency, data or runtime change. Owner explicitly authorized push and develop merge; normal CI gates the merge. Same native task owner implemented the bounded two-line removal; lead inspected the exact diff. Usage telemetry unavailable.
 
 ## 2026-10-03 — B2B-EXCEL-EXPORT-1003 — PC-B
 
@@ -4308,3 +4355,48 @@ Removed the fetched-at/access/date-range metadata line from the Customer Affairs
 واچر هتل نام کارگزار را در SUPPLIER و Board او را در TRANSFER نشان می‌دهد. پیش از صدور، کاربر کارگزار و تورلیدر وابسته به او را انتخاب می‌کند یا تورلیدر را با تلفن در اطلاعات پایهٔ همان کارگزار ثبت می‌کند. شمارهٔ کامل تنها در مسیر مجوزدار سند واچر خوانده و ممیزی می‌شود. فیلدهای علامت‌خوردهٔ خلاصه، پرواز، مسافران، توضیحات و پایین واچر حذف و خلاصه فشرده شد. رابطهٔ nullable تورلیدر به کارگزار با migration افزایشی اضافه شده؛ رکوردهای تاریخی بدون کارگزار باقی می‌مانند. Migration عملیاتی اجرا نشده و پیش از rollout API باید اعمال شود.
 
 LOGIN-NO-SMOKE-1003: removed all aircraft vapor from the login video at the user's request. Approved aircraft and centered NOORA retained. Native 12-second video render and mid-flight visual QA passed; local media endpoint serves HTTP 200. No source/API/data/migration changes.
+## 2026-10-03 — RESERVATION-SEARCH-BUTTON-1003 — PC-A
+
+Reservations inbox includes a search submit button and native Enter submission. Keyword entry is applied on submission; existing status/service/date/sort filters continue to apply immediately, and clear resets both entry and filters to the default previous-month window. Default bounds now respect the selected contract/received/travel date basis instead of silently forcing contract date. Search normalizes Persian/Arabic digits and Yeh/Kaf consistently across supported fields. Twenty-two foundation regressions cover combined filters, invalid dates, normalized keywords, default date-basis behavior and accessible submit controls. No API/schema/migration/dependency/data change; review PR precedes integration.
+
+## 2026-10-03 — LOGIN-NORA-TITLE-1003 — PC-A
+
+عنوان نمایان صفحهٔ ورود در دسکتاپ و موبایل «سامانه یکپارچه آژانس نورا» است. عنوان تب موجود «ورود امن نورا» حفظ شد. تغییر فقط متن UI است؛ API، داده، مجوز، Migration و وابستگی تغییر نکردند.
+
+## 2026-10-03 — CUSTOMER-FOUR-FIELDS-1003 — PC-A
+
+Pure person/customer creation now asks for exactly first name, last name, phone and address. Role and record-kind selection remain available; passenger/combined-role creation retains full identity fields and companion entry. Customer-only payload omits hidden passenger and metadata drafts, and persists phone and address through existing versioned Contacts/Addresses APIs with partial-create safeguards. API permits customer-only people without national ID while retaining the national-ID requirement for new passenger/combined-role people. No schema/migration/dependency or operational-data changes. Forty-nine focused Web and thirty-four API tests pass; scoped lint, both typechecks/builds and CI gate the user-authorized develop merge.
+
+## 2026-10-03 — RESERVATION-MANIFEST-GREGORIAN-DIRECTION-1003 — PC-A — READY_FOR_REVIEW
+
+Reservations Manifest now renders Gregorian Tehran-local dates and explicit origin → destination paths. Tehran/Antalya city-and-country filters retain both physical legs in correct outbound/return sections; empty messages follow the filtered sections. Nine focused tests, scoped lint, Web typecheck and 55-route production build passed. Full Web lint stalled in the shared runtime; CI gates merge. No API, data, migration or dependency change.
+
+
+## 2026-10-03 — PURCHASE-CUSTOMER-DATE-RANGE-1003 — PC-A — READY_FOR_REVIEW
+
+Sales new purchase now collects buyer name, phone, address and postal code above passengers, supports a separate canonical buyer/payer and stores an encrypted immutable contract contact snapshot for authorized printable output. New separate buyers use merged customer-only four-field creation without national ID or passenger passport; passenger identity validation is retained. Ticket results require a confirmed valid range, both legs respect its bounds, and changes invalidate prior catalog selections/quotes. 121 Sales/Customers API + 268 Web + 1 PostgreSQL regression passed (1 existing Web test skipped), affected lint/typechecks and API/Web production builds passed; Prisma validate/generate and all 113 migrations passed on a disposable PostgreSQL 18 database. The additive nullable Sales JSONB migration must precede API rollout; existing configured contact encryption keys are reused with domain separation. Primary dirty checkout and running local services remain unchanged. Scoped locks RELEASED; no merge/local rollout requested. See docs/tasks/PURCHASE-CUSTOMER-DATE-RANGE-1003.md.
+## 2026-10-03 — INSURANCE-KPI-REPLACEMENTS-1003 — PC-B — READY_FOR_REVIEW
+
+Insurance fourth cards now show `دارای طرح بیمه` and `متصل به طرح‌ها`, computed from existing numeric `planCount` projections over complete unfiltered pagination. Empty ready data renders zero; loading, errors or malformed projections render unavailable. Stale resource responses, duplicate rows, changing/invalid totals and incomplete pages are rejected, and CRUD plus explicit Refresh reload the relation summary. Focused 8 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. One unrelated date-range test timed out on the first full run, then its isolated 10 tests and the full rerun passed. No authenticated browser/runtime QA or API/schema/runtime/database change; bounded locks release with commit.
+
+## USER-CREATE-PASSWORD-RESET-1003 — PC-A — READY_FOR_REVIEW
+
+User creation now saves the current explicit access selections even while optional role suggestions are open; weak initial passwords receive clear validation feedback. Canonical system administrators can reset another user using a confirmed password form. IAM rechecks active administrator membership and session, hashes credentials, revokes target sessions and records secret-free audit atomically. Self-service password changes remain unchanged. No schema, migration, dependency or actual user/password change.
+
+84 focused IAM/HTTP tests and 34 Web tests pass; scoped lint, both typechecks and production API/Web builds (55 routes) pass. All 9 isolated PostgreSQL password/reset regressions pass, including old login/access/refresh rejection, administrator session preservation and audit-failure rollback. User authorizes CI-gated develop merge. See [task handoff](tasks/USER-CREATE-PASSWORD-RESET-1003.md).
+
+- Delivery: implementation `a0a1afd4`, [PR #586](https://github.com/nirvanamahlou/Rubi/pull/586) targets develop. Other PCs should fetch the reviewed merge; no migration/dependency step is introduced by this task. Local rollout follows owner authorization while preserving current LAN origins, document storage and unrelated runtime files.
+
+## 2026-10-03 — SALES-DASHBOARD-NEGATIVE-BALANCE-1003 — PC-A — READY_FOR_REVIEW
+
+Sales dashboard aggregation now accepts legitimate negative computed balances from overpayment while rejecting negative payment input. The failing regression was reproduced before the fix; all 88 Sales API tests, scoped lint, formatting, Contracts/Database builds, API typecheck and production build pass. Prisma Client was regenerated locally without database access. No schema, permission, dependency or operational-data change.
+
+## 2026-10-03 — TRANSFER-PASSENGER-PRICING-1003 — PC-A
+
+Transfer purchase now calculates editable chargeable passenger count times unit price, independent of stay nights. Optional split mode stores each transfer leg with its own broker/currency/count/price in one atomic financial batch. Coverage, server totals, CAS and idempotency remain validated; historical purchase amounts are preserved. No migration/dependency/database changes. See docs/tasks/TRANSFER-PASSENGER-PRICING-1003.md for compatibility and validation.
+
+Validation completed: full Reservations API/Web regressions, shared arithmetic, final focused purchase tests, scoped lint/typechecks and affected production builds pass (55 Web routes). Bounded locks released; PR/develop merge follows owner authorization and CI.
+
+## 2026-10-03 — PROFILE-AVATAR-SAVE-1003 — PC-B
+
+Personal profile photo upload now accepts the edited name and contact details and links the stored document through the existing IAM profile service before responding. The Web form consumes the returned profile, eliminating its second save request after photo upload. Older file-only clients remain supported. No schema, migration, permission, dependency, or operational-data change. Local port 3100 was unavailable during verification, so live account behavior remains unverified; focused tests and build checks gate delivery.

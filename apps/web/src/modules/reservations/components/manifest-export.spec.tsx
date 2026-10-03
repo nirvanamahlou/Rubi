@@ -1,6 +1,10 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
-import { ManifestExport } from './manifest-export';
+import {
+  ManifestExport,
+  ManifestRoute,
+  manifestDateTime,
+} from './manifest-export';
 import { manifestReferenceQuery } from './manifest-reference-filter';
 
 it('starts with a date-range ticket search before showing manifest cards', () => {
@@ -31,4 +35,23 @@ it('queries active Master Data and scopes city search to the selected country', 
     pageSize: 25,
     countryId: 'country-ir',
   });
+});
+
+it('shows Gregorian dates in Tehran time for manifest cards', () => {
+  expect(manifestDateTime('2026-10-01T08:00:00.000Z')).toMatch(
+    /^01\/10\/2026,? 11:30$/,
+  );
+  expect(manifestDateTime('2026-10-01T08:00:00.000Z', false)).toBe(
+    '01/10/2026',
+  );
+});
+
+it('renders the physical origin to destination order in the RTL table', () => {
+  const html = renderToStaticMarkup(
+    <ManifestRoute origin="تهران" destination="آنتالیا" />,
+  );
+  expect(html).toContain('dir="ltr"');
+  expect(html).toContain(
+    'تهران</span><span aria-hidden="true">→</span><span dir="auto">آنتالیا',
+  );
 });

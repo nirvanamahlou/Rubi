@@ -175,18 +175,35 @@ export class WorkbenchService {
   }
 
   async uploadProfilePhoto(
-    input: { branchId: string; title: string },
+    input: {
+      branchId: string;
+      title: string;
+      displayName?: string;
+      email?: string | null;
+      phone?: string | null;
+    },
     file: UploadedDocumentFile | undefined,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
   ) {
     const result = await this.documents.uploadOwnProfilePhoto(
-      input,
+      { branchId: input.branchId, title: input.title },
       file,
       actor,
       metadata,
     );
-    return { data: result };
+    const identity = await this.iam.personalProfile(actor.userId);
+    const profile = await this.updateProfile(
+      {
+        displayName: input.displayName ?? identity.displayName,
+        email: input.email ?? identity.email,
+        phone: input.phone ?? identity.profile?.phone ?? null,
+        photoDocumentId: result.id,
+        photoBranchId: input.branchId,
+      },
+      actor,
+    );
+    return { data: { ...result, profile: profile.data } };
   }
 
   async profilePhoto(

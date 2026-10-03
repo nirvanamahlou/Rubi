@@ -68,6 +68,27 @@ function setup() {
   return { service, contract, sales, repo, customers, legal, iam };
 }
 describe('Sales saved output authorization', () => {
+  it('uses the saved buyer contact even after the current customer address changes', async () => {
+    const t = setup();
+    t.contract.buyerContact = {
+      name: 'Synthetic Buyer',
+      phone: '09120000000',
+      address: 'Saved address',
+      postalCode: '0012345678',
+    };
+    t.customers.maskedDetail.mockResolvedValue({
+      data: {
+        kind: 'person',
+        addresses: [{ isPrimary: true, label: 'Changed address' }],
+      },
+    } as never);
+    const result = await t.service.prepare('contract', actor);
+    expect(result.data.customer).toMatchObject({
+      address: 'Saved address',
+      phone: '09120000000',
+      postalCode: '0012345678',
+    });
+  });
   it.each(['JAHAN_ACADEMIA', 'GHESATI_RO'])(
     'preserves the public issuer code %s in output and audit',
     async (code) => {

@@ -1024,7 +1024,12 @@ export function MasterDataGeographyWorkspace() {
             <thead className="bg-muted/50 text-muted-foreground">
               <tr>
                 {tableColumns.map((column) => (
-                  <th className="p-4 text-start" key={column}>
+                  <th
+                    className={
+                      column === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                    }
+                    key={column}
+                  >
                     {column}
                   </th>
                 ))}
@@ -1431,8 +1436,8 @@ export function MasterDataGeographyWorkspace() {
                         {cell}
                       </td>
                     ))}
-                    <td className="p-4">
-                      <div className="flex flex-wrap justify-end gap-2">
+                    <td className="p-4 text-center">
+                      <div className="flex flex-wrap justify-center gap-2">
                         <Button
                           aria-label={`مشاهده ${record.name}`}
                           onClick={() => openRecord(record, 'view')}

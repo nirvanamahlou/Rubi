@@ -2036,13 +2036,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '3',
       },
       {
-        key: 'suggestedCapacityMin',
-        label: 'حداقل ظرفیت پیشنهادی',
-        type: 'number',
-        placeholder: '1',
-        hint: 'برای ثبت بازه، حداقل و حداکثر را وارد کنید؛ حداقل اختیاری است.',
-      },
-      {
         key: 'description',
         label: 'شرح',
         type: 'text',
@@ -2161,13 +2154,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'text',
         placeholder: 'توریستی',
         required: true,
-      },
-      {
-        key: 'referenceValidityMode',
-        label: 'نوع اعتبار مرجع',
-        type: 'select',
-        placeholder: '',
-        options: [{ value: 'DAYS', label: 'تعداد روز مشخص' }],
       },
       {
         key: 'referenceValidityDays',

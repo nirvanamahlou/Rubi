@@ -15,6 +15,16 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 
 export const PROFILE_PHOTO_CHANGED_EVENT = 'rubi:profile-photo-changed';
 
+export class ProfilePhotoUnavailableError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'ProfilePhotoUnavailableError';
+  }
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -76,10 +86,11 @@ async function requestBlob(
       error?: { message?: string };
     } | null;
     const message = payload?.error?.message ?? payload?.message;
-    throw new Error(
+    throw new ProfilePhotoUnavailableError(
       Array.isArray(message)
         ? message.join(' ')
         : (message ?? 'دریافت عکس پروفایل انجام نشد.'),
+      response.status,
     );
   }
   return response.blob();
@@ -149,15 +160,25 @@ export const workbenchPersonalApi = {
     branchId: string;
     title: string;
     file: File;
+    displayName?: string;
+    email?: string;
+    phone?: string;
   }) => {
     const form = new FormData();
     form.set('branchId', input.branchId);
     form.set('title', input.title);
     form.set('file', input.file);
-    return request<{ data: { id: string; scanStatus: string } }>(
-      '/profile/photo',
-      { method: 'POST', body: form },
-    );
+    if (input.displayName !== undefined)
+      form.set('displayName', input.displayName);
+    if (input.email !== undefined) form.set('email', input.email);
+    if (input.phone !== undefined) form.set('phone', input.phone);
+    return request<{
+      data: {
+        id: string;
+        scanStatus: string;
+        profile?: IamPersonalProfileResponseV1['data'];
+      };
+    }>('/profile/photo', { method: 'POST', body: form });
   },
   updateProfile: (input: IamPersonalProfileUpdateInputV1) =>
     request<IamPersonalProfileResponseV1>('/profile', json('PATCH', input)),

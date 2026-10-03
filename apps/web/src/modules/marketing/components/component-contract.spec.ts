@@ -92,7 +92,6 @@ describe('marketing workspace component contract', () => {
       'محتوا و جذب',
       'تخفیف‌ها و پیشنهادها',
       'سفر مشتری',
-      'تنظیمات',
     ]) {
       expect(referenceDataSource).toContain(label);
     }
@@ -104,6 +103,9 @@ describe('marketing workspace component contract', () => {
     );
     expect(marketingSections.map((section) => section.key)).toContain(
       'communications',
+    );
+    expect(marketingSections.map((section) => section.key)).not.toContain(
+      'settings',
     );
   });
 

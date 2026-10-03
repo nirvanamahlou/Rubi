@@ -6,6 +6,7 @@ import {
 } from './master-data-date-range-filter';
 
 import type {
+  MasterDataListQuery,
   MasterDataRecord,
   MasterDataResource,
   MasterDataStatus,
@@ -17,7 +18,7 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
-  CircleAlert,
+  ChevronDown,
   Eye,
   FilePenLine,
   FileSpreadsheet,
@@ -31,7 +32,14 @@ import {
   Umbrella,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -79,10 +87,189 @@ import {
 } from './master-data-profile-details';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
+type InsuranceRelationSummaryState = 'loading' | 'ready' | 'error';
+
+export const INSURER_PLAN_PAGE_SIZE = 10;
+
+export function countRecordsLinkedToPlans(
+  records: readonly MasterDataRecord[],
+): number | null {
+  let linked = 0;
+  for (const record of records) {
+    const count = record.attributes?.planCount;
+    if (!Number.isSafeInteger(count) || Number(count) < 0) return null;
+    if (Number(count) > 0) linked += 1;
+  }
+  return linked;
+}
+
+export function insuranceKpiItems(
+  resource: InsuranceResource,
+  summary: MasterInsuranceSummary | undefined,
+  relationRecords: readonly MasterDataRecord[],
+  relationState: InsuranceRelationSummaryState,
+): readonly MasterDataKpiItem[] {
+  const relationValue =
+    relationState === 'ready'
+      ? (countRecordsLinkedToPlans(relationRecords) ?? '—')
+      : '—';
+  if (resource === 'insurers')
+    return [
+      {
+        label: 'کل شرکت‌ها',
+        value: summary?.insurers.total ?? '—',
+        icon: Building2,
+        tone: 'sky',
+      },
+      {
+        label: 'فعال',
+        value: summary?.insurers.active ?? '—',
+        icon: CheckCircle2,
+        tone: 'emerald',
+      },
+      {
+        label: 'کشورهای تحت پوشش',
+        value: summary?.insurers.countries ?? '—',
+        icon: Globe2,
+        tone: 'violet',
+      },
+      {
+        label: 'دارای طرح بیمه',
+        value: relationValue,
+        icon: ShieldCheck,
+        tone: 'amber',
+      },
+    ];
+  if (resource === 'insurance-plans')
+    return [
+      {
+        label: 'کل طرح‌ها',
+        value: summary?.plans.total ?? '—',
+        icon: ShieldCheck,
+        tone: 'sky',
+      },
+      {
+        label: 'فعال',
+        value: summary?.plans.active ?? '—',
+        icon: CheckCircle2,
+        tone: 'emerald',
+      },
+      {
+        label: 'در حال انقضا',
+        value: summary?.plans.expiringSoon ?? '—',
+        icon: CalendarClock,
+        tone: 'amber',
+      },
+      {
+        label: 'مناطق مقصد',
+        value: summary?.plans.destinations ?? '—',
+        icon: Globe2,
+        tone: 'violet',
+      },
+    ];
+  return [
+    {
+      label: 'کل پوشش‌ها',
+      value: summary?.coverages.total ?? '—',
+      icon: ShieldPlus,
+      tone: 'sky',
+    },
+    {
+      label: 'فعال',
+      value: summary?.coverages.active ?? '—',
+      icon: CheckCircle2,
+      tone: 'emerald',
+    },
+    {
+      label: 'ارزهای مرجع',
+      value: summary?.coverages.currencies ?? '—',
+      icon: Banknote,
+      tone: 'violet',
+    },
+    {
+      label: 'متصل به طرح‌ها',
+      value: relationValue,
+      icon: Link2,
+      tone: 'amber',
+    },
+  ];
+}
+
+export async function fetchInsuranceRelationSummary(
+  list: (
+    resource: 'insurers' | 'insurance-coverages',
+    query: MasterDataListQuery,
+  ) => Promise<{
+    data: readonly MasterDataRecord[];
+    meta: { total: number };
+  }>,
+  resource: 'insurers' | 'insurance-coverages',
+  generation: number,
+  isCurrent: (generation: number, resource: InsuranceResource) => boolean,
+): Promise<readonly MasterDataRecord[] | null> {
+  const records: MasterDataRecord[] = [];
+  const ids = new Set<string>();
+  let expectedTotal: number | undefined;
+  for (let page = 1; ; page += 1) {
+    const response = await list(resource, {
+      search: '',
+      status: 'all',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page,
+      pageSize: 100,
+    });
+    if (!isCurrent(generation, resource)) return null;
+    if (
+      !Number.isSafeInteger(response.meta.total) ||
+      response.meta.total < 0 ||
+      (expectedTotal !== undefined && response.meta.total !== expectedTotal)
+    )
+      throw new Error('Invalid insurance relation summary pagination');
+    expectedTotal ??= response.meta.total;
+    if (response.data.length === 0 && records.length < expectedTotal)
+      throw new Error('Incomplete insurance relation summary pagination');
+    for (const record of response.data) {
+      if (ids.has(record.id))
+        throw new Error('Duplicate insurance relation summary record');
+      ids.add(record.id);
+      records.push(record);
+    }
+    if (records.length === expectedTotal) return records;
+    if (records.length > expectedTotal || response.data.length < 100)
+      throw new Error('Incomplete insurance relation summary pagination');
+  }
+}
+
+export function bindInsurancePlanParent(
+  values: Record<string, string>,
+  insurerId: string,
+) {
+  return { ...values, insurerId };
+}
+
+export async function fetchInsurerPlanPage(
+  list: (
+    resource: 'insurance-plans',
+    query: MasterDataListQuery,
+  ) => Promise<{ data: readonly MasterDataRecord[]; meta: { total: number } }>,
+  query: MasterDataListQuery,
+  generation: number,
+  isCurrent: (generation: number) => boolean,
+) {
+  const response = await list('insurance-plans', query);
+  return isCurrent(generation) ? response : null;
+}
+
+export async function refreshInsurancePlanViews(
+  load: () => Promise<void>,
+  onChanged: () => Promise<void>,
+) {
+  await Promise.all([load(), onChanged()]);
+}
 
 const tabs = [
   { resource: 'insurers', label: 'شرکت‌های بیمه', icon: Umbrella },
-  { resource: 'insurance-plans', label: 'طرح‌های بیمه', icon: ShieldCheck },
   { resource: 'insurance-coverages', label: 'پوشش‌ها', icon: ShieldPlus },
 ] as const satisfies readonly {
   resource: MasterDataResource;
@@ -90,7 +277,7 @@ const tabs = [
   icon: typeof Umbrella;
 }[];
 
-type InsuranceResource = (typeof tabs)[number]['resource'];
+type InsuranceResource = 'insurers' | 'insurance-plans' | 'insurance-coverages';
 
 const rules: Record<InsuranceResource, { title: string; text: string }> = {
   insurers: {
@@ -168,11 +355,348 @@ function statusBadge(record: MasterDataRecord) {
   );
 }
 
+function MasterDataInsurerPlans({
+  insurer,
+  onChanged,
+}: {
+  insurer: MasterDataRecord;
+  onChanged: () => Promise<void>;
+}) {
+  const [plans, setPlans] = useState<readonly MasterDataRecord[]>([]);
+  const [state, setState] = useState<RequestState>('loading');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
+  const [selected, setSelected] = useState<MasterDataRecord>();
+  const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const requestGeneration = useRef(0);
+  const definition = getMasterDataDefinition('insurance-plans');
+
+  const load = useCallback(async () => {
+    const generation = ++requestGeneration.current;
+    setState('loading');
+    try {
+      const response = await fetchInsurerPlanPage(
+        masterDataApi.list,
+        {
+          insurerId: insurer.id,
+          search,
+          status,
+          sortBy: 'name',
+          sortDirection: 'asc',
+          page,
+          pageSize: INSURER_PLAN_PAGE_SIZE,
+        },
+        generation,
+        (candidate) => candidate === requestGeneration.current,
+      );
+      if (!response) return;
+      setPlans(response.data);
+      setTotal(response.meta.total);
+      setState('ready');
+    } catch (error) {
+      if (generation !== requestGeneration.current) return;
+      setPlans([]);
+      setTotal(0);
+      setState(
+        error instanceof MasterDataApiError && error.status === 403
+          ? 'forbidden'
+          : 'error',
+      );
+    }
+  }, [insurer.id, page, search, status]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      requestGeneration.current += 1;
+    };
+  }, [load]);
+
+  async function refreshAfterChange() {
+    await refreshInsurancePlanViews(load, onChanged);
+  }
+
+  async function persist(
+    values: Record<string, string>,
+    logoChange?: MasterDataLogoChange,
+  ) {
+    await masterDataApi.persistWithLogo({
+      resource: 'insurance-plans',
+      values: bindInsurancePlanParent(values, insurer.id),
+      title: `طرح بیمه ${values.name ?? selected?.name ?? ''}`.trim(),
+      ...(formMode === 'edit' && selected ? { existing: selected } : {}),
+      ...(logoChange ? { logoChange } : {}),
+    });
+    setFormMode(null);
+    setSelected(undefined);
+    await refreshAfterChange();
+  }
+
+  const body =
+    state === 'loading' ? (
+      <div
+        aria-label={`در حال بارگذاری طرح‌های ${insurer.name}`}
+        className="space-y-2"
+      >
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    ) : state === 'forbidden' ? (
+      <EmptyState
+        description="مجوز master_data.read لازم است."
+        icon={ShieldCheck}
+        title="دسترسی به طرح‌ها وجود ندارد"
+      />
+    ) : state === 'error' ? (
+      <ErrorState
+        action={
+          <Button onClick={() => void load()} size="sm" variant="outline">
+            تلاش دوباره
+          </Button>
+        }
+        description="دریافت طرح‌های این بیمه‌گر ناموفق بود."
+        title="خطا در دریافت طرح‌ها"
+      />
+    ) : plans.length === 0 ? (
+      <EmptyState
+        description="برای این بیمه‌گر طرحی با فیلتر فعلی ثبت نشده است."
+        icon={ShieldCheck}
+        title="طرحی یافت نشد"
+      />
+    ) : (
+      <div className="overflow-x-auto rounded-xl border border-border bg-background">
+        <table
+          aria-label={`طرح‌های بیمه ${insurer.name}`}
+          className="w-full min-w-[58rem] text-sm"
+        >
+          <thead className="bg-muted/50 text-muted-foreground">
+            <tr>
+              {[
+                'کد طرح',
+                'لوگو',
+                'عنوان',
+                'مقصد یا منطقه',
+                'گروه سنی',
+                'بازه اعتبار',
+                'پوشش‌ها',
+                'وضعیت',
+                'عملیات',
+              ].map((label) => (
+                <th
+                  className={
+                    label === 'عملیات' ? 'p-3 text-center' : 'p-3 text-start'
+                  }
+                  key={label}
+                >
+                  {label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {plans.map((plan) => (
+              <tr className="border-t border-border" key={plan.id}>
+                <td className="p-3 font-mono text-xs" dir="ltr">
+                  {plan.code}
+                </td>
+                <MasterDataLogoCell record={plan} />
+                <td className="p-3">
+                  <button
+                    className="font-bold text-primary"
+                    onClick={() => {
+                      setSelected(plan);
+                      setProfileOpen(true);
+                    }}
+                    type="button"
+                  >
+                    {plan.name}
+                  </button>
+                </td>
+                <td className="p-3">{attribute(plan, 'destinationRegion')}</td>
+                <td className="p-3">
+                  {attribute(plan, 'minimumAge', '0')} تا{' '}
+                  {attribute(plan, 'maximumAge', 'بدون سقف')}
+                </td>
+                <td className="p-3">
+                  {localDate(attribute(plan, 'validFrom'))} تا{' '}
+                  {localDate(attribute(plan, 'validTo', 'نامحدود'))}
+                </td>
+                <td className="max-w-64 p-3">
+                  {attribute(plan, 'coverageNames')}
+                </td>
+                <td className="p-3">{statusBadge(plan)}</td>
+                <td className="p-3 text-center">
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      aria-label={`مشاهده ${plan.name}`}
+                      onClick={() => {
+                        setSelected(plan);
+                        setProfileOpen(true);
+                      }}
+                      size="icon"
+                      title={`مشاهده ${plan.name}`}
+                      variant="ghost"
+                    >
+                      <Eye className="size-4" />
+                    </Button>
+                    <Button
+                      aria-label={`ویرایش ${plan.name}`}
+                      onClick={() => {
+                        setSelected(plan);
+                        setFormMode('edit');
+                      }}
+                      size="icon"
+                      title={`ویرایش ${plan.name}`}
+                      variant="outline"
+                    >
+                      <FilePenLine className="size-4" />
+                    </Button>
+                    <MasterDataDeleteButton
+                      record={plan}
+                      onDeleted={async () => {
+                        setSelected(undefined);
+                        if (plans.length === 1 && page > 1) {
+                          setPage((value) => value - 1);
+                          await onChanged();
+                        } else await refreshAfterChange();
+                      }}
+                    />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+
+  return (
+    <div className="space-y-3 bg-muted/20 p-4">
+      <div className="flex flex-wrap items-end gap-3">
+        <FormField id={`plan-search-${insurer.id}`} label="جست‌وجوی طرح">
+          <Input
+            id={`plan-search-${insurer.id}`}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+            value={search}
+          />
+        </FormField>
+        <FormField label="وضعیت طرح">
+          <Select
+            onValueChange={(value) => {
+              setStatus(value as typeof status);
+              setPage(1);
+            }}
+            value={status}
+          >
+            <SelectTrigger aria-label="فیلتر وضعیت طرح">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+              <SelectItem value="active">فعال</SelectItem>
+              <SelectItem value="inactive">غیرفعال</SelectItem>
+            </SelectContent>
+          </Select>
+        </FormField>
+        <Button
+          className="ms-auto"
+          onClick={() => {
+            setSelected(undefined);
+            setFormMode('create');
+          }}
+        >
+          <Plus className="size-4" /> افزودن طرح
+        </Button>
+      </div>
+      {body}
+      <div className="flex items-center justify-between gap-3">
+        <PaginationShell
+          currentPage={page}
+          totalLabel={`${total.toLocaleString('fa-IR')} طرح`}
+        />
+        <div className="flex gap-2">
+          <Button
+            disabled={page === 1}
+            onClick={() => setPage((value) => Math.max(1, value - 1))}
+            size="sm"
+            variant="outline"
+          >
+            قبلی
+          </Button>
+          <Button
+            disabled={page * INSURER_PLAN_PAGE_SIZE >= total}
+            onClick={() => setPage((value) => value + 1)}
+            size="sm"
+            variant="outline"
+          >
+            بعدی
+          </Button>
+        </div>
+      </div>
+      {formMode ? (
+        <MasterDataLiveForm
+          definition={definition}
+          initialValues={{ insurerId: insurer.id }}
+          key={`${formMode}-${selected?.id ?? 'new'}`}
+          lockedFields={['insurerId']}
+          mode={formMode}
+          onOpenChange={(open) => {
+            if (!open) setFormMode(null);
+          }}
+          onPersist={persist}
+          open
+          {...(selected && formMode === 'edit' ? { record: selected } : {})}
+        />
+      ) : null}
+      {selected ? (
+        <MasterDataProfileDialog
+          onOpenChange={setProfileOpen}
+          open={profileOpen}
+          title={`پروفایل طرح بیمه`}
+        >
+          <div className="space-y-4">
+            <MasterDataProfileIdentity
+              eyebrow="پروفایل طرح بیمه"
+              record={selected}
+              title={selected.name}
+            />
+            <MasterDataDetailSection title="مشخصات طرح">
+              {profileFields['insurance-plans'].map((field) => (
+                <MasterDataDetailItem
+                  key={field.key}
+                  label={field.label}
+                  value={
+                    field.key.startsWith('valid')
+                      ? localDate(attribute(selected, field.key))
+                      : attribute(selected, field.key)
+                  }
+                />
+              ))}
+            </MasterDataDetailSection>
+          </div>
+        </MasterDataProfileDialog>
+      ) : null}
+    </div>
+  );
+}
+
 export function MasterDataInsuranceWorkspace() {
   const [resource, setResource] = useState<InsuranceResource>('insurers');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [summary, setSummary] = useState<MasterInsuranceSummary>();
+  const [relationRecords, setRelationRecords] = useState<
+    readonly MasterDataRecord[]
+  >([]);
+  const [relationSummaryState, setRelationSummaryState] =
+    useState<InsuranceRelationSummaryState>('loading');
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
   const [insurers, setInsurers] = useState<readonly MasterDataRecord[]>([]);
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
@@ -186,6 +710,11 @@ export function MasterDataInsuranceWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [expandedInsurerId, setExpandedInsurerId] = useState<string | null>(
+    null,
+  );
+  const relationRequestRef = useRef(0);
+  const relationResourceRef = useRef<InsuranceResource>('insurers');
   const definition = getMasterDataDefinition(resource);
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
@@ -250,6 +779,34 @@ export function MasterDataInsuranceWorkspace() {
     }
   }, []);
 
+  const loadRelationSummary = useCallback(async () => {
+    if (resource === 'insurance-plans') return;
+    const requestId = ++relationRequestRef.current;
+    relationResourceRef.current = resource;
+    setRelationSummaryState('loading');
+    try {
+      const result = await fetchInsuranceRelationSummary(
+        masterDataApi.list,
+        resource,
+        requestId,
+        (candidate, candidateResource) =>
+          candidate === relationRequestRef.current &&
+          candidateResource === relationResourceRef.current,
+      );
+      if (!result) return;
+      setRelationRecords(result);
+      setRelationSummaryState('ready');
+    } catch {
+      if (
+        requestId !== relationRequestRef.current ||
+        resource !== relationResourceRef.current
+      )
+        return;
+      setRelationRecords([]);
+      setRelationSummaryState('error');
+    }
+  }, [resource]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 180);
     return () => window.clearTimeout(timer);
@@ -284,88 +841,24 @@ export function MasterDataInsuranceWorkspace() {
     return () => window.clearTimeout(timer);
   }, [loadSummary]);
 
-  const kpis = useMemo<readonly MasterDataKpiItem[]>(() => {
-    if (resource === 'insurers')
-      return [
-        {
-          label: 'کل شرکت‌ها',
-          value: summary?.insurers.total ?? '—',
-          icon: Building2,
-          tone: 'sky',
-        },
-        {
-          label: 'فعال',
-          value: summary?.insurers.active ?? '—',
-          icon: CheckCircle2,
-          tone: 'emerald',
-        },
-        {
-          label: 'کشورهای تحت پوشش',
-          value: summary?.insurers.countries ?? '—',
-          icon: Globe2,
-          tone: 'violet',
-        },
-        {
-          label: 'لوگوی ناقص',
-          value: summary?.insurers.missingLogo ?? '—',
-          icon: CircleAlert,
-          tone: 'amber',
-        },
-      ];
-    if (resource === 'insurance-plans')
-      return [
-        {
-          label: 'کل طرح‌ها',
-          value: summary?.plans.total ?? '—',
-          icon: ShieldCheck,
-          tone: 'sky',
-        },
-        {
-          label: 'فعال',
-          value: summary?.plans.active ?? '—',
-          icon: CheckCircle2,
-          tone: 'emerald',
-        },
-        {
-          label: 'در حال انقضا',
-          value: summary?.plans.expiringSoon ?? '—',
-          icon: CalendarClock,
-          tone: 'amber',
-        },
-        {
-          label: 'مناطق مقصد',
-          value: summary?.plans.destinations ?? '—',
-          icon: Globe2,
-          tone: 'violet',
-        },
-      ];
-    return [
-      {
-        label: 'کل پوشش‌ها',
-        value: summary?.coverages.total ?? '—',
-        icon: ShieldPlus,
-        tone: 'sky',
-      },
-      {
-        label: 'فعال',
-        value: summary?.coverages.active ?? '—',
-        icon: CheckCircle2,
-        tone: 'emerald',
-      },
-      {
-        label: 'ارزهای مرجع',
-        value: summary?.coverages.currencies ?? '—',
-        icon: Banknote,
-        tone: 'violet',
-      },
-      {
-        label: 'نیازمند بازبینی',
-        value: summary?.coverages.needsReview ?? '—',
-        icon: CircleAlert,
-        tone: 'amber',
-      },
-    ];
-  }, [resource, summary]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadRelationSummary(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      relationRequestRef.current += 1;
+    };
+  }, [loadRelationSummary]);
+
+  const kpis = useMemo<readonly MasterDataKpiItem[]>(
+    () =>
+      insuranceKpiItems(
+        resource,
+        summary,
+        relationRecords,
+        relationSummaryState,
+      ),
+    [relationRecords, relationSummaryState, resource, summary],
+  );
 
   const filterOptions =
     resource === 'insurers'
@@ -381,6 +874,10 @@ export function MasterDataInsuranceWorkspace() {
         : 'ارز';
 
   function changeResource(next: InsuranceResource) {
+    relationRequestRef.current += 1;
+    relationResourceRef.current = next;
+    setRelationRecords([]);
+    setRelationSummaryState('loading');
     setResource(next);
     setSearch('');
     resetColumnFilters();
@@ -391,6 +888,7 @@ export function MasterDataInsuranceWorkspace() {
     setProfileOpen(false);
     setFormMode(null);
     setNotice(null);
+    setExpandedInsurerId(null);
   }
 
   function openProfile(record: MasterDataRecord) {
@@ -415,7 +913,7 @@ export function MasterDataInsuranceWorkspace() {
         `${definition.singularLabel} با Optimistic Lock و Audit ${formMode === 'edit' ? 'ویرایش' : 'ثبت'} شد.`,
     );
     setFormMode(null);
-    await Promise.all([load(), loadSummary()]);
+    await Promise.all([load(), loadSummary(), loadRelationSummary()]);
   }
 
   async function afterDelete() {
@@ -425,7 +923,7 @@ export function MasterDataInsuranceWorkspace() {
     setNotice('رکورد با موفقیت حذف شد.');
     if (records.length === 1 && page > 1) setPage(page - 1);
     else await load();
-    await loadSummary();
+    await Promise.all([loadSummary(), loadRelationSummary()]);
   }
 
   async function downloadExcel() {
@@ -467,7 +965,7 @@ export function MasterDataInsuranceWorkspace() {
   }
 
   const actions = (record: MasterDataRecord) => (
-    <div className="flex flex-wrap justify-end gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -513,7 +1011,12 @@ export function MasterDataInsuranceWorkspace() {
                 'وضعیت',
                 'عملیات',
               ].map((label) => (
-                <th className="p-4 text-start" key={label}>
+                <th
+                  className={
+                    label === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                  }
+                  key={label}
+                >
                   {label}
                 </th>
               ))}
@@ -532,7 +1035,12 @@ export function MasterDataInsuranceWorkspace() {
                 'وضعیت',
                 'عملیات',
               ].map((label) => (
-                <th className="p-4 text-start" key={label}>
+                <th
+                  className={
+                    label === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                  }
+                  key={label}
+                >
                   {label}
                 </th>
               ))}
@@ -551,7 +1059,12 @@ export function MasterDataInsuranceWorkspace() {
                 'وضعیت',
                 'عملیات',
               ].map((label) => (
-                <th className="p-4 text-start" key={label}>
+                <th
+                  className={
+                    label === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                  }
+                  key={label}
+                >
                   {label}
                 </th>
               ))}
@@ -560,25 +1073,99 @@ export function MasterDataInsuranceWorkspace() {
         </thead>
         <tbody>
           {records.map((record) => (
-            <tr
-              className="border-t border-border transition hover:bg-muted/30"
-              key={record.id}
-            >
-              {resource === 'insurers' ? (
-                <>
-                  <td className="p-4">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="grid size-9 place-items-center rounded-xl bg-cyan-100 text-cyan-700">
-                        <Umbrella className="size-4" />
+            <Fragment key={record.id}>
+              <tr className="border-t border-border transition hover:bg-muted/30">
+                {resource === 'insurers' ? (
+                  <>
+                    <td className="p-4">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="grid size-9 place-items-center rounded-xl bg-cyan-100 text-cyan-700">
+                          <Umbrella className="size-4" />
+                        </span>
+                        <span className="font-mono text-xs" dir="ltr">
+                          {record.code}
+                        </span>
                       </span>
-                      <span className="font-mono text-xs" dir="ltr">
-                        {record.code}
-                      </span>
-                    </span>
-                  </td>
-                  <MasterDataLogoCell record={record} />
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
+                    </td>
+                    <MasterDataLogoCell record={record} />
+                    <td className="p-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          aria-expanded={expandedInsurerId === record.id}
+                          aria-label={`${expandedInsurerId === record.id ? 'بستن' : 'نمایش'} طرح‌های ${record.name}`}
+                          className="grid size-8 place-items-center rounded-lg border border-border"
+                          onClick={() =>
+                            setExpandedInsurerId((current) =>
+                              current === record.id ? null : record.id,
+                            )
+                          }
+                          type="button"
+                        >
+                          <ChevronDown
+                            className={`size-4 transition-transform ${expandedInsurerId === record.id ? 'rotate-180' : ''}`}
+                          />
+                        </button>
+                        <button
+                          className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => openProfile(record)}
+                          type="button"
+                        >
+                          {record.name}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-4" dir="ltr">
+                      {attribute(record, 'englishName')}
+                    </td>
+                    <td className="p-4">
+                      {attribute(record, 'organizationName')}
+                    </td>
+                    <td className="p-4">{attribute(record, 'countryName')}</td>
+                    <td className="p-4">
+                      {Number(
+                        attribute(record, 'planCount', '0'),
+                      ).toLocaleString('fa-IR')}
+                    </td>
+                  </>
+                ) : resource === 'insurance-plans' ? (
+                  <>
+                    <td className="p-4 font-mono text-xs" dir="ltr">
+                      {record.code}
+                    </td>
+                    <MasterDataLogoCell record={record} />
+                    <td className="p-4">
+                      <button
+                        aria-controls={`insurer-plans-${record.id}`}
+                        className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => openProfile(record)}
+                        type="button"
+                      >
+                        {record.name}
+                      </button>
+                    </td>
+                    <td className="p-4">{attribute(record, 'insurerName')}</td>
+                    <td className="p-4">
+                      {attribute(record, 'destinationRegion')}
+                    </td>
+                    <td className="p-4">
+                      {attribute(record, 'minimumAge', '0')} تا{' '}
+                      {attribute(record, 'maximumAge', 'بدون سقف')}
+                    </td>
+                    <td className="p-4">
+                      {localDate(attribute(record, 'validFrom'))} تا{' '}
+                      {localDate(attribute(record, 'validTo', 'نامحدود'))}
+                    </td>
+                    <td className="max-w-64 p-4">
+                      {attribute(record, 'coverageNames')}
+                    </td>
+                  </>
+                ) : (
+                  <>
+                    <td className="p-4 font-mono text-xs" dir="ltr">
+                      {record.code}
+                    </td>
+                    <MasterDataLogoCell record={record} />
+                    <td className="p-4">
                       <button
                         className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => openProfile(record)}
@@ -586,89 +1173,48 @@ export function MasterDataInsuranceWorkspace() {
                       >
                         {record.name}
                       </button>
+                    </td>
+                    <td className="p-4 font-mono" dir="ltr">
+                      {attribute(record, 'coverageLimit')}
+                    </td>
+                    <td className="p-4 font-mono" dir="ltr">
+                      {attribute(record, 'currencyCode')}
+                    </td>
+                    <td className="p-4 font-mono" dir="ltr">
+                      {attribute(record, 'deductibleAmount', '0')}
+                    </td>
+                    <td className="max-w-72 p-4 text-muted-foreground">
+                      {attribute(record, 'description')}
+                    </td>
+                    <td className="p-4">
+                      {Number(
+                        attribute(record, 'planCount', '0'),
+                      ).toLocaleString('fa-IR')}
+                    </td>
+                  </>
+                )}
+                <td className="p-4">{statusBadge(record)}</td>
+                <td className="p-4 text-center">{actions(record)}</td>
+              </tr>
+              {resource === 'insurers' && expandedInsurerId === record.id ? (
+                <tr className="border-t border-border">
+                  <td className="p-0" colSpan={9}>
+                    <div id={`insurer-plans-${record.id}`}>
+                      <MasterDataInsurerPlans
+                        insurer={record}
+                        onChanged={async () => {
+                          await Promise.all([
+                            load(),
+                            loadSummary(),
+                            loadRelationSummary(),
+                          ]);
+                        }}
+                      />
                     </div>
                   </td>
-                  <td className="p-4" dir="ltr">
-                    {attribute(record, 'englishName')}
-                  </td>
-                  <td className="p-4">
-                    {attribute(record, 'organizationName')}
-                  </td>
-                  <td className="p-4">{attribute(record, 'countryName')}</td>
-                  <td className="p-4">
-                    {Number(attribute(record, 'planCount', '0')).toLocaleString(
-                      'fa-IR',
-                    )}
-                  </td>
-                </>
-              ) : resource === 'insurance-plans' ? (
-                <>
-                  <td className="p-4 font-mono text-xs" dir="ltr">
-                    {record.code}
-                  </td>
-                  <MasterDataLogoCell record={record} />
-                  <td className="p-4">
-                    <button
-                      className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      onClick={() => openProfile(record)}
-                      type="button"
-                    >
-                      {record.name}
-                    </button>
-                  </td>
-                  <td className="p-4">{attribute(record, 'insurerName')}</td>
-                  <td className="p-4">
-                    {attribute(record, 'destinationRegion')}
-                  </td>
-                  <td className="p-4">
-                    {attribute(record, 'minimumAge', '0')} تا{' '}
-                    {attribute(record, 'maximumAge', 'بدون سقف')}
-                  </td>
-                  <td className="p-4">
-                    {localDate(attribute(record, 'validFrom'))} تا{' '}
-                    {localDate(attribute(record, 'validTo', 'نامحدود'))}
-                  </td>
-                  <td className="max-w-64 p-4">
-                    {attribute(record, 'coverageNames')}
-                  </td>
-                </>
-              ) : (
-                <>
-                  <td className="p-4 font-mono text-xs" dir="ltr">
-                    {record.code}
-                  </td>
-                  <MasterDataLogoCell record={record} />
-                  <td className="p-4">
-                    <button
-                      className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      onClick={() => openProfile(record)}
-                      type="button"
-                    >
-                      {record.name}
-                    </button>
-                  </td>
-                  <td className="p-4 font-mono" dir="ltr">
-                    {attribute(record, 'coverageLimit')}
-                  </td>
-                  <td className="p-4 font-mono" dir="ltr">
-                    {attribute(record, 'currencyCode')}
-                  </td>
-                  <td className="p-4 font-mono" dir="ltr">
-                    {attribute(record, 'deductibleAmount', '0')}
-                  </td>
-                  <td className="max-w-72 p-4 text-muted-foreground">
-                    {attribute(record, 'description')}
-                  </td>
-                  <td className="p-4">
-                    {Number(attribute(record, 'planCount', '0')).toLocaleString(
-                      'fa-IR',
-                    )}
-                  </td>
-                </>
-              )}
-              <td className="p-4">{statusBadge(record)}</td>
-              <td className="p-4">{actions(record)}</td>
-            </tr>
+                </tr>
+              ) : null}
+            </Fragment>
           ))}
         </tbody>
       </table>
@@ -832,7 +1378,9 @@ export function MasterDataInsuranceWorkspace() {
             setReferenceFilter('all');
             setPage(1);
           }}
-          onRefresh={() => void Promise.all([load(), loadSummary()])}
+          onRefresh={() =>
+            void Promise.all([load(), loadSummary(), loadRelationSummary()])
+          }
         />
       </MasterDataFilterBar>
       {content}

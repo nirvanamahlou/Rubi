@@ -350,7 +350,7 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
         <Skeleton className="h-96 rounded-2xl" />
       ) : personal ? (
         <PersonalDetailsForm
-          key={`${profile.user.id}-${personal.photoDocumentId ?? 'none'}`}
+          key={profile.user.id}
           username={profile.user.username}
           initialPhotoUrl={photoUrl}
           initial={{
@@ -360,7 +360,6 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
           }}
           onSave={async (details, photo) => {
             const branchId = profile.user.branches[0]?.id;
-            let photoDocumentId: string | null = personal.photoDocumentId;
             if (photo) {
               if (!branchId)
                 throw new Error('شعبه مجاز برای ذخیره عکس پیدا نشد.');
@@ -368,9 +367,20 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
                 branchId,
                 title: `عکس پروفایل ${details.displayName}`,
                 file: photo,
+                ...details,
               });
-              photoDocumentId = uploaded.data.id;
+              const savedProfile = uploaded.data.profile
+                ? { data: uploaded.data.profile }
+                : await workbenchPersonalApi.updateProfile({
+                    ...details,
+                    photoDocumentId: uploaded.data.id,
+                    photoBranchId: branchId,
+                  });
+              setPersonal(savedProfile.data);
+              window.dispatchEvent(new Event(PROFILE_PHOTO_CHANGED_EVENT));
+              return;
             }
+            const photoDocumentId = personal.photoDocumentId;
             const photoBranchId = photoDocumentId ? (branchId ?? null) : null;
             const response = await workbenchPersonalApi.updateProfile({
               ...details,
@@ -378,8 +388,6 @@ function PersonalPreferences({ profile }: { profile: AuthenticatedProfile }) {
               photoBranchId,
             });
             setPersonal(response.data);
-            if (photo)
-              window.dispatchEvent(new Event(PROFILE_PHOTO_CHANGED_EVENT));
           }}
         />
       ) : null}

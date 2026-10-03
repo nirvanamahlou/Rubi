@@ -461,14 +461,6 @@ export function CooperationWizard({
                         ))}
                     </NativeSearchSelect>
                   </label>
-                  <label className="field">
-                    <span>وضعیت اولیه فرم</span>
-                    <input
-                      className="input"
-                      value="پیش‌نویس — هنوز ذخیره نشده"
-                      readOnly
-                    />
-                  </label>
                 </div>
               </>
             ) : null}
