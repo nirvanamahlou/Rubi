@@ -323,18 +323,16 @@ describe('CustomerService', () => {
 
   it('creates a customer-only person without a national ID or birth date', async () => {
     const repository = {
-      create: vi
-        .fn()
-        .mockResolvedValue({
-          ...row,
-          isPassenger: false,
-          birthDate: null,
-          nationalIdEncrypted: null,
-          nationalIdIv: null,
-          nationalIdAuthTag: null,
-          nationalIdKeyVersion: null,
-          nationalIdMasked: null,
-        }),
+      create: vi.fn().mockResolvedValue({
+        ...row,
+        isPassenger: false,
+        birthDate: null,
+        nationalIdEncrypted: null,
+        nationalIdIv: null,
+        nationalIdAuthTag: null,
+        nationalIdKeyVersion: null,
+        nationalIdMasked: null,
+      }),
     } as unknown as CustomerRepository;
     const { service, nationalIdProtector } = createService(repository);
     await service.create(
