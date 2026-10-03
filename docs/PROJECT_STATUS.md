@@ -4308,3 +4308,7 @@ Reservations inbox includes a search submit button and native Enter submission. 
 ## 2026-10-03 — LOGIN-NORA-TITLE-1003 — PC-A
 
 عنوان نمایان صفحهٔ ورود در دسکتاپ و موبایل «سامانه یکپارچه آژانس نورا» است. عنوان تب موجود «ورود امن نورا» حفظ شد. تغییر فقط متن UI است؛ API، داده، مجوز، Migration و وابستگی تغییر نکردند.
+
+## 2026-10-03 — CUSTOMER-FOUR-FIELDS-1003 — PC-A
+
+Pure person/customer creation now asks for exactly first name, last name, phone and address. Role and record-kind selection remain available; passenger/combined-role creation retains full identity fields and companion entry. Customer-only payload omits hidden passenger and metadata drafts, and persists phone and address through existing versioned Contacts/Addresses APIs with partial-create safeguards. API permits customer-only people without national ID while retaining the national-ID requirement for new passenger/combined-role people. No schema/migration/dependency or operational-data changes. Forty-nine focused Web and thirty-four API tests pass; scoped lint, both typechecks/builds and CI gate the user-authorized develop merge.
