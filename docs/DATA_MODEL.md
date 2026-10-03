@@ -660,3 +660,7 @@ TicketPublishedOffer optionally references originAirportId and destinationAirpor
 ## Sales buyer contact snapshot — PURCHASE-CUSTOMER-DATE-RANGE-1003
 
 `sales_contracts.buyer_contact` is a nullable JSONB AES-256-GCM envelope for contract-entered buyer name, phone, address and postal code. Ciphertext, nonce, auth tag, envelope version and key version are stored; the domain-separated key derives from the existing configured Customer contact root. Sales owns the snapshot and exposes decoded values only through its scoped contract API/output. Customer and payer retain their canonical public Customers IDs, independent of passenger allocation; `customer_name_snapshot` remains the contract party name. Legacy contracts remain null. Later Customer profile edits do not rewrite a saved snapshot; old-client same-buyer contract edits preserve it, while changing buyer clears it unless a new snapshot is supplied. No national ID/passport or operational Customer record is copied into this field.
+
+## TRANSFER-PASSENGER-PRICING-1003
+
+Reservations purchase calculation snapshots optionally retain `chargeablePassengerCount` in existing JSON. Transfer total is unit price times a positive integer count, independent of hotel dates; hotel formula is unchanged. Per-direction purchase rows retain their existing supplier FK, covered service keys, actor UTC timestamp and shared batch ID. No schema migration; historical revisions remain immutable.

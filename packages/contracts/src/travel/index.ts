@@ -345,7 +345,11 @@ export interface ReservationPassengerPurchasePriceV1 {
 }
 
 export interface ReservationServicePurchaseInputV1 {
-  pricingCalculation?: { baseAmount: string; factor: string };
+  pricingCalculation?: {
+    baseAmount: string;
+    factor: string;
+    chargeablePassengerCount?: number;
+  };
   version: 1;
   expectedVersion: number;
   serviceClientKey: string;
@@ -370,6 +374,7 @@ export interface ReservationPurchaseBatchInputV1 {
 }
 
 export interface ReservationServicePurchaseCalculationV1 {
+  chargeablePassengerCount?: number;
   baseAmount: string;
   factor: string;
   nights: number;

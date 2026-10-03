@@ -80,6 +80,16 @@ export const reservationTransferPassengers = (
         }))
     : snapshot.passengerIds.map((id) => ({ id, name: id, age: 'ADT' }));
 
+export function transferPurchaseTotal(price: string, count: string) {
+  if (
+    !/^\d+$/.test(count) ||
+    !Number.isSafeInteger(Number(count)) ||
+    Number(count) <= 0
+  )
+    throw new Error('تعداد نفرات باید عدد صحیح مثبت باشد.');
+  return reservationServicePurchaseTotal(price, count, 1);
+}
+
 export function hotelPurchaseTotal(
   amount: string,
   basis: 'NIGHT' | 'TOTAL',
@@ -160,13 +170,6 @@ export function ReservationHotelPurchase({
   const hotelPurchase = request.servicePurchases?.find(
     (purchase) => purchase.serviceClientKey === hotel?.clientKey,
   );
-  const transferPurchase = request.servicePurchases?.find((purchase) =>
-    transferKeys.some(
-      (key) =>
-        purchase.coveredServiceClientKeys?.includes(key) ||
-        purchase.serviceClientKey === key,
-    ),
-  );
   const [hotelSupplier, setHotelSupplier] = useState<Option | null>(
     hotelPurchase
       ? {
@@ -175,25 +178,9 @@ export function ReservationHotelPurchase({
         }
       : null,
   );
-  const [transferSupplier, setTransferSupplier] = useState<Option | null>(
-    transferPurchase
-      ? {
-          id: transferPurchase.supplierOrganizationId,
-          name: transferPurchase.supplierName,
-        }
-      : null,
-  );
   const [hotelCurrency, setHotelCurrency] = useState<Option | null>(
     hotelPurchase
       ? { id: hotelPurchase.currencyCode, name: hotelPurchase.currencyCode }
-      : null,
-  );
-  const [transferCurrency, setTransferCurrency] = useState<Option | null>(
-    transferPurchase
-      ? {
-          id: transferPurchase.currencyCode,
-          name: transferPurchase.currencyCode,
-        }
       : null,
   );
   const [hotelBase, setHotelBase] = useState(
@@ -202,12 +189,75 @@ export function ReservationHotelPurchase({
   const [hotelFactor, setHotelFactor] = useState(
     hotelPurchase?.pricingCalculation?.factor ?? '1',
   );
-  const [transferBase, setTransferBase] = useState(
-    transferPurchase?.pricingCalculation?.baseAmount ?? '',
+  type TransferDraft = {
+    supplier: Option | null;
+    currency: Option | null;
+    price: string;
+    count: string;
+  };
+  const latestTransfer = (keys: string[]) =>
+    request.servicePurchases?.find(
+      (purchase) =>
+        keys.every((key) =>
+          (
+            purchase.coveredServiceClientKeys ?? [purchase.serviceClientKey]
+          ).includes(key),
+        ) &&
+        (purchase.coveredServiceClientKeys ?? [purchase.serviceClientKey])
+          .length === keys.length,
+    );
+  const initialTransfer = (keys: string[]): TransferDraft => {
+    const purchase = latestTransfer(keys);
+    return {
+      supplier: purchase
+        ? { id: purchase.supplierOrganizationId, name: purchase.supplierName }
+        : null,
+      currency: purchase
+        ? { id: purchase.currencyCode, name: purchase.currencyCode }
+        : null,
+      price: purchase?.pricingCalculation?.baseAmount ?? '',
+      count: String(
+        purchase?.pricingCalculation?.chargeablePassengerCount ??
+          reservationTransferPassengers(request.snapshot, keys).length,
+      ),
+    };
+  };
+  const [splitTransfers, setSplitTransfers] = useState(
+    transfers.length > 1 &&
+      !latestTransfer(transferKeys) &&
+      transfers.every((service) =>
+        Boolean(latestTransfer([service.clientKey])),
+      ),
   );
-  const [transferFactor, setTransferFactor] = useState(
-    transferPurchase?.pricingCalculation?.factor ?? '1',
+  const [combinedTransfer, setCombinedTransfer] = useState(() =>
+    initialTransfer(transferKeys),
   );
+  const [separateTransfers, setSeparateTransfers] = useState(() =>
+    transfers.map((service) => initialTransfer([service.clientKey])),
+  );
+  const transferRows = splitTransfers
+    ? transfers.map((service, index) => ({
+        keys: [service.clientKey],
+        title: service.titleSnapshot,
+        draft: separateTransfers[index]!,
+      }))
+    : [
+        {
+          keys: transferKeys,
+          title:
+            transfers.length > 1
+              ? 'ترانسفر رفت‌وبرگشت'
+              : (transfers[0]?.titleSnapshot ?? 'ترانسفر'),
+          draft: combinedTransfer,
+        },
+      ];
+  const changeTransfer = (index: number, patch: Partial<TransferDraft>) => {
+    if (splitTransfers)
+      setSeparateTransfers((rows) =>
+        rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+      );
+    else setCombinedTransfer((row) => ({ ...row, ...patch }));
+  };
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const attempt = useRef<{ payload: string; key: string } | null>(null);
@@ -220,7 +270,7 @@ export function ReservationHotelPurchase({
     /* Display invalid dates in form. */
   }
   let hotelTotal = '';
-  let transferTotal = '';
+
   try {
     hotelTotal = reservationServicePurchaseTotal(
       hotelBase,
@@ -230,26 +280,28 @@ export function ReservationHotelPurchase({
   } catch {
     /* Validated on save. */
   }
-  try {
-    transferTotal = reservationServicePurchaseTotal(
-      transferBase,
-      transferFactor,
-      nights,
-    );
-  } catch {
-    /* Validated on save. */
-  }
+  const transferTotals = transferRows.map(({ draft }) => {
+    try {
+      return transferPurchaseTotal(draft.price, draft.count);
+    } catch {
+      return '';
+    }
+  });
   const totals = new Map<string, string[]>();
   if (hotel && hotelCurrency && hotelTotal)
     totals.set(hotelCurrency.id, [
       ...(totals.get(hotelCurrency.id) ?? []),
       hotelTotal,
     ]);
-  if (transfers.length && transferCurrency && transferTotal)
-    totals.set(transferCurrency.id, [
-      ...(totals.get(transferCurrency.id) ?? []),
-      transferTotal,
-    ]);
+  if (transfers.length)
+    transferRows.forEach(({ draft }, index) => {
+      const total = transferTotals[index];
+      if (draft.currency && total)
+        totals.set(draft.currency.id, [
+          ...(totals.get(draft.currency.id) ?? []),
+          total,
+        ]);
+    });
 
   async function save() {
     if (busy) return;
@@ -272,22 +324,27 @@ export function ReservationHotelPurchase({
         });
       }
       if (transfers.length) {
-        if (!transferSupplier && !hotelSupplier)
-          throw new Error('کارگزار ترانسفر را انتخاب کنید.');
-        if (!transferCurrency || !transferTotal)
-          throw new Error(
-            'ارز، قیمت پایه، ضریب و تاریخ اقامت قرارداد را تکمیل کنید.',
-          );
-        purchases.push({
-          serviceClientKey: transfers[0]!.clientKey,
-          coveredServiceClientKeys: transferKeys,
-          supplierOrganizationId: (transferSupplier ?? hotelSupplier)!.id,
-          amount: transferTotal,
-          currencyCode: transferCurrency.id,
-          pricingCalculation: {
-            baseAmount: transferBase,
-            factor: transferFactor,
-          },
+        transferRows.forEach(({ keys, draft }, index) => {
+          const supplier =
+            draft.supplier ?? (!splitTransfers ? hotelSupplier : null);
+          if (!supplier)
+            throw new Error('کارگزار هر مسیر ترانسفر را انتخاب کنید.');
+          if (!draft.currency || !transferTotals[index])
+            throw new Error(
+              'ارز، قیمت هر نفر و تعداد نفرات محاسبه‌شونده ترانسفر را تکمیل کنید.',
+            );
+          purchases.push({
+            serviceClientKey: keys[0]!,
+            coveredServiceClientKeys: keys,
+            supplierOrganizationId: supplier.id,
+            amount: transferTotals[index]!,
+            currencyCode: draft.currency.id,
+            pricingCalculation: {
+              baseAmount: draft.price,
+              factor: draft.count,
+              chargeablePassengerCount: Number(draft.count),
+            },
+          });
         });
       }
       if (
@@ -412,65 +469,81 @@ export function ReservationHotelPurchase({
       ) : null}
       {transfers.length ? (
         <section className="space-y-4 rounded-xl border border-border bg-surface p-4">
-          <h4 className="font-bold">
-            {transfers.length > 1
-              ? 'ترانسفر رفت‌وبرگشت'
-              : transfers[0]!.titleSnapshot}
-          </h4>
-          <p className="text-sm text-muted-foreground">
-            {transfers.map((service) => service.titleSnapshot).join('، ')} · یک
-            کارگزار و یک قیمت پایه برای کل خدمت
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="کارگزار ترانسفر">
-              <Lookup
-                kind="organizations"
-                label="کارگزار ترانسفر"
-                value={transferSupplier ?? hotelSupplier}
-                onChange={setTransferSupplier}
+          {transfers.length > 1 && (
+            <label className="flex items-center gap-2 text-sm font-bold">
+              <input
+                type="checkbox"
+                checked={splitTransfers}
+                onChange={(event) => setSplitTransfers(event.target.checked)}
               />
-            </FormField>
-            <FormField label="ارز خرید ترانسفر">
-              <Lookup
-                kind="currencies"
-                label="ارز خرید ترانسفر"
-                value={transferCurrency}
-                onChange={setTransferCurrency}
-              />
-            </FormField>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <FormField label="قیمت پایه ترانسفر">
-              <MoneyInput
-                aria-label="قیمت پایه ترانسفر"
-                value={transferBase}
-                onValueChange={setTransferBase}
-              />
-            </FormField>
-            <FormField label="ضریب ترانسفر">
-              <MoneyInput
-                aria-label="ضریب ترانسفر"
-                value={transferFactor}
-                onValueChange={setTransferFactor}
-              />
-            </FormField>
-          </div>
-          <p className="text-sm">
-            تعداد شب قرارداد: {nights || 'تاریخ اقامت معتبر نیست'}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            قیمت پایه × ضریب × {nights || '—'} شب قرارداد
-          </p>
-          {transferPurchase && (
-            <p className="text-sm">
-              آخرین خرید: {formatSalesMoney(transferPurchase.amount)}{' '}
-              {transferPurchase.currencyCode}
-            </p>
+              کارگزار جدا برای ترانسفر رفت و برگشت
+            </label>
           )}
-          <p className="font-bold">
-            جمع ترانسفر: {transferTotal ? formatSalesMoney(transferTotal) : '—'}{' '}
-            {transferCurrency?.id ?? ''}
-          </p>
+          {transferRows.map(({ keys, title, draft }, index) => (
+            <div
+              key={keys.join('|')}
+              className="space-y-3 rounded-lg border p-3"
+            >
+              <h4 className="font-bold">{title}</h4>
+              {latestTransfer(keys) && (
+                <p className="text-xs text-muted-foreground">
+                  آخرین خرید ثبت‌شده:{' '}
+                  {formatSalesMoney(latestTransfer(keys)!.amount)}{' '}
+                  {latestTransfer(keys)!.currencyCode}
+                </p>
+              )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FormField label="کارگزار ترانسفر">
+                  <Lookup
+                    kind="organizations"
+                    label={title + ' · کارگزار ترانسفر'}
+                    value={
+                      draft.supplier ?? (!splitTransfers ? hotelSupplier : null)
+                    }
+                    onChange={(supplier) => changeTransfer(index, { supplier })}
+                  />
+                </FormField>
+                <FormField label="ارز خرید ترانسفر">
+                  <Lookup
+                    kind="currencies"
+                    label={title + ' · ارز خرید ترانسفر'}
+                    value={draft.currency}
+                    onChange={(currency) => changeTransfer(index, { currency })}
+                  />
+                </FormField>
+                <FormField label="قیمت ترانسفر هر نفر">
+                  <MoneyInput
+                    aria-label={title + ' · قیمت ترانسفر هر نفر'}
+                    value={draft.price}
+                    onValueChange={(price) => changeTransfer(index, { price })}
+                  />
+                </FormField>
+                <FormField label="تعداد نفرات محاسبه‌شونده">
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    className="h-10 w-full rounded-lg border bg-background px-3"
+                    aria-label={title + ' · تعداد نفرات محاسبه‌شونده'}
+                    value={draft.count}
+                    onChange={(event) =>
+                      changeTransfer(index, { count: event.target.value })
+                    }
+                  />
+                </FormField>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                قیمت هر نفر × تعداد نفرات محاسبه‌شونده
+              </p>
+              <p className="font-bold">
+                جمع ترانسفر:{' '}
+                {transferTotals[index]
+                  ? formatSalesMoney(transferTotals[index]!)
+                  : '—'}{' '}
+                {draft.currency?.id ?? ''}
+              </p>
+            </div>
+          ))}
         </section>
       ) : null}
       {services.length ? (
@@ -484,9 +557,11 @@ export function ReservationHotelPurchase({
             type="button"
             disabled={
               busy ||
-              !nights ||
+              Boolean(hotel && !nights) ||
               Boolean(hotel && !hotelTotal) ||
-              Boolean(transfers.length && !transferTotal)
+              Boolean(
+                transfers.length && transferTotals.some((total) => !total),
+              )
             }
             onClick={() => void save()}
           >
