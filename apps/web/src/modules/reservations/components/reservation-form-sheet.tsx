@@ -109,7 +109,7 @@ export function ReservationFormSheet({
     data.passengers,
     settings
       ? Math.max(
-          2,
+          6,
           8 - Math.ceil(Object.values(settings.text).join('').length / 350),
         )
       : 10,
@@ -197,7 +197,7 @@ export function ReservationFormSheet({
                     'ROOMS / NIGHTS',
                     `${data.rooms} ROOMS / ${data.nights} NIGHTS`,
                   ],
-                  ['TOUR LEADER', data.leader],
+                  ...(voucher ? [['TOUR LEADER', data.leader]] : []),
                 ].map(([label, value]) => (
                   <div key={label}>
                     <span>{label}</span>
@@ -214,7 +214,13 @@ export function ReservationFormSheet({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {['LEG', 'AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'].map((t) => (
+                  {[
+                    ...(voucher ? ['LEG'] : []),
+                    'AIRLINE',
+                    'FLIGHT NO.',
+                    'DATE',
+                    'TIME',
+                  ].map((t) => (
                     <th key={t}>{t}</th>
                   ))}
                 </tr>
@@ -233,7 +239,7 @@ export function ReservationFormSheet({
                     ]
                 ).map((f, i) => (
                   <tr key={i}>
-                    <td>{f.leg}</td>
+                    {voucher && <td>{f.leg}</td>}
                     <td dir="auto">{f.airline}</td>
                     <td>{f.number}</td>
                     <td>{f.date}</td>
@@ -426,7 +432,7 @@ export function ReservationFormSheet({
             </div>
             <footer className={styles.footer}>
               <div>
-                <strong dir="auto">{data.brand}</strong>
+                {voucher && <strong dir="auto">{data.brand}</strong>}
                 <span>
                   {voucher
                     ? 'Hotel voucher - present at check-in.'

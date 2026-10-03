@@ -4999,3 +4999,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-contract-actions-1003` from current `origin/develop`. Reserve only Reservations contract action panel, its focused spec and bounded status/assignment docs. Move `مشاهده` to contract information and move the reservation workflow button to contract operations labeled `فرم رزواسیون`. Preserve the contract PDF view and existing workflow command. No API, schema, migration, dependency or operational-data changes. No conflicting active Reservations action-panel owner found; prior action-panel items were merged and released. User requests merge after verification.
 - Delivered the button move and label; «فرم رزواسیون» retains the Reservations workflow, while «مشاهده» stays wired to Sales PDF preview under contract information. Targeted tests, lint, typecheck and production build passed; no API/schema/migration/dependency/data change. Locks release with the reviewed develop merge.
+
+## RESERVATION-SUPPLIER-PDF-1003 — PC-A — READY_FOR_REVIEW
+
+- Branch codex/pc-a-reservation-form-supplier-pdf-1003 from origin/develop. Scope: Reservations supplier form/settings, PDF render/runtime, focused tests and bounded docs. No migration, dependencies, operational data or shared runtime. PC-A owns this slice until handoff.
