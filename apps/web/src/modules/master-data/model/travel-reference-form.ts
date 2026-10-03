@@ -18,7 +18,10 @@ export function travelReferenceFormValues(
     ]),
   );
   values.displayOrder ||= '0';
-  if (resource === 'visa-services') values.referenceValidityMode ||= 'DAYS';
+  if (resource === 'visa-services')
+    values.referenceValidityMode = String(
+      record?.attributes.referenceValidityMode ?? 'DAYS',
+    );
   values.status = record?.status ?? 'active';
   return values;
 }
@@ -111,6 +114,8 @@ export function travelReferenceMutationValues(
   if (!result.success) throw new Error('فیلدهای خدمت را اصلاح کنید.');
   if (result.values.status === (record?.status ?? 'active'))
     delete result.values.status;
+  if (resource === 'visa-services' && record)
+    delete result.values.referenceValidityMode;
   return result.values;
 }
 

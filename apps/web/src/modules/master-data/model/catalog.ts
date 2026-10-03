@@ -2156,13 +2156,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         required: true,
       },
       {
-        key: 'referenceValidityMode',
-        label: 'نوع اعتبار مرجع',
-        type: 'select',
-        placeholder: '',
-        options: [{ value: 'DAYS', label: 'تعداد روز مشخص' }],
-      },
-      {
         key: 'referenceValidityDays',
         label: 'مدت اعتبار مرجع (روز)',
         type: 'number',

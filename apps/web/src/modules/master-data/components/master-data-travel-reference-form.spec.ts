@@ -67,34 +67,45 @@ describe('travel reference form fields', () => {
       expect(html).toContain('در انتظار اتصال رزرو');
     },
   );
-  it('renders every visa field and meaningful guide-reference labeling', () => {
-    const html = render('visa-services', { referenceValidityDays: 90 });
-    for (const label of [
-      'کد',
-      'عنوان فارسی',
-      'کشور مقصد',
-      'نوع ویزا',
-      'مدت اعتبار مرجع',
-      'مدارک راهنما',
-      'وضعیت',
-    ])
-      expect(html).toContain(label);
-    expect(html).toContain('visa-services-referenceValidityDays');
-    expect(html).toContain('value="90"');
-    expect(html).toContain('id="visa-services-guidanceFileReference-help"');
-    expect(html).toContain(
-      'aria-describedby="visa-services-guidanceFileReference-help"',
-    );
-    expect(html).not.toContain('type="file"');
-    expect(html).not.toContain('passportNumber');
-  });
-  it('hides fixed days for passport-expiry policy and preserves clear controls', () => {
+  it.each([
+    ['create', false],
+    ['edit', true],
+  ] as const)(
+    'hides validity mode in the visa %s form while retaining fixed days',
+    (_, editing) => {
+      const html = render(
+        'visa-services',
+        { referenceValidityMode: 'DAYS', referenceValidityDays: 90 },
+        editing,
+      );
+      for (const label of [
+        'کد',
+        'عنوان فارسی',
+        'کشور مقصد',
+        'نوع ویزا',
+        'مدت اعتبار مرجع',
+        'مدارک راهنما',
+        'وضعیت',
+      ])
+        expect(html).toContain(label);
+      expect(html).toContain('visa-services-referenceValidityDays');
+      if (editing) expect(html).toContain('value="90"');
+      expect(html).toContain('id="visa-services-guidanceFileReference-help"');
+      expect(html).toContain(
+        'aria-describedby="visa-services-guidanceFileReference-help"',
+      );
+      expect(html).not.toContain('type="file"');
+      expect(html).not.toContain('passportNumber');
+      expect(html).not.toContain('نوع اعتبار مرجع');
+      expect(html).not.toContain('visa-services-referenceValidityMode');
+    },
+  );
+  it('keeps fixed days hidden for a legacy passport-expiry record', () => {
     const html = render('visa-services', {
       referenceValidityMode: 'PASSPORT_EXPIRY',
       referenceValidityDays: null,
     });
     expect(html).not.toContain('id="visa-services-referenceValidityDays"');
-    expect(html).toContain('aria-label="پاک‌کردن نوع اعتبار مرجع"');
     expect(html).toContain('aria-label="پاک‌کردن وضعیت"');
   });
 });
