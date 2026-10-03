@@ -5095,7 +5095,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Owner explicitly authorized develop merge and local rollout of PR #574 after reviewable implementation. CI gates integration; no database migration is required.
 
-## RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — IN_PROGRESS
+## RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
 - Branch: `codex/pc-a-reservation-supplier-preview-fix-1003`; base: origin/develop e0149279.
 - Scope/locks: Reservations reservation-settings.tsx, travel-workflow-form.tsx, travel-document.tsx and focused tests; appended task/status documentation only.
 - Fix supplier selection placement and reference loading; keep one preview including history/print. No migration, dependency or shared UI changes.
