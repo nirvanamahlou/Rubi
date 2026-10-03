@@ -4252,3 +4252,9 @@ In the selected-contract panel, «فرم رزواسیون» now sits under «ع�
 ## 2026-10-03 — RESERVATION-SINGLE-FORM-FOOTER-1003 — PC-A
 
 Reservation supplier forms now select brokers solely from active Master Data and apply draft settings immediately to the single preview. Settings remain below the form; saved PDF/send actions wait for the revision to be persisted. All passengers remain in one logical form instead of repeating the whole document per passenger chunk; long lists can naturally span physical pages. Footer contact is Reservation@niyayehseir.com with a deployment-origin QR linking to an authenticated, branch-authorized form viewer. Voucher pagination and existing saved revisions are preserved. No API/schema/migration/dependency or operational data changes. Targeted regression tests, independent QR matrix comparison, scoped lint, typecheck and Web production build pass; synthetic six-passenger A4 layout verified.
+
+## 2026-10-03 — RESERVATION-CONTRACT-TERMS-FINANCE-1003 — PC-A — READY_FOR_REVIEW
+
+The supplied two-page travel-contract terms PDF replaces the previous static file byte-for-byte (SHA256 `8ED0C34F4E94F9802A5CA4F9F0CF45DE9AE49FCB92E1018B4AE30D56206767DC`). Reservations’ existing selected-contract «مفاد» action still downloads that shared asset. Sales’ «مدارک» dialog now includes «دانلود مفاد قرارداد» only after the existing server-side finance-authorized travel-document read succeeds; the API’s financial release checks remain the access gate for the dialog. 13 focused Sales/Reservations tests, scoped lint, Web typecheck and the 55-route production build passed before updating from develop; re-run after merge. The PDF was rendered and visually checked, and the copied file hash matches the supplied source. No API, permission, database, migration or runtime change. See `docs/tasks/RESERVATION-CONTRACT-TERMS-FINANCE-1003.md`.
+
+\r\n
