@@ -701,7 +701,7 @@ export function MasterDataAccommodationWorkspace() {
 
   function actions(record: MasterDataRecord) {
     return (
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         <Button
           aria-label={`مشاهده ${record.name}`}
           onClick={() => {
@@ -939,7 +939,12 @@ export function MasterDataAccommodationWorkspace() {
           <thead className="bg-muted/50 text-muted-foreground">
             <tr>
               {headers.map((header) => (
-                <th className="p-4 text-start" key={header}>
+                <th
+                  className={
+                    header === 'عملیات' ? 'p-4 text-center' : 'p-4 text-start'
+                  }
+                  key={header}
+                >
                   {header}
                 </th>
               ))}
@@ -1068,7 +1073,7 @@ export function MasterDataAccommodationWorkspace() {
                     </td>
                   </>
                 )}
-                <td className="p-4">{actions(record)}</td>
+                <td className="p-4 text-center">{actions(record)}</td>
               </tr>
             ))}
           </tbody>
