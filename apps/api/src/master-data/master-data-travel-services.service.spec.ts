@@ -103,6 +103,7 @@ describe('MasterDataService travel services', () => {
         total: 0,
         active: 0,
         destinations: 0,
+        multilingual: 0,
         incompleteDocuments: null,
       },
       tourTypes: { total: 0, active: 0, domestic: 0, international: 0 },

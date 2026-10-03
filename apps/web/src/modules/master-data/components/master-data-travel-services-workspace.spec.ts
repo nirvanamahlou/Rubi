@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
 
 import { getMasterDataSection } from '../model/sections';
+import { availableTravelKpiValue } from './master-data-travel-services-workspace';
 
 const source = readFileSync(
   resolve(
@@ -105,6 +106,11 @@ function travelTableContracts() {
 }
 
 describe('travel services workspace', () => {
+  it('preserves zero and marks old missing summary values unavailable', () => {
+    expect(availableTravelKpiValue(0)).toBe(0);
+    expect(availableTravelKpiValue(undefined)).toBe('—');
+    expect(availableTravelKpiValue(null)).toBe('—');
+  });
   it('keeps the remaining mockup tabs and their exact KPI labels', () => {
     for (const label of [
       'لیدرها',
@@ -113,7 +119,7 @@ describe('travel services workspace', () => {
       'ویزا',
       'کل لیدرها',
       'مقصدها',
-      'مدرک ناقص',
+      'لیدرهای چندزبانه',
       'داخلی',
       'خارجی',
       'اختصاصی',
@@ -152,6 +158,11 @@ describe('travel services workspace', () => {
 
   it('uses backend summaries and never embeds mockup sample records', () => {
     expect(source).toContain('masterDataApi.travelServicesSummary()');
+    expect(source).toContain('summary?.leaders.multilingual');
+    expect(source).toContain("fourthHint: 'در کل اطلاعات پایه'");
+    expect(source).not.toContain(
+      'fourthValue: summary?.leaders.incompleteDocuments',
+    );
     expect(source).not.toContain('سارا احمدی');
     expect(source).not.toContain('Marhaba Elite');
     expect(source).not.toMatch(/value:\s*(?:86|74|48|41|26|23)\b/);
