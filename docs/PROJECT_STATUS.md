@@ -4272,4 +4272,8 @@ Removed the visible registration title and explanatory paragraph from the Organi
 
 ## 2026-10-03 — RESERVATION-SELECTION-BLUE-1003 — PC-A
 
-Selected Reservation request rows now use the exact screenshot color #0078D7 with white text across all cells and status tones, in light and dark modes. The pink identity-cell override no longer masks selection; unselected status presentation remains intact. Compact row height, viewport, controls and keyboard selection are preserved. Nineteen existing foundation tests and synthetic Chrome computed-style/visual QA pass. Scoped lint/typecheck/build and CI precede user-authorized merge. No API/schema/migration/dependency/data change.
+Selected Reservation request rows now use the exact screenshot color #0078D7 with white text across all cells and status tones, in light and dark modes. The pink identity-cell override no longer masks selection; unselected status presentation remains intact. Compact row height, viewport, controls and keyboard selection are preserved. Nineteen existing foundation tests and synthetic Chrome computed-style QA pass. Scoped lint/typecheck/build and CI precede user-authorized merge. No API/schema/migration/dependency/data change.
+
+## 2026-10-03 — CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B
+
+Removed the fetched-at/access/date-range metadata line from the Customer Affairs report header. Date filters and the selected range passed to PDF export remain unchanged. Four focused component tests, scoped lint, Web typecheck and production build pass. No API, schema, permission, dependency, operational data, or live runtime change.
