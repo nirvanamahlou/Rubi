@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
 
 import { getMasterDataSection } from '../model/sections';
-import { availableTravelKpiValue } from './master-data-travel-services-workspace';
+import {
+  availableTravelKpiValue,
+  travelServicesExportColumns,
+} from './master-data-travel-services-workspace';
 
 const source = readFileSync(
   resolve(
@@ -243,5 +246,85 @@ describe('travel services workspace', () => {
     expect(source).toContain('label="آخرین تغییر"');
     expect(source).toContain('tourTypeUpdatedLabel(selected, tourActorNames)');
     expect(source).toContain("'updatedAt',");
+  });
+
+  it('builds exact unique canonical Excel columns for all four resources', () => {
+    const expected = {
+      leaders: [
+        'code',
+        'name',
+        'englishName',
+        'cityId',
+        'languages',
+        'expertise',
+        'destinations',
+        'welcomeSignCode',
+        'operationalNotes',
+        'status',
+        'updatedAt',
+      ],
+      'tour-types': [
+        'code',
+        'name',
+        'englishName',
+        'scope',
+        'description',
+        'displayOrder',
+        'status',
+        'updatedAt',
+      ],
+      'transfer-types': [
+        'code',
+        'name',
+        'englishName',
+        'vehicleType',
+        'serviceMode',
+        'suggestedCapacity',
+        'suggestedCapacityMin',
+        'description',
+        'displayOrder',
+        'status',
+        'updatedAt',
+      ],
+      'visa-services': [
+        'code',
+        'name',
+        'englishName',
+        'countryId',
+        'visaType',
+        'referenceValidityMode',
+        'referenceValidityDays',
+        'guidanceFileReference',
+        'description',
+        'displayOrder',
+        'status',
+        'updatedAt',
+      ],
+    } as const;
+
+    for (const resource of resources) {
+      const columns = travelServicesExportColumns(resource);
+      expect(columns).toEqual(expected[resource]);
+      expect(new Set(columns).size).toBe(columns.length);
+    }
+    expect(travelServicesExportColumns('leaders')).not.toEqual(
+      expect.arrayContaining(['primaryPhone', 'roamingPhone']),
+    );
+  });
+
+  it('binds the canonical columns to the existing resource and filters', () => {
+    const download = source.slice(
+      source.indexOf('async function downloadExcel()'),
+      source.indexOf('function renderFilters()'),
+    );
+    expect(download).toContain('resource,');
+    expect(download).toContain('filters,');
+    expect(download).toContain(
+      'columns: travelServicesExportColumns(resource)',
+    );
+    expect(download).toContain("resource === 'leaders'");
+    expect(download).toContain("resource === 'tour-types'");
+    expect(download).toContain("resource === 'transfer-types'");
+    expect(download).toContain("resource === 'visa-services'");
   });
 });

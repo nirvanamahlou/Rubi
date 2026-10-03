@@ -105,6 +105,25 @@ const tabs = [
 
 type TravelResource = (typeof tabs)[number]['resource'];
 
+const nonExportableLeaderFields = new Set(['primaryPhone', 'roamingPhone']);
+
+export function travelServicesExportColumns(resource: TravelResource) {
+  const definition = getMasterDataDefinition(resource);
+  return [
+    ...new Set([
+      'code',
+      ...definition.fields
+        .map((field) => field.key)
+        .filter(
+          (field) =>
+            resource !== 'leaders' || !nonExportableLeaderFields.has(field),
+        ),
+      'status',
+      'updatedAt',
+    ]),
+  ];
+}
+
 export function availableTravelKpiValue(value: number | null | undefined) {
   return value ?? '—';
 }
@@ -574,13 +593,7 @@ export function MasterDataTravelServicesWorkspace() {
         resource,
         format: 'xlsx',
         filters,
-        columns: [
-          'code',
-          'name',
-          ...definition.fields.map((field) => field.key),
-          'status',
-          'updatedAt',
-        ],
+        columns: travelServicesExportColumns(resource),
         locale: 'fa-IR',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });

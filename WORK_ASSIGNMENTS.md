@@ -1,3 +1,8 @@
+## TRAVEL-SERVICES-EXCEL-EXPORT-1003 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-travel-services-excel-export-1003` from origin/develop@adc52d28. Reserved only Travel Services Excel column construction and existing workspace regression spec, plus own bounded status entries. All four resources now submit unique canonical columns; unavailable raw Leader phone inputs are omitted without exposing decrypted or new masked fields. Resource/effective filters, API validation/permissions, workbook contract and forms remain unchanged.
+- Focused regression (8), all 467 Master Data Web tests, scoped ESLint, Web typecheck and the 55-route production build pass. Safe in-memory XLSX diagnostics generated and unzipped all four resource workbooks, verifying the exact ordered header labels and every sample field value across 11/8/11/12 aligned header/data cells. No authenticated browser/runtime, database, schema, migration, dependency, API or contract change was performed; bounded locks release with commit.
+
 ## FLIGHT-MULTIPLE-CABINS-1003 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-flight-multiple-cabins-1003` from `origin/develop@977266e2`. Owner requests multiple cabin classes with independent capacity in new-flight entry and adjacent per-class Sales ticket pricing, then develop merge after checks.
