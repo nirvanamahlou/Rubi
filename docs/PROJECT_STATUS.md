@@ -2,6 +2,10 @@
 
 Excel download for Leaders, Tour Types, Transfer Types and Visa Services now submits each canonical column once. Leader exports intentionally omit the unavailable raw phone input fields rather than exposing decrypted data or expanding the API with masked fields. The existing selected resource, effective filters, permission boundary and workbook contract remain unchanged. Focused regression (8), all 467 Master Data Web tests, scoped ESLint, Web typecheck and the 55-route production build pass. Safe in-memory diagnostics generated and unzipped all four workbooks, confirming the exact ordered header labels and every sample field value across 11/8/11/12 aligned header/data cells. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
 
+## 2026-10-03 — FLIGHT-MULTIPLE-CABINS-1003 — PC-A — READY_FOR_REVIEW
+
+Weekly and advanced flight creation now accept multiple cabin classes with their own capacities, for example 20 Economy seats and 5 Business seats, and show the combined total. Each class publishes an independent existing inventory/offer; duplicates and invalid capacities fail before publication, and recurring/shared-return flights and retries preserve per-cabin identity. Sales ticket pricing groups the same flight's cabins below each other, labels the class and its total/remaining seats, and keeps independent price/tier/commission editors. 199 tests, full/scoped Web lint, typecheck and the 55-route Webpack production build pass; GitHub's normal production build also passes. No migration, shared API, dependency, permission, operational-data or primary-runtime change. PR #571 targets develop; final CI gates owner-authorized merge. Scoped locks release with the handoff commit. See docs/tasks/FLIGHT-MULTIPLE-CABINS-1003.md.
+
 ## 2026-10-03 — LEADER-REPLACE-DOCS-KPI-1003 — PC-B — READY_FOR_REVIEW
 
 The Leader fourth KPI is now global `لیدرهای چندزبانه`, counting each leader once only when at least two distinct nonblank trimmed case-normalized languages exist. The existing global query now selects languages beside destinations without an extra query; zero remains zero and old/missing/loading/error summary values render `—`. The optional additive contract preserves `incompleteDocuments: null`. Focused API/Web tests (8/6), full Master Data API/Web suites (478/465), scoped lint, contracts/database builds, API/Web typechecks and API/Web production builds pass. Prisma Client was refreshed generate-only with a process-local dummy URL and no DB contact or tracked output. No authenticated runtime QA was performed; locks release with commit.
@@ -4265,6 +4269,19 @@ Reservation supplier forms now select brokers solely from active Master Data and
 The supplied two-page travel-contract terms PDF replaces the previous static file byte-for-byte (SHA256 `8ED0C34F4E94F9802A5CA4F9F0CF45DE9AE49FCB92E1018B4AE30D56206767DC`). Reservations’ existing selected-contract «مفاد» action still downloads that shared asset. Sales’ «مدارک» dialog now includes «دانلود مفاد قرارداد» only after the existing server-side finance-authorized travel-document read succeeds; the API’s financial release checks remain the access gate for the dialog. 13 focused Sales/Reservations tests, scoped lint, Web typecheck and the 55-route production build passed before updating from develop; re-run after merge. The PDF was rendered and visually checked, and the copied file hash matches the supplied source. No API, permission, database, migration or runtime change. See `docs/tasks/RESERVATION-CONTRACT-TERMS-FINANCE-1003.md`.
 
 \r\n
+
+## 2026-10-03 — RESERVATION-COMPACT-ROWS-1003 — PC-A
+
+Reservation request table minimum body-row height decreases from 46px to 36px while the existing 440px scroll viewport and columns remain unchanged. Saved status actor/time renders beside its checkbox so populated flags do not force tall rows; no audit information, permissions or operations are removed. Synthetic browser layout confirms roughly two more complete contracts. Twenty existing foundation/status tests, scoped lint and Web typecheck passed; production build and CI gate the explicitly requested develop merge. No API/schema/migration/dependency/data change.
+
 ## 2026-10-03 — B2B-REGISTRATION-COPY-1003 — PC-B
 
 Removed the visible registration title and explanatory paragraph from the Organizations directory toolbar at the owner's request. Registration and Excel actions retain their existing handlers and the region retains its accessible name. No API, data, migration or runtime change. Validation and user-authorized develop merge are recorded in the matching Work Item.
+
+## 2026-10-03 — RESERVATION-SELECTION-BLUE-1003 — PC-A
+
+Selected Reservation request rows now use the exact screenshot color #0078D7 with white text across all cells and status tones, in light and dark modes. The pink identity-cell override no longer masks selection; unselected status presentation remains intact. Compact row height, viewport, controls and keyboard selection are preserved. Nineteen existing foundation tests and synthetic Chrome computed-style QA pass. Scoped lint/typecheck/build and CI precede user-authorized merge. No API/schema/migration/dependency/data change.
+
+## 2026-10-03 — CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B
+
+Removed the fetched-at/access/date-range metadata line from the Customer Affairs report header. Date filters and the selected range passed to PDF export remain unchanged. Four focused component tests, scoped lint, Web typecheck and production build pass. No API, schema, permission, dependency, operational data, or live runtime change.

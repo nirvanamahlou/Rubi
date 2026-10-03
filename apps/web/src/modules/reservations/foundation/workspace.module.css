@@ -497,7 +497,7 @@
   margin-top: 12px;
 }
 .requestTable tbody tr {
-  height: 46px;
+  height: 36px;
 }
 .requestTable {
   border-collapse: separate;
@@ -544,10 +544,11 @@
   color: inherit;
   font-weight: 700;
 }
-.requestTable tr[data-selected='true'] td {
-  box-shadow:
-    inset 0 2px var(--primary),
-    inset 0 -2px var(--primary);
+.requestTable tbody tr[data-selected='true'] td,
+.requestTable tbody tr[data-selected='true'] td:first-child {
+  background: #0078d7;
+  color: #ffffff;
+  border-color: rgb(255 255 255 / 30%);
 }
 .requestTable tr:focus-visible {
   outline: 2px solid var(--ring);
@@ -578,4 +579,13 @@
 }
 .exportBar small {
   color: var(--muted-foreground);
+}
+
+/* Keep saved status actor/time beside the checkbox within compact rows. */
+.requestTable td > span:has(> small) {
+  flex-direction: row;
+  gap: 6px;
+}
+.requestTable td > span > small {
+  line-height: 12px;
 }

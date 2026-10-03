@@ -27,12 +27,17 @@ import {
   selectableSupply,
   transportLabels,
 } from '../model/preview';
+import { FlightCabinCapacities } from './flight-cabin-capacities';
 import styles from './ticket-form.module.css';
 import { ReferencePicker } from './reference-picker';
 import { TicketDatePicker } from './ticket-date-picker';
 import { ManifestTemplatePicker } from './manifest-template-picker';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import type { PublishedResource } from '../api/references';
+import {
+  expandFlightCabins,
+  type FlightCabinCapacity,
+} from '../model/flight-cabins';
 
 type TicketDefinitionMode = 'one-way' | 'round-trip' | 'combined';
 
@@ -632,6 +637,7 @@ export function TicketForm({
   onCancel,
   readOnly = false,
   allowRoundTrip = false,
+  allowMultipleClasses = false,
 }: {
   initial: ProductInput;
   references: readonly Reference[];
@@ -643,6 +649,7 @@ export function TicketForm({
   onCancel: () => void;
   readOnly?: boolean;
   allowRoundTrip?: boolean;
+  allowMultipleClasses?: boolean;
 }) {
   const [input, setInput] = useState(initial);
   const [definitionMode, setDefinitionMode] = useState<TicketDefinitionMode>(
@@ -659,6 +666,21 @@ export function TicketForm({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
+  const tripGroup = useRef<string | undefined>(undefined);
+  const [additionalCabins, setAdditionalCabins] = useState<
+    FlightCabinCapacity[]
+  >([]);
+  const cabinInputs = (definition: ProductInput) =>
+    expandFlightCabins(
+      definition,
+      allowMultipleClasses ? additionalCabins : [],
+      references,
+    ).map((item) =>
+      withDisplaySnapshot(
+        { ...item, title: buildAutomaticTicketTitle(item, references) },
+        references,
+      ),
+    );
   const updateInput = (value: ProductInput) => {
     setError('');
     setInput(value);
@@ -726,6 +748,7 @@ export function TicketForm({
       segments: [{ ...returnSegment, ...patch }],
     });
   function chooseTransport(transport: TransportType) {
+    setAdditionalCabins([]);
     const fresh = emptyInput(transport);
     const freshSegment = fresh.segments[0]!;
     updateInput({
@@ -769,7 +792,9 @@ export function TicketForm({
       if (!input.serviceDate && !input.segments[0]?.departureAt)
         throw new Error('تاریخ اولین بلیط را انتخاب کنید.');
       const roundTrip = definitionMode === 'round-trip' && allowRoundTrip;
-      const groupId = roundTrip ? crypto.randomUUID() : undefined;
+      const groupId = roundTrip
+        ? (tripGroup.current ??= crypto.randomUUID())
+        : undefined;
       const baseDefinition: ProductInput = {
         ...input,
         journeyRole: roundTrip
@@ -815,8 +840,11 @@ export function TicketForm({
           },
           references,
         );
-        await onSave([definition, returnDefinition], reason);
-      } else await onSave([definition], reason);
+        await onSave(
+          [...cabinInputs(definition), ...cabinInputs(returnDefinition)],
+          reason,
+        );
+      } else await onSave(cabinInputs(definition), reason);
       setError('');
     } catch (problem) {
       setError(
@@ -1178,7 +1206,14 @@ export function TicketForm({
                 </SelectContent>
               </Select>
             </FormField>
-            <FormField label="ظرفیت کل" id="ticket-capacity">
+            <FormField
+              label={
+                allowMultipleClasses && input.transport === 'flight'
+                  ? 'ظرفیت کلاس انتخاب‌شده'
+                  : 'ظرفیت کل'
+              }
+              id="ticket-capacity"
+            >
               <Input
                 id="ticket-capacity"
                 type="number"
@@ -1200,6 +1235,17 @@ export function TicketForm({
             </FormField>
           </div>
         </section>
+        {allowMultipleClasses && input.transport === 'flight' ? (
+          <FlightCabinCapacities
+            cabins={additionalCabins}
+            primaryCapacity={input.totalCapacity}
+            references={references}
+            onReference={onReference}
+            onChange={setAdditionalCabins}
+            roundTrip={definitionMode === 'round-trip'}
+            disabled={readOnly || saving}
+          />
+        ) : null}
         <section className="space-y-4">
           <h3 className="font-bold text-primary">
             ۵. درخواست قیمت خرید از مالی

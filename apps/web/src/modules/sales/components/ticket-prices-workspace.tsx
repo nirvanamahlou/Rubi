@@ -45,6 +45,7 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { SalesDatePicker } from './sales-date-picker';
 import {
   ticketPriceRows,
+  ticketCabinLabel,
   clearSavedCommissionDrafts,
   filterTicketRows,
   netTicketPrice,
@@ -348,6 +349,7 @@ export function TicketPricesWorkspace() {
       [
         offer.carrierName,
         offer.serviceNumber,
+        ticketCabinLabel(offer.cabinClassCode),
         cities[offer.originId] ?? offer.originId,
         cities[offer.destinationId] ?? offer.destinationId,
         faDay.format(new Date(offer.departureAt)),
@@ -1254,13 +1256,16 @@ function FlightSummary({
         <>
           <p className="break-words text-sm font-semibold">
             {offer.carrierName} · <bdi>{offer.serviceNumber}</bdi>
+            {' · '}
+            {ticketCabinLabel(offer.cabinClassCode)}
           </p>
           <p className="text-sm">
             <bdi>{faDay.format(new Date(offer.departureAt))}</bdi> ·{' '}
             <bdi>{faTime.format(new Date(offer.departureAt))}</bdi>
           </p>
           <p className="text-xs text-muted-foreground">
-            ظرفیت: {offer.remainingCapacity.toLocaleString('fa-IR')}
+            ظرفیت کلاس: {offer.totalCapacity.toLocaleString('fa-IR')} · مانده:{' '}
+            {offer.remainingCapacity.toLocaleString('fa-IR')}
           </p>
         </>
       ) : (
