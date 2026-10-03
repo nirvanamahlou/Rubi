@@ -4292,3 +4292,7 @@ Removed the fetched-at/access/date-range metadata line from the Customer Affairs
 ## 2026-10-03 — VOUCHER-BROKER-LEADER-1003 — PC-A
 
 واچر هتل نام کارگزار را در SUPPLIER و Board او را در TRANSFER نشان می‌دهد. پیش از صدور، کاربر کارگزار و تورلیدر وابسته به او را انتخاب می‌کند یا تورلیدر را با تلفن در اطلاعات پایهٔ همان کارگزار ثبت می‌کند. شمارهٔ کامل تنها در مسیر مجوزدار سند واچر خوانده و ممیزی می‌شود. فیلدهای علامت‌خوردهٔ خلاصه، پرواز، مسافران، توضیحات و پایین واچر حذف و خلاصه فشرده شد. رابطهٔ nullable تورلیدر به کارگزار با migration افزایشی اضافه شده؛ رکوردهای تاریخی بدون کارگزار باقی می‌مانند. Migration عملیاتی اجرا نشده و پیش از rollout API باید اعمال شود.
+
+## 2026-10-03 — RESERVATION-SEARCH-BUTTON-1003 — PC-A
+
+Reservations inbox includes a search submit button and native Enter submission. Keyword entry is applied on submission; existing status/service/date/sort filters continue to apply immediately, and clear resets both entry and filters to the default previous-month window. Default bounds now respect the selected contract/received/travel date basis instead of silently forcing contract date. Search normalizes Persian/Arabic digits and Yeh/Kaf consistently across supported fields. Twenty-two foundation regressions cover combined filters, invalid dates, normalized keywords, default date-basis behavior and accessible submit controls. No API/schema/migration/dependency/data change; review PR precedes integration.
