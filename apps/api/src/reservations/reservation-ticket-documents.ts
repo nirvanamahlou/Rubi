@@ -81,17 +81,17 @@ export class ReservationTicketDocumentsService {
       return choice.document;
     }
     if (choice.automatic && supplied)
-      throw new BadRequestException('شماره ظرفیت شرکت خودکار است.');
+      throw new BadRequestException('شماره بلیط چارتر ظرفیت شرکت خودکار است.');
     if (!choice.automatic && !/^[0-9]{6}$/.test(supplied))
       throw new BadRequestException(
         'شماره بلیط شناور را با ۶ رقم انگلیسی وارد کنید.',
       );
     return this.db.client.$transaction(async (tx) => {
       await tx.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtextextended(${id},0))`,
+        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${id},0))`,
       );
       await tx.$queryRaw(
-        Prisma.sql`SELECT pg_advisory_xact_lock(hashtext('reservation-ticket-number'))`,
+        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext('reservation-ticket-number'))`,
       );
       const intake = await tx.reservationIntake.findFirst({
         where: { id, branchId: { in: [...actor.branchIds] } },

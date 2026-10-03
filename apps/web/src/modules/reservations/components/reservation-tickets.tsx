@@ -396,7 +396,8 @@ export function ReservationTickets({
                         (row) => row.customerId === ticket.passengerId,
                       )?.automatic ? (
                         <span className="text-sm text-muted-foreground">
-                          شماره ظرفیت شرکت به‌صورت خودکار صادر می‌شود.
+                          شماره بلیط چارتر ظرفیت شرکت به‌صورت خودکار صادر
+                          می‌شود.
                         </span>
                       ) : (
                         <input
