@@ -9,6 +9,7 @@ import {
 import type {
   ReservationArrangementUpdateV1,
   ReservationIntakeV1,
+  ReservationServicePurchaseCalculationV1,
   SalesReservationRequestV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
@@ -101,6 +102,15 @@ function present(
         supplierName: purchase.supplierNameSnapshot,
         amount: purchase.amount.toString(),
         currencyCode: purchase.currencyCode,
+        ...(!Array.isArray(purchase.passengerPrices) &&
+        purchase.passengerPrices &&
+        typeof purchase.passengerPrices === 'object' &&
+        'calculation' in purchase.passengerPrices
+          ? {
+              pricingCalculation: purchase.passengerPrices
+                .calculation as unknown as ReservationServicePurchaseCalculationV1,
+            }
+          : {}),
         passengerPrices: Array.isArray(purchase.passengerPrices)
           ? (purchase.passengerPrices as unknown as {
               customerId: string;
