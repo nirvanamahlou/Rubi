@@ -4368,3 +4368,6 @@ User creation now saves the current explicit access selections even while option
 ## 2026-10-03 — SALES-DASHBOARD-NEGATIVE-BALANCE-1003 — PC-A — READY_FOR_REVIEW
 
 Sales dashboard aggregation now accepts legitimate negative computed balances from overpayment while rejecting negative payment input. The failing regression was reproduced before the fix; all 88 Sales API tests, scoped lint, formatting, Contracts/Database builds, API typecheck and production build pass. Prisma Client was regenerated locally without database access. No schema, permission, dependency or operational-data change.
+## 2026-10-03 — AIRLINE-HIDE-REFERENCE-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
+
+The Airlines list now omits Logo Reference and Integration Connection while preserving IATA, ICAO, airline name, country, the independent authenticated Logo column, status and all actions. Version / Audit was already absent and remains absent; forms, View, Excel, API, audit and integration data are unchanged. Focused 18 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA.

@@ -17,8 +17,6 @@ export function transportColumns(
         ['icaoCode', 'ICAO'],
         ['name', 'ایرلاین'],
         ['countryName', 'کشور'],
-        ['logoFileReference', 'لوگو Reference'],
-        ['integrationConnectionReference', 'Integration Connection'],
       ];
     case 'aircraft-types':
       return [
