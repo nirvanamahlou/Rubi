@@ -98,16 +98,12 @@ const sections = [
   },
   {
     id: 'reports',
-    title: 'گزارش و Audit',
+    title: 'گزارش فعالیت‌ها',
     icon: ChartNoAxesCombined,
     accent: '#596f91',
     tint: '#f0f4f8',
     description: 'خروجی مجاز و تاریخچه تغییرات و دسترسی حساس',
-    tabs: [
-      ['reports', 'گزارش‌ها'],
-      ['audit', 'Audit'],
-      ['export', 'خروجی'],
-    ],
+    tabs: [['reports', 'گزارش فعالیت‌ها']],
   },
 ] as const;
 
@@ -594,7 +590,6 @@ export function CorporateProfile({
             <OrganizationActivityPanel
               key={organization.id}
               organizationId={organization.id}
-              tab={tab}
             />
           ) : screen === 'finance' ? (
             <OrganizationFinancePreview
