@@ -17,7 +17,7 @@ describe('mockup column coverage', () => {
     'bus-companies',
     'bus-types',
   ] as const)('has individual columns and two filters for %s', (resource) => {
-    expect(transportColumns(resource).length).toBeGreaterThanOrEqual(6);
+    expect(transportColumns(resource).length).toBeGreaterThanOrEqual(5);
     expect(getMasterDataColumnFilters(resource)).toHaveLength(2);
     expect(new Set(transportColumns(resource).map(([key]) => key)).size).toBe(
       transportColumns(resource).length,
@@ -31,7 +31,6 @@ describe('mockup column coverage', () => {
       'کشور',
       'لوگو Reference',
       'Integration Connection',
-      'Version / Audit',
     ]);
     expect(
       transportColumns('airlines').map(([, label]) => label),
@@ -52,18 +51,34 @@ describe('mockup column coverage', () => {
   });
   it('shows only the required English title for cabin classes', () => {
     expect(transportColumns('cabin-classes').map(([, label]) => label)).toEqual(
-      [
-        'کد',
-        'عنوان انگلیسی',
-        'کد رزرو',
-        'ترتیب',
-        'استفاده در Ticket Catalog',
-        'Version / Audit',
-      ],
+      ['کد', 'عنوان انگلیسی', 'کد رزرو', 'ترتیب', 'استفاده در Ticket Catalog'],
     );
     expect(
       transportColumns('cabin-classes').map(([, label]) => label),
     ).not.toContain('عنوان فارسی');
+  });
+  it('removes combined audit columns while preserving independent versions', () => {
+    for (const resource of [
+      'airlines',
+      'cabin-classes',
+      'rail-companies',
+      'bus-companies',
+    ] as const) {
+      expect(transportColumns(resource).map(([key]) => key)).not.toContain(
+        'versionAudit',
+      );
+      expect(
+        transportColumns(resource).map(([, label]) => label),
+      ).not.toContain('Version / Audit');
+    }
+    expect(transportColumns('baggage-rules')).toContainEqual([
+      'version',
+      'Version',
+    ]);
+    expect(transportColumns('manifest-templates')).toContainEqual([
+      'versionNumber',
+      'نسخه قالب',
+    ]);
   });
   it('does not invent external connections or capacity', () => {
     const record = {
