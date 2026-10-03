@@ -35,6 +35,9 @@ describe('travel output branding and readiness', () => {
     expect(html).toContain('SYNTHETIC');
   });
   it('renders an issued hotel voucher with booking reference and stamp in the shared theme', () => {
+    const settings = defaultVoucherSettings(intake, {});
+    settings.text.broker = 'SYNTHETIC BROKER';
+    settings.flags.hotel = true;
     const html = renderToStaticMarkup(
       <TravelDocument
         intake={{
@@ -44,6 +47,7 @@ describe('travel output branding and readiness', () => {
             voucherIssued: true,
             supplierStatus: 'CONFIRMED',
             supplierReference: 'SUPPLIER-TEST',
+            voucherSettings: settings,
           },
         }}
         voucher
@@ -51,7 +55,7 @@ describe('travel output branding and readiness', () => {
     );
     expect(html).toContain('HOTEL VOUCHER');
     expect(html).toContain('دانلود واچر');
-    expect(html).toContain('SUPPLIER-TEST');
+    expect(html).toContain('SYNTHETIC BROKER');
     expect(html).toContain('STAMP');
     expect(html).toContain('ROOM QUANTITIES BY TYPE');
     expect(html).not.toContain('subject to supplier confirmation');
