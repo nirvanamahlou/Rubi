@@ -5029,6 +5029,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Delivered: replaced the shared PDF with the supplied two-page source (SHA256 `8ED0C34F4E94F9802A5CA4F9F0CF45DE9AE49FCB92E1018B4AE30D56206767DC`) and added “دانلود مفاد قرارداد” inside the Sales travel-documents dialog, rendered only after the existing authorized server read succeeds. Reservations keeps its existing selected-contract download link.
 - Validation before develop update: 13 focused Sales/Reservations tests, scoped ESLint, Web TypeScript check and 55-route production build pass; supplied PDF visually reviewed and source/asset hashes match. Re-run after update. No schema, API, permission or runtime changes. `Central docs`, `Migration`, `Dependency/Lockfile` and IAM reservations release with this review-ready commit.
 
+## RESERVATION-COMPACT-ROWS-1003 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-reservation-compact-rows-1003 from origin/develop. Reserve only Reservations foundation/workspace.module.css and bounded assignment/status docs. Reduce request table body rows from 46px to 36px to fit roughly two more contracts in the unchanged 440px viewport. No active overlapping table stylesheet owner; source/form work is merged and released. No API, data, migration, dependencies or shared component changes. User explicitly requests develop merge and prior local rollout authorization remains.
+
+- Delivered 36px minimum table body rows with the existing 440px viewport preserved. Saved status actor/time sits beside its checkbox, retaining both text and tooltip. Synthetic browser layout shows approximately two additional complete contracts; no clipping or data/UI-action loss. Twenty existing foundation/status tests passed (15s runner timeout for local load), scoped lint and Web typecheck verified. Production build and CI precede authorized develop merge; source lock releases with scoped commit.
+
 ## B2B-REGISTRATION-COPY-1003 — PC-B — READY_FOR_REVIEW
 
 - Owner requests removal of the visible registration title and explanatory sentence, followed by push and merge to develop. Branch `codex/pc-b-b2b-registration-copy-1003` from `origin/develop@67092be4`; reuse the clean B2B checkout and installed dependencies.
@@ -5039,3 +5045,8 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Owner requests repair of B2B Excel export, push and develop merge. Reserve Organizations export UI/client and module-local backend/tests if needed, plus bounded status/task docs. Reuse clean B2B checkout; no migration, dependency, shared contract or permission changes without coordination. Preserve authorized data scope. No active overlapping export owner found. Lead integrates and merges after checks.
 - Delivered unified attached download target with deferred Blob cleanup for directory/commercial/360 exports. Organizations tests 133/133, Master Data export tests 35/35, scoped lint, Web typecheck and 55-route build pass. No schema/API/dependency/permission change. Native worker implemented; lead reviewed lifecycle and data scope. Bounded source reservation releases with commit; authorized develop merge follows CI.
+
+## CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B — READY_FOR_REVIEW
+
+- `COMPUTER_ID=PC-B`; branch `codex/pc-b-ca-report-meta-copy-1003` from `origin/develop@977266e2`. Reserve only the Customer Affairs report-panel presentation, its focused test, and bounded status/assignment notes. Remove the report header's fetched-at/access/date-range copy while preserving report filters and PDF export. No API, data, permission, migration, dependency/lockfile, or live runtime change. No conflicting active Customer Affairs report-panel owner found; preserve all other edits.
+- Delivered the text-only header removal. Focused report component tests 4/4, scoped ESLint, Web typecheck, Web production build and `git diff --check` pass. PR review/CI precede authorized develop merge. Source, test, and bounded docs locks release with the reviewed commit.
