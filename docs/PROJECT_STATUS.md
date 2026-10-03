@@ -4462,3 +4462,7 @@ Removed the Users and Access section/card from agency360 and its workspace panel
 ## 2026-10-03 — RAIL-HIDE-EXTRA-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 Rail Companies now displays code, company, country and organization from its resource-specific column model, plus the renderer's independent authenticated Logo, status and operations columns. Logo Reference, Integration Connection and `انواع قطار` are hidden only from this table; Version / Audit remains absent, and forms/View/export/backend plus every other resource remain unchanged. Focused 15 and all 563 Master Data tests, scoped ESLint, Web typecheck, scoped Prettier and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
+
+## 2026-10-03 — B2B-KPI-HIDE-NOTES-1003 — PC-B
+
+Removed secondary explanatory text beneath colored KPI values in the agency directory and360 dossier. Labels, values, styling and unavailable-versus-zero semantics remain intact. Existing Organizations tests, scoped lint/typecheck/format and Web production build validate the bounded presentation change; CI precedes authorized push/develop merge. No API/schema/dependency/runtime or stored-data change. PC-A can fetch develop after merge.

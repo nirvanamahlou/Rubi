@@ -112,13 +112,11 @@ export function CorporateMetric({
   value = '—',
   icon: Icon,
   tone = '',
-  note,
 }: {
   label: string;
   value?: string;
   icon: LucideIcon;
   tone?: string;
-  note?: string;
 }) {
   return (
     <article className="kpi">
@@ -128,7 +126,6 @@ export function CorporateMetric({
       <div>
         <small>{label}</small>
         <strong>{value}</strong>
-        {note ? <small>{note}</small> : null}
       </div>
     </article>
   );
