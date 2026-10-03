@@ -34,7 +34,7 @@ export function reservationPdfHtml(
     data.passengers,
     settings
       ? Math.max(
-          2,
+          6,
           8 - Math.ceil(Object.values(settings.text).join('').length / 350),
         )
       : 10,
@@ -91,11 +91,11 @@ export function reservationPdfHtml(
         ['INFANTS', data.infants],
         ['DESTINATION', data.destination],
         ['ROOMS / NIGHTS', `${data.rooms} ROOMS / ${data.nights} NIGHTS`],
-        ['TOUR LEADER', data.leader],
+        ...(voucher ? [['TOUR LEADER', data.leader]] : []),
       ],
       'summary',
     )}
-    </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['LEG', 'AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.leg, f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-', '-']])}
+    </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table([...(voucher ? ['LEG'] : []), 'AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [...(voucher ? [f.leg] : []), f.airline, f.number, f.date, f.time]) : [voucher ? ['-', '-', '-', '-', '-'] : ['-', '-', '-', '-']])}
     ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
       ['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'],
       [[data.hotel, data.destination, data.stars, data.meal, data.roomType]],
@@ -109,7 +109,7 @@ export function reservationPdfHtml(
     ${settings ? `<p class="voucherDetails">Transfer: ${escape(settings.flags.transfer ? [settings.text.transferKind, settings.text.transferBoard, settings.text.transferPhone].filter(Boolean).join(' / ') || '-' : '-')} · Guide: ${escape(settings.flags.tourLeader ? [settings.text.leaderLanguage, settings.text.leaderPhone].filter(Boolean).join(' / ') || '-' : '-')}</p>` : ''}
     ${heading('05', 'PASSENGERS', 'Passenger MANIFEST')}${table(['#', 'SURNAME / NAME', 'SEX', 'AGE RATE', ...(voucher ? ['ROOM TYPE'] : [])], rows.length ? rows : [voucher ? ['-', '-', '-', '-', '-'] : ['-', '-', '-', '-']], 'passengers')}
     ${heading('06', 'NOTICE', 'Notes & confirmation')}<div class="notice"><span>SPECIAL REQUESTS / REMARKS</span><p dir="auto">${escape(data.notes) || '&nbsp;'}</p><div></div></div>${voucher ? '<div class="stamp"><strong>STAMP</strong></div>' : ''}
-    <footer class="footer"><div><strong dir="auto">${escape(data.brand)}</strong><span>${voucher ? 'Hotel voucher - present at check-in.' : 'Reservation request - subject to supplier confirmation.'}</span></div><b>${index + 1} / ${pages.length}</b></footer></article>`;
+    <footer class="footer"><div>${voucher ? `<strong dir="auto">${escape(data.brand)}</strong>` : ''}<span>${voucher ? 'Hotel voucher - present at check-in.' : 'Reservation request - subject to supplier confirmation.'}</span></div><b>${index + 1} / ${pages.length}</b></footer></article>`;
     })
     .join('');
   return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:"><title>${escape(data.request)}</title><style>${css}\n@page{size:A4;margin:0}html,body{margin:0;padding:0}.page{margin:0;break-after:page}.page:last-child{break-after:auto}.passengers th:nth-child(2){width:56%}</style></head><body>${sheets}</body></html>`;

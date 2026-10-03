@@ -140,8 +140,8 @@
 .summary {
   border: 1px solid #c3d2e0;
   border-top: 0;
-  min-height: 64px;
-  padding: 10px 16px;
+  min-height: 44px;
+  padding: 5px 12px;
   display: grid;
   grid-template-columns: 0.75fr 0.9fr 0.75fr 1.3fr 1.85fr 0.9fr;
   gap: 8px;
@@ -279,7 +279,7 @@
 
 .bookingSection {
   margin-top: 4mm;
-  margin-bottom: 3mm;
+  margin-bottom: 2mm;
   border: 1px solid #b7cbdc;
   break-inside: avoid;
 }

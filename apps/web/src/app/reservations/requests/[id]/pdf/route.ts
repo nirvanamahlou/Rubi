@@ -48,6 +48,11 @@ export async function GET(
     };
     if (voucher && !intake.workflow.voucherIssued)
       return fail('واچر هنوز صادر نشده است.', 409);
+    if (!voucher && !intake.workflow.supplierFormSettings?.text.broker?.trim())
+      return fail(
+        'پیش از صدور فرم رزرواسیون، نام کارگزار گیرنده را ثبت کنید.',
+        409,
+      );
     const branding = intake.workflow.branding;
     if (!branding) return fail('ابتدا سربرگ فرم را ثبت کنید.', 400);
     if (intake.workflow.supplierStatus === 'CANCELLED')

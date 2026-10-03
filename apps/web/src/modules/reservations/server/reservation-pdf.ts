@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
-import { mkdtemp, readFile, writeFile, rm, access } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join, isAbsolute, dirname } from 'node:path';
+import { join, dirname } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import type {
@@ -9,6 +9,7 @@ import type {
   ReservationFormReferences,
 } from '../model/reservation-form';
 import { reservationPdfHtml } from './reservation-pdf-html';
+import { resolveTicketPdfRuntime } from './ticket-pdf';
 
 const run = promisify(execFile);
 let active = 0;
@@ -20,24 +21,24 @@ export async function renderReservationPdf(
   css: string,
   voucher = false,
 ): Promise<Buffer> {
-  const chrome = process.env.SALES_PDF_CHROME_PATH;
-  const font = process.env.SALES_PDF_NAZANIN_PATH;
-  if (!chrome || !font || !isAbsolute(chrome) || !isAbsolute(font))
-    throw new Error('PDF_RUNTIME_UNAVAILABLE');
+  const { chromePath: chrome, fontPath: font } =
+    await resolveTicketPdfRuntime();
+  if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');
   if (active >= 2) throw new Error('PDF_BUSY');
   active++;
   let directory: string | undefined;
   try {
-    await access(chrome);
-    const fontBytes = await readFile(font);
-    if (!fontBytes.length || fontBytes.length > 5_000_000)
-      throw new Error('PDF_FONT_INVALID');
-    const html = reservationPdfHtml(output, refs, logo, css, voucher).replace(
-      '</style>',
-      '@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,' +
-        fontBytes.toString('base64') +
-        ') format("truetype");font-weight:normal}</style>',
-    );
+    let html = reservationPdfHtml(output, refs, logo, css, voucher);
+    if (font) {
+      const fontBytes = await readFile(font);
+      if (fontBytes.length && fontBytes.length <= 5_000_000)
+        html = html.replace(
+          '</style>',
+          '@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,' +
+            fontBytes.toString('base64') +
+            ') format("truetype");font-weight:normal}</style>',
+        );
+    }
     if (Buffer.byteLength(html) > 10_000_000) throw new Error('PDF_TOO_LARGE');
     directory = await mkdtemp(join(tmpdir(), 'nora-reservation-pdf-'));
     const input = join(directory, 'contract.html');
@@ -73,6 +74,17 @@ export async function renderReservationPdf(
       ],
       { env, windowsHide: true, timeout: 30000, maxBuffer: 1024 * 1024 },
     );
+    // Chrome may return before its child finishes writing the PDF on Windows.
+    const deadline = Date.now() + 10_000;
+    let previousSize = -1;
+    while (Date.now() < deadline) {
+      const size = await stat(result)
+        .then((entry) => entry.size)
+        .catch(() => 0);
+      if (size > 0 && size === previousSize) break;
+      previousSize = size;
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
     const bytes = await readFile(result);
     if (
       bytes.subarray(0, 5).toString() !== '%PDF-' ||
