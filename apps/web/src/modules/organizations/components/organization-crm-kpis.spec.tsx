@@ -107,9 +107,6 @@ describe('organization CRM KPI source availability', () => {
     expect(metricValue(markup, 'قرارداد فروش مرتبط')).toBe('—');
     expect(metricValue(markup, 'سفارش باز')).toBe('—');
     expect(metricValue(markup, 'مانده قراردادهای فروش')).toBe('—');
-    expect(markup).toContain('مشتریان در دسترس نیستند.');
-    expect(markup).toContain('قراردادها در دسترس نیستند.');
-    expect(markup).toContain('رزرواسیون ناقص است.');
   });
 
   it('distinguishes a ready empty source from an unavailable source', () => {
@@ -135,6 +132,5 @@ describe('organization CRM KPI source availability', () => {
     });
 
     expect(metricValue(markup, 'مانده قراردادهای فروش')).toBe('۱۰۰ IRR');
-    expect(markup).toContain('جزئیات پرداخت در دسترس نیست.');
   });
 });

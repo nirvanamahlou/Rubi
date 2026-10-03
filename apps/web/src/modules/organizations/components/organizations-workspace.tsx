@@ -393,10 +393,6 @@ export function OrganizationsWorkspace() {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const metricValue = (value: number | undefined) =>
     metricsState === 'loading' ? '…' : (value?.toLocaleString('fa-IR') ?? '—');
-  const metricNote =
-    metricsState === 'error'
-      ? 'دریافت آمار ناموفق؛ دوباره تازه‌سازی کنید'
-      : 'مطابق جست‌وجو و وضعیت؛ همه صفحات';
 
   async function exportExcel() {
     if (exporting) return;
@@ -461,25 +457,18 @@ export function OrganizationsWorkspace() {
             value={metricValue(metrics?.agencies)}
             icon={Users}
             tone="purple"
-            note={metricNote}
           />
           <CorporateMetric
             label="مشتری سازمانی"
             value={metricValue(metrics?.corporateCustomers)}
             icon={Building2}
             tone="green"
-            note={metricNote}
           />
           <CorporateMetric
             label="نیازمند تکمیل هویت"
             value={metricValue(metrics?.incompleteIdentity)}
             icon={TriangleAlert}
             tone="amber"
-            note={
-              metricsState === 'error'
-                ? metricNote
-                : 'نوع شخصیت یا شناسه ملی شرکت ثبت نشده'
-            }
           />
         </section>
 

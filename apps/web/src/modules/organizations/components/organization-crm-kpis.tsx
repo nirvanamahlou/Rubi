@@ -10,10 +10,7 @@ import {
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { moneyLabel } from '../model/presentation';
-import {
-  connectedOutstanding,
-  overduePaymentCount,
-} from '../model/organization-crm-connections';
+import { connectedOutstanding } from '../model/organization-crm-connections';
 import { useOrganizationCrmConnections } from './use-organization-crm-connections';
 import { useDossierBranch } from './use-dossier-branch';
 import { OrganizationSalesDocuments } from './organization-sales-documents';
@@ -23,13 +20,11 @@ function Metric({
   value,
   icon: Icon,
   tone = '',
-  note,
 }: {
   label: string;
   value: string;
   icon: LucideIcon;
   tone?: string;
-  note?: string | undefined;
 }) {
   return (
     <article className="kpi">
@@ -39,7 +34,6 @@ function Metric({
       <div>
         <small>{label}</small>
         <strong>{value}</strong>
-        {note ? <small>{note}</small> : null}
       </div>
     </article>
   );
@@ -61,14 +55,12 @@ export function OrganizationCrmKpis({
 }) {
   const { branchId, setBranchId, branches, sessionError, sessionContextKey } =
     useDossierBranch();
-  const { data, loading, error } = useOrganizationCrmConnections(
+  const { data, loading } = useOrganizationCrmConnections(
     organizationId,
     branchId,
     sessionContextKey,
   );
   const outstanding = data ? connectedOutstanding(data.contracts) : [];
-  const today = new Date().toISOString().slice(0, 10);
-  const overdue = data ? overduePaymentCount(data.payments, today) : 0;
   const openReservations =
     data?.reservations.filter(
       (reservation) =>
@@ -121,11 +113,6 @@ export function OrganizationCrmKpis({
           }
           icon={Building2}
           tone="green"
-          note={
-            error ||
-            data?.unavailableSources.CUSTOMERS ||
-            'تطبیق در Backend با شناسه سازمان'
-          }
         />
         <Metric
           label="قرارداد فروش مرتبط"
@@ -136,7 +123,6 @@ export function OrganizationCrmKpis({
           }
           icon={FileText}
           tone="purple"
-          note={data?.unavailableSources.SALES || 'داده زنده Backend فروش'}
         />
         <Metric
           label="سفارش باز"
@@ -146,21 +132,12 @@ export function OrganizationCrmKpis({
               : pending
           }
           icon={ShoppingCart}
-          note={
-            data?.unavailableSources.RESERVATIONS ||
-            'داده زنده Backend رزرواسیون'
-          }
         />
         <Metric
           label="مانده قراردادهای فروش"
           value={salesAvailable ? outstandingLabel(outstanding) : pending}
           icon={Wallet}
           tone="amber"
-          note={
-            data?.unavailableSources.SALES_PAYMENTS ||
-            data?.unavailableSources.SALES ||
-            `${overdue.toLocaleString('fa-IR')} پرداخت سررسیدگذشته`
-          }
         />
       </section>
       <OrganizationSalesDocuments
