@@ -1,3 +1,7 @@
+## 2026-10-03 — INSURANCE-NESTED-PLANS-1003 — PC-B — READY_FOR_REVIEW
+
+Insurance Plans are now nested immediately beneath expandable Insurer rows while Coverage remains a top-level tab. Child rows retain logo, coverage, status and View/Edit/Delete actions; the existing plan form locks and force-binds the parent insurer. Generation guards reject stale child responses, and successful CRUD refreshes both the child page and parent summary without clearing the expanded insurer identity. Focused 26 and all 536 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. Tests cover async helper/state boundaries and SSR/source structure; authenticated browser/runtime QA was not performed. No API/schema/organization-model change; bounded locks release with commit.
+
 ## 2026-10-03 — VISA-HIDE-VALIDITY-MODE-1003 — PC-B — READY_FOR_REVIEW
 
 Visa Services create/edit no longer renders the reference-validity-mode selector. New mutations keep the canonical `DAYS` mode; edits preserve supported stored modes by using them only for days-field behavior and omitting mode from PATCH. `DAYS` keeps the optional validated day field, while legacy `PASSPORT_EXPIRY` keeps it hidden. View/table/backend remain unchanged and Excel retains `referenceValidityMode` immediately before `referenceValidityDays`. Focused 32 and all 534 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
