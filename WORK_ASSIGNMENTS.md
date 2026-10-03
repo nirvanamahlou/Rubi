@@ -5045,6 +5045,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-ca-report-meta-copy-1003` from `origin/develop@977266e2`. Reserve only the Customer Affairs report-panel presentation, its focused test, and bounded status/assignment notes. Remove the report header's fetched-at/access/date-range copy while preserving report filters and PDF export. No API, data, permission, migration, dependency/lockfile, or live runtime change. No conflicting active Customer Affairs report-panel owner found; preserve all other edits.
 - Delivered the text-only header removal. Focused report component tests 4/4, scoped ESLint, Web typecheck, Web production build and `git diff --check` pass. PR review/CI precede authorized develop merge. Source, test, and bounded docs locks release with the reviewed commit.
+
 ## VOUCHER-BROKER-LEADER-1003 — PC-A — READY_FOR_REVIEW
 
 - Owner request 2026-10-03: show supplier name on hotel voucher; remove marked voucher-only summary/flight/passenger/notice/footer text; show transfer Board; select a tour leader and full phone from the selected broker's Master Data or add that leader here for the broker before voucher issuance. Compact booking summary and merge to develop.
