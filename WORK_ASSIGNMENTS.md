@@ -5043,6 +5043,11 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered 36px minimum table body rows with the existing 440px viewport preserved. Saved status actor/time sits beside its checkbox, retaining both text and tooltip. Synthetic browser layout shows approximately two additional complete contracts; no clipping or data/UI-action loss. Twenty existing foundation/status tests passed (15s runner timeout for local load), scoped lint and Web typecheck verified. Production build and CI precede authorized develop merge; source lock releases with scoped commit.
 
+## B2B-EXCEL-EXPORT-1003 — PC-B — IN_PROGRESS
+
+- Owner requests repair of B2B Excel export, push and develop merge. Reserve Organizations export UI/client and module-local backend/tests if needed, plus bounded status/task docs. Reuse clean B2B checkout; no migration, dependency, shared contract or permission changes without coordination. Preserve authorized data scope. No active overlapping export owner found. Lead integrates and merges after checks.
+- Delivered unified attached download target with deferred Blob cleanup for directory/commercial/360 exports. Organizations tests 133/133, Master Data export tests 35/35, scoped lint, Web typecheck and 55-route build pass. No schema/API/dependency/permission change. Native worker implemented; lead reviewed lifecycle and data scope. Bounded source reservation releases with commit; authorized develop merge follows CI.
+
 ## B2B-REGISTRATION-COPY-1003 — PC-B — READY_FOR_REVIEW
 
 - Owner requests removal of the visible registration title and explanatory sentence, followed by push and merge to develop. Branch `codex/pc-b-b2b-registration-copy-1003` from `origin/develop@67092be4`; reuse the clean B2B checkout and installed dependencies.

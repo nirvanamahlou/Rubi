@@ -53,6 +53,7 @@ import {
 import { MasterDataLiveForm } from '@/modules/master-data/components/master-data-live-form';
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { agencyClient } from '../api/agency-client';
+import { downloadOrganizationFile } from '../model/organization-download';
 import { AgencyConnectionsPanel } from './agency-connections-panel';
 import { AgreementWorkflowPanel } from './agreement-workflow-panel';
 import { OrganizationAddressesPanel } from './organization-addresses-panel';
@@ -416,12 +417,7 @@ export function OrganizationsWorkspace() {
         locale: 'fa-IR',
         timezone: 'Asia/Tehran',
       });
-      const url = URL.createObjectURL(file.blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.fileName;
-      link.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      downloadOrganizationFile(file.fileName, file.blob);
       setNotice('خروجی اکسل مطابق فیلترهای فعلی دریافت شد.');
     } catch (caught) {
       setNotice(

@@ -4,6 +4,7 @@ import {
   organizationImportLimit,
   type OrganizationImportRow,
 } from './organization-import';
+import { downloadOrganizationFile } from './organization-download';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
@@ -163,16 +164,12 @@ export function downloadOrganizationXlsx(
   rows: readonly (readonly string[])[],
 ) {
   const bytes = createOrganizationXlsx(rows);
-  const url = URL.createObjectURL(
+  downloadOrganizationFile(
+    filename,
     new Blob([bytes], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
   );
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
 }
 
 export async function unzipWorkbook(buffer: ArrayBuffer) {
