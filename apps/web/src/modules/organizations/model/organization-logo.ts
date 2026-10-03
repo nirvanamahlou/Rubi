@@ -4,17 +4,17 @@ import { documentsApi } from '@/modules/documents/api/client';
 import { saveOrganizationChanges } from './record-mutations';
 
 export const ORGANIZATION_LOGO_MAX_BYTES = 5 * 1024 * 1024;
-const ORGANIZATION_LOGO_RETRY_DELAYS_MS = [2_000, 4_000, 8_000, 16_000] as const;
+const ORGANIZATION_LOGO_RETRY_DELAYS_MS = [
+  2_000, 4_000, 8_000, 16_000,
+] as const;
 const ORGANIZATION_LOGO_UNAVAILABLE_NOTICE =
   'تصویر لوگو اکنون قابل دریافت نیست؛ وضعیت فایل را در آرشیو بررسی کنید.';
 
 export type OrganizationLogoPreviewResult =
-  | { blob: Blob }
-  | { reason: string; retryable?: true };
+  { blob: Blob } | { reason: string; retryable?: true };
 
 export type OrganizationLogoLoadState =
-  | { imageUrl: string }
-  | { reason: string };
+  { imageUrl: string } | { reason: string };
 
 export function canViewOrganizationLogo(
   permissions: readonly IamPermissionCode[],
