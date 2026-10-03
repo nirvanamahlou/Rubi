@@ -33,6 +33,10 @@ describe('selected contract actions', () => {
       (group) => group.title === 'اطلاعات قرارداد',
     );
     expect(operations?.items).toContain('دریافت‌ها');
+    expect(operations?.items).toContain('فرم رزواسیون');
+    expect(operations?.items).not.toContain('مشاهده');
+    expect(information?.items).toContain('مشاهده');
+    expect(information?.items).not.toContain('رزرواسیون');
     expect(operations?.items).not.toContain('دریافت');
     expect(information?.items).not.toContain('دریافت‌ها');
   });
@@ -40,7 +44,15 @@ describe('selected contract actions', () => {
   it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
     expect(html.match(/disabled=""/g) ?? []).toHaveLength(13);
-    for (const label of ['واچر', 'مشخصات کلی', 'دریافت‌ها', 'مدارک', 'توضیحات'])
+    for (const label of [
+      'واچر',
+      'فرم رزواسیون',
+      'مشاهده',
+      'مشخصات کلی',
+      'دریافت‌ها',
+      'مدارک',
+      'توضیحات',
+    ])
       expect(html).toContain(label);
     for (const removed of [
       'Confirmation',
@@ -69,6 +81,13 @@ describe('selected contract actions', () => {
     expect(html).toContain('در حال دریافت اطلاعات مسافران');
     expect(html).not.toContain('Synthetic passenger');
     expect(html).not.toContain('Synthetic customer');
+  });
+  it('opens the reservation workflow form from contract operations', () => {
+    const html = renderToStaticMarkup(
+      <ContractActionContent action="فرم رزواسیون" request={request} />,
+    );
+    expect(html).toContain('در حال دریافت اطلاعات…');
+    expect(html).not.toContain('مشاهده');
   });
   it('loads the selected Sales contract PDF for viewing', () => {
     const html = renderToStaticMarkup(

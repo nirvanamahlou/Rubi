@@ -26,7 +26,7 @@ export const contractActionGroups = [
   {
     title: 'عملیات قرارداد',
     items: [
-      'مشاهده',
+      'فرم رزواسیون',
       'بلیط',
       'ویرایش',
       'خرید',
@@ -38,7 +38,7 @@ export const contractActionGroups = [
   },
   {
     title: 'اطلاعات قرارداد',
-    items: ['مشخصات کلی', 'اسامی مسافران', 'رزرواسیون', 'مدارک'],
+    items: ['مشخصات کلی', 'اسامی مسافران', 'مشاهده', 'مدارک'],
   },
   {
     title: 'یادداشت‌ها',
@@ -54,6 +54,8 @@ export function ContractActionContent({
   request: RequestView;
 }) {
   if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
+  if (action === 'فرم رزواسیون')
+    return <TravelWorkflowForm id={request.id} action="رزرواسیون" />;
   if (action === 'مشاهده')
     return (
       <ContractPdfPreview
@@ -206,7 +208,7 @@ export function ContractActionPanel({
                     {request && (
                       <DialogContent
                         dir="rtl"
-                        className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
+                        className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش', 'فرم رزواسیون'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
                       >
                         <DialogTitle className="pe-10">{action}</DialogTitle>
                         <DialogDescription>
