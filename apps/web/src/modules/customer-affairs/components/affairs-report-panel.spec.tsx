@@ -67,7 +67,9 @@ describe('Customer Affairs report layout', () => {
     expect(source).not.toContain(
       'نمای وضعیت درخواست‌ها، رسیدگی و بازخورد مشتریان',
     );
-    expect(source).toContain('downloadAffairsReportPdf(report, dateRangeLabel)');
+    expect(source).toContain(
+      'downloadAffairsReportPdf(report, dateRangeLabel)',
+    );
     const workspace = readFileSync(
       new URL('./customer-affairs-nora-workspace.tsx', import.meta.url),
       'utf8',
