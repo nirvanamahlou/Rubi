@@ -70,9 +70,29 @@ const referenceKeysBySection: Record<
   PASSENGERS: [],
 };
 
-async function loadReservationEditReferences(
+export async function loadReservationEditReferences(
   resource: ReservationEditReferenceResource,
+  requestId: string,
 ) {
+  if (resource === 'brokers') {
+    const options: ReservationEditReferenceOption[] = [];
+    for (let page = 1; ; page++) {
+      const response = await travelRequest<{
+        data: { id: string; name: string }[];
+        meta: { total: number };
+      }>(`reservations/requests/${requestId}/voucher-brokers?page=${page}`);
+      options.push(
+        ...response.data.map((broker) => ({
+          id: broker.id,
+          label: broker.name,
+          searchText: broker.name,
+          aliases: [broker.name],
+        })),
+      );
+      if (!response.data.length || options.length >= response.meta.total)
+        return options;
+    }
+  }
   const records = [];
   for (let page = 1; ; page++) {
     const response = await masterDataApi.list(resource, {
@@ -125,12 +145,13 @@ function ReservationSelect({
   );
 }
 
-function ReservationSettingsForm({
+export function ReservationSettingsForm({
   intake,
   refs,
   onSaved,
   onDirty,
   onPreview,
+  showDocument = false,
   section = 'ALL',
   partyName,
 }: {
@@ -139,6 +160,7 @@ function ReservationSettingsForm({
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
   onPreview?: (settings: VoucherSettingsV1) => void;
+  showDocument?: boolean;
   section?: ReservationSettingsSection;
   partyName?: string;
 }) {
@@ -167,6 +189,7 @@ function ReservationSettingsForm({
     { version: number; state: TravelWorkflowStateV1; createdAt: string }[]
   >([]);
   const [past, setPast] = useState<TravelWorkflowStateV1>();
+  const [previewDirty, setPreviewDirty] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
   const referenceKeys = referenceKeysBySection[section];
   const referenceResourceKey = [
@@ -189,9 +212,12 @@ function ReservationSettingsForm({
       .filter(Boolean) as ReservationEditReferenceResource[];
     if (!resources.length) return;
     let live = true;
-    void Promise.all(
+    void Promise.allSettled(
       resources.map(async (resource) => {
-        const options = await loadReservationEditReferences(resource);
+        const options = await loadReservationEditReferences(
+          resource,
+          intake.id,
+        );
         if (live)
           setDirectory((previous) => ({
             key: referenceResourceKey,
@@ -207,12 +233,17 @@ function ReservationSettingsForm({
         return [resource, options] as const;
       }),
     )
-      .then((entries) => {
+      .then((results) => {
+        const entries = results.flatMap((result) =>
+          result.status === 'fulfilled' ? [result.value] : [],
+        );
         if (live)
           setDirectory({
             key: referenceResourceKey,
             options: Object.fromEntries(entries),
-            error: '',
+            error: results.some((result) => result.status === 'rejected')
+              ? 'دریافت بعضی فهرست‌های اطلاعات پایه انجام نشد؛ دوباره فرم را باز کنید.'
+              : '',
             loading: false,
           });
       })
@@ -230,7 +261,7 @@ function ReservationSettingsForm({
     return () => {
       live = false;
     };
-  }, [referenceResourceKey]);
+  }, [referenceResourceKey, intake.id]);
   useEffect(() => {
     let live = true;
     void travelRequest<{ data: typeof history }>(
@@ -306,6 +337,7 @@ function ReservationSettingsForm({
     }
   }
   const update = (next: typeof draft) => {
+    setPreviewDirty(true);
     setDraft(next);
     onPreview?.(next);
     onDirty();
@@ -367,8 +399,8 @@ function ReservationSettingsForm({
         options,
       );
       return (
-        <label key={key}>
-          {voucherTextLabels[key]}
+        <div key={key}>
+          <span>{voucherTextLabels[key]}</span>
           <SearchCombobox
             value={selectedOption?.id ?? ''}
             options={options.map((option) => ({
@@ -382,7 +414,11 @@ function ReservationSettingsForm({
             loading={
               activeDirectory.loading && !activeDirectory.options[resource]
             }
-            error={activeDirectory.error || undefined}
+            error={
+              !activeDirectory.options[resource]
+                ? activeDirectory.error || undefined
+                : undefined
+            }
             onValueChange={(id) => {
               const option = options.find((item) => item.id === id);
               if (option)
@@ -392,7 +428,7 @@ function ReservationSettingsForm({
                 });
             }}
           />
-        </label>
+        </div>
       );
     }
     return (
@@ -473,6 +509,22 @@ function ReservationSettingsForm({
         className="grid gap-4"
       >
         {(section === 'ALL' || section === 'OTHER') && textField('broker')}
+        {showDocument && (
+          <div className="grid gap-3">
+            {past && (
+              <Button variant="outline" onClick={() => setPast(undefined)}>
+                بازگشت به نسخهٔ فعلی
+              </Button>
+            )}
+            <TravelDocument
+              intake={past ? { ...intake, workflow: past } : intake}
+              historical={Boolean(past)}
+              {...(!past
+                ? { previewSettings: draft, dirty: previewDirty }
+                : {})}
+            />
+          </div>
+        )}
         <div
           className={
             section === 'ALL' || section === 'HOTEL' ? 'grid gap-4' : 'hidden'
@@ -794,7 +846,7 @@ function ReservationSettingsForm({
             ))}
         </div>
       </details>
-      {past && section === 'ALL' && (
+      {past && section === 'ALL' && !showDocument && (
         <div>
           <Button variant="outline" onClick={() => setPast(undefined)}>
             بستن نسخهٔ قبلی
@@ -811,6 +863,7 @@ export function ReservationSettings(props: {
   onSaved: (state: TravelWorkflowStateV1) => void;
   onDirty: () => void;
   onPreview?: (settings: VoucherSettingsV1) => void;
+  showDocument?: boolean;
   section?: ReservationSettingsSection;
   partyName?: string;
 }) {

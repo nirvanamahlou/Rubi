@@ -5042,6 +5042,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Branch codex/pc-a-reservation-form-supplier-pdf-1003 from origin/develop. Scope: Reservations supplier form/settings, PDF render/runtime, focused tests and bounded docs. No migration, dependencies, operational data or shared runtime. PC-A owns this slice until handoff.
 
+## RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
+
+- Branch: `codex/pc-a-reservation-supplier-preview-fix-1003`; base: origin/develop e0149279.
+- Scope/locks: Reservations reservation-settings.tsx, travel-workflow-form.tsx, travel-document.tsx and focused tests; appended task/status documentation only.
+- Fix supplier selection placement and reference loading; keep one preview including history/print. No migration, dependency or shared UI changes.
+- User authorizes PR and merge to develop after validation. Other local changes remain in the original checkout.
+
 ## RESERVATION-SINGLE-FORM-FOOTER-1003 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-reservation-single-form-footer-1003 from origin/develop. Reserve Reservations document/settings/workflow renderer, shared QR utility, form viewer route, focused specs and bounded docs. Remove redundant free-text supplier entry; existing active Master Data broker combobox updates a single live form preview, with settings below and persisted revisions retained. Add requested reservation contact email and QR linking to an authenticated form viewer. Keep all passengers in one logical supplier form rather than repeated forms; long documents can paginate physically. No API/schema/migration/dependency changes or public passenger access. User authorizes develop merge; prior panel scope released.
