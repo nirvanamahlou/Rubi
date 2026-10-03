@@ -1,3 +1,8 @@
+## LEADER-HIDE-DOCUMENTS-1003 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-leader-hide-documents-1003` from origin/develop@380174c9. Reserve only Leader Documents header/matching table cell in travel-services workspace and existing regression spec, own bounded status docs. Preserve other columns, Visa Services guide documents, form/View/export/API/backend/document storage. No active overlapping owner; no migrations/contracts/dependencies/runtime/database changes. User authorizes push/develop merge after checks.
+- The Leader list now omits only its visible Documents header and placeholder cell, retaining nine aligned columns. Visa guide documents and Leader form/View/export/API/database/document behavior remain unchanged. Focused regression (5), all 464 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with the scoped commit.
+
 ## SALES-REFERENCE-EXCEL-EXPORT-1003 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-sales-reference-excel-export-1003` from origin/develop@bd9b4e5e. Reserve shared Sales References Excel request column construction and existing focused Web spec, own bounded status docs. Fix duplicate name column on both Acquaintance Methods and Sales Channels; preserve resource/filter payload, permissions, API validation and workbook contract. Verify generated file contents with safe fixtures where possible. No overlapping Web lock; API Hotel Excel parser lock untouched. No schema/migration/dependency/runtime/database changes. User authorizes push/develop merge after checks.
