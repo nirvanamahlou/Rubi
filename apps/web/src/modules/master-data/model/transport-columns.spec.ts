@@ -33,7 +33,9 @@ describe('mockup column coverage', () => {
         ? 3
         : resource === 'airlines'
           ? 4
-          : 5,
+          : resource === 'rail-companies'
+            ? 4
+            : 5,
     );
     expect(getMasterDataColumnFilters(resource)).toHaveLength(2);
     expect(new Set(transportColumns(resource).map(([key]) => key)).size).toBe(
@@ -113,6 +115,23 @@ describe('mockup column coverage', () => {
           'cabinType',
         ),
       ).toBe(label);
+  });
+  it('keeps only the approved Rail Companies reference columns', () => {
+    expect(transportColumns('rail-companies')).toEqual([
+      ['code', 'کد'],
+      ['name', 'شرکت ریلی'],
+      ['countryName', 'کشور'],
+      ['organizationName', 'سازمان'],
+    ]);
+    for (const hidden of [
+      'لوگو Reference',
+      'Integration Connection',
+      'انواع قطار',
+      'Version / Audit',
+    ])
+      expect(
+        transportColumns('rail-companies').map(([, label]) => label),
+      ).not.toContain(hidden);
   });
   it('removes combined audit columns while preserving independent versions', () => {
     for (const resource of [
