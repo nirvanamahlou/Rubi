@@ -5056,6 +5056,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Branch codex/pc-a-reservation-form-supplier-pdf-1003 from origin/develop. Scope: Reservations supplier form/settings, PDF render/runtime, focused tests and bounded docs. No migration, dependencies, operational data or shared runtime. PC-A owns this slice until handoff.
 
+## SALES-CONTRACT-COLUMNS-NUMBERING-1003 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch `codex/pc-a-sales-contract-columns-numbering-1003` from `origin/develop@4d67795c`. Reserve Sales list/workspace, repository numbering, Customers public adapter consumption, focused API/Web/PostgreSQL regressions, additive optional Sales summary fields and bounded task/status/data-model notes. Producer Sales API and consumer Sales Web coordinated by PC-A; legacy summaries tolerate missing fields. Customer telephone is explicitly confirmed by the user. Existing module public services and contact permission/audit rules remain authoritative; no direct cross-module table access.
+- Migration Owner=PC-A/SALES-CONTRACT-COLUMNS-NUMBERING-1003 for one new non-cycling six-digit contract sequence starting 120123; existing contract numbers remain immutable. Previous buyer-contact migration/source locks explicitly released. Shared contract and bounded central-doc locks held by this task; no dependency/lockfile/schema-model changes. User authorizes develop merge after validation; preserve the dirty primary checkout and current login video.
+- Complete: route, customer phone and original registration date columns; additive public summary fields with buyer-snapshot priority and Customers permission/audit fallback; six-digit sequence with import protection. Validation passed: 91 Sales API tests, 10 workspace tests, full 114-migration deploy and actual sequence concurrency/import/exhaustion test on disposable PostgreSQL 18; API/Web typecheck, scoped API/Web/database lint and API/55-route Web production builds. Operational migration and authenticated visual QA have not yet been run. Migration/shared/source/doc locks RELEASED with this commit; apply the new migration before deploying API. User authorizes PR merge to develop after CI.
+
 ## RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
 
 - Branch: `codex/pc-a-reservation-supplier-preview-fix-1003`; base: origin/develop e0149279.

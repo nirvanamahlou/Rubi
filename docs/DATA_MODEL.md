@@ -1,3 +1,7 @@
+## SALES-CONTRACT-COLUMNS-NUMBERING-1003 (2026-10-03)
+
+Sales owns `sales_contract_public_number_seq`, an independent non-cycling INTEGER sequence starting at 120123 with maximum 999999. New contract numbers are six-digit decimal strings; existing numbers remain immutable and the contract-number unique constraint remains authoritative. Initialization skips above any existing six-digit imported number. Numbers are global, do not reset annually, and may have normal sequence gaps after transaction rollback. Deployment must apply the additive migration before the new API; exhaustion fails safely without wraparound. Route/contact list fields are optional public projections, not new stored columns; registration date is the existing UTC `createdAt`.
+
 ## MANIFEST-DEFAULT-TEMPLATE-0928 (2026-09-28)
 
 Ticket Catalog owns nullable TicketPublishedOffer.manifestTemplateId with a restrictive FK to master_manifest_templates and an index. Historical offers stay null and use the built-in default; no rows are backfilled or operational passenger data changed. Reservations reads only the branch-scoped public Ticket selection and the public Master Data template/country projection; it never queries their tables. The existing offer optimistic revision/audit protects selector updates. An omitted field in old update clients preserves the prior selection; null clears it. Explicit file reads continue through Documents' CLEAN/audit boundary. Default XLSX is generated from authorized passenger details and carries string cells for identifiers.

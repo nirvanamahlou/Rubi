@@ -258,6 +258,9 @@ export interface SalesContractSummary {
   customerId: string;
   customerNameSnapshot: string;
   passengerNames: readonly string[];
+  customerPhone?: string | null;
+  originName?: string | null;
+  destinationName?: string | null;
   ownerUserId: string;
   assignedUserId: string | null;
   branchId: string;

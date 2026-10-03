@@ -6,6 +6,10 @@ Insurance Plans are now nested immediately beneath expandable Insurer rows while
 
 Visa Services create/edit no longer renders the reference-validity-mode selector. New mutations keep the canonical `DAYS` mode; edits preserve supported stored modes by using them only for days-field behavior and omitting mode from PATCH. `DAYS` keeps the optional validated day field, while legacy `PASSPORT_EXPIRY` keeps it hidden. View/table/backend remain unchanged and Excel retains `referenceValidityMode` immediately before `referenceValidityDays`. Focused 32 and all 534 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
 
+## 2026-10-03 — SALES-CONTRACT-COLUMNS-NUMBERING-1003 — PC-A
+
+Sales list adds customer telephone, origin/destination route and original registration date. Optional additive summary fields use public Master Data/Customers services with existing sensitive-contact permission, audit and branch rules; encrypted buyer snapshots take precedence. New contract numbers use a separate PostgreSQL non-cycling sequence starting 120123, preserving old numbers. All 91 Sales API and 10 workspace tests pass; 114 migrations and real concurrency/import/exhaustion regressions pass on disposable PostgreSQL 18. See `docs/tasks/SALES-CONTRACT-COLUMNS-NUMBERING-1003.md` for rollout and compatibility. Final quality/build and PR results are recorded in the work item.
+
 ## 2026-10-03 — TRANSFER-HIDE-MIN-CAPACITY-1003 — PC-B — READY_FOR_REVIEW
 
 Transfer Type create/edit no longer renders the minimum suggested capacity control. The edit mutation omits that legacy attribute, allowing the API's existing partial-update merge to retain the stored value; View/table/backend remain unchanged and Excel still exports `suggestedCapacityMin` immediately after `suggestedCapacity`. Focused form/model/export regression (31), all 533 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
