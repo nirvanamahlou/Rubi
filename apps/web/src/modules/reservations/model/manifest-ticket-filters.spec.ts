@@ -145,3 +145,38 @@ it('orients outbound and return by the selected reverse city/country route witho
   expect(choices.countries.map((c) => c.id).sort()).toEqual(['ir', 'tr']);
   expect(filterManifestTickets(tickets, { originCountryId: 'tr' })).toEqual([]);
 });
+
+it('keeps Tehran to Antalya in outbound and Antalya to Tehran in return for the selected route', () => {
+  const returning = {
+    ...tickets[0]!,
+    offerId: 'antalya-tehran',
+    direction: 'RETURN' as const,
+    originId: 'antalya',
+    destinationId: 'tehran',
+    originCountryId: 'tr',
+    destinationCountryId: 'ir',
+    originName: 'آنتالیا',
+    destinationName: 'تهران',
+  };
+  const outbound = {
+    ...tickets[0]!,
+    originId: 'tehran',
+    destinationId: 'antalya',
+    originCountryId: 'ir',
+    destinationCountryId: 'tr',
+  };
+  const filters = {
+    originId: 'tehran',
+    destinationId: 'antalya',
+    originCountryId: 'ir',
+    destinationCountryId: 'tr',
+  };
+  const visible = filterManifestTickets([outbound, tickets[1]!, returning], filters);
+  expect(visible.map(({ offerId }) => offerId)).toEqual([
+    'tehran-antalya',
+    'antalya-tehran',
+  ]);
+  expect(
+    visible.map((ticket) => manifestDisplayDirection(ticket, filters)),
+  ).toEqual(['OUTBOUND', 'RETURN']);
+});
