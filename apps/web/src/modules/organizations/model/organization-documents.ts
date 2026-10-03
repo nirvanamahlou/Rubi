@@ -1,5 +1,7 @@
 import type {
+  DocumentListItemV1,
   DocumentListQueryV1,
+  DocumentListResponseV1,
   DocumentOptionsResponseV1,
   DocumentValidityFilter,
   IamPermissionCode,
@@ -44,6 +46,68 @@ export function canReadOrganizationDocuments(
     permissions.includes('documents.list') &&
     permissions.includes('documents.organization.read')
   );
+}
+
+/** Linking a proof uses the stricter B2B public reference service. */
+export function canAttachOrganizationDocument(
+  permissions: readonly IamPermissionCode[],
+) {
+  return (
+    canReadOrganizationDocuments(permissions) &&
+    permissions.includes('documents.metadata.read')
+  );
+}
+
+export function isEligibleOrganizationSignatoryProof(
+  document: DocumentListItemV1,
+  asOf: number,
+) {
+  const expiry = document.validUntil
+    ? Date.parse(document.validUntil)
+    : undefined;
+  return (
+    document.currentVersion.scanStatus === 'CLEAN' &&
+    !document.isIncomplete &&
+    (expiry === undefined || (Number.isFinite(expiry) && expiry > asOf))
+  );
+}
+
+export function resolveOrganizationSignatoryProof(
+  documents: readonly DocumentListItemV1[],
+  documentId: string,
+  asOf: number,
+) {
+  if (!documentId)
+    return {
+      documentId: null,
+      documentVersionId: null,
+      isActive: false,
+    } as const;
+  const document = documents.find((item) => item.id === documentId);
+  if (!document || !isEligibleOrganizationSignatoryProof(document, asOf))
+    return {
+      documentId: null,
+      documentVersionId: null,
+      isActive: false,
+    } as const;
+  return {
+    documentId: document.id,
+    documentVersionId: document.currentVersion.id,
+  } as const;
+}
+
+export async function loadOrganizationSignatoryProofs(
+  organizationId: string,
+  branchId: string,
+  page: number,
+  permissions: readonly IamPermissionCode[],
+  list: (query: DocumentListQueryV1) => Promise<DocumentListResponseV1>,
+) {
+  if (!canAttachOrganizationDocument(permissions)) return null;
+  return list({
+    ...organizationDocumentQuery(organizationId, branchId, page),
+    pageSize: 100,
+  });
 }
 
 export interface OrganizationDocumentInput {

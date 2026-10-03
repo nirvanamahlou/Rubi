@@ -1,9 +1,18 @@
-import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
-import { describe, expect, it } from 'vitest';
 import {
+  b2bSignatoryIssue,
+  type B2bSignatoryInputV1,
+  type DocumentListItemV1,
+  type IamPermissionCode,
+  type MasterDataRecord,
+} from '@nora/contracts';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  canAttachOrganizationDocument,
   formatOrganizationDocumentExpiry,
+  loadOrganizationSignatoryProofs,
   organizationDocumentForm,
   organizationDocumentQuery,
+  resolveOrganizationSignatoryProof,
   type OrganizationDocumentInput,
   type OrganizationDocumentOptions,
 } from './organization-documents';
@@ -51,6 +60,19 @@ const input: OrganizationDocumentInput = {
 };
 const file = () =>
   new File(['%PDF-test'], 'synthetic.pdf', { type: 'application/pdf' });
+const proofPermissions: IamPermissionCode[] = [
+  'documents.list',
+  'documents.organization.read',
+  'documents.metadata.read',
+];
+const proof = {
+  id: 'document-1',
+  branchId: 'branch',
+  archiveStatus: 'ACTIVE',
+  isIncomplete: false,
+  validUntil: '2027-01-01T00:00:00.000Z',
+  currentVersion: { id: 'version-1', scanStatus: 'CLEAN' },
+} as DocumentListItemV1;
 
 describe('organization Documents public integration', () => {
   it('locks the query to canonical identity, branch and organization domain', () => {
@@ -68,6 +90,92 @@ describe('organization Documents public integration', () => {
       validity: 'EXPIRED',
     });
     expect(() => organizationDocumentQuery('organization-1', '')).toThrow();
+  });
+  it('loads signatory proofs only with the complete public-reference capability', async () => {
+    const list = vi.fn().mockResolvedValue({
+      data: [proof],
+      meta: { page: 2, pageSize: 100, total: 1, totalPages: 2 },
+    });
+    await expect(
+      loadOrganizationSignatoryProofs(
+        'organization-1',
+        'branch',
+        2,
+        proofPermissions,
+        list,
+      ),
+    ).resolves.toMatchObject({ data: [proof] });
+    expect(list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceModule: 'master-data',
+        sourceEntityType: 'organizations',
+        sourceEntityId: 'organization-1',
+        branchId: 'branch',
+        domain: 'ORGANIZATION',
+        page: 2,
+        pageSize: 100,
+      }),
+    );
+
+    for (const permission of proofPermissions) {
+      const deniedList = vi.fn();
+      await expect(
+        loadOrganizationSignatoryProofs(
+          'organization-1',
+          'branch',
+          1,
+          proofPermissions.filter((item) => item !== permission),
+          deniedList,
+        ),
+      ).resolves.toBeNull();
+      expect(deniedList).not.toHaveBeenCalled();
+    }
+    expect(canAttachOrganizationDocument(permissions)).toBe(false);
+  });
+  it('pins the selected clean proof version in a valid saved form', () => {
+    const selected = resolveOrganizationSignatoryProof(
+      [proof],
+      proof.id,
+      Date.parse('2026-10-03T00:00:00.000Z'),
+    );
+    expect(selected).toEqual({
+      documentId: 'document-1',
+      documentVersionId: 'version-1',
+    });
+    const saved: B2bSignatoryInputV1 = {
+      branchId: 'branch',
+      contactId: 'contact-1',
+      documentTypes: ['FRAMEWORK_AGREEMENT'],
+      authorityLimit: '100',
+      currencyCode: 'IRR',
+      validFrom: '2026-10-03',
+      validTo: null,
+      ...selected,
+      isActive: true,
+      notes: '',
+    };
+    expect(b2bSignatoryIssue(saved)).toBeUndefined();
+    expect(b2bSignatoryIssue({ ...saved, currencyCode: null })).toContain(
+      'ارز',
+    );
+  });
+  it.each([
+    { currentVersion: { id: 'version-1', scanStatus: 'PENDING_SCAN' } },
+    { isIncomplete: true },
+    { validUntil: '2026-01-01T00:00:00.000Z' },
+    { validUntil: 'not-a-date' },
+  ])('fails closed for an ineligible proof %j', (patch) => {
+    expect(
+      resolveOrganizationSignatoryProof(
+        [{ ...proof, ...patch } as DocumentListItemV1],
+        proof.id,
+        Date.parse('2026-10-03T00:00:00.000Z'),
+      ),
+    ).toEqual({
+      documentId: null,
+      documentVersionId: null,
+      isActive: false,
+    });
   });
   it('uses owner classification and existing identity while retaining step-up and UTC expiry', () => {
     const form = organizationDocumentForm(
