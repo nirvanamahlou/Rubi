@@ -8,12 +8,7 @@ import type {
 } from '@nora/contracts';
 import { ArrowLeft, Check, FileText, Search } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from '@/components/ui/overlays';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { AgreementTermsEditor } from './agreement-terms-editor';
 import { blankAgreementTerms } from '../model/agreement-terms';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -27,10 +22,10 @@ import {
 } from '../model/cooperation-draft';
 
 const steps = [
-  ['هویت و نقش', 'انتخاب سازمان موجود یا جدید'],
-  ['اشخاص و دسترسی', 'نماینده و نشانی همکاری'],
-  ['قرارداد و اعتبار', 'شرایط تجاری و پیش‌نویس'],
-  ['اسناد و تأیید', 'بازبینی و ثبت پرونده'],
+  'هویت و نقش',
+  'اشخاص و دسترسی',
+  'قرارداد و اعتبار',
+  'اسناد و تأیید',
 ];
 export function CooperationWizard({
   role,
@@ -230,19 +225,17 @@ export function CooperationWizard({
       }}
     >
       <DialogContent
+        aria-describedby={undefined}
         className="b2b-design b2b-modal cooperation-modal"
         dir="rtl"
         onInteractOutside={(event) => event.preventDefault()}
       >
         <div className="modal-title">
           <DialogTitle>ایجاد همکاری B2B</DialogTitle>
-          <DialogDescription>
-            ثبت نقش آژانس یا مشتری سازمانی با حفظ هویت سازمان موجود
-          </DialogDescription>
         </div>
         <div className="wizard">
           <nav className="panel steps" aria-label="مراحل ایجاد همکاری">
-            {steps.map(([title, description], index) => (
+            {steps.map((title, index) => (
               <div
                 key={title}
                 className={`step ${step === index + 1 ? 'active' : step > index + 1 ? 'done' : ''}`}
@@ -255,10 +248,7 @@ export function CooperationWizard({
                     (index + 1).toLocaleString('fa-IR')
                   )}
                 </span>
-                <div>
-                  <b>{title}</b>
-                  <small>{description}</small>
-                </div>
+                <b>{title}</b>
               </div>
             ))}
           </nav>
@@ -275,10 +265,6 @@ export function CooperationWizard({
             </h3>
             {step === 1 ? (
               <>
-                <p className="panel-note">
-                  ابتدا سازمان موجود را جست‌وجو کنید تا پرونده تکراری ساخته
-                  نشود.
-                </p>
                 <div className="wizard-mode">
                   <label>
                     <input
