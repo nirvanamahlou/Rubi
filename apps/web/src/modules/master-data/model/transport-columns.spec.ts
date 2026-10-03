@@ -29,7 +29,11 @@ describe('mockup column coverage', () => {
     'bus-types',
   ] as const)('has individual columns and two filters for %s', (resource) => {
     expect(transportColumns(resource).length).toBeGreaterThanOrEqual(
-      resource === 'aircraft-types' ? 3 : resource === 'airlines' ? 4 : 5,
+      resource === 'aircraft-types' || resource === 'cabin-classes'
+        ? 3
+        : resource === 'airlines'
+          ? 4
+          : 5,
     );
     expect(getMasterDataColumnFilters(resource)).toHaveLength(2);
     expect(new Set(transportColumns(resource).map(([key]) => key)).size).toBe(
@@ -77,8 +81,13 @@ describe('mockup column coverage', () => {
   });
   it('shows only the required English title for cabin classes', () => {
     expect(transportColumns('cabin-classes').map(([, label]) => label)).toEqual(
-      ['کد', 'عنوان انگلیسی', 'کد رزرو', 'ترتیب', 'استفاده در Ticket Catalog'],
+      ['کد', 'عنوان انگلیسی', 'کد رزرو'],
     );
+    expect(transportColumns('cabin-classes').map(([key]) => key)).toEqual([
+      'code',
+      'englishName',
+      'bookingCode',
+    ]);
     expect(
       transportColumns('cabin-classes').map(([, label]) => label),
     ).not.toContain('عنوان فارسی');

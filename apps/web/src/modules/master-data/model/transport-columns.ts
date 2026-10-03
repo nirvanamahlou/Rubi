@@ -29,8 +29,6 @@ export function transportColumns(
         ['code', 'کد'],
         ['englishName', 'عنوان انگلیسی'],
         ['bookingCode', 'کد رزرو'],
-        ['displayOrder', 'ترتیب'],
-        ['usage', 'استفاده در Ticket Catalog'],
       ];
     case 'baggage-rules':
       return [
