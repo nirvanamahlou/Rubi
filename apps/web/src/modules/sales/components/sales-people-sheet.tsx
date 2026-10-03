@@ -729,6 +729,9 @@ export function SalesPeopleSheet({
         rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
         showPassportExpiry={passportIdentity}
         visibleFields={visibleEntryFields}
+        columnOrder={
+          passportIdentity ? ['passportFirstName', 'passportLastName'] : []
+        }
         columnLabels={
           passportIdentity
             ? {

@@ -2,6 +2,10 @@
 
 Cabin Classes now renders code, English title and booking code from its resource-specific column model, plus the renderer's independent authenticated logo, status and operations columns. Display order and Ticket Catalog usage are hidden only from this table, and Version / Audit remains absent; forms, View, export, backend data and all other resources remain unchanged. Focused 18 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
 
+## 2026-10-03 — PASSPORT-NAME-FIELD-ORDER-1003 — PC-A — READY_FOR_REVIEW
+
+International Sales passenger entry now places English passport first/last names as the second/third columns after the passenger role, before national ID. Customers/default domestic column order and validation/persistence remain unchanged. 11 focused tests, scoped ESLint, Web typecheck and the 55-route production build pass; no authenticated browser/runtime QA or API/schema/dependency change. Bounded locks released; user authorizes develop merge after CI.
+
 ## 2026-10-03 — AIRCRAFT-HIDE-EXTRA-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 Aircraft Types now renders code, manufacturer/model and English title from its resource-specific column model, plus the renderer's independent authenticated logo, status and operations columns. Body type, capacity and display order are hidden only from this table; forms, View, export, backend data and all other resources remain unchanged. Focused 18 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
