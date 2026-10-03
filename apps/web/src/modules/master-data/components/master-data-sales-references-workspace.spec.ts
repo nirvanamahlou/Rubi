@@ -6,6 +6,7 @@ import ts from 'typescript';
 import { getMasterDataColumnFilters } from '@nora/contracts';
 
 import { getMasterDataSection } from '../model/sections';
+import { getMasterDataDefinition } from '../model/catalog';
 import {
   appendUniqueSalesReferenceSummaryPage,
   countEnglishTitles,
@@ -13,6 +14,7 @@ import {
   hasValidSalesReferenceSummaryProgress,
   isCurrentSalesReferenceSummaryRequest,
   salesReferenceKpiItems,
+  salesReferenceExportColumns,
   visibleSalesReferenceColumnFilterIndexes,
 } from './master-data-sales-references-workspace';
 import type { MasterDataRecord } from '@nora/contracts';
@@ -93,6 +95,35 @@ function tableShape() {
 }
 
 describe('sales references workspace', () => {
+  it('submits one canonical Excel column set for both resources', () => {
+    const expected = [
+      'code',
+      'name',
+      'englishName',
+      'description',
+      'displayOrder',
+      'status',
+      'updatedAt',
+    ];
+
+    for (const resource of [
+      'acquaintance-methods',
+      'sales-channels',
+    ] as const) {
+      const columns = salesReferenceExportColumns(
+        getMasterDataDefinition(resource).fields,
+      );
+      expect(columns).toEqual(expected);
+      expect(new Set(columns).size).toBe(columns.length);
+    }
+
+    expect(source).toContain(
+      'columns: salesReferenceExportColumns(definition.fields)',
+    );
+    expect(source).toContain('resource,');
+    expect(source.match(/\.\.\.effectiveColumnFilters/g)).toHaveLength(2);
+  });
+
   it('keeps only the two requested tabs without a standalone profile section', () => {
     for (const label of ['نحوه آشنایی', 'کانال فروش'])
       expect(source).toContain(label);
