@@ -321,6 +321,40 @@ describe('CustomerService', () => {
     expect(JSON.stringify(persisted)).not.toContain('1234567891');
   });
 
+  it('creates a customer-only person without a national ID or birth date', async () => {
+    const repository = {
+      create: vi
+        .fn()
+        .mockResolvedValue({
+          ...row,
+          isPassenger: false,
+          birthDate: null,
+          nationalIdEncrypted: null,
+          nationalIdIv: null,
+          nationalIdAuthTag: null,
+          nationalIdKeyVersion: null,
+          nationalIdMasked: null,
+        }),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    await service.create(
+      {
+        kind: 'person',
+        firstName: 'Synthetic',
+        lastName: 'Customer',
+        displayName: 'Synthetic Customer',
+        roles: ['customer'],
+      },
+      actor,
+    );
+    expect(repository.create).toHaveBeenCalledOnce();
+    expect(nationalIdProtector.protect).not.toHaveBeenCalled();
+    expect(vi.mocked(repository.create).mock.calls[0]?.[0]).toMatchObject({
+      isCustomer: true,
+      isPassenger: false,
+    });
+  });
+
   it('rejects a person create without national ID', async () => {
     const repository = { create: vi.fn() } as unknown as CustomerRepository;
     const { service } = createService(repository);

@@ -1,4 +1,5 @@
 'use client';
+import { CustomerBasicFields } from './customer-basic-fields';
 
 import type {
   BranchReference,
@@ -343,6 +344,11 @@ export function CustomerDrawer({
   const sensitiveRequestId = useRef(0);
   const [addressType, setAddressType] = useState<CustomerAddressType>('home');
   const [address, setAddress] = useState('');
+  const customerOnlyEntry =
+    mode === 'create' &&
+    draft.kind === 'person' &&
+    draft.roles.includes('customer') &&
+    !draft.roles.includes('passenger');
   const [countryId, setCountryId] = useState('');
   const [cityId, setCityId] = useState('');
   const [companionSearch, setCompanionSearch] = useState('');
@@ -650,6 +656,11 @@ export function CustomerDrawer({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const submittedCompanions = customerOnlyEntry ? [] : newCompanions;
+    if (customerOnlyEntry && (!primaryPhone.trim() || !address.trim())) {
+      setMessage('شماره تماس و نشانی مشتری را تکمیل کنید.');
+      return;
+    }
     if (busy || partialCustomer || creationOutcomeUncertain) return;
     if (mode === 'create' && draft.kind === 'person') {
       const entryError = validateCustomerEntryRows([
@@ -659,7 +670,7 @@ export function CustomerDrawer({
           lastName: draft.lastName ?? '',
           nationalId: draft.nationalId ?? '',
         },
-        ...newCompanions.flatMap((row, index) =>
+        ...submittedCompanions.flatMap((row, index) =>
           row.source === 'new'
             ? [
                 {
@@ -680,12 +691,13 @@ export function CustomerDrawer({
     if (
       mode === 'create' &&
       draft.kind === 'person' &&
+      !customerOnlyEntry &&
       !isValidIranianNationalId(draft.nationalId ?? '')
     ) {
       setMessage('کد ملی مشتری باید ده‌رقمی و دارای رقم کنترل معتبر باشد.');
       return;
     }
-    const invalidPassengerIndex = newCompanions.findIndex(
+    const invalidPassengerIndex = submittedCompanions.findIndex(
       (companion) =>
         companion.source === 'new' &&
         !isValidIranianNationalId(companion.nationalId),
@@ -705,6 +717,7 @@ export function CustomerDrawer({
       return;
     }
     if (
+      !customerOnlyEntry &&
       draft.passportNumber?.trim() &&
       !/^[A-Z0-9-]{4,24}$/.test(
         draft.passportNumber.trim().toUpperCase().replace(/\s+/g, ''),
@@ -713,7 +726,7 @@ export function CustomerDrawer({
       setMessage('شماره پاسپورت معتبر نیست.');
       return;
     }
-    const missingBirthDateIndex = newCompanions.findIndex((companion) =>
+    const missingBirthDateIndex = submittedCompanions.findIndex((companion) =>
       companion.source === 'primaryCustomer'
         ? !draft.birthDate
         : !companion.birthDate,
@@ -724,7 +737,7 @@ export function CustomerDrawer({
       );
       return;
     }
-    const invalidPassportIndex = newCompanions.findIndex(
+    const invalidPassportIndex = submittedCompanions.findIndex(
       (companion) =>
         companion.source === 'new' &&
         companion.passportNumber.trim() &&
@@ -738,7 +751,7 @@ export function CustomerDrawer({
       );
       return;
     }
-    for (const [companionIndex, companion] of newCompanions.entries()) {
+    for (const [companionIndex, companion] of submittedCompanions.entries()) {
       for (const document of companion.documents) {
         const documentType = passengerDocumentOptions?.documentTypes.find(
           (item) => item.id === document.documentTypeId,
@@ -774,23 +787,35 @@ export function CustomerDrawer({
       }
     }
     const primaryCustomerIsPassenger =
-      mode === 'create' && newCompanions[0]?.source === 'primaryCustomer';
-    const primaryPassenger = newCompanions.find(
+      mode === 'create' &&
+      !customerOnlyEntry &&
+      newCompanions[0]?.source === 'primaryCustomer';
+    const primaryPassenger = submittedCompanions.find(
       (companion) => companion.source === 'primaryCustomer',
     );
-    const submittedDraft: CustomerMutationRequest = {
-      ...draft,
-      ...(draft.nationalId
-        ? { nationalId: normalizeNationalId(draft.nationalId) }
-        : {}),
-      displayName:
-        draft.kind === 'person'
-          ? `${draft.firstName?.trim() ?? ''} ${draft.lastName?.trim() ?? ''}`.trim()
-          : draft.displayName,
-      roles: primaryCustomerIsPassenger
-        ? Array.from(new Set([...draft.roles, 'passenger' as const]))
-        : draft.roles,
-    };
+    const submittedDraft: CustomerMutationRequest = customerOnlyEntry
+      ? {
+          kind: 'person',
+          firstName: draft.firstName ?? '',
+          lastName: draft.lastName ?? '',
+          displayName: [draft.firstName?.trim(), draft.lastName?.trim()]
+            .filter(Boolean)
+            .join(' '),
+          roles: ['customer'],
+        }
+      : {
+          ...draft,
+          ...(draft.nationalId
+            ? { nationalId: normalizeNationalId(draft.nationalId) }
+            : {}),
+          displayName:
+            draft.kind === 'person'
+              ? `${draft.firstName?.trim() ?? ''} ${draft.lastName?.trim() ?? ''}`.trim()
+              : draft.displayName,
+          roles: primaryCustomerIsPassenger
+            ? Array.from(new Set([...draft.roles, 'passenger' as const]))
+            : draft.roles,
+        };
     if (!draft.nationalId?.trim()) delete submittedDraft.nationalId;
     if (!submittedDraft.passportNumber?.trim())
       delete submittedDraft.passportNumber;
@@ -832,13 +857,25 @@ export function CustomerDrawer({
             })
           ).data;
         }
-        if (primaryEmail.trim()) {
+        if (!customerOnlyEntry && primaryEmail.trim()) {
           createdCustomer = (
             await customersApi.addContact(createdCustomer.id, {
               type: 'email',
               value: primaryEmail.trim().toLowerCase(),
               label: 'اصلی',
               isPrimary: !primaryPhone.trim(),
+              version: createdCustomer.version,
+            })
+          ).data;
+        }
+
+        if (customerOnlyEntry) {
+          createdCustomer = (
+            await customersApi.addAddress(createdCustomer.id, {
+              type: 'home',
+              label: address.trim(),
+              cityId: null,
+              isPrimary: true,
               version: createdCustomer.version,
             })
           ).data;
@@ -851,7 +888,7 @@ export function CustomerDrawer({
           );
         }
 
-        for (const companion of newCompanions) {
+        for (const companion of submittedCompanions) {
           if (companion.source === 'primaryCustomer') continue;
           let createdCompanion = (
             await customersApi.create({
@@ -909,7 +946,7 @@ export function CustomerDrawer({
           ).data;
         }
 
-        const addedCompanionCount = newCompanions.filter(
+        const addedCompanionCount = submittedCompanions.filter(
           (companion) => companion.source === 'new',
         ).length;
         await onSaved(
@@ -1267,7 +1304,7 @@ export function CustomerDrawer({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge>۱ · اطلاعات پرونده</Badge>
-                  <Badge>۲ · مسافران همراه</Badge>
+                  {!customerOnlyEntry && <Badge>۲ · مسافران همراه</Badge>}
                   <span className="text-xs text-muted-foreground">
                     با Tab بین خانه‌ها حرکت کنید؛ مدارک از جزئیات هر ردیف باز
                     می‌شوند.
@@ -1462,43 +1499,45 @@ export function CustomerDrawer({
                   </Select>
                 </FormField>
               ) : null}
-              <FormField label="نحوه آشنایی">
-                <Select
-                  disabled={
-                    readonly || masters.acquaintanceMethods.length === 0
-                  }
-                  onValueChange={(value) =>
-                    setDraft((current) => ({
-                      ...current,
-                      acquaintanceMethodId:
-                        value === 'not-selected' ? null : value,
-                    }))
-                  }
-                  value={draft.acquaintanceMethodId ?? 'not-selected'}
-                >
-                  <SelectTrigger aria-label="نحوه آشنایی">
-                    <SelectValue placeholder="انتخاب از اطلاعات پایه" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="not-selected">ثبت نشده</SelectItem>
-                    {masters.acquaintanceMethods.map((record) => (
-                      <SelectItem
-                        disabled={
-                          !isMasterReferenceSelectable(
-                            record,
-                            draft.acquaintanceMethodId,
-                          )
-                        }
-                        key={record.id}
-                        value={record.id}
-                      >
-                        {record.name}
-                        {record.status === 'inactive' ? ' (غیرفعال)' : ''}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormField>
+              {!customerOnlyEntry && (
+                <FormField label="نحوه آشنایی">
+                  <Select
+                    disabled={
+                      readonly || masters.acquaintanceMethods.length === 0
+                    }
+                    onValueChange={(value) =>
+                      setDraft((current) => ({
+                        ...current,
+                        acquaintanceMethodId:
+                          value === 'not-selected' ? null : value,
+                      }))
+                    }
+                    value={draft.acquaintanceMethodId ?? 'not-selected'}
+                  >
+                    <SelectTrigger aria-label="نحوه آشنایی">
+                      <SelectValue placeholder="انتخاب از اطلاعات پایه" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not-selected">ثبت نشده</SelectItem>
+                      {masters.acquaintanceMethods.map((record) => (
+                        <SelectItem
+                          disabled={
+                            !isMasterReferenceSelectable(
+                              record,
+                              draft.acquaintanceMethodId,
+                            )
+                          }
+                          key={record.id}
+                          value={record.id}
+                        >
+                          {record.name}
+                          {record.status === 'inactive' ? ' (غیرفعال)' : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              )}
               <FormField label="نقش">
                 <div className="flex gap-2">
                   {(['customer', 'passenger'] as CustomerRole[]).map((role) => (
@@ -1564,7 +1603,25 @@ export function CustomerDrawer({
                 </>
               ) : null}
             </div>
-            {mode === 'create' && draft.kind === 'person' ? (
+            {customerOnlyEntry && (
+              <CustomerBasicFields
+                disabled={busy}
+                values={{
+                  firstName: draft.firstName ?? '',
+                  lastName: draft.lastName ?? '',
+                  phone: primaryPhone,
+                  address,
+                }}
+                onChange={(field, value) => {
+                  if (field === 'phone') setPrimaryPhone(value);
+                  else if (field === 'address') setAddress(value);
+                  else setDraft((current) => ({ ...current, [field]: value }));
+                }}
+              />
+            )}
+            {mode === 'create' &&
+            draft.kind === 'person' &&
+            !customerOnlyEntry ? (
               <CustomerEntrySheet
                 calendarMode={calendarMode}
                 onCalendarModeChange={onCalendarModeChange}
@@ -1673,7 +1730,9 @@ export function CustomerDrawer({
                 ]}
               />
             ) : null}
-            {mode === 'create' && draft.kind === 'person' ? (
+            {mode === 'create' &&
+            draft.kind === 'person' &&
+            !customerOnlyEntry ? (
               <Card className="space-y-4 border-primary/20 bg-primary/[0.03] p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
