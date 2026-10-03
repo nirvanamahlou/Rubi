@@ -1,8 +1,10 @@
-## FLIGHT-MULTIPLE-CABINS-1003 — PC-A — IN_PROGRESS
+## FLIGHT-MULTIPLE-CABINS-1003 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch `codex/pc-a-flight-multiple-cabins-1003` from `origin/develop@977266e2`. Owner requests multiple cabin classes with independent capacity in new-flight entry and adjacent per-class Sales ticket pricing, then develop merge after checks.
 - Reserve Ticket Catalog Web ticket-form, flight-schedule-form, shared module-local cabin capacity UI, module-local cabin expansion/validation and focused tests; Sales ticket-price row ordering/class labels and focused tests; bounded task, assignment and status docs. Preserve dirty primary checkout, especially reference-picker/reference-browser and Reservations/Sales unrelated edits. No conflicting active owner found for these scoped files.
 - Compatibility: expand the form into existing single-cabin ProductInput/TicketOfferCreateV1 records through the existing idempotent publication flow. Each offer retains its own FK identity, cabin code, inventory, prices, commissions, reservations and Finance purchase request. No shared API/event contract or schema/migration/dependency/permission change; Central Docs held for this bounded task only. Migration and Dependency/Lockfile remain unassigned.
+
+- Delivered Add/Remove Cabin in weekly and advanced creation, independent per-cabin offers/capacity and adjacent labeled Sales pricing; same-cabin round-trip groups and duplicate/invalid row protection. Validation: 199 focused tests, full/scoped Web lint, typecheck and 55-route production build pass. No migration/API/dependency/permission or operational-data change. PR #571 targets develop; owner-authorized merge follows final CI. Task validation/handoff: docs/tasks/FLIGHT-MULTIPLE-CABINS-1003.md. Scoped locks RELEASED with this handoff commit.
 
 ## LEADER-REPLACE-DOCS-KPI-1003 — PC-B — READY_FOR_REVIEW
 
