@@ -12,6 +12,40 @@ const source = readFileSync(
 );
 
 describe('insurance workspace', () => {
+  it('keeps insurer headers and cells aligned without last change', () => {
+    const headersSource = source.slice(
+      source.indexOf("{resource === 'insurers' ? ("),
+      source.indexOf(") : resource === 'insurance-plans' ? ("),
+    );
+    const headerList = headersSource.slice(
+      headersSource.indexOf('{['),
+      headersSource.indexOf('].map('),
+    );
+    const headers = [...headerList.matchAll(/'([^']+)'/g)].map(
+      (match) => match[1],
+    );
+    const rowsStart = source.indexOf('{records.map((record) => (');
+    const cellsSource = source.slice(
+      source.indexOf("{resource === 'insurers' ? (", rowsStart),
+      source.indexOf(") : resource === 'insurance-plans' ? (", rowsStart),
+    );
+
+    expect(headers).toEqual([
+      'کد',
+      'لوگو',
+      'نام فارسی',
+      'نام انگلیسی',
+      'سازمان مرتبط',
+      'کشور',
+      'طرح فعال',
+      'وضعیت',
+      'عملیات',
+    ]);
+    expect((cellsSource.match(/<td\b/g) ?? []).length + 3).toBe(headers.length);
+    expect(headers).not.toContain('آخرین تغییر');
+    expect(cellsSource).not.toContain('record.updatedAt');
+  });
+
   it('implements all three mockup tabs with exact KPI labels', () => {
     for (const label of [
       'شرکت‌های بیمه',

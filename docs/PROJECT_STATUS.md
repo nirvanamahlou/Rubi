@@ -1,3 +1,7 @@
+## 2026-10-03 — MASTER-DATA-HIDE-AUDIT-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
+
+Visible Last Change/Audit table columns were removed across all current Master Data renderers: Hotels, Hotel Chains, Countries, Regions, Insurers, Airlines, Cabin Classes, Rail Companies, Bus Companies and the generic fallback. Combined `Version / Audit` columns were removed as a whole; independent record/template Version columns remain. Finance Audit operations/timelines, transport profile audit, View/form timestamps, sorting, exports, persistence, optimistic concurrency and backend audit records are unchanged. Focused regressions (42), all 461 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.
+
 ## 2026-10-01 — TRAVEL-HIDE-USAGE-COLUMNS-1001 — PC-B — READY_FOR_REVIEW
 
 The Tour Types and Transfer Types lists no longer display their usage columns. Leaders and Visa Services were already without that column and remain unchanged; AST regressions verify exact headers, matching row-cell counts and the retained prior Tour Types last-change removal across all four tables. Tour Type View usage, model metadata, forms, exports, API and backend behavior remain unchanged. Focused regression (5), all 456 Master Data Web tests, scoped lint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed, and bounded locks release with the scoped commit.

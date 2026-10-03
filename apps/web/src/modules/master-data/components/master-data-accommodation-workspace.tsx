@@ -889,7 +889,6 @@ export function MasterDataAccommodationWorkspace() {
             'وب‌سایت',
             'ساعت ورود / خروج',
             'آدرس',
-            'آخرین تغییر',
             'عملیات',
           ]
         : tab === 'chains'
@@ -901,7 +900,6 @@ export function MasterDataAccommodationWorkspace() {
               'کشور مبدأ',
               'وب‌سایت',
               'تعداد هتل عضو',
-              'آخرین تغییر',
               'وضعیت',
               'عملیات',
             ]
@@ -1002,9 +1000,6 @@ export function MasterDataAccommodationWorkspace() {
                     <td className="p-4 min-w-64">
                       {attribute(record, 'address')}
                     </td>
-                    <td className="p-4">
-                      {new Date(record.updatedAt).toLocaleString('fa-IR')}
-                    </td>
                   </>
                 ) : tab === 'chains' ? (
                   <>
@@ -1020,11 +1015,6 @@ export function MasterDataAccommodationWorkspace() {
                       {Number(
                         attribute(record, 'hotelCount', '0'),
                       ).toLocaleString('fa-IR')}
-                    </td>
-                    <td className="p-4">
-                      {new Intl.DateTimeFormat('fa-IR').format(
-                        new Date(record.updatedAt),
-                      )}
                     </td>
                     <td className="p-4">
                       <StatusBadge record={record} />

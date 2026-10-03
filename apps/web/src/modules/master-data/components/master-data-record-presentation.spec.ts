@@ -114,7 +114,7 @@ describe('Master Data record presentation', () => {
       ),
     );
     expect(countryColumns).toMatch(
-      /'کد ISO-2',[\s\S]*'لوگو',[\s\S]*'نام فارسی',[\s\S]*'نام انگلیسی',[\s\S]*'ترتیب',[\s\S]*'وابستگی‌ها',[\s\S]*'آخرین تغییر',[\s\S]*'وضعیت',[\s\S]*'عملیات'/,
+      /'کد ISO-2',[\s\S]*'لوگو',[\s\S]*'نام فارسی',[\s\S]*'نام انگلیسی',[\s\S]*'ترتیب',[\s\S]*'وابستگی‌ها',[\s\S]*'وضعیت',[\s\S]*'عملیات'/,
     );
     expect(countryColumns).not.toContain('نسخه');
 
@@ -132,5 +132,45 @@ describe('Master Data record presentation', () => {
     );
     expect(nonCountryGeography.match(/record\.version/g)).toHaveLength(2);
     expect(geography.match(/'نسخه'/g)).toHaveLength(2);
+  });
+
+  it('keeps the generic fallback table aligned without last change', () => {
+    const generic = source('master-data-live-workspace.tsx');
+    const table = generic.slice(
+      generic.indexOf('aria-label={`فهرست ${definition.label}`}'),
+      generic.indexOf(
+        '</table>',
+        generic.indexOf('aria-label={`فهرست ${definition.label}`}'),
+      ),
+    );
+    expect(table.match(/<th\b/g)).toHaveLength(5);
+    expect((table.match(/<td\b/g) ?? []).length + 1).toBe(5); // logo cell
+    expect(table).not.toContain('آخرین تغییر');
+    expect(table).not.toContain('record.updatedAt');
+    expect(generic).toContain(
+      '<SelectItem value="updatedAt">آخرین تغییر</SelectItem>',
+    );
+  });
+
+  it('removes audit headers only from tables and preserves audit surfaces', () => {
+    for (const fileName of recordRenderers) {
+      const renderer = source(fileName);
+      for (const tableHead of renderer.matchAll(/<thead\b[\s\S]*?<\/thead>/g)) {
+        expect(tableHead[0], fileName).not.toContain('آخرین تغییر');
+        expect(tableHead[0], fileName).not.toContain('Version / Audit');
+        expect(tableHead[0], fileName).not.toMatch(
+          /<th\b[^>]*>\s*Audit\s*<\/th>/,
+        );
+      }
+    }
+    const finance = source('master-data-finance-workspace.tsx');
+    expect(finance).toContain('onClick={() => void showAudit(row)}');
+    expect(finance).toContain('Audit Timeline نرخ');
+    expect(source('master-data-transportation-workspace.tsx')).toContain(
+      '<MasterDataTransportAudit',
+    );
+    expect(source('master-data-live-workspace.tsx')).toContain(
+      'version: selected.version',
+    );
   });
 });

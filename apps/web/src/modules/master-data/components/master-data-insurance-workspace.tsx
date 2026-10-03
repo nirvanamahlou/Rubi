@@ -510,7 +510,6 @@ export function MasterDataInsuranceWorkspace() {
                 'سازمان مرتبط',
                 'کشور',
                 'طرح فعال',
-                'آخرین تغییر',
                 'وضعیت',
                 'عملیات',
               ].map((label) => (
@@ -600,9 +599,6 @@ export function MasterDataInsuranceWorkspace() {
                     {Number(attribute(record, 'planCount', '0')).toLocaleString(
                       'fa-IR',
                     )}
-                  </td>
-                  <td className="p-4">
-                    {new Date(record.updatedAt).toLocaleString('fa-IR')}
                   </td>
                 </>
               ) : resource === 'insurance-plans' ? (
