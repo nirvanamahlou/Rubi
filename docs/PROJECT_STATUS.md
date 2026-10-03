@@ -6,6 +6,10 @@ User creation now saves the current explicit access selections even while option
 
 - Delivery: implementation `a0a1afd4`, [PR #586](https://github.com/nirvanamahlou/Rubi/pull/586) targets develop. Other PCs should fetch the reviewed merge; no migration/dependency step is introduced by this task. Local rollout follows owner authorization while preserving current LAN origins, document storage and unrelated runtime files.
 
+## 2026-10-03 — INSURANCE-NESTED-PLANS-1003 — PC-B — READY_FOR_REVIEW
+
+Insurance Plans are now nested immediately beneath expandable Insurer rows while Coverage remains a top-level tab. Child rows retain logo, coverage, status and View/Edit/Delete actions; the existing plan form locks and force-binds the parent insurer. Generation guards reject stale child responses, and successful CRUD refreshes both the child page and parent summary without clearing the expanded insurer identity. Focused 26 and all 536 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. Tests cover async helper/state boundaries and SSR/source structure; authenticated browser/runtime QA was not performed. No API/schema/organization-model change; bounded locks release with commit.
+
 ## 2026-10-03 — VISA-HIDE-VALIDITY-MODE-1003 — PC-B — READY_FOR_REVIEW
 
 Visa Services create/edit no longer renders the reference-validity-mode selector. New mutations keep the canonical `DAYS` mode; edits preserve supported stored modes by using them only for days-field behavior and omitting mode from PATCH. `DAYS` keeps the optional validated day field, while legacy `PASSPORT_EXPIRY` keeps it hidden. View/table/backend remain unchanged and Excel retains `referenceValidityMode` immediately before `referenceValidityDays`. Focused 32 and all 534 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
@@ -4340,3 +4344,8 @@ Pure person/customer creation now asks for exactly first name, last name, phone 
 ## 2026-10-03 — RESERVATION-MANIFEST-GREGORIAN-DIRECTION-1003 — PC-A — READY_FOR_REVIEW
 
 Reservations Manifest now renders Gregorian Tehran-local dates and explicit origin → destination paths. Tehran/Antalya city-and-country filters retain both physical legs in correct outbound/return sections; empty messages follow the filtered sections. Nine focused tests, scoped lint, Web typecheck and 55-route production build passed. Full Web lint stalled in the shared runtime; CI gates merge. No API, data, migration or dependency change.
+
+
+## 2026-10-03 — PURCHASE-CUSTOMER-DATE-RANGE-1003 — PC-A — READY_FOR_REVIEW
+
+Sales new purchase now collects buyer name, phone, address and postal code above passengers, supports a separate canonical buyer/payer and stores an encrypted immutable contract contact snapshot for authorized printable output. New separate buyers use merged customer-only four-field creation without national ID or passenger passport; passenger identity validation is retained. Ticket results require a confirmed valid range, both legs respect its bounds, and changes invalidate prior catalog selections/quotes. 121 Sales/Customers API + 268 Web + 1 PostgreSQL regression passed (1 existing Web test skipped), affected lint/typechecks and API/Web production builds passed; Prisma validate/generate and all 113 migrations passed on a disposable PostgreSQL 18 database. The additive nullable Sales JSONB migration must precede API rollout; existing configured contact encryption keys are reused with domain separation. Primary dirty checkout and running local services remain unchanged. Scoped locks RELEASED; no merge/local rollout requested. See docs/tasks/PURCHASE-CUSTOMER-DATE-RANGE-1003.md.

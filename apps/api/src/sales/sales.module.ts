@@ -1,3 +1,4 @@
+import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { Module } from '@nestjs/common';
 
 import { CustomersModule } from '../customers/customers.module';
@@ -29,6 +30,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   providers: [
     AuthGuard,
     SalesRepository,
+    SalesBuyerContactCrypto,
     SalesService,
     SalesOutputService,
     SalesCustomersPublicAdapter,

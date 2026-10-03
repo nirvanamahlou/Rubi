@@ -101,6 +101,7 @@ export interface SalesFormState {
   returnOffer?: TicketOfferV1 | undefined;
   customerId: string;
   customerName: string;
+  buyerContact?: SalesContractCreateRequest['buyerContact'];
   tripType: 'ONE_WAY' | 'ROUND_TRIP';
   originCountryId: string;
   destinationCountryId: string;
@@ -418,6 +419,12 @@ export function withFirstPassengerCustomer(
 ): SalesFormState {
   if (state.customerKind === 'organization')
     return { ...state, firstPassengerIsCustomer: false };
+  if (
+    state.firstPassengerIsCustomer === false &&
+    state.customerId &&
+    state.buyerContact
+  )
+    return state;
   const first = state.passengers[0];
   return {
     ...state,
@@ -963,6 +970,8 @@ export function salesPayload(
     : [];
   return {
     customerId: state.customerId,
+    payerCustomerId: state.customerId,
+    ...(state.buyerContact ? { buyerContact: state.buyerContact } : {}),
     tripType: state.tripType,
     originId: state.originId,
     destinationId: state.destinationId,
