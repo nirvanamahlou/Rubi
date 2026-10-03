@@ -15,4 +15,6 @@ Marketing Web route/model/presentation, bounded System Management Marketing pres
 
 ## Validation and handoff
 
-Implementation and verification are in progress. The lead owns commit, push, PR and the user-authorized develop merge after source review and required checks. All actual checks and release evidence will be recorded before handoff.
+Implementation is complete. All 39 Marketing/System Management tests, scoped ESLint, Web typecheck and the 55-route production build pass. The build uses Next's supported webpack compiler because default Turbopack rejects the reused external dependency junction. A concurrent typecheck initially encountered regenerating `.next/types`; the final check is run after the build. No dependency installation or tracked configuration change was needed. No authenticated browser or running-localhost update is claimed.
+
+The lead reviewed the source and completed the final repairs/checks after the host worker did not return a final report. Worker identity/usage telemetry is not inferred. Latest develop was integrated; only the work ledger conflicted, and both entries were preserved. Scoped locks are released with this handoff. The user-authorized push/PR/develop merge is the remaining release step.

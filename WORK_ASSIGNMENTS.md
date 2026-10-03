@@ -1,7 +1,8 @@
-## MARKETING-SETTINGS-SYSTEM-1003 — PC-B — IN_PROGRESS
+## MARKETING-SETTINGS-SYSTEM-1003 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-marketing-settings-system-1003` from `origin/develop@4d67795c`. Owner explicitly requests moving Marketing settings into System Management → Marketing, then push/develop merge. Reserve Marketing Web section/navigation/route, bounded System Management Marketing presentation, focused regressions, and own status/task entries. Prior System Management PC-B work establishes the existing public settings UI; this unit only hosts the existing Marketing settings areas there.
 - Bounded Central UI reservation: `apps/web/src/lib/navigation.ts` Marketing breadcrumb mapping and System Management module presentation only. Preserve existing permissions, settings persistence, and other modules. No API, shared contract, schema/migration, dependency/lockfile, operational data, or runtime changes. Existing `.data/` and primary coordinator lane are preserved; isolated secondary lane is used because both are occupied.
+- Delivered: Settings card removed from Marketing; legacy links redirect to `/system?module=marketing`. All six original settings views and detail dialogs now appear inside System Management Marketing alongside its existing persisted cards. Shared accessible tabs wrap on small screens and highlight selection. 39 focused tests, scoped lint, Web typecheck and the 55-route webpack production build pass. Default Turbopack rejects the reused dependency junction; no configuration/dependency change was made. Latest develop was integrated, preserving both conflicting ledger entries. No authenticated browser or local runtime update is claimed. Scoped locks RELEASED with handoff; owner-authorized push/develop merge follows.
 
 ## INSURANCE-NESTED-PLANS-1003 — PC-B — READY_FOR_REVIEW
 
