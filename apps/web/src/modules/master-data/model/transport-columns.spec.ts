@@ -29,7 +29,9 @@ describe('mockup column coverage', () => {
     'bus-types',
   ] as const)('has individual columns and two filters for %s', (resource) => {
     expect(transportColumns(resource).length).toBeGreaterThanOrEqual(
-      resource === 'aircraft-types' || resource === 'cabin-classes'
+      resource === 'aircraft-types' ||
+        resource === 'cabin-classes' ||
+        resource === 'bus-companies'
         ? 3
         : resource === 'airlines'
           ? 4
@@ -131,6 +133,22 @@ describe('mockup column coverage', () => {
     ])
       expect(
         transportColumns('rail-companies').map(([, label]) => label),
+      ).not.toContain(hidden);
+  });
+  it('keeps only the approved Bus Companies reference columns', () => {
+    expect(transportColumns('bus-companies')).toEqual([
+      ['code', 'کد'],
+      ['name', 'شرکت اتوبوس'],
+      ['countryName', 'کشور'],
+    ]);
+    for (const hidden of [
+      'لوگو Reference',
+      'Integration Connection',
+      'انواع اتوبوس',
+      'Version / Audit',
+    ])
+      expect(
+        transportColumns('bus-companies').map(([, label]) => label),
       ).not.toContain(hidden);
   });
   it('removes combined audit columns while preserving independent versions', () => {
