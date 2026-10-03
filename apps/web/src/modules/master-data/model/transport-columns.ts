@@ -27,7 +27,7 @@ export function transportColumns(
     case 'cabin-classes':
       return [
         ['code', 'کد'],
-        ['englishName', 'عنوان انگلیسی'],
+        ['cabinType', 'نوع کلاس'],
         ['bookingCode', 'کد رزرو'],
       ];
     case 'baggage-rules':
@@ -118,6 +118,10 @@ const labels: Record<string, string> = {
   DRAFT: 'پیش‌نویس',
   ACTIVE: 'فعال',
   EXPIRED: 'منقضی',
+  ECONOMY: 'Economy',
+  PREMIUM_ECONOMY: 'Premium Economy',
+  BUSINESS: 'Business',
+  FIRST: 'First Class',
 };
 export function transportColumnValue(
   record: MasterDataRecord,

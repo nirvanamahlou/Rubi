@@ -130,7 +130,7 @@ const attributeLabels: Record<string, string> = {
   manufacturerModel: 'سازنده و مدل',
   bodyType: 'نوع بدنه',
   bookingCode: 'کد رزرو',
-  cabinType: 'Cabin',
+  cabinType: 'نوع کلاس',
   displayOrder: 'ترتیب نمایش',
   airlineName: 'ایرلاین',
   cabinClassName: 'کلاس پروازی',
@@ -173,7 +173,7 @@ function aircraftManufacturerModel(record: MasterDataRecord) {
 
 function transportDisplayName(record: MasterDataRecord) {
   if (record.resource === 'cabin-classes')
-    return String(record.attributes.englishName ?? '').trim() || record.code;
+    return transportColumnValue(record, 'cabinType');
   if (record.resource === 'aircraft-types')
     return (
       String(record.attributes.englishName ?? '').trim() ||
@@ -185,6 +185,13 @@ function transportDisplayName(record: MasterDataRecord) {
 
 function profileAttributeEntries(record: MasterDataRecord) {
   const entries = Object.entries(record.attributes);
+  if (record.resource === 'cabin-classes')
+    return [
+      ['cabinType', transportColumnValue(record, 'cabinType')],
+      ...entries.filter(
+        ([key]) => key !== 'cabinType' && key !== 'englishName',
+      ),
+    ] as const;
   if (record.resource !== 'aircraft-types') return entries;
   return [
     ['manufacturerModel', aircraftManufacturerModel(record)],
@@ -201,11 +208,11 @@ function needsCompletion(record: MasterDataRecord) {
     return !record.attributes.englishName || !record.attributes.countryId;
   if (
     record.resource === 'aircraft-types' ||
-    record.resource === 'cabin-classes' ||
     record.resource === 'train-types' ||
     record.resource === 'bus-types'
   )
     return !record.attributes.englishName;
+  if (record.resource === 'cabin-classes') return !record.attributes.cabinType;
   if (record.resource === 'manifest-templates')
     return record.attributes.publicationStatus === 'DRAFT';
   return record.status === 'inactive';
@@ -642,7 +649,7 @@ export function MasterDataTransportationWorkspace() {
                   <Fragment key={key}>
                     <td className="p-4 min-w-28">
                       {key === 'name' ||
-                      (resource === 'cabin-classes' && key === 'englishName') ||
+                      (resource === 'cabin-classes' && key === 'cabinType') ||
                       (resource === 'aircraft-types' &&
                         key === 'manufacturerModel') ? (
                         <>
