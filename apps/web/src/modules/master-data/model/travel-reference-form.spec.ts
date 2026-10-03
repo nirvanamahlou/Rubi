@@ -57,7 +57,7 @@ describe('travel reference form values', () => {
       expect(payload).not.toHaveProperty('status');
     },
   );
-  it('round-trips a stored capacity range and only submits changed status', () => {
+  it('preserves a stored minimum by omitting it from edit values and mutations', () => {
     const existing = record({
       ...transfer,
       suggestedCapacityMin: 4,
@@ -65,10 +65,13 @@ describe('travel reference form values', () => {
     });
     const values = travelReferenceFormValues('transfer-types', existing);
     expect(values).toMatchObject({
-      suggestedCapacityMin: '4',
       suggestedCapacity: '8',
       status: 'inactive',
     });
+    expect(values).not.toHaveProperty('suggestedCapacityMin');
+    expect(
+      travelReferenceMutationValues('transfer-types', values, existing),
+    ).not.toHaveProperty('suggestedCapacityMin');
     expect(
       travelReferenceMutationValues('transfer-types', values, existing),
     ).not.toHaveProperty('status');
@@ -81,11 +84,7 @@ describe('travel reference form values', () => {
     ).toBe('active');
   });
   it.each([
-    { suggestedCapacityMin: '9' },
-    { suggestedCapacity: '' },
     { suggestedCapacity: '101' },
-    { suggestedCapacityMin: '-1' },
-    { suggestedCapacityMin: '1.5' },
     { serviceMode: '' },
     { serviceMode: 'VIP' },
     { vehicleType: '' },

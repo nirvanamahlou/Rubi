@@ -109,19 +109,21 @@ const nonExportableLeaderFields = new Set(['primaryPhone', 'roamingPhone']);
 
 export function travelServicesExportColumns(resource: TravelResource) {
   const definition = getMasterDataDefinition(resource);
-  return [
-    ...new Set([
-      'code',
-      ...definition.fields
-        .map((field) => field.key)
-        .filter(
-          (field) =>
-            resource !== 'leaders' || !nonExportableLeaderFields.has(field),
-        ),
-      'status',
-      'updatedAt',
-    ]),
-  ];
+  const definitionFields = definition.fields
+    .map((field) => field.key)
+    .filter(
+      (field) =>
+        resource !== 'leaders' || !nonExportableLeaderFields.has(field),
+    );
+  const exportableFields =
+    resource === 'transfer-types'
+      ? definitionFields.flatMap((field) =>
+          field === 'suggestedCapacity'
+            ? [field, 'suggestedCapacityMin']
+            : [field],
+        )
+      : definitionFields;
+  return [...new Set(['code', ...exportableFields, 'status', 'updatedAt'])];
 }
 
 export function availableTravelKpiValue(value: number | null | undefined) {

@@ -1,3 +1,7 @@
+## 2026-10-03 — TRANSFER-HIDE-MIN-CAPACITY-1003 — PC-B — READY_FOR_REVIEW
+
+Transfer Type create/edit no longer renders the minimum suggested capacity control. The edit mutation omits that legacy attribute, allowing the API's existing partial-update merge to retain the stored value; View/table/backend remain unchanged and Excel still exports `suggestedCapacityMin` immediately after `suggestedCapacity`. Focused form/model/export regression (31), all 533 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA was performed; bounded locks release with commit.
+
 ## 2026-10-03 — MASTER-DATA-TIGHT-SEARCH-FILTERS-1003 — PC-B — READY_FOR_REVIEW
 
 All dedicated English-name filter controls are removed across Master Data while English fields in forms, View, stored data and general search remain unchanged. The shared projection drops stale hidden English values from list and Excel requests and preserves each remaining filter's original backend slot; both Sales References tabs now use this same path. The module-local filter layout is compact and responsive with readable date ranges and compact desktop actions. Focused 70 and all 536 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA was performed; bounded locks release with commit.

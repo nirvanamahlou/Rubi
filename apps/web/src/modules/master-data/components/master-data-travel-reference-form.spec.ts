@@ -10,6 +10,7 @@ import { MasterDataTravelReferenceForm } from './master-data-travel-reference-fo
 function render(
   resource: 'transfer-types' | 'visa-services',
   attributes: MasterDataRecord['attributes'] = {},
+  editing = true,
 ) {
   const record: MasterDataRecord = {
     id: 'test-record',
@@ -25,36 +26,47 @@ function render(
   return renderToStaticMarkup(
     createElement(MasterDataTravelReferenceForm, {
       resource,
-      record,
+      ...(editing ? { record } : {}),
       onOpenChange: () => undefined,
       onPersist: async () => undefined,
     }),
   );
 }
 describe('travel reference form fields', () => {
-  it('renders every transfer field with status and readonly code/usage', () => {
-    const html = render('transfer-types', {
-      vehicleType: 'ون',
-      serviceMode: 'PRIVATE',
-      suggestedCapacityMin: 4,
-      suggestedCapacity: 8,
-    });
-    for (const label of [
-      'کد',
-      'عنوان فارسی',
-      'وسیله',
-      'شیوه سرویس',
-      'حداقل ظرفیت پیشنهادی',
-      'حداکثر ظرفیت پیشنهادی',
-      'شرح',
-      'استفاده',
-      'وضعیت',
-    ])
-      expect(html).toContain(label);
-    expect(html).toMatch(/id="transfer-types-code"[^>]*readOnly=""/i);
-    expect(html).toMatch(/id="transfer-usage"[^>]*readOnly=""/i);
-    expect(html).toContain('در انتظار اتصال رزرو');
-  });
+  it.each([
+    ['create', false],
+    ['edit', true],
+  ] as const)(
+    'hides minimum capacity in the transfer %s form while retaining the maximum',
+    (_, editing) => {
+      const html = render(
+        'transfer-types',
+        {
+          vehicleType: 'ون',
+          serviceMode: 'PRIVATE',
+          suggestedCapacityMin: 4,
+          suggestedCapacity: 8,
+        },
+        editing,
+      );
+      for (const label of [
+        'کد',
+        'عنوان فارسی',
+        'وسیله',
+        'شیوه سرویس',
+        'حداکثر ظرفیت پیشنهادی',
+        'شرح',
+        'استفاده',
+        'وضعیت',
+      ])
+        expect(html).toContain(label);
+      expect(html).not.toContain('حداقل ظرفیت پیشنهادی');
+      expect(html).not.toContain('transfer-types-suggestedCapacityMin');
+      expect(html).toMatch(/id="transfer-types-code"[^>]*readOnly=""/i);
+      expect(html).toMatch(/id="transfer-usage"[^>]*readOnly=""/i);
+      expect(html).toContain('در انتظار اتصال رزرو');
+    },
+  );
   it('renders every visa field and meaningful guide-reference labeling', () => {
     const html = render('visa-services', { referenceValidityDays: 90 });
     for (const label of [

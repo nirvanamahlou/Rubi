@@ -245,7 +245,7 @@ describe('travel services workspace', () => {
     );
     expect(source).toContain('label="آخرین تغییر"');
     expect(source).toContain('tourTypeUpdatedLabel(selected, tourActorNames)');
-    expect(source).toContain("'updatedAt',");
+    expect(travelServicesExportColumns('tour-types')).toContain('updatedAt');
   });
 
   it('builds exact unique canonical Excel columns for all four resources', () => {
