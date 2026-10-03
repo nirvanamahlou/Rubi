@@ -5029,6 +5029,12 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 - Delivered: replaced the shared PDF with the supplied two-page source (SHA256 `8ED0C34F4E94F9802A5CA4F9F0CF45DE9AE49FCB92E1018B4AE30D56206767DC`) and added “دانلود مفاد قرارداد” inside the Sales travel-documents dialog, rendered only after the existing authorized server read succeeds. Reservations keeps its existing selected-contract download link.
 - Validation before develop update: 13 focused Sales/Reservations tests, scoped ESLint, Web TypeScript check and 55-route production build pass; supplied PDF visually reviewed and source/asset hashes match. Re-run after update. No schema, API, permission or runtime changes. `Central docs`, `Migration`, `Dependency/Lockfile` and IAM reservations release with this review-ready commit.
 
+## RESERVATION-COMPACT-ROWS-1003 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-reservation-compact-rows-1003 from origin/develop. Reserve only Reservations foundation/workspace.module.css and bounded assignment/status docs. Reduce request table body rows from 46px to 36px to fit roughly two more contracts in the unchanged 440px viewport. No active overlapping table stylesheet owner; source/form work is merged and released. No API, data, migration, dependencies or shared component changes. User explicitly requests develop merge and prior local rollout authorization remains.
+
+- Delivered 36px minimum table body rows with the existing 440px viewport preserved. Saved status actor/time sits beside its checkbox, retaining both text and tooltip. Synthetic browser layout shows approximately two additional complete contracts; no clipping or data/UI-action loss. Twenty existing foundation/status tests passed (15s runner timeout for local load), scoped lint and Web typecheck verified. Production build and CI precede authorized develop merge; source lock releases with scoped commit.
+
 ## B2B-REGISTRATION-COPY-1003 — PC-B — READY_FOR_REVIEW
 
 - Owner requests removal of the visible registration title and explanatory sentence, followed by push and merge to develop. Branch `codex/pc-b-b2b-registration-copy-1003` from `origin/develop@67092be4`; reuse the clean B2B checkout and installed dependencies.
