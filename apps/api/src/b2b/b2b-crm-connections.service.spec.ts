@@ -8,6 +8,7 @@ import type {
 import { describe, expect, it, vi } from 'vitest';
 
 import type { CustomerService } from '../customers/customer.service';
+import type { DocumentsService } from '../documents/documents.service';
 import type { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 import type { ReservationsPublicService } from '../reservations/reservations-public.service';
 import type { SalesService } from '../sales/sales.service';
@@ -15,6 +16,7 @@ import { B2bCrmConnectionsService } from './b2b-crm-connections.service';
 
 const organizationId = '11111111-1111-4111-8111-111111111111';
 const branchId = '22222222-2222-4222-8222-222222222222';
+const otherBranchId = '55555555-5555-4555-8555-555555555555';
 const actor: AuthenticatedActor = {
   userId: '33333333-3333-4333-8333-333333333333',
   sessionId: '44444444-4444-4444-8444-444444444444',
@@ -33,6 +35,7 @@ function customer(id: string, linkedOrganizationId: string): CustomerSummary {
   return {
     id,
     organizationId: linkedOrganizationId,
+    ownerBranchId: branchId,
     displayName: 'سازمان هم‌نام',
     status: 'active',
   } as CustomerSummary;
@@ -41,6 +44,7 @@ function customer(id: string, linkedOrganizationId: string): CustomerSummary {
 function contract(id: string, customerId: string): SalesContractSummary {
   return {
     id,
+    branchId,
     contractNumber: `SC-${id}`,
     customerId,
     customerNameSnapshot: 'سازمان هم‌نام',
@@ -71,13 +75,13 @@ function setup() {
   const customers = {
     list: vi.fn().mockResolvedValue({
       data: [otherCustomer, exactCustomer],
-      meta: { total: 2 },
+      meta: { page: 1, pageSize: 100, total: 2, totalPages: 1 },
     }),
   };
   const sales = {
     list: vi.fn().mockResolvedValue({
       data: [wrongContract, exactContract],
-      meta: { total: 2 },
+      meta: { page: 1, pageSize: 100, total: 2, totalPages: 1 },
     }),
     detail: vi.fn().mockResolvedValue({
       data: {
@@ -137,9 +141,11 @@ function setup() {
       reason: 'FINANCE_PORT_UNAVAILABLE',
     }),
   };
+  const documents = { list: vi.fn() };
   const service = new B2bCrmConnectionsService(
     customers as unknown as CustomerService,
     sales as unknown as SalesService,
+    documents as unknown as DocumentsService,
     reservations as unknown as ReservationsPublicService,
     organizations as unknown as MasterOrganizationDirectory,
     finance as unknown as FinancePartyExposurePortV1,
@@ -151,6 +157,7 @@ function setup() {
     reservations,
     organizations,
     finance,
+    documents,
   };
 }
 
@@ -181,6 +188,199 @@ describe('B2B CRM backend connection query', () => {
     });
     expect(result.unavailableSources.FINANCE).toContain('دفترکل مالی');
     expect(result.contracts[0]).not.toHaveProperty('passengerNames');
+  });
+
+  it('links a selected-branch Sales contract through an organizational Customer in another authorized branch', async () => {
+    const fixture = setup();
+    fixture.customers.list.mockResolvedValue({
+      data: [
+        {
+          ...customer('customer-cross-branch', organizationId),
+          ownerBranchId: otherBranchId,
+        },
+      ],
+      meta: { page: 1, pageSize: 100, total: 1, totalPages: 1 },
+    });
+    fixture.sales.list.mockResolvedValue({
+      data: [contract('contract-cross-branch', 'customer-cross-branch')],
+      meta: { page: 1, pageSize: 100, total: 1, totalPages: 1 },
+    });
+    const result = await fixture.service.get(
+      organizationId,
+      { ...actor, branchIds: [branchId, otherBranchId] },
+      branchId,
+    );
+
+    expect(fixture.customers.list).toHaveBeenCalledWith(
+      expect.objectContaining({ branchId: 'all' }),
+      expect.objectContaining({ branchIds: [branchId, otherBranchId] }),
+    );
+    expect(result.customers).toEqual([]);
+    expect(result.contracts.map((row) => row.id)).toEqual([
+      'contract-cross-branch',
+    ]);
+  });
+
+  it('freshly binds receipt metadata to the organization buyer, branch and payment IDs', async () => {
+    const fixture = setup();
+    const detail = {
+      ...contract('contract-exact', 'customer-exact'),
+      branchId,
+      payments: [{ id: 'payment-1' }, { id: 'payment-2' }],
+    } as unknown as SalesContractDetail;
+    fixture.sales.detail.mockResolvedValue({ data: detail });
+    fixture.documents.list.mockImplementation(async (query) => ({
+      data: [
+        {
+          id: `document-${query.sourceEntityId}`,
+          title: 'رسید پرداخت',
+          type: { code: 'RECEIPT', name: 'رسید', domain: 'FINANCE' },
+          branchId,
+          confidentiality: 'RESTRICTED',
+          currentVersion: {
+            originalFileName: 'receipt.pdf',
+            safeDownloadName: 'receipt.pdf',
+            detectedMimeType: 'application/pdf',
+            sizeBytes: 10,
+            scanStatus: 'CLEAN',
+          },
+          capabilities: { viewFile: true, download: true },
+          updatedAt: '2026-10-03T00:00:00.000Z',
+        },
+        {
+          id: `protected-${query.sourceEntityId}`,
+          title: 'سند محرمانه ••••••',
+          type: {
+            id: 'protected-type',
+            code: 'PROTECTED',
+            name: 'سند محرمانه',
+            domain: 'GENERAL',
+          },
+          branchId,
+          confidentiality: 'CONFIDENTIAL',
+          currentVersion: {
+            originalFileName: '',
+            safeDownloadName: 'document.bin',
+            detectedMimeType: '',
+            sizeBytes: 0,
+            scanStatus: 'CLEAN',
+          },
+          capabilities: { viewFile: false, download: false },
+          updatedAt: '2026-10-03T00:00:00.000Z',
+        },
+      ],
+      meta: { page: 1, pageSize: 100, total: 2, totalPages: 1 },
+    }));
+    const securedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.list',
+        'documents.finance.read',
+      ],
+    } as AuthenticatedActor;
+
+    const result = await fixture.service.paymentDocuments(
+      organizationId,
+      detail.id,
+      securedActor,
+      branchId,
+    );
+
+    expect(result.payments.map((row) => row.paymentId)).toEqual([
+      'payment-1',
+      'payment-2',
+    ]);
+    expect(fixture.documents.list).toHaveBeenCalledTimes(2);
+    expect(result.payments[0]?.documents).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'protected-payment-1',
+          title: 'سند محرمانه ••••••',
+          type: { code: 'PROTECTED', name: 'سند محرمانه' },
+          confidentiality: 'CONFIDENTIAL',
+          capabilities: { viewFile: false, download: false },
+        }),
+      ]),
+    );
+    expect(fixture.documents.list).toHaveBeenCalledWith(
+      expect.objectContaining({
+        branchId,
+        domain: 'FINANCE',
+        sourceModule: 'sales',
+        sourceEntityType: 'SalesContractPaymentEntry',
+        sourceEntityId: 'payment-1',
+      }),
+      securedActor,
+    );
+  });
+
+  it('never reads Documents for an unrelated organization, branch or missing document grants', async () => {
+    const fixture = setup();
+    fixture.sales.detail.mockResolvedValue({
+      data: {
+        ...contract('contract-wrong', 'customer-same-name'),
+        branchId,
+        payments: [{ id: 'forged-payment' }],
+      } as unknown as SalesContractDetail,
+    });
+    await expect(
+      fixture.service.paymentDocuments(
+        organizationId,
+        'contract-wrong',
+        actor,
+        branchId,
+      ),
+    ).rejects.toThrow('مرتبط یافت نشد');
+    expect(fixture.documents.list).not.toHaveBeenCalled();
+
+    fixture.sales.detail.mockResolvedValue({
+      data: {
+        ...contract('contract-exact', 'customer-exact'),
+        branchId,
+        payments: [{ id: 'payment-1' }],
+      } as unknown as SalesContractDetail,
+    });
+    await expect(
+      fixture.service.paymentDocuments(
+        organizationId,
+        'contract-exact',
+        actor,
+        branchId,
+      ),
+    ).rejects.toThrow('مجوز مشاهده مدارک پرداخت');
+    expect(fixture.documents.list).not.toHaveBeenCalled();
+  });
+
+  it('rejects duplicate or incomplete receipt metadata pages', async () => {
+    const fixture = setup();
+    fixture.sales.detail.mockResolvedValue({
+      data: {
+        ...contract('contract-exact', 'customer-exact'),
+        branchId,
+        payments: [{ id: 'payment-1' }],
+      } as unknown as SalesContractDetail,
+    });
+    fixture.documents.list.mockResolvedValue({
+      data: [],
+      meta: { page: 1, pageSize: 100, total: 1, totalPages: 2 },
+    });
+    const securedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'documents.list',
+        'documents.finance.read',
+      ],
+    } as AuthenticatedActor;
+    await expect(
+      fixture.service.paymentDocuments(
+        organizationId,
+        'contract-exact',
+        securedActor,
+        branchId,
+      ),
+    ).rejects.toThrow('DOCUMENTS_PAGE_INCOMPLETE');
   });
 
   it('does not call dependent services without customer permission', async () => {
