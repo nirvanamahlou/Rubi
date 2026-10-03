@@ -4,12 +4,6 @@ export type TransportColumn = readonly [key: string, label: string];
 export function transportColumns(
   resource: MasterDataResource,
 ): readonly TransportColumn[] {
-  const operator: readonly TransportColumn[] = [
-    ['countryName', 'کشور'],
-    ['organizationName', 'سازمان'],
-    ['logoFileReference', 'لوگو Reference'],
-    ['integrationConnectionReference', 'Integration Connection'],
-  ];
   switch (resource) {
     case 'airlines':
       return [
@@ -62,8 +56,8 @@ export function transportColumns(
       return [
         ['code', 'کد'],
         ['name', 'شرکت ریلی'],
-        ...operator,
-        ['vehicleTypeCount', 'انواع قطار'],
+        ['countryName', 'کشور'],
+        ['organizationName', 'سازمان'],
       ];
     case 'bus-companies':
       return [
