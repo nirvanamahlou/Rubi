@@ -1,3 +1,8 @@
+## TRANSFER-HIDE-MIN-CAPACITY-1003 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-transfer-hide-min-capacity-1003` from origin/develop@ffaf8f24. Reserve the Transfer Type form definition in `apps/web/src/modules/master-data/model/catalog.ts`, focused Travel Reference form/model regressions, Travel Services export-column helper/existing regression required to preserve its legacy column, and own top status entries. Remove the visible `suggestedCapacityMin` create/edit control while preserving existing stored values during edits; table, View, Excel, API, backend and all other resources remain unchanged. No overlapping Web owner found; active Hotel API lock is non-overlapping. No API/contract/schema/migration/dependency/runtime/database changes. User authorizes lead-owned push/develop merge after review.
+- Transfer create/edit no longer renders the minimum control. Edit payloads omit the legacy minimum, so the existing API partial-update merge retains it; Excel still emits the canonical `suggestedCapacity` then `suggestedCapacityMin` order. Focused 31 and all 533 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime or database QA; bounded locks release with commit.
+
 ## MASTER-DATA-TIGHT-SEARCH-FILTERS-1003 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-tight-search-filters-1003` from origin/develop@e0149279. Reserve Web Master Data column-filter helper/new spec, Sales References workspace/existing spec, module-local filter-bar CSS and filter-actions/existing spec, own top docs. Remove only dedicated englishName search controls and stale values from list/export while retaining original backend slot indexes for all other filters. Compact responsive filter layout, labels/datepickers and clear/refresh accessibility preserved. English form/view/data/general search remain unchanged. No overlapping Web owner; API hotel-import lock untouched. No API/contract/schema/migration/dependency/runtime/database changes. User authorizes push/develop merge after checks.
@@ -5037,6 +5042,13 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Branch codex/pc-a-reservation-form-supplier-pdf-1003 from origin/develop. Scope: Reservations supplier form/settings, PDF render/runtime, focused tests and bounded docs. No migration, dependencies, operational data or shared runtime. PC-A owns this slice until handoff.
 
+## RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
+
+- Branch: `codex/pc-a-reservation-supplier-preview-fix-1003`; base: origin/develop e0149279.
+- Scope/locks: Reservations reservation-settings.tsx, travel-workflow-form.tsx, travel-document.tsx and focused tests; appended task/status documentation only.
+- Fix supplier selection placement and reference loading; keep one preview including history/print. No migration, dependency or shared UI changes.
+- User authorizes PR and merge to develop after validation. Other local changes remain in the original checkout.
+
 ## RESERVATION-SINGLE-FORM-FOOTER-1003 — PC-A — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-A; branch codex/pc-a-reservation-single-form-footer-1003 from origin/develop. Reserve Reservations document/settings/workflow renderer, shared QR utility, form viewer route, focused specs and bounded docs. Remove redundant free-text supplier entry; existing active Master Data broker combobox updates a single live form preview, with settings below and persisted revisions retained. Add requested reservation contact email and QR linking to an authenticated form viewer. Keep all passengers in one logical supplier form rather than repeated forms; long documents can paginate physically. No API/schema/migration/dependency changes or public passenger access. User authorizes develop merge; prior panel scope released.
@@ -5106,9 +5118,7 @@ LOCAL-ALL-SECTIONS-3100-0913 complete: Web3100/API4191 active and verified; runt
 
 - Delivered four required customer-only create fields (first name, last name, phone, address). Passenger identity entry, companions and acquaintance controls stay in the full passenger flow; inactive hidden drafts are not submitted by customer-only creation. Saves phone/contact and primary home address through existing versioned APIs with partial-create safeguards. Customer-only API creation no longer requires national ID; passenger and combined-role creation still do. Forty-nine focused Web and thirty-four API tests passed, including four-field rendering and identity-free customer creation. Scoped lint and Web/API typecheck/build gate owner-authorized develop merge. No migration/dependency/operational data changes; source locks release with scoped commit.
 
-## RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
+## RESERVATION-MANIFEST-GREGORIAN-DIRECTION-1003 — PC-A — READY_FOR_REVIEW
 
-- Branch: `codex/pc-a-reservation-supplier-preview-fix-1003`; base: origin/develop e0149279.
-- Scope/locks: Reservations reservation-settings.tsx, travel-workflow-form.tsx, travel-document.tsx and focused tests; appended task/status documentation only.
-- Fix supplier selection placement and reference loading; keep one preview including history/print. No migration, dependency or shared UI changes.
-- User authorizes PR and merge to develop after validation. Other local changes remain in the original checkout.
+- COMPUTER_ID=PC-A; branch `codex/pc-a-manifest-gregorian-direction-1003` from `origin/develop@e0149279`. Reserve only Reservations Web manifest card dates, route display/grouping, focused regressions and bounded status/assignment docs. Show Gregorian dates and physical origin → destination while keeping both legs of a selected route visible in their correct groups; align empty-state with filtered grouping. No API, schema, migration, dependency, permission or operational-data changes. Previous manifest owner locks are released; no active overlap found. User authorizes develop merge after checks.
+- Delivered Gregorian Tehran-local departure/arrival dates, unambiguous origin → destination display in RTL, and filtered-group empty states. Nine focused tests, scoped lint, Web typecheck and 55-route production build passed. Full Web lint stalled in this shared runtime; CI gates merge. Scoped locks RELEASED with this commit.

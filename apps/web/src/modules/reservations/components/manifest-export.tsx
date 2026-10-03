@@ -30,14 +30,33 @@ function todayInTehran() {
   return part('year') + '-' + part('month') + '-' + part('day');
 }
 
-function dateTime(value: string, timeKnown = true) {
-  return new Intl.DateTimeFormat('fa-IR', {
+export function manifestDateTime(value: string, timeKnown = true) {
+  return new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Tehran',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     ...(timeKnown ? ({ hour: '2-digit', minute: '2-digit' } as const) : {}),
   }).format(new Date(value));
+}
+
+export function ManifestRoute({
+  origin,
+  destination,
+}: {
+  origin: string;
+  destination: string;
+}) {
+  return (
+    <span
+      dir="ltr"
+      className="inline-flex items-center gap-1 whitespace-nowrap"
+    >
+      <span dir="auto">{origin}</span>
+      <span aria-hidden="true">→</span>
+      <span dir="auto">{destination}</span>
+    </span>
+  );
 }
 
 async function authenticatedFetch(
@@ -158,6 +177,14 @@ export function ManifestExport() {
   }
 
   const visibleTickets = filterManifestTickets(tickets, searchRoute);
+  const ticketsByDirection = {
+    OUTBOUND: visibleTickets.filter(
+      (ticket) => manifestDisplayDirection(ticket, searchRoute) === 'OUTBOUND',
+    ),
+    RETURN: visibleTickets.filter(
+      (ticket) => manifestDisplayDirection(ticket, searchRoute) === 'RETURN',
+    ),
+  };
 
   async function download(ticket: ReservationManifestTicketCardV1) {
     if (!ticket.template || busy || downloading.current) return;
@@ -235,7 +262,7 @@ export function ManifestExport() {
           <DatePicker
             value={fromDate}
             onChange={setFromDate}
-            defaultCalendarSystem="gregorian"
+            calendarSystem="gregorian"
             gregorianEnglish
           />
         </label>
@@ -244,7 +271,7 @@ export function ManifestExport() {
           <DatePicker
             value={toDate}
             onChange={setToDate}
-            defaultCalendarSystem="gregorian"
+            calendarSystem="gregorian"
             gregorianEnglish
           />
         </label>
@@ -371,84 +398,79 @@ export function ManifestExport() {
                     </tr>
                   </thead>
                   <tbody>
-                    {visibleTickets
-                      .filter(
-                        (ticket) =>
-                          manifestDisplayDirection(ticket, searchRoute) ===
-                          direction,
-                      )
-                      .map((ticket) => (
-                        <tr key={ticket.offerId}>
-                          <td>
-                            {ticket.originName} ← {ticket.destinationName}
-                          </td>
-                          <td>
-                            {ticket.carrierName}
-                            <br />
-                            {ticket.serviceNumber}
-                          </td>
-                          <td>
-                            {dateTime(
-                              ticket.departureAt,
-                              ticket.departureTimeKnown !== false,
-                            )}
-                          </td>
-                          <td>
-                            {ticket.arrivalAt === ticket.departureAt &&
-                            ticket.transportType !== 'FLIGHT'
-                              ? 'ثبت نشده'
-                              : dateTime(ticket.arrivalAt)}
-                          </td>
-                          <td>{ticket.totalCapacity ?? '—'}</td>
-                          <td>{ticket.allocatedCapacity ?? '—'}</td>
-                          <td>{ticket.reservedCapacity ?? '—'}</td>
-                          <td>{ticket.remainingCapacity ?? '—'}</td>
-                          <td>
-                            {ticket.contractCount} قرارداد ·{' '}
-                            {ticket.passengerCount} مسافر
-                          </td>
-                          <td>
-                            {ticket.template
-                              ? ticket.template.name +
-                                ' · نسخه ' +
-                                ticket.template.versionNumber
-                              : ticket.unavailableReason}
-                          </td>
-                          <td>
-                            <Button
-                              type="button"
-                              disabled={!ticket.template || Boolean(busy)}
-                              onClick={() => void download(ticket)}
+                    {ticketsByDirection[direction].map((ticket) => (
+                      <tr key={ticket.offerId}>
+                        <td>
+                          <ManifestRoute
+                            origin={ticket.originName}
+                            destination={ticket.destinationName}
+                          />
+                        </td>
+                        <td>
+                          {ticket.carrierName}
+                          <br />
+                          {ticket.serviceNumber}
+                        </td>
+                        <td>
+                          {manifestDateTime(
+                            ticket.departureAt,
+                            ticket.departureTimeKnown !== false,
+                          )}
+                        </td>
+                        <td>
+                          {ticket.arrivalAt === ticket.departureAt &&
+                          ticket.transportType !== 'FLIGHT'
+                            ? 'ثبت نشده'
+                            : manifestDateTime(ticket.arrivalAt)}
+                        </td>
+                        <td>{ticket.totalCapacity ?? '—'}</td>
+                        <td>{ticket.allocatedCapacity ?? '—'}</td>
+                        <td>{ticket.reservedCapacity ?? '—'}</td>
+                        <td>{ticket.remainingCapacity ?? '—'}</td>
+                        <td>
+                          {ticket.contractCount} قرارداد ·{' '}
+                          {ticket.passengerCount} مسافر
+                        </td>
+                        <td>
+                          {ticket.template
+                            ? ticket.template.name +
+                              ' · نسخه ' +
+                              ticket.template.versionNumber
+                            : ticket.unavailableReason}
+                        </td>
+                        <td>
+                          <Button
+                            type="button"
+                            disabled={!ticket.template || Boolean(busy)}
+                            onClick={() => void download(ticket)}
+                          >
+                            {busy === ticket.offerId
+                              ? 'در حال ساخت…'
+                              : direction === 'OUTBOUND'
+                                ? 'خروجی رفت'
+                                : 'خروجی برگشت'}
+                          </Button>
+                          {error && errorOfferId === ticket.offerId && (
+                            <p role="alert" className="text-destructive">
+                              {error}
+                            </p>
+                          )}
+                          {downloadLink?.offerId === ticket.offerId && (
+                            <a
+                              className="block text-primary underline"
+                              href={downloadLink.url}
+                              download={downloadLink.fileName}
                             >
-                              {busy === ticket.offerId
-                                ? 'در حال ساخت…'
-                                : direction === 'OUTBOUND'
-                                  ? 'خروجی رفت'
-                                  : 'خروجی برگشت'}
-                            </Button>
-                            {error && errorOfferId === ticket.offerId && (
-                              <p role="alert" className="text-destructive">
-                                {error}
-                              </p>
-                            )}
-                            {downloadLink?.offerId === ticket.offerId && (
-                              <a
-                                className="block text-primary underline"
-                                href={downloadLink.url}
-                                download={downloadLink.fileName}
-                              >
-                                دریافت فایل منیفست
-                              </a>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                              دریافت فایل منیفست
+                            </a>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-              {!visibleTickets.some(
-                (ticket) => ticket.direction === direction,
-              ) && (
+              {ticketsByDirection[direction].length === 0 && (
                 <p className="p-4 text-sm text-muted-foreground">
                   بلیطی برای این مسیر و بازه پیدا نشد.
                 </p>
