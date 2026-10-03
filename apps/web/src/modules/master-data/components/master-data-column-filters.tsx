@@ -17,6 +17,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 
+const isEnglishNameFilter = (filter: { path: readonly string[] }) =>
+  filter.path.length === 1 && filter.path[0] === 'englishName';
+
+export function visibleMasterDataColumnFilters(resource: MasterDataResource) {
+  return getMasterDataColumnFilters(resource)
+    .map((filter, originalIndex) => ({ filter, originalIndex }))
+    .filter(({ filter }) => !isEnglishNameFilter(filter));
+}
+
+export function effectiveMasterDataColumnFilters(
+  resource: MasterDataResource,
+  values: readonly string[],
+) {
+  return Object.fromEntries(
+    visibleMasterDataColumnFilters(resource).flatMap(({ originalIndex }) =>
+      values[originalIndex]
+        ? [[`columnFilter${originalIndex + 1}`, values[originalIndex]]]
+        : [],
+    ),
+  );
+}
+
 export function useMasterDataColumnFilters(
   resource: MasterDataResource,
   onChange: () => void,
@@ -24,10 +46,7 @@ export function useMasterDataColumnFilters(
   const [selection, setSelection] = useState({ resource, values: ['', ''] });
   const columnFilters = useMemo(() => {
     const values = selection.resource === resource ? selection.values : [];
-    return {
-      ...(values[0] ? { columnFilter1: values[0] } : {}),
-      ...(values[1] ? { columnFilter2: values[1] } : {}),
-    };
+    return effectiveMasterDataColumnFilters(resource, values);
   }, [resource, selection]);
   function change(index: number, value: string) {
     const values =
@@ -37,8 +56,8 @@ export function useMasterDataColumnFilters(
     onChange();
   }
   const resetColumnFilters = () => setSelection({ resource, values: ['', ''] });
-  const columnFilterControls = getMasterDataColumnFilters(resource).map(
-    (filter, index) => {
+  const columnFilterControls = visibleMasterDataColumnFilters(resource).map(
+    ({ filter, originalIndex: index }) => {
       const value =
         selection.resource === resource ? (selection.values[index] ?? '') : '';
       const id = `${resource}-column-filter-${index}`;

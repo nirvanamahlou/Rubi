@@ -19,11 +19,34 @@ describe('MasterDataFilterActions', () => {
     expect(html).toContain('col-span-full');
     expect(html).toContain('justify-end');
     expect(html).toContain('border-t');
+    expect(html).toContain('xl:col-auto');
+    expect(html).toContain('xl:w-auto');
+    expect(html).toContain('xl:border-t-0');
     expect(html).toContain('bg-background');
     expect(html).toContain('bg-primary/5');
     expect(html).toContain('پاک‌کردن');
     expect(html).toContain('aria-label="تازه‌سازی"');
     expect(html).not.toContain('>تازه‌سازی</button>');
+  });
+
+  it('keeps the shared filter bar compact and responsive without clipping date controls', () => {
+    const css = readFileSync(
+      resolve(
+        process.cwd(),
+        'src/modules/master-data/components/master-data-filter-bar.module.css',
+      ),
+      'utf8',
+    );
+
+    expect(css).toContain('grid-template-columns: minmax(0, 1fr)');
+    expect(css).toContain('repeat(2, minmax(0, 1fr))');
+    expect(css).toContain('repeat(3, minmax(0, 1fr))');
+    expect(css).toContain('repeat(auto-fit, minmax(10.5rem, 1fr))');
+    expect(css).toMatch(/\.filterBar > fieldset[\s\S]*grid-column: span 2/);
+    expect(css).not.toMatch(/\.filterBar\s*\{[^}]*overflow\s*:/s);
+    expect(css).not.toMatch(
+      /\.filterBar\s*>\s*fieldset\s*\{[^}]*overflow\s*:/s,
+    );
   });
 
   it.each([

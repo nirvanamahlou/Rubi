@@ -3,19 +3,16 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
-import { getMasterDataColumnFilters } from '@nora/contracts';
 
 import { getMasterDataSection } from '../model/sections';
 import { getMasterDataDefinition } from '../model/catalog';
 import {
   appendUniqueSalesReferenceSummaryPage,
   countEnglishTitles,
-  effectiveSalesReferenceColumnFilters,
   hasValidSalesReferenceSummaryProgress,
   isCurrentSalesReferenceSummaryRequest,
   salesReferenceKpiItems,
   salesReferenceExportColumns,
-  visibleSalesReferenceColumnFilterIndexes,
 } from './master-data-sales-references-workspace';
 import type { MasterDataRecord } from '@nora/contracts';
 
@@ -121,7 +118,7 @@ describe('sales references workspace', () => {
       'columns: salesReferenceExportColumns(definition.fields)',
     );
     expect(source).toContain('resource,');
-    expect(source.match(/\.\.\.effectiveColumnFilters/g)).toHaveLength(2);
+    expect(source.match(/\.\.\.columnFilters/g)).toHaveLength(2);
   });
 
   it('keeps only the two requested tabs without a standalone profile section', () => {
@@ -276,51 +273,11 @@ describe('sales references workspace', () => {
     expect(source).not.toContain('customerApi');
   });
 
-  it('hides and drops only the acquaintance English-name filter', () => {
-    const staleFilters = {
-      columnFilter1: 'ACQ',
-      columnFilter2: 'Referral',
-    };
-
-    expect(
-      visibleSalesReferenceColumnFilterIndexes('acquaintance-methods'),
-    ).toEqual([0]);
-    expect(
-      effectiveSalesReferenceColumnFilters(
-        'acquaintance-methods',
-        staleFilters,
-      ),
-    ).toEqual({ columnFilter1: 'ACQ' });
-    expect(
-      effectiveSalesReferenceColumnFilters('acquaintance-methods', {
-        columnFilter2: 'Referral',
-      }),
-    ).toEqual({});
-    expect(visibleSalesReferenceColumnFilterIndexes('sales-channels')).toEqual([
-      0, 1,
-    ]);
-    expect(
-      effectiveSalesReferenceColumnFilters('sales-channels', staleFilters),
-    ).toEqual(staleFilters);
-    expect(source.match(/\.\.\.effectiveColumnFilters/g)).toHaveLength(2);
-    expect(getMasterDataColumnFilters('acquaintance-methods')).toMatchObject([
-      { label: 'کد', path: ['code'] },
-      { label: 'نام انگلیسی', path: ['englishName'] },
-    ]);
-    expect(getMasterDataColumnFilters('sales-channels')).toMatchObject([
-      { label: 'کد', path: ['code'] },
-      { label: 'نام انگلیسی', path: ['englishName'] },
-    ]);
-    expect(source).toMatch(
-      /const effectiveColumnFilters = useMemo\(\s*\(\) => effectiveSalesReferenceColumnFilters\(resource, columnFilters\)/,
-    );
-    expect(source).toMatch(
-      /const visibleColumnFilterIndexes =\s*visibleSalesReferenceColumnFilterIndexes\(resource\)/,
-    );
-    expect(source).toMatch(
-      /columnFilterControls\.filter\(\(_, index\) =>\s*visibleColumnFilterIndexes\.includes\(index\)/,
-    );
-    expect(source).toContain('{visibleColumnFilterControls}');
+  it('uses the shared English-free controls and payload on both resources', () => {
+    expect(source.match(/\.\.\.columnFilters/g)).toHaveLength(2);
+    expect(source).toContain('{columnFilterControls}');
+    expect(source).not.toContain('effectiveSalesReferenceColumnFilters');
+    expect(source).not.toContain('visibleSalesReferenceColumnFilterIndexes');
     expect(source).toContain('id="sales-reference-search"');
     expect(source).toContain('label="عنوان انگلیسی"');
     expect(source).toContain("value={attribute(selected, 'englishName')}");
