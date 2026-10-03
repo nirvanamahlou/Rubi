@@ -18,7 +18,6 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
-  CircleAlert,
   ChevronDown,
   Eye,
   FilePenLine,
@@ -88,8 +87,159 @@ import {
 } from './master-data-profile-details';
 
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
+type InsuranceRelationSummaryState = 'loading' | 'ready' | 'error';
 
 export const INSURER_PLAN_PAGE_SIZE = 10;
+
+export function countRecordsLinkedToPlans(
+  records: readonly MasterDataRecord[],
+): number | null {
+  let linked = 0;
+  for (const record of records) {
+    const count = record.attributes?.planCount;
+    if (!Number.isSafeInteger(count) || Number(count) < 0) return null;
+    if (Number(count) > 0) linked += 1;
+  }
+  return linked;
+}
+
+export function insuranceKpiItems(
+  resource: InsuranceResource,
+  summary: MasterInsuranceSummary | undefined,
+  relationRecords: readonly MasterDataRecord[],
+  relationState: InsuranceRelationSummaryState,
+): readonly MasterDataKpiItem[] {
+  const relationValue =
+    relationState === 'ready'
+      ? (countRecordsLinkedToPlans(relationRecords) ?? '—')
+      : '—';
+  if (resource === 'insurers')
+    return [
+      {
+        label: 'کل شرکت‌ها',
+        value: summary?.insurers.total ?? '—',
+        icon: Building2,
+        tone: 'sky',
+      },
+      {
+        label: 'فعال',
+        value: summary?.insurers.active ?? '—',
+        icon: CheckCircle2,
+        tone: 'emerald',
+      },
+      {
+        label: 'کشورهای تحت پوشش',
+        value: summary?.insurers.countries ?? '—',
+        icon: Globe2,
+        tone: 'violet',
+      },
+      {
+        label: 'دارای طرح بیمه',
+        value: relationValue,
+        icon: ShieldCheck,
+        tone: 'amber',
+      },
+    ];
+  if (resource === 'insurance-plans')
+    return [
+      {
+        label: 'کل طرح‌ها',
+        value: summary?.plans.total ?? '—',
+        icon: ShieldCheck,
+        tone: 'sky',
+      },
+      {
+        label: 'فعال',
+        value: summary?.plans.active ?? '—',
+        icon: CheckCircle2,
+        tone: 'emerald',
+      },
+      {
+        label: 'در حال انقضا',
+        value: summary?.plans.expiringSoon ?? '—',
+        icon: CalendarClock,
+        tone: 'amber',
+      },
+      {
+        label: 'مناطق مقصد',
+        value: summary?.plans.destinations ?? '—',
+        icon: Globe2,
+        tone: 'violet',
+      },
+    ];
+  return [
+    {
+      label: 'کل پوشش‌ها',
+      value: summary?.coverages.total ?? '—',
+      icon: ShieldPlus,
+      tone: 'sky',
+    },
+    {
+      label: 'فعال',
+      value: summary?.coverages.active ?? '—',
+      icon: CheckCircle2,
+      tone: 'emerald',
+    },
+    {
+      label: 'ارزهای مرجع',
+      value: summary?.coverages.currencies ?? '—',
+      icon: Banknote,
+      tone: 'violet',
+    },
+    {
+      label: 'متصل به طرح‌ها',
+      value: relationValue,
+      icon: Link2,
+      tone: 'amber',
+    },
+  ];
+}
+
+export async function fetchInsuranceRelationSummary(
+  list: (
+    resource: 'insurers' | 'insurance-coverages',
+    query: MasterDataListQuery,
+  ) => Promise<{
+    data: readonly MasterDataRecord[];
+    meta: { total: number };
+  }>,
+  resource: 'insurers' | 'insurance-coverages',
+  generation: number,
+  isCurrent: (generation: number, resource: InsuranceResource) => boolean,
+): Promise<readonly MasterDataRecord[] | null> {
+  const records: MasterDataRecord[] = [];
+  const ids = new Set<string>();
+  let expectedTotal: number | undefined;
+  for (let page = 1; ; page += 1) {
+    const response = await list(resource, {
+      search: '',
+      status: 'all',
+      sortBy: 'name',
+      sortDirection: 'asc',
+      page,
+      pageSize: 100,
+    });
+    if (!isCurrent(generation, resource)) return null;
+    if (
+      !Number.isSafeInteger(response.meta.total) ||
+      response.meta.total < 0 ||
+      (expectedTotal !== undefined && response.meta.total !== expectedTotal)
+    )
+      throw new Error('Invalid insurance relation summary pagination');
+    expectedTotal ??= response.meta.total;
+    if (response.data.length === 0 && records.length < expectedTotal)
+      throw new Error('Incomplete insurance relation summary pagination');
+    for (const record of response.data) {
+      if (ids.has(record.id))
+        throw new Error('Duplicate insurance relation summary record');
+      ids.add(record.id);
+      records.push(record);
+    }
+    if (records.length === expectedTotal) return records;
+    if (records.length > expectedTotal || response.data.length < 100)
+      throw new Error('Incomplete insurance relation summary pagination');
+  }
+}
 
 export function bindInsurancePlanParent(
   values: Record<string, string>,
@@ -542,6 +692,11 @@ export function MasterDataInsuranceWorkspace() {
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [summary, setSummary] = useState<MasterInsuranceSummary>();
+  const [relationRecords, setRelationRecords] = useState<
+    readonly MasterDataRecord[]
+  >([]);
+  const [relationSummaryState, setRelationSummaryState] =
+    useState<InsuranceRelationSummaryState>('loading');
   const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
   const [insurers, setInsurers] = useState<readonly MasterDataRecord[]>([]);
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
@@ -558,6 +713,8 @@ export function MasterDataInsuranceWorkspace() {
   const [expandedInsurerId, setExpandedInsurerId] = useState<string | null>(
     null,
   );
+  const relationRequestRef = useRef(0);
+  const relationResourceRef = useRef<InsuranceResource>('insurers');
   const definition = getMasterDataDefinition(resource);
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
@@ -622,6 +779,34 @@ export function MasterDataInsuranceWorkspace() {
     }
   }, []);
 
+  const loadRelationSummary = useCallback(async () => {
+    if (resource === 'insurance-plans') return;
+    const requestId = ++relationRequestRef.current;
+    relationResourceRef.current = resource;
+    setRelationSummaryState('loading');
+    try {
+      const result = await fetchInsuranceRelationSummary(
+        masterDataApi.list,
+        resource,
+        requestId,
+        (candidate, candidateResource) =>
+          candidate === relationRequestRef.current &&
+          candidateResource === relationResourceRef.current,
+      );
+      if (!result) return;
+      setRelationRecords(result);
+      setRelationSummaryState('ready');
+    } catch {
+      if (
+        requestId !== relationRequestRef.current ||
+        resource !== relationResourceRef.current
+      )
+        return;
+      setRelationRecords([]);
+      setRelationSummaryState('error');
+    }
+  }, [resource]);
+
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 180);
     return () => window.clearTimeout(timer);
@@ -656,88 +841,24 @@ export function MasterDataInsuranceWorkspace() {
     return () => window.clearTimeout(timer);
   }, [loadSummary]);
 
-  const kpis = useMemo<readonly MasterDataKpiItem[]>(() => {
-    if (resource === 'insurers')
-      return [
-        {
-          label: 'کل شرکت‌ها',
-          value: summary?.insurers.total ?? '—',
-          icon: Building2,
-          tone: 'sky',
-        },
-        {
-          label: 'فعال',
-          value: summary?.insurers.active ?? '—',
-          icon: CheckCircle2,
-          tone: 'emerald',
-        },
-        {
-          label: 'کشورهای تحت پوشش',
-          value: summary?.insurers.countries ?? '—',
-          icon: Globe2,
-          tone: 'violet',
-        },
-        {
-          label: 'لوگوی ناقص',
-          value: summary?.insurers.missingLogo ?? '—',
-          icon: CircleAlert,
-          tone: 'amber',
-        },
-      ];
-    if (resource === 'insurance-plans')
-      return [
-        {
-          label: 'کل طرح‌ها',
-          value: summary?.plans.total ?? '—',
-          icon: ShieldCheck,
-          tone: 'sky',
-        },
-        {
-          label: 'فعال',
-          value: summary?.plans.active ?? '—',
-          icon: CheckCircle2,
-          tone: 'emerald',
-        },
-        {
-          label: 'در حال انقضا',
-          value: summary?.plans.expiringSoon ?? '—',
-          icon: CalendarClock,
-          tone: 'amber',
-        },
-        {
-          label: 'مناطق مقصد',
-          value: summary?.plans.destinations ?? '—',
-          icon: Globe2,
-          tone: 'violet',
-        },
-      ];
-    return [
-      {
-        label: 'کل پوشش‌ها',
-        value: summary?.coverages.total ?? '—',
-        icon: ShieldPlus,
-        tone: 'sky',
-      },
-      {
-        label: 'فعال',
-        value: summary?.coverages.active ?? '—',
-        icon: CheckCircle2,
-        tone: 'emerald',
-      },
-      {
-        label: 'ارزهای مرجع',
-        value: summary?.coverages.currencies ?? '—',
-        icon: Banknote,
-        tone: 'violet',
-      },
-      {
-        label: 'نیازمند بازبینی',
-        value: summary?.coverages.needsReview ?? '—',
-        icon: CircleAlert,
-        tone: 'amber',
-      },
-    ];
-  }, [resource, summary]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadRelationSummary(), 0);
+    return () => {
+      window.clearTimeout(timer);
+      relationRequestRef.current += 1;
+    };
+  }, [loadRelationSummary]);
+
+  const kpis = useMemo<readonly MasterDataKpiItem[]>(
+    () =>
+      insuranceKpiItems(
+        resource,
+        summary,
+        relationRecords,
+        relationSummaryState,
+      ),
+    [relationRecords, relationSummaryState, resource, summary],
+  );
 
   const filterOptions =
     resource === 'insurers'
@@ -753,6 +874,10 @@ export function MasterDataInsuranceWorkspace() {
         : 'ارز';
 
   function changeResource(next: InsuranceResource) {
+    relationRequestRef.current += 1;
+    relationResourceRef.current = next;
+    setRelationRecords([]);
+    setRelationSummaryState('loading');
     setResource(next);
     setSearch('');
     resetColumnFilters();
@@ -788,7 +913,7 @@ export function MasterDataInsuranceWorkspace() {
         `${definition.singularLabel} با Optimistic Lock و Audit ${formMode === 'edit' ? 'ویرایش' : 'ثبت'} شد.`,
     );
     setFormMode(null);
-    await Promise.all([load(), loadSummary()]);
+    await Promise.all([load(), loadSummary(), loadRelationSummary()]);
   }
 
   async function afterDelete() {
@@ -798,7 +923,7 @@ export function MasterDataInsuranceWorkspace() {
     setNotice('رکورد با موفقیت حذف شد.');
     if (records.length === 1 && page > 1) setPage(page - 1);
     else await load();
-    await loadSummary();
+    await Promise.all([loadSummary(), loadRelationSummary()]);
   }
 
   async function downloadExcel() {
@@ -1078,7 +1203,11 @@ export function MasterDataInsuranceWorkspace() {
                       <MasterDataInsurerPlans
                         insurer={record}
                         onChanged={async () => {
-                          await Promise.all([load(), loadSummary()]);
+                          await Promise.all([
+                            load(),
+                            loadSummary(),
+                            loadRelationSummary(),
+                          ]);
                         }}
                       />
                     </div>
@@ -1249,7 +1378,9 @@ export function MasterDataInsuranceWorkspace() {
             setReferenceFilter('all');
             setPage(1);
           }}
-          onRefresh={() => void Promise.all([load(), loadSummary()])}
+          onRefresh={() =>
+            void Promise.all([load(), loadSummary(), loadRelationSummary()])
+          }
         />
       </MasterDataFilterBar>
       {content}
