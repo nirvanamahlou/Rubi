@@ -1,3 +1,7 @@
+## 2026-10-03 — BUS-INLINE-FACILITIES-1003 — PC-B — READY_FOR_REVIEW
+
+Bus Types create/edit now exposes the same always-visible canonical Add Facility action as Train Types. It reuses the existing Facilities form and public API; returned IDs append/deduplicate in the multi-reference value while preserving the parent draft. View, locked and saving guards plus Train/Hotel behavior remain unchanged. Focused 8 and all 572 Master Data tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. Coverage is SSR plus pure state-helper/reference-contract assertions; mounted/authenticated browser QA was not performed. No API/schema/database/dependency/permission/runtime change; bounded locks release with commit.
+
 ## 2026-10-03 — BUS-HIDE-EXTRA-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 Bus Companies now renders code, company and country from its resource-specific column model, plus the renderer's independent authenticated logo, status and operations columns. Logo Reference, Integration Connection and bus-type count are hidden only from this table, and Version / Audit remains absent; forms, View, export, backend data and all other resources remain unchanged. Focused 16 and all 570 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.

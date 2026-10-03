@@ -14,18 +14,20 @@ vi.mock('@/components/ui/overlays', () => {
 });
 
 import { getMasterDataDefinition } from '../model/catalog';
+import { getReferenceFieldConfig } from '../model/reference-fields';
 import {
   MasterDataLiveForm,
   withAppendedMasterDataReference,
 } from './master-data-live-form';
 
-function renderTrain(
+function renderTransport(
+  resource: 'train-types' | 'bus-types',
   mode: 'create' | 'edit' | 'view',
   lockedFields: readonly string[] = [],
 ) {
   return renderToStaticMarkup(
     createElement(MasterDataLiveForm, {
-      definition: getMasterDataDefinition('train-types'),
+      definition: getMasterDataDefinition(resource),
       mode,
       open: true,
       lockedFields,
@@ -33,10 +35,10 @@ function renderTrain(
         ? {}
         : {
             record: {
-              id: 'train-test',
-              resource: 'train-types' as const,
-              code: 'TRAIN_TEST',
-              name: 'قطار آزمون',
+              id: `${resource}-test`,
+              resource,
+              code: resource === 'train-types' ? 'TRAIN_TEST' : 'BUS_TEST',
+              name: resource === 'train-types' ? 'قطار آزمون' : 'اتوبوس آزمون',
               version: 1,
               status: 'active' as const,
               createdAt: '2026-10-03T00:00:00.000Z',
@@ -50,12 +52,17 @@ function renderTrain(
   );
 }
 
-describe('train inline canonical facility creation', () => {
-  it.each(['create', 'edit'] as const)(
-    'shows Add Facility without requiring a search in %s mode',
-    (mode) => {
-      const html = renderTrain(mode);
-      expect(html).toContain('id="live-train-types-facilityIds"');
+describe('transport inline canonical facility creation', () => {
+  it.each([
+    ['train-types', 'create'],
+    ['train-types', 'edit'],
+    ['bus-types', 'create'],
+    ['bus-types', 'edit'],
+  ] as const)(
+    'shows Add Facility without requiring a search for %s in %s mode',
+    (resource, mode) => {
+      const html = renderTransport(resource, mode);
+      expect(html).toContain(`id="live-${resource}-facilityIds"`);
       expect(html).toContain('افزودن امکان');
     },
   );
@@ -72,41 +79,47 @@ describe('train inline canonical facility creation', () => {
       ['category', false],
       ['displayOrder', false],
     ]);
+    for (const resource of ['train-types', 'bus-types'] as const)
+      expect(getReferenceFieldConfig(resource, 'facilityIds')).toMatchObject({
+        target: 'facilities',
+        payload: 'id',
+        multiple: true,
+        optional: true,
+      });
   });
 
-  it('appends the saved ID without duplicating it or changing the parent draft', () => {
-    const draft = {
+  it.each([
+    {
       name: 'قطار آزمون',
       manufacturer: 'Nora Rail',
       model: 'NR-1',
       facilityIds: 'facility-1',
-    };
-    expect(
-      withAppendedMasterDataReference(draft, 'facilityIds', 'facility-2'),
-    ).toEqual({ ...draft, facilityIds: 'facility-1,facility-2' });
-    expect(
-      withAppendedMasterDataReference(draft, 'facilityIds', 'facility-1'),
-    ).toEqual(draft);
-    expect(draft.facilityIds).toBe('facility-1');
-  });
+    },
+    {
+      name: 'اتوبوس آزمون',
+      manufacturer: 'Nora Bus',
+      model: 'NB-1',
+      facilityIds: 'facility-1',
+    },
+  ])(
+    'appends the saved ID without duplicating it or changing the $name draft',
+    (draft) => {
+      expect(
+        withAppendedMasterDataReference(draft, 'facilityIds', 'facility-2'),
+      ).toEqual({ ...draft, facilityIds: 'facility-1,facility-2' });
+      expect(
+        withAppendedMasterDataReference(draft, 'facilityIds', 'facility-1'),
+      ).toEqual(draft);
+      expect(draft.facilityIds).toBe('facility-1');
+    },
+  );
 
   it('does not expose Add in view or locked mode', () => {
-    expect(renderTrain('view')).not.toContain('افزودن امکان');
-    expect(renderTrain('create', ['facilityIds'])).not.toContain(
-      'افزودن امکان',
-    );
-  });
-
-  it('leaves Bus Types without an inline facility action', () => {
-    const html = renderToStaticMarkup(
-      createElement(MasterDataLiveForm, {
-        definition: getMasterDataDefinition('bus-types'),
-        mode: 'create',
-        open: true,
-        onOpenChange: () => undefined,
-        onPersist: async () => undefined,
-      }),
-    );
-    expect(html).not.toContain('افزودن امکان');
+    for (const resource of ['train-types', 'bus-types'] as const) {
+      expect(renderTransport(resource, 'view')).not.toContain('افزودن امکان');
+      expect(
+        renderTransport(resource, 'create', ['facilityIds']),
+      ).not.toContain('افزودن امکان');
+    }
   });
 });
