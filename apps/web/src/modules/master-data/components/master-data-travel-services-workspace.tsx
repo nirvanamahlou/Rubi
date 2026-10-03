@@ -122,7 +122,13 @@ export function travelServicesExportColumns(resource: TravelResource) {
             ? [field, 'suggestedCapacityMin']
             : [field],
         )
-      : definitionFields;
+      : resource === 'visa-services'
+        ? definitionFields.flatMap((field) =>
+            field === 'referenceValidityDays'
+              ? ['referenceValidityMode', field]
+              : [field],
+          )
+        : definitionFields;
   return [...new Set(['code', ...exportableFields, 'status', 'updatedAt'])];
 }
 
