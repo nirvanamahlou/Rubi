@@ -154,12 +154,22 @@ describe('organizations and suppliers workspace', () => {
       'کل کارگزاران',
       'پروفایل فعال',
       'شهرهای تحت پوشش',
-      'پروفایل غیرفعال',
+      'دارای خدمات',
+      'دارای تماس اصلی',
       'در حال بررسی',
       'تعلیق خرید',
       'پایان همکاری',
     ])
       expect(source).toContain(label);
+    expect(source).not.toContain('پروفایل غیرفعال');
+  });
+
+  it('keeps established summaries independent from fourth KPI failures', () => {
+    expect(source).toContain('Promise.allSettled([');
+    expect(source).toContain("summaryResult.status === 'fulfilled'");
+    expect(source).toContain("fourthKpiResult.status === 'fulfilled'");
+    expect(source).toContain('setSummary(summaryResult.value.data)');
+    expect(source).toContain('setFourthKpis(null)');
   });
 
   it('uses real APIs and leaves module-owned metrics unknown', () => {

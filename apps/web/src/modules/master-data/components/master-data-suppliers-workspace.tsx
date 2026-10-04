@@ -12,11 +12,11 @@ import type {
   MasterOrganizationSupplierSummary,
 } from '@nora/contracts';
 import {
-  AlertTriangle,
   ArrowRight,
   Building2,
   CheckCircle2,
   Clock3,
+  ContactRound,
   Database,
   Eye,
   FilePenLine,
@@ -64,7 +64,7 @@ import { MasterDataDeleteButton } from './master-data-delete-button';
 import { MasterDataFilterActions } from './master-data-filter-actions';
 import { MasterDataFilterBar } from './master-data-filter-bar';
 import { getMasterDataDefinition } from '../model/catalog';
-import { masterDataComplementKpi } from '../model/kpi-complement';
+import { loadSupplierBrokerFourthKpi } from '../model/supplier-broker-kpis';
 import {
   groupSupplierCollaborationRecords,
   loadSupplierCollaborationPage,
@@ -214,7 +214,10 @@ export function MasterDataSuppliersWorkspace() {
   const summaryRequestRef = useRef(0);
   const [summary, setSummary] =
     useState<MasterOrganizationSupplierSummary>(emptySummary);
-  const [summaryLoaded, setSummaryLoaded] = useState(false);
+  const [fourthKpis, setFourthKpis] = useState<{
+    suppliers: number;
+    brokers: number;
+  } | null>(null);
   const [requestState, setRequestState] = useState<RequestState>('loading');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'all' | MasterDataStatus>('active');
@@ -236,17 +239,24 @@ export function MasterDataSuppliersWorkspace() {
 
   const loadSummary = useCallback(async () => {
     const requestId = ++summaryRequestRef.current;
-    setSummaryLoaded(false);
-    try {
-      const response = await masterDataApi.organizationSupplierSummary();
-      if (requestId !== summaryRequestRef.current) return;
-      setSummary(response.data);
-      setSummaryLoaded(true);
-    } catch {
-      if (requestId !== summaryRequestRef.current) return;
-      setSummary(emptySummary);
-      setSummaryLoaded(false);
-    }
+    setFourthKpis(null);
+    const [summaryResult, fourthKpiResult] = await Promise.allSettled([
+      masterDataApi.organizationSupplierSummary(),
+      Promise.all([
+        loadSupplierBrokerFourthKpi(masterDataApi.list, 'suppliers'),
+        loadSupplierBrokerFourthKpi(masterDataApi.list, 'brokers'),
+      ]),
+    ]);
+    if (requestId !== summaryRequestRef.current) return;
+
+    if (summaryResult.status === 'fulfilled')
+      setSummary(summaryResult.value.data);
+    else setSummary(emptySummary);
+
+    if (fourthKpiResult.status === 'fulfilled') {
+      const [suppliers, brokers] = fourthKpiResult.value;
+      setFourthKpis({ suppliers, brokers });
+    } else setFourthKpis(null);
   }, []);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
@@ -305,7 +315,10 @@ export function MasterDataSuppliersWorkspace() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadSummary(), 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      summaryRequestRef.current += 1;
+    };
   }, [loadSummary]);
 
   useEffect(() => {
@@ -337,6 +350,13 @@ export function MasterDataSuppliersWorkspace() {
           icon: Plug,
           tone: 'amber' as const,
         },
+        {
+          label: 'دارای خدمات',
+          value: fourthKpis?.suppliers ?? '—',
+          icon: Network,
+          tone: 'violet' as const,
+          hint: 'در کل اطلاعات پایه',
+        },
       ];
     if (tab === 'brokers')
       return [
@@ -359,14 +379,11 @@ export function MasterDataSuppliersWorkspace() {
           tone: 'violet' as const,
         },
         {
-          label: 'پروفایل غیرفعال',
-          value: masterDataComplementKpi(
-            summary.brokers.total,
-            summary.brokers.active,
-            summaryLoaded ? 'ready' : 'loading',
-          ),
-          icon: AlertTriangle,
+          label: 'دارای تماس اصلی',
+          value: fourthKpis?.brokers ?? '—',
+          icon: ContactRound,
           tone: 'amber' as const,
+          hint: 'در کل اطلاعات پایه',
         },
       ];
     return [
@@ -395,7 +412,7 @@ export function MasterDataSuppliersWorkspace() {
         tone: 'rose' as const,
       },
     ];
-  }, [summary, summaryLoaded, tab]);
+  }, [fourthKpis, summary, tab]);
 
   function changeTab(next: SupplierTab) {
     if (next === tab) return;
