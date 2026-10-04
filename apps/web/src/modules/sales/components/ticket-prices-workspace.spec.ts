@@ -248,10 +248,12 @@ describe('ticket price workspace', () => {
     ).toBe(15);
     if (process.env.TICKET_PRICE_VISUAL_QA_PATH)
       writeFileSync(process.env.TICKET_PRICE_VISUAL_QA_PATH, html);
-    offers[0]?.saleCommissions?.forEach((rule) => {
-      rule.percent = '100';
-      rule.amount = '0';
-    });
+    const firstOffer = offers[0];
+    if (firstOffer && 'saleCommissions' in firstOffer)
+      firstOffer.saleCommissions.forEach((rule) => {
+        rule.percent = '100';
+        rule.amount = '0';
+      });
     state.index = 0;
     const hiddenHtml = renderToStaticMarkup(
       createElement(TicketPricesWorkspace),
