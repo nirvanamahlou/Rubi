@@ -7,23 +7,24 @@ import {
   blankCooperationDraft,
   cooperationIssue,
   CooperationSaveError,
+  normalizeOtpCode,
   saveCooperation,
 } from './cooperation-draft';
 import { blankAgreementTerms, editableAgreementTerms } from './agreement-terms';
 afterEach(() => vi.restoreAllMocks());
 const draft = {
   ...blankCooperationDraft,
+  registrationId: '22222222-2222-4222-8222-222222222222',
   legalName: 'سازمان آزمون',
   code: 'B2B-TEST-01',
 };
 describe('cooperation wizard writes', () => {
   it.each([
-    ['09120000000', '', 'PHONE'],
-    ['', 'qa@example.com', 'EMAIL'],
-    ['', '', 'OTHER'],
+    ['qa@example.com', 'EMAIL'],
+    ['', 'OTHER'],
   ])(
-    'supplies the required contact channel for phone=%s email=%s',
-    async (phone, email, preferredChannel) => {
+    'keeps the no-phone contact flow for email=%s',
+    async (email, preferredChannel) => {
       const existing = {
         id: 'identity',
         version: 1,
@@ -33,16 +34,98 @@ describe('cooperation wizard writes', () => {
         .spyOn(agencyClient, 'saveContact')
         .mockResolvedValue({ data: existing });
       await saveCooperation(
-        { ...draft, fullName: 'نماینده آزمایشی', phone, email },
+        { ...draft, fullName: 'نماینده آزمایشی', email },
         ['master_data.read', 'master_data.create'],
         existing,
       );
       expect(contact).toHaveBeenCalledWith(
         'identity',
-        expect.objectContaining({ preferredChannel, phone, email }),
+        expect.objectContaining({ preferredChannel, phone: '', email }),
       );
     },
   );
+
+  it('routes a supplied phone only through the verified-contact command', async () => {
+    const existing = {
+      id: 'identity',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const generic = vi.spyOn(agencyClient, 'saveContact');
+    const verified = vi
+      .spyOn(agencyClient, 'saveVerifiedContact')
+      .mockResolvedValue({ data: existing });
+    await saveCooperation(
+      {
+        ...draft,
+        branchId: '11111111-1111-4111-8111-111111111111',
+        fullName: 'نماینده آزمایشی',
+        phone: '۰۹۱۲ ۱۲۳ ۴۵۶۷',
+        phoneVerificationGrant: 'grant',
+        phoneVerificationExpiresAt: '2999-01-01T00:00:00.000Z',
+      },
+      ['master_data.read', 'master_data.create'],
+      existing,
+    );
+    expect(generic).not.toHaveBeenCalled();
+    expect(verified).toHaveBeenCalledWith(
+      expect.objectContaining({
+        organizationId: 'identity',
+        phone: '۰۹۱۲ ۱۲۳ ۴۵۶۷',
+        grant: 'grant',
+        registrationId: draft.registrationId,
+      }),
+    );
+    expect(verified.mock.calls[0]?.[0]).not.toHaveProperty('email');
+  });
+
+  it('blocks any supplied phone before organization persistence until it has a grant', async () => {
+    const create = vi.spyOn(masterDataApi, 'create');
+    await expect(
+      saveCooperation(
+        {
+          ...draft,
+          branchId: '11111111-1111-4111-8111-111111111111',
+          fullName: 'نماینده آزمایشی',
+          phone: '09121234567',
+        },
+        ['master_data.read', 'master_data.create'],
+      ),
+    ).rejects.toThrow('تأیید');
+    expect(create).not.toHaveBeenCalled();
+  });
+
+  it('expires a local grant before organization persistence and accepts localized OTP digits', async () => {
+    const create = vi.spyOn(masterDataApi, 'create');
+    expect(normalizeOtpCode('۱۲٣-۴۵۶')).toBe('123456');
+    await expect(
+      saveCooperation(
+        {
+          ...draft,
+          branchId: '11111111-1111-4111-8111-111111111111',
+          fullName: 'نماینده آزمایشی',
+          phone: '09121234567',
+          phoneVerificationGrant: 'expired-grant',
+          phoneVerificationExpiresAt: '2000-01-01T00:00:00.000Z',
+        },
+        ['master_data.read', 'master_data.create'],
+      ),
+    ).rejects.toThrow('مهلت');
+    await expect(
+      saveCooperation(
+        {
+          ...draft,
+          branchId: '11111111-1111-4111-8111-111111111111',
+          fullName: 'نماینده آزمایشی',
+          phone: '09121234567',
+          phoneVerificationGrant: 'malformed-expiry-grant',
+          phoneVerificationExpiresAt: 'not-a-date',
+        },
+        ['master_data.read', 'master_data.create'],
+      ),
+    ).rejects.toThrow('مهلت');
+    expect(create).not.toHaveBeenCalled();
+  });
   it('accepts an optional company ID and rejects a personal or malformed identifier', () => {
     expect(
       cooperationIssue({ ...draft, nationalId: '۱۲۳۴۵۶۷۸۹۰۱' }, 1),
@@ -199,7 +282,7 @@ describe('cooperation wizard writes', () => {
       pendingAgreementDocument: staged('سند قرارداد'),
       pendingGuaranteeDocuments: [staged('سند تضمین')],
     };
-    expect(cooperationIssue(inputDraft, 3)).toBeUndefined();
+    expect(cooperationIssue(inputDraft, 4)).toBeUndefined();
     await saveCooperation(inputDraft, [
       'master_data.read',
       'master_data.create',
@@ -292,7 +375,7 @@ describe('cooperation wizard writes', () => {
     expect(
       cooperationIssue(
         { ...draft, withAgreement: true, branchId: 'branch' },
-        3,
+        4,
       ),
     ).toContain('روش پرداخت');
     expect(
@@ -309,7 +392,7 @@ describe('cooperation wizard writes', () => {
             paymentMethodId: '11111111-1111-4111-8111-111111111111',
           },
         },
-        3,
+        4,
       ),
     ).toBeTruthy();
     expect(

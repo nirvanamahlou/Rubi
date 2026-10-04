@@ -378,8 +378,8 @@ function GenericMasterDataLiveForm({
                   ['mealServiceIds', 'roomTypeIds', 'facilityIds'].includes(
                     field.key,
                   );
-                const isTrainInlineFacility =
-                  definition.key === 'train-types' &&
+                const isTransportInlineFacility =
+                  ['train-types', 'bus-types'].includes(definition.key) &&
                   field.key === 'facilityIds';
                 const isSupplierInlineService =
                   definition.key === 'suppliers' &&
@@ -413,7 +413,7 @@ function GenericMasterDataLiveForm({
                       'serviceCodes',
                     ].includes(field.key)) ||
                     (definition.key === 'cities' && field.key === 'regionId') ||
-                    isTrainInlineFacility ||
+                    isTransportInlineFacility ||
                     (definition.key === 'hotels' &&
                       ['mealServiceIds', 'facilityIds', 'roomTypeIds'].includes(
                         field.key,
@@ -463,7 +463,7 @@ function GenericMasterDataLiveForm({
                                     : reference.target === 'regions'
                                       ? { countryId: values.countryId ?? '' }
                                       : (isHotelInlineReference ||
-                                            isTrainInlineFacility ||
+                                            isTransportInlineFacility ||
                                             isSupplierInlineService) &&
                                           searchQuery
                                         ? { name: searchQuery }
@@ -479,7 +479,7 @@ function GenericMasterDataLiveForm({
                     }
                     alwaysShowCreate={
                       isHotelInlineReference ||
-                      isTrainInlineFacility ||
+                      isTransportInlineFacility ||
                       isSupplierInlineService
                     }
                     id={controlId}

@@ -1,3 +1,12 @@
+
+## 2026-10-03 — B2B-PHONE-VERIFICATION-1003 — PC-B — READY_FOR_REVIEW
+
+Cooperation registration now has an optional mobile verification stage before contract/credit. Entered phones require a development-only code and a server-bound, expiring single-use grant before contact creation through the public MasterData service. Actor/session/branch/draft/role/phone/organization checks, resend and attempt limits, bounded memory capacity, no-store responses and fail-closed production gates protect the dedicated wizard path. Blank email, stale requests and expired grants have regressions. API focused tests (16), full Organizations suite (138), B2B contract tests (3), scoped lint, contracts build/typecheck, API/Web full typechecks and production builds pass; Web emits 55 routes. Local Prisma artifacts were regenerated without schema/migration or DB changes. Frozen contract v1.1 and scope: docs/tasks/B2B-PHONE-VERIFICATION-1003.md. No authenticated browser QA, operational data changes or shared-runtime rollout. Independent review accepted candidate 98a9c908 with no open blockers; OTP-R3-01/R3-02/N01 resolved. PR #587 targets develop; concurrent develop documentation entries are preserved during synchronization and refreshed final-candidate review gates handoff. SMS.IR and durable atomic storage remain required before production activation; this development simulation is not KYC or proof of possession. No persistent verified claim is added to other contact paths.
+
+## 2026-10-03 — BUS-INLINE-FACILITIES-1003 — PC-B — READY_FOR_REVIEW
+
+Bus Types create/edit now exposes the same always-visible canonical Add Facility action as Train Types. It reuses the existing Facilities form and public API; returned IDs append/deduplicate in the multi-reference value while preserving the parent draft. View, locked and saving guards plus Train/Hotel behavior remain unchanged. Focused 8 and all 572 Master Data tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. Coverage is SSR plus pure state-helper/reference-contract assertions; mounted/authenticated browser QA was not performed. No API/schema/database/dependency/permission/runtime change; bounded locks release with commit.
+
 ## 2026-10-03 — BUS-HIDE-EXTRA-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 Bus Companies now renders code, company and country from its resource-specific column model, plus the renderer's independent authenticated logo, status and operations columns. Logo Reference, Integration Connection and bus-type count are hidden only from this table, and Version / Audit remains absent; forms, View, export, backend data and all other resources remain unchanged. Focused 16 and all 570 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
@@ -25,6 +34,7 @@ Voucher preview and PDF now show `SUPPLIER` as `0` and omit the lower reservatio
 ## 2026-10-03 — MARKETING-SETTINGS-SYSTEM-1003 — PC-B — READY_FOR_REVIEW
 
 Marketing Settings now lives under System Management → Marketing. The Marketing hub no longer offers Settings, and `/marketing?section=settings` redirects to `/system?module=marketing`. The six original channel/site/role/alert/general/log views retain their interactions and detail dialogs, while existing persisted Marketing settings remain in place. 39 focused tests, scoped lint, Web typecheck and a 55-route webpack production build pass. Default Turbopack is blocked only by the reused dependency junction. No API, migration, permissions, dependency, operational data or local runtime change; bounded locks are released. See `docs/tasks/MARKETING-SETTINGS-SYSTEM-1003.md`.
+
 
 ## 2026-10-03 — INSURANCE-NESTED-PLANS-1003 — PC-B — READY_FOR_REVIEW
 
@@ -4480,6 +4490,11 @@ Train Types create/edit now provides `افزودن امکان` beside the existi
 
 Removed one-sentence subtitles under main headings in the agency creation wizard: overall dialog, four steps and identity section introduction. Labels, field guidance, validation, OTP, legal warnings and submission behavior remain unchanged. Existing tests, scoped lint/typecheck/format and Web build validate bounded copy removal; CI precedes user-authorized develop merge. No API/schema/dependency/runtime/data change. PC-A can fetch develop after merge.
 
+
 ## 2026-10-03 — B2B-SIGNATORY-FORM-FIX-1003 — PC-B
 
 Improved agency signatory form document loading with context-keyed snapshots, safe owner API error text and retry. Attachment capability now matches the existing B2B public proof-reference service; selection pins the exact proof version and currency dependency is explained. Activation/proof/branch permissions remain enforced. Backend nullable-version resolution remains valid; pinning hardens concurrency consistency. Web Organizations165 tests, focused proof18 and existing API signatory16 tests, scoped lint/typecheck/Prettier and55-route production build pass. No live3100/API listener existed, so the screenshot's deployed fetch cause is still unverified. Local repair only; no API/schema/dependency/runtime change or permission expansion.
+
+## 2026-10-03 — B2B-PHONE-VERIFICATION-1003 resumed integration — PC-B
+
+User resumes dev-only visible test-code delivery and production-disabled sending. Original PR587 is synchronized with latest develop; five-stage verification flow coexists with removed wizard subtitles and current Sales-document client. Existing B2B frozenv1.1 security contract remains unchanged. Focused OTP API16/Web33/Contracts3 and Organizations164 tests pass; independent current-candidate review and remaining checks gate handoff. No SMS.IR secrets/provider, schema/dependency, operating data or runtime change. Local signatory repair remains on separate branch and is not included.
