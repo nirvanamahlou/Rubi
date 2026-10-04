@@ -30,6 +30,7 @@ export function InlineDocumentUpload({
   onUncertainChange,
   contextKey = '',
   uploadedNotice,
+  disabled = false,
   expanded = false,
 }: {
   organizationId?: string | undefined;
@@ -44,6 +45,7 @@ export function InlineDocumentUpload({
   onUncertainChange?: ((uncertain: boolean) => void) | undefined;
   contextKey?: string | undefined;
   uploadedNotice?: string | undefined;
+  disabled?: boolean | undefined;
   expanded?: boolean;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
@@ -104,7 +106,7 @@ export function InlineDocumentUpload({
   }, [organizationId]);
   const type = options?.documentTypes.find((t) => t.id === typeId);
   async function upload() {
-    if (pending.current || uncertain || !options) return;
+    if (disabled || pending.current || uncertain || !options) return;
     setError('');
     setNotice('');
     if (!file) {
@@ -187,7 +189,7 @@ export function InlineDocumentUpload({
           بارگذاری فایل جدید برای {label}
         </summary>
       )}
-      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+      <fieldset className="mt-3 grid gap-3 sm:grid-cols-2" disabled={disabled}>
         <label className="field">
           <span>عنوان مدرک</span>
           <input
@@ -225,23 +227,10 @@ export function InlineDocumentUpload({
           </NativeSearchSelect>
         </label>
         {type?.defaultConfidentiality === 'CONFIDENTIAL' ? (
-          <label className="field">
-            <span>کد دسترسی سند محرمانه</span>
-            <input
-              className="input"
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={6}
-              pattern="[0-9]{6}"
-              required
-              value={confidentialAccessCode}
-              onChange={(event) =>
-                setConfidentialAccessCode(
-                  event.target.value.replace(/\D/gu, '').slice(0, 6),
-                )
-              }
-            />
-          </label>
+          <ConfidentialAccessCodeInput
+            value={confidentialAccessCode}
+            onChange={setConfidentialAccessCode}
+          />
         ) : null}
         <label className="field">
           <span>دسته‌بندی سند</span>
@@ -314,7 +303,31 @@ export function InlineDocumentUpload({
             {notice}
           </p>
         ) : null}
-      </div>
+      </fieldset>
     </Container>
+  );
+}
+
+export function ConfidentialAccessCodeInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="field">
+      <span>کد دسترسی سند محرمانه</span>
+      <input
+        className="input"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={6}
+        value={value}
+        onChange={(event) =>
+          onChange(event.target.value.replace(/\D/gu, '').slice(0, 6))
+        }
+      />
+    </label>
   );
 }

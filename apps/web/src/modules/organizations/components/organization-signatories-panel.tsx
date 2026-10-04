@@ -40,6 +40,7 @@ import {
 import { DossierFormDialog } from './dossier-form-dialog';
 import { InlineDocumentUpload } from './inline-document-upload';
 import { useDossierBranch } from './use-dossier-branch';
+import { useSignatoryUploadSaveGate } from './use-signatory-upload-save-gate';
 
 const labels = {
   FRAMEWORK_AGREEMENT: 'قرارداد همکاری',
@@ -67,6 +68,9 @@ function SignatoryFields({
   permissions,
   onAddContact,
   proofContextKey,
+  proofRequestKey,
+  uploadContextKey,
+  saveGateKey,
   onProofResolved,
   onSaveBlockedChange,
 }: {
@@ -76,6 +80,9 @@ function SignatoryFields({
   permissions: readonly IamPermissionCode[];
   onAddContact: () => void;
   proofContextKey: string;
+  proofRequestKey: string;
+  uploadContextKey: string;
+  saveGateKey: string;
   onProofResolved: (
     contextKey: string,
     proof: { documentId: string; documentVersionId: string },
@@ -94,17 +101,27 @@ function SignatoryFields({
     state: 'waiting' | 'pending' | 'ready' | 'failed';
     message: string;
   }>();
+  const [uploadedDocumentId, setUploadedDocumentId] = useState('');
+  const [pollRevision, setPollRevision] = useState(0);
   const proofPoll = useRef<AbortController | null>(null);
   const uploadGate = useRef({ busy: false, uncertain: false });
-  useEffect(
-    () => () => {
-      proofPoll.current?.abort();
-    },
-    [],
-  );
+  const proofResolved = useRef(onProofResolved);
+  useLayoutEffect(() => {
+    proofResolved.current = onProofResolved;
+  }, [onProofResolved]);
   const canAttachDocument = canAttachOrganizationDocument(permissions);
   const canUploadDocument =
     canAttachDocument && permissions.includes('documents.upload');
+  const [uploaderWasAvailable, setUploaderWasAvailable] =
+    useState(canUploadDocument);
+  useEffect(() => {
+    if (!proofRequestKey) return;
+    const update = window.setTimeout(
+      () => setUploaderWasAvailable(canUploadDocument),
+      0,
+    );
+    return () => window.clearTimeout(update);
+  }, [canUploadDocument, proofRequestKey]);
   const documentScopeKey = JSON.stringify([
     organizationId,
     value.branchId,
@@ -164,74 +181,83 @@ function SignatoryFields({
   const setUploadGate = (key: 'busy' | 'uncertain', blocked: boolean) => {
     uploadGate.current = { ...uploadGate.current, [key]: blocked };
     onSaveBlockedChange(
-      proofContextKey,
+      saveGateKey,
       uploadGate.current.busy || uploadGate.current.uncertain,
     );
   };
-  const pollUploadedProof = async (documentId: string) => {
+  useEffect(() => {
     proofPoll.current?.abort();
+    if (!uploadedDocumentId || !proofRequestKey || !canAttachDocument) return;
     const controller = new AbortController();
     proofPoll.current = controller;
-    setReload((current) => current + 1);
-    setProofProgress({
-      documentId,
-      state: 'waiting',
-      message: 'مدرک ذخیره شد؛ بررسی امنیتی فایل در حال انجام است.',
-    });
-    try {
-      const result = await awaitOrganizationSignatoryProof(
-        organizationId,
-        value.branchId,
-        documentId,
-        permissions,
-        documentsApi.list,
-        controller.signal,
-      );
-      if (controller.signal.aborted) return;
-      if (result.state === 'ready') {
-        onProofResolved(proofContextKey, {
-          documentId: result.documentId,
-          documentVersionId: result.documentVersionId,
-        });
-        setReload((current) => current + 1);
-        setProofProgress({
-          documentId,
-          state: 'ready',
-          message:
-            'مدرک آماده و متصل شد؛ در صورت نیاز فعال‌سازی را دستی انتخاب کنید.',
-        });
-      } else if (result.state === 'pending') {
-        setProofProgress({
-          documentId,
-          state: 'pending',
-          message:
-            'بررسی امنیتی هنوز کامل نشده است؛ برای بررسی دوباره اقدام کنید.',
-        });
-      } else if (result.state === 'rejected') {
-        setProofProgress({
-          documentId,
-          state: 'failed',
-          message: result.message,
-        });
-      } else if (result.state === 'denied') {
-        setProofProgress({
-          documentId,
-          state: 'failed',
-          message: 'مجوز اتصال مدرک در نشست فعلی فعال نیست.',
-        });
+    void (async () => {
+      try {
+        const result = await awaitOrganizationSignatoryProof(
+          organizationId,
+          value.branchId,
+          uploadedDocumentId,
+          permissions,
+          documentsApi.list,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        if (result.state === 'ready') {
+          proofResolved.current(proofContextKey, {
+            documentId: result.documentId,
+            documentVersionId: result.documentVersionId,
+          });
+          setUploadedDocumentId('');
+          setReload((current) => current + 1);
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'ready',
+            message:
+              'مدرک آماده و متصل شد؛ در صورت نیاز فعال‌سازی را دستی انتخاب کنید.',
+          });
+        } else if (result.state === 'pending') {
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'pending',
+            message:
+              'بررسی امنیتی هنوز کامل نشده است؛ برای بررسی دوباره اقدام کنید.',
+          });
+        } else if (result.state === 'rejected') {
+          setUploadedDocumentId('');
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'failed',
+            message: result.message,
+          });
+        } else if (result.state === 'denied') {
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'failed',
+            message: 'مجوز اتصال مدرک در نشست فعلی فعال نیست.',
+          });
+        }
+      } catch (caught) {
+        if (!controller.signal.aborted)
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'pending',
+            message:
+              caught instanceof Error
+                ? caught.message
+                : 'بررسی وضعیت مدرک ناموفق بود؛ دوباره تلاش کنید.',
+          });
       }
-    } catch (caught) {
-      if (!controller.signal.aborted)
-        setProofProgress({
-          documentId,
-          state: 'pending',
-          message:
-            caught instanceof Error
-              ? caught.message
-              : 'بررسی وضعیت مدرک ناموفق بود؛ دوباره تلاش کنید.',
-        });
-    }
-  };
+    })();
+    return () => controller.abort();
+  }, [
+    canAttachDocument,
+    organizationId,
+    permissions,
+    pollRevision,
+    proofContextKey,
+    proofRequestKey,
+    uploadedDocumentId,
+    value.branchId,
+  ]);
   return (
     <>
       <div className="field sm:col-span-2">
@@ -346,6 +372,7 @@ function SignatoryFields({
           value={value.documentId ?? ''}
           onChange={(event) => {
             proofPoll.current?.abort();
+            setUploadedDocumentId('');
             setProofProgress(undefined);
             set(
               resolveOrganizationSignatoryProof(
@@ -382,20 +409,28 @@ function SignatoryFields({
           </span>
         ) : null}
       </label>
-      {canUploadDocument ? (
+      {canUploadDocument || (!proofRequestKey && uploaderWasAvailable) ? (
         <div className="sm:col-span-2">
           <InlineDocumentUpload
             organizationId={organizationId}
             branchId={value.branchId}
             label="مدرک اختیار امضا"
             permissions={permissions}
-            contextKey={proofContextKey}
+            contextKey={uploadContextKey}
+            disabled={!proofRequestKey || !canUploadDocument}
             uploadedNotice="مدرک ذخیره شد؛ وضعیت اسکن و اتصال در حال بررسی است."
             onBusyChange={(busy) => setUploadGate('busy', busy)}
             onUncertainChange={(uncertain) =>
               setUploadGate('uncertain', uncertain)
             }
-            onUploaded={(documentId) => void pollUploadedProof(documentId)}
+            onUploaded={(documentId) => {
+              setUploadedDocumentId(documentId);
+              setProofProgress({
+                documentId,
+                state: 'waiting',
+                message: 'مدرک ذخیره شد؛ بررسی امنیتی فایل در حال انجام است.',
+              });
+            }}
           />
         </div>
       ) : canAttachDocument ? (
@@ -415,7 +450,7 @@ function SignatoryFields({
               type="button"
               size="sm"
               variant="outline"
-              onClick={() => void pollUploadedProof(proofProgress.documentId)}
+              onClick={() => setPollRevision((current) => current + 1)}
             >
               بررسی دوباره وضعیت مدرک
             </Button>
@@ -493,6 +528,7 @@ export function OrganizationSignatoriesPanel({
     permissions,
     sessionError,
     sessionContextKey,
+    actorIdentityKey,
   } = useDossierBranch();
   const [rows, setRows] = useState<B2bSignatoryV1[]>([]);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
@@ -504,10 +540,6 @@ export function OrganizationSignatoriesPanel({
     values: B2bSignatoryInputV1;
   }>();
   const editorGeneration = useRef(0);
-  const [saveBlock, setSaveBlock] = useState({
-    contextKey: '',
-    blocked: false,
-  });
   const [deleting, setDeleting] = useState<B2bSignatoryV1>();
   const [reason, setReason] = useState('');
   const sequence = useRef(0);
@@ -548,23 +580,28 @@ export function OrganizationSignatoriesPanel({
     void load();
   };
   const canManage = permissions.includes('b2b.agency.manage');
-  const editorContextKey = editor
+  const editorUiKey = editor
     ? JSON.stringify([
         organizationId,
         branchId,
-        sessionContextKey,
+        actorIdentityKey,
         editor.generation,
         editor.values.branchId,
       ])
     : '';
+  const editorContextKey = editorUiKey
+    ? JSON.stringify([editorUiKey, sessionContextKey])
+    : '';
+  const editorOperationKey = editor
+    ? JSON.stringify([organizationId, actorIdentityKey, editor.generation])
+    : '';
+  const uploadSaveGate = useSignatoryUploadSaveGate(editorOperationKey);
   const editorContext = useRef(editorContextKey);
   useLayoutEffect(() => {
     editorContext.current = editorContextKey;
   }, [editorContextKey]);
   const saveIsBlocked =
-    !canManage ||
-    !sessionContextKey ||
-    (saveBlock.contextKey === editorContextKey && saveBlock.blocked);
+    !canManage || !sessionContextKey || uploadSaveGate.blocked;
   const today = new Date().toISOString().slice(0, 10);
   const visible = rows.filter((row) =>
     inDossierDateRange(row.validFrom, dateRange),
@@ -582,7 +619,6 @@ export function OrganizationSignatoriesPanel({
           disabled={!canManage || !branchId || loading}
           onClick={() => {
             const generation = ++editorGeneration.current;
-            setSaveBlock({ contextKey: '', blocked: false });
             setEditor({ generation, values: blank(branchId) });
           }}
         >
@@ -736,13 +772,16 @@ export function OrganizationSignatoriesPanel({
           }}
         >
           <SignatoryFields
-            key={editorContextKey}
+            key={editorUiKey}
             value={editor.values}
             onChange={(values) => setEditor({ ...editor, values })}
             organizationId={organizationId}
             permissions={permissions}
             onAddContact={onAddContact}
             proofContextKey={editorContextKey}
+            proofRequestKey={sessionContextKey}
+            uploadContextKey={editorUiKey}
+            saveGateKey={editorOperationKey}
             onProofResolved={(contextKey, proof) => {
               if (editorContext.current !== contextKey) return;
               setEditor((current) =>
@@ -758,8 +797,7 @@ export function OrganizationSignatoriesPanel({
               );
             }}
             onSaveBlockedChange={(contextKey, blocked) => {
-              if (editorContext.current === contextKey)
-                setSaveBlock({ contextKey, blocked });
+              uploadSaveGate.update(contextKey, blocked);
             }}
           />
         </DossierFormDialog>
