@@ -5502,6 +5502,14 @@ Branch codex/pc-a-sales-expert-note-1004 from origin/develop@e9f69ea0. Reserve S
 
 SALES-EXPERT-NOTE-1004 delivered: existing optional expert reservation note moved into price/payment step; existing pricing note separate. Yellow second destination cell retains visible marker under selection and tooltip explains notes. Public persistence/read projection unchanged. 68 focused tests, scoped ESLint, formatting and Web typecheck pass; production build and CI gate merge. Scoped locks RELEASED for review; no API/schema/migration/dependency/runtime change.
 
+## SALES-AGREED-AUTOFILL-1004 — PC-A — IN_PROGRESS
+
+Branch codex/pc-a-sales-agreed-autofill-1004 from origin/develop@c91297a6. Reserve Sales contract form, pricing panel, new pure price-mirror helper and focused tests plus own docs. New-contract mode derives daySale exactly from agreed basis/amount for each service/currency, read-only sale inputs, matching previews/payload/restored drafts. Keep catalog source prices and historical contracts unchanged. No API/schema/migration/dependency/runtime changes; user authorizes develop merge.
+
+Scope extension: preserve independent catalog quote freshness on ticket-only activation while sale amount mirrors agreement. Reserve Sales-owned sales-form payload metadata and API activation quote helper/tests. Existing generic service metadata carries versioned catalog quote; Ticket Catalog public reserve guard remains unchanged. Producer Sales Web/PC-A, consumer Sales API/PC-A, additive metadata compatible with old contracts lacking quote. No central contract/schema/migration change.
+
+SALES-AGREED-AUTOFILL-1004 candidate: new-form derived pricing mirrors each agreement without floating-point conversion; every day-sale input read-only, hotel basis follows agreement. Persisted catalogSaleQuote and Sales activation reader preserve public catalog freshness independently; absent metadata uses old behavior and malformed metadata fails closed. Focused UI/model32 tests plus final catalog payload regression pass, focused API quote2 tests pass; complete Sales/API boundaries and lint/type/build/CI gate merge. No migration/dependency/runtime change. Scoped locks RELEASED with candidate commit.
+
 B2B-CREDIT-COPY-1004 validation: final clean Webpack production build55/55 passed after local dependency junction repair. First CI allfourgates passed; only append-only docs conflicts resolved with concurrent PC-A entries preserved. Source diff remains one UI component. Scoped locks RELEASED at delivery; refreshed CI gates merge.
 
 ## B2B-PHONE-BRANCH-COPY-1004 — PC-B — IN_PROGRESS

@@ -4611,6 +4611,14 @@ The optional expert note is available in contract sale pricing and uses existing
 
 Validation: 68 focused Sales form/payload and Reservations inbox/feed tests pass, including existing metadata transport and notes projection regressions. Scoped ESLint, formatting and Web typecheck pass; production build and final CI gate develop merge.
 
+## 2026-10-04 — SALES-AGREED-AUTOFILL-1004 — PC-A
+
+New-contract sale-price fields are read-only and derive exactly from agreed prices per service/currency, retaining nightly/total hotel basis and zero/decimal precision. New-form draft projection also mirrors restored values, previews and outgoing payloads; catalog reference prices and historical contracts are unchanged. No API/schema/migration/dependency/runtime change. Focused tests and checks gate authorized develop merge.
+
+Ticket-only activation keeps the catalog freshness guard independent through versioned catalogSaleQuote service metadata. Sales API uses the catalog quote for public Ticket Catalog reserve, falling back to historical daySale for old contracts; malformed new quotes fail closed. Agreements do not rewrite catalog fare sources.
+
 ## 2026-10-04 — B2B-PHONE-BRANCH-COPY-1004 — PC-B
 
 Agency phone verification no longer displays the registration-branch selector. Existing authenticated authorized-branch default and OTP branch/session/grant enforcement remain unchanged. One wizard component changes; no API, schema, permission or dependency change. Organizations191 tests, scoped lint/format and Web typecheck pass; final Web build and CI gate user-authorized develop merge. Pending agreement upload task remains isolated.
+
+SALES-AGREED-AUTOFILL-1004 validation: Sales294 tests plus final quote payload3 pass (one environment-dependent skipped); API boundary/catalog targeted12 pass. Scoped lint/API and Web typechecks pass; API build and55-route Web build validate initial candidate; final corrected scalar quote production build, quality, full tests and database CI gates all pass. Concurrent develop merged with appended owner reports retained; refreshed-head CI gates final merge. No local database/runtime change.
