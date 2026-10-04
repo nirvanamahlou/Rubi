@@ -83,7 +83,9 @@ export function validateInboxQuery(
     throw new ForbiddenException('شعبه خارج از دسترسی است.');
   if (
     (query.source &&
-      !['SALES', 'HR', 'RESERVATIONS', 'PURCHASES', 'FINANCE'].includes(query.source)) ||
+      !['SALES', 'HR', 'RESERVATIONS', 'PURCHASES', 'FINANCE'].includes(
+        query.source,
+      )) ||
     (query.status && !statuses.includes(query.status)) ||
     (query.currencyCode && !/^[A-Z]{3}$/.test(query.currencyCode)) ||
     (query.search?.length ?? 0) > 200 ||

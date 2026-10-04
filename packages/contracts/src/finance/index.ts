@@ -359,7 +359,8 @@ export type FinanceRequestStatus =
 export type FinanceRequestSourceModule =
   'SALES' | 'RESERVATIONS' | 'PROCUREMENT' | 'HR' | 'OTHER';
 
-export type FinanceInboxSource = 'SALES' | 'HR' | 'RESERVATIONS' | 'PURCHASES' | 'FINANCE';
+export type FinanceInboxSource =
+  'SALES' | 'HR' | 'RESERVATIONS' | 'PURCHASES' | 'FINANCE';
 export type FinanceInboxSourceConnection =
   'CONNECTED' | 'NOT_CONNECTED' | 'UNAVAILABLE';
 

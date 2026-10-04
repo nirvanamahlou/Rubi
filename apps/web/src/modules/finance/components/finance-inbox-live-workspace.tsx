@@ -217,7 +217,6 @@ export function FinanceInboxLiveWorkspace() {
     useState<FinanceSettlementAccountKind>('BANK');
   const [accountBankId, setAccountBankId] = useState('');
   const [accountMaskedId, setAccountMaskedId] = useState('');
-  const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
   const inboxQuery = useMemo<FinanceInboxQueryV1>(
     () => ({
       search,

@@ -19,7 +19,7 @@ describe('Finance output download integrity', () => {
   it('encodes source filters safely and omits empty parameters', () => {
     expect(
       new URLSearchParams(
-          exportQueryString({ person: 'الف & ب', page: 2 }),
+        exportQueryString({ person: 'الف & ب', page: 2 }),
       ).get('person'),
     ).toBe('الف & ب');
     expect(exportQueryString({ person: '' })).toBe('');
@@ -27,13 +27,11 @@ describe('Finance output download integrity', () => {
   it('never downloads an HTML error disguised as a PDF', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response('<html>login</html>', {
-            headers: { 'Content-Type': 'text/html' },
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response('<html>login</html>', {
+          headers: { 'Content-Type': 'text/html' },
+        }),
+      ),
     );
     await expect(downloadFinanceExport({}, 'pdf')).rejects.toThrow(
       'فایل معتبر',
@@ -42,13 +40,11 @@ describe('Finance output download integrity', () => {
   it('rejects incorrect binary signatures even with the correct MIME type', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response('not-a-pdf', {
-            headers: { 'Content-Type': 'application/pdf' },
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response('not-a-pdf', {
+          headers: { 'Content-Type': 'application/pdf' },
+        }),
+      ),
     );
     await expect(downloadFinanceExport({}, 'pdf')).rejects.toThrow('نامعتبر');
   });
@@ -74,16 +70,14 @@ describe('Finance output download integrity', () => {
     });
     vi.stubGlobal('window', { setTimeout: vi.fn() });
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:synthetic-test');
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response(new Uint8Array([0x50, 0x4b, 3, 4, 0]), {
-          headers: {
-            'Content-Type':
-              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          },
-        }),
-      );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(new Uint8Array([0x50, 0x4b, 3, 4, 0]), {
+        headers: {
+          'Content-Type':
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        },
+      }),
+    );
     vi.stubGlobal('fetch', fetchMock);
     await downloadFinanceExport(
       {

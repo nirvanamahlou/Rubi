@@ -42,20 +42,18 @@ function setup(dueAt = '2026-10-05T10:00:00Z') {
     createWithinTransaction: vi.fn().mockResolvedValue(undefined),
   };
   const inbox = {
-    list: vi
-      .fn()
-      .mockResolvedValue({
-        items: [
-          {
-            id: 'operational:' + id,
-            sourceReference: id,
-            kind: 'OPERATIONAL_REQUEST',
-            branchReference: id,
-            status: 'NEW',
-            dueAt,
-          },
-        ],
-      }),
+    list: vi.fn().mockResolvedValue({
+      items: [
+        {
+          id: 'operational:' + id,
+          sourceReference: id,
+          kind: 'OPERATIONAL_REQUEST',
+          branchReference: id,
+          status: 'NEW',
+          dueAt,
+        },
+      ],
+    }),
   };
   return {
     service: new FinanceFollowupService(

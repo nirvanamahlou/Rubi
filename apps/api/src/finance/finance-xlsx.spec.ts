@@ -50,4 +50,25 @@ describe('Finance genuine Excel workbook', () => {
     expect(sheet).toContain('<v>0</v>');
     expect(sheet.match(/<v>0<\/v>/g)).toHaveLength(1);
   });
+  it('prints separate currency totals and signature spaces for a recorded receipt', () => {
+    const files = unzipSync(
+      buildFinanceXlsx({
+        ...snapshot,
+        scope: 'RECEIPT',
+        columns: Array.from({ length: 14 }, () => ({
+          label: 'فیلد',
+          type: 'TEXT' as const,
+        })),
+        rows: [],
+        totals: [{ currencyCode: 'IRR', amount: '100.125' }],
+      }),
+    );
+    const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(sheet).toContain('جمع در IRR');
+    expect(sheet).toContain('<v>100.125</v>');
+    expect(sheet).toContain('امضای دریافت‌کننده');
+    expect(sheet).toContain('امضای پرداخت‌کننده');
+    expect(sheet).toContain('dimension ref="A1:N10"');
+    expect(strFromU8(files['xl/workbook.xml']!)).toContain('_xlnm.Print_Area');
+  });
 });
