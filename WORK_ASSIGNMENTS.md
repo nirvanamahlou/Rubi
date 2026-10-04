@@ -1,6 +1,7 @@
-## SALES-RANGE-FLOATING-1004 — PC-A — ACTIVE
+## SALES-RANGE-FLOATING-1004 — PC-A — READY_FOR_REVIEW
 
 - Reserve Sales Web required future date range, floating-ticket cancellation, focused tests, and own status entries on `codex/pc-a-sales-range-floating-1004`. No API/schema/migration/dependency or shared UI change. User authorizes tests and develop merge.
+- Delivered required future date selection after passenger counts, Tehran-day guards in Persian/Gregorian calendars, white disabled past days, and functional floating-flight cancellation with scoped fare invalidation. Production Web build (55 routes) and typecheck pass; 277 Sales tests (one pre-existing skip) and scoped lint pass. No authenticated browser/runtime rollout or DB changes. Bounded locks release with delivery.
 
 ## VISA-REQUIRED-DOCUMENTS-1004 — PC-B — READY_FOR_REVIEW
 
