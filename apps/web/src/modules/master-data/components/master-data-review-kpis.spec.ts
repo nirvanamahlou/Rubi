@@ -16,7 +16,7 @@ describe('Master Data review KPI replacements', () => {
       ['زنجیره غیرفعال', 'سرویس‌ها', 'هتل ترکیبی غیرفعال'],
     ],
     ['master-data-finance-workspace.tsx', ['بانک غیرفعال']],
-    ['master-data-suppliers-workspace.tsx', ['پروفایل غیرفعال']],
+    ['master-data-suppliers-workspace.tsx', ['دارای خدمات', 'دارای تماس اصلی']],
     ['master-data-travel-services-workspace.tsx', ['دارای راهنمای مدارک']],
     ['master-data-transportation-workspace.tsx', ['کلاس غیرفعال']],
   ] as const)('binds approved labels in %s', (file, labels) => {
@@ -25,14 +25,14 @@ describe('Master Data review KPI replacements', () => {
       expect(source).toMatch(new RegExp(`(?:label|fourthLabel): '${label}'`));
   });
 
-  it('binds all six complement cards to guarded global aggregates', () => {
+  it('binds the remaining five complement cards to guarded global aggregates', () => {
     const sources = [
       read('master-data-accommodation-workspace.tsx'),
       read('master-data-finance-workspace.tsx'),
       read('master-data-suppliers-workspace.tsx'),
       read('master-data-travel-services-workspace.tsx'),
     ].join('\n');
-    expect(sources.match(/masterDataComplementKpi\(/g)).toHaveLength(6);
+    expect(sources.match(/masterDataComplementKpi\(/g)).toHaveLength(5);
     expect(sources).toContain('latestResponse.meta.total');
     expect(sources).toContain('summary?.visaServices.incompleteGuidance');
     expect(sources).toContain('summaryRequestRef.current');
