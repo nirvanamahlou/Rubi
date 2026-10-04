@@ -4665,3 +4665,5 @@ B2B-AGREEMENT-UPLOAD-1004 AU-R3-01 repair: deferred confidential-grant publicati
 B2B-AGREEMENT-UPLOAD-1004 AU-R3-02: draft upload grant moves atomically with its own new proof scope; submit/approval still request fresh actor grants. Organizations202 tests and Web static checks pass; final review/build/CI gate release.
 
 B2B-AGREEMENT-UPLOAD-1004 final lifecycle checkpoint: session-bound uploads, context-owned busy state and recoverable expired-grant renewal added. Organizations204 tests and scoped Web static checks pass. No database/runtime mutation; exact-candidate final review/build/CI remain release gates.
+
+B2B-AGREEMENT-UPLOAD-1004 PR652: independent review resolved all five lifecycle findings, no open blocker; local checks/build passed. Candidate source frozen and bounded locks released. Final CI/merge pending, no operational runtime/database change.
