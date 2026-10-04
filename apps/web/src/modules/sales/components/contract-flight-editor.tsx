@@ -1,4 +1,6 @@
 'use client';
+import type { MasterDataRecord } from '@nora/contracts';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { SalesDatePicker } from './sales-date-picker';
@@ -7,9 +9,11 @@ import type { ContractFlightDraft } from '../model/sales-form';
 
 export function ContractFlightEditor({
   value,
+  airlines = [],
   onChange,
 }: {
   value: ContractFlightDraft | undefined;
+  airlines?: readonly MasterDataRecord[];
   onChange: (value: ContractFlightDraft | undefined) => void;
 }) {
   if (!value)
@@ -54,11 +58,25 @@ export function ContractFlightEditor({
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <FormField label="ایرلاین" required>
-          <Input
-            aria-label="ایرلاین بلیط شناور"
+          <SearchCombobox
+            label="ایرلاین بلیط شناور"
+            required
             value={value.carrierName}
-            maxLength={160}
-            onChange={(e) => patch({ carrierName: e.target.value })}
+            placeholder="جست‌وجو و انتخاب ایرلاین…"
+            selectedLabel={value.carrierName || undefined}
+            options={airlines
+              .filter((airline) => airline.status === 'active')
+              .map((airline) => ({
+                value: airline.name,
+                label: airline.name,
+                searchText:
+                  airline.name +
+                  ' ' +
+                  airline.code +
+                  ' ' +
+                  String(airline.attributes.englishName ?? ''),
+              }))}
+            onValueChange={(carrierName) => patch({ carrierName })}
           />
         </FormField>
         <FormField label="شماره پرواز" required>

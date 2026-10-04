@@ -117,7 +117,7 @@ export function FlightDateRangeFilter({
       <button
         ref={trigger}
         type="button"
-        className="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
+        className="flex min-h-24 w-full items-center justify-between gap-3 rounded-xl border-2 border-primary/50 bg-primary/5 p-4 text-start text-foreground shadow-sm outline-none hover:border-primary focus:border-primary focus:ring-2 focus:ring-ring/30"
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => {
@@ -136,15 +136,34 @@ export function FlightDateRangeFilter({
           setOpen((current) => !current);
         }}
       >
-        <span>
-          {t('بازه تاریخ پرواز (الزامی)', 'Flight date range (required)')}
-          {value.from
-            ? ': ' + format(value.from) + t(' تا ', ' to ') + format(value.to)
-            : ''}
+        <span className="grid gap-2">
+          <span className="text-base font-bold text-primary">
+            {t('بازه تاریخ سفر (الزامی)', 'Travel date range (required)')}
+          </span>
+          <span className="flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold">
+            <span>
+              {t('از تاریخ: ', 'From: ')}
+              {value.from
+                ? format(value.from)
+                : t('انتخاب شروع سفر', 'Choose travel start')}
+            </span>
+            <span>
+              {t('تا تاریخ: ', 'To: ')}
+              {value.to
+                ? format(value.to)
+                : t('انتخاب پایان سفر', 'Choose travel end')}
+            </span>
+          </span>
+          <span className="text-xs text-primary">
+            {t(
+              'برای انتخاب یا تغییر تاریخ‌ها کلیک کنید',
+              'Click to choose or change dates',
+            )}
+          </span>
         </span>
         <CalendarDays
           aria-hidden="true"
-          className="size-5 shrink-0 text-primary"
+          className="size-8 shrink-0 text-primary"
         />
       </button>
       {value.from ? (

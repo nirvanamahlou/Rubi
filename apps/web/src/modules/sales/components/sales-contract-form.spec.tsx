@@ -1,10 +1,41 @@
+import type * as React from 'react';
+import { emptySalesForm } from '../model/sales-form';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { SalesContractForm } from './sales-contract-form';
 
+const fixture = vi.hoisted(() => ({ flight: false, step: 0 }));
+vi.mock('react', async (original) => ({
+  ...(await original<typeof React>()),
+  useState: (initial: unknown) => {
+    let value =
+      typeof initial === 'function' ? (initial as () => unknown)() : initial;
+    if (
+      value &&
+      typeof value === 'object' &&
+      'serviceKinds' in value &&
+      fixture.flight
+    )
+      value = { ...emptySalesForm, serviceKinds: ['FLIGHT'] };
+    return [value, vi.fn()];
+  },
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('compact sales contract form', () => {
+  it('puts the required flight range after route and passenger counts in the first step', () => {
+    fixture.flight = true;
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    fixture.flight = false;
+    expect(html).toContain('بازه تاریخ سفر (الزامی)');
+    expect(html).toContain('انتخاب شروع سفر');
+    expect(html).toContain('انتخاب پایان سفر');
+    expect(html.indexOf('تعداد مسافران')).toBeLessThan(
+      html.indexOf('بازه تاریخ سفر (الزامی)'),
+    );
+    expect(html.match(/aria-label="بازه تاریخ سفر"/g)).toHaveLength(1);
+    expect(html).not.toContain('بلیط رفت');
+  });
   it('shows a bounded form and compact services without asking for a route date', () => {
     const html = renderToStaticMarkup(<SalesContractForm />);
     expect(html).toContain('max-w-6xl');
