@@ -135,6 +135,13 @@ export class FinanceTicketCostService {
     if (
       input?.version !== 1 ||
       !/^[0-9a-f-]{36}$/i.test(input.costRevisionId ?? '') ||
+      (input.operationId !== undefined &&
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          input.operationId,
+        )) ||
+      (input.expectedPaymentVersion !== undefined &&
+        (!Number.isSafeInteger(input.expectedPaymentVersion) ||
+          input.expectedPaymentVersion < 0)) ||
       !/^[0-9a-f-]{36}$/i.test(input.accountId ?? '') ||
       !/^[0-9a-f-]{36}$/i.test(input.paymentMethodId ?? '') ||
       (input.paymentReference?.length ?? 0) > 160
@@ -144,20 +151,75 @@ export class FinanceTicketCostService {
     if (Number.isNaN(transferAt.getTime()) || !/Z$/.test(input.transferAt))
       throw new BadRequestException('زمان انتقال باید UTC باشد.');
     const amount = money(input.paidAmount);
-    const rate = new Prisma.Decimal(input.exchangeRateToIrr);
     if (
       !/^(?:0|[1-9]\d*)(?:\.\d{1,8})?$/.test(input.exchangeRateToIrr) ||
-      rate.lte(0)
+      new Prisma.Decimal(input.exchangeRateToIrr).lte(0)
     )
       throw new BadRequestException('نرخ تسعیر معتبر نیست.');
-    const request = await this.procurement.forFinance(
-      requestId,
-      actor.branchIds,
-    );
+    const rate = new Prisma.Decimal(input.exchangeRateToIrr);
+    // Public Procurement reads use its own connection. Never request another
+    // connection while holding the Finance transaction/advisory lock.
+    const replayExists = () =>
+      input.operationId
+        ? this.database.client.financeTicketPurchasePaymentRevision.findUnique({
+            where: { id: input.operationId },
+            select: { id: true },
+          })
+        : Promise.resolve(null);
+    let request: Awaited<
+      ReturnType<ProcurementPublicService['forFinance']>
+    > | null = null;
+    if (!(await replayExists())) {
+      try {
+        request = await this.procurement.forFinance(requestId, actor.branchIds);
+      } catch (error) {
+        // A concurrent full settlement may have closed the producer after our
+        // first lookup. Its immutable payment can still be replayed below.
+        if (!(await replayExists())) throw error;
+      }
+    }
     return this.database.client.$transaction(async (tx) => {
+      if (input.operationId)
+        await tx.$queryRaw(
+          Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${`finance-payment:${input.operationId.toLowerCase()}`}, 0))`,
+        );
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${requestId}, 0))`,
       );
+      if (input.operationId) {
+        const replay = await tx.financeTicketPurchasePaymentRevision.findUnique(
+          { where: { id: input.operationId }, include: { cost: true } },
+        );
+        if (replay) {
+          if (
+            replay.cost.requestId !== requestId ||
+            !actor.branchIds.includes(replay.cost.branchId) ||
+            replay.costRevisionId !== input.costRevisionId ||
+            replay.actorUserId !== actor.userId ||
+            replay.accountId !== input.accountId ||
+            replay.paymentMethodId !== input.paymentMethodId ||
+            !replay.paidAmount.equals(amount) ||
+            !replay.exchangeRateToIrr.equals(rate) ||
+            replay.transferAt.getTime() !== transferAt.getTime() ||
+            replay.paymentReference !== (input.paymentReference?.trim() || null)
+          )
+            throw new ConflictException(
+              'شناسه عملیات قبلاً برای پرداخت دیگری استفاده شده است.',
+            );
+          return {
+            id: replay.id,
+            costRevisionId: replay.costRevisionId,
+            version: replay.version,
+            status: replay.status,
+            cumulativePaid: replay.cumulativePaid.toString(),
+            remainingAmount: replay.remainingAmount.toString(),
+          };
+        }
+      }
+      if (!request)
+        throw new ConflictException(
+          'نتیجه پرداخت تغییر کرده است؛ دوباره تلاش کنید.',
+        );
       const cost = await tx.financeTicketPurchaseCostRevision.findFirst({
         where: {
           id: input.costRevisionId,
@@ -195,6 +257,13 @@ export class FinanceTicketCostService {
         where: { costRevisionId: cost.id },
         orderBy: { version: 'desc' },
       });
+      if (
+        input.expectedPaymentVersion !== undefined &&
+        input.expectedPaymentVersion !== (previous?.version ?? 0)
+      )
+        throw new ConflictException(
+          'پرداخت هم‌زمان تغییر کرده است؛ کارتابل را به‌روز کنید.',
+        );
       const cumulative = (
         previous?.cumulativePaid ?? new Prisma.Decimal(0)
       ).add(amount);
@@ -204,7 +273,7 @@ export class FinanceTicketCostService {
       const rialEquivalent = amount.mul(rate).toDecimalPlaces(4);
       const row = await tx.financeTicketPurchasePaymentRevision.create({
         data: {
-          id: randomUUID(),
+          id: input.operationId ?? randomUUID(),
           costRevisionId: cost.id,
           version: (previous?.version ?? 0) + 1,
           status: remaining.isZero() ? 'PAID' : 'PARTIALLY_PAID',

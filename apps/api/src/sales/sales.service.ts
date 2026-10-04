@@ -1,3 +1,4 @@
+import { expectedTicketSale } from './sales-ticket-quote';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { MasterDataService } from '../master-data/master-data.service';
 import { randomUUID } from 'node:crypto';
@@ -1015,10 +1016,7 @@ export class SalesService {
                   )
                   .map((service) => [
                     service.clientKey,
-                    {
-                      amount: service.pricing![0]!.daySale.amount,
-                      currencyCode: service.pricing![0]!.currencyCode,
-                    },
+                    expectedTicketSale(service.pricing![0]!, service.metadata),
                   ]),
               ),
         )

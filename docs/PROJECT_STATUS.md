@@ -1,3 +1,9 @@
+## 2026-10-04 — FINANCE-INBOX-RELIABILITY-1004 — PC-A — READY_FOR_REVIEW
+
+Finance ticket payments now accept an additive operation UUID and observed payment version, serialize operation/request races, validate replay payload/actor/branch, and replay full settlements even after Procurement closes the pending envelope. Finance Web freezes uncertain retries and separates successful payment from failed receipt upload, offering receipt-only retry against the committed payment. HR public pagination is complete/validated and referral response uses HR's existing permission-aware/idempotent public endpoint. Procurement invoice/return actions are connected; Finance/source versions are separate, revised unpaid correction sources may be re-reviewed and stale-source payments are rejected. Tehran whole-day filters, actionable-payment KPIs, per-line Reservations history and an explicit queue-versus-transaction-history distinction are delivered. No amount approval ceiling is introduced per owner decision; overpayment protection remains.
+
+Validation: full API 1961 tests, final focused Finance/HR regressions, Finance Web 37 tests, two real concurrent-payment PostgreSQL tests rerun against final payment code on a random fully migrated database, affected typechecks/lint and a 55-route production build passed. Latest develop has no overlapping Finance code changes; integration and Linux CI gate merge. Full Windows Web testing reproduces two unchanged Master Data raw-source CRLF/LF assertions on the base worktree; those other-owner files were not modified. No operational database, schema/migration/dependency, live runtime or authenticated browser QA. See docs/tasks/FINANCE-INBOX-RELIABILITY-1004.md for compatibility and remaining product scope.
+
 
 ## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
 
@@ -4611,9 +4617,17 @@ The optional expert note is available in contract sale pricing and uses existing
 
 Validation: 68 focused Sales form/payload and Reservations inbox/feed tests pass, including existing metadata transport and notes projection regressions. Scoped ESLint, formatting and Web typecheck pass; production build and final CI gate develop merge.
 
+## 2026-10-04 — SALES-AGREED-AUTOFILL-1004 — PC-A
+
+New-contract sale-price fields are read-only and derive exactly from agreed prices per service/currency, retaining nightly/total hotel basis and zero/decimal precision. New-form draft projection also mirrors restored values, previews and outgoing payloads; catalog reference prices and historical contracts are unchanged. No API/schema/migration/dependency/runtime change. Focused tests and checks gate authorized develop merge.
+
+Ticket-only activation keeps the catalog freshness guard independent through versioned catalogSaleQuote service metadata. Sales API uses the catalog quote for public Ticket Catalog reserve, falling back to historical daySale for old contracts; malformed new quotes fail closed. Agreements do not rewrite catalog fare sources.
+
 ## 2026-10-04 — B2B-PHONE-BRANCH-COPY-1004 — PC-B
 
 Agency phone verification no longer displays the registration-branch selector. Existing authenticated authorized-branch default and OTP branch/session/grant enforcement remain unchanged. One wizard component changes; no API, schema, permission or dependency change. Organizations191 tests, scoped lint/format and Web typecheck pass; final Web build and CI gate user-authorized develop merge. Pending agreement upload task remains isolated.
+
+SALES-AGREED-AUTOFILL-1004 validation: Sales294 tests plus final quote payload3 pass (one environment-dependent skipped); API boundary/catalog targeted12 pass. Scoped lint/API and Web typechecks pass; API build and55-route Web build validate initial candidate; final corrected scalar quote production build, quality, full tests and database CI gates all pass. Concurrent develop merged with appended owner reports retained; refreshed-head CI gates final merge. No local database/runtime change.
 
 ## 2026-10-04 — B2B-ADDRESS-INPUT-1004 — PC-B
 
