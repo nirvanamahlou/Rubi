@@ -5351,6 +5351,14 @@ B2B-PHONE-VERIFICATION-1003 resumed integration: original five-stage OTP flow pr
 
 B2B-SIGNATORY-FORM-FIX-1003 — 2026-10-04: user now explicitly authorizes push/develop merge. Integrated current develop (OTP45e726b0), preserving both appended handoffs; no source conflicts. Prior focused tests/build remain source-valid; refreshed combined Organizations checks and CI gate merge.
 
+## CONTRACT-TOUR-SEARCH-1004 — PC-A — READY_FOR_REVIEW
+
+- Branch codex/pc-a-contract-tour-search-1004 from origin/develop@ee053ecc. Reserve Sales workspace table scroll wrapper, Sales tour picker/helpers/tests and bounded docs. User clarified horizontal scroll above and below table and authorizes develop merge. Sales/Ticket Catalog PC-A ownership; no active scoped overlap found. Reuse shared SearchCombobox (five initial options and substring normalization); audit search prefix use without touching routing/permissions/date logic. Tour options must be active and preserve existing selection/provenance/capacity checks. No schema/migration/dependency/shared API changes.
+
+- Bounded shared regression reservation: search-first-lookups.spec.ts updates the Tour exception to the existing initial-suggestion controls; other guarded lookups remain unchanged. Shared combobox source/API remains unchanged and already uses normalized substring matching. No other owner's source files are changed.
+
+- Delivered synchronized RTL top/bottom table scrolling and standard Tour dropdown with five active suggestions plus normalized substring matching before limiting. 281 Sales/shared tests pass (one skipped), final focused four tests, scoped ESLint, formatting, Web typecheck and 55-route webpack production build pass. No schema/API/dependency/database or local runtime change. Scoped locks RELEASED; user-authorized develop merge follows full CI. Handoff: docs/tasks/CONTRACT-TOUR-SEARCH-1004.md.
+
 ## B2B-DOSSIER-CLEANUP-1004 — PC-B — IN_PROGRESS
 
 Screenshot690: hide internal organization code in dossier header, icon-only edit/delete, remove Change Agency, remove red-marked Sales relation heading/filter and related Sales documents panel, connect remaining summary branch selector to all actor-authorized real branches. Reserve Organizations dossier/header/summary/branch consumer and tests plus own docs. Branch codex/pc-b-b2b-dossier-cleanup-1004 from origin/develop. Preserve backend Sales connections and permissions; no branch grants or unscoped data, schema/dependency changes. User authorizes push/develop merge and3100 runtime rollout; lead owns runtime with existing host services. R2/C3 consumer/UI; escalate producer/security policy changes. Persistent native worker, usage unavailable.

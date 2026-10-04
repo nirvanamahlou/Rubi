@@ -10,7 +10,6 @@ const guardedLookupSources = [
   'organizations/components/cooperation-wizard.tsx',
   'procurement/document-picker.tsx',
   'procurement/owner-picker.tsx',
-  'sales/components/sales-tour-picker.tsx',
   'ticket-catalog/components/reference-browser.tsx',
 ] as const;
 
@@ -20,6 +19,7 @@ describe('search-first form lookups', () => {
       'master-data/components/master-data-reference-selector.tsx',
       'marketing/components/offer-audience-target-selector.tsx',
       'ticket-catalog/components/reference-picker.tsx',
+      'sales/components/sales-tour-picker.tsx',
     ]) {
       const source = readFileSync(
         new URL('../' + path, import.meta.url),

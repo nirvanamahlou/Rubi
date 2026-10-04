@@ -4503,6 +4503,12 @@ Improved agency signatory form document loading with context-keyed snapshots, sa
 
 User resumes dev-only visible test-code delivery and production-disabled sending. Original PR587 is synchronized with latest develop; five-stage verification flow coexists with removed wizard subtitles and current Sales-document client. Existing B2B frozenv1.1 security contract remains unchanged. Focused OTP API16/Web33/Contracts3 and Organizations164 tests pass; independent current-candidate review and remaining checks gate handoff. No SMS.IR secrets/provider, schema/dependency, operating data or runtime change. Local signatory repair remains on separate branch and is not included.
 
+## 2026-10-04 — CONTRACT-TOUR-SEARCH-1004 — PC-A
+
+Sales contracts now have synchronized top/bottom RTL horizontal scrollbars. New-contract tours use the standard searchable dropdown, with five initial active suggestions, date/capacity labels, capacity guards and substring matching across all loaded options before the display limit. Existing tour selection and contract provenance remain unchanged. Shared search already supports middle-text matches; its initial-suggestion regression was updated for Tours. No API/schema/migration/dependency/data change. See docs/tasks/CONTRACT-TOUR-SEARCH-1004.md.
+
+Final validation: scoped ESLint, formatting and Web typecheck pass; production webpack build emits 55 routes. Final focused regression passes (four tests), all Sales/shared tests pass (281, one skipped). Scoped locks released; owner-authorized develop merge follows CI.
+
 ## 2026-10-04 — B2B-DOSSIER-CLEANUP-1004 — PC-B
 
 Removed dossier banner organization code, Change Agency and marked Sales relation/document panels; edit/delete actions now accessible icon buttons with existing permissions and variants. Shared authorized branch context drives summary and Sales KPIs. Only assigned session branches appear; user declined expanded memberships and current live actor has HQ only. Backend integrations and document gates remain intact. Organizations171 tests, focused14, scoped lint/format, Web typecheck, API build and55-route Web build pass. User-authorized develop PR/CI and local3100 rollout follow. No migration, dependency or data mutation. Native persistent worker outcome accepted; usage unavailable.
