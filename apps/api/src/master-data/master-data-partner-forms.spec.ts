@@ -20,7 +20,11 @@ function setup(
     id: orgId,
     isActive: true,
     personType: 'LEGAL',
-    roles: [{ roleCode: 'SUPPLIER' }, { roleCode: 'BROKER' }],
+    roles: [
+      { roleCode: 'SUPPLIER' },
+      { roleCode: 'BROKER' },
+      { roleCode: 'INSURANCE_PROVIDER' },
+    ],
   };
   const existing = {
     id: partnerId,
@@ -62,6 +66,40 @@ function setup(
 }
 
 describe('partner profile form persistence', () => {
+  it('creates an independent insurer and keeps legacy organization validation compatible', async () => {
+    const { service, create } = setup();
+    await service.create(
+      'insurers',
+      { name: 'بیمه مستقل', countryId: orgId },
+      actor,
+    );
+    expect(create).toHaveBeenCalledWith(
+      'insurers',
+      expect.not.objectContaining({ organizationId: expect.anything() }),
+      actor.userId,
+      orgId,
+    );
+
+    const legacy = setup();
+    await legacy.service.create(
+      'insurers',
+      { name: 'بیمه قدیمی', countryId: orgId, organizationId: orgId },
+      actor,
+    );
+    expect(legacy.create).toHaveBeenCalledWith(
+      'insurers',
+      expect.objectContaining({ organizationId: orgId }),
+      actor.userId,
+      orgId,
+    );
+  });
+
+  it('preserves an insurer organization when PATCH omits the legacy relation', async () => {
+    const { service, update } = setup();
+    await service.update('insurers', partnerId, { name: 'نام تازه' }, 1, actor);
+    expect(update.mock.calls[0]?.[2]).not.toHaveProperty('organizationId');
+  });
+
   it.each(['suppliers', 'brokers'])(
     'persists standalone suppliers and organization-backed brokers for %s',
     async (resource) => {
