@@ -4524,6 +4524,10 @@ Final validation: scoped ESLint, formatting and Web typecheck pass; production w
 
 Removed dossier banner organization code, Change Agency and marked Sales relation/document panels; edit/delete actions now accessible icon buttons with existing permissions and variants. Shared authorized branch context drives summary and Sales KPIs. Only assigned session branches appear; user declined expanded memberships and current live actor has HQ only. Backend integrations and document gates remain intact. Organizations171 tests, focused14, scoped lint/format, Web typecheck, API build and55-route Web build pass. User-authorized develop PR/CI and local3100 rollout follow. No migration, dependency or data mutation. Native persistent worker outcome accepted; usage unavailable.
 
+## 2026-10-04 — TICKET-COMMISSION-HIDE-1004 — PC-A
+
+A stored commission of exactly 100 percent means hidden for that sale destination, not a free ticket. Ticket Catalog retains administrative base fares and versioned commissions, marks hidden rules and removes hidden destination/direct fares from active price projections. Sales price management can still edit the original single/pair base; its destination preview and filtered Excel show عدم نمایش instead of a zero fare. Lowering the latest percentage restores that destination without modifying another destination. Existing outbound provider delivery is not initiated by this change. Additive optional Travel projection fields are coordinated with Sales consumers; no schema/migration/dependency/runtime/data change.
+
 ## 2026-10-04 — B2B-HUB-COPY-1004 — PC-B
 
 Screenshot691: remove the three hub-card descriptions beneath Finance/settlement, Commercial/contract and Activity report. Titles, chips, navigation and all API/data behavior remain unchanged. Mechanical R0/C1 scope assigned to persistent native worker; lead owns integration. User authorizes push/develop merge; required checks and CI gate delivery. No migration/dependency or permission changes. Usage unavailable.

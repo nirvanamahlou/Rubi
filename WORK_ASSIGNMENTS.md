@@ -5375,6 +5375,12 @@ Screenshot690: hide internal organization code in dossier header, icon-only edit
 
 B2B-DOSSIER-CLEANUP-1004 delivered: six Organizations consumer/test files; header code and Change Agency removed, accessible square edit/delete icons, red Sales relation/documents panels hidden; one authorized branch context drives summary and connected KPIs. User explicitly declined additional branch memberships: current live actor has HQ only; no IAM grants or data changes. Persistent worker /root/phone_verification_impl reports difficulty3; lead accepted bounded diff. Focused14 and full Organizations171 tests, scoped lint/format, Web typecheck, API build and55-route Web build with localhost4191 API passed. No schema/dependency/backend policy changes; user authorizes develop PR merge and3100 rollout. Telemetry unavailable. Locks released at delivery.
 
+## TICKET-COMMISSION-HIDE-1004 — PC-A — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-ticket-commission-hide-1004 from origin/develop@a6b2009d. Reserve Ticket Catalog commission projection/tests, Sales ticket-price workspace/rows/export/tests, additive Travel contract fields and bounded docs. Producer Ticket Catalog and consumers Sales/pricing export are PC-A owned; optional isHidden and baseRoundTripSalePrices preserve existing clients while suppressing active price projections at 100 percent. No migration/dependency/runtime/operational data change. Existing ticket edit diagnostic task does not touch these files. User authorizes develop merge.
+
+- Delivered: exact 100 percent hides target/direct published fares and legacy target fallback; current lower revisions restore visibility. Administrative pair bases remain editable, UI/Excel show عدم نمایش. Ticket Catalog169 passed/20 skipped, final commission13, Web pricing24, scoped lint and API/Web typecheck passed; API build passed and Web production build/CI gate merge. No operational database or external delivery mutation. Bounded locks release with commit.
+
 ## B2B-HUB-COPY-1004 — PC-B — IN_PROGRESS
 
 Remove only Screenshot691 marked descriptions beneath Finance, Commercial and Activity hub cards. Reserve Organizations corporate-profile hub copy and own docs on codex/pc-b-b2b-hub-copy-1004. R0/C1 mechanical UI copy, persistent native worker; user authorizes push and develop merge. No behavior/API/data/dependency/migration changes; usage unavailable.

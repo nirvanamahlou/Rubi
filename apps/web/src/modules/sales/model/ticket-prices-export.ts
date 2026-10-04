@@ -79,7 +79,12 @@ export function ticketPriceExportRows(
             )
           : undefined;
         if (saved)
-          return [saved.percent, `${saved.amount} ${saved.currencyCode}`];
+          return [
+            saved.percent,
+            saved.isHidden || Number(saved.percent) === 100
+              ? 'عدم نمایش'
+              : `${saved.amount} ${saved.currencyCode}`,
+          ];
         if (legacy) return ['—', `${legacy.amount} ${legacy.currencyCode}`];
         const amount = row.base ? netTicketPrice(row.base.amount, '0') : '';
         return amount ? ['0', `${amount} ${baseCurrency}`] : ['', ''];
@@ -93,7 +98,9 @@ export function ticketPriceExportRows(
         baseCurrency,
         direct?.percent ?? (row.base ? '0' : ''),
         direct
-          ? `${direct.amount} ${direct.currencyCode}`
+          ? direct.isHidden || Number(direct.percent) === 100
+            ? 'عدم نمایش'
+            : `${direct.amount} ${direct.currencyCode}`
           : row.base
             ? `${netTicketPrice(row.base.amount, '0') ?? ''} ${baseCurrency}`.trim()
             : '',

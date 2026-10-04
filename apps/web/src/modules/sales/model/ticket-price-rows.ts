@@ -68,18 +68,20 @@ export function ticketPriceRows(
       base:
         offer.baseStandaloneSalePrice ?? offer.standaloneSalePrice ?? undefined,
     },
-    ...(offer.roundTripSalePrices ?? []).map((price) => ({
-      id: offer.id + ':' + price.returnOfferId,
-      offer,
-      returnOfferId: price.returnOfferId,
-      returning: offers.find((o) => o.id === price.returnOfferId),
-      base: {
-        amount: price.baseAmount ?? price.amount,
-        currencyCode: price.currencyCode,
-        revision: price.revision,
-        tiers: price.baseTiers ?? price.tiers,
-      },
-    })),
+    ...(offer.baseRoundTripSalePrices ?? offer.roundTripSalePrices ?? []).map(
+      (price) => ({
+        id: offer.id + ':' + price.returnOfferId,
+        offer,
+        returnOfferId: price.returnOfferId,
+        returning: offers.find((o) => o.id === price.returnOfferId),
+        base: {
+          amount: price.baseAmount ?? price.amount,
+          currencyCode: price.currencyCode,
+          revision: price.revision,
+          tiers: price.baseTiers ?? price.tiers,
+        },
+      }),
+    ),
   ]);
 }
 export function normalizePercent(value: string) {

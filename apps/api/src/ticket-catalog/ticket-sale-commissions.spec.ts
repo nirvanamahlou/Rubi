@@ -343,3 +343,103 @@ describe('sale commission projection', () => {
     ).toBe('96');
   });
 });
+
+describe('hidden price destinations', () => {
+  const target = {
+    id: targetId,
+    branchId: 'branch',
+    name: 'Partner',
+    code: 'PARTNER',
+    version: 1,
+    isActive: true,
+  };
+  const offer = {
+    id: offerId,
+    standaloneSalePrice: { amount: '100', currencyCode: 'IRR', revision: 2 },
+    targetedStandaloneSalePrices: [
+      {
+        amount: '88',
+        currencyCode: 'IRR',
+        revision: 1,
+        salePriceTarget: target,
+      },
+    ],
+    roundTripSalePrices: [
+      {
+        returnOfferId: returnId,
+        amount: '250',
+        currencyCode: 'IRR',
+        revision: 3,
+      },
+    ],
+  } as unknown as TicketOfferV1;
+  it('removes a 100% target including its legacy price and restores it with the newest lower commission', () => {
+    const hidden = {
+      returnOfferId: null,
+      salePriceTargetId: targetId,
+      revision: 1,
+      percent: new Prisma.Decimal('100.0000'),
+      target,
+    };
+    const view = applySaleCommissions(offer, [hidden]);
+    expect(view.targetedStandaloneSalePrices).toEqual([]);
+    expect(
+      applySaleCommissions({ ...offer, standaloneSalePrice: null }, [hidden])
+        .targetedStandaloneSalePrices,
+    ).toEqual([]);
+    expect(view.saleCommissions?.[0]).toMatchObject({
+      percent: '100',
+      isHidden: true,
+    });
+    expect(view.standaloneSalePrice?.amount).toBe('100');
+    const restored = applySaleCommissions(offer, [
+      hidden,
+      { ...hidden, revision: 2, percent: new Prisma.Decimal('99.9999') },
+    ]);
+    expect(restored.targetedStandaloneSalePrices?.[0]?.amount).toBe('0.0001');
+    expect(restored.saleCommissions?.[0]?.isHidden).toBe(false);
+  });
+  it('hides direct singles and pairs while preserving editable bases and independent partner rules', () => {
+    const rows = [null, returnId].flatMap((returnOfferId) => [
+      {
+        returnOfferId,
+        salePriceTargetId: null,
+        revision: 1,
+        percent: new Prisma.Decimal(100),
+      },
+      {
+        returnOfferId,
+        salePriceTargetId: targetId,
+        revision: 1,
+        percent: new Prisma.Decimal(3),
+        target,
+      },
+    ]);
+    const view = applySaleCommissions(offer, rows);
+    expect(view.standaloneSalePrice).toBeNull();
+    expect(view.roundTripSalePrices).toEqual([]);
+    expect(view.baseStandaloneSalePrice?.amount).toBe('100');
+    expect(view.baseRoundTripSalePrices?.[0]?.amount).toBe('250');
+    expect(view.targetedStandaloneSalePrices?.[0]?.amount).toBe('97');
+    expect(
+      view.saleCommissions?.find(
+        (c) => c.returnOfferId === returnId && c.salePriceTargetId === targetId,
+      ),
+    ).toMatchObject({ isHidden: false, amount: '242.5' });
+  });
+});
+
+it('persists and copies 100 percent as a versioned destination rule', async () => {
+  const { db, tx } = setup();
+  expect(
+    await saveTicketSaleCommission(
+      db,
+      { ...input, percent: '100', copyToAll: true },
+      actor,
+      'hide-all',
+    ),
+  ).toEqual({ data: { count: 2, revision: 1 } });
+  expect(tx.ticketSaleCommissionRevision.create).toHaveBeenCalledTimes(2);
+  for (const [args] of tx.ticketSaleCommissionRevision.create.mock.calls)
+    expect(args.data.percent).toEqual(new Prisma.Decimal(100));
+});

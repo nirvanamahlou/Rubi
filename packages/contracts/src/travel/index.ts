@@ -69,6 +69,8 @@ export interface TicketRoundTripSalePriceUpdateV1 {
 
 /** Commission rules are versioned independently from the base fare. */
 export interface TicketSaleCommissionV1 {
+  /** 100 percent disables this destination; never publish its zero net amount. */
+  isHidden?: boolean;
   returnOfferId: string | null;
   salePriceTargetId: string | null;
   revision: number;
@@ -110,6 +112,8 @@ export interface TicketOfferV1 {
   returnMaxDays?: number | null;
   /** Original direct base, before any direct-sale commission. */
   baseStandaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
+  /** Administrative bases, including pairs hidden from direct-sale publication. */
+  baseRoundTripSalePrices?: readonly TicketRoundTripSalePriceV1[];
   saleCommissions?: readonly TicketSaleCommissionV1[];
 
   /** Null/absent uses the built-in default manifest. */
@@ -147,6 +151,7 @@ export type TicketOfferCreateV1 = Omit<
   | 'reservedCapacity'
   | 'status'
   | 'baseStandaloneSalePrice'
+  | 'baseRoundTripSalePrices'
   | 'saleCommissions'
   | 'standaloneSalePrice'
   | 'targetedStandaloneSalePrices'

@@ -1,3 +1,4 @@
+import { ticketPriceExportRows } from './ticket-prices-export';
 import {
   clearSavedCommissionDrafts,
   type TicketPriceRow,
@@ -218,4 +219,53 @@ describe('flight cabins in ticket pricing', () => {
       ticketPriceRows([business, other, later, economy]).map((row) => row.id),
     ).toEqual(['economy', 'business', 'other', 'later']);
   });
+});
+
+it('keeps hidden pairs in the management rows and marks their destinations in Excel', () => {
+  const offer = {
+    ...outbound,
+    remainingCapacity: 50,
+    baseStandaloneSalePrice: outbound.standaloneSalePrice,
+    standaloneSalePrice: null,
+    baseRoundTripSalePrices: outbound.roundTripSalePrices,
+    roundTripSalePrices: [],
+    saleCommissions: [
+      {
+        returnOfferId: null,
+        salePriceTargetId: 'partner',
+        revision: 1,
+        percent: '100',
+        amount: '0',
+        currencyCode: 'IRR',
+        isHidden: true,
+      },
+      {
+        returnOfferId: 'back',
+        salePriceTargetId: 'partner',
+        revision: 1,
+        percent: '100.0000',
+        amount: '0',
+        currencyCode: 'IRR',
+      },
+    ],
+  } as TicketOfferV1;
+  const rows = ticketPriceRows([offer]);
+  expect(rows).toHaveLength(2);
+  expect(rows[1]?.base?.amount).toBe('260');
+  const exported = ticketPriceExportRows(
+    rows,
+    [
+      {
+        id: 'partner',
+        branchId: 'branch',
+        name: 'Partner',
+        code: 'PARTNER',
+        version: 1,
+        isActive: true,
+      },
+    ],
+    {},
+  );
+  expect(exported[1]?.slice(-2)).toEqual(['100', 'عدم نمایش']);
+  expect(exported[2]?.slice(-2)).toEqual(['100.0000', 'عدم نمایش']);
 });
