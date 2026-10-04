@@ -1,4 +1,5 @@
 'use client';
+import { agreedSalePrice } from '../model/agreed-sale-pricing';
 import {
   moneyDecimal,
   moneyUnits,
@@ -22,12 +23,14 @@ export function SalesPricingPanel({
   values,
   currencies,
   fixedSalePrices,
+  salePriceFromAgreed = false,
   onChange,
 }: {
   services: readonly { key: string; title: string; hotel: boolean }[];
   nights: number;
   values: Record<string, SalesServicePricingV1[]>;
   currencies: readonly SalesCurrency[];
+  salePriceFromAgreed?: boolean;
   fixedSalePrices?: Record<string, SalesServicePricingV1[]> | undefined;
   onChange: (key: string, prices: SalesServicePricingV1[]) => void;
 }) {
@@ -50,7 +53,7 @@ export function SalesPricingPanel({
           daySale: { basis: service.hotel ? 'NIGHT' : 'TOTAL', amount: '' },
           agreed: { basis: service.hotel ? 'NIGHT' : 'TOTAL', amount: '' },
         };
-        const prices = fixedSale
+        const basePrices = fixedSale
           ? [
               {
                 ...fixedSale,
@@ -61,6 +64,9 @@ export function SalesPricingPanel({
               },
             ]
           : (values[service.key] ?? [defaults]);
+        const prices = salePriceFromAgreed
+          ? basePrices.map(agreedSalePrice)
+          : basePrices;
         return (
           <div className="space-y-3 rounded-xl border p-4" key={service.key}>
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -85,7 +91,9 @@ export function SalesPricingPanel({
                 </Button>
               ) : (
                 <span className="text-xs font-semibold text-primary">
-                  نرخ فروش از قیمت بلیط ثبت‌شده می‌آید
+                  {salePriceFromAgreed
+                    ? 'قیمت فروش از مبلغ توافق‌شده پر می‌شود'
+                    : 'نرخ فروش از قیمت بلیط ثبت‌شده می‌آید'}
                 </span>
               )}
             </div>
@@ -99,7 +107,13 @@ export function SalesPricingPanel({
               const change = (next: SalesServicePricingV1) =>
                 onChange(
                   service.key,
-                  prices.map((item, i) => (i === index ? next : item)),
+                  prices.map((item, i) =>
+                    i === index
+                      ? salePriceFromAgreed
+                        ? agreedSalePrice(next)
+                        : next
+                      : item,
+                  ),
                 );
               let totals: ReturnType<typeof resolveSalesPrice> | null = null;
               try {
@@ -195,7 +209,8 @@ export function SalesPricingPanel({
                           className="space-y-2 rounded-lg border bg-background p-3"
                         >
                           <p className="font-semibold">{label}</p>
-                          {service.hotel ? (
+                          {service.hotel &&
+                          !(salePriceFromAgreed && field === 'daySale') ? (
                             <div className="flex gap-1">
                               {(['NIGHT', 'TOTAL'] as const).map((basis) => (
                                 <Button
@@ -226,9 +241,13 @@ export function SalesPricingPanel({
                               entryBasis === 'NIGHT' ? 'مبلغ هر شب' : 'مبلغ کل'
                             }
                             value={displayAmount}
-                            readOnly={Boolean(fixedSale && field === 'daySale')}
+                            readOnly={
+                              field === 'daySale' &&
+                              (salePriceFromAgreed || Boolean(fixedSale))
+                            }
                             onValueChange={(amount) =>
-                              fixedSale && field === 'daySale'
+                              (fixedSale || salePriceFromAgreed) &&
+                              field === 'daySale'
                                 ? undefined
                                 : change({
                                     ...price,
@@ -260,7 +279,9 @@ export function SalesPricingPanel({
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      هر دو مبلغ و ارز را کامل کنید.
+                      {salePriceFromAgreed
+                        ? 'مبلغ توافق‌شده و ارز را کامل کنید.'
+                        : 'هر دو مبلغ و ارز را کامل کنید.'}
                     </p>
                   )}
                 </div>

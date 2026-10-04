@@ -15,8 +15,8 @@ import { MasterDataReferenceSelector } from '@/modules/master-data/components/ma
 import { DossierFormDialog } from './dossier-form-dialog';
 
 const emptyAddress = (): MasterOrganizationAddressMutationV1 => ({
-  countryId: '',
-  cityId: '',
+  countryId: null,
+  cityId: null,
   label: '',
   postalCode: '',
   addressLine: '',
@@ -141,7 +141,7 @@ export function OrganizationAddressesPanel({
             >
               {rows.map((row) => (
                 <option key={row.id} value={row.id}>
-                  {row.label} · {row.cityName}
+                  {[row.label, row.cityName].filter(Boolean).join(' · ')}
                   {row.isPrimary ? ' · اصلی' : ''}
                   {!row.isActive ? ' · غیرفعال' : ''}
                 </option>
@@ -195,9 +195,11 @@ export function OrganizationAddressesPanel({
                 </Button>
               </div>
             </div>
-            <p className="mt-2">
-              {row.countryName} · {row.cityName}
-            </p>
+            {row.countryName || row.cityName ? (
+              <p className="mt-2">
+                {[row.countryName, row.cityName].filter(Boolean).join(' · ')}
+              </p>
+            ) : null}
             <p>{row.addressLine}</p>
             {row.postalCode ? (
               <p>
@@ -220,10 +222,13 @@ export function OrganizationAddressesPanel({
           description="آدرس به همین سازمان متصل می‌شود و در اطلاعات پایه هم در دسترس است."
           onClose={close}
           onSave={async () => {
-            if (!editor.values.countryId || !editor.values.cityId)
-              throw Object.assign(new Error('کشور و شهر را انتخاب کنید.'), {
-                status: 400,
-              });
+            if (
+              Boolean(editor.values.countryId) !== Boolean(editor.values.cityId)
+            )
+              throw Object.assign(
+                new Error('کشور و شهر را با هم انتخاب یا هر دو را خالی کنید.'),
+                { status: 400 },
+              );
             if (editor.id)
               await masterDataApi.updateOrganizationAddress(
                 organizationId,
@@ -257,19 +262,20 @@ export function OrganizationAddressesPanel({
             />
           </label>
           <div className="field">
-            <label htmlFor="agency-address-country">کشور</label>
+            <label htmlFor="agency-address-country">کشور (اختیاری)</label>
             <MasterDataReferenceSelector
               id="agency-address-country"
               label="کشور"
               config={{ target: 'countries', payload: 'id' }}
-              value={editor.values.countryId}
+              value={editor.values.countryId ?? ''}
               disabled={false}
-              required
-              onChange={(countryId) => change({ countryId, cityId: '' })}
+              onChange={(countryId) =>
+                change({ countryId: countryId || null, cityId: null })
+              }
             />
           </div>
           <div className="field">
-            <label htmlFor="agency-address-city">شهر</label>
+            <label htmlFor="agency-address-city">شهر (اختیاری)</label>
             <MasterDataReferenceSelector
               id="agency-address-city"
               label="شهر"
@@ -278,11 +284,10 @@ export function OrganizationAddressesPanel({
                 payload: 'id',
                 scopeField: 'countryId',
               }}
-              scopeValue={editor.values.countryId}
-              value={editor.values.cityId}
+              scopeValue={editor.values.countryId ?? ''}
+              value={editor.values.cityId ?? ''}
               disabled={!editor.values.countryId}
-              required
-              onChange={(cityId) => change({ cityId })}
+              onChange={(cityId) => change({ cityId: cityId || null })}
             />
           </div>
           <label className="field sm:col-span-2">

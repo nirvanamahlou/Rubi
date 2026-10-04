@@ -1317,11 +1317,48 @@ describe.skipIf(!enabled)(
       const edited = await directory.updateAddress(
         organizationId,
         row.id,
-        { ...input, label: 'شعبه ویرایش‌شده', version: row.version },
+        {
+          label: 'شعبه ویرایش‌شده',
+          addressLine: 'نشانی ساختگی ویرایش‌شده',
+          isPrimary: true,
+          version: row.version,
+        },
         actor,
       );
+      expect(edited).toMatchObject({
+        countryId: country.id,
+        cityId: city.id,
+      });
+      const cleared = await directory.updateAddress(
+        organizationId,
+        row.id,
+        {
+          label: 'شعبه ویرایش‌شده',
+          addressLine: 'نشانی ساختگی ویرایش‌شده',
+          countryId: null,
+          cityId: null,
+          isPrimary: true,
+          version: edited.version,
+        },
+        actor,
+      );
+      expect(cleared).toMatchObject({ countryId: null, cityId: null });
       await expect(
-        directory.deleteAddress(organizationId, row.id, edited.version, {
+        directory.updateAddress(
+          organizationId,
+          row.id,
+          {
+            label: 'شعبه نامعتبر',
+            addressLine: 'نشانی نامعتبر',
+            countryId: country.id,
+            cityId: null,
+            version: cleared.version,
+          },
+          actor,
+        ),
+      ).rejects.toThrow('با هم');
+      await expect(
+        directory.deleteAddress(organizationId, row.id, cleared.version, {
           ...actor,
           permissions: [],
         }),
@@ -1330,7 +1367,7 @@ describe.skipIf(!enabled)(
         directory.deleteAddress(
           organizationId,
           row.id,
-          edited.version,
+          cleared.version,
           actor,
           randomUUID(),
         ),
@@ -1352,7 +1389,7 @@ describe.skipIf(!enabled)(
           directory.deleteAddress(
             organizationId,
             row.id,
-            edited.version,
+            cleared.version,
             actor,
           ),
         ).rejects.toThrow('synthetic audit failure');
@@ -1372,7 +1409,7 @@ describe.skipIf(!enabled)(
       await directory.deleteAddress(
         organizationId,
         row.id,
-        edited.version,
+        cleared.version,
         actor,
       );
       expect(

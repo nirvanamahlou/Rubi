@@ -12,6 +12,64 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Finance inbox API', () => {
+  it('responds to HR through its public endpoint with an idempotency key and source version', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ id: 'hr-1' })));
+    vi.stubGlobal('fetch', fetch);
+    await financeInboxApi.respondHr(
+      'hr-1',
+      { version: 3, status: 'IN_REVIEW', note: 'بررسی مالی' },
+      'response-key',
+    );
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:4200/api/v1/hr/connections/hr-1/response',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({ 'idempotency-key': 'response-key' }),
+      }),
+    );
+    expect(JSON.parse(fetch.mock.calls[0]![1].body)).toMatchObject({
+      version: 3,
+      status: 'IN_REVIEW',
+    });
+  });
+  it('routes invoice and return decisions to their own endpoints with Finance CAS versions', async () => {
+    const fetch = vi
+      .fn()
+      .mockImplementation(
+        async () =>
+          new Response(JSON.stringify({ data: { status: 'APPROVED' } })),
+      );
+    vi.stubGlobal('fetch', fetch);
+    await financeInboxApi.decideInvoice('invoice-1', {
+      version: 1,
+      expectedVersion: 0,
+      action: 'APPROVE',
+    });
+    await financeInboxApi.payInvoice('invoice-1', {
+      version: 1,
+      expectedVersion: 2,
+      accountId: 'account',
+      paymentMethodId: 'method',
+      paidAmount: '10',
+      transferAt: '2026-10-04T10:00:00Z',
+    });
+    await financeInboxApi.decideCorrection('return-1', {
+      version: 1,
+      expectedVersion: 3,
+      action: 'CORRECTION_REQUIRED',
+      reason: 'اصلاح',
+    });
+    expect(fetch.mock.calls.map(([url]) => url)).toEqual([
+      'http://localhost:4200/api/v1/finance/inbox/purchases/invoices/invoice-1/decision',
+      'http://localhost:4200/api/v1/finance/inbox/purchases/invoices/invoice-1/payments',
+      'http://localhost:4200/api/v1/finance/inbox/purchases/corrections/return-1/decision',
+    ]);
+    expect(JSON.parse(fetch.mock.calls[1]![1].body)).toMatchObject({
+      expectedVersion: 2,
+    });
+  });
   it('requests persistent installment history with encoded pagination and source filters', async () => {
     const payload = { version: 1, items: [], nextCursor: null };
     const fetch = vi

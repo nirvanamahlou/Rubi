@@ -1,6 +1,21 @@
+## 2026-10-04 — FINANCE-INBOX-RELIABILITY-1004 — PC-A — READY_FOR_REVIEW
+
+Finance ticket payments now accept an additive operation UUID and observed payment version, serialize operation/request races, validate replay payload/actor/branch, and replay full settlements even after Procurement closes the pending envelope. Finance Web freezes uncertain retries and separates successful payment from failed receipt upload, offering receipt-only retry against the committed payment. HR public pagination is complete/validated and referral response uses HR's existing permission-aware/idempotent public endpoint. Procurement invoice/return actions are connected; Finance/source versions are separate, revised unpaid correction sources may be re-reviewed and stale-source payments are rejected. Tehran whole-day filters, actionable-payment KPIs, per-line Reservations history and an explicit queue-versus-transaction-history distinction are delivered. No amount approval ceiling is introduced per owner decision; overpayment protection remains.
+
+Validation: full API 1961 tests, final focused Finance/HR regressions, Finance Web 37 tests, two real concurrent-payment PostgreSQL tests rerun against final payment code on a random fully migrated database, affected typechecks/lint and a 55-route production build passed. Latest develop has no overlapping Finance code changes; integration and Linux CI gate merge. Full Windows Web testing reproduces two unchanged Master Data raw-source CRLF/LF assertions on the base worktree; those other-owner files were not modified. No operational database, schema/migration/dependency, live runtime or authenticated browser QA. See docs/tasks/FINANCE-INBOX-RELIABILITY-1004.md for compatibility and remaining product scope.
+
+
+## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
+
+The Accommodation Meal/Service table now labels its existing canonical `record.code` column «کد سرویس». The shared first cell remains the sole code cell; no duplicate column or new data field was added, and other Accommodation tables are unchanged. Focused 10 and all 602 Master Data Web tests, scoped Prettier/ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA or API/schema/form/export/dependency/database change. Bounded locks release with commit.
+
 ## 2026-10-04 — INSURER-BROKER-HIDE-ORGANIZATIONS-1004 — PC-B — READY_FOR_REVIEW
 
 Insurer and Broker create/edit forms no longer expose Organization. New insurers persist independently; the nullable insurer Organization FK retains uniqueness and restrictive legacy references, and v1 API clients may still provide a validated Organization. Broker primary contact is shown only when editing an existing organization-linked record; its hidden Organization scope is retained locally but omitted from PATCH, preserving the stored link. A disposable PostgreSQL 16 database verified the migration, multiple NULL rows, legacy PATCH/CAS preservation, uniqueness and FK/restrict behavior. Focused Database 1, API 14 and Web 22 tests, full Master Data API 491 and Web 601 tests, scoped ESLint, Prisma format/validate/generate, all affected typechecks/builds and the 55-route Web build pass. Database Designer schema analysis passed; its migration generator failed on its own Column serialization bug and is not treated as migration evidence. No authenticated browser, live runtime or operational DB was changed. Deployment order is migration, API, Web; rollback is guarded and cannot delete independent insurer rows. Bounded locks release with commit.
+
+## 2026-10-04 — SALES-TICKET-SEARCH-SPEED-1004 — PC-A — READY_FOR_REVIEW
+
+Flight lookup now starts when route and future travel range are ready in the first contract step. The next step reuses the exact in-flight/recent first-page request for up to10seconds rather than starting the same lookup again. Form-local abort signals prevent obsolete responses; mismatched route/date/page/cabin/return queries fetch separately, and failed speculative searches retry on entry. No persistent/shared cache or API/schema/dependency change; authoritative inventory and contract validation remain unchanged. Sales284 tests and final10 focused tests pass; lint/typecheck/build gate delivery and local activation.
 
 ## 2026-10-04 — SALES-RANGE-AIRLINE-1004 — PC-A — READY_FOR_REVIEW
 
@@ -17,6 +32,12 @@ Master Data Excel downloads now reject empty, wrong-MIME and non-ZIP HTTP 200 re
 ## 2026-10-04 — RESERVATIONS-HEADER-SEARCH-1004 — PC-A — READY_FOR_REVIEW
 
 Reservations now displays `رزروسیون` in Persian navigation groups/items, breadcrumbs/search, module/workbench cards, change notifications and the page heading. English navigation uses `Reservations`. The global-search trigger and its desktop header container are bounded to 16rem; the visible Ctrl+K badge is removed while Ctrl/Cmd+K and the search dialog remain functional. 98 existing focused tests, scoped lint, Web typecheck and the 55-route production build pass. No route/API/permission/schema/dependency/database changes or authenticated browser/local runtime rollout. Bounded central UI locks release with commit; user authorizes develop merge after CI.
+
+## BROKER-LEADERS-BOARD-1004 — 2026-10-04 — PC-A
+
+Bounded owner-authorized Master Data/Reservations implementation: exact new Broker identity/phone/airport Board form, country-scoped multi-city selection and multiple tour leaders. Atomic aggregate writes, encrypted contact envelopes, omitted-phone preservation, child version/membership checks and deactivate-only removals retain existing data. Voucher selection automatically fills Board/name/full phone through the existing audited owner service and rejects stale responses after broker changes.
+
+Local Master Data API 496 tests and Master Data Web/voucher 604 tests passed; Prisma format/validate/generate and database/contracts builds passed. API/Web production builds (55 Web routes), refreshed scoped lint/typechecks and final focused API 111 pass; latest develop integration and full CI remain gates. Local database connection unavailable, so no operational migration/runtime rollout. Apply the additive broker migration before API rollout. Permanent PC-B ownership retained; owner explicitly authorized this PC-A slice. Handoff: docs/tasks/BROKER-LEADERS-BOARD-1004.md.
 
 ## 2026-10-04 — SALES-RANGE-FLOATING-1004 — PC-A — READY_FOR_REVIEW
 
@@ -4577,6 +4598,37 @@ Screenshot693: remove signatory action text and internal-branch display, align d
 
 Remove four user-specified guidance texts from signatory form; fields, currency dependency, proof validity, inactive save and activation enforcement stay intact. Bounded R0/C1 UI copy assigned to persistent worker. Required checks/CI gate user-authorized push/develop merge. No API/data/schema/permission/dependency changes; usage unavailable.
 
+## 2026-10-04 — SALES-VALIDATION-REFRESH-1004 — PC-A
+
+International Sales registration recovery no longer sends blank hidden local names when valid passport names exist. Pending/duplicate recovery and existing-person updates share a compatible name fallback while preserving nonblank local names, validation, CAS and duplicate protection. Customers Web shows known invalid field labels in Persian from the existing error envelope. No API/schema/migration/dependency/data change. Handoff: docs/tasks/SALES-VALIDATION-REFRESH-1004.md.
+
+Validation: focused47 tests, all Sales/Customers assertions after bounded timeout rerun, scoped lint/formatting and Web typecheck pass. Production build/final CI gate develop merge. The unrelated ticket-price SSR test exceeded5s on this host and passed with one worker/30s process-local limit; repository test configuration was unchanged. Scoped locks released for review.
+
 ## 2026-10-04 — B2B-SIGNATORY-UPLOAD-1004 — PC-B
 
 In-form authority proof upload requested with persisted notes and manual activation after upload. Existing backend has no human-review gate: antivirus CLEAN, complete/unexpired exact-org/branch proof remains mandatory. Frozenv1 consumer-only implementation preserves Documents/B2B policy and adds bounded readiness refresh plus stale-upload/save protection. Independent review and required checks gate delivery. No schema/dependency/permission changes.
+
+## 2026-10-04 — B2B-CREDIT-COPY-1004 — PC-B
+
+Removed repeated toolbar title and explanatory copy from policy, guarantee and temporary-credit subviews. Main dossier title, tabs, actions, filters, alerts and forms retain behavior. One Organizations component changes; no API/schema/permission/dependency/data changes. Organizations191 tests, scoped lint/format and Web typecheck pass. Local Webpack compile/typecheck pass; final clean static generation and CI gate user-authorized develop merge. Prior pending agreement-upload source remains isolated and untouched. Telemetry unavailable.
+## 2026-10-04 — SALES-EXPERT-NOTE-1004 — PC-A
+
+The optional expert note is available in contract sale pricing and uses existing Sales reservationNote service metadata, read by Reservations explanations. Requests with Sales or Reservations notes have a yellow second (destination) cell, including selected rows, with an explanatory tooltip. Pricing notes remain separate. No schema/API/migration/dependency/runtime change. Focused checks and production build/CI gate user-authorized develop merge.
+
+Validation: 68 focused Sales form/payload and Reservations inbox/feed tests pass, including existing metadata transport and notes projection regressions. Scoped ESLint, formatting and Web typecheck pass; production build and final CI gate develop merge.
+
+## 2026-10-04 — SALES-AGREED-AUTOFILL-1004 — PC-A
+
+New-contract sale-price fields are read-only and derive exactly from agreed prices per service/currency, retaining nightly/total hotel basis and zero/decimal precision. New-form draft projection also mirrors restored values, previews and outgoing payloads; catalog reference prices and historical contracts are unchanged. No API/schema/migration/dependency/runtime change. Focused tests and checks gate authorized develop merge.
+
+Ticket-only activation keeps the catalog freshness guard independent through versioned catalogSaleQuote service metadata. Sales API uses the catalog quote for public Ticket Catalog reserve, falling back to historical daySale for old contracts; malformed new quotes fail closed. Agreements do not rewrite catalog fare sources.
+
+## 2026-10-04 — B2B-PHONE-BRANCH-COPY-1004 — PC-B
+
+Agency phone verification no longer displays the registration-branch selector. Existing authenticated authorized-branch default and OTP branch/session/grant enforcement remain unchanged. One wizard component changes; no API, schema, permission or dependency change. Organizations191 tests, scoped lint/format and Web typecheck pass; final Web build and CI gate user-authorized develop merge. Pending agreement upload task remains isolated.
+
+SALES-AGREED-AUTOFILL-1004 validation: Sales294 tests plus final quote payload3 pass (one environment-dependent skipped); API boundary/catalog targeted12 pass. Scoped lint/API and Web typechecks pass; API build and55-route Web build validate initial candidate; final corrected scalar quote production build, quality, full tests and database CI gates all pass. Concurrent develop merged with appended owner reports retained; refreshed-head CI gates final merge. No local database/runtime change.
+
+## 2026-10-04 — B2B-ADDRESS-INPUT-1004 — PC-B
+
+Agency creation replaces the country selector with one free-text address field in the first step. User confirmed optional country/city in the owner backend. MasterData accepts a null pair, preserves omitted geography on edits and validates complete supplied pairs; additive nullable columns retain restrictive geography FKs and a paired-nullability CHECK. Existing address values and permissions remain unchanged. B2B projection and Organizations displays support absent geography. Task-specific tests, disposable PostgreSQL migration proof and affected builds gate user-authorized push/develop merge; no operational database change.

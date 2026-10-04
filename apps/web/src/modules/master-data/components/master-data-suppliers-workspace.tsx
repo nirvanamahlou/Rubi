@@ -557,6 +557,29 @@ export function MasterDataSuppliersWorkspace() {
           record={record}
           title={record.name}
         />
+        {kind === 'broker' ? (
+          <MasterDataDetailSection title="اطلاعات کارگزار و تورلیدرها">
+            <MasterDataDetailItem
+              label="شماره کارگزار"
+              value={text(record, 'primaryPhoneMasked')}
+            />
+            <MasterDataDetailItem
+              label="Board"
+              value={text(record, 'boardText')}
+            />
+            <MasterDataDetailItem
+              label="شهرهای فعالیت"
+              value={text(record, 'cityNames')}
+            />
+            {brokerLeaderValues(record).map((leader) => (
+              <MasterDataDetailItem
+                key={leader.id}
+                label={leader.name}
+                value={leader.phoneMasked || '—'}
+              />
+            ))}
+          </MasterDataDetailSection>
+        ) : null}
         <MasterDataDetailSection title="خلاصه همکاری">
           <MasterDataDetailItem
             label="وضعیت همکاری"
@@ -1135,4 +1158,5 @@ export function MasterDataSuppliersWorkspace() {
     </div>
   );
 }
+import { brokerLeaderValues } from '../model/broker-form';
 import { downloadFile } from '../api/download-file';

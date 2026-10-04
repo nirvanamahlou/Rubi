@@ -1064,3 +1064,58 @@ describe('customer-only purchase identity safety', () => {
     expect(registrationLookup).not.toHaveBeenCalled();
   });
 });
+it('recovers a corrected international passenger using passport names when hidden local names are empty', async () => {
+  const travel = {
+    ...state,
+    originCountryCode: 'IR',
+    destinationCountryCode: 'TR',
+    serviceKinds: ['FLIGHT' as const],
+    passengerComposition: { adults: 1, children: 0, infants: 0 },
+  };
+  const row = filled().rows.p0!;
+  row.values = {
+    ...row.values,
+    firstName: '',
+    lastName: '',
+    passportFirstName: 'SYNTHETIC',
+    passportLastName: 'PASSENGER',
+    passportNumber: 'X1234567',
+    passportExpiryDate: '2030-01-01',
+    gender: 'M',
+  };
+  row.reviewRequired = true;
+  const draft = { ...initialSalesPeopleDraft(travel), rows: { p0: row } };
+  const registrationLookup = vi.fn(
+    async (input: { firstName: string; lastName: string }) => {
+      if (!input.firstName || !input.lastName)
+        throw new CustomersApiError(
+          'Request validation failed.',
+          400,
+          'VALIDATION_ERROR',
+        );
+      return { data: null };
+    },
+  );
+  const create = vi.fn(async (input: CustomerMutationRequest) => ({
+    data: detail('created-passenger', {
+      ...input,
+      contacts: [],
+      addresses: [],
+    } as Partial<CustomerDetail>),
+  }));
+  const result = await saveSalesPeopleDraft(travel, draft, vi.fn(), {
+    registrationLookup,
+    create,
+    addContact: vi.fn(),
+  });
+  expect(registrationLookup).toHaveBeenCalledWith(
+    expect.objectContaining({
+      firstName: 'SYNTHETIC',
+      lastName: 'PASSENGER',
+      matchByNationalId: true,
+    }),
+  );
+  expect(create).toHaveBeenCalledTimes(1);
+  expect(result.patch.customerId).toBe('created-passenger');
+  expect(result.draft.rows.p0?.reviewRequired).toBeFalsy();
+});

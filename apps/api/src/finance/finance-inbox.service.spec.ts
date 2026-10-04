@@ -23,6 +23,116 @@ const emptyTicketCosts = () => ({
 });
 
 describe('FinanceInboxService', () => {
+  it('loads every HR page, including referrals older than the first 25', async () => {
+    const records = Array.from({ length: 26 }, (_, index) => ({
+      id: `hr-${index}`,
+      code: `HR-${index}`,
+      branchId: 'branch-a',
+      title: 'ارجاع',
+      message: 'بررسی',
+      employeeLabel: 'کارمند',
+      status: 'SUBMITTED',
+      dueAt: null,
+      createdAt: '2026-10-04T10:00:00.000Z',
+      version: 1,
+    }));
+    const list = vi.fn(async ({ page }) => ({
+      items: records.slice((page - 1) * 25, page * 25),
+      page,
+      total: 26,
+      pageSize: 25,
+    }));
+    const service = new FinanceInboxService(
+      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
+      { list } as never,
+      { list: vi.fn().mockResolvedValue([]) } as never,
+      {} as never,
+      {} as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    );
+    const result = await service.list(actor);
+    expect(result.items).toHaveLength(26);
+    expect(list).toHaveBeenCalledWith({ target: 'finance', page: 2 }, actor);
+    expect(
+      result.sources.find((source) => source.source === 'HR'),
+    ).toMatchObject({ connection: 'CONNECTED', itemCount: 26 });
+  });
+  it('never reports a changing or incomplete HR pagination as a complete queue', async () => {
+    const list = vi
+      .fn()
+      .mockResolvedValueOnce({
+        items: [{ id: 'hr-1' }],
+        total: 2,
+        pageSize: 1,
+        page: 1,
+      })
+      .mockResolvedValueOnce({
+        items: [{ id: 'hr-1' }],
+        total: 2,
+        pageSize: 1,
+        page: 2,
+      });
+    const result = await new FinanceInboxService(
+      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
+      { list } as never,
+      { list: vi.fn().mockResolvedValue([]) } as never,
+      {} as never,
+      {} as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    ).list(actor);
+    expect(result.items).toEqual([]);
+    expect(
+      result.sources.find((source) => source.source === 'HR'),
+    ).toMatchObject({ connection: 'UNAVAILABLE' });
+  });
+  it('rejects duplicate referrals within a later HR page', async () => {
+    const list = vi
+      .fn()
+      .mockResolvedValueOnce({
+        items: [{ id: 'hr-1' }, { id: 'hr-2' }],
+        total: 4,
+        pageSize: 2,
+        page: 1,
+      })
+      .mockResolvedValueOnce({
+        items: [{ id: 'hr-3' }, { id: 'hr-3' }],
+        total: 4,
+        pageSize: 2,
+        page: 2,
+      });
+    const result = await new FinanceInboxService(
+      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
+      { list } as never,
+      { list: vi.fn().mockResolvedValue([]) } as never,
+      {} as never,
+      {} as never,
+      emptyTicketPurchases() as never,
+      emptyTicketCosts() as never,
+    ).list(actor);
+    expect(result.items).toEqual([]);
+    expect(
+      result.sources.find((source) => source.source === 'HR'),
+    ).toMatchObject({ connection: 'UNAVAILABLE' });
+  });
+  it('isolates Finance cost lookup failures instead of breaking every source', async () => {
+    const result = await new FinanceInboxService(
+      { financeInbox: vi.fn().mockResolvedValue([]) } as never,
+      { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
+      { list: vi.fn().mockResolvedValue([]) } as never,
+      {} as never,
+      {} as never,
+      emptyTicketPurchases() as never,
+      { queueStates: vi.fn().mockRejectedValue(new Error('offline')) } as never,
+    ).list(actor);
+    expect(
+      result.sources.find((source) => source.source === 'PURCHASES'),
+    ).toMatchObject({ connection: 'UNAVAILABLE' });
+    expect(
+      result.sources.find((source) => source.source === 'SALES'),
+    ).toMatchObject({ connection: 'CONNECTED' });
+  });
   it('shows hotel and transfer as one contract request with the summed amount', async () => {
     const purchase = (id: string, title: string, amount: string) => ({
       id,

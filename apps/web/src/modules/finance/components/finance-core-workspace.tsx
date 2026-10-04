@@ -978,7 +978,9 @@ export function FinanceRequestInboxWorkspace() {
       <PageHeader title="کارتابل درخواست‌ها" />
       <FinanceInboxLiveWorkspace />
       <FinanceDeliveryPanel />
-      <FinanceHistoryPanel />
+      <section id="finance-transaction-history">
+        <FinanceHistoryPanel />
+      </section>
     </main>
   );
 }

@@ -71,6 +71,46 @@ export class FinanceInboxService {
     );
   }
 
+  private async completeHrInbox(actor: AuthenticatedActor) {
+    const first = await this.hr.list({ target: 'finance', page: 1 }, actor);
+    const items = [...first.items];
+    if (first.total === undefined) return first;
+    const seen = new Set(items.map((item) => item.id));
+    const pages = Math.ceil(first.total / first.pageSize);
+    if (
+      !Number.isSafeInteger(first.total) ||
+      first.total < 0 ||
+      !Number.isSafeInteger(first.pageSize) ||
+      first.pageSize < 1 ||
+      pages > 1000 ||
+      seen.size !== items.length
+    )
+      throw new ConflictException(
+        'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
+      );
+    for (let page = 2; page <= pages; page++) {
+      const next = await this.hr.list({ target: 'finance', page }, actor);
+      if (
+        next.total !== first.total ||
+        next.page !== page ||
+        next.pageSize !== first.pageSize ||
+        !next.items.length ||
+        new Set(next.items.map((item) => item.id)).size !== next.items.length ||
+        next.items.some((item) => seen.has(item.id))
+      )
+        throw new ConflictException(
+          'فهرست ارجاع‌ها هم‌زمان تغییر کرده است؛ دوباره به‌روز کنید.',
+        );
+      next.items.forEach((item) => seen.add(item.id));
+      items.push(...next.items);
+    }
+    if (items.length !== first.total)
+      throw new ConflictException(
+        'فهرست ارجاع‌ها کامل نیست؛ دوباره به‌روز کنید.',
+      );
+    return { ...first, items };
+  }
+
   async list(actor: AuthenticatedActor): Promise<FinanceInboxV1> {
     if (!actor.permissions.includes('finance.read'))
       throw new ForbiddenException({
@@ -87,10 +127,32 @@ export class FinanceInboxService {
       correctionResult,
     ] = await Promise.allSettled([
       this.sales.financeInbox(actor),
-      this.hr.list({ target: 'finance', page: 1 }, actor),
+      this.completeHrInbox(actor),
       this.reservations.list(actor.branchIds),
-      this.procurement.listFinanceTicketPurchases(actor.branchIds),
-      this.procurement.listFinanceInvoiceSources(actor.branchIds),
+      this.procurement
+        .listFinanceTicketPurchases(actor.branchIds)
+        .then(async (items) => ({
+          items,
+          states: await this.ticketCosts.queueStates(
+            items.map((item) => item.id),
+          ),
+        })),
+      this.procurement
+        .listFinanceInvoiceSources(actor.branchIds)
+        .then(async (items) => ({
+          items,
+          rows: items.length
+            ? await this.database.client.financeProcurementInvoiceRevision.findMany(
+                {
+                  where: {
+                    sourceId: { in: items.map((item) => item.sourceId) },
+                  },
+                  orderBy: [{ sourceId: 'asc' }, { version: 'desc' }],
+                  distinct: ['sourceId'],
+                },
+              )
+            : [],
+        })),
       this.procurement.listFinanceCorrections(actor.branchIds),
     ]);
     const salesItems =
@@ -117,23 +179,25 @@ export class FinanceInboxService {
           })
         : [];
     const ticketItems =
-      ticketResult.status === 'fulfilled' ? ticketResult.value : [];
-    const ticketStates = await this.ticketCosts.queueStates(
-      ticketItems.map((item) => item.id),
-    );
-    const invoiceItems =
-      invoiceResult.status === 'fulfilled' ? invoiceResult.value : [];
+      ticketResult.status === 'fulfilled' ? ticketResult.value.items : [];
+    const ticketStates =
+      ticketResult.status === 'fulfilled'
+        ? ticketResult.value.states
+        : new Map();
+    const invoiceItems = [
+      ...new Map(
+        (invoiceResult.status === 'fulfilled'
+          ? [...invoiceResult.value.items].sort(
+              (a, b) => a.sourceVersion - b.sourceVersion,
+            )
+          : []
+        ).map((item) => [item.sourceId, item] as const),
+      ).values(),
+    ];
     const correctionItems =
       correctionResult.status === 'fulfilled' ? correctionResult.value : [];
-    const financeRows = invoiceItems.length
-      ? await this.database.client.financeProcurementInvoiceRevision.findMany({
-          where: {
-            sourceId: { in: invoiceItems.map((item) => item.sourceId) },
-          },
-          orderBy: [{ sourceId: 'asc' }, { version: 'desc' }],
-          distinct: ['sourceId'],
-        })
-      : [];
+    const financeRows =
+      invoiceResult.status === 'fulfilled' ? invoiceResult.value.rows : [];
     const financeBySource = new Map(
       financeRows.map((row) => [row.sourceId, row] as const),
     );
@@ -178,6 +242,7 @@ export class FinanceInboxService {
         amount: null,
         settlement: null,
         status: hrStatus[item.status],
+        hrReferral: { canRespond: item.canRespond, response: item.response },
         dueAt: item.dueAt,
         createdAt: item.createdAt,
         requesterDisplaySnapshot: null,
@@ -315,15 +380,16 @@ export class FinanceInboxService {
       })),
       ...invoiceItems.map((invoice): FinanceInboxItemV1 => {
         const finance = financeBySource.get(invoice.sourceId);
-        const status: FinanceRequestStatus = finance
-          ? finance.status === 'APPROVED'
-            ? 'READY_FOR_PAYMENT'
-            : finance.status === 'CORRECTION_REQUIRED'
-              ? 'CORRECTION_REQUIRED'
-              : finance.status === 'PAID'
-                ? 'PAID'
-                : 'PAYING'
-          : 'UNDER_REVIEW';
+        const status: FinanceRequestStatus =
+          finance && finance.sourceVersion === invoice.sourceVersion
+            ? finance.status === 'APPROVED'
+              ? 'READY_FOR_PAYMENT'
+              : finance.status === 'CORRECTION_REQUIRED'
+                ? 'CORRECTION_REQUIRED'
+                : finance.status === 'PAID'
+                  ? 'PAID'
+                  : 'PAYING'
+            : 'UNDER_REVIEW';
         return {
           version: 1,
           id: `purchases:invoice:${invoice.sourceId}:${invoice.sourceVersion}`,
@@ -339,18 +405,20 @@ export class FinanceInboxService {
             amount: invoice.amount,
             currencyCode: invoice.currencyCode,
           },
-          settlement: finance
-            ? {
-                paidAmount: finance.cumulativePaid.toString(),
-                remainingAmount: finance.remainingAmount.toString(),
-              }
-            : null,
+          settlement:
+            finance && finance.sourceVersion === invoice.sourceVersion
+              ? {
+                  paidAmount: finance.cumulativePaid.toString(),
+                  remainingAmount: finance.remainingAmount.toString(),
+                }
+              : null,
           status,
           dueAt: invoice.dueAt,
           createdAt: invoice.handoffCreatedAt,
           requesterDisplaySnapshot: null,
           branchReference: invoice.branchId,
           sourceVersion: invoice.sourceVersion,
+          financeVersion: finance?.version ?? 0,
           origin: 'PERSISTED_SOURCE',
         };
       }),
@@ -675,6 +743,13 @@ export class FinanceInboxService {
     );
     if (!source)
       throw new NotFoundException('فاکتور خرید در کارتابل مالی یافت نشد.');
+    if (
+      input.expectedSourceVersion !== undefined &&
+      input.expectedSourceVersion !== source.sourceVersion
+    )
+      throw new ConflictException(
+        'نسخه فاکتور خرید تغییر کرده است؛ کارتابل را به‌روز کنید.',
+      );
     try {
       return await this.database.client.$transaction(async (tx) => {
         const current = await tx.financeProcurementInvoiceRevision.findFirst({
@@ -683,7 +758,12 @@ export class FinanceInboxService {
         });
         if ((current?.version ?? 0) !== input.expectedVersion)
           throw new ConflictException('وضعیت مالی هم‌زمان تغییر کرده است.');
-        if (current)
+        if (
+          current &&
+          (current.sourceVersion === source.sourceVersion ||
+            current.status !== 'CORRECTION_REQUIRED' ||
+            !current.cumulativePaid.isZero())
+        )
           throw new ConflictException('فاکتور خرید قبلاً بررسی شده است.');
         const status =
           input.action === 'APPROVE' ? 'APPROVED' : 'CORRECTION_REQUIRED';
@@ -692,7 +772,7 @@ export class FinanceInboxService {
             sourceId,
             sourceVersion: source.sourceVersion,
             branchId: source.branchId,
-            version: 1,
+            version: (current?.version ?? 0) + 1,
             status,
             cumulativePaid: 0,
             remainingAmount: source.amount,
@@ -768,6 +848,13 @@ export class FinanceInboxService {
     );
     if (!source)
       throw new NotFoundException('فاکتور خرید در کارتابل مالی یافت نشد.');
+    if (
+      input.expectedSourceVersion !== undefined &&
+      input.expectedSourceVersion !== source.sourceVersion
+    )
+      throw new ConflictException(
+        'نسخه فاکتور خرید تغییر کرده است؛ کارتابل را به‌روز کنید.',
+      );
     if (source.currencyCode !== 'IRR' && !input.exchangeRateToIrr)
       throw new BadRequestException('نرخ روز ارز برای پرداخت ارزی الزامی است.');
     try {
@@ -783,7 +870,10 @@ export class FinanceInboxService {
           throw new ConflictException(
             'فاکتور خرید هنوز برای پرداخت تأیید نشده است.',
           );
-        if (current.version !== input.expectedVersion)
+        if (
+          current.version !== input.expectedVersion ||
+          current.sourceVersion !== source.sourceVersion
+        )
           throw new ConflictException('وضعیت پرداخت هم‌زمان تغییر کرده است.');
         const account = await tx.financeSettlementAccount.findFirst({
           where: {

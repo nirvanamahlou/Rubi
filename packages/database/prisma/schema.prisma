@@ -985,6 +985,7 @@ model MasterCity {
   railTerminals               MasterRailTerminal[]
   bankBranches                MasterBankBranch[]
   suppliers                   MasterSupplier[]
+  brokerCities                MasterBrokerCity[]
   brokers                     MasterBroker[]
   compositeHotels             MasterCompositeHotel[]
   customerAddresses           CustomerAddress[]
@@ -1312,8 +1313,8 @@ model MasterOrganizationRole {
 model MasterOrganizationAddress {
   id                  String             @id @default(uuid()) @db.Uuid
   organizationId      String             @db.Uuid
-  countryId           String             @db.Uuid
-  cityId              String             @db.Uuid
+  countryId           String?            @db.Uuid
+  cityId              String?            @db.Uuid
   label               String             @db.VarChar(80)
   postalCode          String?            @db.VarChar(24)
   addressLine         String             @db.VarChar(500)
@@ -1328,8 +1329,8 @@ model MasterOrganizationAddress {
   createdAt           DateTime           @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
   organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
-  city                MasterCity         @relation(fields: [cityId, countryId], references: [id, countryId], onDelete: Restrict)
+  country             MasterCountry?     @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                MasterCity?        @relation(fields: [cityId, countryId], references: [id, countryId], onDelete: Restrict)
 
   @@index([organizationId, isPrimary, isActive, displayOrder])
   @@index([countryId, cityId])
@@ -2433,31 +2434,39 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
-  id                  String                     @id @default(uuid()) @db.Uuid
-  organizationId      String?                    @unique @db.Uuid
-  countryId           String?                    @db.Uuid
-  cityId              String?                    @db.Uuid
-  code                String                     @unique @db.VarChar(32)
-  name                String                     @db.VarChar(160)
-  englishName         String?                    @db.VarChar(160)
-  primaryContactId    String?                    @db.Uuid
-  logoFileReference   String?                    @db.Uuid
-  displayOrder        Int                        @default(0)
-  collaborationStatus MasterCollaborationStatus  @default(ACTIVE)
-  isActive            Boolean                    @default(true)
-  version             Int                        @default(1)
-  createdByUserId     String                     @db.Uuid
-  updatedByUserId     String                     @db.Uuid
-  deactivatedByUserId String?                    @db.Uuid
-  deactivatedAt       DateTime?                  @db.Timestamptz(3)
-  createdAt           DateTime                   @default(now()) @db.Timestamptz(3)
-  updatedAt           DateTime                   @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization?        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  country             MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
-  city                MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  services            MasterBrokerService[]
-  leaders             MasterLeader[]
-  primaryContact      MasterOrganizationContact? @relation("BrokerPrimaryContact", fields: [primaryContactId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
+  id                               String                     @id @default(uuid()) @db.Uuid
+  organizationId                   String?                    @unique @db.Uuid
+  countryId                        String?                    @db.Uuid
+  cityId                           String?                    @db.Uuid
+  code                             String                     @unique @db.VarChar(32)
+  name                             String                     @db.VarChar(160)
+  englishName                      String?                    @db.VarChar(160)
+  boardText                        String?                    @db.VarChar(300)
+  primaryPhoneEncrypted            String?                    @db.Text
+  primaryPhoneEncryptionIv         String?                    @db.VarChar(24)
+  primaryPhoneEncryptionAuthTag    String?                    @db.VarChar(24)
+  primaryPhoneEncryptionKeyVersion Int?
+  primaryPhoneMasked               String?                    @db.VarChar(80)
+  primaryPhoneFingerprint          String?                    @db.Char(64)
+  cities                           MasterBrokerCity[]
+  primaryContactId                 String?                    @db.Uuid
+  logoFileReference                String?                    @db.Uuid
+  displayOrder                     Int                        @default(0)
+  collaborationStatus              MasterCollaborationStatus  @default(ACTIVE)
+  isActive                         Boolean                    @default(true)
+  version                          Int                        @default(1)
+  createdByUserId                  String                     @db.Uuid
+  updatedByUserId                  String                     @db.Uuid
+  deactivatedByUserId              String?                    @db.Uuid
+  deactivatedAt                    DateTime?                  @db.Timestamptz(3)
+  createdAt                        DateTime                   @default(now()) @db.Timestamptz(3)
+  updatedAt                        DateTime                   @updatedAt @db.Timestamptz(3)
+  organization                     MasterOrganization?        @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  country                          MasterCountry?             @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                             MasterCity?                @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  services                         MasterBrokerService[]
+  leaders                          MasterLeader[]
+  primaryContact                   MasterOrganizationContact? @relation("BrokerPrimaryContact", fields: [primaryContactId, organizationId], references: [id, organizationId], onDelete: Restrict, onUpdate: Restrict)
 
   @@index([primaryContactId, organizationId])
   @@index([isActive, name])
@@ -6499,4 +6508,15 @@ model ReservationTicketDocument {
 
   @@unique([intakeId, customerId])
   @@map("reservation_ticket_documents")
+}
+
+model MasterBrokerCity {
+  brokerId String       @db.Uuid
+  cityId   String       @db.Uuid
+  broker   MasterBroker @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  city     MasterCity   @relation(fields: [cityId], references: [id], onDelete: Restrict)
+
+  @@id([brokerId, cityId])
+  @@index([cityId])
+  @@map("master_broker_cities")
 }

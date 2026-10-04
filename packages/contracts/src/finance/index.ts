@@ -398,7 +398,11 @@ export interface FinanceInboxItemV1 {
   requesterDisplaySnapshot: string | null;
   branchReference: string;
   sourceVersion: number;
+  /** Latest Finance revision, distinct from the producer's source version. */
+  financeVersion?: number;
   origin: 'PERSISTED_SOURCE';
+  /** Public HR referral projection, not a payroll/payment instruction. */
+  hrReferral?: { canRespond: boolean; response: string | null };
   /** Atomic Reservations submission; absent on legacy single-service purchases. */
   reservationPurchase?: {
     lines: readonly {
@@ -437,6 +441,9 @@ export interface FinanceTicketCostCommandV1 {
 
 export interface FinanceTicketPaymentCommandV1 {
   version: 1;
+  /** Reuse this UUID for retries of the same payment, never for another payment. */
+  operationId?: string;
+  expectedPaymentVersion?: number;
   costRevisionId: string;
   accountId: string;
   paymentMethodId: string;
@@ -553,6 +560,7 @@ export interface FinanceReceiptDecisionCommandV1 {
 export interface FinanceProcurementInvoiceDecisionCommandV1 {
   version: 1;
   expectedVersion: number;
+  expectedSourceVersion?: number;
   action: 'APPROVE' | 'CORRECTION_REQUIRED';
   reason?: string | null;
 }
@@ -560,6 +568,7 @@ export interface FinanceProcurementInvoiceDecisionCommandV1 {
 export interface FinanceProcurementInvoicePaymentCommandV1 {
   version: 1;
   expectedVersion: number;
+  expectedSourceVersion?: number;
   accountId: string;
   paymentMethodId: string;
   paidAmount: string;

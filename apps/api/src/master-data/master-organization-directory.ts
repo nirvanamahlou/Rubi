@@ -38,11 +38,28 @@ function validateAddress(input: MasterOrganizationAddressMutationV1) {
     throw new BadRequestException('عنوان و نشانی کامل را وارد کنید.');
 }
 
+function addressGeography(
+  input: MasterOrganizationAddressMutationV1,
+  current: { countryId: string | null; cityId: string | null } = {
+    countryId: null,
+    cityId: null,
+  },
+) {
+  const countryId =
+    input.countryId === undefined ? current.countryId : input.countryId;
+  const cityId = input.cityId === undefined ? current.cityId : input.cityId;
+  if ((countryId === null) !== (cityId === null))
+    throw new BadRequestException(
+      'کشور و شهر باید با هم ثبت یا هر دو حذف شوند.',
+    );
+  return { countryId, cityId };
+}
+
 function addressRecord(row: {
   id: string;
   organizationId: string;
-  countryId: string;
-  cityId: string;
+  countryId: string | null;
+  cityId: string | null;
   label: string;
   postalCode: string | null;
   addressLine: string;
@@ -52,16 +69,16 @@ function addressRecord(row: {
   version: number;
   createdAt: Date;
   updatedAt: Date;
-  country: { name: string };
-  city: { name: string };
+  country: { name: string } | null;
+  city: { name: string } | null;
 }): MasterOrganizationAddressV1 {
   return {
     id: row.id,
     organizationId: row.organizationId,
     countryId: row.countryId,
-    countryName: row.country.name,
+    countryName: row.country?.name ?? null,
     cityId: row.cityId,
-    cityName: row.city.name,
+    cityName: row.city?.name ?? null,
     label: row.label,
     postalCode: row.postalCode,
     addressLine: row.addressLine,
@@ -213,8 +230,9 @@ export class MasterOrganizationDirectory {
     requestedBranch?: string,
   ) {
     validateAddress(input);
+    const geography = addressGeography(input);
     await this.assertOrganization(organizationId);
-    await this.assertCityCountry(input.cityId, input.countryId);
+    await this.assertCityCountry(geography.cityId, geography.countryId);
     const actorBranchId = branchOf(actor, requestedBranch);
     const row = await this.database.client.$transaction(async (transaction) => {
       if (input.isPrimary)
@@ -229,8 +247,8 @@ export class MasterOrganizationDirectory {
       const created = await transaction.masterOrganizationAddress.create({
         data: {
           organizationId,
-          countryId: input.countryId,
-          cityId: input.cityId,
+          countryId: geography.countryId,
+          cityId: geography.cityId,
           label: input.label.trim(),
           postalCode: input.postalCode?.trim() || null,
           addressLine: input.addressLine.trim(),
@@ -275,7 +293,6 @@ export class MasterOrganizationDirectory {
     validateAddress(input);
     if (!input.version)
       throw new BadRequestException('version برای ویرایش آدرس الزامی است.');
-    await this.assertCityCountry(input.cityId, input.countryId);
     const actorBranchId = branchOf(actor, requestedBranch);
     const row = await this.database.client.$transaction(async (transaction) => {
       const before = await transaction.masterOrganizationAddress.findFirst({
@@ -285,6 +302,12 @@ export class MasterOrganizationDirectory {
       if (!before) throw new NotFoundException('آدرس سازمان یافت نشد.');
       if (before.version !== input.version)
         throw new ConflictException('آدرس هم‌زمان تغییر کرده است.');
+      const geography = addressGeography(input, before);
+      await this.assertCityCountry(
+        geography.cityId,
+        geography.countryId,
+        transaction,
+      );
       if (input.isPrimary)
         await transaction.masterOrganizationAddress.updateMany({
           where: { organizationId, isPrimary: true, NOT: { id: addressId } },
@@ -297,8 +320,8 @@ export class MasterOrganizationDirectory {
       const claimed = await transaction.masterOrganizationAddress.updateMany({
         where: { id: addressId, organizationId, version: input.version },
         data: {
-          countryId: input.countryId,
-          cityId: input.cityId,
+          countryId: geography.countryId,
+          cityId: geography.cityId,
           label: input.label.trim(),
           postalCode: input.postalCode?.trim() || null,
           addressLine: input.addressLine.trim(),
@@ -403,8 +426,17 @@ export class MasterOrganizationDirectory {
     });
   }
 
-  private async assertCityCountry(cityId: string, countryId: string) {
-    const city = await this.database.client.masterCity.findFirst({
+  private async assertCityCountry(
+    cityId: string | null,
+    countryId: string | null,
+    client: Pick<Prisma.TransactionClient, 'masterCity'> = this.database.client,
+  ) {
+    if (cityId === null && countryId === null) return;
+    if (!cityId || !countryId)
+      throw new BadRequestException(
+        'کشور و شهر باید با هم ثبت یا هر دو حذف شوند.',
+      );
+    const city = await client.masterCity.findFirst({
       where: { id: cityId, countryId },
       select: { id: true },
     });

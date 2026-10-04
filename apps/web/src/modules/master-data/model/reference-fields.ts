@@ -118,6 +118,12 @@ const configs: Partial<
     },
   },
   brokers: {
+    cityIds: {
+      target: 'cities',
+      payload: 'id',
+      multiple: true,
+      scopeField: 'countryId',
+    },
     organizationId: {
       target: 'organizations',
       payload: 'id',

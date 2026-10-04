@@ -51,6 +51,7 @@ export async function removeOwnedMasterDataLinks(
       await tx.masterSupplierService.deleteMany({ where: { supplierId: id } });
       break;
     case 'brokers':
+      await tx.masterBrokerCity.deleteMany({ where: { brokerId: id } });
       await tx.masterBrokerService.deleteMany({ where: { brokerId: id } });
       break;
     case 'hotels':

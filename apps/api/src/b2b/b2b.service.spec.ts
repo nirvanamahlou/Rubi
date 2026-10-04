@@ -76,6 +76,40 @@ function setup(profile: Record<string, unknown> | null = null) {
 }
 
 describe('B2B agency service', () => {
+  it('preserves an address without geography in the agency workspace projection', async () => {
+    const { service, organizations } = setup();
+    vi.mocked(organizations.primaryAddress).mockResolvedValue({
+      id: 'address',
+      organizationId,
+      countryId: null,
+      countryName: null,
+      cityId: null,
+      cityName: null,
+      label: 'نشانی همکاری',
+      postalCode: null,
+      addressLine: 'تهران، خیابان آزمون',
+      isPrimary: true,
+      displayOrder: 0,
+      isActive: true,
+      version: 1,
+      createdAt: '2026-10-04T00:00:00.000Z',
+      updatedAt: '2026-10-04T00:00:00.000Z',
+    });
+
+    const { data } = await service.agencyWorkspace(
+      organizationId,
+      actor,
+      branchId,
+    );
+
+    expect(data.primaryAddress).toMatchObject({
+      countryId: null,
+      countryName: null,
+      cityId: null,
+      cityName: null,
+      addressLine: 'تهران، خیابان آزمون',
+    });
+  });
   it('returns only scoped manager choices and profile fields under agency read permission', async () => {
     const { service, iam } = setup({
       id: 'profile',

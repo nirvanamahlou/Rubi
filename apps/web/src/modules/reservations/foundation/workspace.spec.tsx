@@ -389,3 +389,20 @@ describe('reservation search submission and filter combinations', () => {
     ).toBe(0);
   });
 });
+
+it('marks only the second cell of noted requests, including the initially selected row', () => {
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[{ ...row('noted'), hasNotes: true }, row('plain')]}
+      access={access}
+      now={now}
+      initialSection="inbox"
+    />,
+  );
+  expect(html.match(/data-has-note="true"/g)).toHaveLength(1);
+  expect(html).toMatch(
+    /<tr[^>]*data-selected="true"[\s\S]*?<td[^>]*data-has-note="false"[\s\S]*?<td[^>]*data-has-note="true"/,
+  );
+  expect(html).toContain('دارای یادداشت در توضیحات');
+});
