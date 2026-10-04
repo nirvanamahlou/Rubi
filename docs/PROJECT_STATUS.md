@@ -1,3 +1,7 @@
+## 2026-10-04 — INSURANCE-PLAN-TOGGLE-OPERATIONS-1004 — PC-B — READY_FOR_REVIEW
+
+The insurer nested-plan expand/collapse button moved from the Persian-name cell into the centered Operations action group. The insurer name remains the View trigger; native keyboard behavior, accessible name, `aria-expanded`, corrected `aria-controls`, toggle state and nested-plan loading/CRUD/permission behavior are preserved. Focused 9 and all 598 Master Data tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA or API/schema/dependency/database/runtime change; bounded locks release with commit.
+
 ## 2026-10-04 — MASTER-DATA-XLSX-DOWNLOAD-1004 — PC-B — READY_FOR_REVIEW
 
 Master Data Excel downloads now reject empty, wrong-MIME and non-ZIP HTTP 200 responses instead of saving them with an `.xlsx` extension. All nine list workspaces use one safe browser-download helper that keeps the Blob URL alive for a bounded 60 seconds and always removes its temporary anchor. Independent openpyxl validation opened populated and header-only generated workbooks with exact Persian headers and values. Focused Web 28, focused API 38 and all 596 Master Data Web tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. The former immediate URL revocation is a verified weakness, but no user-provided corrupt file was available to claim an exact reproduction. No authenticated browser/runtime, real-data, API/schema/contract/dependency or database change; bounded locks release with commit.
