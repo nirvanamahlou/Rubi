@@ -4667,3 +4667,5 @@ B2B-AGREEMENT-UPLOAD-1004 AU-R3-02: draft upload grant moves atomically with its
 B2B-AGREEMENT-UPLOAD-1004 final lifecycle checkpoint: session-bound uploads, context-owned busy state and recoverable expired-grant renewal added. Organizations204 tests and scoped Web static checks pass. No database/runtime mutation; exact-candidate final review/build/CI remain release gates.
 
 B2B-AGREEMENT-UPLOAD-1004 PR652: independent review resolved all five lifecycle findings, no open blocker; local checks/build passed. Candidate source frozen and bounded locks released. Final CI/merge pending, no operational runtime/database change.
+
+LOAD-ROUTE-SIDES-1004: PC-A adds both endpoint country/city filters in charter Load and disjoint outbound/eligible-return display. Explicit search snapshots both countries; changing country clears its city and results. Reservation manifest already provides four endpoint controls and route-relative direction, verified by existing tests. No backend/schema/runtime changes.

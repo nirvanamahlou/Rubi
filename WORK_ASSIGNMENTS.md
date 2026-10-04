@@ -5579,3 +5579,9 @@ B2B-AGREEMENT-UPLOAD-1004 AU-R3-02 repair: reviewer identified upload grant disc
 B2B-AGREEMENT-UPLOAD-1004 grouped lifecycle repair: AU-R3-03 adds actual session to upload context; AU-R3-04 scopes busy ownership to actor/session/editor; AU-R3-05 clears rejected confidential grants in current scope for in-dialog renewal, retaining terms and semantic requestId. Same Luna implementer; Organizations204 tests, scoped lint/typecheck/format pass. Final candidate build, independent refreshed review and CI gate release; task/shared reservation releases only after acceptance.
 
 B2B-AGREEMENT-UPLOAD-1004 review checkpoint: independent Luna review95e6495b resolved AU-R3-01 through05 with no remaining blocker. Local API286/Organizations204 plus merged Finance40/MasterDataAPI35/Web68 tests passed; final Web55 build and affected static checks passed. Shared/task locks RELEASED for user-authorized PR652 after source freeze; final CI gates merge. Operational database/runtime unchanged; usage unknown.
+
+## LOAD-ROUTE-SIDES-1004 — PC-A — IN_PROGRESS
+
+Reserve Ticket Catalog flight-load model/grid and focused tests, Reservations manifest filter model/tests, own docs on codex/pc-a-load-route-sides-1004. Add origin/destination country/city filters, disjoint outbound/return rows and unique manifest offer direction. Existing public reference/ticket contracts unchanged; no schema/dependency/runtime changes. User authorizes develop merge.
+
+LOAD-ROUTE-SIDES-1004 scope finalized: Ticket Catalog only; Reservations existing route filters verified without changes. Focused17 tests pass; lint/type/build and CI gate authorized merge. Scoped locks released at candidate delivery.
