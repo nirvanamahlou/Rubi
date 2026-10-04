@@ -1,7 +1,7 @@
 'use client';
 
 import type { MasterDataRecord } from '@nora/contracts';
-import { Save } from 'lucide-react';
+import { Plus, Save, X } from 'lucide-react';
 import { useRef, useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +21,9 @@ import {
   travelReferenceFieldLimit,
   travelReferenceFormValues,
   travelReferenceMutationValues,
+  normalizeRequiredDocumentNames,
+  requiredDocumentNames,
+  type TravelReferenceMutationValue,
   transferUsageLabel,
   validateTravelReferenceForm,
   type TravelReferenceResource,
@@ -38,7 +41,9 @@ export function MasterDataTravelReferenceForm({
   resource: TravelReferenceResource;
   record?: MasterDataRecord;
   onOpenChange: (open: boolean) => void;
-  onPersist: (values: Record<string, string>) => Promise<void>;
+  onPersist: (
+    values: Record<string, TravelReferenceMutationValue>,
+  ) => Promise<void>;
 }) {
   const definition = getMasterDataDefinition(resource);
   const [values, setValues] = useState(() =>
@@ -46,6 +51,7 @@ export function MasterDataTravelReferenceForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [documentName, setDocumentName] = useState('');
   const savingRef = useRef(false);
   const change = (key: string, value: string) =>
     setValues((current) => ({
@@ -55,6 +61,25 @@ export function MasterDataTravelReferenceForm({
         ? { referenceValidityDays: '' }
         : {}),
     }));
+  const documents = requiredDocumentNames(values.requiredDocumentNames);
+  const addDocument = () => {
+    const next = normalizeRequiredDocumentNames([...documents, documentName]);
+    if (!documentName.trim()) return;
+    if (documentName.trim().length > 160 || next.length > 50) {
+      setErrors((current) => ({
+        ...current,
+        requiredDocumentNames: 'حداکثر ۵۰ نام تا ۱۶۰ نویسه مجاز است.',
+      }));
+      return;
+    }
+    change('requiredDocumentNames', JSON.stringify(next));
+    setDocumentName('');
+    setErrors((current) => {
+      const nextErrors = { ...current };
+      delete nextErrors.requiredDocumentNames;
+      return nextErrors;
+    });
+  };
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (savingRef.current) return;
@@ -125,7 +150,66 @@ export function MasterDataTravelReferenceForm({
                 {...(errors[field.key] ? { error: errors[field.key] } : {})}
                 {...(field.hint ? { description: field.hint } : {})}
               >
-                {reference ? (
+                {field.key === 'requiredDocumentNames' ? (
+                  <div className="space-y-3">
+                    <div className="flex gap-2">
+                      <Input
+                        {...common}
+                        maxLength={160}
+                        placeholder={field.placeholder}
+                        value={documentName}
+                        onChange={(event) =>
+                          setDocumentName(event.target.value)
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={saving || !documentName.trim()}
+                        onClick={addDocument}
+                      >
+                        <Plus className="size-4" aria-hidden="true" /> افزودن
+                        مدرک
+                      </Button>
+                    </div>
+                    {documents.length ? (
+                      <ul
+                        className="flex flex-wrap gap-2"
+                        aria-label="مدارک مورد نیاز"
+                      >
+                        {documents.map((name) => (
+                          <li
+                            className="flex items-center gap-1 rounded-lg border px-2 py-1 text-sm"
+                            key={name}
+                          >
+                            <span>{name}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={saving}
+                              aria-label={`حذف ${name}`}
+                              onClick={() =>
+                                change(
+                                  'requiredDocumentNames',
+                                  JSON.stringify(
+                                    documents.filter((item) => item !== name),
+                                  ),
+                                )
+                              }
+                            >
+                              <X className="size-3.5" aria-hidden="true" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        مدرکی ثبت نشده است.
+                      </p>
+                    )}
+                  </div>
+                ) : reference ? (
                   <MasterDataReferenceSelector
                     config={reference}
                     id={id}

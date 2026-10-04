@@ -40,6 +40,7 @@ import { SalesThemedSelect } from './sales-themed-select';
 import { ContractPayments } from './contract-payments';
 import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
+import { ContractTableScroll } from './contract-table-scroll';
 
 export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
@@ -486,7 +487,7 @@ export function SalesWorkspace() {
       ) : null}
       {contracts.length && !loading ? (
         <Card className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-md shadow-primary/[0.035]">
-          <div className="overflow-x-auto">
+          <ContractTableScroll>
             <table className="w-full min-w-[88rem] text-sm">
               <caption className="sr-only">
                 فهرست قراردادهای فروش؛ عملیات هر قرارداد در ستون آخر قرار دارد.
@@ -648,7 +649,7 @@ export function SalesWorkspace() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </ContractTableScroll>
         </Card>
       ) : null}
       {!loading &&

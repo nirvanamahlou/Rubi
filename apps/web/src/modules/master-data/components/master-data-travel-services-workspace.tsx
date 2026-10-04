@@ -74,6 +74,7 @@ import {
 import { MasterDataTourTypeForm } from './master-data-tour-type-form';
 import { MasterDataTravelReferenceForm } from './master-data-travel-reference-form';
 import {
+  requiredDocumentNames,
   transferCapacityLabel,
   visaValidityLabel,
 } from '../model/travel-reference-form';
@@ -134,7 +135,9 @@ export function travelServicesExportColumns(resource: TravelResource) {
         ? definitionFields.flatMap((field) =>
             field === 'referenceValidityDays'
               ? ['referenceValidityMode', field]
-              : [field],
+              : field === 'requiredDocumentNames'
+                ? ['guidanceFileReference', field]
+                : [field],
           )
         : definitionFields;
   return [...new Set(['code', ...exportableFields, 'status', 'updatedAt'])];
@@ -206,7 +209,7 @@ const headers: Record<TravelResource, readonly string[]> = {
     'نوع ویزا',
     'Provider',
     'مدت اعتبار مرجع',
-    'مدارک راهنما',
+    'مدارک مورد نیاز',
     'وضعیت',
     'عملیات',
   ],
@@ -247,7 +250,7 @@ const profileFields: Record<
     { key: 'visaType', label: 'نوع ویزا' },
     { key: 'supplierName', label: 'Provider' },
     { key: 'referenceValidityDays', label: 'مدت اعتبار مرجع' },
-    { key: 'guidanceFileReference', label: 'مدارک راهنما' },
+    { key: 'requiredDocumentNames', label: 'مدارک مورد نیاز' },
     { key: 'description', label: 'شرح' },
   ],
 };
@@ -556,7 +559,9 @@ export function MasterDataTravelServicesWorkspace() {
     setProfileOpen(true);
   }
 
-  async function persist(values: Record<string, string>) {
+  async function persist(
+    values: Record<string, string | number | readonly string[] | null>,
+  ) {
     if (formMode === 'edit' && selected) {
       const safeValues = { ...values };
       if (resource === 'leaders') {
@@ -722,7 +727,9 @@ export function MasterDataTravelServicesWorkspace() {
       <Badge key="visa">{attribute(record, 'visaType')}</Badge>,
       attribute(record, 'supplierName'),
       visaValidityLabel(record),
-      attribute(record, 'guidanceFileReference'),
+      requiredDocumentNames(attribute(record, 'requiredDocumentNames')).join(
+        '، ',
+      ) || '—',
     ];
   }
 
@@ -1032,7 +1039,12 @@ export function MasterDataTravelServicesWorkspace() {
                         : resource === 'visa-services' &&
                             field.key === 'referenceValidityDays'
                           ? visaValidityLabel(selected)
-                          : translated(selected, field.key)
+                          : resource === 'visa-services' &&
+                              field.key === 'requiredDocumentNames'
+                            ? requiredDocumentNames(
+                                attribute(selected, field.key),
+                              ).join('، ') || '—'
+                            : translated(selected, field.key)
                     }
                   />
                 ))}

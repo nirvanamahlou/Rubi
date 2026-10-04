@@ -103,6 +103,7 @@ const columnLabels: Readonly<Record<string, string>> = {
   visaType: 'نوع ویزا',
   referenceValidityDays: 'مدت اعتبار مرجع',
   guidanceFileReference: 'Reference راهنما',
+  requiredDocumentNames: 'مدارک مورد نیاز',
   insurerId: 'بیمه‌گر',
   destinationRegion: 'مقصد یا منطقه',
   minimumAge: 'حداقل سن',

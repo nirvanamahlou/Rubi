@@ -147,10 +147,6 @@ export function OrganizationAddressesPanel({
                 </option>
               ))}
             </NativeSearchSelect>
-            <span className="panel-note">
-              برای مشاهده نشانی و اطلاعات هر شعبه، آن را انتخاب کنید. شعب جدید
-              را با «ثبت شعبه یا آدرس» اضافه کنید.
-            </span>
           </label>
         ) : null}
         {visibleRows.map((row) => (
