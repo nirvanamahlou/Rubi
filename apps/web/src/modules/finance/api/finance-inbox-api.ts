@@ -15,6 +15,10 @@ import type {
   FinanceSupplierPaymentCommandV1,
   FinanceTicketCostCommandV1,
   FinanceTicketPaymentCommandV1,
+  FinanceProcurementInvoiceDecisionCommandV1,
+  FinanceProcurementInvoicePaymentCommandV1,
+  FinanceProcurementCorrectionDecisionCommandV1,
+  HrConnectionDecision,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -80,6 +84,40 @@ async function apiRequest<T>(
 }
 
 export const financeInboxApi = {
+  async respondHr(id: string, command: HrConnectionDecision, key: string) {
+    return apiRequest(`/hr/connections/${encodeURIComponent(id)}/response`, {
+      method: 'POST',
+      headers: { 'idempotency-key': key },
+      body: JSON.stringify(command),
+    });
+  },
+  async decideInvoice(
+    id: string,
+    command: FinanceProcurementInvoiceDecisionCommandV1,
+  ) {
+    return apiRequest(
+      `/finance/inbox/purchases/invoices/${encodeURIComponent(id)}/decision`,
+      { method: 'POST', body: JSON.stringify(command) },
+    );
+  },
+  async payInvoice(
+    id: string,
+    command: FinanceProcurementInvoicePaymentCommandV1,
+  ) {
+    return apiRequest(
+      `/finance/inbox/purchases/invoices/${encodeURIComponent(id)}/payments`,
+      { method: 'POST', body: JSON.stringify(command) },
+    );
+  },
+  async decideCorrection(
+    id: string,
+    command: FinanceProcurementCorrectionDecisionCommandV1,
+  ) {
+    return apiRequest(
+      `/finance/inbox/purchases/corrections/${encodeURIComponent(id)}/decision`,
+      { method: 'POST', body: JSON.stringify(command) },
+    );
+  },
   history: (query: FinanceHistoryQueryV1 = {}) => {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(query))
