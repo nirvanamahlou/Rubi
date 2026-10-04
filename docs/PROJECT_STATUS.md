@@ -4652,3 +4652,6 @@ Ticket seat/unit/invoice/currency entry moved into the existing Finance ticket p
 Finance request page also has a top document-delivery jump button targeting the existing lower panel, with header scroll offset and keyboard focus target. No permission/data change.
 
 Validation: all Finance Web40 tests pass, including retained accepted-cost revision/retry, paid-cost lock and failure handling. Scoped lint/typecheck/production build and final CI gate develop merge; no live financial commands or local deployment. PR648.
+
+
+LOAD-ROUTE-SIDES-1004: PC-A adds both endpoint country/city filters in charter Load and disjoint outbound/eligible-return display. Explicit search snapshots both countries; changing country clears its city and results. Reservation manifest already provides four endpoint controls and route-relative direction, verified by existing tests. No backend/schema/runtime changes.
