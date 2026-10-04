@@ -5555,3 +5555,9 @@ Reserve Finance inbox Web component, existing Finance API client cost result typ
 TICKET-PAYMENT-INLINE-PRICE-1004 scope extended by user: Finance request wrapper adds top jump link to existing customer document-delivery panel. Reserve bounded finance-core-workspace.tsx wrapper presentation, existing permissions/data unchanged.
 
 TICKET-PAYMENT-INLINE-PRICE-1004 — READY_FOR_REVIEW: combined payment form, accepted cost preparation retained for retries, paid cost lock, per-currency source account/FX, existing partial payment/idempotency/receipt handling retained. Top delivery jump link targets existing lower panel with scroll offset/focus. Finance40 tests pass; final lint/type/build and exact-head CI gate user-authorized develop merge. Scoped locks RELEASED for review. No backend/schema/migration/dependency/runtime or actual payment changes. PR648.
+
+## LOAD-ROUTE-SIDES-1004 — PC-A — IN_PROGRESS
+
+Reserve Ticket Catalog flight-load model/grid and focused tests, Reservations manifest filter model/tests, own docs on codex/pc-a-load-route-sides-1004. Add origin/destination country/city filters, disjoint outbound/return rows and unique manifest offer direction. Existing public reference/ticket contracts unchanged; no schema/dependency/runtime changes. User authorizes develop merge.
+
+LOAD-ROUTE-SIDES-1004 scope finalized: Ticket Catalog only; Reservations existing route filters verified without changes. Focused17 tests pass; lint/type/build and CI gate authorized merge. Scoped locks released at candidate delivery.

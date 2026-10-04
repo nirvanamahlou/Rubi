@@ -9,17 +9,20 @@ export const countryFlightLoadOffers = (
   offers: readonly TicketOfferV1[],
   references: readonly Reference[],
   country: string,
-) =>
-  offers.filter(
+  originCountry = '',
+) => {
+  const matches = (cityId: string, countryId: string) =>
+    !countryId ||
+    references.some(
+      (ref) =>
+        ref.kind === 'city' && ref.id === cityId && ref.countryId === countryId,
+    );
+  return offers.filter(
     (offer) =>
-      !country ||
-      references.some(
-        (ref) =>
-          ref.kind === 'city' &&
-          ref.id === offer.destinationId &&
-          ref.countryId === country,
-      ),
+      matches(offer.originId, originCountry) &&
+      matches(offer.destinationId, country),
   );
+};
 
 export interface FlightLoadFilter {
   from: string;
@@ -142,4 +145,12 @@ export function flightLoadTotals(offers: readonly TicketOfferV1[]) {
     }),
     { total: 0, remaining: 0, sold: 0, reserved: 0 },
   );
+}
+
+export function disjointFlightLoadLegs(
+  outbounds: readonly TicketOfferV1[],
+  returns: readonly TicketOfferV1[],
+) {
+  const returnIds = new Set(returns.map((offer) => offer.id));
+  return outbounds.filter((offer) => !returnIds.has(offer.id));
 }

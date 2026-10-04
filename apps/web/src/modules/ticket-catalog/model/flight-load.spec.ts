@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import {
   companyFlightLegs,
+  disjointFlightLoadLegs,
   countryFlightLoadOffers,
   currentCompanyLoadOffers,
   validFlightLoadDates,
@@ -214,4 +215,29 @@ describe('company flight load', () => {
       validFlightLoadDates(rows, filter, new Date('2099-10-01T22:00:00Z')),
     ).toEqual({ from: '2099-10-02', to: '2099-10-03' });
   });
+});
+
+it('filters both endpoint countries and reverses their roles for reverse searches', () => {
+  const a = offer('out', '2099-10-01');
+  const b = offer('back', '2099-10-08', { originId: 'b', destinationId: 'a' });
+  const refs = [
+    {
+      kind: 'city' as const,
+      id: 'a',
+      name: 'A',
+      countryId: 'ir',
+      active: true,
+    },
+    {
+      kind: 'city' as const,
+      id: 'b',
+      name: 'B',
+      countryId: 'tr',
+      active: true,
+    },
+  ];
+  expect(countryFlightLoadOffers([a, b], refs, 'tr', 'ir')).toEqual([a]);
+  expect(countryFlightLoadOffers([a, b], refs, 'ir', 'tr')).toEqual([b]);
+  expect(disjointFlightLoadLegs([a, b], [b])).toEqual([a]);
+  expect(companyReturnLegs([a, b], a, false, '')).toEqual([b]);
 });
