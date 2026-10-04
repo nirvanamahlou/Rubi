@@ -300,10 +300,10 @@ export interface MasterOrganizationContactUnmasked {
 export interface MasterOrganizationAddressV1 {
   id: string;
   organizationId: string;
-  countryId: string;
-  countryName: string;
-  cityId: string;
-  cityName: string;
+  countryId: string | null;
+  countryName: string | null;
+  cityId: string | null;
+  cityName: string | null;
   label: string;
   postalCode: string | null;
   addressLine: string;
@@ -316,8 +316,8 @@ export interface MasterOrganizationAddressV1 {
 }
 
 export interface MasterOrganizationAddressMutationV1 {
-  countryId: string;
-  cityId: string;
+  countryId?: string | null;
+  cityId?: string | null;
   label: string;
   postalCode?: string | null;
   addressLine: string;

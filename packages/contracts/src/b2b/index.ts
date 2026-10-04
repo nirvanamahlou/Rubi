@@ -114,10 +114,10 @@ export interface B2bAgencyWorkspaceV1 {
   primaryAddress: {
     id: string;
     label: string;
-    countryId: string;
-    countryName: string;
-    cityId: string;
-    cityName: string;
+    countryId: string | null;
+    countryName: string | null;
+    cityId: string | null;
+    cityName: string | null;
     postalCode: string | null;
     addressLine: string;
     version: number;

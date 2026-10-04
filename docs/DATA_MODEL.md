@@ -682,3 +682,7 @@ Reservations purchase calculation snapshots optionally retain `chargeablePasseng
 ## BROKER-LEADERS-BOARD-1004
 
 MasterBroker gains optional airport pickup boardText (300 characters) and the existing AES-GCM primary phone envelope pattern. MasterBrokerCity owns unique (brokerId, cityId) FK links; cityId remains the first-city legacy projection. The additive migration backfills historical single-city links. MasterLeader broker ownership is reused: create/update/deactivate and broker CAS execute in the same transaction; leader versions protect concurrent standalone edits. Removed leaders retain identity. Public projections and audit omit encryption envelopes; only the existing Reservations-authorized audited leader contact endpoint returns full phone and optional broker Board.
+
+## B2B-ADDRESS-INPUT-1004 — optional organization-address geography
+
+Master Data organization addresses retain required bounded addressLine and organization ownership. countryId/cityId may both be null for a free-text address; complete pairs retain restrictive country/composite-city FKs and canonical city-country validation. A database paired-nullability check rejects partial pairs. Existing geography is not rewritten; PATCH omission preserves it and explicit both-null clears it. MasterData address and B2B primary-address projections expose nullable geography, consumed without fabricated locations. No address authority, audit/version, branch, permission or retention changes.
