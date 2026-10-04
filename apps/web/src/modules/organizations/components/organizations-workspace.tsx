@@ -81,6 +81,7 @@ import {
   saveOrganizationChanges,
   type OrganizationDeletionTarget,
 } from '../model/record-mutations';
+import { useOrganizationContactDisclosures } from './use-organization-contact-disclosures';
 
 type RequestState =
   'loading' | 'ready' | 'empty' | 'unauthorized' | 'forbidden' | 'error';
@@ -111,6 +112,11 @@ export function OrganizationsWorkspace() {
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
+  const contactDisclosures = useOrganizationContactDisclosures({
+    active: profileOpen && Boolean(selected),
+    organizationId: selected?.id ?? '',
+    contacts,
+  });
   useSuppressHrConnections(true);
   const openedOrganization = useRef<string | null>(null);
   const historyRecords = useRef(new Map<string, MasterDataRecord>());
@@ -925,64 +931,121 @@ export function OrganizationsWorkspace() {
                   tone="warning"
                 />
               ) : null}
+              {contactDisclosures.status ? (
+                <p className="panel-note" role="status">
+                  {contactDisclosures.status}
+                </p>
+              ) : null}
               {contactsLoading ? (
                 <Skeleton className="h-16 w-full" />
               ) : contacts.length ? (
-                contacts.map((contact) => (
-                  <div
-                    className="flex flex-wrap items-center gap-3 rounded-xl border p-3"
-                    key={contact.id}
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <span className="block font-semibold">
-                        {contact.name}
-                      </span>
-                      <span>
-                        {attribute(contact, 'jobTitle') || 'سمت ثبت نشده'}
-                      </span>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1">
-                        {['phoneMasked', 'emailMasked'].map((key) => {
-                          const value = attribute(contact, key, '').trim();
-                          return value && value !== '—' && value !== '-' ? (
-                            <span key={key} dir="ltr">
-                              {value}
-                            </span>
-                          ) : null;
-                        })}
+                contacts.map((contact) => {
+                  const disclosed = contactDisclosures.disclosure(contact.id);
+                  const maskedPhone = attribute(
+                    contact,
+                    'phoneMasked',
+                    '',
+                  ).trim();
+                  const maskedEmail = attribute(
+                    contact,
+                    'emailMasked',
+                    '',
+                  ).trim();
+                  const phone = disclosed
+                    ? disclosed.phone?.trim() || null
+                    : maskedPhone && maskedPhone !== '—' && maskedPhone !== '-'
+                      ? maskedPhone
+                      : null;
+                  const email = disclosed
+                    ? disclosed.email?.trim() || null
+                    : maskedEmail && maskedEmail !== '—' && maskedEmail !== '-'
+                      ? maskedEmail
+                      : null;
+                  const disclosureFailure = contactDisclosures.failure(
+                    contact.id,
+                  );
+                  return (
+                    <div
+                      className="flex flex-wrap items-center gap-3 rounded-xl border p-3"
+                      key={contact.id}
+                    >
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <span className="block font-semibold">
+                          {contact.name}
+                        </span>
+                        <span>
+                          {attribute(contact, 'jobTitle') || 'سمت ثبت نشده'}
+                        </span>
+                        {phone || email ? (
+                          <dl className="grid min-w-0 gap-1 text-sm">
+                            {phone ? (
+                              <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2">
+                                <dt className="text-muted-foreground">تلفن</dt>
+                                <dd
+                                  className="min-w-0 break-all text-left"
+                                  dir="ltr"
+                                >
+                                  {phone}
+                                </dd>
+                              </div>
+                            ) : null}
+                            {email ? (
+                              <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-2">
+                                <dt className="text-muted-foreground">ایمیل</dt>
+                                <dd
+                                  className="min-w-0 break-all text-left"
+                                  dir="ltr"
+                                >
+                                  {email}
+                                </dd>
+                              </div>
+                            ) : null}
+                          </dl>
+                        ) : (
+                          <p className="panel-note">
+                            اطلاعات تماسی ثبت نشده است.
+                          </p>
+                        )}
+                        {disclosureFailure ? (
+                          <p className="form-error text-sm" role="status">
+                            {disclosureFailure} اطلاعات پوشیده نمایش داده شده
+                            است.
+                          </p>
+                        ) : null}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          title="ویرایش مخاطب"
+                          aria-label={`ویرایش مخاطب ${contact.name}`}
+                          disabled={!permissions.includes('master_data.update')}
+                          onClick={() =>
+                            setContactForm({ mode: 'edit', record: contact })
+                          }
+                        >
+                          <Pencil aria-hidden="true" className="size-4" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          title="حذف دائمی مخاطب"
+                          disabled={!permissions.includes('master_data.delete')}
+                          onClick={() =>
+                            setDeleteTarget({
+                              resource: 'organization-contacts',
+                              record: contact,
+                              organizationId: selected.id,
+                            })
+                          }
+                          aria-label={`حذف دائمی مخاطب ${contact.name}`}
+                        >
+                          <Trash2 aria-hidden="true" className="size-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        title="ویرایش مخاطب"
-                        aria-label={`ویرایش مخاطب ${contact.name}`}
-                        disabled={!permissions.includes('master_data.update')}
-                        onClick={() =>
-                          setContactForm({ mode: 'edit', record: contact })
-                        }
-                      >
-                        <Pencil aria-hidden="true" className="size-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="destructive"
-                        title="حذف دائمی مخاطب"
-                        disabled={!permissions.includes('master_data.delete')}
-                        onClick={() =>
-                          setDeleteTarget({
-                            resource: 'organization-contacts',
-                            record: contact,
-                            organizationId: selected.id,
-                          })
-                        }
-                        aria-label={`حذف دائمی مخاطب ${contact.name}`}
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               ) : !contactsError ? (
                 <p className="text-sm text-muted-foreground">
                   تماس ثبت‌شده‌ای وجود ندارد.

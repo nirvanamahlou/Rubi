@@ -4524,3 +4524,7 @@ Screenshot691: remove the three hub-card descriptions beneath Finance/settlement
 ## 2026-10-04 — B2B-PROFILE-COPY-1004 — PC-B
 
 Remove specified explanatory copy from360 profile/branches/signatories and hide display-order readout. Edit fields and stored order remain intact; no functionality/API/data/permission change. Persistent worker handles bounded Organizations presentation; lead reviews and owns user-authorized push/develop merge. Required checks and CI gate delivery; telemetry unavailable.
+
+## 2026-10-04 — B2B-CONTACT-DISPLAY-1004 — PC-B
+
+Screenshot692 requests readable full representative contacts and icon-only address controls. Full values are backend-masked; existing audited MasterData unmask owner contract remains sole disclosure source and permission unchanged. Frozenv1 requires fresh context, no-store and delayed-result isolation; independent finalreview gates delivery. No migration/dependency/data/permission changes. Current task owns bounded Organizations consumer and existing MasterData Web client method.
