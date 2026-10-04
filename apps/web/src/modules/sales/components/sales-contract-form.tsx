@@ -15,8 +15,6 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type {
   HotelRoomRateV1,
-  MasterDataRecord,
-  MasterDataResource,
   SalesServiceKind,
   SalesAccommodationKind,
 } from '@nora/contracts';
@@ -31,7 +29,12 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import { AUTH_SESSION_RECOVERED_EVENT } from '@/lib/auth-session';
+import {
+  emptySalesReferences,
+  loadSalesReferences,
+  type SalesReferenceFailure,
+} from '../model/sales-reference-loader';
 import { salesApi } from '../api/client';
 import { TicketOfferPicker } from './ticket-offer-picker';
 import { ContractFlightEditor } from './contract-flight-editor';
@@ -157,23 +160,13 @@ export function SalesContractForm() {
   const [hotelRoomRates, setHotelRoomRates] = useState<
     readonly HotelRoomRateV1[]
   >([]);
-  const [references, setReferences] = useState<{
-    countries: readonly MasterDataRecord[];
-    cities: readonly MasterDataRecord[];
-    hotels: readonly MasterDataRecord[];
-    roomTypes: readonly MasterDataRecord[];
-    visaServices: readonly MasterDataRecord[];
-    banks: readonly MasterDataRecord[];
-    currencies: readonly MasterDataRecord[];
-  }>({
-    countries: [],
-    cities: [],
-    hotels: [],
-    roomTypes: [],
-    visaServices: [],
-    banks: [],
-    currencies: [],
-  });
+  const [references, setReferences] = useState(emptySalesReferences);
+  const referenceCache = useRef(emptySalesReferences);
+  const [referenceFailures, setReferenceFailures] = useState<
+    SalesReferenceFailure[]
+  >([]);
+  const [referencesBusy, setReferencesBusy] = useState(true);
+  const [referenceAttempt, setReferenceAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
@@ -286,64 +279,35 @@ export function SalesContractForm() {
           }
         }, 0)
       : undefined;
-    const query = {
-      search: '',
-      status: 'active' as const,
-      sortBy: 'name' as const,
-      sortDirection: 'asc' as const,
-      page: 1,
-      pageSize: 100,
-    };
-    const loadReferences = async (resource: MasterDataResource) => {
-      const data: MasterDataRecord[] = [];
-      for (let page = 1; ; page++) {
-        const response = await masterDataApi.list(resource, { ...query, page });
-        data.push(...response.data);
-        if (!response.data.length || data.length >= response.meta.total)
-          return { data };
-      }
-    };
-    void Promise.allSettled([
-      loadReferences('countries'),
-      loadReferences('cities'),
-      loadReferences('hotels'),
-      loadReferences('room-types'),
-      loadReferences('visa-services'),
-      loadReferences('banks'),
-      loadReferences('currencies'),
-    ]).then((results) => {
-      const dataAt = (index: number): readonly MasterDataRecord[] => {
-        const result = results[index];
-        if (result?.status === 'fulfilled') return result.value.data ?? [];
-        return [];
-      };
-      const [
-        countries = [],
-        cities = [],
-        hotels = [],
-        roomTypes = [],
-        visaServices = [],
-        banks = [],
-        currencies = [],
-      ] = [0, 1, 2, 3, 4, 5, 6].map(dataAt);
-      setReferences({
-        countries,
-        cities,
-        hotels,
-        roomTypes,
-        visaServices,
-        banks,
-        currencies,
-      });
-      setState((current) => withSalesRouteDefaults(current, countries, cities));
-      if (results.some((result) => result.status === 'rejected'))
-        setError(
-          'بخشی از اطلاعات پایه دریافت نشد؛ گزینه‌های دریافت‌شده، از جمله هتل‌های فعال، همچنان قابل استفاده‌اند.',
-        );
-    });
     return () => {
       if (restoreTimer !== undefined) globalThis.clearTimeout(restoreTimer);
     };
+  }, []);
+  useEffect(() => {
+    let cancelled = false;
+    void loadSalesReferences().then(({ references: loaded, failures }) => {
+      if (cancelled) return;
+      const next = { ...referenceCache.current, ...loaded };
+      referenceCache.current = next;
+      setReferences(next);
+      setReferenceFailures(failures);
+      setReferencesBusy(false);
+      setState((current) =>
+        withSalesRouteDefaults(current, next.countries, next.cities),
+      );
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [referenceAttempt]);
+  useEffect(() => {
+    const recover = () => {
+      setReferencesBusy(true);
+      setReferenceAttempt((attempt) => attempt + 1);
+    };
+    window.addEventListener(AUTH_SESSION_RECOVERED_EVENT, recover);
+    return () =>
+      window.removeEventListener(AUTH_SESSION_RECOVERED_EVENT, recover);
   }, []);
   useEffect(() => {
     globalThis.localStorage?.setItem(
@@ -740,6 +704,28 @@ export function SalesContractForm() {
           </li>
         ))}
       </ol>
+      {referenceFailures.length ? (
+        <div className="grid gap-2">
+          <Alert
+            tone="error"
+            title="دریافت اطلاعات پایه کامل نشد"
+            description={`دریافت این بخش‌ها ناموفق بود: ${referenceFailures.map(({ label, status }) => label + (status === 401 ? ' (نیاز به ورود مجدد)' : status === 403 ? ' (عدم دسترسی)' : '')).join('، ')}. گزینه‌های دریافت‌شده همچنان قابل استفاده‌اند.`}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            disabled={referencesBusy}
+            onClick={() => {
+              setReferencesBusy(true);
+              setReferenceAttempt((attempt) => attempt + 1);
+            }}
+          >
+            {referencesBusy
+              ? 'در حال دریافت اطلاعات پایه…'
+              : 'تلاش مجدد دریافت اطلاعات پایه'}
+          </Button>
+        </div>
+      ) : null}
       {error ? (
         <Alert tone="error" title="عملیات کامل نشد" description={error} />
       ) : null}
