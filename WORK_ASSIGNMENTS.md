@@ -1,3 +1,8 @@
+## CABIN-FILTER-ENGLISH-1004 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-cabin-filter-english-1004` from origin/develop. Reserve Cabin filter option presentation, the Cabin-only labels in shared `packages/contracts/src/master-data/catalog-filters.ts`, focused tests and own status entries. English option labels only; preserve canonical request values, Persian field/KPI labels, forms and unrelated filters. Existing producer filter metadata and consumer Web ship together; no wire/API/schema/dependency/runtime change. Lead reviews, pushes and merges develop after checks.
+- The canonical Cabin filter descriptor now presents `Economy`, `Premium Economy`, `Business` and `First Class` while retaining enum values, its existing descriptor title, original backend slot and effective list/export query. Persian Cabin form/table/KPI labels, form choices, other filters and backend behavior remain unchanged. Focused 78 and all 607 Master Data Web tests, Contracts build, scoped lint/format, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA. Bounded locks release with commit.
+
 ## CABIN-CREATE-CHECK-1004 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-cabin-create-check-1004` from origin/develop. Reserve bounded Cabin Classes form/payload/API/repository regression paths and own docs only. Verify new class creation using synthetic data and fix proven existing-path defects; preserve canonical enums, required booking code, unique constraints, permissions, legacy records and other resources. No schema/migration/dependency/runtime changes without escalation. Lead owns review/push/develop merge after checks.
