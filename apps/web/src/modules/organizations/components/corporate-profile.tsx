@@ -42,7 +42,6 @@ const sections = [
     icon: Building2,
     accent: '#1674e8',
     tint: '#eaf3ff',
-    description: undefined,
     tabs: [
       ['profile', 'مشخصات و نقش‌ها'],
       ['branches', 'شعب'],
@@ -57,7 +56,6 @@ const sections = [
     icon: FileText,
     accent: '#e98923',
     tint: '#fff4e7',
-    description: 'قرارداد چارچوب، اعتبار و تضمین، نرخ توافقی، تخفیف و پورسانت',
     tabs: [
       ['framework', 'قرارداد چارچوب'],
       ['credit', 'اعتبار و تضمین'],
@@ -72,7 +70,6 @@ const sections = [
     icon: Wallet,
     accent: '#1689b7',
     tint: '#e9f8ff',
-    description: 'صورت‌حساب، فاکتور تجمیعی، دریافت، چک، تسویه و مغایرت',
     tabs: [
       ['statement', 'صورتحساب دوره‌ای'],
       ['invoice', 'فاکتور تجمیعی'],
@@ -88,7 +85,6 @@ const sections = [
     icon: ChartNoAxesCombined,
     accent: '#596f91',
     tint: '#f0f4f8',
-    description: 'خروجی مجاز و تاریخچه تغییرات و دسترسی حساس',
     tabs: [['reports', 'گزارش فعالیت‌ها']],
   },
 ] as const;
@@ -365,15 +361,7 @@ export function CorporateProfile({
             aria-label={`بخش‌های پرونده ${entityLabel}`}
           >
             {sections.map(
-              ({
-                id,
-                title: label,
-                icon: Icon,
-                accent,
-                tint,
-                description,
-                tabs,
-              }) => (
+              ({ id, title: label, icon: Icon, accent, tint, tabs }) => (
                 <article
                   className="hub-card"
                   key={id}
@@ -387,7 +375,6 @@ export function CorporateProfile({
                     </div>
                     <div className="hub-copy">
                       <h3>{label}</h3>
-                      <p>{description}</p>
                     </div>
                   </div>
                   <div className="pills">
