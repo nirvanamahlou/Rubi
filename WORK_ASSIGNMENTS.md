@@ -5490,8 +5490,16 @@ B2B-SIGNATORY-UPLOAD-1004 independent review bf314973: blocking UPLOAD-R3-001 sa
 
 B2B-SIGNATORY-UPLOAD-1004 repair candidate: stable actor/editor mount retains upload across same-identity focus refresh, fresh request context restarts eligibility polling, operation save gate retains busy/uncertain state; confidential code native constraint removed, upload-only validation preserved. Actual panel key wiring and lifecycle regressions included. Organizations191 tests, scoped lint/format/typecheck and55-route Web4191 build pass. UPLOAD-R3-001/002 await refreshed independent candidate review; no backend changes.
 
+## B2B-CREDIT-COPY-1004 — PC-B — IN_PROGRESS
+
+Branch codex/pc-b-b2b-credit-copy-1004 from origin/develop1a3bb936 in reused clean Rubi-subtitle-runtime lane. Remove repeated section titles/descriptions within agency credit/guarantee subviews; preserve page title/tabs/form labels/alerts/behavior. R0/C2 bounded UI copy, same persistent worker; no backend/API/schema/permission/data/dependency changes. Own Organizations credit subview component presentation and own docs only. Separate from pending dirty agreement-upload task in Rubi-b2b-crm-connections; no edits to its agreement-terms-editor. User authorizes push/develop merge. Telemetry unknown.
+
+B2B-CREDIT-COPY-1004 candidate: exact one-component presentational diff reviewed by lead; policy/guarantees/temporary toolbar text removed. Organizations191 tests, scoped lint/format/typecheck pass; final clean build and CI gate merge. Persistent worker, no new tests mirroring copy-only implementation; usage unknown. Bounded locks release at delivery.
+
 ## SALES-EXPERT-NOTE-1004 — PC-A — IN_PROGRESS
 
 Branch codex/pc-a-sales-expert-note-1004 from origin/develop@e9f69ea0. Reserve Sales contract-form pricing-step presentation, Reservations inbox workspace/CSS and focused regressions plus own docs. Reuse existing reservationNote public service metadata and hasNotes projection: producer Sales/PC-A, consumer Reservations/PC-A, no contract/schema/migration/dependency changes. Move existing optional sales reservation note to pricing as expert note; second destination cell remains yellow even when selected. User authorizes develop merge. Preserve dirty primary checkout; no local rollout.
 
 SALES-EXPERT-NOTE-1004 delivered: existing optional expert reservation note moved into price/payment step; existing pricing note separate. Yellow second destination cell retains visible marker under selection and tooltip explains notes. Public persistence/read projection unchanged. 68 focused tests, scoped ESLint, formatting and Web typecheck pass; production build and CI gate merge. Scoped locks RELEASED for review; no API/schema/migration/dependency/runtime change.
+
+B2B-CREDIT-COPY-1004 validation: final clean Webpack production build55/55 passed after local dependency junction repair. First CI allfourgates passed; only append-only docs conflicts resolved with concurrent PC-A entries preserved. Source diff remains one UI component. Scoped locks RELEASED at delivery; refreshed CI gates merge.
