@@ -43,6 +43,25 @@ describe('buildMasterDataXlsx', () => {
     expect(worksheet).not.toContain('<f>');
   });
 
+  it('creates a header-only workbook when filters match no records', () => {
+    const files = unzipSync(
+      buildMasterDataXlsx({
+        resource: 'countries',
+        columns: ['code', 'name', 'englishName', 'status', 'updatedAt'],
+        records: [],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      }),
+    );
+    const worksheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+
+    expect(worksheet).toContain('<dimension ref="A1:E1"/>');
+    expect(worksheet).toContain('<row r="1">');
+    expect(worksheet).not.toContain('<row r="2">');
+    expect(worksheet).toContain('کد سیستمی');
+    expect(worksheet).toContain('آخرین تغییر');
+  });
+
   it('removes only XML-forbidden C0 controls and preserves allowed whitespace and DEL', () => {
     const files = unzipSync(
       buildMasterDataXlsx({

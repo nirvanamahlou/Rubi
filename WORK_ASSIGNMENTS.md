@@ -1,3 +1,7 @@
+## MASTER-DATA-XLSX-DOWNLOAD-1004 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-master-data-xlsx-download-1004` from origin/develop. Master Data now rejects empty, wrong-MIME and non-ZIP HTTP 200 responses before saving, while all nine Excel consumers share a bounded 60-second object-URL lifetime and safe anchor cleanup. Auth, permissions, branch scope, filters, formula safety, API/schema/contracts/dependencies/database/runtime remain unchanged. The immediate-revocation timing is a verified code weakness, not a claimed reproduction of the user's exact file. Focused Web 28, focused API 38 and all 596 Master Data Web tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. Independent openpyxl validation opened populated 2x5 and header-only 1x5 fixtures with exact Persian headers/values. No authenticated browser/runtime or real-data QA; bounded locks release with commit. Lead owns review/commit/push/develop merge.
+
 ## SALES-RANGE-FLOATING-1004 — PC-A — READY_FOR_REVIEW
 
 - Reserve Sales Web required future date range, floating-ticket cancellation, focused tests, and own status entries on `codex/pc-a-sales-range-floating-1004`. No API/schema/migration/dependency or shared UI change. User authorizes tests and develop merge.

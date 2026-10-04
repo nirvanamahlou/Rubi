@@ -700,12 +700,7 @@ export function MasterDataAccommodationWorkspace() {
         locale: 'fa-IR',
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       });
-      const url = URL.createObjectURL(response.blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = response.fileName;
-      anchor.click();
-      URL.revokeObjectURL(url);
+      downloadFile(response.blob, response.fileName);
       setNotice('خروجی Excel فیلترشده دریافت شد.');
     } catch (error) {
       setNotice(
@@ -1524,3 +1519,4 @@ export function MasterDataAccommodationWorkspace() {
     </div>
   );
 }
+import { downloadFile } from '../api/download-file';
