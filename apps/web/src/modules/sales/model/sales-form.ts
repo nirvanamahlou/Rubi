@@ -852,11 +852,9 @@ export function salesPayload(
         if (service.kind === 'FLIGHT' && catalog)
           service.metadata = {
             ...service.metadata,
-            catalogSaleQuote: {
-              version: 1,
-              currencyCode: catalog.currencyCode,
-              amount: catalog.daySale.amount,
-            },
+            catalogSaleQuoteVersion: 1,
+            catalogSaleQuoteCurrency: catalog.currencyCode,
+            catalogSaleQuoteAmount: catalog.daySale.amount,
           };
       }
     }

@@ -99,9 +99,9 @@ it('carries an independent catalog quote while persisting the agreed sale amount
     catalogSalePricing: { 'flight-outbound': [catalog] },
   });
   expect(payload.services[0]!.pricing![0]!.daySale.amount).toBe('95');
-  expect(payload.services[0]!.metadata!.catalogSaleQuote).toEqual({
-    version: 1,
-    amount: '100',
-    currencyCode: 'IRR',
+  expect(payload.services[0]!.metadata).toMatchObject({
+    catalogSaleQuoteVersion: 1,
+    catalogSaleQuoteAmount: '100',
+    catalogSaleQuoteCurrency: 'IRR',
   });
 });

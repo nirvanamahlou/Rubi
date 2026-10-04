@@ -9,7 +9,9 @@ const price = {
 it('keeps catalog freshness check separate from an agreed customer price', () => {
   expect(
     expectedTicketSale(price, {
-      catalogSaleQuote: { version: 1, amount: '100', currencyCode: 'IRR' },
+      catalogSaleQuoteVersion: 1,
+      catalogSaleQuoteAmount: '100',
+      catalogSaleQuoteCurrency: 'IRR',
     }),
   ).toEqual({ amount: '100', currencyCode: 'IRR' });
   expect(expectedTicketSale(price)).toEqual({
@@ -18,11 +20,12 @@ it('keeps catalog freshness check separate from an agreed customer price', () =>
   });
 });
 it('rejects malformed quote metadata rather than bypassing the public catalog guard', () => {
-  for (const catalogSaleQuote of [
-    null,
-    {},
-    { version: 1, amount: 'oops', currencyCode: 'IRR' },
-    { version: 1, amount: '-1', currencyCode: 'IRR' },
-  ])
-    expect(() => expectedTicketSale(price, { catalogSaleQuote })).toThrow();
+  for (const amount of [null, undefined, 'oops', '-1'])
+    expect(() =>
+      expectedTicketSale(price, {
+        catalogSaleQuoteVersion: 1,
+        catalogSaleQuoteAmount: amount,
+        catalogSaleQuoteCurrency: 'IRR',
+      }),
+    ).toThrow();
 });

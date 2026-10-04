@@ -5,17 +5,16 @@ export function expectedTicketSale(
   price: SalesServicePricingV1,
   metadata?: Readonly<Record<string, unknown>> | null,
 ) {
-  const quote = metadata?.catalogSaleQuote;
-  if (quote === undefined)
+  const version = metadata?.catalogSaleQuoteVersion;
+  if (version === undefined)
     return { amount: price.daySale.amount, currencyCode: price.currencyCode };
+  const quote = {
+    amount: metadata?.catalogSaleQuoteAmount,
+    currencyCode: metadata?.catalogSaleQuoteCurrency,
+  };
   if (
-    !quote ||
-    typeof quote !== 'object' ||
-    !('version' in quote) ||
-    quote.version !== 1 ||
-    !('amount' in quote) ||
+    version !== 1 ||
     typeof quote.amount !== 'string' ||
-    !('currencyCode' in quote) ||
     typeof quote.currencyCode !== 'string' ||
     !/^[A-Z]{3}$/.test(quote.currencyCode)
   )
