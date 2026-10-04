@@ -4584,3 +4584,7 @@ Remove four user-specified guidance texts from signatory form; fields, currency 
 ## 2026-10-04 — B2B-SIGNATORY-UPLOAD-1004 — PC-B
 
 In-form authority proof upload requested with persisted notes and manual activation after upload. Existing backend has no human-review gate: antivirus CLEAN, complete/unexpired exact-org/branch proof remains mandatory. Frozenv1 consumer-only implementation preserves Documents/B2B policy and adds bounded readiness refresh plus stale-upload/save protection. Independent review and required checks gate delivery. No schema/dependency/permission changes.
+
+## 2026-10-04 — B2B-CREDIT-COPY-1004 — PC-B
+
+Removed repeated toolbar title and explanatory copy from policy, guarantee and temporary-credit subviews. Main dossier title, tabs, actions, filters, alerts and forms retain behavior. One Organizations component changes; no API/schema/permission/dependency/data changes. Organizations191 tests, scoped lint/format and Web typecheck pass. Local Webpack compile/typecheck pass; final clean static generation and CI gate user-authorized develop merge. Prior pending agreement-upload source remains isolated and untouched. Telemetry unavailable.
