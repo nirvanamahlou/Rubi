@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   CONTACT_UNMASK_PERMISSION,
+  hasCurrentContactDisclosurePermission,
   loadOrganizationContactDisclosures,
   organizationContactDisclosureContext,
   visibleOrganizationContactDisclosure,
@@ -46,14 +47,70 @@ describe('organization contact disclosure boundary', () => {
     expect(context({ active: false })).toBeUndefined();
   });
 
-  it('filters contacts that are not bound to the current organization', () => {
+  it('hides cleartext immediately when the current access provider revokes permission', () => {
+    expect(hasCurrentContactDisclosurePermission(authorized, authorized)).toBe(
+      true,
+    );
+    const currentContext = context()!;
+    const snapshot = {
+      contextKey: currentContext.key,
+      values: {
+        [contact.id]: {
+          id: contact.id,
+          phone: '09121234567',
+          email: 'person@example.test',
+        },
+      },
+      failures: {},
+    };
+    expect(
+      visibleOrganizationContactDisclosure(
+        snapshot,
+        currentContext.key,
+        contact.id,
+      ),
+    ).toBeDefined();
+
+    const providerAllows = hasCurrentContactDisclosurePermission(
+      authorized,
+      [],
+    );
+    const revokedContext = context({
+      permissions: providerAllows ? authorized : [],
+    });
+    expect(revokedContext).toBeUndefined();
+    expect(
+      visibleOrganizationContactDisclosure(
+        snapshot,
+        revokedContext?.key ?? '',
+        contact.id,
+      ),
+    ).toBeUndefined();
+    expect(hasCurrentContactDisclosurePermission(authorized, undefined)).toBe(
+      false,
+    );
+  });
+
+  it('never requests disclosure for contacts outside the current organization', async () => {
     const result = context({
       contacts: [
         contact,
         { id: 'contact-b', version: 1, organizationId: 'organization-b' },
       ],
-    });
+    })!;
     expect(result?.contacts).toEqual([contact]);
+    const request = vi.fn(async (id: string) => ({
+      id,
+      phone: '09121234567',
+      email: null,
+    }));
+    await loadOrganizationContactDisclosures({
+      context: result,
+      request,
+      isCurrent: (key) => key === result.key,
+    });
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith(contact.id, 'branch-a');
   });
 
   it('changes identity for session, organization and contact version changes', () => {

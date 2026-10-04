@@ -6,6 +6,17 @@ import type {
 export const CONTACT_UNMASK_PERMISSION =
   'master_data.sensitive_contact.unmask' as const;
 
+export function hasCurrentContactDisclosurePermission(
+  dossierPermissions: readonly IamPermissionCode[],
+  accessPermissions: readonly string[] | null | undefined,
+) {
+  return (
+    Array.isArray(accessPermissions) &&
+    dossierPermissions.includes(CONTACT_UNMASK_PERMISSION) &&
+    accessPermissions.includes(CONTACT_UNMASK_PERMISSION)
+  );
+}
+
 export interface OrganizationContactIdentity {
   id: string;
   version: number;

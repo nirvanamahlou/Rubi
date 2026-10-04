@@ -7,8 +7,10 @@ import type {
 import { useEffect, useMemo, useState } from 'react';
 
 import { masterDataApi } from '@/modules/master-data/api/client';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import {
   CONTACT_UNMASK_PERMISSION,
+  hasCurrentContactDisclosurePermission,
   loadOrganizationContactDisclosures,
   organizationContactDisclosureContext,
   visibleOrganizationContactDisclosure,
@@ -32,6 +34,11 @@ export function useOrganizationContactDisclosures(input: {
 }) {
   const { branchId, permissions, sessionContextKey, sessionError } =
     useDossierBranch();
+  const accessPermissions = useAccessPermissions();
+  const canUnmask = hasCurrentContactDisclosurePermission(
+    permissions,
+    accessPermissions,
+  );
   const identities = useMemo(
     () =>
       input.contacts.map(({ id, version, attributes }) => ({
@@ -48,7 +55,7 @@ export function useOrganizationContactDisclosures(input: {
         organizationId: input.organizationId,
         branchId,
         sessionContextKey,
-        permissions,
+        permissions: canUnmask ? [CONTACT_UNMASK_PERMISSION] : [],
         contacts: identities,
       }),
     [
@@ -56,7 +63,7 @@ export function useOrganizationContactDisclosures(input: {
       identities,
       input.active,
       input.organizationId,
-      permissions,
+      canUnmask,
       sessionContextKey,
     ],
   );
@@ -99,7 +106,6 @@ export function useOrganizationContactDisclosures(input: {
   }, [context, identities.length]);
 
   const visibleState = state.contextKey === contextKey ? state : emptyState;
-  const canUnmask = permissions.includes(CONTACT_UNMASK_PERMISSION);
   const mismatchedContacts = useMemo(
     () =>
       new Set(
@@ -131,6 +137,8 @@ export function useOrganizationContactDisclosures(input: {
     if (sessionError) status = sessionError;
     else if (!sessionContextKey)
       status = 'در حال بررسی مجوز نمایش اطلاعات تماس…';
+    else if (!Array.isArray(accessPermissions))
+      status = 'دسترسی نمایش کامل اطلاعات تماس در حال بررسی است.';
     else if (!canUnmask)
       status =
         'اطلاعات تماس مطابق سطح دسترسی به‌صورت پوشیده نمایش داده شده است.';
