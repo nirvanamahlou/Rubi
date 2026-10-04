@@ -4576,3 +4576,9 @@ Screenshot693: remove signatory action text and internal-branch display, align d
 ## 2026-10-04 — B2B-SIGNATORY-FORM-COPY-1004 — PC-B
 
 Remove four user-specified guidance texts from signatory form; fields, currency dependency, proof validity, inactive save and activation enforcement stay intact. Bounded R0/C1 UI copy assigned to persistent worker. Required checks/CI gate user-authorized push/develop merge. No API/data/schema/permission/dependency changes; usage unavailable.
+
+## 2026-10-04 — SALES-VALIDATION-REFRESH-1004 — PC-A
+
+International Sales registration recovery no longer sends blank hidden local names when valid passport names exist. Pending/duplicate recovery and existing-person updates share a compatible name fallback while preserving nonblank local names, validation, CAS and duplicate protection. Customers Web shows known invalid field labels in Persian from the existing error envelope. No API/schema/migration/dependency/data change. Handoff: docs/tasks/SALES-VALIDATION-REFRESH-1004.md.
+
+Validation: focused47 tests, all Sales/Customers assertions after bounded timeout rerun, scoped lint/formatting and Web typecheck pass. Production build/final CI gate develop merge. The unrelated ticket-price SSR test exceeded5s on this host and passed with one worker/30s process-local limit; repository test configuration was unchanged. Scoped locks released for review.
