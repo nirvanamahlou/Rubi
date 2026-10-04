@@ -140,10 +140,10 @@ export function getMasterDataColumnFilters(
       return [
         english,
         enumField('Cabin', 'cabinType', [
-          ['ECONOMY', 'اقتصادی'],
-          ['PREMIUM_ECONOMY', 'اقتصادی ممتاز'],
-          ['BUSINESS', 'تجاری'],
-          ['FIRST', 'فرست کلاس'],
+          ['ECONOMY', 'Economy'],
+          ['PREMIUM_ECONOMY', 'Premium Economy'],
+          ['BUSINESS', 'Business'],
+          ['FIRST', 'First Class'],
         ]),
       ];
     case 'baggage-rules':

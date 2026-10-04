@@ -193,7 +193,7 @@ describe('MasterDataService', () => {
     );
   });
 
-  it('allows an omitted English cabin title and uses the booking code as its internal name', async () => {
+  it('accepts the visible Cabin form payload and normalizes its enum', async () => {
     const repository = {
       codeExists: vi.fn().mockResolvedValue(false),
       fieldExists: vi.fn().mockResolvedValue(false),
@@ -210,29 +210,73 @@ describe('MasterDataService', () => {
 
     await service.create(
       'cabin-classes',
-      { englishName: '  Economy  ', bookingCode: 'y' },
+      {
+        englishName: '  Business  ',
+        bookingCode: 'c',
+        cabinType: 'business',
+      },
       actor,
     );
 
     expect(repository.create).toHaveBeenCalledWith(
       'cabin-classes',
       expect.objectContaining({
-        englishName: 'Economy',
-        name: 'Economy',
-        bookingCode: 'Y',
+        englishName: 'Business',
+        name: 'Business',
+        bookingCode: 'C',
+        cabinType: 'BUSINESS',
         displayOrder: 0,
       }),
       actor.userId,
       actor.branchIds[0],
     );
+  });
 
-    await service.create('cabin-classes', { bookingCode: 'J' }, actor);
-    expect(repository.create).toHaveBeenLastCalledWith(
+  it('persists the exact visible Cabin form payload without an English title', async () => {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      fieldExists: vi.fn().mockResolvedValue(false),
+      create: vi
+        .fn()
+        .mockImplementation(
+          async (_resource: string, data: Record<string, unknown>) => ({
+            ...row,
+            ...data,
+          }),
+        ),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+
+    const created = await service.create(
       'cabin-classes',
-      expect.objectContaining({ name: 'J', bookingCode: 'J' }),
+      { bookingCode: 'J', cabinType: 'ECONOMY' },
+      actor,
+    );
+    expect(repository.create).toHaveBeenCalledWith(
+      'cabin-classes',
+      expect.not.objectContaining({ englishName: expect.anything() }),
       actor.userId,
       actor.branchIds[0],
     );
+    expect(repository.create).toHaveBeenCalledWith(
+      'cabin-classes',
+      expect.objectContaining({
+        name: 'J',
+        bookingCode: 'J',
+        cabinType: 'ECONOMY',
+      }),
+      actor.userId,
+      actor.branchIds[0],
+    );
+    expect(created).toMatchObject({
+      data: {
+        name: 'J',
+        attributes: {
+          bookingCode: 'J',
+          cabinType: 'ECONOMY',
+        },
+      },
+    });
   });
 
   it('accepts a country without an English title', async () => {

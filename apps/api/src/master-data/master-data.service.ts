@@ -406,7 +406,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'model',
     'manufacturerModel',
   ],
-  'cabin-classes': ['englishName', 'bookingCode', 'displayOrder'],
+  'cabin-classes': ['englishName', 'bookingCode', 'cabinType', 'displayOrder'],
   'baggage-rules': [
     'name',
     'airlineId',

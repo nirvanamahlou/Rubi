@@ -104,6 +104,35 @@ describe('Master Data dedicated column filters', () => {
     });
   });
 
+  it('presents only Cabin filter choices in English without changing enum query values', () => {
+    const visible = visibleMasterDataColumnFilters('cabin-classes');
+    expect(visible).toHaveLength(1);
+    expect(visible[0]).toMatchObject({
+      originalIndex: 1,
+      filter: {
+        label: 'Cabin',
+        path: ['cabinType'],
+        options: [
+          ['ECONOMY', 'Economy'],
+          ['PREMIUM_ECONOMY', 'Premium Economy'],
+          ['BUSINESS', 'Business'],
+          ['FIRST', 'First Class'],
+        ],
+      },
+    });
+    expect(
+      effectiveMasterDataColumnFilters('cabin-classes', [
+        'stale-english-name',
+        'PREMIUM_ECONOMY',
+      ]),
+    ).toEqual({ columnFilter2: 'PREMIUM_ECONOMY' });
+
+    const html = renderToStaticMarkup(
+      createElement(FilterHarness, { resource: 'cabin-classes' }),
+    );
+    expect(html).toContain('فیلتر Cabin');
+  });
+
   it('binds the shared projected filters to list and export in all specialized consumers', () => {
     for (const file of [
       'master-data-accommodation-workspace.tsx',
