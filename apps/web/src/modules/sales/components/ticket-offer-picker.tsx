@@ -25,7 +25,7 @@ export function TicketOfferPicker({
   acceptAnyRoundTripFare = false,
 }: {
   query: TicketOfferSearchV1;
-  prepared?: PreparedTicketSearch;
+  prepared?: PreparedTicketSearch | undefined;
   enabled?: boolean;
   selectedId: string;
   onSelect: (offer: TicketOfferV1) => void;
