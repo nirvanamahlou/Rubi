@@ -1319,6 +1319,14 @@ export class HrService {
       const row = await this.record(tx, id, actor);
       if (row.version !== expected)
         throw new ConflictException('رکورد توسط کاربر دیگری تغییر کرده است.');
+      if (
+        row.section === 'payroll' &&
+        row.tab === 'paymentRequests' &&
+        ['تأییدشده', 'تاییدشده'].includes(row.status)
+      )
+        throw new ConflictException(
+          'حقوق تأییدشده تغییر نمی‌کند؛ پس از برگشت مالی یک درخواست اصلاح‌شده ارسال کنید.',
+        );
       const schema = validate.resource(row.section, row.tab);
       let parentId = row.parentId;
       if (input.parentId !== undefined) {

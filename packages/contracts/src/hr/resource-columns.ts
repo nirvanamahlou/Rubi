@@ -746,6 +746,7 @@ export const HR_RESOURCE_COLUMNS = {
     'خالص پرداختی',
     'تاریخ صدور',
   ],
+  'payroll.paymentRequests': ['کارمند', 'دوره', 'مبلغ حقوق', 'تاریخ پرداخت'],
   'payroll.corrections': [
     'کارمند',
     'دوره مرجع',

@@ -30,6 +30,11 @@ enum AuditOutcome {
 }
 
 model User {
+  financeRequestsCreated                           FinanceOperationalRequest[]               @relation("FinanceRequestCreator")
+  financeRequestRevisions                          FinanceOperationalRevision[]
+  financeSavedViews                                FinanceSavedView[]
+  financeReminderPoliciesManaged                   FinanceReminderPolicy[]                   @relation("FinanceReminderManager")
+  financeReminderPoliciesUpdated                   FinanceReminderPolicy[]                   @relation("FinanceReminderUpdater")
   reservationTicketDocuments                       ReservationTicketDocument[]
   ticketSaleCommissions                            TicketSaleCommissionRevision[]
   tourPricingDraftsCreated                         PackagePricingTourDraft[]                 @relation("TourPricingDraftCreator")
@@ -221,6 +226,8 @@ model RolePermission {
 }
 
 model Branch {
+  financeOperationalRequests          FinanceOperationalRequest[]
+  financeReminderPolicy               FinanceReminderPolicy?
   tourPricingDrafts                   PackagePricingTourDraft[]
   financeTicketCostRevisions          FinanceTicketPurchaseCostRevision[]
   ticketSalePriceTargets              TicketSalePriceTarget[]
@@ -1234,6 +1241,7 @@ model MasterBankBranch {
 }
 
 model MasterPaymentMethod {
+  financeOperationalPayments         FinanceOperationalRevision[]
   financeTicketPaymentRevisions      FinanceTicketPurchasePaymentRevision[]
   b2bAgreementRevisions              B2bAgreementRevision[]
   financeSupplierPaymentRevisions    FinanceSupplierPaymentRevision[]
@@ -3279,6 +3287,7 @@ model DocumentCategory {
 }
 
 model Document {
+  financeOperationalRequests       FinanceOperationalRequest[]
   id                               String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   archiveCode                      String                       @unique @default(dbgenerated("documents_generate_archive_code()")) @map("archive_code") @db.VarChar(40)
   title                            String                       @db.VarChar(240)
@@ -3477,35 +3486,36 @@ model DocumentProcessingJob {
 
 // HR-005: additive HR boundary; immutable event/ledger rows, soft-deleted aggregates.
 model HrEmployee {
-  procurementRequests  ProcurementRequest[] @relation("ProcurementRequestRequesterEmployee")
-  organizationBranchId String?              @map("organization_branch_id") @db.Uuid
-  organizationBranch   HrRecord?            @relation("HrEmployeeOrganizationBranch", fields: [organizationBranchId, branchId], references: [id, branchId], onDelete: Restrict)
-  photoDocumentId      String?              @map("photo_document_id") @db.Uuid
-  photoDocument        Document?            @relation(fields: [photoDocumentId], references: [id], onDelete: Restrict)
-  id                   String               @id @default(uuid()) @db.Uuid
-  personnelCode        String               @unique @map("personnel_code") @db.VarChar(50)
-  branchId             String               @map("branch_id") @db.Uuid
-  userId               String?              @unique @map("user_id") @db.Uuid
-  managerId            String?              @map("manager_id") @db.Uuid
-  name                 String               @db.VarChar(160)
-  kind                 String               @db.VarChar(80)
-  unit                 String               @db.VarChar(160)
-  position             String               @db.VarChar(160)
-  grade                String               @db.VarChar(40)
-  startedAt            DateTime             @map("started_at") @db.Date
-  status               String               @default("فعال") @db.VarChar(80)
-  version              Int                  @default(1)
-  deletedAt            DateTime?            @map("deleted_at") @db.Timestamptz(3)
-  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
-  branch               Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  user                 User?                @relation(fields: [userId], references: [id], onDelete: Restrict)
-  manager              HrEmployee?          @relation("HrManager", fields: [managerId], references: [id], onDelete: Restrict)
-  reports              HrEmployee[]         @relation("HrManager")
-  records              HrRecord[]
-  auditEvents          HrAuditEvent[]
-  leaveEntries         HrLeaveEntry[]
-  notifications        HrNotification[]
+  financePayrollRequests FinanceOperationalRequest[]
+  procurementRequests    ProcurementRequest[]        @relation("ProcurementRequestRequesterEmployee")
+  organizationBranchId   String?                     @map("organization_branch_id") @db.Uuid
+  organizationBranch     HrRecord?                   @relation("HrEmployeeOrganizationBranch", fields: [organizationBranchId, branchId], references: [id, branchId], onDelete: Restrict)
+  photoDocumentId        String?                     @map("photo_document_id") @db.Uuid
+  photoDocument          Document?                   @relation(fields: [photoDocumentId], references: [id], onDelete: Restrict)
+  id                     String                      @id @default(uuid()) @db.Uuid
+  personnelCode          String                      @unique @map("personnel_code") @db.VarChar(50)
+  branchId               String                      @map("branch_id") @db.Uuid
+  userId                 String?                     @unique @map("user_id") @db.Uuid
+  managerId              String?                     @map("manager_id") @db.Uuid
+  name                   String                      @db.VarChar(160)
+  kind                   String                      @db.VarChar(80)
+  unit                   String                      @db.VarChar(160)
+  position               String                      @db.VarChar(160)
+  grade                  String                      @db.VarChar(40)
+  startedAt              DateTime                    @map("started_at") @db.Date
+  status                 String                      @default("فعال") @db.VarChar(80)
+  version                Int                         @default(1)
+  deletedAt              DateTime?                   @map("deleted_at") @db.Timestamptz(3)
+  createdAt              DateTime                    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch                 Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  user                   User?                       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  manager                HrEmployee?                 @relation("HrManager", fields: [managerId], references: [id], onDelete: Restrict)
+  reports                HrEmployee[]                @relation("HrManager")
+  records                HrRecord[]
+  auditEvents            HrAuditEvent[]
+  leaveEntries           HrLeaveEntry[]
+  notifications          HrNotification[]
 
   @@unique([id, branchId])
   @@index([branchId, deletedAt, name])
@@ -3515,35 +3525,36 @@ model HrEmployee {
 }
 
 model HrRecord {
-  organizationEmployees HrEmployee[]     @relation("HrEmployeeOrganizationBranch")
-  searchText            String           @default("") @map("search_text") @db.VarChar(12000)
-  expiresAt             DateTime?        @map("expires_at") @db.Date
-  documentId            String?          @map("document_id") @db.Uuid
-  document              Document?        @relation(fields: [documentId], references: [id], onDelete: Restrict)
-  id                    String           @id @default(uuid()) @db.Uuid
-  code                  String           @unique @db.VarChar(60)
-  branchId              String           @map("branch_id") @db.Uuid
-  employeeId            String?          @map("employee_id") @db.Uuid
-  parentId              String?          @map("parent_id") @db.Uuid
-  section               String           @db.VarChar(40)
-  tab                   String           @db.VarChar(40)
-  values                Json
-  data                  Json             @default("{}")
-  status                String           @default("پیش‌نویس") @db.VarChar(80)
-  version               Int              @default(1)
-  effectiveAt           DateTime?        @map("effective_at") @db.Date
-  appliedAt             DateTime?        @map("applied_at") @db.Timestamptz(3)
-  deletedAt             DateTime?        @map("deleted_at") @db.Timestamptz(3)
-  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
-  branch                Branch           @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  employee              HrEmployee?      @relation(fields: [employeeId], references: [id], onDelete: Restrict)
-  parent                HrRecord?        @relation("HrRecordParent", fields: [parentId, branchId], references: [id, branchId], onDelete: Restrict)
-  children              HrRecord[]       @relation("HrRecordParent")
-  auditEvents           HrAuditEvent[]
-  amounts               HrRecordAmount[]
-  leaveEntries          HrLeaveEntry[]
-  notifications         HrNotification[]
+  financeOperationalRequest FinanceOperationalRequest?
+  organizationEmployees     HrEmployee[]               @relation("HrEmployeeOrganizationBranch")
+  searchText                String                     @default("") @map("search_text") @db.VarChar(12000)
+  expiresAt                 DateTime?                  @map("expires_at") @db.Date
+  documentId                String?                    @map("document_id") @db.Uuid
+  document                  Document?                  @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  id                        String                     @id @default(uuid()) @db.Uuid
+  code                      String                     @unique @db.VarChar(60)
+  branchId                  String                     @map("branch_id") @db.Uuid
+  employeeId                String?                    @map("employee_id") @db.Uuid
+  parentId                  String?                    @map("parent_id") @db.Uuid
+  section                   String                     @db.VarChar(40)
+  tab                       String                     @db.VarChar(40)
+  values                    Json
+  data                      Json                       @default("{}")
+  status                    String                     @default("پیش‌نویس") @db.VarChar(80)
+  version                   Int                        @default(1)
+  effectiveAt               DateTime?                  @map("effective_at") @db.Date
+  appliedAt                 DateTime?                  @map("applied_at") @db.Timestamptz(3)
+  deletedAt                 DateTime?                  @map("deleted_at") @db.Timestamptz(3)
+  createdAt                 DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch                    Branch                     @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  employee                  HrEmployee?                @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  parent                    HrRecord?                  @relation("HrRecordParent", fields: [parentId, branchId], references: [id, branchId], onDelete: Restrict)
+  children                  HrRecord[]                 @relation("HrRecordParent")
+  auditEvents               HrAuditEvent[]
+  amounts                   HrRecordAmount[]
+  leaveEntries              HrLeaveEntry[]
+  notifications             HrNotification[]
 
   @@unique([id, branchId])
   @@index([branchId, section, tab, deletedAt, createdAt])
@@ -4007,34 +4018,35 @@ model SalesContractPriceComponent {
 }
 
 model SalesContractPaymentEntry {
-  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  contractId              String                    @map("contract_id") @db.Uuid
-  amount                  Decimal                   @db.Decimal(20, 4)
-  currencyCode            String                    @map("currency_code") @db.VarChar(3)
-  dueAt                   DateTime                  @map("due_at") @db.Timestamptz(3)
+  financeRefundRequests   FinanceOperationalRequest[]
+  id                      String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  contractId              String                      @map("contract_id") @db.Uuid
+  amount                  Decimal                     @db.Decimal(20, 4)
+  currencyCode            String                      @map("currency_code") @db.VarChar(3)
+  dueAt                   DateTime                    @map("due_at") @db.Timestamptz(3)
   method                  SalesPaymentMethod
-  status                  SalesPaymentStatus        @default(PENDING_FINANCE_CONFIRMATION)
-  description             String?                   @db.VarChar(500)
-  paymentReference        String?                   @map("payment_reference") @db.VarChar(160)
-  bankId                  String?                   @map("bank_id") @db.Uuid
-  checkSecureIdentifier   String?                   @map("check_secure_identifier") @db.VarChar(160)
-  checkOwnerName          String?                   @map("check_owner_name") @db.VarChar(200)
-  checkDueDate            DateTime?                 @map("check_due_date") @db.Date
-  idempotencyKey          String                    @map("idempotency_key") @db.VarChar(160)
-  requestFingerprint      String                    @map("request_fingerprint") @db.Char(64)
-  createdByUserId         String                    @map("created_by_user_id") @db.Uuid
-  financePaymentReference String?                   @map("finance_payment_reference") @db.VarChar(160)
-  financeConfirmedByRef   String?                   @map("finance_confirmed_by_ref") @db.VarChar(160)
-  financeConfirmedAt      DateTime?                 @map("finance_confirmed_at") @db.Timestamptz(3)
-  financeReceiptAccountId String?                   @map("finance_receipt_account_id") @db.Uuid
-  financeReceiptAccount   FinanceSettlementAccount? @relation("SalesPaymentReceiptAccount", fields: [financeReceiptAccountId], references: [id], onDelete: Restrict)
-  financeDecisionReason   String?                   @map("finance_decision_reason") @db.VarChar(500)
-  financeReviewedByUserId String?                   @map("finance_reviewed_by_user_id") @db.Uuid
-  financeReviewedAt       DateTime?                 @map("finance_reviewed_at") @db.Timestamptz(3)
-  createdAt               DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt               DateTime                  @updatedAt @map("updated_at") @db.Timestamptz(3)
-  contract                SalesContract             @relation(fields: [contractId], references: [id], onDelete: Cascade)
-  financeReviewedBy       User?                     @relation("SalesPaymentFinanceReviewer", fields: [financeReviewedByUserId], references: [id], onDelete: Restrict)
+  status                  SalesPaymentStatus          @default(PENDING_FINANCE_CONFIRMATION)
+  description             String?                     @db.VarChar(500)
+  paymentReference        String?                     @map("payment_reference") @db.VarChar(160)
+  bankId                  String?                     @map("bank_id") @db.Uuid
+  checkSecureIdentifier   String?                     @map("check_secure_identifier") @db.VarChar(160)
+  checkOwnerName          String?                     @map("check_owner_name") @db.VarChar(200)
+  checkDueDate            DateTime?                   @map("check_due_date") @db.Date
+  idempotencyKey          String                      @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint      String                      @map("request_fingerprint") @db.Char(64)
+  createdByUserId         String                      @map("created_by_user_id") @db.Uuid
+  financePaymentReference String?                     @map("finance_payment_reference") @db.VarChar(160)
+  financeConfirmedByRef   String?                     @map("finance_confirmed_by_ref") @db.VarChar(160)
+  financeConfirmedAt      DateTime?                   @map("finance_confirmed_at") @db.Timestamptz(3)
+  financeReceiptAccountId String?                     @map("finance_receipt_account_id") @db.Uuid
+  financeReceiptAccount   FinanceSettlementAccount?   @relation("SalesPaymentReceiptAccount", fields: [financeReceiptAccountId], references: [id], onDelete: Restrict)
+  financeDecisionReason   String?                     @map("finance_decision_reason") @db.VarChar(500)
+  financeReviewedByUserId String?                     @map("finance_reviewed_by_user_id") @db.Uuid
+  financeReviewedAt       DateTime?                   @map("finance_reviewed_at") @db.Timestamptz(3)
+  createdAt               DateTime                    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt               DateTime                    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  contract                SalesContract               @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  financeReviewedBy       User?                       @relation("SalesPaymentFinanceReviewer", fields: [financeReviewedByUserId], references: [id], onDelete: Restrict)
 
   @@unique([contractId, idempotencyKey])
   @@index([financeReceiptAccountId, financeConfirmedAt])
@@ -4498,6 +4510,7 @@ enum FinanceSupplierPaymentStatus {
 }
 
 model FinanceSettlementAccount {
+  financeOperationalPayments FinanceOperationalRevision[]
   id                         String                                 @id @default(uuid()) @db.Uuid
   branchId                   String                                 @db.Uuid
   title                      String                                 @db.VarChar(160)
@@ -4521,6 +4534,111 @@ model FinanceSettlementAccount {
   @@unique([branchId, title, currencyCode])
   @@index([branchId, isActive, title])
   @@index([bankId, isActive])
+}
+
+model FinanceOperationalRequest {
+  id                String                       @id @db.Uuid
+  branchId          String                       @db.Uuid
+  requesterId       String                       @db.Uuid
+  kind              String                       @db.VarChar(24)
+  title             String                       @db.VarChar(200)
+  party             String                       @db.VarChar(200)
+  description       String                       @db.VarChar(2000)
+  reference         String                       @db.VarChar(160)
+  amount            Decimal                      @db.Decimal(24, 4)
+  currencyCode      String                       @db.VarChar(3)
+  dueAt             DateTime                     @db.Timestamptz(3)
+  status            String                       @default("NEW") @db.VarChar(24)
+  version           Int                          @default(1)
+  createFingerprint String                       @db.VarChar(64)
+  hrRecordId        String?                      @unique @db.Uuid
+  payrollEmployeeId String?                      @db.Uuid
+  payrollPeriod     String?                      @db.VarChar(20)
+  sourceVersion     Int?
+  refundReceiptId   String?                      @db.Uuid
+  documentId        String?                      @db.Uuid
+  createdAt         DateTime                     @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                     @updatedAt @db.Timestamptz(3)
+  branch            Branch                       @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  requester         User                         @relation("FinanceRequestCreator", fields: [requesterId], references: [id], onDelete: Restrict)
+  payroll           HrRecord?                    @relation(fields: [hrRecordId], references: [id], onDelete: Restrict)
+  payrollEmployee   HrEmployee?                  @relation(fields: [payrollEmployeeId], references: [id], onDelete: Restrict)
+  refundReceipt     SalesContractPaymentEntry?   @relation(fields: [refundReceiptId], references: [id], onDelete: Restrict)
+  document          Document?                    @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  revisions         FinanceOperationalRevision[]
+  reminders         FinanceReminderDelivery[]
+
+  @@unique([payrollEmployeeId, payrollPeriod])
+  @@index([branchId, status, dueAt])
+  @@index([refundReceiptId, status])
+  @@map("finance_operational_requests")
+}
+
+model FinanceOperationalRevision {
+  id               String                    @id @db.Uuid
+  requestId        String                    @db.Uuid
+  actorId          String                    @db.Uuid
+  version          Int
+  action           String                    @db.VarChar(24)
+  fromStatus       String?                   @db.VarChar(24)
+  toStatus         String                    @db.VarChar(24)
+  reason           String                    @db.VarChar(2000)
+  fingerprint      String                    @db.VarChar(64)
+  snapshot         Json
+  paidAmount       Decimal?                  @db.Decimal(24, 4)
+  cumulativePaid   Decimal                   @default(0) @db.Decimal(24, 4)
+  remainingAmount  Decimal                   @db.Decimal(24, 4)
+  accountId        String?                   @db.Uuid
+  methodId         String?                   @db.Uuid
+  transferAt       DateTime?                 @db.Timestamptz(3)
+  paymentReference String?                   @db.VarChar(160)
+  createdAt        DateTime                  @default(now()) @db.Timestamptz(3)
+  request          FinanceOperationalRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  actor            User                      @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  account          FinanceSettlementAccount? @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  method           MasterPaymentMethod?      @relation(fields: [methodId], references: [id], onDelete: Restrict)
+
+  @@unique([requestId, version])
+  @@index([requestId, transferAt])
+  @@map("finance_operational_revisions")
+}
+
+model FinanceSavedView {
+  id        String   @id @default(uuid()) @db.Uuid
+  ownerId   String   @db.Uuid
+  title     String   @db.VarChar(80)
+  query     Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@unique([ownerId, title])
+  @@map("finance_saved_views")
+}
+
+model FinanceReminderPolicy {
+  branchId    String   @id @db.Uuid
+  managerId   String   @db.Uuid
+  updatedById String   @db.Uuid
+  version     Int      @default(1)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  branch      Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  manager     User     @relation("FinanceReminderManager", fields: [managerId], references: [id], onDelete: Restrict)
+  updatedBy   User     @relation("FinanceReminderUpdater", fields: [updatedById], references: [id], onDelete: Restrict)
+
+  @@map("finance_reminder_policies")
+}
+
+model FinanceReminderDelivery {
+  id        String                     @id @default(uuid()) @db.Uuid
+  requestId String?                    @db.Uuid
+  sourceKey String                     @db.VarChar(160)
+  phase     String                     @db.VarChar(16)
+  createdAt DateTime                   @default(now()) @db.Timestamptz(3)
+  request   FinanceOperationalRequest? @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceKey, phase])
+  @@index([requestId, phase])
+  @@map("finance_reminder_deliveries")
 }
 
 model FinanceProcurementInvoiceRevision {

@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { DatabaseService } from '../database/database.service';
+import type { Prisma } from '@nora/database';
 
 /** Public owner projection. Procurement never reads Master Data tables itself. */
 @Injectable()
@@ -30,6 +31,16 @@ export class MasterProcurementDirectory {
       }))
     )
       throw new BadRequestException('ارز باید در اطلاعات پایه فعال باشد.');
+  }
+  /** Master Data-owned validation of a referenced outgoing method. */
+  activeOutgoingPaymentMethod(
+    id: string,
+    transaction?: Prisma.TransactionClient,
+  ) {
+    return (transaction ?? this.database.client).masterPaymentMethod.findFirst({
+      where: { id, isActive: true, direction: { in: ['PAYMENT', 'BOTH'] } },
+      select: { id: true, name: true },
+    });
   }
   async suppliers(
     search: string,

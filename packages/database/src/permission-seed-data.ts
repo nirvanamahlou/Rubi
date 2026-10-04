@@ -341,6 +341,8 @@ export const PERMISSION_SEED_DATA = [
   ['ticket_catalog.manage', 'ticket_catalog', 'مدیریت بلیت قابل فروش'],
   ['reservations.documents.manage', 'reservations', 'عملیات مدارک رزرواسیون'],
   ['finance.read', 'finance', 'مشاهده کارتابل مالی'],
+  ['finance.export', 'finance', 'خروجی Excel/PDF و رسید مالی'],
+  ['finance.request.manage', 'finance', 'ثبت و اصلاح درخواست‌های عملیاتی مالی'],
   ['finance.receipt.approve', 'finance', 'تأیید یا برگشت دریافت‌های مشتری'],
   ['finance.payment.create', 'finance', 'ثبت پرداخت‌های مالی'],
   ['finance.account.manage', 'finance', 'ایجاد و مدیریت حساب‌های پرداخت'],

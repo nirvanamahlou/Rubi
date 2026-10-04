@@ -137,6 +137,8 @@ export const IAM_PERMISSION_CODES = [
   'reservations.read',
   'reservations.documents.manage',
   'finance.read',
+  'finance.export',
+  'finance.request.manage',
   'finance.receipt.approve',
   'finance.payment.create',
   'finance.account.manage',

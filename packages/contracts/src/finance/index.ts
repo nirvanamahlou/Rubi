@@ -359,7 +359,8 @@ export type FinanceRequestStatus =
 export type FinanceRequestSourceModule =
   'SALES' | 'RESERVATIONS' | 'PROCUREMENT' | 'HR' | 'OTHER';
 
-export type FinanceInboxSource = 'SALES' | 'HR' | 'RESERVATIONS' | 'PURCHASES';
+export type FinanceInboxSource =
+  'SALES' | 'HR' | 'RESERVATIONS' | 'PURCHASES' | 'FINANCE';
 export type FinanceInboxSourceConnection =
   'CONNECTED' | 'NOT_CONNECTED' | 'UNAVAILABLE';
 
@@ -378,6 +379,8 @@ export interface FinanceInboxItemV1 {
     | 'RECEIPT_VERIFICATION'
     | 'PAYMENT_REQUEST'
     | 'HR_REFERRAL'
+    | 'PAYROLL_REQUEST'
+    | 'OPERATIONAL_REQUEST'
     | 'RETURN_CORRECTION';
   sourceReference: string;
   /** Stable reference needed by the owning module to apply an inbox action. */
@@ -674,9 +677,11 @@ export function normalizeFinanceListQuery(
 
 /** Append-only operational evidence, independent of the pending inbox. */
 export type FinanceHistorySourceV1 =
-  'SALES' | 'TICKET' | 'RESERVATIONS' | 'INVOICE';
+  'SALES' | 'TICKET' | 'RESERVATIONS' | 'INVOICE' | 'OPERATIONAL';
 export interface FinanceHistoryQueryV1 {
   cursor?: string;
+  /** Exact persisted transaction ID; never a pending request ID. */
+  recordId?: string | undefined;
   direction?: 'RECEIPT' | 'PAYMENT';
   source?: FinanceHistorySourceV1;
   requestId?: string;
@@ -702,4 +707,52 @@ export interface FinanceHistoryV1 {
   version: 1;
   items: readonly FinanceHistoryItemV1[];
   nextCursor: string | null;
+}
+
+export interface FinanceInboxQueryV1 {
+  search?: string;
+  source?: FinanceInboxSource | undefined;
+  status?: FinanceRequestStatus | 'OPEN' | 'CLOSED' | undefined;
+  branchId?: string;
+  person?: string;
+  currencyCode?: string;
+  minAmount?: string;
+  maxAmount?: string;
+  fromDate?: string;
+  toDate?: string;
+  dueFrom?: string;
+  dueTo?: string;
+  page?: number;
+  pageSize?: number;
+}
+export interface FinanceInboxPageV1 extends FinanceInboxV1 {
+  total: number;
+  page: number;
+  pageSize: number;
+  summary: {
+    openCount: number;
+    overdueCount: number;
+    receiptCount: number;
+    paymentCount: number;
+  };
+}
+export interface FinanceExportQueryV1 extends FinanceInboxQueryV1 {
+  scope?: 'INBOX' | 'HISTORY' | 'RECEIPT';
+  historySource?: FinanceHistorySourceV1 | undefined;
+  direction?: 'RECEIPT' | 'PAYMENT' | undefined;
+  requestId?: string | undefined;
+  recordId?: string | undefined;
+}
+export interface FinanceExportSnapshotV1 {
+  version: 1;
+  scope: 'INBOX' | 'HISTORY' | 'RECEIPT';
+  title: string;
+  generatedAt: string;
+  preparedBy: string;
+  filterSnapshot: FinanceExportQueryV1;
+  columns: readonly { label: string; type: 'TEXT' | 'DECIMAL' | 'DATE' }[];
+  rows: readonly (readonly (string | null)[])[];
+  /** Currency totals are never combined or implicitly converted. */
+  totals: readonly { currencyCode: string; amount: string }[];
+  warnings: readonly string[];
 }
