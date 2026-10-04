@@ -349,6 +349,28 @@ describe('cooperation wizard writes', () => {
       values: { roleCodes: 'SUPPLIER,AGENCY' },
     });
   });
+  it('persists a typed address without inventing country or city identifiers', async () => {
+    const existing = {
+      id: 'identity',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const createAddress = vi
+      .spyOn(masterDataApi, 'createOrganizationAddress')
+      .mockResolvedValue({ data: {} as never });
+
+    await saveCooperation(
+      { ...draft, addressLine: '  تهران، خیابان نمونه  ' },
+      ['master_data.read', 'master_data.update'],
+      existing,
+    );
+
+    expect(createAddress).toHaveBeenCalledWith('identity', {
+      addressLine: 'تهران، خیابان نمونه',
+      label: 'نشانی همکاری',
+      isPrimary: false,
+    });
+  });
   it('reports the persisted organization after a later contact failure', async () => {
     const existing = {
       id: 'identity',
@@ -397,7 +419,7 @@ describe('cooperation wizard writes', () => {
       ),
     ).toBeTruthy();
     expect(
-      cooperationIssue({ ...draft, countryId: 'country' }, 2),
+      cooperationIssue({ ...draft, countryId: 'country' }, 1),
     ).toBeTruthy();
   });
 });

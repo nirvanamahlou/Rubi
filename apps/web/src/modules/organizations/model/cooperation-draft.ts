@@ -74,7 +74,7 @@ export function cooperationIssue(
         !/^[0-9۰-۹٠-٩]{11}$/.test(draft.nationalId.trim()))
     )
       return 'شناسه ملی شرکت باید ۱۱ رقم و مربوط به شخصیت حقوقی باشد.';
-    return validateOrganizationRows([
+    const identityIssue = validateOrganizationRows([
       {
         code: draft.code,
         legalName: draft.legalName,
@@ -82,13 +82,14 @@ export function cooperationIssue(
         roleCodes: draft.role,
       },
     ])[0]?.issue;
+    if (identityIssue) return identityIssue;
+    if (Boolean(draft.countryId) !== Boolean(draft.cityId))
+      return 'کشور و شهر نشانی باید با هم ثبت شوند.';
+    if (draft.addressLine && draft.addressLine.trim().length < 2)
+      return 'نشانی را کامل وارد کنید.';
+    return undefined;
   }
   if (step === 2) {
-    if (
-      (draft.countryId || draft.cityId || draft.addressLine) &&
-      (!draft.countryId || !draft.cityId || draft.addressLine.trim().length < 2)
-    )
-      return 'برای ثبت نشانی، کشور، شهر و نشانی کامل را وارد کنید.';
     if (
       (draft.jobTitle || draft.phone || draft.email) &&
       draft.fullName.trim().length < 2
@@ -255,8 +256,9 @@ export async function saveCooperation(
     }
     if (draft.addressLine.trim())
       await masterDataApi.createOrganizationAddress(organization.id, {
-        countryId: draft.countryId,
-        cityId: draft.cityId,
+        ...(draft.countryId && draft.cityId
+          ? { countryId: draft.countryId, cityId: draft.cityId }
+          : {}),
         addressLine: draft.addressLine.trim(),
         label: 'نشانی همکاری',
         isPrimary: false,

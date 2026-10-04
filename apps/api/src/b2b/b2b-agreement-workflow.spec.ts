@@ -48,6 +48,23 @@ describe('agreement terms and public boundary checks', () => {
       ),
     ).toEqual([]);
   });
+  it('rejects duplicate transient grants without including token text in validation messages', () => {
+    const token = 'super-secret-token-value';
+    const errors = validateSync(
+      plainToInstance(SaveB2bAgreementDto, {
+        ...input(),
+        referenceGrants: [
+          { documentId: id, token },
+          { documentId: id, token: `${token}-other` },
+        ],
+      }),
+      { whitelist: true, forbidNonWhitelisted: true },
+    );
+    expect(errors.length).toBeGreaterThan(0);
+    expect(
+      JSON.stringify(errors.map((error) => error.constraints)),
+    ).not.toContain(token);
+  });
   it.each([undefined, null, {}, []])(
     'rejects missing or malformed terms %s',
     (terms) => {
@@ -180,7 +197,90 @@ describe('agreement terms and public boundary checks', () => {
       id,
       expect.objectContaining({ userId: id }),
       true,
+      '22222222-2222-4222-8222-222222222222',
+      undefined,
     );
+  });
+  it('keeps renewed grants out of persisted terms and semantic commands', async () => {
+    const { service, documents, repository } = setup();
+    const writer = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'b2b.credit.manage',
+      ] as typeof actor.permissions,
+    };
+    for (const token of ['a'.repeat(32), 'b'.repeat(32)]) {
+      const dto = input();
+      dto.terms.documentId = id;
+      await expect(
+        service.save(
+          id,
+          undefined,
+          { ...dto, referenceGrants: [{ documentId: id, token }] },
+          writer,
+        ),
+      ).rejects.toThrow('persistence reached');
+    }
+    expect(repository.save).toHaveBeenCalledTimes(2);
+    expect(repository.save.mock.calls[0]?.[0]).toEqual(
+      repository.save.mock.calls[1]?.[0],
+    );
+    expect(repository.save.mock.calls[0]?.[1]).toEqual(
+      repository.save.mock.calls[1]?.[1],
+    );
+    const persisted = JSON.stringify(
+      repository.save.mock.calls.map(([command, terms]) => [command, terms]),
+    );
+    expect(persisted).not.toContain('a'.repeat(32));
+    expect(persisted).not.toContain('b'.repeat(32));
+    expect(documents.assertDraftReference).toHaveBeenNthCalledWith(
+      1,
+      id,
+      id,
+      id,
+      writer,
+      true,
+      undefined,
+      'a'.repeat(32),
+    );
+    expect(documents.assertDraftReference).toHaveBeenNthCalledWith(
+      2,
+      id,
+      id,
+      id,
+      writer,
+      true,
+      undefined,
+      'b'.repeat(32),
+    );
+  });
+  it('rejects grants unrelated to the contract before persistence', async () => {
+    const { service, repository } = setup();
+    await expect(
+      service.save(
+        id,
+        undefined,
+        {
+          ...input(),
+          referenceGrants: [
+            {
+              documentId: '22222222-2222-4222-8222-222222222222',
+              token: 'x'.repeat(32),
+            },
+          ],
+        },
+        {
+          ...actor,
+          permissions: [...actor.permissions, 'b2b.credit.manage'],
+        },
+      ),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'B2B_DOCUMENT_GRANT_UNRELATED',
+      }),
+    });
+    expect(repository.save).not.toHaveBeenCalled();
   });
   it('validates the payment method through Master Data and rejects inactive references', async () => {
     const { service, organizations } = setup();

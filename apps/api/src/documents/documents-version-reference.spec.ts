@@ -145,7 +145,7 @@ describe('public organization document version references', () => {
       ids.map((id) => ({ versionId: id, documentId: `document-${id}` })),
     );
     const boundary = new B2bAgreementDocuments({
-      organizationVersionReferences: lookup,
+      organizationProofVersionReferences: lookup,
     } as unknown as DocumentsService);
     const ids = Array.from({ length: 201 }, (_, i) => String(i));
     const result = await boundary.referenceMap(
@@ -157,5 +157,59 @@ describe('public organization document version references', () => {
     expect(result.size).toBe(201);
     expect(lookup).toHaveBeenCalledTimes(2);
     expect(result.get('200')).toBe('document-200');
+  });
+  it('maps coded sensitive stored versions without widening metadata', async () => {
+    const findMany = vi
+      .fn()
+      .mockResolvedValue([
+        { id: 'coded-version', documentId: 'coded-document' },
+      ]);
+    const repository = new DocumentsRepository(
+      {
+        client: { documentVersion: { findMany } },
+      } as unknown as DatabaseService,
+      { createWithinTransaction: vi.fn() } as unknown as NotificationsService,
+    );
+    await expect(
+      repository.organizationProofVersionReferences(
+        ['coded-version'],
+        'organization',
+        'branch',
+        true,
+      ),
+    ).resolves.toEqual([
+      { versionId: 'coded-version', documentId: 'coded-document' },
+    ]);
+    const documentFilter = findMany.mock.calls[0]?.[0].where.document;
+    expect(documentFilter.confidentialAccessCodeHash).toBeUndefined();
+    expect(documentFilter.relations.some.sourceEntityId).toBe('organization');
+  });
+  it('fails closed when opaque stored references need permissions the actor lacks', async () => {
+    const repository = {
+      organizationProofVersionReferences: vi.fn().mockResolvedValue([]),
+    };
+    const service = Object.assign(Object.create(DocumentsService.prototype), {
+      repository,
+    }) as DocumentsService;
+    await expect(
+      service.organizationProofVersionReferences(
+        ['protected-version'],
+        'organization',
+        'branch',
+        { ...actor, permissions: [] },
+      ),
+    ).rejects.toThrow('مجوز');
+    await expect(
+      service.organizationProofVersionReferences(
+        ['protected-version'],
+        'organization',
+        'branch',
+        actor,
+      ),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'B2B_DOCUMENT_REFERENCE_PERMISSION_DENIED',
+      }),
+    });
   });
 });

@@ -189,6 +189,21 @@ describe('B2B authenticated runtime boundary', () => {
       expect.objectContaining({ role: 'CORPORATE_CUSTOMER' }),
       actor,
     );
+    workflow.save.mockClear();
+    const secret = 'token-that-must-not-be-echoed';
+    const malformed = await request(app.getHttpServer())
+      .post(`/b2b/agencies/${id}/agreements/drafts`)
+      .set('Cookie', 'nora_access=test-only')
+      .send({
+        branchId: id,
+        role: 'CORPORATE_CUSTOMER',
+        requestId: id,
+        terms: agreementTestTerms(),
+        referenceGrants: [{ documentId: 'not-a-uuid', token: secret }],
+      })
+      .expect(400);
+    expect(JSON.stringify(malformed.body)).not.toContain(secret);
+    expect(workflow.save).not.toHaveBeenCalled();
     await request(app.getHttpServer())
       .post(`/b2b/agencies/${id}/agreements/${id}/review`)
       .set('Cookie', 'nora_access=test-only')

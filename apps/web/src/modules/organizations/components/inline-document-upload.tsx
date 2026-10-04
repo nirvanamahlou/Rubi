@@ -17,6 +17,40 @@ import {
 } from '../model/organization-documents';
 import { useBoundUploadContext } from './use-bound-upload-context';
 
+export async function issueUploadedConfidentialGrant(
+  documentId: string,
+  code: string,
+  enabled: boolean,
+) {
+  if (!enabled) return undefined;
+  const response = await documentsApi.createAccessGrant(documentId, {
+    code,
+    purpose: 'CONFIDENTIAL_VIEW',
+  });
+  return response.data.token;
+}
+
+/** Publish the selected ID only after its fresh confidential grant is ready. */
+export async function publishUploadedDocumentAfterGrant(
+  request: {
+    isCurrent: () => boolean;
+    publish: (documentId: string, token?: string) => void;
+  },
+  documentId: string,
+  getGrant: () => Promise<string | undefined>,
+) {
+  let token: string | undefined;
+  let grantError: unknown;
+  try {
+    token = await getGrant();
+  } catch (error) {
+    grantError = error;
+  }
+  if (!request.isCurrent()) return { current: false, grantError };
+  request.publish(documentId, token);
+  return { current: true, grantError };
+}
+
 /** Upload through the Documents owner; only its saved ID is attached to the form. */
 export function InlineDocumentUpload({
   organizationId,
@@ -24,6 +58,8 @@ export function InlineDocumentUpload({
   label,
   permissions,
   onUploaded,
+  onConfidentialGrant,
+  onUploadedWithConfidentialGrant,
   onStaged,
   staged,
   onBusyChange,
@@ -38,6 +74,10 @@ export function InlineDocumentUpload({
   label: string;
   permissions: readonly IamPermissionCode[];
   onUploaded: (id: string) => void;
+  onConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
+  onUploadedWithConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
   onStaged?:
     ((document: StagedOrganizationDocument | null) => void) | undefined;
   staged?: StagedOrganizationDocument | null | undefined;
@@ -66,6 +106,8 @@ export function InlineDocumentUpload({
     [uncertain, setUncertain] = useState(false);
   const bindUpload = useBoundUploadContext(contextKey, {
     onUploaded,
+    onConfidentialGrant,
+    onUploadedWithConfidentialGrant,
     onBusyChange,
     onUncertainChange,
   });
@@ -151,8 +193,33 @@ export function InlineDocumentUpload({
     try {
       const result = await documentsApi.upload(form);
       if (!request.isCurrent()) return;
-      request.uploaded(result.data.id);
+      let grantError: unknown;
+      if (type?.defaultConfidentiality === 'CONFIDENTIAL') {
+        const completion = await publishUploadedDocumentAfterGrant(
+          request,
+          result.data.id,
+          () =>
+            issueUploadedConfidentialGrant(
+              result.data.id,
+              confidentialAccessCode,
+              Boolean(onConfidentialGrant),
+            ),
+        );
+        if (!completion.current) return;
+        grantError = completion.grantError;
+        if (!grantError && onConfidentialGrant) setConfidentialAccessCode('');
+      } else {
+        request.publish(result.data.id);
+      }
       setFile(undefined);
+      if (grantError !== undefined) {
+        setError(
+          (grantError instanceof Error
+            ? grantError.message
+            : 'دریافت مجوز موقت سند ناموفق بود.') +
+            ' فایل بارگذاری شده است؛ کد را برای ذخیره قرارداد دوباره وارد کنید.',
+        );
+      }
       setNotice(
         uploadedNotice ??
           (result.data.currentVersion.scanStatus === 'CLEAN'
@@ -173,10 +240,8 @@ export function InlineDocumentUpload({
       );
     } finally {
       pending.current = false;
-      if (request.isCurrent()) {
-        setBusy(false);
-        request.busy(false);
-      }
+      setBusy(false);
+      request.releaseBusy();
     }
   }
   const Container = expanded ? 'div' : 'details';

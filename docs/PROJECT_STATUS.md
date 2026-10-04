@@ -1,6 +1,13 @@
 ## 2026-10-04 — FINANCE-WORKFLOW-EXPORTS-1004 — PC-A — IN_PROGRESS
 
 Finance operational case workflow, approved HR salary entry table/public bridge, branch manager deadline reminders, server filters/paging/private views and authorized genuine XLSX/server PDF/recorded-transaction receipts are implemented. Multi-stage approval remains deferred by owner. Additive migration only; permission catalog adds finance.export and finance.request.manage without role grants. Existing source authority and legacy payments are unchanged; no operational database/runtime/deploy is modified. Real PDF rendering/rasterized Persian layout QA and focused tests passed; full affected checks and concurrent develop integration/CI remain gates. See docs/tasks/FINANCE-WORKFLOW-EXPORTS-1004.md for rollout, compatibility and honest operational limits.
+## 2026-10-04 — CABIN-FILTER-ENGLISH-1004 — PC-B — READY_FOR_REVIEW
+
+Only the Cabin filter choices now display `Economy`, `Premium Economy`, `Business` and `First Class`. The canonical enum values, original query slot, existing filter descriptor title, Persian form/table/KPI labels, form choices, other filters and backend behavior remain unchanged. Focused 78 and all 607 Master Data Web tests, Contracts build, scoped lint/format, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit and lead owns review/push/develop merge.
+
+## 2026-10-04 — CABIN-CREATE-CHECK-1004 — PC-B — READY_FOR_REVIEW
+
+Cabin Class creation failed before persistence because `cabinType`, already required by the visible form and supported by the Prisma enum/repository mapper, was missing from the API resource allowlist. The bounded repair accepts that canonical field while preserving enum validation, booking-code uniqueness, permissions and legacy behavior. Exact regressions cover the visible create payload without `englishName`, generated internal name, explicit enum normalization and projected response. Focused API 35 and Web 19 tests, full Master Data API 502 and Web 606 tests, scoped lint/format, API/Web typechecks and production builds, and the 55-route Web build pass. No schema/migration/runtime/database/API endpoint change or authenticated browser QA; PostgreSQL persistence was not rerun locally and repository persistence is covered by the existing synthetic harness. Bounded locks release with commit; lead owns review/push/develop merge.
 
 ## 2026-10-04 — FINANCE-INBOX-RELIABILITY-1004 — PC-A — READY_FOR_REVIEW
 
@@ -8,6 +15,10 @@ Finance ticket payments now accept an additive operation UUID and observed payme
 
 Validation: full API 1961 tests, final focused Finance/HR regressions, Finance Web 37 tests, two real concurrent-payment PostgreSQL tests rerun against final payment code on a random fully migrated database, affected typechecks/lint and a 55-route production build passed. Latest develop has no overlapping Finance code changes; integration and Linux CI gate merge. Full Windows Web testing reproduces two unchanged Master Data raw-source CRLF/LF assertions on the base worktree; those other-owner files were not modified. No operational database, schema/migration/dependency, live runtime or authenticated browser QA. See docs/tasks/FINANCE-INBOX-RELIABILITY-1004.md for compatibility and remaining product scope.
 
+
+## 2026-10-04 — FINANCE-DELIVERY-TICK-1004 — PC-A — READY_FOR_REVIEW
+
+The concurrent customer-document delivery option in receipt approval now needs only its checkbox. The existing AFTER_RECEIPT command supplies an automatic reason; the extra basis, manual Audit reason and manager-exception fields are removed from this option. Backend audit, permissions, receipt validation and the separate contract delivery controls remain intact. Finance Web 37 tests and all eight exact-source-head CI jobs passed, including lint/typechecks and full production builds. No API/schema/migration/dependency/database/runtime changes or authenticated browser QA. User authorizes develop merge after CI; bounded locks release with commit.
 
 ## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
 
@@ -4632,3 +4643,32 @@ Ticket-only activation keeps the catalog freshness guard independent through ver
 Agency phone verification no longer displays the registration-branch selector. Existing authenticated authorized-branch default and OTP branch/session/grant enforcement remain unchanged. One wizard component changes; no API, schema, permission or dependency change. Organizations191 tests, scoped lint/format and Web typecheck pass; final Web build and CI gate user-authorized develop merge. Pending agreement upload task remains isolated.
 
 SALES-AGREED-AUTOFILL-1004 validation: Sales294 tests plus final quote payload3 pass (one environment-dependent skipped); API boundary/catalog targeted12 pass. Scoped lint/API and Web typechecks pass; API build and55-route Web build validate initial candidate; final corrected scalar quote production build, quality, full tests and database CI gates all pass. Concurrent develop merged with appended owner reports retained; refreshed-head CI gates final merge. No local database/runtime change.
+
+## 2026-10-04 — B2B-ADDRESS-INPUT-1004 — PC-B
+
+Agency creation replaces the country selector with one free-text address field in the first step. User confirmed optional country/city in the owner backend. MasterData accepts a null pair, preserves omitted geography on edits and validates complete supplied pairs; additive nullable columns retain restrictive geography FKs and a paired-nullability CHECK. Existing address values and permissions remain unchanged. B2B projection and Organizations displays support absent geography. Task-specific tests, disposable PostgreSQL migration proof and affected builds gate user-authorized push/develop merge; no operational database change.
+
+## 2026-10-04 — B2B-AGREEMENT-UPLOAD-1004 — PC-B
+
+User selected fresh confidential-code access for each submit/approval actor. Documents owns raw organization-proof eligibility; masked list metadata cannot authorize contract references. Frozenv2.1 reserves a narrow opaque-reference producer and transient B2B referenceGrants transport, with credentials excluded from persisted terms/commands/fingerprints/audit. Existing organization/branch, scan/expiry, pinned version and independent approval gates remain. Same strong worker implements; focused/full checks and independent exact-candidate review gate user-authorized push/develop merge. No schema, dependency, permission expansion or operational database change.
+
+B2B-AGREEMENT-UPLOAD-1004 validation checkpoint: user-approved Luna recovery after original implementer usage limit preserves task scope. API286 and Organizations198 tests pass; 19 PostgreSQL opt-in integration tests skipped. Contracts/API static and build checks plus Web lint/typecheck pass; generated database artifacts refreshed only, no operational database/schema change. Final Web build, independent exact-candidate review and CI remain outstanding; no push/merge claim.
+
+B2B-AGREEMENT-UPLOAD-1004 final local validation: Web webpack production build55/55 passed; API286 and Organizations198 tests plus affected lint/typecheck/build gates passed. Independent committed-candidate review and CI remain required before authorized develop merge.
+## 2026-10-04 — TICKET-PAYMENT-INLINE-PRICE-1004 — PC-A
+
+Ticket seat/unit/invoice/currency entry moved into the existing Finance ticket payment dialog, removing the separate cost action. Existing public cost command prepares an accepted revision before the existing idempotent payment command; accepted preparation is retained for retries. Source-account filtering and FX follow selected purchase currency, paid-cost lock and receipt retry remain. No backend/schema/migration/dependency/runtime change. Tests/checks/CI gate owner-authorized develop merge.
+
+Finance request page also has a top document-delivery jump button targeting the existing lower panel, with header scroll offset and keyboard focus target. No permission/data change.
+
+Validation: all Finance Web40 tests pass, including retained accepted-cost revision/retry, paid-cost lock and failure handling. Scoped lint/typecheck/production build and final CI gate develop merge; no live financial commands or local deployment. PR648.
+
+B2B-AGREEMENT-UPLOAD-1004 AU-R3-01 repair: deferred confidential-grant publication prevents upload self-invalidation; stale context publication remains blocked. Organizations200 tests and scoped Web static checks pass. Refreshed independent review and final build/CI required; not released yet.
+
+B2B-AGREEMENT-UPLOAD-1004 AU-R3-02: draft upload grant moves atomically with its own new proof scope; submit/approval still request fresh actor grants. Organizations202 tests and Web static checks pass; final review/build/CI gate release.
+
+B2B-AGREEMENT-UPLOAD-1004 final lifecycle checkpoint: session-bound uploads, context-owned busy state and recoverable expired-grant renewal added. Organizations204 tests and scoped Web static checks pass. No database/runtime mutation; exact-candidate final review/build/CI remain release gates.
+
+B2B-AGREEMENT-UPLOAD-1004 PR652: independent review resolved all five lifecycle findings, no open blocker; local checks/build passed. Candidate source frozen and bounded locks released. Final CI/merge pending, no operational runtime/database change.
+
+LOAD-ROUTE-SIDES-1004: PC-A adds both endpoint country/city filters in charter Load and disjoint outbound/eligible-return display. Explicit search snapshots both countries; changing country clears its city and results. Reservation manifest already provides four endpoint controls and route-relative direction, verified by existing tests. No backend/schema/runtime changes.

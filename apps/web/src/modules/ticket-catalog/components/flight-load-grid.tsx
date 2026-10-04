@@ -5,6 +5,7 @@ import { Button, FormField, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   companyFlightLegs,
+  disjointFlightLoadLegs,
   countryFlightLoadOffers,
   currentCompanyLoadOffers,
   validFlightLoadDates,
@@ -60,6 +61,8 @@ export function FlightLoadGrid({
   renderActions: (offer: TicketOfferV1) => ReactNode;
 }) {
   const [filter, setFilter] = useState(initial);
+  const [originCountry, setOriginCountry] = useState('');
+  const [searchedOriginCountry, setSearchedOriginCountry] = useState('');
   const [country, setCountry] = useState('');
   const [searchedCountry, setSearchedCountry] = useState('');
   const [countries, setCountries] = useState<Reference[]>([]);
@@ -89,7 +92,12 @@ export function FlightLoadGrid({
   }, []);
   const cityCountry = (id: string) =>
     references.find((r) => r.kind === 'city' && r.id === id)?.countryId;
-  const countryOffers = countryFlightLoadOffers(offers, references, country);
+  const countryOffers = countryFlightLoadOffers(
+    offers,
+    references,
+    country,
+    originCountry,
+  );
   const [searched, setSearched] = useState<FlightLoadFilter>();
   const [searchedCurrent, setSearchedCurrent] = useState(false);
   const [validDates, setValidDates] = useState(true);
@@ -103,19 +111,35 @@ export function FlightLoadGrid({
   const loadOffers = searchedCurrent
     ? currentCompanyLoadOffers(offers)
     : offers;
-  const outbounds = searched
+  const outboundCandidates = searched
     ? companyFlightLegs(
-        countryFlightLoadOffers(loadOffers, references, searchedCountry),
+        countryFlightLoadOffers(
+          loadOffers,
+          references,
+          searchedCountry,
+          searchedOriginCountry,
+        ),
         searched,
       )
     : [];
-  const outbound = outbounds.find((offer) => offer.id === outboundId);
+  const outbound = outboundCandidates.find((offer) => offer.id === outboundId);
   const returns = companyReturnLegs(
     loadOffers,
     outbound,
     sameClass,
     filter.carrier,
   );
+  const outbounds = disjointFlightLoadLegs(outboundCandidates, returns);
+  const originCities = [
+    ...new Set(
+      company
+        .filter(
+          (offer) =>
+            !originCountry || cityCountry(offer.originId) === originCountry,
+        )
+        .map((offer) => offer.originId),
+    ),
+  ];
   const returning = returns.find((offer) => offer.id === returnId);
   const cities = [
     ...new Set(
@@ -405,7 +429,29 @@ export function FlightLoadGrid({
             onChange={(value) => change('to', value)}
           />
         </FormField>
-        <FormField label="کشور" id="load-country">
+        <FormField label="کشور مبدأ" id="load-origin-country">
+          <NativeSearchSelect
+            id="load-origin-country"
+            value={originCountry}
+            onChange={(event) => {
+              setOriginCountry(event.target.value);
+              change('origin', '');
+            }}
+          >
+            <option value="">همه</option>
+            {countries.map((ref) => (
+              <option key={ref.id} value={ref.id}>
+                {ref.name}
+              </option>
+            ))}
+          </NativeSearchSelect>
+        </FormField>
+        {selectFilter(
+          'origin',
+          'شهر مبدأ',
+          originCities.map((id) => [id, cityName(id)]),
+        )}
+        <FormField label="کشور مقصد" id="load-country">
           <NativeSearchSelect
             id="load-country"
             value={country}
@@ -424,7 +470,7 @@ export function FlightLoadGrid({
         </FormField>
         {selectFilter(
           'destination',
-          'شهر',
+          'شهر مقصد',
           cities.map((id) => [id, cityName(id)]),
         )}
         {selectFilter(
@@ -475,6 +521,7 @@ export function FlightLoadGrid({
             setSearched({ ...searchFilter });
             setSearchedCurrent(validDates);
             setSearchedCountry(country);
+            setSearchedOriginCountry(originCountry);
             setOutboundId('');
             setReturnId('');
           }}
@@ -496,6 +543,8 @@ export function FlightLoadGrid({
           variant="outline"
           onClick={() => {
             setCountry('');
+            setOriginCountry('');
+            setSearchedOriginCountry('');
             setSearchedCountry('');
             setFilter(initial());
             setValidDates(false);

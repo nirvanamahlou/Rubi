@@ -14,6 +14,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { documentsApi } from '@/modules/documents/api/client';
 import {
+  canAttachOrganizationDocument,
   canReadOrganizationDocuments,
   organizationDocumentQuery,
   type StagedOrganizationDocument,
@@ -37,6 +38,9 @@ export function AgreementTermsEditor({
   permissions,
   disabled = false,
   onUploadStateChange,
+  onConfidentialGrant,
+  onConfidentialUploadComplete,
+  uploadContextKey = '',
   pendingDocuments,
   onPendingDocumentsChange,
   focus = 'all',
@@ -48,7 +52,13 @@ export function AgreementTermsEditor({
   organizationId?: string | undefined;
   permissions: readonly IamPermissionCode[];
   disabled?: boolean;
-  onUploadStateChange?: (busy: boolean) => void;
+  onUploadStateChange?: (busy: boolean, contextKey: string) => void;
+  onConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
+  onConfidentialUploadComplete?:
+    | ((documentId: string, token: string, terms: B2bAgreementTermsV1) => void)
+    | undefined;
+  uploadContextKey?: string;
   pendingDocuments?: AgreementPendingDocuments;
   onPendingDocumentsChange?: (documents: AgreementPendingDocuments) => void;
   focus?: 'all' | 'credit' | 'guarantees' | 'temporary';
@@ -56,7 +66,7 @@ export function AgreementTermsEditor({
   const [uploading, setUploading] = useState(false);
   const uploadBusy = (busy: boolean) => {
     setUploading(busy);
-    onUploadStateChange?.(busy);
+    onUploadStateChange?.(busy, uploadContextKey);
   };
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
   const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
@@ -116,8 +126,7 @@ export function AgreementTermsEditor({
     next: B2bAgreementTermsV1[K],
   ) => onChange({ ...value, [key]: next });
   const text = (
-    key:
-      'title' | 'cancellationTerms' | 'refundTerms' | 'notes' | 'changeReason',
+    key: 'title' | 'cancellationTerms' | 'refundTerms' | 'notes',
     label: string,
     multiline = false,
   ) => (
@@ -126,7 +135,7 @@ export function AgreementTermsEditor({
       {multiline ? (
         <textarea
           className="textarea"
-          maxLength={key === 'changeReason' ? 500 : 2000}
+          maxLength={2000}
           value={value[key]}
           onChange={(e) => set(key, e.target.value)}
         />
@@ -185,6 +194,8 @@ export function AgreementTermsEditor({
     inlineOnly = false,
     stage?: (document: StagedOrganizationDocument | null) => void,
     staged?: StagedOrganizationDocument | null,
+    targetBinding = '',
+    completeConfidential?: ((id: string, token: string) => void) | undefined,
   ) => (
     <div className="field full">
       <span>{label}</span>
@@ -207,7 +218,7 @@ export function AgreementTermsEditor({
           value={id ?? ''}
           aria-label={label}
           disabled={
-            !organizationId || !canReadOrganizationDocuments(permissions)
+            !organizationId || !canAttachOrganizationDocument(permissions)
           }
           onChange={(e) => change(e.target.value || null)}
         >
@@ -235,7 +246,7 @@ export function AgreementTermsEditor({
       ) : null}
       {branchId &&
       permissions.includes('documents.upload') &&
-      canReadOrganizationDocuments(permissions) ? (
+      canAttachOrganizationDocument(permissions) ? (
         <InlineDocumentUpload
           expanded={inlineOnly || !organizationId}
           organizationId={organizationId}
@@ -248,6 +259,17 @@ export function AgreementTermsEditor({
             change(documentId);
             setReload((n) => n + 1);
           }}
+          onUploadedWithConfidentialGrant={
+            completeConfidential
+              ? (documentId, token) => {
+                  stage?.(null);
+                  completeConfidential(documentId, token);
+                  setReload((n) => n + 1);
+                }
+              : undefined
+          }
+          onConfidentialGrant={onConfidentialGrant}
+          contextKey={`${uploadContextKey}|${label}|${targetBinding}`}
           onStaged={organizationId ? undefined : stage}
           staged={staged}
         />
@@ -469,6 +491,20 @@ export function AgreementTermsEditor({
                   guarantees: pendingDocuments?.guarantees ?? [],
                 }),
               pendingDocuments?.agreement,
+              `${value.documentId ?? ''}:${value.documentVersionId ?? ''}`,
+              (documentId, token) => {
+                const terms = {
+                  ...value,
+                  documentId,
+                  documentVersionId: null,
+                };
+                if (onConfidentialUploadComplete)
+                  onConfidentialUploadComplete(documentId, token, terms);
+                else {
+                  onChange(terms);
+                  onConfidentialGrant?.(documentId, token);
+                }
+              },
             )}
           </div>
         </section>
@@ -801,15 +837,35 @@ export function AgreementTermsEditor({
                         ),
                       }),
                     pendingDocuments?.guarantees[index],
+                    JSON.stringify(guarantee),
+                    (documentId, token) => {
+                      const terms = {
+                        ...value,
+                        guarantees: value.guarantees.map((item, i) =>
+                          i === index
+                            ? {
+                                ...item,
+                                documentId,
+                                documentVersionId: null,
+                              }
+                            : item,
+                        ),
+                      };
+                      if (onConfidentialUploadComplete)
+                        onConfidentialUploadComplete(documentId, token, terms);
+                      else {
+                        update({
+                          documentId,
+                          documentVersionId: null,
+                        });
+                        onConfidentialGrant?.(documentId, token);
+                      }
+                    },
                   )}
                 </div>
               </div>
             );
           })}
-          <p className="panel-note">
-            ثبت شرط سپرده، دریافت وجه ثبت نمی‌کند. دریافت و مانده سپرده در بخش
-            مالی مدیریت می‌شود.
-          </p>
         </section>
       )}
       {!organizationId ? (
@@ -817,49 +873,31 @@ export function AgreementTermsEditor({
           فایل‌های انتخاب‌شده پس از ایجاد سازمان در «اسناد و فایل‌ها» ذخیره و به
           همین قرارداد یا تضمین متصل می‌شوند.
         </p>
-      ) : canReadOrganizationDocuments(permissions) ? (
+      ) : canReadOrganizationDocuments(permissions) && documentPages > 1 ? (
         <div className="agreement-row-title">
-          <span className="panel-note">
-            فایل هر مدرک را در محل همان قرارداد یا تضمین بارگذاری کنید. اسناد
-            ذخیره‌شده همین سازمان و شعبه نیز قابل انتخاب‌اند.
-          </span>
           <button
             type="button"
             className="btn"
-            onClick={() => setReload((x) => x + 1)}
+            disabled={documentPage <= 1}
+            onClick={() => setDocumentPage((p) => p - 1)}
           >
-            تازه‌سازی اسناد
+            اسناد قبلی
           </button>
-          {documentPages > 1 ? (
-            <>
-              <button
-                type="button"
-                className="btn"
-                disabled={documentPage <= 1}
-                onClick={() => setDocumentPage((p) => p - 1)}
-              >
-                اسناد قبلی
-              </button>
-              <button
-                type="button"
-                className="btn"
-                disabled={documentPage >= documentPages}
-                onClick={() => setDocumentPage((p) => p + 1)}
-              >
-                اسناد بعدی
-              </button>
-            </>
-          ) : null}
+          <button
+            type="button"
+            className="btn"
+            disabled={documentPage >= documentPages}
+            onClick={() => setDocumentPage((p) => p + 1)}
+          >
+            اسناد بعدی
+          </button>
         </div>
-      ) : (
+      ) : organizationId && !canReadOrganizationDocuments(permissions) ? (
         <p className="panel-note">
           برای اتصال سند، مجوز مشاهده اسناد سازمان لازم است.
         </p>
-      )}
-      <div className="form-grid">
-        {text('notes', 'یادداشت تکمیلی', true)}
-        {text('changeReason', 'دلیل ثبت یا اصلاح این نسخه (اختیاری)', true)}
-      </div>
+      ) : null}
+      <div className="form-grid">{text('notes', 'یادداشت تکمیلی', true)}</div>
       <div className="boundary-note">
         ذخیره، پیش‌نویس ایجاد می‌کند. فعال‌سازی قرارداد و سقف‌ها پس از ارسال و
         تأیید یک کاربر مستقل دارای مجوز انجام می‌شود.
