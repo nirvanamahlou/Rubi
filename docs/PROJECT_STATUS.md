@@ -1,3 +1,6 @@
+## 2026-10-04 — CABIN-KPI-PERSIAN-1004 — PC-B — READY_FOR_REVIEW
+
+Only the Cabin Classes KPI label changed from `Cabinها` to `انواع کابین`. Metric computation and canonical English cabin types remain unchanged across the form, dropdown, table, View, API and stored values. Focused 23 and all 583 Master Data tests, scoped ESLint/Prettier, Web typecheck and the production Web build pass. No authenticated browser/runtime QA; bounded locks release with commit.
 
 ## 2026-10-04 — SUPPLIER-BROKER-FOURTH-KPI-1004 — PC-B — READY_FOR_REVIEW
 
@@ -42,7 +45,6 @@ Voucher preview and PDF now show `SUPPLIER` as `0` and omit the lower reservatio
 ## 2026-10-03 — MARKETING-SETTINGS-SYSTEM-1003 — PC-B — READY_FOR_REVIEW
 
 Marketing Settings now lives under System Management → Marketing. The Marketing hub no longer offers Settings, and `/marketing?section=settings` redirects to `/system?module=marketing`. The six original channel/site/role/alert/general/log views retain their interactions and detail dialogs, while existing persisted Marketing settings remain in place. 39 focused tests, scoped lint, Web typecheck and a 55-route webpack production build pass. Default Turbopack is blocked only by the reused dependency junction. No API, migration, permissions, dependency, operational data or local runtime change; bounded locks are released. See `docs/tasks/MARKETING-SETTINGS-SYSTEM-1003.md`.
-
 
 ## 2026-10-03 — INSURANCE-NESTED-PLANS-1003 — PC-B — READY_FOR_REVIEW
 
@@ -4291,6 +4293,7 @@ Final independent verification exposed only a breadcrumb-test false positive: th
 ## 2026-10-01 — LOGIN-LAN-HYDRATION-1001 — PC-A — READY_FOR_REVIEW
 
 LAN login page rendering without working form submission is traced to Next.js development-origin blocking of JavaScript resources. An environment-controlled allowed-origin list enables the local LAN host, while the login form's native fallback uses POST to keep credentials out of query strings. Scope is IAM Web login and Next development configuration only; no migration, dependency or API contract change. Sixteen focused login tests, scoped lint, Web typecheck, Prettier, diff check and 55-route production build pass. Local runtime rollout and browser smoke follow review/merge.
+
 ## 2026-10-01 — RESERVATION-DASHBOARD-DATE-FILTER-1001 — PC-A
 
 Reservation operations no longer exposes a separate events tab. The dashboard now has date-basis, start-date and end-date controls, and its metrics reflect the active date range. The existing reservation foundation render regression was updated; no API, schema, migration, dependency or runtime change.
@@ -4314,6 +4317,7 @@ Shared ticket preview/PDF has Tehran Milad/Azadi and world-landmark silhouettes,
 ## 2026-10-01 — RESERVATION-BUNDLED-PURCHASE-1001 — PC-A — READY_FOR_REVIEW
 
 Reservations purchase now prepares one atomic hotel-and-transfer request per contract. Outbound/return transfers share a broker and a per-passenger all-directions price; the hotel panel shows its name, assigned passenger age categories and nightly rates. Finance groups the resulting rows under the contract number and displays each purchase and totals by currency, while preserving individual settlement records. The schema change is additive and prior single purchases remain readable. Focused API/Web tests, scoped lint, both typechecks, Prisma validation and the six-task production build pass. No operational database or runtime change; apply migration before API rollout. User requested develop merge after CI.
+
 ## 2026-10-03 — LOGIN-HIGGSFIELD-BACKGROUND-1003 — PC-A — MEDIA_BLOCKED
 
 Prepared optional single-play login video support with matching poster fallback and reduced-motion source suppression. Higgsfield rejected Seedance 2.5, Mini, Kling 2.6 and Grok Lite for account-plan access, including alternatives quoting exactly the available 10 credits; no generation job or video exists. User chose Higgsfield only and to retain a draft. Sixteen login tests, scoped lint, Web typecheck and the 55-route build pass. NOORA compositing and desktop/mobile visual acceptance remain pending. Current login background and local runtime remain unchanged; no merge before verified media. See [task handoff](tasks/LOGIN-HIGGSFIELD-BACKGROUND-1003.md).
@@ -4347,6 +4351,7 @@ Updated the local login video to a TAILWIND passenger aircraft and exact cloud-t
 Login media now preserves the approved TAILWIND aircraft while emitting animated, independently drifting vapor from both engines; the previous rigid trail was removed. NOORA is centered above the login form. Local assets and cache versions updated; 16 login tests pass. No auth/API/schema/dependency/data changes.
 
 Follow-up visual correction: replace the sparse puffs with denser white continuous turbulent engine plumes. Same approved airliner, centered NOORA and one-shot silent playback. Full Web build/TypeScript, lint and 16 login tests passed; final media rendered and visually inspected.
+
 ## 2026-10-03 — RESERVATION-SUPPLIER-PREVIEW-FIX-1003 — PC-A — READY_FOR_REVIEW
 
 Supplier selection now precedes the reservation preview and uses the existing paginated reservation-scoped active broker directory. Reference loading preserves successful lists when another resource fails; loaded pickers remain searchable. Reference pickers no longer wrap interactive options in a label, preventing label activation from reopening selection. The current and historical forms share one preview slot; the print portal is hidden on screen and exposed only by print CSS. Four focused suites / 14 tests pass. Scoped source lint and the 55-route production build (including TypeScript) pass; no migration, dependency, API contract or operational data changes. PR #578 targets develop; user authorizes merge after CI. Scoped source locks release with the reviewed commit. Primary checkout and the running login-video worktree remain untouched.
@@ -4408,11 +4413,13 @@ Selected Reservation request rows now use the exact screenshot color #0078D7 wit
 ## 2026-10-03 — CUSTOMER-AFFAIRS-REPORT-META-COPY-1003 — PC-B
 
 Removed the fetched-at/access/date-range metadata line from the Customer Affairs report header. Date filters and the selected range passed to PDF export remain unchanged. Four focused component tests, scoped lint, Web typecheck and production build pass. No API, schema, permission, dependency, operational data, or live runtime change.
+
 ## 2026-10-03 — VOUCHER-BROKER-LEADER-1003 — PC-A
 
 واچر هتل نام کارگزار را در SUPPLIER و Board او را در TRANSFER نشان می‌دهد. پیش از صدور، کاربر کارگزار و تورلیدر وابسته به او را انتخاب می‌کند یا تورلیدر را با تلفن در اطلاعات پایهٔ همان کارگزار ثبت می‌کند. شمارهٔ کامل تنها در مسیر مجوزدار سند واچر خوانده و ممیزی می‌شود. فیلدهای علامت‌خوردهٔ خلاصه، پرواز، مسافران، توضیحات و پایین واچر حذف و خلاصه فشرده شد. رابطهٔ nullable تورلیدر به کارگزار با migration افزایشی اضافه شده؛ رکوردهای تاریخی بدون کارگزار باقی می‌مانند. Migration عملیاتی اجرا نشده و پیش از rollout API باید اعمال شود.
 
 LOGIN-NO-SMOKE-1003: removed all aircraft vapor from the login video at the user's request. Approved aircraft and centered NOORA retained. Native 12-second video render and mid-flight visual QA passed; local media endpoint serves HTTP 200. No source/API/data/migration changes.
+
 ## 2026-10-03 — RESERVATION-SEARCH-BUTTON-1003 — PC-A
 
 Reservations inbox includes a search submit button and native Enter submission. Keyword entry is applied on submission; existing status/service/date/sort filters continue to apply immediately, and clear resets both entry and filters to the default previous-month window. Default bounds now respect the selected contract/received/travel date basis instead of silently forcing contract date. Search normalizes Persian/Arabic digits and Yeh/Kaf consistently across supported fields. Twenty-two foundation regressions cover combined filters, invalid dates, normalized keywords, default date-basis behavior and accessible submit controls. No API/schema/migration/dependency/data change; review PR precedes integration.
@@ -4429,10 +4436,10 @@ Pure person/customer creation now asks for exactly first name, last name, phone 
 
 Reservations Manifest now renders Gregorian Tehran-local dates and explicit origin → destination paths. Tehran/Antalya city-and-country filters retain both physical legs in correct outbound/return sections; empty messages follow the filtered sections. Nine focused tests, scoped lint, Web typecheck and 55-route production build passed. Full Web lint stalled in the shared runtime; CI gates merge. No API, data, migration or dependency change.
 
-
 ## 2026-10-03 — PURCHASE-CUSTOMER-DATE-RANGE-1003 — PC-A — READY_FOR_REVIEW
 
 Sales new purchase now collects buyer name, phone, address and postal code above passengers, supports a separate canonical buyer/payer and stores an encrypted immutable contract contact snapshot for authorized printable output. New separate buyers use merged customer-only four-field creation without national ID or passenger passport; passenger identity validation is retained. Ticket results require a confirmed valid range, both legs respect its bounds, and changes invalidate prior catalog selections/quotes. 121 Sales/Customers API + 268 Web + 1 PostgreSQL regression passed (1 existing Web test skipped), affected lint/typechecks and API/Web production builds passed; Prisma validate/generate and all 113 migrations passed on a disposable PostgreSQL 18 database. The additive nullable Sales JSONB migration must precede API rollout; existing configured contact encryption keys are reused with domain separation. Primary dirty checkout and running local services remain unchanged. Scoped locks RELEASED; no merge/local rollout requested. See docs/tasks/PURCHASE-CUSTOMER-DATE-RANGE-1003.md.
+
 ## 2026-10-03 — INSURANCE-KPI-REPLACEMENTS-1003 — PC-B — READY_FOR_REVIEW
 
 Insurance fourth cards now show `دارای طرح بیمه` and `متصل به طرح‌ها`, computed from existing numeric `planCount` projections over complete unfiltered pagination. Empty ready data renders zero; loading, errors or malformed projections render unavailable. Stale resource responses, duplicate rows, changing/invalid totals and incomplete pages are rejected, and CRUD plus explicit Refresh reload the relation summary. Focused 8 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. One unrelated date-range test timed out on the first full run, then its isolated 10 tests and the full rerun passed. No authenticated browser/runtime QA or API/schema/runtime/database change; bounded locks release with commit.
@@ -4448,6 +4455,7 @@ User creation now saves the current explicit access selections even while option
 ## 2026-10-03 — SALES-DASHBOARD-NEGATIVE-BALANCE-1003 — PC-A — READY_FOR_REVIEW
 
 Sales dashboard aggregation now accepts legitimate negative computed balances from overpayment while rejecting negative payment input. The failing regression was reproduced before the fix; all 88 Sales API tests, scoped lint, formatting, Contracts/Database builds, API typecheck and production build pass. Prisma Client was regenerated locally without database access. No schema, permission, dependency or operational-data change.
+
 ## 2026-10-03 — AIRLINE-HIDE-REFERENCE-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 The Airlines list now omits Logo Reference and Integration Connection while preserving IATA, ICAO, airline name, country, the independent authenticated Logo column, status and all actions. Version / Audit was already absent and remains absent; forms, View, Excel, API, audit and integration data are unchanged. Focused 18 and all 538 Master Data tests, scoped ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA.
@@ -4481,10 +4489,10 @@ Aircraft Types now replaces `انواع بدنه` with `مدل‌های یکتا
 ## 2026-10-03 — B2B-REMOVE-ACCESS-SECTION-1003 — PC-B
 
 Removed the Users and Access section/card from agency360 and its workspace panel mount. Legacy browser access history resolves to the dossier home, preserving browser navigation. Stored users, security permissions, global system users and historical activity reporting remain unchanged. Organizations159 tests, scoped lint/typecheck/format and production build validation; lead bounded diff review and CI precede user-authorized push/develop merge. No API/schema/dependency/runtime change. PC-A can fetch develop after merge.
+
 ## 2026-10-03 — RAIL-HIDE-EXTRA-COLUMNS-1003 — PC-B — READY_FOR_REVIEW
 
 Rail Companies now displays code, company, country and organization from its resource-specific column model, plus the renderer's independent authenticated Logo, status and operations columns. Logo Reference, Integration Connection and `انواع قطار` are hidden only from this table; Version / Audit remains absent, and forms/View/export/backend plus every other resource remain unchanged. Focused 15 and all 563 Master Data tests, scoped ESLint, Web typecheck, scoped Prettier and the 55-route production build pass. No authenticated browser/runtime QA; bounded locks release with commit.
-
 
 ## 2026-10-03 — B2B-KPI-HIDE-NOTES-1003 — PC-B
 
@@ -4497,7 +4505,6 @@ Train Types create/edit now provides `افزودن امکان` beside the existi
 ## 2026-10-03 — B2B-CREATE-HIDE-DESCRIPTIONS-1003 — PC-B
 
 Removed one-sentence subtitles under main headings in the agency creation wizard: overall dialog, four steps and identity section introduction. Labels, field guidance, validation, OTP, legal warnings and submission behavior remain unchanged. Existing tests, scoped lint/typecheck/format and Web build validate bounded copy removal; CI precedes user-authorized develop merge. No API/schema/dependency/runtime/data change. PC-A can fetch develop after merge.
-
 
 ## 2026-10-03 — B2B-SIGNATORY-FORM-FIX-1003 — PC-B
 

@@ -134,6 +134,9 @@ describe('transport KPI replacements', () => {
   });
 
   it('replaces the cabin review card and preserves manifest publication', () => {
+    expect(
+      transportKpiItems('cabin-classes', [], 'ready').map(({ label }) => label),
+    ).toEqual(['کلاس‌ها', 'فعال', 'انواع کابین', 'کلاس غیرفعال']);
     expect(transportKpiItems('cabin-classes', [], 'ready')[3]?.label).toBe(
       'کلاس غیرفعال',
     );

@@ -299,7 +299,7 @@ export function transportKpiItems(
       fourth!,
     );
   if (resource === 'cabin-classes')
-    return common('کلاس‌ها', 'فعال', 'Cabinها', distinct('cabinType'), {
+    return common('کلاس‌ها', 'فعال', 'انواع کابین', distinct('cabinType'), {
       label: 'کلاس غیرفعال',
       value: summaryState === 'ready' ? allRecords.length - active : '—',
       icon: CircleAlert,
