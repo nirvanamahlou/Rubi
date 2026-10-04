@@ -33,6 +33,13 @@ import {
   FINANCE_PARTY_EXPOSURE_PORT,
   UnavailableFinanceExposureAdapter,
 } from './finance-exposure.port';
+import { B2bPhoneVerificationController } from './b2b-phone-verification.controller';
+import {
+  B2B_PHONE_DELIVERY_PORT,
+  DevelopmentB2bPhoneDelivery,
+} from './b2b-phone-verification.delivery';
+import { B2bPhoneVerificationService } from './b2b-phone-verification.service';
+import { B2bPhoneVerificationStore } from './b2b-phone-verification.store';
 
 @Module({
   imports: [
@@ -49,6 +56,7 @@ import {
     B2bController,
     B2bOrganizationUserController,
     B2bPortalController,
+    B2bPhoneVerificationController,
   ],
   providers: [
     B2bActivityService,
@@ -66,6 +74,13 @@ import {
     B2bAgreementWorkflowRepository,
     B2bAgreementWorkflowService,
     B2bAgreementDocuments,
+    B2bPhoneVerificationStore,
+    B2bPhoneVerificationService,
+    DevelopmentB2bPhoneDelivery,
+    {
+      provide: B2B_PHONE_DELIVERY_PORT,
+      useExisting: DevelopmentB2bPhoneDelivery,
+    },
     UnavailableFinanceExposureAdapter,
     {
       provide: FINANCE_PARTY_EXPOSURE_PORT,

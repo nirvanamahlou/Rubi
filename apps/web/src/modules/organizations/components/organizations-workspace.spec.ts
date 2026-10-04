@@ -72,6 +72,19 @@ describe('agency to Master Organization integration', () => {
     expect(agreementEditor).not.toContain('دلیل ثبت یا اصلاح این نسخه *');
   });
 
+  it('keeps the five-stage phone workflow stale-safe and development-only explicit', () => {
+    expect(cooperationWizard).toContain("'تأیید شماره',");
+    expect(cooperationWizard).not.toContain('کد یک‌بارمصرف شماره همراه');
+    expect(cooperationWizard).toContain('کد آزمایشی؛ پیامک واقعی ارسال نشده');
+    expect(cooperationWizard).toContain('PhoneVerificationRequestGate');
+    expect(cooperationWizard).toContain('phoneRequests.current.invalidate()');
+    expect(cooperationWizard).toContain(
+      'phoneRequests.current.isCurrent(requestId)',
+    );
+    expect(cooperationWizard).toContain('phoneVerificationExpiresAt');
+    expect(cooperationWizard).not.toContain('localStorage');
+  });
+
   it('loads operational and address data through public APIs without inventing Finance exposure', () => {
     expect(source).not.toContain('BLOCKED_FOR_MIGRATION');
     expect(client).toContain('workspace(organizationId');
