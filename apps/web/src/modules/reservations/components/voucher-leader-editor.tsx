@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TravelWorkflowStateV1, VoucherSettingsV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -47,6 +47,13 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
       source.workflow.voucherSettings = source.workflow.supplierFormSettings;
     return defaultVoucherSettings(source, {});
   });
+  const selectionRequest = useRef(0);
+  useEffect(
+    () => () => {
+      selectionRequest.current += 1;
+    },
+    [],
+  );
   const [brokers, setBrokers] = useState<Choice[]>([]);
   const [leaders, setLeaders] = useState<Choice[]>([]);
   const [search, setSearch] = useState('');
@@ -92,6 +99,8 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
   }
   async function chooseLeader(id: string) {
     if (!draft.brokerId) return;
+    const request = ++selectionRequest.current;
+    const brokerId = draft.brokerId;
     if (!id) {
       const next = { ...draft };
       delete next.leaderId;
@@ -106,45 +115,54 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
     setError('');
     try {
       const r = await travelRequest<{
-        data: { id: string; name: string; phone: string };
-      }>(`${path}/${draft.brokerId}/leaders/${id}/contact`);
-      change({
-        ...draft,
+        data: { id: string; name: string; phone: string; board?: string };
+      }>(`${path}/${brokerId}/leaders/${id}/contact`);
+      if (request !== selectionRequest.current) return;
+      onDirty();
+      setDraft((current) => ({
+        ...current,
         leaderId: id,
         text: {
-          ...draft.text,
+          ...current.text,
           leaderName: r.data.name,
           leaderPhone: r.data.phone,
+          transferBoard: r.data.board ?? '',
         },
-        flags: { ...draft.flags, tourLeader: true },
-      });
+        flags: { ...current.flags, tourLeader: true },
+      }));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'دریافت شماره انجام نشد.');
+      if (request === selectionRequest.current)
+        setError(e instanceof Error ? e.message : 'دریافت شماره انجام نشد.');
     } finally {
-      setBusy(false);
+      if (request === selectionRequest.current) setBusy(false);
     }
   }
   async function addLeader() {
     if (!draft.brokerId) return;
+    const request = ++selectionRequest.current;
+    const brokerId = draft.brokerId;
     setBusy(true);
     setError('');
     try {
       const r = await createLeader(
-        `${path}/${draft.brokerId}/leaders`,
+        `${path}/${brokerId}/leaders`,
         newName.trim(),
         newPhone.trim(),
       );
+      if (request !== selectionRequest.current) return;
       const list = await travelRequest<{ data: Choice[] }>(
-        `${path}/${draft.brokerId}/leaders`,
+        `${path}/${brokerId}/leaders`,
       );
+      if (request !== selectionRequest.current) return;
       setLeaders(list.data);
       setNewName('');
       setNewPhone('');
       await chooseLeader(r.data.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'ثبت تورلیدر انجام نشد.');
+      if (request === selectionRequest.current)
+        setError(e instanceof Error ? e.message : 'ثبت تورلیدر انجام نشد.');
     } finally {
-      setBusy(false);
+      if (request === selectionRequest.current) setBusy(false);
     }
   }
   async function save() {
@@ -185,6 +203,9 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
           className="w-full rounded border border-border bg-surface p-2"
           value={draft.brokerId || ''}
           onChange={(e) => {
+            selectionRequest.current += 1;
+            setBusy(false);
+            setError('');
             const broker = brokers.find((item) => item.id === e.target.value);
             setLeaders([]);
             const next = { ...draft };
@@ -196,6 +217,7 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
               text: {
                 ...draft.text,
                 broker: broker?.name || '',
+                transferBoard: '',
                 leaderName: '',
                 leaderPhone: '',
               },

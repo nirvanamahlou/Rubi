@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
 import {
   normalizeOrganizationNationalId,
@@ -528,6 +530,10 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'logoFileReference',
   ],
   brokers: [
+    'cityIds',
+    'boardText',
+    'primaryPhone',
+    'leaderDrafts',
     'englishName',
     'primaryContactId',
     'code',
@@ -1181,7 +1187,14 @@ export class MasterDataService {
       actorUserId: actor.userId,
       actorBranchId: branchOf(actor, requestedBranch),
     });
-    return { data: { id: leaderId, name: String(leader.name), phone } };
+    return {
+      data: {
+        id: leaderId,
+        name: String(leader.name),
+        phone,
+        board: String(broker.boardText ?? ''),
+      },
+    };
   }
 
   async unmaskOrganizationContact(
@@ -1568,6 +1581,18 @@ export class MasterDataService {
         throw new BadRequestException(`فیلد الزامی: ${missing.join(', ')}`);
     }
     const data: Record<string, unknown> = { ...values };
+    if (resource === 'brokers' && Object.hasOwn(data, 'cityIds')) {
+      const ids = brokerCityIds(data.cityIds);
+      data.cityId = ids[0] ?? null;
+    }
+    if (resource === 'brokers' && Object.hasOwn(data, 'boardText')) {
+      if (typeof data.boardText !== 'string' && data.boardText !== null)
+        throw new BadRequestException('متن Board معتبر نیست.');
+      const board = String(data.boardText ?? '').trim();
+      if (board.length > 300)
+        throw new BadRequestException('متن Board حداکثر ۳۰۰ نویسه است.');
+      data.boardText = board || null;
+    }
     if (resource === 'aircraft-types') {
       if (Object.hasOwn(data, 'manufacturerModel')) {
         const { manufacturer, model } = normalizeManufacturerModel(
@@ -1698,7 +1723,7 @@ export class MasterDataService {
           throw new BadRequestException('نشانی حداکثر ۵۰۰ نویسه است.');
         data.address = address || null;
       }
-      if (resource === 'suppliers' && Object.hasOwn(data, 'primaryPhone')) {
+      if (Object.hasOwn(data, 'primaryPhone')) {
         const phone = String(data.primaryPhone ?? '').trim();
         delete data.primaryPhone;
         if (phone) {
@@ -3392,6 +3417,90 @@ export class MasterDataService {
         status: 'DRAFT',
         isAuthoritative: false,
       };
+    }
+    if (resource === 'brokers') {
+      const existing = entityId
+        ? await this.repository.find('brokers', entityId)
+        : null;
+      const countryId = Object.hasOwn(data, 'countryId')
+        ? data.countryId
+        : existing?.countryId;
+      const hasCities =
+        Object.hasOwn(data, 'cityIds') || Object.hasOwn(data, 'cityId');
+      const ids = Object.hasOwn(data, 'cityIds')
+        ? brokerCityIds(data.cityIds)
+        : hasCities
+          ? brokerCityIds(data.cityId)
+          : ((existing?.cities ?? []) as { cityId: string }[]).map(
+              (v) => v.cityId,
+            );
+      for (const id of ids) {
+        const city = await this.repository.find('cities', id);
+        if (!city?.isActive || (countryId && city.countryId !== countryId))
+          throw new BadRequestException(
+            'شهرها باید فعال و متعلق به کشور انتخاب‌شده باشند.',
+          );
+      }
+      if (hasCities) {
+        data.cities = {
+          ...(partial ? { deleteMany: {} } : {}),
+          create: ids.map((cityId) => ({ cityId })),
+        };
+        delete data.cityIds;
+      }
+      if (Object.hasOwn(data, 'leaderDrafts')) {
+        const draft = brokerLeaderDrafts(data.leaderDrafts);
+        const existingLeaders = (existing?.leaders ?? []) as {
+          id: string;
+          version: number;
+        }[];
+        for (const item of [...draft.items, ...draft.removed]) {
+          if (
+            item.id &&
+            !existingLeaders.some(
+              (v) => v.id === item.id && v.version === item.version,
+            )
+          )
+            throw new ConflictException(
+              'تورلیدر هم‌زمان تغییر کرده یا متعلق به این کارگزار نیست.',
+            );
+        }
+        data.brokerLeaderChanges = {
+          items: await Promise.all(
+            draft.items.map(async (item) => {
+              const phoneData: Record<string, unknown> = {};
+              if (item.phone !== undefined) {
+                const phone = this.contactCrypto.protect('phone', item.phone);
+                Object.assign(phoneData, {
+                  primaryPhoneEncrypted: phone.encrypted,
+                  primaryPhoneEncryptionIv: phone.encryptionIv,
+                  primaryPhoneEncryptionAuthTag: phone.encryptionAuthTag,
+                  primaryPhoneEncryptionKeyVersion: phone.encryptionKeyVersion,
+                  primaryPhoneMasked: phone.masked,
+                  primaryPhoneFingerprint: phone.fingerprint,
+                });
+              }
+              return {
+                id: item.id,
+                version: item.version,
+                data: {
+                  name: item.name,
+                  ...phoneData,
+                  ...(!item.id
+                    ? {
+                        code: `LEADER_${randomUUID().replaceAll('-', '').slice(0, 24)}`,
+                        languages: [],
+                        destinations: [],
+                      }
+                    : {}),
+                },
+              };
+            }),
+          ),
+          removed: draft.removed,
+        };
+        delete data.leaderDrafts;
+      }
     }
     return data;
   }

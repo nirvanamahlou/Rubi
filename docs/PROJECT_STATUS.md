@@ -4572,3 +4572,9 @@ Screenshot693: remove signatory action text and internal-branch display, align d
 ## 2026-10-04 — B2B-SIGNATORY-FORM-COPY-1004 — PC-B
 
 Remove four user-specified guidance texts from signatory form; fields, currency dependency, proof validity, inactive save and activation enforcement stay intact. Bounded R0/C1 UI copy assigned to persistent worker. Required checks/CI gate user-authorized push/develop merge. No API/data/schema/permission/dependency changes; usage unavailable.
+
+## BROKER-LEADERS-BOARD-1004 — 2026-10-04 — PC-A
+
+Bounded owner-authorized Master Data/Reservations implementation: exact new Broker identity/phone/airport Board form, country-scoped multi-city selection and multiple tour leaders. Atomic aggregate writes, encrypted contact envelopes, omitted-phone preservation, child version/membership checks and deactivate-only removals retain existing data. Voucher selection automatically fills Board/name/full phone through the existing audited owner service and rejects stale responses after broker changes.
+
+Local Master Data API 496 tests and Master Data Web/voucher 604 tests passed; Prisma format/validate/generate and database/contracts builds passed. Final affected production builds and lint/typecheck refresh are running; develop integration and full CI remain gates. Local database connection unavailable, so no operational migration/runtime rollout. Apply the additive broker migration before API rollout. Permanent PC-B ownership retained; owner explicitly authorized this PC-A slice. Handoff: docs/tasks/BROKER-LEADERS-BOARD-1004.md.

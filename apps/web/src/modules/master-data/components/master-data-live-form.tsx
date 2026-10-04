@@ -1,4 +1,5 @@
 'use client';
+import { MasterDataBrokerForm } from './master-data-broker-form';
 
 import {
   isMasterTransportFormResource,
@@ -161,6 +162,15 @@ export function masterDataRecordTitle(
 export function MasterDataLiveForm(
   props: Parameters<typeof GenericMasterDataLiveForm>[0],
 ) {
+  if (props.definition.key === 'brokers')
+    return props.open ? (
+      <MasterDataBrokerForm
+        mode={props.mode}
+        onOpenChange={props.onOpenChange}
+        onPersist={props.onPersist}
+        {...(props.record ? { record: props.record } : {})}
+      />
+    ) : null;
   if (props.definition.key === 'meal-services' && props.mode !== 'view')
     return props.open ? (
       <MasterDataMealServiceForm

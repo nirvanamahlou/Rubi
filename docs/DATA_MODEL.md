@@ -668,3 +668,7 @@ TicketPublishedOffer optionally references originAirportId and destinationAirpor
 ## TRANSFER-PASSENGER-PRICING-1003
 
 Reservations purchase calculation snapshots optionally retain `chargeablePassengerCount` in existing JSON. Transfer total is unit price times a positive integer count, independent of hotel dates; hotel formula is unchanged. Per-direction purchase rows retain their existing supplier FK, covered service keys, actor UTC timestamp and shared batch ID. No schema migration; historical revisions remain immutable.
+
+## BROKER-LEADERS-BOARD-1004
+
+MasterBroker gains optional airport pickup boardText (300 characters) and the existing AES-GCM primary phone envelope pattern. MasterBrokerCity owns unique (brokerId, cityId) FK links; cityId remains the first-city legacy projection. The additive migration backfills historical single-city links. MasterLeader broker ownership is reused: create/update/deactivate and broker CAS execute in the same transaction; leader versions protect concurrent standalone edits. Removed leaders retain identity. Public projections and audit omit encryption envelopes; only the existing Reservations-authorized audited leader contact endpoint returns full phone and optional broker Board.
