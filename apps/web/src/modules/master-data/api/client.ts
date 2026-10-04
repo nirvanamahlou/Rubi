@@ -130,11 +130,31 @@ async function requestFile(
       response.status,
     );
   }
+  const contentType = (response.headers.get('content-type') ?? '')
+    .split(';', 1)[0]
+    ?.trim()
+    .toLowerCase();
+  if (
+    contentType !==
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  )
+    throw new MasterDataApiError('پاسخ دریافتی فایل Excel معتبر نیست.', 502);
+  const blob = await response.blob();
+  if (blob.size < 4)
+    throw new MasterDataApiError('فایل Excel دریافتی خالی است.', 502);
+  const signature = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
+  if (
+    signature[0] !== 0x50 ||
+    signature[1] !== 0x4b ||
+    signature[2] !== 0x03 ||
+    signature[3] !== 0x04
+  )
+    throw new MasterDataApiError('محتوای پاسخ یک فایل Excel معتبر نیست.', 502);
   const disposition = response.headers.get('content-disposition') ?? '';
   const fileName =
     /filename="?([^";]+)"?/i.exec(disposition)?.[1] ??
     `master-data-${input.resource}.xlsx`;
-  return { blob: await response.blob(), fileName };
+  return { blob, fileName };
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {

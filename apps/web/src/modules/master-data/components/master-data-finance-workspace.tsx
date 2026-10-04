@@ -605,14 +605,7 @@ export function MasterDataFinanceWorkspace() {
         timezone:
           Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Tehran',
       });
-      const url = window.URL.createObjectURL(file.blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = file.fileName;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(url);
+      downloadFile(file.blob, file.fileName);
     } catch (error) {
       setNotice(
         error instanceof Error ? error.message : 'خروجی Excel ناموفق بود.',
@@ -1572,3 +1565,4 @@ export function MasterDataFinanceWorkspace() {
     </div>
   );
 }
+import { downloadFile } from '../api/download-file';

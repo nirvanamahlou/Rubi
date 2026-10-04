@@ -148,14 +148,18 @@ describe('master data browser client', () => {
 
   it('downloads a credentialed XLSX file from the direct endpoint', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
-    const blob = new Blob(['xlsx']);
+    const blob = new Blob([new Uint8Array([0x50, 0x4b, 0x03, 0x04])], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       headers: {
-        get: (name: string) =>
-          name === 'content-disposition'
-            ? 'attachment; filename="master-data-countries.xlsx"'
-            : null,
+        get: (name: string) => {
+          if (name === 'content-disposition')
+            return 'attachment; filename="master-data-countries.xlsx"';
+          if (name === 'content-type') return blob.type;
+          return null;
+        },
       },
       blob: async () => blob,
     });
@@ -180,6 +184,60 @@ describe('master data browser client', () => {
       'http://localhost:4000/api/v1/master-data/exports/xlsx/download',
       expect.objectContaining({ method: 'POST', credentials: 'include' }),
     );
+  });
+
+  it.each([
+    {
+      title: 'empty response',
+      contentType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      bytes: new Uint8Array(),
+      message: 'فایل Excel دریافتی خالی است.',
+    },
+    {
+      title: 'HTML response',
+      contentType: 'text/html',
+      bytes: new TextEncoder().encode('<html>login</html>'),
+      message: 'پاسخ دریافتی فایل Excel معتبر نیست.',
+    },
+    {
+      title: 'non-ZIP response',
+      contentType:
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      bytes: new TextEncoder().encode('{"error":"proxy"}'),
+      message: 'محتوای پاسخ یک فایل Excel معتبر نیست.',
+    },
+  ])('rejects a successful $title before download', async (fixture) => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const blob = new Blob([fixture.bytes], { type: fixture.contentType });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name === 'content-type' ? fixture.contentType : null,
+        },
+        blob: async () => blob,
+      }),
+    );
+
+    await expect(
+      masterDataApi.downloadExcel({
+        resource: 'countries',
+        format: 'xlsx',
+        filters: {
+          search: '',
+          status: 'all',
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        columns: ['code', 'name'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      }),
+    ).rejects.toMatchObject({ status: 502, message: fixture.message });
   });
 
   it('preserves forbidden status for the permission state', async () => {

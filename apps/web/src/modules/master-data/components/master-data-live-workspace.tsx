@@ -262,14 +262,7 @@ function GenericMasterDataWorkspace({
     try {
       if (format === 'xlsx') {
         const file = await masterDataApi.downloadExcel(input);
-        const url = window.URL.createObjectURL(file.blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = file.fileName;
-        document.body.append(anchor);
-        anchor.click();
-        anchor.remove();
-        window.setTimeout(() => window.URL.revokeObjectURL(url), 0);
+        downloadFile(file.blob, file.fileName);
         setNotice(`فایل Excel ${definition.label} با موفقیت دانلود شد.`);
         return;
       }
@@ -731,3 +724,4 @@ export function MasterDataWorkspace({
     return <MasterDataSalesReferencesWorkspace />;
   return <GenericMasterDataWorkspace section={section} />;
 }
+import { downloadFile } from '../api/download-file';

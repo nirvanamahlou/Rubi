@@ -1,3 +1,7 @@
+## 2026-10-04 — MASTER-DATA-XLSX-DOWNLOAD-1004 — PC-B — READY_FOR_REVIEW
+
+Master Data Excel downloads now reject empty, wrong-MIME and non-ZIP HTTP 200 responses instead of saving them with an `.xlsx` extension. All nine list workspaces use one safe browser-download helper that keeps the Blob URL alive for a bounded 60 seconds and always removes its temporary anchor. Independent openpyxl validation opened populated and header-only generated workbooks with exact Persian headers and values. Focused Web 28, focused API 38 and all 596 Master Data Web tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. The former immediate URL revocation is a verified weakness, but no user-provided corrupt file was available to claim an exact reproduction. No authenticated browser/runtime, real-data, API/schema/contract/dependency or database change; bounded locks release with commit.
+
 ## 2026-10-04 — CABIN-KPI-PERSIAN-1004 — PC-B — READY_FOR_REVIEW
 
 Only the Cabin Classes KPI label changed from `Cabinها` to `انواع کابین`. Metric computation and canonical English cabin types remain unchanged across the form, dropdown, table, View, API and stored values. Focused 23 and all 583 Master Data tests, scoped ESLint/Prettier, Web typecheck and the production Web build pass. No authenticated browser/runtime QA; bounded locks release with commit.
