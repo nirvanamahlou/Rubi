@@ -35,7 +35,7 @@ export const englishNavigation: Record<
     description: 'Customer requests',
   },
   '/reservations': {
-    title: 'Reservations & travel operations',
+    title: 'Reservations',
     description: 'Travel services',
   },
   '/reservations/hotel-rates': {
@@ -81,7 +81,7 @@ export const englishNavigation: Record<
 export const englishNavigationGroups: Record<string, string> = {
   work: 'Workspace',
   sales: 'Sales & customer relations',
-  operations: 'Reservations & travel supply',
+  operations: 'Reservations',
   finance: 'Finance',
   hr: 'Human resources',
   resources: 'Documents & reports',

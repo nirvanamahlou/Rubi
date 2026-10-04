@@ -37,7 +37,7 @@ const expectedTitles = [
   'داشبورد',
   'مشتریان و مسافران',
   'امور مشتریان و پشتیبانی',
-  'رزرواسیون و عملیات سفر',
+  'رزروسیون',
   'مدیریت گروهی نرخ‌های هتل‌ها',
   'تعریف و ظرفیت پرواز',
   'قرارداد',
@@ -167,7 +167,7 @@ describe('CRM navigation', () => {
 
   it('keeps sales, reservation, and ticket management as separate modules', () => {
     expect(getNavigationItem('/sales')?.title).toBe('قرارداد');
-    expect(getNavigationItem('/reservations')?.title).toContain('رزرواسیون');
+    expect(getNavigationItem('/reservations')?.title).toBe('رزروسیون');
     expect(getNavigationItem('/ticket-management')?.title).toBe(
       'تعریف و ظرفیت پرواز',
     );
