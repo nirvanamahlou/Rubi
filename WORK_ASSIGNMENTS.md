@@ -1,3 +1,7 @@
+## SALES-RANGE-FLOATING-1004 — PC-A — ACTIVE
+
+- Reserve Sales Web required future date range, floating-ticket cancellation, focused tests, and own status entries on `codex/pc-a-sales-range-floating-1004`. No API/schema/migration/dependency or shared UI change. User authorizes tests and develop merge.
+
 ## SUPPLIER-BROKER-FOURTH-KPI-1004 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-supplier-broker-fourth-kpi-1004` from origin/develop@494f97bd. Reserve Master Data Suppliers workspace, module-local complete-pagination KPI helper/tests and own top status entries. Add a fourth global `دارای خدمات` card for Suppliers and replace Broker inactive with global `دارای تماس اصلی`, using existing canonical record projections with safe unfiltered pagination/stale/error guards. Preserve each tab's first three cards, collaboration tab, API/schema/permissions/dependencies/runtime/database and all other resources. No overlapping active Master Data supplier workspace lock found; lead owns review/commit/push/develop merge.
