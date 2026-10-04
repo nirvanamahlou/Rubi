@@ -29,6 +29,7 @@ export function MasterDataBrokerForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
+  const leaderSequence = useRef(0);
   const disabled = saving || mode === 'view';
   function change(key: string, value: string) {
     setValues((current) => ({
@@ -238,18 +239,19 @@ export function MasterDataBrokerForm({
             type="button"
             variant="outline"
             disabled={disabled || leaders.length >= 100}
-            onClick={() =>
+            onClick={() => {
+              const key = `new-${++leaderSequence.current}`;
               setLeaders((current) => [
                 ...current,
                 {
-                  key: crypto.randomUUID(),
+                  key,
                   name: '',
                   phone: '',
                   phoneMasked: '',
                   phoneTouched: false,
                 },
-              ])
-            }
+              ]);
+            }}
           >
             افزودن تورلیدر
           </Button>
