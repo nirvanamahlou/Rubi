@@ -8,11 +8,14 @@ import {
   Query,
   ParseUUIDPipe,
   Post,
+  Res,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type {
   FinanceHistoryQueryV1,
+  FinanceInboxQueryV1,
+  FinanceExportQueryV1,
   FinanceReceiptDecisionCommandV1,
   FinanceProcurementInvoiceDecisionCommandV1,
   FinanceProcurementInvoicePaymentCommandV1,
@@ -27,6 +30,14 @@ import { RequirePermissions } from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 import { FinanceInboxService } from './finance-inbox.service';
+import type { Response } from 'express';
+import {
+  isClosedFinanceItem,
+  filterFinanceInbox,
+  validateInboxQuery,
+} from './finance-inbox-query';
+import { financeExportSnapshot } from './finance-export';
+import { buildFinanceXlsx, FINANCE_XLSX_MIME } from './finance-xlsx';
 
 @Controller('finance')
 @UseGuards(AuthGuard, PermissionGuard)
@@ -51,6 +62,77 @@ export class FinanceInboxController {
   @Header('Cache-Control', 'private, no-store')
   list(@Req() request: AuthenticatedRequest) {
     return this.inbox.list(request.actor);
+  }
+
+  @Get('inbox/page')
+  @RequirePermissions('finance.read')
+  @Header('Cache-Control', 'private, no-store')
+  async page(
+    @Query() query: FinanceInboxQueryV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const { page, pageSize } = validateInboxQuery(query, request.actor);
+    const result = await this.inbox.list(request.actor);
+    const items = filterFinanceInbox(result.items, query);
+    const open = items.filter((item) => !isClosedFinanceItem(item));
+    return {
+      ...result,
+      items: items.slice((page - 1) * pageSize, page * pageSize),
+      total: items.length,
+      page,
+      pageSize,
+      summary: {
+        openCount: open.length,
+        overdueCount: open.filter(
+          (item) => item.dueAt && item.dueAt < result.generatedAt,
+        ).length,
+        receiptCount: open.filter((item) => item.source === 'SALES').length,
+        paymentCount: open.filter(
+          (item) =>
+            [
+              'PAYMENT_REQUEST',
+              'PAYROLL_REQUEST',
+              'OPERATIONAL_REQUEST',
+            ].includes(item.kind) &&
+            item.amount &&
+            ['READY_FOR_PAYMENT', 'APPROVED', 'PAYING'].includes(item.status),
+        ).length,
+      },
+    };
+  }
+
+  @Get('export-data')
+  @RequirePermissions('finance.read', 'finance.export')
+  @Header('Cache-Control', 'private, no-store')
+  exportData(
+    @Query() query: FinanceExportQueryV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return financeExportSnapshot(this.inbox, query, request.actor);
+  }
+
+  @Get('export.xlsx')
+  @RequirePermissions('finance.read', 'finance.export')
+  async exportXlsx(
+    @Query() query: FinanceExportQueryV1,
+    @Req() request: AuthenticatedRequest,
+    @Res() response: Response,
+  ) {
+    const snapshot = await financeExportSnapshot(
+      this.inbox,
+      query,
+      request.actor,
+    );
+    response.setHeader('Content-Type', FINANCE_XLSX_MIME);
+    response.setHeader('Cache-Control', 'private, no-store');
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader(
+      'Content-Disposition',
+      'attachment; filename="finance-' +
+        snapshot.scope.toLowerCase() +
+        '.xlsx"',
+    );
+    response.send(Buffer.from(buildFinanceXlsx(snapshot)));
   }
 
   @Get('settlement-accounts')

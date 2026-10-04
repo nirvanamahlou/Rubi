@@ -2,6 +2,8 @@
 
 import type {
   FinanceHistoryQueryV1,
+  FinanceInboxQueryV1,
+  FinanceInboxPageV1,
   FinanceHistoryV1,
   FinanceBankOptionV1,
   FinanceInboxV1,
@@ -33,7 +35,7 @@ export class FinanceInboxApiError extends Error {
   }
 }
 
-async function apiRequest<T>(
+export async function apiRequest<T>(
   path: string,
   init: RequestInit = {},
   retried = false,
@@ -127,6 +129,15 @@ export const financeInboxApi = {
     );
   },
   list: () => apiRequest<FinanceInboxV1>('/finance/inbox'),
+  page: (query: FinanceInboxQueryV1) =>
+    apiRequest<FinanceInboxPageV1>(
+      '/finance/inbox/page?' +
+        new URLSearchParams(
+          Object.entries(query)
+            .filter(([, value]) => value !== undefined && value !== '')
+            .map(([key, value]) => [key, String(value)]),
+        ).toString(),
+    ),
   accounts: async () =>
     (
       await apiRequest<{ data: readonly FinanceSettlementAccountV1[] }>(

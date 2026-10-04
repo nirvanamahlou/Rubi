@@ -103,6 +103,7 @@ const approval = new Set([
   'benefits.loans',
   'finance.batch',
   'payroll.runs',
+  'payroll.paymentRequests',
 ]);
 
 export function getHrResource(

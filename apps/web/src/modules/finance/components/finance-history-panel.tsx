@@ -10,12 +10,14 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/surfaces';
 import { financeInboxApi } from '../api/finance-inbox-api';
+import { FinanceExportActions } from './finance-export-actions';
 
 const sourceNames: Record<FinanceHistorySourceV1, string> = {
   SALES: 'فروش',
   TICKET: 'خرید بلیت',
   RESERVATIONS: 'رزرواسیون',
   INVOICE: 'فاکتور خرید',
+  OPERATIONAL: 'درخواست عملیاتی و حقوق',
 };
 const date = (value: string) =>
   new Intl.DateTimeFormat('fa-IR', {
@@ -97,6 +99,17 @@ export function FinanceHistoryPanel({
           به‌روزرسانی
         </Button>
       </div>
+      {!compact ? (
+        <FinanceExportActions
+          query={{
+            scope: 'HISTORY',
+            historySource: source,
+            requestId,
+            direction,
+          }}
+          disabled={busy}
+        />
+      ) : null}
       {!compact ? (
         <div className="flex flex-wrap items-center gap-3">
           <label>
@@ -201,6 +214,15 @@ export function FinanceHistoryPanel({
                 </div>
               ) : null}
             </dl>
+            <FinanceExportActions
+              receipt
+              query={{
+                scope: 'RECEIPT',
+                historySource: row.source,
+                recordId: row.id,
+                requestId: row.requestId,
+              }}
+            />
           </article>
         ))}
       </div>

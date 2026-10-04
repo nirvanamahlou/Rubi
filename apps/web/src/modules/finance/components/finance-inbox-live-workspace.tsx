@@ -20,14 +20,19 @@ import {
   WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { inTehranDateRange, isActionablePayment } from '../model/inbox-filters';
+import { isActionablePayment } from '../model/inbox-filters';
 import { paymentWithReceipt } from '../model/payment-with-receipt';
 import { FinanceHistoryPanel } from './finance-history-panel';
+import { FinanceExportActions } from './finance-export-actions';
+import { FinancePayrollActions } from './finance-payroll-actions';
+import { FinanceFollowupPanel } from './finance-followup-panel';
+import { FinanceRequestCreate } from './finance-request-create';
 import { ticketPurchaseTotal } from '../model/ticket-purchase-total';
 import type {
   FinanceInboxItemV1,
   FinanceInboxSource,
-  FinanceInboxV1,
+  FinanceInboxQueryV1,
+  FinanceInboxPageV1,
   FinanceBankOptionV1,
   FinancePaymentMethodOptionV1,
   FinanceRequestStatus,
@@ -67,14 +72,15 @@ const sourceLabels: Record<FinanceInboxSource, string> = {
   HR: 'منابع انسانی',
   RESERVATIONS: 'رزرواسیون',
   PURCHASES: 'خرید و تأمین',
+  FINANCE: 'درخواست مستقیم مالی',
 };
 const statusLabels: Partial<Record<FinanceRequestStatus, string>> = {
   NEW: 'جدید',
   UNDER_REVIEW: 'در حال بررسی',
-  APPROVED: 'پاسخ داده‌شده',
+  APPROVED: 'تأییدشده',
   READY_FOR_PAYMENT: 'آماده پرداخت',
-  PAYING: 'در حال پرداخت',
-  PAID: 'پرداخت‌شده',
+  PAYING: 'پرداخت جزئی',
+  PAID: 'تسویه‌شده',
   RECEIPT_CONFIRMED: 'دریافت تأییدشده',
   CORRECTION_REQUIRED: 'نیازمند اصلاح',
   REJECTED: 'ردشده',
@@ -87,6 +93,11 @@ const closed = new Set<FinanceRequestStatus>([
   'REJECTED',
   'CANCELLED',
 ]);
+
+const isClosed = (item: FinanceInboxItemV1) =>
+  item.status === 'APPROVED'
+    ? item.kind === 'HR_REFERRAL'
+    : closed.has(item.status);
 
 function faDate(value: string | null) {
   if (!value) return 'بدون سررسید';
@@ -111,6 +122,7 @@ function sourceTone(source: FinanceInboxSource) {
       'border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/40 dark:text-cyan-200',
     PURCHASES:
       'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200',
+    FINANCE: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   }[source];
 }
 
@@ -127,15 +139,46 @@ export function FinanceInboxLiveWorkspace() {
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{
     revision: number;
-    data: FinanceInboxV1 | null;
+    queryKey: string;
+    data: FinanceInboxPageV1 | null;
     error: string;
   } | null>(null);
   const [search, setSearch] = useState('');
   const [source, setSource] = useState<FinanceInboxSource | 'ALL'>('ALL');
-  const [status, setStatus] = useState<'ALL' | 'OPEN' | 'CLOSED'>('OPEN');
+  const [status, setStatus] = useState<
+    'ALL' | 'OPEN' | 'CLOSED' | FinanceRequestStatus
+  >('OPEN');
+  const [branchId, setBranchId] = useState('');
+  const [person, setPerson] = useState('');
+  const [currencyCode, setCurrencyCode] = useState('');
+  const [minAmount, setMinAmount] = useState('');
+  const [maxAmount, setMaxAmount] = useState('');
+  const [dueFrom, setDueFrom] = useState('');
+  const [dueTo, setDueTo] = useState('');
+  const [pagination, setPagination] = useState({ key: '', page: 1 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const filterKey = JSON.stringify({
+    search,
+    source,
+    status,
+    fromDate,
+    toDate,
+    branchId,
+    person,
+    currencyCode,
+    minAmount,
+    maxAmount,
+    dueFrom,
+    dueTo,
+  });
+  const page = pagination.key === filterKey ? pagination.page : 1;
+  const setPage = (value: number | ((current: number) => number)) =>
+    setPagination({
+      key: filterKey,
+      page: typeof value === 'function' ? value(page) : value,
+    });
   const [accounts, setAccounts] = useState<
     readonly FinanceSettlementAccountV1[]
   >([]);
@@ -183,22 +226,57 @@ export function FinanceInboxLiveWorkspace() {
     useState<FinanceSettlementAccountKind>('BANK');
   const [accountBankId, setAccountBankId] = useState('');
   const [accountMaskedId, setAccountMaskedId] = useState('');
-  const loading = state?.revision !== revision;
+  const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
+  const inboxQuery = useMemo<FinanceInboxQueryV1>(
+    () => ({
+      search,
+      source: source === 'ALL' ? undefined : source,
+      status: status === 'ALL' ? undefined : status,
+      fromDate,
+      toDate,
+      branchId,
+      person,
+      currencyCode,
+      minAmount,
+      maxAmount,
+      dueFrom,
+      dueTo,
+      page,
+      pageSize: 25,
+    }),
+    [
+      search,
+      source,
+      status,
+      fromDate,
+      toDate,
+      branchId,
+      person,
+      currencyCode,
+      minAmount,
+      maxAmount,
+      dueFrom,
+      dueTo,
+      page,
+    ],
+  );
+
+  const queryKey = JSON.stringify(inboxQuery);
+  const loading = state?.revision !== revision || state.queryKey !== queryKey;
   const data = loading ? null : state.data;
   const error = loading ? '' : state.error;
-  const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
-
   useEffect(() => {
     let active = true;
     void financeInboxApi
-      .list()
+      .page(inboxQuery)
       .then((value) => {
-        if (active) setState({ revision, data: value, error: '' });
+        if (active) setState({ revision, queryKey, data: value, error: '' });
       })
       .catch((reason: unknown) => {
         if (active)
           setState({
             revision,
+            queryKey,
             data: null,
             error:
               reason instanceof FinanceInboxApiError
@@ -206,6 +284,12 @@ export function FinanceInboxLiveWorkspace() {
                 : 'دریافت کارتابل مالی ناموفق بود.',
           });
       });
+    return () => {
+      active = false;
+    };
+  }, [revision, inboxQuery, queryKey]);
+  useEffect(() => {
+    let active = true;
     void Promise.allSettled([
       financeInboxApi.accounts(),
       financeInboxApi.methods(),
@@ -236,37 +320,9 @@ export function FinanceInboxLiveWorkspace() {
     };
   }, [revision]);
 
-  const items = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase('fa');
-    return (data?.items ?? []).filter((item) => {
-      const matchesSource = source === 'ALL' || item.source === source;
-      const matchesStatus =
-        status === 'ALL' ||
-        (status === 'OPEN'
-          ? !closed.has(item.status)
-          : closed.has(item.status));
-      const matchesDates = inTehranDateRange(item.createdAt, fromDate, toDate);
-      const haystack = [
-        item.title,
-        item.sourceReference,
-        item.contractReference,
-        item.partyDisplaySnapshot,
-        item.description,
-        item.requesterDisplaySnapshot,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLocaleLowerCase('fa');
-      return (
-        matchesSource &&
-        matchesStatus &&
-        matchesDates &&
-        (!query || haystack.includes(query))
-      );
-    });
-  }, [data, fromDate, search, source, status, toDate]);
+  const items = useMemo(() => data?.items ?? [], [data]);
   const dashboard = useMemo(() => {
-    const openItems = items.filter((item) => !closed.has(item.status));
+    const openItems = items.filter((item) => !isClosed(item));
     const receiptItems = openItems.filter((item) => item.source === 'SALES');
     const paymentItems = openItems.filter(isActionablePayment);
     const dueItems = [...openItems]
@@ -282,22 +338,25 @@ export function FinanceInboxLiveWorkspace() {
       }))
       .filter((item) => item.count > 0);
     return {
-      receiptCount: receiptItems.length,
-      paymentCount: paymentItems.length,
+      receiptCount: data?.summary.receiptCount ?? receiptItems.length,
+      paymentCount: data?.summary.paymentCount ?? paymentItems.length,
       dueItems,
       sourceSummary,
       activeAccountCount: accounts.filter((account) => account.isActive).length,
     };
-  }, [accounts, items]);
+  }, [accounts, items, data]);
   const selected =
     items.find(({ id }) => id === selectedId) ?? items[0] ?? null;
-  const openCount = items.filter((item) => !closed.has(item.status)).length;
-  const overdueCount = items.filter(
-    (item) =>
-      !closed.has(item.status) &&
-      item.dueAt !== null &&
-      (data?.generatedAt ?? '') > item.dueAt,
-  ).length;
+  const openCount =
+    data?.summary.openCount ?? items.filter((item) => !isClosed(item)).length;
+  const overdueCount =
+    data?.summary.overdueCount ??
+    items.filter(
+      (item) =>
+        !isClosed(item) &&
+        item.dueAt !== null &&
+        (data?.generatedAt ?? '') > item.dueAt,
+    ).length;
   const availableSources = (data?.sources ?? []).filter(
     ({ connection }) => connection !== 'NOT_CONNECTED',
   );
@@ -925,6 +984,9 @@ export function FinanceInboxLiveWorkspace() {
       </div>
 
       <Card className="p-4">
+        <FinanceRequestCreate
+          onCreated={() => setRevision((value) => value + 1)}
+        />
         <div className="mb-4 flex items-center gap-2">
           <ListFilter className="size-4 text-primary" />
           <div>
@@ -972,6 +1034,11 @@ export function FinanceInboxLiveWorkspace() {
               <SelectItem value="OPEN">درخواست‌های باز</SelectItem>
               <SelectItem value="CLOSED">موارد بسته موجود در صف</SelectItem>
               <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <label className="grid gap-1 text-xs text-muted-foreground">
@@ -989,12 +1056,112 @@ export function FinanceInboxLiveWorkspace() {
               setStatus('OPEN');
               setFromDate('');
               setToDate('');
+              setBranchId('');
+              setPerson('');
+              setCurrencyCode('');
+              setMinAmount('');
+              setMaxAmount('');
+              setDueFrom('');
+              setDueTo('');
+              setPage(1);
             }}
             variant="outline"
           >
             پاک‌کردن فیلترها
           </Button>
         </div>
+        <div className="my-3 grid gap-3 sm:grid-cols-3">
+          <Input
+            aria-label="فیلتر شعبه"
+            placeholder="شناسه شعبه"
+            value={branchId}
+            onChange={(event) => setBranchId(event.target.value)}
+          />
+          <Input
+            aria-label="فیلتر شخص"
+            placeholder="درخواست‌کننده / ذی‌نفع"
+            value={person}
+            onChange={(event) => setPerson(event.target.value)}
+          />
+          <Input
+            aria-label="فیلتر ارز"
+            placeholder="ارز، مثل IRR"
+            value={currencyCode}
+            onChange={(event) =>
+              setCurrencyCode(event.target.value.toUpperCase())
+            }
+            maxLength={3}
+          />
+          <MoneyInput
+            aria-label="حداقل مبلغ"
+            placeholder="حداقل مبلغ"
+            value={minAmount}
+            onValueChange={setMinAmount}
+          />
+          <MoneyInput
+            aria-label="حداکثر مبلغ"
+            placeholder="حداکثر مبلغ"
+            value={maxAmount}
+            onValueChange={setMaxAmount}
+          />
+          <label className="text-xs">
+            سررسید از
+            <DatePicker value={dueFrom} onChange={setDueFrom} />
+          </label>
+          <label className="text-xs">
+            سررسید تا
+            <DatePicker value={dueTo} onChange={setDueTo} />
+          </label>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={page === 1 || loading}
+            onClick={() => setPage((value) => value - 1)}
+          >
+            صفحه قبل
+          </Button>
+          <span className="text-sm">
+            صفحه {page.toLocaleString('fa-IR')} ·{' '}
+            {data?.total.toLocaleString('fa-IR') ?? '—'} نتیجه
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={loading || !data || page * 25 >= data.total}
+            onClick={() => setPage((value) => value + 1)}
+          >
+            صفحه بعد
+          </Button>
+          {page > 1 ? (
+            <Button size="sm" variant="ghost" onClick={() => setPage(1)}>
+              بازگشت به صفحه اول
+            </Button>
+          ) : null}
+        </div>
+        <FinanceExportActions
+          disabled={loading || !!error}
+          query={{ ...inboxQuery, scope: 'INBOX' }}
+        />
+        <FinanceFollowupPanel
+          query={inboxQuery}
+          onApply={(value) => {
+            setSearch(value.search ?? '');
+            setSource(value.source ?? 'ALL');
+            setStatus(value.status ?? 'ALL');
+            setBranchId(value.branchId ?? '');
+            setPerson(value.person ?? '');
+            setCurrencyCode(value.currencyCode ?? '');
+            setMinAmount(value.minAmount ?? '');
+            setMaxAmount(value.maxAmount ?? '');
+            setFromDate(value.fromDate ?? '');
+            setToDate(value.toDate ?? '');
+            setDueFrom(value.dueFrom ?? '');
+            setDueTo(value.dueTo ?? '');
+            setPage(1);
+          }}
+        />
       </Card>
 
       {status === 'CLOSED' ? (
@@ -1050,7 +1217,7 @@ export function FinanceInboxLiveWorkspace() {
               const overdue = Boolean(
                 data &&
                 item.dueAt &&
-                !closed.has(item.status) &&
+                !isClosed(item) &&
                 data.generatedAt > item.dueAt,
               );
               return (
@@ -1341,6 +1508,17 @@ export function FinanceInboxLiveWorkspace() {
                       />
                     ))
                   : null}
+                {['PAYROLL_REQUEST', 'OPERATIONAL_REQUEST'].includes(
+                  selected.kind,
+                ) ? (
+                  <FinancePayrollActions
+                    key={selected.id}
+                    item={selected}
+                    accounts={accounts}
+                    methods={methods}
+                    onChanged={() => setRevision((value) => value + 1)}
+                  />
+                ) : null}
                 {selected.kind === 'RECEIPT_VERIFICATION' ? (
                   <div className="grid grid-cols-2 gap-2 pt-2">
                     <Button

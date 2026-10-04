@@ -15,6 +15,7 @@ const sources: FinanceHistorySourceV1[] = [
   'TICKET',
   'RESERVATIONS',
   'INVOICE',
+  'OPERATIONAL',
 ];
 const pageSize = 25;
 type Cursor = { date: string; source: FinanceHistorySourceV1; id: string };
@@ -25,6 +26,8 @@ export function historyCursor(query: FinanceHistoryQueryV1): Cursor | null {
     (query.direction !== undefined &&
       !['RECEIPT', 'PAYMENT'].includes(query.direction)) ||
     (query.source !== undefined && !sources.includes(query.source)) ||
+    (query.recordId !== undefined &&
+      (typeof query.recordId !== 'string' || !uuid.test(query.recordId))) ||
     (query.requestId !== undefined &&
       (typeof query.requestId !== 'string' || !uuid.test(query.requestId)))
   )
@@ -115,47 +118,71 @@ export async function readFinanceHistory(
       query.direction === (source === 'SALES' ? 'RECEIPT' : 'PAYMENT'));
   const db = database.client;
   const take = pageSize + 1;
-  const [receipts, tickets, invoices, descriptors] = await Promise.all([
-    enabled('SALES')
-      ? sales.financeReceiptHistory(
-          actor,
-          historyAfter(cursor, 'SALES', 'financeConfirmedAt'),
-          take,
-          query.requestId,
-        )
-      : [],
-    enabled('TICKET')
-      ? db.financeTicketPurchasePaymentRevision.findMany({
-          where: {
-            cost: {
-              branchId: { in: [...actor.branchIds] },
-              ...(query.requestId ? { requestId: query.requestId } : {}),
+  const [receipts, tickets, invoices, descriptors, operational] =
+    await Promise.all([
+      enabled('SALES')
+        ? sales.financeReceiptHistory(
+            actor,
+            {
+              ...historyAfter(cursor, 'SALES', 'financeConfirmedAt'),
+              ...(query.recordId ? { id: query.recordId } : {}),
             },
-            ...historyAfter(cursor, 'TICKET', 'transferAt'),
-          },
-          include: { cost: true, account: true, paymentMethod: true },
-          orderBy: [{ transferAt: 'desc' }, { id: 'desc' }],
-          take,
-        })
-      : [],
-    enabled('INVOICE')
-      ? db.financeProcurementInvoiceRevision.findMany({
-          where: {
-            branchId: { in: [...actor.branchIds] },
-            paidAmount: { gt: 0 },
-            transferAt: { not: null },
-            ...(query.requestId ? { sourceId: query.requestId } : {}),
-            ...historyAfter(cursor, 'INVOICE', 'transferAt'),
-          },
-          include: { account: true, paymentMethod: true },
-          orderBy: [{ transferAt: 'desc' }, { id: 'desc' }],
-          take,
-        })
-      : [],
-    enabled('RESERVATIONS')
-      ? reservations.financeHistoryPurchases(actor.branchIds, query.requestId)
-      : [],
-  ]);
+            take,
+            query.requestId,
+          )
+        : [],
+      enabled('TICKET')
+        ? db.financeTicketPurchasePaymentRevision.findMany({
+            where: {
+              cost: {
+                branchId: { in: [...actor.branchIds] },
+                ...(query.requestId ? { requestId: query.requestId } : {}),
+              },
+              ...historyAfter(cursor, 'TICKET', 'transferAt'),
+              ...(query.recordId ? { id: query.recordId } : {}),
+            },
+            include: { cost: true, account: true, paymentMethod: true },
+            orderBy: [{ transferAt: 'desc' }, { id: 'desc' }],
+            take,
+          })
+        : [],
+      enabled('INVOICE')
+        ? db.financeProcurementInvoiceRevision.findMany({
+            where: {
+              branchId: { in: [...actor.branchIds] },
+              paidAmount: { gt: 0 },
+              transferAt: { not: null },
+              ...(query.requestId ? { sourceId: query.requestId } : {}),
+              ...historyAfter(cursor, 'INVOICE', 'transferAt'),
+              ...(query.recordId ? { id: query.recordId } : {}),
+            },
+            include: { account: true, paymentMethod: true },
+            orderBy: [{ transferAt: 'desc' }, { id: 'desc' }],
+            take,
+          })
+        : [],
+      enabled('RESERVATIONS')
+        ? reservations.financeHistoryPurchases(actor.branchIds, query.requestId)
+        : [],
+      enabled('OPERATIONAL')
+        ? db.financeOperationalRevision.findMany({
+            where: {
+              action: 'PAY',
+              paidAmount: { gt: 0 },
+              transferAt: { not: null },
+              request: {
+                branchId: { in: actor.branchIds },
+                ...(query.requestId ? { id: query.requestId } : {}),
+              },
+              ...historyAfter(cursor, 'OPERATIONAL', 'transferAt'),
+              ...(query.recordId ? { id: query.recordId } : {}),
+            },
+            include: { request: true, account: true },
+            orderBy: [{ transferAt: 'desc' }, { id: 'desc' }],
+            take,
+          })
+        : [],
+    ]);
   const purchases = new Map(descriptors.map((p) => [p.id, p]));
   const payments = purchases.size
     ? await db.financeSupplierPaymentRevision.findMany({
@@ -164,6 +191,7 @@ export async function readFinanceHistory(
           paidAmount: { gt: 0 },
           transferAt: { not: null },
           ...historyAfter(cursor, 'RESERVATIONS', 'transferAt'),
+          ...(query.recordId ? { id: query.recordId } : {}),
         },
         include: { account: true, paymentMethod: true },
         orderBy: [{ transferAt: 'desc' }, { id: 'desc' }],
@@ -183,6 +211,29 @@ export async function readFinanceHistory(
     : [];
   const accountNames = new Map(receiptAccounts.map((a) => [a.id, a.title]));
   return historyPage([
+    ...operational.map((row) => ({
+      id: row.id,
+      source: 'OPERATIONAL' as const,
+      direction: 'PAYMENT' as const,
+      requestId: row.requestId,
+      title: `${row.request.title} · ${row.request.party}`,
+      occurredAt: row.transferAt!.toISOString(),
+      amount: row.paidAmount!.toString(),
+      currencyCode: row.request.currencyCode,
+      accountId: row.accountId,
+      accountTitle: row.account?.title ?? null,
+      method:
+        row.snapshot &&
+        typeof row.snapshot === 'object' &&
+        !Array.isArray(row.snapshot) &&
+        typeof row.snapshot.methodName === 'string'
+          ? row.snapshot.methodName
+          : null,
+      reference: row.paymentReference,
+      installment: null,
+      cumulativePaid: row.cumulativePaid.toString(),
+      remainingAmount: row.remainingAmount.toString(),
+    })),
     ...receipts.map((row) => ({
       ...row,
       accountTitle: row.accountId

@@ -6,6 +6,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -28,6 +29,7 @@ import { moneyDecimal, moneyUnits } from '@nora/contracts';
 
 import { HrConnectionsService } from '../hr/hr-connections.service';
 import { DatabaseService } from '../database/database.service';
+import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { ReservationsPublicService } from '../reservations/reservations-public.service';
 import { SalesService } from '../sales/sales.service';
 import { ProcurementPublicService } from '../procurement/procurement-public.service';
@@ -59,6 +61,9 @@ export class FinanceInboxService {
     private readonly procurement: ProcurementPublicService,
     @Inject(FinanceTicketCostService)
     private readonly ticketCosts: FinanceTicketCostService,
+    @Optional()
+    @Inject(IamFinanceDirectory)
+    private readonly identity?: IamFinanceDirectory,
   ) {}
 
   history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
@@ -201,8 +206,55 @@ export class FinanceInboxService {
     const financeBySource = new Map(
       financeRows.map((row) => [row.sourceId, row] as const),
     );
+    const payrollRows =
+      await this.database.client.financeOperationalRequest.findMany({
+        where: { branchId: { in: actor.branchIds } },
+        include: {
+          revisions: { orderBy: { version: 'desc' }, take: 1 },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    const names = new Map(
+      (
+        (await this.identity?.displayNames(
+          payrollRows.map((row) => row.requesterId),
+          actor.branchIds,
+        )) ?? []
+      ).map((user) => [user.id, user.displayName]),
+    );
 
     const items: FinanceInboxItemV1[] = [
+      ...payrollRows.map((row): FinanceInboxItemV1 => ({
+        version: 1,
+        id: `operational:${row.id}`,
+        source: row.kind === 'PAYROLL' ? 'HR' : 'FINANCE',
+        kind:
+          row.kind === 'PAYROLL' ? 'PAYROLL_REQUEST' : 'OPERATIONAL_REQUEST',
+        sourceReference: row.id,
+        sourceContextReference: row.hrRecordId ?? row.id,
+        contractReference: row.reference,
+        title: row.title,
+        partyDisplaySnapshot: row.party,
+        description: row.description,
+        amount: {
+          amount: row.amount.toString(),
+          currencyCode: row.currencyCode,
+        },
+        settlement: {
+          paidAmount: row.revisions[0]?.cumulativePaid.toString() ?? '0',
+          remainingAmount:
+            row.revisions[0]?.remainingAmount.toString() ??
+            row.amount.toString(),
+        },
+        status: row.status as FinanceRequestStatus,
+        dueAt: row.dueAt.toISOString(),
+        createdAt: row.createdAt.toISOString(),
+        requesterDisplaySnapshot: names.get(row.requesterId) ?? null,
+        branchReference: row.branchId,
+        sourceVersion: row.sourceVersion!,
+        financeVersion: row.version,
+        origin: 'PERSISTED_SOURCE',
+      })),
       ...salesItems.map((item): FinanceInboxItemV1 => ({
         version: 1,
         id: `sales:${item.paymentId}`,
@@ -489,7 +541,16 @@ export class FinanceInboxService {
       version: 1,
       generatedAt: new Date().toISOString(),
       items,
-      sources,
+      sources: [
+        ...sources,
+        {
+          source: 'FINANCE',
+          connection: 'CONNECTED',
+          itemCount: payrollRows.filter((row) => row.kind !== 'PAYROLL').length,
+          message:
+            'درخواست‌های عملیاتی استرداد، کمیسیون، چک و اصلاح مالی؛ بدون ثبت خودکار سند حسابداری',
+        },
+      ],
     };
   }
 

@@ -7,6 +7,7 @@ import { AuditController } from './audit.controller';
 import { AuthGuard } from './auth.guard';
 import { IamService } from './iam.service';
 import { IamProcurementDirectory } from './iam-procurement-directory';
+import { IamFinanceDirectory } from './iam-finance-directory';
 import { IAM_STEP_UP_PORT } from './iam-step-up.port';
 import { MfaTotpService } from './mfa-totp';
 import { PermissionGuard } from './permission.guard';
@@ -32,12 +33,18 @@ import { UsersController } from './users.controller';
   ],
   providers: [
     IamProcurementDirectory,
+    IamFinanceDirectory,
     IamService,
     MfaTotpService,
     AuthGuard,
     PermissionGuard,
     { provide: IAM_STEP_UP_PORT, useExisting: IamService },
   ],
-  exports: [IamService, IAM_STEP_UP_PORT, IamProcurementDirectory],
+  exports: [
+    IamService,
+    IAM_STEP_UP_PORT,
+    IamProcurementDirectory,
+    IamFinanceDirectory,
+  ],
 })
 export class IamModule {}

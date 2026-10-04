@@ -61,6 +61,7 @@ function dependencies() {
         .fn<(query: unknown) => Promise<unknown[]>>()
         .mockResolvedValue([]),
     },
+    financeOperationalRevision: { findMany: vi.fn().mockResolvedValue([]) },
   };
   const sales = { financeReceiptHistory: vi.fn().mockResolvedValue([]) };
   const reservations = {

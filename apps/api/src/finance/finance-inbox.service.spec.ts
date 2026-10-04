@@ -22,6 +22,12 @@ const emptyTicketCosts = () => ({
   queueStates: vi.fn().mockResolvedValue(new Map()),
 });
 
+const emptyOperationalDatabase = () => ({
+  client: {
+    financeOperationalRequest: { findMany: vi.fn().mockResolvedValue([]) },
+  },
+});
+
 describe('FinanceInboxService', () => {
   it('loads every HR page, including referrals older than the first 25', async () => {
     const records = Array.from({ length: 26 }, (_, index) => ({
@@ -47,7 +53,7 @@ describe('FinanceInboxService', () => {
       { list } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     );
@@ -78,7 +84,7 @@ describe('FinanceInboxService', () => {
       { list } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     ).list(actor);
@@ -107,7 +113,7 @@ describe('FinanceInboxService', () => {
       { list } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     ).list(actor);
@@ -122,7 +128,7 @@ describe('FinanceInboxService', () => {
       { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       { queueStates: vi.fn().mockRejectedValue(new Error('offline')) } as never,
     ).list(actor);
@@ -166,7 +172,7 @@ describe('FinanceInboxService', () => {
         ]),
       } as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     ).list(actor);
@@ -292,6 +298,9 @@ describe('FinanceInboxService', () => {
       {} as never,
       {
         client: {
+          financeOperationalRequest: {
+            findMany: vi.fn().mockResolvedValue([]),
+          },
           financeProcurementInvoiceRevision: {
             findMany: vi.fn().mockResolvedValue([]),
           },
@@ -315,6 +324,7 @@ describe('FinanceInboxService', () => {
       { source: 'HR', connection: 'CONNECTED', itemCount: 1 },
       { source: 'RESERVATIONS', connection: 'CONNECTED', itemCount: 1 },
       { source: 'PURCHASES', connection: 'CONNECTED', itemCount: 2 },
+      { source: 'FINANCE', connection: 'CONNECTED', itemCount: 0 },
     ]);
     expect(hr.list).toHaveBeenCalledWith({ target: 'finance', page: 1 }, actor);
     expect(reservations.list).toHaveBeenCalledWith(['branch-a']);
@@ -356,7 +366,7 @@ describe('FinanceInboxService', () => {
       { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     ).list(actor);
@@ -374,7 +384,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     );
@@ -534,7 +544,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     );
@@ -564,7 +574,7 @@ describe('FinanceInboxService', () => {
       {} as never,
       {} as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       emptyTicketPurchases() as never,
       emptyTicketCosts() as never,
     );
@@ -646,7 +656,7 @@ describe('FinanceInboxService', () => {
       { list: vi.fn().mockResolvedValue({ items: [] }) } as never,
       { list: vi.fn().mockResolvedValue([]) } as never,
       {} as never,
-      {} as never,
+      emptyOperationalDatabase() as never,
       procurement as never,
       emptyTicketCosts() as never,
     );
