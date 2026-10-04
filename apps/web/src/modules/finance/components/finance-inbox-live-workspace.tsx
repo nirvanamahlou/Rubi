@@ -1,3 +1,4 @@
+import { prepareTicketPayment } from '../model/prepare-ticket-payment';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   ArrowDownLeft,
@@ -149,7 +150,6 @@ export function FinanceInboxLiveWorkspace() {
     | 'APPROVE'
     | 'CORRECTION_REQUIRED'
     | 'PAYMENT'
-    | 'TICKET_COST'
     | 'HR_REVIEW'
     | 'HR_ANSWER'
     | 'HR_REJECT'
@@ -186,6 +186,9 @@ export function FinanceInboxLiveWorkspace() {
   const loading = state?.revision !== revision;
   const data = loading ? null : state.data;
   const error = loading ? '' : state.error;
+  const paymentCurrency = actionItem?.ticketPurchase
+    ? ticketCurrency
+    : actionItem?.amount?.currencyCode;
   const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
 
   useEffect(() => {
@@ -359,16 +362,21 @@ export function FinanceInboxLiveWorkspace() {
     const eligibleAccounts = accounts.filter(
       (account) =>
         account.branchId === item.branchReference &&
-        account.currencyCode === item.amount?.currencyCode,
+        account.currencyCode ===
+          (item.amount?.currencyCode ??
+            (item.ticketPurchase ? 'IRR' : undefined)),
     );
     setActionItem(item);
     setActionKind('PAYMENT');
+    setTicketSeatCount(item.ticketPurchase?.seatCount?.toString() ?? '');
+    setTicketUnitCost(item.ticketPurchase?.unitCost ?? '');
+    setTicketCurrency(item.amount?.currencyCode ?? 'IRR');
     setAccountId(eligibleAccounts[0]?.id ?? '');
     setPaymentMethodId(methods[0]?.id ?? '');
     setPaidAmount(
       item.settlement?.remainingAmount ?? item.amount?.amount ?? '',
     );
-    setExchangeRate(item.amount?.currencyCode === 'IRR' ? '1' : '');
+    setExchangeRate((item.amount?.currencyCode ?? 'IRR') === 'IRR' ? '1' : '');
     setPaidAt(new Date().toISOString());
     setPaymentReference('');
     setTicketReceiptFile(null);
@@ -385,16 +393,6 @@ export function FinanceInboxLiveWorkspace() {
     setReason('');
     setActionError('');
     hrResponseKey.current = crypto.randomUUID();
-  }
-
-  function openTicketCost(item: FinanceInboxItemV1) {
-    setActionItem(item);
-    setActionKind('TICKET_COST');
-    setTicketSeatCount(item.ticketPurchase?.seatCount?.toString() ?? '');
-    setTicketUnitCost(item.ticketPurchase?.unitCost ?? '');
-    setTicketCurrency('IRR');
-    setReason('');
-    setActionError('');
   }
 
   async function uploadTicketPaymentReceipt(
@@ -455,19 +453,24 @@ export function FinanceInboxLiveWorkspace() {
           },
           hrResponseKey.current,
         );
-      } else if (actionKind === 'TICKET_COST') {
-        await financeInboxApi.recordTicketCost(actionItem.sourceReference, {
-          version: 1,
-          seatCount: Number(ticketSeatCount),
-          unitCost: ticketUnitCost,
-          currencyCode: ticketCurrency.toUpperCase().trim(),
-        });
       } else if (actionKind === 'PAYMENT' && actionItem.ticketPurchase) {
+        const prepared = ticketCommand.current
+          ? actionItem
+          : await prepareTicketPayment(
+              actionItem,
+              {
+                seatCount: ticketSeatCount,
+                unitCost: ticketUnitCost,
+                currencyCode: ticketCurrency,
+              },
+              financeInboxApi.recordTicketCost,
+            );
+        setActionItem(prepared);
         ticketCommand.current ??= {
           version: 1,
           operationId: crypto.randomUUID(),
           expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
-          costRevisionId: actionItem.sourceContextReference,
+          costRevisionId: prepared.sourceContextReference,
           accountId,
           paymentMethodId,
           paidAmount,
@@ -624,7 +627,7 @@ export function FinanceInboxLiveWorkspace() {
         branchId: actionItem.branchReference,
         title: accountTitle,
         kind: accountKind,
-        currencyCode: actionItem.amount?.currencyCode ?? 'IRR',
+        currencyCode: paymentCurrency ?? 'IRR',
         bankId: accountKind === 'BANK' ? accountBankId : null,
         maskedIdentifier: accountMaskedId.trim() || null,
       });
@@ -1390,36 +1393,12 @@ export function FinanceInboxLiveWorkspace() {
                 selected.source === 'PURCHASES' &&
                 selected.ticketPurchase ? (
                   <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      ابتدا تعداد صندلی و قیمت خرید هر صندلی را ثبت کنید؛ جمع
-                      فاکتور خودکار محاسبه می‌شود. سپس هر پرداخت از حساب و روش
-                      انتخابی ثبت می‌شود و تا تسویهٔ کامل می‌توان پرداخت بعدی
-                      افزود.
-                    </p>
                     <Button
                       className="w-full"
-                      variant="outline"
-                      disabled={selected.ticketPurchase.paymentCount > 0}
-                      onClick={() => openTicketCost(selected)}
+                      onClick={() => openSupplierPayment(selected)}
                     >
-                      {selected.amount
-                        ? 'تکمیل / اصلاح تعداد و قیمت خرید هر صندلی'
-                        : 'ثبت تعداد و قیمت خرید هر صندلی'}
+                      <WalletCards className="size-4" /> ثبت پرداخت خرید بلیت
                     </Button>
-                    {selected.ticketPurchase.paymentCount > 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        قیمت خرید پس از شروع پرداخت قابل اصلاح نیست.
-                      </p>
-                    ) : null}
-                    {selected.amount ? (
-                      <Button
-                        className="w-full"
-                        onClick={() => openSupplierPayment(selected)}
-                      >
-                        <WalletCards className="size-4" />
-                        ثبت پرداخت خرید بلیت
-                      </Button>
-                    ) : null}
                     <FinanceHistoryPanel
                       requestId={selected.sourceReference}
                       source="TICKET"
@@ -1450,11 +1429,9 @@ export function FinanceInboxLiveWorkspace() {
                 ? 'تأیید دریافت مسافر'
                 : actionKind === 'CORRECTION_REQUIRED'
                   ? 'ارسال برای اصلاح'
-                  : actionKind === 'TICKET_COST'
-                    ? 'ثبت قیمت خرید بلیت توسط مالی'
-                    : actionItem?.ticketPurchase
-                      ? 'ثبت پرداخت خرید بلیت'
-                      : 'ثبت پرداخت کارگزار'}
+                  : actionItem?.ticketPurchase
+                    ? 'ثبت پرداخت خرید بلیت'
+                    : 'ثبت پرداخت کارگزار'}
           </DialogTitle>
           <DialogDescription>
             {actionItem?.title} · {actionItem && money(actionItem)}
@@ -1470,9 +1447,15 @@ export function FinanceInboxLiveWorkspace() {
               className="grid gap-3"
               disabled={actionBusy || paymentUncertain}
             >
-              {actionKind === 'TICKET_COST' ? (
+              {actionKind === 'PAYMENT' && actionItem?.ticketPurchase ? (
                 <>
-                  <div className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20 sm:grid-cols-2">
+                  <fieldset
+                    disabled={
+                      !!actionItem?.ticketPurchase?.paymentCount ||
+                      paymentUncertain
+                    }
+                    className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20 sm:grid-cols-2"
+                  >
                     <label className="grid gap-2">
                       <span>تعداد صندلی خریداری‌شده</span>
                       <Input
@@ -1504,17 +1487,25 @@ export function FinanceInboxLiveWorkspace() {
                         {ticketInvoice ?? '—'} {ticketCurrency}
                       </strong>
                     </div>
-                  </div>
+                  </fieldset>
                   <label className="grid gap-2">
                     <span>کد ارز خرید</span>
                     <Input
                       required
                       dir="ltr"
                       maxLength={3}
-                      value={ticketCurrency}
-                      onChange={(event) =>
-                        setTicketCurrency(event.target.value.toUpperCase())
+                      disabled={
+                        !!actionItem?.ticketPurchase?.paymentCount ||
+                        paymentUncertain
                       }
+                      value={ticketCurrency}
+                      onChange={(event) => {
+                        setTicketCurrency(event.target.value.toUpperCase());
+                        setAccountId('');
+                        setExchangeRate(
+                          event.target.value.toUpperCase() === 'IRR' ? '1' : '',
+                        );
+                      }}
                     />
                   </label>
                 </>
@@ -1533,8 +1524,7 @@ export function FinanceInboxLiveWorkspace() {
                             (account) =>
                               account.branchId ===
                                 actionItem?.branchReference &&
-                              account.currencyCode ===
-                                actionItem?.amount?.currencyCode,
+                              account.currencyCode === paymentCurrency,
                           )
                           .map((account) => (
                             <SelectItem key={account.id} value={account.id}>
@@ -1601,17 +1591,19 @@ export function FinanceInboxLiveWorkspace() {
                     />
                     <small className="text-muted-foreground">
                       مانده فعلی:{' '}
-                      {actionItem?.settlement?.remainingAmount ??
-                        actionItem?.amount?.amount ??
-                        '—'}{' '}
-                      {actionItem?.amount?.currencyCode}
+                      {(actionItem?.ticketPurchase &&
+                      !actionItem.ticketPurchase.paymentCount
+                        ? ticketInvoice
+                        : (actionItem?.settlement?.remainingAmount ??
+                          actionItem?.amount?.amount)) ?? '—'}{' '}
+                      {paymentCurrency}
                     </small>
                   </label>
                   <p className="text-sm text-muted-foreground">
                     می‌توانید بخشی از مبلغ را پرداخت کنید و مانده را در
                     پرداخت‌های بعدی ثبت کنید؛ پس از هر ثبت، مانده به‌روز می‌شود.
                   </p>
-                  {actionItem?.amount?.currencyCode !== 'IRR' ? (
+                  {paymentCurrency !== 'IRR' ? (
                     <label className="grid gap-2">
                       <span>نرخ روز ارز به ریال</span>
                       <MoneyInput
@@ -1673,8 +1665,7 @@ export function FinanceInboxLiveWorkspace() {
                         .filter(
                           (account) =>
                             account.branchId === actionItem?.branchReference &&
-                            account.currencyCode ===
-                              actionItem?.amount?.currencyCode,
+                            account.currencyCode === paymentCurrency,
                         )
                         .map((account) => (
                           <SelectItem key={account.id} value={account.id}>
@@ -1789,8 +1780,7 @@ export function FinanceInboxLiveWorkspace() {
                   ) : null}
                 </div>
               ) : null}
-              {actionKind !== 'TICKET_COST' &&
-              !(actionKind === 'PAYMENT' && actionItem?.ticketPurchase) ? (
+              {!(actionKind === 'PAYMENT' && actionItem?.ticketPurchase) ? (
                 <label className="grid gap-2">
                   <span>
                     {actionKind === 'CORRECTION_REQUIRED'
@@ -1830,7 +1820,9 @@ export function FinanceInboxLiveWorkspace() {
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
                     (!accountId || !paymentMethodId || !paidAmount)) ||
-                  (actionKind === 'TICKET_COST' &&
+                  (actionKind === 'PAYMENT' &&
+                    Boolean(actionItem?.ticketPurchase) &&
+                    !actionItem?.ticketPurchase?.paymentCount &&
                     (!ticketSeatCount ||
                       !ticketUnitCost ||
                       !ticketInvoice ||
