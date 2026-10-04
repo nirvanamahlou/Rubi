@@ -5,6 +5,10 @@ Finance ticket payments now accept an additive operation UUID and observed payme
 Validation: full API 1961 tests, final focused Finance/HR regressions, Finance Web 37 tests, two real concurrent-payment PostgreSQL tests rerun against final payment code on a random fully migrated database, affected typechecks/lint and a 55-route production build passed. Latest develop has no overlapping Finance code changes; integration and Linux CI gate merge. Full Windows Web testing reproduces two unchanged Master Data raw-source CRLF/LF assertions on the base worktree; those other-owner files were not modified. No operational database, schema/migration/dependency, live runtime or authenticated browser QA. See docs/tasks/FINANCE-INBOX-RELIABILITY-1004.md for compatibility and remaining product scope.
 
 
+## 2026-10-04 — FINANCE-DELIVERY-TICK-1004 — PC-A — READY_FOR_REVIEW
+
+The concurrent customer-document delivery option in receipt approval now needs only its checkbox. The existing AFTER_RECEIPT command supplies an automatic reason; the extra basis, manual Audit reason and manager-exception fields are removed from this option. Backend audit, permissions, receipt validation and the separate contract delivery controls remain intact. Finance Web 37 tests pass; lint, typecheck and production build gate delivery. No API/schema/migration/dependency/database/runtime changes or authenticated browser QA. User authorizes develop merge after CI; bounded locks release with commit.
+
 ## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
 
 The Accommodation Meal/Service table now labels its existing canonical `record.code` column «کد سرویس». The shared first cell remains the sole code cell; no duplicate column or new data field was added, and other Accommodation tables are unchanged. Focused 10 and all 602 Master Data Web tests, scoped Prettier/ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA or API/schema/form/export/dependency/database change. Bounded locks release with commit.
