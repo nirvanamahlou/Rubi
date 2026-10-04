@@ -4520,3 +4520,7 @@ Removed dossier banner organization code, Change Agency and marked Sales relatio
 ## 2026-10-04 — B2B-HUB-COPY-1004 — PC-B
 
 Screenshot691: remove the three hub-card descriptions beneath Finance/settlement, Commercial/contract and Activity report. Titles, chips, navigation and all API/data behavior remain unchanged. Mechanical R0/C1 scope assigned to persistent native worker; lead owns integration. User authorizes push/develop merge; required checks and CI gate delivery. No migration/dependency or permission changes. Usage unavailable.
+
+## 2026-10-04 — B2B-PROFILE-COPY-1004 — PC-B
+
+Remove specified explanatory copy from360 profile/branches/signatories and hide display-order readout. Edit fields and stored order remain intact; no functionality/API/data/permission change. Persistent worker handles bounded Organizations presentation; lead reviews and owns user-authorized push/develop merge. Required checks and CI gate delivery; telemetry unavailable.

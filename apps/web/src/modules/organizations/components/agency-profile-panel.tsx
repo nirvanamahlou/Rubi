@@ -108,10 +108,6 @@ export function AgencyProfilePanel({
             ) : (
               <strong>{branches[0]?.name ?? 'در حال دریافت…'}</strong>
             )}
-            <span className="panel-note">
-              شعبه شرکت شما که قرارداد و مسئول پیگیری این آژانس را مدیریت
-              می‌کند.
-            </span>
           </label>
           {sessionError || error ? (
             <p className="form-error" role="alert">
@@ -137,16 +133,8 @@ export function AgencyProfilePanel({
                       : 'تعیین نشده')}
                 </b>
               </div>
-              <div className="summary-row">
-                <span>ترتیب نمایش</span>
-                <b>{(profile?.displayOrder ?? 0).toLocaleString('fa-IR')}</b>
-              </div>
             </div>
           ) : null}
-          <p className="panel-note">
-            مدیر حساب، کارمند شرکت شما و مسئول ارتباط و پیگیری همکاری با این
-            آژانس است. از «ویرایش پروفایل و مدیر حساب» تعیین می‌شود.
-          </p>
           <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-3">
             <p className="panel-note">
               برای بررسی وضعیت همکاری، وارد «قرارداد و شرایط تجاری ← قرارداد
