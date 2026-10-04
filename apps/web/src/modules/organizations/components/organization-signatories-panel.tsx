@@ -200,9 +200,6 @@ function SignatoryFields({
             })
           }
         />
-        <span className="panel-note">
-          خالی یعنی سقف ثبت نشده است؛ به معنی اختیار نامحدود نیست.
-        </span>
       </label>
       <div className="field">
         <label htmlFor="signatory-currency">ارز سقف اختیار</label>
@@ -217,11 +214,6 @@ function SignatoryFields({
             set({ currencyCode: currencyCode || null })
           }
         />
-        {value.authorityLimit === null ? (
-          <span className="panel-note">
-            برای انتخاب ارز، ابتدا سقف مبلغ اختیار را وارد کنید.
-          </span>
-        ) : null}
       </div>
       <div className="field">
         <span>شروع اعتبار</span>
@@ -278,10 +270,6 @@ function SignatoryFields({
             </option>
           ))}
         </NativeSearchSelect>
-        <span className="panel-note">
-          از مدارک همین پرونده و شعبه انتخاب کنید. برای فعال‌سازی، مدرک باید
-          کامل، معتبر و بررسی‌شده باشد.
-        </span>
         {!canAttachDocument ? (
           <span className="panel-note">
             مجوز مشاهده فراداده و اتصال مدرک سازمان برای این کاربر فعال نیست.
@@ -550,7 +538,6 @@ export function OrganizationSignatoriesPanel({
       {editor ? (
         <DossierFormDialog
           title={editor.id ? 'ویرایش امضادار' : 'ثبت امضادار'}
-          description="شخص و حدود اختیار او را ثبت کنید. بدون مدرک معتبر می‌توانید اطلاعات را به‌صورت غیرفعال ذخیره کنید."
           onClose={close}
           onSave={async () => {
             const issue = b2bSignatoryIssue(editor.values);

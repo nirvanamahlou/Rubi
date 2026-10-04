@@ -5423,3 +5423,11 @@ B2B-CONTACT-DISPLAY-1004 refreshed review87b4a3b3 resolves CD-R1/CD-A1/CD-A2 in 
 Screenshot693: icon-only signatory edit/delete, remove internal-branch readout, right-align compact date filters into vacated branch slot. Reserve Organizations signatory presentation only plus own docs; R1/C2 persistent worker. Preserve form fields/branch permissions/filter logic/delete confirmation. User authorizes push/develop merge. No API/data/permission/schema/dependency change; usage unavailable.
 
 B2B-SIGNATORY-LAYOUT-1004 delivered: signatory icon actions preserve permission/confirmation, singlebranchreadout removed, compact RTL responsive date row. Organizations180 tests, scoped lint/format and Web typecheck pass; existing Contracts generated artifact refreshed to current source, no tracked contracts/dependency changes. Lead reviewed exact two-file UI diff; Web build/CI gate merge. Persistent worker usage unavailable; locks released at delivery.
+
+## B2B-SIGNATORY-FORM-COPY-1004 — PC-B — IN_PROGRESS
+
+Remove four exact requested signatory-form guidance texts only. Reserve bounded Organizations signatory component copy plus own docs. PC-B R0/C1 persistent worker; preserve field labels/validation/proof/activation/currency behavior. User authorizes push/develop merge. No API/data/permissions/schema/dependency changes; usage unavailable.
+
+B2B-SIGNATORY-FORM-COPY-1004 scope extended to Organizations-local DossierFormDialog description prop/render only: optional description and truthy conditional avoid empty margin after removing form introduction. Existing nonempty callers unchanged; lead authorized necessary bounded presentation repair, no central cross-module contract change.
+
+B2B-SIGNATORY-FORM-COPY-1004 delivered: four requested texts removed; optional conditional description avoids empty spacing, installed Dialog handles absent-description aria relation. Organizations180 tests, scoped ESLint/Prettier, Web typecheck and55-route build4191 pass. Lead accepted bounded two-file UI diff, no behavior changes. Persistent worker; usage unavailable. Locks released at delivery; CI gates merge.
