@@ -4564,3 +4564,7 @@ User creation now accepts 4–200 character initial passwords, including numeric
 ## 2026-10-04 — B2B-SIGNATORY-LAYOUT-1004 — PC-B
 
 Screenshot693: remove signatory action text and internal-branch display, align date filters to the right in a compact responsive row. Preserve date behavior, branch scope, forms and deletion gates. Bounded Organizations presentation assigned to persistent worker; lead owns user-authorized push/develop merge. No API/data/schema/dependency changes. Checks and CI gate delivery; telemetry unavailable.
+
+## 2026-10-04 — B2B-SIGNATORY-FORM-COPY-1004 — PC-B
+
+Remove four user-specified guidance texts from signatory form; fields, currency dependency, proof validity, inactive save and activation enforcement stay intact. Bounded R0/C1 UI copy assigned to persistent worker. Required checks/CI gate user-authorized push/develop merge. No API/data/schema/permission/dependency changes; usage unavailable.
