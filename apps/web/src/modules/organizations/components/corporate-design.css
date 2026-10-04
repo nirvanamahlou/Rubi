@@ -19,6 +19,15 @@
     min-height: 40px;
     width: 100%;
   }
+  .signatory-filter-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 240px));
+    justify-content: start;
+  }
+  @media (max-width: 640px) {
+    .signatory-filter-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
   .dossier-filter-error {
     grid-column: 1 / -1;
   }
