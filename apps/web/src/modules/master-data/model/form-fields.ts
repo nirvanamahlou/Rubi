@@ -38,6 +38,11 @@ export function getMasterDataFormFields(
   let fields: readonly MasterDataFieldDefinition[] = hidden
     ? definition.fields.filter((field) => !hidden.has(field.key))
     : definition.fields;
+  if (
+    (mode === 'create' || mode === 'edit') &&
+    (definition.key === 'insurers' || definition.key === 'brokers')
+  )
+    fields = fields.filter((field) => field.key !== 'organizationId');
   if (isMasterTransportFormResource(definition.key)) {
     fields = fields.map((field): MasterDataFieldDefinition =>
       definition.key === 'train-types' && field.key === 'amenities'
