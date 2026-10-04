@@ -5423,6 +5423,10 @@ B2B-CONTACT-DISPLAY-1004 independent review /root/contact_display_final_review o
 
 B2B-CONTACT-DISPLAY-1004 refreshed review87b4a3b3 resolves CD-R1/CD-A1/CD-A2 in source. Remaining CD-R2 medium blocking verification gap: pure helper test does not exercise actual hook provider-revocation wiring. Same worker adds real-hook regression using existing captured-effects/controlled-state React SSR harness, no dependency change. Exact finalcandidate review still required.
 
+## INITIAL-PASSWORD-FOUR-DIGITS-1004 — PC-A — READY_FOR_REVIEW
+
+- Branch `codex/pc-a-initial-password-four-digits-1004` from `origin/develop@0c5484e0`; isolated worktree of the same task. IAM initial-password policy, CreateUser DTO/service and Users creation form now accept 4–200 characters including numeric-only values. User authorizes develop merge. 50 focused API and 20 Web tests, scoped lint/format, API/Web typechecks and production builds (55 Web pages) pass. Creation service tests cover numeric credential hashing and rejection below four characters. No migration, dependency, grant or operational data change; reset/change/bootstrap policies remain strong. Scoped locks RELEASED at delivery.
+
 ## B2B-SIGNATORY-LAYOUT-1004 — PC-B — IN_PROGRESS
 
 Screenshot693: icon-only signatory edit/delete, remove internal-branch readout, right-align compact date filters into vacated branch slot. Reserve Organizations signatory presentation only plus own docs; R1/C2 persistent worker. Preserve form fields/branch permissions/filter logic/delete confirmation. User authorizes push/develop merge. No API/data/permission/schema/dependency change; usage unavailable.

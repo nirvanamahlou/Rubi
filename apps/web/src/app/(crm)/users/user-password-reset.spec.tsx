@@ -2,7 +2,28 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readFileSync } from 'node:fs';
 import { UserPasswordReset } from './user-password-reset';
-import { userPasswordError } from './user-password-policy';
+import {
+  initialUserPasswordError,
+  userPasswordError,
+} from './user-password-policy';
+
+describe('initial user password', () => {
+  it.each(['1234', '0000', '123456', 'abcd', '0'.repeat(200)])(
+    'accepts simple initial credentials',
+    (password) => {
+      expect(initialUserPasswordError(password)).toBeNull();
+    },
+  );
+  it.each(['', '123', '0'.repeat(201)])(
+    'rejects invalid length',
+    (password) => {
+      expect(initialUserPasswordError(password)).not.toBeNull();
+    },
+  );
+  it('retains the strong reset policy', () => {
+    expect(userPasswordError('1234')).not.toBeNull();
+  });
+});
 describe('user creation and password reset controls', () => {
   it.each([
     'Valid-Synthetic-2026!',

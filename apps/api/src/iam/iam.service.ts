@@ -46,7 +46,11 @@ import {
 import type { CreateUserDto } from './dto/create-user.dto';
 import type { CreateRoleDto } from './dto/create-role.dto';
 import type { UpdateUserAccessDto } from './dto/update-user-access.dto';
-import { assertStrongPassword, passwordPolicyErrors } from './password-policy';
+import {
+  assertStrongPassword,
+  initialPasswordPolicyErrors,
+  passwordPolicyErrors,
+} from './password-policy';
 import { classifyRefreshFailure } from './refresh-token-policy';
 import type { RequestMetadata } from './iam.types';
 import type { IamStepUpPort } from './iam-step-up.port';
@@ -1222,7 +1226,7 @@ export class IamService implements IamStepUpPort {
   ) {
     const profile = await this.managedAccess(dto, actor);
     await this.assertRolesAssignable(dto.roleIds, actor);
-    const passwordErrors = passwordPolicyErrors(dto.password);
+    const passwordErrors = initialPasswordPolicyErrors(dto.password);
     if (passwordErrors.length || dto.password.length > 200)
       throw new BadRequestException({
         code: 'IAM_PASSWORD_POLICY',

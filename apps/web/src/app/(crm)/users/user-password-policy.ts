@@ -1,3 +1,9 @@
+export function initialUserPasswordError(password: string): string | null {
+  return password.length >= 4 && password.length <= 200
+    ? null
+    : 'رمز اولیه باید ۴ تا ۲۰۰ نویسه باشد؛ استفاده از فقط عدد مجاز است.';
+}
+
 export function userPasswordError(password: string): string | null {
   return password.length >= 10 &&
     password.length <= 200 &&
