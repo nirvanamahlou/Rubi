@@ -603,6 +603,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'referenceValidityDays',
     'referenceValidityMode',
     'guidanceFileReference',
+    'requiredDocumentNames',
     'description',
     'displayOrder',
   ],

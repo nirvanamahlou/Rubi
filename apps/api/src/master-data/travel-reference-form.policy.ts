@@ -30,6 +30,28 @@ export function prepareTravelReferenceForm(
       throw new BadRequestException(`مقدار ${field} معتبر نیست.`);
     values[field] = trimmed || null;
   }
+  if (
+    resource === 'visa-services' &&
+    Object.hasOwn(values, 'requiredDocumentNames')
+  ) {
+    const raw = values.requiredDocumentNames;
+    if (!Array.isArray(raw) || raw.some((item) => typeof item !== 'string'))
+      throw new BadRequestException('فهرست مدارک مورد نیاز معتبر نیست.');
+    if (raw.length > 50)
+      throw new BadRequestException('حداکثر ۵۰ مدرک مورد نیاز مجاز است.');
+    const names: string[] = [];
+    const seen = new Set<string>();
+    for (const item of raw) {
+      const name = item.trim();
+      if (!name || name.length > 160)
+        throw new BadRequestException('نام مدرک مورد نیاز معتبر نیست.');
+      if (!seen.has(name)) {
+        seen.add(name);
+        names.push(name);
+      }
+    }
+    values.requiredDocumentNames = names;
+  }
   for (const [field, maximum] of [
     ['displayOrder', 2147483647],
     ['suggestedCapacity', 100],
