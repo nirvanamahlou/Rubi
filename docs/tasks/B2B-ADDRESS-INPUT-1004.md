@@ -1,0 +1,9 @@
+# B2B-ADDRESS-INPUT-1004
+
+PC-B, base3b9e9342. User explicitly selected free address text only; country/city optional. R2/C4, persistent implementation worker.
+
+Master Data owns organization address persistence; B2B/Organizations consume its public API. Reserve sole Migration Owner/schema for nullable countryId/cityId and a paired-nullability invariant. Existing FKs, address text bounds, organization/branch authority, audit and optimistic versions stay intact. No fake geography defaults, new grants, direct cross-module table reads, destructive migration or data rewrite.
+
+Input compatibility: create omission becomes both null; complete country/city pair still validated against canonical geography. PATCH omission preserves existing fields; explicit both-null clears optional geography. Reject any merged partial pair. Response country/city and B2B primaryAddress projections are nullable, all affected readers handle absent geography without inventing labels. Wizard displays only one plain «نشانی» input and saves text through owner API. Address panels may keep optional pair for older structured records; avoid wiping those on unrelated edits.
+
+Checks: focused create/update/validation/projection/wizard save tests including null pair, legacy pair, partial/mismatch rejection, patch preservation, address whitespace/bounds; fresh disposable PostgreSQL applies migration and verifies old rows/FKs/paired check plus free text roundtrip. Prisma validate/generate, affected API/Contracts/Web typechecks/builds, scoped lint/format and full affected modules. User authorizes push/develop merge; runtime rollout only after reviewed migration plan, tests and successful CI. Telemetry unavailable.

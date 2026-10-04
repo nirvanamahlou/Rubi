@@ -1313,8 +1313,8 @@ model MasterOrganizationRole {
 model MasterOrganizationAddress {
   id                  String             @id @default(uuid()) @db.Uuid
   organizationId      String             @db.Uuid
-  countryId           String             @db.Uuid
-  cityId              String             @db.Uuid
+  countryId           String?            @db.Uuid
+  cityId              String?            @db.Uuid
   label               String             @db.VarChar(80)
   postalCode          String?            @db.VarChar(24)
   addressLine         String             @db.VarChar(500)
@@ -1329,8 +1329,8 @@ model MasterOrganizationAddress {
   createdAt           DateTime           @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime           @updatedAt @db.Timestamptz(3)
   organization        MasterOrganization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  country             MasterCountry      @relation(fields: [countryId], references: [id], onDelete: Restrict)
-  city                MasterCity         @relation(fields: [cityId, countryId], references: [id, countryId], onDelete: Restrict)
+  country             MasterCountry?     @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  city                MasterCity?        @relation(fields: [cityId, countryId], references: [id, countryId], onDelete: Restrict)
 
   @@index([organizationId, isPrimary, isActive, displayOrder])
   @@index([countryId, cityId])

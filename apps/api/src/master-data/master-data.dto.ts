@@ -187,11 +187,13 @@ export class MasterDataLogoRemoveDto {
 }
 
 export class MasterOrganizationAddressDto {
+  @IsOptional()
   @IsUUID()
-  countryId!: string;
+  countryId?: string | null;
 
+  @IsOptional()
   @IsUUID()
-  cityId!: string;
+  cityId?: string | null;
 
   @IsString()
   @MaxLength(80)

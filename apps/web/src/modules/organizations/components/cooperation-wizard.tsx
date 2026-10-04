@@ -61,10 +61,6 @@ export function CooperationWizard({
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<readonly MasterDataRecord[]>([]);
   const [searching, setSearching] = useState(false);
-  const [countries, setCountries] = useState<readonly MasterDataRecord[]>([]);
-  const [countryQuery, setCountryQuery] = useState('');
-  const [cityQuery, setCityQuery] = useState('');
-  const [cities, setCities] = useState<readonly MasterDataRecord[]>([]);
   const [branches, setBranches] = useState<readonly BranchReference[]>([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -231,57 +227,6 @@ export function CooperationWizard({
       window.clearTimeout(timer);
     };
   }, [query, mode]);
-  useEffect(() => {
-    let active = true;
-    if (!countryQuery.trim()) return;
-    const timer = window.setTimeout(() => {
-      void masterDataApi
-        .list('countries', {
-          search: countryQuery,
-          status: 'active',
-          page: 1,
-          pageSize: 100,
-          sortBy: 'name',
-          sortDirection: 'asc',
-        })
-        .then((response) => {
-          if (active) setCountries(response.data);
-        })
-        .catch(() => {
-          if (active) setError('دریافت کشورها ناموفق بود.');
-        });
-    }, 300);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [countryQuery]);
-  useEffect(() => {
-    let active = true;
-    if (!draft.countryId || !cityQuery.trim()) return;
-    const timer = window.setTimeout(() => {
-      void masterDataApi
-        .list('cities', {
-          search: cityQuery,
-          status: 'active',
-          countryId: draft.countryId,
-          page: 1,
-          pageSize: 100,
-          sortBy: 'name',
-          sortDirection: 'asc',
-        })
-        .then((response) => {
-          if (active) setCities(response.data);
-        })
-        .catch(() => {
-          if (active) setError('دریافت شهرها ناموفق بود.');
-        });
-    }, 300);
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [draft.countryId, cityQuery]);
   function next() {
     const issue =
       step === 1 && mode === 'existing' && !existing
@@ -556,43 +501,12 @@ export function CooperationWizard({
                       </p>
                     </div>
                   ) : null}
-                  <label className="field">
-                    <span>کشور نشانی (اختیاری)</span>
-                    <input
-                      className="input"
-                      aria-label="جست‌وجوی کشور"
-                      placeholder="جست‌وجوی کشور"
-                      value={countryQuery}
-                      onChange={(event) => setCountryQuery(event.target.value)}
-                    />
-                    <NativeSearchSelect
-                      className="input"
-                      aria-label="کشور نشانی"
-                      disabled={!permissions.includes('master_data.update')}
-                      value={draft.countryId}
-                      onChange={(event) => {
-                        setDraft((current) => ({
-                          ...current,
-                          countryId: event.target.value,
-                          cityId: '',
-                        }));
-                        setCities([]);
-                      }}
-                    >
-                      <option value="">انتخاب نشده</option>
-                      {!countryQuery.trim() ? (
-                        <option disabled value="__search-country__">
-                          برای نمایش کشورها، جست‌وجو کنید
-                        </option>
-                      ) : null}
-                      {countryQuery.trim() &&
-                        countries.map((country) => (
-                          <option key={country.id} value={country.id}>
-                            {country.name}
-                          </option>
-                        ))}
-                    </NativeSearchSelect>
-                  </label>
+                  {field(
+                    'addressLine',
+                    'نشانی',
+                    500,
+                    !permissions.includes('master_data.update'),
+                  )}
                 </div>
               </>
             ) : null}
@@ -625,42 +539,6 @@ export function CooperationWizard({
                     !permissions.includes('master_data.create'),
                     'email',
                   )}
-                  {draft.countryId ? (
-                    <>
-                      <label className="field">
-                        <span>شهر نشانی</span>
-                        <input
-                          className="input"
-                          aria-label="جست‌وجوی شهر"
-                          placeholder="جست‌وجوی شهر"
-                          value={cityQuery}
-                          onChange={(event) => setCityQuery(event.target.value)}
-                        />
-                        <NativeSearchSelect
-                          className="input"
-                          aria-label="شهر نشانی"
-                          value={draft.cityId}
-                          onChange={(event) =>
-                            set('cityId', event.target.value)
-                          }
-                        >
-                          <option value="">انتخاب شهر</option>
-                          {!cityQuery.trim() ? (
-                            <option disabled value="__search-city__">
-                              برای نمایش شهرها، جست‌وجو کنید
-                            </option>
-                          ) : null}
-                          {cityQuery.trim() &&
-                            cities.map((city) => (
-                              <option key={city.id} value={city.id}>
-                                {city.name}
-                              </option>
-                            ))}
-                        </NativeSearchSelect>
-                      </label>
-                      {field('addressLine', 'نشانی کامل', 500)}
-                    </>
-                  ) : null}
                 </div>
                 <div className="boundary-note">
                   پس از ثبت سازمان، نمایندگان، امضاداران و مدیر حساب را در صفحه
