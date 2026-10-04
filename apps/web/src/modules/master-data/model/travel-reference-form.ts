@@ -2,6 +2,8 @@ import type { MasterDataRecord } from '@nora/contracts';
 import { getMasterDataDefinition } from './catalog';
 
 export type TravelReferenceResource = 'transfer-types' | 'visa-services';
+export type TravelReferenceMutationValue =
+  string | number | readonly string[] | null;
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -22,8 +24,37 @@ export function travelReferenceFormValues(
     values.referenceValidityMode = String(
       record?.attributes.referenceValidityMode ?? 'DAYS',
     );
+  if (resource === 'visa-services')
+    values.requiredDocumentNames = JSON.stringify(
+      requiredDocumentNames(record?.attributes.requiredDocumentNames),
+    );
   values.status = record?.status ?? 'active';
   return values;
+}
+
+export function requiredDocumentNames(value: unknown): string[] {
+  if (typeof value !== 'string' || !value.trim()) return [];
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) &&
+      parsed.every((item) => typeof item === 'string')
+      ? parsed
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function normalizeRequiredDocumentNames(values: readonly string[]) {
+  const result: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of values) {
+    const value = raw.trim();
+    if (!value || seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
 }
 
 export function travelReferenceFieldLimit(key: string) {
@@ -50,6 +81,7 @@ export function validateTravelReferenceForm(
       errors[field.key] = `${field.label} الزامی است.`;
     if (
       field.type === 'text' &&
+      field.key !== 'requiredDocumentNames' &&
       value.length > travelReferenceFieldLimit(field.key)
     )
       errors[field.key] = `${field.label} بیش از حد طولانی است.`;
@@ -86,6 +118,13 @@ export function validateTravelReferenceForm(
     errors.suggestedCapacityMin =
       'حداقل ظرفیت نباید از حداکثر بیشتر باشد و به حداکثر نیاز دارد.';
   if (resource === 'visa-services') {
+    const documents = requiredDocumentNames(values.requiredDocumentNames);
+    if (
+      documents.length > 50 ||
+      documents.some((name) => !name.trim() || name.trim().length > 160)
+    )
+      errors.requiredDocumentNames =
+        'حداکثر ۵۰ نام مدرک تا ۱۶۰ نویسه مجاز است.';
     if (
       !['DAYS', 'PASSPORT_EXPIRY'].includes(values.referenceValidityMode ?? '')
     )
@@ -116,7 +155,14 @@ export function travelReferenceMutationValues(
     delete result.values.status;
   if (resource === 'visa-services' && record)
     delete result.values.referenceValidityMode;
-  return result.values;
+  const values: Record<string, TravelReferenceMutationValue> = {
+    ...result.values,
+  };
+  if (resource === 'visa-services')
+    values.requiredDocumentNames = requiredDocumentNames(
+      result.values.requiredDocumentNames,
+    );
+  return values;
 }
 
 export function transferCapacityLabel(record: MasterDataRecord) {

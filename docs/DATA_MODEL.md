@@ -6,6 +6,10 @@ Sales owns `sales_contract_public_number_seq`, an independent non-cycling INTEGE
 
 Ticket Catalog owns nullable TicketPublishedOffer.manifestTemplateId with a restrictive FK to master_manifest_templates and an index. Historical offers stay null and use the built-in default; no rows are backfilled or operational passenger data changed. Reservations reads only the branch-scoped public Ticket selection and the public Master Data template/country projection; it never queries their tables. The existing offer optimistic revision/audit protects selector updates. An omitted field in old update clients preserves the prior selection; null clears it. Explicit file reads continue through Documents' CLEAN/audit boundary. Default XLSX is generated from authorized passenger details and carries string cells for identifiers.
 
+## VISA-REQUIRED-DOCUMENTS-1004 — نام مدارک مورد نیاز ویزا
+
+`MasterVisaService.requiredDocumentNames` یک آرایه متنی افزایشی و غیرتهی با پیش‌فرض خالی است. حداکثر ۵۰ نام trim‌شده، غیرخالی و حداکثر ۱۶۰ نویسه با حذف تکرار پایدار پذیرفته می‌شود. رکوردهای تاریخی بدون backfill مقداری، آرایه خالی می‌گیرند. حذف این آرایه از PATCH مقدار ذخیره‌شده را حفظ می‌کند و آرایه خالی آن را پاک می‌کند. `guidanceFileReference` قدیمی بدون تغییر در مدل، API و export باقی می‌ماند؛ UI جدید فقط نام مدارک را مدیریت می‌کند و فایل مسافر یا upload نگه نمی‌دارد.
+
 # مدل داده و ERD اولیه
 
 ## TICKET-PROCUREMENT-FINANCE-PAYMENT-0927 — مقصد قیمت و خرید صندلی بلیت

@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   travelReferenceFormValues,
   travelReferenceMutationValues,
+  normalizeRequiredDocumentNames,
+  requiredDocumentNames,
   transferCapacityLabel,
   transferUsageLabel,
   validateTravelReferenceForm,
@@ -100,7 +102,6 @@ describe('travel reference form values', () => {
     { referenceValidityMode: '' },
     { referenceValidityMode: 'OTHER' },
     { countryId: '' },
-    { guidanceFileReference: 'DOC-20112' },
     { referenceValidityDays: '3651' },
     { status: '' },
     { visaType: '' },
@@ -162,6 +163,28 @@ describe('travel reference form values', () => {
       '۹۰ روز',
     );
     expect(visaValidityLabel(record())).toBe('مشخص نشده');
+  });
+  it('hydrates, normalizes and submits only required document names', () => {
+    const existing = record({
+      countryId: visa.countryId,
+      visaType: visa.visaType,
+      requiredDocumentNames: '["پاسپورت","عکس"]',
+      guidanceFileReference: '55555555-5555-4555-8555-555555555555',
+    });
+    const values = travelReferenceFormValues('visa-services', existing);
+    expect(requiredDocumentNames(values.requiredDocumentNames)).toEqual([
+      'پاسپورت',
+      'عکس',
+    ]);
+    expect(
+      normalizeRequiredDocumentNames([' پاسپورت ', 'عکس', 'پاسپورت']),
+    ).toEqual(['پاسپورت', 'عکس']);
+    expect(
+      travelReferenceMutationValues('visa-services', values, existing),
+    ).toMatchObject({ requiredDocumentNames: ['پاسپورت', 'عکس'] });
+    expect(
+      travelReferenceMutationValues('visa-services', values, existing),
+    ).not.toHaveProperty('guidanceFileReference');
   });
   it('formats bounded, upper-only and unknown capacities correctly', () => {
     expect(

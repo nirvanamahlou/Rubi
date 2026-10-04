@@ -65,4 +65,30 @@ describe('buildMasterDataXlsx', () => {
     expect(worksheet).not.toContain('\u001f');
     expect(worksheet).toContain('ABCD\u007fE\tF\rG\nH');
   });
+
+  it('exports required document names beside the retained legacy guidance reference', () => {
+    const files = unzipSync(
+      buildMasterDataXlsx({
+        resource: 'visa-services',
+        columns: ['guidanceFileReference', 'requiredDocumentNames'],
+        records: [
+          {
+            ...record,
+            resource: 'visa-services',
+            attributes: {
+              guidanceFileReference: '55555555-5555-4555-8555-555555555555',
+              requiredDocumentNames: '["پاسپورت","عکس"]',
+            },
+          },
+        ],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      }),
+    );
+    const worksheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(worksheet).toContain('Reference راهنما');
+    expect(worksheet).toContain('مدارک مورد نیاز');
+    expect(worksheet).toContain('55555555-5555-4555-8555-555555555555');
+    expect(worksheet).toContain('[&quot;پاسپورت&quot;,&quot;عکس&quot;]');
+  });
 });

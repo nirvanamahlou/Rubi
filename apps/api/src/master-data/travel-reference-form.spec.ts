@@ -117,6 +117,7 @@ describe('travel reference form persistence contract', () => {
         referenceValidityMode: 'DAYS',
         referenceValidityDays: '90',
         guidanceFileReference: referenceId,
+        requiredDocumentNames: [' پاسپورت ', 'عکس', 'پاسپورت'],
         description: 'General guide',
         status: 'inactive',
       },
@@ -126,10 +127,41 @@ describe('travel reference form persistence contract', () => {
       referenceValidityMode: 'DAYS',
       referenceValidityDays: 90,
       guidanceFileReference: referenceId,
+      requiredDocumentNames: ['پاسپورت', 'عکس'],
       isActive: false,
     });
     expect(result.data.attributes.referenceValidityMode).toBe('DAYS');
+    expect(result.data.attributes.requiredDocumentNames).toBe(
+      '["پاسپورت","عکس"]',
+    );
     expect(result.data.attributes).not.toHaveProperty('supplierId');
+  });
+  it('preserves omitted visa document names and clears an explicit empty list', async () => {
+    const existing = {
+      ...base,
+      requiredDocumentNames: ['پاسپورت'],
+    };
+    const { service, update } = setup(existing);
+    await service.update(
+      'visa-services',
+      id,
+      { description: 'updated' },
+      2,
+      actor,
+    );
+    expect(update.mock.calls[0]?.[2]).not.toHaveProperty(
+      'requiredDocumentNames',
+    );
+    await service.update(
+      'visa-services',
+      id,
+      { requiredDocumentNames: [] },
+      2,
+      actor,
+    );
+    expect(update.mock.calls[1]?.[2]).toMatchObject({
+      requiredDocumentNames: [],
+    });
   });
   it('preserves legacy numeric-only payloads and omitted lower bounds', async () => {
     const { service, create } = setup();
@@ -285,10 +317,25 @@ describe('travel reference form persistence contract', () => {
     { countryId: '' },
     { visaType: '' },
     { passportNumber: 'not-accepted' },
+    { requiredDocumentNames: 'passport' },
+    { requiredDocumentNames: [4] },
+    { requiredDocumentNames: [''] },
+    { requiredDocumentNames: ['x'.repeat(161)] },
+    {
+      requiredDocumentNames: Array.from(
+        { length: 51 },
+        (_, index) => `doc-${index}`,
+      ),
+    },
+    { requiredDocumentNames: Array.from({ length: 51 }, () => 'passport') },
   ])('rejects malformed visa fields before writes: %j', async (invalid) => {
     const { service, create } = setup();
+    const values = { ...visa, ...invalid } as unknown as Record<
+      string,
+      string | number | readonly string[] | null
+    >;
     await expect(
-      service.create('visa-services', { ...visa, ...invalid }, actor),
+      service.create('visa-services', values, actor),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(create).not.toHaveBeenCalled();
   });

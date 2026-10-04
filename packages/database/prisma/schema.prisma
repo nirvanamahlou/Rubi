@@ -2591,6 +2591,7 @@ model MasterVisaService {
   referenceValidityDays Int?
   referenceValidityMode String          @default("DAYS") @db.VarChar(24)
   guidanceFileReference String?         @db.Uuid
+  requiredDocumentNames String[]        @default([])
   description           String?         @db.VarChar(1000)
   displayOrder          Int             @default(0)
   isActive              Boolean         @default(true)

@@ -1,7 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import type { MasterDataRecord, TourDepartureV1 } from '@nora/contracts';
-import { Button } from '@/components/ui';
+import {
+  SearchCombobox,
+  type SearchOption,
+} from '@/components/ui/search-combobox';
 import { toursApi } from '@/modules/ticket-catalog/api/tours';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { selectSalesInsurance } from '../model/sales-insurance';
@@ -22,18 +25,11 @@ export function SalesTourPicker({
 }) {
   const [rows, setRows] = useState<TourDepartureV1[]>([]);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
-  const hasSearch = Boolean(search.trim());
-  const matchingRows = hasSearch
-    ? rows.filter((row) =>
-        row.package.name
-          .toLocaleLowerCase('fa-IR')
-          .includes(search.trim().toLocaleLowerCase('fa-IR')),
-      )
-    : [];
   useEffect(() => {
-    if (!search.trim()) return;
+    if (!open) return;
     let alive = true;
     void toursApi
       .departures()
@@ -41,15 +37,24 @@ export function SalesTourPicker({
         if (alive) setRows(data);
       })
       .catch((reason: unknown) => {
-        if (alive)
+        if (alive) {
+          setRows([]);
           setError(
             reason instanceof Error ? reason.message : 'دریافت تور ناموفق بود.',
           );
+        }
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
       });
     return () => {
       alive = false;
     };
-  }, [search]);
+  }, [open]);
+  const options = salesTourOptions(
+    rows,
+    state.passengerComposition.adults + state.passengerComposition.children,
+  );
   const select = async (tour: TourDepartureV1) => {
     setBusy(true);
     setError('');
@@ -149,48 +154,60 @@ export function SalesTourPicker({
   return (
     <section className="space-y-3 rounded-xl border p-4">
       <h3 className="font-bold">انتخاب نوبت تور</h3>
-      <input
-        aria-label="جست‌وجوی تور"
-        className="h-10 w-full rounded-xl border px-3"
-        placeholder="نام تور…"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
+      <SearchCombobox
+        label="جست‌وجو و انتخاب تور"
+        placeholder="انتخاب تور فعال…"
+        value={state.tour?.id ?? ''}
+        selectedLabel={state.tour?.package.name}
+        options={loading || error ? [] : options}
+        loading={loading}
+        error={error || undefined}
+        disabled={busy}
+        onOpenChange={(next) => {
+          if (next && !open) {
+            setLoading(true);
+            setError('');
+          }
+          setOpen(next);
+        }}
+        onValueChange={(id) => {
+          const tour = rows.find((row) => row.id === id);
+          if (
+            tour &&
+            options.some((option) => option.value === id && !option.disabled)
+          )
+            void select(tour);
+        }}
       />
-      {hasSearch && error ? <p role="alert">{error}</p> : null}
-      {!hasSearch ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          برای نمایش نوبت‌ها، نام تور را جست‌وجو کنید.
-        </p>
-      ) : (
-        matchingRows.map((row) => (
-          <div
-            key={row.id}
-            className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-3"
-          >
-            <div>
-              <strong>{row.package.name}</strong>
-              <p>
-                <bdi>{row.startsOn}</bdi> تا <bdi>{row.endsOn}</bdi> ·{' '}
-                {row.remainingCapacity} صندلی
-              </p>
-            </div>
-            <Button
-              disabled={
-                busy ||
-                row.remainingCapacity <
-                  state.passengerComposition.adults +
-                    state.passengerComposition.children
-              }
-              onClick={() => void select(row)}
-            >
-              انتخاب تور
-            </Button>
-          </div>
-        ))
-      )}
-      {hasSearch && !matchingRows.length && !error && (
-        <p>نوبت توری برای فروش یافت نشد؛ ابتدا در مدیریت بلیط تعریف کنید.</p>
-      )}
+      {error && <p role="alert">{error}</p>}
     </section>
   );
+}
+
+export function salesTourOptions(
+  rows: readonly TourDepartureV1[],
+  passengers: number,
+): SearchOption[] {
+  return rows
+    .filter(
+      (row) =>
+        row.outbound.status === 'ACTIVE' &&
+        (!row.returning || row.returning.status === 'ACTIVE'),
+    )
+    .map((row) => ({
+      value: row.id,
+      label:
+        row.package.name +
+        ' · ' +
+        row.startsOn +
+        ' تا ' +
+        row.endsOn +
+        ' · ' +
+        row.remainingCapacity +
+        ' صندلی',
+      searchText: [row.package.details?.airlineName, row.outbound.carrierName]
+        .filter(Boolean)
+        .join(' '),
+      disabled: row.remainingCapacity < passengers,
+    }));
 }

@@ -224,7 +224,7 @@ describe('travel services workspace', () => {
           'نوع ویزا',
           'Provider',
           'مدت اعتبار مرجع',
-          'مدارک راهنما',
+          'مدارک مورد نیاز',
           'وضعیت',
           'عملیات',
         ],
@@ -236,7 +236,7 @@ describe('travel services workspace', () => {
       expect(table.cells).toBe(table.headers.length);
     }
     expect(tables.leaders?.headers).not.toContain('مدارک');
-    expect(tables['visa-services']?.headers).toContain('مدارک راهنما');
+    expect(tables['visa-services']?.headers).toContain('مدارک مورد نیاز');
     expect(tables['tour-types']?.headers).not.toContain('آخرین تغییر');
     expect(source).toContain('label="استفاده"');
     expect(source).toContain('tourTypeUsageLabel(selected)');
@@ -295,6 +295,7 @@ describe('travel services workspace', () => {
         'referenceValidityMode',
         'referenceValidityDays',
         'guidanceFileReference',
+        'requiredDocumentNames',
         'description',
         'displayOrder',
         'status',
