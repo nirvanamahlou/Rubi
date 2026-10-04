@@ -4636,3 +4636,11 @@ SALES-AGREED-AUTOFILL-1004 validation: Sales294 tests plus final quote payload3 
 ## 2026-10-04 — B2B-ADDRESS-INPUT-1004 — PC-B
 
 Agency creation replaces the country selector with one free-text address field in the first step. User confirmed optional country/city in the owner backend. MasterData accepts a null pair, preserves omitted geography on edits and validates complete supplied pairs; additive nullable columns retain restrictive geography FKs and a paired-nullability CHECK. Existing address values and permissions remain unchanged. B2B projection and Organizations displays support absent geography. Task-specific tests, disposable PostgreSQL migration proof and affected builds gate user-authorized push/develop merge; no operational database change.
+
+## 2026-10-04 — TICKET-PAYMENT-INLINE-PRICE-1004 — PC-A
+
+Ticket seat/unit/invoice/currency entry moved into the existing Finance ticket payment dialog, removing the separate cost action. Existing public cost command prepares an accepted revision before the existing idempotent payment command; accepted preparation is retained for retries. Source-account filtering and FX follow selected purchase currency, paid-cost lock and receipt retry remain. No backend/schema/migration/dependency/runtime change. Tests/checks/CI gate owner-authorized develop merge.
+
+Finance request page also has a top document-delivery jump button targeting the existing lower panel, with header scroll offset and keyboard focus target. No permission/data change.
+
+Validation: all Finance Web40 tests pass, including retained accepted-cost revision/retry, paid-cost lock and failure handling. Scoped lint/typecheck/production build and final CI gate develop merge; no live financial commands or local deployment. PR648.

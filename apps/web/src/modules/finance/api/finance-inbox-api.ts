@@ -183,10 +183,19 @@ export const financeInboxApi = {
       { method: 'POST', body: JSON.stringify(input) },
     ),
   recordTicketCost: (requestId: string, input: FinanceTicketCostCommandV1) =>
-    apiRequest<{ data: unknown }>(
-      `/finance/ticket-purchases/${encodeURIComponent(requestId)}/costs`,
-      { method: 'POST', body: JSON.stringify(input) },
-    ),
+    apiRequest<{
+      data: {
+        id: string;
+        version: number;
+        invoiceAmount: string;
+        currencyCode: string;
+        seatCount: number;
+        unitCost: string;
+      };
+    }>(`/finance/ticket-purchases/${encodeURIComponent(requestId)}/costs`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   payTicket: (requestId: string, input: FinanceTicketPaymentCommandV1) =>
     apiRequest<{
       data: {
