@@ -1712,6 +1712,159 @@ describe('DocumentsService security and persistence flow', () => {
     expect(storage.removeQuarantined).not.toHaveBeenCalled();
   });
 
+  it('authorizes organization proof from raw owner state and same-session confidential grant', async () => {
+    const proof = row({
+      domain: 'ORGANIZATION',
+      scanStatus: 'CLEAN',
+      confidentialAccessCodeHash: 'a'.repeat(128),
+    });
+    proof.sourceModule = 'master-data';
+    proof.sourceEntityType = 'organizations';
+    proof.sourceEntityId = 'organization';
+    proof.relations = [
+      {
+        ...proof.relations[0]!,
+        relationType: 'PRIMARY_CASE',
+        sourceModule: 'master-data',
+        sourceEntityType: 'organizations',
+        sourceEntityId: 'organization',
+      },
+    ];
+    repository.findDetail.mockResolvedValue(proof);
+    repository.hasConfidentialAccessGrant.mockResolvedValue(true);
+    const proofActor: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        'documents.list',
+        'documents.organization.read',
+        'documents.metadata.read',
+        'documents.sensitive.read',
+      ],
+    };
+    await expect(
+      service.assertOrganizationProofReference(
+        {
+          documentId: proof.id,
+          organizationId: 'organization',
+          branchId,
+          expectedVersionId: proof.currentVersion!.id,
+          confidentialGrantToken: 'fresh-token',
+        },
+        proofActor,
+      ),
+    ).resolves.toEqual({
+      documentId: proof.id,
+      versionId: proof.currentVersion!.id,
+    });
+    expect(repository.hasConfidentialAccessGrant).toHaveBeenCalledWith({
+      tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
+      documentId: proof.id,
+      actorUserId: proofActor.userId,
+      actorSessionId: proofActor.sessionId,
+    });
+  });
+
+  it('rejects raw expired coded proof even though masked projections hide expiry', async () => {
+    const proof = row({
+      domain: 'ORGANIZATION',
+      scanStatus: 'CLEAN',
+      confidentialAccessCodeHash: 'a'.repeat(128),
+    });
+    proof.validUntil = new Date('2000-01-01T00:00:00.000Z');
+    proof.relations = [
+      {
+        ...proof.relations[0]!,
+        relationType: 'PRIMARY_CASE',
+        sourceModule: 'master-data',
+        sourceEntityType: 'organizations',
+        sourceEntityId: 'organization',
+      },
+    ];
+    repository.findDetail.mockResolvedValue(proof);
+    repository.hasConfidentialAccessGrant.mockResolvedValue(true);
+    await expect(
+      service.assertOrganizationProofReference(
+        {
+          documentId: proof.id,
+          organizationId: 'organization',
+          branchId,
+          confidentialGrantToken: 'fresh-token',
+        },
+        {
+          ...actor,
+          permissions: [
+            'documents.list',
+            'documents.organization.read',
+            'documents.metadata.read',
+            'documents.sensitive.read',
+          ],
+        },
+      ),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'B2B_DOCUMENT_NOT_READY' }),
+    });
+  });
+
+  it('does not let another actor or session reuse a maker confidential grant', async () => {
+    const proof = row({
+      domain: 'ORGANIZATION',
+      scanStatus: 'CLEAN',
+      confidentialAccessCodeHash: 'a'.repeat(128),
+    });
+    proof.relations = [
+      {
+        ...proof.relations[0]!,
+        relationType: 'PRIMARY_CASE',
+        sourceModule: 'master-data',
+        sourceEntityType: 'organizations',
+        sourceEntityId: 'organization',
+      },
+    ];
+    repository.findDetail.mockResolvedValue(proof);
+    repository.hasConfidentialAccessGrant.mockImplementation(
+      async (input: { actorUserId: string; actorSessionId: string }) =>
+        input.actorUserId === actor.userId &&
+        input.actorSessionId === actor.sessionId,
+    );
+    const permissions: AuthenticatedActor['permissions'] = [
+      'documents.list',
+      'documents.organization.read',
+      'documents.metadata.read',
+      'documents.sensitive.read',
+    ];
+    await expect(
+      service.assertOrganizationProofReference(
+        {
+          documentId: proof.id,
+          organizationId: 'organization',
+          branchId,
+          confidentialGrantToken: 'maker-token',
+        },
+        { ...actor, permissions },
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      service.assertOrganizationProofReference(
+        {
+          documentId: proof.id,
+          organizationId: 'organization',
+          branchId,
+          confidentialGrantToken: 'maker-token',
+        },
+        {
+          ...actor,
+          userId: '99999999-9999-4999-8999-999999999999',
+          sessionId: '88888888-8888-4888-8888-888888888888',
+          permissions,
+        },
+      ),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({
+        code: 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED',
+      }),
+    });
+  });
+
   it('rejects downgrading a coded document even with a valid same-session grant', async () => {
     const coded = row({ confidentialAccessCodeHash: 'a'.repeat(128) });
     const mutatingActor: AuthenticatedActor = {

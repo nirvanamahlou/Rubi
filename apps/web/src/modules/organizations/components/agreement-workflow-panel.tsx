@@ -7,7 +7,6 @@ import type {
   B2bAgreementRevisionV1,
   B2bAgreementTermsV1,
   B2bCooperationRole,
-  BranchReference,
   IamPermissionCode,
 } from '@nora/contracts';
 import { b2bAgreementTermsIssue, B2B_AGREEMENT_TYPES } from '@nora/contracts';
@@ -29,6 +28,8 @@ import {
 import { agencyClient, B2bApiError } from '../api/agency-client';
 import {
   blankAgreementTerms,
+  agreementUploadContextKey,
+  agreementUploadIsBusy,
   editableAgreementTerms,
   reviewLabels,
   serviceLabels,
@@ -42,6 +43,83 @@ import {
   collectAgreementExport,
 } from '../model/commercial-export';
 import { CommercialExportActions } from './commercial-export-actions';
+import { documentsApi } from '@/modules/documents/api/client';
+import { organizationDocumentQuery } from '../model/organization-documents';
+import { ConfidentialAccessCodeInput } from './inline-document-upload';
+import { useDossierBranch } from './use-dossier-branch';
+
+const proofIds = (terms: B2bAgreementTermsV1) =>
+  [...new Set([terms.documentId, ...terms.guarantees.map((g) => g.documentId)])]
+    .filter((id): id is string => Boolean(id))
+    .sort();
+const proofIdentity = (terms: B2bAgreementTermsV1) =>
+  [
+    `${terms.documentId ?? ''}:${terms.documentVersionId ?? ''}`,
+    ...terms.guarantees.map(
+      (guarantee) =>
+        `${guarantee.documentId ?? ''}:${guarantee.documentVersionId ?? ''}`,
+    ),
+  ].join('|');
+
+export function uploadedAgreementReferenceState(
+  scope: string,
+  documentId: string,
+  token: string,
+) {
+  return {
+    scope,
+    phase: 'checking' as const,
+    protectedReferences: new Set([documentId]),
+    codes: {},
+    grants: { [documentId]: token },
+  };
+}
+
+export interface AgreementReferenceState {
+  scope: string;
+  phase: 'checking' | 'ready' | 'failed';
+  protectedReferences: Set<string>;
+  codes: Record<string, string>;
+  grants: Record<string, string>;
+}
+
+export function rejectedAgreementReferenceGrantState(
+  state: AgreementReferenceState,
+  documentIds: readonly string[],
+): AgreementReferenceState {
+  const grants = { ...state.grants };
+  const codes = { ...state.codes };
+  for (const id of documentIds) {
+    delete grants[id];
+    codes[id] = '';
+  }
+  return { ...state, grants, codes };
+}
+
+export async function protectedAgreementProofIds(
+  organizationId: string,
+  branchId: string,
+  ids: readonly string[],
+) {
+  const unresolved = new Set(ids);
+  const protectedIds = new Set<string>();
+  for (let page = 1; unresolved.size && page <= 100; page++) {
+    const response = await documentsApi.list({
+      ...organizationDocumentQuery(organizationId, branchId, page),
+      pageSize: 100,
+    });
+    for (const item of response.data) {
+      if (!unresolved.delete(item.id)) continue;
+      if (item.requiresConfidentialAccessCode) protectedIds.add(item.id);
+    }
+    if (page >= response.meta.totalPages) break;
+  }
+  if (unresolved.size)
+    throw new Error(
+      'وضعیت دسترسی همه اسناد قرارداد قابل تأیید نیست؛ فهرست اسناد را دوباره دریافت کنید.',
+    );
+  return protectedIds;
+}
 
 function RevisionSummary({
   revision,
@@ -184,12 +262,16 @@ export function AgreementWorkflowPanel({
   role: B2bCooperationRole;
   view?: 'agreements' | 'credit' | 'guarantees' | 'temporary';
 }) {
-  const [branches, setBranches] = useState<readonly BranchReference[]>([]);
-  const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
-    [],
-  );
-  const [userId, setUserId] = useState('');
-  const [branchId, setBranchId] = useState('');
+  const {
+    branches,
+    branchId,
+    setBranchId,
+    permissions,
+    sessionError,
+    sessionContextKey,
+    actorUserId: userId,
+    actorIdentityKey,
+  } = useDossierBranch();
   const [records, setRecords] = useState<B2bAgreementCaseV1[]>([]);
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
@@ -202,17 +284,26 @@ export function AgreementWorkflowPanel({
     record?: B2bAgreementCaseV1;
     terms: B2bAgreementTermsV1;
     requestId: string;
+    grantContextKey: string;
+    actorIdentityKey: string;
+    permissions: readonly IamPermissionCode[];
   } | null>(null);
   const [action, setAction] = useState<{
     record: B2bAgreementCaseV1;
     kind: 'submit' | 'APPROVE' | 'REJECT';
     reason: string;
     requestId: string;
+    grantContextKey: string;
+    actorIdentityKey: string;
   } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingOwnerKey, setUploadingOwnerKey] = useState<string | null>(
+    null,
+  );
   const [uncertain, setUncertain] = useState(false);
   const [dialogError, setDialogError] = useState('');
+  const [referenceState, setReferenceState] =
+    useState<AgreementReferenceState | null>(null);
   const sequence = useRef(0);
   const load = useCallback(async () => {
     const current = ++sequence.current;
@@ -224,22 +315,15 @@ export function AgreementWorkflowPanel({
         setPages(1);
         return;
       }
-      const user = await agencyClient.session();
-      if (current !== sequence.current) return;
-      setPermissions(user.permissions);
-      setUserId(user.id);
-      setBranches(user.branches);
-      const branch =
-        user.branches.find((b) => b.id === branchId)?.id ??
-        user.branches[0]?.id;
-      if (!branch) throw new Error('شعبه مجاز وجود ندارد.');
-      if (branch !== branchId) {
-        setBranchId(branch);
+      if (!sessionContextKey) {
+        if (sessionError) throw new Error(sessionError);
         return;
       }
+      const branch = branchId;
+      if (!branch) throw new Error('شعبه مجاز وجود ندارد.');
       if (
-        !user.permissions.includes('b2b.agreement.read') ||
-        !user.permissions.includes('b2b.credit.read')
+        !permissions.includes('b2b.agreement.read') ||
+        !permissions.includes('b2b.credit.read')
       )
         throw new Error(
           'برای مشاهده قرارداد و سیاست‌های ارزی، مجوز مشاهده قرارداد و اعتبار لازم است.',
@@ -283,7 +367,17 @@ export function AgreementWorkflowPanel({
     } finally {
       if (current === sequence.current) setLoading(false);
     }
-  }, [organizationId, role, branchId, page, dateRange, view]);
+  }, [
+    organizationId,
+    role,
+    branchId,
+    page,
+    dateRange,
+    view,
+    permissions,
+    sessionContextKey,
+    sessionError,
+  ]);
   const invalidate = useCallback(() => {
     ++sequence.current;
   }, []);
@@ -294,6 +388,201 @@ export function AgreementWorkflowPanel({
       invalidate();
     };
   }, [load, refresh, invalidate]);
+  const currentEditor =
+    editor?.actorIdentityKey === actorIdentityKey ? editor : null;
+  const currentAction =
+    action?.actorIdentityKey === actorIdentityKey ? action : null;
+  const editorUploadContextKey = currentEditor
+    ? agreementUploadContextKey(
+        userId,
+        sessionContextKey,
+        organizationId,
+        branchId,
+        currentEditor.grantContextKey,
+      )
+    : '';
+  const uploading = agreementUploadIsBusy(
+    editorUploadContextKey,
+    uploadingOwnerKey,
+  );
+  const setUploadBusy = (isBusy: boolean, contextKey: string) =>
+    setUploadingOwnerKey((current) =>
+      isBusy ? contextKey : current === contextKey ? null : current,
+    );
+  const activeTerms =
+    currentEditor?.terms ?? currentAction?.record.revisions[0];
+  const activeProofKey = activeTerms ? proofIdentity(activeTerms) : '';
+  const grantContextKey =
+    currentEditor?.grantContextKey ?? currentAction?.grantContextKey ?? '';
+  const proofIdsKey = JSON.stringify(activeTerms ? proofIds(activeTerms) : []);
+  const shouldCheckReferences =
+    Boolean(activeTerms && activeProofKey) && currentAction?.kind !== 'REJECT';
+  const hasEditor = Boolean(currentEditor);
+  const referenceScopeKey = JSON.stringify([
+    actorIdentityKey,
+    sessionContextKey,
+    organizationId,
+    branchId,
+    activeProofKey,
+    grantContextKey,
+  ]);
+  const currentReferenceState =
+    referenceState?.scope === referenceScopeKey ? referenceState : null;
+  const protectedReferences =
+    currentReferenceState?.protectedReferences ?? new Set<string>();
+  const referenceCodes = currentReferenceState?.codes ?? {};
+  const referenceGrants = currentReferenceState?.grants ?? {};
+  const checkingReferences =
+    shouldCheckReferences &&
+    (!currentReferenceState || currentReferenceState.phase === 'checking');
+  const referenceCheckFailed = currentReferenceState?.phase === 'failed';
+  const updateReferenceState = (
+    update: (
+      current: NonNullable<typeof currentReferenceState>,
+    ) => NonNullable<typeof currentReferenceState>,
+  ) =>
+    setReferenceState((previous) => {
+      const current =
+        previous?.scope === referenceScopeKey
+          ? previous
+          : {
+              scope: referenceScopeKey,
+              phase: 'ready' as const,
+              protectedReferences: new Set<string>(),
+              codes: {},
+              grants: {},
+            };
+      return update(current);
+    });
+  const setReferenceCode = (documentId: string, code: string) =>
+    updateReferenceState((current) => ({
+      ...current,
+      codes: { ...current.codes, [documentId]: code },
+    }));
+  const setReferenceGrant = (documentId: string, token: string) =>
+    updateReferenceState((current) => ({
+      ...current,
+      grants: { ...current.grants, [documentId]: token },
+    }));
+  const completeConfidentialUpload = (
+    documentId: string,
+    token: string,
+    terms: B2bAgreementTermsV1,
+  ) => {
+    if (!currentEditor) return;
+    const nextScope = JSON.stringify([
+      actorIdentityKey,
+      sessionContextKey,
+      organizationId,
+      branchId,
+      proofIdentity(terms),
+      currentEditor.grantContextKey,
+    ]);
+    setEditor({
+      ...currentEditor,
+      terms,
+      requestId: crypto.randomUUID(),
+    });
+    setReferenceState(
+      uploadedAgreementReferenceState(nextScope, documentId, token),
+    );
+    setDialogError('');
+  };
+  const clearRejectedReferenceGrants = (
+    caught: unknown,
+    documentIds: readonly string[],
+  ) => {
+    if (
+      !(caught instanceof B2bApiError) ||
+      caught.code !== 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED'
+    )
+      return false;
+    setReferenceState((previous) =>
+      previous?.scope === referenceScopeKey
+        ? rejectedAgreementReferenceGrantState(previous, documentIds)
+        : previous,
+    );
+    return true;
+  };
+  useEffect(() => {
+    let active = true;
+    if (!shouldCheckReferences) {
+      return () => {
+        active = false;
+      };
+    }
+    if (!sessionContextKey || !branchId) return;
+    void protectedAgreementProofIds(
+      organizationId,
+      branchId,
+      JSON.parse(proofIdsKey) as string[],
+    )
+      .then((ids) => {
+        if (active) {
+          setReferenceState((previous) => {
+            const grants =
+              previous?.scope === referenceScopeKey ? previous.grants : {};
+            return {
+              scope: referenceScopeKey,
+              phase: 'ready',
+              protectedReferences: new Set([...ids, ...Object.keys(grants)]),
+              codes:
+                previous?.scope === referenceScopeKey ? previous.codes : {},
+              grants,
+            };
+          });
+        }
+      })
+      .catch((caught) => {
+        if (active) {
+          setReferenceState((previous) => ({
+            scope: referenceScopeKey,
+            phase: 'failed',
+            protectedReferences: new Set(),
+            codes: previous?.scope === referenceScopeKey ? previous.codes : {},
+            grants:
+              previous?.scope === referenceScopeKey ? previous.grants : {},
+          }));
+          setDialogError(
+            caught instanceof Error
+              ? caught.message
+              : 'بررسی دسترسی اسناد قرارداد ناموفق بود.',
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [
+    organizationId,
+    branchId,
+    sessionContextKey,
+    referenceScopeKey,
+    grantContextKey,
+    proofIdsKey,
+    hasEditor,
+    shouldCheckReferences,
+  ]);
+
+  async function grantsFor(ids: readonly string[]) {
+    const required = ids.filter((id) => protectedReferences.has(id));
+    const result: { documentId: string; token: string }[] = [];
+    for (const documentId of required) {
+      const existing = referenceGrants[documentId];
+      if (existing) {
+        result.push({ documentId, token: existing });
+        continue;
+      }
+      const code = referenceCodes[documentId];
+      if (!code) throw new Error('کد دسترسی هر سند محرمانه را وارد کنید.');
+      const response = await documentsApi.createAccessGrant(documentId, {
+        code,
+        purpose: 'CONFIDENTIAL_VIEW',
+      });
+      result.push({ documentId, token: response.data.token });
+    }
+    return result;
+  }
   const canManage =
     permissions.includes('b2b.agreement.manage') &&
     permissions.includes('b2b.agreement.read') &&
@@ -307,6 +596,7 @@ export function AgreementWorkflowPanel({
   function edit(record?: B2bAgreementCaseV1) {
     setDialogError('');
     setUncertain(false);
+    setReferenceState(null);
     const latest = record?.revisions[0];
     setEditor({
       ...(record ? { record } : {}),
@@ -328,6 +618,9 @@ export function AgreementWorkflowPanel({
               : {}),
           },
       requestId: crypto.randomUUID(),
+      grantContextKey: crypto.randomUUID(),
+      actorIdentityKey,
+      permissions,
     });
   }
   function begin(
@@ -336,109 +629,158 @@ export function AgreementWorkflowPanel({
   ) {
     setDialogError('');
     setUncertain(false);
+    setReferenceState(null);
     setAction({
       record,
       kind,
       reason: kind === 'submit' ? 'ارسال برای بررسی قرارداد و اعتبار' : '',
       requestId: crypto.randomUUID(),
+      grantContextKey: crypto.randomUUID(),
+      actorIdentityKey,
     });
   }
   async function save() {
-    if (!editor || busy || uploading) return;
+    if (
+      !currentEditor ||
+      busy ||
+      uploading ||
+      checkingReferences ||
+      referenceCheckFailed
+    )
+      return;
     if (view === 'temporary') {
       const issue = temporaryCreditIssue(
-        editor.terms.creditPolicies,
-        editor.record?.revisions[0]?.creditPolicies ?? [],
+        currentEditor.terms.creditPolicies,
+        currentEditor.record?.revisions[0]?.creditPolicies ?? [],
       );
       if (issue) {
         setDialogError(issue);
         return;
       }
     }
-    if (!editor.terms.paymentMethodId) {
+    if (!currentEditor.terms.paymentMethodId) {
       setDialogError('روش پرداخت را از اطلاعات پایه انتخاب کنید.');
       return;
     }
-    const issue = b2bAgreementTermsIssue(editor.terms);
+    const issue = b2bAgreementTermsIssue(currentEditor.terms);
     if (issue) {
       setDialogError(issue);
       return;
     }
     setBusy(true);
     setDialogError('');
+    const referenceDocumentIds = proofIds(currentEditor.terms);
     try {
+      const grants = await grantsFor(referenceDocumentIds);
       await agencyClient.saveAgreementTerms(
         organizationId,
         {
           branchId,
           role,
-          requestId: editor.requestId,
-          ...(editor.record ? { version: editor.record.version } : {}),
-          terms: editor.terms,
+          requestId: currentEditor.requestId,
+          ...(currentEditor.record
+            ? { version: currentEditor.record.version }
+            : {}),
+          terms: currentEditor.terms,
+          ...(grants.length ? { referenceGrants: grants } : {}),
         },
-        editor.record?.id,
+        currentEditor.record?.id,
       );
       setEditor(null);
+      setReferenceState(null);
       setUncertain(false);
       setNotice('پیش‌نویس قرارداد، سقف‌ها و تضمین‌ها ذخیره شد.');
       setRefresh((n) => n + 1);
     } catch (caught) {
+      const grantRejected = clearRejectedReferenceGrants(
+        caught,
+        referenceDocumentIds,
+      );
       setDialogError(
-        caught instanceof Error ? caught.message : 'ذخیره ناموفق بود.',
+        grantRejected
+          ? 'مجوز موقت یکی از اسناد منقضی یا با نشست جاری ناسازگار است؛ کد محرمانگی را دوباره وارد کنید.'
+          : caught instanceof Error
+            ? caught.message
+            : 'ذخیره ناموفق بود.',
       );
       setUncertain(
-        !(
-          caught instanceof B2bApiError &&
-          caught.status > 0 &&
-          caught.status < 500
-        ),
+        !grantRejected &&
+          !(
+            caught instanceof B2bApiError &&
+            caught.status > 0 &&
+            caught.status < 500
+          ),
       );
     } finally {
       setBusy(false);
     }
   }
   async function perform() {
-    if (!action || busy) return;
-    if (action.reason.trim().length < 3) {
+    if (!currentAction || busy || checkingReferences || referenceCheckFailed)
+      return;
+    if (currentAction.reason.trim().length < 3) {
       setDialogError('توضیح ارسال یا نتیجه بررسی را وارد کنید.');
       return;
     }
     setBusy(true);
     setDialogError('');
+    const referenceDocumentIds =
+      currentAction.kind === 'REJECT'
+        ? []
+        : currentAction.record.revisions[0]
+          ? proofIds(currentAction.record.revisions[0])
+          : [];
     try {
+      const grants =
+        currentAction.kind === 'REJECT'
+          ? []
+          : await grantsFor(referenceDocumentIds);
       await agencyClient.agreementAction(
         organizationId,
-        action.record.id,
-        action.kind === 'submit' ? 'submit' : 'review',
+        currentAction.record.id,
+        currentAction.kind === 'submit' ? 'submit' : 'review',
         {
           branchId,
           role,
-          requestId: action.requestId,
-          version: action.record.version,
-          reason: action.reason,
-          ...(action.kind !== 'submit' ? { decision: action.kind } : {}),
+          requestId: currentAction.requestId,
+          version: currentAction.record.version,
+          reason: currentAction.reason,
+          ...(currentAction.kind !== 'submit'
+            ? { decision: currentAction.kind }
+            : {}),
+          ...(grants.length ? { referenceGrants: grants } : {}),
         },
       );
       setAction(null);
+      setReferenceState(null);
       setUncertain(false);
       setNotice(
-        action.kind === 'submit'
+        currentAction.kind === 'submit'
           ? 'نسخه برای تأیید مستقل ارسال شد.'
-          : action.kind === 'APPROVE'
+          : currentAction.kind === 'APPROVE'
             ? 'قرارداد و شرایط این نسخه تأیید شد.'
             : 'نسخه رد شد؛ علت در تاریخچه ثبت شده است.',
       );
       setRefresh((n) => n + 1);
     } catch (caught) {
+      const grantRejected = clearRejectedReferenceGrants(
+        caught,
+        referenceDocumentIds,
+      );
       setDialogError(
-        caught instanceof Error ? caught.message : 'ثبت نتیجه ناموفق بود.',
+        grantRejected
+          ? 'مجوز موقت یکی از اسناد منقضی یا با نشست جاری ناسازگار است؛ کد محرمانگی را دوباره وارد کنید.'
+          : caught instanceof Error
+            ? caught.message
+            : 'ثبت نتیجه ناموفق بود.',
       );
       setUncertain(
-        !(
-          caught instanceof B2bApiError &&
-          caught.status > 0 &&
-          caught.status < 500
-        ),
+        !grantRejected &&
+          !(
+            caught instanceof B2bApiError &&
+            caught.status > 0 &&
+            caught.status < 500
+          ),
       );
     } finally {
       setBusy(false);
@@ -744,12 +1086,13 @@ export function AgreementWorkflowPanel({
           </button>
         </div>
       ) : null}
-      {editor ? (
+      {currentEditor ? (
         <Dialog
           open
           onOpenChange={(open) => {
             if (!open && !busy && !uploading) {
               setEditor(null);
+              setReferenceState(null);
               if (uncertain) setRefresh((n) => n + 1);
             }
           }}
@@ -762,7 +1105,7 @@ export function AgreementWorkflowPanel({
             <DialogTitle>
               {view !== 'agreements'
                 ? formTitle
-                : editor.record
+                : currentEditor.record
                   ? 'ویرایش و نسخه‌بندی قرارداد'
                   : 'قرارداد جدید'}
             </DialogTitle>
@@ -771,17 +1114,33 @@ export function AgreementWorkflowPanel({
             </DialogDescription>
             <AgreementTermsEditor
               focus={view === 'agreements' ? 'all' : view}
-              value={editor.terms}
+              value={currentEditor.terms}
               role={role}
               branchId={branchId}
               organizationId={organizationId}
               permissions={permissions}
+              uploadContextKey={editorUploadContextKey}
               disabled={busy || uncertain}
-              onUploadStateChange={setUploading}
+              onUploadStateChange={setUploadBusy}
+              onConfidentialGrant={setReferenceGrant}
+              onConfidentialUploadComplete={completeConfidentialUpload}
               onChange={(terms) =>
-                setEditor({ ...editor, terms, requestId: crypto.randomUUID() })
+                setEditor({
+                  ...currentEditor,
+                  terms,
+                  requestId: crypto.randomUUID(),
+                })
               }
             />
+            {[...protectedReferences]
+              .filter((documentId) => !referenceGrants[documentId])
+              .map((documentId) => (
+                <ConfidentialAccessCodeInput
+                  key={documentId}
+                  value={referenceCodes[documentId] ?? ''}
+                  onChange={(code) => setReferenceCode(documentId, code)}
+                />
+              ))}
             {dialogError ? (
               <div role="alert" className="form-error">
                 {dialogError}
@@ -799,6 +1158,7 @@ export function AgreementWorkflowPanel({
                 disabled={busy || uploading}
                 onClick={() => {
                   setEditor(null);
+                  setReferenceState(null);
                   if (uncertain) setRefresh((n) => n + 1);
                 }}
               >
@@ -806,7 +1166,12 @@ export function AgreementWorkflowPanel({
               </button>
               <button
                 className="btn primary"
-                disabled={busy || uploading}
+                disabled={
+                  busy ||
+                  uploading ||
+                  checkingReferences ||
+                  referenceCheckFailed
+                }
                 onClick={() => void save()}
               >
                 {busy
@@ -819,11 +1184,14 @@ export function AgreementWorkflowPanel({
           </DialogContent>
         </Dialog>
       ) : null}
-      {action ? (
+      {currentAction ? (
         <Dialog
           open
           onOpenChange={(open) => {
-            if (!open && !busy) setAction(null);
+            if (!open && !busy) {
+              setAction(null);
+              setReferenceState(null);
+            }
           }}
         >
           <DialogContent
@@ -832,28 +1200,38 @@ export function AgreementWorkflowPanel({
             onInteractOutside={(e) => e.preventDefault()}
           >
             <DialogTitle>
-              {action.kind === 'submit'
+              {currentAction.kind === 'submit'
                 ? 'ارسال نسخه برای تأیید'
-                : action.kind === 'APPROVE'
+                : currentAction.kind === 'APPROVE'
                   ? 'تأیید قرارداد و شرایط ارزی'
                   : 'رد نسخه قرارداد'}
             </DialogTitle>
             <DialogDescription>
-              {action.record.title} · نسخه {action.record.revisions[0]?.number}
+              {currentAction.record.title} · نسخه{' '}
+              {currentAction.record.revisions[0]?.number}
             </DialogDescription>
-            {action.record.revisions[0] ? (
-              <RevisionSummary revision={action.record.revisions[0]} />
+            {currentAction.record.revisions[0] ? (
+              <RevisionSummary revision={currentAction.record.revisions[0]} />
             ) : null}
+            {currentAction.kind !== 'REJECT'
+              ? [...protectedReferences].map((documentId) => (
+                  <ConfidentialAccessCodeInput
+                    key={documentId}
+                    value={referenceCodes[documentId] ?? ''}
+                    onChange={(code) => setReferenceCode(documentId, code)}
+                  />
+                ))
+              : null}
             <label className="field">
               <span>توضیح تصمیم *</span>
               <textarea
                 className="textarea"
                 maxLength={500}
                 disabled={busy || uncertain}
-                value={action.reason}
+                value={currentAction.reason}
                 onChange={(e) =>
                   setAction({
-                    ...action,
+                    ...currentAction,
                     reason: e.target.value,
                     requestId: crypto.randomUUID(),
                   })
@@ -874,22 +1252,25 @@ export function AgreementWorkflowPanel({
               <button
                 className="btn"
                 disabled={busy}
-                onClick={() => setAction(null)}
+                onClick={() => {
+                  setAction(null);
+                  setReferenceState(null);
+                }}
               >
                 انصراف
               </button>
               <button
                 className="btn primary"
-                disabled={busy}
+                disabled={busy || checkingReferences || referenceCheckFailed}
                 onClick={() => void perform()}
               >
                 {busy
                   ? 'در حال ثبت…'
                   : uncertain
                     ? 'پیگیری درخواست'
-                    : action.kind === 'submit'
+                    : currentAction.kind === 'submit'
                       ? 'ارسال برای تأیید'
-                      : action.kind === 'APPROVE'
+                      : currentAction.kind === 'APPROVE'
                         ? 'ثبت تأیید'
                         : 'ثبت رد'}
               </button>

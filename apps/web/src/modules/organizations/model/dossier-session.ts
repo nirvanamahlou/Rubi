@@ -6,6 +6,7 @@ export function dossierSessionProjection(
   selectedBranchId: string,
 ) {
   return {
+    actorUserId: user.id,
     branches: user.branches,
     branchId: user.branches.some((branch) => branch.id === selectedBranchId)
       ? selectedBranchId

@@ -67,13 +67,12 @@ describe('agency to Master Organization integration', () => {
     expect(source).not.toContain('دانلود قالب ورود');
   });
 
-  it('keeps contract and guarantee uploads inside registration and marks its explanation optional', () => {
+  it('keeps contract and guarantee uploads inside registration without a change-reason field', () => {
     expect(cooperationWizard).toContain('pendingAgreementDocument');
     expect(cooperationWizard).toContain('pendingGuaranteeDocuments');
     expect(agreementEditor).toContain("'سند قرارداد'");
     expect(agreementEditor).toContain('`سند تضمین ${index + 1}`');
-    expect(agreementEditor).toContain('دلیل ثبت یا اصلاح این نسخه (اختیاری)');
-    expect(agreementEditor).not.toContain('دلیل ثبت یا اصلاح این نسخه *');
+    expect(agreementEditor).not.toContain('دلیل ثبت یا اصلاح این نسخه');
   });
 
   it('keeps the five-stage phone workflow stale-safe and development-only explicit', () => {

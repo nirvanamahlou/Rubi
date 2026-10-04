@@ -1,5 +1,28 @@
 import type { B2bAgreementTermsV1 } from '@nora/contracts';
 
+export function agreementUploadContextKey(
+  actorUserId: string,
+  sessionContextKey: string,
+  organizationId: string,
+  branchId: string,
+  editorGeneration: string,
+) {
+  return [
+    actorUserId,
+    sessionContextKey,
+    organizationId,
+    branchId,
+    editorGeneration,
+  ].join('|');
+}
+
+export function agreementUploadIsBusy(
+  activeContextKey: string,
+  busyContextKey: string | null,
+) {
+  return Boolean(activeContextKey && busyContextKey === activeContextKey);
+}
+
 export function blankAgreementTerms(): B2bAgreementTermsV1 {
   return {
     title: '',

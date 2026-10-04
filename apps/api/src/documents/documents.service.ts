@@ -1093,6 +1093,129 @@ export class DocumentsService {
     );
   }
 
+  /** Opaque owner mapping used only to restore already stored organization proof IDs. */
+  async organizationProofVersionReferences(
+    versionIds: readonly string[],
+    organizationId: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.branchIds.includes(branchId))
+      throw new ForbiddenException('شعبه سند در دامنه دسترسی نیست.');
+    for (const permission of [
+      'documents.list',
+      'documents.organization.read',
+      'documents.metadata.read',
+    ] as const)
+      this.assertPermission(actor.permissions, permission);
+    if (versionIds.length > 200)
+      throw new BadRequestException(
+        'تعداد نسخه‌های درخواست‌شده بیش از حد مجاز است.',
+      );
+    if (!versionIds.length) return [];
+    const rows = await this.repository.organizationProofVersionReferences(
+      versionIds,
+      organizationId,
+      branchId,
+      actor.permissions.includes('documents.sensitive.read'),
+    );
+    if (
+      rows.length < new Set(versionIds).size &&
+      !actor.permissions.includes('documents.sensitive.read')
+    )
+      throw new ForbiddenException({
+        code: 'B2B_DOCUMENT_REFERENCE_PERMISSION_DENIED',
+        message: 'مجوز مشاهده مرجع اسناد حساس کافی نیست.',
+      });
+    return rows;
+  }
+
+  /** Authoritative proof validation. Only opaque IDs are returned to B2B. */
+  async assertOrganizationProofReference(
+    input: {
+      documentId: string;
+      organizationId: string;
+      branchId: string;
+      expectedVersionId?: string | null;
+      allowPendingScan?: boolean;
+      confidentialGrantToken?: string;
+    },
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException('شعبه سند در دامنه دسترسی نیست.');
+    for (const permission of [
+      'documents.list',
+      'documents.organization.read',
+      'documents.metadata.read',
+    ] as const)
+      this.assertPermission(actor.permissions, permission);
+    const row = await this.repository.findDetail(
+      input.documentId,
+      [input.branchId],
+      true,
+      actor.userId,
+    );
+    const related = row?.relations.some(
+      (relation) =>
+        relation.relationType === 'PRIMARY_CASE' &&
+        relation.sourceModule === 'master-data' &&
+        relation.sourceEntityType === 'organizations' &&
+        relation.sourceEntityId === input.organizationId,
+    );
+    if (
+      !row ||
+      !row.currentVersion ||
+      row.archiveStatus !== 'ACTIVE' ||
+      row.documentType.domain !== 'ORGANIZATION' ||
+      !related
+    )
+      throw new ConflictException({
+        code: 'B2B_DOCUMENT_REFERENCE_INVALID',
+        message: 'سند مجاز و مرتبط با این سازمان و شعبه یافت نشد.',
+      });
+    if (
+      ['CONFIDENTIAL', 'RESTRICTED'].includes(row.confidentiality) &&
+      !actor.permissions.includes('documents.sensitive.read')
+    )
+      throw new ForbiddenException({
+        code: 'B2B_DOCUMENT_SENSITIVE_PERMISSION_DENIED',
+        message: 'مجوز مشاهده اسناد حساس برای این مدرک کافی نیست.',
+      });
+    if (row.confidentialAccessCodeHash)
+      await this.assertConfidentialAccess(
+        row,
+        actor,
+        input.confidentialGrantToken
+          ? { confidentialAccessGrantToken: input.confidentialGrantToken }
+          : {},
+      );
+    const validScan =
+      row.currentVersion.scanStatus === 'CLEAN' ||
+      (input.allowPendingScan === true &&
+        ['PENDING_SCAN', 'AWAITING_ANTIVIRUS_ADAPTER'].includes(
+          row.currentVersion.scanStatus,
+        ));
+    if (
+      !validScan ||
+      row.isIncomplete ||
+      (row.validUntil !== null && row.validUntil.getTime() <= Date.now())
+    )
+      throw new ConflictException({
+        code: 'B2B_DOCUMENT_NOT_READY',
+        message: 'سند باید کامل، معتبر و دارای وضعیت امنیتی مجاز باشد.',
+      });
+    if (
+      input.expectedVersionId &&
+      input.expectedVersionId !== row.currentVersion.id
+    )
+      throw new ConflictException({
+        code: 'B2B_DOCUMENT_VERSION_CHANGED',
+        message: 'نسخه سند تغییر کرده است؛ پیش‌نویس را بازبینی کنید.',
+      });
+    return { documentId: row.id, versionId: row.currentVersion.id };
+  }
+
   async list(query: DocumentListQueryV1, actor: AuthenticatedActor) {
     const sourceReference = [
       query.sourceModule,

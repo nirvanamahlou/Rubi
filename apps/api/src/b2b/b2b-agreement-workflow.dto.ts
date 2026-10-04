@@ -100,6 +100,10 @@ export class B2bAgreementTermsDto implements B2bAgreementTermsV1 {
   @Type(() => B2bGuaranteeDraftDto)
   guarantees!: B2bGuaranteeDraftDto[];
 }
+export class B2bReferenceGrantDto {
+  @IsUUID() documentId!: string;
+  @IsString() @MinLength(20) @MaxLength(256) token!: string;
+}
 export class SaveB2bAgreementDto {
   @IsUUID() branchId!: string;
   @IsIn(['AGENCY', 'CORPORATE_CUSTOMER']) role:
@@ -111,6 +115,13 @@ export class SaveB2bAgreementDto {
   @ValidateNested()
   @Type(() => B2bAgreementTermsDto)
   terms!: B2bAgreementTermsDto;
+  @ValidateIf(optional)
+  @IsArray()
+  @ArrayMaxSize(21)
+  @ArrayUnique((grant: B2bReferenceGrantDto) => grant.documentId)
+  @ValidateNested({ each: true })
+  @Type(() => B2bReferenceGrantDto)
+  referenceGrants?: B2bReferenceGrantDto[];
 }
 export class B2bAgreementActionDto {
   @IsUUID() branchId!: string;
@@ -121,4 +132,11 @@ export class B2bAgreementActionDto {
   @IsString() @MinLength(3) @MaxLength(500) reason!: string;
   @ValidateIf(optional) @IsIn(['APPROVE', 'REJECT']) decision?:
     'APPROVE' | 'REJECT';
+  @ValidateIf(optional)
+  @IsArray()
+  @ArrayMaxSize(21)
+  @ArrayUnique((grant: B2bReferenceGrantDto) => grant.documentId)
+  @ValidateNested({ each: true })
+  @Type(() => B2bReferenceGrantDto)
+  referenceGrants?: B2bReferenceGrantDto[];
 }
