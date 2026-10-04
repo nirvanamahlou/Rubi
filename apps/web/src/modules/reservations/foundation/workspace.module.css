@@ -589,3 +589,10 @@
 .requestTable td > span > small {
   line-height: 12px;
 }
+
+/* Keep the notes marker visible when the request is selected. */
+.requestTable tbody tr td[data-has-note='true'] {
+  background: #ffe082;
+  color: #422d00;
+  border-color: #d5aa35;
+}
