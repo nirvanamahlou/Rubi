@@ -1,6 +1,28 @@
 import { describe, expect, it } from 'vitest';
 
-import { assertStrongPassword, passwordPolicyErrors } from './password-policy';
+import {
+  assertStrongPassword,
+  initialPasswordPolicyErrors,
+  passwordPolicyErrors,
+} from './password-policy';
+
+describe('initial password policy', () => {
+  it.each(['1234', '0000', '123456', 'abcd', '0'.repeat(200)])(
+    'accepts %s',
+    (password) => {
+      expect(initialPasswordPolicyErrors(password)).toEqual([]);
+    },
+  );
+  it.each(['', '123', '0'.repeat(201)])(
+    'rejects invalid length',
+    (password) => {
+      expect(initialPasswordPolicyErrors(password)).not.toEqual([]);
+    },
+  );
+  it('keeps numeric initial credentials invalid for strong-password operations', () => {
+    expect(() => assertStrongPassword('1234')).toThrow();
+  });
+});
 
 describe('IAM password policy', () => {
   it.each([10, 11, 12])(

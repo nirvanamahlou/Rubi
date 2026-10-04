@@ -4548,3 +4548,6 @@ Remove specified explanatory copy from360 profile/branches/signatories and hide 
 ## 2026-10-04 — B2B-CONTACT-DISPLAY-1004 — PC-B
 
 Screenshot692 requests readable full representative contacts and icon-only address controls. Full values are backend-masked; existing audited MasterData unmask owner contract remains sole disclosure source and permission unchanged. Frozenv1 requires fresh context, no-store and delayed-result isolation; independent finalreview gates delivery. No migration/dependency/data/permission changes. Current task owns bounded Organizations consumer and existing MasterData Web client method.
+## INITIAL-PASSWORD-FOUR-DIGITS-1004 — PC-A — READY_FOR_REVIEW
+
+User creation now accepts 4–200 character initial passwords, including numeric-only credentials. DTO, API service and Users form validation are aligned; reset/change/bootstrap remain strong. 40 API and 20 Web focused tests, scoped lint/format, API/Web typechecks and production builds (55 Web pages) pass. No migration, data rewrite or runtime change. User-authorized develop integration follows PR checks; locks released at delivery.
