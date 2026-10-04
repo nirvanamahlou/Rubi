@@ -653,7 +653,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'شرکت بیمه',
     group: 'بیمه',
     description:
-      'مدیریت بیمه‌گران دارای Organization فعال با نقش بیمه‌گر؛ قرارداد خرید در Procurement است.',
+      'مدیریت مستقل بیمه‌گران؛ قرارداد خرید در Procurement نگهداری می‌شود.',
     fields: [
       nameField,
       {
@@ -667,7 +667,6 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         label: 'سازمان بیمه‌گر',
         type: 'text',
         placeholder: 'org_...',
-        required: true,
       },
       {
         key: 'countryId',
@@ -1707,7 +1706,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     singularLabel: 'کارگزار',
     group: 'سازمان‌ها',
     description:
-      'Profile عملیاتی کارگزار با reference سازمان؛ بدهی و قرارداد اینجا نگهداری نمی‌شود.',
+      'Profile عملیاتی کارگزار؛ بدهی و قرارداد اینجا نگهداری نمی‌شود.',
     fields: [
       nameField,
       {
