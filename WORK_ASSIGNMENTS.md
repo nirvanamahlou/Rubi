@@ -5443,6 +5443,12 @@ Screenshot693: icon-only signatory edit/delete, remove internal-branch readout, 
 
 B2B-SIGNATORY-LAYOUT-1004 delivered: signatory icon actions preserve permission/confirmation, singlebranchreadout removed, compact RTL responsive date row. Organizations180 tests, scoped lint/format and Web typecheck pass; existing Contracts generated artifact refreshed to current source, no tracked contracts/dependency changes. Lead reviewed exact two-file UI diff; Web build/CI gate merge. Persistent worker usage unavailable; locks released at delivery.
 
+## SALES-TICKET-SEARCH-SPEED-1004 — PC-A — IN_PROGRESS
+
+Reserve Sales ticket query/client/picker, first-step preloading integration and focused tests plus own docs on codex/pc-a-sales-ticket-search-speed-1004 from origin/develop@137cc45c. Investigate backend before selecting bounded implementation. Preserve current auth/branch, future date, return eligibility, capacity and authoritative sale validation. No schema/dependency or cross-module producer changes without extension. User requests faster following-step lookup and existing local activation.
+
+SALES-TICKET-SEARCH-SPEED-1004 delivered: confirmed route/future range starts a form-local abortable first-page search before navigating. Picker reuses only an exact query younger than10seconds; invalid/obsolete/page/return/cabin queries cannot share, and speculative failure retries on the visible page. No persistent/global cache, producer/schema/dependency change; server capacity/eligibility checks unchanged. Sales284 tests plus final10 focused tests pass; scoped lint/typecheck and55-route build gate delivery. Local runtime rollout requested by context; locks release at commit.
+
 ## SALES-RANGE-AIRLINE-1004 — PC-A — READY_FOR_REVIEW
 
 Branch codex/pc-a-sales-range-airline-1004 from origin/develop@a6ff4a6f. Reserve Sales contract form, flight date range, floating flight editor and focused tests plus own docs. Move required travel date range to route/passenger step, improve contrast and use active existing airlines through public MasterData list. No producer/schema/dependency/runtime changes. User authorizes develop merge. Preserve unrelated dirty primary checkout.
