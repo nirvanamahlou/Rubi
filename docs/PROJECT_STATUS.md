@@ -4638,3 +4638,5 @@ Agency creation replaces the country selector with one free-text address field i
 Ticket seat/unit/invoice/currency entry moved into the existing Finance ticket payment dialog, removing the separate cost action. Existing public cost command prepares an accepted revision before the existing idempotent payment command; accepted preparation is retained for retries. Source-account filtering and FX follow selected purchase currency, paid-cost lock and receipt retry remain. No backend/schema/migration/dependency/runtime change. Tests/checks/CI gate owner-authorized develop merge.
 
 Finance request page also has a top document-delivery jump button targeting the existing lower panel, with header scroll offset and keyboard focus target. No permission/data change.
+
+Validation: all Finance Web40 tests pass, including retained accepted-cost revision/retry, paid-cost lock and failure handling. Scoped lint/typecheck/production build and final CI gate develop merge; no live financial commands or local deployment. PR648.
