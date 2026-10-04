@@ -18,6 +18,10 @@ const profile = readFileSync(
   new URL('./corporate-profile.tsx', import.meta.url),
   'utf8',
 );
+const dossierSummary = readFileSync(
+  new URL('./agency-dossier-summary.tsx', import.meta.url),
+  'utf8',
+);
 const cooperationWizard = readFileSync(
   new URL('./cooperation-wizard.tsx', import.meta.url),
   'utf8',
@@ -102,7 +106,7 @@ describe('agency to Master Organization integration', () => {
     expect(profile).not.toContain('OrganizationCrmConnectionsPanel');
     expect(client).toContain('crmConnections(');
     expect(client).toContain('/crm-connections');
-    expect(profile).toContain('<OrganizationCrmKpis');
+    expect(dossierSummary).toContain('<OrganizationCrmKpis');
     expect(profile).toContain('<OrganizationFinancePreview');
   });
 });
