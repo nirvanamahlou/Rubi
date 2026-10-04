@@ -16,7 +16,10 @@ vi.mock('@/components/ui/overlays', () => {
     DialogClose: contents,
   };
 });
-import { MasterDataLiveForm } from './master-data-live-form';
+import {
+  MasterDataLiveForm,
+  masterDataFormValuesFrom,
+} from './master-data-live-form';
 import { getMasterDataDefinition } from '../model/catalog';
 import { getMasterDataFormFields } from '../model/form-fields';
 import { getReferenceFieldConfig } from '../model/reference-fields';
@@ -86,6 +89,26 @@ describe('transport mockup form coverage', () => {
     expect(html).not.toContain('live-cabin-classes-englishName');
     expect(html).toContain('required=""');
     expect(html).not.toContain('عنوان فارسی');
+
+    const createValues = masterDataFormValuesFrom(definition);
+    expect(Object.keys(createValues)).toEqual([
+      'cabinType',
+      'bookingCode',
+      'displayOrder',
+    ]);
+    expect(createValues).not.toHaveProperty('englishName');
+    expect(
+      validateMasterDataDraft('cabin-classes', {
+        ...createValues,
+        bookingCode: 'Y',
+      }),
+    ).toMatchObject({
+      success: true,
+      values: {
+        cabinType: 'ECONOMY',
+        bookingCode: 'Y',
+      },
+    });
   });
 
   it('renders the manifest upload workflow without manual template metadata', () => {
