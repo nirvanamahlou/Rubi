@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import type { B2bCooperationRole } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';
+import { OrganizationCrmKpis } from './organization-crm-kpis';
 import { useDossierBranch } from './use-dossier-branch';
 
 export function AgencyDossierSummary({
@@ -14,8 +15,14 @@ export function AgencyDossierSummary({
   organizationId: string;
   role: B2bCooperationRole;
 }) {
-  const { branchId, setBranchId, branches, permissions, sessionError } =
-    useDossierBranch();
+  const {
+    branchId,
+    setBranchId,
+    branches,
+    permissions,
+    sessionError,
+    sessionContextKey,
+  } = useDossierBranch();
   const [summary, setSummary] = useState<
     readonly { label: string; value: string }[]
   >([]);
@@ -89,48 +96,55 @@ export function AgencyDossierSummary({
     };
   }, [organizationId, branchId, permissions, role]);
   return (
-    <section className="panel" aria-label="خلاصه اطلاعات ثبت‌شده">
-      <header className="panel-head">
-        <div>
-          <h2 className="panel-title">اطلاعات ثبت‌شده در پرونده</h2>
-          <p className="panel-note">
-            {branches.find((branch) => branch.id === branchId)?.name ??
-              'در حال دریافت…'}
-          </p>
-        </div>
-        <label className="field">
-          <span>شعبه خلاصه پرونده</span>
-          <NativeSearchSelect
-            className="input"
-            value={branchId}
-            onChange={(event) => {
-              setSummary([]);
-              setBranchId(event.target.value);
-            }}
-          >
-            {branches.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
-              </option>
-            ))}
-          </NativeSearchSelect>
-        </label>
-      </header>
-      <div className="panel-body grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {sessionError ? (
-          <p role="alert">{sessionError}</p>
-        ) : (
-          summary.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-xl border border-border p-4"
+    <>
+      <section className="panel" aria-label="خلاصه اطلاعات ثبت‌شده">
+        <header className="panel-head">
+          <div>
+            <h2 className="panel-title">اطلاعات ثبت‌شده در پرونده</h2>
+            <p className="panel-note">
+              {branches.find((branch) => branch.id === branchId)?.name ??
+                'در حال دریافت…'}
+            </p>
+          </div>
+          <label className="field">
+            <span>شعبه خلاصه پرونده</span>
+            <NativeSearchSelect
+              className="input"
+              value={branchId}
+              onChange={(event) => {
+                setSummary([]);
+                setBranchId(event.target.value);
+              }}
             >
-              <p className="panel-note">{item.label}</p>
-              <strong>{item.value}</strong>
-            </div>
-          ))
-        )}
-      </div>
-    </section>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </NativeSearchSelect>
+          </label>
+        </header>
+        <div className="panel-body grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {sessionError ? (
+            <p role="alert">{sessionError}</p>
+          ) : (
+            summary.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-xl border border-border p-4"
+              >
+                <p className="panel-note">{item.label}</p>
+                <strong>{item.value}</strong>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+      <OrganizationCrmKpis
+        organizationId={organizationId}
+        branchId={branchId}
+        sessionContextKey={sessionContextKey}
+      />
+    </>
   );
 }

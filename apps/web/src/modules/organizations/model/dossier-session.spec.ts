@@ -33,6 +33,10 @@ describe('dossier session context', () => {
     );
     const revoked = dossierSessionProjection(user('user-b', []), 3, 'branch-b');
     expect(first.branchId).toBe('branch-b');
+    expect(first.branches.map((branch) => branch.id)).toEqual([
+      'branch-a',
+      'branch-b',
+    ]);
     expect(nextActor.contextKey).not.toBe(first.contextKey);
     expect(revoked.contextKey).not.toBe(nextActor.contextKey);
     expect(revoked.permissions).toEqual([]);

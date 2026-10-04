@@ -30,7 +30,6 @@ import {
   readDossierHistory,
 } from '../model/dossier-history';
 import { OrganizationActivityPanel } from './organization-activity-panel';
-import { OrganizationCrmKpis } from './organization-crm-kpis';
 import {
   usePageBreadcrumbs,
   type PageBreadcrumb,
@@ -329,27 +328,29 @@ export function CorporateProfile({
                 ? 'سازمان فعال'
                 : 'سازمان غیرفعال'}
             </span>
-            <span>
-              کد سازمان: <bdi>{organization.code}</bdi>
-            </span>
           </div>
         </div>
         <div className="org-actions">
-          <Button variant="outline" disabled={!canEdit} onClick={onEdit}>
-            <Pencil aria-hidden="true" className="size-4" /> ویرایش{' '}
-            {entityLabel}
+          <Button
+            aria-label={`ویرایش ${entityLabel}`}
+            title={`ویرایش ${entityLabel}`}
+            variant="outline"
+            size="icon"
+            disabled={!canEdit}
+            onClick={onEdit}
+          >
+            <Pencil aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            aria-label={`حذف دائمی ${entityLabel}`}
+            title={`حذف دائمی ${entityLabel}`}
             variant="destructive"
+            size="icon"
             disabled={!canDelete}
             onClick={onDelete}
           >
-            <Trash2 aria-hidden="true" className="size-4" /> حذف دائمی{' '}
-            {entityLabel}
+            <Trash2 aria-hidden="true" className="size-4" />
           </Button>
-          <button className="btn" onClick={onClose}>
-            تغییر {entityLabel}
-          </button>
           <button className="btn primary" onClick={() => go('home')}>
             <LayoutDashboard size={18} />
             نمای ۳۶۰ درجه
@@ -359,7 +360,6 @@ export function CorporateProfile({
       {screen === 'home' ? (
         <>
           {overview}
-          <OrganizationCrmKpis organizationId={organization.id} />
           <section
             className="hub-grid"
             aria-label={`بخش‌های پرونده ${entityLabel}`}
