@@ -2169,11 +2169,11 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '90',
       },
       {
-        key: 'guidanceFileReference',
-        label: 'مدارک راهنما',
+        key: 'requiredDocumentNames',
+        label: 'مدارک مورد نیاز',
         type: 'text',
-        placeholder: 'شناسه فایل راهنمای عمومی',
-        hint: 'شناسه UUID راهنمای عمومی در اسناد؛ فایل یا مشخصات متقاضی در این فرم دریافت نمی‌شود.',
+        placeholder: 'مثلاً پاسپورت',
+        hint: 'فقط نام مدارک لازم را وارد کنید؛ در این فرم فایلی بارگذاری نمی‌شود.',
       },
       {
         key: 'description',

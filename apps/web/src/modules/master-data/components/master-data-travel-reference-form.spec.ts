@@ -84,16 +84,17 @@ describe('travel reference form fields', () => {
         'کشور مقصد',
         'نوع ویزا',
         'مدت اعتبار مرجع',
-        'مدارک راهنما',
+        'مدارک مورد نیاز',
         'وضعیت',
       ])
         expect(html).toContain(label);
       expect(html).toContain('visa-services-referenceValidityDays');
       if (editing) expect(html).toContain('value="90"');
-      expect(html).toContain('id="visa-services-guidanceFileReference-help"');
+      expect(html).toContain('id="visa-services-requiredDocumentNames-help"');
       expect(html).toContain(
-        'aria-describedby="visa-services-guidanceFileReference-help"',
+        'aria-describedby="visa-services-requiredDocumentNames-help"',
       );
+      expect(html).toContain('افزودن مدرک');
       expect(html).not.toContain('type="file"');
       expect(html).not.toContain('passportNumber');
       expect(html).not.toContain('نوع اعتبار مرجع');
@@ -107,5 +108,14 @@ describe('travel reference form fields', () => {
     });
     expect(html).not.toContain('id="visa-services-referenceValidityDays"');
     expect(html).toContain('aria-label="پاک‌کردن وضعیت"');
+  });
+  it('renders saved document names with accessible remove actions', () => {
+    const html = render('visa-services', {
+      requiredDocumentNames: '["پاسپورت","عکس"]',
+    });
+    expect(html).toContain('پاسپورت');
+    expect(html).toContain('عکس');
+    expect(html).toContain('aria-label="حذف پاسپورت"');
+    expect(html).not.toContain('guidanceFileReference');
   });
 });

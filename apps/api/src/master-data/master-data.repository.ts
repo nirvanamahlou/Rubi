@@ -707,6 +707,11 @@ export function toMasterDataRecord(
       providerOrganization?.displayName ?? supplier?.code ?? '',
     );
     attributes.supplierCode = String(supplier?.code ?? '');
+    attributes.requiredDocumentNames = JSON.stringify(
+      Array.isArray(row.requiredDocumentNames)
+        ? row.requiredDocumentNames.map(String)
+        : [],
+    );
   }
   if (resource === 'insurers') {
     attributes.organizationName = String(organization?.displayName ?? '');
