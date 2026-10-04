@@ -5553,6 +5553,22 @@ B2B-ADDRESS-INPUT-1004 validation: focused Web14/API23 and full Organizations192
 
 B2B-ADDRESS-INPUT-1004 release checkpoint: API production build and Web webpack production build55/55 passed with current nullable contracts resolved from this checkout and API4191. Lead reviewed owner merge semantics, DTO/contracts, SQL/FKs and wizard placement. Scoped schema/migration/shared-contract locks RELEASED for user-authorized develop PR after candidate commit; final CI gates merge. Local application migration/runtime not changed; three older unrelated pending migrations are not applied by this task.
 
+B2B-SIGNATORY-UPLOAD-1004 accepted: candidate66555e7b independent review resolved UPLOAD-R3-001/002; CI passed and PR636 merged develop1ec451f3. Bounded locks RELEASED. Runtime3100 verified candidate HTTP200; telemetry unavailable.
+
+## B2B-AGREEMENT-UPLOAD-1004 — PC-B — IN_PROGRESS
+
+Branch codex/pc-b-b2b-agreement-upload-1004 from origin/develop1ec451f3; screenshot694 removes marked agreement guidance, document-refresh strip and optional reason UI, and diagnoses draft registration blocked after document/guarantee upload. Reserve Organizations agreement form/model/local inline-uploader consumers/tests and own docs for investigation. R3/C3 financial-document eligibility boundary; persistent worker, focused advice then frozen contract and independent final review. No backend gate bypass, grant/schema/dependency or operational data mutations; further scope requires evidence. User authorizes push/develop merge. Telemetry unavailable.
+
+B2B-AGREEMENT-UPLOAD-1004 resumed: user chose Option1 fresh confidential-code grant per submit/approval actor; no durable authority from initial attach. Expand PC-B scope to bounded Documents opaque organization-proof/reference producer, B2B agreement workflow/DTO/controller/service consumers and Organizations action/editor/API/model/tests. Reserve shared B2B optional transient referenceGrants contract (producer Documents/B2B PC-B, consumer Organizations PC-B), own task/status docs. No migration/schema/dependency/permission expansion or operational mutation; R3/C4 frozenv2 and independent final review required. Existing initial cleanup checkpoint dc580666 integrated latest develop449106f0 into07f82b41, concurrent append entries retained. Pending policy resolved; telemetry unavailable.
+
+B2B-AGREEMENT-UPLOAD-1004 contract path clarification v2.1: shared lock targets packages/contracts/src/b2b/agreement-workflow.ts, re-export remains unchanged. Existing authorized masked DocumentListItem requiresConfidentialAccessCode boolean drives UI action code prompts; no new public protected-metadata flags or general list widening. All v2 policy/acceptance invariants unchanged.
+
+B2B-AGREEMENT-UPLOAD-1004 bounded consumer scope clarification: Organizations use-dossier-branch and dossier-session projection/regressions may expose the actual actor UUID separately from stable actor/session context keys, solely to preserve existing maker/checker UI comparisons. Upload context hook may add opt-in grant callback; old upload callers remain unchanged. Existing backend maker/checker authority, permissions and session binding remain unchanged; frozenv2.1 invariants continue.
+
+B2B-AGREEMENT-UPLOAD-1004 recovery: original implementer reached account usage limit; user explicitly authorized Luna continuation. Actual recovery agent /root/agreement_upload_luna_recovery completes the same reserved checkout and scope. Full affected API286 pass/19 PostgreSQL integration tests skipped (opt-in harness unset); Organizations198 pass; Contracts build/typecheck/lint, API lint/typecheck/build and Web lint/typecheck pass. Stale generated database client refreshed from current merged schema without database access or tracked database changes. Web production build and independent committed-candidate review remain release gates; telemetry unavailable.
+
+B2B-AGREEMENT-UPLOAD-1004 source checkpoint: Luna recovery completed and froze implementation; Web webpack production build55/55 passed. Full affected static/test/build gates passed with19 opt-in PostgreSQL integration tests skipped. Bounded reservation remains held through independent review and CI; no runtime or operational DB change.
+
 ## TICKET-PAYMENT-INLINE-PRICE-1004 — PC-A — IN_PROGRESS
 
 Reserve Finance inbox Web component, existing Finance API client cost result typing, payment-preparation helper/tests and own docs on codex/pc-a-ticket-payment-inline-price-1004 from origin/develop. Combine seat count/unit cost/invoice/currency into existing ticket payment form. Keep existing public Finance cost then payment commands, CAS/idempotent payment/partial payment/receipt retry and paid-cost lock; no API/schema/migration/dependency/runtime changes. User authorizes develop merge.
@@ -5560,6 +5576,14 @@ Reserve Finance inbox Web component, existing Finance API client cost result typ
 TICKET-PAYMENT-INLINE-PRICE-1004 scope extended by user: Finance request wrapper adds top jump link to existing customer document-delivery panel. Reserve bounded finance-core-workspace.tsx wrapper presentation, existing permissions/data unchanged.
 
 TICKET-PAYMENT-INLINE-PRICE-1004 — READY_FOR_REVIEW: combined payment form, accepted cost preparation retained for retries, paid cost lock, per-currency source account/FX, existing partial payment/idempotency/receipt handling retained. Top delivery jump link targets existing lower panel with scroll offset/focus. Finance40 tests pass; final lint/type/build and exact-head CI gate user-authorized develop merge. Scoped locks RELEASED for review. No backend/schema/migration/dependency/runtime or actual payment changes. PR648.
+
+B2B-AGREEMENT-UPLOAD-1004 review repair: independent Luna reviewer reported AU-R3-01 on89c9f005 (confidential upload self-invalidates target before grant and leaves busy). Same Luna implementer stages bound publication until grant resolves and safely releases busy; two deferred regressions added. Organizations200 tests, scoped lint and Web typecheck pass; final build and refreshed exact-candidate review remain.
+
+B2B-AGREEMENT-UPLOAD-1004 AU-R3-02 repair: reviewer identified upload grant discarded by the newly selected proof scope. Same Luna implementer adds an optional agreement-only atomic completion callback that carries exact next terms and current actor-bound grant; discovery still blocks failed/unresolved references. Existing uploader callers remain unchanged. Organizations202 tests, scoped lint/typecheck and changed-source format pass; refreshed exact-candidate review/build/CI pending.
+
+B2B-AGREEMENT-UPLOAD-1004 grouped lifecycle repair: AU-R3-03 adds actual session to upload context; AU-R3-04 scopes busy ownership to actor/session/editor; AU-R3-05 clears rejected confidential grants in current scope for in-dialog renewal, retaining terms and semantic requestId. Same Luna implementer; Organizations204 tests, scoped lint/typecheck/format pass. Final candidate build, independent refreshed review and CI gate release; task/shared reservation releases only after acceptance.
+
+B2B-AGREEMENT-UPLOAD-1004 review checkpoint: independent Luna review95e6495b resolved AU-R3-01 through05 with no remaining blocker. Local API286/Organizations204 plus merged Finance40/MasterDataAPI35/Web68 tests passed; final Web55 build and affected static checks passed. Shared/task locks RELEASED for user-authorized PR652 after source freeze; final CI gates merge. Operational database/runtime unchanged; usage unknown.
 
 ## LOAD-ROUTE-SIDES-1004 — PC-A — IN_PROGRESS
 

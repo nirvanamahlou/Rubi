@@ -94,12 +94,18 @@ export interface B2bAgreementCaseV1 {
   activeRevisionId: string | null;
   revisions: B2bAgreementRevisionV1[];
 }
+export interface B2bReferenceGrantV1 {
+  documentId: string;
+  token: string;
+}
 export interface SaveB2bAgreementTermsRequestV1 {
   branchId: string;
   role: B2bCooperationRole;
   requestId: string;
   version?: number;
   terms: B2bAgreementTermsV1;
+  /** Transient Documents grants. Never persisted with agreement terms. */
+  referenceGrants?: B2bReferenceGrantV1[];
 }
 export interface B2bAgreementActionRequestV1 {
   branchId: string;
@@ -108,4 +114,6 @@ export interface B2bAgreementActionRequestV1 {
   version: number;
   reason: string;
   decision?: 'APPROVE' | 'REJECT';
+  /** Transient Documents grants. Never persisted with workflow commands. */
+  referenceGrants?: B2bReferenceGrantV1[];
 }
