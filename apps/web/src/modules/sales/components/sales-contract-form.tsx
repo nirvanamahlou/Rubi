@@ -33,6 +33,10 @@ import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
+import {
+  prepareTicketSearch,
+  type PreparedTicketSearch,
+} from '../api/ticket-search';
 import { TicketOfferPicker } from './ticket-offer-picker';
 import { ContractFlightEditor } from './contract-flight-editor';
 import {
@@ -146,6 +150,8 @@ export function SalesContractForm() {
     from: '',
     to: '',
   });
+  const [preparedTickets, setPreparedTickets] =
+    useState<PreparedTicketSearch>();
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
   const [state, setState] = useState<SalesFormState>({
     ...emptySalesForm,
@@ -176,6 +182,39 @@ export function SalesContractForm() {
     banks: [],
     currencies: [],
   });
+  const prefetchKey = JSON.stringify({
+    originId: state.originId,
+    destinationId: state.destinationId,
+    departureFrom:
+      flightRange.from && flightRange.from > futureFrom.slice(0, 10)
+        ? flightRange.from
+        : futureFrom,
+    departureTo: flightRange.to,
+    page: 1,
+  });
+  const canPrefetchTickets = Boolean(
+    state.originId &&
+    state.destinationId &&
+    state.originId !== state.destinationId &&
+    state.serviceKinds.includes('FLIGHT') &&
+    !state.contractFlights?.OUTBOUND &&
+    salesFlightRangeReady(flightRange, salesFlightToday()),
+  );
+  useEffect(() => {
+    if (!canPrefetchTickets) return;
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () =>
+        setPreparedTickets(
+          prepareTicketSearch(JSON.parse(prefetchKey), controller.signal),
+        ),
+      0,
+    );
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [prefetchKey, canPrefetchTickets]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
@@ -992,6 +1031,7 @@ export function SalesContractForm() {
               value={flightRange}
               onChange={(range) => {
                 setFlightRange(range);
+                setFutureFrom(new Date().toISOString());
                 patchState(resetSalesTicketRange(state));
               }}
             />
@@ -1087,6 +1127,7 @@ export function SalesContractForm() {
                       {!state.contractFlights?.OUTBOUND ? (
                         <>
                           <TicketOfferPicker
+                            prepared={preparedTickets}
                             enabled={salesFlightRangeReady(
                               flightRange,
                               salesFlightToday(),
@@ -1875,7 +1916,6 @@ export function SalesContractForm() {
               else {
                 if (step === 0) {
                   setDetailStep(0);
-                  setFutureFrom(new Date().toISOString());
                 }
                 setStep((value) =>
                   value === 0 && !detailSteps.length ? 2 : value + 1,
