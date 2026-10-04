@@ -127,8 +127,8 @@ describe('real partner form fields', () => {
     expect(html).toContain('id="live-organizations-personType"');
     expect(html).toContain('پاک‌کردن نوع شخصیت');
   });
-  it('shows primary contact only for a legacy organization-linked broker edit', () => {
-    expect(render('brokers', 'edit')).toContain(
+  it('preserves legacy organization context without exposing contact selectors in the new broker form', () => {
+    expect(render('brokers', 'edit')).not.toContain(
       'id="live-brokers-primaryContactId"',
     );
     const independent = renderToStaticMarkup(
