@@ -18,11 +18,16 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { DossierDateFilters } from './dossier-date-filters';
 import { inDossierDateRange } from '../model/dossier-date-range';
 import { MasterDataReferenceSelector } from '@/modules/master-data/components/master-data-reference-selector';
-import { documentsApi } from '@/modules/documents/api/client';
+import {
+  documentsApi,
+  DocumentsApiError,
+} from '@/modules/documents/api/client';
 import { agencyClient, B2bApiError } from '../api/agency-client';
 import {
-  canReadOrganizationDocuments,
-  organizationDocumentQuery,
+  canAttachOrganizationDocument,
+  isEligibleOrganizationSignatoryProof,
+  loadOrganizationSignatoryProofs,
+  resolveOrganizationSignatoryProof,
 } from '../model/organization-documents';
 import { DossierFormDialog } from './dossier-form-dialog';
 import { useDossierBranch } from './use-dossier-branch';
@@ -60,37 +65,67 @@ function SignatoryFields({
   onAddContact: () => void;
 }) {
   const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(1);
+  const [documentSnapshotKey, setDocumentSnapshotKey] = useState('');
+  const [pagination, setPagination] = useState({ scopeKey: '', page: 1 });
+  const [loadedPages, setLoadedPages] = useState(1);
   const [reload, setReload] = useState(0);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [openedAt] = useState(() => Date.now());
+  const canAttachDocument = canAttachOrganizationDocument(permissions);
+  const documentScopeKey = JSON.stringify([
+    organizationId,
+    value.branchId,
+    permissions,
+  ]);
+  const page = pagination.scopeKey === documentScopeKey ? pagination.page : 1;
+  const documentRequestKey = JSON.stringify([documentScopeKey, page, reload]);
+  const snapshotIsCurrent = documentSnapshotKey === documentRequestKey;
+  const visibleDocuments = snapshotIsCurrent ? documents : [];
+  const pages = snapshotIsCurrent ? loadedPages : 1;
+  const visibleError = snapshotIsCurrent ? error : '';
+  const loading = canAttachDocument && !snapshotIsCurrent;
   useEffect(() => {
     let active = true;
-    if (!canReadOrganizationDocuments(permissions)) return;
-    void documentsApi
-      .list({
-        ...organizationDocumentQuery(organizationId, value.branchId, page),
-        pageSize: 100,
-      })
+    if (!canAttachDocument) return;
+    void loadOrganizationSignatoryProofs(
+      organizationId,
+      value.branchId,
+      page,
+      permissions,
+      documentsApi.list,
+    )
       .then((result) => {
-        if (active) {
+        if (active && result) {
           setDocuments(result.data);
-          setPages(result.meta.totalPages);
+          setLoadedPages(result.meta.totalPages);
           setError('');
+          setDocumentSnapshotKey(documentRequestKey);
         }
       })
-      .catch(() => {
-        if (active) setError('دریافت مدارک ناموفق بود؛ دوباره تلاش کنید.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
+      .catch((caught: unknown) => {
+        if (active) {
+          setDocuments([]);
+          setLoadedPages(1);
+          setError(
+            caught instanceof DocumentsApiError
+              ? caught.message
+              : 'دریافت مدارک ناموفق بود؛ دوباره تلاش کنید.',
+          );
+          setDocumentSnapshotKey(documentRequestKey);
+        }
       });
     return () => {
       active = false;
     };
-  }, [organizationId, value.branchId, permissions, page, reload]);
+  }, [
+    organizationId,
+    value.branchId,
+    permissions,
+    page,
+    reload,
+    canAttachDocument,
+    documentRequestKey,
+  ]);
   const set = (patch: Partial<B2bSignatoryInputV1>) =>
     onChange({ ...value, ...patch });
   return (
@@ -182,6 +217,11 @@ function SignatoryFields({
             set({ currencyCode: currencyCode || null })
           }
         />
+        {value.authorityLimit === null ? (
+          <span className="panel-note">
+            برای انتخاب ارز، ابتدا سقف مبلغ اختیار را وارد کنید.
+          </span>
+        ) : null}
       </div>
       <div className="field">
         <span>شروع اعتبار</span>
@@ -206,32 +246,29 @@ function SignatoryFields({
         مدرک اختیار امضا
         <NativeSearchSelect
           className="input"
-          disabled={!canReadOrganizationDocuments(permissions) || loading}
+          disabled={!canAttachDocument || loading}
           value={value.documentId ?? ''}
           onChange={(event) =>
-            set({
-              documentId: event.target.value || null,
-              documentVersionId: null,
-              ...(!event.target.value ? { isActive: false } : {}),
-            })
+            set(
+              resolveOrganizationSignatoryProof(
+                visibleDocuments,
+                event.target.value,
+                openedAt,
+              ),
+            )
           }
         >
           <option value="">بدون مدرک؛ ثبت غیرفعال</option>
           {value.documentId &&
-          !documents.some((d) => d.id === value.documentId) ? (
+          !visibleDocuments.some((d) => d.id === value.documentId) ? (
             <option value={value.documentId}>مدرک ثبت‌شده</option>
           ) : null}
-          {documents.map((document) => (
+          {visibleDocuments.map((document) => (
             <option
               key={document.id}
               value={document.id}
               disabled={
-                document.currentVersion.scanStatus !== 'CLEAN' ||
-                document.isIncomplete ||
-                Boolean(
-                  document.validUntil &&
-                  Date.parse(document.validUntil) <= openedAt,
-                )
+                !isEligibleOrganizationSignatoryProof(document, openedAt)
               }
             >
               {document.title}
@@ -245,6 +282,11 @@ function SignatoryFields({
           از مدارک همین پرونده و شعبه انتخاب کنید. برای فعال‌سازی، مدرک باید
           کامل، معتبر و بررسی‌شده باشد.
         </span>
+        {!canAttachDocument ? (
+          <span className="panel-note">
+            مجوز مشاهده فراداده و اتصال مدرک سازمان برای این کاربر فعال نیست.
+          </span>
+        ) : null}
       </label>
       {pages > 1 ? (
         <div className="flex gap-2 sm:col-span-2">
@@ -253,8 +295,7 @@ function SignatoryFields({
             variant="outline"
             disabled={page <= 1}
             onClick={() => {
-              setLoading(true);
-              setPage((n) => n - 1);
+              setPagination({ scopeKey: documentScopeKey, page: page - 1 });
             }}
           >
             مدارک قبلی
@@ -264,18 +305,25 @@ function SignatoryFields({
             variant="outline"
             disabled={page >= pages}
             onClick={() => {
-              setLoading(true);
-              setPage((n) => n + 1);
+              setPagination({ scopeKey: documentScopeKey, page: page + 1 });
             }}
           >
             مدارک بعدی
           </Button>
         </div>
       ) : null}
-      {error ? (
-        <p role="alert" className="form-error sm:col-span-2">
-          {error}
-        </p>
+      {visibleError ? (
+        <div role="alert" className="form-error sm:col-span-2">
+          <p>{visibleError}</p>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setReload((current) => current + 1)}
+          >
+            تلاش دوباره
+          </Button>
+        </div>
       ) : null}
       <label className="field sm:col-span-2">
         توضیحات حدود اختیار
@@ -289,7 +337,7 @@ function SignatoryFields({
         <input
           type="checkbox"
           checked={value.isActive}
-          disabled={!value.documentId}
+          disabled={!value.documentId || !value.documentVersionId}
           onChange={(event) => set({ isActive: event.target.checked })}
         />
         فعال در بازه اعتبار؛ با مدرک اختیار

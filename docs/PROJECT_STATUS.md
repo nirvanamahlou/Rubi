@@ -4490,6 +4490,11 @@ Train Types create/edit now provides `افزودن امکان` beside the existi
 
 Removed one-sentence subtitles under main headings in the agency creation wizard: overall dialog, four steps and identity section introduction. Labels, field guidance, validation, OTP, legal warnings and submission behavior remain unchanged. Existing tests, scoped lint/typecheck/format and Web build validate bounded copy removal; CI precedes user-authorized develop merge. No API/schema/dependency/runtime/data change. PC-A can fetch develop after merge.
 
+
+## 2026-10-03 — B2B-SIGNATORY-FORM-FIX-1003 — PC-B
+
+Improved agency signatory form document loading with context-keyed snapshots, safe owner API error text and retry. Attachment capability now matches the existing B2B public proof-reference service; selection pins the exact proof version and currency dependency is explained. Activation/proof/branch permissions remain enforced. Backend nullable-version resolution remains valid; pinning hardens concurrency consistency. Web Organizations165 tests, focused proof18 and existing API signatory16 tests, scoped lint/typecheck/Prettier and55-route production build pass. No live3100/API listener existed, so the screenshot's deployed fetch cause is still unverified. Local repair only; no API/schema/dependency/runtime change or permission expansion.
+
 ## 2026-10-03 — B2B-PHONE-VERIFICATION-1003 resumed integration — PC-B
 
 User resumes dev-only visible test-code delivery and production-disabled sending. Original PR587 is synchronized with latest develop; five-stage verification flow coexists with removed wizard subtitles and current Sales-document client. Existing B2B frozenv1.1 security contract remains unchanged. Focused OTP API16/Web33/Contracts3 and Organizations164 tests pass; independent current-candidate review and remaining checks gate handoff. No SMS.IR secrets/provider, schema/dependency, operating data or runtime change. Local signatory repair remains on separate branch and is not included.
