@@ -17,6 +17,19 @@ import {
 } from '../model/organization-documents';
 import { useBoundUploadContext } from './use-bound-upload-context';
 
+export async function issueUploadedConfidentialGrant(
+  documentId: string,
+  code: string,
+  enabled: boolean,
+) {
+  if (!enabled) return undefined;
+  const response = await documentsApi.createAccessGrant(documentId, {
+    code,
+    purpose: 'CONFIDENTIAL_VIEW',
+  });
+  return response.data.token;
+}
+
 /** Upload through the Documents owner; only its saved ID is attached to the form. */
 export function InlineDocumentUpload({
   organizationId,
@@ -24,6 +37,7 @@ export function InlineDocumentUpload({
   label,
   permissions,
   onUploaded,
+  onConfidentialGrant,
   onStaged,
   staged,
   onBusyChange,
@@ -38,6 +52,8 @@ export function InlineDocumentUpload({
   label: string;
   permissions: readonly IamPermissionCode[];
   onUploaded: (id: string) => void;
+  onConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
   onStaged?:
     ((document: StagedOrganizationDocument | null) => void) | undefined;
   staged?: StagedOrganizationDocument | null | undefined;
@@ -66,6 +82,7 @@ export function InlineDocumentUpload({
     [uncertain, setUncertain] = useState(false);
   const bindUpload = useBoundUploadContext(contextKey, {
     onUploaded,
+    onConfidentialGrant,
     onBusyChange,
     onUncertainChange,
   });
@@ -153,6 +170,28 @@ export function InlineDocumentUpload({
       if (!request.isCurrent()) return;
       request.uploaded(result.data.id);
       setFile(undefined);
+      if (type?.defaultConfidentiality === 'CONFIDENTIAL') {
+        try {
+          const token = await issueUploadedConfidentialGrant(
+            result.data.id,
+            confidentialAccessCode,
+            Boolean(onConfidentialGrant),
+          );
+          if (!request.isCurrent()) return;
+          if (token) {
+            request.confidentialGrant(result.data.id, token);
+            setConfidentialAccessCode('');
+          }
+        } catch (caught) {
+          if (!request.isCurrent()) return;
+          setError(
+            (caught instanceof Error
+              ? caught.message
+              : 'دریافت مجوز موقت سند ناموفق بود.') +
+              ' فایل بارگذاری شده است؛ کد را برای ذخیره قرارداد دوباره وارد کنید.',
+          );
+        }
+      }
       setNotice(
         uploadedNotice ??
           (result.data.currentVersion.scanStatus === 'CLEAN'

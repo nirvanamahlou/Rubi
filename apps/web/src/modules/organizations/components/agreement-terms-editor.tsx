@@ -14,6 +14,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { documentsApi } from '@/modules/documents/api/client';
 import {
+  canAttachOrganizationDocument,
   canReadOrganizationDocuments,
   organizationDocumentQuery,
   type StagedOrganizationDocument,
@@ -37,6 +38,8 @@ export function AgreementTermsEditor({
   permissions,
   disabled = false,
   onUploadStateChange,
+  onConfidentialGrant,
+  uploadContextKey = '',
   pendingDocuments,
   onPendingDocumentsChange,
   focus = 'all',
@@ -49,6 +52,9 @@ export function AgreementTermsEditor({
   permissions: readonly IamPermissionCode[];
   disabled?: boolean;
   onUploadStateChange?: (busy: boolean) => void;
+  onConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
+  uploadContextKey?: string;
   pendingDocuments?: AgreementPendingDocuments;
   onPendingDocumentsChange?: (documents: AgreementPendingDocuments) => void;
   focus?: 'all' | 'credit' | 'guarantees' | 'temporary';
@@ -184,6 +190,7 @@ export function AgreementTermsEditor({
     inlineOnly = false,
     stage?: (document: StagedOrganizationDocument | null) => void,
     staged?: StagedOrganizationDocument | null,
+    targetBinding = '',
   ) => (
     <div className="field full">
       <span>{label}</span>
@@ -206,7 +213,7 @@ export function AgreementTermsEditor({
           value={id ?? ''}
           aria-label={label}
           disabled={
-            !organizationId || !canReadOrganizationDocuments(permissions)
+            !organizationId || !canAttachOrganizationDocument(permissions)
           }
           onChange={(e) => change(e.target.value || null)}
         >
@@ -234,7 +241,7 @@ export function AgreementTermsEditor({
       ) : null}
       {branchId &&
       permissions.includes('documents.upload') &&
-      canReadOrganizationDocuments(permissions) ? (
+      canAttachOrganizationDocument(permissions) ? (
         <InlineDocumentUpload
           expanded={inlineOnly || !organizationId}
           organizationId={organizationId}
@@ -247,6 +254,8 @@ export function AgreementTermsEditor({
             change(documentId);
             setReload((n) => n + 1);
           }}
+          onConfidentialGrant={onConfidentialGrant}
+          contextKey={`${uploadContextKey}|${label}|${targetBinding}`}
           onStaged={organizationId ? undefined : stage}
           staged={staged}
         />
@@ -468,6 +477,7 @@ export function AgreementTermsEditor({
                   guarantees: pendingDocuments?.guarantees ?? [],
                 }),
               pendingDocuments?.agreement,
+              `${value.documentId ?? ''}:${value.documentVersionId ?? ''}`,
             )}
           </div>
         </section>
@@ -800,6 +810,7 @@ export function AgreementTermsEditor({
                         ),
                       }),
                     pendingDocuments?.guarantees[index],
+                    JSON.stringify(guarantee),
                   )}
                 </div>
               </div>

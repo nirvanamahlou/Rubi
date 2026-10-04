@@ -4632,3 +4632,11 @@ SALES-AGREED-AUTOFILL-1004 validation: Sales294 tests plus final quote payload3 
 ## 2026-10-04 — B2B-ADDRESS-INPUT-1004 — PC-B
 
 Agency creation replaces the country selector with one free-text address field in the first step. User confirmed optional country/city in the owner backend. MasterData accepts a null pair, preserves omitted geography on edits and validates complete supplied pairs; additive nullable columns retain restrictive geography FKs and a paired-nullability CHECK. Existing address values and permissions remain unchanged. B2B projection and Organizations displays support absent geography. Task-specific tests, disposable PostgreSQL migration proof and affected builds gate user-authorized push/develop merge; no operational database change.
+
+## 2026-10-04 — B2B-AGREEMENT-UPLOAD-1004 — PC-B
+
+User selected fresh confidential-code access for each submit/approval actor. Documents owns raw organization-proof eligibility; masked list metadata cannot authorize contract references. Frozenv2.1 reserves a narrow opaque-reference producer and transient B2B referenceGrants transport, with credentials excluded from persisted terms/commands/fingerprints/audit. Existing organization/branch, scan/expiry, pinned version and independent approval gates remain. Same strong worker implements; focused/full checks and independent exact-candidate review gate user-authorized push/develop merge. No schema, dependency, permission expansion or operational database change.
+
+B2B-AGREEMENT-UPLOAD-1004 validation checkpoint: user-approved Luna recovery after original implementer usage limit preserves task scope. API286 and Organizations198 tests pass; 19 PostgreSQL opt-in integration tests skipped. Contracts/API static and build checks plus Web lint/typecheck pass; generated database artifacts refreshed only, no operational database/schema change. Final Web build, independent exact-candidate review and CI remain outstanding; no push/merge claim.
+
+B2B-AGREEMENT-UPLOAD-1004 final local validation: Web webpack production build55/55 passed; API286 and Organizations198 tests plus affected lint/typecheck/build gates passed. Independent committed-candidate review and CI remain required before authorized develop merge.

@@ -21,6 +21,7 @@ import { B2bAgreementWorkflowRepository } from './b2b-agreement-workflow.reposit
 import type { AgreementCaseRow } from './b2b-agreement-workflow.repository';
 import type {
   B2bAgreementActionDto,
+  B2bReferenceGrantDto,
   SaveB2bAgreementDto,
 } from './b2b-agreement-workflow.dto';
 
@@ -115,6 +116,33 @@ function permissions(
 }
 const hasCredit = (terms: B2bAgreementTermsV1 | undefined) =>
   Boolean(terms && (terms.creditPolicies.length || terms.guarantees.length));
+
+function referenceGrantMap(
+  terms: B2bAgreementTermsV1,
+  grants: readonly B2bReferenceGrantDto[] | undefined,
+) {
+  const related = new Set(
+    [
+      terms.documentId,
+      ...terms.guarantees.map((item) => item.documentId),
+    ].filter((id): id is string => Boolean(id)),
+  );
+  const result = new Map<string, string>();
+  for (const grant of grants ?? []) {
+    if (!related.has(grant.documentId))
+      throw new BadRequestException({
+        code: 'B2B_DOCUMENT_GRANT_UNRELATED',
+        message: 'مجوز موقت سند به هیچ مدرک این قرارداد مربوط نیست.',
+      });
+    if (result.has(grant.documentId))
+      throw new BadRequestException({
+        code: 'B2B_DOCUMENT_GRANT_DUPLICATE',
+        message: 'برای هر سند فقط یک مجوز موقت پذیرفته می‌شود.',
+      });
+    result.set(grant.documentId, grant.token);
+  }
+  return result;
+}
 
 @Injectable()
 export class B2bAgreementWorkflowService {
@@ -220,6 +248,7 @@ export class B2bAgreementWorkflowService {
     role: B2bCooperationRole,
     actor: AuthenticatedActor,
     pinned = false,
+    grants: ReadonlyMap<string, string> = new Map(),
   ) {
     const issue = b2bAgreementTermsIssue(terms);
     if (issue)
@@ -262,6 +291,8 @@ export class B2bAgreementWorkflowService {
         branchId,
         actor,
         !pinned,
+        expected,
+        grants.get(documentId),
       );
       if ((pinned || expected) && expected !== document.versionId)
         throw new ConflictException({
@@ -306,6 +337,7 @@ export class B2bAgreementWorkflowService {
       'b2b.credit.read',
     );
     const scope = this.scope(organizationId, dto.branchId, dto.role, actor);
+    const grants = referenceGrantMap(dto.terms, dto.referenceGrants);
     const row = await this.repository.save(
       {
         ...scope,
@@ -329,6 +361,8 @@ export class B2bAgreementWorkflowService {
           dto.branchId,
           dto.role,
           actor,
+          false,
+          grants,
         );
       },
     );
@@ -362,6 +396,7 @@ export class B2bAgreementWorkflowService {
       dto.reason,
       async (before) => {
         const terms = (await this.record(before, actor)).revisions[0]!;
+        const grants = referenceGrantMap(terms, dto.referenceGrants);
         if (hasCredit(terms))
           permissions(
             actor,
@@ -375,6 +410,7 @@ export class B2bAgreementWorkflowService {
             dto.role,
             actor,
             true,
+            grants,
           );
           const today = day(new Date());
           if (

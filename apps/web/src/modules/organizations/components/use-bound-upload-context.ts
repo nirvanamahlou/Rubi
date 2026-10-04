@@ -4,6 +4,8 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 
 export interface BoundUploadCallbacks {
   onUploaded: (id: string) => void;
+  onConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
   onBusyChange: (busy: boolean) => void;
   onUncertainChange?: ((uncertain: boolean) => void) | undefined;
 }
@@ -35,6 +37,13 @@ export function useBoundUploadContext(
           current.current.contextKey === captured.contextKey
         )
           current.current.callbacks.onUploaded(id);
+      },
+      confidentialGrant: (documentId: string, token: string) => {
+        if (
+          mounted.current &&
+          current.current.contextKey === captured.contextKey
+        )
+          current.current.callbacks.onConfidentialGrant?.(documentId, token);
       },
       busy: (busy: boolean) => {
         if (
