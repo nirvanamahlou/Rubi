@@ -97,7 +97,7 @@ export const navigationMessages = [
     description: 'درخواست‌های مشتریان و پشتیبانی پس از سفر',
   },
   {
-    title: 'رزرواسیون و عملیات سفر',
+    title: 'رزروسیون',
     href: '/reservations',
     description: 'بررسی ظرفیت، صدور خدمات، واچر، بیمه و منیفست',
   },

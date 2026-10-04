@@ -194,17 +194,13 @@ export function ReservationOperationsWorkspace({
     setQuery((current) => ({ ...current, ...patch, page: 1 }));
   }
   return (
-    <main
-      dir="rtl"
-      className={styles.workspace}
-      aria-label="رزرواسیون و عملیات سفر"
-    >
+    <main dir="rtl" className={styles.workspace} aria-label="رزروسیون">
       <div className={styles.operationLayout}>
         <div className={styles.operationMain}>
           <header className={styles.header}>
             <div>
               <p className={styles.eyebrow}>عملیات سفر</p>
-              <h1>رزرواسیون</h1>
+              <h1>رزروسیون</h1>
               <p>از دریافت درخواست تا آماده‌سازی مدارک سفر</p>
             </div>
             <span className={styles.badge}>

@@ -25,6 +25,7 @@ const moduleTitles: Record<string, string> = {
 };
 
 const categoryTitles: Record<string, string> = {
+  رزروسیون: 'Reservations',
   'فضای کار': 'Workspace',
   'فروش و ارتباط با مشتری': 'Sales & customer relations',
   'رزرواسیون و تأمین سفر': 'Reservations & travel supply',

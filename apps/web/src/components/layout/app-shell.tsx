@@ -343,18 +343,12 @@ function SearchDialog() {
     <Dialog>
       <DialogTrigger asChild>
         <button
-          className="flex h-10 w-full items-center gap-2 rounded-xl border border-input bg-background px-3 text-sm text-muted-foreground outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring lg:max-w-md"
+          className="flex h-10 w-full items-center gap-2 rounded-xl border border-input bg-background px-3 text-sm text-muted-foreground outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring lg:max-w-64"
           id="global-search-trigger"
           type="button"
         >
           <Search aria-hidden="true" className="size-4" />
           <span className="truncate">{messages.common.search}</span>
-          <kbd
-            dir="ltr"
-            className="ms-auto hidden shrink-0 items-center whitespace-nowrap rounded-md border border-input bg-surface px-2 py-0.5 text-[11px] font-semibold leading-5 text-foreground sm:inline-flex"
-          >
-            Ctrl + K
-          </kbd>
         </button>
       </DialogTrigger>
       <DialogContent>
@@ -661,7 +655,7 @@ function AppShellContent({ children }: { children: ReactNode }) {
               </DrawerContent>
             </Drawer>
             <LegalEntityContextSelector />
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 lg:max-w-64">
               <SearchDialog />
             </div>
             <div
