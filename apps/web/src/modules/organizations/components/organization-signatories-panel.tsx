@@ -10,7 +10,7 @@ import {
   type DocumentListItemV1,
   type IamPermissionCode,
 } from '@nora/contracts';
-import { FileSignature, Plus } from 'lucide-react';
+import { FileSignature, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -424,7 +424,7 @@ export function OrganizationSignatoriesPanel({
         </Button>
       </header>
       <div className="panel-body space-y-3">
-        <div className="dossier-filter-grid">
+        <div className="dossier-filter-grid signatory-filter-grid">
           {branches.length > 1 ? (
             <label className="field">
               شعبه داخلی مسئول همکاری
@@ -440,11 +440,7 @@ export function OrganizationSignatoriesPanel({
                 ))}
               </NativeSearchSelect>
             </label>
-          ) : (
-            <p className="panel-note">
-              شعبه داخلی: {branches[0]?.name ?? 'در حال دریافت…'}
-            </p>
-          )}
+          ) : null}
           <DossierDateFilters
             value={dateRange}
             onChange={setDateRange}
@@ -499,8 +495,10 @@ export function OrganizationSignatoriesPanel({
               {row.notes ? <p>{row.notes}</p> : null}
               <div className="flex flex-wrap gap-2">
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="outline"
+                  title={`ویرایش امضادار ${row.contactName}`}
+                  aria-label={`ویرایش امضادار ${row.contactName}`}
                   disabled={!canManage}
                   onClick={() =>
                     setEditor({
@@ -522,18 +520,20 @@ export function OrganizationSignatoriesPanel({
                     })
                   }
                 >
-                  ویرایش امضادار
+                  <Pencil aria-hidden="true" className="size-4" />
                 </Button>
                 <Button
-                  size="sm"
+                  size="icon"
                   variant="destructive"
+                  title={`حذف دائمی امضادار ${row.contactName}`}
+                  aria-label={`حذف دائمی امضادار ${row.contactName}`}
                   disabled={!canManage}
                   onClick={() => {
                     setReason('');
                     setDeleting(row);
                   }}
                 >
-                  حذف دائمی امضادار
+                  <Trash2 aria-hidden="true" className="size-4" />
                 </Button>
               </div>
             </article>

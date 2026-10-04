@@ -4548,3 +4548,7 @@ Remove specified explanatory copy from360 profile/branches/signatories and hide 
 ## 2026-10-04 — B2B-CONTACT-DISPLAY-1004 — PC-B
 
 Screenshot692 requests readable full representative contacts and icon-only address controls. Full values are backend-masked; existing audited MasterData unmask owner contract remains sole disclosure source and permission unchanged. Frozenv1 requires fresh context, no-store and delayed-result isolation; independent finalreview gates delivery. No migration/dependency/data/permission changes. Current task owns bounded Organizations consumer and existing MasterData Web client method.
+
+## 2026-10-04 — B2B-SIGNATORY-LAYOUT-1004 — PC-B
+
+Screenshot693: remove signatory action text and internal-branch display, align date filters to the right in a compact responsive row. Preserve date behavior, branch scope, forms and deletion gates. Bounded Organizations presentation assigned to persistent worker; lead owns user-authorized push/develop merge. No API/data/schema/dependency changes. Checks and CI gate delivery; telemetry unavailable.

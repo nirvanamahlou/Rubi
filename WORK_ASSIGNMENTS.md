@@ -5413,3 +5413,9 @@ B2B-CONTACT-DISPLAY-1004 candidate: icon-only address actions and authorized aut
 B2B-CONTACT-DISPLAY-1004 independent review /root/contact_display_final_review on48e84519 found blocking CD-R1: AccessProvider current permission denial could leave cleartext until dossier focus refresh. Same implementer repairs request/render permission intersection and lifecycle regression; prior candidate not accepted. CD-A2 no-store resolved, CD-A1 incomplete until CD-R1. Refresh exact-candidate independent review after repair; telemetry unavailable.
 
 B2B-CONTACT-DISPLAY-1004 refreshed review87b4a3b3 resolves CD-R1/CD-A1/CD-A2 in source. Remaining CD-R2 medium blocking verification gap: pure helper test does not exercise actual hook provider-revocation wiring. Same worker adds real-hook regression using existing captured-effects/controlled-state React SSR harness, no dependency change. Exact finalcandidate review still required.
+
+## B2B-SIGNATORY-LAYOUT-1004 — PC-B — IN_PROGRESS
+
+Screenshot693: icon-only signatory edit/delete, remove internal-branch readout, right-align compact date filters into vacated branch slot. Reserve Organizations signatory presentation only plus own docs; R1/C2 persistent worker. Preserve form fields/branch permissions/filter logic/delete confirmation. User authorizes push/develop merge. No API/data/permission/schema/dependency change; usage unavailable.
+
+B2B-SIGNATORY-LAYOUT-1004 delivered: signatory icon actions preserve permission/confirmation, singlebranchreadout removed, compact RTL responsive date row. Organizations180 tests, scoped lint/format and Web typecheck pass; existing Contracts generated artifact refreshed to current source, no tracked contracts/dependency changes. Lead reviewed exact two-file UI diff; Web build/CI gate merge. Persistent worker usage unavailable; locks released at delivery.
