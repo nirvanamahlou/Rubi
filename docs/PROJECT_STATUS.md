@@ -1,6 +1,3 @@
-## 2026-10-04 — SALES-TICKET-SEARCH-SPEED-1004 — PC-A — READY_FOR_REVIEW
-
-Flight lookup now starts when route and future travel range are ready in the first contract step. The next step reuses the exact in-flight/recent first-page request for up to10seconds rather than starting the same lookup again. Form-local abort signals prevent obsolete responses; mismatched route/date/page/cabin/return queries fetch separately, and failed speculative searches retry on entry. No persistent/shared cache or API/schema/dependency change; authoritative inventory and contract validation remain unchanged. Sales284 tests and final10 focused tests pass; lint/typecheck/build gate delivery and local activation.
 
 ## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
 
@@ -9,6 +6,10 @@ The Accommodation Meal/Service table now labels its existing canonical `record.c
 ## 2026-10-04 — INSURER-BROKER-HIDE-ORGANIZATIONS-1004 — PC-B — READY_FOR_REVIEW
 
 Insurer and Broker create/edit forms no longer expose Organization. New insurers persist independently; the nullable insurer Organization FK retains uniqueness and restrictive legacy references, and v1 API clients may still provide a validated Organization. Broker primary contact is shown only when editing an existing organization-linked record; its hidden Organization scope is retained locally but omitted from PATCH, preserving the stored link. A disposable PostgreSQL 16 database verified the migration, multiple NULL rows, legacy PATCH/CAS preservation, uniqueness and FK/restrict behavior. Focused Database 1, API 14 and Web 22 tests, full Master Data API 491 and Web 601 tests, scoped ESLint, Prisma format/validate/generate, all affected typechecks/builds and the 55-route Web build pass. Database Designer schema analysis passed; its migration generator failed on its own Column serialization bug and is not treated as migration evidence. No authenticated browser, live runtime or operational DB was changed. Deployment order is migration, API, Web; rollback is guarded and cannot delete independent insurer rows. Bounded locks release with commit.
+
+## 2026-10-04 — SALES-TICKET-SEARCH-SPEED-1004 — PC-A — READY_FOR_REVIEW
+
+Flight lookup now starts when route and future travel range are ready in the first contract step. The next step reuses the exact in-flight/recent first-page request for up to10seconds rather than starting the same lookup again. Form-local abort signals prevent obsolete responses; mismatched route/date/page/cabin/return queries fetch separately, and failed speculative searches retry on entry. No persistent/shared cache or API/schema/dependency change; authoritative inventory and contract validation remain unchanged. Sales284 tests and final10 focused tests pass; lint/typecheck/build gate delivery and local activation.
 
 ## 2026-10-04 — SALES-RANGE-AIRLINE-1004 — PC-A — READY_FOR_REVIEW
 
@@ -4584,6 +4585,12 @@ Screenshot693: remove signatory action text and internal-branch display, align d
 ## 2026-10-04 — B2B-SIGNATORY-FORM-COPY-1004 — PC-B
 
 Remove four user-specified guidance texts from signatory form; fields, currency dependency, proof validity, inactive save and activation enforcement stay intact. Bounded R0/C1 UI copy assigned to persistent worker. Required checks/CI gate user-authorized push/develop merge. No API/data/schema/permission/dependency changes; usage unavailable.
+
+## 2026-10-04 — SALES-VALIDATION-REFRESH-1004 — PC-A
+
+International Sales registration recovery no longer sends blank hidden local names when valid passport names exist. Pending/duplicate recovery and existing-person updates share a compatible name fallback while preserving nonblank local names, validation, CAS and duplicate protection. Customers Web shows known invalid field labels in Persian from the existing error envelope. No API/schema/migration/dependency/data change. Handoff: docs/tasks/SALES-VALIDATION-REFRESH-1004.md.
+
+Validation: focused47 tests, all Sales/Customers assertions after bounded timeout rerun, scoped lint/formatting and Web typecheck pass. Production build/final CI gate develop merge. The unrelated ticket-price SSR test exceeded5s on this host and passed with one worker/30s process-local limit; repository test configuration was unchanged. Scoped locks released for review.
 
 ## 2026-10-04 — B2B-SIGNATORY-UPLOAD-1004 — PC-B
 

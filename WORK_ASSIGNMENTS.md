@@ -5443,6 +5443,12 @@ Screenshot693: icon-only signatory edit/delete, remove internal-branch readout, 
 
 B2B-SIGNATORY-LAYOUT-1004 delivered: signatory icon actions preserve permission/confirmation, singlebranchreadout removed, compact RTL responsive date row. Organizations180 tests, scoped lint/format and Web typecheck pass; existing Contracts generated artifact refreshed to current source, no tracked contracts/dependency changes. Lead reviewed exact two-file UI diff; Web build/CI gate merge. Persistent worker usage unavailable; locks released at delivery.
 
+## SALES-TICKET-SEARCH-SPEED-1004 — PC-A — IN_PROGRESS
+
+Reserve Sales ticket query/client/picker, first-step preloading integration and focused tests plus own docs on codex/pc-a-sales-ticket-search-speed-1004 from origin/develop@137cc45c. Investigate backend before selecting bounded implementation. Preserve current auth/branch, future date, return eligibility, capacity and authoritative sale validation. No schema/dependency or cross-module producer changes without extension. User requests faster following-step lookup and existing local activation.
+
+SALES-TICKET-SEARCH-SPEED-1004 delivered: confirmed route/future range starts a form-local abortable first-page search before navigating. Picker reuses only an exact query younger than10seconds; invalid/obsolete/page/return/cabin queries cannot share, and speculative failure retries on the visible page. No persistent/global cache, producer/schema/dependency change; server capacity/eligibility checks unchanged. Sales284 tests plus final10 focused tests pass; scoped lint/typecheck and55-route build gate delivery. Local runtime rollout requested by context; locks release at commit.
+
 ## SALES-RANGE-AIRLINE-1004 — PC-A — READY_FOR_REVIEW
 
 Branch codex/pc-a-sales-range-airline-1004 from origin/develop@a6ff4a6f. Reserve Sales contract form, flight date range, floating flight editor and focused tests plus own docs. Move required travel date range to route/passenger step, improve contrast and use active existing airlines through public MasterData list. No producer/schema/dependency/runtime changes. User authorizes develop merge. Preserve unrelated dirty primary checkout.
@@ -5457,11 +5463,11 @@ B2B-SIGNATORY-FORM-COPY-1004 scope extended to Organizations-local DossierFormDi
 
 B2B-SIGNATORY-FORM-COPY-1004 delivered: four requested texts removed; optional conditional description avoids empty spacing, installed Dialog handles absent-description aria relation. Organizations180 tests, scoped ESLint/Prettier, Web typecheck and55-route build4191 pass. Lead accepted bounded two-file UI diff, no behavior changes. Persistent worker; usage unavailable. Locks released at delivery; CI gates merge.
 
-## SALES-TICKET-SEARCH-SPEED-1004 — PC-A — IN_PROGRESS
+## SALES-VALIDATION-REFRESH-1004 — PC-A — READY_FOR_REVIEW
 
-Reserve Sales ticket query/client/picker, first-step preloading integration and focused tests plus own docs on codex/pc-a-sales-ticket-search-speed-1004 from origin/develop@137cc45c. Investigate backend before selecting bounded implementation. Preserve current auth/branch, future date, return eligibility, capacity and authoritative sale validation. No schema/dependency or cross-module producer changes without extension. User requests faster following-step lookup and existing local activation.
+- Branch codex/pc-a-sales-validation-refresh-1004 from origin/develop@82272a25. Reserve Sales people-sheet recovery/update helpers and regressions, Customers Web error reader and regressions, bounded docs. Reproduce blank hidden Persian names in international registration recovery while passport names are valid; do not disable DTO/identity/version/duplicate checks. Producer Customers API existing validation envelope, consumers Sales people-sheet and Customers browser client remain PC-A-owned. No API/schema/migration/dependency/database changes. User authorizes develop merge.
 
-SALES-TICKET-SEARCH-SPEED-1004 delivered: confirmed route/future range starts a form-local abortable first-page search before navigating. Picker reuses only an exact query younger than10seconds; invalid/obsolete/page/return/cabin queries cannot share, and speculative failure retries on the visible page. No persistent/global cache, producer/schema/dependency change; server capacity/eligibility checks unchanged. Sales284 tests plus final10 focused tests pass; scoped lint/typecheck and55-route build gate delivery. Local runtime rollout requested by context; locks release at commit.
+- Delivered international passport-name fallback across registration recovery/duplicate lookup/update, plus bounded Persian validation-field messages. Focused47 tests pass; Sales/Customers404 tests passed with one timed-out unrelated SSR test, whose full three-test file passed on one worker with process-local30s timeout. One environment-dependent test skipped. Scoped ESLint/Prettier and Web typecheck pass; production Web build and final CI gate merge. No schema/API/dependency/database/runtime change. Scoped locks RELEASED; user-authorized develop merge follows final checks. Handoff: docs/tasks/SALES-VALIDATION-REFRESH-1004.md.
 
 ## B2B-SIGNATORY-UPLOAD-1004 — PC-B — IN_PROGRESS
 
