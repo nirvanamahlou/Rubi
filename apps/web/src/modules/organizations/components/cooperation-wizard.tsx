@@ -691,29 +691,6 @@ export function CooperationWizard({
                         قالب پشتیبانی‌شده: 09xxxxxxxxx یا معادل +98/0098
                       </small>
                     </label>
-                    <label className="field">
-                      <span>شعبه ثبت شماره *</span>
-                      <NativeSearchSelect
-                        className="input"
-                        value={draft.branchId}
-                        disabled={
-                          phoneBusy || Boolean(draft.phoneVerificationGrant)
-                        }
-                        onChange={(event) =>
-                          changeIdentity((current) => ({
-                            ...current,
-                            branchId: event.target.value,
-                          }))
-                        }
-                      >
-                        <option value="">انتخاب شعبه</option>
-                        {branches.map((branch) => (
-                          <option value={branch.id} key={branch.id}>
-                            {branch.name}
-                          </option>
-                        ))}
-                      </NativeSearchSelect>
-                    </label>
                     <div className="field">
                       <span>ارسال کد</span>
                       <button

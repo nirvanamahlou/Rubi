@@ -27,6 +27,12 @@ Master Data Excel downloads now reject empty, wrong-MIME and non-ZIP HTTP 200 re
 
 Reservations now displays `رزروسیون` in Persian navigation groups/items, breadcrumbs/search, module/workbench cards, change notifications and the page heading. English navigation uses `Reservations`. The global-search trigger and its desktop header container are bounded to 16rem; the visible Ctrl+K badge is removed while Ctrl/Cmd+K and the search dialog remain functional. 98 existing focused tests, scoped lint, Web typecheck and the 55-route production build pass. No route/API/permission/schema/dependency/database changes or authenticated browser/local runtime rollout. Bounded central UI locks release with commit; user authorizes develop merge after CI.
 
+## BROKER-LEADERS-BOARD-1004 — 2026-10-04 — PC-A
+
+Bounded owner-authorized Master Data/Reservations implementation: exact new Broker identity/phone/airport Board form, country-scoped multi-city selection and multiple tour leaders. Atomic aggregate writes, encrypted contact envelopes, omitted-phone preservation, child version/membership checks and deactivate-only removals retain existing data. Voucher selection automatically fills Board/name/full phone through the existing audited owner service and rejects stale responses after broker changes.
+
+Local Master Data API 496 tests and Master Data Web/voucher 604 tests passed; Prisma format/validate/generate and database/contracts builds passed. API/Web production builds (55 Web routes), refreshed scoped lint/typechecks and final focused API 111 pass; latest develop integration and full CI remain gates. Local database connection unavailable, so no operational migration/runtime rollout. Apply the additive broker migration before API rollout. Permanent PC-B ownership retained; owner explicitly authorized this PC-A slice. Handoff: docs/tasks/BROKER-LEADERS-BOARD-1004.md.
+
 ## 2026-10-04 — SALES-RANGE-FLOATING-1004 — PC-A — READY_FOR_REVIEW
 
 New contract flight details require confirming both future range endpoints after passenger counts; company ticket searches and continuing the flight step are gated accordingly. Past days are white and disabled in both calendars using Tehran midnight, and apply rejects a past start even when its end is future. Floating flight cancellation uses current state, removes only the selected leg and its stale fare, and exposes a clear company-inventory action; editing an existing manual flight preserves its fare. Web production build (55 routes), typecheck and 277 Sales tests (one pre-existing skip) and scoped lint pass. No API/schema/dependency/database/runtime change or authenticated browser QA. User authorizes develop merge after checks; scoped locks release with delivery.
@@ -4596,6 +4602,9 @@ Validation: focused47 tests, all Sales/Customers assertions after bounded timeou
 
 In-form authority proof upload requested with persisted notes and manual activation after upload. Existing backend has no human-review gate: antivirus CLEAN, complete/unexpired exact-org/branch proof remains mandatory. Frozenv1 consumer-only implementation preserves Documents/B2B policy and adds bounded readiness refresh plus stale-upload/save protection. Independent review and required checks gate delivery. No schema/dependency/permission changes.
 
+## 2026-10-04 — B2B-CREDIT-COPY-1004 — PC-B
+
+Removed repeated toolbar title and explanatory copy from policy, guarantee and temporary-credit subviews. Main dossier title, tabs, actions, filters, alerts and forms retain behavior. One Organizations component changes; no API/schema/permission/dependency/data changes. Organizations191 tests, scoped lint/format and Web typecheck pass. Local Webpack compile/typecheck pass; final clean static generation and CI gate user-authorized develop merge. Prior pending agreement-upload source remains isolated and untouched. Telemetry unavailable.
 ## 2026-10-04 — SALES-EXPERT-NOTE-1004 — PC-A
 
 The optional expert note is available in contract sale pricing and uses existing Sales reservationNote service metadata, read by Reservations explanations. Requests with Sales or Reservations notes have a yellow second (destination) cell, including selected rows, with an explanatory tooltip. Pricing notes remain separate. No schema/API/migration/dependency/runtime change. Focused checks and production build/CI gate user-authorized develop merge.
@@ -4607,3 +4616,9 @@ Validation: 68 focused Sales form/payload and Reservations inbox/feed tests pass
 New-contract sale-price fields are read-only and derive exactly from agreed prices per service/currency, retaining nightly/total hotel basis and zero/decimal precision. New-form draft projection also mirrors restored values, previews and outgoing payloads; catalog reference prices and historical contracts are unchanged. No API/schema/migration/dependency/runtime change. Focused tests and checks gate authorized develop merge.
 
 Ticket-only activation keeps the catalog freshness guard independent through versioned catalogSaleQuote service metadata. Sales API uses the catalog quote for public Ticket Catalog reserve, falling back to historical daySale for old contracts; malformed new quotes fail closed. Agreements do not rewrite catalog fare sources.
+
+## 2026-10-04 — B2B-PHONE-BRANCH-COPY-1004 — PC-B
+
+Agency phone verification no longer displays the registration-branch selector. Existing authenticated authorized-branch default and OTP branch/session/grant enforcement remain unchanged. One wizard component changes; no API, schema, permission or dependency change. Organizations191 tests, scoped lint/format and Web typecheck pass; final Web build and CI gate user-authorized develop merge. Pending agreement upload task remains isolated.
+
+SALES-AGREED-AUTOFILL-1004 validation: Sales294 tests plus final quote payload3 pass (one environment-dependent skipped); API boundary/catalog targeted12 pass. Scoped lint/API and Web typechecks pass; API build and55-route Web build validate initial candidate; final corrected scalar quote production build, quality, full tests and database CI gates all pass. Concurrent develop merged with appended owner reports retained; refreshed-head CI gates final merge. No local database/runtime change.

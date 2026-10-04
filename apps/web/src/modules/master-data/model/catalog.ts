@@ -1708,7 +1708,20 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
     description:
       'Profile عملیاتی کارگزار؛ بدهی و قرارداد اینجا نگهداری نمی‌شود.',
     fields: [
-      nameField,
+      { ...nameField, label: 'نام فارسی کارگزار' },
+      {
+        key: 'primaryPhone',
+        label: 'شماره کارگزار',
+        type: 'text',
+        placeholder: '',
+      },
+      {
+        key: 'boardText',
+        label: 'متن تابلوی استقبال فرودگاه (Board)',
+        type: 'text',
+        placeholder: '',
+      },
+      { key: 'cityIds', label: 'شهرهای فعالیت', type: 'text', placeholder: '' },
       {
         key: 'englishName',
         label: 'نام انگلیسی کارگزار',
