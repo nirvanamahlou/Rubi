@@ -36,13 +36,11 @@ beforeEach(() => {
   fixture.effects = [];
   fixture.route = fixture.dates = fixture.flight = true;
   vi.useFakeTimers();
-  fetcher
-    .mockReset()
-    .mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ data: [], hasMore: false }),
-    });
+  fetcher.mockReset().mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: async () => ({ data: [], hasMore: false }),
+  });
   vi.stubGlobal('fetch', fetcher);
 });
 afterEach(() => {
