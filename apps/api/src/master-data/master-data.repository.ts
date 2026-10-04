@@ -1,3 +1,4 @@
+import type { Prisma } from '@nora/database';
 import { columnFilterWhere } from './catalog-filters';
 import {
   ConflictException,
@@ -78,7 +79,8 @@ function auditSnapshot(resource: MasterDataResource, value: unknown) {
   if (
     (resource !== 'organization-contacts' &&
       resource !== 'leaders' &&
-      resource !== 'suppliers') ||
+      resource !== 'suppliers' &&
+      resource !== 'brokers') ||
     typeof snapshot !== 'object' ||
     Array.isArray(snapshot)
   )
@@ -384,6 +386,17 @@ function relations(resource: MasterDataResource): object | undefined {
           isActive: true,
         },
       },
+      cities: { include: { city: true } },
+      leaders: {
+        where: { isActive: true },
+        orderBy: { name: 'asc' },
+        select: {
+          id: true,
+          name: true,
+          version: true,
+          primaryPhoneMasked: true,
+        },
+      },
       country: true,
       city: true,
       services: { include: { service: true } },
@@ -555,6 +568,7 @@ export function toMasterDataRecord(
     'destinationCity',
     'cabinClass',
     'services',
+    ...(resource === 'brokers' ? ['cities', 'leaders'] : []),
     'chain',
     'mealService',
     'defaultRoomType',
@@ -657,7 +671,7 @@ export function toMasterDataRecord(
       ? String(primaryContact.fullName ?? '')
       : null;
     attributes.primaryPhoneMasked =
-      resource === 'suppliers'
+      resource === 'suppliers' || row.primaryPhoneMasked
         ? (row.primaryPhoneMasked as string | null)
         : primaryContact?.isActive
           ? (primaryContact.phoneMasked as string | null)
@@ -674,6 +688,25 @@ export function toMasterDataRecord(
     attributes.serviceNames =
       services?.map(({ service }) => String(service.name ?? '')).join(',') ??
       '';
+  }
+  if (resource === 'brokers') {
+    const links = (row.cities ?? []) as {
+      cityId: string;
+      city?: { name: string };
+    }[];
+    attributes.cityIds =
+      links.map((v) => v.cityId).join(',') || String(row.cityId ?? '');
+    attributes.cityNames =
+      links.map((v) => v.city?.name ?? '').join('، ') ||
+      String(city?.name ?? '');
+    attributes.leadersJson = JSON.stringify(
+      ((row.leaders ?? []) as Record<string, unknown>[]).map((leader) => ({
+        id: String(leader.id),
+        name: String(leader.name),
+        version: Number(leader.version),
+        primaryPhoneMasked: leader.primaryPhoneMasked ?? null,
+      })),
+    );
   }
   if (resource === 'travel-services') {
     attributes.supplierCount = Number(count?.suppliers ?? 0);
@@ -1025,7 +1058,19 @@ export class MasterDataRepository {
     if (resource === 'insurance-coverages' && query.currencyId)
       where.currencyId = query.currencyId;
     if (resource === 'suppliers' || resource === 'brokers') {
-      if (query.cityId) where.cityId = query.cityId;
+      if (query.cityId) {
+        if (resource === 'brokers')
+          where.AND = [
+            ...(Array.isArray(where.AND) ? where.AND : []),
+            {
+              OR: [
+                { cityId: query.cityId },
+                { cities: { some: { cityId: query.cityId } } },
+              ],
+            },
+          ];
+        else where.cityId = query.cityId;
+      }
       if (query.organizationId) where.organizationId = query.organizationId;
       if (query.serviceId)
         where.services = { some: { serviceId: query.serviceId } };
@@ -1169,6 +1214,8 @@ export class MasterDataRepository {
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const createData = { ...data };
+      const brokerChanges = createData.brokerLeaderChanges;
+      delete createData.brokerLeaderChanges;
       if (
         resource === 'manifest-templates' &&
         createData.versionNumber === undefined
@@ -1179,7 +1226,7 @@ export class MasterDataRepository {
         });
         createData.versionNumber = (latest._max.versionNumber ?? 0) + 1;
       }
-      const row = await delegate(transaction, resource).create({
+      let row = await delegate(transaction, resource).create({
         data: {
           ...createData,
           createdByUserId: actorUserId,
@@ -1187,6 +1234,19 @@ export class MasterDataRepository {
         },
         ...(relations(resource) ? { include: relations(resource) } : {}),
       });
+      if (resource === 'brokers' && brokerChanges) {
+        await applyBrokerLeaders(
+          transaction,
+          row.id,
+          brokerChanges,
+          actorUserId,
+          actorBranchId,
+        );
+        row = (await delegate(transaction, resource).findUnique({
+          where: { id: row.id },
+          include: relations(resource),
+        }))!;
+      }
       await transaction.masterDataAuditEvent.create({
         data: {
           actorUserId,
@@ -1212,9 +1272,14 @@ export class MasterDataRepository {
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const model = delegate(transaction, resource);
+      const writeData = { ...data };
+      const brokerChanges = writeData.brokerLeaderChanges;
+      delete writeData.brokerLeaderChanges;
       const before = await model.findUnique({
         where: { id },
-        ...(resource === 'train-types' ? { include: relations(resource) } : {}),
+        ...(resource === 'train-types' || resource === 'brokers'
+          ? { include: relations(resource) }
+          : {}),
       });
       if (!before || before.version !== expectedVersion) return null;
       const claimed = await model.updateMany({
@@ -1223,13 +1288,26 @@ export class MasterDataRepository {
       });
       if (claimed.count !== 1) return null;
 
-      const row = await model.update({
+      let row = await model.update({
         where: { id },
         data: {
-          ...data,
+          ...writeData,
         },
         ...(relations(resource) ? { include: relations(resource) } : {}),
       });
+      if (resource === 'brokers' && brokerChanges) {
+        await applyBrokerLeaders(
+          transaction,
+          id,
+          brokerChanges,
+          actorUserId,
+          actorBranchId,
+        );
+        row = (await model.findUnique({
+          where: { id },
+          include: relations(resource),
+        }))!;
+      }
       await transaction.masterDataAuditEvent.create({
         data: {
           actorUserId,
@@ -1450,9 +1528,7 @@ export class MasterDataRepository {
       client.masterBroker.count(),
       client.masterBroker.count({ where: { isActive: true } }),
       client.masterBroker.findMany({
-        where: { cityId: { not: null } },
-        distinct: ['cityId'],
-        select: { cityId: true },
+        select: { cityId: true, cities: { select: { cityId: true } } },
       }),
       client.masterBroker.count({
         where: {
@@ -1500,7 +1576,12 @@ export class MasterDataRepository {
       brokers: {
         total: brokerTotal,
         active: brokerActive,
-        coveredCities: brokerCities.length,
+        coveredCities: new Set(
+          brokerCities.flatMap((row) => [
+            ...(row.cityId ? [row.cityId] : []),
+            ...(row.cities ?? []).map((v) => v.cityId),
+          ]),
+        ).size,
         incomplete: brokerIncomplete,
       },
       contacts: {
@@ -1831,5 +1912,73 @@ export class MasterDataRepository {
         companies: null,
       },
     };
+  }
+}
+
+export async function applyBrokerLeaders(
+  tx: Prisma.TransactionClient,
+  brokerId: string,
+  value: unknown,
+  actorUserId: string,
+  actorBranchId: string,
+) {
+  const changes = value as {
+    items: { id?: string; version?: number; data: Record<string, unknown> }[];
+    removed: { id: string; version: number }[];
+  };
+  for (const item of changes.items) {
+    if (item.id) {
+      if (!Number.isSafeInteger(item.version) || Number(item.version) < 1)
+        throw new ConflictException('نسخه تورلیدر الزامی است.');
+      const result = await tx.masterLeader.updateMany({
+        where: {
+          id: item.id,
+          brokerId,
+          isActive: true,
+          version: Number(item.version),
+        },
+        data: {
+          ...item.data,
+          updatedByUserId: actorUserId,
+          version: { increment: 1 },
+        },
+      });
+      if (result.count !== 1)
+        throw new ConflictException('تورلیدر هم‌زمان تغییر کرده است.');
+    } else {
+      const row = await tx.masterLeader.create({
+        data: {
+          ...item.data,
+          brokerId,
+          createdByUserId: actorUserId,
+          updatedByUserId: actorUserId,
+        } as Prisma.MasterLeaderUncheckedCreateInput,
+      });
+      await tx.masterDataAuditEvent.create({
+        data: {
+          actorUserId,
+          actorBranchId,
+          action: 'master_data.create',
+          resource: 'leaders',
+          entityId: row.id,
+          outcome: AuditOutcome.SUCCESS,
+          afterSnapshot: auditSnapshot('leaders', row),
+        },
+      });
+    }
+  }
+  for (const item of changes.removed) {
+    const result = await tx.masterLeader.updateMany({
+      where: { id: item.id, brokerId, isActive: true, version: item.version },
+      data: {
+        isActive: false,
+        deactivatedAt: new Date(),
+        deactivatedByUserId: actorUserId,
+        updatedByUserId: actorUserId,
+        version: { increment: 1 },
+      },
+    });
+    if (result.count !== 1)
+      throw new ConflictException('تورلیدر هم‌زمان تغییر کرده است.');
   }
 }

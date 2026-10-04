@@ -323,11 +323,16 @@ describe('owned association cleanup', () => {
     'removes only associations owned by %s',
     async (resource, delegate, key) => {
       const deleteMany = vi.fn();
+      const cityDelete = vi.fn();
       const tx = {
+        masterBrokerCity: { deleteMany: cityDelete },
         [delegate]: { deleteMany },
       } as unknown as Prisma.TransactionClient;
       await removeOwnedMasterDataLinks(tx, resource, id);
       expect(deleteMany).toHaveBeenCalledWith({ where: { [key]: id } });
+      if (resource === 'brokers')
+        expect(cityDelete).toHaveBeenCalledWith({ where: { brokerId: id } });
+      else expect(cityDelete).not.toHaveBeenCalled();
     },
   );
 
