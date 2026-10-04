@@ -248,6 +248,7 @@ describe('cooperation wizard writes', () => {
         categoryId: 'category',
         validUntil: '',
         requiresStepUpVerification: false,
+        confidentialAccessCode: '573921',
       },
       file: new File(['%PDF-test'], `${title}.pdf`, {
         type: 'application/pdf',

@@ -14,6 +14,7 @@ export function dossierSessionProjection(
     error: user.branches.length
       ? ''
       : 'هیچ شعبه مجازی برای این حساب وجود ندارد.',
+    actorIdentityKey: user.id,
     contextKey: [
       revision,
       user.id,

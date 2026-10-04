@@ -15,6 +15,7 @@ export function DossierFormDialog({
   children,
   onSave,
   onClose,
+  submitDisabled = false,
   destructive = false,
 }: {
   title: string;
@@ -22,6 +23,7 @@ export function DossierFormDialog({
   children: ReactNode;
   onSave: () => Promise<void>;
   onClose: () => void;
+  submitDisabled?: boolean;
   destructive?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
@@ -50,7 +52,7 @@ export function DossierFormDialog({
         <form
           onSubmit={async (event) => {
             event.preventDefault();
-            if (submitting.current || uncertain) return;
+            if (submitting.current || uncertain || submitDisabled) return;
             submitting.current = true;
             setBusy(true);
             setError('');
@@ -102,7 +104,7 @@ export function DossierFormDialog({
               type="submit"
               variant={destructive ? 'destructive' : 'primary'}
               loading={busy}
-              disabled={uncertain}
+              disabled={uncertain || submitDisabled}
             >
               {destructive ? 'تأیید حذف دائمی' : 'ذخیره اطلاعات'}
             </Button>
