@@ -18,7 +18,7 @@ export function DossierFormDialog({
   destructive = false,
 }: {
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
   onSave: () => Promise<void>;
   onClose: () => void;
@@ -44,7 +44,9 @@ export function DossierFormDialog({
         onInteractOutside={(event) => event.preventDefault()}
       >
         <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
+        {description ? (
+          <DialogDescription>{description}</DialogDescription>
+        ) : null}
         <form
           onSubmit={async (event) => {
             event.preventDefault();

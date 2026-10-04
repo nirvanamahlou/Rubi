@@ -5423,14 +5423,26 @@ B2B-CONTACT-DISPLAY-1004 independent review /root/contact_display_final_review o
 
 B2B-CONTACT-DISPLAY-1004 refreshed review87b4a3b3 resolves CD-R1/CD-A1/CD-A2 in source. Remaining CD-R2 medium blocking verification gap: pure helper test does not exercise actual hook provider-revocation wiring. Same worker adds real-hook regression using existing captured-effects/controlled-state React SSR harness, no dependency change. Exact finalcandidate review still required.
 
+## INITIAL-PASSWORD-FOUR-DIGITS-1004 — PC-A — READY_FOR_REVIEW
+
+- Branch `codex/pc-a-initial-password-four-digits-1004` from `origin/develop@0c5484e0`; isolated worktree of the same task. IAM initial-password policy, CreateUser DTO/service and Users creation form now accept 4–200 characters including numeric-only values. User authorizes develop merge. 50 focused API and 20 Web tests, scoped lint/format, API/Web typechecks and production builds (55 Web pages) pass. Creation service tests cover numeric credential hashing and rejection below four characters. No migration, dependency, grant or operational data change; reset/change/bootstrap policies remain strong. Scoped locks RELEASED at delivery.
+
 ## B2B-SIGNATORY-LAYOUT-1004 — PC-B — IN_PROGRESS
 
 Screenshot693: icon-only signatory edit/delete, remove internal-branch readout, right-align compact date filters into vacated branch slot. Reserve Organizations signatory presentation only plus own docs; R1/C2 persistent worker. Preserve form fields/branch permissions/filter logic/delete confirmation. User authorizes push/develop merge. No API/data/permission/schema/dependency change; usage unavailable.
 
 B2B-SIGNATORY-LAYOUT-1004 delivered: signatory icon actions preserve permission/confirmation, singlebranchreadout removed, compact RTL responsive date row. Organizations180 tests, scoped lint/format and Web typecheck pass; existing Contracts generated artifact refreshed to current source, no tracked contracts/dependency changes. Lead reviewed exact two-file UI diff; Web build/CI gate merge. Persistent worker usage unavailable; locks released at delivery.
 
-## SALES-RANGE-AIRLINE-1004 — PC-A — IN_PROGRESS
+## SALES-RANGE-AIRLINE-1004 — PC-A — READY_FOR_REVIEW
 
 Branch codex/pc-a-sales-range-airline-1004 from origin/develop@a6ff4a6f. Reserve Sales contract form, flight date range, floating flight editor and focused tests plus own docs. Move required travel date range to route/passenger step, improve contrast and use active existing airlines through public MasterData list. No producer/schema/dependency/runtime changes. User authorizes develop merge. Preserve unrelated dirty primary checkout.
 
 SALES-RANGE-AIRLINE-1004 delivered: required date range moved to route/passenger step with clear start/end prompts and stronger blue border; flight continuation and future date/inventory reset rules preserved. Both floating legs use active paginated MasterData airline references and normalized substring suggestions; existing carrier snapshot remains supported. Sales279 tests plus final eight focused tests, scoped lint/typecheck and production build gate delivery. No API/schema/migration/dependency or local runtime change. Scoped locks release with commit; user-authorized develop PR merge after CI.
+
+## B2B-SIGNATORY-FORM-COPY-1004 — PC-B — IN_PROGRESS
+
+Remove four exact requested signatory-form guidance texts only. Reserve bounded Organizations signatory component copy plus own docs. PC-B R0/C1 persistent worker; preserve field labels/validation/proof/activation/currency behavior. User authorizes push/develop merge. No API/data/permissions/schema/dependency changes; usage unavailable.
+
+B2B-SIGNATORY-FORM-COPY-1004 scope extended to Organizations-local DossierFormDialog description prop/render only: optional description and truthy conditional avoid empty margin after removing form introduction. Existing nonempty callers unchanged; lead authorized necessary bounded presentation repair, no central cross-module contract change.
+
+B2B-SIGNATORY-FORM-COPY-1004 delivered: four requested texts removed; optional conditional description avoids empty spacing, installed Dialog handles absent-description aria relation. Organizations180 tests, scoped ESLint/Prettier, Web typecheck and55-route build4191 pass. Lead accepted bounded two-file UI diff, no behavior changes. Persistent worker; usage unavailable. Locks released at delivery; CI gates merge.

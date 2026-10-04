@@ -6,7 +6,9 @@ import { CreateUserDto } from './create-user.dto';
 
 describe('CreateUserDto password length', () => {
   it.each([
-    [9, false],
+    [3, false],
+    [4, true],
+    [9, true],
     [10, true],
     [11, true],
     [12, true],
@@ -16,7 +18,7 @@ describe('CreateUserDto password length', () => {
     const dto = Object.assign(new CreateUserDto(), {
       username: 'synthetic-user',
       displayName: 'Synthetic test',
-      password: 'A'.repeat(Number(length)),
+      password: '0'.repeat(Number(length)),
       roleIds: [],
       branchIds: [],
     });

@@ -18,7 +18,7 @@ import styles from './user-management.module.css';
 import { recommendRoleAccess } from './role-access-presets';
 import { RoleAccessProposal } from './role-access-proposal';
 import { UserPasswordReset } from './user-password-reset';
-import { userPasswordError } from './user-password-policy';
+import { initialUserPasswordError } from './user-password-policy';
 interface Permission {
   id: string;
   code: string;
@@ -225,7 +225,7 @@ export function UserManagement() {
     if (saving.current || !canManage) return;
     const fields = new FormData(event.currentTarget);
     if (!selected) {
-      const passwordError = userPasswordError(
+      const passwordError = initialUserPasswordError(
         String(fields.get('password') ?? ''),
       );
       if (passwordError) {
@@ -410,14 +410,12 @@ export function UserManagement() {
                       <Input
                         name="password"
                         type="password"
-                        minLength={10}
+                        minLength={4}
                         maxLength={200}
                         required
                         autoComplete="new-password"
                       />
-                      <small>
-                        حداقل ۱۰ نویسه شامل حرف بزرگ، کوچک، رقم و علامت
-                      </small>
+                      <small>حداقل ۴ نویسه؛ رمز می‌تواند فقط عدد باشد.</small>
                     </label>
                   </div>
                 )}

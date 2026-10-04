@@ -12,7 +12,7 @@ import {
   MinLength,
 } from 'class-validator';
 
-import { PASSWORD_MIN_LENGTH } from '../password-policy';
+import { INITIAL_PASSWORD_MIN_LENGTH } from '../password-policy';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'ramtin' })
@@ -34,9 +34,9 @@ export class CreateUserDto {
   @MaxLength(160)
   displayName!: string;
 
-  @ApiProperty({ format: 'password', minLength: PASSWORD_MIN_LENGTH })
+  @ApiProperty({ format: 'password', minLength: INITIAL_PASSWORD_MIN_LENGTH })
   @IsString()
-  @MinLength(PASSWORD_MIN_LENGTH)
+  @MinLength(INITIAL_PASSWORD_MIN_LENGTH)
   @MaxLength(200)
   password!: string;
 

@@ -1,4 +1,12 @@
 export const PASSWORD_MIN_LENGTH = 10;
+export const INITIAL_PASSWORD_MIN_LENGTH = 4;
+
+export function initialPasswordPolicyErrors(password: string): string[] {
+  return password.length >= INITIAL_PASSWORD_MIN_LENGTH &&
+    password.length <= 200
+    ? []
+    : ['رمز اولیه باید ۴ تا ۲۰۰ نویسه باشد؛ استفاده از فقط عدد مجاز است.'];
+}
 
 export function passwordPolicyErrors(password: string): string[] {
   const checks: Array<[boolean, string]> = [
