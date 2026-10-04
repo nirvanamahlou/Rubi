@@ -1727,7 +1727,7 @@ model MasterOrganizationContact {
 
 model MasterInsurer {
   id                  String                @id @default(uuid()) @db.Uuid
-  organizationId      String                @unique @db.Uuid
+  organizationId      String?               @unique @db.Uuid
   countryId           String?               @db.Uuid
   code                String                @unique @db.VarChar(32)
   name                String                @db.VarChar(160)
@@ -1742,7 +1742,7 @@ model MasterInsurer {
   deactivatedAt       DateTime?             @db.Timestamptz(3)
   createdAt           DateTime              @default(now()) @db.Timestamptz(3)
   updatedAt           DateTime              @updatedAt @db.Timestamptz(3)
-  organization        MasterOrganization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization        MasterOrganization?   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   country             MasterCountry?        @relation(fields: [countryId], references: [id], onDelete: Restrict)
   plans               MasterInsurancePlan[]
 

@@ -159,6 +159,23 @@ export function masterDataRecordTitle(
   );
 }
 
+export function partnerPersistValues(
+  resource: MasterDataCatalogItem['key'],
+  mode: MasterDataFormMode,
+  record: MasterDataRecord | undefined,
+  values: Record<string, string>,
+) {
+  if (resource !== 'insurers' && resource !== 'brokers') return values;
+  const next = { ...values };
+  delete next.organizationId;
+  if (
+    resource === 'brokers' &&
+    !(mode === 'edit' && record?.attributes.organizationId)
+  )
+    delete next.primaryContactId;
+  return next;
+}
+
 export function MasterDataLiveForm(
   props: Parameters<typeof GenericMasterDataLiveForm>[0],
 ) {
@@ -232,7 +249,13 @@ function GenericMasterDataLiveForm({
   const [supplierPhoneTouched, setSupplierPhoneTouched] = useState(false);
   const readonly = mode === 'view';
   const focusRestore = useMasterDataDialogFocusRestore();
-  const fields = getMasterDataFormFields(definition, mode);
+  const fields = getMasterDataFormFields(definition, mode).filter(
+    (field) =>
+      definition.key !== 'brokers' ||
+      field.key !== 'primaryContactId' ||
+      mode === 'view' ||
+      (mode === 'edit' && Boolean(record?.attributes.organizationId)),
+  );
 
   function displayValue(field: (typeof fields)[number], value: string): string {
     const option = field.options?.find((item) => item.value === value);
@@ -277,12 +300,11 @@ function GenericMasterDataLiveForm({
     }
     setSaving(true);
     try {
-      await onPersist(
+      const persistedValues =
         definition.key === 'suppliers' && mode === 'edit'
           ? supplierEditValues(result.values, supplierPhoneTouched)
-          : result.values,
-        logoChange,
-      );
+          : partnerPersistValues(definition.key, mode, record, result.values);
+      await onPersist(persistedValues, logoChange);
     } catch (error) {
       setErrors({
         form:

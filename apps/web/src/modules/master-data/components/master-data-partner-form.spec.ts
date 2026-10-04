@@ -15,10 +15,13 @@ vi.mock('@/components/ui/overlays', () => {
   };
 });
 import { getMasterDataDefinition } from '../model/catalog';
-import { MasterDataLiveForm } from './master-data-live-form';
+import {
+  MasterDataLiveForm,
+  partnerPersistValues,
+} from './master-data-live-form';
 
 function render(
-  resource: 'suppliers' | 'brokers' | 'organizations',
+  resource: 'suppliers' | 'brokers' | 'organizations' | 'insurers',
   mode: 'create' | 'edit' | 'view' = 'create',
   lockedFields: readonly string[] = [],
 ) {
@@ -36,6 +39,7 @@ function render(
       organizationId: 'test-org',
       personType: 'LEGAL',
       serviceCodes: 'HOTEL,FLIGHT',
+      primaryContactId: 'test-contact',
     },
   };
   return renderToStaticMarkup(
@@ -52,6 +56,16 @@ function render(
 }
 
 describe('real partner form fields', () => {
+  it('removes insurer organization controls while retaining legacy profile context', () => {
+    expect(render('insurers')).not.toContain(
+      'id="live-insurers-organizationId"',
+    );
+    expect(render('insurers', 'edit')).not.toContain(
+      'id="live-insurers-organizationId"',
+    );
+    expect(render('insurers', 'view')).toContain('سازمان بیمه‌گر');
+  });
+
   it.each(['suppliers', 'brokers'] as const)(
     'renders partner identity, multi-service selection and scoped contact for %s',
     (resource) => {
@@ -79,9 +93,9 @@ describe('real partner form fields', () => {
         expect(html).not.toContain('ثبت سازمان جدید');
         expect(html).toContain('افزودن خدمت');
       } else {
-        expect(html).toContain('تماس اصلی');
-        expect(html).toContain('ابتدا سازمان را انتخاب کنید.');
-        expect(html).toContain('id="live-brokers-organizationId"');
+        expect(html).not.toContain('تماس اصلی');
+        expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
+        expect(html).not.toContain('id="live-brokers-organizationId"');
         expect(html).not.toContain('افزودن خدمت');
       }
       expect(html).toContain(`id="live-${resource}-serviceCodes"`);
@@ -112,6 +126,66 @@ describe('real partner form fields', () => {
     expect(html).toContain('نوع شخصیت');
     expect(html).toContain('id="live-organizations-personType"');
     expect(html).toContain('پاک‌کردن نوع شخصیت');
+  });
+  it('shows primary contact only for a legacy organization-linked broker edit', () => {
+    expect(render('brokers', 'edit')).toContain(
+      'id="live-brokers-primaryContactId"',
+    );
+    const independent = renderToStaticMarkup(
+      createElement(MasterDataLiveForm, {
+        definition: getMasterDataDefinition('brokers'),
+        mode: 'edit',
+        open: true,
+        record: {
+          id: 'independent',
+          resource: 'brokers',
+          code: 'BROKER_INDEPENDENT',
+          name: 'مستقل',
+          version: 1,
+          status: 'active',
+          createdAt: '2026-10-04T00:00:00Z',
+          updatedAt: '2026-10-04T00:00:00Z',
+          attributes: { primaryContactId: 'stale-contact' },
+        },
+        onOpenChange: () => undefined,
+        onPersist: async () => undefined,
+      }),
+    );
+    expect(independent).not.toContain('id="live-brokers-primaryContactId"');
+  });
+
+  it('omits hidden organization context and disallowed new contact values from mutations', () => {
+    const legacyRecord = {
+      id: 'legacy',
+      resource: 'brokers' as const,
+      code: 'BROKER_LEGACY',
+      name: 'قدیمی',
+      version: 1,
+      status: 'active' as const,
+      createdAt: '2026-10-04T00:00:00Z',
+      updatedAt: '2026-10-04T00:00:00Z',
+      attributes: { organizationId: 'legacy-org' },
+    };
+    expect(
+      partnerPersistValues('brokers', 'edit', legacyRecord, {
+        name: 'قدیمی',
+        organizationId: 'legacy-org',
+        primaryContactId: 'contact',
+      }),
+    ).toEqual({ name: 'قدیمی', primaryContactId: 'contact' });
+    expect(
+      partnerPersistValues('brokers', 'create', undefined, {
+        name: 'جدید',
+        organizationId: 'stale-org',
+        primaryContactId: 'stale-contact',
+      }),
+    ).toEqual({ name: 'جدید' });
+    expect(
+      partnerPersistValues('insurers', 'edit', legacyRecord, {
+        name: 'بیمه',
+        organizationId: 'legacy-org',
+      }),
+    ).toEqual({ name: 'بیمه' });
   });
   it.each(['suppliers', 'brokers'] as const)(
     'does not expose editor controls in read-only %s profiles',

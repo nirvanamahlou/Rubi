@@ -645,7 +645,7 @@ const requiredFields: Record<MasterDataResource, readonly string[]> = {
   banks: ['code', 'name', 'countryId'],
   'bank-branches': ['code', 'name', 'bankId', 'cityId'],
   'payment-methods': ['name', 'channel', 'direction'],
-  insurers: ['name', 'organizationId', 'countryId'],
+  insurers: ['name', 'countryId'],
   'insurance-plans': [
     'name',
     'insurerId',

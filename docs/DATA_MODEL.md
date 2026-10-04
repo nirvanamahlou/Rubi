@@ -1,3 +1,13 @@
+## INSURER-BROKER-HIDE-ORGANIZATIONS-1004 — بیمه‌گر مستقل
+
+`MasterInsurer.organizationId` اختیاری است تا بیمه‌گر مستقل بدون ساختن یا
+انتخاب Organization ثبت شود. لینک‌های تاریخی دست‌نخورده می‌مانند و همان FK
+محدودکننده و یکتایی برای مقدارهای non-null برقرار است. حذف فیلد از PATCH رابطهٔ
+تاریخی را حفظ می‌کند و کلاینت‌های v1 همچنان می‌توانند `organizationId` معتبر با
+نقش بیمه‌گر بفرستند. استقرار به‌ترتیب migration، API و سپس Web انجام می‌شود.
+بازگشت مستقیم ستون به NOT NULL فقط وقتی مجاز است که هیچ بیمه‌گر مستقل وجود
+نداشته باشد؛ rollback نباید ردیف مستقل را حذف یا برای آن سازمان ساختگی بسازد.
+
 ## SALES-CONTRACT-COLUMNS-NUMBERING-1003 (2026-10-03)
 
 Sales owns `sales_contract_public_number_seq`, an independent non-cycling INTEGER sequence starting at 120123 with maximum 999999. New contract numbers are six-digit decimal strings; existing numbers remain immutable and the contract-number unique constraint remains authoritative. Initialization skips above any existing six-digit imported number. Numbers are global, do not reset annually, and may have normal sequence gaps after transaction rollback. Deployment must apply the additive migration before the new API; exhaustion fails safely without wraparound. Route/contact list fields are optional public projections, not new stored columns; registration date is the existing UTC `createdAt`.
