@@ -5,6 +5,7 @@ import { documentsApi } from '@/modules/documents/api/client';
 import {
   ConfidentialAccessCodeInput,
   issueUploadedConfidentialGrant,
+  publishUploadedDocumentAfterGrant,
 } from './inline-document-upload';
 
 describe('inline confidential document code', () => {
@@ -31,6 +32,70 @@ describe('inline confidential document code', () => {
     });
     create.mockRestore();
   });
+
+  it('publishes a confidential upload after grant issuance even though selecting it changes the target ID', async () => {
+    let resolveGrant!: (token: string) => void;
+    const grant = new Promise<string>(
+      (resolve) => (resolveGrant = resolve),
+    );
+    let selectedDocumentId = 'previous-document';
+    const slotContext = 'actor|organization|branch|editor|contract-slot';
+    const currentContext = slotContext;
+    const publish = vi.fn((documentId: string, token?: string) => {
+      selectedDocumentId = documentId;
+      // A rerender after selecting the new ID must retain this slot's
+      // authority; the operation is not bound to the mutable selected ID.
+      expect(currentContext).toBe(slotContext);
+      expect(token).toBe('fresh-token');
+    });
+    const completion = publishUploadedDocumentAfterGrant(
+      {
+        isCurrent: () => currentContext === slotContext,
+        publish,
+      },
+      'uploaded-document',
+      () => grant,
+    );
+
+    expect(selectedDocumentId).toBe('previous-document');
+    resolveGrant('fresh-token');
+    await expect(completion).resolves.toEqual({
+      current: true,
+      grantError: undefined,
+    });
+    expect(selectedDocumentId).toBe('uploaded-document');
+    expect(publish).toHaveBeenCalledExactlyOnceWith(
+      'uploaded-document',
+      'fresh-token',
+    );
+  });
+
+  it('does not publish a delayed grant after the upload context changes', async () => {
+    let resolveGrant!: (token: string) => void;
+    const grant = new Promise<string>(
+      (resolve) => (resolveGrant = resolve),
+    );
+    let currentContext = 'actor|organization|branch|editor|contract-slot';
+    const originalContext = currentContext;
+    const publish = vi.fn();
+    const completion = publishUploadedDocumentAfterGrant(
+      {
+        isCurrent: () => currentContext === originalContext,
+        publish,
+      },
+      'uploaded-document',
+      () => grant,
+    );
+
+    currentContext = 'different-actor|organization|branch|editor|contract-slot';
+    resolveGrant('fresh-token');
+    await expect(completion).resolves.toEqual({
+      current: false,
+      grantError: undefined,
+    });
+    expect(publish).not.toHaveBeenCalled();
+  });
+
   it('validates only when Upload is requested and does not block the parent signatory form', () => {
     const markup = renderToStaticMarkup(
       <form>

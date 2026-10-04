@@ -4651,3 +4651,5 @@ Ticket seat/unit/invoice/currency entry moved into the existing Finance ticket p
 Finance request page also has a top document-delivery jump button targeting the existing lower panel, with header scroll offset and keyboard focus target. No permission/data change.
 
 Validation: all Finance Web40 tests pass, including retained accepted-cost revision/retry, paid-cost lock and failure handling. Scoped lint/typecheck/production build and final CI gate develop merge; no live financial commands or local deployment. PR648.
+
+B2B-AGREEMENT-UPLOAD-1004 AU-R3-01 repair: deferred confidential-grant publication prevents upload self-invalidation; stale context publication remains blocked. Organizations200 tests and scoped Web static checks pass. Refreshed independent review and final build/CI required; not released yet.

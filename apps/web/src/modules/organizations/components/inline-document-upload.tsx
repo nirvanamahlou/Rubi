@@ -30,6 +30,27 @@ export async function issueUploadedConfidentialGrant(
   return response.data.token;
 }
 
+/** Publish the selected ID only after its one-time attachment grant is ready. */
+export async function publishUploadedDocumentAfterGrant(
+  request: {
+    isCurrent: () => boolean;
+    publish: (documentId: string, token?: string) => void;
+  },
+  documentId: string,
+  getGrant: () => Promise<string | undefined>,
+) {
+  let token: string | undefined;
+  let grantError: unknown;
+  try {
+    token = await getGrant();
+  } catch (error) {
+    grantError = error;
+  }
+  if (!request.isCurrent()) return { current: false, grantError };
+  request.publish(documentId, token);
+  return { current: true, grantError };
+}
+
 /** Upload through the Documents owner; only its saved ID is attached to the form. */
 export function InlineDocumentUpload({
   organizationId,
@@ -168,29 +189,32 @@ export function InlineDocumentUpload({
     try {
       const result = await documentsApi.upload(form);
       if (!request.isCurrent()) return;
-      request.uploaded(result.data.id);
-      setFile(undefined);
+      let grantError: unknown;
       if (type?.defaultConfidentiality === 'CONFIDENTIAL') {
-        try {
-          const token = await issueUploadedConfidentialGrant(
+        const completion = await publishUploadedDocumentAfterGrant(
+          request,
+          result.data.id,
+          () =>
+            issueUploadedConfidentialGrant(
             result.data.id,
             confidentialAccessCode,
             Boolean(onConfidentialGrant),
-          );
-          if (!request.isCurrent()) return;
-          if (token) {
-            request.confidentialGrant(result.data.id, token);
-            setConfidentialAccessCode('');
-          }
-        } catch (caught) {
-          if (!request.isCurrent()) return;
+            ),
+        );
+        if (!completion.current) return;
+        grantError = completion.grantError;
+        if (!grantError && onConfidentialGrant) setConfidentialAccessCode('');
+      } else {
+        request.publish(result.data.id);
+      }
+      setFile(undefined);
+      if (grantError !== undefined) {
           setError(
-            (caught instanceof Error
-              ? caught.message
+            (grantError instanceof Error
+              ? grantError.message
               : 'دریافت مجوز موقت سند ناموفق بود.') +
               ' فایل بارگذاری شده است؛ کد را برای ذخیره قرارداد دوباره وارد کنید.',
           );
-        }
       }
       setNotice(
         uploadedNotice ??
@@ -212,10 +236,8 @@ export function InlineDocumentUpload({
       );
     } finally {
       pending.current = false;
-      if (request.isCurrent()) {
-        setBusy(false);
-        request.busy(false);
-      }
+      setBusy(false);
+      request.releaseBusy();
     }
   }
   const Container = expanded ? 'div' : 'details';
