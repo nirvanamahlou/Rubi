@@ -49,6 +49,35 @@ function record(
 }
 
 describe('insurance workspace', () => {
+  it('keeps the insurer name as View trigger and centers plan expansion with Operations', () => {
+    const actions = source.slice(
+      source.indexOf('const actions ='),
+      source.indexOf('const table ='),
+    );
+    const insurerNameCell = source.slice(
+      source.indexOf('<MasterDataLogoCell record={record} />'),
+      source.indexOf('<td className="p-4" dir="ltr">'),
+    );
+
+    expect(actions).toContain(
+      'className="flex flex-wrap justify-center gap-2"',
+    );
+    expect(actions).toContain("resource === 'insurers'");
+    expect(actions).toContain('<Button');
+    expect(actions).toContain('type="button"');
+    expect(actions).toContain('aria-controls={`insurer-plans-${record.id}`}');
+    expect(actions).toContain(
+      'aria-expanded={expandedInsurerId === record.id}',
+    );
+    expect(actions).toContain('current === record.id ? null : record.id');
+    expect(actions).toContain("? 'بستن' : 'نمایش'");
+    expect(actions).toContain('<ChevronDown');
+    expect(insurerNameCell).toContain('onClick={() => openProfile(record)}');
+    expect(insurerNameCell).not.toContain('<ChevronDown');
+    expect(insurerNameCell).not.toContain('setExpandedInsurerId');
+    expect(source.match(/aria-controls=\{`insurer-plans-/g)).toHaveLength(1);
+  });
+
   it('nests plans under insurers and binds every write to the expanded parent', () => {
     const tabs = source.slice(
       source.indexOf('const tabs'),

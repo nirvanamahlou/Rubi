@@ -961,6 +961,26 @@ export function MasterDataInsuranceWorkspace() {
 
   const actions = (record: MasterDataRecord) => (
     <div className="flex flex-wrap justify-center gap-2">
+      {resource === 'insurers' ? (
+        <Button
+          aria-controls={`insurer-plans-${record.id}`}
+          aria-expanded={expandedInsurerId === record.id}
+          aria-label={`${expandedInsurerId === record.id ? 'بستن' : 'نمایش'} طرح‌های ${record.name}`}
+          onClick={() =>
+            setExpandedInsurerId((current) =>
+              current === record.id ? null : record.id,
+            )
+          }
+          size="icon"
+          title={`${expandedInsurerId === record.id ? 'بستن' : 'نمایش'} طرح‌های ${record.name}`}
+          type="button"
+          variant="outline"
+        >
+          <ChevronDown
+            className={`size-4 transition-transform ${expandedInsurerId === record.id ? 'rotate-180' : ''}`}
+          />
+        </Button>
+      ) : null}
       <Button
         aria-label={`مشاهده ${record.name}`}
         onClick={() => openProfile(record)}
@@ -1084,30 +1104,13 @@ export function MasterDataInsuranceWorkspace() {
                     </td>
                     <MasterDataLogoCell record={record} />
                     <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          aria-expanded={expandedInsurerId === record.id}
-                          aria-label={`${expandedInsurerId === record.id ? 'بستن' : 'نمایش'} طرح‌های ${record.name}`}
-                          className="grid size-8 place-items-center rounded-lg border border-border"
-                          onClick={() =>
-                            setExpandedInsurerId((current) =>
-                              current === record.id ? null : record.id,
-                            )
-                          }
-                          type="button"
-                        >
-                          <ChevronDown
-                            className={`size-4 transition-transform ${expandedInsurerId === record.id ? 'rotate-180' : ''}`}
-                          />
-                        </button>
-                        <button
-                          className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          onClick={() => openProfile(record)}
-                          type="button"
-                        >
-                          {record.name}
-                        </button>
-                      </div>
+                      <button
+                        className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => openProfile(record)}
+                        type="button"
+                      >
+                        {record.name}
+                      </button>
                     </td>
                     <td className="p-4" dir="ltr">
                       {attribute(record, 'englishName')}
@@ -1130,7 +1133,6 @@ export function MasterDataInsuranceWorkspace() {
                     <MasterDataLogoCell record={record} />
                     <td className="p-4">
                       <button
-                        aria-controls={`insurer-plans-${record.id}`}
                         className="font-bold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         onClick={() => openProfile(record)}
                         type="button"
