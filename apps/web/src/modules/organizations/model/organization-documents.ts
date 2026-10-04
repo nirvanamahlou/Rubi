@@ -117,6 +117,7 @@ export interface OrganizationDocumentInput {
   branchId: string;
   validUntil: string;
   requiresStepUpVerification: boolean;
+  confidentialAccessCode?: string;
 }
 
 export interface StagedOrganizationDocument {
@@ -164,6 +165,11 @@ export function validateOrganizationDocumentInput(
     throw new Error('نوع فایل برای این سند مجاز نیست.');
   if (type.requiresExpiry && !input.validUntil)
     throw new Error('تاریخ انقضای این نوع سند الزامی است.');
+  if (
+    type.defaultConfidentiality === 'CONFIDENTIAL' &&
+    !/^\d{6}$/u.test(input.confidentialAccessCode ?? '')
+  )
+    throw new Error('برای سند محرمانه، کد شش‌رقمی تعیین کنید.');
   if (input.validUntil) {
     const parsed = new Date(`${input.validUntil}T00:00:00.000Z`);
     if (
@@ -200,6 +206,8 @@ export function organizationDocumentForm(
   form.set('branchId', input.branchId);
   form.set('ownerUserId', options.currentUserId);
   form.set('confidentiality', type.defaultConfidentiality);
+  if (type.defaultConfidentiality === 'CONFIDENTIAL')
+    form.set('confidentialAccessCode', input.confidentialAccessCode!);
   form.set('sourceModule', 'master-data');
   form.set('sourceEntityType', 'organizations');
   form.set('sourceEntityId', organization.id);
@@ -211,4 +219,113 @@ export function organizationDocumentForm(
   if (input.validUntil)
     form.set('validUntil', dossierDateBoundary(input.validUntil, true));
   return form;
+}
+
+export const ORGANIZATION_SIGNATORY_PROOF_POLL_DELAYS = [
+  2_000, 4_000, 8_000, 15_000, 15_000,
+] as const;
+
+export type OrganizationSignatoryProofPollResult =
+  | {
+      state: 'ready';
+      documentId: string;
+      documentVersionId: string;
+    }
+  | { state: 'pending' }
+  | { state: 'rejected'; message: string }
+  | { state: 'denied' }
+  | { state: 'aborted' };
+
+export function mergeOrganizationSignatoryProof<T extends object>(
+  current: T,
+  proof: { documentId: string; documentVersionId: string },
+) {
+  return { ...current, ...proof };
+}
+
+function waitForProofPoll(delay: number, signal: AbortSignal) {
+  return new Promise<boolean>((resolve) => {
+    if (signal.aborted) {
+      resolve(false);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      signal.removeEventListener('abort', abort);
+      resolve(true);
+    }, delay);
+    const abort = () => {
+      window.clearTimeout(timer);
+      resolve(false);
+    };
+    signal.addEventListener('abort', abort, { once: true });
+  });
+}
+
+/** Polls only the existing exact-source list and never weakens proof eligibility. */
+export async function awaitOrganizationSignatoryProof(
+  organizationId: string,
+  branchId: string,
+  documentId: string,
+  permissions: readonly IamPermissionCode[],
+  list: (query: DocumentListQueryV1) => Promise<DocumentListResponseV1>,
+  signal: AbortSignal,
+  delays: readonly number[] = ORGANIZATION_SIGNATORY_PROOF_POLL_DELAYS,
+  wait: (
+    delay: number,
+    signal: AbortSignal,
+  ) => Promise<boolean> = waitForProofPoll,
+): Promise<OrganizationSignatoryProofPollResult> {
+  if (!canAttachOrganizationDocument(permissions)) return { state: 'denied' };
+  for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+    if (signal.aborted) return { state: 'aborted' };
+    let page = 1;
+    let totalPages = 1;
+    let document: DocumentListItemV1 | undefined;
+    do {
+      const response = await list({
+        ...organizationDocumentQuery(organizationId, branchId, page),
+        pageSize: 100,
+      });
+      if (signal.aborted) return { state: 'aborted' };
+      document = response.data.find((item) => item.id === documentId);
+      totalPages = Math.min(response.meta.totalPages, 10);
+      page += 1;
+    } while (!document && page <= totalPages);
+    if (document) {
+      if (
+        document.branchId !== branchId ||
+        document.type.domain !== 'ORGANIZATION' ||
+        document.archiveStatus !== 'ACTIVE'
+      )
+        return {
+          state: 'rejected',
+          message: 'مدرک بارگذاری‌شده با پرونده و شعبه جاری هم‌خوان نیست.',
+        };
+      if (document.currentVersion.scanStatus === 'CLEAN') {
+        if (!isEligibleOrganizationSignatoryProof(document, Date.now()))
+          return {
+            state: 'rejected',
+            message:
+              'مدرک بارگذاری‌شده کامل یا دارای اعتبار قابل استفاده نیست.',
+          };
+        return {
+          state: 'ready',
+          documentId: document.id,
+          documentVersionId: document.currentVersion.id,
+        };
+      }
+      if (
+        ['INFECTED', 'QUARANTINED', 'SCAN_FAILED'].includes(
+          document.currentVersion.scanStatus,
+        )
+      )
+        return {
+          state: 'rejected',
+          message: 'بررسی امنیتی مدرک بارگذاری‌شده موفق نبود.',
+        };
+    }
+    if (attempt === delays.length) return { state: 'pending' };
+    if (!(await wait(delays[attempt]!, signal))) return { state: 'aborted' };
+  }
+  return { state: 'pending' };
 }
