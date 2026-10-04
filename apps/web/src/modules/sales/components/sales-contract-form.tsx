@@ -1,4 +1,5 @@
 'use client';
+import { agreedSalePricing } from '../model/agreed-sale-pricing';
 import {
   salesFlightRangeReady,
   salesFlightToday,
@@ -153,10 +154,26 @@ export function SalesContractForm() {
   const [preparedTickets, setPreparedTickets] =
     useState<PreparedTicketSearch>();
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
-  const [state, setState] = useState<SalesFormState>({
+  const [draftState, setState] = useState<SalesFormState>({
     ...emptySalesForm,
     servicePricing: {},
   });
+  const state = useMemo<SalesFormState>(
+    () => ({
+      ...draftState,
+      servicePricing: agreedSalePricing(draftState.servicePricing ?? {}),
+      catalogSalePricing:
+        !draftState.tour &&
+        !draftState.serviceKinds.includes('HOTEL') &&
+        !draftState.serviceKinds.includes('TOUR')
+          ? repriceStandaloneTicketSelections(
+              { ...draftState, servicePricing: {} },
+              salesPassengerCounts(draftState).seated,
+            )
+          : {},
+    }),
+    [draftState],
+  );
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
   const [insuranceReady, setInsuranceReady] = useState(false);
@@ -1756,6 +1773,7 @@ export function SalesContractForm() {
               </p>
             ) : null}
             <SalesPricingPanel
+              salePriceFromAgreed
               currencies={references.currencies}
               services={pricingServices}
               nights={pricingNights}

@@ -92,6 +92,7 @@ export interface SalesFormState {
   insurancePlan?: SalesInsuranceSelection | undefined;
   contractFlights?: Partial<Record<SalesTicketDirection, ContractFlightDraft>>;
   servicePricing?: Record<string, SalesServicePricingV1[]>;
+  catalogSalePricing?: Record<string, SalesServicePricingV1[]>;
   customerKind?: 'person' | 'organization';
   customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
@@ -847,6 +848,16 @@ export function salesPayload(
         service.pricing = [];
       } else {
         service.pricing = state.servicePricing[service.clientKey] ?? [];
+        const catalog = state.catalogSalePricing?.[service.clientKey]?.[0];
+        if (service.kind === 'FLIGHT' && catalog)
+          service.metadata = {
+            ...service.metadata,
+            catalogSaleQuote: {
+              version: 1,
+              currencyCode: catalog.currencyCode,
+              amount: catalog.daySale.amount,
+            },
+          };
       }
     }
   const extras = state.serviceKinds.includes('INSURANCE')
