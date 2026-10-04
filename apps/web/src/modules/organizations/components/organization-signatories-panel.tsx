@@ -414,10 +414,6 @@ export function OrganizationSignatoriesPanel({
             <FileSignature size={20} />
             امضاداران
           </h2>
-          <p className="panel-note">
-            ثبت شخص، حدود اختیار و مدرک امضا؛ دسترسی ورود و تأیید قرارداد
-            جداگانه مدیریت می‌شوند.
-          </p>
         </div>
         <Button
           disabled={!canManage || !branchId || loading}

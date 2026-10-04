@@ -5376,3 +5376,9 @@ B2B-DOSSIER-CLEANUP-1004 delivered: six Organizations consumer/test files; heade
 Remove only Screenshot691 marked descriptions beneath Finance, Commercial and Activity hub cards. Reserve Organizations corporate-profile hub copy and own docs on codex/pc-b-b2b-hub-copy-1004. R0/C1 mechanical UI copy, persistent native worker; user authorizes push and develop merge. No behavior/API/data/dependency/migration changes; usage unavailable.
 
 B2B-HUB-COPY-1004 delivered: one component removes three marked descriptions and unused description rendering. Titles/chips/navigation preserved. Organizations171 tests, scoped ESLint/Prettier and Web typecheck passed; final Web build and CI gate push/merge. Lead reviewed exact copy-only diff; native worker difficulty pending, telemetry unavailable. Locks released at delivery.
+
+## B2B-PROFILE-COPY-1004 — PC-B — IN_PROGRESS
+
+Remove user-specified branch/account-manager/address/signatory explanatory text and display-order readout from360 dossier. Reserve bounded Organizations profile component copy plus own docs on codex/pc-b-b2b-profile-copy-1004. R0/C1 presentational only, persistent worker; no form fields/backend/data/permission changes. User authorizes push/develop merge. Telemetry unavailable.
+
+B2B-PROFILE-COPY-1004 delivered: three Organizations components remove only requested explanatory copy and display-order summary row; edit field/data remain. Organizations171 tests, scoped lint/format and Web typecheck passed. Lead accepted exact presentational diff; build/CI gate merge. Persistent worker, telemetry unavailable. Locks released at delivery.
