@@ -37,6 +37,7 @@ describe('ticket price workspace', () => {
     const html = renderToStaticMarkup(createElement(TicketPricesWorkspace));
     for (const text of [
       'قیمت بلیط',
+      'کمیسیون ۱۰۰٪ به معنی عدم نمایش است',
       'مبدأ',
       'مقصد سفر',
       'نوع بلیت',
@@ -247,6 +248,18 @@ describe('ticket price workspace', () => {
     ).toBe(15);
     if (process.env.TICKET_PRICE_VISUAL_QA_PATH)
       writeFileSync(process.env.TICKET_PRICE_VISUAL_QA_PATH, html);
+    const firstOffer = offers[0];
+    if (firstOffer && 'saleCommissions' in firstOffer)
+      firstOffer.saleCommissions.forEach((rule) => {
+        rule.percent = '100';
+        rule.amount = '0';
+      });
+    state.index = 0;
+    const hiddenHtml = renderToStaticMarkup(
+      createElement(TicketPricesWorkspace),
+    );
+    expect(hiddenHtml.match(/>عدم نمایش</g)).toHaveLength(2);
+    expect(hiddenHtml).not.toContain('>0 IRR<');
     state.values = null;
   });
 });

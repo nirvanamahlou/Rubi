@@ -5,7 +5,7 @@ import {
   selectFlightRange,
   flightCalendarPlacement,
 } from './flight-date-range';
-describe('optional flight range', () => {
+describe('required flight range', () => {
   it('opens above low controls and bounds panel height to visible space', () => {
     expect(flightCalendarPlacement(750, 794, 900)).toEqual({
       above: true,
@@ -35,7 +35,7 @@ describe('optional flight range', () => {
       selectFlightRange({ from: '2026-10-01', to: '2026-10-10' }, '2026-11-01'),
     ).toEqual({ from: '2026-11-01', to: '' });
   });
-  it('starts without a required date and offers clearing an applied filter', () => {
+  it('requires choosing dates before showing inventory and permits changing the range', () => {
     expect(
       renderToStaticMarkup(
         <FlightDateRangeFilter
@@ -43,7 +43,7 @@ describe('optional flight range', () => {
           onChange={() => undefined}
         />,
       ),
-    ).toContain('همه بلیط‌های آینده');
+    ).toContain('بازه تاریخ پرواز (الزامی)');
     expect(
       renderToStaticMarkup(
         <FlightDateRangeFilter

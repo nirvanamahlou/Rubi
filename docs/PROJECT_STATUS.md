@@ -2,6 +2,11 @@
 
 Master Data Excel downloads now reject empty, wrong-MIME and non-ZIP HTTP 200 responses instead of saving them with an `.xlsx` extension. All nine list workspaces use one safe browser-download helper that keeps the Blob URL alive for a bounded 60 seconds and always removes its temporary anchor. Independent openpyxl validation opened populated and header-only generated workbooks with exact Persian headers and values. Focused Web 28, focused API 38 and all 596 Master Data Web tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. The former immediate URL revocation is a verified weakness, but no user-provided corrupt file was available to claim an exact reproduction. No authenticated browser/runtime, real-data, API/schema/contract/dependency or database change; bounded locks release with commit.
 
+## 2026-10-04 — SALES-RANGE-FLOATING-1004 — PC-A — READY_FOR_REVIEW
+
+New contract flight details require confirming both future range endpoints after passenger counts; company ticket searches and continuing the flight step are gated accordingly. Past days are white and disabled in both calendars using Tehran midnight, and apply rejects a past start even when its end is future. Floating flight cancellation uses current state, removes only the selected leg and its stale fare, and exposes a clear company-inventory action; editing an existing manual flight preserves its fare. Web production build (55 routes), typecheck and 277 Sales tests (one pre-existing skip) and scoped lint pass. No API/schema/dependency/database/runtime change or authenticated browser QA. User authorizes develop merge after checks; scoped locks release with delivery.
+
+
 ## 2026-10-04 — CABIN-KPI-PERSIAN-1004 — PC-B — READY_FOR_REVIEW
 
 Only the Cabin Classes KPI label changed from `Cabinها` to `انواع کابین`. Metric computation and canonical English cabin types remain unchanged across the form, dropdown, table, View, API and stored values. Focused 23 and all 583 Master Data tests, scoped ESLint/Prettier, Web typecheck and the production Web build pass. No authenticated browser/runtime QA; bounded locks release with commit.
@@ -4527,6 +4532,10 @@ Final validation: scoped ESLint, formatting and Web typecheck pass; production w
 ## 2026-10-04 — B2B-DOSSIER-CLEANUP-1004 — PC-B
 
 Removed dossier banner organization code, Change Agency and marked Sales relation/document panels; edit/delete actions now accessible icon buttons with existing permissions and variants. Shared authorized branch context drives summary and Sales KPIs. Only assigned session branches appear; user declined expanded memberships and current live actor has HQ only. Backend integrations and document gates remain intact. Organizations171 tests, focused14, scoped lint/format, Web typecheck, API build and55-route Web build pass. User-authorized develop PR/CI and local3100 rollout follow. No migration, dependency or data mutation. Native persistent worker outcome accepted; usage unavailable.
+
+## 2026-10-04 — TICKET-COMMISSION-HIDE-1004 — PC-A
+
+A stored commission of exactly 100 percent means hidden for that sale destination, not a free ticket. Ticket Catalog retains administrative base fares and versioned commissions, marks hidden rules and removes hidden destination/direct fares from active price projections. Sales price management can still edit the original single/pair base; its destination preview and filtered Excel show عدم نمایش instead of a zero fare. Lowering the latest percentage restores that destination without modifying another destination. Existing outbound provider delivery is not initiated by this change. Additive optional Travel projection fields are coordinated with Sales consumers; no schema/migration/dependency/runtime/data change.
 
 ## 2026-10-04 — B2B-HUB-COPY-1004 — PC-B
 

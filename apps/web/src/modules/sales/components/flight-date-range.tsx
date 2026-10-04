@@ -1,6 +1,10 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  salesFlightRangeReady,
+  salesFlightToday,
+} from '../model/sales-flight-range';
 import { Button } from '@/components/ui/button';
 import {
   calendarMonthDays,
@@ -74,7 +78,7 @@ export function FlightDateRangeFilter({
     else setAnchor(moveCalendarMonth(anchor, offset, system));
   };
   const root = useRef<HTMLDivElement>(null);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = salesFlightToday();
   useEffect(() => {
     if (!open) return;
     const reposition = () => {
@@ -133,7 +137,7 @@ export function FlightDateRangeFilter({
         }}
       >
         <span>
-          {t('بازه تاریخ اختیاری', 'Optional date range')}
+          {t('بازه تاریخ پرواز (الزامی)', 'Flight date range (required)')}
           {value.from
             ? ': ' + format(value.from) + t(' تا ', ' to ') + format(value.to)
             : ''}
@@ -157,8 +161,8 @@ export function FlightDateRangeFilter({
       ) : (
         <span className="text-xs text-muted-foreground">
           {t(
-            'همه بلیط‌های آینده، از نزدیک‌ترین تاریخ',
-            'All upcoming flights, earliest first',
+            'برای نمایش بلیط‌ها، ابتدا روز شروع و پایان بازه را انتخاب و تأیید کنید.',
+            'Select and confirm both dates to display flights.',
           )}
         </span>
       )}
@@ -327,7 +331,9 @@ export function FlightDateRangeFilter({
                 </span>
               ))}
               {calendarMonthDays(anchor, system).map((day) => {
+                const past = day.isoDate < today;
                 const selected = Boolean(
+                  !past &&
                   draft.from &&
                   day.isoDate >= draft.from &&
                   day.isoDate <= (draft.to || draft.from),
@@ -338,20 +344,24 @@ export function FlightDateRangeFilter({
                     type="button"
                     aria-label={format(day.isoDate)}
                     aria-pressed={selected}
-                    disabled={day.isoDate < today}
+                    disabled={past}
                     className={
                       'h-9 rounded-lg text-sm focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-30 disabled:cursor-not-allowed ' +
-                      (day.isoDate === draft.from || day.isoDate === draft.to
-                        ? 'bg-primary font-bold text-primary-foreground shadow-sm'
-                        : selected
-                          ? 'bg-primary/15 text-primary'
-                          : 'hover:bg-primary/10') +
+                      (past
+                        ? 'bg-white text-slate-300'
+                        : day.isoDate === draft.from || day.isoDate === draft.to
+                          ? 'bg-primary font-bold text-primary-foreground shadow-sm'
+                          : selected
+                            ? 'bg-primary/15 text-primary'
+                            : 'hover:bg-primary/10') +
                       ' ' +
                       (day.isCurrentMonth ? '' : 'opacity-40')
                     }
                     onClick={() =>
                       setDraft((current) =>
-                        selectFlightRange(current, day.isoDate),
+                        past
+                          ? current
+                          : selectFlightRange(current, day.isoDate),
                       )
                     }
                   >
@@ -369,13 +379,14 @@ export function FlightDateRangeFilter({
           <Button
             type="button"
             className="w-full"
-            disabled={!draft.from || !draft.to || draft.to < today}
+            disabled={!salesFlightRangeReady(draft, today)}
             onClick={() => {
+              if (!salesFlightRangeReady(draft, today)) return;
               onChange(draft);
               setOpen(false);
             }}
           >
-            {t('اعمال فیلتر', 'Apply filter')}
+            {t('تأیید بازه و نمایش بلیط‌ها', 'Confirm dates and show flights')}
           </Button>
         </div>
       ) : null}

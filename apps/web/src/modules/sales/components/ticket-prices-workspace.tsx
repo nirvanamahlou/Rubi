@@ -385,9 +385,9 @@ export function TicketPricesWorkspace() {
           o.branchId === outbound.branchId && eligibleTicketReturn(outbound, o),
       )
     : [];
-  const currentPair = outbound?.roundTripSalePrices?.find(
-    (p) => p.returnOfferId === returnId,
-  );
+  const currentPair = (
+    outbound?.baseRoundTripSalePrices ?? outbound?.roundTripSalePrices
+  )?.find((p) => p.returnOfferId === returnId);
   function updateDraft(row: TicketPriceRow, patch: Partial<Draft>) {
     setDrafts((current) => ({
       ...current,
@@ -649,6 +649,10 @@ export function TicketPricesWorkspace() {
           </div>
         }
       />
+      <p className="text-sm text-muted-foreground">
+        کمیسیون ۱۰۰٪ به معنی عدم نمایش است؛ بلیت و قیمت آن برای آن مقصد فروش
+        ارسال نمی‌شود.
+      </p>
       {error ? <Alert tone="error" title={error} /> : null}
       {notice ? <Alert title={notice} /> : null}
 
@@ -801,9 +805,10 @@ export function TicketPricesWorkspace() {
               value={returnId}
               onValueChange={(id) => {
                 setReturnId(id);
-                const p = outbound?.roundTripSalePrices?.find(
-                  (p) => p.returnOfferId === id,
-                );
+                const p = (
+                  outbound?.baseRoundTripSalePrices ??
+                  outbound?.roundTripSalePrices
+                )?.find((p) => p.returnOfferId === id);
                 setPairDraft({
                   amount: p?.baseAmount ?? p?.amount ?? '',
                   tiers: (p?.baseTiers ?? p?.tiers)?.map((tier) => ({
@@ -1154,15 +1159,18 @@ export function TicketPricesWorkspace() {
                                     dir="ltr"
                                     className={targetStyles.price}
                                   >
-                                    {net
-                                      ? formatAmount(net) +
-                                        ' ' +
-                                        (legacy &&
-                                        !current &&
-                                        percentDrafts[fieldKey] === undefined
-                                          ? legacy.currencyCode
-                                          : row.base!.currencyCode)
-                                      : 'درصد نامعتبر'}
+                                    {validPercent(percent) &&
+                                    Number(percent) === 100
+                                      ? 'عدم نمایش'
+                                      : net
+                                        ? formatAmount(net) +
+                                          ' ' +
+                                          (legacy &&
+                                          !current &&
+                                          percentDrafts[fieldKey] === undefined
+                                            ? legacy.currencyCode
+                                            : row.base!.currencyCode)
+                                        : 'درصد نامعتبر'}
                                   </strong>
                                   <div className={targetStyles.actions}>
                                     <Button

@@ -166,3 +166,44 @@ describe('Contract-only flight form and consumers', () => {
     });
   });
 });
+
+it('cancels a floating outbound without losing the other direction or leaving its price', () => {
+  const current = {
+    ...state,
+    contractFlights: { OUTBOUND: draft, RETURN: draft },
+    servicePricing: {
+      'flight-outbound': {} as never,
+      'flight-return': {} as never,
+    },
+  };
+  let next: SalesFormState = current;
+  const editor = ContractFlightEditor({
+    value: draft,
+    onChange: (flight) => {
+      next = { ...next, ...patchContractFlight(next, 'OUTBOUND', flight) };
+    },
+  });
+  editor.props.children[0].props.children[1].props.onClick();
+  expect(next.contractFlights?.OUTBOUND).toBeUndefined();
+  expect(next.contractFlights?.RETURN).toEqual(draft);
+  expect(next.servicePricing).toEqual({ 'flight-return': {} });
+  expect(
+    renderToStaticMarkup(
+      createElement(ContractFlightEditor, {
+        value: next.contractFlights?.OUTBOUND,
+        onChange: () => undefined,
+      }),
+    ),
+  ).toContain('افزودن بلیط شناور');
+  expect(salesFlightSelection(next, 'OUTBOUND')).toBeUndefined();
+});
+
+it('keeps an entered manual fare while editing its flight details', () => {
+  const pricing = { 'flight-outbound': {} as never };
+  expect(
+    patchContractFlight({ ...state, servicePricing: pricing }, 'OUTBOUND', {
+      ...draft,
+      serviceNumber: 'EDITED',
+    }).servicePricing,
+  ).toBe(pricing);
+});
