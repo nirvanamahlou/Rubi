@@ -45,7 +45,7 @@ export function ContractFlightEditor({
           variant="outline"
           onClick={() => onChange(undefined)}
         >
-          انتخاب از موجودی شرکت
+          لغو بلیط شناور و انتخاب از موجودی شرکت
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">

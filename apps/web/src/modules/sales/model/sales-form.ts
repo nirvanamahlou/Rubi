@@ -261,6 +261,18 @@ export function patchContractFlight(
   else delete contractFlights[direction];
   return {
     contractFlights,
+    servicePricing:
+      Boolean(state.contractFlights?.[direction]) === Boolean(flight)
+        ? (state.servicePricing ?? {})
+        : Object.fromEntries(
+            Object.entries(state.servicePricing ?? {}).filter(
+              ([key]) =>
+                key !==
+                (direction === 'OUTBOUND'
+                  ? 'flight-outbound'
+                  : 'flight-return'),
+            ),
+          ),
     ...(direction === 'OUTBOUND'
       ? { outboundOffer: undefined }
       : { returnOffer: undefined }),

@@ -53,3 +53,20 @@ describe('ticket search date gate', () => {
     expect(state.ticket.outboundOfferId).toBe('old-out');
   });
 });
+
+import { salesFlightToday } from './sales-flight-range';
+it('uses Tehran midnight and rejects a past start, even with a future end', () => {
+  expect(salesFlightToday(new Date('2026-10-03T21:00:00Z'))).toBe('2026-10-04');
+  expect(
+    salesFlightRangeReady(
+      { from: '2026-10-03', to: '2026-10-08' },
+      '2026-10-04',
+    ),
+  ).toBe(false);
+  expect(
+    salesFlightRangeReady(
+      { from: '2026-10-04', to: '2026-10-04' },
+      '2026-10-04',
+    ),
+  ).toBe(true);
+});

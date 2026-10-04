@@ -1,3 +1,8 @@
+## 2026-10-04 — SALES-RANGE-FLOATING-1004 — PC-A — READY_FOR_REVIEW
+
+New contract flight details require confirming both future range endpoints after passenger counts; company ticket searches and continuing the flight step are gated accordingly. Past days are white and disabled in both calendars using Tehran midnight, and apply rejects a past start even when its end is future. Floating flight cancellation uses current state, removes only the selected leg and its stale fare, and exposes a clear company-inventory action; editing an existing manual flight preserves its fare. Web production build (55 routes), typecheck and 277 Sales tests (one pre-existing skip) and scoped lint pass. No API/schema/dependency/database/runtime change or authenticated browser QA. User authorizes develop merge after checks; scoped locks release with delivery.
+
+
 ## 2026-10-04 — CABIN-KPI-PERSIAN-1004 — PC-B — READY_FOR_REVIEW
 
 Only the Cabin Classes KPI label changed from `Cabinها` to `انواع کابین`. Metric computation and canonical English cabin types remain unchanged across the form, dropdown, table, View, API and stored values. Focused 23 and all 583 Master Data tests, scoped ESLint/Prettier, Web typecheck and the production Web build pass. No authenticated browser/runtime QA; bounded locks release with commit.

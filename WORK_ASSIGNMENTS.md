@@ -1,3 +1,8 @@
+## SALES-RANGE-FLOATING-1004 — PC-A — READY_FOR_REVIEW
+
+- Reserve Sales Web required future date range, floating-ticket cancellation, focused tests, and own status entries on `codex/pc-a-sales-range-floating-1004`. No API/schema/migration/dependency or shared UI change. User authorizes tests and develop merge.
+- Delivered required future date selection after passenger counts, Tehran-day guards in Persian/Gregorian calendars, white disabled past days, and functional floating-flight cancellation with scoped fare invalidation. Production Web build (55 routes) and typecheck pass; 277 Sales tests (one pre-existing skip) and scoped lint pass. No authenticated browser/runtime rollout or DB changes. Bounded locks release with delivery.
+
 ## CABIN-KPI-PERSIAN-1004 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-cabin-kpi-persian-1004` from origin/develop. Reserved only the Cabin Classes KPI label in the Master Data transportation workspace, its focused KPI regressions and own top status entries. Replaced `Cabinها` with `انواع کابین` while preserving metric values, form/dropdown/table/View/API/canonical enums and every other resource. Focused 23 and all 583 Master Data tests, scoped ESLint/Prettier, Web typecheck and the production Web build pass. No authenticated browser/runtime QA; no API/schema/migration/dependency/runtime/database change. Bounded locks release with commit; lead owns review/commit/push/develop merge.

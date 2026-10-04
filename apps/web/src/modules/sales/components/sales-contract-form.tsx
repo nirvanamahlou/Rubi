@@ -1,6 +1,7 @@
 'use client';
 import {
   salesFlightRangeReady,
+  salesFlightToday,
   resetSalesTicketRange,
 } from '../model/sales-flight-range';
 import { moneyDecimal, moneyUnits, passengerOverSixty } from '@nora/contracts';
@@ -206,8 +207,13 @@ export function SalesContractForm() {
       ),
     );
   }, [references.hotels, state.destinationId, state.tour]);
-  const patchState = (patch: Partial<SalesFormState>) =>
+  const patchState = (
+    update:
+      | Partial<SalesFormState>
+      | ((current: SalesFormState) => Partial<SalesFormState>),
+  ) =>
     setState((current) => {
+      const patch = typeof update === 'function' ? update(current) : update;
       const changedRoute = [
         'originId',
         'originCountryId',
@@ -553,6 +559,7 @@ export function SalesContractForm() {
       if (activeDetail === 'TOUR') return false;
       if (activeDetail === 'FLIGHT')
         return (
+          salesFlightRangeReady(flightRange, salesFlightToday()) &&
           salesFlightsValid(state) &&
           (!state.serviceKinds.includes('HOTEL') ||
             (salesHotelValid(state) && !hotelCapacityError))
@@ -613,6 +620,7 @@ export function SalesContractForm() {
     passengerCounts,
     hotelGuestIds,
     hotelCapacityError,
+    flightRange,
   ]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -1057,15 +1065,18 @@ export function SalesContractForm() {
                       <ContractFlightEditor
                         value={state.contractFlights?.OUTBOUND}
                         onChange={(value) =>
-                          patchState(
-                            patchContractFlight(state, 'OUTBOUND', value),
+                          patchState((current) =>
+                            patchContractFlight(current, 'OUTBOUND', value),
                           )
                         }
                       />
                       {!state.contractFlights?.OUTBOUND ? (
                         <>
                           <TicketOfferPicker
-                            enabled={salesFlightRangeReady(flightRange)}
+                            enabled={salesFlightRangeReady(
+                              flightRange,
+                              salesFlightToday(),
+                            )}
                             originLabel={
                               references.cities.find(
                                 (city) => city.id === state.originId,
@@ -1132,8 +1143,8 @@ export function SalesContractForm() {
                       <ContractFlightEditor
                         value={state.contractFlights?.RETURN}
                         onChange={(value) =>
-                          patchState(
-                            patchContractFlight(state, 'RETURN', value),
+                          patchState((current) =>
+                            patchContractFlight(current, 'RETURN', value),
                           )
                         }
                       />
@@ -1146,7 +1157,10 @@ export function SalesContractForm() {
                           {!flightDirections.includes('OUTBOUND') ||
                           salesFlightSelection(state, 'OUTBOUND') ? (
                             <TicketOfferPicker
-                              enabled={salesFlightRangeReady(flightRange)}
+                              enabled={salesFlightRangeReady(
+                                flightRange,
+                                salesFlightToday(),
+                              )}
                               originLabel={
                                 references.cities.find(
                                   (city) => city.id === state.destinationId,
