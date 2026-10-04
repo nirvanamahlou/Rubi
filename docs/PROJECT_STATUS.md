@@ -4663,3 +4663,5 @@ Validation: all Finance Web40 tests pass, including retained accepted-cost revis
 B2B-AGREEMENT-UPLOAD-1004 AU-R3-01 repair: deferred confidential-grant publication prevents upload self-invalidation; stale context publication remains blocked. Organizations200 tests and scoped Web static checks pass. Refreshed independent review and final build/CI required; not released yet.
 
 B2B-AGREEMENT-UPLOAD-1004 AU-R3-02: draft upload grant moves atomically with its own new proof scope; submit/approval still request fresh actor grants. Organizations202 tests and Web static checks pass; final review/build/CI gate release.
+
+B2B-AGREEMENT-UPLOAD-1004 final lifecycle checkpoint: session-bound uploads, context-owned busy state and recoverable expired-grant renewal added. Organizations204 tests and scoped Web static checks pass. No database/runtime mutation; exact-candidate final review/build/CI remain release gates.

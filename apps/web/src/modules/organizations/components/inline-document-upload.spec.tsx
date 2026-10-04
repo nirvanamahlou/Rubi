@@ -68,10 +68,11 @@ describe('inline confidential document code', () => {
     );
   });
 
-  it('does not publish a delayed grant after the upload context changes', async () => {
+  it('discards a delayed grant after the same actor starts a new session', async () => {
     let resolveGrant!: (token: string) => void;
     const grant = new Promise<string>((resolve) => (resolveGrant = resolve));
-    let currentContext = 'actor|organization|branch|editor|contract-slot';
+    let currentContext =
+      'actor|old-session|organization|branch|editor|contract-slot';
     const originalContext = currentContext;
     const publish = vi.fn();
     const completion = publishUploadedDocumentAfterGrant(
@@ -83,7 +84,8 @@ describe('inline confidential document code', () => {
       () => grant,
     );
 
-    currentContext = 'different-actor|organization|branch|editor|contract-slot';
+    currentContext =
+      'actor|new-session|organization|branch|editor|contract-slot';
     resolveGrant('fresh-token');
     await expect(completion).resolves.toEqual({
       current: false,

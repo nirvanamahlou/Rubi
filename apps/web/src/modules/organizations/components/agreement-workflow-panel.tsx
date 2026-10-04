@@ -29,6 +29,7 @@ import { agencyClient, B2bApiError } from '../api/agency-client';
 import {
   blankAgreementTerms,
   agreementUploadContextKey,
+  agreementUploadIsBusy,
   editableAgreementTerms,
   reviewLabels,
   serviceLabels,
@@ -72,6 +73,27 @@ export function uploadedAgreementReferenceState(
     codes: {},
     grants: { [documentId]: token },
   };
+}
+
+export interface AgreementReferenceState {
+  scope: string;
+  phase: 'checking' | 'ready' | 'failed';
+  protectedReferences: Set<string>;
+  codes: Record<string, string>;
+  grants: Record<string, string>;
+}
+
+export function rejectedAgreementReferenceGrantState(
+  state: AgreementReferenceState,
+  documentIds: readonly string[],
+): AgreementReferenceState {
+  const grants = { ...state.grants };
+  const codes = { ...state.codes };
+  for (const id of documentIds) {
+    delete grants[id];
+    codes[id] = '';
+  }
+  return { ...state, grants, codes };
 }
 
 export async function protectedAgreementProofIds(
@@ -275,16 +297,13 @@ export function AgreementWorkflowPanel({
     actorIdentityKey: string;
   } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingOwnerKey, setUploadingOwnerKey] = useState<string | null>(
+    null,
+  );
   const [uncertain, setUncertain] = useState(false);
   const [dialogError, setDialogError] = useState('');
-  const [referenceState, setReferenceState] = useState<{
-    scope: string;
-    phase: 'checking' | 'ready' | 'failed';
-    protectedReferences: Set<string>;
-    codes: Record<string, string>;
-    grants: Record<string, string>;
-  } | null>(null);
+  const [referenceState, setReferenceState] =
+    useState<AgreementReferenceState | null>(null);
   const sequence = useRef(0);
   const load = useCallback(async () => {
     const current = ++sequence.current;
@@ -373,6 +392,23 @@ export function AgreementWorkflowPanel({
     editor?.actorIdentityKey === actorIdentityKey ? editor : null;
   const currentAction =
     action?.actorIdentityKey === actorIdentityKey ? action : null;
+  const editorUploadContextKey = currentEditor
+    ? agreementUploadContextKey(
+        userId,
+        sessionContextKey,
+        organizationId,
+        branchId,
+        currentEditor.grantContextKey,
+      )
+    : '';
+  const uploading = agreementUploadIsBusy(
+    editorUploadContextKey,
+    uploadingOwnerKey,
+  );
+  const setUploadBusy = (isBusy: boolean, contextKey: string) =>
+    setUploadingOwnerKey((current) =>
+      isBusy ? contextKey : current === contextKey ? null : current,
+    );
   const activeTerms =
     currentEditor?.terms ?? currentAction?.record.revisions[0];
   const activeProofKey = activeTerms ? proofIdentity(activeTerms) : '';
@@ -451,6 +487,22 @@ export function AgreementWorkflowPanel({
       uploadedAgreementReferenceState(nextScope, documentId, token),
     );
     setDialogError('');
+  };
+  const clearRejectedReferenceGrants = (
+    caught: unknown,
+    documentIds: readonly string[],
+  ) => {
+    if (
+      !(caught instanceof B2bApiError) ||
+      caught.code !== 'DOCUMENT_CONFIDENTIAL_CODE_REQUIRED'
+    )
+      return false;
+    setReferenceState((previous) =>
+      previous?.scope === referenceScopeKey
+        ? rejectedAgreementReferenceGrantState(previous, documentIds)
+        : previous,
+    );
+    return true;
   };
   useEffect(() => {
     let active = true;
@@ -617,8 +669,9 @@ export function AgreementWorkflowPanel({
     }
     setBusy(true);
     setDialogError('');
+    const referenceDocumentIds = proofIds(currentEditor.terms);
     try {
-      const grants = await grantsFor(proofIds(currentEditor.terms));
+      const grants = await grantsFor(referenceDocumentIds);
       await agencyClient.saveAgreementTerms(
         organizationId,
         {
@@ -639,15 +692,24 @@ export function AgreementWorkflowPanel({
       setNotice('پیش‌نویس قرارداد، سقف‌ها و تضمین‌ها ذخیره شد.');
       setRefresh((n) => n + 1);
     } catch (caught) {
+      const grantRejected = clearRejectedReferenceGrants(
+        caught,
+        referenceDocumentIds,
+      );
       setDialogError(
-        caught instanceof Error ? caught.message : 'ذخیره ناموفق بود.',
+        grantRejected
+          ? 'مجوز موقت یکی از اسناد منقضی یا با نشست جاری ناسازگار است؛ کد محرمانگی را دوباره وارد کنید.'
+          : caught instanceof Error
+            ? caught.message
+            : 'ذخیره ناموفق بود.',
       );
       setUncertain(
-        !(
-          caught instanceof B2bApiError &&
-          caught.status > 0 &&
-          caught.status < 500
-        ),
+        !grantRejected &&
+          !(
+            caught instanceof B2bApiError &&
+            caught.status > 0 &&
+            caught.status < 500
+          ),
       );
     } finally {
       setBusy(false);
@@ -662,15 +724,17 @@ export function AgreementWorkflowPanel({
     }
     setBusy(true);
     setDialogError('');
+    const referenceDocumentIds =
+      currentAction.kind === 'REJECT'
+        ? []
+        : currentAction.record.revisions[0]
+          ? proofIds(currentAction.record.revisions[0])
+          : [];
     try {
       const grants =
         currentAction.kind === 'REJECT'
           ? []
-          : await grantsFor(
-              currentAction.record.revisions[0]
-                ? proofIds(currentAction.record.revisions[0])
-                : [],
-            );
+          : await grantsFor(referenceDocumentIds);
       await agencyClient.agreementAction(
         organizationId,
         currentAction.record.id,
@@ -699,15 +763,24 @@ export function AgreementWorkflowPanel({
       );
       setRefresh((n) => n + 1);
     } catch (caught) {
+      const grantRejected = clearRejectedReferenceGrants(
+        caught,
+        referenceDocumentIds,
+      );
       setDialogError(
-        caught instanceof Error ? caught.message : 'ثبت نتیجه ناموفق بود.',
+        grantRejected
+          ? 'مجوز موقت یکی از اسناد منقضی یا با نشست جاری ناسازگار است؛ کد محرمانگی را دوباره وارد کنید.'
+          : caught instanceof Error
+            ? caught.message
+            : 'ثبت نتیجه ناموفق بود.',
       );
       setUncertain(
-        !(
-          caught instanceof B2bApiError &&
-          caught.status > 0 &&
-          caught.status < 500
-        ),
+        !grantRejected &&
+          !(
+            caught instanceof B2bApiError &&
+            caught.status > 0 &&
+            caught.status < 500
+          ),
       );
     } finally {
       setBusy(false);
@@ -1046,14 +1119,9 @@ export function AgreementWorkflowPanel({
               branchId={branchId}
               organizationId={organizationId}
               permissions={permissions}
-              uploadContextKey={agreementUploadContextKey(
-                userId,
-                organizationId,
-                branchId,
-                currentEditor.grantContextKey,
-              )}
+              uploadContextKey={editorUploadContextKey}
               disabled={busy || uncertain}
-              onUploadStateChange={setUploading}
+              onUploadStateChange={setUploadBusy}
               onConfidentialGrant={setReferenceGrant}
               onConfidentialUploadComplete={completeConfidentialUpload}
               onChange={(terms) =>

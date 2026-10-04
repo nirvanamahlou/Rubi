@@ -52,7 +52,7 @@ export function AgreementTermsEditor({
   organizationId?: string | undefined;
   permissions: readonly IamPermissionCode[];
   disabled?: boolean;
-  onUploadStateChange?: (busy: boolean) => void;
+  onUploadStateChange?: (busy: boolean, contextKey: string) => void;
   onConfidentialGrant?:
     ((documentId: string, token: string) => void) | undefined;
   onConfidentialUploadComplete?:
@@ -66,7 +66,7 @@ export function AgreementTermsEditor({
   const [uploading, setUploading] = useState(false);
   const uploadBusy = (busy: boolean) => {
     setUploading(busy);
-    onUploadStateChange?.(busy);
+    onUploadStateChange?.(busy, uploadContextKey);
   };
   const [currencies, setCurrencies] = useState<readonly MasterDataRecord[]>([]);
   const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);

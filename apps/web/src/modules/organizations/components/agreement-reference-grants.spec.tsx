@@ -9,10 +9,14 @@ vi.mock('@/modules/documents/api/client', () => ({
 
 import {
   protectedAgreementProofIds,
+  rejectedAgreementReferenceGrantState,
   uploadedAgreementReferenceState,
 } from './agreement-workflow-panel';
-import { agreementUploadContextKey } from '../model/agreement-terms';
-import { blankAgreementTerms } from '../model/agreement-terms';
+import {
+  agreementUploadContextKey,
+  agreementUploadIsBusy,
+  blankAgreementTerms,
+} from '../model/agreement-terms';
 import { AgreementTermsEditor } from './agreement-terms-editor';
 
 describe('agreement confidential proof discovery', () => {
@@ -54,20 +58,61 @@ describe('agreement confidential proof discovery', () => {
     expect(state.grants).toEqual({ 'new-protected-document': 'fresh-token' });
     expect(state.codes).toEqual({});
   });
+
+  it('clears only rejected grants and transient codes without changing proof scope', () => {
+    const state = {
+      ...uploadedAgreementReferenceState(
+        'actor|session|organization|branch|proof|editor',
+        'protected-document',
+        'expired-token',
+      ),
+      phase: 'ready' as const,
+      codes: { 'protected-document': '123456', 'other-document': '654321' },
+      grants: {
+        'protected-document': 'expired-token',
+        'other-document': 'other-token',
+      },
+      protectedReferences: new Set(['protected-document', 'other-document']),
+    };
+    const renewed = rejectedAgreementReferenceGrantState(state, [
+      'protected-document',
+    ]);
+
+    expect(renewed.scope).toBe(state.scope);
+    expect(renewed.phase).toBe('ready');
+    expect(renewed.protectedReferences).toEqual(state.protectedReferences);
+    expect(renewed.grants).toEqual({ 'other-document': 'other-token' });
+    expect(renewed.codes).toEqual({
+      'protected-document': '',
+      'other-document': '654321',
+    });
+    expect(state.grants['protected-document']).toBe('expired-token');
+  });
 });
 
 describe('agreement upload context identity', () => {
   it('binds uploads to actor, organization, branch, and editor generation', () => {
     const key = agreementUploadContextKey(
       'actor',
+      'session',
       'organization',
       'branch',
       'editor-generation',
     );
-    expect(key).toBe('actor|organization|branch|editor-generation');
+    expect(key).toBe('actor|session|organization|branch|editor-generation');
+    expect(
+      agreementUploadContextKey(
+        'actor',
+        'session',
+        'organization',
+        'branch',
+        'editor-generation',
+      ),
+    ).toBe(key);
     expect(
       agreementUploadContextKey(
         'other-actor',
+        'session',
         'organization',
         'branch',
         'editor-generation',
@@ -76,6 +121,16 @@ describe('agreement upload context identity', () => {
     expect(
       agreementUploadContextKey(
         'actor',
+        'other-session',
+        'organization',
+        'branch',
+        'editor-generation',
+      ),
+    ).not.toBe(key);
+    expect(
+      agreementUploadContextKey(
+        'actor',
+        'session',
         'other-organization',
         'branch',
         'editor-generation',
@@ -84,6 +139,7 @@ describe('agreement upload context identity', () => {
     expect(
       agreementUploadContextKey(
         'actor',
+        'session',
         'organization',
         'other-branch',
         'editor-generation',
@@ -92,11 +148,41 @@ describe('agreement upload context identity', () => {
     expect(
       agreementUploadContextKey(
         'actor',
+        'session',
         'organization',
         'branch',
         'new-editor-generation',
       ),
     ).not.toBe(key);
+  });
+
+  it('gates upload busy state only for the owning editor context', () => {
+    const original = agreementUploadContextKey(
+      'actor-a',
+      'session-a',
+      'organization',
+      'branch',
+      'editor-a',
+    );
+    const sameEditor = agreementUploadContextKey(
+      'actor-a',
+      'session-a',
+      'organization',
+      'branch',
+      'editor-a',
+    );
+    const nextActor = agreementUploadContextKey(
+      'actor-b',
+      'session-b',
+      'organization',
+      'branch',
+      'editor-b',
+    );
+
+    expect(agreementUploadIsBusy(sameEditor, original)).toBe(true);
+    expect(agreementUploadIsBusy(nextActor, original)).toBe(false);
+    expect(agreementUploadIsBusy(nextActor, nextActor)).toBe(true);
+    expect(agreementUploadIsBusy('', original)).toBe(false);
   });
 });
 
