@@ -5420,7 +5420,7 @@ B2B-CONTACT-DISPLAY-1004 refreshed review87b4a3b3 resolves CD-R1/CD-A1/CD-A2 in 
 
 ## INITIAL-PASSWORD-FOUR-DIGITS-1004 — PC-A — READY_FOR_REVIEW
 
-- Branch `codex/pc-a-initial-password-four-digits-1004` from `origin/develop@0c5484e0`; isolated worktree of the same task. IAM initial-password policy, CreateUser DTO/service and Users creation form now accept 4–200 characters including numeric-only values. User authorizes develop merge. 40 focused API and 20 Web tests, scoped lint/format, API/Web typechecks and production builds (55 Web pages) pass. No migration, dependency, grant or operational data change; reset/change/bootstrap policies remain strong. Scoped locks RELEASED at delivery.
+- Branch `codex/pc-a-initial-password-four-digits-1004` from `origin/develop@0c5484e0`; isolated worktree of the same task. IAM initial-password policy, CreateUser DTO/service and Users creation form now accept 4–200 characters including numeric-only values. User authorizes develop merge. 50 focused API and 20 Web tests, scoped lint/format, API/Web typechecks and production builds (55 Web pages) pass. Creation service tests cover numeric credential hashing and rejection below four characters. No migration, dependency, grant or operational data change; reset/change/bootstrap policies remain strong. Scoped locks RELEASED at delivery.
 
 ## B2B-SIGNATORY-LAYOUT-1004 — PC-B — IN_PROGRESS
 

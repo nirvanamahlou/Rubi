@@ -240,21 +240,22 @@ describe('independent managed user access', () => {
 });
 
 describe('managed account creation', () => {
-  it('creates a new account with its own role and hashed password inside one transaction', async () => {
+  it('creates a new account with its own role and hashed four-digit password inside one transaction', async () => {
     const f = fixture();
     const result = await f.service.createUser(
       {
         ...access,
         displayName: 'Synthetic user',
         username: 'synthetic-user',
-        password: 'Synthetic-Only!42Pass',
+        password: '1234',
       },
       actor,
       {},
     );
     const data = f.client.user.create.mock.calls[0]![0].data;
     expect(result.id).toMatch(/^[0-9a-f-]{36}$/);
-    expect(data.passwordHash).not.toBe('Synthetic-Only!42Pass');
+    expect(data.passwordHash).not.toBe('1234');
+    expect(data.passwordHash).toMatch(/^\$argon2id\$/);
     expect(data.roles.create).toEqual([
       { roleId: 'personal-access-' + result.id },
     ]);
@@ -268,7 +269,7 @@ describe('managed account creation', () => {
 });
 
 describe('user creation credential feedback', () => {
-  it('reports weak initial password as a validation error rather than an unexpected server error', async () => {
+  it('reports initial password shorter than four characters as a validation error', async () => {
     const f = fixture();
     await expect(
       f.service.createUser(
@@ -276,7 +277,7 @@ describe('user creation credential feedback', () => {
           ...access,
           username: 'synthetic',
           displayName: 'Synthetic',
-          password: 'alllowercase123!',
+          password: '123',
         },
         actor,
         {},

@@ -4555,7 +4555,7 @@ Screenshot692 requests readable full representative contacts and icon-only addre
 
 ## INITIAL-PASSWORD-FOUR-DIGITS-1004 — PC-A — READY_FOR_REVIEW
 
-User creation now accepts 4–200 character initial passwords, including numeric-only credentials. DTO, API service and Users form validation are aligned; reset/change/bootstrap remain strong. 40 API and 20 Web focused tests, scoped lint/format, API/Web typechecks and production builds (55 Web pages) pass. No migration, data rewrite or runtime change. User-authorized develop integration follows PR checks; locks released at delivery.
+User creation now accepts 4–200 character initial passwords, including numeric-only credentials. DTO, API service and Users form validation are aligned; reset/change/bootstrap remain strong. 50 API and 20 Web focused tests, scoped lint/format, API/Web typechecks and production builds (55 Web pages) pass. Service-level regressions verify four-digit credential hashing and rejection below four characters. No migration, data rewrite or runtime change. User-authorized develop integration follows PR checks; locks released at delivery.
 
 ## 2026-10-04 — B2B-SIGNATORY-LAYOUT-1004 — PC-B
 
