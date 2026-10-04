@@ -5503,3 +5503,9 @@ Branch codex/pc-a-sales-expert-note-1004 from origin/develop@e9f69ea0. Reserve S
 SALES-EXPERT-NOTE-1004 delivered: existing optional expert reservation note moved into price/payment step; existing pricing note separate. Yellow second destination cell retains visible marker under selection and tooltip explains notes. Public persistence/read projection unchanged. 68 focused tests, scoped ESLint, formatting and Web typecheck pass; production build and CI gate merge. Scoped locks RELEASED for review; no API/schema/migration/dependency/runtime change.
 
 B2B-CREDIT-COPY-1004 validation: final clean Webpack production build55/55 passed after local dependency junction repair. First CI allfourgates passed; only append-only docs conflicts resolved with concurrent PC-A entries preserved. Source diff remains one UI component. Scoped locks RELEASED at delivery; refreshed CI gates merge.
+
+## B2B-PHONE-BRANCH-COPY-1004 — PC-B — IN_PROGRESS
+
+Branch codex/pc-b-b2b-phone-branch-copy-1004 from develop76eac235; reused clean Rubi-subtitle-runtime. Remove registration-branch selector from agency phone-verification step while preserving existing authorized draft branch, OTP actor/session/branch binding and verification/reset rules. R1/C2 bounded consumer UI, same persistent worker. Reserve cooperation-wizard presentation and directly necessary local model/tests plus own docs. No backend/policy/API/grant/schema/dependency or operational data change. User authorizes push/develop merge; pending agreement-upload source remains untouched in other checkout. Telemetry unknown.
+
+B2B-PHONE-BRANCH-COPY-1004 candidate: removed only phone-step branch label/select; authenticated branch fetch/default and OTP actor/session/branch/reset/expiry/grant flow unchanged. Organizations191 tests, scoped lint/format and Web typecheck pass. Final production build and CI gate merge; persistent worker, usage unknown. Scoped locks release at delivery.
