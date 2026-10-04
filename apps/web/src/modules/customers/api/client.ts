@@ -31,6 +31,58 @@ export class CustomersApiError extends Error {
   }
 }
 
+export function customerErrorMessage(
+  envelope: {
+    message?: string;
+    error?: {
+      code?: string;
+      message?: string;
+      details?: readonly { reason?: string }[];
+    };
+  } | null,
+) {
+  if (
+    envelope?.error?.code !== 'VALIDATION_ERROR' ||
+    envelope.error.message !== 'Request validation failed.'
+  )
+    return (
+      envelope?.error?.message ??
+      envelope?.message ??
+      'عملیات مشتریان ناموفق بود.'
+    );
+  const labels: Record<string, string> = {
+    firstName: 'نام',
+    lastName: 'نام خانوادگی',
+    displayName: 'نام کامل',
+    nationalId: 'کد ملی',
+    birthDate: 'تاریخ تولد',
+    passportNumber: 'شماره پاسپورت',
+    passportExpiryDate: 'تاریخ انقضای پاسپورت',
+    passportFirstName: 'نام انگلیسی پاسپورت',
+    passportLastName: 'نام خانوادگی انگلیسی پاسپورت',
+    gender: 'جنسیت',
+    nationalityCode: 'ملیت',
+    passportIssuingCountryCode: 'کشور صادرکننده پاسپورت',
+    birthCountryCode: 'کشور محل تولد',
+    acquaintanceMethodId: 'روش آشنایی',
+    version: 'نسخه پرونده',
+    value: 'شماره تماس یا ایمیل',
+  };
+  const fields = new Set<string>();
+  for (const detail of envelope.error.details ?? [])
+    for (const [key, label] of Object.entries(labels))
+      if (
+        typeof detail.reason === 'string' &&
+        new RegExp('(?:^|\\.)' + key + '(?:\\s|$)').test(detail.reason)
+      )
+        fields.add(label);
+  return fields.size
+    ? [...fields]
+        .map((label) => label + ' را کامل و معتبر وارد کنید.')
+        .join(' ')
+    : 'اطلاعات واردشده معتبر نیست؛ فیلدهای فرم را بررسی کنید.';
+}
+
 async function request<T>(
   path: string,
   init?: RequestInit,
@@ -58,12 +110,14 @@ async function request<T>(
     const envelope = (await response.json().catch(() => null)) as {
       code?: string;
       message?: string;
-      error?: { code?: string; message?: string };
+      error?: {
+        code?: string;
+        message?: string;
+        details?: { reason?: string }[];
+      };
     } | null;
     throw new CustomersApiError(
-      envelope?.error?.message ??
-        envelope?.message ??
-        'عملیات مشتریان ناموفق بود.',
+      customerErrorMessage(envelope),
       response.status,
       envelope?.error?.code ?? envelope?.code,
     );

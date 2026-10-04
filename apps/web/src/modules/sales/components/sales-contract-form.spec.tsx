@@ -17,6 +17,7 @@ vi.mock('react', async (original) => ({
       fixture.flight
     )
       value = { ...emptySalesForm, serviceKinds: ['FLIGHT'] };
+    if (value === 0) value = fixture.step;
     return [value, vi.fn()];
   },
 }));
@@ -63,4 +64,18 @@ describe('compact sales contract form', () => {
     expect(html.indexOf('کشور مبدأ')).toBeLessThan(html.indexOf('شهر مبدأ'));
     expect(html.indexOf('شهر مبدأ')).toBeLessThan(html.indexOf('کشور مقصد'));
   });
+});
+
+it('offers the expert reservation note on sale pricing rather than only at final submission', () => {
+  fixture.step = 3;
+  const html = renderToStaticMarkup(<SalesContractForm />);
+  fixture.step = 0;
+  expect(html).toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
+  expect(html).toMatch(/maxlength="500"/i);
+  expect(html).toContain('در توضیحات درخواست رزرواسیون نمایش داده می‌شود.');
+  expect(html).toContain('یادداشت قیمت‌گذاری');
+  fixture.step = 4;
+  const final = renderToStaticMarkup(<SalesContractForm />);
+  fixture.step = 0;
+  expect(final).not.toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
 });

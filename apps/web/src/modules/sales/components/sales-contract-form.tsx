@@ -33,6 +33,10 @@ import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { salesApi } from '../api/client';
+import {
+  prepareTicketSearch,
+  type PreparedTicketSearch,
+} from '../api/ticket-search';
 import { TicketOfferPicker } from './ticket-offer-picker';
 import { ContractFlightEditor } from './contract-flight-editor';
 import {
@@ -146,6 +150,8 @@ export function SalesContractForm() {
     from: '',
     to: '',
   });
+  const [preparedTickets, setPreparedTickets] =
+    useState<PreparedTicketSearch>();
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
   const [state, setState] = useState<SalesFormState>({
     ...emptySalesForm,
@@ -176,6 +182,39 @@ export function SalesContractForm() {
     banks: [],
     currencies: [],
   });
+  const prefetchKey = JSON.stringify({
+    originId: state.originId,
+    destinationId: state.destinationId,
+    departureFrom:
+      flightRange.from && flightRange.from > futureFrom.slice(0, 10)
+        ? flightRange.from
+        : futureFrom,
+    departureTo: flightRange.to,
+    page: 1,
+  });
+  const canPrefetchTickets = Boolean(
+    state.originId &&
+    state.destinationId &&
+    state.originId !== state.destinationId &&
+    state.serviceKinds.includes('FLIGHT') &&
+    !state.contractFlights?.OUTBOUND &&
+    salesFlightRangeReady(flightRange, salesFlightToday()),
+  );
+  useEffect(() => {
+    if (!canPrefetchTickets) return;
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () =>
+        setPreparedTickets(
+          prepareTicketSearch(JSON.parse(prefetchKey), controller.signal),
+        ),
+      0,
+    );
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [prefetchKey, canPrefetchTickets]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedNumber, setSavedNumber] = useState('');
@@ -992,6 +1031,7 @@ export function SalesContractForm() {
               value={flightRange}
               onChange={(range) => {
                 setFlightRange(range);
+                setFutureFrom(new Date().toISOString());
                 patchState(resetSalesTicketRange(state));
               }}
             />
@@ -1087,6 +1127,7 @@ export function SalesContractForm() {
                       {!state.contractFlights?.OUTBOUND ? (
                         <>
                           <TicketOfferPicker
+                            prepared={preparedTickets}
                             enabled={salesFlightRangeReady(
                               flightRange,
                               salesFlightToday(),
@@ -1738,6 +1779,20 @@ export function SalesContractForm() {
               disabled={!pricingServices.length}
               onChange={(payments) => patchState({ payments })}
             />
+            <FormField label="یادداشت کارشناس برای رزرواسیون (اختیاری)">
+              <Textarea
+                maxLength={500}
+                rows={3}
+                value={state.reservationNote ?? ''}
+                onChange={(event) =>
+                  patchState({ reservationNote: event.target.value })
+                }
+                placeholder="توضیحات لازم برای اجرای خدمات سفر"
+              />
+              <p className="text-sm text-muted-foreground">
+                در توضیحات درخواست رزرواسیون نمایش داده می‌شود.
+              </p>
+            </FormField>
             <FormField label="یادداشت قیمت‌گذاری">
               <Textarea
                 value={state.pricingNotes}
@@ -1828,23 +1883,6 @@ export function SalesContractForm() {
           </div>
         ) : null}
       </Card>
-      {step === salesSteps.length - 1 && (
-        <FormField label="یادداشت برای رزرواسیون (اختیاری)">
-          <Textarea
-            maxLength={500}
-            value={state.reservationNote ?? ''}
-            onChange={(event) =>
-              setState((current) => ({
-                ...current,
-                reservationNote: event.target.value,
-              }))
-            }
-          />
-          <p className="text-sm text-muted-foreground">
-            همراه قرارداد برای تیم رزرواسیون ارسال می‌شود.
-          </p>
-        </FormField>
-      )}
       <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
         <Button
           type="button"
@@ -1875,7 +1913,6 @@ export function SalesContractForm() {
               else {
                 if (step === 0) {
                   setDetailStep(0);
-                  setFutureFrom(new Date().toISOString());
                 }
                 setStep((value) =>
                   value === 0 && !detailSteps.length ? 2 : value + 1,
