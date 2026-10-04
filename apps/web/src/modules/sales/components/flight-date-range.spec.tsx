@@ -43,7 +43,7 @@ describe('required flight range', () => {
           onChange={() => undefined}
         />,
       ),
-    ).toContain('بازه تاریخ پرواز (الزامی)');
+    ).toContain('بازه تاریخ سفر (الزامی)');
     expect(
       renderToStaticMarkup(
         <FlightDateRangeFilter

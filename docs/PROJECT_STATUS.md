@@ -1,3 +1,7 @@
+## 2026-10-04 — SALES-RANGE-AIRLINE-1004 — PC-A — READY_FOR_REVIEW
+
+The required flight date range is now a prominent start/end control in the first route/passenger step. Flight continuation requires the confirmed future range; date changes still invalidate catalog selections and stale fares. Both floating flight legs select active existing airlines through the public paginated MasterData API with five normalized substring suggestions; the selected name remains the contract snapshot. Sales279 tests and final eight focused tests pass; lint/typecheck and55-route production build gate delivery. No API/schema/dependency/database/runtime change or authenticated browser QA. User authorizes develop merge after CI; scoped locks release at commit.
+
 ## 2026-10-04 — INSURANCE-PLAN-TOGGLE-OPERATIONS-1004 — PC-B — READY_FOR_REVIEW
 
 The insurer nested-plan expand/collapse button moved from the Persian-name cell into the centered Operations action group. The insurer name remains the View trigger; native keyboard behavior, accessible name, `aria-expanded`, corrected `aria-controls`, toggle state and nested-plan loading/CRUD/permission behavior are preserved. Focused 9 and all 598 Master Data tests, scoped ESLint/Prettier, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA or API/schema/dependency/database/runtime change; bounded locks release with commit.

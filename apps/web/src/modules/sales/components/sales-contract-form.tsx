@@ -158,6 +158,7 @@ export function SalesContractForm() {
     readonly HotelRoomRateV1[]
   >([]);
   const [references, setReferences] = useState<{
+    airlines: readonly MasterDataRecord[];
     countries: readonly MasterDataRecord[];
     cities: readonly MasterDataRecord[];
     hotels: readonly MasterDataRecord[];
@@ -166,6 +167,7 @@ export function SalesContractForm() {
     banks: readonly MasterDataRecord[];
     currencies: readonly MasterDataRecord[];
   }>({
+    airlines: [],
     countries: [],
     cities: [],
     hotels: [],
@@ -311,6 +313,7 @@ export function SalesContractForm() {
       loadReferences('visa-services'),
       loadReferences('banks'),
       loadReferences('currencies'),
+      loadReferences('airlines'),
     ]).then((results) => {
       const dataAt = (index: number): readonly MasterDataRecord[] => {
         const result = results[index];
@@ -325,8 +328,10 @@ export function SalesContractForm() {
         visaServices = [],
         banks = [],
         currencies = [],
-      ] = [0, 1, 2, 3, 4, 5, 6].map(dataAt);
+        airlines = [],
+      ] = [0, 1, 2, 3, 4, 5, 6, 7].map(dataAt);
       setReferences({
+        airlines,
         countries,
         cities,
         hotels,
@@ -552,7 +557,8 @@ export function SalesContractForm() {
         state.serviceKinds.length &&
         passengerCounts.total > 0 &&
         (!state.serviceKinds.includes('FLIGHT') ||
-          passengerCounts.seated > 0) &&
+          (passengerCounts.seated > 0 &&
+            salesFlightRangeReady(flightRange, salesFlightToday()))) &&
         (passengerCounts.infants === 0 || passengerCounts.adults > 0),
       );
     if (step === 1) {
@@ -977,6 +983,20 @@ export function SalesContractForm() {
             </p>
           </section>
         ) : null}
+        {step === 0 && state.serviceKinds.includes('FLIGHT') ? (
+          <section
+            aria-label="بازه تاریخ سفر"
+            className="mt-5 border-t border-border pt-4"
+          >
+            <FlightDateRangeFilter
+              value={flightRange}
+              onChange={(range) => {
+                setFlightRange(range);
+                patchState(resetSalesTicketRange(state));
+              }}
+            />
+          </section>
+        ) : null}
         {step === 1 ? (
           <div className="grid gap-6">
             <h2 className="text-xl font-black">جزئیات خدمات</h2>
@@ -1051,18 +1071,12 @@ export function SalesContractForm() {
                   />
                   این بلیط بیزینس است — درج در خروجی
                 </label>
-                <FlightDateRangeFilter
-                  value={flightRange}
-                  onChange={(range) => {
-                    setFlightRange(range);
-                    patchState(resetSalesTicketRange(state));
-                  }}
-                />
                 <div className="grid items-start gap-5 lg:grid-cols-2">
                   {flightDirections.includes('OUTBOUND') ? (
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">بلیط رفت</h3>
                       <ContractFlightEditor
+                        airlines={references.airlines}
                         value={state.contractFlights?.OUTBOUND}
                         onChange={(value) =>
                           patchState((current) =>
@@ -1141,6 +1155,7 @@ export function SalesContractForm() {
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">انتخاب بلیط برگشت</h3>
                       <ContractFlightEditor
+                        airlines={references.airlines}
                         value={state.contractFlights?.RETURN}
                         onChange={(value) =>
                           patchState((current) =>
