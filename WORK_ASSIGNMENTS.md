@@ -3,6 +3,10 @@
 - Reserve Sales Web required future date range, floating-ticket cancellation, focused tests, and own status entries on `codex/pc-a-sales-range-floating-1004`. No API/schema/migration/dependency or shared UI change. User authorizes tests and develop merge.
 - Delivered required future date selection after passenger counts, Tehran-day guards in Persian/Gregorian calendars, white disabled past days, and functional floating-flight cancellation with scoped fare invalidation. Production Web build (55 routes) and typecheck pass; 277 Sales tests (one pre-existing skip) and scoped lint pass. No authenticated browser/runtime rollout or DB changes. Bounded locks release with delivery.
 
+## CABIN-KPI-PERSIAN-1004 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-cabin-kpi-persian-1004` from origin/develop. Reserved only the Cabin Classes KPI label in the Master Data transportation workspace, its focused KPI regressions and own top status entries. Replaced `Cabinها` with `انواع کابین` while preserving metric values, form/dropdown/table/View/API/canonical enums and every other resource. Focused 23 and all 583 Master Data tests, scoped ESLint/Prettier, Web typecheck and the production Web build pass. No authenticated browser/runtime QA; no API/schema/migration/dependency/runtime/database change. Bounded locks release with commit; lead owns review/commit/push/develop merge.
+
 ## VISA-REQUIRED-DOCUMENTS-1004 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-visa-required-documents-1004` from origin/develop@ee053ecc. Human product owner explicitly approves transfer of the sole Migration lock from PC-A to PC-B on 2026-10-04 for this bounded Visa required-document names change. This entry supersedes the historical Migration reservation PC-A/TICKET-PROCUREMENT-FINANCE-PAYMENT-0927 only for lock authority; its task, code, contracts and other ownership remain unchanged. Sole Migration Owner = PC-B/VISA-REQUIRED-DOCUMENTS-1004 until committed delivery; previous owner must re-reserve after release before another migration. Reserve Prisma schema and one additive MasterVisaService field migration, bounded Master Data Visa API/Web/import/export/tests and DATA_MODEL/status documentation. No dependency lock, permissions, runtime or operational database change.
@@ -5381,3 +5385,9 @@ B2B-DOSSIER-CLEANUP-1004 delivered: six Organizations consumer/test files; heade
 Remove only Screenshot691 marked descriptions beneath Finance, Commercial and Activity hub cards. Reserve Organizations corporate-profile hub copy and own docs on codex/pc-b-b2b-hub-copy-1004. R0/C1 mechanical UI copy, persistent native worker; user authorizes push and develop merge. No behavior/API/data/dependency/migration changes; usage unavailable.
 
 B2B-HUB-COPY-1004 delivered: one component removes three marked descriptions and unused description rendering. Titles/chips/navigation preserved. Organizations171 tests, scoped ESLint/Prettier and Web typecheck passed; final Web build and CI gate push/merge. Lead reviewed exact copy-only diff; native worker difficulty pending, telemetry unavailable. Locks released at delivery.
+
+## B2B-PROFILE-COPY-1004 — PC-B — IN_PROGRESS
+
+Remove user-specified branch/account-manager/address/signatory explanatory text and display-order readout from360 dossier. Reserve bounded Organizations profile component copy plus own docs on codex/pc-b-b2b-profile-copy-1004. R0/C1 presentational only, persistent worker; no form fields/backend/data/permission changes. User authorizes push/develop merge. Telemetry unavailable.
+
+B2B-PROFILE-COPY-1004 delivered: three Organizations components remove only requested explanatory copy and display-order summary row; edit field/data remain. Organizations171 tests, scoped lint/format and Web typecheck passed. Lead accepted exact presentational diff; build/CI gate merge. Persistent worker, telemetry unavailable. Locks released at delivery.
