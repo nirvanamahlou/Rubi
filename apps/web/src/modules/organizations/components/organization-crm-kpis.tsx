@@ -7,13 +7,10 @@ import {
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
-import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { moneyLabel } from '../model/presentation';
 import { connectedOutstanding } from '../model/organization-crm-connections';
 import { useOrganizationCrmConnections } from './use-organization-crm-connections';
-import { useDossierBranch } from './use-dossier-branch';
-import { OrganizationSalesDocuments } from './organization-sales-documents';
 
 function Metric({
   label,
@@ -50,11 +47,13 @@ function outstandingLabel(
 
 export function OrganizationCrmKpis({
   organizationId,
+  branchId,
+  sessionContextKey,
 }: {
   organizationId: string;
+  branchId: string;
+  sessionContextKey: string;
 }) {
-  const { branchId, setBranchId, branches, sessionError, sessionContextKey } =
-    useDossierBranch();
   const { data, loading } = useOrganizationCrmConnections(
     organizationId,
     branchId,
@@ -72,80 +71,42 @@ export function OrganizationCrmKpis({
   const reservationsAvailable = data && !data.unavailableSources.RESERVATIONS;
 
   return (
-    <>
-      <section className="panel mb-5" aria-label="شعبه قراردادهای فروش مرتبط">
-        <header className="panel-head">
-          <div>
-            <h2 className="panel-title">ارتباط قراردادهای فروش</h2>
-            <p className="panel-note">
-              قراردادها با شناسه مشتری سازمانی و در شعبه انتخاب‌شده تطبیق داده
-              می‌شوند.
-            </p>
-          </div>
-          <label className="field">
-            <span>شعبه قراردادهای فروش</span>
-            <NativeSearchSelect
-              className="input"
-              value={branchId}
-              onChange={(event) => setBranchId(event.target.value)}
-            >
-              {branches.map((branch) => (
-                <option key={branch.id} value={branch.id}>
-                  {branch.name}
-                </option>
-              ))}
-            </NativeSearchSelect>
-          </label>
-        </header>
-        {sessionError ? (
-          <div className="panel-body" role="alert">
-            {sessionError}
-          </div>
-        ) : null}
-      </section>
-      <section className="kpis" aria-label="شاخص‌های متصل پرونده سازمان">
-        <Metric
-          label="مشتری سازمانی مرتبط"
-          value={
-            customersAvailable
-              ? data.customers.length.toLocaleString('fa-IR')
-              : pending
-          }
-          icon={Building2}
-          tone="green"
-        />
-        <Metric
-          label="قرارداد فروش مرتبط"
-          value={
-            salesAvailable
-              ? data.contracts.length.toLocaleString('fa-IR')
-              : pending
-          }
-          icon={FileText}
-          tone="purple"
-        />
-        <Metric
-          label="سفارش باز"
-          value={
-            reservationsAvailable
-              ? openReservations.toLocaleString('fa-IR')
-              : pending
-          }
-          icon={ShoppingCart}
-        />
-        <Metric
-          label="مانده قراردادهای فروش"
-          value={salesAvailable ? outstandingLabel(outstanding) : pending}
-          icon={Wallet}
-          tone="amber"
-        />
-      </section>
-      <OrganizationSalesDocuments
-        organizationId={organizationId}
-        branchId={branchId}
-        sessionContextKey={sessionContextKey}
-        connections={data}
+    <section className="kpis" aria-label="شاخص‌های متصل پرونده سازمان">
+      <Metric
+        label="مشتری سازمانی مرتبط"
+        value={
+          customersAvailable
+            ? data.customers.length.toLocaleString('fa-IR')
+            : pending
+        }
+        icon={Building2}
+        tone="green"
       />
-    </>
+      <Metric
+        label="قرارداد فروش مرتبط"
+        value={
+          salesAvailable
+            ? data.contracts.length.toLocaleString('fa-IR')
+            : pending
+        }
+        icon={FileText}
+        tone="purple"
+      />
+      <Metric
+        label="سفارش باز"
+        value={
+          reservationsAvailable
+            ? openReservations.toLocaleString('fa-IR')
+            : pending
+        }
+        icon={ShoppingCart}
+      />
+      <Metric
+        label="مانده قراردادهای فروش"
+        value={salesAvailable ? outstandingLabel(outstanding) : pending}
+        icon={Wallet}
+        tone="amber"
+      />
+    </section>
   );
 }

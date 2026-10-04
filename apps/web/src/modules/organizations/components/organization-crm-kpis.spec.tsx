@@ -3,18 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  useDossierBranch: vi.fn(),
   useOrganizationCrmConnections: vi.fn(),
 }));
 
-vi.mock('./use-dossier-branch', () => ({
-  useDossierBranch: mocks.useDossierBranch,
-}));
 vi.mock('./use-organization-crm-connections', () => ({
   useOrganizationCrmConnections: mocks.useOrganizationCrmConnections,
-}));
-vi.mock('./organization-sales-documents', () => ({
-  OrganizationSalesDocuments: () => null,
 }));
 
 import { OrganizationCrmKpis } from './organization-crm-kpis';
@@ -70,7 +63,11 @@ function renderKpis(snapshot: B2bCrmConnectionsV1) {
     error: '',
   });
   return renderToStaticMarkup(
-    <OrganizationCrmKpis organizationId="organization-a" />,
+    <OrganizationCrmKpis
+      organizationId="organization-a"
+      branchId="branch-a"
+      sessionContextKey="session-a"
+    />,
   );
 }
 
@@ -84,13 +81,16 @@ function metricValue(markup: string, label: string) {
 
 describe('organization CRM KPI source availability', () => {
   beforeEach(() => {
-    mocks.useDossierBranch.mockReturnValue({
-      branchId: 'branch-a',
-      setBranchId: vi.fn(),
-      branches: [{ id: 'branch-a', name: 'Branch A' }],
-      sessionError: '',
-      sessionContextKey: 'session-a',
-    });
+    mocks.useOrganizationCrmConnections.mockReset();
+  });
+
+  it('loads KPI values for the branch selected by the dossier summary', () => {
+    renderKpis(data);
+    expect(mocks.useOrganizationCrmConnections).toHaveBeenCalledWith(
+      'organization-a',
+      'branch-a',
+      'session-a',
+    );
   });
 
   it('does not present denied, failed or incomplete sources as concrete values', () => {
