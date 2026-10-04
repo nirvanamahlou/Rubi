@@ -56,6 +56,7 @@ export function applySaleCommissions(
             salePriceTargetId: row.salePriceTargetId,
             revision: row.revision,
             percent: row.percent.toString(),
+            isHidden: row.percent.eq(100),
             amount: commissionAmount(fare.amount, row.percent.toString()),
             currencyCode: fare.currencyCode,
             ...(fare.tiers?.length
@@ -99,37 +100,56 @@ export function applySaleCommissions(
   return {
     ...offer,
     baseStandaloneSalePrice: base,
+    baseRoundTripSalePrices: offer.roundTripSalePrices ?? [],
     saleCommissions: commissions,
-    standaloneSalePrice:
-      base && direct
+    standaloneSalePrice: direct?.isHidden
+      ? null
+      : base && direct
         ? { ...base, amount: direct.amount, tiers: direct.tiers }
         : base,
-    targetedStandaloneSalePrices: [...targeted.values()].map((price) => {
-      const c = commissions.find(
-        (c) =>
-          !c.returnOfferId && c.salePriceTargetId === price.salePriceTarget.id,
-      );
-      return c
-        ? {
-            ...price,
-            amount: c.amount,
-            currencyCode: c.currencyCode,
-            tiers: c.tiers,
-          }
-        : price;
-    }),
-    roundTripSalePrices: (offer.roundTripSalePrices ?? []).map((price) => {
-      const c = commissions.find(
-        (c) => c.returnOfferId === price.returnOfferId && !c.salePriceTargetId,
-      );
-      return {
-        ...price,
-        baseAmount: price.amount,
-        baseTiers: price.tiers,
-        amount: c?.amount ?? price.amount,
-        tiers: c?.tiers ?? price.tiers,
-      };
-    }),
+    targetedStandaloneSalePrices: [...targeted.values()]
+      .filter(
+        (price) =>
+          !latest.get('ONEWAY:' + price.salePriceTarget.id)?.percent.eq(100),
+      )
+      .map((price) => {
+        const c = commissions.find(
+          (c) =>
+            !c.returnOfferId &&
+            c.salePriceTargetId === price.salePriceTarget.id,
+        );
+        return c
+          ? {
+              ...price,
+              amount: c.amount,
+              currencyCode: c.currencyCode,
+              tiers: c.tiers,
+            }
+          : price;
+      }),
+    roundTripSalePrices: (offer.roundTripSalePrices ?? [])
+      .filter(
+        (price) =>
+          !commissions.some(
+            (c) =>
+              c.returnOfferId === price.returnOfferId &&
+              !c.salePriceTargetId &&
+              c.isHidden,
+          ),
+      )
+      .map((price) => {
+        const c = commissions.find(
+          (c) =>
+            c.returnOfferId === price.returnOfferId && !c.salePriceTargetId,
+        );
+        return {
+          ...price,
+          baseAmount: price.amount,
+          baseTiers: price.tiers,
+          amount: c?.amount ?? price.amount,
+          tiers: c?.tiers ?? price.tiers,
+        };
+      }),
   };
 }
 

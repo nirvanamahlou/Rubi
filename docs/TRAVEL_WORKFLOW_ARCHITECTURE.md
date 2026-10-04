@@ -248,3 +248,7 @@ Owner-approved MANIFEST-LOAD-SEARCH-0930 removes Finance approval from manifest 
 ### خرید یک‌جای خدمات قرارداد رزرواسیون
 
 در فرم خرید، هتل با نام snapshot و مسافران تخصیص‌یافته، رده سنی، نرخ هر شب و جمع اقامت هر مسافر نمایش داده می‌شود. ترانسفر رفت و برگشت، در صورت وجود، یک ردیف خرید با یک کارگزار و یک نرخ کل برای هر مسافر دارد؛ مسافری که در هر دو جهت حضور دارد فقط یک بار محاسبه می‌شود. ثبت هتل و ترانسفر یک درخواست اتمیک با `batchId` مشترک است. سرور پوشش دقیق کلیدهای خدمات، نرخ‌های مسافران و جمع مبالغ را بازحساب می‌کند. کارتابل مالی درخواست را با شماره قرارداد، ردیف‌های خرید و جمع به تفکیک ارز باز می‌کند؛ پرداخت و سابقه مالی همچنان برای هر ردیف مستقل باقی می‌ماند. ردیف‌های قدیمی بدون `batchId` به صورت درخواست تک‌ردیفی سازگار هستند.
+
+### Ticket price destinations — 2026-10-04
+
+A latest sale-destination commission of 100 percent disables publication for that one-way or round-trip price and destination. It must never be interpreted as a publishable zero fare. Administrative base prices and commission history remain editable; lowering the latest commission below 100 enables publication again. The public active price projection omits hidden fares, while administrative commission rows carry isHidden and pair bases remain separate. Provider adapters must ignore hidden commission rows; this rule does not itself initiate external delivery.
