@@ -116,8 +116,7 @@ export function AgreementTermsEditor({
     next: B2bAgreementTermsV1[K],
   ) => onChange({ ...value, [key]: next });
   const text = (
-    key:
-      'title' | 'cancellationTerms' | 'refundTerms' | 'notes' | 'changeReason',
+    key: 'title' | 'cancellationTerms' | 'refundTerms' | 'notes',
     label: string,
     multiline = false,
   ) => (
@@ -126,7 +125,7 @@ export function AgreementTermsEditor({
       {multiline ? (
         <textarea
           className="textarea"
-          maxLength={key === 'changeReason' ? 500 : 2000}
+          maxLength={2000}
           value={value[key]}
           onChange={(e) => set(key, e.target.value)}
         />
@@ -806,10 +805,6 @@ export function AgreementTermsEditor({
               </div>
             );
           })}
-          <p className="panel-note">
-            ثبت شرط سپرده، دریافت وجه ثبت نمی‌کند. دریافت و مانده سپرده در بخش
-            مالی مدیریت می‌شود.
-          </p>
         </section>
       )}
       {!organizationId ? (
@@ -817,49 +812,31 @@ export function AgreementTermsEditor({
           فایل‌های انتخاب‌شده پس از ایجاد سازمان در «اسناد و فایل‌ها» ذخیره و به
           همین قرارداد یا تضمین متصل می‌شوند.
         </p>
-      ) : canReadOrganizationDocuments(permissions) ? (
+      ) : canReadOrganizationDocuments(permissions) && documentPages > 1 ? (
         <div className="agreement-row-title">
-          <span className="panel-note">
-            فایل هر مدرک را در محل همان قرارداد یا تضمین بارگذاری کنید. اسناد
-            ذخیره‌شده همین سازمان و شعبه نیز قابل انتخاب‌اند.
-          </span>
           <button
             type="button"
             className="btn"
-            onClick={() => setReload((x) => x + 1)}
+            disabled={documentPage <= 1}
+            onClick={() => setDocumentPage((p) => p - 1)}
           >
-            تازه‌سازی اسناد
+            اسناد قبلی
           </button>
-          {documentPages > 1 ? (
-            <>
-              <button
-                type="button"
-                className="btn"
-                disabled={documentPage <= 1}
-                onClick={() => setDocumentPage((p) => p - 1)}
-              >
-                اسناد قبلی
-              </button>
-              <button
-                type="button"
-                className="btn"
-                disabled={documentPage >= documentPages}
-                onClick={() => setDocumentPage((p) => p + 1)}
-              >
-                اسناد بعدی
-              </button>
-            </>
-          ) : null}
+          <button
+            type="button"
+            className="btn"
+            disabled={documentPage >= documentPages}
+            onClick={() => setDocumentPage((p) => p + 1)}
+          >
+            اسناد بعدی
+          </button>
         </div>
-      ) : (
+      ) : organizationId && !canReadOrganizationDocuments(permissions) ? (
         <p className="panel-note">
           برای اتصال سند، مجوز مشاهده اسناد سازمان لازم است.
         </p>
-      )}
-      <div className="form-grid">
-        {text('notes', 'یادداشت تکمیلی', true)}
-        {text('changeReason', 'دلیل ثبت یا اصلاح این نسخه (اختیاری)', true)}
-      </div>
+      ) : null}
+      <div className="form-grid">{text('notes', 'یادداشت تکمیلی', true)}</div>
       <div className="boundary-note">
         ذخیره، پیش‌نویس ایجاد می‌کند. فعال‌سازی قرارداد و سقف‌ها پس از ارسال و
         تأیید یک کاربر مستقل دارای مجوز انجام می‌شود.
