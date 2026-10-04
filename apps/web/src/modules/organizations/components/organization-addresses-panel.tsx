@@ -160,7 +160,9 @@ export function OrganizationAddressesPanel({
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
+                  title={`ویرایش ${row.label}`}
+                  aria-label={`ویرایش ${row.label}`}
                   disabled={!permissions.includes('master_data.update')}
                   onClick={() =>
                     setEditor({
@@ -179,17 +181,17 @@ export function OrganizationAddressesPanel({
                     })
                   }
                 >
-                  <Pencil className="size-4" />
-                  ویرایش
+                  <Pencil aria-hidden="true" className="size-4" />
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
+                  title={`حذف دائمی ${row.label}`}
+                  aria-label={`حذف دائمی ${row.label}`}
                   disabled={!permissions.includes('master_data.delete')}
                   onClick={() => setDeleting(row)}
                 >
-                  <Trash2 className="size-4" />
-                  حذف دائمی
+                  <Trash2 aria-hidden="true" className="size-4" />
                 </Button>
               </div>
             </div>

@@ -662,9 +662,19 @@ export const masterDataApi = {
       meta: { limit: number };
     }>(`/audit/notifications?limit=${Math.min(60, Math.max(1, limit))}`);
   },
-  unmaskOrganizationContact(id: string) {
+  unmaskOrganizationContact(
+    id: string,
+    options?: { branchId?: string; signal?: AbortSignal },
+  ) {
     return request<{ data: MasterOrganizationContactUnmasked }>(
       `/organization-contacts/${encodeURIComponent(id)}/unmask`,
+      {
+        cache: 'no-store',
+        ...(options?.signal ? { signal: options.signal } : {}),
+        ...(options?.branchId
+          ? { headers: { 'x-branch-id': options.branchId } }
+          : {}),
+      },
     );
   },
   organizationAddresses(organizationId: string) {

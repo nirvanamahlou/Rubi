@@ -13,6 +13,39 @@ afterEach(() => {
 });
 
 describe('master data browser client', () => {
+  it('requests audited contact disclosure without browser caching and in the selected branch', async () => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
+    const controller = new AbortController();
+    const response = {
+      data: {
+        id: 'contact/id',
+        phone: '09121234567',
+        email: 'person@example.test',
+      },
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => response,
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      masterDataApi.unmaskOrganizationContact('contact/id', {
+        branchId: 'branch-id',
+        signal: controller.signal,
+      }),
+    ).resolves.toEqual(response);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/master-data/organization-contacts/contact%2Fid/unmask',
+      expect.objectContaining({
+        cache: 'no-store',
+        credentials: 'include',
+        signal: controller.signal,
+        headers: expect.objectContaining({ 'x-branch-id': 'branch-id' }),
+      }),
+    );
+  });
+
   it('loads the saved logo as an authenticated image instead of displaying its document id', async () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     const image = new Blob(['image'], { type: 'image/png' });
