@@ -6,6 +6,7 @@ const fixture = vi.hoisted(() => ({
   route: true,
   dates: true,
   flight: true,
+  emptyStateCount: 0,
   effects: [] as (() => void | (() => void))[],
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -28,12 +29,15 @@ vi.mock('react', async (original) => ({
       };
     if (value && typeof value === 'object' && 'from' in value && 'to' in value)
       value = fixture.dates ? { from: '2099-10-01', to: '2099-10-10' } : value;
+    if (value === '' && fixture.emptyStateCount++ === 0)
+      value = JSON.stringify(['origin', 'destination', ['OUTBOUND']]);
     return [value, vi.fn()];
   },
 }));
 const fetcher = vi.fn();
 beforeEach(() => {
   fixture.effects = [];
+  fixture.emptyStateCount = 0;
   fixture.route = fixture.dates = fixture.flight = true;
   vi.useFakeTimers();
   fetcher.mockReset().mockResolvedValue({
@@ -50,13 +54,13 @@ afterEach(() => {
 it('starts first-page tickets while still in the route step, and aborts obsolete work on cleanup', async () => {
   const html = renderToStaticMarkup(<SalesContractForm />);
   expect(html).toContain('تعداد مسافران');
-  expect(html).not.toContain('بلیط رفت');
+  expect(html).toContain('تاریخ بلیط رفت');
   const cleanup = fixture.effects[0]!();
   await vi.runAllTimersAsync();
   expect(fetcher).toHaveBeenCalledTimes(1);
   const params = new URL(fetcher.mock.calls[0]![0]).searchParams;
-  expect(params.get('departureFrom')).toBe('2099-10-01');
-  expect(params.get('departureTo')).toBe('2099-10-10');
+  expect(params.get('departureFrom')).toBe('2099-10-01T00:00:00+03:30');
+  expect(params.get('departureTo')).toBe('2099-10-01');
   expect(params.get('page')).toBe('1');
   cleanup?.();
   expect(fetcher.mock.calls[0]![1].signal.aborted).toBe(true);

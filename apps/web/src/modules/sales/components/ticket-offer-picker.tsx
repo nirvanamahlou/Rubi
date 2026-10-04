@@ -10,10 +10,13 @@ import {
   type PreparedTicketSearch,
 } from '../api/ticket-search';
 import { TicketOfferCard } from './ticket-offer-card';
+import { flightDay } from '../model/exact-flight-dates';
 
 export function TicketOfferPicker({
   query,
   prepared,
+  exactDay,
+  allowedOfferIds,
   enabled = true,
   selectedId,
   onSelect,
@@ -26,6 +29,8 @@ export function TicketOfferPicker({
 }: {
   query: TicketOfferSearchV1;
   prepared?: PreparedTicketSearch | undefined;
+  exactDay?: string | undefined;
+  allowedOfferIds?: readonly string[] | undefined;
   enabled?: boolean;
   selectedId: string;
   onSelect: (offer: TicketOfferV1) => void;
@@ -64,7 +69,13 @@ export function TicketOfferPicker({
           },
         ) ?? searchTickets(searchQuery, controller.signal));
         if (controller.signal.aborted) return;
-        setOffers(result.data);
+        setOffers(
+          result.data.filter(
+            (offer) =>
+              (!exactDay || flightDay(offer) === exactDay) &&
+              (!allowedOfferIds || allowedOfferIds.includes(offer.id)),
+          ),
+        );
         setHasMore(result.hasMore);
       })()
         .catch((reason: unknown) => {
@@ -83,11 +94,11 @@ export function TicketOfferPicker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [filters, page, enabled, prepared]);
+  }, [filters, page, enabled, prepared, exactDay, allowedOfferIds]);
   if (!enabled)
     return (
       <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-        ابتدا بازه تاریخ را انتخاب و تأیید کنید تا بلیط‌ها نمایش داده شوند.
+        ابتدا تاریخ بلیط را انتخاب کنید تا پروازهای همان روز نمایش داده شوند.
       </p>
     );
   return (

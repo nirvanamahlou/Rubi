@@ -24,6 +24,7 @@ export function SalesPricingPanel({
   currencies,
   fixedSalePrices,
   salePriceFromAgreed = false,
+  compact = false,
   onChange,
 }: {
   services: readonly { key: string; title: string; hotel: boolean }[];
@@ -31,6 +32,7 @@ export function SalesPricingPanel({
   values: Record<string, SalesServicePricingV1[]>;
   currencies: readonly SalesCurrency[];
   salePriceFromAgreed?: boolean;
+  compact?: boolean;
   fixedSalePrices?: Record<string, SalesServicePricingV1[]> | undefined;
   onChange: (key: string, prices: SalesServicePricingV1[]) => void;
 }) {
@@ -38,7 +40,7 @@ export function SalesPricingPanel({
     Record<string, 'NIGHT' | 'TOTAL'>
   >({});
   return (
-    <section className="space-y-4">
+    <section className={compact ? 'space-y-2' : 'space-y-4'}>
       <h2 className="text-xl font-black">قیمت روز فروش و توافق با مشتری</h2>
       <p className="text-sm text-muted-foreground">
         قیمت‌ها برای کل مسافران و تمام اتاق‌های انتخاب‌شده هستند؛ هر ارز جدا
@@ -68,7 +70,14 @@ export function SalesPricingPanel({
           ? basePrices.map(agreedSalePrice)
           : basePrices;
         return (
-          <div className="space-y-3 rounded-xl border p-4" key={service.key}>
+          <div
+            className={
+              compact
+                ? 'space-y-2 rounded-xl border p-3'
+                : 'space-y-3 rounded-xl border p-4'
+            }
+            key={service.key}
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-bold">
                 {service.title}
@@ -97,7 +106,7 @@ export function SalesPricingPanel({
                 </span>
               )}
             </div>
-            {service.hotel ? (
+            {service.hotel && !compact ? (
               <p className="text-xs text-muted-foreground">
                 هر شب × تعداد شب = کل اقامت. با ورود کل، قیمت متوسط هر شب محاسبه
                 می‌شود؛ جمع دقیق حفظ می‌شود.
@@ -128,7 +137,11 @@ export function SalesPricingPanel({
               return (
                 <div
                   key={index}
-                  className="space-y-3 rounded-lg bg-muted/20 p-3"
+                  className={
+                    compact
+                      ? 'space-y-2 rounded-lg'
+                      : 'space-y-3 rounded-lg bg-muted/20 p-3'
+                  }
                 >
                   <div className="flex items-end gap-2">
                     {fixedSale ? (
@@ -170,7 +183,7 @@ export function SalesPricingPanel({
                       </Button>
                     ) : null}
                   </div>
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-2 sm:grid-cols-2">
                     {(['daySale', 'agreed'] as const).map((field) => {
                       const part = price[field],
                         label =
@@ -206,7 +219,11 @@ export function SalesPricingPanel({
                       return (
                         <div
                           key={field}
-                          className="space-y-2 rounded-lg border bg-background p-3"
+                          className={
+                            compact
+                              ? 'space-y-1'
+                              : 'space-y-2 rounded-lg border bg-background p-3'
+                          }
                         >
                           <p className="font-semibold">{label}</p>
                           {service.hotel &&
@@ -287,17 +304,18 @@ export function SalesPricingPanel({
                 </div>
               );
             })}
-            {service.hotel ? (
-              <p className="text-xs text-muted-foreground">
-                هزینه خرید هتل بعداً در رزرواسیون ثبت می‌شود؛ تا آن زمان سود هتل
-                مشخص نیست.
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                این مبلغ فروش است، نه هزینه خرید. هزینه خرید بلیط در مدیریت بلیط
-                باقی می‌ماند.
-              </p>
-            )}
+            {!compact &&
+              (service.hotel ? (
+                <p className="text-xs text-muted-foreground">
+                  هزینه خرید هتل بعداً در رزرواسیون ثبت می‌شود؛ تا آن زمان سود
+                  هتل مشخص نیست.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  این مبلغ فروش است، نه هزینه خرید. هزینه خرید بلیط در مدیریت
+                  بلیط باقی می‌ماند.
+                </p>
+              ))}
           </div>
         );
       })}

@@ -183,7 +183,7 @@ Ticket Catalog owns immutable TourPackage definitions and TourDeparture dated oc
 
 ## SALES-OUTPUT-HOTEL-CURRENCY-0907
 
-Add nullable SalesContractPassenger.accommodationKind (varchar24, constrained to DBL/SINGLE/INFANT/CHILD_WITH_BED/CHILD_WITHOUT_BED). It describes that passenger's hotel occupancy category, not a room inventory reservation. New Sales hotel guests select an age-compatible value; legacy values remain null. Existing room counts/allocations, supplier prices, Finance balances and no-cost transfers remain unchanged. Print sums explicit passenger agreedPrices per currency; never converts currencies or fabricates legacy allocation.
+Add nullable SalesContractPassenger.accommodationKind (varchar24, constrained to DBL/SINGLE/INFANT/CHILD_WITH_BED/CHILD_WITHOUT_BED). It describes that passenger's hotel occupancy category, not a room inventory reservation. The owner-approved SALES-EXACT-TRIP-FLOW-1004 policy removes mandatory per-passenger occupancy selection from new-contract entry; omitted values remain null, and explicit legacy values remain age-validated and preserved. Aggregate room counts, guest/service allocations, supplier prices, Finance balances and no-cost transfers remain unchanged. Print sums explicit passenger agreedPrices per currency; never converts currencies or fabricates legacy allocation.
 
 ## SALES-CUSTOMER-PRICING-0907 — individual package amounts
 

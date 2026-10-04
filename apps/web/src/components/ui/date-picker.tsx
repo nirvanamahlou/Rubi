@@ -35,6 +35,9 @@ function formatCalendarNumber(value: number, system: CalendarSystem): string {
 }
 
 export interface DatePickerProps {
+  availableDates?: readonly string[];
+  markedDates?: readonly string[];
+  minimumDate?: string;
   calendarSystem?: CalendarSystem;
   defaultCalendarSystem?: CalendarSystem;
   withinDialog?: boolean;
@@ -59,6 +62,9 @@ export interface DatePickerProps {
 }
 
 export function DatePicker({
+  availableDates,
+  markedDates,
+  minimumDate,
   calendarSystem: controlledCalendarSystem,
   withinDialog = false,
   className,
@@ -210,6 +216,11 @@ export function DatePicker({
   };
 
   const selectDay = (isoDate: string) => {
+    if (
+      (minimumDate && isoDate < minimumDate) ||
+      (availableDates && !availableDates.includes(isoDate))
+    )
+      return;
     emit(joinDateAndTime(isoDate, currentValue, includeTime));
     if (!includeTime) setOpen(false);
   };
@@ -536,12 +547,16 @@ export function DatePicker({
                   ))}
                   {days.map((day) => {
                     const selected = day.isoDate === selectedDate;
+                    const available =
+                      (!minimumDate || day.isoDate >= minimumDate) &&
+                      (!availableDates || availableDates.includes(day.isoDate));
+                    const marked = markedDates?.includes(day.isoDate);
                     return (
                       <button
-                        aria-label={`${day.year}/${day.month}/${day.day}`}
+                        aria-label={`${day.year}/${day.month}/${day.day}${marked ? ' · دارای پرواز' : ''}`}
                         aria-pressed={selected}
                         className={cn(
-                          'flex aspect-square items-center justify-center rounded-lg text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                          'relative flex aspect-square items-center justify-center rounded-lg text-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-30',
                           day.isCurrentMonth
                             ? 'text-foreground hover:bg-primary/10'
                             : 'text-muted-foreground/45',
@@ -552,10 +567,17 @@ export function DatePicker({
                             'bg-primary font-bold text-primary-foreground shadow-sm hover:bg-primary/90',
                         )}
                         key={day.isoDate}
+                        disabled={!available}
                         onClick={() => selectDay(day.isoDate)}
                         type="button"
                       >
                         {formatCalendarNumber(day.day, calendarSystem)}
+                        {marked ? (
+                          <span
+                            aria-label="دارای پرواز"
+                            className="absolute bottom-1 size-1.5 rounded-full bg-red-500"
+                          />
+                        ) : null}
                       </button>
                     );
                   })}
