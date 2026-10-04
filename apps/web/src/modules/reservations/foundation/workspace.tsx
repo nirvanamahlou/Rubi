@@ -715,7 +715,15 @@ export function ReservationOperationsWorkspace({
                           }}
                         >
                           {reservationCells(row).map((value, index) => (
-                            <td key={reservationColumns[index]} title={value}>
+                            <td
+                              key={reservationColumns[index]}
+                              data-has-note={index === 1 && !!row.hasNotes}
+                              title={
+                                index === 1 && row.hasNotes
+                                  ? value + ' · دارای یادداشت در توضیحات'
+                                  : value
+                              }
+                            >
                               {index === 0 ? (
                                 <button
                                   type="button"

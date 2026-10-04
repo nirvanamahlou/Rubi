@@ -1738,6 +1738,20 @@ export function SalesContractForm() {
               disabled={!pricingServices.length}
               onChange={(payments) => patchState({ payments })}
             />
+            <FormField label="یادداشت کارشناس برای رزرواسیون (اختیاری)">
+              <Textarea
+                maxLength={500}
+                rows={3}
+                value={state.reservationNote ?? ''}
+                onChange={(event) =>
+                  patchState({ reservationNote: event.target.value })
+                }
+                placeholder="توضیحات لازم برای اجرای خدمات سفر"
+              />
+              <p className="text-sm text-muted-foreground">
+                در توضیحات درخواست رزرواسیون نمایش داده می‌شود.
+              </p>
+            </FormField>
             <FormField label="یادداشت قیمت‌گذاری">
               <Textarea
                 value={state.pricingNotes}
@@ -1828,23 +1842,6 @@ export function SalesContractForm() {
           </div>
         ) : null}
       </Card>
-      {step === salesSteps.length - 1 && (
-        <FormField label="یادداشت برای رزرواسیون (اختیاری)">
-          <Textarea
-            maxLength={500}
-            value={state.reservationNote ?? ''}
-            onChange={(event) =>
-              setState((current) => ({
-                ...current,
-                reservationNote: event.target.value,
-              }))
-            }
-          />
-          <p className="text-sm text-muted-foreground">
-            همراه قرارداد برای تیم رزرواسیون ارسال می‌شود.
-          </p>
-        </FormField>
-      )}
       <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
         <Button
           type="button"
