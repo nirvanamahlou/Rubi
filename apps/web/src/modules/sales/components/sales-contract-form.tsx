@@ -1,5 +1,11 @@
 'use client';
-import { agreedSalePricing } from '../model/agreed-sale-pricing';
+import {
+  tripPricingView,
+  splitFlightPrices,
+  roundTripPriceKey,
+} from '../model/round-trip-pricing';
+import { FlightTripDates } from './flight-trip-dates';
+import { exactFlightQuery } from '../model/exact-flight-dates';
 import {
   salesFlightRangeReady,
   salesFlightToday,
@@ -19,7 +25,6 @@ import type {
   MasterDataRecord,
   MasterDataResource,
   SalesServiceKind,
-  SalesAccommodationKind,
 } from '@nora/contracts';
 
 import { hotelNights } from '@nora/contracts';
@@ -54,10 +59,7 @@ import {
 
 import { SalesPeopleSheet } from './sales-people-sheet';
 import type { SalesPeopleDraft } from '../model/sales-people-sheet';
-import {
-  FlightDateRangeFilter,
-  type FlightDateRange,
-} from './flight-date-range';
+import { type FlightDateRange } from './flight-date-range';
 import {
   emptySalesForm,
   salesFlightSelection,
@@ -66,8 +68,6 @@ import {
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
-  salesAccommodationOptions,
-  salesAccommodationsComplete,
   salesPassengerCompositionMatches,
   salesPassengerCounts,
   salesHotelGuestIds,
@@ -80,7 +80,6 @@ import {
   withFirstPassengerCustomer,
   salesHotelValid,
   salesDetailSteps,
-  salesReturnSearchFrom,
   withSalesRouteDefaults,
   toggleSalesDirectionalService,
   type SalesFormState,
@@ -151,6 +150,9 @@ export function SalesContractForm() {
     from: '',
     to: '',
   });
+  const [flightRangeRoute, setFlightRangeRoute] = useState('');
+  const [flightDateOutboundIds, setFlightDateOutboundIds] =
+    useState<string[]>();
   const [preparedTickets, setPreparedTickets] =
     useState<PreparedTicketSearch>();
   const [futureFrom, setFutureFrom] = useState(() => new Date().toISOString());
@@ -161,7 +163,7 @@ export function SalesContractForm() {
   const state = useMemo<SalesFormState>(
     () => ({
       ...draftState,
-      servicePricing: agreedSalePricing(draftState.servicePricing ?? {}),
+      servicePricing: draftState.servicePricing ?? {},
       catalogSalePricing:
         !draftState.tour &&
         !draftState.serviceKinds.includes('HOTEL') &&
@@ -202,20 +204,24 @@ export function SalesContractForm() {
   const prefetchKey = JSON.stringify({
     originId: state.originId,
     destinationId: state.destinationId,
-    departureFrom:
-      flightRange.from && flightRange.from > futureFrom.slice(0, 10)
-        ? flightRange.from
-        : futureFrom,
-    departureTo: flightRange.to,
+    ...exactFlightQuery(flightRange.from),
     page: 1,
   });
+  const flightRouteKey = JSON.stringify([
+    state.originId,
+    state.destinationId,
+    salesDirections(state, 'FLIGHT'),
+  ]);
+  const flightDatesReady =
+    flightRangeRoute === flightRouteKey &&
+    salesFlightRangeReady(flightRange, salesFlightToday());
   const canPrefetchTickets = Boolean(
     state.originId &&
     state.destinationId &&
     state.originId !== state.destinationId &&
     state.serviceKinds.includes('FLIGHT') &&
     !state.contractFlights?.OUTBOUND &&
-    salesFlightRangeReady(flightRange, salesFlightToday()),
+    flightDatesReady,
   );
   useEffect(() => {
     if (!canPrefetchTickets) return;
@@ -536,6 +542,10 @@ export function SalesContractForm() {
             },
           ],
     );
+  const pricingView = tripPricingView(
+    pricingServices,
+    state.servicePricing ?? {},
+  );
   let pricingNights = 0;
   try {
     pricingNights = hotelNights(state.hotel.checkIn, state.hotel.checkOut);
@@ -602,7 +612,7 @@ export function SalesContractForm() {
           : {}),
     });
   };
-  const canContinue = useMemo(() => {
+  const canContinue = (() => {
     if (step === 0)
       return Boolean(
         state.originId &&
@@ -613,15 +623,14 @@ export function SalesContractForm() {
         state.serviceKinds.length &&
         passengerCounts.total > 0 &&
         (!state.serviceKinds.includes('FLIGHT') ||
-          (passengerCounts.seated > 0 &&
-            salesFlightRangeReady(flightRange, salesFlightToday()))) &&
+          (passengerCounts.seated > 0 && flightDatesReady)) &&
         (passengerCounts.infants === 0 || passengerCounts.adults > 0),
       );
     if (step === 1) {
       if (activeDetail === 'TOUR') return false;
       if (activeDetail === 'FLIGHT')
         return (
-          salesFlightRangeReady(flightRange, salesFlightToday()) &&
+          flightDatesReady &&
           salesFlightsValid(state) &&
           (!state.serviceKinds.includes('HOTEL') ||
             (salesHotelValid(state) && !hotelCapacityError))
@@ -641,7 +650,6 @@ export function SalesContractForm() {
         state.passengers.length > 0 &&
         state.passengers.every((item) => item.birthDate) &&
         salesPassengerCompositionMatches(state) &&
-        salesAccommodationsComplete(state) &&
         (!state.serviceKinds.includes('HOTEL') || hotelGuestIds.length > 0) &&
         state.passengers.every(
           ({ customerId }) =>
@@ -672,18 +680,7 @@ export function SalesContractForm() {
       }
     }
     return true;
-  }, [
-    state,
-    step,
-    activeDetail,
-    insuranceReady,
-    peopleDirty,
-    references.currencies,
-    passengerCounts,
-    hotelGuestIds,
-    hotelCapacityError,
-    flightRange,
-  ]);
+  })();
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (step !== salesSteps.length - 1 || busy) return;
@@ -691,8 +688,6 @@ export function SalesContractForm() {
     setError('');
     try {
       const payload = salesPayload(state);
-      if (!salesAccommodationsComplete(state))
-        throw new Error('نوع اقامت هر مسافر هتل را مشخص کنید.');
       validateSalesCurrencySelection(payload, references.currencies);
       validatePassengerPackagePrices(
         payload.passengers,
@@ -1041,12 +1036,38 @@ export function SalesContractForm() {
         ) : null}
         {step === 0 && state.serviceKinds.includes('FLIGHT') ? (
           <section
-            aria-label="بازه تاریخ سفر"
+            aria-label="انتخاب تاریخ بلیط رفت و برگشت"
             className="mt-5 border-t border-border pt-4"
           >
-            <FlightDateRangeFilter
-              value={flightRange}
-              onChange={(range) => {
+            <FlightTripDates
+              originId={
+                salesDirections(state, 'FLIGHT').includes('OUTBOUND')
+                  ? state.originId
+                  : state.destinationId
+              }
+              destinationId={
+                salesDirections(state, 'FLIGHT').includes('OUTBOUND')
+                  ? state.destinationId
+                  : state.originId
+              }
+              roundTrip={
+                salesDirections(state, 'FLIGHT').includes('OUTBOUND') &&
+                salesDirections(state, 'FLIGHT').includes('RETURN')
+              }
+              seats={salesPassengerCounts(state).seated}
+              requireFare={
+                !state.tour &&
+                !state.serviceKinds.includes('HOTEL') &&
+                !state.serviceKinds.includes('TOUR')
+              }
+              value={
+                flightRangeRoute === flightRouteKey
+                  ? flightRange
+                  : { from: '', to: '' }
+              }
+              onChange={(range, outboundIds) => {
+                setFlightDateOutboundIds(outboundIds);
+                setFlightRangeRoute(flightRouteKey);
                 setFlightRange(range);
                 setFutureFrom(new Date().toISOString());
                 patchState(resetSalesTicketRange(state));
@@ -1145,10 +1166,7 @@ export function SalesContractForm() {
                         <>
                           <TicketOfferPicker
                             prepared={preparedTickets}
-                            enabled={salesFlightRangeReady(
-                              flightRange,
-                              salesFlightToday(),
-                            )}
+                            enabled={flightDatesReady}
                             originLabel={
                               references.cities.find(
                                 (city) => city.id === state.originId,
@@ -1163,15 +1181,10 @@ export function SalesContractForm() {
                             query={{
                               originId: state.originId,
                               destinationId: state.destinationId,
-                              departureFrom:
-                                flightRange.from &&
-                                flightRange.from > futureFrom.slice(0, 10)
-                                  ? flightRange.from
-                                  : futureFrom,
-                              ...(flightRange.to
-                                ? { departureTo: flightRange.to }
-                                : {}),
+                              ...exactFlightQuery(flightRange.from),
                             }}
+                            exactDay={flightRange.from}
+                            allowedOfferIds={flightDateOutboundIds}
                             requiredSeats={passengerCounts.seated}
                             requireStandaloneFare={
                               !state.tour &&
@@ -1230,10 +1243,7 @@ export function SalesContractForm() {
                           {!flightDirections.includes('OUTBOUND') ||
                           salesFlightSelection(state, 'OUTBOUND') ? (
                             <TicketOfferPicker
-                              enabled={salesFlightRangeReady(
-                                flightRange,
-                                salesFlightToday(),
-                              )}
+                              enabled={flightDatesReady}
                               originLabel={
                                 references.cities.find(
                                   (city) => city.id === state.destinationId,
@@ -1248,24 +1258,9 @@ export function SalesContractForm() {
                               query={{
                                 originId: state.destinationId,
                                 destinationId: state.originId,
-                                departureFrom: flightDirections.includes(
-                                  'OUTBOUND',
-                                )
-                                  ? [
-                                      salesReturnSearchFrom(state),
-                                      flightRange.from,
-                                      futureFrom,
-                                    ]
-                                      .sort()
-                                      .at(-1)!
-                                  : flightRange.from &&
-                                      flightRange.from > futureFrom.slice(0, 10)
-                                    ? flightRange.from
-                                    : futureFrom,
-                                ...(flightRange.to
-                                  ? { departureTo: flightRange.to }
-                                  : {}),
+                                ...exactFlightQuery(flightRange.to),
                               }}
+                              exactDay={flightRange.to}
                               requiredSeats={passengerCounts.seated}
                               requireStandaloneFare={
                                 !state.tour &&
@@ -1658,34 +1653,6 @@ export function SalesContractForm() {
                     </label>
                   ))}
                 </div>
-                <div className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
-                  {state.passengers
-                    .filter((p) => hotelGuestIds.includes(p.customerId))
-                    .map((passenger) => (
-                      <SearchableReference
-                        key={passenger.customerId}
-                        label={'نوع اقامت · ' + passenger.displayName}
-                        value={
-                          state.passengerAccommodations?.[
-                            passenger.customerId
-                          ] ?? ''
-                        }
-                        options={salesAccommodationOptions(
-                          passenger.birthDate,
-                          salesTravelDate(state),
-                        )}
-                        onChange={(value) =>
-                          patchState({
-                            passengerAccommodations: {
-                              ...state.passengerAccommodations,
-                              [passenger.customerId]:
-                                value as SalesAccommodationKind,
-                            },
-                          })
-                        }
-                      />
-                    ))}
-                </div>
               </fieldset>
             ) : null}
             {state.passengers
@@ -1752,73 +1719,89 @@ export function SalesContractForm() {
                           : state.serviceKinds.includes('HOTEL') &&
                               hotelGuestIds.length === 0
                             ? 'حداقل یک مهمان برای هتل انتخاب کنید.'
-                            : !salesAccommodationsComplete(state)
-                              ? 'نوع اقامت هر مسافر هتل را مشخص کنید.'
-                              : 'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.'}
+                            : 'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.'}
               </p>
             ) : null}
           </section>
         ) : null}
         {step === 3 ? (
-          <div className="grid gap-6">
-            {state.serviceKinds.includes('TRANSFER') ? (
-              <p className="rounded-xl bg-primary/5 p-3 text-sm text-primary">
-                ترانسفر{' '}
-                {salesDirections(state, 'TRANSFER')
-                  .map((direction) =>
-                    direction === 'OUTBOUND' ? 'رفت' : 'برگشت',
-                  )
-                  .join(' و ')}{' '}
-                همراه خدمات است؛ هزینهٔ اضافه ندارد و در خروجی بلیط درج می‌شود.
-              </p>
-            ) : null}
-            <SalesPricingPanel
-              salePriceFromAgreed
-              currencies={references.currencies}
-              services={pricingServices}
-              nights={pricingNights}
-              values={state.servicePricing ?? {}}
-              fixedSalePrices={fixedTicketSalePrices}
-              onChange={(key, prices) =>
-                patchState({
-                  servicePricing: { ...state.servicePricing, [key]: prices },
-                })
-              }
-            />
-            <PassengerPackagePrices
-              state={state}
-              onChange={(passengerPrices) => patchState({ passengerPrices })}
-            />
-            <InsuranceExtraSummary state={state} />
-            <SalesPaymentPlan
-              payments={state.payments}
-              currencies={references.currencies}
-              banks={references.banks}
-              disabled={!pricingServices.length}
-              onChange={(payments) => patchState({ payments })}
-            />
-            <FormField label="یادداشت کارشناس برای رزرواسیون (اختیاری)">
-              <Textarea
-                maxLength={500}
-                rows={3}
-                value={state.reservationNote ?? ''}
-                onChange={(event) =>
-                  patchState({ reservationNote: event.target.value })
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+            <div className="grid content-start gap-3">
+              {state.serviceKinds.includes('TRANSFER') ? (
+                <p className="rounded-xl bg-primary/5 p-3 text-sm text-primary">
+                  ترانسفر{' '}
+                  {salesDirections(state, 'TRANSFER')
+                    .map((direction) =>
+                      direction === 'OUTBOUND' ? 'رفت' : 'برگشت',
+                    )
+                    .join(' و ')}{' '}
+                  همراه خدمات است؛ هزینهٔ اضافه ندارد و در خروجی بلیط درج
+                  می‌شود.
+                </p>
+              ) : null}
+              <SalesPricingPanel
+                compact
+                currencies={references.currencies}
+                services={pricingView.services}
+                nights={pricingNights}
+                values={pricingView.values}
+                fixedSalePrices={
+                  fixedTicketSalePrices
+                    ? tripPricingView(pricingServices, fixedTicketSalePrices)
+                        .values
+                    : undefined
                 }
-                placeholder="توضیحات لازم برای اجرای خدمات سفر"
-              />
-              <p className="text-sm text-muted-foreground">
-                در توضیحات درخواست رزرواسیون نمایش داده می‌شود.
-              </p>
-            </FormField>
-            <FormField label="یادداشت قیمت‌گذاری">
-              <Textarea
-                value={state.pricingNotes}
-                onChange={(event) =>
-                  patchState({ pricingNotes: event.target.value })
+                onChange={(key, prices) =>
+                  patchState({
+                    servicePricing:
+                      key === roundTripPriceKey
+                        ? splitFlightPrices(prices, state.servicePricing ?? {})
+                        : { ...state.servicePricing, [key]: prices },
+                  })
                 }
               />
-            </FormField>
+            </div>
+            <div className="grid content-start gap-3">
+              <PassengerPackagePrices
+                state={state}
+                onChange={(passengerPrices) => patchState({ passengerPrices })}
+              />
+              <InsuranceExtraSummary state={state} />
+              <SalesPaymentPlan
+                payments={state.payments}
+                currencies={references.currencies}
+                banks={references.banks}
+                disabled={!pricingServices.length}
+                onChange={(payments) => patchState({ payments })}
+              />
+              <FormField label="یادداشت کارشناس برای رزرواسیون (اختیاری)">
+                <Textarea
+                  maxLength={500}
+                  rows={3}
+                  value={state.reservationNote ?? ''}
+                  onChange={(event) =>
+                    patchState({ reservationNote: event.target.value })
+                  }
+                  placeholder="توضیحات لازم برای اجرای خدمات سفر"
+                />
+                <p className="text-sm text-muted-foreground">
+                  در توضیحات درخواست رزرواسیون نمایش داده می‌شود.
+                </p>
+              </FormField>
+              <details className="rounded-xl border p-3">
+                <summary className="cursor-pointer text-sm font-semibold">
+                  یادداشت قیمت‌گذاری
+                </summary>
+                <FormField label="یادداشت قیمت‌گذاری">
+                  <Textarea
+                    value={state.pricingNotes}
+                    onChange={(event) =>
+                      patchState({ pricingNotes: event.target.value })
+                    }
+                  />
+                </FormField>
+              </details>
+            </div>
           </div>
         ) : null}
         {step === 4 ? (
@@ -1887,9 +1870,9 @@ export function SalesContractForm() {
             </div>
             <InsuranceExtraSummary state={state} />
             <SalesPricingSummary
-              services={pricingServices}
+              services={pricingView.services}
               nights={pricingNights}
-              values={state.servicePricing ?? {}}
+              values={pricingView.values}
             />
             {state.serviceKinds.includes('FLIGHT') ? (
               <Alert

@@ -92,7 +92,7 @@ describe('ticket list before and after date selection', () => {
     const cleanup = effects.map((effect) => effect());
     await vi.runAllTimersAsync();
     expect(fetcher).not.toHaveBeenCalled();
-    expect(html).toContain('ابتدا بازه تاریخ را انتخاب');
+    expect(html).toContain('ابتدا تاریخ بلیط را انتخاب');
     expect(html).not.toContain('در حال دریافت');
     cleanup.forEach((cancel) => cancel?.());
   });

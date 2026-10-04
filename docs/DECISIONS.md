@@ -366,3 +366,9 @@ For B2B-SALES-CONTRACT-CONNECTION-1003, the older supplier-payment wording in MO
 ## INITIAL-PASSWORD-FOUR-DIGITS-1004 — 2026-10-04
 
 Owner-approved exception to PR #46: administrator-created initial user passwords accept 4–200 characters, including numeric-only values, without required character classes. This is limited to creation; self-service change, administrator reset and bootstrap administrator keep the existing strong policy. Password hashing, permissions, login throttling and existing credentials remain unchanged. Four-digit numeric passwords have only 10,000 combinations; owner explicitly approves the simpler initial credential policy. No automatic data or password rewrite.
+
+## SALES-EXACT-TRIP-FLOW-1004 — owner-approved contract entry policy
+
+- 2026-10-04: the owner requests one agreed total and one day-sale total for a round-trip ticket, exact departure/return dates with flight-availability dots, and no manual question about each passenger's hotel room/occupancy. This supersedes mandatory accommodation selection for new Sales contract entry only. Existing optional occupancy snapshots, age validation, aggregate room counts and guest/service assignments remain intact; no room assignment is invented.
+- The UI groups both flight legs, but the public payload retains two service/allocation identities. Decimal-unit splitting preserves the exact combined currency total and existing catalog day-fare snapshots. Day sale and agreed price remain distinct; one-way services retain their own service identity.
+- Calendar dates follow Tehran local days. Public paginated Ticket Catalog projections provide the marked days; reverse-route, branch, arrival, capacity, fare and inclusive Min/Max constraints determine return dates. Exact-day listing and authoritative server recheck prevent dates from weakening inventory validation. Floating contract-only tickets retain explicit manual-date entry.

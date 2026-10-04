@@ -4,7 +4,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { SalesContractForm } from './sales-contract-form';
 
-const fixture = vi.hoisted(() => ({ flight: false, step: 0 }));
+const fixture = vi.hoisted(() => ({
+  flight: false,
+  hotel: false,
+  roundTrip: false,
+  step: 0,
+}));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
   useState: (initial: unknown) => {
@@ -17,6 +22,37 @@ vi.mock('react', async (original) => ({
       fixture.flight
     )
       value = { ...emptySalesForm, serviceKinds: ['FLIGHT'] };
+    if (
+      value &&
+      typeof value === 'object' &&
+      'serviceKinds' in value &&
+      fixture.roundTrip
+    )
+      value = { ...value, tripType: 'ROUND_TRIP', serviceKinds: ['FLIGHT'] };
+    if (
+      value &&
+      typeof value === 'object' &&
+      'serviceKinds' in value &&
+      fixture.hotel
+    )
+      value = {
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL'],
+        departureDate: '2099-10-01',
+        passengers: [
+          {
+            customerId: 'guest',
+            displayName: 'Synthetic Guest',
+            birthDate: '2000-01-01',
+          },
+        ],
+        hotel: {
+          ...emptySalesForm.hotel,
+          checkIn: '2099-10-01',
+          checkOut: '2099-10-04',
+          guestCustomerIds: ['guest'],
+        },
+      };
     if (value === 0) value = fixture.step;
     return [value, vi.fn()];
   },
@@ -24,18 +60,47 @@ vi.mock('react', async (original) => ({
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('compact sales contract form', () => {
-  it('puts the required flight range after route and passenger counts in the first step', () => {
+  it('shows one day-sale and agreed input for round-trip flights in the compact pricing layout', () => {
+    fixture.roundTrip = true;
+    fixture.step = 3;
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    fixture.roundTrip = false;
+    fixture.step = 0;
+    expect(html).toContain('lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]');
+    expect(
+      html.match(/aria-label="قیمت روز فروش بلیط رفت‌وبرگشت کل"/g),
+    ).toHaveLength(1);
+    expect(
+      html.match(/aria-label="مبلغ توافق‌شده با مشتری بلیط رفت‌وبرگشت کل"/g),
+    ).toHaveLength(1);
+    expect(html).not.toContain('aria-label="قیمت روز فروش بلیط برگشت کل"');
+  });
+  it('keeps hotel guests and aggregate rooms without asking each guest for an occupancy type', () => {
+    fixture.hotel = true;
+    fixture.step = 2;
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    fixture.hotel = false;
+    fixture.step = 0;
+    expect(html).toContain('اعضای اقامت هتل');
+    expect(html).toContain('Synthetic Guest');
+    expect(html).toContain('اتاق');
+    expect(html).not.toContain('نوع اقامت ·');
+    expect(html).not.toContain('نوع اقامت هر مسافر');
+  });
+  it('puts exact flight date choices after route and passenger counts in the first step', () => {
     fixture.flight = true;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.flight = false;
-    expect(html).toContain('بازه تاریخ سفر (الزامی)');
-    expect(html).toContain('انتخاب شروع سفر');
-    expect(html).toContain('انتخاب پایان سفر');
+    expect(html).toContain('انتخاب تاریخ بلیط رفت');
+    expect(html).toContain('تاریخ بلیط رفت');
+    expect(html).toContain('نقطهٔ قرمز');
     expect(html.indexOf('تعداد مسافران')).toBeLessThan(
-      html.indexOf('بازه تاریخ سفر (الزامی)'),
+      html.indexOf('انتخاب تاریخ بلیط رفت'),
     );
-    expect(html.match(/aria-label="بازه تاریخ سفر"/g)).toHaveLength(1);
-    expect(html).not.toContain('بلیط رفت');
+    expect(
+      html.match(/aria-label="انتخاب تاریخ بلیط رفت و برگشت"/g),
+    ).toHaveLength(1);
+    expect(html).not.toContain('بازه تاریخ سفر (الزامی)');
   });
   it('shows a bounded form and compact services without asking for a route date', () => {
     const html = renderToStaticMarkup(<SalesContractForm />);
