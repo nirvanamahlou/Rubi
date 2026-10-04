@@ -917,7 +917,7 @@ export function MasterDataAccommodationWorkspace() {
             ]
           : tab === 'meals'
             ? [
-                'کد',
+                'کد سرویس',
                 'لوگو',
                 'عنوان فارسی',
                 'عنوان انگلیسی',

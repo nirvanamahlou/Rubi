@@ -121,6 +121,43 @@ describe('accommodation workspace', () => {
     expect(catalogSource).toContain("key: 'usageCondition'");
   });
 
+  it('labels the canonical meal service code without adding a duplicate cell', () => {
+    const tableStart = source.indexOf('function table()');
+    const mealsBranch = source.indexOf(": tab === 'meals'", tableStart);
+    const mealsHeadersStart = source.indexOf('? [', mealsBranch);
+    const mealsHeadersEnd = source.indexOf(': [', mealsHeadersStart);
+    const headers = [
+      ...source
+        .slice(mealsHeadersStart, mealsHeadersEnd)
+        .matchAll(/'([^']+)'/g),
+    ].map((match) => match[1]);
+    const mealsCells = source.slice(
+      source.indexOf(") : tab === 'meals' ? (", source.indexOf('<tbody>')),
+      source.indexOf(') : (', source.indexOf(") : tab === 'meals' ? (")),
+    );
+    const sharedRowPrefix = source.slice(
+      source.indexOf('<tr', source.indexOf('{records.map((record) => (')),
+      source.indexOf("{tab === 'hotels' ? (", source.indexOf('<tbody>')),
+    );
+
+    expect(headers).toEqual([
+      'کد سرویس',
+      'لوگو',
+      'عنوان فارسی',
+      'عنوان انگلیسی',
+      'دسته',
+      'وعده‌های شامل‌شده',
+      'تعداد هتل مرتبط',
+      'وضعیت',
+      'عملیات',
+    ]);
+    expect((mealsCells.match(/<td\b/g) ?? []).length + 3).toBe(headers.length);
+    expect(sharedRowPrefix.match(/<td\b/g)).toHaveLength(1);
+    expect(sharedRowPrefix).toContain('{record.code}');
+    expect(mealsCells).not.toContain('record.code');
+    expect(headers.filter((header) => header === 'کد سرویس')).toHaveLength(1);
+  });
+
   it('implements the catalog tabs and opens hotel profiles from the list', () => {
     for (const label of [
       'هتل‌ها',
