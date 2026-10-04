@@ -38,8 +38,21 @@ describe('dossier session context', () => {
       'branch-b',
     ]);
     expect(nextActor.contextKey).not.toBe(first.contextKey);
+    expect(first.actorIdentityKey).toBe('user-a');
+    expect(nextActor.actorIdentityKey).toBe('user-b');
     expect(revoked.contextKey).not.toBe(nextActor.contextKey);
     expect(revoked.permissions).toEqual([]);
+  });
+
+  it('keeps actor identity stable across ordinary refresh revisions', () => {
+    const first = dossierSessionProjection(user('user-a', []), 1, 'branch-a');
+    const refreshed = dossierSessionProjection(
+      user('user-a', []),
+      2,
+      'branch-a',
+    );
+    expect(refreshed.contextKey).not.toBe(first.contextKey);
+    expect(refreshed.actorIdentityKey).toBe(first.actorIdentityKey);
   });
 
   it('retains the selected branch only while the refreshed actor remains authorized', () => {

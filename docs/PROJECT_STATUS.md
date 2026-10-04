@@ -2,6 +2,10 @@
 
 Flight lookup now starts when route and future travel range are ready in the first contract step. The next step reuses the exact in-flight/recent first-page request for up to10seconds rather than starting the same lookup again. Form-local abort signals prevent obsolete responses; mismatched route/date/page/cabin/return queries fetch separately, and failed speculative searches retry on entry. No persistent/shared cache or API/schema/dependency change; authoritative inventory and contract validation remain unchanged. Sales284 tests and final10 focused tests pass; lint/typecheck/build gate delivery and local activation.
 
+## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
+
+The Accommodation Meal/Service table now labels its existing canonical `record.code` column «کد سرویس». The shared first cell remains the sole code cell; no duplicate column or new data field was added, and other Accommodation tables are unchanged. Focused 10 and all 602 Master Data Web tests, scoped Prettier/ESLint, Web typecheck and the 55-route production build pass. No authenticated browser/runtime QA or API/schema/form/export/dependency/database change. Bounded locks release with commit.
+
 ## 2026-10-04 — INSURER-BROKER-HIDE-ORGANIZATIONS-1004 — PC-B — READY_FOR_REVIEW
 
 Insurer and Broker create/edit forms no longer expose Organization. New insurers persist independently; the nullable insurer Organization FK retains uniqueness and restrictive legacy references, and v1 API clients may still provide a validated Organization. Broker primary contact is shown only when editing an existing organization-linked record; its hidden Organization scope is retained locally but omitted from PATCH, preserving the stored link. A disposable PostgreSQL 16 database verified the migration, multiple NULL rows, legacy PATCH/CAS preservation, uniqueness and FK/restrict behavior. Focused Database 1, API 14 and Web 22 tests, full Master Data API 491 and Web 601 tests, scoped ESLint, Prisma format/validate/generate, all affected typechecks/builds and the 55-route Web build pass. Database Designer schema analysis passed; its migration generator failed on its own Column serialization bug and is not treated as migration evidence. No authenticated browser, live runtime or operational DB was changed. Deployment order is migration, API, Web; rollback is guarded and cannot delete independent insurer rows. Bounded locks release with commit.
@@ -4580,3 +4584,7 @@ Screenshot693: remove signatory action text and internal-branch display, align d
 ## 2026-10-04 — B2B-SIGNATORY-FORM-COPY-1004 — PC-B
 
 Remove four user-specified guidance texts from signatory form; fields, currency dependency, proof validity, inactive save and activation enforcement stay intact. Bounded R0/C1 UI copy assigned to persistent worker. Required checks/CI gate user-authorized push/develop merge. No API/data/schema/permission/dependency changes; usage unavailable.
+
+## 2026-10-04 — B2B-SIGNATORY-UPLOAD-1004 — PC-B
+
+In-form authority proof upload requested with persisted notes and manual activation after upload. Existing backend has no human-review gate: antivirus CLEAN, complete/unexpired exact-org/branch proof remains mandatory. Frozenv1 consumer-only implementation preserves Documents/B2B policy and adds bounded readiness refresh plus stale-upload/save protection. Independent review and required checks gate delivery. No schema/dependency/permission changes.

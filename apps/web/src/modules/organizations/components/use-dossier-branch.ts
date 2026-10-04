@@ -17,6 +17,7 @@ export function useDossierBranch() {
   );
   const [sessionError, setSessionError] = useState('');
   const [sessionContextKey, setSessionContextKey] = useState('');
+  const [actorIdentityKey, setActorIdentityKey] = useState('');
   const request = useRef(0);
   const selectedBranch = useRef('');
   const selectBranch = useCallback((branch: string) => {
@@ -36,6 +37,7 @@ export function useDossierBranch() {
       setBranches(projection.branches);
       setPermissions(projection.permissions);
       setSessionError(projection.error);
+      setActorIdentityKey(projection.actorIdentityKey);
       setSessionContextKey(projection.contextKey);
     },
     [],
@@ -57,6 +59,7 @@ export function useDossierBranch() {
         setBranches([]);
         selectedBranch.current = '';
         setBranchId('');
+        setActorIdentityKey('');
         setSessionError(
           caught instanceof Error ? caught.message : 'نشست معتبر نیست.',
         );
@@ -87,5 +90,6 @@ export function useDossierBranch() {
     permissions,
     sessionError,
     sessionContextKey,
+    actorIdentityKey,
   };
 }
