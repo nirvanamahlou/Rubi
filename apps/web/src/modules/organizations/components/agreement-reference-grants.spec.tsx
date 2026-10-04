@@ -7,7 +7,10 @@ vi.mock('@/modules/documents/api/client', () => ({
   DocumentsApiError: class DocumentsApiError extends Error {},
 }));
 
-import { protectedAgreementProofIds } from './agreement-workflow-panel';
+import {
+  protectedAgreementProofIds,
+  uploadedAgreementReferenceState,
+} from './agreement-workflow-panel';
 import { agreementUploadContextKey } from '../model/agreement-terms';
 import { blankAgreementTerms } from '../model/agreement-terms';
 import { AgreementTermsEditor } from './agreement-terms-editor';
@@ -36,6 +39,20 @@ describe('agreement confidential proof discovery', () => {
     await expect(
       protectedAgreementProofIds('organization', 'branch', ['missing']),
     ).rejects.toThrow('قابل تأیید نیست');
+  });
+
+  it('keeps a newly issued upload grant under the next proof scope while discovery runs', () => {
+    const state = uploadedAgreementReferenceState(
+      'actor|session|organization|branch|next-proof|editor-generation',
+      'new-protected-document',
+      'fresh-token',
+    );
+    expect(state.phase).toBe('checking');
+    expect(state.protectedReferences).toEqual(
+      new Set(['new-protected-document']),
+    );
+    expect(state.grants).toEqual({ 'new-protected-document': 'fresh-token' });
+    expect(state.codes).toEqual({});
   });
 });
 

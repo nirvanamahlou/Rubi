@@ -35,9 +35,7 @@ describe('inline confidential document code', () => {
 
   it('publishes a confidential upload after grant issuance even though selecting it changes the target ID', async () => {
     let resolveGrant!: (token: string) => void;
-    const grant = new Promise<string>(
-      (resolve) => (resolveGrant = resolve),
-    );
+    const grant = new Promise<string>((resolve) => (resolveGrant = resolve));
     let selectedDocumentId = 'previous-document';
     const slotContext = 'actor|organization|branch|editor|contract-slot';
     const currentContext = slotContext;
@@ -72,9 +70,7 @@ describe('inline confidential document code', () => {
 
   it('does not publish a delayed grant after the upload context changes', async () => {
     let resolveGrant!: (token: string) => void;
-    const grant = new Promise<string>(
-      (resolve) => (resolveGrant = resolve),
-    );
+    const grant = new Promise<string>((resolve) => (resolveGrant = resolve));
     let currentContext = 'actor|organization|branch|editor|contract-slot';
     const originalContext = currentContext;
     const publish = vi.fn();
@@ -88,6 +84,30 @@ describe('inline confidential document code', () => {
     );
 
     currentContext = 'different-actor|organization|branch|editor|contract-slot';
+    resolveGrant('fresh-token');
+    await expect(completion).resolves.toEqual({
+      current: false,
+      grantError: undefined,
+    });
+    expect(publish).not.toHaveBeenCalled();
+  });
+
+  it('discards a delayed grant after an external proof selection changes', async () => {
+    let resolveGrant!: (token: string) => void;
+    const grant = new Promise<string>((resolve) => (resolveGrant = resolve));
+    let currentContext = 'actor|session|organization|branch|proof-a|editor';
+    const originalContext = currentContext;
+    const publish = vi.fn();
+    const completion = publishUploadedDocumentAfterGrant(
+      {
+        isCurrent: () => currentContext === originalContext,
+        publish,
+      },
+      'uploaded-document',
+      () => grant,
+    );
+
+    currentContext = 'actor|session|organization|branch|proof-b|editor';
     resolveGrant('fresh-token');
     await expect(completion).resolves.toEqual({
       current: false,

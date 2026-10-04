@@ -39,6 +39,7 @@ export function AgreementTermsEditor({
   disabled = false,
   onUploadStateChange,
   onConfidentialGrant,
+  onConfidentialUploadComplete,
   uploadContextKey = '',
   pendingDocuments,
   onPendingDocumentsChange,
@@ -54,6 +55,9 @@ export function AgreementTermsEditor({
   onUploadStateChange?: (busy: boolean) => void;
   onConfidentialGrant?:
     ((documentId: string, token: string) => void) | undefined;
+  onConfidentialUploadComplete?:
+    | ((documentId: string, token: string, terms: B2bAgreementTermsV1) => void)
+    | undefined;
   uploadContextKey?: string;
   pendingDocuments?: AgreementPendingDocuments;
   onPendingDocumentsChange?: (documents: AgreementPendingDocuments) => void;
@@ -191,6 +195,7 @@ export function AgreementTermsEditor({
     stage?: (document: StagedOrganizationDocument | null) => void,
     staged?: StagedOrganizationDocument | null,
     targetBinding = '',
+    completeConfidential?: ((id: string, token: string) => void) | undefined,
   ) => (
     <div className="field full">
       <span>{label}</span>
@@ -254,6 +259,15 @@ export function AgreementTermsEditor({
             change(documentId);
             setReload((n) => n + 1);
           }}
+          onUploadedWithConfidentialGrant={
+            completeConfidential
+              ? (documentId, token) => {
+                  stage?.(null);
+                  completeConfidential(documentId, token);
+                  setReload((n) => n + 1);
+                }
+              : undefined
+          }
           onConfidentialGrant={onConfidentialGrant}
           contextKey={`${uploadContextKey}|${label}|${targetBinding}`}
           onStaged={organizationId ? undefined : stage}
@@ -478,6 +492,19 @@ export function AgreementTermsEditor({
                 }),
               pendingDocuments?.agreement,
               `${value.documentId ?? ''}:${value.documentVersionId ?? ''}`,
+              (documentId, token) => {
+                const terms = {
+                  ...value,
+                  documentId,
+                  documentVersionId: null,
+                };
+                if (onConfidentialUploadComplete)
+                  onConfidentialUploadComplete(documentId, token, terms);
+                else {
+                  onChange(terms);
+                  onConfidentialGrant?.(documentId, token);
+                }
+              },
             )}
           </div>
         </section>
@@ -811,6 +838,29 @@ export function AgreementTermsEditor({
                       }),
                     pendingDocuments?.guarantees[index],
                     JSON.stringify(guarantee),
+                    (documentId, token) => {
+                      const terms = {
+                        ...value,
+                        guarantees: value.guarantees.map((item, i) =>
+                          i === index
+                            ? {
+                                ...item,
+                                documentId,
+                                documentVersionId: null,
+                              }
+                            : item,
+                        ),
+                      };
+                      if (onConfidentialUploadComplete)
+                        onConfidentialUploadComplete(documentId, token, terms);
+                      else {
+                        update({
+                          documentId,
+                          documentVersionId: null,
+                        });
+                        onConfidentialGrant?.(documentId, token);
+                      }
+                    },
                   )}
                 </div>
               </div>

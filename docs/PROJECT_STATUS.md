@@ -4653,3 +4653,5 @@ Finance request page also has a top document-delivery jump button targeting the 
 Validation: all Finance Web40 tests pass, including retained accepted-cost revision/retry, paid-cost lock and failure handling. Scoped lint/typecheck/production build and final CI gate develop merge; no live financial commands or local deployment. PR648.
 
 B2B-AGREEMENT-UPLOAD-1004 AU-R3-01 repair: deferred confidential-grant publication prevents upload self-invalidation; stale context publication remains blocked. Organizations200 tests and scoped Web static checks pass. Refreshed independent review and final build/CI required; not released yet.
+
+B2B-AGREEMENT-UPLOAD-1004 AU-R3-02: draft upload grant moves atomically with its own new proof scope; submit/approval still request fresh actor grants. Organizations202 tests and Web static checks pass; final review/build/CI gate release.

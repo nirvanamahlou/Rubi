@@ -6,6 +6,8 @@ export interface BoundUploadCallbacks {
   onUploaded: (id: string) => void;
   onConfidentialGrant?:
     ((documentId: string, token: string) => void) | undefined;
+  onUploadedWithConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
   onBusyChange: (busy: boolean) => void;
   onUncertainChange?: ((uncertain: boolean) => void) | undefined;
 }
@@ -50,8 +52,21 @@ export function useBoundUploadContext(
           mounted.current &&
           current.current.contextKey === captured.contextKey
         ) {
-          current.current.callbacks.onUploaded(documentId);
-          if (token)
+          if (
+            token &&
+            current.current.callbacks.onUploadedWithConfidentialGrant
+          )
+            current.current.callbacks.onUploadedWithConfidentialGrant(
+              documentId,
+              token,
+            );
+          else {
+            current.current.callbacks.onUploaded(documentId);
+          }
+          if (
+            token &&
+            !current.current.callbacks.onUploadedWithConfidentialGrant
+          )
             current.current.callbacks.onConfidentialGrant?.(documentId, token);
         }
       },

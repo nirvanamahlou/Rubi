@@ -30,7 +30,7 @@ export async function issueUploadedConfidentialGrant(
   return response.data.token;
 }
 
-/** Publish the selected ID only after its one-time attachment grant is ready. */
+/** Publish the selected ID only after its fresh confidential grant is ready. */
 export async function publishUploadedDocumentAfterGrant(
   request: {
     isCurrent: () => boolean;
@@ -59,6 +59,7 @@ export function InlineDocumentUpload({
   permissions,
   onUploaded,
   onConfidentialGrant,
+  onUploadedWithConfidentialGrant,
   onStaged,
   staged,
   onBusyChange,
@@ -74,6 +75,8 @@ export function InlineDocumentUpload({
   permissions: readonly IamPermissionCode[];
   onUploaded: (id: string) => void;
   onConfidentialGrant?:
+    ((documentId: string, token: string) => void) | undefined;
+  onUploadedWithConfidentialGrant?:
     ((documentId: string, token: string) => void) | undefined;
   onStaged?:
     ((document: StagedOrganizationDocument | null) => void) | undefined;
@@ -104,6 +107,7 @@ export function InlineDocumentUpload({
   const bindUpload = useBoundUploadContext(contextKey, {
     onUploaded,
     onConfidentialGrant,
+    onUploadedWithConfidentialGrant,
     onBusyChange,
     onUncertainChange,
   });
@@ -196,9 +200,9 @@ export function InlineDocumentUpload({
           result.data.id,
           () =>
             issueUploadedConfidentialGrant(
-            result.data.id,
-            confidentialAccessCode,
-            Boolean(onConfidentialGrant),
+              result.data.id,
+              confidentialAccessCode,
+              Boolean(onConfidentialGrant),
             ),
         );
         if (!completion.current) return;
@@ -209,12 +213,12 @@ export function InlineDocumentUpload({
       }
       setFile(undefined);
       if (grantError !== undefined) {
-          setError(
-            (grantError instanceof Error
-              ? grantError.message
-              : 'دریافت مجوز موقت سند ناموفق بود.') +
-              ' فایل بارگذاری شده است؛ کد را برای ذخیره قرارداد دوباره وارد کنید.',
-          );
+        setError(
+          (grantError instanceof Error
+            ? grantError.message
+            : 'دریافت مجوز موقت سند ناموفق بود.') +
+            ' فایل بارگذاری شده است؛ کد را برای ذخیره قرارداد دوباره وارد کنید.',
+        );
       }
       setNotice(
         uploadedNotice ??

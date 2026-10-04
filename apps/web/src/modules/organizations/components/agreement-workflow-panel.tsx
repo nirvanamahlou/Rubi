@@ -60,6 +60,20 @@ const proofIdentity = (terms: B2bAgreementTermsV1) =>
     ),
   ].join('|');
 
+export function uploadedAgreementReferenceState(
+  scope: string,
+  documentId: string,
+  token: string,
+) {
+  return {
+    scope,
+    phase: 'checking' as const,
+    protectedReferences: new Set([documentId]),
+    codes: {},
+    grants: { [documentId]: token },
+  };
+}
+
 export async function protectedAgreementProofIds(
   organizationId: string,
   branchId: string,
@@ -266,7 +280,7 @@ export function AgreementWorkflowPanel({
   const [dialogError, setDialogError] = useState('');
   const [referenceState, setReferenceState] = useState<{
     scope: string;
-    phase: 'ready' | 'failed';
+    phase: 'checking' | 'ready' | 'failed';
     protectedReferences: Set<string>;
     codes: Record<string, string>;
     grants: Record<string, string>;
@@ -382,7 +396,9 @@ export function AgreementWorkflowPanel({
     currentReferenceState?.protectedReferences ?? new Set<string>();
   const referenceCodes = currentReferenceState?.codes ?? {};
   const referenceGrants = currentReferenceState?.grants ?? {};
-  const checkingReferences = shouldCheckReferences && !currentReferenceState;
+  const checkingReferences =
+    shouldCheckReferences &&
+    (!currentReferenceState || currentReferenceState.phase === 'checking');
   const referenceCheckFailed = currentReferenceState?.phase === 'failed';
   const updateReferenceState = (
     update: (
@@ -412,6 +428,30 @@ export function AgreementWorkflowPanel({
       ...current,
       grants: { ...current.grants, [documentId]: token },
     }));
+  const completeConfidentialUpload = (
+    documentId: string,
+    token: string,
+    terms: B2bAgreementTermsV1,
+  ) => {
+    if (!currentEditor) return;
+    const nextScope = JSON.stringify([
+      actorIdentityKey,
+      sessionContextKey,
+      organizationId,
+      branchId,
+      proofIdentity(terms),
+      currentEditor.grantContextKey,
+    ]);
+    setEditor({
+      ...currentEditor,
+      terms,
+      requestId: crypto.randomUUID(),
+    });
+    setReferenceState(
+      uploadedAgreementReferenceState(nextScope, documentId, token),
+    );
+    setDialogError('');
+  };
   useEffect(() => {
     let active = true;
     if (!shouldCheckReferences) {
@@ -427,14 +467,18 @@ export function AgreementWorkflowPanel({
     )
       .then((ids) => {
         if (active) {
-          setReferenceState((previous) => ({
-            scope: referenceScopeKey,
-            phase: 'ready',
-            protectedReferences: ids,
-            codes: previous?.scope === referenceScopeKey ? previous.codes : {},
-            grants:
-              previous?.scope === referenceScopeKey ? previous.grants : {},
-          }));
+          setReferenceState((previous) => {
+            const grants =
+              previous?.scope === referenceScopeKey ? previous.grants : {};
+            return {
+              scope: referenceScopeKey,
+              phase: 'ready',
+              protectedReferences: new Set([...ids, ...Object.keys(grants)]),
+              codes:
+                previous?.scope === referenceScopeKey ? previous.codes : {},
+              grants,
+            };
+          });
         }
       })
       .catch((caught) => {
@@ -1011,6 +1055,7 @@ export function AgreementWorkflowPanel({
               disabled={busy || uncertain}
               onUploadStateChange={setUploading}
               onConfidentialGrant={setReferenceGrant}
+              onConfidentialUploadComplete={completeConfidentialUpload}
               onChange={(terms) =>
                 setEditor({
                   ...currentEditor,
