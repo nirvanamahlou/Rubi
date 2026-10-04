@@ -4,12 +4,16 @@ import { useEffect, useState } from 'react';
 import type { TicketOfferSearchV1, TicketOfferV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/surfaces';
-import { getPublicApiBaseUrl } from '@/lib/environment';
-import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import {
+  readyTicketSearch,
+  searchTickets,
+  type PreparedTicketSearch,
+} from '../api/ticket-search';
 import { TicketOfferCard } from './ticket-offer-card';
 
 export function TicketOfferPicker({
   query,
+  prepared,
   enabled = true,
   selectedId,
   onSelect,
@@ -21,6 +25,7 @@ export function TicketOfferPicker({
   acceptAnyRoundTripFare = false,
 }: {
   query: TicketOfferSearchV1;
+  prepared?: PreparedTicketSearch | undefined;
   enabled?: boolean;
   selectedId: string;
   onSelect: (offer: TicketOfferV1) => void;
@@ -47,33 +52,17 @@ export function TicketOfferPicker({
     const timer = setTimeout(() => {
       setBusy(true);
       setError('');
-      const params = new URLSearchParams({
+      const searchQuery = {
         ...JSON.parse(filters),
-        page: String(page),
-      });
+        page,
+      } as TicketOfferSearchV1;
       void (async () => {
-        const base = getPublicApiBaseUrl();
-        if (!base) throw new Error('اتصال به سرور تنظیم نشده است.');
-        const get = () =>
-          fetch(`${base}/ticket-catalog/offers?${params}`, {
-            credentials: 'include',
-            signal: controller.signal,
-            cache: 'no-store',
-          });
-        let response = await get();
-        if (
-          response.status === 401 &&
-          (await refreshAuthenticatedSession(base))
-        )
-          response = await get();
-        if (!response.ok)
-          throw new Error(
-            'دریافت بلیط‌ها ناموفق بود؛ دسترسی و اتصال را بررسی کنید.',
-          );
-        const result = (await response.json()) as {
-          data: TicketOfferV1[];
-          hasMore: boolean;
-        };
+        const result = await (readyTicketSearch(searchQuery, prepared)?.catch(
+          () => {
+            controller.signal.throwIfAborted();
+            return searchTickets(searchQuery, controller.signal);
+          },
+        ) ?? searchTickets(searchQuery, controller.signal));
         if (controller.signal.aborted) return;
         setOffers(result.data);
         setHasMore(result.hasMore);
@@ -94,7 +83,7 @@ export function TicketOfferPicker({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [filters, page, enabled]);
+  }, [filters, page, enabled, prepared]);
   if (!enabled)
     return (
       <p className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">

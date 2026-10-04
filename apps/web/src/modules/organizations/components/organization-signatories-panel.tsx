@@ -1,7 +1,13 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import {
   b2bSignatoryIssue,
   B2B_SIGNATORY_DOCUMENT_TYPES,
@@ -24,13 +30,17 @@ import {
 } from '@/modules/documents/api/client';
 import { agencyClient, B2bApiError } from '../api/agency-client';
 import {
+  awaitOrganizationSignatoryProof,
   canAttachOrganizationDocument,
   isEligibleOrganizationSignatoryProof,
   loadOrganizationSignatoryProofs,
+  mergeOrganizationSignatoryProof,
   resolveOrganizationSignatoryProof,
 } from '../model/organization-documents';
 import { DossierFormDialog } from './dossier-form-dialog';
+import { InlineDocumentUpload } from './inline-document-upload';
 import { useDossierBranch } from './use-dossier-branch';
+import { useSignatoryUploadSaveGate } from './use-signatory-upload-save-gate';
 
 const labels = {
   FRAMEWORK_AGREEMENT: 'قرارداد همکاری',
@@ -57,12 +67,27 @@ function SignatoryFields({
   organizationId,
   permissions,
   onAddContact,
+  proofContextKey,
+  proofRequestKey,
+  uploadContextKey,
+  saveGateKey,
+  onProofResolved,
+  onSaveBlockedChange,
 }: {
   value: B2bSignatoryInputV1;
   onChange: (value: B2bSignatoryInputV1) => void;
   organizationId: string;
   permissions: readonly IamPermissionCode[];
   onAddContact: () => void;
+  proofContextKey: string;
+  proofRequestKey: string;
+  uploadContextKey: string;
+  saveGateKey: string;
+  onProofResolved: (
+    contextKey: string,
+    proof: { documentId: string; documentVersionId: string },
+  ) => void;
+  onSaveBlockedChange: (contextKey: string, blocked: boolean) => void;
 }) {
   const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
   const [documentSnapshotKey, setDocumentSnapshotKey] = useState('');
@@ -71,7 +96,32 @@ function SignatoryFields({
   const [reload, setReload] = useState(0);
   const [error, setError] = useState('');
   const [openedAt] = useState(() => Date.now());
+  const [proofProgress, setProofProgress] = useState<{
+    documentId: string;
+    state: 'waiting' | 'pending' | 'ready' | 'failed';
+    message: string;
+  }>();
+  const [uploadedDocumentId, setUploadedDocumentId] = useState('');
+  const [pollRevision, setPollRevision] = useState(0);
+  const proofPoll = useRef<AbortController | null>(null);
+  const uploadGate = useRef({ busy: false, uncertain: false });
+  const proofResolved = useRef(onProofResolved);
+  useLayoutEffect(() => {
+    proofResolved.current = onProofResolved;
+  }, [onProofResolved]);
   const canAttachDocument = canAttachOrganizationDocument(permissions);
+  const canUploadDocument =
+    canAttachDocument && permissions.includes('documents.upload');
+  const [uploaderWasAvailable, setUploaderWasAvailable] =
+    useState(canUploadDocument);
+  useEffect(() => {
+    if (!proofRequestKey) return;
+    const update = window.setTimeout(
+      () => setUploaderWasAvailable(canUploadDocument),
+      0,
+    );
+    return () => window.clearTimeout(update);
+  }, [canUploadDocument, proofRequestKey]);
   const documentScopeKey = JSON.stringify([
     organizationId,
     value.branchId,
@@ -128,6 +178,86 @@ function SignatoryFields({
   ]);
   const set = (patch: Partial<B2bSignatoryInputV1>) =>
     onChange({ ...value, ...patch });
+  const setUploadGate = (key: 'busy' | 'uncertain', blocked: boolean) => {
+    uploadGate.current = { ...uploadGate.current, [key]: blocked };
+    onSaveBlockedChange(
+      saveGateKey,
+      uploadGate.current.busy || uploadGate.current.uncertain,
+    );
+  };
+  useEffect(() => {
+    proofPoll.current?.abort();
+    if (!uploadedDocumentId || !proofRequestKey || !canAttachDocument) return;
+    const controller = new AbortController();
+    proofPoll.current = controller;
+    void (async () => {
+      try {
+        const result = await awaitOrganizationSignatoryProof(
+          organizationId,
+          value.branchId,
+          uploadedDocumentId,
+          permissions,
+          documentsApi.list,
+          controller.signal,
+        );
+        if (controller.signal.aborted) return;
+        if (result.state === 'ready') {
+          proofResolved.current(proofContextKey, {
+            documentId: result.documentId,
+            documentVersionId: result.documentVersionId,
+          });
+          setUploadedDocumentId('');
+          setReload((current) => current + 1);
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'ready',
+            message:
+              'مدرک آماده و متصل شد؛ در صورت نیاز فعال‌سازی را دستی انتخاب کنید.',
+          });
+        } else if (result.state === 'pending') {
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'pending',
+            message:
+              'بررسی امنیتی هنوز کامل نشده است؛ برای بررسی دوباره اقدام کنید.',
+          });
+        } else if (result.state === 'rejected') {
+          setUploadedDocumentId('');
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'failed',
+            message: result.message,
+          });
+        } else if (result.state === 'denied') {
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'failed',
+            message: 'مجوز اتصال مدرک در نشست فعلی فعال نیست.',
+          });
+        }
+      } catch (caught) {
+        if (!controller.signal.aborted)
+          setProofProgress({
+            documentId: uploadedDocumentId,
+            state: 'pending',
+            message:
+              caught instanceof Error
+                ? caught.message
+                : 'بررسی وضعیت مدرک ناموفق بود؛ دوباره تلاش کنید.',
+          });
+      }
+    })();
+    return () => controller.abort();
+  }, [
+    canAttachDocument,
+    organizationId,
+    permissions,
+    pollRevision,
+    proofContextKey,
+    proofRequestKey,
+    uploadedDocumentId,
+    value.branchId,
+  ]);
   return (
     <>
       <div className="field sm:col-span-2">
@@ -240,15 +370,18 @@ function SignatoryFields({
           className="input"
           disabled={!canAttachDocument || loading}
           value={value.documentId ?? ''}
-          onChange={(event) =>
+          onChange={(event) => {
+            proofPoll.current?.abort();
+            setUploadedDocumentId('');
+            setProofProgress(undefined);
             set(
               resolveOrganizationSignatoryProof(
                 visibleDocuments,
                 event.target.value,
                 openedAt,
               ),
-            )
-          }
+            );
+          }}
         >
           <option value="">بدون مدرک؛ ثبت غیرفعال</option>
           {value.documentId &&
@@ -276,6 +409,54 @@ function SignatoryFields({
           </span>
         ) : null}
       </label>
+      {canUploadDocument || (!proofRequestKey && uploaderWasAvailable) ? (
+        <div className="sm:col-span-2">
+          <InlineDocumentUpload
+            organizationId={organizationId}
+            branchId={value.branchId}
+            label="مدرک اختیار امضا"
+            permissions={permissions}
+            contextKey={uploadContextKey}
+            disabled={!proofRequestKey || !canUploadDocument}
+            uploadedNotice="مدرک ذخیره شد؛ وضعیت اسکن و اتصال در حال بررسی است."
+            onBusyChange={(busy) => setUploadGate('busy', busy)}
+            onUncertainChange={(uncertain) =>
+              setUploadGate('uncertain', uncertain)
+            }
+            onUploaded={(documentId) => {
+              setUploadedDocumentId(documentId);
+              setProofProgress({
+                documentId,
+                state: 'waiting',
+                message: 'مدرک ذخیره شد؛ بررسی امنیتی فایل در حال انجام است.',
+              });
+            }}
+          />
+        </div>
+      ) : canAttachDocument ? (
+        <p className="panel-note sm:col-span-2">
+          مجوز بارگذاری سند در نشست فعلی فعال نیست؛ می‌توانید از مدارک موجود
+          انتخاب کنید.
+        </p>
+      ) : null}
+      {proofProgress ? (
+        <div
+          className="sm:col-span-2"
+          role={proofProgress.state === 'failed' ? 'alert' : 'status'}
+        >
+          <p>{proofProgress.message}</p>
+          {proofProgress.state === 'pending' ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setPollRevision((current) => current + 1)}
+            >
+              بررسی دوباره وضعیت مدرک
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       {pages > 1 ? (
         <div className="flex gap-2 sm:col-span-2">
           <Button
@@ -340,16 +521,25 @@ export function OrganizationSignatoriesPanel({
   organizationId: string;
   onAddContact: () => void;
 }) {
-  const { branches, branchId, setBranchId, permissions, sessionError } =
-    useDossierBranch();
+  const {
+    branches,
+    branchId,
+    setBranchId,
+    permissions,
+    sessionError,
+    sessionContextKey,
+    actorIdentityKey,
+  } = useDossierBranch();
   const [rows, setRows] = useState<B2bSignatoryV1[]>([]);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [editor, setEditor] = useState<{
     id?: string;
+    generation: number;
     values: B2bSignatoryInputV1;
   }>();
+  const editorGeneration = useRef(0);
   const [deleting, setDeleting] = useState<B2bSignatoryV1>();
   const [reason, setReason] = useState('');
   const sequence = useRef(0);
@@ -390,6 +580,28 @@ export function OrganizationSignatoriesPanel({
     void load();
   };
   const canManage = permissions.includes('b2b.agency.manage');
+  const editorUiKey = editor
+    ? JSON.stringify([
+        organizationId,
+        branchId,
+        actorIdentityKey,
+        editor.generation,
+        editor.values.branchId,
+      ])
+    : '';
+  const editorContextKey = editorUiKey
+    ? JSON.stringify([editorUiKey, sessionContextKey])
+    : '';
+  const editorOperationKey = editor
+    ? JSON.stringify([organizationId, actorIdentityKey, editor.generation])
+    : '';
+  const uploadSaveGate = useSignatoryUploadSaveGate(editorOperationKey);
+  const editorContext = useRef(editorContextKey);
+  useLayoutEffect(() => {
+    editorContext.current = editorContextKey;
+  }, [editorContextKey]);
+  const saveIsBlocked =
+    !canManage || !sessionContextKey || uploadSaveGate.blocked;
   const today = new Date().toISOString().slice(0, 10);
   const visible = rows.filter((row) =>
     inDossierDateRange(row.validFrom, dateRange),
@@ -405,7 +617,10 @@ export function OrganizationSignatoriesPanel({
         </div>
         <Button
           disabled={!canManage || !branchId || loading}
-          onClick={() => setEditor({ values: blank(branchId) })}
+          onClick={() => {
+            const generation = ++editorGeneration.current;
+            setEditor({ generation, values: blank(branchId) });
+          }}
         >
           <Plus size={16} />
           افزودن امضادار
@@ -491,6 +706,7 @@ export function OrganizationSignatoriesPanel({
                   onClick={() =>
                     setEditor({
                       id: row.id,
+                      generation: ++editorGeneration.current,
                       values: {
                         branchId: row.branchId,
                         contactId: row.contactId,
@@ -539,7 +755,13 @@ export function OrganizationSignatoriesPanel({
         <DossierFormDialog
           title={editor.id ? 'ویرایش امضادار' : 'ثبت امضادار'}
           onClose={close}
+          submitDisabled={saveIsBlocked}
           onSave={async () => {
+            if (saveIsBlocked)
+              throw new B2bApiError(
+                'نشست یا وضعیت بارگذاری برای ذخیره آماده نیست.',
+                409,
+              );
             const issue = b2bSignatoryIssue(editor.values);
             if (issue) throw new B2bApiError(issue, 400);
             await agencyClient.saveSignatory(
@@ -550,11 +772,33 @@ export function OrganizationSignatoriesPanel({
           }}
         >
           <SignatoryFields
+            key={editorUiKey}
             value={editor.values}
             onChange={(values) => setEditor({ ...editor, values })}
             organizationId={organizationId}
             permissions={permissions}
             onAddContact={onAddContact}
+            proofContextKey={editorContextKey}
+            proofRequestKey={sessionContextKey}
+            uploadContextKey={editorUiKey}
+            saveGateKey={editorOperationKey}
+            onProofResolved={(contextKey, proof) => {
+              if (editorContext.current !== contextKey) return;
+              setEditor((current) =>
+                current
+                  ? {
+                      ...current,
+                      values: mergeOrganizationSignatoryProof(
+                        current.values,
+                        proof,
+                      ),
+                    }
+                  : current,
+              );
+            }}
+            onSaveBlockedChange={(contextKey, blocked) => {
+              uploadSaveGate.update(contextKey, blocked);
+            }}
           />
         </DossierFormDialog>
       ) : null}

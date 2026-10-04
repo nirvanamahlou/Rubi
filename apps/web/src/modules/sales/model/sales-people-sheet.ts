@@ -497,6 +497,21 @@ export function validateSalesPeopleDraft(
       'تاریخ تولد همه مسافران را کامل کنید؛ تعداد بزرگسال، کودک و نوزاد باید با مرحله اول یکسان باشد.',
     );
 }
+function registrationNames(row: PeopleRow, passportIdentity: boolean) {
+  return {
+    firstName:
+      row.values.firstName.trim() ||
+      (passportIdentity
+        ? row.values.passportFirstName.trim().toUpperCase()
+        : ''),
+    lastName:
+      row.values.lastName.trim() ||
+      (passportIdentity
+        ? row.values.passportLastName.trim().toUpperCase()
+        : ''),
+  };
+}
+
 function mutationNeedsReview(error: unknown) {
   return !(
     error instanceof CustomersApiError &&
@@ -566,8 +581,7 @@ export async function saveSalesPeopleDraft(
         const previous = (
           await api.registrationLookup!({
             nationalId: row.pendingNationalId,
-            firstName: row.values.firstName.trim(),
-            lastName: row.values.lastName.trim(),
+            ...registrationNames(row, passportIdentity && key !== 'primary'),
             matchByNationalId: true,
           })
         ).data;
@@ -583,8 +597,7 @@ export async function saveSalesPeopleDraft(
         await api.registrationLookup!({
           matchByNationalId: true,
           nationalId,
-          firstName: row.values.firstName.trim(),
-          lastName: row.values.lastName.trim(),
+          ...registrationNames(row, passportIdentity && key !== 'primary'),
           ...(row.values.birthDate ? { birthDate: row.values.birthDate } : {}),
         })
       ).data;
@@ -659,10 +672,10 @@ export async function saveSalesPeopleDraft(
         const updated = (
           await api.update(row.person.id, {
             kind: 'person',
-            displayName:
-              row.values.firstName.trim() + ' ' + row.values.lastName.trim(),
-            firstName: row.values.firstName.trim(),
-            lastName: row.values.lastName.trim(),
+            displayName: Object.values(
+              registrationNames(row, passportIdentity && key !== 'primary'),
+            ).join(' '),
+            ...registrationNames(row, passportIdentity && key !== 'primary'),
             acquaintanceMethodId: acquaintanceChanged
               ? row.values.acquaintanceMethodId || null
               : profile.acquaintanceMethodId,
@@ -780,8 +793,7 @@ export async function saveSalesPeopleDraft(
         const existing = (
           await api.registrationLookup({
             nationalId: normalizeNationalId(row.values.nationalId),
-            firstName: row.values.firstName.trim(),
-            lastName: row.values.lastName.trim(),
+            ...registrationNames(row, passportIdentity && key !== 'primary'),
             matchByNationalId: true,
             ...(row.values.birthDate
               ? { birthDate: row.values.birthDate }

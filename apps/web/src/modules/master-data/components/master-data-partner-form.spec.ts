@@ -77,6 +77,13 @@ describe('real partner form fields', () => {
         expect(html).not.toContain('id="live-suppliers-cityId"');
       } else {
         expect(html).toContain('id="live-brokers-englishName"');
+        expect(html).toContain('Board');
+        expect(html).toContain('شهرهای فعالیت');
+        expect(html).toContain('افزودن تورلیدر');
+        expect(html).not.toContain('خدمات قابل ارائه');
+        expect(html).not.toContain('سازمان کارگزار');
+        expect(html.match(/<form\b/g)).toHaveLength(1);
+        return;
       }
       expect(html).toContain('خدمات قابل ارائه');
       expect(html).toContain('aria-multiselectable="true"');
@@ -104,8 +111,10 @@ describe('real partner form fields', () => {
         expect(html).not.toContain('افزودن مخاطب');
       } else {
         expect(html).toContain('value="Test Partner"');
-        expect(html).toContain('id="live-brokers-primaryContactId"');
+        expect(html).not.toContain('id="live-brokers-primaryContactId"');
         expect(html).not.toContain('ابتدا سازمان را انتخاب کنید.');
+        expect(html).toContain('شماره کارگزار');
+        return;
       }
       expect(html).toContain('پاک‌کردن خدمات قابل ارائه');
       expect(html).not.toContain('type="tel"');
@@ -118,8 +127,8 @@ describe('real partner form fields', () => {
     expect(html).toContain('id="live-organizations-personType"');
     expect(html).toContain('پاک‌کردن نوع شخصیت');
   });
-  it('shows primary contact only for a legacy organization-linked broker edit', () => {
-    expect(render('brokers', 'edit')).toContain(
+  it('preserves legacy organization context without exposing contact selectors in the new broker form', () => {
+    expect(render('brokers', 'edit')).not.toContain(
       'id="live-brokers-primaryContactId"',
     );
     const independent = renderToStaticMarkup(

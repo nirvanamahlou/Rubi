@@ -1,6 +1,7 @@
 import type * as React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { prepareTicketSearch } from '../api/ticket-search';
 import { TicketOfferPicker } from './ticket-offer-picker';
 
 const effects = vi.hoisted(() => [] as (() => void | (() => void))[]);
@@ -28,6 +29,52 @@ afterEach(() => {
 });
 
 describe('ticket list before and after date selection', () => {
+  it('reuses the exact prepared first-page request instead of waiting for a second network request', async () => {
+    const query = {
+      originId: 'origin',
+      destinationId: 'destination',
+      departureFrom: '2026-10-01',
+      departureTo: '2026-10-08',
+      page: 1,
+    };
+    const prepared = prepareTicketSearch(query, new AbortController().signal);
+    renderToStaticMarkup(
+      <TicketOfferPicker
+        query={query}
+        prepared={prepared}
+        selectedId=""
+        requiredSeats={1}
+        onSelect={vi.fn()}
+      />,
+    );
+    const cleanup = effects.map((effect) => effect());
+    await vi.runAllTimersAsync();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    cleanup.forEach((cancel) => cancel?.());
+  });
+  it('retries a failed speculative search when entering the ticket page', async () => {
+    const query = {
+      originId: 'origin',
+      destinationId: 'destination',
+      departureFrom: '2026-10-01',
+      page: 1,
+    };
+    fetcher.mockRejectedValueOnce(new TypeError('temporary network error'));
+    const prepared = prepareTicketSearch(query, new AbortController().signal);
+    renderToStaticMarkup(
+      <TicketOfferPicker
+        query={query}
+        prepared={prepared}
+        selectedId=""
+        requiredSeats={1}
+        onSelect={vi.fn()}
+      />,
+    );
+    const cleanup = effects.map((effect) => effect());
+    await vi.runAllTimersAsync();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    cleanup.forEach((cancel) => cancel?.());
+  });
   it('shows only a date prompt and sends no request while search is disabled', async () => {
     const html = renderToStaticMarkup(
       <TicketOfferPicker

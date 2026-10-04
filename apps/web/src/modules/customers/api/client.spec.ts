@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { customersApi } from './client';
+import { customersApi, customerErrorMessage } from './client';
 
 const originalBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 afterEach(() => {
@@ -205,4 +205,29 @@ describe('customers browser client', () => {
       expect.objectContaining({ method: 'POST', credentials: 'include' }),
     );
   });
+});
+
+it('shows actual validation fields in Persian while retaining business errors', () => {
+  expect(
+    customerErrorMessage({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Request validation failed.',
+        details: [
+          { reason: 'firstName must be longer than or equal to 1 characters' },
+          { reason: 'lastName must be a string' },
+        ],
+      },
+    }),
+  ).toBe(
+    'نام را کامل و معتبر وارد کنید. نام خانوادگی را کامل و معتبر وارد کنید.',
+  );
+  expect(
+    customerErrorMessage({
+      error: {
+        code: 'CUSTOMER_NATIONAL_ID_EXISTS',
+        message: 'پرونده موجود است.',
+      },
+    }),
+  ).toBe('پرونده موجود است.');
 });

@@ -88,3 +88,41 @@ describe('sales pricing entry', () => {
     expect(html).toContain('هزینه خرید هتل بعداً');
   });
 });
+
+it('new-contract mode shows read-only sale prices equal to agreed values for flights and hotels', () => {
+  const html = renderToStaticMarkup(
+    <SalesPricingPanel
+      salePriceFromAgreed
+      currencies={[{ code: 'IRR', name: 'ریال', status: 'active' }]}
+      services={[
+        { key: 'flight', title: 'بلیط', hotel: false },
+        { key: 'hotel', title: 'هتل', hotel: true },
+      ]}
+      nights={3}
+      values={{
+        flight: [
+          {
+            version: 1,
+            currencyCode: 'IRR',
+            daySale: { basis: 'TOTAL', amount: '100' },
+            agreed: { basis: 'TOTAL', amount: '95' },
+          },
+        ],
+        hotel: [
+          {
+            version: 1,
+            currencyCode: 'IRR',
+            daySale: { basis: 'NIGHT', amount: '200' },
+            agreed: { basis: 'TOTAL', amount: '550' },
+          },
+        ],
+      }}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toMatch(/قیمت روز فروش بلیط کل[^>]*readOnly=""[^>]*value="95"/);
+  expect(html).toMatch(/قیمت روز فروش هتل کل[^>]*readOnly=""[^>]*value="550"/);
+  expect(html.match(/readOnly=""/g)).toHaveLength(2);
+  expect(html.match(/ورود قیمت هر شب/g)).toHaveLength(1);
+  expect(html).toContain('قابل پرداخت: 550');
+});

@@ -448,20 +448,14 @@ export function AgreementWorkflowPanel({
     <div className="agreement-workflow">
       <div className="agreement-row-title agreement-toolbar dossier-filter-grid">
         <div className="commercial-section-heading">
-          <div>
-            <h3>
-              {view === 'temporary'
-                ? 'افزایش موقت اعتبار'
-                : view === 'credit'
-                  ? 'سیاست‌های اعتبار'
-                  : view === 'guarantees'
-                    ? 'تضمین‌های قرارداد'
-                    : 'قراردادهای همکاری'}
-            </h3>
-            <p className="panel-note">
-              نسخه‌بندی، ویرایش پیش‌نویس و تأیید مستقل قرارداد و شرایط ارزی
-            </p>
-          </div>
+          {view === 'agreements' ? (
+            <div>
+              <h3>قراردادهای همکاری</h3>
+              <p className="panel-note">
+                نسخه‌بندی، ویرایش پیش‌نویس و تأیید مستقل قرارداد و شرایط ارزی
+              </p>
+            </div>
+          ) : null}
           <div className="commercial-section-actions">
             {canManage &&
             view !== 'agreements' &&
