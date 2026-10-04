@@ -19,7 +19,9 @@ import {
   TrendingUp,
   WalletCards,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { inTehranDateRange, isActionablePayment } from '../model/inbox-filters';
+import { paymentWithReceipt } from '../model/payment-with-receipt';
 import { FinanceHistoryPanel } from './finance-history-panel';
 import { ticketPurchaseTotal } from '../model/ticket-purchase-total';
 import type {
@@ -32,6 +34,7 @@ import type {
   FinanceSettlementAccountKind,
   FinanceSettlementAccountV1,
   FinanceCustomerDocumentDeliveryBasisV1,
+  FinanceTicketPaymentCommandV1,
 } from '@nora/contracts';
 
 import { Button } from '@/components/ui/button';
@@ -112,6 +115,15 @@ function sourceTone(source: FinanceInboxSource) {
 }
 
 export function FinanceInboxLiveWorkspace() {
+  const ticketCommand = useRef<FinanceTicketPaymentCommandV1 | null>(null);
+  const [paymentUncertain, setPaymentUncertain] = useState(false);
+  const submitting = useRef(false);
+  const hrResponseKey = useRef('');
+  const [receiptRetries, setReceiptRetries] = useState<
+    { id: string; item: FinanceInboxItemV1; file: File }[]
+  >([]);
+  const [receiptBusy, setReceiptBusy] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
   const [revision, setRevision] = useState(0);
   const [state, setState] = useState<{
     revision: number;
@@ -134,7 +146,14 @@ export function FinanceInboxLiveWorkspace() {
   const [banks, setBanks] = useState<readonly FinanceBankOptionV1[]>([]);
   const [actionItem, setActionItem] = useState<FinanceInboxItemV1 | null>(null);
   const [actionKind, setActionKind] = useState<
-    'APPROVE' | 'CORRECTION_REQUIRED' | 'PAYMENT' | 'TICKET_COST' | null
+    | 'APPROVE'
+    | 'CORRECTION_REQUIRED'
+    | 'PAYMENT'
+    | 'TICKET_COST'
+    | 'HR_REVIEW'
+    | 'HR_ANSWER'
+    | 'HR_REJECT'
+    | null
   >(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -226,10 +245,7 @@ export function FinanceInboxLiveWorkspace() {
         (status === 'OPEN'
           ? !closed.has(item.status)
           : closed.has(item.status));
-      const createdAt = new Date(item.createdAt).getTime();
-      const matchesFrom =
-        !fromDate || createdAt >= new Date(fromDate).getTime();
-      const matchesTo = !toDate || createdAt <= new Date(toDate).getTime();
+      const matchesDates = inTehranDateRange(item.createdAt, fromDate, toDate);
       const haystack = [
         item.title,
         item.sourceReference,
@@ -244,8 +260,7 @@ export function FinanceInboxLiveWorkspace() {
       return (
         matchesSource &&
         matchesStatus &&
-        matchesFrom &&
-        matchesTo &&
+        matchesDates &&
         (!query || haystack.includes(query))
       );
     });
@@ -253,7 +268,7 @@ export function FinanceInboxLiveWorkspace() {
   const dashboard = useMemo(() => {
     const openItems = items.filter((item) => !closed.has(item.status));
     const receiptItems = openItems.filter((item) => item.source === 'SALES');
-    const paymentItems = openItems.filter((item) => item.source !== 'SALES');
+    const paymentItems = openItems.filter(isActionablePayment);
     const dueItems = [...openItems]
       .filter((item) => item.dueAt)
       .sort((left, right) =>
@@ -339,6 +354,8 @@ export function FinanceInboxLiveWorkspace() {
   }
 
   function openSupplierPayment(item: FinanceInboxItemV1) {
+    ticketCommand.current = null;
+    setPaymentUncertain(false);
     const eligibleAccounts = accounts.filter(
       (account) =>
         account.branchId === item.branchReference &&
@@ -357,6 +374,17 @@ export function FinanceInboxLiveWorkspace() {
     setTicketReceiptFile(null);
     setReason('');
     setActionError('');
+  }
+
+  function openHrResponse(
+    item: FinanceInboxItemV1,
+    kind: 'HR_REVIEW' | 'HR_ANSWER' | 'HR_REJECT',
+  ) {
+    setActionItem(item);
+    setActionKind(kind);
+    setReason('');
+    setActionError('');
+    hrResponseKey.current = crypto.randomUUID();
   }
 
   function openTicketCost(item: FinanceInboxItemV1) {
@@ -403,11 +431,31 @@ export function FinanceInboxLiveWorkspace() {
   }
 
   async function submitAction() {
-    if (!actionItem || !actionKind) return;
+    if (!actionItem || !actionKind || submitting.current) return;
+    submitting.current = true;
     setActionBusy(true);
     setActionError('');
     try {
-      if (actionKind === 'TICKET_COST') {
+      if (
+        actionKind === 'HR_REVIEW' ||
+        actionKind === 'HR_ANSWER' ||
+        actionKind === 'HR_REJECT'
+      ) {
+        await financeInboxApi.respondHr(
+          actionItem.sourceContextReference,
+          {
+            version: actionItem.sourceVersion,
+            status:
+              actionKind === 'HR_REVIEW'
+                ? 'IN_REVIEW'
+                : actionKind === 'HR_ANSWER'
+                  ? 'ANSWERED'
+                  : 'REJECTED',
+            note: reason,
+          },
+          hrResponseKey.current,
+        );
+      } else if (actionKind === 'TICKET_COST') {
         await financeInboxApi.recordTicketCost(actionItem.sourceReference, {
           version: 1,
           seatCount: Number(ticketSeatCount),
@@ -415,25 +463,85 @@ export function FinanceInboxLiveWorkspace() {
           currencyCode: ticketCurrency.toUpperCase().trim(),
         });
       } else if (actionKind === 'PAYMENT' && actionItem.ticketPurchase) {
-        const payment = await financeInboxApi.payTicket(
-          actionItem.sourceReference,
-          {
+        ticketCommand.current ??= {
+          version: 1,
+          operationId: crypto.randomUUID(),
+          expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
+          costRevisionId: actionItem.sourceContextReference,
+          accountId,
+          paymentMethodId,
+          paidAmount,
+          exchangeRateToIrr: exchangeRate,
+          transferAt: new Date(
+            /[zZ]$|[+-]\d{2}:\d{2}$/.test(paidAt) ? paidAt : `${paidAt}+03:30`,
+          ).toISOString(),
+          paymentReference: paymentReference.trim() || null,
+        };
+        const command = ticketCommand.current;
+        setPaymentUncertain(true);
+        const result = await paymentWithReceipt(
+          () => financeInboxApi.payTicket(actionItem.sourceReference, command),
+          ticketReceiptFile
+            ? (payment) =>
+                uploadTicketPaymentReceipt(
+                  ticketReceiptFile,
+                  payment.id,
+                  actionItem,
+                )
+            : undefined,
+        );
+        if (result.receiptFailed && ticketReceiptFile) {
+          setReceiptRetries((current) => [
+            ...current,
+            {
+              id: result.payment.id,
+              item: actionItem,
+              file: ticketReceiptFile,
+            },
+          ]);
+        }
+        ticketCommand.current = null;
+        setPaymentUncertain(false);
+      } else if (
+        actionItem.source === 'PURCHASES' &&
+        actionItem.kind === 'RETURN_CORRECTION'
+      ) {
+        await financeInboxApi.decideCorrection(actionItem.sourceReference, {
+          version: 1,
+          expectedVersion: actionItem.sourceVersion,
+          action: actionKind as 'APPROVE' | 'CORRECTION_REQUIRED',
+          reason,
+        });
+      } else if (
+        actionItem.source === 'PURCHASES' &&
+        !actionItem.ticketPurchase
+      ) {
+        if (actionKind === 'PAYMENT') {
+          await financeInboxApi.payInvoice(actionItem.sourceReference, {
             version: 1,
-            costRevisionId: actionItem.sourceContextReference,
+            expectedVersion: actionItem.financeVersion ?? 0,
+            expectedSourceVersion: actionItem.sourceVersion,
             accountId,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
-            transferAt: paidAt,
+            transferAt: new Date(
+              /[zZ]$|[+-]\d{2}:\d{2}$/.test(paidAt)
+                ? paidAt
+                : `${paidAt}+03:30`,
+            ).toISOString(),
             paymentReference: paymentReference.trim() || null,
-          },
-        );
-        if (ticketReceiptFile)
-          await uploadTicketPaymentReceipt(
-            ticketReceiptFile,
-            payment.id,
-            actionItem,
-          );
+            reason,
+          });
+        } else {
+          await financeInboxApi.decideInvoice(actionItem.sourceReference, {
+            version: 1,
+            expectedVersion: actionItem.financeVersion ?? 0,
+            expectedSourceVersion: actionItem.sourceVersion,
+            action: actionKind as 'APPROVE' | 'CORRECTION_REQUIRED',
+            reason,
+          });
+        }
       } else if (actionKind === 'PAYMENT') {
         await financeInboxApi.paySupplier(
           actionItem.sourceContextReference,
@@ -445,7 +553,11 @@ export function FinanceInboxLiveWorkspace() {
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
-            transferAt: paidAt,
+            transferAt: new Date(
+              /[zZ]$|[+-]\d{2}:\d{2}$/.test(paidAt)
+                ? paidAt
+                : `${paidAt}+03:30`,
+            ).toISOString(),
             paymentReference: paymentReference.trim() || null,
             reason,
           },
@@ -483,12 +595,21 @@ export function FinanceInboxLiveWorkspace() {
       setActionKind(null);
       setRevision((value) => value + 1);
     } catch (cause) {
+      if (
+        cause instanceof FinanceInboxApiError &&
+        cause.status >= 400 &&
+        cause.status < 500
+      ) {
+        ticketCommand.current = null;
+        setPaymentUncertain(false);
+      }
       setActionError(
         cause instanceof FinanceInboxApiError
           ? cause.message
           : 'ثبت عملیات مالی ناموفق بود.',
       );
     } finally {
+      submitting.current = false;
       setActionBusy(false);
     }
   }
@@ -526,6 +647,40 @@ export function FinanceInboxLiveWorkspace() {
 
   return (
     <section className="space-y-5" aria-label="کارتابل یکپارچه مالی">
+      {receiptRetries.map((retry) => (
+        <Card key={retry.id} className="space-y-3 p-4">
+          <p>
+            پرداخت «{retry.item.title}» ثبت شده است؛ فقط بارگذاری رسید ناموفق
+            بود. پرداخت را دوباره ثبت نکنید.
+          </p>
+          <Button
+            disabled={receiptBusy}
+            onClick={async () => {
+              setReceiptBusy(true);
+              setReceiptError('');
+              try {
+                await uploadTicketPaymentReceipt(
+                  retry.file,
+                  retry.id,
+                  retry.item,
+                );
+                setReceiptRetries((current) =>
+                  current.filter((entry) => entry.id !== retry.id),
+                );
+              } catch {
+                setReceiptError(
+                  'بارگذاری رسید ناموفق بود؛ پرداخت قبلی محفوظ است.',
+                );
+              } finally {
+                setReceiptBusy(false);
+              }
+            }}
+          >
+            تلاش مجدد بارگذاری رسید
+          </Button>
+          {receiptError ? <p role="alert">{receiptError}</p> : null}
+        </Card>
+      ))}
       <Card className="overflow-hidden border-0 bg-gradient-to-l from-slate-950 via-blue-950 to-indigo-900 p-0 text-white shadow-xl shadow-primary/10">
         <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
           <div>
@@ -815,7 +970,7 @@ export function FinanceInboxLiveWorkspace() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="OPEN">درخواست‌های باز</SelectItem>
-              <SelectItem value="CLOSED">درخواست‌های بسته</SelectItem>
+              <SelectItem value="CLOSED">موارد بسته موجود در صف</SelectItem>
               <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
             </SelectContent>
           </Select>
@@ -842,6 +997,25 @@ export function FinanceInboxLiveWorkspace() {
         </div>
       </Card>
 
+      {status === 'CLOSED' ? (
+        <Card className="space-y-2 p-4">
+          <p>
+            این فیلتر فقط موارد بسته‌ای را نشان می‌دهد که منبع در صف ارسال
+            می‌کند. همه دریافت‌ها و پرداخت‌های ثبت‌شده را در تاریخچه مستقل پایین
+            صفحه بررسی کنید؛ فیلترهای صف روی تاریخچه اعمال نمی‌شوند.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() =>
+              document
+                .getElementById('finance-transaction-history')
+                ?.scrollIntoView({ behavior: 'smooth' })
+            }
+          >
+            مشاهده تاریخچه دریافت و پرداخت
+          </Button>
+        </Card>
+      ) : null}
       {error ? (
         <Alert tone="warning" title="کارتابل دریافت نشد" description={error} />
       ) : null}
@@ -1085,6 +1259,88 @@ export function FinanceInboxLiveWorkspace() {
                     </strong>
                   </div>
                 ))}
+                {selected.hrReferral ? (
+                  <div className="space-y-2">
+                    {selected.hrReferral.response ? (
+                      <p>پاسخ مالی: {selected.hrReferral.response}</p>
+                    ) : null}
+                    {selected.hrReferral.canRespond ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selected.status === 'NEW' ? (
+                          <Button
+                            onClick={() =>
+                              openHrResponse(selected, 'HR_REVIEW')
+                            }
+                          >
+                            شروع بررسی ارجاع
+                          </Button>
+                        ) : null}
+                        {selected.status === 'UNDER_REVIEW' ? (
+                          <Button
+                            onClick={() =>
+                              openHrResponse(selected, 'HR_ANSWER')
+                            }
+                          >
+                            ثبت پاسخ ارجاع
+                          </Button>
+                        ) : null}
+                        <Button
+                          variant="outline"
+                          onClick={() => openHrResponse(selected, 'HR_REJECT')}
+                        >
+                          رد ارجاع با علت
+                        </Button>
+                      </div>
+                    ) : null}
+                    <p className="text-xs text-muted-foreground">
+                      این مورد ارجاع منابع انسانی است؛ ثبت پاسخ به معنی ثبت
+                      پرداخت حقوق نیست.
+                    </p>
+                  </div>
+                ) : null}
+                {selected.source === 'PURCHASES' && !selected.ticketPurchase ? (
+                  <div className="space-y-2">
+                    {selected.status === 'UNDER_REVIEW' ? (
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => openReceiptAction(selected, 'APPROVE')}
+                        >
+                          تأیید درخواست خرید
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() =>
+                            openReceiptAction(selected, 'CORRECTION_REQUIRED')
+                          }
+                        >
+                          برگشت برای اصلاح
+                        </Button>
+                      </div>
+                    ) : null}
+                    {isActionablePayment(selected) ? (
+                      <Button onClick={() => openSupplierPayment(selected)}>
+                        ثبت پرداخت فاکتور خرید
+                      </Button>
+                    ) : null}
+                    {selected.kind === 'PAYMENT_REQUEST' ? (
+                      <FinanceHistoryPanel
+                        requestId={selected.sourceReference}
+                        source="INVOICE"
+                        compact
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
+                {selected.reservationPurchase
+                  ? selected.reservationPurchase.lines.map((line) => (
+                      <FinanceHistoryPanel
+                        key={line.purchaseId}
+                        requestId={line.purchaseId}
+                        source="RESERVATIONS"
+                        compact
+                      />
+                    ))
+                  : null}
                 {selected.kind === 'RECEIPT_VERIFICATION' ? (
                   <div className="grid grid-cols-2 gap-2 pt-2">
                     <Button
@@ -1180,7 +1436,7 @@ export function FinanceInboxLiveWorkspace() {
       <Dialog
         open={actionItem !== null && actionKind !== null}
         onOpenChange={(open) => {
-          if (!open && !actionBusy) {
+          if (!open && !actionBusy && !ticketCommand.current) {
             setActionItem(null);
             setActionKind(null);
           }
@@ -1188,15 +1444,17 @@ export function FinanceInboxLiveWorkspace() {
       >
         <DialogContent dir="rtl">
           <DialogTitle>
-            {actionKind === 'APPROVE'
-              ? 'تأیید دریافت مسافر'
-              : actionKind === 'CORRECTION_REQUIRED'
-                ? 'ارسال برای اصلاح'
-                : actionKind === 'TICKET_COST'
-                  ? 'ثبت قیمت خرید بلیت توسط مالی'
-                  : actionItem?.ticketPurchase
-                    ? 'ثبت پرداخت خرید بلیت'
-                    : 'ثبت پرداخت کارگزار'}
+            {actionItem?.kind === 'HR_REFERRAL'
+              ? 'رسیدگی به ارجاع منابع انسانی'
+              : actionKind === 'APPROVE'
+                ? 'تأیید دریافت مسافر'
+                : actionKind === 'CORRECTION_REQUIRED'
+                  ? 'ارسال برای اصلاح'
+                  : actionKind === 'TICKET_COST'
+                    ? 'ثبت قیمت خرید بلیت توسط مالی'
+                    : actionItem?.ticketPurchase
+                      ? 'ثبت پرداخت خرید بلیت'
+                      : 'ثبت پرداخت کارگزار'}
           </DialogTitle>
           <DialogDescription>
             {actionItem?.title} · {actionItem && money(actionItem)}
@@ -1208,62 +1466,207 @@ export function FinanceInboxLiveWorkspace() {
               void submitAction();
             }}
           >
-            {actionKind === 'TICKET_COST' ? (
-              <>
-                <div className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20 sm:grid-cols-2">
+            <fieldset
+              className="grid gap-3"
+              disabled={actionBusy || paymentUncertain}
+            >
+              {actionKind === 'TICKET_COST' ? (
+                <>
+                  <div className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20 sm:grid-cols-2">
+                    <label className="grid gap-2">
+                      <span>تعداد صندلی خریداری‌شده</span>
+                      <Input
+                        required
+                        dir="ltr"
+                        inputMode="numeric"
+                        min="1"
+                        value={ticketSeatCount}
+                        onChange={(event) =>
+                          setTicketSeatCount(
+                            event.target.value.replace(/[^0-9]/g, ''),
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="grid gap-2">
+                      <span>قیمت خرید هر صندلی</span>
+                      <MoneyInput
+                        required
+                        value={ticketUnitCost}
+                        onValueChange={setTicketUnitCost}
+                      />
+                    </label>
+                    <div className="sm:col-span-2 rounded-xl bg-background/80 p-3 text-sm">
+                      <span className="text-muted-foreground">
+                        جمع فاکتور محاسبه‌شده
+                      </span>
+                      <strong className="mt-1 block text-lg" dir="ltr">
+                        {ticketInvoice ?? '—'} {ticketCurrency}
+                      </strong>
+                    </div>
+                  </div>
                   <label className="grid gap-2">
-                    <span>تعداد صندلی خریداری‌شده</span>
+                    <span>کد ارز خرید</span>
                     <Input
                       required
                       dir="ltr"
-                      inputMode="numeric"
-                      min="1"
-                      value={ticketSeatCount}
+                      maxLength={3}
+                      value={ticketCurrency}
                       onChange={(event) =>
-                        setTicketSeatCount(
-                          event.target.value.replace(/[^0-9]/g, ''),
-                        )
+                        setTicketCurrency(event.target.value.toUpperCase())
                       }
                     />
                   </label>
+                </>
+              ) : null}
+              {actionKind === 'PAYMENT' ? (
+                <>
                   <label className="grid gap-2">
-                    <span>قیمت خرید هر صندلی</span>
+                    <span>حساب پرداخت‌کننده</span>
+                    <Select value={accountId} onValueChange={setAccountId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="انتخاب حساب مبدأ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts
+                          .filter(
+                            (account) =>
+                              account.branchId ===
+                                actionItem?.branchReference &&
+                              account.currencyCode ===
+                                actionItem?.amount?.currencyCode,
+                          )
+                          .map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.title} · {account.currencyCode}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setAccountDialog(true);
+                        setActionError('');
+                      }}
+                    >
+                      <PlusCircle className="size-4" />
+                      تعریف حساب جدید
+                    </Button>
+                  </label>
+                  <label className="grid gap-2">
+                    <span>روش پرداخت</span>
+                    <NativeSearchSelect
+                      aria-label="روش پرداخت"
+                      required
+                      className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
+                      value={paymentMethodId}
+                      onChange={(event) =>
+                        setPaymentMethodId(event.target.value)
+                      }
+                    >
+                      <option value="" disabled>
+                        انتخاب روش پرداخت
+                      </option>
+                      {methods.map((method) => (
+                        <option key={method.id} value={method.id}>
+                          {method.name}
+                        </option>
+                      ))}
+                    </NativeSearchSelect>
+                    {methodsError ? (
+                      <span role="alert" className="text-sm text-destructive">
+                        {methodsError}
+                      </span>
+                    ) : null}
+                    {methodsError ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setRevision((value) => value + 1)}
+                      >
+                        دریافت مجدد روش‌های پرداخت
+                      </Button>
+                    ) : null}
+                  </label>
+                  <label className="grid gap-2">
+                    <span>مبلغ این پرداخت</span>
                     <MoneyInput
                       required
-                      value={ticketUnitCost}
-                      onValueChange={setTicketUnitCost}
+                      value={paidAmount}
+                      onValueChange={setPaidAmount}
+                    />
+                    <small className="text-muted-foreground">
+                      مانده فعلی:{' '}
+                      {actionItem?.settlement?.remainingAmount ??
+                        actionItem?.amount?.amount ??
+                        '—'}{' '}
+                      {actionItem?.amount?.currencyCode}
+                    </small>
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    می‌توانید بخشی از مبلغ را پرداخت کنید و مانده را در
+                    پرداخت‌های بعدی ثبت کنید؛ پس از هر ثبت، مانده به‌روز می‌شود.
+                  </p>
+                  {actionItem?.amount?.currencyCode !== 'IRR' ? (
+                    <label className="grid gap-2">
+                      <span>نرخ روز ارز به ریال</span>
+                      <MoneyInput
+                        required
+                        value={exchangeRate}
+                        onValueChange={setExchangeRate}
+                      />
+                    </label>
+                  ) : null}
+                  <label className="grid gap-2">
+                    <span>تاریخ و ساعت پرداخت</span>
+                    <DatePicker
+                      includeTime
+                      value={paidAt}
+                      onChange={setPaidAt}
                     />
                   </label>
-                  <div className="sm:col-span-2 rounded-xl bg-background/80 p-3 text-sm">
-                    <span className="text-muted-foreground">
-                      جمع فاکتور محاسبه‌شده
-                    </span>
-                    <strong className="mt-1 block text-lg" dir="ltr">
-                      {ticketInvoice ?? '—'} {ticketCurrency}
-                    </strong>
-                  </div>
-                </div>
+                  <label className="grid gap-2">
+                    <span>شماره پیگیری (اختیاری)</span>
+                    <Input
+                      dir="ltr"
+                      maxLength={160}
+                      value={paymentReference}
+                      onChange={(event) =>
+                        setPaymentReference(event.target.value)
+                      }
+                    />
+                  </label>
+                  {actionItem?.ticketPurchase ? (
+                    <label className="grid gap-2 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3">
+                      <span className="flex items-center gap-2 font-semibold">
+                        <FileUp className="size-4 text-primary" />
+                        رسید پرداخت (اختیاری)
+                      </span>
+                      <Input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={(event) =>
+                          setTicketReceiptFile(event.target.files?.[0] ?? null)
+                        }
+                      />
+                      <small className="text-muted-foreground">
+                        پس از ثبت پرداخت، فایل در اسناد مالی با مرجع همین پرداخت
+                        ذخیره می‌شود.
+                      </small>
+                    </label>
+                  ) : null}
+                </>
+              ) : null}
+              {actionKind === 'APPROVE' && actionItem?.source === 'SALES' ? (
                 <label className="grid gap-2">
-                  <span>کد ارز خرید</span>
-                  <Input
-                    required
-                    dir="ltr"
-                    maxLength={3}
-                    value={ticketCurrency}
-                    onChange={(event) =>
-                      setTicketCurrency(event.target.value.toUpperCase())
-                    }
-                  />
-                </label>
-              </>
-            ) : null}
-            {actionKind === 'PAYMENT' ? (
-              <>
-                <label className="grid gap-2">
-                  <span>حساب پرداخت‌کننده</span>
+                  <span>واریز به حساب</span>
                   <Select value={accountId} onValueChange={setAccountId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="انتخاب حساب مبدأ" />
+                      <SelectValue placeholder="انتخاب حساب مقصد" />
                     </SelectTrigger>
                     <SelectContent>
                       {accounts
@@ -1293,248 +1696,124 @@ export function FinanceInboxLiveWorkspace() {
                     تعریف حساب جدید
                   </Button>
                 </label>
-                <label className="grid gap-2">
-                  <span>روش پرداخت</span>
-                  <NativeSearchSelect
-                    aria-label="روش پرداخت"
-                    required
-                    className="h-11 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                    value={paymentMethodId}
-                    onChange={(event) => setPaymentMethodId(event.target.value)}
-                  >
-                    <option value="" disabled>
-                      انتخاب روش پرداخت
-                    </option>
-                    {methods.map((method) => (
-                      <option key={method.id} value={method.id}>
-                        {method.name}
-                      </option>
-                    ))}
-                  </NativeSearchSelect>
-                  {methodsError ? (
-                    <span role="alert" className="text-sm text-destructive">
-                      {methodsError}
-                    </span>
-                  ) : null}
-                  {methodsError ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setRevision((value) => value + 1)}
-                    >
-                      دریافت مجدد روش‌های پرداخت
-                    </Button>
-                  ) : null}
-                </label>
-                <label className="grid gap-2">
-                  <span>مبلغ این پرداخت</span>
-                  <MoneyInput
-                    required
-                    value={paidAmount}
-                    onValueChange={setPaidAmount}
-                  />
-                  <small className="text-muted-foreground">
-                    مانده فعلی:{' '}
-                    {actionItem?.settlement?.remainingAmount ??
-                      actionItem?.amount?.amount ??
-                      '—'}{' '}
-                    {actionItem?.amount?.currencyCode}
-                  </small>
-                </label>
-                <p className="text-sm text-muted-foreground">
-                  می‌توانید بخشی از مبلغ را پرداخت کنید و مانده را در پرداخت‌های
-                  بعدی ثبت کنید؛ پس از هر ثبت، مانده به‌روز می‌شود.
-                </p>
-                {actionItem?.amount?.currencyCode !== 'IRR' ? (
-                  <label className="grid gap-2">
-                    <span>نرخ روز ارز به ریال</span>
-                    <MoneyInput
-                      required
-                      value={exchangeRate}
-                      onValueChange={setExchangeRate}
-                    />
-                  </label>
-                ) : null}
-                <label className="grid gap-2">
-                  <span>تاریخ و ساعت پرداخت</span>
-                  <DatePicker includeTime value={paidAt} onChange={setPaidAt} />
-                </label>
-                <label className="grid gap-2">
-                  <span>شماره پیگیری (اختیاری)</span>
-                  <Input
-                    dir="ltr"
-                    maxLength={160}
-                    value={paymentReference}
-                    onChange={(event) =>
-                      setPaymentReference(event.target.value)
-                    }
-                  />
-                </label>
-                {actionItem?.ticketPurchase ? (
-                  <label className="grid gap-2 rounded-2xl border border-dashed border-primary/30 bg-primary/5 p-3">
-                    <span className="flex items-center gap-2 font-semibold">
-                      <FileUp className="size-4 text-primary" />
-                      رسید پرداخت (اختیاری)
-                    </span>
-                    <Input
-                      type="file"
-                      accept="image/*,application/pdf"
+              ) : null}
+              {actionKind === 'APPROVE' && actionItem?.source === 'SALES' ? (
+                <div className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                  <label className="flex cursor-pointer items-start gap-3 text-sm font-bold">
+                    <input
+                      className="mt-1 size-4 accent-primary"
+                      type="checkbox"
+                      checked={issueDocumentDelivery}
                       onChange={(event) =>
-                        setTicketReceiptFile(event.target.files?.[0] ?? null)
+                        setIssueDocumentDelivery(event.target.checked)
                       }
                     />
-                    <small className="text-muted-foreground">
-                      پس از ثبت پرداخت، فایل در اسناد مالی با مرجع همین پرداخت
-                      ذخیره می‌شود.
-                    </small>
+                    <span>
+                      هم‌زمان مجوز تحویل مدارک به مشتری صادر شود
+                      <small className="mt-1 block font-normal leading-5 text-muted-foreground">
+                        این مجوز مستقل از خرید کارگزار و رزرواسیون است.
+                      </small>
+                    </span>
                   </label>
-                ) : null}
-              </>
-            ) : null}
-            {actionKind === 'APPROVE' ? (
-              <label className="grid gap-2">
-                <span>واریز به حساب</span>
-                <Select value={accountId} onValueChange={setAccountId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="انتخاب حساب مقصد" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts
-                      .filter(
-                        (account) =>
-                          account.branchId === actionItem?.branchReference &&
-                          account.currencyCode ===
-                            actionItem?.amount?.currencyCode,
-                      )
-                      .map((account) => (
-                        <SelectItem key={account.id} value={account.id}>
-                          {account.title} · {account.currencyCode}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setAccountDialog(true);
-                    setActionError('');
-                  }}
-                >
-                  <PlusCircle className="size-4" />
-                  تعریف حساب جدید
-                </Button>
-              </label>
-            ) : null}
-            {actionKind === 'APPROVE' ? (
-              <div className="grid gap-3 rounded-2xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900 dark:bg-blue-950/20">
-                <label className="flex cursor-pointer items-start gap-3 text-sm font-bold">
-                  <input
-                    className="mt-1 size-4 accent-primary"
-                    type="checkbox"
-                    checked={issueDocumentDelivery}
-                    onChange={(event) =>
-                      setIssueDocumentDelivery(event.target.checked)
-                    }
-                  />
+                  {issueDocumentDelivery ? (
+                    <>
+                      <label className="grid gap-2">
+                        <span>مبنای مجوز تحویل مدارک</span>
+                        <Select
+                          value={documentDeliveryBasis}
+                          onValueChange={(value) =>
+                            setDocumentDeliveryBasis(
+                              value as FinanceCustomerDocumentDeliveryBasisV1,
+                            )
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="AFTER_RECEIPT">
+                              پس از تأیید همین دریافت مشتری
+                            </SelectItem>
+                            <SelectItem value="FULL_SETTLEMENT">
+                              فقط در صورت تسویه کامل قرارداد
+                            </SelectItem>
+                            <SelectItem value="MANAGER_EXCEPTION">
+                              استثنای مدیر
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </label>
+                      {documentDeliveryBasis === 'MANAGER_EXCEPTION' ? (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <label className="grid gap-2">
+                            <span>شناسه تأییدکننده دوم</span>
+                            <Input
+                              required
+                              dir="ltr"
+                              placeholder="UUID"
+                              value={documentDeliverySecondApprover}
+                              onChange={(event) =>
+                                setDocumentDeliverySecondApprover(
+                                  event.target.value,
+                                )
+                              }
+                            />
+                          </label>
+                          <label className="grid gap-2">
+                            <span>انقضای استثنا (UTC)</span>
+                            <DatePicker
+                              required
+                              withinDialog
+                              includeTime
+                              defaultCalendarSystem="gregorian"
+                              gregorianEnglish
+                              value={documentDeliveryExpiresAt}
+                              onChange={setDocumentDeliveryExpiresAt}
+                              aria-label="تاریخ و ساعت انقضای استثنا"
+                            />
+                          </label>
+                        </div>
+                      ) : null}
+                      <label className="grid gap-2">
+                        <span>دلیل مجوز در Audit</span>
+                        <Input
+                          required
+                          maxLength={500}
+                          value={documentDeliveryReason}
+                          onChange={(event) =>
+                            setDocumentDeliveryReason(event.target.value)
+                          }
+                        />
+                      </label>
+                    </>
+                  ) : null}
+                </div>
+              ) : null}
+              {actionKind !== 'TICKET_COST' &&
+              !(actionKind === 'PAYMENT' && actionItem?.ticketPurchase) ? (
+                <label className="grid gap-2">
                   <span>
-                    هم‌زمان مجوز تحویل مدارک به مشتری صادر شود
-                    <small className="mt-1 block font-normal leading-5 text-muted-foreground">
-                      این مجوز مستقل از خرید کارگزار و رزرواسیون است.
-                    </small>
+                    {actionKind === 'CORRECTION_REQUIRED'
+                      ? 'دلیل اصلاح (الزامی)'
+                      : 'توضیح مالی (اختیاری)'}
                   </span>
+                  <Textarea
+                    required={
+                      actionKind === 'CORRECTION_REQUIRED' ||
+                      actionItem?.kind === 'HR_REFERRAL'
+                    }
+                    maxLength={500}
+                    value={reason}
+                    onChange={(event) => setReason(event.target.value)}
+                  />
                 </label>
-                {issueDocumentDelivery ? (
-                  <>
-                    <label className="grid gap-2">
-                      <span>مبنای مجوز تحویل مدارک</span>
-                      <Select
-                        value={documentDeliveryBasis}
-                        onValueChange={(value) =>
-                          setDocumentDeliveryBasis(
-                            value as FinanceCustomerDocumentDeliveryBasisV1,
-                          )
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="AFTER_RECEIPT">
-                            پس از تأیید همین دریافت مشتری
-                          </SelectItem>
-                          <SelectItem value="FULL_SETTLEMENT">
-                            فقط در صورت تسویه کامل قرارداد
-                          </SelectItem>
-                          <SelectItem value="MANAGER_EXCEPTION">
-                            استثنای مدیر
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </label>
-                    {documentDeliveryBasis === 'MANAGER_EXCEPTION' ? (
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <label className="grid gap-2">
-                          <span>شناسه تأییدکننده دوم</span>
-                          <Input
-                            required
-                            dir="ltr"
-                            placeholder="UUID"
-                            value={documentDeliverySecondApprover}
-                            onChange={(event) =>
-                              setDocumentDeliverySecondApprover(
-                                event.target.value,
-                              )
-                            }
-                          />
-                        </label>
-                        <label className="grid gap-2">
-                          <span>انقضای استثنا (UTC)</span>
-                          <DatePicker
-                            required
-                            withinDialog
-                            includeTime
-                            defaultCalendarSystem="gregorian"
-                            gregorianEnglish
-                            value={documentDeliveryExpiresAt}
-                            onChange={setDocumentDeliveryExpiresAt}
-                            aria-label="تاریخ و ساعت انقضای استثنا"
-                          />
-                        </label>
-                      </div>
-                    ) : null}
-                    <label className="grid gap-2">
-                      <span>دلیل مجوز در Audit</span>
-                      <Input
-                        required
-                        maxLength={500}
-                        value={documentDeliveryReason}
-                        onChange={(event) =>
-                          setDocumentDeliveryReason(event.target.value)
-                        }
-                      />
-                    </label>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-            {actionKind !== 'TICKET_COST' &&
-            !(actionKind === 'PAYMENT' && actionItem?.ticketPurchase) ? (
-              <label className="grid gap-2">
-                <span>
-                  {actionKind === 'CORRECTION_REQUIRED'
-                    ? 'دلیل اصلاح (الزامی)'
-                    : 'توضیح مالی (اختیاری)'}
-                </span>
-                <Textarea
-                  required={actionKind === 'CORRECTION_REQUIRED'}
-                  maxLength={500}
-                  value={reason}
-                  onChange={(event) => setReason(event.target.value)}
-                />
-              </label>
+              ) : null}
+            </fieldset>
+            {paymentUncertain ? (
+              <p role="status">
+                نتیجه پرداخت هنوز قطعی دریافت نشده؛ فقط همان عملیات را دوباره
+                ارسال کنید. اطلاعات این تلاش ثابت می‌ماند.
+              </p>
             ) : null}
             {actionError ? (
               <p className="text-sm text-destructive" role="alert">
@@ -1546,7 +1825,9 @@ export function FinanceInboxLiveWorkspace() {
                 type="submit"
                 disabled={
                   actionBusy ||
-                  (actionKind === 'APPROVE' && !accountId) ||
+                  (actionKind === 'APPROVE' &&
+                    actionItem?.source === 'SALES' &&
+                    !accountId) ||
                   (actionKind === 'PAYMENT' &&
                     (!accountId || !paymentMethodId || !paidAmount)) ||
                   (actionKind === 'TICKET_COST' &&
@@ -1561,7 +1842,7 @@ export function FinanceInboxLiveWorkspace() {
               <Button
                 type="button"
                 variant="outline"
-                disabled={actionBusy}
+                disabled={actionBusy || paymentUncertain}
                 onClick={() => {
                   setActionItem(null);
                   setActionKind(null);

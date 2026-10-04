@@ -1,3 +1,9 @@
+## 2026-10-04 — FINANCE-INBOX-RELIABILITY-1004 — PC-A — READY_FOR_REVIEW
+
+Finance ticket payments now accept an additive operation UUID and observed payment version, serialize operation/request races, validate replay payload/actor/branch, and replay full settlements even after Procurement closes the pending envelope. Finance Web freezes uncertain retries and separates successful payment from failed receipt upload, offering receipt-only retry against the committed payment. HR public pagination is complete/validated and referral response uses HR's existing permission-aware/idempotent public endpoint. Procurement invoice/return actions are connected; Finance/source versions are separate, revised unpaid correction sources may be re-reviewed and stale-source payments are rejected. Tehran whole-day filters, actionable-payment KPIs, per-line Reservations history and an explicit queue-versus-transaction-history distinction are delivered. No amount approval ceiling is introduced per owner decision; overpayment protection remains.
+
+Validation: full API 1961 tests, final focused Finance/HR regressions, Finance Web 37 tests, two real concurrent-payment PostgreSQL tests rerun against final payment code on a random fully migrated database, affected typechecks/lint and a 55-route production build passed. Latest develop has no overlapping Finance code changes; integration and Linux CI gate merge. Full Windows Web testing reproduces two unchanged Master Data raw-source CRLF/LF assertions on the base worktree; those other-owner files were not modified. No operational database, schema/migration/dependency, live runtime or authenticated browser QA. See docs/tasks/FINANCE-INBOX-RELIABILITY-1004.md for compatibility and remaining product scope.
+
 
 ## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
 

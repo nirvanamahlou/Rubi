@@ -1,3 +1,9 @@
+## FINANCE-INBOX-RELIABILITY-1004 — PC-A — READY_FOR_REVIEW
+
+- Human owner explicitly authorizes this chat on 2026-10-04 to supersede the stale Finance scope reservation in TICKET-PROCUREMENT-FINANCE-PAYMENT-0927 (branch already merged). COMPUTER_ID=PC-A; branch codex/pc-a-finance-inbox-reliability-1004 from origin/develop@82272a25. Reserve Finance API/Web/tests, additive Finance v1 contract fields and own status entries only. No dependency lock, migration, operational database or shared runtime changes. Producer Finance API and consumer Finance Web ship together; legacy commands remain readable. User authorizes develop merge after verification.
+- Scope: replay-safe ticket payments using the existing payment UUID, receipt-upload recovery, complete HR public pagination, procurement decision/payment wiring, truthful queue/history views and date/KPI regressions. New approval policies, Tasks/HR/Documents-owned features must retain public-service boundaries and cannot be fabricated.
+- Delivered bounded scope with full API 1961 tests, final Finance/HR regressions, Finance Web 37 tests, two isolated real PostgreSQL concurrency/replay tests, scoped lint/format, affected typechecks and API/Web production builds. No operational database/migration/dependency/runtime or authenticated browser change. Linux CI gates develop merge; known unchanged Windows Master Data CRLF assertions and remaining broader product scope are recorded in docs/tasks/FINANCE-INBOX-RELIABILITY-1004.md. Bounded locks release with commit.
+
 ## ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-accommodation-meal-service-code-1004` from origin/develop. Reserve Accommodation workspace, focused spec and own status entries only. Display existing canonical record.code under meals-only کد سرویس heading; no duplicate column or backend/form/export/runtime change. Lead reviews, pushes and merges develop after checks.
