@@ -7,7 +7,7 @@ Validation: full API 1961 tests, final focused Finance/HR regressions, Finance W
 
 ## 2026-10-04 — FINANCE-DELIVERY-TICK-1004 — PC-A — READY_FOR_REVIEW
 
-The concurrent customer-document delivery option in receipt approval now needs only its checkbox. The existing AFTER_RECEIPT command supplies an automatic reason; the extra basis, manual Audit reason and manager-exception fields are removed from this option. Backend audit, permissions, receipt validation and the separate contract delivery controls remain intact. Finance Web 37 tests pass; lint, typecheck and production build gate delivery. No API/schema/migration/dependency/database/runtime changes or authenticated browser QA. User authorizes develop merge after CI; bounded locks release with commit.
+The concurrent customer-document delivery option in receipt approval now needs only its checkbox. The existing AFTER_RECEIPT command supplies an automatic reason; the extra basis, manual Audit reason and manager-exception fields are removed from this option. Backend audit, permissions, receipt validation and the separate contract delivery controls remain intact. Finance Web 37 tests and all eight exact-source-head CI jobs passed, including lint/typechecks and full production builds. No API/schema/migration/dependency/database/runtime changes or authenticated browser QA. User authorizes develop merge after CI; bounded locks release with commit.
 
 ## 2026-10-04 — ACCOMMODATION-MEAL-SERVICE-CODE-1004 — PC-B — READY_FOR_REVIEW
 
