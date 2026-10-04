@@ -1,7 +1,7 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
 import {
   documentsApi,
@@ -15,6 +15,7 @@ import {
   type OrganizationDocumentOptions,
   type StagedOrganizationDocument,
 } from '../model/organization-documents';
+import { useBoundUploadContext } from './use-bound-upload-context';
 
 /** Upload through the Documents owner; only its saved ID is attached to the form. */
 export function InlineDocumentUpload({
@@ -26,6 +27,9 @@ export function InlineDocumentUpload({
   onStaged,
   staged,
   onBusyChange,
+  onUncertainChange,
+  contextKey = '',
+  uploadedNotice,
   expanded = false,
 }: {
   organizationId?: string | undefined;
@@ -37,6 +41,9 @@ export function InlineDocumentUpload({
     ((document: StagedOrganizationDocument | null) => void) | undefined;
   staged?: StagedOrganizationDocument | null | undefined;
   onBusyChange: (busy: boolean) => void;
+  onUncertainChange?: ((uncertain: boolean) => void) | undefined;
+  contextKey?: string | undefined;
+  uploadedNotice?: string | undefined;
   expanded?: boolean;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
@@ -47,6 +54,7 @@ export function InlineDocumentUpload({
     [expiry, setExpiry] = useState(staged?.input.validUntil ?? '');
   const [file, setFile] = useState<File | undefined>(staged?.file),
     [busy, setBusy] = useState(false);
+  const [confidentialAccessCode, setConfidentialAccessCode] = useState('');
   const [error, setError] = useState(''),
     [notice, setNotice] = useState(
       staged
@@ -54,10 +62,11 @@ export function InlineDocumentUpload({
         : '',
     ),
     [uncertain, setUncertain] = useState(false);
-  const callbacks = useRef({ onUploaded, onBusyChange });
-  useLayoutEffect(() => {
-    callbacks.current = { onUploaded, onBusyChange };
-  }, [onUploaded, onBusyChange]);
+  const bindUpload = useBoundUploadContext(contextKey, {
+    onUploaded,
+    onBusyChange,
+    onUncertainChange,
+  });
   const pending = useRef(false);
   useEffect(() => {
     let active = true;
@@ -109,6 +118,9 @@ export function InlineDocumentUpload({
       categoryId,
       validUntil: expiry,
       requiresStepUpVerification: false,
+      ...(type?.defaultConfidentiality === 'CONFIDENTIAL'
+        ? { confidentialAccessCode }
+        : {}),
     };
     try {
       validateOrganizationDocumentInput(input, file, options, permissions);
@@ -131,21 +143,26 @@ export function InlineDocumentUpload({
       permissions,
     );
     pending.current = true;
+    const request = bindUpload();
     setBusy(true);
-    callbacks.current.onBusyChange(true);
+    request.busy(true);
     try {
       const result = await documentsApi.upload(form);
-      callbacks.current.onUploaded(result.data.id);
+      if (!request.isCurrent()) return;
+      request.uploaded(result.data.id);
       setFile(undefined);
       setNotice(
-        result.data.currentVersion.scanStatus === 'CLEAN'
-          ? 'مدرک در اسناد و فایل‌ها ذخیره و انتخاب شد.'
-          : 'مدرک ذخیره و انتخاب شد؛ تأیید قرارداد پس از بررسی امنیتی فایل ممکن است.',
+        uploadedNotice ??
+          (result.data.currentVersion.scanStatus === 'CLEAN'
+            ? 'مدرک در اسناد و فایل‌ها ذخیره و انتخاب شد.'
+            : 'مدرک ذخیره و انتخاب شد؛ تأیید قرارداد پس از بررسی امنیتی فایل ممکن است.'),
       );
     } catch (e) {
+      if (!request.isCurrent()) return;
       const unknown =
         !(e instanceof DocumentsApiError) || e.status === 0 || e.status >= 500;
       setUncertain(unknown);
+      request.uncertain(unknown);
       setError(
         (e instanceof Error ? e.message : 'بارگذاری ناموفق بود.') +
           (unknown
@@ -154,8 +171,10 @@ export function InlineDocumentUpload({
       );
     } finally {
       pending.current = false;
-      setBusy(false);
-      callbacks.current.onBusyChange(false);
+      if (request.isCurrent()) {
+        setBusy(false);
+        request.busy(false);
+      }
     }
   }
   const Container = expanded ? 'div' : 'details';
@@ -189,6 +208,7 @@ export function InlineDocumentUpload({
             value={typeId}
             onChange={(e) => {
               setTypeId(e.target.value);
+              setConfidentialAccessCode('');
               setFile(undefined);
               onStaged?.(null);
               setNotice('');
@@ -204,6 +224,25 @@ export function InlineDocumentUpload({
               ))}
           </NativeSearchSelect>
         </label>
+        {type?.defaultConfidentiality === 'CONFIDENTIAL' ? (
+          <label className="field">
+            <span>کد دسترسی سند محرمانه</span>
+            <input
+              className="input"
+              inputMode="numeric"
+              autoComplete="off"
+              maxLength={6}
+              pattern="[0-9]{6}"
+              required
+              value={confidentialAccessCode}
+              onChange={(event) =>
+                setConfidentialAccessCode(
+                  event.target.value.replace(/\D/gu, '').slice(0, 6),
+                )
+              }
+            />
+          </label>
+        ) : null}
         <label className="field">
           <span>دسته‌بندی سند</span>
           <NativeSearchSelect

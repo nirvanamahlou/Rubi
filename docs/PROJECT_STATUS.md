@@ -4568,3 +4568,7 @@ Screenshot693: remove signatory action text and internal-branch display, align d
 ## 2026-10-04 — B2B-SIGNATORY-FORM-COPY-1004 — PC-B
 
 Remove four user-specified guidance texts from signatory form; fields, currency dependency, proof validity, inactive save and activation enforcement stay intact. Bounded R0/C1 UI copy assigned to persistent worker. Required checks/CI gate user-authorized push/develop merge. No API/data/schema/permission/dependency changes; usage unavailable.
+
+## 2026-10-04 — B2B-SIGNATORY-UPLOAD-1004 — PC-B
+
+In-form authority proof upload requested with persisted notes and manual activation after upload. Existing backend has no human-review gate: antivirus CLEAN, complete/unexpired exact-org/branch proof remains mandatory. Frozenv1 consumer-only implementation preserves Documents/B2B policy and adds bounded readiness refresh plus stale-upload/save protection. Independent review and required checks gate delivery. No schema/dependency/permission changes.
