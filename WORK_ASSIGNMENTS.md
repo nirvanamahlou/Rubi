@@ -5457,6 +5457,12 @@ B2B-SIGNATORY-FORM-COPY-1004 scope extended to Organizations-local DossierFormDi
 
 B2B-SIGNATORY-FORM-COPY-1004 delivered: four requested texts removed; optional conditional description avoids empty spacing, installed Dialog handles absent-description aria relation. Organizations180 tests, scoped ESLint/Prettier, Web typecheck and55-route build4191 pass. Lead accepted bounded two-file UI diff, no behavior changes. Persistent worker; usage unavailable. Locks released at delivery; CI gates merge.
 
+## SALES-VALIDATION-REFRESH-1004 — PC-A — READY_FOR_REVIEW
+
+- Branch codex/pc-a-sales-validation-refresh-1004 from origin/develop@82272a25. Reserve Sales people-sheet recovery/update helpers and regressions, Customers Web error reader and regressions, bounded docs. Reproduce blank hidden Persian names in international registration recovery while passport names are valid; do not disable DTO/identity/version/duplicate checks. Producer Customers API existing validation envelope, consumers Sales people-sheet and Customers browser client remain PC-A-owned. No API/schema/migration/dependency/database changes. User authorizes develop merge.
+
+- Delivered international passport-name fallback across registration recovery/duplicate lookup/update, plus bounded Persian validation-field messages. Focused47 tests pass; Sales/Customers404 tests passed with one timed-out unrelated SSR test, whose full three-test file passed on one worker with process-local30s timeout. One environment-dependent test skipped. Scoped ESLint/Prettier and Web typecheck pass; production Web build and final CI gate merge. No schema/API/dependency/database/runtime change. Scoped locks RELEASED; user-authorized develop merge follows final checks. Handoff: docs/tasks/SALES-VALIDATION-REFRESH-1004.md.
+
 ## B2B-SIGNATORY-UPLOAD-1004 — PC-B — IN_PROGRESS
 
 User requests in-form authority proof upload and notes plus activation availability after upload, push/develop merge. Reserve Organizations signatory consumer/form plus own docs for initial investigation. Preserve Documents upload/scan/classification/review and B2B signatory activation enforcement; no grant/schema/dependency changes. R3/C3 document/authority boundary; advisor then frozen contract, same persistent worker, independent final review required. Material upload-versus-validated activation decision must be resolved. Telemetry unavailable.
