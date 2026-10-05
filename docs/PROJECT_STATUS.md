@@ -4717,3 +4717,6 @@ Reservations hotel/transfer purchase now reads independent active MasterBroker r
 ## 2026-10-05 — Issued passenger ticket report — PC-A
 
 Ticket Catalog consumes Reservations actual ticket-document issuance through a new branch-scoped public read endpoint. Required issuance-date boundaries use Tehran days; optional contract/passenger/document/route/airline/status filters apply to the entire Excel/PDF server export without UI pagination. Each row is one assigned flight segment; unissued allocations never appear. Empty results produce a valid workbook/PDF. No schema, migration, dependency or operational runtime change. User authorizes develop merge; static/build/CI validation is the merge gate.
+
+
+ISSUED-TICKET-EXPORT-1005 validation: scoped ESLint, API/Web typecheck, API build and 55-page Web production build pass after refreshing existing generated artifacts. Focused actual-issuance/date/filter/workbook/security/UI tests and real synthetic PDF rendering pass. PR665 exact-head full quality, test, build and PostgreSQL CI gate develop merge. No operational data or local runtime change.
