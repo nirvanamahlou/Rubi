@@ -84,7 +84,7 @@ export function Lookup({
   value,
   onChange,
 }: {
-  kind: 'hotels' | 'organizations' | 'currencies';
+  kind: 'hotels' | 'organizations' | 'brokers' | 'currencies';
   label: string;
   value: Option | null;
   onChange: (value: Option) => void;

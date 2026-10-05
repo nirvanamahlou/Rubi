@@ -1,6 +1,10 @@
 ## 2026-10-05 — SYSTEM-USERS-TILE-1005 — PC-A — READY_FOR_REVIEW
 
-User Management is now a directly linked purple card inside the existing responsive System Management grid, with a stronger border, users icon and quick-access footer. The duplicate page-top link is removed. Persian/English labels, company-settings filtering, search and existing IAM access-link protection remain. No API, permissions, migration, dependency or live runtime change. 19 focused existing tests, format and diff checks pass. Scoped lint, local Web typecheck/build and exact-head CI gate the user-authorized develop merge. Bounded locks released with commit; no authenticated browser/runtime rollout.
+User Management is now a directly linked purple card inside the existing responsive System Management grid, with a stronger border, users icon and quick-access footer. The duplicate page-top link is removed. Persian/English labels, company-settings filtering, search and existing IAM access-link protection remain. No API, permissions, migration, dependency or live runtime change. 19 focused existing tests, scoped ESLint, format and diff checks pass. Scoped lint, local Web typecheck/build and exact-head CI gate the user-authorized develop merge. Bounded locks released with commit; no authenticated browser/runtime rollout.
+
+## 2026-10-05 — RESERVATION-ACTIONS-ENGLISH-1005 — PC-A — READY_FOR_REVIEW
+
+Supplier-form save is the first action above download and print, with one save button and unchanged disabled/cancelled protections. The permission-scoped broker directory supplies an additive English name without contacts; both-language lookup preserves old Persian selections and new supplier form snapshots save the registered English name when available. Existing fallback supports records without English names. Twelve focused tests, affected lint and API build pass; production Web/TypeScript and full CI gate merge. No schema/migration/dependency/permission change; user authorizes develop merge, bounded locks released.
 
 ## 2026-10-05 — RESERVATION-LABEL-1005 — PC-A — READY_FOR_REVIEW
 
@@ -4693,3 +4697,7 @@ New-contract flight calendars accept future dates without a separate floating-da
 Procurement record edit/delete glyphs are being repaired locally after confirming the shared `Button` auto-selects its destructive variant for Persian delete labels and the local destructive text utility hides the glyph on that background. Scope is limited to `record-actions.tsx`, meaningful Procurement specs and this unit's docs; callbacks, labels, disabled behavior and confirmation remain in scope for regression checks. No shared Button, API, database, permission, dependency, runtime or DOCX changes are authorized.
 
 The repair uses readable sky/rose light/dark surfaces with hover and focus-ring states. Rendered SSR tests confirm actual labels, Lucide glyphs, disabled output and removal of conflicting destructive tokens; Procurement tests (9 files/36 tests), scoped lint, Web typecheck, the 55-route production build and four-file Prettier checks pass after rebuilding stale `@nora/contracts` dist from existing source exports. Chrome targetable-window/browser QA was unavailable, and no runtime or scheduled DOCX work was attempted.
+
+## 2026-10-05 — RESERVATION-PURCHASE-BROKERS-1005 — PC-A
+
+Reservations hotel/transfer purchase now reads independent active MasterBroker records rather than BROKER-role organizations. Adds a restrictive broker FK beside the preserved legacy organization FK with exactly-one-source CHECK; public broker validation and Finance/Reservations projections retain v1 compatibility and historical purchases. API166 tests (six opt-in skipped), Web11, API typecheck, Prisma validation/generation and disposable PostgreSQL migration integrity proof pass. Final builds/CI gate release; no real purchase created or develop merge authorized.
