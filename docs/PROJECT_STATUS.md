@@ -4683,3 +4683,9 @@ LOAD-ROUTE-SIDES-1004: PC-A adds both endpoint country/city filters in charter L
 ## 2026-10-05 — SALES-FLOATING-CALENDAR-1005 — PC-A
 
 New-contract flight calendars accept future dates without a separate floating-date checkbox. Existing saleable catalog days remain red-marked, including registered return days with a floating outbound date. Matching catalog pairs retain their outbound filter; floating return dates do not impose an empty catalog allowlist. Return chronology and authoritative ticket capacity/fare checks remain. Sales/DatePicker311 tests pass (one existing skip), seven focused calendar regressions, scoped lint and Web typecheck pass; production build and exact-head CI gate authorized develop merge. No API/schema/migration/dependency/operational data or runtime rollout.
+
+## 2026-10-05 — PROCUREMENT-ICON-THEME-1005 — PC-B — READY_FOR_REVIEW
+
+Procurement record edit/delete glyphs are being repaired locally after confirming the shared `Button` auto-selects its destructive variant for Persian delete labels and the local destructive text utility hides the glyph on that background. Scope is limited to `record-actions.tsx`, meaningful Procurement specs and this unit's docs; callbacks, labels, disabled behavior and confirmation remain in scope for regression checks. No shared Button, API, database, permission, dependency, runtime or DOCX changes are authorized.
+
+The repair uses readable sky/rose light/dark surfaces with hover and focus-ring states. Rendered SSR tests confirm actual labels, Lucide glyphs, disabled output and removal of conflicting destructive tokens; Procurement tests (9 files/36 tests), scoped lint, Web typecheck, the 55-route production build and four-file Prettier checks pass after rebuilding stale `@nora/contracts` dist from existing source exports. Chrome targetable-window/browser QA was unavailable, and no runtime or scheduled DOCX work was attempted.
