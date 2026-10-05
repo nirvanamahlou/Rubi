@@ -18,7 +18,14 @@ export class MasterTravelDirectory {
       sortDirection: 'asc',
     });
     return {
-      data: result.data.map((row) => ({ id: row.id, name: row.name })),
+      data: result.data.map((row) => ({
+        id: row.id,
+        name: row.name,
+        englishName:
+          typeof row.attributes.englishName === 'string'
+            ? row.attributes.englishName.trim()
+            : '',
+      })),
       meta: result.meta,
     };
   }
