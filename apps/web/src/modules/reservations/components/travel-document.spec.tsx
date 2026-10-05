@@ -29,6 +29,11 @@ const intake = {
     },
   },
 } as unknown as ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+const supplier = defaultVoucherSettings(intake, {});
+supplier.brokerId = 'broker';
+supplier.text.broker = 'BROKER';
+intake.workflow.supplierFormSettings = supplier;
+
 describe('travel output branding and readiness', () => {
   it('places one supplier picker before the single reservation preview', () => {
     const html = renderToStaticMarkup(
@@ -57,6 +62,8 @@ describe('travel output branding and readiness', () => {
   it('renders an issued hotel voucher with booking reference and stamp in the shared theme', () => {
     const settings = defaultVoucherSettings(intake, {});
     settings.text.broker = 'SYNTHETIC BROKER';
+    settings.brokerId = 'broker';
+    settings.leaderId = 'leader';
     settings.flags.hotel = true;
     const html = renderToStaticMarkup(
       <TravelDocument
@@ -113,6 +120,7 @@ describe('travel output branding and readiness', () => {
 it('applies an unsaved selected broker immediately without adding a manual supplier input', () => {
   const settings = defaultVoucherSettings(intake, {});
   settings.text.broker = 'SELECTED BROKER';
+  settings.brokerId = 'broker';
   const html = renderToStaticMarkup(
     <TravelDocument intake={intake} previewSettings={settings} dirty />,
   );
@@ -120,4 +128,32 @@ it('applies an unsaved selected broker immediately without adding a manual suppl
   expect(html).not.toContain('reservation-supplier-name');
   expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
   expect(html).toContain('Reservation@niyayehseir.com');
+});
+
+it('hides the reservation preview without a selected broker', () => {
+  const workflow = { ...intake.workflow };
+  delete workflow.supplierFormSettings;
+  const html = renderToStaticMarkup(
+    <TravelDocument intake={{ ...intake, workflow }} />,
+  );
+  expect(html).not.toContain('data-document-preview');
+  expect(html).toContain('disabled');
+});
+it('hides an issued voucher without a selected directory leader', () => {
+  const settings = defaultVoucherSettings(intake, {});
+  settings.brokerId = 'broker';
+  const html = renderToStaticMarkup(
+    <TravelDocument
+      intake={{
+        ...intake,
+        workflow: {
+          ...intake.workflow,
+          voucherIssued: true,
+          voucherSettings: settings,
+        },
+      }}
+      voucher
+    />,
+  );
+  expect(html).not.toContain('data-document-preview');
 });

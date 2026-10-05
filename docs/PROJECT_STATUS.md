@@ -1,7 +1,3 @@
-## 2026-10-05 — TICKET-CATALOG-SALE-DEFAULT-1005 — PC-A — READY_FOR_REVIEW
-
-New ticket-only contracts use the public Ticket Catalog fare for readonly day sale and an initially equal editable agreement. One-way/combined round-trip seat-tier quotes remain exact; explicit negotiated totals survive seated passenger changes and restored drafts. Mixed/package pricing, unpriced/manual entry and persisted contract editing are unchanged. Payload pricing and catalog quote metadata remain separate. Sales323 tests (one existing skip), Web lint/TypeScript pass and production compilation succeeds; final production completion and exact-head CI gate owner-authorized develop merge. Concurrent develop integrated; bounded locks released with PR662 candidate. No authenticated browser QA, API/schema/migration/dependency/runtime change.
-
 ## 2026-10-05 — SYSTEM-USERS-TILE-1005 — PC-A — READY_FOR_REVIEW
 
 User Management is now a directly linked purple card inside the existing responsive System Management grid, with a stronger border, users icon and quick-access footer. The duplicate page-top link is removed. Persian/English labels, company-settings filtering, search and existing IAM access-link protection remain. No API, permissions, migration, dependency or live runtime change. 19 focused existing tests, scoped ESLint, format and diff checks pass. Scoped lint, local Web typecheck/build and exact-head CI gate the user-authorized develop merge. Bounded locks released with commit; no authenticated browser/runtime rollout.
@@ -13,6 +9,10 @@ Supplier-form save is the first action above download and print, with one save b
 ## 2026-10-05 — RESERVATION-LABEL-1005 — PC-A — READY_FOR_REVIEW
 
 Corrected reservation module and navigation group to رزرواسیون, including page heading, related notification/Workbench/module-foundation titles and English category mapping. Updated existing navigation/settings assertions. Focused 45 tests, scoped ESLint, Web TypeScript and 55-route production generation pass. Routes, access control, APIs and stored data unchanged; no migration or dependency changes. User authorizes develop merge; bounded locks released.
+
+## 2026-10-05 — TICKET-CATALOG-SALE-DEFAULT-1005 — PC-A — READY_FOR_REVIEW
+
+New ticket-only contracts use the public Ticket Catalog fare for readonly day sale and an initially equal editable agreement. One-way/combined round-trip seat-tier quotes remain exact; explicit negotiated totals survive seated passenger changes and restored drafts. Mixed/package pricing, unpriced/manual entry and persisted contract editing are unchanged. Payload pricing and catalog quote metadata remain separate. Sales323 tests (one existing skip), Web lint/TypeScript and 55-page production build pass. Prior exact-head CI gates pass; latest integrated-head CI gates owner-authorized develop merge. Concurrent work retained; bounded locks released with PR662 candidate. No authenticated browser QA, API/schema/migration/dependency/runtime change.
 
 ## 2026-10-04 — FINANCE-WORKFLOW-EXPORTS-1004 — PC-A — READY_FOR_REVIEW
 
@@ -4702,6 +4702,10 @@ Procurement record edit/delete glyphs are being repaired locally after confirmin
 
 The repair uses readable sky/rose light/dark surfaces with hover and focus-ring states. Rendered SSR tests confirm actual labels, Lucide glyphs, disabled output and removal of conflicting destructive tokens; Procurement tests (9 files/36 tests), scoped lint, Web typecheck, the 55-route production build and four-file Prettier checks pass after rebuilding stale `@nora/contracts` dist from existing source exports. Chrome targetable-window/browser QA was unavailable, and no runtime or scheduled DOCX work was attempted.
 
+
+RESERVATION-VOUCHER-GATES-1005: supplier form preview/send requires a directory broker; voucher button waits for sent supplier form and voucher display/issue requires a directory leader from its broker. Canonical directory labels and membership validation used without new data contracts/schema. API152 tests passed (6 existing skips); final Web/static/build/CI gates remain. No local deployment.
+
 ## 2026-10-05 — RESERVATION-PURCHASE-BROKERS-1005 — PC-A
 
 Reservations hotel/transfer purchase now reads independent active MasterBroker records rather than BROKER-role organizations. Adds a restrictive broker FK beside the preserved legacy organization FK with exactly-one-source CHECK; public broker validation and Finance/Reservations projections retain v1 compatibility and historical purchases. API166 tests (six opt-in skipped), Web11, API typecheck, Prisma validation/generation and disposable PostgreSQL migration integrity proof pass. Final builds/CI gate release; no real purchase created or develop merge authorized.
+

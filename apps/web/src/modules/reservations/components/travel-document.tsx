@@ -77,7 +77,16 @@ export function TravelDocument({
   const state = intake.workflow;
   const formReferences = useReservationFormReferences(intake, true);
   const savedSupplier = state.supplierFormSettings?.text.broker?.trim() ?? '';
-  const supplierReady = voucher || historical || !!savedSupplier;
+  const supplierReady =
+    historical ||
+    (voucher
+      ? !!state.voucherSettings?.brokerId && !!state.voucherSettings?.leaderId
+      : !!(previewSettings ?? state.supplierFormSettings)?.brokerId &&
+        !!(
+          (
+            previewSettings ?? state.supplierFormSettings
+          )?.text.broker?.trim() || savedSupplier
+        ));
   const enabled =
     (!!logo ||
       (voucher && state.voucherSettings?.flags.withLetterhead === false)) &&
@@ -211,7 +220,7 @@ export function TravelDocument({
           بررسی کنید.
         </p>
       )}
-      {enabled && <DocumentPreview>{sheet}</DocumentPreview>}
+      {enabled && supplierReady && <DocumentPreview>{sheet}</DocumentPreview>}
       {printing &&
         createPortal(
           <div data-travel-document style={{ display: 'none' }}>

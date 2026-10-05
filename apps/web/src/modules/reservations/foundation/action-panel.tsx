@@ -194,7 +194,12 @@ export function ContractActionPanel({
                     <DialogTrigger asChild>
                       <button
                         type="button"
-                        disabled={!request}
+                        disabled={
+                          !request ||
+                          (action === 'واچر' &&
+                            !request.hotelRequested &&
+                            !request.hotelConfirmed)
+                        }
                         className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
                         aria-label={
                           action === 'توضیحات' && request?.hasNotes

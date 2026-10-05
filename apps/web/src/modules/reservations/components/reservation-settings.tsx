@@ -437,11 +437,19 @@ export function ReservationSettingsForm({
             }
             onValueChange={(id) => {
               const option = options.find((item) => item.id === id);
-              if (option)
-                update({
+              if (option) {
+                const next = {
                   ...draft,
                   text: { ...draft.text, [referenceKey]: option.label },
-                });
+                  ...(referenceKey === 'broker' ? { brokerId: option.id } : {}),
+                };
+                if (referenceKey === 'broker' && draft.brokerId !== option.id) {
+                  delete next.leaderId;
+                  next.text.leaderName = '';
+                  next.text.leaderPhone = '';
+                }
+                update(next);
+              }
             }}
           />
         </div>
@@ -533,7 +541,7 @@ export function ReservationSettingsForm({
         className="grid gap-4"
       >
         {(section === 'ALL' || section === 'OTHER') && textField('broker')}
-        {showDocument && (
+        {showDocument && draft.brokerId && (
           <div className="grid gap-3">
             {saveButton}
             {past && (

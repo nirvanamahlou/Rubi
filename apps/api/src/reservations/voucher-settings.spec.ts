@@ -123,6 +123,7 @@ it('isolates supplier form edits and freezes sent details for purchase', () => {
   original.text.roomType = 'DBL';
   const state = { ...initialTravelWorkflow(), voucherSettings: original };
   const single = settings();
+  single.brokerId = '00000000-0000-4000-8000-000000000001';
   single.text.roomType = 'SGL';
   const draft = transition(
     state,
