@@ -22,6 +22,9 @@ describe('system management access', () => {
   it('uses the dedicated management center rather than a placeholder workspace', () => {
     expect(systemPageSource).toContain('SystemManagementWorkspace');
     expect(systemPageSource).not.toContain('ModuleFoundationWorkspace');
+    expect(systemPageSource).not.toContain('<Link');
+    expect(workspaceSource).toContain('styles.userManagementCard');
+    expect(workspaceSource).toContain('href="/system/users"');
   });
 
   it('exposes user management inside system navigation without the Legal Entity callout', () => {
