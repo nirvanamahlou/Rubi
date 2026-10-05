@@ -42,6 +42,7 @@ async function reportFetch(
     {
       credentials: 'include',
       cache: 'no-store',
+      redirect: 'error',
       ...(signal ? { signal } : {}),
     },
   );
@@ -82,6 +83,15 @@ export async function downloadIssuedTicketReport(
       ? '/ticket-catalog/issued/export/pdf?' + params
       : 'issued-tickets/export?' + params,
   );
+  const contentType = response.headers.get('content-type') ?? '';
+  const expected =
+    format === 'pdf'
+      ? 'application/pdf'
+      : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (!contentType.includes(expected))
+    throw new Error(
+      'فایل خروجی معتبر دریافت نشد؛ دوباره وارد سامانه شوید و تلاش کنید.',
+    );
   const blob = await response.blob();
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
