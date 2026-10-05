@@ -1,5 +1,5 @@
 import type * as React from 'react';
-import { emptySalesForm } from '../model/sales-form';
+import { emptySalesForm, type SalesFormState } from '../model/sales-form';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { SalesContractForm } from './sales-contract-form';
@@ -9,6 +9,7 @@ const fixture = vi.hoisted(() => ({
   hotel: false,
   roundTrip: false,
   step: 0,
+  ticketDraft: null as SalesFormState | null,
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
@@ -53,6 +54,13 @@ vi.mock('react', async (original) => ({
           guestCustomerIds: ['guest'],
         },
       };
+    if (
+      value &&
+      typeof value === 'object' &&
+      'serviceKinds' in value &&
+      fixture.ticketDraft
+    )
+      value = fixture.ticketDraft;
     if (value === 0) value = fixture.step;
     return [value, vi.fn()];
   },
@@ -60,6 +68,52 @@ vi.mock('react', async (original) => ({
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('compact sales contract form', () => {
+  it('shows the registered ticket sale price readonly alongside an editable agreed default', () => {
+    fixture.step = 3;
+    fixture.ticketDraft = {
+      ...emptySalesForm,
+      serviceKinds: ['FLIGHT'],
+      ticket: { ...emptySalesForm.ticket, outboundOfferId: 'OUT' },
+      servicePricing: {},
+      outboundOffer: {
+        id: 'OUT',
+        version: 1,
+        branchId: 'branch',
+        originId: 'origin',
+        destinationId: 'destination',
+        departureAt: '2099-10-01T08:00:00.000Z',
+        arrivalAt: '2099-10-01T10:00:00.000Z',
+        carrierName: 'Carrier',
+        serviceNumber: 'OUT',
+        cabinClassCode: 'ECONOMY',
+        totalCapacity: 20,
+        remainingCapacity: 20,
+        status: 'ACTIVE',
+        standaloneSalePrice: {
+          revision: 1,
+          amount: '125',
+          currencyCode: 'IRR',
+        },
+      },
+    };
+    let html: string;
+    try {
+      html = renderToStaticMarkup(<SalesContractForm />);
+    } finally {
+      fixture.step = 0;
+      fixture.ticketDraft = null;
+    }
+    const day = html.match(
+      /<input[^>]*aria-label="قیمت روز فروش بلیط رفت کل"[^>]*>/,
+    )?.[0];
+    const agreed = html.match(
+      /<input[^>]*aria-label="مبلغ توافق‌شده با مشتری بلیط رفت کل"[^>]*>/,
+    )?.[0];
+    expect(day).toContain('value="125"');
+    expect(day).toContain('readOnly');
+    expect(agreed).toContain('value="125"');
+    expect(agreed).not.toContain('readOnly');
+  });
   it('shows one day-sale and agreed input for round-trip flights in the compact pricing layout', () => {
     fixture.roundTrip = true;
     fixture.step = 3;

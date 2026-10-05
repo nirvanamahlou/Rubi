@@ -1,3 +1,7 @@
+## 2026-10-05 — TICKET-CATALOG-SALE-DEFAULT-1005 — PC-A — VERIFYING
+
+New ticket-only contracts use the public Ticket Catalog fare for readonly day sale and an initially equal editable agreement. One-way/combined round-trip seat-tier quotes remain exact; explicit negotiated totals survive seated passenger changes and restored drafts. Mixed/package pricing, unpriced/manual entry and persisted contract editing are unchanged. Payload pricing and catalog quote metadata remain separate. Local verification and exact-head CI gate owner-authorized develop merge; no API/schema/migration/dependency/runtime change.
+
 ## 2026-10-05 — RESERVATION-LABEL-1005 — PC-A — READY_FOR_REVIEW
 
 Corrected reservation module and navigation group to رزرواسیون, including page heading, related notification/Workbench/module-foundation titles and English category mapping. Updated existing navigation/settings assertions. Focused 45 tests, scoped ESLint, Web TypeScript and 55-route production generation pass. Routes, access control, APIs and stored data unchanged; no migration or dependency changes. User authorizes develop merge; bounded locks released.
