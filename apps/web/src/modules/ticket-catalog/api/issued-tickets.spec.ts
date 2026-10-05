@@ -9,13 +9,11 @@ describe('server issued ticket report', () => {
   it('rejects login HTML instead of downloading a fake PDF', async () => {
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response('<html>login</html>', {
-            headers: { 'content-type': 'text/html' },
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        new Response('<html>login</html>', {
+          headers: { 'content-type': 'text/html' },
+        }),
+      ),
     );
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
     try {
