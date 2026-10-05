@@ -1,3 +1,7 @@
+## 2026-10-05 — SYSTEM-USERS-TILE-1005 — PC-A — READY_FOR_REVIEW
+
+User Management is now a directly linked purple card inside the existing responsive System Management grid, with a stronger border, users icon and quick-access footer. The duplicate page-top link is removed. Persian/English labels, company-settings filtering, search and existing IAM access-link protection remain. No API, permissions, migration, dependency or live runtime change. 19 focused existing tests, scoped ESLint, format and diff checks pass. Scoped lint, local Web typecheck/build and exact-head CI gate the user-authorized develop merge. Bounded locks released with commit; no authenticated browser/runtime rollout.
+
 ## 2026-10-05 — RESERVATION-ACTIONS-ENGLISH-1005 — PC-A — READY_FOR_REVIEW
 
 Supplier-form save is the first action above download and print, with one save button and unchanged disabled/cancelled protections. The permission-scoped broker directory supplies an additive English name without contacts; both-language lookup preserves old Persian selections and new supplier form snapshots save the registered English name when available. Existing fallback supports records without English names. Twelve focused tests, affected lint and API build pass; production Web/TypeScript and full CI gate merge. No schema/migration/dependency/permission change; user authorizes develop merge, bounded locks released.
@@ -340,7 +344,7 @@ Follow-up to the authorized merge/local release: active system administrators re
 
 کنترل‌های عملیات رکورد در تمام workspaceهای اطلاعات پایه با الگوی فقط‌آیکون یکسان شدند؛ مشاهده و ویرایش outline و حذف قرمز. نام دسترس‌پذیر و تأیید حذف محفوظ است. ۳۶۴ تست Master Data، lint محدوده، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. این تغییر فقط Web و تست‌های مربوط را در بر می‌گیرد؛ بدون API، داده یا Migration.
 
-# 2026-09-29 — MANAGER-ACCESS-VISIBILITY-0929 — PC-A — IN_PROGRESS
+# 2026-09-29 — MANAGER-ACCESS-VISIBILITY-0929 — PC-A — READY_FOR_REVIEW
 
 پیگیری محدودیت دسترسی مدیر: حساب دارای نقش فعال سیستمی administrator باید همهٔ مجوزهای native و همهٔ زیربخش‌های کاتالوگ را برای تنظیم نقش «مدیر» ببیند و واگذار کند؛ سایر اپراتورها فقط دسترسی فعلی خود را واگذار می‌کنند. کار روی IAM و فرم مدیریت کاربران رزرو شده است. بدون تغییر کاربر واقعی یا شعب؛ آزمون و handoff پس از اصلاح ثبت می‌شود.
 
@@ -4696,8 +4700,11 @@ The repair uses readable sky/rose light/dark surfaces with hover and focus-ring 
 
 ## 2026-10-05 — FINANCE-SEARCH-SORT-1005 — PC-A
 
-Finance document-delivery candidates now load only after an explicit nonempty contract search; changing/clearing the query discards previous rows and late responses. Finance inbox supports ascending/descending amount, due date and Finance entry timestamp sorting on the server before pagination and export, retained in saved views. Optional v1 query fields preserve existing newest-first clients; exact Decimal amount comparisons remain separate per currency with missing values last. No schema, dependency or migration changes. Targeted ordering/search tests: 24 passed; Web Finance suite: 49 passed, one opt-in skipped. Remaining lint/typecheck/build and exact-head CI gate the user-authorized develop merge.
+Finance document-delivery candidates now load only after an explicit nonempty contract search; changing/clearing the query discards previous rows and late responses. Finance inbox supports ascending/descending amount, due date and Finance entry timestamp sorting on the server before pagination and export, retained in saved views. Optional v1 query fields preserve existing newest-first clients; exact Decimal amount comparisons remain separate per currency with missing values last. No schema, dependency or migration changes. API Finance100 and Web Finance49 tests passed (eight API/one Web opt-in skips). Scoped lint/format, API and Web typechecks and API build passed. Web compile passed; final production generation and exact-head CI gate the user-authorized develop merge.
+
+RESERVATION-VOUCHER-GATES-1005: supplier form preview/send requires a directory broker; voucher button waits for sent supplier form and voucher display/issue requires a directory leader from its broker. Canonical directory labels and membership validation used without new data contracts/schema. API152 tests passed (6 existing skips); final Web/static/build/CI gates remain. No local deployment.
 
 ## 2026-10-05 — RESERVATION-PURCHASE-BROKERS-1005 — PC-A
 
 Reservations hotel/transfer purchase now reads independent active MasterBroker records rather than BROKER-role organizations. Adds a restrictive broker FK beside the preserved legacy organization FK with exactly-one-source CHECK; public broker validation and Finance/Reservations projections retain v1 compatibility and historical purchases. API166 tests (six opt-in skipped), Web11, API typecheck, Prisma validation/generation and disposable PostgreSQL migration integrity proof pass. Final builds/CI gate release; no real purchase created or develop merge authorized.
+

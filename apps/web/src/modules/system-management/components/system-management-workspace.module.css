@@ -345,6 +345,20 @@
   color: inherit;
   text-align: start;
 }
+.userManagementCard {
+  --accent: #8554ca;
+  border: 2px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 12%, transparent);
+  text-decoration: none;
+}
+.userManagementCard:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.userManagementCard .enter {
+  color: var(--accent);
+}
 .hubCard::before {
   position: absolute;
   inset: 0 0 auto;

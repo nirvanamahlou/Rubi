@@ -282,7 +282,7 @@ export class ReservationRequestsController {
     @Req() req: AuthenticatedRequest,
   ) {
     if (
-      input.action === 'VOUCHER_SETTINGS' &&
+      ['VOUCHER_SETTINGS', 'SUPPLIER_FORM_SETTINGS'].includes(input.action) &&
       input.voucherSettings?.brokerId
     ) {
       await this.workflow.detail(id, req.actor.branchIds);
@@ -302,6 +302,20 @@ export class ReservationRequestsController {
         settings.text.leaderPhone = leader.phone || '';
         settings.flags.tourLeader = true;
       }
+    }
+    if (['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(input.action)) {
+      const current = await this.workflow.detail(id, req.actor.branchIds);
+      const settings = current.workflow.voucherSettings;
+      if (!settings?.brokerId || !settings.leaderId)
+        throw new BadRequestException(
+          'کارگزار و تورلیدر را انتخاب و ذخیره کنید.',
+        );
+      await this.directory!.voucherBrokerName(settings.brokerId);
+      await this.directory!.voucherLeaderContact(
+        settings.brokerId,
+        settings.leaderId,
+        req.actor,
+      );
     }
     return { data: await this.workflow.update(id, input, req.actor) };
   }
