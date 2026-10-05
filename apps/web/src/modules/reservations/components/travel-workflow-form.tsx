@@ -293,11 +293,13 @@ export function TravelWorkflowForm({
               )}
             </section>
           )}
-          <TravelDocument
-            key={`${intake.id}:${state.version}`}
-            intake={intake}
-            voucher={action === 'واچر' || action === 'Confirmation'}
-          />
+          {state.voucherSettings?.leaderId && !settingsDirty && (
+            <TravelDocument
+              key={`${intake.id}:${state.version}`}
+              intake={intake}
+              voucher={action === 'واچر' || action === 'Confirmation'}
+            />
+          )}
         </>
       )}
       {action === 'رزرواسیون' && (
@@ -439,6 +441,7 @@ export function TravelWorkflowForm({
                 disabled={
                   busy ||
                   settingsDirty ||
+                  !state.supplierFormSettings?.brokerId ||
                   !['NEW', 'REQUESTED'].includes(state.supplierStatus)
                 }
                 onClick={() => void run('REQUEST_SUPPLIER')}
@@ -457,6 +460,7 @@ export function TravelWorkflowForm({
                     busy ||
                     settingsDirty ||
                     !state.voucherSettings?.brokerId ||
+                    !state.voucherSettings?.leaderId ||
                     state.supplierStatus !== 'REQUESTED' ||
                     (!state.insuranceIssued && !acknowledge)
                   }
@@ -480,6 +484,7 @@ export function TravelWorkflowForm({
                   busy ||
                   settingsDirty ||
                   !state.voucherSettings?.brokerId ||
+                  !state.voucherSettings?.leaderId ||
                   !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)
                 }

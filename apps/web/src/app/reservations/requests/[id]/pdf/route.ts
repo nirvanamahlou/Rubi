@@ -48,7 +48,17 @@ export async function GET(
     };
     if (voucher && !intake.workflow.voucherIssued)
       return fail('واچر هنوز صادر نشده است.', 409);
-    if (!voucher && !intake.workflow.supplierFormSettings?.text.broker?.trim())
+    if (
+      voucher &&
+      (!intake.workflow.voucherSettings?.brokerId ||
+        !intake.workflow.voucherSettings?.leaderId)
+    )
+      return fail('ابتدا کارگزار و تورلیدر واچر را انتخاب کنید.', 409);
+    if (
+      !voucher &&
+      (!intake.workflow.supplierFormSettings?.brokerId ||
+        !intake.workflow.supplierFormSettings?.text.broker?.trim())
+    )
       return fail(
         'پیش از صدور فرم رزرواسیون، نام کارگزار گیرنده را ثبت کنید.',
         409,

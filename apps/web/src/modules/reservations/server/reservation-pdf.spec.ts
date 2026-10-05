@@ -34,6 +34,7 @@ const intake = {
 } as unknown as ReservationFormIntake;
 intake.workflow.supplierFormSettings = defaultVoucherSettings(intake, {});
 intake.workflow.supplierFormSettings.text.broker = 'Synthetic Supplier';
+intake.workflow.supplierFormSettings.brokerId = id;
 const request = () =>
   new Request(`http://localhost/reservations/requests/${id}/pdf`, {
     headers: { cookie: 'test-session' },
@@ -174,7 +175,14 @@ it('rejects unissued direct voucher downloads before rendering', async () => {
 it('downloads an issued voucher using saved voucher settings and a voucher filename', async () => {
   const value = {
     ...intake,
-    workflow: { ...intake.workflow, voucherIssued: true },
+    workflow: {
+      ...intake.workflow,
+      voucherIssued: true,
+      voucherSettings: {
+        ...intake.workflow.supplierFormSettings!,
+        leaderId: id,
+      },
+    },
   };
   vi.stubGlobal(
     'fetch',
@@ -345,4 +353,26 @@ it('keeps six selected passengers on one compact hotel voucher page', () => {
   expect(html.match(/<article class="page"/g)).toHaveLength(1);
   expect(html).toContain('VOUCHER-PASSENGER-6');
   expect(html).toContain('1 / 1');
+});
+
+it('rejects supplier PDF with a typed name but no directory broker', async () => {
+  const settings = { ...intake.workflow.supplierFormSettings! };
+  delete settings.brokerId;
+  vi.stubGlobal(
+    'fetch',
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({
+          data: {
+            ...intake,
+            workflow: { ...intake.workflow, supplierFormSettings: settings },
+          },
+        }),
+      ),
+  );
+  expect(
+    (await GET(request(), { params: Promise.resolve({ id }) })).status,
+  ).toBe(409);
+  expect(renderer).not.toHaveBeenCalled();
 });

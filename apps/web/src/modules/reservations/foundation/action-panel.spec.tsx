@@ -69,7 +69,8 @@ describe('selected contract actions', () => {
       <ContractActionPanel request={request} />,
     );
     expect(html).toContain('SYNTH-01');
-    expect(html).not.toContain('disabled=""');
+    expect(html.match(/disabled=""/g)).toHaveLength(1);
+    expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
     expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(12);
     expect(html).toContain('href="/contracts/terms.pdf"');
     expect(html).toContain('download="مفاد.pdf"');
@@ -151,4 +152,11 @@ it('marks notes only for the selected contract with notes', () => {
       <ContractActionPanel request={{ ...request, hasNotes: false }} />,
     ),
   ).not.toContain('این قرارداد یادداشت دارد');
+});
+
+it('enables the voucher action after the reservation form was sent', () => {
+  const html = renderToStaticMarkup(
+    <ContractActionPanel request={{ ...request, hotelRequested: true }} />,
+  );
+  expect(html).not.toMatch(/disabled=""[^>]*aria-label="واچر"/);
 });

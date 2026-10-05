@@ -130,6 +130,10 @@ export function transitionTravelWorkflow(
     case 'BRANDING':
       break;
     case 'REQUEST_SUPPLIER':
+      if (!current.supplierFormSettings?.brokerId)
+        throw new Error(
+          'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
+        );
       if (!['NEW', 'REQUESTED'].includes(current.supplierStatus))
         throw new Error('ثبت ارسال در این وضعیت ممکن نیست.');
       next.supplierStatus = 'REQUESTED';
@@ -152,6 +156,16 @@ export function transitionTravelWorkflow(
         command.supplierReference.length > 200
       )
         throw new Error('مرجع تأیید کارگزار الزامی است.');
+      if (
+        current.sentSupplierFormSettings?.brokerId &&
+        current.voucherSettings?.brokerId !==
+          current.sentSupplierFormSettings.brokerId
+      )
+        throw new Error('تورلیدر باید از کارگزار فرم صادرشده انتخاب شود.');
+      if (!current.voucherSettings?.leaderId)
+        throw new Error(
+          'پیش از صدور واچر، تورلیدر کارگزار را انتخاب و ذخیره کنید.',
+        );
       if (
         !current.insuranceIssued &&
         command.acknowledgeMissingInsurance !== true
@@ -189,6 +203,16 @@ export function transitionTravelWorkflow(
       if (!current.voucherSettings?.brokerId)
         throw new Error(
           'پیش از صدور واچر، کارگزار را در تنظیمات واچر ثبت کنید.',
+        );
+      if (
+        current.sentSupplierFormSettings?.brokerId &&
+        current.voucherSettings?.brokerId !==
+          current.sentSupplierFormSettings.brokerId
+      )
+        throw new Error('تورلیدر باید از کارگزار فرم صادرشده انتخاب شود.');
+      if (!current.voucherSettings?.leaderId)
+        throw new Error(
+          'پیش از صدور واچر، تورلیدر کارگزار را انتخاب و ذخیره کنید.',
         );
       if (
         !current.insuranceIssued &&
