@@ -8,6 +8,7 @@ const fixture = vi.hoisted(() => ({
   outbound: [] as TicketOfferV1[],
   returning: [] as TicketOfferV1[],
   pickers: [] as DatePickerProps[],
+  loaded: true,
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof React>()),
@@ -18,13 +19,15 @@ vi.mock('react', async (original) => ({
       value && typeof value === 'object' && 'outbound' in value
         ? {
             ...value,
-            key: JSON.stringify({
-              originId: 'origin',
-              destinationId: 'destination',
-              roundTrip: true,
-              seats: 1,
-              requireFare: true,
-            }),
+            key: fixture.loaded
+              ? JSON.stringify({
+                  originId: 'origin',
+                  destinationId: 'destination',
+                  roundTrip: true,
+                  seats: 1,
+                  requireFare: true,
+                })
+              : '',
             outbound: fixture.outbound,
             returning: fixture.returning,
           }
@@ -76,6 +79,7 @@ const returning: TicketOfferV1 = {
 beforeEach(() => {
   vi.mocked(searchTickets).mockReset();
   fixture.pickers = [];
+  fixture.loaded = true;
   fixture.outbound = [
     outbound,
     {
@@ -104,7 +108,8 @@ it('marks only available outbound days and eligible reverse-route return dates w
     />,
   );
   expect(fixture.pickers[0]!.markedDates).toEqual(['2099-10-01']);
-  expect(fixture.pickers[0]!.availableDates).toEqual(['2099-10-01']);
+  expect(fixture.pickers[0]!.availableDates).toBeUndefined();
+  expect(fixture.pickers[1]!.availableDates).toBeUndefined();
   expect(fixture.pickers[1]!.markedDates).toEqual(['2099-10-03']);
   fixture.pickers[1]!.onChange?.('2099-10-03');
   expect(onChange).toHaveBeenLastCalledWith(
@@ -113,6 +118,66 @@ it('marks only available outbound days and eligible reverse-route return dates w
   );
   fixture.pickers[0]!.onChange?.('2099-10-01');
   expect(onChange).toHaveBeenLastCalledWith({ from: '2099-10-01', to: '' });
+});
+it('selects unmarked floating dates without an extra toggle or an empty catalog allowlist', () => {
+  const onChange = vi.fn();
+  const html = renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      roundTrip
+      seats={1}
+      requireFare
+      value={{ from: '2099-10-01', to: '' }}
+      onChange={onChange}
+    />,
+  );
+  expect(html).not.toContain('ورود تاریخ دلخواه');
+  expect(html).not.toContain('checkbox');
+  expect(fixture.pickers[0]!.disabled).toBe(false);
+  expect(fixture.pickers[1]!.disabled).toBe(false);
+  fixture.pickers[0]!.onChange?.('2099-10-02');
+  expect(onChange).toHaveBeenLastCalledWith({ from: '2099-10-02', to: '' });
+  fixture.pickers[1]!.onChange?.('2099-10-04');
+  expect(onChange).toHaveBeenLastCalledWith(
+    { from: '2099-10-01', to: '2099-10-04' },
+    undefined,
+  );
+  expect(fixture.pickers[1]!.minimumDate).toBe('2099-10-01');
+});
+it('keeps registered return dates marked when the outbound date is floating', () => {
+  renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      roundTrip
+      seats={1}
+      requireFare
+      value={{ from: '2099-10-02', to: '' }}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(fixture.pickers[1]!.markedDates).toEqual(['2099-10-03', '2099-10-05']);
+  expect(fixture.pickers[1]!.availableDates).toBeUndefined();
+});
+it('allows floating date selection while catalog markers are loading or unavailable', () => {
+  fixture.loaded = false;
+  renderToStaticMarkup(
+    <FlightTripDates
+      originId="origin"
+      destinationId="destination"
+      roundTrip
+      seats={1}
+      requireFare
+      value={{ from: '2099-10-02', to: '' }}
+      onChange={vi.fn()}
+    />,
+  );
+  for (const picker of fixture.pickers) {
+    expect(picker.disabled).toBe(false);
+    expect(picker.availableDates).toBeUndefined();
+    expect(picker.markedDates).toEqual([]);
+  }
 });
 it('does not enable date selection before a route exists', () => {
   const html = renderToStaticMarkup(

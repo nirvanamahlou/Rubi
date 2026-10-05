@@ -53,7 +53,6 @@ export function FlightTripDates({
   }>({ key: '', outbound: [], returning: [] });
   const [error, setError] = useState('');
   const [attempt, setAttempt] = useState(0);
-  const [manualDates, setManualDates] = useState(false);
   const key = JSON.stringify({
     originId,
     destinationId,
@@ -122,14 +121,15 @@ export function FlightTripDates({
     ? result.returning.filter(
         (offer) =>
           saleable(offer) &&
-          selectedOutbound.some(
-            (out) =>
-              eligibleReturn(out, offer) &&
-              (!requireFare ||
-                out.roundTripSalePrices?.some(
-                  (fare) => fare.returnOfferId === offer.id,
-                )),
-          ),
+          (!selectedOutbound.length ||
+            selectedOutbound.some(
+              (out) =>
+                eligibleReturn(out, offer) &&
+                (!requireFare ||
+                  out.roundTripSalePrices?.some(
+                    (fare) => fare.returnOfferId === offer.id,
+                  )),
+            )),
       )
     : [];
   const returnDays = [...new Set(returns.map(flightDay))];
@@ -147,10 +147,9 @@ export function FlightTripDates({
           بلیط رفت
           <DatePicker
             value={value.from}
-            {...(!manualDates ? { availableDates: days } : {})}
             markedDates={days}
             minimumDate={salesFlightToday()}
-            disabled={!readyRoute || (!current && !manualDates)}
+            disabled={!readyRoute}
             aria-label="تاریخ بلیط رفت"
             onChange={(from) => onChange({ from, to: roundTrip ? '' : from })}
           />
@@ -160,44 +159,30 @@ export function FlightTripDates({
             بلیط برگشت
             <DatePicker
               value={value.to}
-              {...(!manualDates ? { availableDates: returnDays } : {})}
               markedDates={returnDays}
               minimumDate={value.from || salesFlightToday()}
-              disabled={(!current && !manualDates) || !value.from}
+              disabled={!readyRoute || !value.from}
               aria-label="تاریخ بلیط برگشت"
-              onChange={(to) =>
+              onChange={(to) => {
+                const pairedOutboundIds = selectedOutbound
+                  .filter((out) =>
+                    returns.some(
+                      (offer) => flightDay(offer) === to && canPair(out, offer),
+                    ),
+                  )
+                  .map((out) => out.id);
                 onChange(
                   { ...value, to },
-                  manualDates
-                    ? undefined
-                    : selectedOutbound
-                        .filter((out) =>
-                          returns.some(
-                            (offer) =>
-                              flightDay(offer) === to && canPair(out, offer),
-                          ),
-                        )
-                        .map((out) => out.id),
-                )
-              }
+                  pairedOutboundIds.length ? pairedOutboundIds : undefined,
+                );
+              }}
             />
           </label>
         ) : null}
       </div>
-      <label className="flex items-center gap-2 text-xs font-medium">
-        <input
-          type="checkbox"
-          checked={manualDates}
-          onChange={(event) => {
-            setManualDates(event.target.checked);
-            onChange({ from: '', to: '' });
-          }}
-        />
-        ورود تاریخ دلخواه برای بلیط شناور
-      </label>
       <p className="text-xs text-muted-foreground">
-        نقطهٔ قرمز یعنی پرواز دارای ظرفیت در این مسیر؛ فقط تاریخ‌های دارای بلیط
-        قابل انتخاب‌اند.
+        نقطهٔ قرمز تاریخ بلیط‌های ثبت‌شدهٔ قابل فروش در این مسیر را نشان می‌دهد؛
+        روزهای بدون نقطه نیز برای بلیط شناور قابل انتخاب‌اند.
       </p>
       {!readyRoute ? (
         <p className="text-sm">ابتدا مبدأ و مقصد را انتخاب کنید.</p>
