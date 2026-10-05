@@ -1,3 +1,7 @@
+## RESERVATION-LABEL-1005 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes correcting reservation module and group to رزرواسیون and merging develop. Reserve only existing رزروسیون presentation labels in navigation/messages, Workbench connections, module foundation, notification labels, System Management category translation, Reservations heading and affected assertions. Existing previous naming work delivered; no overlapping active bounded lock. No API/schema/dependency/permission/route changes. Delivered corrected module/group, heading, notification, Workbench and settings labels; 45 existing focused tests, scoped ESLint, Web TypeScript and 55-route production generation pass after refreshing existing Contracts build artifacts. Bounded locks released for review.
+
 ## CABIN-FILTER-ENGLISH-1004 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-cabin-filter-english-1004` from origin/develop. Reserve Cabin filter option presentation, the Cabin-only labels in shared `packages/contracts/src/master-data/catalog-filters.ts`, focused tests and own status entries. English option labels only; preserve canonical request values, Persian field/KPI labels, forms and unrelated filters. Existing producer filter metadata and consumer Web ship together; no wire/API/schema/dependency/runtime change. Lead reviews, pushes and merges develop after checks.
@@ -5604,6 +5608,12 @@ B2B-AGREEMENT-UPLOAD-1004 review checkpoint: independent Luna review95e6495b res
 Reserve Ticket Catalog flight-load model/grid and focused tests, Reservations manifest filter model/tests, own docs on codex/pc-a-load-route-sides-1004. Add origin/destination country/city filters, disjoint outbound/return rows and unique manifest offer direction. Existing public reference/ticket contracts unchanged; no schema/dependency/runtime changes. User authorizes develop merge.
 
 LOAD-ROUTE-SIDES-1004 scope finalized: Ticket Catalog only; Reservations existing route filters verified without changes. Focused17 tests pass; lint/type/build and CI gate authorized merge. Scoped locks released at candidate delivery.
+
+## SALES-FLOATING-CALENDAR-1005 — PC-A — IN_PROGRESS
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-sales-floating-calendar-1005 from origin/develop@61c74b68. Reserve Sales FlightTripDates component and focused regressions plus own status entries. Remove the separate manual-date toggle and make non-catalog future dates selectable for floating tickets while retaining catalog red markers, return chronology and public capacity/fare validation. No shared UI/API/schema/migration/dependency/runtime change or overlapping active target-file lock. User authorizes develop merge after checks.
+
+SALES-FLOATING-CALENDAR-1005 candidate: removed the manual-date toggle and catalog-only date allowlists, retaining red saleable catalog markers and future/return chronology. Floating outbound dates retain reverse-route markers; unmatched return dates no longer publish an empty outbound allowlist. 311 Sales/DatePicker tests pass (one existing skip), including seven calendar regressions; scoped lint and Web typecheck pass. Production build and exact-head CI gate user-authorized develop merge. Bounded source locks RELEASED with candidate commit; no authenticated browser/local runtime or database change.
 
 ## 2026-10-05 — PROCUREMENT-ICON-THEME-1005 — PC-B — READY_FOR_REVIEW
 

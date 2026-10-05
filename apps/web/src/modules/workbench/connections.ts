@@ -22,7 +22,7 @@ export const workbenchDestinations = [
   },
   {
     href: '/reservations',
-    title: 'رزروسیون',
+    title: 'رزرواسیون',
     description: 'پیگیری عملیات اجرایی سفر در ماژول مسئول',
     prefixes: ['reservations.'],
   },

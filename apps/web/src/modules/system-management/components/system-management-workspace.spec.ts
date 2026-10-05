@@ -32,7 +32,7 @@ describe('system management reference implementation', () => {
     for (const category of [
       'فضای کار',
       'فروش و ارتباط با مشتری',
-      'رزروسیون',
+      'رزرواسیون',
       'مالی',
       'سرمایه انسانی',
       'اسناد و گزارش‌ها',
@@ -248,7 +248,7 @@ describe('system management reference implementation', () => {
     expect(workspace).toContain('aria-modal="true"');
     expect(workspace).toContain("aria-pressed={category === 'all'}");
     expect(workspace).not.toContain('aria-expanded={expanded}');
-    expect(navigation).toContain('رزروسیون');
+    expect(navigation).toContain('رزرواسیون');
     expect(navigation).toContain('فروش و ارتباط با مشتری');
     expect(workspace).not.toContain(
       'زیرمجموعه‌های ${systemCategoryGroups.find',

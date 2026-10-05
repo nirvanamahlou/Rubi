@@ -106,7 +106,7 @@ export const foundationModules: Record<
 > = {
   reservations: {
     key: 'reservations',
-    title: 'رزروسیون',
+    title: 'رزرواسیون',
     description:
       'مرکز استعلام، Hold، اجرای snapshot تأییدشده فروش، صدور خدمات و عملیات سفر.',
     boundary:

@@ -1,3 +1,7 @@
+## 2026-10-05 — RESERVATION-LABEL-1005 — PC-A — READY_FOR_REVIEW
+
+Corrected reservation module and navigation group to رزرواسیون, including page heading, related notification/Workbench/module-foundation titles and English category mapping. Updated existing navigation/settings assertions. Focused 45 tests, scoped ESLint, Web TypeScript and 55-route production generation pass. Routes, access control, APIs and stored data unchanged; no migration or dependency changes. User authorizes develop merge; bounded locks released.
+
 ## 2026-10-04 — FINANCE-WORKFLOW-EXPORTS-1004 — PC-A — READY_FOR_REVIEW
 
 Finance operational case workflow, approved HR salary entry table/public bridge, branch manager deadline reminders, server filters/paging/private views and authorized genuine XLSX/server PDF/recorded-transaction receipts are implemented. Multi-stage approval remains deferred by owner. Additive migration only; permission catalog adds finance.export and finance.request.manage without role grants. Existing source authority and legacy payments are unchanged; no operational database/runtime/deploy is modified. Full API2008, six real fully migrated PostgreSQL cases, integrated Web Finance/HR155, real Chrome PDF rasterized Persian layout QA and affected lint/type checks passed. Concurrent develop at6f06c4d8 was integrated with its Finance ticket-payment/delivery and B2B changes preserved. Final integrated production build/CI remain gates; bounded locks release with candidate commit. See docs/tasks/FINANCE-WORKFLOW-EXPORTS-1004.md for rollout, compatibility and honest operational limits.
@@ -4675,6 +4679,11 @@ B2B-AGREEMENT-UPLOAD-1004 final lifecycle checkpoint: session-bound uploads, con
 B2B-AGREEMENT-UPLOAD-1004 PR652: independent review resolved all five lifecycle findings, no open blocker; local checks/build passed. Candidate source frozen and bounded locks released. Final CI/merge pending, no operational runtime/database change.
 
 LOAD-ROUTE-SIDES-1004: PC-A adds both endpoint country/city filters in charter Load and disjoint outbound/eligible-return display. Explicit search snapshots both countries; changing country clears its city and results. Reservation manifest already provides four endpoint controls and route-relative direction, verified by existing tests. No backend/schema/runtime changes.
+
+## 2026-10-05 — SALES-FLOATING-CALENDAR-1005 — PC-A
+
+New-contract flight calendars accept future dates without a separate floating-date checkbox. Existing saleable catalog days remain red-marked, including registered return days with a floating outbound date. Matching catalog pairs retain their outbound filter; floating return dates do not impose an empty catalog allowlist. Return chronology and authoritative ticket capacity/fare checks remain. Sales/DatePicker311 tests pass (one existing skip), seven focused calendar regressions, scoped lint and Web typecheck pass; production build and exact-head CI gate authorized develop merge. No API/schema/migration/dependency/operational data or runtime rollout.
+
 ## 2026-10-05 — PROCUREMENT-ICON-THEME-1005 — PC-B — READY_FOR_REVIEW
 
 Procurement record edit/delete glyphs are being repaired locally after confirming the shared `Button` auto-selects its destructive variant for Persian delete labels and the local destructive text utility hides the glyph on that background. Scope is limited to `record-actions.tsx`, meaningful Procurement specs and this unit's docs; callbacks, labels, disabled behavior and confirmation remain in scope for regression checks. No shared Button, API, database, permission, dependency, runtime or DOCX changes are authorized.
