@@ -86,8 +86,13 @@ export function queryIssuedTickets(
         (query.airlineId === 'all' || ticket.airlineId === query.airlineId) &&
         (query.status === 'all' || ticket.status === query.status) &&
         (!query.issuedFrom ||
-          ticket.issuedAt.slice(0, 10) >= query.issuedFrom) &&
-        (!query.issuedTo || ticket.issuedAt.slice(0, 10) <= query.issuedTo),
+          new Date(Date.parse(ticket.issuedAt) + 12600000)
+            .toISOString()
+            .slice(0, 10) >= query.issuedFrom) &&
+        (!query.issuedTo ||
+          new Date(Date.parse(ticket.issuedAt) + 12600000)
+            .toISOString()
+            .slice(0, 10) <= query.issuedTo),
     )
     .sort(
       (left, right) =>

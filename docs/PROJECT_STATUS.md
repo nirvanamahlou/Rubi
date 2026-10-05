@@ -4712,3 +4712,8 @@ RESERVATION-VOUCHER-GATES-1005: supplier form preview/send requires a directory 
 
 Reservations hotel/transfer purchase now reads independent active MasterBroker records rather than BROKER-role organizations. Adds a restrictive broker FK beside the preserved legacy organization FK with exactly-one-source CHECK; public broker validation and Finance/Reservations projections retain v1 compatibility and historical purchases. API166 tests (six opt-in skipped), Web11, API typecheck, Prisma validation/generation and disposable PostgreSQL migration integrity proof pass. Final builds/CI gate release; no real purchase created or develop merge authorized.
 
+
+
+## 2026-10-05 — Issued passenger ticket report — PC-A
+
+Ticket Catalog consumes Reservations actual ticket-document issuance through a new branch-scoped public read endpoint. Required issuance-date boundaries use Tehran days; optional contract/passenger/document/route/airline/status filters apply to the entire Excel/PDF server export without UI pagination. Each row is one assigned flight segment; unissued allocations never appear. Empty results produce a valid workbook/PDF. No schema, migration, dependency or operational runtime change. User authorizes develop merge; static/build/CI validation is the merge gate.

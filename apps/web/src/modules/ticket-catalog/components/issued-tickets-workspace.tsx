@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileCheck2, Route, Search, TicketCheck } from 'lucide-react';
 import {
   Alert,
@@ -25,7 +25,10 @@ import {
   type IssuedTicketReadModel,
   type IssuedTicketStatus,
 } from '../model/issued-tickets';
-import { loadReservationIssuedTickets } from '../api/issued-tickets';
+import {
+  loadReservationIssuedTickets,
+  downloadIssuedTicketReport,
+} from '../api/issued-tickets';
 import { TicketDatePicker } from './ticket-date-picker';
 
 const statusLabels: Record<IssuedTicketStatus, string> = {
@@ -39,18 +42,52 @@ export function IssuedTicketsWorkspace({
   tickets,
   loading = false,
   error = '',
+  onDatesChange,
 }: {
   tickets: readonly IssuedTicketReadModel[];
   loading?: boolean;
   error?: string;
+  onDatesChange?: (query: IssuedTicketQuery) => void;
 }) {
-  const [query, setQuery] = useState<IssuedTicketQuery>(
-    initialIssuedTicketQuery,
-  );
+  const [query, setQuery] = useState<IssuedTicketQuery>(() => ({
+    ...initialIssuedTicketQuery,
+    issuedFrom: new Date(Date.now() - 30 * 86400000 + 12600000)
+      .toISOString()
+      .slice(0, 10),
+    issuedTo: new Date(Date.now() + 12600000).toISOString().slice(0, 10),
+  }));
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  async function download(format: 'xlsx' | 'pdf') {
+    setExportError('');
+    setExporting(true);
+    try {
+      await downloadIssuedTicketReport(query, format);
+    } catch (reason) {
+      setExportError(
+        reason instanceof Error ? reason.message : 'خروجی انجام نشد.',
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
   const result = queryIssuedTickets(tickets, query);
   const routeCounts = countIssuedTicketsByRoute(tickets);
-  const filter = (patch: Partial<IssuedTicketQuery>) =>
-    setQuery({ ...query, ...patch, page: 1 });
+  const filter = (patch: Partial<IssuedTicketQuery>) => {
+    const next = { ...query, ...patch, page: 1 };
+    setQuery(next);
+    if (
+      (patch.issuedFrom !== undefined || patch.issuedTo !== undefined) &&
+      next.issuedFrom &&
+      next.issuedTo &&
+      next.issuedFrom <= next.issuedTo
+    )
+      onDatesChange?.({
+        ...initialIssuedTicketQuery,
+        issuedFrom: next.issuedFrom,
+        issuedTo: next.issuedTo,
+      });
+  };
   const options = useMemo(() => {
     const origins = new Map<string, string>();
     const destinations = new Map<string, string>();
@@ -89,7 +126,9 @@ export function IssuedTicketsWorkspace({
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="p-5">
-          <p className="text-sm text-muted-foreground">جمع بلیط‌های صادرشده</p>
+          <p className="text-sm text-muted-foreground">
+            جمع قطعه‌های پرواز صادرشده
+          </p>
           <div className="mt-3 flex items-center justify-between">
             <strong className="text-2xl text-primary">
               {tickets.length.toLocaleString('fa-IR')}
@@ -127,7 +166,7 @@ export function IssuedTicketsWorkspace({
       </div>
       {routeCounts.length ? (
         <Card className="p-4">
-          <h2 className="font-bold">جمع بلیط صادرشده در هر مسیر</h2>
+          <h2 className="font-bold">جمع قطعه پرواز صادرشده در هر مسیر</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {routeCounts.map((route) => (
               <Badge key={route.key}>
@@ -277,6 +316,31 @@ export function IssuedTicketsWorkspace({
           </div>
         </div>
       </Card>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={loading || exporting}
+          onClick={() => void download('xlsx')}
+        >
+          دانلود اکسل
+        </Button>
+        <Button
+          disabled={loading || exporting}
+          onClick={() => void download('pdf')}
+        >
+          دانلود PDF
+        </Button>
+        <span className="text-sm text-muted-foreground">
+          انتخاب بازه تاریخ صدور برای خروجی الزامی است؛ سایر فیلترها اختیاری
+          هستند.
+        </span>
+      </div>
+      {exportError ? (
+        <Alert
+          tone="warning"
+          title="خروجی انجام نشد"
+          description={exportError}
+        />
+      ) : null}
       {!result.rows.length ? (
         <EmptyState
           icon={FileCheck2}
@@ -349,15 +413,27 @@ export function ConnectedIssuedTicketsWorkspace() {
   const [tickets, setTickets] = useState<IssuedTicketReadModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [range, setRange] = useState<IssuedTicketQuery>(() => ({
+    ...initialIssuedTicketQuery,
+    issuedFrom: new Date(Date.now() - 30 * 86400000 + 12600000)
+      .toISOString()
+      .slice(0, 10),
+    issuedTo: new Date(Date.now() + 12600000).toISOString().slice(0, 10),
+  }));
+  const onDatesChange = useCallback((q: IssuedTicketQuery) => {
+    setLoading(true);
+    setRange(q);
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
-    void loadReservationIssuedTickets(controller.signal)
+    void loadReservationIssuedTickets(controller.signal, range)
       .then((data) => {
         setTickets(data);
         setError('');
       })
       .catch((reason: unknown) => {
         if (controller.signal.aborted) return;
+        setTickets([]);
         setError(
           reason instanceof Error
             ? reason.message
@@ -368,8 +444,13 @@ export function ConnectedIssuedTicketsWorkspace() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, []);
+  }, [range]);
   return (
-    <IssuedTicketsWorkspace tickets={tickets} loading={loading} error={error} />
+    <IssuedTicketsWorkspace
+      tickets={tickets}
+      loading={loading}
+      error={error}
+      onDatesChange={onDatesChange}
+    />
   );
 }

@@ -4,8 +4,16 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Optional,
 } from '@nestjs/common';
 import { salesContractFlights, type AuthenticatedActor } from '@nora/contracts';
+import { MasterTravelDirectory } from '../master-data/master-travel-directory';
+import {
+  reportRange,
+  issuedRows,
+  filterIssuedRows,
+} from './issued-ticket-report';
+import type { SalesReservationRequestV1 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
@@ -18,7 +26,66 @@ export class ReservationTicketDocumentsService {
     @Inject(TravelWorkflowService)
     private readonly workflow: TravelWorkflowService,
     @Inject(TicketPublicService) private readonly catalog: TicketPublicService,
+    @Optional()
+    @Inject(MasterTravelDirectory)
+    private readonly directory?: MasterTravelDirectory,
   ) {}
+  async report(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const range = reportRange(query);
+    const documents = await this.db.client.reservationTicketDocument.findMany({
+      where: {
+        issuedAt: range,
+        intake: { branchId: { in: [...actor.branchIds] } },
+      },
+      include: {
+        intake: {
+          include: {
+            workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
+          },
+        },
+      },
+      orderBy: [{ issuedAt: 'desc' }, { id: 'asc' }],
+      take: 10001,
+    });
+    if (documents.length > 10000)
+      throw new BadRequestException(
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۱۰۰۰۰ بلیط دارد.',
+      );
+    const rows = documents.flatMap((doc) =>
+      issuedRows(
+        doc,
+        doc.intake.snapshot as unknown as SalesReservationRequestV1,
+        (
+          doc.intake.workflowRevisions[0]?.state as
+            { supplierStatus?: string } | undefined
+        )?.supplierStatus === 'CANCELLED',
+      ),
+    );
+    if (rows.length > 20000)
+      throw new BadRequestException(
+        'بازه را کوچک‌تر کنید؛ گزارش بیش از ۲۰۰۰۰ قطعه پرواز دارد.',
+      );
+    const names = new Map<string, string>();
+    for (const id of new Set(
+      rows.flatMap((r) => [r.originCityId, r.destinationCityId]),
+    )) {
+      try {
+        names.set(
+          id,
+          (await this.directory?.cityReference(id))?.name ?? 'نام شهر ثبت نشده',
+        );
+      } catch {
+        names.set(id, 'نام شهر ثبت نشده');
+      }
+    }
+    for (const row of rows) {
+      row.origin = names.get(row.originCityId)!;
+      row.destination = names.get(row.destinationCityId)!;
+    }
+    return { data: filterIssuedRows(rows, query) };
+  }
   async choices(id: string, actor: AuthenticatedActor) {
     if (!actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
