@@ -51,7 +51,7 @@ const notificationAreas: readonly (readonly [string, NotificationArea])[] = [
   ['customer-affairs', { label: 'امور مشتریان', href: '/customer-affairs' }],
   ['sales', { label: 'فروش و قراردادها', href: '/sales' }],
   ['ticket-catalog', { label: 'مدیریت بلیط‌ها', href: '/ticket-management' }],
-  ['reservations', { label: 'رزروسیون', href: '/reservations' }],
+  ['reservations', { label: 'رزرواسیون', href: '/reservations' }],
   ['procurement', { label: 'خرید و تأمین', href: '/purchases' }],
   ['purchases', { label: 'خرید و تأمین', href: '/purchases' }],
   ['finance', { label: 'کارتابل درخواست‌های مالی', href: '/finance/requests' }],

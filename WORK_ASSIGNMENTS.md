@@ -1,3 +1,7 @@
+## RESERVATION-LABEL-1005 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes correcting reservation module and group to رزرواسیون and merging develop. Reserve only existing رزروسیون presentation labels in navigation/messages, Workbench connections, module foundation, notification labels, System Management category translation, Reservations heading and affected assertions. Existing previous naming work delivered; no overlapping active bounded lock. No API/schema/dependency/permission/route changes. Delivered corrected module/group, heading, notification, Workbench and settings labels; 45 existing focused tests, scoped ESLint, Web TypeScript and 55-route production generation pass after refreshing existing Contracts build artifacts. Bounded locks released for review.
+
 ## CABIN-FILTER-ENGLISH-1004 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-cabin-filter-english-1004` from origin/develop. Reserve Cabin filter option presentation, the Cabin-only labels in shared `packages/contracts/src/master-data/catalog-filters.ts`, focused tests and own status entries. English option labels only; preserve canonical request values, Persian field/KPI labels, forms and unrelated filters. Existing producer filter metadata and consumer Web ship together; no wire/API/schema/dependency/runtime change. Lead reviews, pushes and merges develop after checks.

@@ -86,7 +86,7 @@ export const navigationGroups = [
   {
     id: 'operations',
     dotClass: 'bg-[#62d5c6]',
-    title: 'رزروسیون',
+    title: 'رزرواسیون',
     hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management'],
   },
   {
