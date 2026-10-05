@@ -46,6 +46,7 @@ export function ProcurementRecordActions({
         title="ویرایش"
         size="icon"
         variant="ghost"
+        className="border border-sky-200 bg-sky-50 text-sky-700 hover:bg-sky-100 hover:text-sky-800 focus-visible:ring-sky-500 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200 dark:hover:bg-sky-900/60 dark:hover:text-sky-100"
         onClick={onEdit}
       >
         <Pencil aria-hidden="true" className="size-4" />
@@ -57,7 +58,7 @@ export function ProcurementRecordActions({
             title="حذف دائمی"
             size="icon"
             variant="ghost"
-            className="text-destructive hover:text-destructive"
+            className="border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 focus-visible:ring-rose-500 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200 dark:hover:bg-rose-900/60 dark:hover:text-rose-100"
             disabled={deleteDisabled}
           >
             <Trash2 aria-hidden="true" className="size-4" />
