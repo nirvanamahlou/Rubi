@@ -1,6 +1,73 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MasterTravelDirectory } from './master-travel-directory';
 import type { MasterDataService } from './master-data.service';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+
+it('lists independent active registered brokers without requiring an organization role', async () => {
+  const list = vi.fn().mockResolvedValue({
+    data: [{ id: 'broker', name: 'Registered', attributes: {} }],
+    meta: { total: 1 },
+  });
+  const directory = new MasterTravelDirectory({ list } as never);
+  expect(await directory.hotelRateChoices('brokers', 'Registered', 2)).toEqual({
+    data: [{ id: 'broker', name: 'Registered' }],
+    meta: { total: 1 },
+  });
+  expect(list).toHaveBeenCalledWith(
+    'brokers',
+    expect.objectContaining({
+      page: 2,
+      search: 'Registered',
+      status: 'active',
+    }),
+  );
+  expect(list.mock.calls[0]![1]).not.toHaveProperty('organizationRole');
+});
+
+it('validates an independent broker and never falls back for an inactive broker', async () => {
+  const detail = vi.fn().mockResolvedValue({
+    data: { id: 'broker', name: 'Registered', status: 'active' },
+  });
+  const directory = new MasterTravelDirectory({ detail } as never);
+  expect(await directory.brokerReference('broker')).toEqual({
+    id: 'broker',
+    name: 'Registered',
+    source: 'BROKER',
+  });
+  detail.mockResolvedValue({ data: { status: 'inactive' } });
+  await expect(directory.brokerReference('broker')).rejects.toBeInstanceOf(
+    BadRequestException,
+  );
+  expect(detail).toHaveBeenCalledTimes(2);
+});
+
+it('preserves legacy organization references only when no registered broker exists', async () => {
+  const detail = vi
+    .fn()
+    .mockRejectedValueOnce(new NotFoundException())
+    .mockResolvedValueOnce({
+      data: {
+        id: 'legacy',
+        name: 'Legacy',
+        status: 'active',
+        attributes: { roleCodes: 'BROKER' },
+      },
+    });
+  expect(
+    await new MasterTravelDirectory({ detail } as never).brokerReference(
+      'legacy',
+    ),
+  ).toEqual({ id: 'legacy', name: 'Legacy', source: 'ORGANIZATION' });
+  expect(detail).toHaveBeenLastCalledWith('organizations', 'legacy');
+});
+
+it('does not hide broker lookup failures by trying a legacy reference', async () => {
+  const detail = vi.fn().mockRejectedValue(new Error('Unavailable'));
+  await expect(
+    new MasterTravelDirectory({ detail } as never).brokerReference('broker'),
+  ).rejects.toThrow('Unavailable');
+  expect(detail).toHaveBeenCalledTimes(1);
+});
 
 it('projects English broker names without private contact data', async () => {
   const list = vi.fn().mockResolvedValue({
