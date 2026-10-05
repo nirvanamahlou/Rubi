@@ -156,7 +156,23 @@ it('marks notes only for the selected contract with notes', () => {
 
 it('enables the voucher action after the reservation form was sent', () => {
   const html = renderToStaticMarkup(
-    <ContractActionPanel request={{ ...request, hotelRequested: true }} />,
+    <ContractActionPanel
+      request={{ ...request, hotelRequested: true, voucherReady: true }}
+    />,
   );
   expect(html).not.toMatch(/disabled=""[^>]*aria-label="واچر"/);
+});
+
+it('keeps the voucher button disabled when a legacy requested/confirmed flag has no sent form', () => {
+  const html = renderToStaticMarkup(
+    <ContractActionPanel
+      request={{
+        ...request,
+        hotelRequested: true,
+        hotelConfirmed: true,
+        voucherReady: false,
+      }}
+    />,
+  );
+  expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
 });

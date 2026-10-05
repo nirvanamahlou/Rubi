@@ -34,14 +34,16 @@ export function validateVoucherSettings(
     if (
       typeof v.text[key] !== 'string' ||
       v.text[key].length >
-        ([
-          'stayNotes',
-          'remarks',
-          'excursionDescription',
-          'extraServices',
-        ].includes(key)
-          ? 500
-          : 200)
+        (key === 'transferBoard'
+          ? 300
+          : [
+                'stayNotes',
+                'remarks',
+                'excursionDescription',
+                'extraServices',
+              ].includes(key)
+            ? 500
+            : 200)
     )
       return fail();
   for (const key of voucherNumberKeys)

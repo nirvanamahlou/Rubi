@@ -300,11 +300,17 @@ export class ReservationRequestsController {
         );
         settings.text.leaderName = leader.name;
         settings.text.leaderPhone = leader.phone || '';
+        if (input.action === 'VOUCHER_SETTINGS')
+          settings.text.transferBoard = leader.board ?? '';
         settings.flags.tourLeader = true;
       }
     }
     if (['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(input.action)) {
       const current = await this.workflow.detail(id, req.actor.branchIds);
+      if (!current.workflow.sentSupplierFormSettings?.brokerId)
+        throw new BadRequestException(
+          'ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید.',
+        );
       const settings = current.workflow.voucherSettings;
       if (!settings?.brokerId || !settings.leaderId)
         throw new BadRequestException(
