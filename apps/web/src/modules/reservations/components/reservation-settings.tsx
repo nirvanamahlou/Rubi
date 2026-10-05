@@ -78,15 +78,19 @@ export async function loadReservationEditReferences(
     const options: ReservationEditReferenceOption[] = [];
     for (let page = 1; ; page++) {
       const response = await travelRequest<{
-        data: { id: string; name: string }[];
+        data: { id: string; name: string; englishName?: string }[];
         meta: { total: number };
       }>(`reservations/requests/${requestId}/voucher-brokers?page=${page}`);
       options.push(
         ...response.data.map((broker) => ({
           id: broker.id,
-          label: broker.name,
-          searchText: broker.name,
-          aliases: [broker.name],
+          label: broker.englishName?.trim() || broker.name,
+          searchText: [broker.name, broker.englishName]
+            .filter(Boolean)
+            .join(' '),
+          aliases: [broker.name, broker.englishName?.trim()].filter(
+            (name): name is string => Boolean(name),
+          ),
         })),
       );
       if (!response.data.length || options.length >= response.meta.total)
@@ -324,7 +328,19 @@ export function ReservationSettingsForm({
           applyToContractAndVoucher: false,
           expectedVersion: intake.workflow.version,
           note: sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
-          voucherSettings: draft,
+          voucherSettings: {
+            ...draft,
+            text: {
+              ...draft.text,
+              broker:
+                findReservationEditReference(
+                  draft.text.broker ?? '',
+                  activeDirectory.options.brokers ?? [],
+                )?.label ??
+                draft.text.broker ??
+                '',
+            },
+          },
         },
       );
       onSaved(r.data);
@@ -481,6 +497,14 @@ export function ReservationSettingsForm({
       </label>
     );
   };
+  const saveButton = (
+    <Button
+      onClick={() => void save()}
+      disabled={busy || activeDirectory.loading || !selected.length}
+    >
+      {busy ? 'در حال ذخیره…' : 'ثبت نسخهٔ جدید فرم رزرواسیون'}
+    </Button>
+  );
   return (
     <section className={styles.form}>
       <header className={styles.formHeader}>
@@ -519,6 +543,7 @@ export function ReservationSettingsForm({
         {(section === 'ALL' || section === 'OTHER') && textField('broker')}
         {showDocument && draft.brokerId && (
           <div className="grid gap-3">
+            {saveButton}
             {past && (
               <Button variant="outline" onClick={() => setPast(undefined)}>
                 بازگشت به نسخهٔ فعلی
@@ -807,12 +832,7 @@ export function ReservationSettingsForm({
           این اصلاح فقط در فرم رزواسیون و مبنای خرید ثبت می‌شود و قرارداد فروش
           را تغییر نمی‌دهد.
         </p>
-        <Button
-          onClick={() => void save()}
-          disabled={busy || activeDirectory.loading || !selected.length}
-        >
-          {busy ? 'در حال ذخیره…' : 'ثبت نسخهٔ جدید فرم رزواسیون'}
-        </Button>
+        {!showDocument && saveButton}
       </fieldset>
       {message && <p role="status">{message}</p>}
       {error && (

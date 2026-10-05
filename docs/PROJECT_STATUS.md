@@ -1,3 +1,7 @@
+## 2026-10-05 — RESERVATION-ACTIONS-ENGLISH-1005 — PC-A — READY_FOR_REVIEW
+
+Supplier-form save is the first action above download and print, with one save button and unchanged disabled/cancelled protections. The permission-scoped broker directory supplies an additive English name without contacts; both-language lookup preserves old Persian selections and new supplier form snapshots save the registered English name when available. Existing fallback supports records without English names. Twelve focused tests, affected lint and API build pass; production Web/TypeScript and full CI gate merge. No schema/migration/dependency/permission change; user authorizes develop merge, bounded locks released.
+
 ## 2026-10-05 — RESERVATION-LABEL-1005 — PC-A — READY_FOR_REVIEW
 
 Corrected reservation module and navigation group to رزرواسیون, including page heading, related notification/Workbench/module-foundation titles and English category mapping. Updated existing navigation/settings assertions. Focused 45 tests, scoped ESLint, Web TypeScript and 55-route production generation pass. Routes, access control, APIs and stored data unchanged; no migration or dependency changes. User authorizes develop merge; bounded locks released.
@@ -4692,3 +4696,8 @@ The repair uses readable sky/rose light/dark surfaces with hover and focus-ring 
 
 
 RESERVATION-VOUCHER-GATES-1005: supplier form preview/send requires a directory broker; voucher button waits for sent supplier form and voucher display/issue requires a directory leader from its broker. Canonical directory labels and membership validation used without new data contracts/schema. API152 tests passed (6 existing skips); final Web/static/build/CI gates remain. No local deployment.
+
+## 2026-10-05 — RESERVATION-PURCHASE-BROKERS-1005 — PC-A
+
+Reservations hotel/transfer purchase now reads independent active MasterBroker records rather than BROKER-role organizations. Adds a restrictive broker FK beside the preserved legacy organization FK with exactly-one-source CHECK; public broker validation and Finance/Reservations projections retain v1 compatibility and historical purchases. API166 tests (six opt-in skipped), Web11, API typecheck, Prisma validation/generation and disposable PostgreSQL migration integrity proof pass. Final builds/CI gate release; no real purchase created or develop merge authorized.
+

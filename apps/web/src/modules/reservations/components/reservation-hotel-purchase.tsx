@@ -415,7 +415,7 @@ export function ReservationHotelPurchase({
           <div className="grid gap-3 sm:grid-cols-2">
             <FormField label="کارگزار هتل">
               <Lookup
-                kind="organizations"
+                kind="brokers"
                 label="کارگزار هتل"
                 value={hotelSupplier}
                 onChange={setHotelSupplier}
@@ -495,7 +495,7 @@ export function ReservationHotelPurchase({
               <div className="grid gap-3 sm:grid-cols-2">
                 <FormField label="کارگزار ترانسفر">
                   <Lookup
-                    kind="organizations"
+                    kind="brokers"
                     label={title + ' · کارگزار ترانسفر'}
                     value={
                       draft.supplier ?? (!splitTransfers ? hotelSupplier : null)
