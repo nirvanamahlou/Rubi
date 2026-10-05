@@ -2,9 +2,38 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   issuedReportQuery,
   loadReservationIssuedTickets,
+  downloadIssuedTicketReport,
 } from './issued-tickets';
 import { initialIssuedTicketQuery } from '../model/issued-tickets';
 describe('server issued ticket report', () => {
+  it('rejects login HTML instead of downloading a fake PDF', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('<html>login</html>', {
+            headers: { 'content-type': 'text/html' },
+          }),
+        ),
+    );
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    try {
+      await expect(
+        downloadIssuedTicketReport(
+          {
+            ...initialIssuedTicketQuery,
+            issuedFrom: '2026-10-01',
+            issuedTo: '2026-10-05',
+          },
+          'pdf',
+        ),
+      ).rejects.toThrow('فایل خروجی معتبر');
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
+  });
   it('requires ordered issuance dates and exports all pages', () => {
     expect(() => issuedReportQuery(initialIssuedTicketQuery)).toThrow('بازه');
     expect(() =>
