@@ -2,6 +2,10 @@
 
 New ticket-only contracts use the public Ticket Catalog fare for readonly day sale and an initially equal editable agreement. One-way/combined round-trip seat-tier quotes remain exact; explicit negotiated totals survive seated passenger changes and restored drafts. Mixed/package pricing, unpriced/manual entry and persisted contract editing are unchanged. Payload pricing and catalog quote metadata remain separate. Sales323 tests (one existing skip), Web lint/TypeScript pass and production compilation succeeds; final production completion and exact-head CI gate owner-authorized develop merge. Concurrent develop integrated; bounded locks released with PR662 candidate. No authenticated browser QA, API/schema/migration/dependency/runtime change.
 
+## 2026-10-05 — SYSTEM-USERS-TILE-1005 — PC-A — READY_FOR_REVIEW
+
+User Management is now a directly linked purple card inside the existing responsive System Management grid, with a stronger border, users icon and quick-access footer. The duplicate page-top link is removed. Persian/English labels, company-settings filtering, search and existing IAM access-link protection remain. No API, permissions, migration, dependency or live runtime change. 19 focused existing tests, scoped ESLint, format and diff checks pass. Scoped lint, local Web typecheck/build and exact-head CI gate the user-authorized develop merge. Bounded locks released with commit; no authenticated browser/runtime rollout.
+
 ## 2026-10-05 — RESERVATION-ACTIONS-ENGLISH-1005 — PC-A — READY_FOR_REVIEW
 
 Supplier-form save is the first action above download and print, with one save button and unchanged disabled/cancelled protections. The permission-scoped broker directory supplies an additive English name without contacts; both-language lookup preserves old Persian selections and new supplier form snapshots save the registered English name when available. Existing fallback supports records without English names. Twelve focused tests, affected lint and API build pass; production Web/TypeScript and full CI gate merge. No schema/migration/dependency/permission change; user authorizes develop merge, bounded locks released.
@@ -344,7 +348,7 @@ Follow-up to the authorized merge/local release: active system administrators re
 
 کنترل‌های عملیات رکورد در تمام workspaceهای اطلاعات پایه با الگوی فقط‌آیکون یکسان شدند؛ مشاهده و ویرایش outline و حذف قرمز. نام دسترس‌پذیر و تأیید حذف محفوظ است. ۳۶۴ تست Master Data، lint محدوده، typecheck و build تولیدی Web با ۵۳ مسیر موفق‌اند. این تغییر فقط Web و تست‌های مربوط را در بر می‌گیرد؛ بدون API، داده یا Migration.
 
-# 2026-09-29 — MANAGER-ACCESS-VISIBILITY-0929 — PC-A — IN_PROGRESS
+# 2026-09-29 — MANAGER-ACCESS-VISIBILITY-0929 — PC-A — READY_FOR_REVIEW
 
 پیگیری محدودیت دسترسی مدیر: حساب دارای نقش فعال سیستمی administrator باید همهٔ مجوزهای native و همهٔ زیربخش‌های کاتالوگ را برای تنظیم نقش «مدیر» ببیند و واگذار کند؛ سایر اپراتورها فقط دسترسی فعلی خود را واگذار می‌کنند. کار روی IAM و فرم مدیریت کاربران رزرو شده است. بدون تغییر کاربر واقعی یا شعب؛ آزمون و handoff پس از اصلاح ثبت می‌شود.
 
