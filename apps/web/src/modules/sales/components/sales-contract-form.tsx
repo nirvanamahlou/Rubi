@@ -1,5 +1,9 @@
 'use client';
 import {
+  isTicketOnlyContract,
+  ticketOnlySaleDefaults,
+} from '../model/ticket-only-sale-defaults';
+import {
   tripPricingView,
   splitFlightPrices,
   roundTripPriceKey,
@@ -160,8 +164,10 @@ export function SalesContractForm() {
     ...emptySalesForm,
     servicePricing: {},
   });
-  const state = useMemo<SalesFormState>(
-    () => ({
+  const state = useMemo<SalesFormState>(() => {
+    if (isTicketOnlyContract(draftState))
+      return ticketOnlySaleDefaults(draftState);
+    return {
       ...draftState,
       servicePricing: draftState.servicePricing ?? {},
       catalogSalePricing:
@@ -173,9 +179,8 @@ export function SalesContractForm() {
               salesPassengerCounts(draftState).seated,
             )
           : {},
-    }),
-    [draftState],
-  );
+    };
+  }, [draftState]);
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
   const [insuranceReady, setInsuranceReady] = useState(false);
@@ -293,30 +298,32 @@ export function SalesContractForm() {
           patch[key as keyof SalesFormState] !==
             current[key as keyof SalesFormState],
       );
-      return withFirstPassengerCustomer(
-        withSalesHotelDates(current, {
-          ...current,
-          ...patch,
-          ...(changedRoute
-            ? {
-                outboundOffer: undefined,
-                returnOffer: undefined,
-                contractFlights: {},
-                ticket: {
-                  ...current.ticket,
-                  outboundOfferId: '',
-                  returnOfferId: '',
-                },
-                hotel: {
-                  ...current.hotel,
-                  hotelId: '',
-                  name: '',
-                  roomTypeId: '',
-                },
-                visaReferenceId: '',
-              }
-            : {}),
-        }),
+      return ticketOnlySaleDefaults(
+        withFirstPassengerCustomer(
+          withSalesHotelDates(current, {
+            ...current,
+            ...patch,
+            ...(changedRoute
+              ? {
+                  outboundOffer: undefined,
+                  returnOffer: undefined,
+                  contractFlights: {},
+                  ticket: {
+                    ...current.ticket,
+                    outboundOfferId: '',
+                    returnOfferId: '',
+                  },
+                  hotel: {
+                    ...current.hotel,
+                    hotelId: '',
+                    name: '',
+                    roomTypeId: '',
+                  },
+                  visaReferenceId: '',
+                }
+              : {}),
+          }),
+        ),
       );
     });
 
@@ -341,10 +348,12 @@ export function SalesContractForm() {
               restored.serviceKinds = restored.serviceKinds.filter(
                 (kind) => kind !== 'BUS' && kind !== 'TRAIN',
               );
-            setState({
-              ...restored,
-              servicePricing: restored.servicePricing ?? {},
-            } as SalesFormState);
+            setState(
+              ticketOnlySaleDefaults({
+                ...restored,
+                servicePricing: restored.servicePricing ?? {},
+              } as SalesFormState),
+            );
           } catch {
             globalThis.localStorage.removeItem('nora.sales.contract.draft.v1');
           }
@@ -588,10 +597,9 @@ export function SalesContractForm() {
       !state.serviceKinds.includes('HOTEL') &&
       !state.serviceKinds.includes('TOUR')
         ? {
-            servicePricing: repriceStandaloneTicketSelections(
-              state,
-              nextCounts.seated,
-            ),
+            servicePricing: isTicketOnlyContract(state)
+              ? state.servicePricing
+              : repriceStandaloneTicketSelections(state, nextCounts.seated),
           }
         : {}),
       ...(!outboundAvailable && state.outboundOffer

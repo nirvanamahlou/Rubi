@@ -5623,6 +5623,12 @@ LOAD-ROUTE-SIDES-1004 scope finalized: Ticket Catalog only; Reservations existin
 
 SALES-FLOATING-CALENDAR-1005 candidate: removed the manual-date toggle and catalog-only date allowlists, retaining red saleable catalog markers and future/return chronology. Floating outbound dates retain reverse-route markers; unmatched return dates no longer publish an empty outbound allowlist. 311 Sales/DatePicker tests pass (one existing skip), including seven calendar regressions; scoped lint and Web typecheck pass. Production build and exact-head CI gate user-authorized develop merge. Bounded source locks RELEASED with candidate commit; no authenticated browser/local runtime or database change.
 
+## TICKET-CATALOG-SALE-DEFAULT-1005 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-catalog-sale-default-1005 from origin/develop@68f97f88, reusing this chat's clean completed Finance checkout. Reserve SalesContractForm, new Sales-owned ticket-only draft pricing helper and focused model/form regressions, own status and decision entries. Only new contracts with exactly FLIGHT selected consume public Ticket Catalog one-way/pair/seat-tier prices as read-only day sale and initial editable agreement. Preserve explicit negotiated values, exact currency sums, source quote metadata, floating/unpriced manual input, mixed/package pricing and historical contracts. No producer/API/shared contract/schema/migration/dependency/runtime changes. Current Sales calendar work released its distinct source locks; no active target-file collision. User expressly authorizes develop merge after verification.
+
+Implemented native day-sale/default agreement normalization in the new form, restored drafts and passenger-count updates. Negotiated totals remain independently editable; unchanged defaults follow seated passenger totals. Regressions cover payload quotes, round-trip decimals, seat tiers, currency changes, restored drafts and readonly/editable form inputs. Sales 323 tests pass (one existing skip), Web lint, TypeScript and 55-page production build pass. Prior exact-head CI gates pass; latest integrated-head CI remains the develop merge gate. Concurrent work retained. No authenticated browser QA or operational database/server change. Bounded locks released with review candidate; PR662.
+
 ## 2026-10-05 — PROCUREMENT-ICON-THEME-1005 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-procurement-icon-theme-1005` from the existing healthy Procurement Web checkout.
