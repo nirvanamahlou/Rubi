@@ -261,8 +261,7 @@ export function TravelWorkflowForm({
           onClose={() => setTicket(false)}
         />
       )}
-      {(action === 'واچر' ||
-        (action === 'Confirmation' && state.voucherIssued)) && (
+      {(action === 'واچر' || action === 'Confirmation') && (
         <>
           {!closed && (
             <section className="grid gap-2 rounded border border-border p-3">
