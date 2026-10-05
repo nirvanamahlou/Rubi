@@ -524,6 +524,14 @@ export function SystemManagementWorkspace() {
     );
   }, [category, localizedModules, query]);
 
+  const showUserManagement =
+    (category === 'all' || category === 'company-settings') &&
+    (!query.trim() ||
+      (english
+        ? 'User management users roles permissions access'
+        : 'مدیریت کاربران تعریف کاربر نقش دسترسی بخش‌ها و زیربخش‌ها'
+      ).includes(query.trim()));
+
   const openModule = (module: SettingModule) => {
     setSelectedModuleId(module.id);
     setModuleTab('settings');
@@ -689,6 +697,43 @@ export function SystemManagementWorkspace() {
         })}
       </nav>
       <div className={styles.hubGrid}>
+        {showUserManagement ? (
+          <Link
+            className={`${styles.hubCard} ${styles.userManagementCard}`}
+            href="/system/users"
+          >
+            <div className={styles.cardTop}>
+              <span className={styles.cardIcon}>
+                <Users aria-hidden="true" />
+              </span>
+              <div className={styles.grow}>
+                <h3>{english ? 'User management' : 'مدیریت کاربران'}</h3>
+                <p className={styles.subtitle}>
+                  {english
+                    ? 'Users, roles and access'
+                    : 'کاربران، نقش‌ها و دسترسی‌ها'}
+                </p>
+              </div>
+            </div>
+            <div className={styles.tags}>
+              {(english
+                ? ['Users', 'Roles', 'Permissions']
+                : ['کاربران', 'نقش‌ها', 'دسترسی‌ها']
+              ).map((label) => (
+                <span className={styles.tag} key={label}>
+                  {label}
+                </span>
+              ))}
+            </div>
+            <div className={styles.cardFoot}>
+              <span>{english ? 'Quick access' : 'دسترسی سریع'}</span>
+              <span className={styles.enter}>
+                {english ? 'Manage users' : 'مدیریت کاربران'}
+                <ArrowLeft aria-hidden="true" size={18} />
+              </span>
+            </div>
+          </Link>
+        ) : null}
         {filteredModules.length ? (
           filteredModules.map((module) => {
             const Icon = iconMap[module.icon] ?? Settings;
@@ -736,7 +781,7 @@ export function SystemManagementWorkspace() {
               </button>
             );
           })
-        ) : (
+        ) : showUserManagement ? null : (
           <div className={styles.empty}>{copy.empty}</div>
         )}
       </div>
