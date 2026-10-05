@@ -425,7 +425,11 @@ it('records transfer-only split purchases without stay dates and rejects invalid
   const service = new ReservationServicePurchaseService(
     db as never,
     {
-      brokerReference: vi.fn(async (id: string) => ({ id, name: id })),
+      brokerReference: vi.fn(async (id: string) => ({
+        id,
+        name: id,
+        source: 'BROKER',
+      })),
       currencyReference: vi.fn(),
     } as never,
   );
@@ -480,6 +484,10 @@ it('records transfer-only split purchases without stay dates and rejects invalid
   );
   expect(create).toHaveBeenCalledTimes(2);
   expect(create.mock.calls[0]![0].data.amount).toBe('75');
+  expect(create.mock.calls[0]![0].data.supplierOrganizationId).toBeNull();
+  expect(create.mock.calls[0]![0].data.supplierBrokerId).toBe(
+    valid.supplierOrganizationId,
+  );
   expect(create.mock.calls[0]![0].data.passengerPrices.calculation.nights).toBe(
     1,
   );

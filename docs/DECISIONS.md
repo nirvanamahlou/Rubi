@@ -379,3 +379,7 @@ Owner defers amount-based multi-stage Finance approval/separation for now, confi
 
 On 2026-10-05 the owner explicitly requires a new contract with only FLIGHT selected to obtain day-sale price from the registered public ticket sale price and prefill an independently editable agreement with that price. This specific case does not mirror day sale from agreement, superseding the earlier temporary agreed-price mirror where applicable. Preserve catalog quote freshness, exact seat-tier/pair totals, historic contracts and all other service/package policy. A missing registered fare does not invent a price or replace a manually entered floating-ticket price. No new price producer, API/permission policy or database change.
 
+
+## 2026-10-05 — RESERVATION-PURCHASE-BROKERS-1005
+
+The new independent MasterBroker form conflicts with the older purchase selector and required MasterOrganization FK. Use a new broker-only option kind for Reservations hotel/transfer purchase, leaving legacy organization/rate-capture consumers intact. Add a nullable broker FK beside the nullable legacy organization FK with exactly-one-source CHECK; preserve all historical rows and existing v1 wire keys. Producer MasterTravelDirectory validates canonical active brokers; only NotFound allows legacy organization fallback, never inactive/permission/server failures. Rollout is additive migration → API → Web. No historical supplier relinking or synthetic organization creation.

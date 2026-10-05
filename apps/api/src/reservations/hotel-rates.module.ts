@@ -273,7 +273,7 @@ export class HotelRatesController {
   ) {
     this.rates.require(req.actor);
     if (
-      !['hotels', 'organizations', 'currencies'].includes(kind) ||
+      !['hotels', 'organizations', 'brokers', 'currencies'].includes(kind) ||
       search.length > 100 ||
       !/^\d+$/.test(page) ||
       Number(page) < 1 ||
@@ -281,7 +281,7 @@ export class HotelRatesController {
     )
       throw new BadRequestException();
     return this.directory.hotelRateChoices(
-      kind as 'hotels' | 'organizations' | 'currencies',
+      kind as 'hotels' | 'organizations' | 'brokers' | 'currencies',
       search,
       Number(page),
     );

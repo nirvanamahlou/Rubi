@@ -466,7 +466,10 @@ export class ReservationServicePurchaseService {
                   : (item.row.coveredServiceClientKeys?.length ?? 0) > 1
                     ? 'ترانسفر رفت‌وبرگشت'
                     : item.service.titleSnapshot,
-              supplierOrganizationId: item.broker.id,
+              supplierOrganizationId:
+                item.broker.source === 'BROKER' ? null : item.broker.id,
+              supplierBrokerId:
+                item.broker.source === 'BROKER' ? item.broker.id : null,
               supplierNameSnapshot: item.broker.name,
               version: input.expectedVersion + index + 1,
               amount: item.amount,
@@ -621,7 +624,9 @@ export class ReservationServicePurchaseService {
             serviceClientKey: service.clientKey,
             serviceKind: service.kind,
             serviceTitleSnapshot: service.titleSnapshot,
-            supplierOrganizationId: broker.id,
+            supplierOrganizationId:
+              broker.source === 'BROKER' ? null : broker.id,
+            supplierBrokerId: broker.source === 'BROKER' ? broker.id : null,
             supplierNameSnapshot: broker.name,
             version: input.expectedVersion + 1,
             amount: hotelPricing?.amount ?? input.amount,

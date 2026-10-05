@@ -691,3 +691,7 @@ FinanceOperationalRevision is append-only (database trigger), unique request/ver
 ## B2B-ADDRESS-INPUT-1004 — optional organization-address geography
 
 Master Data organization addresses retain required bounded addressLine and organization ownership. countryId/cityId may both be null for a free-text address; complete pairs retain restrictive country/composite-city FKs and canonical city-country validation. A database paired-nullability check rejects partial pairs. Existing geography is not rewritten; PATCH omission preserves it and explicit both-null clears it. MasterData address and B2B primary-address projections expose nullable geography, consumed without fabricated locations. No address authority, audit/version, branch, permission or retention changes.
+
+## 2026-10-05 — Reservations purchase broker references
+
+ReservationServicePurchase supports either supplierBrokerId → MasterBroker or its historical supplierOrganizationId → MasterOrganization. Both are restrictive real FKs; exactly one must be present (database CHECK). Historical organization references remain unchanged. Registered broker choices no longer require an organization link or BROKER organization role. Existing supplierOrganizationId v1 request/response key remains the supplier reference ID for compatibility; public MasterTravelDirectory resolves an active registered broker first and only a genuine missing broker permits legacy organization resolution. Supplier names remain immutable purchase snapshots. Finance/Reservations project the canonical broker ID when present.

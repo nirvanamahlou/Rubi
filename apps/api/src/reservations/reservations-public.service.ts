@@ -98,7 +98,8 @@ function present(
         serviceClientKey: purchase.serviceClientKey,
         serviceKind: purchase.serviceKind,
         serviceTitle: purchase.serviceTitleSnapshot,
-        supplierOrganizationId: purchase.supplierOrganizationId,
+        supplierOrganizationId:
+          purchase.supplierBrokerId ?? purchase.supplierOrganizationId!,
         supplierName: purchase.supplierNameSnapshot,
         amount: purchase.amount.toString(),
         currencyCode: purchase.currencyCode,
