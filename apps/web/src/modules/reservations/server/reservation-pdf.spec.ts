@@ -360,16 +360,14 @@ it('rejects supplier PDF with a typed name but no directory broker', async () =>
   delete settings.brokerId;
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({
-          data: {
-            ...intake,
-            workflow: { ...intake.workflow, supplierFormSettings: settings },
-          },
-        }),
-      ),
+    vi.fn().mockResolvedValue(
+      Response.json({
+        data: {
+          ...intake,
+          workflow: { ...intake.workflow, supplierFormSettings: settings },
+        },
+      }),
+    ),
   );
   expect(
     (await GET(request(), { params: Promise.resolve({ id }) })).status,
