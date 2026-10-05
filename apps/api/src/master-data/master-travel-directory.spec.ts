@@ -2,6 +2,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { MasterTravelDirectory } from './master-travel-directory';
 import type { MasterDataService } from './master-data.service';
 
+it('projects English broker names without private contact data', async () => {
+  const list = vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 'broker',
+        name: 'کارگزار نمونه',
+        attributes: { englishName: ' Sample Broker ', primaryPhone: 'private' },
+      },
+    ],
+    meta: { total: 1 },
+  });
+  const directory = new MasterTravelDirectory({ list } as never);
+  expect(await directory.voucherBrokers('', 1)).toEqual({
+    data: [
+      { id: 'broker', name: 'کارگزار نمونه', englishName: 'Sample Broker' },
+    ],
+    meta: { total: 1 },
+  });
+});
+
 it('creates an inline voucher leader under the selected broker and its city', async () => {
   const detail = vi.fn().mockImplementation(async (resource: string) => ({
     data:
