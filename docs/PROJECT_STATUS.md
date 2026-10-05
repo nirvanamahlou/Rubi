@@ -4694,6 +4694,10 @@ Procurement record edit/delete glyphs are being repaired locally after confirmin
 
 The repair uses readable sky/rose light/dark surfaces with hover and focus-ring states. Rendered SSR tests confirm actual labels, Lucide glyphs, disabled output and removal of conflicting destructive tokens; Procurement tests (9 files/36 tests), scoped lint, Web typecheck, the 55-route production build and four-file Prettier checks pass after rebuilding stale `@nora/contracts` dist from existing source exports. Chrome targetable-window/browser QA was unavailable, and no runtime or scheduled DOCX work was attempted.
 
+## 2026-10-05 — FINANCE-SEARCH-SORT-1005 — PC-A
+
+Finance document-delivery candidates now load only after an explicit nonempty contract search; changing/clearing the query discards previous rows and late responses. Finance inbox supports ascending/descending amount, due date and Finance entry timestamp sorting on the server before pagination and export, retained in saved views. Optional v1 query fields preserve existing newest-first clients; exact Decimal amount comparisons remain separate per currency with missing values last. No schema, dependency or migration changes. Targeted ordering/search tests: 24 passed; Web Finance suite: 49 passed, one opt-in skipped. Remaining lint/typecheck/build and exact-head CI gate the user-authorized develop merge.
+
 ## 2026-10-05 — RESERVATION-PURCHASE-BROKERS-1005 — PC-A
 
 Reservations hotel/transfer purchase now reads independent active MasterBroker records rather than BROKER-role organizations. Adds a restrictive broker FK beside the preserved legacy organization FK with exactly-one-source CHECK; public broker validation and Finance/Reservations projections retain v1 compatibility and historical purchases. API166 tests (six opt-in skipped), Web11, API typecheck, Prisma validation/generation and disposable PostgreSQL migration integrity proof pass. Final builds/CI gate release; no real purchase created or develop merge authorized.

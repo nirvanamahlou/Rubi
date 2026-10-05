@@ -8,7 +8,7 @@ import {
   Search,
   ShieldCheck,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   FinanceCustomerDocumentDeliveryBasisV1,
   FinanceCustomerDocumentDeliveryCandidateV1,
@@ -64,30 +64,41 @@ export function FinanceDeliveryPanel() {
   const [reason, setReason] = useState('');
   const [secondApproverReference, setSecondApproverReference] = useState('');
   const [exceptionExpiresAt, setExceptionExpiresAt] = useState('');
+  const loadVersion = useRef(0);
 
   async function load(contractNumber = search) {
+    const query = contractNumber.trim();
+    const version = ++loadVersion.current;
+    setRows([]);
+    setLoaded(false);
+    if (!query) {
+      setBusy(false);
+      setError('');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
-      setRows(await financeInboxApi.customerDocumentDeliveries(contractNumber));
+      const results = await financeInboxApi.customerDocumentDeliveries(query);
+      if (version !== loadVersion.current) return;
+      setRows(results);
       setLoaded(true);
     } catch (cause) {
+      if (version !== loadVersion.current) return;
       setRows([]);
       setError(
         cause instanceof Error ? cause.message : 'فهرست قراردادها دریافت نشد.',
       );
     } finally {
-      setBusy(false);
+      if (version === loadVersion.current) setBusy(false);
     }
   }
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void load('');
-    }, 0);
-    return () => window.clearTimeout(timer);
-    // Initial queue is deliberately independent of the text filter.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const requestVersion = loadVersion;
+    return () => {
+      requestVersion.current++;
+    };
   }, []);
 
   function openDecision(row: FinanceCustomerDocumentDeliveryCandidateV1) {
@@ -207,12 +218,24 @@ export function FinanceDeliveryPanel() {
                 aria-label="شماره قرارداد"
                 placeholder="بخشی یا همهٔ شماره؛ مثلاً SC-2026"
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) => {
+                  loadVersion.current++;
+                  setSearch(event.target.value);
+                  setRows([]);
+                  setLoaded(false);
+                  setBusy(false);
+                  setError('');
+                }}
               />
             </div>
           </label>
-          <Button className="self-end" loading={busy} type="submit">
-            نمایش قراردادها
+          <Button
+            className="self-end"
+            loading={busy}
+            disabled={!search.trim()}
+            type="submit"
+          >
+            جست‌وجوی قرارداد
           </Button>
         </form>
 
@@ -237,7 +260,7 @@ export function FinanceDeliveryPanel() {
         {loaded && !busy && !error && !rows.length ? (
           <EmptyState
             title="قراردادی پیدا نشد"
-            description="شماره قرارداد را کامل یا بخشی از آن وارد کنید؛ برای نمایش همه، کادر را خالی بگذارید."
+            description="شماره قرارداد را کامل یا بخشی از آن وارد کنید و جست‌وجو را بزنید."
           />
         ) : null}
 
