@@ -155,6 +155,10 @@ export function FinanceInboxLiveWorkspace() {
   const [maxAmount, setMaxAmount] = useState('');
   const [dueFrom, setDueFrom] = useState('');
   const [dueTo, setDueTo] = useState('');
+  const [sortBy, setSortBy] = useState<'createdAt' | 'dueAt' | 'amount'>(
+    'createdAt',
+  );
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [pagination, setPagination] = useState({ key: '', page: 1 });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fromDate, setFromDate] = useState('');
@@ -172,6 +176,8 @@ export function FinanceInboxLiveWorkspace() {
     maxAmount,
     dueFrom,
     dueTo,
+    sortBy,
+    sortDirection,
   });
   const page = pagination.key === filterKey ? pagination.page : 1;
   const setPage = (value: number | ((current: number) => number)) =>
@@ -231,6 +237,8 @@ export function FinanceInboxLiveWorkspace() {
       maxAmount,
       dueFrom,
       dueTo,
+      sortBy,
+      sortDirection,
       page,
       pageSize: 25,
     }),
@@ -247,6 +255,8 @@ export function FinanceInboxLiveWorkspace() {
       maxAmount,
       dueFrom,
       dueTo,
+      sortBy,
+      sortDirection,
       page,
     ],
   );
@@ -978,6 +988,48 @@ export function FinanceInboxLiveWorkspace() {
           </div>
         </div>
         <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            مرتب‌سازی بر اساس
+            <Select
+              value={sortBy}
+              onValueChange={(value) => setSortBy(value as typeof sortBy)}
+            >
+              <SelectTrigger aria-label="مرتب‌سازی کارتابل مالی">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="createdAt">تاریخ ورود به مالی</SelectItem>
+                <SelectItem value="dueAt">تاریخ سررسید</SelectItem>
+                <SelectItem value="amount">مبلغ درخواست</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            ترتیب نمایش
+            <Select
+              value={sortDirection}
+              onValueChange={(value) =>
+                setSortDirection(value as typeof sortDirection)
+              }
+            >
+              <SelectTrigger aria-label="جهت مرتب‌سازی کارتابل">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">
+                  صعودی (کمترین / قدیمی‌ترین اول)
+                </SelectItem>
+                <SelectItem value="desc">
+                  نزولی (بیشترین / جدیدترین اول)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          {sortBy === 'amount' ? (
+            <p className="text-xs text-muted-foreground">
+              مبلغ درخواست‌ها در هر ارز جداگانه مرتب می‌شود.
+            </p>
+          ) : null}
           <div className="relative">
             <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
             <Input
@@ -1044,6 +1096,8 @@ export function FinanceInboxLiveWorkspace() {
               setMaxAmount('');
               setDueFrom('');
               setDueTo('');
+              setSortBy('createdAt');
+              setSortDirection('desc');
               setPage(1);
             }}
             variant="outline"
@@ -1128,6 +1182,8 @@ export function FinanceInboxLiveWorkspace() {
         <FinanceFollowupPanel
           query={inboxQuery}
           onApply={(value) => {
+            setSortBy(value.sortBy ?? 'createdAt');
+            setSortDirection(value.sortDirection ?? 'desc');
             setSearch(value.search ?? '');
             setSource(value.source ?? 'ALL');
             setStatus(value.status ?? 'ALL');

@@ -4702,6 +4702,9 @@ Procurement record edit/delete glyphs are being repaired locally after confirmin
 
 The repair uses readable sky/rose light/dark surfaces with hover and focus-ring states. Rendered SSR tests confirm actual labels, Lucide glyphs, disabled output and removal of conflicting destructive tokens; Procurement tests (9 files/36 tests), scoped lint, Web typecheck, the 55-route production build and four-file Prettier checks pass after rebuilding stale `@nora/contracts` dist from existing source exports. Chrome targetable-window/browser QA was unavailable, and no runtime or scheduled DOCX work was attempted.
 
+## 2026-10-05 — FINANCE-SEARCH-SORT-1005 — PC-A
+
+Finance document-delivery candidates now load only after an explicit nonempty contract search; changing/clearing the query discards previous rows and late responses. Finance inbox supports ascending/descending amount, due date and Finance entry timestamp sorting on the server before pagination and export, retained in saved views. Optional v1 query fields preserve existing newest-first clients; exact Decimal amount comparisons remain separate per currency with missing values last. No schema, dependency or migration changes. API Finance100 and Web Finance49 tests passed (eight API/one Web opt-in skips). Scoped lint/format, API and Web typechecks and API build passed. Web production build passed all55 routes; exact-head CI gates the user-authorized develop merge (PR663).
 
 RESERVATION-VOUCHER-GATES-1005: supplier form preview/send requires a directory broker; voucher button waits for sent supplier form and voucher display/issue requires a directory leader from its broker. Canonical directory labels and membership validation used without new data contracts/schema. API152 tests passed (6 existing skips); final Web/static/build/CI gates remain. No local deployment.
 

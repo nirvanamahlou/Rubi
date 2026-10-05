@@ -710,6 +710,8 @@ export interface FinanceHistoryV1 {
 }
 
 export interface FinanceInboxQueryV1 {
+  sortBy?: 'createdAt' | 'dueAt' | 'amount';
+  sortDirection?: 'asc' | 'desc';
   search?: string;
   source?: FinanceInboxSource | undefined;
   status?: FinanceRequestStatus | 'OPEN' | 'CLOSED' | undefined;

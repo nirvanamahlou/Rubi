@@ -76,12 +76,17 @@ export function validateInboxQuery(
     'toDate',
     'dueFrom',
     'dueTo',
+    'sortBy',
+    'sortDirection',
   ] as const)
     if (query[key] !== undefined && typeof query[key] !== 'string')
       throw new BadRequestException('نوع فیلتر معتبر نیست.');
   if (query.branchId && !actor.branchIds.includes(query.branchId))
     throw new ForbiddenException('شعبه خارج از دسترسی است.');
   if (
+    (query.sortBy &&
+      !['createdAt', 'dueAt', 'amount'].includes(query.sortBy)) ||
+    (query.sortDirection && !['asc', 'desc'].includes(query.sortDirection)) ||
     (query.source &&
       !['SALES', 'HR', 'RESERVATIONS', 'PURCHASES', 'FINANCE'].includes(
         query.source,
@@ -182,8 +187,31 @@ export function filterFinanceInbox(
         inDays(item.dueAt, query.dueFrom, query.dueTo)
       );
     })
-    .sort(
-      (a, b) =>
-        b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id),
-    );
+    .sort((a, b) => {
+      const field = query.sortBy ?? 'createdAt';
+      const direction =
+        (query.sortDirection ?? (field === 'dueAt' ? 'asc' : 'desc')) === 'asc'
+          ? 1
+          : -1;
+      const left = field === 'amount' ? a.amount : a[field];
+      const right = field === 'amount' ? b.amount : b[field];
+      if (left === null || right === null) {
+        if (left !== right) return left === null ? 1 : -1;
+      } else if (field === 'amount') {
+        // Different currencies have no common nominal monetary ordering.
+        const currency = a.amount!.currencyCode.localeCompare(
+          b.amount!.currencyCode,
+        );
+        if (currency) return currency;
+        const leftUnits = decimalUnits(a.amount!.amount);
+        const rightUnits = decimalUnits(b.amount!.amount);
+        if (leftUnits !== rightUnits)
+          return (leftUnits < rightUnits ? -1 : 1) * direction;
+      } else {
+        const difference =
+          Date.parse(left as string) - Date.parse(right as string);
+        if (difference) return Math.sign(difference) * direction;
+      }
+      return b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id);
+    });
 }
