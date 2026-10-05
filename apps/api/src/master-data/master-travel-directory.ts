@@ -1,4 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { MasterDataService } from './master-data.service';
 
 /** Public, non-PII reference validation for Ticket Catalog consumers. */
@@ -77,7 +82,7 @@ export class MasterTravelDirectory {
 
   /** Public non-sensitive choices for Reservations purchase rate capture. */
   async hotelRateChoices(
-    kind: 'hotels' | 'organizations' | 'currencies',
+    kind: 'hotels' | 'organizations' | 'brokers' | 'currencies',
     search: string,
     page: number,
   ) {
@@ -204,6 +209,14 @@ export class MasterTravelDirectory {
 
   /** Public non-sensitive validation for a broker selected on a service purchase. */
   async brokerReference(brokerId: string) {
+    try {
+      const { data: broker } = await this.master.detail('brokers', brokerId);
+      if (broker.status !== 'active')
+        throw new BadRequestException('کارگزار باید فعال باشد.');
+      return { id: broker.id, name: broker.name, source: 'BROKER' as const };
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) throw error;
+    }
     const { data: broker } = await this.master.detail(
       'organizations',
       brokerId,
@@ -217,7 +230,11 @@ export class MasterTravelDirectory {
       throw new BadRequestException(
         'کارگزار باید فعال و دارای نقش کارگزار باشد.',
       );
-    return { id: broker.id, name: broker.name };
+    return {
+      id: broker.id,
+      name: broker.name,
+      source: 'ORGANIZATION' as const,
+    };
   }
 
   async currencyReference(code: string) {

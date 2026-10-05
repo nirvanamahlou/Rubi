@@ -42,7 +42,8 @@ export class FinanceDeliveryService {
     serviceClientKey: string;
     serviceKind: string;
     serviceTitleSnapshot: string;
-    supplierOrganizationId: string;
+    supplierOrganizationId: string | null;
+    supplierBrokerId?: string | null;
     supplierNameSnapshot: string;
     amount: { toString(): string };
     currencyCode: string;
@@ -82,7 +83,8 @@ export class FinanceDeliveryService {
       serviceClientKey: row.serviceClientKey,
       serviceKind: row.serviceKind,
       serviceTitle: row.serviceTitleSnapshot,
-      supplierOrganizationId: row.supplierOrganizationId,
+      supplierOrganizationId:
+        row.supplierBrokerId ?? row.supplierOrganizationId!,
       supplierName: row.supplierNameSnapshot,
       amount: row.amount.toString(),
       currencyCode: row.currencyCode,
