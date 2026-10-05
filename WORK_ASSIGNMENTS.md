@@ -5604,3 +5604,9 @@ B2B-AGREEMENT-UPLOAD-1004 review checkpoint: independent Luna review95e6495b res
 Reserve Ticket Catalog flight-load model/grid and focused tests, Reservations manifest filter model/tests, own docs on codex/pc-a-load-route-sides-1004. Add origin/destination country/city filters, disjoint outbound/return rows and unique manifest offer direction. Existing public reference/ticket contracts unchanged; no schema/dependency/runtime changes. User authorizes develop merge.
 
 LOAD-ROUTE-SIDES-1004 scope finalized: Ticket Catalog only; Reservations existing route filters verified without changes. Focused17 tests pass; lint/type/build and CI gate authorized merge. Scoped locks released at candidate delivery.
+
+## SALES-FLOATING-CALENDAR-1005 — PC-A — IN_PROGRESS
+
+- COMPUTER_ID=PC-A; branch codex/pc-a-sales-floating-calendar-1005 from origin/develop@61c74b68. Reserve Sales FlightTripDates component and focused regressions plus own status entries. Remove the separate manual-date toggle and make non-catalog future dates selectable for floating tickets while retaining catalog red markers, return chronology and public capacity/fare validation. No shared UI/API/schema/migration/dependency/runtime change or overlapping active target-file lock. User authorizes develop merge after checks.
+
+SALES-FLOATING-CALENDAR-1005 candidate: removed the manual-date toggle and catalog-only date allowlists, retaining red saleable catalog markers and future/return chronology. Floating outbound dates retain reverse-route markers; unmatched return dates no longer publish an empty outbound allowlist. 311 Sales/DatePicker tests pass (one existing skip), including seven calendar regressions; scoped lint and Web typecheck pass. Production build and exact-head CI gate user-authorized develop merge. Bounded source locks RELEASED with candidate commit; no authenticated browser/local runtime or database change.

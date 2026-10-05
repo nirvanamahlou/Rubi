@@ -4675,3 +4675,7 @@ B2B-AGREEMENT-UPLOAD-1004 final lifecycle checkpoint: session-bound uploads, con
 B2B-AGREEMENT-UPLOAD-1004 PR652: independent review resolved all five lifecycle findings, no open blocker; local checks/build passed. Candidate source frozen and bounded locks released. Final CI/merge pending, no operational runtime/database change.
 
 LOAD-ROUTE-SIDES-1004: PC-A adds both endpoint country/city filters in charter Load and disjoint outbound/eligible-return display. Explicit search snapshots both countries; changing country clears its city and results. Reservation manifest already provides four endpoint controls and route-relative direction, verified by existing tests. No backend/schema/runtime changes.
+
+## 2026-10-05 — SALES-FLOATING-CALENDAR-1005 — PC-A
+
+New-contract flight calendars accept future dates without a separate floating-date checkbox. Existing saleable catalog days remain red-marked, including registered return days with a floating outbound date. Matching catalog pairs retain their outbound filter; floating return dates do not impose an empty catalog allowlist. Return chronology and authoritative ticket capacity/fare checks remain. Sales/DatePicker311 tests pass (one existing skip), seven focused calendar regressions, scoped lint and Web typecheck pass; production build and exact-head CI gate authorized develop merge. No API/schema/migration/dependency/operational data or runtime rollout.
