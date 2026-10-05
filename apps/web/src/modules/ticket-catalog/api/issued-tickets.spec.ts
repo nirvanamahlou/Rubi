@@ -1,75 +1,83 @@
-import { describe, expect, it } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
-  projectReservationIssuedTickets,
-  type ReservationIssuedTicketSourceRow,
+  issuedReportQuery,
+  loadReservationIssuedTickets,
+  downloadIssuedTicketReport,
 } from './issued-tickets';
-
-const row: ReservationIssuedTicketSourceRow = {
-  id: 'reservation-1',
-  contractVersion: 2,
-  receivedAt: '2026-09-21T06:00:00.000Z',
-  workflow: { supplierStatus: 'CONFIRMED' },
-  snapshot: {
-    contractNumber: 'SC-2026-000010',
-    passengerAssignments: [
-      {
-        customerId: 'passenger-1',
-        displayNameSnapshot: 'مسافر اول',
-        serviceClientKeys: ['flight-outbound'],
-      },
-      {
-        customerId: 'passenger-2',
-        displayNameSnapshot: 'مسافر دوم',
-        serviceClientKeys: ['hotel-only'],
-      },
-    ],
-    serviceSelections: [
-      { clientKey: 'flight-outbound', kind: 'FLIGHT' },
-      { clientKey: 'hotel-only', kind: 'HOTEL' },
-    ],
-    ticketSelections: [
-      {
-        serviceClientKey: 'flight-outbound',
-        direction: 'OUTBOUND',
-        offerId: 'offer-1',
-        originId: 'tehran',
-        destinationId: 'antalya',
-        departureAt: '2026-09-30T03:30:00.000Z',
-        carrierNameSnapshot: 'IRAN AIRTOUR',
-      },
-    ],
-  },
-};
-
-describe('reservation issued ticket projection', () => {
-  it('projects only assigned flight passengers and keeps missing official numbers empty', () => {
-    expect(
-      projectReservationIssuedTickets([row], {
-        tehran: 'تهران',
-        antalya: 'آنتالیا',
-      }),
-    ).toEqual([
-      expect.objectContaining({
-        contractNumber: 'SC-2026-000010',
-        passengerDisplayName: 'مسافر اول',
-        origin: 'تهران',
-        destination: 'آنتالیا',
-        ticketNumber: null,
-        pnr: null,
-        status: 'issued',
-      }),
-    ]);
-  });
-
-  it('shows a cancelled reservation as voided without fabricating rows', () => {
-    const cancelled = {
-      ...row,
-      workflow: { supplierStatus: 'CANCELLED' as const },
-    };
-    expect(
-      projectReservationIssuedTickets([cancelled], {}).map(
-        (ticket) => ticket.status,
+import { initialIssuedTicketQuery } from '../model/issued-tickets';
+describe('server issued ticket report', () => {
+  it('rejects login HTML instead of downloading a fake PDF', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response('<html>login</html>', {
+          headers: { 'content-type': 'text/html' },
+        }),
       ),
-    ).toEqual(['voided']);
+    );
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    try {
+      await expect(
+        downloadIssuedTicketReport(
+          {
+            ...initialIssuedTicketQuery,
+            issuedFrom: '2026-10-01',
+            issuedTo: '2026-10-05',
+          },
+          'pdf',
+        ),
+      ).rejects.toThrow('فایل خروجی معتبر');
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
+  });
+  it('requires ordered issuance dates and exports all pages', () => {
+    expect(() => issuedReportQuery(initialIssuedTicketQuery)).toThrow('بازه');
+    expect(() =>
+      issuedReportQuery({
+        ...initialIssuedTicketQuery,
+        issuedFrom: '2026-10-05',
+        issuedTo: '2026-10-01',
+      }),
+    ).toThrow();
+    const params = new URLSearchParams(
+      issuedReportQuery({
+        ...initialIssuedTicketQuery,
+        issuedFrom: '2026-10-01',
+        issuedTo: '2026-10-05',
+        page: 9,
+        passenger: 'نام',
+        originCityId: 'city',
+      }),
+    );
+    expect(params.get('page')).toBeNull();
+    expect(params.get('status')).toBeNull();
+    expect(params.get('passenger')).toBe('نام');
+    expect(params.get('originCityId')).toBe('city');
+  });
+  it('loads actual public issuance rows without scanning reservation request pages', async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ data: [] })));
+    vi.stubGlobal('fetch', fetcher);
+    vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
+    try {
+      expect(
+        await loadReservationIssuedTickets(new AbortController().signal, {
+          ...initialIssuedTicketQuery,
+          issuedFrom: '2026-10-01',
+          issuedTo: '2026-10-05',
+        }),
+      ).toEqual([]);
+      expect(fetcher.mock.calls[0]?.[0]).toContain('/issued-tickets?');
+      expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+        credentials: 'include',
+        cache: 'no-store',
+      });
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
   });
 });

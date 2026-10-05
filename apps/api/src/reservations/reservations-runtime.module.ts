@@ -1,3 +1,5 @@
+import { issuedColumns, issuedValues } from './issued-ticket-report';
+import { buildIssuedTicketWorkbook } from './issued-ticket-workbook';
 import { ReservationTicketDocumentsService } from './reservation-ticket-documents';
 import {
   SalesReservationTableModule,
@@ -45,6 +47,7 @@ import {
   NotFoundException,
   Get,
   Header,
+  StreamableFile,
   Inject,
   Module,
   Patch,
@@ -94,6 +97,34 @@ export class ReservationRequestsController {
     @Inject(MasterTravelDirectory)
     private readonly directory?: MasterTravelDirectory,
   ) {}
+  @Get('issued-tickets')
+  @Header('Cache-Control', 'private, no-store')
+  issuedTickets(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.ticketDocuments) throw new NotFoundException();
+    return this.ticketDocuments.report(query, req.actor!);
+  }
+  @Get('issued-tickets/export')
+  @Header('Cache-Control', 'private, no-store')
+  async issuedTicketsExport(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!this.ticketDocuments) throw new NotFoundException();
+    const { data } = await this.ticketDocuments.report(query, req.actor!);
+    return new StreamableFile(
+      buildIssuedTicketWorkbook(
+        issuedValues(data),
+        issuedColumns.map(([, label]) => label),
+      ),
+      {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        disposition: 'attachment; filename="issued-tickets.xlsx"',
+      },
+    );
+  }
   @Get(':id/voucher-brokers')
   @Header('Cache-Control', 'private, no-store')
   async voucherBrokers(
