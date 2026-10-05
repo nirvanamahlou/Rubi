@@ -4698,6 +4698,10 @@ Procurement record edit/delete glyphs are being repaired locally after confirmin
 
 The repair uses readable sky/rose light/dark surfaces with hover and focus-ring states. Rendered SSR tests confirm actual labels, Lucide glyphs, disabled output and removal of conflicting destructive tokens; Procurement tests (9 files/36 tests), scoped lint, Web typecheck, the 55-route production build and four-file Prettier checks pass after rebuilding stale `@nora/contracts` dist from existing source exports. Chrome targetable-window/browser QA was unavailable, and no runtime or scheduled DOCX work was attempted.
 
+
+RESERVATION-VOUCHER-GATES-1005: supplier form preview/send requires a directory broker; voucher button waits for sent supplier form and voucher display/issue requires a directory leader from its broker. Canonical directory labels and membership validation used without new data contracts/schema. API152 tests passed (6 existing skips); final Web/static/build/CI gates remain. No local deployment.
+
 ## 2026-10-05 — RESERVATION-PURCHASE-BROKERS-1005 — PC-A
 
 Reservations hotel/transfer purchase now reads independent active MasterBroker records rather than BROKER-role organizations. Adds a restrictive broker FK beside the preserved legacy organization FK with exactly-one-source CHECK; public broker validation and Finance/Reservations projections retain v1 compatibility and historical purchases. API166 tests (six opt-in skipped), Web11, API typecheck, Prisma validation/generation and disposable PostgreSQL migration integrity proof pass. Final builds/CI gate release; no real purchase created or develop merge authorized.
+

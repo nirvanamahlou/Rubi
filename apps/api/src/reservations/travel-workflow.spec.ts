@@ -58,7 +58,13 @@ describe('travel workflow', () => {
   });
   it('requires a saved broker before supplier confirmation issues a voucher', () => {
     const requested = transition(
-      initialTravelWorkflow(),
+      {
+        ...initialTravelWorkflow(),
+        supplierFormSettings: {
+          brokerId: 'synthetic-broker',
+          leaderId: 'synthetic-leader',
+        } as never,
+      },
       command(initialTravelWorkflow(), 'REQUEST_SUPPLIER'),
       [],
     );
@@ -75,8 +81,15 @@ describe('travel workflow', () => {
   });
   it('allows optional insurance only after explicit acknowledgement and closes voucher', () => {
     let state = initialTravelWorkflow();
+    state.supplierFormSettings = {
+      brokerId: 'synthetic-broker',
+      leaderId: 'synthetic-leader',
+    } as never;
     state = transition(state, command(state, 'REQUEST_SUPPLIER'), ['p']);
-    state.voucherSettings = { brokerId: 'synthetic-broker' } as never;
+    state.voucherSettings = {
+      brokerId: 'synthetic-broker',
+      leaderId: 'synthetic-leader',
+    } as never;
     expect(() =>
       transition(
         state,
@@ -103,7 +116,14 @@ describe('travel workflow', () => {
   });
   it('issues with a recorded insurance reference without extra acknowledgement', () => {
     let state = initialTravelWorkflow();
-    state.voucherSettings = { brokerId: 'synthetic-broker' } as never;
+    state.supplierFormSettings = {
+      brokerId: 'synthetic-broker',
+      leaderId: 'synthetic-leader',
+    } as never;
+    state.voucherSettings = {
+      brokerId: 'synthetic-broker',
+      leaderId: 'synthetic-leader',
+    } as never;
     for (const action of [
       'REQUEST_SUPPLIER',
       'INSURANCE',
@@ -124,7 +144,10 @@ describe('travel workflow', () => {
     const state = {
       ...initialTravelWorkflow(),
       supplierStatus: 'CONFIRMED' as const,
-      voucherSettings: { brokerId: 'synthetic-broker' } as never,
+      voucherSettings: {
+        brokerId: 'synthetic-broker',
+        leaderId: 'synthetic-leader',
+      } as never,
     };
     expect(
       transition(
@@ -310,4 +333,41 @@ describe('manual table workflow flags', () => {
       ),
     ).toThrow();
   });
+});
+
+it('rejects sending without a selected broker and issuing without its leader', () => {
+  const state = initialTravelWorkflow();
+  expect(() =>
+    transition(state, command(state, 'REQUEST_SUPPLIER'), []),
+  ).toThrow('کارگزار');
+  const requested = {
+    ...state,
+    supplierStatus: 'REQUESTED' as const,
+    voucherSettings: { brokerId: 'b' } as never,
+  };
+  expect(() =>
+    transition(
+      requested,
+      command(requested, 'CONFIRM_SUPPLIER', {
+        supplierReference: 'ref',
+        acknowledgeMissingInsurance: true,
+      }),
+      [],
+    ),
+  ).toThrow('تورلیدر');
+  const mismatch = {
+    ...requested,
+    sentSupplierFormSettings: { brokerId: 'a' } as never,
+    voucherSettings: { brokerId: 'b', leaderId: 'l' } as never,
+  };
+  expect(() =>
+    transition(
+      mismatch,
+      command(mismatch, 'CONFIRM_SUPPLIER', {
+        supplierReference: 'ref',
+        acknowledgeMissingInsurance: true,
+      }),
+      [],
+    ),
+  ).toThrow('کارگزار فرم');
 });

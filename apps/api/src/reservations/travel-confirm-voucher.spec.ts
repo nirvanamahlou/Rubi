@@ -8,7 +8,10 @@ it('persists confirmation and voucher together and notifies the sales owner in t
   const state = {
     ...initialTravelWorkflow(),
     supplierStatus: 'REQUESTED',
-    voucherSettings: { brokerId: 'synthetic-broker' } as never,
+    voucherSettings: {
+      brokerId: 'synthetic-broker',
+      leaderId: 'synthetic-leader',
+    } as never,
     branding: {
       kind: 'OWN',
       referenceId: 'company',

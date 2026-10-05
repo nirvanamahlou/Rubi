@@ -45,7 +45,16 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
       source.workflow.supplierFormSettings
     )
       source.workflow.voucherSettings = source.workflow.supplierFormSettings;
-    return defaultVoucherSettings(source, {});
+    const settings = defaultVoucherSettings(source, {});
+    const supplier = intake.workflow.sentSupplierFormSettings;
+    if (supplier?.brokerId && supplier.brokerId !== settings.brokerId) {
+      settings.brokerId = supplier.brokerId;
+      settings.text.broker = supplier.text.broker;
+      delete settings.leaderId;
+      settings.text.leaderName = '';
+      settings.text.leaderPhone = '';
+    }
+    return settings;
   });
   const selectionRequest = useRef(0);
   useEffect(
@@ -202,6 +211,7 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
         <select
           className="w-full rounded border border-border bg-surface p-2"
           value={draft.brokerId || ''}
+          disabled={Boolean(intake.workflow.sentSupplierFormSettings?.brokerId)}
           onChange={(e) => {
             selectionRequest.current += 1;
             setBusy(false);
@@ -226,6 +236,10 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
           }}
         >
           <option value="">انتخاب کارگزار</option>
+          {intake.workflow.sentSupplierFormSettings?.brokerId &&
+            !brokers.some((b) => b.id === draft.brokerId) && (
+              <option value={draft.brokerId}>{draft.text.broker}</option>
+            )}
           {brokers.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}
@@ -290,7 +304,10 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
           </Button>
         </div>
       )}
-      <Button disabled={busy || !draft.brokerId} onClick={() => void save()}>
+      <Button
+        disabled={busy || !draft.brokerId || !draft.leaderId}
+        onClick={() => void save()}
+      >
         ذخیره تنظیمات واچر
       </Button>
       {error && (

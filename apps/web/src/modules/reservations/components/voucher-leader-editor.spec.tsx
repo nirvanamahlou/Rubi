@@ -146,3 +146,29 @@ describe('voucher leader selection', () => {
     expect(harness.states[0]).not.toHaveProperty('leaderId');
   });
 });
+
+it('uses the sent form broker and locks its selector', () => {
+  harness.stateIndex = 0;
+  harness.refIndex = 0;
+  const tree = VoucherLeaderEditor({
+    intake: {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        sentSupplierFormSettings: {
+          brokerId: 'broker-b',
+          text: { broker: 'B' },
+        } as never,
+      },
+    },
+    onDirty: vi.fn(),
+    onSaved: vi.fn(),
+  });
+  expect(harness.states[0]).toMatchObject({
+    brokerId: 'broker-b',
+    text: { broker: 'B', leaderName: '', leaderPhone: '' },
+  });
+  expect(
+    elements(tree).find((node) => node.type === 'select')?.props.disabled,
+  ).toBe(true);
+});
