@@ -3,13 +3,19 @@ import { useEffect, useRef, useState } from 'react';
 import type { TravelWorkflowStateV1, VoucherSettingsV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { defaultVoucherSettings } from '../model/voucher-settings';
 import { travelRequest } from './travel-workflow-form';
 import type { ReservationFormIntake } from '../model/reservation-form';
 
-type Choice = { id: string; name: string; phoneMasked?: string };
+type Choice = {
+  id: string;
+  name: string;
+  englishName?: string;
+  phoneMasked?: string;
+};
 type Props = {
   intake: ReservationFormIntake;
   onDirty: () => void;
@@ -53,6 +59,7 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
       delete settings.leaderId;
       settings.text.leaderName = '';
       settings.text.leaderPhone = '';
+      settings.text.transferBoard = '';
     }
     return settings;
   });
@@ -70,6 +77,9 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
   const [newPhone, setNewPhone] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [brokersLoading, setBrokersLoading] = useState(true);
+  const [leadersLoading, setLeadersLoading] = useState(Boolean(draft.brokerId));
+  const [lookupError, setLookupError] = useState('');
   const path = `reservations/requests/${intake.id}/voucher-brokers`;
   useEffect(() => {
     let active = true;
@@ -80,8 +90,16 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
         if (active) setBrokers(r.data);
       })
       .catch((e) => {
-        if (active) setError(String(e.message));
+        if (active)
+          setLookupError(
+            e instanceof Error ? e.message : 'دریافت کارگزاران انجام نشد.',
+          );
+      })
+      .finally(() => {
+        if (active) setBrokersLoading(false);
       });
+    // Keep the selected label separate from filtered remote results.
+    // Requests use the existing permission-scoped public directory.
     return () => {
       active = false;
     };
@@ -96,7 +114,13 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
         if (active) setLeaders(r.data);
       })
       .catch((e) => {
-        if (active) setError(String(e.message));
+        if (active)
+          setLookupError(
+            e instanceof Error ? e.message : 'دریافت تورلیدرها انجام نشد.',
+          );
+      })
+      .finally(() => {
+        if (active) setLeadersLoading(false);
       });
     return () => {
       active = false;
@@ -107,7 +131,7 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
     onDirty();
   }
   async function chooseLeader(id: string) {
-    if (!draft.brokerId) return;
+    if (!draft.brokerId || busy) return;
     const request = ++selectionRequest.current;
     const brokerId = draft.brokerId;
     if (!id) {
@@ -115,30 +139,37 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
       delete next.leaderId;
       change({
         ...next,
-        text: { ...draft.text, leaderName: '', leaderPhone: '' },
+        text: {
+          ...draft.text,
+          leaderName: '',
+          leaderPhone: '',
+          transferBoard: '',
+        },
         flags: { ...draft.flags, tourLeader: false },
       });
       return;
     }
     setBusy(true);
     setError('');
+    onDirty();
     try {
       const r = await travelRequest<{
         data: { id: string; name: string; phone: string; board?: string };
       }>(`${path}/${brokerId}/leaders/${id}/contact`);
       if (request !== selectionRequest.current) return;
-      onDirty();
-      setDraft((current) => ({
-        ...current,
+      const next: VoucherSettingsV1 = {
+        ...draft,
         leaderId: id,
         text: {
-          ...current.text,
+          ...draft.text,
           leaderName: r.data.name,
-          leaderPhone: r.data.phone,
+          leaderPhone: r.data.phone ?? '',
           transferBoard: r.data.board ?? '',
         },
-        flags: { ...current.flags, tourLeader: true },
-      }));
+        flags: { ...draft.flags, tourLeader: true },
+      };
+      setDraft(next);
+      await persist(next, request);
     } catch (e) {
       if (request === selectionRequest.current)
         setError(e instanceof Error ? e.message : 'دریافت شماره انجام نشد.');
@@ -174,8 +205,8 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
       if (request === selectionRequest.current) setBusy(false);
     }
   }
-  async function save() {
-    if (!draft.brokerId || !draft.text.broker) {
+  async function persist(settings: VoucherSettingsV1, request: number) {
+    if (!settings.brokerId || !settings.leaderId || !settings.text.broker) {
       setError('کارگزار را انتخاب کنید.');
       return;
     }
@@ -188,35 +219,60 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
           action: 'VOUCHER_SETTINGS',
           expectedVersion: intake.workflow.version,
           note: 'تنظیمات کارگزار، ترانسفر و تورلیدر واچر',
-          voucherSettings: draft,
+          voucherSettings: settings,
         },
       );
+      if (request !== selectionRequest.current) return;
       onSaved(r.data);
       window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
+      if (request === selectionRequest.current)
+        setError(
+          e instanceof Error
+            ? e.message
+            : 'ذخیره انجام نشد؛ دوباره ذخیره تنظیمات را بزنید.',
+        );
     } finally {
-      setBusy(false);
+      if (request === selectionRequest.current) setBusy(false);
     }
   }
   return (
     <section className="grid gap-3 rounded border border-border p-3">
       <h3 className="font-semibold">اطلاعات کارگزار و تورلیدر واچر</h3>
-      <label>
-        جست‌وجوی کارگزار
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} />
-      </label>
+      <p className="text-sm text-muted-foreground">
+        با انتخاب تورلیدر، Board و مشخصات ثبت‌شدهٔ او خودکار تکمیل و ذخیره
+        می‌شود.
+      </p>
       <label>
         کارگزار
-        <select
-          className="w-full rounded border border-border bg-surface p-2"
+        <SearchCombobox
+          label="جست‌وجو و انتخاب کارگزار واچر"
+          placeholder="جست‌وجو و انتخاب کارگزار…"
+          remote
+          loading={brokersLoading}
+          onSearchChange={(query) => {
+            if (query === search) return;
+            setBrokersLoading(true);
+            setLookupError('');
+            setSearch(query);
+          }}
+          selectedLabel={draft.text.broker}
+          options={brokers.map((b) => ({
+            value: b.id,
+            label: b.name,
+            searchText: b.englishName ?? '',
+          }))}
           value={draft.brokerId || ''}
-          disabled={Boolean(intake.workflow.sentSupplierFormSettings?.brokerId)}
-          onChange={(e) => {
+          disabled={
+            busy || Boolean(intake.workflow.sentSupplierFormSettings?.brokerId)
+          }
+          onValueChange={(id) => {
             selectionRequest.current += 1;
             setBusy(false);
             setError('');
-            const broker = brokers.find((item) => item.id === e.target.value);
+            const broker = brokers.find((item) => item.id === id);
+            setLeadersLoading(Boolean(broker));
+            setLookupError('');
             setLeaders([]);
             const next = { ...draft };
             delete next.leaderId;
@@ -234,47 +290,32 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
               flags: { ...draft.flags, tourLeader: false },
             });
           }}
-        >
-          <option value="">انتخاب کارگزار</option>
-          {intake.workflow.sentSupplierFormSettings?.brokerId &&
-            !brokers.some((b) => b.id === draft.brokerId) && (
-              <option value={draft.brokerId}>{draft.text.broker}</option>
-            )}
-          {brokers.map((b) => (
-            <option key={b.id} value={b.id}>
-              {b.name}
-            </option>
-          ))}
-        </select>
+        />
       </label>
       <label>
         Board کارگزار برای ترانسفر
         <Input
           value={draft.text.transferBoard || ''}
-          onChange={(e) =>
-            change({
-              ...draft,
-              text: { ...draft.text, transferBoard: e.target.value },
-            })
-          }
+          readOnly
+          aria-label="Board ثبت‌شدهٔ کارگزار"
+          placeholder="با انتخاب تورلیدر، خودکار تکمیل می‌شود"
         />
       </label>
       <label>
         تورلیدر کارگزار
-        <select
-          className="w-full rounded border border-border bg-surface p-2"
-          disabled={!draft.brokerId || busy}
+        <SearchCombobox
+          label="جست‌وجو و انتخاب تورلیدر کارگزار"
+          placeholder="جست‌وجو و انتخاب تورلیدر…"
+          loading={leadersLoading}
+          selectedLabel={draft.text.leaderName}
+          options={leaders.map((l) => ({
+            value: l.id,
+            label: `${l.name}${l.phoneMasked ? ` · ${l.phoneMasked}` : ''}`,
+          }))}
+          disabled={!draft.brokerId || busy || leadersLoading}
           value={draft.leaderId || ''}
-          onChange={(e) => void chooseLeader(e.target.value)}
-        >
-          <option value="">بدون تورلیدر</option>
-          {leaders.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.name}
-              {l.phoneMasked ? ` · ${l.phoneMasked}` : ''}
-            </option>
-          ))}
-        </select>
+          onValueChange={(id) => void chooseLeader(id)}
+        />
       </label>
       {draft.text.leaderName && (
         <p>
@@ -306,10 +347,15 @@ export function VoucherLeaderEditor({ intake, onDirty, onSaved }: Props) {
       )}
       <Button
         disabled={busy || !draft.brokerId || !draft.leaderId}
-        onClick={() => void save()}
+        onClick={() => void persist(draft, ++selectionRequest.current)}
       >
         ذخیره تنظیمات واچر
       </Button>
+      {lookupError && (
+        <p role="alert" className="text-destructive">
+          {lookupError}
+        </p>
+      )}
       {error && (
         <p role="alert" className="text-destructive">
           {error}

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
 import { VoucherLeaderEditor } from './voucher-leader-editor';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import type { ReservationFormIntake } from '../model/reservation-form';
 
 const harness = vi.hoisted(() => ({
@@ -65,18 +66,19 @@ function elements(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
   return [node, ...elements(node.props.children as ReactNode)];
 }
 function choose(tree: ReactNode, index: number, value: string) {
-  const control = elements(tree).filter((node) => node.type === 'select')[
+  const control = elements(tree).filter((node) => node.type === SearchCombobox)[
     index
   ]!;
-  (control.props.onChange as (event: { target: { value: string } }) => void)({
-    target: { value },
-  });
+  (control.props.onValueChange as (value: string) => void)(value);
 }
 async function flush() {
   await Promise.resolve();
   await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
 }
 beforeEach(() => {
+  vi.stubGlobal('window', { dispatchEvent: vi.fn() });
   harness.states = [];
   harness.refs = [];
   harness.effects = [];
@@ -92,6 +94,67 @@ beforeEach(() => {
   }));
 });
 describe('voucher leader selection', () => {
+  it('uses two searchable dropdowns and a readonly automatic Board field', () => {
+    const tree = render();
+    const controls = elements(tree).filter(
+      (node) => node.type === SearchCombobox,
+    );
+    expect(controls).toHaveLength(2);
+    expect(controls[0]?.props).toMatchObject({
+      remote: true,
+      selectedLabel: 'A',
+    });
+    expect(
+      elements(tree).find(
+        (node) => node.props['aria-label'] === 'Board ثبت‌شدهٔ کارگزار',
+      )?.props.readOnly,
+    ).toBe(true);
+    expect(elements(tree).some((node) => node.type === 'select')).toBe(false);
+  });
+  it('keeps a failed save draft available for retry and normalizes a missing phone', async () => {
+    render();
+    for (const effect of harness.effects) effect();
+    await flush();
+    harness.request.mockResolvedValueOnce({
+      data: { id: 'leader', name: 'Leader', phone: null, board: 'Board' },
+    });
+    harness.request.mockRejectedValueOnce(
+      new Error('ثبت انجام نشد؛ دوباره تلاش کنید.'),
+    );
+    choose(render(), 1, 'leader');
+    await flush();
+    expect(harness.states[0]).toMatchObject({
+      leaderId: 'leader',
+      text: { leaderName: 'Leader', leaderPhone: '', transferBoard: 'Board' },
+    });
+    const tree = render();
+    expect(
+      elements(tree).find((node) => node.props.role === 'alert')?.props
+        .children,
+    ).toContain('دوباره تلاش کنید');
+    const retry = elements(tree).find(
+      (node) => node.props.children === 'ذخیره تنظیمات واچر',
+    )!;
+    expect(retry.props.disabled).toBe(false);
+    harness.request.mockResolvedValueOnce({ data: { version: 2 } });
+    await (retry.props.onClick as () => Promise<void>)();
+    await flush();
+    expect(
+      harness.request.mock.calls.filter(([path]) => path.endsWith('/workflow')),
+    ).toHaveLength(2);
+  });
+  it('does not save a leader when its authorized contact lookup fails', async () => {
+    render();
+    for (const effect of harness.effects) effect();
+    await flush();
+    harness.request.mockRejectedValueOnce(new Error('دریافت تماس مجاز نیست.'));
+    choose(render(), 1, 'leader');
+    await flush();
+    expect(
+      harness.request.mock.calls.some(([path]) => path.endsWith('/workflow')),
+    ).toBe(false);
+    expect(harness.states[0]).not.toHaveProperty('leaderId');
+  });
   it('fills Board, leader name and phone from the audited contact response', async () => {
     let tree = render();
     for (const effect of harness.effects) effect();
@@ -115,6 +178,17 @@ describe('voucher leader selection', () => {
         leaderPhone: '+905551234567',
       },
     });
+    expect(harness.request).toHaveBeenCalledWith(
+      'reservations/requests/intake/workflow',
+      expect.objectContaining({
+        action: 'VOUCHER_SETTINGS',
+        expectedVersion: 1,
+        voucherSettings: expect.objectContaining({
+          leaderId: 'leader',
+          text: expect.objectContaining({ transferBoard: 'AIRPORT BOARD' }),
+        }),
+      }),
+    );
   });
   it('ignores an old contact response after the broker changes', async () => {
     let tree = render();
@@ -169,6 +243,6 @@ it('uses the sent form broker and locks its selector', () => {
     text: { broker: 'B', leaderName: '', leaderPhone: '' },
   });
   expect(
-    elements(tree).find((node) => node.type === 'select')?.props.disabled,
+    elements(tree).find((node) => node.type === SearchCombobox)?.props.disabled,
   ).toBe(true);
 });

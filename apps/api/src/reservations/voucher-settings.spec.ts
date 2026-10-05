@@ -57,6 +57,18 @@ it('requires a hotel age band for every selected child', () => {
     hotelChildAgeBand: 'CHD_6_TO_12',
   });
 });
+it('persists the existing 300-character registered Board without widening other fields', () => {
+  const value = settings();
+  value.text.transferBoard = 'B'.repeat(300);
+  expect(validateVoucherSettings(value, ['p']).text.transferBoard).toHaveLength(
+    300,
+  );
+  value.text.transferBoard += 'B';
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+  value.text.transferBoard = '';
+  value.text.leaderName = 'L'.repeat(201);
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+});
 it('keeps hotel child age bands in the reservation snapshot without changing ticket age', () => {
   const value = settings();
   value.passengers[0] = {

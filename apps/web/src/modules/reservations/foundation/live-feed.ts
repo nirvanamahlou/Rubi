@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { voucherActionAvailable } from '../model/voucher-readiness';
 import type { LoginResponse } from '@nora/contracts';
 import {
   isCivilDate,
@@ -144,6 +145,9 @@ const envelopeSchema = z.object({
               'CANCELLED',
             ]),
             voucherIssued: z.boolean(),
+            sentSupplierFormSettings: z
+              .object({ brokerId: id.optional() })
+              .nullish(),
             reservationNotes: z.array(z.string()).optional(),
           })
           .nullable()
@@ -339,6 +343,9 @@ export function decodeIntake(
         hotelRequested: ['REQUESTED', 'CONFIRMED'].includes(
           row.workflow?.supplierStatus ?? '',
         ),
+        voucherReady: row.workflow
+          ? voucherActionAvailable(row.workflow)
+          : false,
         hotelConfirmed: row.workflow?.voucherIssued === true,
         correctedAt: row.tableSummary?.correctedAt ?? undefined,
         ...(travelDate ? { travelDate } : {}),

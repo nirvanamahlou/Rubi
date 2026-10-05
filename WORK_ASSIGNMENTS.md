@@ -5623,9 +5623,13 @@ LOAD-ROUTE-SIDES-1004 scope finalized: Ticket Catalog only; Reservations existin
 
 SALES-FLOATING-CALENDAR-1005 candidate: removed the manual-date toggle and catalog-only date allowlists, retaining red saleable catalog markers and future/return chronology. Floating outbound dates retain reverse-route markers; unmatched return dates no longer publish an empty outbound allowlist. 311 Sales/DatePicker tests pass (one existing skip), including seven calendar regressions; scoped lint and Web typecheck pass. Production build and exact-head CI gate user-authorized develop merge. Bounded source locks RELEASED with candidate commit; no authenticated browser/local runtime or database change.
 
-## VOUCHER-SEARCHABLE-LEADER-1005 — PC-A — IN_PROGRESS
+## VOUCHER-SEARCHABLE-LEADER-1005 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-voucher-searchable-leader-1005 from origin/develop@8e06f37c. Reserve Reservations voucher leader editor/regressions, workflow form/document readiness, own readiness model and foundation action-panel/live-feed projection/regressions; bounded Reservations controller canonical Board snapshot and focused API regression if needed; own status entries. Replace separate broker search/select with an existing searchable dropdown; searchable same-broker leader selection fills authoritative Board/name/contact and saves through existing CAS workflow. Require the actual saved/sent supplier form before voucher access/issue; preserve historical issued vouchers and existing finance/insurance/branch/contact permission gates. Earlier voucher gates unit explicitly released; no active source overlap or shared API/schema/migration/dependency changes. User authorizes develop merge after tests; no operational database, live runtime or deployment change.
+
+VOUCHER-SEARCHABLE-LEADER-1005 bounded correction: registered Master Data Board accepts 300 characters but Reservations transferBoard rejected over 200. Reserve Reservations voucher-settings validator/regression to accept the producer's existing 300-character Board without truncation; no producer/shared wire/schema changes. Existing other field/age/passenger validation remains unchanged.
+
+Candidate: searchable broker/leader selection, authorized canonical Board/name/nullable phone and automatic CAS save with retry; actual sent-form readiness gates voucher access and server issue. Full Reservations Web184 and API157 tests pass (two Web and six API existing opt-in skips), API/Web lint/typecheck/build and 55-route Web generation pass. Generated Prisma client refreshed locally only; no database connection/migration or live runtime change. No authenticated browser QA. Exact-head CI gates user-authorized develop merge; bounded source locks RELEASED with candidate commit.
 
 ## TICKET-CATALOG-SALE-DEFAULT-1005 — PC-A — READY_FOR_REVIEW
 

@@ -85,6 +85,35 @@ it('decodes actual queue labels, meal reference and arrangement notes without de
   });
 });
 describe('reservation feed boundary', () => {
+  it('projects voucher readiness only from a real sent supplier form or an issued historical voucher', () => {
+    const project = (workflow: object) =>
+      decodeIntake(
+        { version: 1, data: [{ ...intake(), workflow }] },
+        session,
+      )[0]!;
+    expect(
+      project({ supplierStatus: 'REQUESTED', voucherIssued: false })
+        .voucherReady,
+    ).toBe(false);
+    expect(
+      project({
+        supplierStatus: 'REQUESTED',
+        voucherIssued: false,
+        sentSupplierFormSettings: { brokerId: 'broker' },
+      }).voucherReady,
+    ).toBe(true);
+    expect(
+      project({ supplierStatus: 'CONFIRMED', voucherIssued: true })
+        .voucherReady,
+    ).toBe(true);
+    expect(
+      project({
+        supplierStatus: 'CANCELLED',
+        voucherIssued: false,
+        sentSupplierFormSettings: { brokerId: 'broker' },
+      }).voucherReady,
+    ).toBe(false);
+  });
   it('marks hotel confirmation only once a voucher is issued', () => {
     const input = intake();
     const project = (voucherIssued: boolean) =>

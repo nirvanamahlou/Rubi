@@ -196,9 +196,7 @@ export function ContractActionPanel({
                         type="button"
                         disabled={
                           !request ||
-                          (action === 'واچر' &&
-                            !request.hotelRequested &&
-                            !request.hotelConfirmed)
+                          (action === 'واچر' && !request.voucherReady)
                         }
                         className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
                         aria-label={

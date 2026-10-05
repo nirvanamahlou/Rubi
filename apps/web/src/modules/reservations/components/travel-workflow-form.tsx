@@ -18,6 +18,7 @@ import { TravelDocument } from './travel-document';
 import { ReservationSettings } from './reservation-settings';
 import { ReservationTickets } from './reservation-tickets';
 import { VoucherLeaderEditor } from './voucher-leader-editor';
+import { hasSentReservationForm } from '../model/voucher-readiness';
 
 export async function travelRequest<T>(
   path: string,
@@ -263,7 +264,7 @@ export function TravelWorkflowForm({
       )}
       {(action === 'واچر' || action === 'Confirmation') && (
         <>
-          {!closed && (
+          {!closed && hasSentReservationForm(state) && (
             <section className="grid gap-2 rounded border border-border p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
@@ -292,13 +293,15 @@ export function TravelWorkflowForm({
               )}
             </section>
           )}
-          {state.voucherSettings?.leaderId && !settingsDirty && (
-            <TravelDocument
-              key={`${intake.id}:${state.version}`}
-              intake={intake}
-              voucher={action === 'واچر' || action === 'Confirmation'}
-            />
-          )}
+          {(state.voucherIssued || hasSentReservationForm(state)) &&
+            state.voucherSettings?.leaderId &&
+            !settingsDirty && (
+              <TravelDocument
+                key={`${intake.id}:${state.version}`}
+                intake={intake}
+                voucher={action === 'واچر' || action === 'Confirmation'}
+              />
+            )}
         </>
       )}
       {action === 'رزرواسیون' && (
@@ -319,28 +322,32 @@ export function TravelWorkflowForm({
           }}
         />
       )}
-      {action === 'Confirmation' && !closed && (
-        <VoucherLeaderEditor
-          key={`${intake.id}:${state.version}`}
-          intake={intake}
-          onDirty={() => setSettingsDirty(true)}
-          onSaved={(workflow) => {
-            setIntake({ ...intake, workflow });
-            setSettingsDirty(false);
-          }}
-        />
-      )}
+      {action === 'Confirmation' &&
+        !closed &&
+        hasSentReservationForm(state) && (
+          <VoucherLeaderEditor
+            key={`${intake.id}:${state.version}`}
+            intake={intake}
+            onDirty={() => setSettingsDirty(true)}
+            onSaved={(workflow) => {
+              setIntake({ ...intake, workflow });
+              setSettingsDirty(false);
+            }}
+          />
+        )}
       {settingsDirty && (
         <p role="status">
           تنظیمات تغییر کرده؛ قبل از ارسال یا صدور ذخیره کنید.
         </p>
       )}
-      {action === 'واچر' && state.supplierStatus === 'NEW' && (
-        <p role="status">
-          ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید؛
-          سپس صدور واچر فعال می‌شود.
-        </p>
-      )}
+      {(action === 'واچر' || action === 'Confirmation') &&
+        !closed &&
+        !hasSentReservationForm(state) && (
+          <p role="status">
+            ابتدا فرم رزرواسیون را آماده و ارسال درخواست به کارگزار را ثبت کنید؛
+            سپس صدور واچر فعال می‌شود.
+          </p>
+        )}
       {action === 'ویرایش' && (
         <div className="grid gap-2">
           <p>
@@ -460,6 +467,7 @@ export function TravelWorkflowForm({
                     settingsDirty ||
                     !state.voucherSettings?.brokerId ||
                     !state.voucherSettings?.leaderId ||
+                    !hasSentReservationForm(state) ||
                     state.supplierStatus !== 'REQUESTED' ||
                     (!state.insuranceIssued && !acknowledge)
                   }
@@ -484,6 +492,7 @@ export function TravelWorkflowForm({
                   settingsDirty ||
                   !state.voucherSettings?.brokerId ||
                   !state.voucherSettings?.leaderId ||
+                  !hasSentReservationForm(state) ||
                   !['REQUESTED', 'CONFIRMED'].includes(state.supplierStatus) ||
                   (!state.insuranceIssued && !acknowledge)
                 }
