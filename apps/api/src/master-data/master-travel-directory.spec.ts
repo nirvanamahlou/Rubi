@@ -4,12 +4,10 @@ import type { MasterDataService } from './master-data.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 it('lists independent active registered brokers without requiring an organization role', async () => {
-  const list = vi
-    .fn()
-    .mockResolvedValue({
-      data: [{ id: 'broker', name: 'Registered', attributes: {} }],
-      meta: { total: 1 },
-    });
+  const list = vi.fn().mockResolvedValue({
+    data: [{ id: 'broker', name: 'Registered', attributes: {} }],
+    meta: { total: 1 },
+  });
   const directory = new MasterTravelDirectory({ list } as never);
   expect(await directory.hotelRateChoices('brokers', 'Registered', 2)).toEqual({
     data: [{ id: 'broker', name: 'Registered' }],
@@ -27,11 +25,9 @@ it('lists independent active registered brokers without requiring an organizatio
 });
 
 it('validates an independent broker and never falls back for an inactive broker', async () => {
-  const detail = vi
-    .fn()
-    .mockResolvedValue({
-      data: { id: 'broker', name: 'Registered', status: 'active' },
-    });
+  const detail = vi.fn().mockResolvedValue({
+    data: { id: 'broker', name: 'Registered', status: 'active' },
+  });
   const directory = new MasterTravelDirectory({ detail } as never);
   expect(await directory.brokerReference('broker')).toEqual({
     id: 'broker',
