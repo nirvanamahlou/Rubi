@@ -18,6 +18,25 @@ const row = () => [
   '123.4567',
 ];
 describe('Nora occupancy import rows', () => {
+  it('reads original Nora raw child ranges and all explicit composition slots', () => {
+    const r = row();
+    r[9] = '3-6.99 / 0-11.99';
+    expect(occupancyImportRows([header, r]).rows[0]?.childAges).toEqual([
+      { min: 3, maxExclusive: 7 },
+      { min: 0, maxExclusive: 12 },
+    ]);
+    r[6] = '3';
+    r[8] = '2 AD + 3 CHD (3-6.99 / 0-11.99 / 0-11.99)';
+    expect(occupancyImportRows([header, r]).rows[0]?.childAges).toHaveLength(3);
+    r[8] = '2 AD + 3 CHD';
+    expect(occupancyImportRows([header, r]).issues).toHaveLength(1);
+    r[6] = '2';
+    r[9] = '00-06,99 / 00-11,99';
+    expect(occupancyImportRows([header, r]).rows[0]?.childAges).toEqual([
+      { min: 0, maxExclusive: 7 },
+      { min: 0, maxExclusive: 12 },
+    ]);
+  });
   it('normalizes Excel binary noise and preserves genuine source precision', () => {
     const r = row();
     r[13] = '515.1999999999999';

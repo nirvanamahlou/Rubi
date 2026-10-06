@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import type { HotelOccupancyRateV1 } from '@nora/contracts';
 import { SearchCombobox } from '@/components/ui/search-combobox';
+import { OccupancyImportPreview } from './occupancy-import-preview';
 import {
   occupancyImportRows,
   readOccupancyXlsx,
@@ -182,6 +183,8 @@ export function OccupancyImportPanel({
     [issues, setIssues] = useState<string[]>([]),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState('');
+  const [preview, setPreview] = useState<{ excluded: number } | null>(null);
+  const [fileError, setFileError] = useState('');
   const [sourceHotel, setSourceHotel] = useState(''),
     [board, setBoard] = useState(''),
     [hotelId, setHotelId] = useState(''),
@@ -207,6 +210,8 @@ export function OccupancyImportPanel({
   async function load(file: File) {
     setBusy(true);
     setMessage('');
+    setPreview(null);
+    setFileError('');
     setRows([]);
     setIssues([]);
     setSourceHotel('');
@@ -216,11 +221,12 @@ export function OccupancyImportPanel({
       const parsed = occupancyImportRows(await readOccupancyXlsx(file));
       setRows(parsed.rows);
       setIssues(parsed.issues);
+      setPreview({ excluded: parsed.excluded });
       setMessage(
         `${parsed.rows.length.toLocaleString('fa-IR')} نرخ خوانده شد؛ ${parsed.excluded.toLocaleString('fa-IR')} ردیف IN DBL PP کنار گذاشته شد. فایل فقط در مرورگر خوانده شده؛ هنوز هیچ نرخی ثبت نشده است.`,
       );
     } catch (e) {
-      setIssues([e instanceof Error ? e.message : 'خواندن فایل انجام نشد.']);
+      setFileError(e instanceof Error ? e.message : 'خواندن فایل انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -302,18 +308,15 @@ export function OccupancyImportPanel({
         }}
       />
       {message && <p role="status">{message}</p>}
-      {issues.length > 0 && (
-        <details>
-          <summary>
-            {issues.length.toLocaleString('fa-IR')} ردیف نیازمند اصلاح (ثبت
-            نمی‌شوند)
-          </summary>
-          <ul>
-            {issues.slice(0, 50).map((issue, i) => (
-              <li key={i}>{issue}</li>
-            ))}
-          </ul>
-        </details>
+      {busy && <p role="status">در حال خواندن شیت خروجی نورا…</p>}
+      {fileError && <p role="alert">خواندن فایل انجام نشد: {fileError}</p>}
+      {preview && (
+        <OccupancyImportPreview
+          key={message}
+          rows={rows}
+          issues={issues}
+          excluded={preview.excluded}
+        />
       )}
       {rows.length > 0 && (
         <>
