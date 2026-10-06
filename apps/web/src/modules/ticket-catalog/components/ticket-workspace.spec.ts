@@ -9,6 +9,16 @@ import { emptyInput } from '../model/preview';
 import type { Product, ProductInput, Reference } from '../model/catalog';
 
 describe('ticket workspace entry points', () => {
+  it('does not expose deletion for flight load or defined tickets', () => {
+    const source = readFileSync(
+      new URL('./ticket-workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).not.toContain('archiveExpiredOffer');
+    expect(source).not.toContain('حذف بلیط');
+    expect(source).not.toContain('حذف بلیت');
+    expect(source).toContain('updatePublishedStatus');
+  });
   it('matches the browser card to the authoritative published offer', () => {
     const definition = emptyInput();
     definition.totalCapacity = 50;
@@ -123,7 +133,7 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('repeatedDefinitions(');
     expect(source).toContain('publishRepeatedProducts(');
     expect(source).toContain('setRepeat(');
-    expect(source).toContain('removedPriceRevisions');
+    expect(source).not.toContain('removedPriceRevisions');
     expect(source).not.toContain('updateStandaloneSalePrice(');
     expect(source).toContain('updateOfferStatus(');
     expect(source).not.toContain('listActiveCurrencyReferences()');

@@ -40,7 +40,6 @@ describe('Rendered ticket UI', () => {
         onView: () => {},
         onEdit: () => {},
         onRepeat: () => {},
-        onDelete: () => {},
         onStatus: () => {},
       }),
     );
@@ -79,7 +78,6 @@ describe('Rendered ticket UI', () => {
         onView: () => {},
         onEdit: () => {},
         onRepeat: () => {},
-        onDelete: () => {},
         onStatus: () => {},
       }),
     );
@@ -92,7 +90,6 @@ describe('Rendered ticket UI', () => {
         onView: () => {},
         onEdit: () => {},
         onRepeat: () => {},
-        onDelete: () => {},
         onStatus: () => {},
       }),
     );
@@ -105,7 +102,6 @@ describe('Rendered ticket UI', () => {
         onView: () => {},
         onEdit: () => {},
         onRepeat: () => {},
-        onDelete: () => {},
         onStatus: () => {},
       }),
     );
@@ -118,7 +114,6 @@ describe('Rendered ticket UI', () => {
         onView: () => {},
         onEdit: () => {},
         onRepeat: () => {},
-        onDelete: () => {},
         onStatus: () => {},
       }),
     );
@@ -128,7 +123,10 @@ describe('Rendered ticket UI', () => {
       }),
     );
     expect(card).toContain('ظرفیت کل');
-    expect(card).toContain('bg-destructive text-white');
+    expect(card).not.toContain('حذف بلیط');
+    expect(pausedCard).not.toContain('حذف بلیط');
+    expect(draftCard).not.toContain('حذف بلیط');
+    expect(cancelledCard).not.toContain('حذف بلیط');
     expect(card).toContain('مانده');
     expect(card).toContain(
       `${(sample.definition.totalCapacity - 5).toLocaleString('fa-IR')} نفر`,
