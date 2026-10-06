@@ -5623,6 +5623,12 @@ LOAD-ROUTE-SIDES-1004 scope finalized: Ticket Catalog only; Reservations existin
 
 SALES-FLOATING-CALENDAR-1005 candidate: removed the manual-date toggle and catalog-only date allowlists, retaining red saleable catalog markers and future/return chronology. Floating outbound dates retain reverse-route markers; unmatched return dates no longer publish an empty outbound allowlist. 311 Sales/DatePicker tests pass (one existing skip), including seven calendar regressions; scoped lint and Web typecheck pass. Production build and exact-head CI gate user-authorized develop merge. Bounded source locks RELEASED with candidate commit; no authenticated browser/local runtime or database change.
 
+## SALES-DESTINATION-TOTAL-1006 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-destination-total-1006 from origin/develop@fbdc267e. Reserve Sales workspace table/contact-route-date presentation and focused regressions plus own assignment/status entries. Replace route with destination and show canonical contract total per currency beside outstanding balance. Existing public Sales projection only; no API/schema/migration/dependency/permission/export/runtime changes. No active target overlap; preserve unrelated dirty primary checkout. User authorizes develop merge after tests and exact-head CI.
+
+Candidate displays destination only and canonical per-currency total next to outstanding, with exact decimal formatting and explicit unknown fallback. Sales326 tests pass (one existing skip). Web static/build and exact-head CI gate merge; no authenticated browser QA, database or runtime change. Bounded locks RELEASED with candidate commit.
+
 ## VOUCHER-SEARCHABLE-LEADER-1005 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-voucher-searchable-leader-1005 from origin/develop@8e06f37c. Reserve Reservations voucher leader editor/regressions, workflow form/document readiness, own readiness model and foundation action-panel/live-feed projection/regressions; bounded Reservations controller canonical Board snapshot and focused API regression if needed; own status entries. Replace separate broker search/select with an existing searchable dropdown; searchable same-broker leader selection fills authoritative Board/name/contact and saves through existing CAS workflow. Require the actual saved/sent supplier form before voucher access/issue; preserve historical issued vouchers and existing finance/insurance/branch/contact permission gates. Earlier voucher gates unit explicitly released; no active source overlap or shared API/schema/migration/dependency changes. User authorizes develop merge after tests; no operational database, live runtime or deployment change.
@@ -5678,3 +5684,8 @@ TICKET-DUPLICATES-1006 evidence/scope: local read-only audit confirmed seven sam
 
 
 TICKET-DUPLICATES-1006 candidate: API177, Web183 and fixture safety8 tests pass; API/Web lint/typecheck/build and Web55-route generation passed. Isolated PostgreSQL concurrent-create/replay and non-destructive archival proof passed; final committed SQL proof/CI gate authorized merge. No schema/lockfile/wire changes. Migration/source locks RELEASED with the frozen review candidate. Operational database/runtime remain unchanged; migration deploy is required for existing local duplicates.
+## NAVIGATION-CLOSED-1006 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; codex/pc-a-navigation-closed-1006 from origin/develop. Reserve bounded central app-shell.tsx Navigation initial group state, existing collapse regression, own status/assignment entries. All sidebar groups start closed independently of route and asynchronous access loading; manual toggles retained on desktop/mobile. No active target-file collision. No permissions, API, schema, dependency or runtime change. User explicitly authorizes develop merge after checks.
+
+NAVIGATION-CLOSED-1006: closed defaults cover all registered groups before permission loading; existing two collapse regressions, scoped Web lint and typecheck pass. PR666 production build and exact-head CI gate merge. Bounded central Navigation lock released with review candidate; no local runtime or data change.
