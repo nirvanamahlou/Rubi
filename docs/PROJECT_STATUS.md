@@ -4810,6 +4810,10 @@ Agency registration can advance past phone verification so the remaining form ca
 ## 2026-10-06 — CAMPAIGN-DETAILS-ACTION-1006 — PC-B
 
 Dedicated RTL icon-only campaign declaration action/form persists goal progress, expense titles/exact amounts/currencies and links through existing versioned campaign update. Actual expense is the exact sum of expense rows per currency; refreshed cards/detail/budget tab show persisted values and detailed rows. Frozen idempotent retry preserves uncertain submissions. No schema/migration/dependency/permission/runtime changes. Verification and authorized develop merge are tracked in WORK_ASSIGNMENTS.md.
+
+## 2026-10-06 — PROCUREMENT-REQUEST-HEADING-1006
+
+Request detail breadcrumb uses the saved request title; redundant UUID/version heading removed. Internal identity and routing preserved. Web-only change; no migration/API/IAM/data changes. Web lint/typecheck and 7 focused tests passed; production build/PostgreSQL CI gates passed. PR #693 awaits remaining required gates; live authenticated browser unavailable (CUA initialization failure).
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
@@ -4817,3 +4821,7 @@ Visible message/scheduled-channel names use existing Persian labels while canoni
 ## 2026-10-06 — CONTENT-LIST-REDESIGN-1006 — PC-B
 
 Marketing content/acquisition uses RTL list-first toolbars, search and semantic tables with named icon-only add/view/edit/delete actions. Persian form-type/status labels retain canonical API enums; content editors use dialogs and preserve campaign/related-record versions. Library lists actual paginated BRAND Documents through its public contract instead of non-persistent demo cards; upload remains in Documents, title edits retain metadata/CAS, removal archives with a reason and is recoverable in Documents. Confidential/step-up records delegate access verification to the canonical Documents page. No API/schema/migration/IAM/dependency/runtime change. Marketing88 Web and22 records-service tests pass; scoped lint and clean exact-head CI quality/build gates precede user-authorized develop merge. Local reused Sales contracts mismatch is documented in WORK_ASSIGNMENTS.md.
+
+## 2026-10-06 — B2B contract and finance form simplification — PC-B
+
+The agreement form keeps all existing contract, credit and guarantee values while removing redundant headings and explanatory copy; optional SLA, cancellation and refund terms sit in one expandable group. Each finance tab keeps its Sales-derived rows and uses a compact document bar with an expandable archive instead of an always-open document list and filters. The existing Documents upload form now accepts optional financial notes and sends them as the public `description` field with the selected file. The upload still validates branch, owner, type, confidentiality, expiry and file size through the existing Documents boundary. No accounting transaction, API change, schema/migration, IAM grant or operational data change. Focused Organizations tests 32/32, scoped ESLint, Web typecheck and production build (55 routes) passed; exact-head PR CI remains the final gate.

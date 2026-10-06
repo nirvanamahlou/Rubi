@@ -321,7 +321,7 @@ function WorkspaceState({
     enabled: !!selectedId,
     retry: false,
   });
-  const detailNumber = detail.data?.number ?? null;
+  const detailTitle = detail.data?.draft.title || 'پیش‌نویس بدون عنوان';
   const breadcrumbs = useMemo<readonly PageBreadcrumb[]>(() => {
     const items: PageBreadcrumb[] = [
       {
@@ -338,13 +338,20 @@ function WorkspaceState({
         title: groups[group] ?? groups[0],
         ...(selectedId ? { onSelect: closeRequest } : {}),
       });
-    if (selectedId && detailNumber)
+    if (selectedId && detail.data)
       items.push({
         key: `request-${selectedId}`,
-        title: detailNumber,
+        title: detailTitle,
       });
     return items;
-  }, [group, selectedId, detailNumber, navigateGroup, closeRequest]);
+  }, [
+    group,
+    selectedId,
+    detail.data,
+    detailTitle,
+    navigateGroup,
+    closeRequest,
+  ]);
   usePageBreadcrumbs('/purchases', breadcrumbs);
   const showSamples =
     group === 0 &&
@@ -794,10 +801,7 @@ function RequestDetail({
       <Card className="overflow-hidden border-primary/15 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-muted-foreground">
-              {request.number} · نسخه {request.version.toLocaleString('fa-IR')}
-            </p>
-            <h2 ref={heading} tabIndex={-1} className="mt-2 text-xl font-bold">
+            <h2 ref={heading} tabIndex={-1} className="text-xl font-bold">
               {request.draft.title || 'پیش‌نویس بدون عنوان'}
             </h2>
           </div>

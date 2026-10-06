@@ -112,6 +112,7 @@ export async function loadOrganizationSignatoryProofs(
 
 export interface OrganizationDocumentInput {
   title: string;
+  description?: string;
   documentTypeId: string;
   categoryId: string;
   branchId: string;
@@ -152,6 +153,8 @@ export function validateOrganizationDocumentInput(
     throw new Error('دسته‌بندی معتبر را انتخاب کنید.');
   if (input.title.trim().length < 2 || input.title.trim().length > 240)
     throw new Error('عنوان سند باید بین ۲ تا ۲۴۰ حرف باشد.');
+  if ((input.description?.trim().length ?? 0) > 1000)
+    throw new Error('توضیحات سند نباید بیشتر از ۱۰۰۰ حرف باشد.');
   if (
     file.size === 0 ||
     file.size >
@@ -201,6 +204,8 @@ export function organizationDocumentForm(
   const form = new FormData();
   form.set('file', file);
   form.set('title', input.title.trim());
+  if (input.description?.trim())
+    form.set('description', input.description.trim());
   form.set('documentTypeId', type.id);
   form.set('categoryId', input.categoryId);
   form.set('branchId', input.branchId);

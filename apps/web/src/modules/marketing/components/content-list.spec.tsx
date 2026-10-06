@@ -58,7 +58,7 @@ function nodes(node: ReactNode): ReactElement<Record<string, unknown>>[] {
   return [node, ...nodes(node.props.children as ReactNode)];
 }
 const asset: MarketingAssetViewV1 = {
-  contractVersion: 1,
+  contractVersion: 'marketing.records.v1',
   branchId: 'branch-1',
   createdAt: '2026-10-06T00:00:00.000Z',
   updatedAt: '2026-10-06T00:00:00.000Z',
