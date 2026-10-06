@@ -5771,3 +5771,9 @@ B2B-CONTRACT-GUARANTEE-PUBLISH-1006 candidate repair checkpoint: independent rev
 - Reserve draft-form.tsx and existing DraftForm test plus bounded status docs on codex/pc-b-procurement-category-add-1006. Prior request redesign PR #677 is merged and its file reservation released. Add a compact category creation trigger beside the label, reusing branch-scoped category persistence and validation. No API, migration, IAM or dependency changes. User authorizes push and merge after CI.
 
 - Verification: DraftForm 11/11, scoped ESLint, Web typecheck and diff whitespace checks pass. Production build/full gates are delegated to PR CI. Implementation complete and source reservation released; merge requires passing checks. No authenticated browser test or local runtime redeployment.
+
+## PROCUREMENT-OWNER-LOADING-1006 — PC-B — IMPLEMENTED
+
+- Reserve owner-picker.tsx, draft-form.tsx and focused owner-picker regression tests on codex/pc-b-procurement-owner-loading-1006. Prior category PR #687 is merged and its reservation released. Load authorized owners on branch selection without mandatory search; preserve IAM same-branch eligibility and assignment policy. No IAM grant, API contract/schema/dependency or operational data changes. User authorizes push and merge after CI.
+
+- Implementation complete; source reservation released. Focused owner-query and DraftForm tests 14/14, scoped lint, Web typecheck and diff checks pass. Owner-query tests execute automatic blank-search fetch, pagination, no-branch gating and visible error behavior. Full build and project gates required in PR CI. No authenticated browser QA or runtime redeployment.

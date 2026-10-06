@@ -4791,3 +4791,8 @@ PR #683 merged into develop at `9993f3d4` after all CI gates passed. Source rese
 ## 2026-10-06 — Procurement category add shortcut
 
 PC-B added an accessible, non-submit Add button beside the purchase-category label. It opens/focuses the existing new-category input and reuses branch-scoped category persistence. No API/schema/dependency changes. Source reservation complete; CI and PR merge gate pending.
+
+
+## 2026-10-06 — Procurement owner initial loading
+
+PC-B corrected a search-only query gate that left the follow-up owner dropdown empty until typing. Owner choices now load on branch selection, with search and pagination retaining branch scoping. Branch changes reset picker state; create/assign permission gates and backend eligibility remain authoritative. Focused tests and CI are required before merge; no API/IAM/schema/runtime changes.
