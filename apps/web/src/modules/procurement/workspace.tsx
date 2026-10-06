@@ -47,6 +47,7 @@ import {
 } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
 import { ProcurementRecordActions } from './record-actions';
+import { resolveProcurementRecordStage } from './record-lifecycle';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
 import {
@@ -104,18 +105,6 @@ function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
   return index < 0 || index === 7 ? 0 : index;
 }
-const kinds = [
-  ['quotations', 'استعلام‌ها'],
-  ['orders', 'سفارش‌ها'],
-  ['receipts', 'رسید کالا'],
-  ['adjustments', 'اصلاحات جبرانی'],
-  ['acceptances', 'پذیرش خدمت'],
-  ['discrepancies', 'مغایرت‌ها'],
-  ['returns', 'مرجوعی‌ها'],
-  ['invoices', 'فاکتورها'],
-  ['handoffs', 'ارجاع مالی'],
-  ['audit', 'تاریخچه'],
-] as const;
 const nextAction: Record<ProcurementRequestV1['status'], string> = {
   DRAFT: 'تکمیل و ارسال درخواست',
   SUBMITTED: 'تعیین مسئول و بررسی',
@@ -484,7 +473,7 @@ function WorkspaceState({
               bootstrap={bootstrap}
               onEdit={() => setEditing(true)}
               onChanged={saved}
-              initialKind="audit"
+              initialKind="quotations"
             />
           ) : null}
         </div>
@@ -761,17 +750,22 @@ function RequestDetail({
   const identity = useRef<ReturnType<typeof commandAttempt> | null>(null);
   const can = (permission: ProcurementPermission) =>
     bootstrap.permissions.includes(permission);
+  const lifecycle = resolveProcurementRecordStage(
+    kind,
+    can('procurement.audit.read'),
+  );
+  const activeKind = lifecycle.activeKind;
   const records = useQuery({
     queryKey: [
       'procurement',
       'records',
       request.id,
       request.version,
-      kind,
+      activeKind,
       page,
     ],
-    queryFn: () => procurementApi.records(request.id, kind, page),
-    enabled: kind !== 'audit' || can('procurement.audit.read'),
+    queryFn: () => procurementApi.records(request.id, activeKind, page),
+    enabled: activeKind !== 'audit' || can('procurement.audit.read'),
     retry: false,
   });
   async function command(body: Record<string, unknown>) {
@@ -977,31 +971,50 @@ function RequestDetail({
         </fieldset>
       </Card>
       <Card className="space-y-4 p-5">
-        <nav aria-label="اسناد پرونده" className="flex flex-wrap gap-2">
-          {kinds
-            .filter(
-              ([value]) => value !== 'audit' || can('procurement.audit.read'),
-            )
-            .map(([value, label]) => (
-              <Button
-                size="sm"
-                variant={kind === value ? 'secondary' : 'ghost'}
-                key={value}
-                aria-pressed={kind === value}
-                onClick={() => {
-                  setKind(value);
-                  setPage(1);
-                }}
-              >
-                {label}
-              </Button>
-            ))}
-        </nav>
-        {kind === 'audit' && !can('procurement.audit.read') ? (
-          <EmptyState
-            title="دسترسی به تاریخچه ندارید"
-            description="یکی از بخش‌های مجاز پرونده را انتخاب کنید."
-          />
+        <div className="space-y-2">
+          <nav aria-label="مراحل پرونده خرید" className="flex flex-wrap gap-2">
+            {lifecycle.stages.map((stage) => {
+              const selected = stage.id === lifecycle.stage.id;
+              return (
+                <Button
+                  size="sm"
+                  variant={selected ? 'secondary' : 'ghost'}
+                  key={stage.id}
+                  aria-pressed={selected}
+                  onClick={() => {
+                    setKind(stage.kinds[0]![0]);
+                    setPage(1);
+                  }}
+                >
+                  {stage.label}
+                </Button>
+              );
+            })}
+          </nav>
+          {lifecycle.stage.kinds.length > 1 && (
+            <nav
+              aria-label={`سوابق ${lifecycle.stage.label}`}
+              className="flex flex-wrap gap-2 border-t border-border pt-2"
+            >
+              {lifecycle.stage.kinds.map(([value, label]) => (
+                <Button
+                  key={value}
+                  size="sm"
+                  variant={activeKind === value ? 'outline' : 'ghost'}
+                  aria-pressed={activeKind === value}
+                  onClick={() => {
+                    setKind(value);
+                    setPage(1);
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </nav>
+          )}
+        </div>
+        {activeKind === 'audit' && !can('procurement.audit.read') ? (
+          <EmptyState title="دسترسی به تاریخچه ندارید" description="" />
         ) : records.isPending ? (
           <Skeleton className="h-40" />
         ) : records.isError ? (
@@ -1023,7 +1036,7 @@ function RequestDetail({
               />
             ) : (
               <div className="space-y-3">
-                {kind === 'quotations' && (
+                {activeKind === 'quotations' && (
                   <QuotationComparison records={records.data.items} />
                 )}
                 {records.data.items.map((record, index) => (
@@ -1044,13 +1057,13 @@ function RequestDetail({
         )}
       </Card>
       <OperationForm
-        key={kind}
-        kind={kind}
+        key={activeKind}
+        kind={activeKind}
         request={request}
         bootstrap={bootstrap}
         onChanged={onChanged}
       />
-      {kind === 'orders' && (
+      {activeKind === 'orders' && (
         <ProcurementExportPanel
           bootstrap={bootstrap}
           kind="ORDER"

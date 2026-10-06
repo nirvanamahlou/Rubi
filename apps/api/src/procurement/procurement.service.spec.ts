@@ -1143,9 +1143,6 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       const omitted = await command(second.row, 'AMEND_ORDER', {
         orderId: second.order.id,
         reason: 'Synthetic reason-only amendment',
-        supplierId: supplier,
-        currencyCode: 'IRR',
-        lines: [commercial(second.item.requestItemId)],
       });
       const preserved =
         await database.client.procurementOrder.findUniqueOrThrow({
@@ -1161,6 +1158,53 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           trackingCode: 'SYNTHETIC-ORDER-TRACKING',
           documents,
         },
+      });
+      const preservedVersion =
+        await database.client.procurementOrderVersion.findUniqueOrThrow({
+          where: {
+            orderId_version: { orderId: second.order.id, version: 2 },
+          },
+        });
+      expect(
+        await database.client.procurementOrderItem.findMany({
+          where: {
+            orderId: second.order.id,
+            orderVersionId: preservedVersion.id,
+          },
+        }),
+      ).toHaveLength(1);
+    });
+    it('keeps an amended order bound to its selected supplier and currency', async () => {
+      const context = await orderedRequest();
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Synthetic supplier change',
+            supplierId: randomUUID(),
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Synthetic currency change',
+            currencyCode: 'USD',
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      expect(
+        await database.client.procurementOrder.findUniqueOrThrow({
+          where: { id: context.order.id },
+        }),
+      ).toMatchObject({
+        version: 1,
+        status: 'ISSUED',
+        supplierId: context.order.supplierId,
+        currencyCode: context.order.currencyCode,
       });
     });
     it('rejects malformed or oversized amended order metadata without changing the saved version', async () => {

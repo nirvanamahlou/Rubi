@@ -737,12 +737,40 @@ export class ProcurementOperations {
       const order = await this.order(tx, requestId, input.orderId);
       this.issued(order);
       const reason = v.text(input.reason, 'reason', 1000);
-      const lines = linesOf(input.lines);
-      const amount = documentTotal(lines);
-      const supplier = await this.master.supplier(v.uuid(input.supplierId));
-      const currencyCode = v.currency(input.currencyCode);
+      const suppliedSupplierId = input.supplierId
+        ? v.uuid(input.supplierId, 'supplierId')
+        : order.supplierId;
+      requireRule(
+        suppliedSupplierId === order.supplierId,
+        'INVALID_REFERENCE',
+        'تأمین‌کننده سفارش به پیشنهاد منتخب متصل است؛ برای تغییر تأمین‌کننده سفارش تازه‌ای از پیشنهاد معتبر بسازید.',
+        'supplierId',
+      );
+      const supplier = await this.master.supplier(order.supplierId);
+      const suppliedCurrencyCode = input.currencyCode
+        ? v.currency(input.currencyCode)
+        : order.currencyCode;
+      requireRule(
+        suppliedCurrencyCode === order.currencyCode,
+        'INVALID_REFERENCE',
+        'ارز سفارش از پیشنهاد منتخب می‌آید و در اصلاح سفارش قابل تغییر نیست.',
+        'currencyCode',
+      );
+      const currencyCode = order.currencyCode;
       await this.master.assertCurrency(currencyCode);
       const oldItems = await this.orderItems(tx, order);
+      const lines: CommercialLine[] =
+        input.lines === undefined
+          ? oldItems.items.map((item) => ({
+              itemId: item.requestItemId,
+              quantity: item.quantity.toString(),
+              unitPrice: item.unitPrice.toString(),
+              discount: item.discountAmount.toString(),
+              tax: item.taxAmount.toString(),
+              extraCost: item.extraCostAmount.toString(),
+            }))
+          : linesOf(input.lines);
+      const amount = documentTotal(lines);
       // Fulfilled/billed versions require an explicit commercial correction agreement.
       const dependencies =
         (await tx.procurementReceipt.count({ where: { orderId: order.id } })) +
