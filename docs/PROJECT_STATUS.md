@@ -4787,6 +4787,10 @@ PC-B condensed the dossier into four workflow groups and simplified selected-ord
 
 PR #683 merged into develop at `9993f3d4` after all CI gates passed. Source reservation released; no runtime deployment or authenticated browser visual QA.
 
+## 2026-10-06 — SALES-PASSENGER-PRICE-1006 — PC-A
+
+New-contract service day/agreed-price inputs are replaced by passenger whole-package IRR/active foreign-currency table. Totals are the exact saved contract revenue and print/Finance source; no per-service allocation is fabricated. Existing surcharge/capacity/catalog freshness and old unmarked contracts remain. Added scoped actual-cost profit read/display in contract payments, separately per currency, with unknown costs retaining incomplete state. Insurance purchase enters the existing Reservations purchase/Finance workflow. Sales329 Web tests (one skip), focused table/purchase22 and Sales/Finance/Reservations API125 tests pass; scoped lint/typecheck and API/Web production builds pass, including all 55 Web routes. Profit HTTP authentication/permission/branch checks pass; shared Sales contracts 11 tests and final passenger totals 4 tests pass. Exact-head CI remains the merge gate. No schema/migration/dependency/operational DB/runtime change.
+
 ## 2026-10-06 — CAMPAIGN-OWNER-OPTIONAL-1006 — PC-B
 
 Campaign owner no longer displays a required marker in the form. Automatic authenticated-user ownership and server authorization remain unchanged. 11 focused tests, affected lint, full Web TypeScript and production build (55 pages) passed. No schema/migration/contract/dependency/runtime/data change or authenticated browser QA. PR #685 awaits exact-head CI before user-authorized develop merge; bounded locks released.
@@ -4810,3 +4814,6 @@ Dedicated RTL icon-only campaign declaration action/form persists goal progress,
 ## 2026-10-06 — PROCUREMENT-REQUEST-HEADING-1006
 
 Request detail breadcrumb uses the saved request title; redundant UUID/version heading removed. Internal identity and routing preserved. Web-only change; no migration/API/IAM/data changes. Web lint/typecheck and 7 focused tests passed; production build/PostgreSQL CI gates passed. PR #693 awaits remaining required gates; live authenticated browser unavailable (CUA initialization failure).
+## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
+
+Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.

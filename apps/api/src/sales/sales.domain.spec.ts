@@ -460,3 +460,28 @@ describe('signed calculated Sales balance aggregation', () => {
     }
   });
 });
+
+it('validates package passenger totals without inventing service prices', () => {
+  const input = structuredClone(draft);
+  input.services = input.services.map((s) => ({
+    ...s,
+    metadata: { passengerPackagePricingVersion: 1 },
+  }));
+  input.passengers = input.passengers.map((p) => ({
+    ...p,
+    agreedPrices: [
+      {
+        amount: input.priceComponents[0]!.amount,
+        currencyCode: input.priceComponents[0]!.currencyCode,
+      },
+    ],
+  }));
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.passengers = input.passengers.map((p) => ({
+    ...p,
+    agreedPrices: [
+      { amount: '1', currencyCode: input.priceComponents[0]!.currencyCode },
+    ],
+  }));
+  expect(() => validateSalesContract(input)).toThrow();
+});

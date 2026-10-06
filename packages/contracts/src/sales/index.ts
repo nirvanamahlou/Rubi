@@ -412,6 +412,8 @@ export interface SalesFinancePaymentConfirmedV1 {
 }
 
 export const salesEndpoints = {
+  profit: (id: string) =>
+    `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}/profit`,
   contracts: `${SALES_API_PREFIX}/contracts`,
   contract: (id: string) =>
     `${SALES_API_PREFIX}/contracts/${encodeURIComponent(id)}`,
@@ -431,3 +433,23 @@ export const salesEndpoints = {
 } as const;
 
 export * from './insurance-extra';
+export interface SalesContractProfitV1 {
+  version: 1;
+  complete: boolean;
+  missingServiceKeys: readonly string[];
+  missingServiceTitles: readonly string[];
+  totals: readonly {
+    currencyCode: string;
+    salesAmount: string;
+    purchaseAmount: string;
+    profitAmount: string | null;
+  }[];
+  costs: readonly {
+    serviceClientKeys: readonly string[];
+    serviceTitles: readonly string[];
+    source: 'RESERVATIONS' | 'FINANCE_TICKET';
+    referenceId: string;
+    amount: string;
+    currencyCode: string;
+  }[];
+}

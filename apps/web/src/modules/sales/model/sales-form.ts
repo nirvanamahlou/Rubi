@@ -1,3 +1,4 @@
+import { passengerSaleTotals } from './passenger-sale-totals';
 import {
   addInsuranceExtra,
   insuranceExtraRials,
@@ -87,6 +88,7 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  priceEntryMode?: 'PASSENGER_TOTAL';
   insuranceExtraToman?: Record<string, string>;
   tour?: TourDepartureV1 | undefined;
   insurancePlan?: SalesInsuranceSelection | undefined;
@@ -841,7 +843,7 @@ export function salesPayload(
       ...contractFlightMetadata({ ...flight, version: 1 }),
     };
   }
-  if (state.servicePricing)
+  if (state.servicePricing && state.priceEntryMode !== 'PASSENGER_TOTAL')
     for (const service of services) {
       if (service.kind === 'TRANSFER') {
         service.metadata = { ...service.metadata, includedWithoutCharge: true };
@@ -887,6 +889,40 @@ export function salesPayload(
       ],
     });
   }
+  if (state.priceEntryMode === 'PASSENGER_TOTAL')
+    passengerSaleTotals(state.passengers, state.passengerPrices ?? {});
+  const packagePrices =
+    state.priceEntryMode === 'PASSENGER_TOTAL'
+      ? passengerSaleTotals(
+          state.passengers,
+          Object.fromEntries(
+            state.passengers.map((p) => [
+              p.customerId,
+              extras.some((e) => e.customerId === p.customerId)
+                ? addInsuranceExtra(
+                    state.passengerPrices?.[p.customerId] ?? [],
+                    state.insuranceExtraToman![p.customerId]!,
+                  )
+                : (state.passengerPrices?.[p.customerId] ?? []),
+            ]),
+          ),
+        )
+      : undefined;
+  if (packagePrices)
+    for (const service of services) {
+      service.metadata = {
+        ...service.metadata,
+        passengerPackagePricingVersion: 1,
+      };
+      const catalog = state.catalogSalePricing?.[service.clientKey]?.[0];
+      if (service.kind === 'FLIGHT' && catalog)
+        service.metadata = {
+          ...service.metadata,
+          catalogSaleQuoteVersion: 1,
+          catalogSaleQuoteCurrency: catalog.currencyCode,
+          catalogSaleQuoteAmount: catalog.daySale.amount,
+        };
+    }
   const pairedTicketFares =
     state.outboundOffer && state.returnOffer
       ? roundTripPerLegFares(state.outboundOffer, state.returnOffer)
@@ -1020,12 +1056,14 @@ export function salesPayload(
         : {}),
       ...(state.passengerPrices
         ? {
-            agreedPrices: extras.some((p) => p.customerId === item.customerId)
-              ? addInsuranceExtra(
-                  state.passengerPrices[item.customerId] ?? [],
-                  state.insuranceExtraToman![item.customerId]!,
-                )
-              : (state.passengerPrices[item.customerId] ?? []),
+            agreedPrices: packagePrices
+              ? packagePrices.prices[item.customerId]
+              : extras.some((p) => p.customerId === item.customerId)
+                ? addInsuranceExtra(
+                    state.passengerPrices[item.customerId] ?? [],
+                    state.insuranceExtraToman![item.customerId]!,
+                  )
+                : (state.passengerPrices[item.customerId] ?? []),
           }
         : {}),
       birthDate: item.birthDate,
@@ -1058,6 +1096,7 @@ export function salesPayload(
           }
         : null,
     priceComponents:
+      packagePrices?.components ??
       servicePriceComponents(
         services,
         state.serviceKinds.includes('HOTEL')
@@ -1066,7 +1105,8 @@ export function salesPayload(
               checkOutDate: state.hotel.checkOut,
             }
           : null,
-      ) ?? state.priceComponents,
+      ) ??
+      state.priceComponents,
     payments: state.payments.map((payment) => ({
       ...payment,
       dueAt: utc(payment.dueAt),

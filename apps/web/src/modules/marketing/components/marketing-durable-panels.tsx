@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/form-controls';
 import { Badge, Card, EmptyState } from '@/components/ui/surfaces';
 import { marketingApi } from '../api/records-client';
+import { campaignChannelLabels } from '../model/marketing';
 import {
   AUTOMATION_NODE_SIZE,
   automationCanvasSize,
@@ -932,13 +933,13 @@ export function DurableMessagesPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'].map(
-                  (value) => (
-                    <SelectItem key={value} value={value}>
-                      {value}
-                    </SelectItem>
-                  ),
-                )}
+                {(
+                  ['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'] as const
+                ).map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {campaignChannelLabels[value]}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </FormField>
@@ -946,7 +947,7 @@ export function DurableMessagesPanel({
           <fieldset className="grid gap-2" disabled={viewing}>
             <legend className="text-sm font-bold">کانال‌ها</legend>
             <div className="flex flex-wrap gap-3">
-              {['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'].map(
+              {(['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'] as const).map(
                 (value) => (
                   <label className="flex items-center gap-2" key={value}>
                     <Checkbox
@@ -959,7 +960,7 @@ export function DurableMessagesPanel({
                         )
                       }
                     />
-                    {value}
+                    {campaignChannelLabels[value]}
                   </label>
                 ),
               )}
@@ -1074,15 +1075,16 @@ export function DurableMessagesPanel({
           <Plus aria-hidden="true" className="size-4" />
         </Button>
         {!viewing ? (
-          <Button
-            aria-label={scheduled ? 'ذخیره ارسال' : 'ذخیره پیام'}
-            className="md:col-span-2"
-            onClick={() => void save()}
-            size="icon"
-            title="ذخیره"
-          >
-            <Save aria-hidden="true" className="size-4" />
-          </Button>
+          <div className="flex justify-end md:col-span-2" dir="rtl">
+            <Button
+              aria-label={scheduled ? 'ذخیره ارسال' : 'ذخیره پیام'}
+              onClick={() => void save()}
+              size="icon"
+              title="ذخیره"
+            >
+              <Save aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
         ) : null}
       </Card>
       <AssetTable
