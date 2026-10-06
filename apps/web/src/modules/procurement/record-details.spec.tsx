@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { RecordCard } from './record-details';
+import { RecordCard, RecordPreviewButton } from './record-details';
 
 describe('Persisted procurement record details', () => {
   it('shows the saved order tracking and exact archived document version', () => {
@@ -41,5 +41,38 @@ describe('Persisted procurement record details', () => {
     expect(html).toContain('رایانه');
     expect(html).toContain('120.50');
     expect(html).not.toContain('UNLISTED-METADATA');
+  });
+  it('previews the saved request values, items, documents and an accessible view action', () => {
+    const record = {
+      id: 'request-1',
+      number: 'PR-1405-901',
+      status: 'APPROVED',
+      data: {
+        title: 'تجهیزات شعبه غرب',
+        documents: [{ id: 'request-document', versionId: 'version-4' }],
+      },
+      draft: {
+        items: [
+          {
+            id: 'request-item',
+            description: 'رایانه قابل حمل',
+            quantity: '3',
+            unit: 'دستگاه',
+          },
+        ],
+      },
+    };
+    const card = renderToStaticMarkup(
+      <RecordCard record={record} showPreviewAction />,
+    );
+    const trigger = renderToStaticMarkup(
+      <RecordPreviewButton record={record} />,
+    );
+
+    expect(card).toContain('تجهیزات شعبه غرب');
+    expect(card).toContain('رایانه قابل حمل');
+    expect(card).toContain('request-document');
+    expect(card).toContain('version-4');
+    expect(trigger).toContain('aria-label="مشاهده تجهیزات شعبه غرب"');
   });
 });
