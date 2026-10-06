@@ -4751,4 +4751,4 @@ New-agency staged contract/guarantee uploads now create fresh confidential acces
 
 ## 2026-10-06 — B2B-COMPOSE-WEBROOT-1006 — PC-B
 
-Compose now passes `apps/web` as Next.js's project directory. Local image build and service startup passed; API and Web containers report healthy, API health on4192 returns `ok`, and `/login` on3100 returns HTTP200. Existing PostgreSQL, Redis and MinIO containers remain healthy. Full CI is required before merging the bounded Compose command/documentation follow-up. No schema, IAM, dependency or operational-record change.
+Compose now passes `apps/web` as Next.js's project directory. Local image build and service startup passed; API and Web containers report healthy, API health on4192 returns `ok`, and `/login` on3100 returns HTTP200. Existing PostgreSQL, Redis and MinIO containers remain healthy. PR #675 merged to `develop` as `3d48ef15`; formatting, full lint/typecheck, full tests, production build and PostgreSQL18 migration/seed gates passed. No schema, IAM, dependency or operational-record change.
