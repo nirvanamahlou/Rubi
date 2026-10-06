@@ -8,9 +8,10 @@ import { FormField, Input } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import { ProcurementSelect } from './procurement-select';
 export function procurementOwnerQuery(branchId: string, search = '', page = 1) {
+  const normalizedSearch = search.trim();
   return queryOptions({
-    queryKey: ['procurement', 'owners', branchId, search, page],
-    queryFn: () => procurementApi.owners(branchId, search, page),
+    queryKey: ['procurement', 'owners', branchId, normalizedSearch, page],
+    queryFn: () => procurementApi.owners(branchId, normalizedSearch, page),
     enabled: Boolean(branchId),
     retry: false,
   });

@@ -5777,3 +5777,5 @@ B2B-CONTRACT-GUARANTEE-PUBLISH-1006 candidate repair checkpoint: independent rev
 - Reserve owner-picker.tsx, draft-form.tsx and focused owner-picker regression tests on codex/pc-b-procurement-owner-loading-1006. Prior category PR #687 is merged and its reservation released. Load authorized owners on branch selection without mandatory search; preserve IAM same-branch eligibility and assignment policy. No IAM grant, API contract/schema/dependency or operational data changes. User authorizes push and merge after CI.
 
 - Implementation complete; source reservation released. Focused owner-query and DraftForm tests 14/14, scoped lint, Web typecheck and diff checks pass. Owner-query tests execute automatic blank-search fetch, pagination, no-branch gating and visible error behavior. Full build and project gates required in PR CI. No authenticated browser QA or runtime redeployment.
+
+- CI compatibility correction: retain whitespace normalization in the owner search path; existing shared lookup regression and the owner query tests now validate trimmed searches while permitting initial blank-search suggestions.

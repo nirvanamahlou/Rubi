@@ -56,7 +56,7 @@ describe('Procurement owner loading', () => {
     const client = new QueryClient();
     const observer = new QueryObserver(
       client,
-      procurementOwnerQuery('branch-2', 'سارا', 3),
+      procurementOwnerQuery('branch-2', '  سارا  ', 3),
     );
     const unsubscribe = observer.subscribe(() => undefined);
     try {
