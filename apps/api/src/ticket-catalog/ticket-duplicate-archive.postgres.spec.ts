@@ -44,7 +44,13 @@ describe.skipIf(!url)('duplicate flight PostgreSQL proof', () => {
       service.publish(definition, actor, branchId, randomUUID()),
       service.publish(definition, actor, branchId, randomUUID()),
     ]);
-    expect(outcomes.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+    expect(
+      outcomes.filter((r) => r.status === 'fulfilled'),
+      outcomes
+        .filter((r) => r.status === 'rejected')
+        .map((r) => String(r.reason))
+        .join('\n'),
+    ).toHaveLength(1);
     expect(outcomes.filter((r) => r.status === 'rejected')).toHaveLength(1);
     expect(
       await client.ticketPublishedOffer.count({ where: { branchId } }),
@@ -148,6 +154,7 @@ describe.skipIf(!url)('duplicate flight PostgreSQL proof', () => {
     const repair = () =>
       client.$transaction(async (tx) => {
         for (const statement of sql
+          .replace(/--.*$/gm, '')
           .replace(/^BEGIN;|^COMMIT;/gm, '')
           .split(';')
           .map((s) => s.trim())

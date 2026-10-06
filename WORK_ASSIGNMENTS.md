@@ -5682,8 +5682,8 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-duplicates-1006 from origin/develop@f
 
 TICKET-DUPLICATES-1006 evidence/scope: local read-only audit confirmed seven same branch/route/carrier/departure/cabin50 offers created with distinct ticket-catalog keys, six copied into the shared demo fixture. Extend sole PC-A Migration Owner to one non-destructive data migration archiving only exact unused duplicate offers (no SQL DELETE or FK rewrite), guarded by Sales selection, allocations/holds and tours, with fares/commissions and monetary purchase/Finance references preserved unchanged and preferred for canonical selection. Cross-module tables are read only to protect references, never changed. Preserve marked demo IDs as archived history; producer/consumer API contract unchanged. No other active migration lock found in current candidate status.
 
-
 TICKET-DUPLICATES-1006 candidate: API177, Web183 and fixture safety8 tests pass; API/Web lint/typecheck/build and Web55-route generation passed. Isolated PostgreSQL concurrent-create/replay and non-destructive archival proof passed; final committed SQL proof/CI gate authorized merge. No schema/lockfile/wire changes. Migration/source locks RELEASED with the frozen review candidate. Operational database/runtime remain unchanged; migration deploy is required for existing local duplicates.
+
 ## NAVIGATION-CLOSED-1006 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; codex/pc-a-navigation-closed-1006 from origin/develop. Reserve bounded central app-shell.tsx Navigation initial group state, existing collapse regression, own status/assignment entries. All sidebar groups start closed independently of route and asynchronous access loading; manual toggles retained on desktop/mobile. No active target-file collision. No permissions, API, schema, dependency or runtime change. User explicitly authorizes develop merge after checks.
