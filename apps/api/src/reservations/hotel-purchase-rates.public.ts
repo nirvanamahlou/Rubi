@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   HotelRoomRateV1,
+  HotelOccupancyRateV1,
   PackageTourHotelPurchaseBatchV1,
 } from '@nora/contracts';
 import { DatabaseService } from '../database/database.service';
@@ -21,6 +22,7 @@ export class HotelPurchaseRatesPublicService {
     endsOn: string,
     tourDepartureId?: string,
     cityId?: string,
+    includeOccupancy = false,
   ): Promise<readonly PackageTourHotelPurchaseBatchV1[]> {
     if (!hotelIds.length && !tourDepartureId && !cityId) return [];
     const start = new Date(`${startsOn}T00:00:00.000Z`);
@@ -81,28 +83,42 @@ export class HotelPurchaseRatesPublicService {
         observedAt: batch.createdAt.toISOString(),
         // Prisma loads this relation as an array, but a public projection must
         // also tolerate a minimal fixture or consumer response that omits it.
-        rows: (batch.rows ?? []).map((row) => ({
-          id: row.id,
-          version: 1,
-          batchId: row.batchId,
-          hotelId: row.hotelId,
-          hotelName: row.hotelName,
-          brokerId: row.brokerId,
-          brokerName: row.brokerName,
-          basePerNight: row.base.toString(),
-          currencyCode: row.currency,
-          factors: row.factors as Record<string, string>,
-          roomRates: (row.roomRates ?? []).map((room) => ({
-            roomTypeId: room.roomTypeId,
-            roomTypeName: room.roomTypeName,
-            factor: room.factor.toString(),
-            maxAdults: room.maxAdults,
-            maxChildren: room.maxChildren,
-            maxChildren2To6: room.maxChildren2To6,
-            maxChildren6To12: room.maxChildren6To12,
-            maxInfants: room.maxInfants,
+        rows: (batch.rows ?? [])
+          .filter(
+            (row) =>
+              includeOccupancy ||
+              !(row.roomRates ?? []).some((room) =>
+                Array.isArray(room.occupancyRates),
+              ),
+          )
+          .map((row) => ({
+            id: row.id,
+            version: 1,
+            batchId: row.batchId,
+            hotelId: row.hotelId,
+            hotelName: row.hotelName,
+            brokerId: row.brokerId,
+            brokerName: row.brokerName,
+            basePerNight: row.base.toString(),
+            currencyCode: row.currency,
+            factors: row.factors as Record<string, string>,
+            roomRates: (row.roomRates ?? []).map((room) => ({
+              roomTypeId: room.roomTypeId,
+              roomTypeName: room.roomTypeName,
+              factor: room.factor.toString(),
+              maxAdults: room.maxAdults,
+              maxChildren: room.maxChildren,
+              maxChildren2To6: room.maxChildren2To6,
+              maxChildren6To12: room.maxChildren6To12,
+              maxInfants: room.maxInfants,
+              ...(Array.isArray(room.occupancyRates)
+                ? {
+                    occupancyRates:
+                      room.occupancyRates as unknown as HotelOccupancyRateV1[],
+                  }
+                : {}),
+            })),
           })),
-        })),
       }));
   }
 
@@ -117,6 +133,9 @@ export class HotelPurchaseRatesPublicService {
       [input.hotelId],
       input.checkIn,
       input.checkOut,
+      undefined,
+      undefined,
+      true,
     );
     const result = new Map<string, HotelRoomRateV1>();
     for (const batch of batches)

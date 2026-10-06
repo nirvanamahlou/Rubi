@@ -11,6 +11,14 @@ import { Choice, Lookup, rateRequest, type Option } from './controls';
 import { RateHistory } from './history';
 import { kinds, labels, price, type FactorKind, type Factors } from './model';
 import styles from './rates.module.css';
+import {
+  hotelMaximumCombinations,
+  type HotelOccupancyRateV1,
+} from '@nora/contracts';
+import {
+  OccupancyImportPanel,
+  OccupancyRateEditor,
+} from './occupancy-import-panel';
 
 type RoomTypeOption = Option & { code?: string };
 type HotelOption = Option & {
@@ -18,6 +26,7 @@ type HotelOption = Option & {
   roomTypes?: RoomTypeOption[];
 };
 type RoomRateDraft = {
+  occupancyRates?: HotelOccupancyRateV1[];
   roomTypeId: string;
   roomTypeName: string;
   factor: string;
@@ -180,8 +189,9 @@ export function HotelRoomRatesTable({
         <div>
           <strong>جدول اتاق، ظرفیت و ضریب‌های {row.hotel.name}</strong>
           <p>
-            قیمت پایه هر نفر / هر شب است. ظرفیت‌ها در قرارداد کنترل می‌شوند و
-            نوع اتاق بدون ضریب قیمت نیز همچنان در جدول نمایش داده می‌شود.
+            نرخ واردشده کل اتاق / هر شب است و فقط ترکیب‌های صریح خودش معتبرند.
+            قیمت پایه دستی هر نفر / هر شب است. ظرفیت‌ها در قرارداد کنترل می‌شوند
+            و نوع اتاق بدون ضریب قیمت نیز همچنان در جدول نمایش داده می‌شود.
           </p>
         </div>
         <span className={styles.chip}>{row.currency}</span>
@@ -230,93 +240,112 @@ export function HotelRoomRatesTable({
                   <td>
                     <strong>{roomType.name}</strong>
                   </td>
-                  <td>
-                    <input
-                      aria-label={`ظرفیت بزرگسال ${roomType.name}`}
-                      type="number"
-                      required
-                      min="1"
-                      max="20"
-                      value={value.maxAdults}
-                      onChange={(event) =>
-                        onChangeRoom(roomType.id, {
-                          maxAdults: event.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      aria-label={`ظرفیت کودک ۲ تا ۶ سال ${roomType.name}`}
-                      type="number"
-                      required
-                      min="0"
-                      max="20"
-                      value={value.maxChildren2To6}
-                      onChange={(event) =>
-                        onChangeRoom(roomType.id, {
-                          maxChildren2To6: event.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      aria-label={`ظرفیت کودک ۶ تا ۱۲ سال ${roomType.name}`}
-                      type="number"
-                      required
-                      min="0"
-                      max="20"
-                      value={value.maxChildren6To12}
-                      onChange={(event) =>
-                        onChangeRoom(roomType.id, {
-                          maxChildren6To12: event.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <input
-                      aria-label={`ظرفیت نوزاد ${roomType.name}`}
-                      type="number"
-                      required
-                      min="0"
-                      max="20"
-                      value={value.maxInfants}
-                      onChange={(event) =>
-                        onChangeRoom(roomType.id, {
-                          maxInfants: event.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <output dir="ltr">
-                      {value.maxAdults || '0'} + {value.maxChildren2To6 || '0'}{' '}
-                      + {value.maxChildren6To12 || '0'} +{' '}
-                      {value.maxInfants || '0'} = {capacity}
-                    </output>
-                  </td>
-                  <td>
-                    <input
-                      aria-label={`ضریب نوع اتاق ${roomType.name}`}
-                      type="number"
-                      min="0.001"
-                      max="999.999"
-                      step="0.001"
-                      value={value.factor}
-                      onChange={(event) =>
-                        onChangeRoom(roomType.id, {
-                          factor: event.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td>
-                    <output dir="ltr">
-                      {price(row.base, value.factor, row.currency)}
-                    </output>
-                  </td>
+                  {value.occupancyRates ? (
+                    <td colSpan={7}>
+                      <p dir="ltr">
+                        {hotelMaximumCombinations(value.occupancyRates)}
+                      </p>
+                      <p>
+                        {value.occupancyRates.length.toLocaleString('fa-IR')}{' '}
+                        نرخ مستقلِ ترکیب / تاریخ؛ جست‌وجو و ویرایش در جدول
+                        نرخ‌های ترکیبی بالای صفحه.
+                      </p>
+                      <p>
+                        ضرایب و ظرفیت‌های جمعی قدیمی به این اتاق اعمال نمی‌شوند.
+                      </p>
+                    </td>
+                  ) : (
+                    <>
+                      <td>
+                        <input
+                          aria-label={`ظرفیت بزرگسال ${roomType.name}`}
+                          type="number"
+                          required
+                          min="1"
+                          max="20"
+                          value={value.maxAdults}
+                          onChange={(event) =>
+                            onChangeRoom(roomType.id, {
+                              maxAdults: event.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          aria-label={`ظرفیت کودک ۲ تا ۶ سال ${roomType.name}`}
+                          type="number"
+                          required
+                          min="0"
+                          max="20"
+                          value={value.maxChildren2To6}
+                          onChange={(event) =>
+                            onChangeRoom(roomType.id, {
+                              maxChildren2To6: event.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          aria-label={`ظرفیت کودک ۶ تا ۱۲ سال ${roomType.name}`}
+                          type="number"
+                          required
+                          min="0"
+                          max="20"
+                          value={value.maxChildren6To12}
+                          onChange={(event) =>
+                            onChangeRoom(roomType.id, {
+                              maxChildren6To12: event.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <input
+                          aria-label={`ظرفیت نوزاد ${roomType.name}`}
+                          type="number"
+                          required
+                          min="0"
+                          max="20"
+                          value={value.maxInfants}
+                          onChange={(event) =>
+                            onChangeRoom(roomType.id, {
+                              maxInfants: event.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <output dir="ltr">
+                          {value.maxAdults || '0'} +{' '}
+                          {value.maxChildren2To6 || '0'} +{' '}
+                          {value.maxChildren6To12 || '0'} +{' '}
+                          {value.maxInfants || '0'} = {capacity}
+                        </output>
+                      </td>
+                      <td>
+                        <input
+                          aria-label={`ضریب نوع اتاق ${roomType.name}`}
+                          type="number"
+                          min="0.001"
+                          max="999.999"
+                          step="0.001"
+                          value={value.factor}
+                          onChange={(event) =>
+                            onChangeRoom(roomType.id, {
+                              factor: event.target.value,
+                            })
+                          }
+                        />
+                      </td>
+                      <td>
+                        <output dir="ltr">
+                          {price(row.base, value.factor, row.currency)}
+                        </output>
+                      </td>
+                    </>
+                  )}
                 </tr>
               );
             })}
@@ -937,9 +966,18 @@ export function HotelRatePacksWorkspace() {
             maxChildren2To6: Number(room.maxChildren2To6),
             maxChildren6To12: Number(room.maxChildren6To12),
             maxInfants: Number(room.maxInfants),
+            ...(room.occupancyRates
+              ? { occupancyRates: room.occupancyRates }
+              : {}),
           })),
       })),
     });
+    if (new TextEncoder().encode(body).byteLength > 90000) {
+      setError(
+        'حجم بسته زیاد است؛ بازه یا تعداد هتل‌ها را کمتر کنید. چیزی ثبت نشده است.',
+      );
+      return;
+    }
     if (pending.current?.body !== body || pending.current.route !== route)
       pending.current = { route, body, key: crypto.randomUUID() };
     setBusy(true);
@@ -1139,6 +1177,91 @@ export function HotelRatePacksWorkspace() {
           + بستهٔ جدید
         </button>
       </header>
+      <OccupancyImportPanel
+        hotels={rows.map((row) => row.hotel)}
+        checkIn={checkIn}
+        checkOut={checkOut}
+        currency={currency}
+        disabled={!canWrite || busy}
+        onApply={(hotelId, imported) => {
+          setRows((current) =>
+            current.map((row) =>
+              row.hotel.id !== hotelId
+                ? row
+                : {
+                    ...row,
+                    selected: true,
+                    base: row.base || '1',
+                    factors: {
+                      ...row.factors,
+                      double: row.factors.double || '1',
+                    },
+                    roomRates: row.roomRates.map((room) => {
+                      const selected = imported.find(
+                        (item) => item.roomTypeId === room.roomTypeId,
+                      );
+                      if (!selected) return room;
+                      return {
+                        ...room,
+                        factor: '1',
+                        maxAdults: String(
+                          Math.max(
+                            ...selected.rates.map((rate) => rate.adults),
+                          ),
+                        ),
+                        maxChildren2To6: String(
+                          Math.max(
+                            ...selected.rates.map(
+                              (rate) => rate.childAges.length,
+                            ),
+                          ),
+                        ),
+                        maxChildren6To12: '0',
+                        maxInfants: '0',
+                        occupancyRates: selected.rates,
+                      };
+                    }),
+                  },
+            ),
+          );
+          pending.current = null;
+          setMessage(
+            'نرخ ترکیبی به پیش‌نویس منتقل شد؛ قیمت واقعی از ترکیب خوانده می‌شود و ضرایب قدیمی به آن اعمال نمی‌شوند.',
+          );
+        }}
+      />
+      {selected.flatMap((row) =>
+        row.roomRates
+          .filter((room) => room.occupancyRates)
+          .map((room) => (
+            <div key={`${row.hotel.id}:${room.roomTypeId}`}>
+              <h3>
+                {row.hotel.name} / {room.roomTypeName}
+              </h3>
+              <OccupancyRateEditor
+                disabled={!canWrite || busy}
+                rates={room.occupancyRates!}
+                onChange={(rates) => {
+                  setRows((current) =>
+                    current.map((hotelRow) =>
+                      hotelRow.hotel.id !== row.hotel.id
+                        ? hotelRow
+                        : {
+                            ...hotelRow,
+                            roomRates: hotelRow.roomRates.map((r) =>
+                              r.roomTypeId === room.roomTypeId
+                                ? { ...r, occupancyRates: rates }
+                                : r,
+                            ),
+                          },
+                    ),
+                  );
+                  pending.current = null;
+                }}
+              />
+            </div>
+          )),
+      )}
       <div className={styles.dashboard} aria-label="داشبورد نرخ هتل">
         <article className={styles.dashboardPrimary}>
           <span>بسته‌های ثبت‌شده</span>

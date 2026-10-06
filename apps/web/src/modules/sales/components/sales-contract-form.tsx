@@ -76,6 +76,8 @@ import {
   salesPassengerCounts,
   salesHotelGuestIds,
   salesHotelCapacityError,
+  salesHotelOccupancyQuote,
+  hotelOccupancySaleDefaults,
   salesHotelRoomTypes,
   salesOfferHasCapacity,
   salesDirections,
@@ -184,9 +186,20 @@ export function SalesContractForm() {
   const [peopleDraft, setPeopleDraft] = useState<SalesPeopleDraft | null>(null);
   const [peopleDirty, setPeopleDirty] = useState(false);
   const [insuranceReady, setInsuranceReady] = useState(false);
-  const [hotelRoomRates, setHotelRoomRates] = useState<
-    readonly HotelRoomRateV1[]
-  >([]);
+  const [hotelRateSnapshot, setHotelRateSnapshot] = useState<{
+    key: string;
+    data: readonly HotelRoomRateV1[];
+  }>({ key: '', data: [] });
+  const hotelRateKey = JSON.stringify([
+    state.hotel.hotelId,
+    state.hotel.checkIn,
+    state.hotel.checkOut,
+  ]);
+  const hotelRoomRates = useMemo(
+    () =>
+      hotelRateSnapshot.key === hotelRateKey ? hotelRateSnapshot.data : [],
+    [hotelRateSnapshot, hotelRateKey],
+  );
   const [references, setReferences] = useState<{
     airlines: readonly MasterDataRecord[];
     countries: readonly MasterDataRecord[];
@@ -255,13 +268,14 @@ export function SalesContractForm() {
         references.hotels,
         references.roomTypes,
         hotelRoomRates.map((rate) => rate.roomTypeId),
-      ),
-    [
-      hotelRoomRates,
-      references.hotels,
-      references.roomTypes,
-      state.hotel.hotelId,
-    ],
+      ).filter((room) => {
+        const rate = hotelRoomRates.find((item) => item.roomTypeId === room.id);
+        return (
+          !rate?.occupancyRates ||
+          Boolean(salesHotelOccupancyQuote(state, rate))
+        );
+      }),
+    [hotelRoomRates, references.hotels, references.roomTypes, state],
   );
   const selectableHotels = useMemo(() => {
     const hotelsAtDestination = references.hotels.filter(
@@ -298,31 +312,37 @@ export function SalesContractForm() {
           patch[key as keyof SalesFormState] !==
             current[key as keyof SalesFormState],
       );
-      return ticketOnlySaleDefaults(
-        withFirstPassengerCustomer(
-          withSalesHotelDates(current, {
-            ...current,
-            ...patch,
-            ...(changedRoute
-              ? {
-                  outboundOffer: undefined,
-                  returnOffer: undefined,
-                  contractFlights: {},
-                  ticket: {
-                    ...current.ticket,
-                    outboundOfferId: '',
-                    returnOfferId: '',
-                  },
-                  hotel: {
-                    ...current.hotel,
-                    hotelId: '',
-                    name: '',
-                    roomTypeId: '',
-                  },
-                  visaReferenceId: '',
-                }
-              : {}),
-          }),
+      return hotelOccupancySaleDefaults(
+        ticketOnlySaleDefaults(
+          withFirstPassengerCustomer(
+            withSalesHotelDates(current, {
+              ...current,
+              ...patch,
+              ...(changedRoute
+                ? {
+                    outboundOffer: undefined,
+                    returnOffer: undefined,
+                    contractFlights: {},
+                    ticket: {
+                      ...current.ticket,
+                      outboundOfferId: '',
+                      returnOfferId: '',
+                    },
+                    hotel: {
+                      ...current.hotel,
+                      hotelId: '',
+                      name: '',
+                      roomTypeId: '',
+                    },
+                    visaReferenceId: '',
+                  }
+                : {}),
+            }),
+          ),
+        ),
+        hotelRoomRates.find(
+          (room) =>
+            room.roomTypeId === (patch.hotel ?? current.hotel).roomTypeId,
         ),
       );
     });
@@ -445,7 +465,7 @@ export function SalesContractForm() {
       })
       .then(({ data }) => {
         if (cancelled) return;
-        setHotelRoomRates(data);
+        setHotelRateSnapshot({ key: hotelRateKey, data });
       })
       .catch((cause) => {
         if (!cancelled)
@@ -463,6 +483,7 @@ export function SalesContractForm() {
     state.hotel.hotelId,
     state.hotel.checkIn,
     state.hotel.checkOut,
+    hotelRateKey,
   ]);
   const toggleService = (kind: SalesServiceKind) => {
     setDetailStep(0);
@@ -551,9 +572,13 @@ export function SalesContractForm() {
             },
           ],
     );
+  const occupancyRoom = hotelRoomRates.find(
+    (room) => room.roomTypeId === state.hotel.roomTypeId,
+  );
+  const pricedState = hotelOccupancySaleDefaults(state, occupancyRoom);
   const pricingView = tripPricingView(
     pricingServices,
-    state.servicePricing ?? {},
+    pricedState.servicePricing ?? {},
   );
   let pricingNights = 0;
   try {
@@ -571,7 +596,12 @@ export function SalesContractForm() {
           passengerCounts.seated,
         )
       : undefined;
-  const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
+  const hotelCapacityError =
+    state.serviceKinds.includes('HOTEL') &&
+    state.hotel.hotelId &&
+    hotelRateSnapshot.key !== hotelRateKey
+      ? 'در حال دریافت نرخ هتل برای تاریخ انتخاب‌شده؛ تا دریافت موفق ادامه ندهید.'
+      : salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
   const updatePassengerCount = (
     kind: keyof SalesFormState['passengerComposition'],
@@ -592,6 +622,22 @@ export function SalesContractForm() {
     );
     patchState({
       passengerComposition,
+      ...(kind === 'children'
+        ? {
+            childAges: Array.from(
+              { length: value },
+              (_, i) => state.childAges?.[i] ?? null,
+            ),
+          }
+        : {}),
+      ...(kind === 'infants'
+        ? {
+            infantAges: Array.from(
+              { length: value },
+              (_, i) => state.infantAges?.[i] ?? null,
+            ),
+          }
+        : {}),
       hotel: { ...state.hotel, occupancy: nextCounts.total },
       ...(!state.tour &&
       !state.serviceKinds.includes('HOTEL') &&
@@ -630,6 +676,12 @@ export function SalesContractForm() {
         state.originId !== state.destinationId &&
         state.serviceKinds.length &&
         passengerCounts.total > 0 &&
+        (!state.serviceKinds.includes('HOTEL') ||
+          ((state.childAges?.length ?? 0) === passengerCounts.children &&
+            (state.infantAges?.length ?? 0) === passengerCounts.infants &&
+            [...(state.childAges ?? []), ...(state.infantAges ?? [])].every(
+              (age) => age !== null,
+            ))) &&
         (!state.serviceKinds.includes('FLIGHT') ||
           (passengerCounts.seated > 0 && flightDatesReady)) &&
         (passengerCounts.infants === 0 || passengerCounts.adults > 0),
@@ -659,6 +711,7 @@ export function SalesContractForm() {
         state.passengers.every((item) => item.birthDate) &&
         salesPassengerCompositionMatches(state) &&
         (!state.serviceKinds.includes('HOTEL') || hotelGuestIds.length > 0) &&
+        !hotelCapacityError &&
         state.passengers.every(
           ({ customerId }) =>
             state.serviceKinds.some((kind) => kind !== 'HOTEL') ||
@@ -666,10 +719,11 @@ export function SalesContractForm() {
         )
       );
     if (step === 3) {
+      if (hotelCapacityError) return false;
       try {
         const payload = salesPayload({
-          ...state,
-          servicePricing: state.servicePricing ?? {},
+          ...pricedState,
+          servicePricing: pricedState.servicePricing ?? {},
         });
         validateSalesCurrencySelection(payload, references.currencies);
         validatePassengerPackagePrices(
@@ -695,7 +749,8 @@ export function SalesContractForm() {
     setBusy(true);
     setError('');
     try {
-      const payload = salesPayload(state);
+      if (hotelCapacityError) throw new Error(hotelCapacityError);
+      const payload = salesPayload(pricedState);
       validateSalesCurrencySelection(payload, references.currencies);
       validatePassengerPackagePrices(
         payload.passengers,
@@ -1036,6 +1091,65 @@ export function SalesContractForm() {
               />
             </div>
             <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
+              {Array.from({ length: passengerCounts.children }, (_, index) => (
+                <label className="mr-3 inline-block" key={`child-${index}`}>
+                  سن / ردهٔ سنی کودک {index + 1}
+                  <select
+                    aria-label={`سن کودک ${index + 1}`}
+                    className="m-2 rounded border bg-surface p-2"
+                    value={state.childAges?.[index] ?? ''}
+                    onChange={(e) =>
+                      patchState({
+                        childAges: Array.from(
+                          { length: passengerCounts.children },
+                          (_, i) =>
+                            i === index
+                              ? e.target.value === ''
+                                ? null
+                                : Number(e.target.value)
+                              : (state.childAges?.[i] ?? null),
+                        ),
+                      })
+                    }
+                  >
+                    <option value="">انتخاب سن</option>
+                    {Array.from({ length: 10 }, (_, i) => i + 2).map((age) => (
+                      <option key={age} value={age}>
+                        {age} تا کمتر از {age + 1} سال
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+              {state.serviceKinds.includes('HOTEL') &&
+                Array.from({ length: passengerCounts.infants }, (_, index) => (
+                  <label className="mr-3 inline-block" key={`infant-${index}`}>
+                    سن نوزاد {index + 1}
+                    <select
+                      aria-label={`سن نوزاد ${index + 1}`}
+                      className="m-2 rounded border bg-surface p-2"
+                      value={state.infantAges?.[index] ?? ''}
+                      onChange={(e) =>
+                        patchState({
+                          infantAges: Array.from(
+                            { length: passengerCounts.infants },
+                            (_, i) =>
+                              i === index
+                                ? e.target.value === ''
+                                  ? null
+                                  : Number(e.target.value)
+                                : (state.infantAges?.[i] ?? null),
+                          ),
+                        })
+                      }
+                    >
+                      <option value="">انتخاب سن</option>
+                      <option value="0">کمتر از ۱ سال</option>
+                      <option value="1">۱ تا کمتر از ۲ سال</option>
+                    </select>
+                  </label>
+                ))}
+              <br />
               نوزاد لازم نیست در تعداد صندلی بلیط شمرده شود؛ فقط بزرگسال و کودک
               از ظرفیت بلیط کم می‌شوند. هر نوزاد باید همراه حداقل یک بزرگسال
               باشد.
@@ -1408,8 +1522,59 @@ export function SalesContractForm() {
                     }
                   />
                   <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground md:col-span-3">
+                    {hotelRoomRates
+                      .filter((room) => room.occupancyRates)
+                      .map((room) => {
+                        const quote = salesHotelOccupancyQuote(state, room);
+                        return (
+                          <p key={room.roomTypeId}>
+                            {room.roomTypeName}:{' '}
+                            {quote
+                              ? `قیمت پایهٔ کل ${state.hotel.roomCount} اتاق برای تمام شب‌ها: ${quote.amount} ${quote.currencyCode}`
+                              : 'برای ترکیب/سن/تاریخ فعلی نرخ ندارد'}
+                          </p>
+                        );
+                      })}
+                    {(() => {
+                      const room = hotelRoomRates.find(
+                        (rate) => rate.roomTypeId === state.hotel.roomTypeId,
+                      );
+                      const quote = room
+                        ? salesHotelOccupancyQuote(state, room)
+                        : null;
+                      return quote ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() =>
+                            patchState({
+                              servicePricing: {
+                                ...state.servicePricing,
+                                hotel: [
+                                  {
+                                    version: 1,
+                                    currencyCode: quote.currencyCode,
+                                    daySale: {
+                                      basis: 'TOTAL',
+                                      amount: quote.amount,
+                                    },
+                                    agreed: {
+                                      basis: 'TOTAL',
+                                      amount: quote.amount,
+                                    },
+                                  },
+                                ],
+                              },
+                            })
+                          }
+                        >
+                          اعمال قیمت پایهٔ هتل به توافق اولیه
+                        </Button>
+                      ) : null;
+                    })()}
                     {hotelRoomRates.length
                       ? hotelRoomRates
+                          .filter((room) => !room.occupancyRates)
                           .map(
                             (room) =>
                               `${room.roomTypeName}: ${room.maxAdults} بزرگسال + ${room.maxChildren2To6 ?? room.maxChildren} کودک ۲–۶ + ${room.maxChildren6To12 ?? 0} کودک ۶–۱۲ + ${room.maxInfants ?? 0} نوزاد`,
@@ -1754,10 +1919,13 @@ export function SalesContractForm() {
                 nights={pricingNights}
                 values={pricingView.values}
                 fixedSalePrices={
-                  fixedTicketSalePrices
-                    ? tripPricingView(pricingServices, fixedTicketSalePrices)
-                        .values
-                    : undefined
+                  occupancyRoom?.occupancyRates &&
+                  pricedState.servicePricing?.hotel
+                    ? { hotel: pricedState.servicePricing.hotel }
+                    : fixedTicketSalePrices
+                      ? tripPricingView(pricingServices, fixedTicketSalePrices)
+                          .values
+                      : undefined
                 }
                 onChange={(key, prices) =>
                   patchState({

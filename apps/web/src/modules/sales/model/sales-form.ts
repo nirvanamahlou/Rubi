@@ -11,6 +11,9 @@ import {
   salesContractOnlyFlights,
   type SalesFlightSnapshotV1,
   type SalesServicePricingV1,
+  quoteHotelOccupancy,
+  hotelAgeOn,
+  moneyUnits,
 } from '@nora/contracts';
 import type {
   CustomerSummary,
@@ -87,6 +90,8 @@ export const salesSteps = [
 ] as const;
 
 export interface SalesFormState {
+  childAges?: (number | null)[];
+  infantAges?: (number | null)[];
   insuranceExtraToman?: Record<string, string>;
   tour?: TourDepartureV1 | undefined;
   insurancePlan?: SalesInsuranceSelection | undefined;
@@ -374,6 +379,10 @@ export function salesHotelCapacityError(
     ({ roomTypeId }) => roomTypeId === state.hotel.roomTypeId,
   );
   if (!roomRate) return null;
+  if (roomRate.occupancyRates)
+    return salesHotelOccupancyQuote(state, roomRate)
+      ? null
+      : 'برای تعداد اتاق، ترکیب مهمانان، سن کودک و تمام شب‌های انتخاب‌شده نرخ معتبری وجود ندارد؛ سن‌ها، تاریخ یا نوع اتاق را اصلاح کنید.';
   const rooms = Math.max(1, state.hotel.roomCount);
   const counts = salesPassengerCounts(state);
   const maxAdults = roomRate.maxAdults * rooms;
@@ -389,6 +398,78 @@ export function salesHotelCapacityError(
   )
     return null;
   return `ظرفیت ${roomRate.roomTypeName} برای ${rooms.toLocaleString('fa-IR')} اتاق، حداکثر ${maxAdults.toLocaleString('fa-IR')} بزرگسال، ${maxChildren2To6.toLocaleString('fa-IR')} کودک ۲–۶، ${maxChildren6To12.toLocaleString('fa-IR')} کودک ۶–۱۲ و ${maxInfants.toLocaleString('fa-IR')} نوزاد است؛ تعداد اتاق یا نوع اتاق را تغییر دهید.`;
+}
+
+export function salesHotelOccupancyQuote(
+  state: SalesFormState,
+  room: HotelRoomRateV1,
+) {
+  if (!room.occupancyRates) return null;
+  const counts = salesPassengerCounts(state);
+  const guestIds = new Set(salesHotelGuestIds(state));
+  const guests = state.passengers.filter((p) => guestIds.has(p.customerId));
+  let adults = counts.adults;
+  let ages: (number | null)[] = [
+    ...(state.childAges ?? []),
+    ...(state.infantAges ?? []),
+  ];
+  if (guests.length) {
+    const actual = guests.map((p) =>
+      hotelAgeOn(p.birthDate, state.hotel.checkIn),
+    );
+    if (actual.some((age) => age === null)) return null;
+    adults = actual.filter((age) => age !== null && age >= 12).length;
+    ages = actual.filter((age) => age !== null && age < 12);
+  } else if (
+    (state.childAges?.length ?? 0) !== counts.children ||
+    (state.infantAges?.length ?? 0) !== counts.infants
+  )
+    return null;
+  if (ages.some((age) => age === null)) return null;
+  return quoteHotelOccupancy(room.occupancyRates, {
+    adults,
+    childAges: ages as number[],
+    rooms: state.hotel.roomCount,
+    checkIn: state.hotel.checkIn,
+    checkOut: state.hotel.checkOut,
+  });
+}
+
+/** Only new-contract imported hotel quotes; a negotiated agreement remains independent. */
+export function hotelOccupancySaleDefaults(
+  state: SalesFormState,
+  room?: HotelRoomRateV1,
+): SalesFormState {
+  if (
+    !state.serviceKinds.includes('HOTEL') ||
+    !room?.occupancyRates ||
+    state.tour
+  )
+    return state;
+  const quote = salesHotelOccupancyQuote(state, room);
+  if (!quote) return state;
+  const previous = state.servicePricing?.hotel?.find(
+    (p) => p.currencyCode === quote.currencyCode,
+  );
+  const followed =
+    previous?.agreed.basis === 'TOTAL' &&
+    previous.daySale.basis === 'TOTAL' &&
+    /^\d{1,18}(\.\d{1,4})?$/.test(previous.agreed.amount) &&
+    /^\d{1,18}(\.\d{1,4})?$/.test(previous.daySale.amount) &&
+    moneyUnits(previous.agreed.amount) === moneyUnits(previous.daySale.amount);
+  const price: SalesServicePricingV1 = {
+    version: 1,
+    currencyCode: quote.currencyCode,
+    daySale: { basis: 'TOTAL', amount: quote.amount },
+    agreed:
+      previous && !followed
+        ? previous.agreed
+        : { basis: 'TOTAL', amount: quote.amount },
+  };
+  return {
+    ...state,
+    servicePricing: { ...state.servicePricing, hotel: [price] },
+  };
 }
 
 export function salesPassengerCompositionMatches(state: SalesFormState) {

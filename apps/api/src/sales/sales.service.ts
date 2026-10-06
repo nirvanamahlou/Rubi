@@ -4,7 +4,11 @@ import { MasterDataService } from '../master-data/master-data.service';
 import { randomUUID } from 'node:crypto';
 import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
-import { validatePassengerPackagePrices } from '@nora/contracts';
+import {
+  validatePassengerPackagePrices,
+  quoteHotelOccupancy,
+  hotelAgeOn,
+} from '@nora/contracts';
 
 import {
   BadRequestException,
@@ -411,6 +415,29 @@ export class SalesService {
     const guests = input.passengers.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     );
+    if (roomRate.occupancyRates) {
+      const ages = guests.map((p) =>
+        hotelAgeOn(p.birthDate, hotel.checkInDate),
+      );
+      if (
+        ages.some((age) => age === null) ||
+        !quoteHotelOccupancy(roomRate.occupancyRates, {
+          adults: ages.filter((age) => age !== null && age >= 12).length,
+          childAges: ages.filter(
+            (age): age is number => age !== null && age < 12,
+          ),
+          rooms: hotel.roomCount,
+          checkIn: hotel.checkInDate,
+          checkOut: hotel.checkOutDate,
+        })
+      )
+        throw new BadRequestException({
+          code: 'HOTEL_OCCUPANCY_RATE_UNAVAILABLE',
+          message:
+            'نرخ معتبر برای ترکیب واقعی مهمانان، سن کودک و تمام شب‌های اقامت وجود ندارد.',
+        });
+      return;
+    }
     const requested = passengerCapacityBands(guests, input.departureDate);
     const capacity = hotelCapacity(roomRate, hotel.roomCount);
     if (capacityExceeded(requested, capacity))
@@ -439,6 +466,28 @@ export class SalesService {
     const guests = contract.passengersDetail.filter((passenger) =>
       passenger.serviceClientKeys.includes(hotel.serviceClientKey),
     );
+    if (roomRate.occupancyRates) {
+      const ages = guests.map((p) =>
+        hotelAgeOn(p.birthDate, hotel.checkInDate),
+      );
+      if (
+        ages.some((age) => age === null) ||
+        !quoteHotelOccupancy(roomRate.occupancyRates, {
+          adults: ages.filter((age) => age !== null && age >= 12).length,
+          childAges: ages.filter(
+            (age): age is number => age !== null && age < 12,
+          ),
+          rooms: hotel.roomCount,
+          checkIn: hotel.checkInDate,
+          checkOut: hotel.checkOutDate,
+        })
+      )
+        throw new BadRequestException({
+          code: 'HOTEL_OCCUPANCY_RATE_UNAVAILABLE',
+          message: 'ترکیب مهمانان و تاریخ اقامت با نرخ اتاق هماهنگ نیست.',
+        });
+      return;
+    }
     const requested = passengerCapacityBands(guests, contract.departureDate);
     const capacity = hotelCapacity(roomRate, hotel.roomCount);
     if (capacityExceeded(requested, capacity))

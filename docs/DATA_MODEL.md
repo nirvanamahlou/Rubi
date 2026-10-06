@@ -1,3 +1,7 @@
+## HOTEL-OCCUPANCY-IMPORT-PREVIEW-1006 — نرخ ترکیب اتاق
+
+Reservations-owned `ReservationHotelRoomRate.occupancyRates` is an additive nullable JSON array on an immutable room-rate revision. Each entry carries exact adults, separate child min/exclusive-max slots, inclusive start/exclusive end dates, Decimal-string amount, currency, composition and board; the amount is whole room/night, never per person. Existing pack/group/room FKs remain authoritative. API validates bounds and compatible pack dates/currency; NULL preserves legacy factor rates. Multiple legal maxima remain distinct, with actual allocation/age/night validation through the public Reservations contract consumed by Sales. No new Master Data ownership or destructive backfill. See [preview task](tasks/HOTEL-OCCUPANCY-IMPORT-PREVIEW-1006.md).
+
 ## INSURER-BROKER-HIDE-ORGANIZATIONS-1004 — بیمه‌گر مستقل
 
 `MasterInsurer.organizationId` اختیاری است تا بیمه‌گر مستقل بدون ساختن یا

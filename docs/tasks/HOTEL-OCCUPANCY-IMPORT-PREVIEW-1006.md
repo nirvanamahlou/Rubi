@@ -1,0 +1,32 @@
+# HOTEL-OCCUPANCY-IMPORT-PREVIEW-1006 — PC-A
+
+## Scope and owner decisions
+
+Only the corrected «خروجی نورا» sheet is delivered as a new XLSX. Original workbook untouched. IN DBL PP excluded; DOUBLE and explicit adult/child compositions are whole-room nightly rates. Per-row adults/children retained, maximum persons is their sum; the capacity column repeats every undominated legal maximum for that exact hotel/room, not independent adult and child maxima. Child ceilings ending .99 display as exclusive next-year limits (3–6.99 → 3 to under7). Every child has a separate slot.
+
+41,070 delivered rows, 2,092 excluded rows, 416 hotel/room groups (368 with multiple maxima). Independent read-only verification covers every row, prices/currencies/dates and unchanged metadata; no missing child-age slots. Whole-file parser validation identifies157 reversed source date ranges; these are reported/rejected, not guessed or rewritten. The other40,913 rows parse. Source nightly decimal strings retain up to12places (only IEEE754 representation noise normalized); BigInt allocation rounds only the final Sales total half-up to4places. Workbook private output/support files are not committed.
+
+## Public contract and persistence
+
+Reservations owns nullable `ReservationHotelRoomRate.occupancyRates` JSON arrays in existing append-only pack revisions. Existing real branch/hotel/room/broker/actor FKs, permission checks, CAS, audited transaction and operation-key replay remain. Additive array CHECK migration only; legacy NULL versions stay unchanged. Optional v1 field producer Reservations and consumer Sales ship together. Old clients omitting existing tariffs during same-room edits fail without writing, preventing implicit data loss.
+
+Imported packs are independent STAY hotel packs; tour legacy per-person/factor pricing must not consume their nominal compatibility base/factor. Public tour projections exclude these groups. One board/currency per selected room pack, exact tariffs stay within pack dates. Conflicting exact-shape overlapping prices are rejected. Directory records are explicitly mapped; no automatic placeholder hotels/rooms/brokers, and no Master Data implementation changes.
+
+## User workflow
+
+1. Open `/reservations/hotel-rates`, create/open an appropriate branch/city/date/currency pack.
+2. Select the supplied single-sheet corrected XLSX. Reading is browser-local only and does not write/upload/import.
+3. Choose source hotel and board, existing destination hotel and explicit distinct linked room mappings. Dates intersect the chosen pack; large payloads require smaller packs.
+4. Apply to draft, select an authorized broker and explicitly save the pack. Row problems remain visible and invalid rows are never silently imported.
+5. Open the saved pack later; search tariffs by composition/date/board/price, edit price/date and explicitly save a new version. Master Data identities/room composition are not silently rewritten.
+6. New Sales contracts require a child age choice; hotel rooms quote exact room allocation for all stay nights and child-age slots, including infants. Actual selected guest birthdays at check-in replace draft ages. Existing product adult/child categories remain; this does not redefine flight-age rules. Pricing defaults full-stay room totals and preserves independently negotiated agreement; stale hotel/date responses cannot authorize continuation.
+
+## Preview / rollout boundaries
+
+User requested separate review ports, not live deployment or develop merge. Preview Web `http://127.0.0.1:3210` and API `http://127.0.0.1:4210/api/v1` use copied `rubi_hotel_occupancy_preview_1006`, separate local document storage and no supplier adapter. Original localhost3100/API4000 and operational database untouched. Existing local accounts/authorization are copied; preview login uses another hostname so cookies do not replace localhost sessions. Existing documents are not copied into preview storage. No actual Nora tariff import is performed, including in preview.
+
+Production rollout remains migration → API → Web, after owner review/authorization. No dependency/lockfile changes. Future non-legacy tour pricing and automatic Master Data creation are out of scope. Do not drop the new column to roll back imported data; roll back application only under coordinated review and retain stored revisions.
+
+## Verification
+
+Exact quote tests reject synthesized cross-combinations, missing nights, invalid dates, seventh birthday, mixed boards/currencies and conflicting rates; cover multiple rooms, child-slot order, seasonal periods and decimal arithmetic. API persistence/replay/old-editor guard and public legacy isolation regressions included. Preview PostgreSQL verifies exact JSON persistence, CHECK rejection and rollback; zero imported tariffs remain and operational schema unchanged. API/Web lint/type/build and complete affected-domain tests gate delivery. Windows test timeout may need30seconds under concurrent build load; unrelated five-second test timeout is rerun without changing source. Authenticated browser import/contract creation is intentionally left for the user; no real financial operation is executed.
