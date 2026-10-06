@@ -2,7 +2,8 @@ import type {
   MarketingCampaignInputV1,
   MarketingCampaignViewV1,
 } from '@nora/contracts';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { notifyNotificationFeedChanged } from '@/modules/notifications/api/client';
 import { marketingApi } from '../api/records-client';
 import {
   ensureCampaignPublicationAttempt,
@@ -37,6 +38,7 @@ type Failure =
   | 'reject'
   | 'lost'
   | 'unreadable'
+  | 'malformed-success'
   | 'server-after-commit'
   | 'server-before-commit'
   | 'forbidden'
@@ -87,6 +89,23 @@ function server() {
       if (operation === 'create') {
         creates++;
         row = {
+          contractVersion: 'marketing.records.v1',
+          segmentId: null,
+          utmSource: null,
+          utmMedium: null,
+          utmCampaign: null,
+          utmTerm: null,
+          utmContent: null,
+          progressPercent: '0',
+          spendLines: [],
+          links: [],
+          publicationRequestedAt: null,
+          scheduledFor: null,
+          externalPublicationStatus: 'UNAVAILABLE',
+          createdAt: '2026-10-01T00:00:00.000Z',
+          updatedAt: '2026-10-01T00:00:00.000Z',
+          declaredByUserId: 'actor',
+          declaredAt: '2026-10-01T00:00:00.000Z',
           ...payload,
           id: `entity-${creates}`,
           branchId: 'branch',
@@ -113,6 +132,8 @@ function server() {
     }
     if (failure === 'lost') throw new TypeError('Response lost after commit');
     if (failure === 'unreadable') return new Response('{', { status: 200 });
+    if (failure === 'malformed-success')
+      return response(200, { data: { id: 'incomplete' } });
     if (failure === 'server-after-commit')
       return response(502, { message: 'Gateway lost committed response' });
     return response(200, { data: row });
@@ -151,8 +172,25 @@ function server() {
   };
 }
 afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => vi.mocked(notifyNotificationFeedChanged).mockClear());
 
 describe('campaign command outcome matrix through the real API client', () => {
+  it('keeps a committed command pending when the server returns malformed 2xx JSON', async () => {
+    const state = server();
+    state.fail('create', 'malformed-success');
+    await expect(state.run()).rejects.toMatchObject({
+      code: 'INVALID_CAMPAIGN_MUTATION_RESPONSE',
+      status: 200,
+    });
+    expect(state.pending).toMatchObject({ kind: 'create', uncertain: true });
+    expect(notifyNotificationFeedChanged).not.toHaveBeenCalled();
+
+    await state.run();
+    expect(state.calls[0]).toEqual(state.calls[1]);
+    expect(state.creates).toBe(1);
+    expect(notifyNotificationFeedChanged).toHaveBeenCalledTimes(2);
+  });
+
   it('permits corrected new intent after definitive create rejection', async () => {
     const state = server();
     state.fail('create', 'reject');
@@ -177,6 +215,7 @@ describe('campaign command outcome matrix through the real API client', () => {
   it.each([
     'lost',
     'unreadable',
+    'malformed-success',
     'server-after-commit',
     'server-before-commit',
   ] as const)(
@@ -197,7 +236,12 @@ describe('campaign command outcome matrix through the real API client', () => {
     },
   );
 
-  it.each(['lost', 'unreadable', 'server-after-commit'] as const)(
+  it.each([
+    'lost',
+    'unreadable',
+    'malformed-success',
+    'server-after-commit',
+  ] as const)(
     'replays uncertain update (%s) at its original version before newer correction',
     async (failure) => {
       const state = server();
@@ -222,7 +266,12 @@ describe('campaign command outcome matrix through the real API client', () => {
     },
   );
 
-  it.each(['lost', 'unreadable', 'server-after-commit'] as const)(
+  it.each([
+    'lost',
+    'unreadable',
+    'malformed-success',
+    'server-after-commit',
+  ] as const)(
     'replays uncertain publication (%s) before editing its committed entity',
     async (failure) => {
       const state = server();

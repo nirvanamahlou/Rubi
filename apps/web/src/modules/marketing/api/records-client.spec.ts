@@ -10,6 +10,46 @@ vi.mock('@/modules/notifications/api/client', () => ({
 
 import { marketingApi } from './records-client';
 
+function campaign(id: string, version: number, status: 'DRAFT' | 'ACTIVE') {
+  return {
+    contractVersion: 'marketing.records.v1',
+    id,
+    branchId: 'branch-1',
+    internalCode: 'TEST',
+    name: 'داده سرور',
+    campaignType: 'SALE',
+    objective: 'Test',
+    executionCompany: 'NIAYESH_SEIR_SAHAR',
+    channels: ['SMS'],
+    ownerUserId: 'actor',
+    segmentId: null,
+    salesTarget: '10',
+    targetCurrencyCode: 'IRR',
+    budgetAmount: '12',
+    budgetCurrencyCode: 'IRR',
+    startsAt: '2026-10-01T00:00:00.000Z',
+    endsAt: '2026-11-01T00:00:00.000Z',
+    utmSource: null,
+    utmMedium: null,
+    utmCampaign: null,
+    utmTerm: null,
+    utmContent: null,
+    frequencyCap: 1,
+    progressPercent: '0',
+    spendLines: [],
+    links: [],
+    status,
+    publicationRequestedAt: null,
+    scheduledFor: null,
+    version,
+    createdAt: '2026-10-01T00:00:00.000Z',
+    updatedAt: '2026-10-01T00:00:00.000Z',
+    declaredByUserId: 'actor',
+    declaredAt: '2026-10-01T00:00:00.000Z',
+    externalPublicationStatus: 'UNAVAILABLE',
+  };
+}
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
@@ -51,19 +91,20 @@ describe('marketing durable API client', () => {
   });
 
   it('reloads campaign data from the server and sends caller idempotency keys', async () => {
-    const campaign = { id: 'campaign-server', name: 'داده سرور', version: 4 };
+    const row = campaign('campaign-server', 4, 'DRAFT');
+    const published = campaign('campaign-server', 5, 'ACTIVE');
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ data: [campaign] }), { status: 200 }),
+        new Response(JSON.stringify({ data: [row] }), { status: 200 }),
       )
       .mockResolvedValueOnce(
-        new Response(JSON.stringify({ data: campaign }), { status: 200 }),
+        new Response(JSON.stringify({ data: published }), { status: 200 }),
       );
     vi.stubGlobal('fetch', fetchMock);
 
     await expect(marketingApi.campaigns()).resolves.toEqual({
-      data: [campaign],
+      data: [row],
     });
     await marketingApi.publishCampaign(
       'campaign-server',
@@ -78,5 +119,28 @@ describe('marketing durable API client', () => {
       JSON.stringify({ expectedVersion: 4, scheduledFor: null }),
     );
     expect(notifyNotificationFeedChanged).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a successful campaign response for a different entity without notifying', async () => {
+    vi.mocked(notifyNotificationFeedChanged).mockClear();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: campaign('another-campaign', 5, 'ACTIVE'),
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
+
+    await expect(
+      marketingApi.publishCampaign('campaign-server', 4, null, 'publish-key'),
+    ).rejects.toMatchObject({
+      status: 200,
+      code: 'CAMPAIGN_MUTATION_RESPONSE_MISMATCH',
+    });
+    expect(notifyNotificationFeedChanged).not.toHaveBeenCalled();
   });
 });
