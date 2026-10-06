@@ -501,21 +501,19 @@ it('records insurance actual cost through the same authorized, scoped CAS and id
   const db = {
     client: {
       reservationIntake: {
-        findUnique: vi
-          .fn()
-          .mockResolvedValue({
-            branchId: 'branch',
-            snapshot: {
-              serviceSelections: [
-                {
-                  clientKey: 'insurance',
-                  kind: 'INSURANCE',
-                  titleSnapshot: 'Policy',
-                },
-              ],
-            },
-            workflowRevisions: [],
-          }),
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: 'branch',
+          snapshot: {
+            serviceSelections: [
+              {
+                clientKey: 'insurance',
+                kind: 'INSURANCE',
+                titleSnapshot: 'Policy',
+              },
+            ],
+          },
+          workflowRevisions: [],
+        }),
       },
       reservationServicePurchase: {
         findUnique: vi.fn().mockResolvedValue(null),
@@ -530,13 +528,11 @@ it('records insurance actual cost through the same authorized, scoped CAS and id
     },
   };
   const directory = {
-    brokerReference: vi
-      .fn()
-      .mockResolvedValue({
-        id: valid.supplierOrganizationId,
-        source: 'BROKER',
-        name: 'Insurer broker',
-      }),
+    brokerReference: vi.fn().mockResolvedValue({
+      id: valid.supplierOrganizationId,
+      source: 'BROKER',
+      name: 'Insurer broker',
+    }),
     currencyReference: vi.fn(),
   };
   const service = new ReservationServicePurchaseService(
