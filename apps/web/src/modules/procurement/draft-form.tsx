@@ -168,9 +168,8 @@ export function DraftForm({
   const [requesterPage, setRequesterPage] = useState(1);
   const [ownerUserId, setOwnerUserId] = useState(request?.ownerUserId ?? '');
   const canAssign = bootstrap.permissions.includes('procurement.assign');
-  const canChooseOwner = bootstrap.permissions.includes(
-    'procurement.request.create',
-  );
+  const canChooseOwner =
+    canAssign || bootstrap.permissions.includes('procurement.request.create');
   const requesters = useQuery({
     queryKey: [
       'procurement',
@@ -336,68 +335,92 @@ export function DraftForm({
       customFields[key] ||
       (draft[key] !== '' && !existing.includes(draft[key]));
     return (
-      <FormField id={`proc-${key}`} label={label} required={required}>
-        <div className="space-y-2">
-          <ProcurementSelect
-            id={`proc-${key}`}
-            required={required}
-            value={custom ? '__new__' : draft[key]}
-            onChange={(event) => {
-              const selected = event.target.value;
-              setCustomFields((previous) => ({
-                ...previous,
-                [key]: selected === '__new__',
-              }));
-              update(key, selected === '__new__' ? '' : selected);
-            }}
-          >
-            <option value="">انتخاب از موارد ثبت‌شده</option>
-            {existing.map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-            <option value="__new__">ثبت مورد جدید</option>
-          </ProcurementSelect>
-          {(custom || existing.length === 0) && (
-            <div className="space-y-1.5">
-              <Input
-                id={`proc-new-${key}`}
-                aria-label={`مقدار تازهٔ ${label}`}
-                aria-required={required}
-                value={draft[key]}
-                onChange={(event) => update(key, event.target.value)}
-                placeholder="مقدار تازه را وارد کنید"
-              />
-              {key === 'category' && (
-                <>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    disabled={!draft[key].trim() || savingCategory}
-                    onClick={() => void saveCategoryChoice()}
-                  >
-                    {savingCategory
-                      ? 'در حال ذخیره…'
-                      : 'ذخیره دسته در فهرست شعبه'}
-                  </Button>
-                  {categoryError && (
-                    <p role="alert" className="text-xs text-destructive">
-                      {categoryError}
-                    </p>
-                  )}
-                </>
-              )}
-              {key !== 'category' && (
-                <p className="text-xs leading-5 text-muted-foreground">
-                  با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه می‌شود.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      </FormField>
+      <div className="relative">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="absolute left-0 top-0 h-7 px-2 text-xs"
+          aria-label="افزودن دسته خرید"
+          disabled={!draft.branchId || savingCategory}
+          onClick={() => {
+            setCustomFields((previous) => ({ ...previous, category: true }));
+            setCategoryError('');
+            update('category', '');
+            focusControl('proc-new-category');
+          }}
+        >
+          افزودن
+        </Button>
+        <FormField
+          id={`proc-${key}`}
+          label={label}
+          required={required}
+          labelClassName="min-h-7 pe-20 flex items-center"
+        >
+          <div className="space-y-2">
+            <ProcurementSelect
+              id={`proc-${key}`}
+              required={required}
+              value={custom ? '__new__' : draft[key]}
+              onChange={(event) => {
+                const selected = event.target.value;
+                setCustomFields((previous) => ({
+                  ...previous,
+                  [key]: selected === '__new__',
+                }));
+                update(key, selected === '__new__' ? '' : selected);
+              }}
+            >
+              <option value="">انتخاب از موارد ثبت‌شده</option>
+              {existing.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+              <option value="__new__">ثبت مورد جدید</option>
+            </ProcurementSelect>
+            {(custom || existing.length === 0) && (
+              <div className="space-y-1.5">
+                <Input
+                  id={`proc-new-${key}`}
+                  aria-label={`مقدار تازهٔ ${label}`}
+                  aria-required={required}
+                  value={draft[key]}
+                  onChange={(event) => update(key, event.target.value)}
+                  placeholder="مقدار تازه را وارد کنید"
+                />
+                {key === 'category' && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      disabled={!draft[key].trim() || savingCategory}
+                      onClick={() => void saveCategoryChoice()}
+                    >
+                      {savingCategory
+                        ? 'در حال ذخیره…'
+                        : 'ذخیره دسته در فهرست شعبه'}
+                    </Button>
+                    {categoryError && (
+                      <p role="alert" className="text-xs text-destructive">
+                        {categoryError}
+                      </p>
+                    )}
+                  </>
+                )}
+                {key !== 'category' && (
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه
+                    می‌شود.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </FormField>
+      </div>
     );
   };
   const savedItemChoice = (
@@ -813,13 +836,15 @@ export function DraftForm({
           {canChooseOwner && (!request || canAssign) && (
             <div className="rounded-xl border border-primary/10 bg-surface/70 p-4">
               <ProcurementOwnerPicker
+                key={draft.branchId}
                 branchId={draft.branchId}
                 value={ownerUserId}
                 onChange={setOwnerUserId}
                 label="مسئول پیگیری"
                 compact
                 showHints={false}
-                {...(request?.ownerUserId
+                {...(request?.ownerUserId &&
+                request.draft.branchId === draft.branchId
                   ? {
                       initialOption: {
                         id: request.ownerUserId,

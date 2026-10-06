@@ -5773,3 +5773,29 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-passenger-price-1006 from origin/devel
 SALES-PASSENGER-PRICE-1006 contract extension: reserve bounded central sales/pricing.ts metadata policy passengerPackagePricingVersion=1: all service snapshots consistently marked, no service prices except existing validated insurance surcharge; priceComponents are package totals exactly reconciled to passenger agreedPrices. Legacy unmarked pricing unchanged. Sales producer and Finance/Reservations/print existing consumers are PC-A-owned. Additive profit response and public Reservations/Finance cost read methods, no producer table bypass. Extend Reservations insurance purchase support through existing permission/CAS/idempotency/Finance flow (no schema).
 
 SALES-PASSENGER-PRICE-1006 validation: Sales Web329 pass/one skip; focused Web22 and final totals4 pass; bounded API125 plus final profit/permission/purchase20 pass; shared contracts11 pass; scoped ESLint/TypeScript, API production build and Web55-route production build pass. Source locks released with this review candidate; exact-head CI is required before authorized develop merge. No authenticated browser visual QA or runtime/DB update.
+
+## CAMPAIGN-OWNER-OPTIONAL-1006 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch codex/pc-b-campaign-owner-optional-1006 from origin/develop@2d1343c7. Reserve campaign form and focused regression, bounded WORK_ASSIGNMENTS/PROJECT_STATUS entries. User requests no required marker on the system-assigned campaign owner, push and develop merge. Existing authenticated-actor assignment and server ownership/security checks remain unchanged; no schema, migration, contract or dependency changes. No active Marketing overlap found; unrelated local runtime edits preserved.
+
+- Result: 11 focused tests, affected ESLint, full Web TypeScript and production build (55 pages) passed. Bounded locks released with candidate commit; PR #685 must pass exact-head CI before authorized merge. No authenticated browser or local runtime change.
+
+## PROCUREMENT-CATEGORY-ADD-1006 — PC-B — IMPLEMENTED
+
+- Reserve draft-form.tsx and existing DraftForm test plus bounded status docs on codex/pc-b-procurement-category-add-1006. Prior request redesign PR #677 is merged and its file reservation released. Add a compact category creation trigger beside the label, reusing branch-scoped category persistence and validation. No API, migration, IAM or dependency changes. User authorizes push and merge after CI.
+
+- Verification: DraftForm 11/11, scoped ESLint, Web typecheck and diff whitespace checks pass. Production build/full gates are delegated to PR CI. Implementation complete and source reservation released; merge requires passing checks. No authenticated browser test or local runtime redeployment.
+
+## PROCUREMENT-OWNER-LOADING-1006 — PC-B — IMPLEMENTED
+
+- Reserve owner-picker.tsx, draft-form.tsx and focused owner-picker regression tests on codex/pc-b-procurement-owner-loading-1006. Prior category PR #687 is merged and its reservation released. Load authorized owners on branch selection without mandatory search; preserve IAM same-branch eligibility and assignment policy. No IAM grant, API contract/schema/dependency or operational data changes. User authorizes push and merge after CI.
+
+- Implementation complete; source reservation released. Focused owner-query and DraftForm tests 14/14, scoped lint, Web typecheck and diff checks pass. Owner-query tests execute automatic blank-search fetch, pagination, no-branch gating and visible error behavior. Full build and project gates required in PR CI. No authenticated browser QA or runtime redeployment.
+
+- CI compatibility correction: retain whitespace normalization in the owner search path; existing shared lookup regression and the owner query tests now validate trimmed searches while permitting initial blank-search suggestions.
+
+## B2B-AGENCY-WIZARD-CREDIT-UI-1006 — PC-B — IN_PROGRESS
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-agency-phone-next-1006` from `origin/develop@9993f3d4`. Reserve the Organizations cooperation wizard, agreement workflow toolbar, shared dossier date filter, rates panel, corporate design CSS, focused tests and bounded task/status documentation. No backend, contract, schema, migration, dependency, IAM, or operational data change.
+- Allow navigation past phone verification to inspect subsequent registration steps while retaining the existing final-save OTP guard. Remove specified B2B helper headings/copy. Move compact Excel/PDF exports to the filter action area for agreement, credit and guarantee views; keep date inputs accessible.
+- Implementation complete. Focused Organizations tests 22/22, scoped ESLint, Web typecheck, formatting and Web production build (55 routes) pass; exact-head PR CI is the final check. No automated browser interaction or operational data change.

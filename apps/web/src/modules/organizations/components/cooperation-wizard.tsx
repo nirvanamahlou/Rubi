@@ -231,7 +231,9 @@ export function CooperationWizard({
     const issue =
       step === 1 && mode === 'existing' && !existing
         ? 'ابتدا سازمان موجود را انتخاب کنید.'
-        : cooperationIssue(draft, step);
+        : step === 3
+          ? undefined
+          : cooperationIssue(draft, step);
     if (issue) {
       setError(issue);
       return;
@@ -241,6 +243,12 @@ export function CooperationWizard({
   }
   async function save() {
     if (busy || uploading || stopped) return;
+    const verificationIssue = cooperationIssue(draft, 3);
+    if (verificationIssue) {
+      setStep(3);
+      setError(verificationIssue);
+      return;
+    }
     setBusy(true);
     setError('');
     try {

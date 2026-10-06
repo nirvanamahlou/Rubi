@@ -1216,22 +1216,14 @@ export function AgreementWorkflowPanel({
     <div className="agreement-workflow">
       <div className="agreement-row-title agreement-toolbar dossier-filter-grid">
         <div className="commercial-section-heading">
-          {view === 'agreements' ? (
-            <div>
-              <h3>قراردادهای همکاری</h3>
-              <p className="panel-note">
-                نسخه‌بندی، ویرایش پیش‌نویس و تأیید مستقل قرارداد و شرایط ارزی
-              </p>
-            </div>
-          ) : null}
           <div className="commercial-section-actions">
             {canManage &&
             view !== 'agreements' &&
             permissions.includes('b2b.credit.manage') ? (
               <label className="field">
-                <span>{formTitle}</span>
                 <NativeSearchSelect
                   className="input"
+                  aria-label="انتخاب قرارداد مرتبط"
                   value=""
                   disabled={loading || !branchId}
                   onChange={(e) => {
@@ -1262,39 +1254,36 @@ export function AgreementWorkflowPanel({
                 قرارداد جدید
               </button>
             ) : null}
-            <CommercialExportActions
-              key={`${organizationId}:${role}:${branchId}:${view}:${dateRange.from}:${dateRange.to}:${refresh}`}
-              disabled={
-                loading ||
-                !!error ||
-                !branchId ||
-                !permissions.includes('b2b.agreement.read') ||
-                !permissions.includes('b2b.credit.read') ||
-                !!(
-                  dateRange.from &&
-                  dateRange.to &&
-                  dateRange.from > dateRange.to
-                )
-              }
-              loadReport={async (isCurrent) => {
-                const all = await collectAgreementExport(
-                  (page) =>
-                    agencyClient.agreements(
-                      organizationId,
-                      branchId,
-                      role,
-                      page,
-                    ),
-                  isCurrent,
-                );
-                return agreementReport(all, view, dateRange, [
-                  `سازمان: ${organizationName}`,
-                  `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
-                  `نقش: ${role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی'}`,
-                ]);
-              }}
-            />
           </div>
+        </div>
+        <div className="agreement-export-position">
+          <CommercialExportActions
+            key={`${organizationId}:${role}:${branchId}:${view}:${dateRange.from}:${dateRange.to}:${refresh}`}
+            disabled={
+              loading ||
+              !!error ||
+              !branchId ||
+              !permissions.includes('b2b.agreement.read') ||
+              !permissions.includes('b2b.credit.read') ||
+              !!(
+                dateRange.from &&
+                dateRange.to &&
+                dateRange.from > dateRange.to
+              )
+            }
+            loadReport={async (isCurrent) => {
+              const all = await collectAgreementExport(
+                (page) =>
+                  agencyClient.agreements(organizationId, branchId, role, page),
+                isCurrent,
+              );
+              return agreementReport(all, view, dateRange, [
+                `سازمان: ${organizationName}`,
+                `شعبه: ${branches.find((b) => b.id === branchId)?.name ?? branchId}`,
+                `نقش: ${role === 'AGENCY' ? 'آژانس' : 'مشتری سازمانی'}`,
+              ]);
+            }}
+          />
         </div>
         <DossierDateFilters
           value={dateRange}
@@ -1309,6 +1298,7 @@ export function AgreementWorkflowPanel({
                 ? 'شروع سقف اعتبار'
                 : 'شروع قرارداد'
           }
+          showLabels={view === 'agreements'}
         />
         <label className="field">
           <span>شعبه قرارداد</span>

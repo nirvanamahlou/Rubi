@@ -262,7 +262,7 @@ export function CampaignForm({
               </Select>
             </FormField>
             <div className="grid gap-2">
-              <FormField id="campaign-owner" label="مسئول" required>
+              <FormField id="campaign-owner" label="مسئول">
                 <Input
                   id="campaign-owner"
                   dir="ltr"

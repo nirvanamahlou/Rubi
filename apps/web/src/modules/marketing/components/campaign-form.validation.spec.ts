@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import type { CampaignDraft } from '../model/durable-records';
@@ -31,6 +32,15 @@ const validDraft: CampaignDraft = {
 };
 
 describe('CampaignForm decimal validation', () => {
+  it('does not mark the automatically assigned owner as a required form field', () => {
+    const source = readFileSync(
+      new URL('./campaign-form.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('<FormField id="campaign-owner" label="مسئول">');
+    expect(source).not.toContain('label="مسئول" required');
+    expect(validateDraft(validDraft)).toEqual([]);
+  });
   it('accepts and preserves a budget with four fractional digits', () => {
     expect(validateDraft(validDraft)).toEqual([]);
     expect(validDraft.budgetAmount).toBe('12.3456');

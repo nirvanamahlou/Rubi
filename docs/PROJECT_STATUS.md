@@ -4790,3 +4790,20 @@ PR #683 merged into develop at `9993f3d4` after all CI gates passed. Source rese
 ## 2026-10-06 — SALES-PASSENGER-PRICE-1006 — PC-A
 
 New-contract service day/agreed-price inputs are replaced by passenger whole-package IRR/active foreign-currency table. Totals are the exact saved contract revenue and print/Finance source; no per-service allocation is fabricated. Existing surcharge/capacity/catalog freshness and old unmarked contracts remain. Added scoped actual-cost profit read/display in contract payments, separately per currency, with unknown costs retaining incomplete state. Insurance purchase enters the existing Reservations purchase/Finance workflow. Sales329 Web tests (one skip), focused table/purchase22 and Sales/Finance/Reservations API125 tests pass; scoped lint/typecheck and API/Web production builds pass, including all 55 Web routes. Profit HTTP authentication/permission/branch checks pass; shared Sales contracts 11 tests and final passenger totals 4 tests pass. Exact-head CI remains the merge gate. No schema/migration/dependency/operational DB/runtime change.
+
+## 2026-10-06 — CAMPAIGN-OWNER-OPTIONAL-1006 — PC-B
+
+Campaign owner no longer displays a required marker in the form. Automatic authenticated-user ownership and server authorization remain unchanged. 11 focused tests, affected lint, full Web TypeScript and production build (55 pages) passed. No schema/migration/contract/dependency/runtime/data change or authenticated browser QA. PR #685 awaits exact-head CI before user-authorized develop merge; bounded locks released.
+
+
+## 2026-10-06 — Procurement category add shortcut
+
+PC-B added an accessible, non-submit Add button beside the purchase-category label. It opens/focuses the existing new-category input and reuses branch-scoped category persistence. No API/schema/dependency changes. Source reservation complete; CI and PR merge gate pending.
+
+
+## 2026-10-06 — Procurement owner initial loading
+
+PC-B corrected a search-only query gate that left the follow-up owner dropdown empty until typing. Owner choices now load on branch selection, with search and pagination retaining branch scoping. Branch changes reset picker state; create/assign permission gates and backend eligibility remain authoritative. Focused tests and CI are required before merge; no API/IAM/schema/runtime changes.
+## 2026-10-06 — B2B agency wizard and commercial toolbar — PC-B
+
+Agency registration can advance past phone verification so the remaining form can be inspected; final save still checks the existing unexpired verification grant and returns to that step if missing. Removed the requested commercial helper copy and agreement heading. In credit/guarantee subsections the visible date captions are removed while date controls keep accessible names, and compact PDF/Excel exports appear alongside filter actions. Organizations focused tests: 22 passed; scoped lint, Web typecheck and production build (55 routes) passed after building the shared contracts package. No API, schema, IAM or operational data changes. Exact-head PR CI is the final gate.
