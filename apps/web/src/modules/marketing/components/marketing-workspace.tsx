@@ -1,5 +1,9 @@
 'use client';
 import { useRouteAccess } from '@/modules/iam/access-context';
+import type {
+  AuthenticatedActor,
+  MarketingCampaignViewV1,
+} from '@nora/contracts';
 
 import {
   BadgePercent,
@@ -57,12 +61,12 @@ import {
 import { cn } from '@/lib/utils';
 import { MARKETING_SECTION_CHANGE_EVENT } from '@/lib/navigation';
 import { MARKETING_ATTRIBUTION_STATUS } from '../api/contracts';
+import { marketingApi } from '../api/records-client';
 import {
   campaignChannelLabels,
   campaignStatusLabels,
   executionCompanyLabels,
   filterAndSortCampaigns,
-  marketingPreviewCampaigns,
   normalizeMarketingCampaignQuery,
   paginateCampaigns,
   type CampaignChannel,
@@ -80,7 +84,11 @@ import {
 } from '../model/reference-data';
 import { downloadRowsAsExcel } from '../utils/excel-export';
 import { CampaignCalendar } from './campaign-calendar';
-import { CampaignForm, type CampaignFormMode } from './campaign-form';
+import {
+  CampaignForm,
+  type CampaignDraft,
+  type CampaignFormMode,
+} from './campaign-form';
 import { MarketingProcessTracker } from './marketing-process-tracker';
 import {
   CampaignDetailReference,
@@ -163,6 +171,59 @@ function statusTone(status: CampaignStatus) {
   if (status === 'PAUSED' || status === 'READY_FOR_APPROVAL')
     return 'bg-amber-100 text-amber-800';
   return 'bg-secondary text-secondary-foreground';
+}
+
+function liveCampaign(record: MarketingCampaignViewV1): CampaignPreview {
+  const spendAmount = (record.spendLines ?? []).reduce(
+    (total, line) => total + Number(line.amount),
+    0,
+  );
+  const status: CampaignStatus =
+    record.status === 'ACTIVE'
+      ? 'RUNNING'
+      : record.status === 'SCHEDULED'
+        ? 'SCHEDULED'
+        : record.status === 'PAUSED'
+          ? 'PAUSED'
+          : record.status === 'CANCELLED'
+            ? 'CANCELLED'
+            : 'DRAFT';
+  return {
+    id: record.id,
+    internalCode: record.internalCode,
+    name: record.name,
+    campaignType: record.campaignType,
+    objective: record.objective,
+    channels: record.channels.filter(
+      (channel): channel is CampaignChannel => channel in campaignChannelLabels,
+    ),
+    audienceSummary: record.segmentId ? 'سگمنت ثبت‌شده' : 'بدون سگمنت',
+    segmentReference: record.segmentId ?? '',
+    startsAt: record.startsAt,
+    endsAt: record.endsAt,
+    budgetAmount: record.budgetAmount,
+    spendAmount: String(spendAmount),
+    currencyCode: record.budgetCurrencyCode as CampaignPreview['currencyCode'],
+    attributedRevenue: null,
+    ownerRole: record.ownerUserId,
+    ownerUserId: record.ownerUserId,
+    salesTarget: record.salesTarget,
+    ...(record.progressPercent !== undefined
+      ? { progressPercent: record.progressPercent }
+      : {}),
+    ...(record.links !== undefined ? { links: record.links } : {}),
+    ...(record.spendLines !== undefined
+      ? { spendLines: record.spendLines }
+      : {}),
+    executionCompany: record.executionCompany as ExecutionCompany,
+    offerTitle: '—',
+    couponCode: null,
+    utmCampaign: record.utmCampaign ?? '',
+    frequencyCap: String(record.frequencyCap),
+    status,
+    version: record.version,
+    updatedAt: record.updatedAt,
+  };
 }
 
 function MarketingHub({
@@ -296,18 +357,22 @@ function CampaignCard({
             <Power aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            aria-label={`مشاهده ${campaign.name}`}
             onClick={() => onOpen('view', campaign)}
-            size="sm"
+            size="icon"
+            title="مشاهده"
             variant="outline"
           >
-            <Eye aria-hidden="true" className="size-4" /> مشاهده
+            <Eye aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            aria-label={`ویرایش ${campaign.name}`}
             onClick={() => onOpen('edit', campaign)}
-            size="sm"
+            size="icon"
+            title="ویرایش"
             variant="secondary"
           >
-            <FilePenLine aria-hidden="true" className="size-4" /> ویرایش
+            <FilePenLine aria-hidden="true" className="size-4" />
           </Button>
         </div>
       </div>
@@ -383,11 +448,19 @@ function CampaignCard({
 }
 
 function CampaignList({
+  campaignsSource,
+  error,
+  loading,
   onOpen,
   onNotice,
+  onRetry,
 }: {
+  campaignsSource: readonly CampaignPreview[];
+  error: string;
+  loading: boolean;
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
+  onRetry: () => void;
 }) {
   const [query, setQuery] = useState<MarketingCampaignQuery>(() =>
     normalizeMarketingCampaignQuery({}),
@@ -396,8 +469,8 @@ function CampaignList({
     () => new Set(),
   );
   const filtered = useMemo(
-    () => filterAndSortCampaigns(marketingPreviewCampaigns, query),
-    [query],
+    () => filterAndSortCampaigns(campaignsSource, query),
+    [campaignsSource, query],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / query.pageSize));
   const currentPage = Math.min(query.page, totalPages);
@@ -413,12 +486,6 @@ function CampaignList({
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-black">فهرست کمپین‌ها</h3>
-          <p className="text-sm text-muted-foreground">
-            جست‌وجو، فیلتر تاریخ و صفحه‌بندی واکنش‌گرا
-          </p>
-        </div>
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => {
@@ -579,7 +646,22 @@ function CampaignList({
           </Button>
         </div>
       </FilterBar>
-      {campaigns.length ? (
+      {loading ? (
+        <Card className="p-6 text-center" role="status">
+          در حال دریافت کمپین‌ها…
+        </Card>
+      ) : error ? (
+        <Card className="grid gap-3 p-6 text-center" role="alert">
+          <p>{error}</p>
+          <Button
+            className="justify-self-center"
+            onClick={onRetry}
+            variant="outline"
+          >
+            تلاش دوباره
+          </Button>
+        </Card>
+      ) : campaigns.length ? (
         <div className="grid gap-4">
           {campaigns.map((campaign) => (
             <CampaignCard
@@ -621,7 +703,7 @@ function CampaignList({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3">
         <PaginationShell
           currentPage={currentPage}
-          totalLabel={`${filtered.length.toLocaleString('fa-IR')} کمپین آزمایشی`}
+          totalLabel={`${filtered.length.toLocaleString('fa-IR')} کمپین ثبت‌شده`}
         />
         <div className="flex gap-2">
           <Button
@@ -761,88 +843,20 @@ function BudgetPanel({ onNotice }: { onNotice: (message: string) => void }) {
   );
 }
 
-function ApprovalPanel({
-  onOpen,
-  onNotice,
-}: {
-  onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
-  onNotice: (message: string) => void;
-}) {
-  const requests = [
-    ['تورهای نوروز ۱۴۰۶', '۵ میلیارد', 'حسین موسوی', '۲ ساعت پیش'],
-    ['بازگشت مشتریان غیرفعال', '۸۰۰ میلیون', 'مریم احمدی', '۵ ساعت پیش'],
-    ['پیشنهاد ویژه کیش', '۱.۲ میلیارد', 'علی رضایی', 'دیروز'],
-  ] as const;
-  return (
-    <section className="grid gap-4 md:grid-cols-2">
-      {requests.map(([name, budget, owner, time], index) => (
-        <Card className="p-5" key={name}>
-          <div className="flex justify-between gap-3">
-            <div>
-              <h3 className="font-black">{name}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                درخواست فعال‌سازی کمپین
-              </p>
-            </div>
-            <Badge className="bg-amber-100 text-amber-800">
-              در انتظار تأیید
-            </Badge>
-          </div>
-          <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
-            <div className="rounded-lg bg-muted/40 p-3">
-              <dt className="text-xs text-muted-foreground">بودجه</dt>
-              <dd className="mt-1 font-bold">{budget}</dd>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <dt className="text-xs text-muted-foreground">درخواست‌کننده</dt>
-              <dd className="mt-1 font-bold">{owner}</dd>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <dt className="text-xs text-muted-foreground">زمان</dt>
-              <dd className="mt-1 font-bold">{time}</dd>
-            </div>
-          </dl>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button
-              onClick={() => onNotice(`${name} در Preview تأیید شد.`)}
-              size="sm"
-            >
-              تأیید
-            </Button>
-            <Button
-              onClick={() => onNotice(`${name} برای اصلاح بازگردانده شد.`)}
-              size="sm"
-              variant="destructive"
-            >
-              بازگشت برای اصلاح
-            </Button>
-            <Button
-              onClick={() =>
-                onOpen(
-                  'view',
-                  marketingPreviewCampaigns[
-                    index % marketingPreviewCampaigns.length
-                  ],
-                )
-              }
-              size="sm"
-              variant="outline"
-            >
-              مشاهده جزئیات
-            </Button>
-          </div>
-        </Card>
-      ))}
-    </section>
-  );
-}
-
 function CampaignsPanel({
+  campaigns,
+  error,
+  loading,
   onOpen,
   onNotice,
+  onRetry,
 }: {
+  campaigns: readonly CampaignPreview[];
+  error: string;
+  loading: boolean;
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
+  onRetry: () => void;
 }) {
   const [tab, setTab] = useState('list');
   return (
@@ -863,19 +877,23 @@ function CampaignsPanel({
         ))}
       </TabsList>
       <TabsContent className="mt-5" value="list">
-        <CampaignList onNotice={onNotice} onOpen={onOpen} />
+        <CampaignList
+          campaignsSource={campaigns}
+          error={error}
+          loading={loading}
+          onNotice={onNotice}
+          onOpen={onOpen}
+          onRetry={onRetry}
+        />
       </TabsContent>
       <TabsContent className="mt-5" value="calendar">
         <CampaignCalendar
-          campaigns={marketingPreviewCampaigns}
+          campaigns={campaigns}
           onOpen={(campaign) => onOpen('view', campaign)}
         />
       </TabsContent>
       <TabsContent className="mt-5" value="budget">
         <BudgetPanel onNotice={onNotice} />
-      </TabsContent>
-      <TabsContent className="mt-5" value="approval">
-        <ApprovalPanel onNotice={onNotice} onOpen={onOpen} />
       </TabsContent>
     </Tabs>
   );
@@ -900,6 +918,10 @@ export function MarketingWorkspace({
   initialSection?: string | null;
 }) {
   const router = useRouter();
+  const [actor, setActor] = useState<AuthenticatedActor | null>(null);
+  const [campaigns, setCampaigns] = useState<CampaignPreview[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [campaignsError, setCampaignsError] = useState('');
   const [section, setSection] = useState<MarketingSectionKey | null>(() =>
     resolveMarketingSection(initialSection),
   );
@@ -912,6 +934,28 @@ export function MarketingWorkspace({
     mode: CampaignFormMode;
     campaign?: CampaignPreview;
   }>({ open: false, mode: 'create' });
+  const loadCampaigns = useCallback(async () => {
+    setCampaignsLoading(true);
+    setCampaignsError('');
+    try {
+      const [access, response] = await Promise.all([
+        marketingApi.access(),
+        marketingApi.campaigns(),
+      ]);
+      setActor(access);
+      setCampaigns(response.data.map(liveCampaign));
+    } catch (error) {
+      setCampaignsError(
+        error instanceof Error ? error.message : 'دریافت کمپین‌ها انجام نشد.',
+      );
+    } finally {
+      setCampaignsLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadCampaigns(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadCampaigns]);
   const syncSectionFromHistory = useCallback(() => {
     const requestedSection = new URL(window.location.href).searchParams.get(
       'section',
@@ -983,7 +1027,14 @@ export function MarketingWorkspace({
               onOpen={setDetailItem}
             />
           ) : section === 'campaigns' ? (
-            <CampaignsPanel onNotice={setNotice} onOpen={openCampaign} />
+            <CampaignsPanel
+              campaigns={campaigns}
+              error={campaignsError}
+              loading={campaignsLoading}
+              onNotice={setNotice}
+              onOpen={openCampaign}
+              onRetry={() => void loadCampaigns()}
+            />
           ) : genericSection ? (
             <MarketingReferenceSection
               key={genericSection}
@@ -1036,6 +1087,77 @@ export function MarketingWorkspace({
               campaign={campaignDialog.campaign}
               key={`${campaignDialog.mode}-${campaignDialog.campaign?.id ?? 'new'}`}
               mode={campaignDialog.mode}
+              ownerUserId={actor?.userId ?? ''}
+              onSave={async (draft: CampaignDraft) => {
+                if (!actor?.branchIds[0])
+                  throw new Error('شعبه فعال برای ذخیره مشخص نیست.');
+                const date = (value: string) => new Date(value).toISOString();
+                const input = {
+                  internalCode: draft.internalCode,
+                  name: draft.name,
+                  campaignType: draft.campaignType,
+                  objective: draft.objective,
+                  executionCompany: draft.company,
+                  channels: draft.channels,
+                  ownerUserId: draft.ownerUserId,
+                  segmentId:
+                    draft.segmentReference &&
+                    !draft.segmentReference.startsWith('preview-')
+                      ? draft.segmentReference
+                      : null,
+                  salesTarget: draft.salesTarget,
+                  targetCurrencyCode: draft.currencyCode,
+                  budgetAmount: draft.budgetAmount,
+                  budgetCurrencyCode: draft.currencyCode,
+                  startsAt: date(draft.startsAt),
+                  endsAt: date(draft.endsAt),
+                  utmSource: draft.utmSource || null,
+                  utmMedium: draft.utmMedium || null,
+                  utmCampaign: draft.utmCampaign || null,
+                  utmTerm: null,
+                  utmContent: null,
+                  frequencyCap: Number(draft.frequencyCap),
+                  progressPercent: draft.progressPercent,
+                  spendLines:
+                    draft.spendLabel && draft.spendAmount
+                      ? [
+                          {
+                            label: draft.spendLabel,
+                            amount: draft.spendAmount,
+                            currencyCode: draft.currencyCode,
+                          },
+                        ]
+                      : [],
+                  links: draft.links
+                    .split(/\r?\n/)
+                    .map((value) => value.trim())
+                    .filter(Boolean),
+                  ...(campaignDialog.campaign
+                    ? { expectedVersion: campaignDialog.campaign.version }
+                    : {}),
+                };
+                if (campaignDialog.mode === 'create') {
+                  const created = await marketingApi.createCampaign(
+                    input,
+                    actor.branchIds[0],
+                  );
+                  await marketingApi.publishCampaign(
+                    created.data.id,
+                    created.data.version,
+                  );
+                  setNotice(
+                    'کمپین در سامانه منتشر شد؛ اتصال خارجی همچنان غیرفعال است.',
+                  );
+                } else if (campaignDialog.campaign) {
+                  await marketingApi.updateCampaign(
+                    campaignDialog.campaign.id,
+                    input,
+                  );
+                  setNotice('تغییرات کمپین با ثبت نسخه و سابقه ذخیره شد.');
+                }
+                await loadCampaigns();
+                setCampaignDialog((current) => ({ ...current, open: false }));
+              }}
             />
           )}
         </DialogContent>

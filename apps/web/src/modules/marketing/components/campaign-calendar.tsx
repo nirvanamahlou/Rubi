@@ -9,19 +9,14 @@ import {
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   calendarMonthDays,
   calendarMonthLabel,
   moveCalendarMonth,
   type CalendarSystem,
 } from '@/components/ui/date-picker.utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/form-controls';
+import { FormField } from '@/components/ui/form-controls';
 import { Badge, Card, EmptyState } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import { campaignStatusLabels, type CampaignPreview } from '../model/marketing';
@@ -65,15 +60,32 @@ export function CampaignCalendar({
   campaigns: readonly CampaignPreview[];
   onOpen: (campaign: CampaignPreview) => void;
 }) {
-  const [system, setSystem] = useState<CalendarSystem>('persian');
-  const [anchor, setAnchor] = useState(() => new Date(2026, 8, 2, 12));
+  const system: CalendarSystem = 'persian';
+  const [anchor, setAnchor] = useState(() => new Date());
+  const [range, setRange] = useState(() => {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const local = (value: Date) =>
+      `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+    return { startsAt: local(start), endsAt: local(end) };
+  });
   const days = useMemo(
     () => calendarMonthDays(anchor, system),
     [anchor, system],
   );
+  const rangeCampaigns = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) =>
+          campaign.startsAt.slice(0, 10) <= range.endsAt &&
+          campaign.endsAt.slice(0, 10) >= range.startsAt,
+      ),
+    [campaigns, range],
+  );
   const monthCampaigns = useMemo(
     () =>
-      campaigns.filter((campaign) =>
+      rangeCampaigns.filter((campaign) =>
         days.some(
           (day) =>
             day.isCurrentMonth &&
@@ -81,7 +93,7 @@ export function CampaignCalendar({
             campaign.endsAt.slice(0, 10) >= day.isoDate,
         ),
       ),
-    [campaigns, days],
+    [rangeCampaigns, days],
   );
 
   return (
@@ -98,19 +110,27 @@ export function CampaignCalendar({
             </p>
           </div>
         </div>
-        <div dir="ltr" className="flex flex-wrap items-center gap-2">
-          <Select
-            value={system}
-            onValueChange={(value) => setSystem(value as CalendarSystem)}
-          >
-            <SelectTrigger aria-label="نوع تقویم" className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="persian">تقویم شمسی</SelectItem>
-              <SelectItem value="gregorian">تقویم میلادی</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[14rem_14rem_auto_auto_auto] lg:items-end">
+          <FormField id="campaign-calendar-start" label="از تاریخ">
+            <DatePicker
+              id="campaign-calendar-start"
+              value={range.startsAt}
+              onChange={(startsAt) => {
+                setRange((current) => ({ ...current, startsAt }));
+                const next = new Date(`${startsAt}T12:00:00`);
+                if (Number.isFinite(next.getTime())) setAnchor(next);
+              }}
+            />
+          </FormField>
+          <FormField id="campaign-calendar-end" label="تا تاریخ">
+            <DatePicker
+              id="campaign-calendar-end"
+              value={range.endsAt}
+              onChange={(endsAt) =>
+                setRange((current) => ({ ...current, endsAt }))
+              }
+            />
+          </FormField>
           <Button
             aria-label="ماه قبل"
             onClick={() =>
@@ -121,10 +141,7 @@ export function CampaignCalendar({
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
           </Button>
-          <Button
-            onClick={() => setAnchor(new Date(2026, 8, 2, 12))}
-            variant="outline"
-          >
+          <Button onClick={() => setAnchor(new Date())} variant="outline">
             <RotateCcw aria-hidden="true" className="size-4" />
             امروز
           </Button>
@@ -156,7 +173,7 @@ export function CampaignCalendar({
           </div>
           <div dir="ltr" className="grid grid-cols-7">
             {days.map((day) => {
-              const events = campaignsOnDay(campaigns, day.isoDate);
+              const events = campaignsOnDay(rangeCampaigns, day.isoDate);
               return (
                 <div
                   className={cn(

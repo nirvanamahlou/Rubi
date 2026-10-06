@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronLeft, ChevronRight, Eye, Save } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Send } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,8 @@ export type CampaignFormMode = 'create' | 'view' | 'edit';
 interface CampaignFormProps {
   mode: CampaignFormMode;
   campaign?: CampaignPreview | undefined;
+  ownerUserId: string;
+  onSave: (draft: CampaignDraft) => Promise<void>;
 }
 
 const steps = [
@@ -42,7 +44,7 @@ const steps = [
   'زمان‌بندی',
   'بودجه',
   'ردیابی و ارسال',
-  'تایید و پیش‌نمایش',
+  'انتشار داخلی',
 ] as const;
 
 const selectableChannels: readonly CampaignChannel[] = [
@@ -59,7 +61,7 @@ const selectableChannels: readonly CampaignChannel[] = [
   'OFFLINE',
 ];
 
-interface CampaignDraft {
+export interface CampaignDraft {
   internalCode: string;
   name: string;
   campaignType: string;
@@ -71,6 +73,12 @@ interface CampaignDraft {
   endsAt: string;
   budgetAmount: string;
   currencyCode: 'IRR' | 'USD' | 'EUR';
+  ownerUserId: string;
+  salesTarget: string;
+  progressPercent: string;
+  spendLabel: string;
+  spendAmount: string;
+  links: string;
   utmSource: string;
   utmMedium: string;
   utmCampaign: string;
@@ -78,7 +86,10 @@ interface CampaignDraft {
   expectedVersion: number;
 }
 
-function initialDraft(campaign?: CampaignPreview): CampaignDraft {
+function initialDraft(
+  campaign: CampaignPreview | undefined,
+  ownerUserId: string,
+): CampaignDraft {
   return {
     internalCode: campaign?.internalCode ?? 'MKT-PREVIEW-NEW',
     name: campaign?.name ?? '',
@@ -91,10 +102,18 @@ function initialDraft(campaign?: CampaignPreview): CampaignDraft {
     endsAt: campaign?.endsAt ?? '',
     budgetAmount: campaign?.budgetAmount ?? '',
     currencyCode: campaign?.currencyCode ?? 'IRR',
-    utmSource: 'nora-preview',
-    utmMedium: 'campaign-workspace',
+    ownerUserId: campaign?.ownerUserId ?? ownerUserId,
+    salesTarget: campaign?.salesTarget ?? '',
+    progressPercent: campaign?.progressPercent ?? '0',
+    spendLabel: campaign?.spendLines?.[0]?.label ?? '',
+    spendAmount: campaign?.spendLines?.[0]?.amount ?? '',
+    links: campaign?.links?.join('\n') ?? '',
+    utmSource: '',
+    utmMedium: '',
     utmCampaign: campaign?.utmCampaign ?? '',
-    frequencyCap: campaign?.frequencyCap ?? 'حداکثر ۱ پیام در ۷ روز',
+    frequencyCap: /^\d+$/.test(campaign?.frequencyCap ?? '')
+      ? campaign!.frequencyCap
+      : '1',
     expectedVersion: campaign?.version ?? 1,
   };
 }
@@ -110,28 +129,48 @@ function validateDraft(draft: CampaignDraft): string[] {
   if (draft.objective.trim().length < 3)
     errors.push('هدف کمپین باید مشخص باشد.');
   if (draft.channels.length === 0) errors.push('حداقل یک کانال انتخاب کنید.');
-  if (!draft.segmentReference.startsWith('preview-'))
-    errors.push('فقط Segment ساختگی مجاز است.');
+  const startsAt = Date.parse(draft.startsAt);
+  const endsAt = Date.parse(draft.endsAt);
   if (
     !draft.startsAt ||
     !draft.endsAt ||
-    Date.parse(draft.startsAt) >= Date.parse(draft.endsAt)
+    !Number.isFinite(startsAt) ||
+    !Number.isFinite(endsAt) ||
+    startsAt >= endsAt
   ) {
     errors.push('بازه زمانی شروع و پایان معتبر و صعودی نیست.');
   }
   if (!/^\d+(?:\.\d{1,2})?$/.test(draft.budgetAmount)) {
     errors.push('بودجه باید Decimal غیرمنفی و بدون Float محاسباتی باشد.');
   }
-  if (!draft.utmCampaign.trim()) errors.push('UTM Campaign الزامی است.');
+  if (!draft.ownerUserId) errors.push('مسئول کمپین مشخص نیست.');
+  if (!/^\d+(?:\.\d{1,4})?$/.test(draft.salesTarget))
+    errors.push('هدف فروش باید Decimal غیرمنفی باشد.');
+  if (
+    !/^\d{1,3}(?:\.\d{1,4})?$/.test(draft.progressPercent) ||
+    Number(draft.progressPercent) > 100
+  )
+    errors.push('پیشرفت هدف باید بین صفر تا صد باشد.');
+  if (!/^\d+$/.test(draft.frequencyCap) || Number(draft.frequencyCap) < 1)
+    errors.push('محدودیت تکرار باید یک عدد مثبت باشد.');
+  if (draft.spendAmount && !/^\d+(?:\.\d{1,4})?$/.test(draft.spendAmount))
+    errors.push('هزینه واقعی باید Decimal غیرمنفی باشد.');
   return errors;
 }
 
-export function CampaignForm({ campaign, mode }: CampaignFormProps) {
+export function CampaignForm({
+  campaign,
+  mode,
+  ownerUserId,
+  onSave,
+}: CampaignFormProps) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<CampaignDraft>(() =>
-    initialDraft(campaign),
+    initialDraft(campaign, ownerUserId),
   );
   const [submitted, setSubmitted] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const readOnly = mode === 'view';
   const errors = useMemo(() => validateDraft(draft), [draft]);
 
@@ -250,6 +289,30 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 </SelectContent>
               </Select>
             </FormField>
+            <div className="grid gap-2">
+              <FormField id="campaign-owner" label="مسئول" required>
+                <Input
+                  id="campaign-owner"
+                  dir="ltr"
+                  readOnly
+                  value={draft.ownerUserId}
+                />
+              </FormField>
+              <p className="text-xs text-muted-foreground">
+                فعلاً به کاربر جاری محدود است؛ انتخاب همکار پس از قرارداد عمومی
+                IAM فعال می‌شود.
+              </p>
+            </div>
+            <FormField id="campaign-sales-target" label="هدف فروش" required>
+              <MoneyInput
+                id="campaign-sales-target"
+                readOnly={readOnly}
+                value={draft.salesTarget}
+                onValueChange={(salesTarget) =>
+                  update('salesTarget', salesTarget)
+                }
+              />
+            </FormField>
           </div>
         ) : null}
 
@@ -354,6 +417,49 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 </SelectContent>
               </Select>
             </FormField>
+            {mode === 'edit' ? (
+              <>
+                <FormField id="campaign-progress" label="پیشرفت هدف" required>
+                  <Input
+                    id="campaign-progress"
+                    dir="ltr"
+                    value={draft.progressPercent}
+                    onChange={(event) =>
+                      update('progressPercent', event.target.value)
+                    }
+                  />
+                </FormField>
+                <FormField id="campaign-spend-label" label="عنوان ریز هزینه">
+                  <Input
+                    id="campaign-spend-label"
+                    value={draft.spendLabel}
+                    onChange={(event) =>
+                      update('spendLabel', event.target.value)
+                    }
+                  />
+                </FormField>
+                <FormField id="campaign-spend-amount" label="هزینه واقعی">
+                  <MoneyInput
+                    id="campaign-spend-amount"
+                    value={draft.spendAmount}
+                    onValueChange={(spendAmount) =>
+                      update('spendAmount', spendAmount)
+                    }
+                  />
+                </FormField>
+                <FormField
+                  id="campaign-links"
+                  label="لینک‌ها (هر خط یک نشانی HTTP(S))"
+                >
+                  <Textarea
+                    id="campaign-links"
+                    rows={3}
+                    value={draft.links}
+                    onChange={(event) => update('links', event.target.value)}
+                  />
+                </FormField>
+              </>
+            ) : null}
           </div>
         ) : null}
 
@@ -377,7 +483,7 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 onChange={(event) => update('utmMedium', event.target.value)}
               />
             </FormField>
-            <FormField id="campaign-utm-campaign" label="UTM Campaign" required>
+            <FormField id="campaign-utm-campaign" label="UTM Campaign">
               <Input
                 id="campaign-utm-campaign"
                 dir="ltr"
@@ -388,7 +494,7 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
             </FormField>
             <FormField
               id="campaign-frequency-cap"
-              label="محدودیت تکرار ارسال"
+              label="محدودیت تکرار ارسال (تعداد)"
               required
             >
               <Input
@@ -404,11 +510,12 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
         {step === 7 ? (
           <div className="grid gap-4">
             <div className="flex items-center gap-3">
-              <span className="grid size-11 place-items-center rounded-2xl bg-primary/10 text-primary">
-                <Eye aria-hidden="true" className="size-5" />
-              </span>
               <div>
-                <h3 className="font-black">پیش‌نمایش نهایی</h3>
+                <h3 className="font-black">انتشار داخلی کمپین</h3>
+                <p className="text-sm text-muted-foreground">
+                  انتشار فقط وضعیت داخلی را فعال می‌کند و هیچ Provider یا
+                  وب‌سایتی فراخوانی نمی‌شود.
+                </p>
               </div>
             </div>
             <dl className="grid gap-3 rounded-2xl bg-muted/50 p-4 text-sm sm:grid-cols-2">
@@ -455,9 +562,16 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
                 </ul>
               </Alert>
             ) : (
-              <Alert title="اعتبارسنجی پیش‌نمایش موفق" />
+              <Alert title="اعتبارسنجی انتشار موفق" />
             )}
-            {submitted ? <Alert title="پیش‌نویس آماده شد" /> : null}
+            {submitted ? (
+              <Alert
+                title={
+                  mode === 'create' ? 'کمپین منتشر شد' : 'تغییرات ذخیره شد'
+                }
+              />
+            ) : null}
+            {saveError ? <Alert tone="error" title={saveError} /> : null}
           </div>
         ) : null}
       </Card>
@@ -485,12 +599,31 @@ export function CampaignForm({ campaign, mode }: CampaignFormProps) {
             </Button>
           ) : !readOnly ? (
             <Button
-              disabled={errors.length > 0}
-              onClick={() => setSubmitted(true)}
+              disabled={errors.length > 0 || saving}
+              onClick={async () => {
+                setSaving(true);
+                setSaveError('');
+                try {
+                  await onSave(draft);
+                  setSubmitted(true);
+                } catch (error) {
+                  setSaveError(
+                    error instanceof Error
+                      ? error.message
+                      : 'ذخیره کمپین انجام نشد.',
+                  );
+                } finally {
+                  setSaving(false);
+                }
+              }}
               type="button"
             >
-              <Save aria-hidden="true" className="size-4" />
-              آماده‌سازی پیش‌نویس
+              <Send aria-hidden="true" className="size-4" />
+              {saving
+                ? 'در حال ذخیره…'
+                : mode === 'create'
+                  ? 'انتشار'
+                  : 'ذخیره تغییرات'}
             </Button>
           ) : (
             <Badge className="gap-1">

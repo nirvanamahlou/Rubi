@@ -25,14 +25,14 @@ export type CampaignChannel =
 export type ExecutionCompany = 'NIAYESH_SEIR_SAHAR' | 'JAHAN_BASTAN';
 
 export interface CampaignPreview {
-  id: `preview-${string}`;
+  id: string;
   internalCode: string;
   name: string;
   campaignType: string;
   objective: string;
   channels: readonly CampaignChannel[];
   audienceSummary: string;
-  segmentReference: `preview-${string}`;
+  segmentReference: string;
   startsAt: string;
   endsAt: string;
   budgetAmount: string;
@@ -40,6 +40,16 @@ export interface CampaignPreview {
   currencyCode: 'IRR' | 'USD' | 'EUR';
   attributedRevenue: null;
   ownerRole: string;
+  ownerUserId?: string;
+  salesTarget?: string;
+  progressPercent?: string;
+  links?: readonly string[];
+  spendLines?: readonly {
+    id?: string;
+    label: string;
+    amount: string;
+    currencyCode: string;
+  }[];
   executionCompany: ExecutionCompany;
   offerTitle: string;
   couponCode: string | null;

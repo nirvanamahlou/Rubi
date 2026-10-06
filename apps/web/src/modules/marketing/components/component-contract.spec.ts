@@ -113,14 +113,11 @@ describe('marketing workspace component contract', () => {
     for (const label of [
       'تقویم کمپین‌ها',
       'بودجه و هزینه‌ها',
-      'گردش تأیید',
       'گروه‌ها و سگمنت‌ها',
       'مخاطبان کمپین',
       'منابع ورود',
       'ارسال پیام',
       'ارسال‌های زمان‌بندی‌شده',
-      'تاریخچه ارسال‌ها',
-      'قالب‌های پیام',
       'کتابخانه محتوا و فایل‌ها',
       'ساخت اتوماسیون',
       'کانال‌ها و سرویس‌ها',
@@ -128,12 +125,11 @@ describe('marketing workspace component contract', () => {
       expect(referenceDataSource).toContain(label);
     }
     for (const pageMarker of [
-      'سازنده سگمنت پویا',
+      'DurableSegmentsPanel',
       'سرنخ‌های مارکتینگ',
       'افزودن مخاطبان کمپین',
       'افزودن منبع ورود',
-      'marketing-message-composer',
-      'قالب‌های پیام',
+      'DurableMessagesPanel',
       'کتابخانه محتوا',
       'صفحات فرود',
       'پیشنهادهای ویژه',
@@ -151,10 +147,7 @@ describe('marketing workspace component contract', () => {
     expect(marketingSectionTabs.communications.map((item) => item[0])).toEqual([
       'send',
       'scheduled',
-      'history',
-      'templates',
     ]);
-    expect(referencePagesSource).toContain("label: 'قالب جدید'");
     expect(marketingSectionTabs.offers.map((item) => item[0])).not.toContain(
       'rules',
     );
@@ -174,8 +167,10 @@ describe('marketing workspace component contract', () => {
     expect(workspaceSource).toContain('endsBefore');
     expect(calendarSource).toContain('calendarMonthDays');
     expect(calendarSource).toContain('moveCalendarMonth');
-    expect(calendarSource).toContain('تقویم شمسی');
-    expect(calendarSource).toContain('تقویم میلادی');
+    expect(calendarSource).toContain(
+      "const system: CalendarSystem = 'persian'",
+    );
+    expect(calendarSource).not.toContain('تقویم میلادی');
     expect(calendarSource).toContain('onOpen(campaign)');
   });
 
@@ -185,7 +180,7 @@ describe('marketing workspace component contract', () => {
       'بودجه مصوب',
       'UTM Campaign',
       'محدودیت تکرار ارسال',
-      'پیش‌نمایش نهایی',
+      'انتشار داخلی کمپین',
     ]) {
       expect(formSource).toContain(field);
     }
@@ -273,6 +268,12 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain('documentsApi.upload');
     expect(referencePagesSource).toContain(
       "form.set('sourceModule', 'marketing')",
+    );
+    expect(referencePagesSource).toContain(
+      "form.set('confidentiality', 'INTERNAL')",
+    );
+    expect(referencePagesSource).not.toContain(
+      'marketing-asset-confidentiality',
     );
     expect(referencePagesSource).toContain('ثبت در محتوا و اسناد');
     expect(referencePagesSource).toContain('افزودن مخاطبان کمپین');

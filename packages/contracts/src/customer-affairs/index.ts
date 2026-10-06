@@ -233,3 +233,40 @@ export interface CustomerAffairsDashboard {
     correctiveActions: number;
   };
 }
+
+export const CUSTOMER_AFFAIRS_MARKETING_INTAKE_CONTRACT_VERSION =
+  'customer-affairs.marketing-intake.v1' as const;
+
+export type CustomerAffairsMarketingIntakeStatus =
+  'NEW' | 'CONTACTED' | 'QUALIFIED' | 'NURTURE' | 'LOST';
+
+export interface CustomerAffairsMarketingIntakeInputV1 {
+  phone: string;
+  sourceCategory: string;
+  campaignId?: string | null;
+  status: CustomerAffairsMarketingIntakeStatus;
+  assigneeUserId?: string | null;
+  lastFollowUpAt?: string | null;
+}
+
+export interface CustomerAffairsMarketingIntakeViewV1 {
+  contractVersion: typeof CUSTOMER_AFFAIRS_MARKETING_INTAKE_CONTRACT_VERSION;
+  id: string;
+  branchId: string;
+  maskedPhone: string;
+  sourceCategory: string;
+  campaignId: string | null;
+  status: CustomerAffairsMarketingIntakeStatus;
+  assigneeUserId: string | null;
+  lastFollowUpAt: string | null;
+  score: number;
+  scoreRuleIds: string[];
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerAffairsMarketingScoreInputV1 {
+  ruleIds: string[];
+  expectedVersion: number;
+}

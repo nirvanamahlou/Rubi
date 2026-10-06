@@ -4724,3 +4724,9 @@ Ticket Catalog consumes Reservations actual ticket-document issuance through a n
 
 
 ISSUED-TICKET-EXPORT-1005 validation: scoped ESLint, API/Web typecheck, API build and 55-page Web production build pass after refreshing existing generated artifacts. Focused actual-issuance/date/filter/workbook/security/UI tests and real synthetic PDF rendering pass. PR665 exact-head full quality, test, build and PostgreSQL CI gate develop merge. No operational data or local runtime change.
+
+## 2026-10-06 — MARKETING-DOCX-1006 — PC-B — READY_FOR_REVIEW
+
+The 30 ordered Marketing DOCX paragraphs are represented by durable campaign/asset APIs, owner-side encrypted Customer Affairs intake and full-range source aggregates, and server-backed Marketing forms. Mutations enforce branch permissions, idempotency, CAS and atomic audit; raw phones remain outside Marketing commands/audit. Approval, preview fixtures, usage/history panels and unavailable external publication/dispatch are not presented as successful workflows.
+
+Focused API tests (8 files/58) and Web tests (5 files/25), affected lint/typechecks, contracts/database builds and the API build pass. The final campaign-reference authorization repair has focused API test/lint/typecheck coverage; prior API/Web builds predate only that guard and the final actor-only explanatory copy respectively. Exported reference validation now requires the current actor, Marketing read plus attribution permissions and actor branch membership. Cross-user owner/sales-expert selection remains intentionally incomplete under the approved actor-only placeholder. The pre-index migration passed on disposable PostgreSQL; the amended migration validates/generates, local replay is blocked by `localhost:55473`, and the existing PostgreSQL18 CI migration job is the pending replay path. No live-browser QA. Independent review, refreshed-base integration/CI and browser verification remain before merge; no operational database/runtime change.
