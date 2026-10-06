@@ -9,7 +9,9 @@ import {
   MessagesSquare,
   Package,
   PackageCheck,
+  Pencil,
   ReceiptText,
+  Trash2,
 } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MasterDataRecord, ProcurementRequestV1 } from '@nora/contracts';
@@ -1388,6 +1390,10 @@ function SectionOperations({
 }) {
   const kinds = sectionKinds[group] ?? [];
   const [kind, setKind] = useState(kinds[0]?.[0] ?? 'quotations');
+  const [orderAction, setOrderAction] = useState<{
+    action: 'AMEND_ORDER' | 'CANCEL_ORDER';
+    record: Record<string, unknown>;
+  } | null>(null);
   const records = useQuery({
     queryKey: [
       'procurement',
@@ -1446,6 +1452,8 @@ function SectionOperations({
           <div className="divide-y divide-border">
             {records.data.items.map((row, index) => {
               const record = row as Record<string, unknown>;
+              const selectedOrderAction =
+                orderAction?.record.id === record.id ? orderAction : null;
               return (
                 <details
                   key={String(record.id ?? index)}
@@ -1466,6 +1474,78 @@ function SectionOperations({
                   </summary>
                   <div className="mt-3">
                     <RecordCard record={record} />
+                    {group === 5 &&
+                      (bootstrap.permissions.includes(
+                        'procurement.order.amend',
+                      ) ||
+                        bootstrap.permissions.includes(
+                          'procurement.order.cancel',
+                        )) && (
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+                          {bootstrap.permissions.includes(
+                            'procurement.order.amend',
+                          ) &&
+                            String(record.status) === 'ISSUED' && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                aria-label="ویرایش سفارش"
+                                title="ویرایش سفارش"
+                                onClick={() =>
+                                  setOrderAction({
+                                    action: 'AMEND_ORDER',
+                                    record,
+                                  })
+                                }
+                              >
+                                <Pencil aria-hidden="true" className="size-4" />
+                              </Button>
+                            )}
+                          {bootstrap.permissions.includes(
+                            'procurement.order.cancel',
+                          ) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              aria-label="لغو سفارش"
+                              title="لغو سفارش"
+                              disabled={['CANCELLED', 'CLOSED'].includes(
+                                String(record.status),
+                              )}
+                              onClick={() =>
+                                setOrderAction({
+                                  action: 'CANCEL_ORDER',
+                                  record,
+                                })
+                              }
+                            >
+                              <Trash2 aria-hidden="true" className="size-4" />
+                            </Button>
+                          )}
+                          <span className="self-center text-xs text-muted-foreground">
+                            لغو سفارش سابقه را حفظ می‌کند و سفارش دارای دریافت
+                            یا فاکتور لغو نمی‌شود.
+                          </span>
+                        </div>
+                      )}
+                    {group === 5 && selectedOrderAction && (
+                      <div className="mt-4">
+                        <OperationForm
+                          key={`${selectedOrderAction.action}-${String(record.id)}`}
+                          kind="orders"
+                          initialAction={selectedOrderAction.action}
+                          initialRecord={record}
+                          request={request}
+                          bootstrap={bootstrap}
+                          onChanged={(updated) => {
+                            onSaved(updated);
+                            setOrderAction(null);
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </details>
               );

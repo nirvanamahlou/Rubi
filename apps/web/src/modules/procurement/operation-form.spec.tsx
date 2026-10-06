@@ -55,12 +55,34 @@ describe('Procurement lifecycle operation forms', () => {
     expect(
       orderAmendmentFields({
         id: 'order-1',
-        payload: { supplierId: 'supplier-2', currencyCode: 'USD' },
+        payload: {
+          supplierId: 'supplier-2',
+          currencyCode: 'USD',
+          expectedAt: '2026-10-20T00:00:00.000Z',
+          deliveryLocation: 'شعبه مرکزی',
+          trackingCode: 'TRACK-1',
+          paymentTerms: '۳۰ روزه',
+        },
       }),
-    ).toEqual({ supplierId: 'supplier-2', currencyCode: 'USD' });
+    ).toEqual({
+      orderId: 'order-1',
+      supplierId: 'supplier-2',
+      currencyCode: 'USD',
+      expectedAt: '2026-10-20T00:00:00.000Z',
+      deliveryLocation: 'شعبه مرکزی',
+      trackingCode: 'TRACK-1',
+      paymentTerms: '۳۰ روزه',
+      reason: '',
+    });
     expect(orderAmendmentFields({})).toEqual({
+      orderId: '',
       supplierId: '',
       currencyCode: '',
+      expectedAt: '',
+      deliveryLocation: '',
+      trackingCode: '',
+      paymentTerms: '',
+      reason: '',
     });
   });
   it('identifies operational choices using their persisted payload and current status', () => {
@@ -87,6 +109,58 @@ describe('Procurement lifecycle operation forms', () => {
     expect(html).toContain('کد پیگیری');
     expect(html).toContain('بارگذاری فایل سند سفارش');
     expect(html).toContain('اسناد و فایل‌ها');
+  });
+  it('opens an order edit form prefilled from the persisted order and offers an audited cancellation form', () => {
+    const order = {
+      id: 'order-1',
+      status: 'ISSUED',
+      supplierId: 'supplier-2',
+      currencyCode: 'USD',
+      expectedAt: '2026-10-20T00:00:00.000Z',
+      deliveryLocation: 'شعبه مرکزی',
+      trackingCode: 'TRACK-1',
+      paymentTerms: '۳۰ روزه',
+      lines: [
+        {
+          requestItemId: 'item-1',
+          quantity: '12',
+          unitPrice: '40',
+          discountAmount: '0',
+          taxAmount: '0',
+          extraCostAmount: '0',
+        },
+      ],
+    };
+    const edit = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <OperationForm
+          request={request}
+          kind="orders"
+          initialAction="AMEND_ORDER"
+          initialRecord={order}
+          bootstrap={bootstrap(['procurement.order.amend'])}
+          onChanged={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(edit).toContain('اصلاح سفارش و ارسال برای تأیید مجدد');
+    expect(edit).toContain('TRACK-1');
+    expect(edit).toContain('شعبه مرکزی');
+    expect(edit).toContain('۳۰ روزه');
+    const cancel = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <OperationForm
+          request={request}
+          kind="orders"
+          initialAction="CANCEL_ORDER"
+          initialRecord={order}
+          bootstrap={bootstrap(['procurement.order.cancel'])}
+          onChanged={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(cancel).toContain('لغو سفارش');
+    expect(cancel).toContain('دلیل لغو سفارش');
   });
   it('makes the receiver form available and explains versioned corrections', () => {
     const html = renderToStaticMarkup(

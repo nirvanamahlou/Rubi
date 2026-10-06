@@ -20,6 +20,7 @@ import {
 } from './api';
 import { emptyDraft, reconcileDraft } from './model';
 import { ProcurementSelect } from './procurement-select';
+import { ProcurementOwnerPicker } from './owner-picker';
 
 export const selectClass =
   'h-11 w-full rounded-xl border border-input bg-surface px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
@@ -165,6 +166,11 @@ export function DraftForm({
   );
   const [requesterSearch, setRequesterSearch] = useState('');
   const [requesterPage, setRequesterPage] = useState(1);
+  const [ownerUserId, setOwnerUserId] = useState(request?.ownerUserId ?? '');
+  const canAssign = bootstrap.permissions.includes('procurement.assign');
+  const canChooseOwner = bootstrap.permissions.includes(
+    'procurement.request.create',
+  );
   const requesters = useQuery({
     queryKey: [
       'procurement',
@@ -190,6 +196,12 @@ export function DraftForm({
     enabled: Boolean(draft.branchId),
     retry: false,
   });
+  const categories = useQuery({
+    queryKey: ['procurement', 'categories', draft.branchId],
+    queryFn: () => procurementApi.categories(draft.branchId),
+    enabled: Boolean(draft.branchId),
+    retry: false,
+  });
   const savedRequests = useQuery({
     queryKey: savedRequestFieldOptionsKey,
     queryFn: () =>
@@ -206,6 +218,8 @@ export function DraftForm({
   const [customFields, setCustomFields] = useState({
     category: false,
   });
+  const [savingCategory, setSavingCategory] = useState(false);
+  const [categoryError, setCategoryError] = useState('');
   const [customItemFields, setCustomItemFields] = useState<
     Record<string, boolean>
   >({});
@@ -223,6 +237,34 @@ export function DraftForm({
   const [errorTitle, setErrorTitle] = useState('ذخیره انجام نشد');
   const identity = useRef<ReturnType<typeof retryIdentity> | null>(null);
   const busyRef = useRef(false);
+  async function saveCategoryChoice() {
+    const label = draft.category.trim();
+    if (!label || !draft.branchId || savingCategory) return;
+    setSavingCategory(true);
+    setCategoryError('');
+    try {
+      const saved = await procurementApi.createCategory(draft.branchId, label);
+      queryClient.setQueryData<
+        ProcurementListV1<{ id: string; label: string }>
+      >(['procurement', 'categories', draft.branchId], (current) => ({
+        items: [
+          saved,
+          ...(current?.items ?? []).filter((item) => item.id !== saved.id),
+        ],
+        page: 1,
+        pageSize: 500,
+        hasMore: false,
+      }));
+      update('category', saved.label);
+      setCustomFields((previous) => ({ ...previous, category: false }));
+    } catch (caught) {
+      setCategoryError(
+        caught instanceof Error ? caught.message : 'ذخیره دسته انجام نشد.',
+      );
+    } finally {
+      setSavingCategory(false);
+    }
+  }
   function focusControl(controlId: string) {
     requestAnimationFrame(() => {
       const control = document.getElementById(controlId);
@@ -278,6 +320,9 @@ export function DraftForm({
       ...new Set(
         [
           request?.draft[key]?.trim() ?? '',
+          ...(key === 'category'
+            ? (categories.data?.items ?? []).map((item) => item.label.trim())
+            : []),
           ...(savedRequests.data?.items ?? [])
             .filter(
               (item) =>
@@ -336,9 +381,31 @@ export function DraftForm({
                 onChange={(event) => update(key, event.target.value)}
                 placeholder="مقدار تازه را وارد کنید"
               />
-              <p className="text-xs leading-5 text-muted-foreground">
-                با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه می‌شود.
-              </p>
+              {key === 'category' && (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={!draft[key].trim() || savingCategory}
+                    onClick={() => void saveCategoryChoice()}
+                  >
+                    {savingCategory
+                      ? 'در حال ذخیره…'
+                      : 'ذخیره دسته در فهرست شعبه'}
+                  </Button>
+                  {categoryError && (
+                    <p role="alert" className="text-xs text-destructive">
+                      {categoryError}
+                    </p>
+                  )}
+                </>
+              )}
+              {key !== 'category' && (
+                <p className="text-xs leading-5 text-muted-foreground">
+                  با ذخیرهٔ پیش‌نویس، این مورد به فهرست انتخاب‌ها اضافه می‌شود.
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -441,18 +508,47 @@ export function DraftForm({
     identity.current = retryIdentity(identity.current, {
       draft,
       requesterEmployeeId,
+      ownerUserId: canChooseOwner ? ownerUserId : '',
       id: baseRequest?.id,
       version: baseRequest?.version,
       mode,
     });
     try {
-      const saved = await procurementApi.save(
+      let saved = await procurementApi.save(
         draft,
         identity.current.key,
         baseRequest,
         requesterEmployeeId,
         mode === 'PUBLISH',
+        canChooseOwner && !baseRequest ? ownerUserId || undefined : undefined,
       );
+      if (
+        baseRequest &&
+        canAssign &&
+        ownerUserId &&
+        saved.ownerUserId !== ownerUserId
+      ) {
+        setBaseRequest(saved);
+        try {
+          saved = await procurementApi.command(
+            saved,
+            { action: 'ASSIGN', ownerUserId },
+            crypto.randomUUID(),
+          );
+        } catch (caught) {
+          setBaseRequest(saved);
+          setErrorTitle('درخواست ذخیره شد؛ تخصیص مسئول پیگیری انجام نشد');
+          setError(
+            caught instanceof Error
+              ? caught.message
+              : 'تخصیص مسئول پیگیری انجام نشد. از صفحه پرونده دوباره تلاش کنید.',
+          );
+          setConflict(
+            caught instanceof ProcurementApiError && caught.status === 409,
+          );
+          return;
+        }
+      }
       rememberSavedRequestFieldOptions(queryClient, saved);
       onSaved(saved);
     } catch (caught) {
@@ -654,6 +750,7 @@ export function DraftForm({
                 value={draft.branchId}
                 onChange={(event) => {
                   update('branchId', event.target.value);
+                  setOwnerUserId('');
                   if (!request) {
                     setRequesterEmployeeId('');
                     setRequesterLabel('');
@@ -670,6 +767,29 @@ export function DraftForm({
                 ))}
               </ProcurementSelect>
             </FormField>
+            {canChooseOwner && (!request || canAssign) && (
+              <div className="space-y-2">
+                <ProcurementOwnerPicker
+                  branchId={draft.branchId}
+                  value={ownerUserId}
+                  onChange={setOwnerUserId}
+                  label="مسئول پیگیری"
+                  {...(request?.ownerUserId
+                    ? {
+                        initialOption: {
+                          id: request.ownerUserId,
+                          label: `مسئول فعلی (${request.ownerUserId.slice(0, 8)})`,
+                        },
+                      }
+                    : {})}
+                />
+                <p className="text-xs text-muted-foreground">
+                  فقط مسئولان فعال و مجاز خرید در همین شعبه قابل انتخاب‌اند.
+                  مسئول پیگیری کار را در کارتابل خود می‌بیند؛ اختیار تأیید فقط
+                  از سیاست مصوب خرید می‌آید.
+                </p>
+              </div>
+            )}
             <FormField id="proc-unit" label="واحد سازمانی">
               <ProcurementSelect
                 id="proc-unit"

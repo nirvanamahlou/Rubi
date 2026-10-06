@@ -56,6 +56,16 @@ function fingerprint(value: unknown): string {
     .update(JSON.stringify(canonical(value)))
     .digest('hex');
 }
+export function procurementCategoryKey(value: string): string {
+  return value
+    .normalize('NFKC')
+    .replace(/[\u0640\u200c]/g, ' ')
+    .replace(/[ي]/g, 'ی')
+    .replace(/[ك]/g, 'ک')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLocaleLowerCase('fa');
+}
 export function requestDto(row: ProcurementRow): ProcurementRequestV1 {
   return {
     id: row.id,
@@ -207,7 +217,11 @@ export class ProcurementService {
     );
   }
   async owners(query: Record<string, unknown>, actor: AuthenticatedActor) {
-    this.require(actor, 'procurement.assign');
+    if (
+      !actor.permissions.includes('procurement.assign') &&
+      !actor.permissions.includes('procurement.request.create')
+    )
+      throw new ForbiddenException('مجوز مشاهده مسئولان خرید وجود ندارد.');
     v.object(query, ['branchId', 'search', 'page']);
     const branchId = v.uuid(query.branchId);
     this.branch(actor, branchId);
@@ -236,6 +250,70 @@ export class ProcurementService {
     const branchId = v.uuid(query.branchId);
     this.branch(actor, branchId);
     return { items: await this.hr.units(actor, branchId) };
+  }
+  async categories(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.create');
+    v.object(query, ['branchId']);
+    const branchId = v.uuid(query.branchId);
+    this.branch(actor, branchId);
+    const [saved, used] = await Promise.all([
+      this.database.client.procurementCategory.findMany({
+        where: { branchId, isActive: true },
+        select: { id: true, label: true, normalizedLabel: true },
+        orderBy: [{ label: 'asc' }, { id: 'asc' }],
+        take: 500,
+      }),
+      this.database.client.procurementRequest.findMany({
+        where: { branchId, category: { not: null } },
+        select: { category: true },
+        distinct: ['category'],
+        take: 500,
+      }),
+    ]);
+    const values = new Map<string, { id: string; label: string }>();
+    for (const item of [
+      ...saved,
+      ...used.map((item) => ({
+        id: 'legacy:' + procurementCategoryKey(item.category ?? ''),
+        label: item.category ?? '',
+        normalizedLabel: procurementCategoryKey(item.category ?? ''),
+      })),
+    ]) {
+      if (
+        item.label &&
+        item.normalizedLabel &&
+        !values.has(item.normalizedLabel)
+      )
+        values.set(item.normalizedLabel, { id: item.id, label: item.label });
+    }
+    return {
+      items: [...values.values()].sort((a, b) =>
+        a.label.localeCompare(b.label, 'fa'),
+      ),
+    };
+  }
+  async createCategory(body: unknown, actor: AuthenticatedActor) {
+    this.require(actor, 'procurement.request.create');
+    const input = v.object(body, ['branchId', 'label']);
+    const branchId = v.uuid(input.branchId);
+    this.branch(actor, branchId);
+    const label = v.text(input.label, 'label', 80);
+    const normalizedLabel = procurementCategoryKey(label);
+    requireRule(
+      Boolean(normalizedLabel),
+      'VALIDATION_ERROR',
+      'نام دسته را وارد کنید.',
+      'label',
+    );
+    return this.database.client.procurementCategory.create({
+      data: {
+        branchId,
+        label: label.normalize('NFC'),
+        normalizedLabel,
+        createdByUserId: actor.userId,
+      },
+      select: { id: true, label: true, branchId: true, createdAt: true },
+    });
   }
   async bootstrap(actor: AuthenticatedActor) {
     if (
@@ -643,7 +721,12 @@ export class ProcurementService {
     this.require(actor, 'procurement.request.create');
     const input =
       body && typeof body === 'object' && 'draft' in body
-        ? v.object(body, ['draft', 'requesterEmployeeId', 'publish'])
+        ? v.object(body, [
+            'draft',
+            'requesterEmployeeId',
+            'publish',
+            'ownerUserId',
+          ])
         : null;
     const draft = v.draft(input ? input.draft : body);
     requireRule(
@@ -656,6 +739,19 @@ export class ProcurementService {
     const requesterEmployeeId = input?.requesterEmployeeId
       ? v.uuid(input.requesterEmployeeId)
       : null;
+    const ownerUserId = input?.ownerUserId ? v.uuid(input.ownerUserId) : null;
+    if (ownerUserId)
+      requireRule(
+        (
+          await this.iam.authorizedUsers(
+            [ownerUserId],
+            draft.branchId,
+            'procurement.quote.manage',
+          )
+        ).length === 1,
+        'INVALID_OWNER',
+        'مسئول پیگیری باید کاربر فعال و مجاز خرید در همین شعبه باشد.',
+      );
     if (publish) {
       if (draft.urgent) this.require(actor, 'procurement.emergency');
       validateSubmission(draft);
@@ -677,7 +773,7 @@ export class ProcurementService {
       draft.branchId,
       'CREATE',
       key,
-      { draft, requesterEmployeeId, publish },
+      { draft, requesterEmployeeId, ownerUserId, publish },
       async (tx) => {
         const id = randomUUID();
         const row = await tx.procurementRequest.create({
@@ -687,6 +783,7 @@ export class ProcurementService {
             branchId: draft.branchId,
             requesterUserId: actor.userId,
             requesterEmployeeId,
+            ownerUserId,
             ...this.columns(draft),
           },
         });
@@ -700,13 +797,24 @@ export class ProcurementService {
           },
         });
         await this.audit(tx, row, actor, 'CREATE');
-        if (!publish) return requestDto(row);
-        const published = await tx.procurementRequest.update({
-          where: { id },
-          data: { status: 'SUBMITTED', version: { increment: 1 } },
+        const result = publish
+          ? await tx.procurementRequest.update({
+              where: { id },
+              data: { status: 'SUBMITTED', version: { increment: 1 } },
+            })
+          : row;
+        if (publish) await this.audit(tx, result, actor, 'PUBLISH');
+        await this.tasks.syncProcurementWithinTransaction(tx, {
+          eventId: randomUUID(),
+          requestId: id,
+          requestNumber: result.number,
+          branchId: result.branchId,
+          status: result.status,
+          ownerUserId: result.ownerUserId,
+          approverUserId: null,
+          action: 'CREATE',
         });
-        await this.audit(tx, published, actor, 'PUBLISH');
-        return requestDto(published);
+        return requestDto(result);
       },
     );
   }

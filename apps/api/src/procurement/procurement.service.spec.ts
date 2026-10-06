@@ -16,6 +16,7 @@ import type { LegalEntitiesService } from '../legal-entities/legal-entities.serv
 import type { MasterProcurementDirectory } from '../master-data/master-procurement-directory';
 import { NotificationsRepository } from '../notifications/notifications.repository';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AutomationTasksService } from '../tasks/automation-tasks.service';
 import type {
   ApprovalPolicy,
   CommercialLine,
@@ -26,6 +27,7 @@ import { ProcurementPublicService } from './procurement-public.service';
 import {
   json,
   procurementBoundary,
+  procurementCategoryKey,
   ProcurementService,
 } from './procurement.service';
 
@@ -481,6 +483,21 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         },
       } as unknown as HrProcurementDirectory;
       const iam = {
+        candidates: async (branchId: string) => ({
+          items: [...identities.values()]
+            .filter(
+              ({ actor }) =>
+                actor.branchIds.includes(branchId) &&
+                actor.permissions.includes('procurement.quote.manage'),
+            )
+            .map(({ actor }) => ({
+              id: actor.userId,
+              label: 'Synthetic buyer',
+            })),
+          page: 1,
+          pageSize: 50,
+          hasMore: false,
+        }),
         authorizedUsers: async (
           ids: string[],
           branchId: string,
@@ -549,7 +566,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         port,
         operations,
         new NotificationsService(new NotificationsRepository(database)),
-        { syncProcurementWithinTransaction: async () => null } as never,
+        new AutomationTasksService(database),
       );
     }, 30000);
     afterAll(async () => {
@@ -578,6 +595,47 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       };
     });
 
+    it('persists normalized categories within the authorized branch and retains legacy request categories', async () => {
+      expect(procurementCategoryKey('مهندسی\u200c شبکه ك')).toBe(
+        'مهندسی شبکه ک',
+      );
+      await create(fixture({ category: 'دفتر و لوازم' }));
+      const saved = await service.createCategory(
+        { branchId: branch, label: 'مهندسی\u200c شبکه ك' },
+        maker,
+      );
+      expect(saved).toMatchObject({
+        branchId: branch,
+        label: 'مهندسی\u200c شبکه ك',
+      });
+      const list = await service.categories({ branchId: branch }, maker);
+      expect(list.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ label: 'مهندسی\u200c شبکه ك' }),
+          expect.objectContaining({ label: 'دفتر و لوازم' }),
+        ]),
+      );
+      const duplicateActor: AuthenticatedActor = {
+        ...maker,
+        userId: colleague.userId,
+      };
+      await rejected(
+        () =>
+          procurementBoundary(() =>
+            service.createCategory(
+              { branchId: branch, label: 'مهندسی شبکه ک' },
+              duplicateActor,
+            ),
+          ),
+        409,
+        'CONFLICT',
+      );
+      await rejected(
+        () => service.categories({ branchId: otherBranch }, maker),
+        403,
+      );
+    });
+
     it('stores an incomplete draft and rolls back unsuccessful submission without losing its contents', async () => {
       const row = await create(
         fixture({ title: '', items: [], needReason: '', requiredAt: null }),
@@ -590,6 +648,61 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           where: { requestId: row.id },
         }),
       ).toBe(0);
+    });
+    it('routes a created request to an authorized buyer for follow-up without creating approval authority', async () => {
+      const requester: AuthenticatedActor = {
+        ...maker,
+        permissions: ['procurement.request.create'],
+      };
+      const ownerChoices = await service.owners(
+        { branchId: branch, search: '', page: 1 },
+        requester,
+      );
+      expect(ownerChoices.items.map((item) => item.id)).toContain(
+        checker1.userId,
+      );
+      const row = await procurementBoundary(() =>
+        service.create(
+          {
+            draft: fixture(),
+            ownerUserId: checker1.userId,
+          },
+          randomUUID(),
+          requester,
+        ),
+      );
+
+      expect(row.ownerUserId).toBe(checker1.userId);
+      expect(
+        await database.client.automationTask.findFirst({
+          where: {
+            sourceModule: 'PROCUREMENT',
+            sourceReference: row.id,
+            assigneeUserId: checker1.userId,
+            kind: 'PROCUREMENT_FOLLOW_UP',
+            status: 'OPEN',
+          },
+        }),
+      ).toMatchObject({ assigneeUserId: checker1.userId });
+      expect(
+        await database.client.procurementApprovalSnapshot.count({
+          where: { requestId: row.id },
+        }),
+      ).toBe(0);
+    });
+    it('rejects a follow-up recipient who is not an authorized same-branch buyer', async () => {
+      await rejected(
+        () =>
+          procurementBoundary(() =>
+            service.create(
+              { draft: fixture(), ownerUserId: randomUUID() },
+              randomUUID(),
+              { ...maker, permissions: ['procurement.request.create'] },
+            ),
+          ),
+        422,
+        'INVALID_OWNER',
+      );
     });
     it('leaves a complete draft intact when the production policy port is unconfigured', async () => {
       approvedPolicy = await new ProcurementPolicyPort().resolve(fixture());

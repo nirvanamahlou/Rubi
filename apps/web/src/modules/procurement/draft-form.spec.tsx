@@ -116,6 +116,22 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).not.toContain('>ویرایش پیش‌نویس</span>');
     expect(html).not.toContain('شماره درخواست:');
   });
+  it('offers a follow-up recipient only to authorized assigners and keeps approval policy separate', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <DraftForm
+          bootstrap={{
+            ...bootstrap,
+            permissions: ['procurement.request.create', 'procurement.assign'],
+          }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(html).toContain('مسئول پیگیری');
+    expect(html).toContain('اختیار تأیید فقط از سیاست مصوب خرید می‌آید');
+  });
   it('blocks publish before persistence when required or line values are invalid', () => {
     const draft = {
       ...emptyDraft('unit-a', 'branch-1'),
