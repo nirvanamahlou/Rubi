@@ -9,6 +9,7 @@ import {
   Download,
   Eye,
   FilePenLine,
+  ListPlus,
   FileStack,
   FilterX,
   Gauge,
@@ -96,6 +97,7 @@ import {
 } from './campaign-form';
 import { MarketingProcessTracker } from './marketing-process-tracker';
 import { CampaignDetail } from './campaign-detail';
+import { CampaignDeclarationsForm } from './campaign-declarations-form';
 import {
   MarketingDashboardReference,
   MarketingReferenceSection,
@@ -261,16 +263,18 @@ function MarketingHub({
   );
 }
 
-function CampaignCard({
+export function CampaignCard({
   campaign,
   disabled,
   onOpen,
   onToggleActive,
+  onDetails,
 }: {
   campaign: CampaignPreview;
   disabled: boolean;
   onOpen: (mode: CampaignFormMode, campaign: CampaignPreview) => void;
   onToggleActive: () => void;
+  onDetails: () => void;
 }) {
   return (
     <Card className={cn('p-4 transition', disabled && 'opacity-60')}>
@@ -290,6 +294,15 @@ function CampaignCard({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            aria-label={`ثبت جزئیات ${campaign.name}`}
+            title="ثبت جزئیات"
+            size="icon"
+            variant="outline"
+            onClick={onDetails}
+          >
+            <ListPlus aria-hidden="true" className="size-4" />
+          </Button>
           <Button
             aria-label={
               disabled
@@ -419,6 +432,7 @@ function CampaignList({
   onOpen,
   onNotice,
   onRetry,
+  onDetails,
 }: {
   campaignsSource: readonly CampaignPreview[];
   error: string;
@@ -426,6 +440,7 @@ function CampaignList({
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
   onRetry: () => void;
+  onDetails: (campaign: CampaignPreview) => void;
 }) {
   const [query, setQuery] = useState<MarketingCampaignQuery>(() =>
     normalizeMarketingCampaignQuery({}),
@@ -639,6 +654,7 @@ function CampaignList({
               disabled={disabledCampaigns.has(campaign.id)}
               key={campaign.id}
               onOpen={(mode, item) => onOpen(mode, item)}
+              onDetails={() => onDetails(campaign)}
               onToggleActive={() => {
                 const isDisabled = disabledCampaigns.has(campaign.id);
                 setDisabledCampaigns((current) => {
@@ -734,6 +750,28 @@ function BudgetPanel({ campaigns }: { campaigns: readonly CampaignPreview[] }) {
           ))}
         </div>
       </Card>
+      <Card className="grid gap-3 p-5">
+        <h3 className="font-black">ریز هزینه‌های کمپین‌ها</h3>
+        {campaigns.flatMap((campaign) =>
+          (campaign.spendLines ?? []).map((line, index) => (
+            <div
+              className="grid gap-2 border-b py-3 sm:grid-cols-3"
+              key={`${campaign.id}-${line.id ?? index}`}
+            >
+              <strong>{campaign.name}</strong>
+              <span>{line.label}</span>
+              <span dir="ltr">
+                {formatMoney(line.amount, line.currencyCode)}
+              </span>
+            </div>
+          )),
+        )}
+        {!campaigns.some((campaign) => campaign.spendLines?.length) ? (
+          <p className="text-sm text-muted-foreground">
+            هنوز هزینه‌ای ثبت نشده است.
+          </p>
+        ) : null}
+      </Card>
     </div>
   );
 }
@@ -745,6 +783,7 @@ function CampaignsPanel({
   onOpen,
   onNotice,
   onRetry,
+  onDetails,
 }: {
   campaigns: readonly CampaignPreview[];
   error: string;
@@ -752,6 +791,7 @@ function CampaignsPanel({
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
   onRetry: () => void;
+  onDetails: (campaign: CampaignPreview) => void;
 }) {
   const [tab, setTab] = useState('list');
   return (
@@ -779,6 +819,7 @@ function CampaignsPanel({
           onNotice={onNotice}
           onOpen={onOpen}
           onRetry={onRetry}
+          onDetails={onDetails}
         />
       </TabsContent>
       <TabsContent className="mt-5" value="calendar">
@@ -831,6 +872,8 @@ export function MarketingWorkspace({
     mode: CampaignFormMode;
     campaign?: CampaignPreview;
   }>({ open: false, mode: 'create' });
+  const [declarationsCampaign, setDeclarationsCampaign] =
+    useState<CampaignPreview | null>(null);
   const loadCampaigns = useCallback(async () => {
     setCampaignsLoading(true);
     setCampaignsError('');
@@ -941,6 +984,7 @@ export function MarketingWorkspace({
               onNotice={setNotice}
               onOpen={openCampaign}
               onRetry={() => void loadCampaigns()}
+              onDetails={setDeclarationsCampaign}
             />
           ) : genericSection ? (
             <MarketingReferenceSection
@@ -965,6 +1009,40 @@ export function MarketingWorkspace({
           <span>{notice}</span>
         </div>
       ) : null}
+      <Dialog
+        open={Boolean(declarationsCampaign)}
+        onOpenChange={(open) => {
+          if (!open) setDeclarationsCampaign(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+          <DialogTitle>
+            ثبت جزئیات کمپین — {declarationsCampaign?.name}
+          </DialogTitle>
+          {declarationsCampaign ? (
+            <CampaignDeclarationsForm
+              key={declarationsCampaign.id}
+              campaign={declarationsCampaign}
+              onSave={async (input, key) => {
+                const result = await marketingApi.updateCampaign(
+                  declarationsCampaign.id,
+                  input,
+                  key,
+                );
+                setCampaigns((current) =>
+                  current.map((item) =>
+                    item.id === result.data.id
+                      ? campaignPreviewFromRecord(result.data, segments)
+                      : item,
+                  ),
+                );
+                setDeclarationsCampaign(null);
+                setNotice('پیشرفت، هزینه‌ها و لینک‌های کمپین ذخیره شدند.');
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
       <Dialog
         open={campaignDialog.open}
         onOpenChange={(open) =>
