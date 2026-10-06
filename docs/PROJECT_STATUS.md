@@ -1,3 +1,7 @@
+## 2026-10-06 — TICKET-NO-DELETE-LOCAL-1006 — PC-A — COMPLETED
+
+PR674 merged into develop at 0e9af46c after all eight CI gates passed. The combined source, including the concurrent B2B fix, passed a fresh Web production build. Web3100 and API4000 now run that source from the isolated worktree; login, exact build manifest and API health returned HTTP200. API/packages match the locally tested feature build. Database, credentials and document storage preserved; no migration or seed executed. Primary source fast-forwarded; bounded runtime locks released.
+
 ## 2026-10-06 — TICKET-NO-DELETE-1006 — PC-A — READY_FOR_REVIEW
 
 Defined-ticket deletion is removed from flight-load future/expired row actions and the legacy ticket card/confirmation flow. The Web API client no longer exposes delete. The authenticated legacy DELETE command rejects with HTTP400 before any DB transaction; existing status controls, history, prices, finance references, tour deletion and historical migration bytes remain. 184 Ticket Catalog Web tests (one existing skip), scoped Web/API ESLint and API typecheck pass. 181 API tests (19 opt-in skips) include three real PostgreSQL/HTTP lifecycle tests; fresh synthetic DB was fully migrated and removed after success. API typecheck/build passed. Web production build and exact-head CI gate user-authorized develop merge; bounded locks released with commit. No schema/migration/permission/dependency change or runtime rollout.
