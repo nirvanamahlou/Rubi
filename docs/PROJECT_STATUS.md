@@ -4813,3 +4813,7 @@ Dedicated RTL icon-only campaign declaration action/form persists goal progress,
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
+
+## 2026-10-06 — CONTENT-LIST-REDESIGN-1006 — PC-B
+
+Marketing content/acquisition uses RTL list-first toolbars, search and semantic tables with named icon-only add/view/edit/delete actions. Persian form-type/status labels retain canonical API enums; content editors use dialogs and preserve campaign/related-record versions. Library lists actual paginated BRAND Documents through its public contract instead of non-persistent demo cards; upload remains in Documents, title edits retain metadata/CAS, removal archives with a reason and is recoverable in Documents. Confidential/step-up records delegate access verification to the canonical Documents page. No API/schema/migration/IAM/dependency/runtime change. Marketing88 Web and22 records-service tests pass; scoped lint and clean exact-head CI quality/build gates precede user-authorized develop merge. Local reused Sales contracts mismatch is documented in WORK_ASSIGNMENTS.md.
