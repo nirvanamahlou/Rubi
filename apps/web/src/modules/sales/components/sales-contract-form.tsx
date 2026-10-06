@@ -3,11 +3,6 @@ import {
   isTicketOnlyContract,
   ticketOnlySaleDefaults,
 } from '../model/ticket-only-sale-defaults';
-import {
-  tripPricingView,
-  splitFlightPrices,
-  roundTripPriceKey,
-} from '../model/round-trip-pricing';
 import { FlightTripDates } from './flight-trip-dates';
 import { exactFlightQuery } from '../model/exact-flight-dates';
 import {
@@ -31,8 +26,6 @@ import type {
   SalesServiceKind,
 } from '@nora/contracts';
 
-import { hotelNights } from '@nora/contracts';
-import { SalesPricingPanel, SalesPricingSummary } from './sales-pricing-panel';
 import { validateSalesCurrencySelection } from './sales-currency-select';
 import { validatePassengerPackagePrices } from '@nora/contracts';
 import { PassengerPackagePrices } from './passenger-package-prices';
@@ -163,12 +156,17 @@ export function SalesContractForm() {
   const [draftState, setState] = useState<SalesFormState>({
     ...emptySalesForm,
     servicePricing: {},
+    priceEntryMode: 'PASSENGER_TOTAL',
   });
   const state = useMemo<SalesFormState>(() => {
     if (isTicketOnlyContract(draftState))
-      return ticketOnlySaleDefaults(draftState);
+      return ticketOnlySaleDefaults({
+        ...draftState,
+        priceEntryMode: 'PASSENGER_TOTAL',
+      });
     return {
       ...draftState,
+      priceEntryMode: 'PASSENGER_TOTAL',
       servicePricing: draftState.servicePricing ?? {},
       catalogSalePricing:
         !draftState.tour &&
@@ -534,43 +532,7 @@ export function SalesContractForm() {
         : key.startsWith('TRANSFER-')
           ? `ترانسفر ${key.endsWith('OUTBOUND') ? 'رفت' : 'برگشت'}`
           : (serviceOptions.find(([kind]) => kind === key)?.[1] ?? key);
-  const pricingServices = state.serviceKinds
-    .filter((kind) => kind !== 'TRANSFER')
-    .flatMap((kind) =>
-      kind === 'FLIGHT'
-        ? salesDirections(state, kind).map((direction) => ({
-            key: `${kind.toLowerCase()}-${direction.toLowerCase()}`,
-            title: `${kind === 'FLIGHT' ? 'بلیط' : 'ترانسفر'} ${direction === 'OUTBOUND' ? 'رفت' : 'برگشت'}`,
-            hotel: false,
-          }))
-        : [
-            {
-              key: kind.toLowerCase(),
-              title: serviceOptions.find(([key]) => key === kind)?.[1] ?? kind,
-              hotel: kind === 'HOTEL',
-            },
-          ],
-    );
-  const pricingView = tripPricingView(
-    pricingServices,
-    state.servicePricing ?? {},
-  );
-  let pricingNights = 0;
-  try {
-    pricingNights = hotelNights(state.hotel.checkIn, state.hotel.checkOut);
-  } catch {
-    /* No valid stay selected yet. */
-  }
   const passengerCounts = salesPassengerCounts(state);
-  const fixedTicketSalePrices =
-    !state.tour &&
-    !state.serviceKinds.includes('HOTEL') &&
-    !state.serviceKinds.includes('TOUR')
-      ? repriceStandaloneTicketSelections(
-          { ...state, servicePricing: {} },
-          passengerCounts.seated,
-        )
-      : undefined;
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
   const updatePassengerCount = (
@@ -1733,7 +1695,7 @@ export function SalesContractForm() {
           </section>
         ) : null}
         {step === 3 ? (
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+          <div className="grid gap-4 grid-cols-1">
             <div className="grid content-start gap-3">
               {state.serviceKinds.includes('TRANSFER') ? (
                 <p className="rounded-xl bg-primary/5 p-3 text-sm text-primary">
@@ -1743,35 +1705,14 @@ export function SalesContractForm() {
                       direction === 'OUTBOUND' ? 'رفت' : 'برگشت',
                     )
                     .join(' و ')}{' '}
-                  همراه خدمات است؛ هزینهٔ اضافه ندارد و در خروجی بلیط درج
-                  می‌شود.
+                  در قیمت کل خدمات هر مسافر لحاظ می‌شود.
                 </p>
               ) : null}
-              <SalesPricingPanel
-                compact
-                currencies={references.currencies}
-                services={pricingView.services}
-                nights={pricingNights}
-                values={pricingView.values}
-                fixedSalePrices={
-                  fixedTicketSalePrices
-                    ? tripPricingView(pricingServices, fixedTicketSalePrices)
-                        .values
-                    : undefined
-                }
-                onChange={(key, prices) =>
-                  patchState({
-                    servicePricing:
-                      key === roundTripPriceKey
-                        ? splitFlightPrices(prices, state.servicePricing ?? {})
-                        : { ...state.servicePricing, [key]: prices },
-                  })
-                }
-              />
             </div>
             <div className="grid content-start gap-3">
               <PassengerPackagePrices
                 state={state}
+                currencies={references.currencies}
                 onChange={(passengerPrices) => patchState({ passengerPrices })}
               />
               <InsuranceExtraSummary state={state} />
@@ -1779,7 +1720,7 @@ export function SalesContractForm() {
                 payments={state.payments}
                 currencies={references.currencies}
                 banks={references.banks}
-                disabled={!pricingServices.length}
+                disabled={!state.passengers.length}
                 onChange={(payments) => patchState({ payments })}
               />
               <FormField label="یادداشت کارشناس برای رزرواسیون (اختیاری)">
@@ -1877,10 +1818,10 @@ export function SalesContractForm() {
               </Card>
             </div>
             <InsuranceExtraSummary state={state} />
-            <SalesPricingSummary
-              services={pricingView.services}
-              nights={pricingNights}
-              values={pricingView.values}
+            <PassengerPackagePrices
+              state={state}
+              currencies={references.currencies}
+              onChange={(passengerPrices) => patchState({ passengerPrices })}
             />
             {state.serviceKinds.includes('FLIGHT') ? (
               <Alert

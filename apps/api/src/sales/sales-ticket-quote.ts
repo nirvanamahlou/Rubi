@@ -2,11 +2,11 @@ import { BadRequestException } from '@nestjs/common';
 import { moneyUnits, type SalesServicePricingV1 } from '@nora/contracts';
 /** A catalog quote is a freshness guard, independent of the customer agreement. */
 export function expectedTicketSale(
-  price: SalesServicePricingV1,
+  price: SalesServicePricingV1 | undefined,
   metadata?: Readonly<Record<string, unknown>> | null,
 ) {
   const version = metadata?.catalogSaleQuoteVersion;
-  if (version === undefined)
+  if (version === undefined && price)
     return { amount: price.daySale.amount, currencyCode: price.currencyCode };
   const quote = {
     amount: metadata?.catalogSaleQuoteAmount,

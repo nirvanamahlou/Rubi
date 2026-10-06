@@ -68,13 +68,16 @@ vi.mock('react', async (original) => ({
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('compact sales contract form', () => {
-  it('shows the registered ticket sale price readonly alongside an editable agreed default', () => {
+  it('shows passenger package prices without catalog/day-sale or service agreement fields', () => {
     fixture.step = 3;
     fixture.ticketDraft = {
       ...emptySalesForm,
       serviceKinds: ['FLIGHT'],
       ticket: { ...emptySalesForm.ticket, outboundOfferId: 'OUT' },
       servicePricing: {},
+      passengers: [
+        { customerId: 'one', displayName: 'Sample', birthDate: '1990-01-01' },
+      ],
       outboundOffer: {
         id: 'OUT',
         version: 1,
@@ -103,31 +106,21 @@ describe('compact sales contract form', () => {
       fixture.step = 0;
       fixture.ticketDraft = null;
     }
-    const day = html.match(
-      /<input[^>]*aria-label="قیمت روز فروش بلیط رفت کل"[^>]*>/,
-    )?.[0];
-    const agreed = html.match(
-      /<input[^>]*aria-label="مبلغ توافق‌شده با مشتری بلیط رفت کل"[^>]*>/,
-    )?.[0];
-    expect(day).toContain('value="125"');
-    expect(day).toContain('readOnly');
-    expect(agreed).toContain('value="125"');
-    expect(agreed).not.toContain('readOnly');
+    expect(html).toContain('قیمت ریالی Sample');
+    expect(html).toContain('قیمت ارزی Sample');
+    expect(html).not.toContain('قیمت روز فروش بلیط');
+    expect(html).not.toContain('مبلغ توافق‌شده با مشتری بلیط');
   });
-  it('shows one day-sale and agreed input for round-trip flights in the compact pricing layout', () => {
+  it('uses the passenger table for round-trip packages without two agreement prices', () => {
     fixture.roundTrip = true;
     fixture.step = 3;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.roundTrip = false;
     fixture.step = 0;
-    expect(html).toContain('lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]');
-    expect(
-      html.match(/aria-label="قیمت روز فروش بلیط رفت‌وبرگشت کل"/g),
-    ).toHaveLength(1);
-    expect(
-      html.match(/aria-label="مبلغ توافق‌شده با مشتری بلیط رفت‌وبرگشت کل"/g),
-    ).toHaveLength(1);
-    expect(html).not.toContain('aria-label="قیمت روز فروش بلیط برگشت کل"');
+    expect(html).toContain('قیمت ریالی (IRR)');
+    expect(html).toContain('قیمت ارزی');
+    expect(html).not.toContain('قیمت روز فروش');
+    expect(html).not.toContain('مبلغ توافق‌شده با مشتری');
   });
   it('keeps hotel guests and aggregate rooms without asking each guest for an occupancy type', () => {
     fixture.hotel = true;

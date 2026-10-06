@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { validatePassengerPackagePrices } from './pricing';
+import {
+  validatePassengerPackagePrices,
+  servicePriceComponents,
+} from './pricing';
 import type { SalesPassengerInput, SalesPriceComponentInput } from './index';
 const person = (amount: string): SalesPassengerInput => ({
   customerId: 'test',
@@ -91,4 +94,36 @@ describe('Individual agreed package totals', () => {
         true,
       ),
     ).not.toThrow());
+});
+
+it('rejects mixing per-service sale prices or partial markers into a passenger package snapshot', () => {
+  expect(() =>
+    servicePriceComponents([
+      {
+        clientKey: 'flight',
+        kind: 'FLIGHT',
+        titleSnapshot: 'Flight',
+        metadata: { passengerPackagePricingVersion: 1 },
+        pricing: [
+          {
+            version: 1,
+            currencyCode: 'USD',
+            daySale: { basis: 'TOTAL', amount: '1' },
+            agreed: { basis: 'TOTAL', amount: '1' },
+          },
+        ],
+      },
+    ]),
+  ).toThrow();
+  expect(() =>
+    servicePriceComponents([
+      {
+        clientKey: 'one',
+        kind: 'OTHER',
+        titleSnapshot: 'One',
+        metadata: { passengerPackagePricingVersion: 1 },
+      },
+      { clientKey: 'two', kind: 'OTHER', titleSnapshot: 'Two' },
+    ]),
+  ).toThrow();
 });
