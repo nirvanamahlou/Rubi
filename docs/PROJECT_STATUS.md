@@ -4766,3 +4766,13 @@ New-agency staged contract/guarantee uploads now create fresh confidential acces
 ## 2026-10-06 — B2B-COMPOSE-WEBROOT-1006 — PC-B
 
 Compose now passes `apps/web` as Next.js's project directory. Local image build and service startup passed; API and Web containers report healthy, API health on4192 returns `ok`, and `/login` on3100 returns HTTP200. Existing PostgreSQL, Redis and MinIO containers remain healthy. PR #675 merged to `develop` as `3d48ef15`; formatting, full lint/typecheck, full tests, production build and PostgreSQL18 migration/seed gates passed. No schema, IAM, dependency or operational-record change.
+
+## 2026-10-06 — PROCUREMENT-REQUEST-FORM-REDESIGN-1006 — PC-B — READY_FOR_REVIEW
+
+فرم درخواست خرید با گریدهای مستقل و فشرده بازچینی شد تا کنترل‌های بلند باعث ایجاد فضای خالی کنار فیلدهای دیگر نشوند. متن‌های راهنمای تکراری مسئول پیگیری حذف شده‌اند؛ ثبت دستهٔ تازه، برچسب‌ها، اعتبارسنجی و پیام‌های خطا حفظ شدند. تست متمرکز ۱۱/۱۱، ESLint، TypeScript و build تولید وب با ۵۵ مسیر موفق‌اند. CI کامل PR شمارهٔ ۶۷۷ (quality، test، build و PostgreSQL migration/seed) موفق شد. شاخه: `codex/pc-b-procurement-form-redesign-1006`.
+
+## 2026-10-06 — B2B-CONTRACT-GUARANTEE-PUBLISH-1006 — PC-B — READY_FOR_REVIEW
+
+Agreement guarantee rows now use the canonical expanded Documents uploader; the screenshot-marked draft helper copy is removed. Agreement form save returns the exact persisted version and submits it with a separate request ID for independent review; sub-section-only edits remain save-only. Confidential proof submission creates fresh action-scoped grants; retries retain the same request/grant payload and explicit rejected grants can be renewed. Partial save/submit failure remains visible and retry never saves a second version. No API, schema, migration, permission or operational data changes. Focused/full Organizations tests, B2B workflow/idempotency/documents tests, Web typecheck/lint/build, exact-candidate independent review and CI remain release gates. See docs/tasks/B2B-CONTRACT-GUARANTEE-PUBLISH-1006.md.
+
+B2B-CONTRACT-GUARANTEE-PUBLISH-1006 review repair: independent review blocked candidate `0b8302c3` on panel-unmount and stale confidential-grant boundaries. A mounted/context/request/proof-scope lease now prevents stale follow-on grants, saves/submits and state updates; deferred-grant regressions were added. After rebase on refreshed develop `6c631406`, Organizations 207/API 18 tests, Web typecheck, scoped lint and Web 55-route production build pass. Fresh review of source candidate `1017b936` reports NO_BLOCKER and resolves both findings; exact-head CI still gates develop merge. No authenticated browser run or operational database/runtime mutation.

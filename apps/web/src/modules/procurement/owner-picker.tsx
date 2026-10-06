@@ -13,12 +13,16 @@ export function ProcurementOwnerPicker({
   onChange,
   label = 'مسئول خرید',
   initialOption,
+  compact = false,
+  showHints = true,
 }: {
   branchId: string;
   value: string;
   onChange: (value: string) => void;
   label?: string;
   initialOption?: { id: string; label: string };
+  compact?: boolean;
+  showHints?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -41,8 +45,17 @@ export function ProcurementOwnerPicker({
     retry: false,
   });
   return (
-    <div className="min-w-64 space-y-2">
-      <FormField id="proc-owner-search" label={`جست‌وجوی ${label} واجد دسترسی`}>
+    <div
+      className={
+        compact
+          ? 'grid min-w-0 items-start gap-4 sm:grid-cols-2'
+          : 'min-w-64 space-y-2'
+      }
+    >
+      <FormField
+        id="proc-owner-search"
+        label={compact ? `جست‌وجوی ${label}` : `جست‌وجوی ${label} واجد دسترسی`}
+      >
         <Input
           id="proc-owner-search"
           value={search}
@@ -80,21 +93,23 @@ export function ProcurementOwnerPicker({
         </ProcurementSelect>
       </FormField>
       {query.isError && (
-        <Alert
-          tone="error"
-          title="مسئولان دریافت نشدند"
-          description={
-            query.error instanceof Error
-              ? query.error.message
-              : 'دریافت ناموفق بود'
-          }
-        >
-          <Button variant="ghost" onClick={() => void query.refetch()}>
-            تلاش دوباره
-          </Button>
-        </Alert>
+        <div className={compact ? 'sm:col-span-2' : undefined}>
+          <Alert
+            tone="error"
+            title="مسئولان دریافت نشدند"
+            description={
+              query.error instanceof Error
+                ? query.error.message
+                : 'دریافت ناموفق بود'
+            }
+          >
+            <Button variant="ghost" onClick={() => void query.refetch()}>
+              تلاش دوباره
+            </Button>
+          </Alert>
+        </div>
       )}
-      {!debounced.trim() ? (
+      {showHints && !debounced.trim() ? (
         <p className="text-xs text-muted-foreground" role="status">
           برای نمایش مسئولان، نام یا کد را جست‌وجو کنید.
         </p>
@@ -106,27 +121,29 @@ export function ProcurementOwnerPicker({
           </p>
         )
       )}
-      <div className="flex gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={!debounced.trim() || page <= 1}
-          onClick={() => setPage(page - 1)}
-        >
-          قبلی
-        </Button>
-        <span className="self-center text-xs">
-          {page.toLocaleString('fa-IR')}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={!debounced.trim() || !query.data?.hasMore}
-          onClick={() => setPage(page + 1)}
-        >
-          بعدی
-        </Button>
-      </div>
+      {(!compact || Boolean(debounced.trim()) || page > 1) && (
+        <div className={`flex gap-2 ${compact ? 'sm:col-span-2' : ''}`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!debounced.trim() || page <= 1}
+            onClick={() => setPage(page - 1)}
+          >
+            قبلی
+          </Button>
+          <span className="self-center text-xs">
+            {page.toLocaleString('fa-IR')}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!debounced.trim() || !query.data?.hasMore}
+            onClick={() => setPage(page + 1)}
+          >
+            بعدی
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

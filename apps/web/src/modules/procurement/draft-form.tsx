@@ -338,18 +338,6 @@ export function DraftForm({
     return (
       <FormField id={`proc-${key}`} label={label} required={required}>
         <div className="space-y-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setCustomFields((previous) => ({ ...previous, [key]: true }));
-              update(key, '');
-              focusControl(`proc-new-${key}`);
-            }}
-          >
-            افزودن دسته خرید
-          </Button>
           <ProcurementSelect
             id={`proc-${key}`}
             required={required}
@@ -580,13 +568,13 @@ export function DraftForm({
       ? reconcileDraft(baseRequest.draft, draft, latest.draft)
       : null;
   return (
-    <Card className="overflow-hidden p-5 sm:p-7">
+    <Card className="overflow-hidden p-4 sm:p-5">
       <form
         onSubmit={(event) => {
           event.preventDefault();
           void save();
         }}
-        className="space-y-7"
+        className="space-y-5"
       >
         <h2 ref={heading} tabIndex={-1} className="sr-only">
           درخواست خرید
@@ -667,18 +655,54 @@ export function DraftForm({
         )}
         <fieldset
           disabled={busy}
-          className="min-w-0 space-y-6 rounded-2xl border border-primary/15 bg-gradient-to-b from-primary/5 via-surface to-surface p-4 sm:p-6"
+          className="min-w-0 space-y-5 rounded-2xl border border-primary/15 bg-gradient-to-b from-primary/5 via-surface to-surface p-4 sm:p-5"
         >
-          <legend className="mb-5 w-full border-b border-primary/15 pb-4 text-base font-bold text-foreground">
+          <legend className="mb-4 w-full border-b border-primary/15 pb-3 text-base font-bold text-foreground">
             <span className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <span className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 <ClipboardList aria-hidden="true" className="size-5" />
               </span>
               اطلاعات درخواست
             </span>
           </legend>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {text('title', 'عنوان درخواست', false, true, 300)}
+            <FormField id="proc-branch" label="شعبه">
+              <ProcurementSelect
+                id="proc-branch"
+                className={selectClass}
+                value={draft.branchId}
+                onChange={(event) => {
+                  update('branchId', event.target.value);
+                  setOwnerUserId('');
+                  if (!request) {
+                    setRequesterEmployeeId('');
+                    setRequesterLabel('');
+                    update('unitId', null);
+                    setRequesterPage(1);
+                  }
+                }}
+              >
+                <option value="">انتخاب شعبه</option>
+                {bootstrap.branches.map((branch) => (
+                  <option key={branch.id} value={branch.id}>
+                    {branch.label}
+                  </option>
+                ))}
+              </ProcurementSelect>
+            </FormField>
+            <FormField id="proc-requiredAt" label="تاریخ نیاز" required>
+              <DatePicker
+                id="proc-requiredAt"
+                aria-required
+                value={draft.requiredAt?.slice(0, 10) ?? ''}
+                onChange={(value) =>
+                  update('requiredAt', value ? `${value}T00:00:00.000Z` : null)
+                }
+              />
+            </FormField>
+          </div>
+          <div className="grid items-start gap-4 lg:grid-cols-2">
             <FormField id="proc-requester" label="درخواست‌کننده">
               {request ? (
                 <Input
@@ -743,103 +767,70 @@ export function DraftForm({
                 </div>
               )}
             </FormField>
-            <FormField id="proc-branch" label="شعبه">
-              <ProcurementSelect
-                id="proc-branch"
-                className={selectClass}
-                value={draft.branchId}
-                onChange={(event) => {
-                  update('branchId', event.target.value);
-                  setOwnerUserId('');
-                  if (!request) {
-                    setRequesterEmployeeId('');
-                    setRequesterLabel('');
-                    update('unitId', null);
+            <div className="grid items-start gap-4 sm:grid-cols-2">
+              <FormField id="proc-unit" label="واحد سازمانی">
+                <ProcurementSelect
+                  id="proc-unit"
+                  className={selectClass}
+                  value={draft.unitId ?? ''}
+                  onChange={(event) => {
+                    const nextUnit = event.target.value || null;
+                    const requester = requesters.data?.items.find(
+                      (item) => item.id === requesterEmployeeId,
+                    );
+                    update('unitId', nextUnit);
+                    if (
+                      nextUnit &&
+                      requester?.unitId &&
+                      requester.unitId !== nextUnit
+                    ) {
+                      setRequesterEmployeeId('');
+                      setRequesterLabel('');
+                    }
                     setRequesterPage(1);
-                  }
-                }}
-              >
-                <option value="">انتخاب شعبه</option>
-                {bootstrap.branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.label}
-                  </option>
-                ))}
-              </ProcurementSelect>
-            </FormField>
-            {canChooseOwner && (!request || canAssign) && (
-              <div className="space-y-2">
-                <ProcurementOwnerPicker
-                  branchId={draft.branchId}
-                  value={ownerUserId}
-                  onChange={setOwnerUserId}
-                  label="مسئول پیگیری"
-                  {...(request?.ownerUserId
-                    ? {
-                        initialOption: {
-                          id: request.ownerUserId,
-                          label: `مسئول فعلی (${request.ownerUserId.slice(0, 8)})`,
-                        },
-                      }
-                    : {})}
-                />
-                <p className="text-xs text-muted-foreground">
-                  فقط مسئولان فعال و مجاز خرید در همین شعبه قابل انتخاب‌اند.
-                  مسئول پیگیری کار را در کارتابل خود می‌بیند؛ اختیار تأیید فقط
-                  از سیاست مصوب خرید می‌آید.
-                </p>
-              </div>
-            )}
-            <FormField id="proc-unit" label="واحد سازمانی">
-              <ProcurementSelect
-                id="proc-unit"
-                className={selectClass}
-                value={draft.unitId ?? ''}
-                onChange={(event) => {
-                  const nextUnit = event.target.value || null;
-                  const requester = requesters.data?.items.find(
-                    (item) => item.id === requesterEmployeeId,
-                  );
-                  update('unitId', nextUnit);
-                  if (
-                    nextUnit &&
-                    requester?.unitId &&
-                    requester.unitId !== nextUnit
-                  ) {
-                    setRequesterEmployeeId('');
-                    setRequesterLabel('');
-                  }
-                  setRequesterPage(1);
-                }}
-              >
-                <option value="">انتخاب واحد از منابع انسانی</option>
-                {draft.unitId &&
-                  !units.data?.items.some(
-                    (unit) => unit.id === draft.unitId,
-                  ) && <option value={draft.unitId}>{draft.unitId}</option>}
-                {units.data?.items.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.label}
-                  </option>
-                ))}
-              </ProcurementSelect>
-              {units.isError && (
-                <p className="text-sm text-destructive">
-                  فهرست واحدهای منابع انسانی دریافت نشد.
-                </p>
-              )}
-            </FormField>
-            {savedChoice('category', 'دسته خرید', true)}
-            <FormField id="proc-requiredAt" label="تاریخ نیاز" required>
-              <DatePicker
-                id="proc-requiredAt"
-                aria-required
-                value={draft.requiredAt?.slice(0, 10) ?? ''}
-                onChange={(value) =>
-                  update('requiredAt', value ? `${value}T00:00:00.000Z` : null)
-                }
+                  }}
+                >
+                  <option value="">انتخاب واحد از منابع انسانی</option>
+                  {draft.unitId &&
+                    !units.data?.items.some(
+                      (unit) => unit.id === draft.unitId,
+                    ) && <option value={draft.unitId}>{draft.unitId}</option>}
+                  {units.data?.items.map((unit) => (
+                    <option key={unit.id} value={unit.id}>
+                      {unit.label}
+                    </option>
+                  ))}
+                </ProcurementSelect>
+                {units.isError && (
+                  <p className="text-sm text-destructive">
+                    فهرست واحدهای منابع انسانی دریافت نشد.
+                  </p>
+                )}
+              </FormField>
+              {savedChoice('category', 'دسته خرید', true)}
+            </div>
+          </div>
+          {canChooseOwner && (!request || canAssign) && (
+            <div className="rounded-xl border border-primary/10 bg-surface/70 p-4">
+              <ProcurementOwnerPicker
+                branchId={draft.branchId}
+                value={ownerUserId}
+                onChange={setOwnerUserId}
+                label="مسئول پیگیری"
+                compact
+                showHints={false}
+                {...(request?.ownerUserId
+                  ? {
+                      initialOption: {
+                        id: request.ownerUserId,
+                        label: `مسئول فعلی (${request.ownerUserId.slice(0, 8)})`,
+                      },
+                    }
+                  : {})}
               />
-            </FormField>
+            </div>
+          )}
+          <div className="grid items-start gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <FormField id="proc-deliveryLocation" label="محل تحویل">
               <ProcurementSelect
                 id="proc-deliveryLocation"
@@ -857,19 +848,6 @@ export function DraftForm({
                 ))}
               </ProcurementSelect>
             </FormField>
-          </div>
-          {text('needReason', 'شرح نیاز و توجیه خرید', true, false, 4000)}
-          <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
-            <input
-              type="checkbox"
-              checked={draft.urgent}
-              onChange={(event) => update('urgent', event.target.checked)}
-            />
-            خرید اضطراری است
-          </label>
-          {draft.urgent &&
-            text('urgencyReason', 'دلیل اضطرار', true, true, 1000)}
-          <div className="grid gap-4 sm:grid-cols-2">
             <FormField id="proc-estimate" label="مبلغ">
               <MoneyInput
                 id="proc-estimate"
@@ -897,6 +875,19 @@ export function DraftForm({
                 ))}
               </ProcurementSelect>
             </FormField>
+          </div>
+          {text('needReason', 'شرح نیاز و توجیه خرید', true, false, 4000)}
+          <div className="grid items-end gap-4 sm:grid-cols-2">
+            <label className="flex h-11 items-center gap-3 rounded-xl border border-input bg-surface px-3 text-sm font-semibold">
+              <input
+                type="checkbox"
+                checked={draft.urgent}
+                onChange={(event) => update('urgent', event.target.checked)}
+              />
+              خرید اضطراری است
+            </label>
+            {draft.urgent &&
+              text('urgencyReason', 'دلیل اضطرار', true, true, 1000)}
           </div>
         </fieldset>
         <fieldset
