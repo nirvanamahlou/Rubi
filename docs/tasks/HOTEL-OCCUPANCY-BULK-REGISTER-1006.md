@@ -1,5 +1,11 @@
 # Whole-file Nora registration — PC-A preview
 
+## Follow-up: reimport and hotel-create allowlist repair
+
+Owner requests later Excel uploads update the same city/supplier. The consumer reads the complete branch pack directory and exact-period standalone details, then matches branch/city/check-in/check-out/currency/hotel/supplier/board. Existing pack IDs determine update commands independently of importer chunk boundaries. Incoming guest tariffs replace only identical adult/child-band/board/date keys; missing hotels/rooms/compositions remain. Unmatched periods/rows create packs; unchanged content issues no write. Existing duplicate targets fail closed rather than choosing an arbitrary latest row. Updates use existing versioned PATCH and actor/pack/body-derived replay keys; conflicts require fresh reading, never bypassing CAS. No whole-file atomicity or concurrent create-uniqueness guarantee is added.
+
+User reproduced `فیلد غیرمجاز: countryId` while creating the first source hotel. The hotel producer accepts cityId, not countryId: removed only the unsupported consumer create field. Country/city are still verified through the existing city public detail before writes. Accepted supplier/room records from the earlier partial attempt are preserved and reused on retry; no deletion/reset is required. A regression compares every generated create payload against the actual existing producer allowlist, plus synthetic create/update/reimport/unchanged/isolation/ambiguity cases. Reservations256 tests pass (two existing skips); scoped lint and typecheck pass. Production build/preview restart gates release; authenticated real-file import remains human review.
+
 Branch: codex/pc-a-hotel-occupancy-import-preview-1006; continuation of PR671.
 
 ## Owner decisions

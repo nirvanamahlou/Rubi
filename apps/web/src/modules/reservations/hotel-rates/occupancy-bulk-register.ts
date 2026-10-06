@@ -8,6 +8,9 @@ import {
   planOccupancyBatch,
 } from './occupancy-bulk';
 import type { ImportedOccupancy } from './occupancy-import';
+import { loadPackDirectory } from './existing-packs-model';
+import { planOccupancyReimport } from './occupancy-reimport';
+import type { PackDetail } from './packs-workspace';
 
 export async function allImportReferences(
   resource: MasterDataResource,
@@ -152,7 +155,6 @@ export async function registerOccupancyBatch(input: {
           values: {
             name,
             cityId: input.cityId,
-            countryId: input.countryId,
             isSaleableReference: 'true',
             roomTypeIds: [...needed],
           },
@@ -188,24 +190,72 @@ export async function registerOccupancyBatch(input: {
     new Map([...hotelMap].map(([n, h]) => [n, h.id])),
     new Map([...roomMap].map(([n, r]) => [n, r.id])),
   );
+  onProgress('بررسی بسته‌های موجود همین شهر و کارگزار برای به‌روزرسانی…');
+  const directory = await loadPackDirectory(input.branchId, rateRequest);
+  const periods = new Set(
+    packs.map((p) => JSON.stringify([p.checkIn, p.checkOut, p.currency])),
+  );
+  const existing: PackDetail[] = [];
+  for (const summary of directory.filter(
+    (p) =>
+      p.cityId === input.cityId &&
+      p.method === 'STAY' &&
+      !p.tourDepartureId &&
+      periods.has(JSON.stringify([p.checkIn, p.checkOut, p.currency])),
+  )) {
+    const detail = await rateRequest<PackDetail>(
+      `/packs/${encodeURIComponent(summary.id)}`,
+    );
+    if (
+      detail.id !== summary.id ||
+      detail.branchId !== input.branchId ||
+      detail.cityId !== input.cityId ||
+      detail.checkIn !== summary.checkIn ||
+      detail.checkOut !== summary.checkOut ||
+      detail.currency !== summary.currency ||
+      detail.method !== 'STAY' ||
+      detail.tourDepartureId
+    )
+      throw Error('بسته موجود حین بررسی تغییر کرد؛ دوباره تلاش کنید.');
+    existing.push(detail);
+  }
+  const commands = planOccupancyReimport(packs, existing);
   let saved = 0;
+  let created = 0,
+    updated = 0,
+    unchanged = 0;
   try {
-    for (const pack of packs) {
+    for (const command of commands) {
+      if (command.unchanged) {
+        unchanged++;
+        saved++;
+        continue;
+      }
       onProgress(
-        `ثبت بسته ${saved + 1} از ${packs.length}؛ ${saved} بسته تأیید شده است…`,
+        `ثبت یا به‌روزرسانی بسته ${saved + 1} از ${commands.length}؛ ${saved} بسته بررسی شده است…`,
       );
-      await rateRequest('/packs', {
-        method: 'POST',
-        body: JSON.stringify(pack),
-        headers: {
-          'idempotency-key': await bulkOperationKey(input.actorId, pack),
+      await rateRequest(
+        command.id ? `/packs/${encodeURIComponent(command.id)}` : '/packs',
+        {
+          method: command.id ? 'PATCH' : 'POST',
+          body: JSON.stringify(command.body),
+          headers: {
+            'idempotency-key': await bulkOperationKey(
+              command.id
+                ? `${input.actorId}:update:${command.id}`
+                : input.actorId,
+              command.body,
+            ),
+          },
         },
-      });
+      );
       saved++;
+      if (command.id) updated++;
+      else created++;
     }
   } catch (error) {
     throw Error(
-      `${saved} از ${packs.length} بسته تأیید شده؛ ثبت مجدد همین فایل با همین کارگزار، بسته‌های قبلی را تکرار نمی‌کند. ${error instanceof Error ? error.message : 'ثبت ناموفق بود.'}`,
+      `${saved} از ${commands.length} بسته بررسی شده؛ ${created} جدید، ${updated} آپدیت، ${unchanged} بدون تغییر. دوباره همین فایل و کارگزار را ثبت کنید. ${error instanceof Error ? error.message : 'ثبت ناموفق بود.'}`,
     );
   } finally {
     if (saved) input.onSaved();
@@ -214,5 +264,8 @@ export async function registerOccupancyBatch(input: {
     packs: saved,
     prices: plan.priceCount,
     hotels: plan.hotelNames.size,
+    created,
+    updated,
+    unchanged,
   };
 }

@@ -104,7 +104,7 @@ export function OccupancyBulkPanel({
       });
       setDone(true);
       setMessage(
-        `${result.hotels.toLocaleString('fa-IR')} هتل، ${result.prices.toLocaleString('fa-IR')} قیمت در ${result.packs.toLocaleString('fa-IR')} بسته ثبت شد. از بخش بسته‌های موجود پایین صفحه قابل مشاهده و ویرایش است.${preview.issues.length ? ` ${preview.issues.length} ردیف خطادار ثبت نشد.` : ''}`,
+        `${result.hotels.toLocaleString('fa-IR')} هتل، ${result.prices.toLocaleString('fa-IR')} قیمت بررسی شد: ${result.created} بسته جدید، ${result.updated} بسته به‌روزرسانی و ${result.unchanged} بسته بدون تغییر. از بخش بسته‌های موجود پایین صفحه قابل مشاهده و ویرایش است.${preview.issues.length ? ` ${preview.issues.length} ردیف خطادار ثبت نشد.` : ''}`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ثبت ناموفق بود.');
@@ -122,6 +122,11 @@ export function OccupancyBulkPanel({
         کشور و شهر را بالا انتخاب کنید. قیمت کل اتاق در هر شب، ترکیب نفرات، بورد
         و همه تاریخ‌ها از اکسل خوانده می‌شود؛ انتخاب تک‌هتل یا انتقال به
         پیش‌نویس لازم نیست.
+      </p>
+      <p>
+        اکسل جدیدِ همین شهر و کارگزار، قیمت ترکیب‌های موجود در همان بازه و ارز
+        را به‌روزرسانی می‌کند. بازه‌های جدید اضافه می‌شوند؛ هتل‌ها، اتاق‌ها و
+        نرخ‌هایی که در فایل جدید نیستند حذف نمی‌شوند.
       </p>
       <label className="block">
         فایل خروجی نورا
