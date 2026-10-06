@@ -3,6 +3,7 @@
 import type {
   HotelRoomRateV1,
   SalesContractCreateRequest,
+  SalesContractProfitV1,
   SalesContractOutputV1,
   SalesContractDetail,
   SalesContractListQuery,
@@ -95,6 +96,10 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  profit: (id: string) =>
+    request<{ data: SalesContractProfitV1 }>(
+      `/contracts/${encodeURIComponent(id)}/profit`,
+    ),
   cancel: (id: string, version: number, reason: string) =>
     request<{ data: SalesContractDetail }>(
       `/contracts/${encodeURIComponent(id)}/cancel`,

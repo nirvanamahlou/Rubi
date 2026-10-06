@@ -22,10 +22,11 @@ describe('Passenger whole-package price entry', () => {
     const html = renderToStaticMarkup(
       <PassengerPackagePrices state={state} onChange={vi.fn()} />,
     );
-    expect(html).toContain('مبلغ کل First IRR');
-    expect(html).toContain('مبلغ کل Second IRR');
-    expect((html.match(/inputMode="decimal"/g) || []).length).toBe(2);
-    expect(html).toContain('1,000');
+    expect(html).toContain('قیمت ریالی First');
+    expect(html).toContain('قیمت ریالی Second');
+    expect((html.match(/inputMode="decimal"/g) || []).length).toBe(4);
+    expect(html).not.toContain('1,000');
+    expect(html).toContain('قیمت ارزی');
     expect(html).toContain('value=""');
   });
 });

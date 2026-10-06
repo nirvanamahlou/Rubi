@@ -1,3 +1,4 @@
+import { SalesProfitService } from './sales-profit.service';
 import { ForbiddenException } from '@nestjs/common';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
@@ -38,6 +39,7 @@ import { SALES_XLSX_MIME } from './sales.xlsx';
 @Controller('sales')
 export class SalesController {
   constructor(
+    @Inject(SalesProfitService) private readonly profit: SalesProfitService,
     @Inject(SalesService) private readonly service: SalesService,
     @Inject(SalesOutputService) private readonly output: SalesOutputService,
     @Inject(TravelWorkflowService)
@@ -130,6 +132,15 @@ export class SalesController {
       idempotencyKey,
       traceId,
     );
+  }
+
+  @Get('contracts/:id/profit')
+  @Header('Cache-Control', 'private, no-store')
+  contractProfit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.profit.detail(id, request.actor);
   }
 
   @Get('contracts/:id/status-history')

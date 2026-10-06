@@ -531,7 +531,7 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'خدمت انتخاب‌شده متعلق به این قرارداد نیست.',
       );
-    if (service.kind !== 'HOTEL' && service.kind !== 'TRANSFER')
+    if (!['HOTEL', 'TRANSFER', 'INSURANCE'].includes(service.kind))
       throw new BadRequestException(
         'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
       );
@@ -569,7 +569,7 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'جمع قیمت مسافران هتل با مبلغ خرید یکسان نیست.',
       );
-    if (service.kind === 'TRANSFER' && input.passengerPrices)
+    if (service.kind !== 'HOTEL' && input.passengerPrices)
       throw new BadRequestException(
         'قیمت مسافری فقط برای خرید هتل ثبت می‌شود.',
       );

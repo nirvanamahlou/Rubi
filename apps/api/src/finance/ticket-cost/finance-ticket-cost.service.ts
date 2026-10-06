@@ -308,6 +308,39 @@ export class FinanceTicketCostService {
     });
   }
 
+  /** Recorded actual cost, independent of settlement; never a catalog sale quote. */
+  async recordedCostsForOffers(offerIds: readonly string[], branchId: string) {
+    if (!offerIds.length) return [];
+    const rows =
+      await this.database.client.financeTicketPurchaseCostRevision.findMany({
+        where: { branchId, offerId: { in: [...new Set(offerIds)] } },
+        orderBy: [{ version: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }],
+        select: {
+          id: true,
+          offerId: true,
+          currencyCode: true,
+          adultUnitCost: true,
+          childUnitCost: true,
+          unitCost: true,
+        },
+      });
+    const seen = new Set<string>();
+    return rows.flatMap((row) => {
+      if (!row.offerId || seen.has(row.offerId)) return [];
+      seen.add(row.offerId);
+      return [
+        {
+          id: row.id,
+          offerId: row.offerId,
+          currencyCode: row.currencyCode,
+          adultUnitCost: row.adultUnitCost.toString(),
+          childUnitCost: row.childUnitCost.toString(),
+          unitCost: row.unitCost?.toString() ?? null,
+        },
+      ];
+    });
+  }
+
   /** Only a fully paid, offer-linked, immutable cost is visible to package pricing. */
   async paidCostsForOffers(
     offerIds: readonly string[],

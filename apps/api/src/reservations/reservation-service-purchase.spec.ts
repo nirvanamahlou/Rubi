@@ -492,3 +492,100 @@ it('records transfer-only split purchases without stay dates and rejects invalid
     1,
   );
 });
+
+it('records insurance actual cost through the same authorized, scoped CAS and idempotency purchase path', async () => {
+  const create = vi
+    .fn()
+    .mockResolvedValue({ id: 'insurance-cost', version: 1 });
+  const updateMany = vi.fn().mockResolvedValue({ count: 1 });
+  const db = {
+    client: {
+      reservationIntake: {
+        findUnique: vi
+          .fn()
+          .mockResolvedValue({
+            branchId: 'branch',
+            snapshot: {
+              serviceSelections: [
+                {
+                  clientKey: 'insurance',
+                  kind: 'INSURANCE',
+                  titleSnapshot: 'Policy',
+                },
+              ],
+            },
+            workflowRevisions: [],
+          }),
+      },
+      reservationServicePurchase: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      $transaction: vi.fn(async (run: (tx: unknown) => Promise<unknown>) =>
+        run({
+          $queryRaw: vi.fn(),
+          reservationIntake: { updateMany },
+          reservationServicePurchase: { create },
+        }),
+      ),
+    },
+  };
+  const directory = {
+    brokerReference: vi
+      .fn()
+      .mockResolvedValue({
+        id: valid.supplierOrganizationId,
+        source: 'BROKER',
+        name: 'Insurer broker',
+      }),
+    currencyReference: vi.fn(),
+  };
+  const service = new ReservationServicePurchaseService(
+    db as never,
+    directory as never,
+  );
+  const actor = {
+    userId: 'actor',
+    branchIds: ['branch'],
+    permissions: ['reservations.read', 'reservations.hotel_purchase.write'],
+  } as never;
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      { ...valid, serviceClientKey: 'insurance' },
+      actor,
+      'insurance-cost-key',
+    ),
+  ).resolves.toMatchObject({ data: { id: 'insurance-cost' } });
+  expect(create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        serviceKind: 'INSURANCE',
+        amount: '1250000',
+        currencyCode: 'IRR',
+        supplierBrokerId: valid.supplierOrganizationId,
+      }),
+    }),
+  );
+  expect(updateMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: expect.objectContaining({
+        purchaseVersion: 0,
+        branchId: { in: ['branch'] },
+      }),
+    }),
+  );
+  await expect(
+    service.record(
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      {
+        ...valid,
+        serviceClientKey: 'insurance',
+        passengerPrices: [
+          { customerId: valid.supplierOrganizationId, nightlyAmount: '1' },
+        ],
+      },
+      actor,
+      'bad',
+    ),
+  ).rejects.toThrow();
+});
