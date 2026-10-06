@@ -5711,9 +5711,10 @@ NAVIGATION-CLOSED-1006: closed defaults cover all registered groups before permi
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-b2b-compose-webroot-1006` from `origin/develop@0e9af46c`. Reserve only the `web.command` startup-root correction in `infrastructure/compose.apps.yaml` and this task's bounded status documentation. The Next.js app root is `apps/web`; Compose must pass that directory to Next so its `/login` healthcheck succeeds. The user's newer direction to run the stack in Compose supersedes the previous host-gateway runtime: replace only the old host gateway/Web processes after the Compose API is healthy, retain URL 3100 and API port 4192, and leave PostgreSQL, Redis and MinIO running. Do not alter storage, IAM, schema, migrations or dependencies. Verify container health, HTTP `/login` on 3100 and API health on 4192. No operational record changes.
 
-## PROCUREMENT-REQUEST-FORM-REDESIGN-1006 — PC-B — IN_PROGRESS
+## PROCUREMENT-REQUEST-FORM-REDESIGN-1006 — PC-B — READY_FOR_REVIEW
 
 - شاخهٔ مستقل `codex/pc-b-procurement-form-redesign-1006` از `origin/develop@3d48ef15`؛ COMPUTER_ID=PC-B.
 - رزرو محدوده: `apps/web/src/modules/procurement/draft-form.tsx`، `owner-picker.tsx` و تست متمرکز فرم؛ به‌علاوه ثبت همین واحد در اسناد وضعیت. مالکیت ماژول خرید و تأمین با PC-B است؛ فایل‌های هدف آزاد بودند.
 - هدف: چیدمان متراکم و واکنش‌گرای فرم درخواست، حذف فاصله‌های نامتوازن و متن‌های توضیحی تکراری زیر فیلدها. برچسب، اعتبارسنجی، پیام خطا، دسترس‌پذیری و رفتار فرم حفظ می‌شوند. بدون API، Schema/Migration، مجوز، Dependency/Lockfile یا دادهٔ عملیاتی.
-- وضعیت: پیاده‌سازی و اعتبارسنجی در جریان است؛ Push/PR و Merge پس از عبور بررسی‌ها.
+- نتیجه: فرم با گریدهای مستقل و فشرده برای فیلدهای پایه، منابع انسانی، مسئول پیگیری و تحویل/ارز بازچینی شد؛ متن‌های راهنمای تکراری مسئول پیگیری حذف و کنترل OwnerPicker به‌صورت اختیاری فشرده شد. انتخاب «ثبت مورد جدید» و ذخیره دسته حفظ شد؛ برچسب‌ها، خطاها و رفتار فرم تغییر نکردند.
+- اعتبارسنجی: تست DraftForm یازده مورد، ESLint متمرکز، Web typecheck، Prettier، `git diff --check` و Web production build با ۵۵ مسیر موفق‌اند. چهار CI دقیق PR شماره ۶۷۷ شامل quality gate، تست کامل، build تولید و PostgreSQL migration/seed موفق‌اند. آمادهٔ Merge به develop با اجازهٔ صریح مالک؛ قفل‌ها پس از Merge آزاد می‌شوند.
