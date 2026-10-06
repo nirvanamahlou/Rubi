@@ -115,6 +115,7 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).not.toContain('>ثبت پیش‌نویس</span>');
     expect(html).not.toContain('>ویرایش پیش‌نویس</span>');
     expect(html).not.toContain('شماره درخواست:');
+    expect(html).not.toContain('افزودن دسته خرید');
   });
   it('offers a follow-up recipient only to authorized assigners and keeps approval policy separate', () => {
     const html = renderToStaticMarkup(
@@ -130,7 +131,8 @@ describe('Purchase draft accessibility and persisted input', () => {
       </QueryClientProvider>,
     );
     expect(html).toContain('مسئول پیگیری');
-    expect(html).toContain('اختیار تأیید فقط از سیاست مصوب خرید می‌آید');
+    expect(html).not.toContain('برای نمایش مسئولان');
+    expect(html).not.toContain('اختیار تأیید فقط از سیاست مصوب خرید می‌آید');
   });
   it('blocks publish before persistence when required or line values are invalid', () => {
     const draft = {

@@ -4752,3 +4752,6 @@ New-agency staged contract/guarantee uploads now create fresh confidential acces
 ## 2026-10-06 — B2B-COMPOSE-WEBROOT-1006 — PC-B
 
 Compose now passes `apps/web` as Next.js's project directory. Local image build and service startup passed; API and Web containers report healthy, API health on4192 returns `ok`, and `/login` on3100 returns HTTP200. Existing PostgreSQL, Redis and MinIO containers remain healthy. Full CI is required before merging the bounded Compose command/documentation follow-up. No schema, IAM, dependency or operational-record change.
+## 2026-10-06 — PROCUREMENT-REQUEST-FORM-REDESIGN-1006 — PC-B — IN_PROGRESS
+
+فرم ایجاد درخواست خرید در حال بازطراحی است تا فاصله‌های اضافی و متن‌های راهنمای تکراری حذف شوند و چیدمان فیلدها در اندازه‌های مختلف صفحه منظم باشد. متن راهنمای فهرست مسئول پیگیری نیز به‌صورت اختیاری پنهان می‌شود. برچسب‌ها، اعتبارسنجی و پیام‌های خطا حفظ می‌شوند. شاخهٔ مستقل از آخرین develop: `codex/pc-b-procurement-form-redesign-1006`.
