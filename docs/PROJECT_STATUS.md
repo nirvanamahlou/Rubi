@@ -4724,3 +4724,8 @@ Ticket Catalog consumes Reservations actual ticket-document issuance through a n
 
 
 ISSUED-TICKET-EXPORT-1005 validation: scoped ESLint, API/Web typecheck, API build and 55-page Web production build pass after refreshing existing generated artifacts. Focused actual-issuance/date/filter/workbook/security/UI tests and real synthetic PDF rendering pass. PR665 exact-head full quality, test, build and PostgreSQL CI gate develop merge. No operational data or local runtime change.
+
+
+## 2026-10-06 — Sidebar groups start closed — PC-A
+
+All desktop/mobile sidebar group IDs initialize closed, including groups made visible after asynchronous permission loading. Manual open/close remains route-independent. No access, navigation destination, API or schema changes. User authorizes develop merge; targeted collapse regression, Web lint/typecheck/build and exact-head CI gate merge.

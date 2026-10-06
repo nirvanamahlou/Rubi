@@ -5669,3 +5669,9 @@ Reserve Reservations ticket-document public reporting/controller/new export help
 ISSUED-TICKET-EXPORT-1005 candidate: Reservations issuance records and assigned segment projection, validated Tehran date boundaries, identical optional server filters, private downloadable XLSX and browser-rendered PDF. API focused14 pass/one existing skip; Web report/model/security/UI tests pass and actual synthetic PDF runtime smoke passes. Scope locks released with review candidate. Generated Contracts/Prisma rebuild needed for unrelated pre-existing stale artifacts; final static/build/CI gates required. No operational database/runtime changes.
 
 ISSUED-TICKET-EXPORT-1005 validation: scoped ESLint, API/Web typecheck, API build and 55-page Web production build pass after refreshing existing generated artifacts. Focused actual-issuance/date/filter/workbook/security/UI tests and real synthetic PDF rendering pass. PR665 exact-head full quality, test, build and PostgreSQL CI gate develop merge. No operational data or local runtime change.
+
+## NAVIGATION-CLOSED-1006 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; codex/pc-a-navigation-closed-1006 from origin/develop. Reserve bounded central app-shell.tsx Navigation initial group state, existing collapse regression, own status/assignment entries. All sidebar groups start closed independently of route and asynchronous access loading; manual toggles retained on desktop/mobile. No active target-file collision. No permissions, API, schema, dependency or runtime change. User explicitly authorizes develop merge after checks.
+
+NAVIGATION-CLOSED-1006: closed defaults cover all registered groups before permission loading; existing two collapse regressions, scoped Web lint and typecheck pass. PR666 production build and exact-head CI gate merge. Bounded central Navigation lock released with review candidate; no local runtime or data change.
