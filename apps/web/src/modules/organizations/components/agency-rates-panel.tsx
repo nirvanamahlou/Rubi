@@ -193,11 +193,6 @@ export function AgencyRatesPanel({
         ) : !visible.length ? (
           <p>هنوز {kindLabels[kind]} ثبت نشده است.</p>
         ) : null}
-        {profile?.status !== 'ACTIVE' ? (
-          <p className="boundary-note">
-            شرایط تجاری تا فعال‌شدن پروفایل، به‌صورت پیش‌نویس ذخیره می‌شود.
-          </p>
-        ) : null}
         {visible.map((row) => (
           <article className="rounded-xl border border-border p-4" key={row.id}>
             <div className="flex flex-wrap items-center justify-between gap-3">
