@@ -4796,6 +4796,10 @@ Campaign owner no longer displays a required marker in the form. Automatic authe
 
 PC-B added an accessible, non-submit Add button beside the purchase-category label. It opens/focuses the existing new-category input and reuses branch-scoped category persistence. No API/schema/dependency changes. Source reservation complete; CI and PR merge gate pending.
 
+
+## 2026-10-06 — Procurement owner initial loading
+
+PC-B corrected a search-only query gate that left the follow-up owner dropdown empty until typing. Owner choices now load on branch selection, with search and pagination retaining branch scoping. Branch changes reset picker state; create/assign permission gates and backend eligibility remain authoritative. Focused tests and CI are required before merge; no API/IAM/schema/runtime changes.
 ## 2026-10-06 — B2B agency wizard and commercial toolbar — PC-B
 
 Agency registration can advance past phone verification so the remaining form can be inspected; final save still checks the existing unexpired verification grant and returns to that step if missing. Removed the requested commercial helper copy and agreement heading. In credit/guarantee subsections the visible date captions are removed while date controls keep accessible names, and compact PDF/Excel exports appear alongside filter actions. Organizations focused tests: 22 passed; scoped lint, Web typecheck and production build (55 routes) passed after building the shared contracts package. No API, schema, IAM or operational data changes. Exact-head PR CI is the final gate.
