@@ -4751,7 +4751,8 @@ New-agency staged contract/guarantee uploads now create fresh confidential acces
 
 ## 2026-10-06 — B2B-COMPOSE-WEBROOT-1006 — PC-B
 
-Compose now passes `apps/web` as Next.js's project directory. Local image build and service startup passed; API and Web containers report healthy, API health on4192 returns `ok`, and `/login` on3100 returns HTTP200. Existing PostgreSQL, Redis and MinIO containers remain healthy. Full CI is required before merging the bounded Compose command/documentation follow-up. No schema, IAM, dependency or operational-record change.
+Compose now passes `apps/web` as Next.js's project directory. Local image build and service startup passed; API and Web containers report healthy, API health on4192 returns `ok`, and `/login` on3100 returns HTTP200. Existing PostgreSQL, Redis and MinIO containers remain healthy. PR #675 merged to `develop` as `3d48ef15`; formatting, full lint/typecheck, full tests, production build and PostgreSQL18 migration/seed gates passed. No schema, IAM, dependency or operational-record change.
+
 ## 2026-10-06 — PROCUREMENT-REQUEST-FORM-REDESIGN-1006 — PC-B — READY_FOR_REVIEW
 
 فرم درخواست خرید با گریدهای مستقل و فشرده بازچینی شد تا کنترل‌های بلند باعث ایجاد فضای خالی کنار فیلدهای دیگر نشوند. متن‌های راهنمای تکراری مسئول پیگیری حذف شده‌اند؛ ثبت دستهٔ تازه، برچسب‌ها، اعتبارسنجی و پیام‌های خطا حفظ شدند. تست متمرکز ۱۱/۱۱، ESLint، TypeScript و build تولید وب با ۵۵ مسیر موفق‌اند. CI کامل PR شمارهٔ ۶۷۷ (quality، test، build و PostgreSQL migration/seed) موفق شد. شاخه: `codex/pc-b-procurement-form-redesign-1006`.

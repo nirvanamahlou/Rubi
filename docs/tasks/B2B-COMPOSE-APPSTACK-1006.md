@@ -20,4 +20,4 @@ The local Compose overlay provides API and Web services on `4192` and `3100`, re
 
 ## Handoff
 
-PR #673 from `codex/pc-b-b2b-compose-appstack-1006` was merged to `develop` as `cf696496` after all exact-head CI gates passed. The separate startup correction is tracked in `WORK_ASSIGNMENTS.md` as `B2B-COMPOSE-WEBROOT-1006`; it was built and verified locally on Compose, and its own review/CI flow follows. The previously user-authorized branch memberships remain outside this upload fix; no branch access was changed here.
+PR #673 from `codex/pc-b-b2b-compose-appstack-1006` was merged to `develop` as `cf696496`; PR #675 corrected and verified the Compose Next.js root and merged as `3d48ef15`. Both PRs passed their exact-head CI gates. Compose API and Web are running locally with healthy checks on ports 4192 and 3100. The previously user-authorized branch memberships remain outside this upload fix; no branch access was changed here.
