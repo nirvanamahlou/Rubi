@@ -6,9 +6,15 @@ import type { LoginResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { DatePicker } from '@/components/ui/date-picker';
+import { SearchCombobox } from '@/components/ui/search-combobox';
+import {
+  loadPackDestinations,
+  type DestinationChoice,
+} from './pack-destinations';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { Choice, Lookup, rateRequest, type Option } from './controls';
 import { RateHistory } from './history';
+import { ExistingPacksBrowser } from './existing-packs-browser';
 import { kinds, labels, price, type FactorKind, type Factors } from './model';
 import styles from './rates.module.css';
 import {
@@ -64,7 +70,7 @@ type GridRow = {
   roomRates: RoomRateDraft[];
   inCityList: boolean;
 };
-type PackSummary = {
+export type PackSummary = {
   tourLabel?: string;
   tourDepartureId?: string | null;
   id: string;
@@ -79,7 +85,7 @@ type PackSummary = {
   hotelCount: number;
   updatedAt: string;
 };
-type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
+export type PackDetail = Omit<PackSummary, 'hotelCount' | 'updatedAt'> & {
   batchId: string;
   rows: {
     hotelId: string;
@@ -613,7 +619,13 @@ export function HotelRatePacksWorkspace() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [branch, setBranch] = useState('');
-  const [cities, setCities] = useState<HotelOption[]>([]);
+  const [cities, setCities] = useState<DestinationChoice[]>([]);
+  const [countries, setCountries] = useState<DestinationChoice[]>([]);
+  const [countryId, setCountryId] = useState('');
+  const [destinationChange, setDestinationChange] = useState<{
+    kind: 'country' | 'city';
+    id: string;
+  } | null>(null);
   const [citySearch, setCitySearch] = useState('');
   const [cityId, setCityId] = useState('');
   const [hotelSearch, setHotelSearch] = useState('');
@@ -634,13 +646,14 @@ export function HotelRatePacksWorkspace() {
   } | null>(null);
   const [editorMode, setEditorMode] = useState<'list' | 'new' | 'edit'>('list');
   const editorRef = useRef<HTMLDivElement>(null);
-  const citySearchRef = useRef<HTMLInputElement>(null);
+  const destinationRef = useRef<HTMLElement>(null);
   const [packs, setPacks] = useState<PackSummary[]>([]);
   const [packTotal, setPackTotal] = useState(0);
   const [packPage, setPackPage] = useState(1);
   const [revision, setRevision] = useState(0);
   const [busy, setBusy] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [browserLocked, setBrowserLocked] = useState(false);
   const [message, setMessage] = useState('');
   const pending = useRef<{ route: string; body: string; key: string } | null>(
     null,
@@ -648,8 +661,10 @@ export function HotelRatePacksWorkspace() {
 
   useEffect(() => {
     if (editorMode === 'list') return;
-    editorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    if (editorMode === 'new') citySearchRef.current?.focus();
+    (editorMode === 'new'
+      ? destinationRef.current
+      : editorRef.current
+    )?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, [editorMode]);
 
   useEffect(() => {
@@ -673,18 +688,31 @@ export function HotelRatePacksWorkspace() {
   useEffect(() => {
     if (!session) return;
     let active = true;
+    loadPackDestinations('countries', rateRequest)
+      .then((result) => {
+        if (active) setCountries(result);
+      })
+      .catch((e) => {
+        if (active)
+          setError(e instanceof Error ? e.message : 'کشورها بارگذاری نشدند.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    if (!session || !countryId) return;
+    let active = true;
     const timer = setTimeout(() => {
-      rateRequest<{ data: HotelOption[] }>(
-        `/pack-options?kind=cities&search=${encodeURIComponent(citySearch)}&page=1`,
-      )
+      loadPackDestinations('cities', rateRequest, countryId, citySearch)
         .then((result) => {
           if (active)
             setCities((old) => {
               const selected = old.find((city) => city.id === cityId);
-              return selected &&
-                !result.data.some((city) => city.id === selected.id)
-                ? [selected, ...result.data]
-                : result.data;
+              return selected && !result.some((city) => city.id === selected.id)
+                ? [selected, ...result]
+                : result;
             });
         })
         .catch((e) => {
@@ -696,7 +724,7 @@ export function HotelRatePacksWorkspace() {
       active = false;
       clearTimeout(timer);
     };
-  }, [session, citySearch, cityId]);
+  }, [session, citySearch, cityId, countryId]);
 
   useEffect(() => {
     if (!session || !branch) return;
@@ -811,6 +839,9 @@ export function HotelRatePacksWorkspace() {
   function newPack() {
     setEditing(null);
     setEditorMode('new');
+    setCountryId('');
+    setDestinationChange(null);
+    setCities([]);
     setCityId('');
     setCitySearch('');
     setHotelSearch('');
@@ -835,6 +866,10 @@ export function HotelRatePacksWorkspace() {
     pending.current = null;
   }
   function switchBranch(value: string) {
+    if (browserLocked) {
+      setError('ابتدا تغییرات قیمت بستهٔ موجود را ذخیره یا کنار بگذارید.');
+      return;
+    }
     closeEditor();
     setBranch(value);
     setPackPage(1);
@@ -848,7 +883,32 @@ export function HotelRatePacksWorkspace() {
     pending.current = null;
   }
   function chooseCity(id: string) {
+    if (!cities.some((city) => city.id === id && city.countryId === countryId))
+      return;
     setCityId(id);
+    setRows([]);
+    setHotelSearch('');
+    pending.current = null;
+  }
+  function changeDestination(
+    kind: 'country' | 'city',
+    id: string,
+    confirmed = false,
+  ) {
+    if ((kind === 'country' ? countryId : cityId) === id) return;
+    if (selected.length && !confirmed) {
+      setDestinationChange({ kind, id });
+      return;
+    }
+    setDestinationChange(null);
+    if (kind === 'city') {
+      chooseCity(id);
+      return;
+    }
+    setCountryId(id);
+    setCities([]);
+    setCitySearch('');
+    setCityId('');
     setRows([]);
     setHotelSearch('');
     pending.current = null;
@@ -860,6 +920,13 @@ export function HotelRatePacksWorkspace() {
     pending.current = null;
     try {
       const item = await rateRequest<PackDetail>(`/packs/${id}`);
+      const destination = await rateRequest<{ data: DestinationChoice[] }>(
+        `/pack-options?kind=cities&cityId=${encodeURIComponent(item.cityId)}`,
+      );
+      const city = destination.data.find((option) => option.id === item.cityId);
+      if (!city?.countryId)
+        throw new Error('کشور شهر این بسته در اطلاعات پایه مشخص نیست.');
+      setCountryId(city.countryId);
       setEditing({ id: item.id, version: item.version });
       setEditorMode('edit');
       setBranch(item.branchId);
@@ -868,7 +935,10 @@ export function HotelRatePacksWorkspace() {
       setCities((old) =>
         old.some((city) => city.id === item.cityId)
           ? old
-          : [{ id: item.cityId, name: item.cityName }, ...old],
+          : [
+              city,
+              ...old.filter((option) => option.countryId === city.countryId),
+            ],
       );
       setCheckIn(item.checkIn);
       setCheckOut(item.checkOut);
@@ -1177,12 +1247,83 @@ export function HotelRatePacksWorkspace() {
           + بستهٔ جدید
         </button>
       </header>
+      <section
+        ref={destinationRef}
+        className="space-y-3 rounded-xl border p-4"
+        aria-label="مقصد ورودی اکسل"
+      >
+        <h2>کشور و شهر بستهٔ اکسل</h2>
+        <p>
+          ابتدا بستهٔ جدید، سپس کشور و شهر را انتخاب کنید؛ فایل فقط برای شهر
+          انتخاب‌شده نگاشت می‌شود.
+        </p>
+        <SearchCombobox
+          label="کشور بستهٔ هتل"
+          value={countryId}
+          disabled={
+            !canWrite ||
+            busy ||
+            opening ||
+            editorMode === 'list' ||
+            editorMode === 'edit'
+          }
+          options={countries.map((country) => ({
+            value: country.id,
+            label: country.name,
+          }))}
+          onValueChange={(id) => {
+            changeDestination('country', id);
+          }}
+        />
+        <SearchCombobox
+          label="شهر بستهٔ هتل"
+          value={cityId}
+          disabled={
+            !canWrite ||
+            busy ||
+            opening ||
+            !countryId ||
+            editorMode === 'list' ||
+            editorMode === 'edit'
+          }
+          options={cities.map((city) => ({ value: city.id, label: city.name }))}
+          onSearchChange={setCitySearch}
+          onValueChange={(id) => changeDestination('city', id)}
+        />
+        {destinationChange && (
+          <div role="alert" className="space-y-2 rounded border p-3">
+            <p>
+              با تغییر مقصد، نرخ‌ها و نگاشت‌های ذخیره‌نشدهٔ پیش‌نویس پاک
+              می‌شوند. ادامه می‌دهید؟
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() =>
+                changeDestination(
+                  destinationChange.kind,
+                  destinationChange.id,
+                  true,
+                )
+              }
+            >
+              تأیید تغییر مقصد و پاک‌کردن پیش‌نویس
+            </button>{' '}
+            <button type="button" onClick={() => setDestinationChange(null)}>
+              انصراف
+            </button>
+          </div>
+        )}
+      </section>
       <OccupancyImportPanel
+        key={`${branch}:${cityId}:${editorMode}`}
         hotels={rows.map((row) => row.hotel)}
         checkIn={checkIn}
         checkOut={checkOut}
         currency={currency}
-        disabled={!canWrite || busy}
+        disabled={
+          !canWrite || busy || editorMode === 'list' || !cityId || hotelLoading
+        }
         onApply={(hotelId, imported) => {
           setRows((current) =>
             current.map((row) =>
@@ -1321,7 +1462,12 @@ export function HotelRatePacksWorkspace() {
             activeId={editing?.id ?? null}
             opening={opening}
             onOpen={(id) => void openPack(id)}
-            onDraftFocus={() => citySearchRef.current?.focus()}
+            onDraftFocus={() =>
+              destinationRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              })
+            }
           />
         </div>
         {packTotal > 50 && (
@@ -1385,21 +1531,8 @@ export function HotelRatePacksWorkspace() {
                           )?.name ?? '—'}
                         </td>
                         <td>
-                          <input
-                            ref={citySearchRef}
-                            aria-label="جست‌وجوی شهر"
-                            value={citySearch}
-                            onChange={(event) =>
-                              setCitySearch(event.target.value)
-                            }
-                            placeholder="جست‌وجوی نام شهر"
-                          />
-                          <Choice
-                            label="شهر"
-                            value={cityId}
-                            onChange={chooseCity}
-                            options={cities}
-                          />
+                          {cities.find((city) => city.id === cityId)?.name ||
+                            'کشور و شهر را بالای ورودی اکسل انتخاب کنید.'}
                         </td>
                         <td>
                           <DatePicker
@@ -1704,7 +1837,7 @@ export function HotelRatePacksWorkspace() {
                     ? 'در حال ذخیره…'
                     : editing
                       ? 'ذخیرهٔ نسخهٔ جدید'
-                      : 'ساخت بستهٔ نرخ'}
+                      : 'ثبت بستهٔ نرخ'}
                 </button>
               </section>
             </fieldset>
@@ -1726,6 +1859,14 @@ export function HotelRatePacksWorkspace() {
         <summary>سابقهٔ نرخ‌های ثبت‌شدهٔ قبلی</summary>
         <RateHistory revision={revision} />
       </details>
+      <ExistingPacksBrowser
+        key={branch}
+        branchId={branch}
+        revision={revision}
+        canWrite={canWrite}
+        onLockChange={setBrowserLocked}
+        onSaved={() => setRevision((value) => value + 1)}
+      />
     </main>
   );
 }

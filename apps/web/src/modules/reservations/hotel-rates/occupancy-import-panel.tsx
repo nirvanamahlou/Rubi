@@ -185,6 +185,7 @@ export function OccupancyImportPanel({
     [message, setMessage] = useState('');
   const [preview, setPreview] = useState<{ excluded: number } | null>(null);
   const [fileError, setFileError] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [sourceHotel, setSourceHotel] = useState(''),
     [board, setBoard] = useState(''),
     [hotelId, setHotelId] = useState(''),
@@ -302,11 +303,34 @@ export function OccupancyImportPanel({
         accept=".xlsx"
         disabled={disabled || busy}
         onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) void load(file);
-          e.target.value = '';
+          setFile(e.target.files?.[0] ?? null);
+          setRows([]);
+          setIssues([]);
+          setPreview(null);
+          setFileError('');
+          setMessage('');
+          setSourceHotel('');
+          setHotelId('');
+          setMapping({});
+          setBoard('');
         }}
       />
+      <button
+        className="rounded bg-primary px-4 py-2 text-white"
+        type="button"
+        disabled={disabled || busy || !file}
+        onClick={() => {
+          if (file) void load(file);
+        }}
+      >
+        {busy ? 'در حال خواندن…' : 'دیدن پیش‌نمایش اکسل'}
+      </button>
+      {disabled && (
+        <p>
+          ابتدا بستهٔ جدید را باز کنید و شهر آن را انتخاب کنید؛ سپس فایل اکسل را
+          انتخاب کنید.
+        </p>
+      )}
       {message && <p role="status">{message}</p>}
       {busy && <p role="status">در حال خواندن شیت خروجی نورا…</p>}
       {fileError && <p role="alert">خواندن فایل انجام نشد: {fileError}</p>}

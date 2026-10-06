@@ -133,13 +133,19 @@ export class MasterTravelDirectory {
 
   /** Active city / saleable hotel choices for a Reservations-owned rate pack. */
   async hotelRatePackChoices(
-    kind: 'cities' | 'hotels',
+    kind: 'countries' | 'cities' | 'hotels',
     search: string,
     page: number,
     cityId?: string,
+    countryId?: string,
   ) {
     if (kind === 'hotels' && !cityId)
       throw new BadRequestException('ابتدا شهر را انتخاب کنید.');
+    if (kind === 'cities' && cityId) {
+      const city = await this.cityReference(cityId);
+      const data = !countryId || city.countryId === countryId ? [city] : [];
+      return { data, meta: { total: data.length, page: 1, pageSize: 100 } };
+    }
     const result = await this.master.list(kind, {
       page,
       pageSize: 100,
@@ -147,6 +153,7 @@ export class MasterTravelDirectory {
       sortDirection: 'asc',
       search,
       status: 'active',
+      ...(kind === 'cities' && countryId ? { countryId } : {}),
       ...(kind === 'hotels' && cityId ? { cityId, saleableOnly: true } : {}),
     });
     return {
@@ -154,6 +161,9 @@ export class MasterTravelDirectory {
         id: row.id,
         name: row.name,
         englishName: String(row.attributes.englishName ?? ''),
+        ...(kind === 'cities'
+          ? { countryId: String(row.attributes.countryId ?? '') }
+          : {}),
         ...(kind === 'hotels'
           ? { roomTypes: this.hotelRoomTypes(row.attributes) }
           : {}),
