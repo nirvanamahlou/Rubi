@@ -9,6 +9,7 @@ import {
   MessagesSquare,
   Package,
   PackageCheck,
+  Plus,
   Pencil,
   ReceiptText,
   Trash2,
@@ -18,6 +19,12 @@ import type { MasterDataRecord, ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/overlays';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
   Alert,
@@ -39,7 +46,7 @@ import { OperationForm } from './operation-form';
 import { ProcurementRecordActions } from './record-actions';
 import { ProcurementSelect } from './procurement-select';
 import { ProcurementSupplierLogo } from './supplier-logo';
-import { RecordCard } from './record-details';
+import { RecordCard, RecordPreviewButton } from './record-details';
 import {
   sampleRequests,
   sampleSuppliers,
@@ -616,16 +623,24 @@ export function InternalSections({
                             <ProcurementSupplierLogo id={supplier.id} />
                           )}
                           <div className="min-w-0">
-                            <button
-                              type="button"
-                              className="text-right font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              onClick={() => {
-                                if (!('sample' in supplier))
-                                  void editSupplier(supplier.id);
-                              }}
-                            >
-                              {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
-                            </button>
+                            {'sample' in supplier ? (
+                              <RecordPreviewButton
+                                record={supplier as Record<string, unknown>}
+                                title={
+                                  supplier.name?.trim() ||
+                                  'تأمین‌کننده بدون نام'
+                                }
+                                variant="ghost"
+                                className="h-auto max-w-full justify-start px-0 py-0 text-right font-semibold text-primary hover:bg-transparent hover:underline"
+                              >
+                                {supplier.name?.trim() ||
+                                  'تأمین‌کننده بدون نام'}
+                              </RecordPreviewButton>
+                            ) : (
+                              <SupplierRecordPreviewButton
+                                supplier={supplier}
+                              />
+                            )}
                             <p
                               className="mt-1 text-xs text-muted-foreground"
                               dir="ltr"
@@ -691,18 +706,14 @@ export function InternalSections({
                       )}
                     >
                       <div className="min-w-0">
-                        <button
-                          type="button"
-                          className="max-w-full truncate text-right font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          onClick={() => {
-                            if (row.sample) {
-                              setCandidate(row.id);
-                              setOpenedSampleId(row.id);
-                            } else onOpen(row.id);
-                          }}
+                        <RecordPreviewButton
+                          record={requestPreviewRecord(row)}
+                          title={row.draft.title || 'درخواست بدون عنوان'}
+                          variant="ghost"
+                          className="h-auto max-w-full justify-start truncate px-0 py-0 text-right font-semibold text-primary hover:bg-transparent hover:underline"
                         >
                           {row.draft.title || 'درخواست بدون عنوان'}
-                        </button>
+                        </RecordPreviewButton>
                         <p
                           className="mt-1 text-xs text-muted-foreground"
                           dir="ltr"
@@ -712,6 +723,21 @@ export function InternalSections({
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge>{statusLabels[row.status]}</Badge>
+                        {group === 5 &&
+                          !row.sample &&
+                          ['APPROVED', 'SOURCING'].includes(row.status) &&
+                          bootstrap.permissions.includes(
+                            'procurement.order.manage',
+                          ) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => onOpen(row.id)}
+                            >
+                              <Plus aria-hidden="true" className="size-4" />
+                              سفارش جدید
+                            </Button>
+                          )}
                         <ProcurementRecordActions
                           label={row.draft.title || row.number}
                           onEdit={() => {
@@ -911,6 +937,100 @@ export function InternalSections({
         />
       )}
     </div>
+  );
+}
+
+function requestPreviewRecord(row: ProcurementListRow) {
+  return {
+    id: row.id,
+    number: row.number,
+    version: row.version,
+    status: row.status,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    ...row.draft,
+    data: row.draft,
+    lines: row.draft.items ?? [],
+    documents: row.draft.documents ?? [],
+  } as Record<string, unknown>;
+}
+
+function SupplierRecordPreviewButton({
+  supplier,
+}: {
+  supplier: {
+    id: string;
+    code: string;
+    name: string;
+    isActive: boolean;
+    collaborationStatus: string;
+  };
+}) {
+  const [open, setOpen] = useState(false);
+  const profile = useQuery({
+    queryKey: ['procurement', 'supplier-profile', supplier.id],
+    queryFn: () => masterDataApi.detail('suppliers', supplier.id),
+    enabled: open,
+    retry: false,
+  });
+  const value = profile.data?.data;
+  const snapshot = value
+    ? {
+        id: value.id,
+        name: value.name,
+        code: value.code,
+        status: value.status,
+        version: value.version,
+        createdAt: value.createdAt,
+        updatedAt: value.updatedAt,
+        ...value.attributes,
+      }
+    : null;
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-auto max-w-full justify-start gap-1 px-0 py-0 text-right font-semibold text-primary hover:bg-transparent hover:underline"
+        onClick={() => setOpen(true)}
+      >
+        {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          dir="rtl"
+          className="max-h-[90vh] max-w-3xl overflow-y-auto"
+        >
+          <DialogTitle className="pe-8">
+            {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
+          </DialogTitle>
+          <DialogDescription>اطلاعات ثبت‌شدهٔ تأمین‌کننده</DialogDescription>
+          {profile.isPending ? (
+            <Skeleton className="mt-4 h-36" />
+          ) : profile.isError ? (
+            <Alert
+              tone="error"
+              title="پروفایل تأمین‌کننده دریافت نشد"
+              description={errorText(profile.error)}
+            >
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={() => void profile.refetch()}
+              >
+                تلاش دوباره
+              </Button>
+            </Alert>
+          ) : snapshot ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+              <ProcurementSupplierLogo id={supplier.id} />
+              <RecordCard record={snapshot} />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -1268,6 +1388,18 @@ function SectionRequestForm({
           </h2>
         </div>
         <Badge className="relative">{statusLabels[request.status]}</Badge>
+        <div className="relative">
+          <RecordPreviewButton
+            record={{
+              ...request,
+              ...request.draft,
+              data: request.draft,
+              lines: request.draft.items,
+              documents: request.draft.documents,
+            }}
+            title={request.draft.title || request.number}
+          />
+        </div>
       </Card>
       {group === 2 ? (
         <ApprovalForm
@@ -1473,7 +1605,7 @@ function SectionOperations({
                     </span>
                   </summary>
                   <div className="mt-3">
-                    <RecordCard record={record} />
+                    <RecordCard record={record} showPreviewAction />
                     {group === 5 &&
                       (bootstrap.permissions.includes(
                         'procurement.order.amend',

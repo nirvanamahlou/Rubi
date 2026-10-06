@@ -767,6 +767,21 @@ export class ProcurementOperations {
         'AMENDMENT_POLICY_REQUIRED',
         'تغییر دامنه یا مقدار نیازمند تأیید مجدد درخواست است.',
       );
+      const existingData = v.object(order.data);
+      const has = (key: string) =>
+        Object.prototype.hasOwnProperty.call(input, key);
+      const expectedAt = has('expectedAt')
+        ? new Date(v.date(input.expectedAt, 'expectedAt'))
+        : order.expectedAt;
+      const deliveryLocation = has('deliveryLocation')
+        ? v.text(input.deliveryLocation, 'deliveryLocation', 1000, true)
+        : String(existingData.deliveryLocation ?? '');
+      const paymentTerms = has('paymentTerms')
+        ? v.text(input.paymentTerms, 'paymentTerms', 2000, true)
+        : String(existingData.paymentTerms ?? '');
+      const trackingCode = has('trackingCode')
+        ? v.text(input.trackingCode, 'trackingCode', 100, true)
+        : String(existingData.trackingCode ?? '');
       const amended = await tx.procurementOrder.update({
         where: { id: order.id },
         data: {
@@ -774,10 +789,14 @@ export class ProcurementOperations {
           supplierId: supplier.id,
           currencyCode,
           totalAmount: amount,
+          expectedAt,
           status: 'PENDING_APPROVAL',
           data: json({
-            ...v.object(order.data),
+            ...existingData,
             supplier,
+            paymentTerms,
+            deliveryLocation,
+            trackingCode,
             reason,
             makerUserId: actor.userId,
           }),
@@ -1640,9 +1659,100 @@ export class ProcurementOperations {
       }));
     } else if (kind === 'acceptances')
       rows = await tx.procurementServiceAcceptance.findMany(args);
-    else if (kind === 'selections')
-      rows = await tx.procurementSelection.findMany(args);
-    else if (kind === 'discrepancies')
+    else if (kind === 'selections') {
+      const currentVersion = await tx.procurementRequestVersion.findFirst({
+        where: { requestId },
+        orderBy: [{ version: 'desc' }, { id: 'desc' }],
+        select: { id: true },
+      });
+      const eligibleSelections: unknown[] = [];
+      let selectionOffset = 0;
+      const requiredEligibleCount = page * 50 + 1;
+      while (
+        currentVersion &&
+        eligibleSelections.length < requiredEligibleCount
+      ) {
+        const selections = await tx.procurementSelection.findMany({
+          where: {
+            requestId,
+            requestVersionId: currentVersion.id,
+            procurementSelectionQuotationidRequestid: {
+              is: { status: 'VALID', validUntil: { gt: new Date() } },
+            },
+          },
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: 51,
+          skip: selectionOffset,
+          include: {
+            procurementSelectionQuotationidRequestid: {
+              select: {
+                id: true,
+                reference: true,
+                supplierId: true,
+                currencyCode: true,
+                totalAmount: true,
+                validUntil: true,
+              },
+            },
+          },
+        });
+        selectionOffset += selections.length;
+        const supplierIds = [
+          ...new Set(
+            selections.map(
+              (selection) =>
+                selection.procurementSelectionQuotationidRequestid.supplierId,
+            ),
+          ),
+        ];
+        const activeSuppliers = new Map<
+          string,
+          { id: string; version: number; label: string }
+        >();
+        await Promise.all(
+          supplierIds.map(async (supplierId) => {
+            try {
+              activeSuppliers.set(
+                supplierId,
+                await this.master.supplier(supplierId),
+              );
+            } catch {
+              // Inactive or inaccessible Master Data entries cannot be offered
+              // as a purchase-order source.
+            }
+          }),
+        );
+        eligibleSelections.push(
+          ...selections.flatMap((selection) => {
+            const quotation =
+              selection.procurementSelectionQuotationidRequestid;
+            const supplier = activeSuppliers.get(quotation.supplierId);
+            return supplier
+              ? [
+                  {
+                    id: selection.id,
+                    requestId: selection.requestId,
+                    requestVersionId: selection.requestVersionId,
+                    createdAt: selection.createdAt,
+                    payload: selection.payload,
+                    supplierId: supplier.id,
+                    supplierName: supplier.label,
+                    quotation: {
+                      id: quotation.id,
+                      reference: quotation.reference,
+                      currencyCode: quotation.currencyCode,
+                      totalAmount: quotation.totalAmount.toString(),
+                      validUntil: quotation.validUntil?.toISOString() ?? null,
+                    },
+                  },
+                ]
+              : [];
+          }),
+        );
+        if (selections.length < 51) break;
+      }
+      rows = eligibleSelections.slice((page - 1) * 50, page * 50 + 1);
+    } else if (kind === 'discrepancies')
       rows = await tx.procurementDiscrepancy.findMany(args);
     else if (kind === 'returns')
       rows = await tx.procurementReturn.findMany(args);

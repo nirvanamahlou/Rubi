@@ -170,9 +170,18 @@ const operationStatusLabels: Record<string, string> = {
 };
 export const recordLabel = (record: Row) => {
   const row = flatten(record);
+  const quotation =
+    typeof row.quotation === 'object' && row.quotation !== null
+      ? (row.quotation as Row)
+      : {};
   return (
     [
-      row.name || row.supplierName || row.number || row.invoiceNumber,
+      row.number ||
+        row.invoiceNumber ||
+        quotation.reference ||
+        row.name ||
+        row.supplierName,
+      row.supplierName,
       row.status
         ? (operationStatusLabels[String(row.status)] ?? String(row.status))
         : null,
@@ -511,6 +520,19 @@ function OperationFields({
         ? lineOptions.filter((row) => row.kind !== 'GOODS')
         : lineOptions;
   async function submit() {
+    if (
+      action === 'ORDER' &&
+      (!fields.supplierId ||
+        !fields.selectionId ||
+        !fields.expectedAt ||
+        !fields.deliveryLocation?.trim() ||
+        !fields.paymentTerms?.trim())
+    ) {
+      setError(
+        'تأمین‌کننده، پیشنهاد منتخب معتبر، موعد تحویل، محل تحویل و شرایط پرداخت را تکمیل کنید.',
+      );
+      return;
+    }
     setBusy(true);
     setError('');
     setSuccess('');
@@ -991,9 +1013,16 @@ function RecordSelect({
               }))
             : [],
         )
-      : rows.filter(
-          (row) => !supplierId || flatten(row).supplierId === supplierId,
-        );
+      : rows.filter((row) => {
+          const flattened = flatten(row);
+          if (
+            resource === 'suppliers' &&
+            (flattened.isActive !== true ||
+              flattened.collaborationStatus !== 'ACTIVE')
+          )
+            return false;
+          return !supplierId || flattened.supplierId === supplierId;
+        });
   return (
     <div className="space-y-2">
       <FormField id={`operation-select-${resource}`} label={label}>
@@ -1055,7 +1084,11 @@ function RecordSelect({
       )}
       {!query.isPending && !query.isError && !options.length && (
         <p className="text-xs text-muted-foreground">
-          گزینه‌ای در این صفحه وجود ندارد.
+          {resource === 'selections'
+            ? 'پیشنهاد معتبر و انتخاب‌شده‌ای وجود ندارد؛ ابتدا در بخش استعلام‌ها پیشنهاد فعال را انتخاب کنید.'
+            : resource === 'suppliers'
+              ? 'تأمین‌کنندهٔ فعال و مجازی در این صفحه وجود ندارد.'
+              : 'گزینه‌ای در این صفحه وجود ندارد.'}
         </p>
       )}
       <div className="flex items-center gap-2">

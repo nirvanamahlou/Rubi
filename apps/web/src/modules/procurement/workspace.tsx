@@ -1030,6 +1030,7 @@ function RequestDetail({
                   <RecordCard
                     key={String(record.id ?? index)}
                     record={record}
+                    showPreviewAction
                   />
                 ))}
               </div>
