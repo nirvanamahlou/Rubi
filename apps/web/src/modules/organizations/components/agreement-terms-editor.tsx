@@ -9,7 +9,7 @@ import type {
   IamPermissionCode,
   MasterDataRecord,
 } from '@nora/contracts';
-import { Plus, Trash2, FileText, ShieldCheck, Wallet } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, Wallet } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { documentsApi } from '@/modules/documents/api/client';
@@ -303,14 +303,6 @@ export function AgreementTermsEditor({
             : 'مشاهده یا تکمیل مشخصات قرارداد مرتبط'}
         </summary>
         <section className="agreement-section">
-          <div className="agreement-section-title">
-            <FileText size={20} />
-            <div>
-              <h4>مشخصات و شرایط قرارداد</h4>
-              <p>دامنه خدمات، اعتبار زمانی و شیوه تسویه همکاری</p>
-            </div>
-            <span className="badge">پیش‌نویس</span>
-          </div>
           <div className="form-grid">
             {text('title', 'عنوان قرارداد *')}
             {select(
@@ -461,24 +453,29 @@ export function AgreementTermsEditor({
                 />
               </label>
             ) : null}
-            <label className="field">
-              <span>مهلت پاسخ‌گویی (ساعت)</span>
-              <input
-                className="input"
-                type="number"
-                min={1}
-                max={720}
-                value={value.slaHours ?? ''}
-                onChange={(e) =>
-                  set(
-                    'slaHours',
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
-              />
-            </label>
-            {text('cancellationTerms', 'شرایط لغو و جریمه', true)}
-            {text('refundTerms', 'شرایط استرداد', true)}
+            <details className="field full">
+              <summary>شرایط تکمیلی</summary>
+              <div className="form-grid">
+                <label className="field">
+                  <span>مهلت پاسخ‌گویی (ساعت)</span>
+                  <input
+                    className="input"
+                    type="number"
+                    min={1}
+                    max={720}
+                    value={value.slaHours ?? ''}
+                    onChange={(e) =>
+                      set(
+                        'slaHours',
+                        e.target.value ? Number(e.target.value) : null,
+                      )
+                    }
+                  />
+                </label>
+                {text('cancellationTerms', 'شرایط لغو و جریمه', true)}
+                {text('refundTerms', 'شرایط استرداد', true)}
+              </div>
+            </details>
             {document(
               'سند قرارداد',
               value.documentId,
@@ -519,7 +516,6 @@ export function AgreementTermsEditor({
                   ? 'افزایش موقت سقف اعتبار'
                   : 'سیاست اعتبار به تفکیک ارز'}
               </h4>
-              <p>هر ارز سقف مستقل دارد؛ تبدیل ارز انجام نمی‌شود.</p>
             </div>
             <button
               type="button"
@@ -552,11 +548,6 @@ export function AgreementTermsEditor({
               افزودن سقف ارزی
             </button>
           </div>
-          {!value.creditPolicies.length ? (
-            <p className="panel-note">
-              برای پرداخت اعتباری یا ترکیبی، حداقل یک سقف ارزی اضافه کنید.
-            </p>
-          ) : null}
           {value.creditPolicies.map((policy, index) => (
             <div className="agreement-subcard" key={index}>
               <div className="agreement-row-title">
@@ -680,7 +671,6 @@ export function AgreementTermsEditor({
             <ShieldCheck size={20} />
             <div>
               <h4>تضمین‌ها و اسناد پشتیبان</h4>
-              <p>مشخصات تضمین و نسخه سند آن همراه قرارداد ثبت می‌شود.</p>
             </div>
             <button
               type="button"
@@ -713,11 +703,6 @@ export function AgreementTermsEditor({
               افزودن تضمین
             </button>
           </div>
-          {!value.guarantees.length ? (
-            <p className="panel-note">
-              در صورت نیاز، ضمانت‌نامه بانکی، چک یا شرط سپرده را اضافه کنید.
-            </p>
-          ) : null}
           {value.guarantees.map((guarantee, index) => {
             const update = (patch: Partial<typeof guarantee>) =>
               set(
@@ -868,12 +853,9 @@ export function AgreementTermsEditor({
           })}
         </section>
       )}
-      {!organizationId ? (
-        <p className="boundary-note">
-          فایل‌های انتخاب‌شده پس از ایجاد سازمان در «اسناد و فایل‌ها» ذخیره و به
-          همین قرارداد یا تضمین متصل می‌شوند.
-        </p>
-      ) : canReadOrganizationDocuments(permissions) && documentPages > 1 ? (
+      {organizationId &&
+      canReadOrganizationDocuments(permissions) &&
+      documentPages > 1 ? (
         <div className="agreement-row-title">
           <button
             type="button"

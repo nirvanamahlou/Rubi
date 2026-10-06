@@ -4813,3 +4813,7 @@ Dedicated RTL icon-only campaign declaration action/form persists goal progress,
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
+
+## 2026-10-06 — B2B contract and finance form simplification — PC-B
+
+The agreement form keeps all existing contract, credit and guarantee values while removing redundant headings and explanatory copy; optional SLA, cancellation and refund terms sit in one expandable group. Each finance tab keeps its Sales-derived rows and uses a compact document bar with an expandable archive instead of an always-open document list and filters. The existing Documents upload form now accepts optional financial notes and sends them as the public `description` field with the selected file. The upload still validates branch, owner, type, confidentiality, expiry and file size through the existing Documents boundary. No accounting transaction, API change, schema/migration, IAM grant or operational data change. Focused Organizations tests 32/32, scoped ESLint, Web typecheck and production build (55 routes) passed; exact-head PR CI remains the final gate.
