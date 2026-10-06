@@ -46,6 +46,36 @@ function expiryTransaction(
 }
 
 describe('TicketPublicService offer retry', () => {
+  it('rejects a different request key for existing inventory before creating another purchase', async () => {
+    const upsert = vi.fn();
+    const ensureOfferPurchaseRequest = vi.fn();
+    const tx = {
+      $queryRaw: vi.fn(),
+      ticketPublishedOffer: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([{ ...row, supplyType: null }]),
+        upsert,
+      },
+    };
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: (fn: (transaction: unknown) => unknown) => fn(tx),
+        },
+      } as never,
+      { ensureOfferPurchaseRequest } as never,
+    );
+    await expect(
+      service.publish(
+        { ...input, totalCapacity: 50 },
+        actor,
+        'branch-1',
+        'new-key',
+      ),
+    ).rejects.toThrow('قبلاً ثبت');
+    expect(upsert).not.toHaveBeenCalled();
+    expect(ensureOfferPurchaseRequest).not.toHaveBeenCalled();
+  });
   it('pages management offers with a lookahead and rejects invalid pages', async () => {
     const findMany = vi.fn().mockResolvedValue(
       Array.from({ length: 501 }, (_, index) => ({
@@ -162,7 +192,17 @@ describe('TicketPublicService offer retry', () => {
     const ensureOfferPurchaseRequest = vi.fn();
     const service = new TicketPublicService(
       {
-        client: { ticketPublishedOffer: { upsert } },
+        client: {
+          $transaction: (fn: (tx: unknown) => unknown) =>
+            fn({
+              $queryRaw: vi.fn(),
+              ticketPublishedOffer: {
+                upsert,
+                findUnique: vi.fn().mockResolvedValue(row),
+                findMany: vi.fn().mockResolvedValue([]),
+              },
+            }),
+        },
       } as unknown as DatabaseService,
       { ensureOfferPurchaseRequest } as unknown as ProcurementPublicService,
     );
@@ -399,11 +439,15 @@ describe('TicketPublicService offer retry', () => {
     const service = new TicketPublicService(
       {
         client: {
-          ticketPublishedOffer: {
-            upsert: vi
-              .fn()
-              .mockResolvedValue({ ...row, carrierName: 'Other carrier' }),
-          },
+          $transaction: (fn: (tx: unknown) => unknown) =>
+            fn({
+              $queryRaw: vi.fn(),
+              ticketPublishedOffer: {
+                findUnique: vi
+                  .fn()
+                  .mockResolvedValue({ ...row, carrierName: 'Other carrier' }),
+              },
+            }),
         },
       } as unknown as DatabaseService,
       { ensureOfferPurchaseRequest } as unknown as ProcurementPublicService,

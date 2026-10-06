@@ -48,7 +48,19 @@ describe('Ticket Catalog manifest selection', () => {
       manifestTemplateById: vi.fn().mockResolvedValue({ id: templateId }),
     };
     const service = new TicketPublicService(
-      { client: { ticketPublishedOffer: { upsert } } } as never,
+      {
+        client: {
+          $transaction: (fn: (tx: unknown) => unknown) =>
+            fn({
+              $queryRaw: vi.fn(),
+              ticketPublishedOffer: {
+                upsert,
+                findUnique: vi.fn().mockResolvedValue(null),
+                findMany: vi.fn().mockResolvedValue([]),
+              },
+            }),
+        },
+      } as never,
       { ensureOfferPurchaseRequest: vi.fn() } as never,
       directory as never,
     );
@@ -122,6 +134,7 @@ describe('Ticket Catalog manifest selection', () => {
         $queryRaw: vi.fn(),
         ticketPublishedOffer: {
           findFirst: vi.fn().mockResolvedValue(row),
+          findMany: vi.fn().mockResolvedValue([]),
           update: vi.fn().mockResolvedValue({ version: 3 }),
         },
         ticketOfferAudit: { create: vi.fn() },
