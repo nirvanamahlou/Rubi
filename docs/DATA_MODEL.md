@@ -417,6 +417,11 @@ erDiagram
 - net purchase از اجزای approved محاسبه می‌شود و margin فیلد قابل ویرایش نیست.
 - Purchase Invoice پس از approval به payable و journal source یکتا تبدیل می‌شود.
 - یک source document بیش از یک posting فعال ندارد؛ correction با reversal است.
+- `ProcurementCategory` فهرست پایدار و branch-scoped دسته خرید است؛ فقط شعبهٔ واقعی را
+  می‌پذیرد، به Branch و کاربر سازنده FK محدودکننده دارد و کلید Unicode نرمال‌شده
+  برای جلوگیری از تکرار نگه می‌دارد. دستهٔ ذخیره‌شده روی درخواست‌های قبلی snapshot
+  است و بازنویسی یا backfill نمی‌شود. خواندن/ساخت دسته به مجوز ثبت درخواست و دسترسی
+  صریح به همان شعبه نیاز دارد؛ Legal Entity دسترسی شعبه ایجاد نمی‌کند.
 
 ### Finance
 
@@ -695,3 +700,7 @@ Master Data organization addresses retain required bounded addressLine and organ
 ## 2026-10-05 — Reservations purchase broker references
 
 ReservationServicePurchase supports either supplierBrokerId → MasterBroker or its historical supplierOrganizationId → MasterOrganization. Both are restrictive real FKs; exactly one must be present (database CHECK). Historical organization references remain unchanged. Registered broker choices no longer require an organization link or BROKER organization role. Existing supplierOrganizationId v1 request/response key remains the supplier reference ID for compatibility; public MasterTravelDirectory resolves an active registered broker first and only a genuine missing broker permits legacy organization resolution. Supplier names remain immutable purchase snapshots. Finance/Reservations project the canonical broker ID when present.
+
+## TICKET-DUPLICATES-1006 — dated flight identity and historical repair
+
+Ticket Catalog publication/revision serializes branch-scoped flight identity checks in the same transaction: route, UTC departure, normalized carrier/service number, cabin and supply source (legacy null equals COMPANY). Capacity, arrival and optional producer defaults are edits of existing inventory, not a new dated flight. Request-key replay remains unchanged. A non-destructive migration retains every ID and audit, archiving only exact duplicate offers without any Sales selection, capacity/hold history or tour reference, preferring a priced/financial canonical source and preserving every pricing/financial reference unchanged; protected historical copies stay intact. The shared synthetic fixture marks five previously duplicated copies archived. No schema/wire/FK rewrite or capacity aggregation occurs.

@@ -11,10 +11,14 @@ export function ProcurementOwnerPicker({
   branchId,
   value,
   onChange,
+  label = 'مسئول خرید',
+  initialOption,
 }: {
   branchId: string;
   value: string;
   onChange: (value: string) => void;
+  label?: string;
+  initialOption?: { id: string; label: string };
 }) {
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -22,7 +26,7 @@ export function ProcurementOwnerPicker({
   const [selected, setSelected] = useState<{
     id: string;
     label: string;
-  } | null>(null);
+  } | null>(initialOption ?? null);
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebounced(search);
@@ -38,14 +42,14 @@ export function ProcurementOwnerPicker({
   });
   return (
     <div className="min-w-64 space-y-2">
-      <FormField id="proc-owner-search" label="جست‌وجوی مسئول واجد دسترسی">
+      <FormField id="proc-owner-search" label={`جست‌وجوی ${label} واجد دسترسی`}>
         <Input
           id="proc-owner-search"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
       </FormField>
-      <FormField id="proc-owner" label="مسئول خرید">
+      <FormField id="proc-owner" label={label}>
         <ProcurementSelect
           id="proc-owner"
           className={selectClass}

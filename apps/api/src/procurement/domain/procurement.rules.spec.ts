@@ -166,20 +166,16 @@ describe('Submission and policy fail closed', () => {
     expect(() => validateSubmission(input)).not.toThrow();
     expect(input).toEqual(before);
   });
-  it.each([
-    'title',
-    'unitId',
-    'purchaseType',
-    'category',
-    'needReason',
-    'requiredAt',
-  ] as const)('requires %s before submission', (field) => {
-    failsWith(
-      () => validateSubmission(draft({ [field]: ' ' })),
-      'VALIDATION_ERROR',
-      field,
-    );
-  });
+  it.each(['title', 'purchaseType', 'category', 'requiredAt'] as const)(
+    'requires %s before submission',
+    (field) => {
+      failsWith(
+        () => validateSubmission(draft({ [field]: ' ' })),
+        'VALIDATION_ERROR',
+        field,
+      );
+    },
+  );
   it('allows optional urgency detail, unknown amount detail, delivery location and acceptance criteria', () => {
     expect(() =>
       validateSubmission(
@@ -194,6 +190,17 @@ describe('Submission and policy fail closed', () => {
         }),
       ),
     ).not.toThrow();
+  });
+  it('allows optional organizational unit, need description and goods description', () => {
+    const input = draft({ unitId: null, needReason: '' });
+    input.items[0]!.description = '';
+    expect(() => validateSubmission(input)).not.toThrow();
+  });
+  it('still requires a description for service items', () => {
+    const input = draft();
+    input.items[0]!.kind = 'SERVICE';
+    input.items[0]!.description = '';
+    failsWith(() => validateSubmission(input), 'VALIDATION_ERROR', 'items');
   });
   it('allows a request to be submitted without a supplier', () => {
     const input = draft();

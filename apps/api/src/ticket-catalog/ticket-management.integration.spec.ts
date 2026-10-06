@@ -86,12 +86,16 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
     if (app) await app.close();
     if (client) await client.$disconnect();
   }, 60000);
-  it('creates ten identical-schedule independent offers, edits, pauses, activates, holds and archives safely', async () => {
+  it('creates ten distinct services, rejects duplicate stock, and edits/archives safely', async () => {
     const ids: string[] = [];
     for (let index = 0; index < 10; index++) {
       const key = 'ticket-catalog:qa-' + userId + '-' + index;
-      const first = await service.publish(definition, actor, branchId, key);
-      expect(await service.publish(definition, actor, branchId, key)).toEqual(
+      const occurrence =
+        index === 0
+          ? definition
+          : { ...definition, serviceNumber: `QA-${index}` };
+      const first = await service.publish(occurrence, actor, branchId, key);
+      expect(await service.publish(occurrence, actor, branchId, key)).toEqual(
         first,
       );
       ids.push(first.data.id);
@@ -103,6 +107,9 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
       list.every((o) => o.catalogProductId?.startsWith('qa-' + userId)),
     ).toBe(true);
     const id = ids[0]!;
+    await expect(
+      service.publish(definition, actor, branchId, randomUUID()),
+    ).rejects.toThrow('قبلاً ثبت');
     await expect(
       service.publish(
         { ...definition, totalCapacity: 60 },

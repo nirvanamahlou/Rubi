@@ -132,6 +132,9 @@ const primaryAction: Record<string, string> = {
 };
 type Row = Record<string, unknown>;
 const flatten = (row: Row): Row => ({
+  ...(typeof row.payload === 'object' && row.payload !== null
+    ? row.payload
+    : {}),
   ...(typeof row.data === 'object' && row.data !== null ? row.data : {}),
   ...row,
 });
@@ -165,27 +168,61 @@ const operationStatusLabels: Record<string, string> = {
   MISMATCH: 'دارای مغایرت',
   WAITING_FINANCE: 'منتظر مالی',
 };
-const recordLabel = (row: Row) =>
-  [
-    row.name || row.supplierName || row.number || row.invoiceNumber,
-    row.status
-      ? (operationStatusLabels[String(row.status)] ?? String(row.status))
-      : null,
-    row.currencyCode && row.totalAmount
-      ? `${String(row.totalAmount)} ${String(row.currencyCode)}`
-      : null,
-  ]
-    .filter(Boolean)
-    .join(' · ') || 'رکورد ثبت‌شده';
+export const recordLabel = (record: Row) => {
+  const row = flatten(record);
+  return (
+    [
+      row.name || row.supplierName || row.number || row.invoiceNumber,
+      row.status
+        ? (operationStatusLabels[String(row.status)] ?? String(row.status))
+        : null,
+      row.currencyCode && row.totalAmount
+        ? `${String(row.totalAmount)} ${String(row.currencyCode)}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' · ') || 'رکورد ثبت‌شده'
+  );
+};
+export const orderAmendmentFields = (record: Row) => {
+  const row = flatten(record);
+  return {
+    orderId: String(row.id ?? ''),
+    supplierId: String(row.supplierId ?? ''),
+    currencyCode: String(row.currencyCode ?? ''),
+    expectedAt: String(row.expectedAt ?? ''),
+    deliveryLocation: String(row.deliveryLocation ?? ''),
+    trackingCode: String(row.trackingCode ?? ''),
+    paymentTerms: String(row.paymentTerms ?? ''),
+    reason: '',
+  };
+};
+const orderAmendmentLines = (record: Row): Line[] => {
+  const row = flatten(record);
+  return Array.isArray(row.lines)
+    ? (row.lines as Row[]).map((line) => ({
+        ...makeLine(String(line.requestItemId ?? line.itemId ?? '')),
+        quantity: String(line.quantity ?? ''),
+        unitPrice: String(line.unitPrice ?? ''),
+        discount: String(line.discountAmount ?? '0'),
+        tax: String(line.taxAmount ?? '0'),
+        extraCost: String(line.extraCostAmount ?? '0'),
+      }))
+    : [];
+};
 export function OperationForm({
   request,
   bootstrap,
   kind,
+  initialAction,
+  initialRecord,
   onChanged,
 }: {
   request: ProcurementRequestV1;
   bootstrap: Bootstrap;
   kind: string;
+  initialAction?: string;
+  initialRecord?: Row;
   onChanged: (value: ProcurementRequestV1) => void;
 }) {
   const available = operations.filter(
@@ -197,6 +234,7 @@ export function OperationForm({
   );
   const [action, setAction] = useState(
     () =>
+      available.find((value) => value.action === initialAction)?.action ??
       available.find((value) => value.action === primaryAction[kind])?.action ??
       available[0]?.action ??
       '',
@@ -251,6 +289,7 @@ export function OperationForm({
           action={action}
           request={request}
           bootstrap={bootstrap}
+          {...(initialRecord ? { initialRecord } : {})}
           onChanged={onChanged}
           label={available.find((value) => value.action === action)!.label}
         />
@@ -263,16 +302,18 @@ function OperationFields({
   action,
   request,
   bootstrap,
+  initialRecord,
   onChanged,
   label,
 }: {
   action: string;
   request: ProcurementRequestV1;
   bootstrap: Bootstrap;
+  initialRecord?: Row;
   onChanged: (value: ProcurementRequestV1) => void;
   label: string;
 }) {
-  const [fields, setFields] = useState<Record<string, string>>({
+  const [fields, setFields] = useState<Record<string, string>>(() => ({
     currencyCode: request.draft.currencyCode ?? '',
     deliveryLocation: request.draft.deliveryLocation,
     kind: 'SHORTAGE',
@@ -281,12 +322,24 @@ function OperationFields({
     receivedDelta: '0',
     acceptedDelta: '0',
     rejectedDelta: '0',
-  });
+    ...(action === 'AMEND_ORDER' && initialRecord
+      ? orderAmendmentFields(initialRecord)
+      : {}),
+    ...(action === 'CANCEL_ORDER' && initialRecord
+      ? { orderId: String(flatten(initialRecord).id ?? ''), reason: '' }
+      : {}),
+  }));
   const [customLocations, setCustomLocations] = useState<
     Record<string, boolean>
   >({});
-  const [selectedOrder, setSelectedOrder] = useState<Row | null>(null);
-  const [lines, setLines] = useState<Line[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Row | null>(() =>
+    action === 'AMEND_ORDER' ? (initialRecord ?? null) : null,
+  );
+  const [lines, setLines] = useState<Line[]>(() =>
+    action === 'AMEND_ORDER' && initialRecord
+      ? orderAmendmentLines(initialRecord)
+      : [],
+  );
   const [singleSource, setSingleSource] = useState(false);
   const [documents, setDocuments] = useState(() => [
     ...request.draft.documents,
@@ -314,6 +367,9 @@ function OperationFields({
       {multiline ? (
         <Textarea
           id={`operation-${key}`}
+          required={
+            key === 'reason' && ['AMEND_ORDER', 'CANCEL_ORDER'].includes(action)
+          }
           value={fields[key] ?? ''}
           onChange={(event) =>
             set(
@@ -327,6 +383,9 @@ function OperationFields({
       ) : (
         <Input
           id={`operation-${key}`}
+          required={
+            key === 'reason' && ['AMEND_ORDER', 'CANCEL_ORDER'].includes(action)
+          }
           value={fields[key] ?? ''}
           onChange={(event) =>
             set(
@@ -389,10 +448,22 @@ function OperationFields({
       resource={resource}
       label={title}
       value={fields[key] ?? ''}
+      {...(key === 'orderId' && initialRecord
+        ? { selectedRecord: initialRecord }
+        : {})}
+      {...(resource === 'selections' && fields.supplierId
+        ? { supplierId: fields.supplierId }
+        : {})}
       onChange={(row) => {
         set(key, String(row.id));
+        if (action === 'ORDER' && key === 'supplierId') set('selectionId', '');
         if (key === 'orderId') {
           setSelectedOrder(row);
+          if (action === 'AMEND_ORDER')
+            setFields((previous) => ({
+              ...previous,
+              ...orderAmendmentFields(row),
+            }));
           setLines(
             action === 'AMEND_ORDER' && Array.isArray(row.lines)
               ? (row.lines as Row[]).map((line) => ({
@@ -473,7 +544,9 @@ function OperationFields({
           }),
         ),
       };
-    if (['ACCEPT_SERVICE', 'RETURN', 'ADJUST_RECEIPT'].includes(action))
+    if (
+      ['ORDER', 'ACCEPT_SERVICE', 'RETURN', 'ADJUST_RECEIPT'].includes(action)
+    )
       body = { ...body, documents };
     identity.current = commandAttempt(identity.current, request, body);
     try {
@@ -512,8 +585,15 @@ function OperationFields({
         <legend className="sr-only">{label}</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           {hasOrder && choose('orderId', 'سفارش مرجع', 'orders')}
-          {action === 'AMEND_ORDER' &&
-            choose('supplierId', 'تأمین‌کننده جدید یا فعلی', 'suppliers')}
+          {action === 'AMEND_ORDER' && (
+            <>
+              {choose('supplierId', 'تأمین‌کننده جدید یا فعلی', 'suppliers')}
+              {date('expectedAt', 'موعد تحویل')}
+              {location('deliveryLocation', 'محل تحویل')}
+              {input('paymentTerms', 'شرایط پرداخت')}
+              {input('trackingCode', 'کد پیگیری (اختیاری)')}
+            </>
+          )}
           {action === 'QUOTE' && (
             <>
               {choose('supplierId', 'تأمین‌کننده', 'suppliers')}
@@ -529,10 +609,12 @@ function OperationFields({
             choose('quotationId', 'پیشنهاد منتخب', 'quotations')}
           {action === 'ORDER' && (
             <>
+              {choose('supplierId', 'تأمین‌کننده', 'suppliers')}
               {choose('selectionId', 'انتخاب ثبت‌شده', 'selections')}
               {date('expectedAt', 'موعد تحویل')}
               {location('deliveryLocation', 'محل تحویل')}
               {input('paymentTerms', 'شرایط پرداخت')}
+              {input('trackingCode', 'کد پیگیری (اختیاری)')}
             </>
           )}
           {action === 'RECEIVE' && (
@@ -800,9 +882,16 @@ function OperationFields({
             خرید تک‌منبعی (نیازمند دلیل و مجوز)
           </label>
         )}
-        {input('reason', 'دلیل و توضیحات عملیات', true)}
+        {input(
+          'reason',
+          action === 'CANCEL_ORDER'
+            ? 'دلیل لغو سفارش'
+            : 'دلیل و توضیحات عملیات',
+          true,
+        )}
         {[
           'QUOTE',
+          'ORDER',
           'INVOICE',
           'RECEIVE',
           'ACCEPT_SERVICE',
@@ -814,11 +903,14 @@ function OperationFields({
             value={documents}
             onChange={setDocuments}
             available={bootstrap.documents === 'AVAILABLE'}
-            {...(action === 'INVOICE'
+            {...(['INVOICE', 'ORDER'].includes(action)
               ? {
                   invoiceUpload: {
                     requestId: request.id,
                     requestNumber: request.number,
+                    ...(action === 'ORDER'
+                      ? { purpose: 'ORDER' as const }
+                      : {}),
                   },
                 }
               : {})}
@@ -853,16 +945,22 @@ function RecordSelect({
   label,
   value,
   onChange,
+  supplierId,
+  selectedRecord,
 }: {
   requestId: string;
   resource: string;
   label: string;
   value: string;
   onChange: (row: Row) => void;
+  supplierId?: string;
+  selectedRecord?: Row;
 }) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Row | null>(null);
+  const [selected, setSelected] = useState<Row | null>(
+    () => selectedRecord ?? null,
+  );
   const query = useQuery({
     queryKey: [
       'procurement',
@@ -893,7 +991,9 @@ function RecordSelect({
               }))
             : [],
         )
-      : rows;
+      : rows.filter(
+          (row) => !supplierId || flatten(row).supplierId === supplierId,
+        );
   return (
     <div className="space-y-2">
       <FormField id={`operation-select-${resource}`} label={label}>
@@ -915,9 +1015,13 @@ function RecordSelect({
           <option value="">
             {query.isPending ? 'در حال دریافت…' : 'انتخاب از سوابق واقعی'}
           </option>
-          {selected && !options.some((row) => row.id === selected.id) && (
-            <option value={String(selected.id)}>{recordLabel(selected)}</option>
-          )}
+          {selected &&
+            (!supplierId || flatten(selected).supplierId === supplierId) &&
+            !options.some((row) => row.id === selected.id) && (
+              <option value={String(selected.id)}>
+                {recordLabel(selected)}
+              </option>
+            )}
           {options.map((row) => (
             <option key={String(row.id)} value={String(row.id)}>
               {recordLabel(row)}

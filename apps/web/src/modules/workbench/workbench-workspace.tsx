@@ -64,6 +64,7 @@ import { MessageComposer } from './message-composer';
 import { PasswordChange } from './password-change';
 import { WorkbenchHrNotifications } from './workbench-hr-notifications';
 import { WorkbenchOwnRequests } from './workbench-own-requests';
+import { WorkbenchProcurementFollowUps } from './workbench-procurement-follow-ups';
 import { NewRequestDialog } from './new-request-dialog';
 import {
   PROFILE_PHOTO_CHANGED_EVENT,
@@ -482,6 +483,7 @@ export function WorkbenchWorkspace() {
                 />
               </TabsContent>
               <TabsContent value="requests" className="space-y-4">
+                <WorkbenchProcurementFollowUps />
                 <WorkbenchOwnRequests
                   key={`${home.user.id}-${requestsVersion}`}
                 />

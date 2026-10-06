@@ -22,8 +22,14 @@ export function ProcurementDocumentPicker({
   value: ProcurementDocumentReferenceV1[];
   onChange: (value: ProcurementDocumentReferenceV1[]) => void;
   available: boolean;
-  invoiceUpload?: { requestId: string; requestNumber: string };
+  invoiceUpload?: {
+    requestId: string;
+    requestNumber: string;
+    purpose?: 'ORDER';
+  };
 }) {
+  const uploadLabel =
+    invoiceUpload?.purpose === 'ORDER' ? 'سند سفارش' : 'فاکتور';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<readonly DocumentListItemV1[]>([]);
@@ -112,9 +118,15 @@ export function ProcurementDocumentPicker({
       form.set('file', file);
       form.set(
         'title',
-        `فاکتور ${invoiceUpload.requestNumber} · ${file.name}`.slice(0, 240),
+        `${uploadLabel} ${invoiceUpload.requestNumber} · ${file.name}`.slice(
+          0,
+          240,
+        ),
       );
-      form.set('description', 'فایل فاکتور بارگذاری‌شده از خرید و تأمین');
+      form.set(
+        'description',
+        `فایل ${uploadLabel} بارگذاری‌شده از خرید و تأمین`,
+      );
       form.set('documentTypeId', documentType.id);
       form.set('categoryId', category.id);
       form.set('branchId', branchId);
@@ -124,10 +136,10 @@ export function ProcurementDocumentPicker({
       form.set('sourceEntityId', invoiceUpload.requestId);
       form.set(
         'sourceDisplayLabel',
-        `${invoiceUpload.requestNumber} · فاکتور خرید`,
+        `${invoiceUpload.requestNumber} · ${uploadLabel} خرید`,
       );
       form.set('confidentiality', documentType.defaultConfidentiality);
-      form.set('versionNote', 'بارگذاری از فرم فاکتور خرید');
+      form.set('versionNote', `بارگذاری از فرم ${uploadLabel} خرید`);
       const result = await documentsApi.upload(form);
       const reference = {
         id: result.data.id,
@@ -138,7 +150,7 @@ export function ProcurementDocumentPicker({
         reference,
       ]);
       setInvoiceUploadSuccess(
-        'فایل در اسناد و فایل‌ها ذخیره و به فاکتور پیوست شد.',
+        `فایل در اسناد و فایل‌ها ذخیره و به ${uploadLabel} پیوست شد.`,
       );
       if (fileInput.current) fileInput.current.value = '';
     } catch (caught) {
@@ -160,10 +172,10 @@ export function ProcurementDocumentPicker({
             <section className="rounded-xl border border-primary/20 bg-primary/5 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h4 className="font-semibold">بارگذاری فایل فاکتور</h4>
+                  <h4 className="font-semibold">بارگذاری فایل {uploadLabel}</h4>
                   <p className="mt-1 text-xs text-muted-foreground">
                     فایل در بخش «اسناد و فایل‌ها» با مرجع همین درخواست ذخیره و
-                    به فاکتور پیوست می‌شود.
+                    به {uploadLabel} پیوست می‌شود.
                   </p>
                 </div>
                 <input
@@ -171,7 +183,7 @@ export function ProcurementDocumentPicker({
                   accept={invoiceOptions?.uploadPolicy.allowedMimeTypes.join(
                     ',',
                   )}
-                  aria-label="انتخاب فایل فاکتور"
+                  aria-label={`انتخاب فایل ${uploadLabel}`}
                   className="sr-only"
                   disabled={busy || !invoiceOptions}
                   onChange={(event) => {
@@ -187,7 +199,7 @@ export function ProcurementDocumentPicker({
                   onClick={() => fileInput.current?.click()}
                 >
                   <FileUp aria-hidden="true" className="size-4" />
-                  بارگذاری فاکتور
+                  بارگذاری {uploadLabel}
                 </Button>
               </div>
               {invoiceUploadError && (

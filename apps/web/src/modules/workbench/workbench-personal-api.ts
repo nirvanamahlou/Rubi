@@ -103,6 +103,16 @@ const json = (method: 'POST' | 'PATCH', value: unknown): RequestInit => ({
 });
 
 export const workbenchPersonalApi = {
+  procurementFollowUps: () =>
+    request<{
+      items: {
+        id: string;
+        requestId: string;
+        title: string;
+        dueAt: string | null;
+        createdAt: string;
+      }[];
+    }>('/procurement-follow-ups'),
   performance: (days: string) =>
     request<WorkbenchPerformanceResponseV1>(
       `/performance?days=${encodeURIComponent(days)}`,

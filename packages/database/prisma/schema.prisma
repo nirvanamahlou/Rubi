@@ -61,6 +61,7 @@ model User {
   travelDeliveryRevisions                          FinanceDeliveryRevision[]
   customerDocumentDeliveryRevisions                FinanceCustomerDocumentDeliveryRevision[]
   procurementTicketPurchaseRequests                ProcurementTicketPurchaseRequest[]        @relation("ProcurementTicketPurchaseCreator")
+  procurementCategoriesCreated                     ProcurementCategory[]                     @relation("ProcurementCategoryCreator")
   procurementReceiptAdjustments                    ProcurementReceiptAdjustment[]
   procurementExportJobs                            ProcurementExportJob[]
   procurementRequestRequesteruseridRows            ProcurementRequest[]                      @relation("ProcurementRequestRequesteruserid")
@@ -285,6 +286,7 @@ model Branch {
   financeSettlementAccounts           FinanceSettlementAccount[]
   financeProcurementInvoiceRevisions  FinanceProcurementInvoiceRevision[]
   settingsProcurementApprovalPolicies SettingsProcurementApprovalPolicy[]
+  procurementCategories               ProcurementCategory[]
   automationTasks                     AutomationTask[]
 
   @@map("branches")
@@ -5880,6 +5882,22 @@ model ProcurementRequest {
   @@index([branchId, ownerUserId, createdAt, id])
   @@index([branchId, requiredAt])
   @@map("procurement_request")
+}
+
+model ProcurementCategory {
+  id              String   @id @default(uuid()) @db.Uuid
+  branchId        String   @db.Uuid
+  label           String   @db.VarChar(80)
+  normalizedLabel String   @db.VarChar(160)
+  isActive        Boolean  @default(true)
+  createdByUserId String   @db.Uuid
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  createdBy       User     @relation("ProcurementCategoryCreator", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([branchId, normalizedLabel])
+  @@index([branchId, isActive, label])
+  @@map("procurement_categories")
 }
 
 model ProcurementRequestItem {

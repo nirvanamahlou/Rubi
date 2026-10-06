@@ -9,9 +9,11 @@ import {
   MessagesSquare,
   Package,
   PackageCheck,
+  Pencil,
   ReceiptText,
+  Trash2,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MasterDataRecord, ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -36,6 +38,8 @@ import { statusLabels } from './model';
 import { OperationForm } from './operation-form';
 import { ProcurementRecordActions } from './record-actions';
 import { ProcurementSelect } from './procurement-select';
+import { ProcurementSupplierLogo } from './supplier-logo';
+import { RecordCard } from './record-details';
 import {
   sampleRequests,
   sampleSuppliers,
@@ -175,7 +179,7 @@ const sectionStatuses: Partial<
     'CLOSED',
   ],
   4: ['APPROVED', 'SOURCING'],
-  5: ['SOURCING', 'CLOSED'],
+  5: ['APPROVED', 'SOURCING', 'CLOSED'],
   6: ['SOURCING', 'CLOSED'],
   7: ['SOURCING', 'CLOSED'],
 };
@@ -245,6 +249,7 @@ export function InternalSections({
   onSaved: (request: ProcurementRequestV1) => void;
   onDelete?: (request: ProcurementRequestV1) => Promise<void>;
 }) {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [querySearch, setQuerySearch] = useState('');
   const [status, setStatus] = useState('');
@@ -256,6 +261,7 @@ export function InternalSections({
   const [supplierForm, setSupplierForm] = useState<
     { mode: 'create' } | { mode: 'edit'; record: MasterDataRecord } | null
   >(null);
+  const [supplierError, setSupplierError] = useState('');
   const [hiddenSamples, setHiddenSamples] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -384,9 +390,15 @@ export function InternalSections({
       resource: 'suppliers',
       values,
       title: `تأمین‌کننده ${values.name ?? values.legalName ?? ''}`.trim(),
+      ...(supplierForm?.mode === 'edit'
+        ? { existing: supplierForm.record }
+        : {}),
       ...(logoChange ? { logoChange } : {}),
     });
     setSupplierForm(null);
+    await queryClient.invalidateQueries({
+      queryKey: ['procurement', 'supplier-profile'],
+    });
     await suppliers.refetch();
   }
   function hideSample(id: string) {
@@ -400,8 +412,13 @@ export function InternalSections({
     });
   }
   async function editSupplier(id: string) {
-    const result = await masterDataApi.detail('suppliers', id);
-    setSupplierForm({ mode: 'edit', record: result.data });
+    setSupplierError('');
+    try {
+      const result = await masterDataApi.detail('suppliers', id);
+      setSupplierForm({ mode: 'edit', record: result.data });
+    } catch (caught) {
+      setSupplierError(errorText(caught));
+    }
   }
   async function deleteRequest(row: ProcurementListRow) {
     const result = await procurementApi.get(row.id);
@@ -411,6 +428,13 @@ export function InternalSections({
 
   return (
     <div className="space-y-5" data-procurement-section={group}>
+      {supplierError && (
+        <Alert
+          tone="error"
+          title="اطلاعات تأمین‌کننده دریافت نشد"
+          description={supplierError}
+        />
+      )}
       <PageHeader
         title={title.title}
         actions={
@@ -587,16 +611,28 @@ export function InternalSections({
                           tone.row,
                         )}
                       >
-                        <div>
-                          <p className="font-semibold">
-                            {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
-                          </p>
-                          <p
-                            className="mt-1 text-xs text-muted-foreground"
-                            dir="ltr"
-                          >
-                            {supplier.code}
-                          </p>
+                        <div className="flex min-w-0 items-center gap-3">
+                          {!('sample' in supplier) && (
+                            <ProcurementSupplierLogo id={supplier.id} />
+                          )}
+                          <div className="min-w-0">
+                            <button
+                              type="button"
+                              className="text-right font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              onClick={() => {
+                                if (!('sample' in supplier))
+                                  void editSupplier(supplier.id);
+                              }}
+                            >
+                              {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
+                            </button>
+                            <p
+                              className="mt-1 text-xs text-muted-foreground"
+                              dir="ltr"
+                            >
+                              {supplier.code}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge>
@@ -604,8 +640,7 @@ export function InternalSections({
                           </Badge>
                           <ProcurementRecordActions
                             label={
-                              supplier.name?.trim() ||
-                              'تأمین‌کننده بدون نام'
+                              supplier.name?.trim() || 'تأمین‌کننده بدون نام'
                             }
                             onEdit={() => {
                               if ('sample' in supplier && supplier.sample)
@@ -656,9 +691,18 @@ export function InternalSections({
                       )}
                     >
                       <div className="min-w-0">
-                        <p className="truncate font-semibold">
+                        <button
+                          type="button"
+                          className="max-w-full truncate text-right font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => {
+                            if (row.sample) {
+                              setCandidate(row.id);
+                              setOpenedSampleId(row.id);
+                            } else onOpen(row.id);
+                          }}
+                        >
                           {row.draft.title || 'درخواست بدون عنوان'}
-                        </p>
+                        </button>
                         <p
                           className="mt-1 text-xs text-muted-foreground"
                           dir="ltr"
@@ -831,7 +875,7 @@ export function InternalSections({
                 <div className="border-t border-border pt-4">
                   <Badge className={tone.chip}>پیش‌نمایش فرم</Badge>
                   <fieldset disabled className="mt-3 space-y-3">
-                    {previewFields[group].map(([label, value], index) => (
+                    {previewFields[group].map(([label], index) => (
                       <FormField
                         key={label}
                         id={`proc-preview-${group}-${index}`}
@@ -839,7 +883,9 @@ export function InternalSections({
                       >
                         <Input
                           id={`proc-preview-${group}-${index}`}
-                          defaultValue={value}
+                          value=""
+                          placeholder="یک رکورد را انتخاب کنید"
+                          readOnly
                         />
                       </FormField>
                     ))}
@@ -1344,6 +1390,10 @@ function SectionOperations({
 }) {
   const kinds = sectionKinds[group] ?? [];
   const [kind, setKind] = useState(kinds[0]?.[0] ?? 'quotations');
+  const [orderAction, setOrderAction] = useState<{
+    action: 'AMEND_ORDER' | 'CANCEL_ORDER';
+    record: Record<string, unknown>;
+  } | null>(null);
   const records = useQuery({
     queryKey: [
       'procurement',
@@ -1402,23 +1452,102 @@ function SectionOperations({
           <div className="divide-y divide-border">
             {records.data.items.map((row, index) => {
               const record = row as Record<string, unknown>;
+              const selectedOrderAction =
+                orderAction?.record.id === record.id ? orderAction : null;
               return (
-                <div
+                <details
                   key={String(record.id ?? index)}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm"
+                  className="px-5 py-4 text-sm"
                 >
-                  <strong>
-                    {String(
-                      record.number ??
-                        record.invoiceNumber ??
-                        record.id ??
-                        'رکورد',
+                  <summary className="cursor-pointer rounded-lg px-2 py-1 text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <strong>
+                      {String(
+                        record.number ??
+                          record.invoiceNumber ??
+                          record.id ??
+                          'رکورد',
+                      )}
+                    </strong>
+                    <span className="text-muted-foreground">
+                      {String(record.status ?? '')}
+                    </span>
+                  </summary>
+                  <div className="mt-3">
+                    <RecordCard record={record} />
+                    {group === 5 &&
+                      (bootstrap.permissions.includes(
+                        'procurement.order.amend',
+                      ) ||
+                        bootstrap.permissions.includes(
+                          'procurement.order.cancel',
+                        )) && (
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+                          {bootstrap.permissions.includes(
+                            'procurement.order.amend',
+                          ) &&
+                            String(record.status) === 'ISSUED' && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                aria-label="ویرایش سفارش"
+                                title="ویرایش سفارش"
+                                onClick={() =>
+                                  setOrderAction({
+                                    action: 'AMEND_ORDER',
+                                    record,
+                                  })
+                                }
+                              >
+                                <Pencil aria-hidden="true" className="size-4" />
+                              </Button>
+                            )}
+                          {bootstrap.permissions.includes(
+                            'procurement.order.cancel',
+                          ) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              aria-label="لغو سفارش"
+                              title="لغو سفارش"
+                              disabled={['CANCELLED', 'CLOSED'].includes(
+                                String(record.status),
+                              )}
+                              onClick={() =>
+                                setOrderAction({
+                                  action: 'CANCEL_ORDER',
+                                  record,
+                                })
+                              }
+                            >
+                              <Trash2 aria-hidden="true" className="size-4" />
+                            </Button>
+                          )}
+                          <span className="self-center text-xs text-muted-foreground">
+                            لغو سفارش سابقه را حفظ می‌کند و سفارش دارای دریافت
+                            یا فاکتور لغو نمی‌شود.
+                          </span>
+                        </div>
+                      )}
+                    {group === 5 && selectedOrderAction && (
+                      <div className="mt-4">
+                        <OperationForm
+                          key={`${selectedOrderAction.action}-${String(record.id)}`}
+                          kind="orders"
+                          initialAction={selectedOrderAction.action}
+                          initialRecord={record}
+                          request={request}
+                          bootstrap={bootstrap}
+                          onChanged={(updated) => {
+                            onSaved(updated);
+                            setOrderAction(null);
+                          }}
+                        />
+                      </div>
                     )}
-                  </strong>
-                  <span className="text-muted-foreground">
-                    {String(record.status ?? '')}
-                  </span>
-                </div>
+                  </div>
+                </details>
               );
             })}
           </div>
