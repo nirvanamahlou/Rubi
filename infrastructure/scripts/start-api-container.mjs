@@ -6,7 +6,11 @@ if (!databaseUrl) {
 }
 
 const database = new URL(databaseUrl);
-if (['localhost', '127.0.0.1', '::1', 'host.docker.internal'].includes(database.hostname)) {
+if (
+  ['localhost', '127.0.0.1', '::1', 'host.docker.internal'].includes(
+    database.hostname,
+  )
+) {
   database.hostname = 'postgres';
   database.port = '5432';
   process.env.DATABASE_URL = database.toString();

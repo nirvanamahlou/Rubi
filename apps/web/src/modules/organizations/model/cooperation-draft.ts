@@ -199,10 +199,9 @@ export async function saveCooperation(
     require('documents.organization.read');
     require('documents.metadata.read');
     if (
-      [
-        draft.pendingAgreementDocument,
-        ...draft.pendingGuaranteeDocuments,
-      ].some((document) => document?.input.confidentialAccessCode)
+      [draft.pendingAgreementDocument, ...draft.pendingGuaranteeDocuments].some(
+        (document) => document?.input.confidentialAccessCode,
+      )
     )
       require('documents.file.read');
   }
