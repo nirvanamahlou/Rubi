@@ -4817,3 +4817,7 @@ Request detail breadcrumb uses the saved request title; redundant UUID/version h
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
+
+## 2026-10-06 — PROCUREMENT-RECORD-LISTS-1006
+
+Removed inert sidebar form previews from all seven Procurement sections. Scoped creation/decision actions now sit above full-width records, with a paginated authorized request chooser for dependent forms. Text preview triggers no longer match the shared icon-only action rule; full record titles wrap in lists and workbench. Supplier logos continue using authenticated Master Data document previews, and newly persisted logo profiles immediately refresh the adjacent title cache. No API/schema/IAM/dependency or operational data changes. Eight focused tests, Web typecheck and changed-file lint pass; full CI/build gates required before merge; authenticated browser verification unavailable because CUA initialization fails.
