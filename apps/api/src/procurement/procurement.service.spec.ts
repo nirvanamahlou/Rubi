@@ -177,6 +177,190 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
     async function approvedRequest(draft = fixture()) {
       return approve(await command(await create(draft), 'SUBMIT'));
     }
+    it('creates a form order atomically, with warranty, scoped listing and final approval still required', async () => {
+      const draft = fixture();
+      const request = await approvedRequest(draft);
+      const key = randomUUID();
+      const input = {
+        supplierId: supplier,
+        currencyCode: 'IRR',
+        lines: [commercial(draft.items[0]!.id)],
+        validUntil: nextMonth,
+        expectedAt: tomorrow,
+        paymentTerms: 'On acceptance',
+        warranty: '12 months',
+        deliveryLocation: 'Synthetic office',
+        trackingCode: 'FORM-1',
+        documents,
+      };
+      const saved = await command(request, 'ORDER_FORM', input, maker, key);
+      await command(request, 'ORDER_FORM', input, maker, key);
+      const orders = await database.client.procurementOrder.findMany({
+        where: { requestId: request.id },
+      });
+      expect(orders).toHaveLength(1);
+      expect(orders[0]!.status).toBe('PENDING_APPROVAL');
+      expect(orders[0]!.data).toMatchObject({
+        warranty: '12 months',
+        trackingCode: 'FORM-1',
+        documents,
+      });
+      const own = await service.orders({ search: draft.title }, maker);
+      expect(own.items.some((order) => order.id === orders[0]!.id)).toBe(true);
+      const outside = await service.orders(
+        { search: draft.title },
+        { ...outsider, branchIds: [otherBranch] },
+      );
+      expect(outside.items).toHaveLength(0);
+      await rejected(
+        () => command(saved, 'ISSUE_ORDER', { orderId: orders[0]!.id }),
+        422,
+        'FINAL_APPROVAL_REQUIRED',
+      );
+    });
+    it('rolls back quote, selection and version when the form order has an invalid tracking code', async () => {
+      const draft = fixture();
+      const request = await approvedRequest(draft);
+      await rejected(
+        () =>
+          command(request, 'ORDER_FORM', {
+            supplierId: supplier,
+            currencyCode: 'IRR',
+            lines: [commercial(draft.items[0]!.id)],
+            validUntil: nextMonth,
+            expectedAt: tomorrow,
+            paymentTerms: 'On acceptance',
+            deliveryLocation: 'Synthetic office',
+            trackingCode: 'x'.repeat(101),
+            documents,
+          }),
+        422,
+        'VALIDATION_ERROR',
+      );
+      expect(
+        await database.client.procurementQuotation.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+      expect(
+        await database.client.procurementSelection.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+      expect(
+        await database.client.procurementOrder.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+      expect((await service.detail(request.id, maker)).version).toBe(
+        request.version,
+      );
+    });
+    it('rejects form order without quote-select permission before writing any quotation', async () => {
+      const request = await approvedRequest();
+      await rejected(
+        () =>
+          command(
+            request,
+            'ORDER_FORM',
+            {},
+            {
+              ...maker,
+              permissions: maker.permissions.filter(
+                (permission) => permission !== 'procurement.quote.select',
+              ),
+            },
+          ),
+        403,
+      );
+      expect(
+        await database.client.procurementQuotation.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+    });
+    it('replaces pending order approval on amendment and retires it on cancellation', async () => {
+      const context = await orderedRequest('GOODS', false);
+      // The helper has approved the initial order, but has not issued it.
+      const amended = await command(context.row, 'AMEND_ORDER', {
+        orderId: context.order.id,
+        warranty: '24 months',
+        reason: 'Synthetic updated warranty',
+      });
+      expect(amended.status).toBe('IN_REVIEW');
+      const again = await command(amended, 'AMEND_ORDER', {
+        orderId: context.order.id,
+        warranty: '36 months',
+        reason: 'Synthetic second amendment',
+      });
+      const cancelled = await command(again, 'CANCEL_ORDER', {
+        orderId: context.order.id,
+        reason: 'Synthetic cancellation',
+      });
+      expect(cancelled.status).toBe('SOURCING');
+      const snapshots =
+        await database.client.procurementApprovalSnapshot.findMany({
+          where: { requestId: cancelled.id },
+        });
+      expect(
+        await database.client.procurementApprovalStep.count({
+          where: {
+            snapshotId: { in: snapshots.map((snapshot) => snapshot.id) },
+            status: 'PENDING',
+          },
+        }),
+      ).toBe(0);
+      expect(
+        (await service.orders({ search: cancelled.draft.title }, maker)).items,
+      ).toHaveLength(0);
+      expect(
+        (
+          await service.orders(
+            { search: cancelled.draft.title, status: 'CANCELLED' },
+            maker,
+          )
+        ).items,
+      ).toHaveLength(1);
+    });
+    it('stores discrepancy date and rejects return using a different order context', async () => {
+      const context = await orderedRequest();
+      let row = await command(
+        context.row,
+        'RECEIVE',
+        receiptInput(context.order.id, context.item.id),
+      );
+      const receipt =
+        await database.client.procurementReceiptItem.findFirstOrThrow({
+          where: { orderId: context.order.id },
+        });
+      await rejected(
+        () =>
+          command(row, 'RETURN', {
+            orderId: randomUUID(),
+            receiptItemId: receipt.id,
+            quantity: '1',
+            disposition: 'ACCEPTED',
+            returnedAt: instant,
+            reason: 'Synthetic mismatch',
+            documents,
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      row = await command(row, 'DISCREPANCY', {
+        orderId: context.order.id,
+        kind: 'DAMAGE',
+        description: 'Synthetic damage',
+        occurredAt: instant,
+      });
+      expect(
+        (
+          await database.client.procurementDiscrepancy.findFirstOrThrow({
+            where: { requestId: row.id },
+          })
+        ).data,
+      ).toMatchObject({ occurredAt: instant });
+    });
     async function selectedRequest(draft = fixture(), validUntil = nextMonth) {
       let row = await approvedRequest(draft);
       row = await command(row, 'QUOTE', {

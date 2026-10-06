@@ -141,6 +141,10 @@ export type ProcurementExportJob = {
   } | null;
 };
 export const procurementApi = {
+  orders: (query: URLSearchParams) =>
+    procurementRequest<ProcurementListV1<Record<string, unknown>>>(
+      `/orders?${query}`,
+    ),
   exports: (page: number) =>
     procurementRequest<ProcurementListV1<ProcurementExportJob>>(
       `/exports?page=${page}`,

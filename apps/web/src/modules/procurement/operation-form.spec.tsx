@@ -51,6 +51,67 @@ const bootstrap = (permissions: Bootstrap['permissions']): Bootstrap => ({
 });
 
 describe('Procurement lifecycle operation forms', () => {
+  it('shows the consolidated order form with price, warranty, dates and archived upload', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <OperationForm
+          request={request}
+          kind="orders"
+          initialAction="ORDER_FORM"
+          bootstrap={bootstrap([
+            'procurement.order.manage',
+            'procurement.quote.manage',
+            'procurement.quote.select',
+          ])}
+          onChanged={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    for (const text of [
+      'تأمین‌کننده',
+      'موعد تحویل',
+      'محل تحویل',
+      'شرایط پرداخت',
+      'ضمانت',
+      'ارز',
+      'کد پیگیری',
+      'بارگذاری فایل سند سفارش',
+      'اعتبار قیمت',
+    ])
+      expect(html).toContain(text);
+    expect(html).not.toContain('انتخاب ثبت‌شده');
+    expect(html).not.toContain('id="proc-operation"');
+  });
+  it('opens order-bound discrepancy and return forms with their required dates', () => {
+    const render = (
+      action: string,
+      kind: string,
+      permission: Bootstrap['permissions'][number],
+    ) =>
+      renderToStaticMarkup(
+        <QueryClientProvider client={new QueryClient()}>
+          <OperationForm
+            request={request}
+            kind={kind}
+            initialAction={action}
+            initialRecord={{ id: 'order-1' }}
+            bootstrap={bootstrap([permission])}
+            onChanged={() => undefined}
+          />
+        </QueryClientProvider>,
+      );
+    const discrepancy = render(
+      'DISCREPANCY',
+      'discrepancies',
+      'procurement.discrepancy.manage',
+    );
+    expect(discrepancy).toContain('تاریخ مغایرت');
+    expect(discrepancy).toContain('نوع مغایرت');
+    expect(discrepancy).not.toContain('سفارش مرجع');
+    const returned = render('RETURN', 'returns', 'procurement.return.manage');
+    for (const text of ['مقدار مرجوعی', 'تاریخ مرجوعی', 'مبدأ مقدار مرجوعی'])
+      expect(returned).toContain(text);
+  });
   it('loads the selected order currency and supplier instead of draft defaults when amending', () => {
     expect(
       orderAmendmentFields({
@@ -72,6 +133,7 @@ describe('Procurement lifecycle operation forms', () => {
       deliveryLocation: 'شعبه مرکزی',
       trackingCode: 'TRACK-1',
       paymentTerms: '۳۰ روزه',
+      warranty: '',
       reason: '',
     });
     expect(orderAmendmentFields({})).toEqual({
@@ -82,6 +144,7 @@ describe('Procurement lifecycle operation forms', () => {
       deliveryLocation: '',
       trackingCode: '',
       paymentTerms: '',
+      warranty: '',
       reason: '',
     });
   });

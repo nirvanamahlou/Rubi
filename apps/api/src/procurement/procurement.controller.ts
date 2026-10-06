@@ -51,6 +51,14 @@ export class ProcurementController {
   exportDetail(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return procurementBoundary(() => this.exports.detail(id, req.actor));
   }
+  @Get('orders')
+  @Header('Cache-Control', 'private, no-store')
+  orders(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.orders(query, req.actor));
+  }
   @Get('bootstrap')
   @Header('Cache-Control', 'private, no-store')
   bootstrap(@Req() req: AuthenticatedRequest) {

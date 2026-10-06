@@ -346,6 +346,83 @@ export class ProcurementService {
       travel: 'NOT_CONNECTED' as const,
     };
   }
+  async orders(query: Record<string, unknown>, actor: AuthenticatedActor) {
+    v.object(query, ['page', 'search', 'status', 'createdFrom', 'createdTo']);
+    const page = v.integer(Number(query.page ?? 1), 'page', 100000);
+    const search = v.text(query.search, 'search', 100, true);
+    const status = v.text(query.status, 'status', 40, true);
+    requireRule(
+      !status ||
+        [
+          'PENDING_APPROVAL',
+          'APPROVED',
+          'ISSUED',
+          'CLOSED',
+          'CANCELLED',
+        ].includes(status),
+      'VALIDATION_ERROR',
+      'وضعیت سفارش معتبر نیست.',
+    );
+    const dates = v.dateRange(query.createdFrom, query.createdTo);
+    const parents = await this.database.client.procurementOrder.findMany({
+      where: {
+        procurementOrderRequestid: await this.scope(actor),
+        status: status || { not: 'CANCELLED' },
+        ...(search
+          ? {
+              OR: [
+                { number: { contains: search, mode: 'insensitive' } },
+                {
+                  procurementOrderRequestid: {
+                    title: { contains: search, mode: 'insensitive' },
+                  },
+                },
+              ],
+            }
+          : {}),
+        ...(dates.start || dates.endExclusive
+          ? {
+              createdAt: {
+                ...(dates.start ? { gte: dates.start } : {}),
+                ...(dates.endExclusive ? { lt: dates.endExclusive } : {}),
+              },
+            }
+          : {}),
+      },
+      include: {
+        procurementOrderRequestid: { select: { title: true, number: true } },
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      skip: (page - 1) * 50,
+      take: 51,
+    });
+    const versions =
+      await this.database.client.procurementOrderVersion.findMany({
+        where: {
+          OR: parents.map((order) => ({
+            orderId: order.id,
+            version: order.version,
+          })),
+        },
+        take: 51,
+      });
+    const lines = await this.database.client.procurementOrderItem.findMany({
+      where: { orderVersionId: { in: versions.map((version) => version.id) } },
+      take: 5100,
+    });
+    return {
+      items: parents
+        .slice(0, 50)
+        .map(({ procurementOrderRequestid: request, ...order }) => ({
+          ...order,
+          requestTitle: request.title,
+          requestNumber: request.number,
+          lines: lines.filter((line) => line.orderId === order.id),
+        })),
+      page,
+      hasMore: parents.length > 50,
+    };
+  }
   async list(query: Record<string, unknown>, actor: AuthenticatedActor) {
     v.object(query, [
       'page',
@@ -1137,6 +1214,7 @@ export class ProcurementService {
       QUOTE: 'procurement.quote.manage',
       SELECT_QUOTE: 'procurement.quote.select',
       ORDER: 'procurement.order.manage',
+      ORDER_FORM: 'procurement.order.manage',
       ISSUE_ORDER: 'procurement.order.issue',
       AMEND_ORDER: 'procurement.order.amend',
       CLOSE_REMAINDER: 'procurement.order.cancel',
@@ -1155,6 +1233,10 @@ export class ProcurementService {
     const permission = permissions[action];
     requireRule(permission, 'VALIDATION_ERROR', 'اقدام معتبر نیست.');
     this.require(actor, permission);
+    if (action === 'ORDER_FORM') {
+      this.require(actor, 'procurement.quote.manage');
+      this.require(actor, 'procurement.quote.select');
+    }
     const version = v.integer(input.expectedVersion);
     const existing = await this.detail(id, actor);
     const reason = v.text(input.reason, 'reason', 1000, true);
