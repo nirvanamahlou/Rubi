@@ -1,5 +1,7 @@
 'use client';
 
+import { Send } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Badge, Card } from '@/components/ui/surfaces';
 import {
   campaignChannelLabels,
@@ -17,7 +19,13 @@ function Definition({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function CampaignDetail({ campaign }: { campaign: CampaignPreview }) {
+export function CampaignDetail({
+  campaign,
+  onPublish,
+}: {
+  campaign: CampaignPreview;
+  onPublish?: () => Promise<void>;
+}) {
   return (
     <div className="mt-5 grid gap-4" dir="rtl">
       <Card className="grid gap-4 p-5 md:grid-cols-3">
@@ -65,6 +73,17 @@ export function CampaignDetail({ campaign }: { campaign: CampaignPreview }) {
         />
         <Definition label="زمان اعلام" value={campaign.declaredAt ?? '—'} />
       </Card>
+      {campaign.status === 'DRAFT' && onPublish ? (
+        <Button
+          aria-label="انتشار پیش‌نویس ذخیره‌شده"
+          className="justify-self-start"
+          onClick={() => void onPublish()}
+          size="icon"
+          title="انتشار پیش‌نویس"
+        >
+          <Send aria-hidden="true" className="size-4" />
+        </Button>
+      ) : null}
 
       <Card className="grid gap-4 p-5 md:grid-cols-2">
         <h3 className="font-black md:col-span-2">هزینه‌های ثبت‌شده</h3>

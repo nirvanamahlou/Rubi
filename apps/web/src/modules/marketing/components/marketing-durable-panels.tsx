@@ -7,7 +7,17 @@ import type {
   MarketingAssetViewV1,
   MarketingCampaignViewV1,
 } from '@nora/contracts';
-import { Eye, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
+import {
+  Calculator,
+  Eye,
+  Link2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -27,10 +37,14 @@ import { Badge, Card, EmptyState } from '@/components/ui/surfaces';
 import { marketingApi } from '../api/records-client';
 import {
   automationDraftFromAsset,
+  automationEdgeLines,
   automationInputFromDraft,
+  automationNodePoint,
   contentDraftFromAsset,
   contentInputFromDraft,
   emptyContentDraft,
+  emptyMessageFormState,
+  scheduledMessagePayload,
   type AutomationDraft,
   type AutomationPort,
   type ContentDraft,
@@ -94,11 +108,14 @@ function LoadState({
     <Card className="grid gap-3 p-6 text-center" role="alert">
       <p>{error}</p>
       <Button
+        aria-label="تلاش دوباره"
         className="justify-self-center"
         onClick={onRetry}
+        size="icon"
+        title="تلاش دوباره"
         variant="outline"
       >
-        تلاش دوباره
+        <RefreshCw aria-hidden="true" className="size-4" />
       </Button>
     </Card>
   );
@@ -213,23 +230,30 @@ export function DurableSegmentsPanel({ onNotice }: { onNotice: Notice }) {
         </FormField>
         <div className="flex gap-2 md:col-span-2">
           {!viewing ? (
-            <Button disabled={saving} onClick={() => void save()}>
+            <Button
+              aria-label={saving ? 'در حال ذخیره سگمنت' : 'ذخیره سگمنت'}
+              disabled={saving}
+              onClick={() => void save()}
+              size="icon"
+              title="ذخیره سگمنت"
+            >
               <Save aria-hidden="true" className="size-4" />
-              {saving ? 'در حال ذخیره…' : 'ذخیره سگمنت'}
             </Button>
           ) : null}
           {editing || viewing ? (
             <Button
+              aria-label="بستن فرم سگمنت"
               onClick={() => {
                 setEditing(null);
                 setViewing(false);
                 setName('');
                 setRule('');
               }}
+              size="icon"
+              title="بستن"
               variant="outline"
             >
               <X aria-hidden="true" className="size-4" />
-              بستن
             </Button>
           ) : null}
         </div>
@@ -432,6 +456,7 @@ export function DurableIntakesPanel({
             />
           </FormField>
           <Button
+            aria-label="ذخیره سرنخ جدید"
             className="md:col-span-2 xl:col-span-3"
             onClick={async () => {
               if (!data.actor?.branchIds[0]) return;
@@ -460,9 +485,10 @@ export function DurableIntakesPanel({
                 );
               }
             }}
+            size="icon"
+            title="سرنخ جدید"
           >
             <Plus aria-hidden="true" className="size-4" />
-            سرنخ جدید
           </Button>
           <Button
             aria-label="پاک‌کردن فرم سرنخ"
@@ -536,6 +562,7 @@ export function DurableIntakesPanel({
               </div>
               {mode === 'scoring' ? (
                 <Button
+                  aria-label={`محاسبه امتیاز ${item.maskedPhone}`}
                   onClick={async () => {
                     try {
                       await marketingApi.scoreIntake(
@@ -553,8 +580,10 @@ export function DurableIntakesPanel({
                       );
                     }
                   }}
+                  size="icon"
+                  title="محاسبه امتیاز"
                 >
-                  محاسبه امتیاز
+                  <Calculator aria-hidden="true" className="size-4" />
                 </Button>
               ) : (
                 <div className="flex items-center gap-2">
@@ -667,8 +696,14 @@ export function DurableSourceChart({ onNotice }: { onNotice: Notice }) {
         <FormField id="source-end" label="تا تاریخ">
           <DatePicker id="source-end" value={endsAt} onChange={setEndsAt} />
         </FormField>
-        <Button disabled={loading} onClick={() => void load()}>
-          {loading ? 'در حال دریافت…' : 'اعمال بازه'}
+        <Button
+          aria-label="اعمال بازه"
+          disabled={loading}
+          onClick={() => void load()}
+          size="icon"
+          title="اعمال بازه"
+        >
+          <Save aria-hidden="true" className="size-4" />
         </Button>
       </Card>
       <Card className="min-h-96 p-6">
@@ -725,12 +760,29 @@ export function DurableMessagesPanel({
   const [campaignId, setCampaignId] = useState('none');
   const [messageId, setMessageId] = useState('none');
   const [channels, setChannels] = useState<string[]>(['SMS']);
+  const [scheduledChannel, setScheduledChannel] = useState('SMS');
   const [status, setStatus] = useState('DRAFT');
   const [audienceId, setAudienceId] = useState('none');
   const [body, setBody] = useState('');
   const [sendMode, setSendMode] = useState('NOW');
   const [sendAt, setSendAt] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
+  const resetForm = () => {
+    const empty = emptyMessageFormState();
+    setEditing(null);
+    setViewing(false);
+    setName(empty.name);
+    setCampaignId(empty.campaignId);
+    setMessageId(empty.messageId);
+    setChannels(empty.channels);
+    setScheduledChannel(empty.scheduledChannel);
+    setStatus(empty.status);
+    setAudienceId(empty.audienceId);
+    setBody(empty.body);
+    setSendMode(empty.sendMode);
+    setSendAt(empty.sendAt);
+    setScheduledAt(empty.scheduledAt);
+  };
   const fill = (item: MarketingAssetViewV1, mode: 'view' | 'edit') => {
     setEditing(mode === 'edit' ? item : null);
     setViewing(mode === 'view');
@@ -742,6 +794,7 @@ export function DurableMessagesPanel({
         ? item.payload.channels.map(String)
         : [String(item.payload.channel ?? 'SMS')],
     );
+    setScheduledChannel(String(item.payload.channel ?? 'SMS'));
     setStatus(item.status);
     setAudienceId(
       item.kind === 'MESSAGE' ? (item.relatedAssetId ?? 'none') : 'none',
@@ -769,7 +822,7 @@ export function DurableMessagesPanel({
               : audienceId,
           scheduledAt: scheduled ? new Date(scheduledAt).toISOString() : null,
           payload: scheduled
-            ? { channel: channels[0], status }
+            ? scheduledMessagePayload(scheduledChannel, status)
             : {
                 channels,
                 audience:
@@ -788,11 +841,7 @@ export function DurableMessagesPanel({
           branchId: data.actor.branchIds[0],
         },
       );
-      setEditing(null);
-      setViewing(false);
-      setName('');
-      setBody('');
-      setAudienceId('none');
+      resetForm();
       await data.load();
       onNotice(
         scheduled
@@ -869,26 +918,51 @@ export function DurableMessagesPanel({
             </SelectContent>
           </Select>
         </FormField>
-        <fieldset className="grid gap-2" disabled={viewing}>
-          <legend className="text-sm font-bold">کانال‌ها</legend>
-          <div className="flex flex-wrap gap-3">
-            {['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'].map((value) => (
-              <label className="flex items-center gap-2" key={value}>
-                <Checkbox
-                  checked={channels.includes(value)}
-                  onCheckedChange={(checked) =>
-                    setChannels((current) =>
-                      checked
-                        ? [...new Set([...current, value])]
-                        : current.filter((channel) => channel !== value),
-                    )
-                  }
-                />
-                {value}
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        {scheduled ? (
+          <FormField id="schedule-record-channel" label="کانال" required>
+            <Select
+              disabled={viewing}
+              value={scheduledChannel}
+              onValueChange={setScheduledChannel}
+            >
+              <SelectTrigger id="schedule-record-channel">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'].map(
+                  (value) => (
+                    <SelectItem key={value} value={value}>
+                      {value}
+                    </SelectItem>
+                  ),
+                )}
+              </SelectContent>
+            </Select>
+          </FormField>
+        ) : (
+          <fieldset className="grid gap-2" disabled={viewing}>
+            <legend className="text-sm font-bold">کانال‌ها</legend>
+            <div className="flex flex-wrap gap-3">
+              {['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'].map(
+                (value) => (
+                  <label className="flex items-center gap-2" key={value}>
+                    <Checkbox
+                      checked={channels.includes(value)}
+                      onCheckedChange={(checked) =>
+                        setChannels((current) =>
+                          checked
+                            ? [...new Set([...current, value])]
+                            : current.filter((channel) => channel !== value),
+                        )
+                      }
+                    />
+                    {value}
+                  </label>
+                ),
+              )}
+            </div>
+          </fieldset>
+        )}
         {scheduled ? (
           <>
             <FormField id="message-record-time" label="زمان ارسال" required>
@@ -988,14 +1062,7 @@ export function DurableMessagesPanel({
         )}
         <Button
           aria-label="پیام جدید"
-          onClick={() => {
-            setEditing(null);
-            setViewing(false);
-            setName('');
-            setBody('');
-            setMessageId('none');
-            setAudienceId('none');
-          }}
+          onClick={resetForm}
           size="icon"
           title="پیام جدید"
           type="button"
@@ -1004,9 +1071,14 @@ export function DurableMessagesPanel({
           <Plus aria-hidden="true" className="size-4" />
         </Button>
         {!viewing ? (
-          <Button className="md:col-span-2" onClick={() => void save()}>
+          <Button
+            aria-label={scheduled ? 'ذخیره ارسال' : 'ذخیره پیام'}
+            className="md:col-span-2"
+            onClick={() => void save()}
+            size="icon"
+            title="ذخیره"
+          >
             <Save aria-hidden="true" className="size-4" />
-            ذخیره
           </Button>
         ) : null}
       </Card>
@@ -1045,10 +1117,16 @@ export function DurableContentPanel({
   const kind = CONTENT_KIND[tab];
   const data = useMarketingData([
     kind,
-    ...(kind === 'LANDING_PAGE' ? ['FORM' as const] : []),
+    ...(kind === 'LANDING_PAGE'
+      ? (['FORM'] as const)
+      : kind === 'FORM'
+        ? (['LANDING_PAGE'] as const)
+        : []),
   ]);
   const rows = data.assets.filter((item) => item.kind === kind);
-  const related = data.assets.filter((item) => item.kind === 'FORM');
+  const related = data.assets.filter((item) =>
+    kind === 'FORM' ? item.kind === 'LANDING_PAGE' : item.kind === 'FORM',
+  );
   const [editing, setEditing] = useState<MarketingAssetViewV1 | null>(null);
   const [viewing, setViewing] = useState(false);
   const [draft, setDraft] = useState<ContentDraft>(emptyContentDraft);
@@ -1202,18 +1280,21 @@ export function DurableContentPanel({
             />
           </FormField>
         ) : null}
-        {tab === 'landing' ? (
-          <FormField id="content-record-form" label="فرم متصل">
+        {tab === 'landing' || tab === 'forms' ? (
+          <FormField
+            id="content-record-related"
+            label={tab === 'forms' ? 'صفحه فرود متصل' : 'فرم متصل'}
+          >
             <Select
               disabled={viewing}
               value={draft.relatedId}
               onValueChange={(value) => updateDraft('relatedId', value)}
             >
-              <SelectTrigger id="content-record-form">
+              <SelectTrigger id="content-record-related">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="none">بدون فرم</SelectItem>
+                <SelectItem value="none">بدون رکورد متصل</SelectItem>
                 {related.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
                     {item.name}
@@ -1236,11 +1317,13 @@ export function DurableContentPanel({
         ) : null}
         {!viewing ? (
           <Button
+            aria-label="ذخیره رکورد محتوا"
             className="md:col-span-2 xl:col-span-3"
             onClick={() => void save()}
+            size="icon"
+            title="ذخیره"
           >
             <Save aria-hidden="true" className="size-4" />
-            ذخیره
           </Button>
         ) : null}
         <Button
@@ -1274,6 +1357,80 @@ export function DurableContentPanel({
         onSelect={fill}
       />
     </section>
+  );
+}
+
+export function AutomationGraphCanvas({
+  draft,
+  onPortSelect,
+}: {
+  draft: AutomationDraft;
+  onPortSelect?: (nodeId: string, port: AutomationPort) => void;
+}) {
+  const edgeLines = automationEdgeLines(draft);
+  return (
+    <div className="relative min-h-[28rem] overflow-auto rounded-2xl border border-border bg-muted/20">
+      <svg
+        aria-label="اتصال‌های ذخیره‌شده گراف اتوماسیون"
+        className="pointer-events-none absolute inset-0 size-full"
+        preserveAspectRatio="none"
+        role="img"
+        viewBox="0 0 100 100"
+      >
+        <defs>
+          <marker
+            id="marketing-automation-arrow"
+            markerHeight="5"
+            markerWidth="5"
+            orient="auto"
+            refX="4"
+            refY="2.5"
+            viewBox="0 0 5 5"
+          >
+            <path d="M 0 0 L 5 2.5 L 0 5 z" fill="currentColor" />
+          </marker>
+        </defs>
+        {edgeLines.map((edge, index) => (
+          <line
+            data-source-port={edge.sourcePort}
+            data-target-port={edge.targetPort}
+            key={`${edge.source}-${edge.target}-${index}`}
+            markerEnd="url(#marketing-automation-arrow)"
+            stroke="currentColor"
+            strokeWidth="1.1"
+            x1={edge.sourcePoint.x}
+            x2={edge.targetPoint.x}
+            y1={edge.sourcePoint.y}
+            y2={edge.targetPoint.y}
+          />
+        ))}
+      </svg>
+      {draft.nodes.map((node, index) => {
+        const point = automationNodePoint(index, draft.nodes.length);
+        return (
+          <div
+            className="absolute w-44 -translate-x-1/2 -translate-y-1/2 rounded-2xl border-2 border-primary/30 bg-surface p-6 text-center shadow-sm"
+            key={node.id}
+            style={{ left: `${point.x}%`, top: `${point.y}%` }}
+          >
+            {(['top', 'right', 'bottom', 'left'] as const).map((port) => (
+              <button
+                aria-label={`درگاه ${port} ${node.title}`}
+                className={`absolute size-3 rounded-full bg-primary ${port === 'top' ? '-top-1.5 left-1/2' : port === 'bottom' ? '-bottom-1.5 left-1/2' : port === 'right' ? 'right-[-6px] top-1/2' : 'left-[-6px] top-1/2'}`}
+                key={port}
+                onClick={() => onPortSelect?.(node.id, port)}
+                title={`انتخاب درگاه ${port}`}
+                type="button"
+              />
+            ))}
+            <strong>{node.title}</strong>
+            <small className="mt-2 block font-mono text-[10px] text-muted-foreground">
+              {node.id}
+            </small>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1319,41 +1476,28 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
             }
           />
         </FormField>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {draft.nodes.map((node) => (
-            <div
-              className="relative rounded-2xl border-2 border-primary/30 bg-surface p-6 text-center"
-              key={node.id}
-            >
-              {(['top', 'right', 'bottom', 'left'] as const).map((port) => (
-                <button
-                  aria-label={`درگاه ${port} ${node.title}`}
-                  className={`absolute size-3 rounded-full bg-primary ${port === 'top' ? '-top-1.5 left-1/2' : port === 'bottom' ? '-bottom-1.5 left-1/2' : port === 'right' ? 'right-[-6px] top-1/2' : 'left-[-6px] top-1/2'}`}
-                  key={port}
-                  onClick={() => {
-                    if (!source) {
-                      setSource(node.id);
-                      setSourcePort(port);
-                    } else {
-                      setTarget(node.id);
-                      setTargetPort(port);
-                    }
-                  }}
-                  title={`انتخاب درگاه ${port}`}
-                  type="button"
-                />
-              ))}
-              <strong>{node.title}</strong>
-              <small className="mt-2 block font-mono text-[10px] text-muted-foreground">
-                {node.id}
-              </small>
-            </div>
-          ))}
-        </div>
+        <AutomationGraphCanvas
+          draft={draft}
+          onPortSelect={(nodeId, port) => {
+            if (!source) {
+              setSource(nodeId);
+              setSourcePort(port);
+            } else {
+              setTarget(nodeId);
+              setTargetPort(port);
+            }
+          }}
+        />
         <div className="flex flex-wrap gap-2">
-          <Button disabled={viewing} onClick={addStage} variant="outline">
+          <Button
+            aria-label="افزودن مرحله"
+            disabled={viewing}
+            onClick={addStage}
+            size="icon"
+            title="افزودن مرحله"
+            variant="outline"
+          >
             <Plus aria-hidden="true" className="size-4" />
-            افزودن مرحله
           </Button>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
@@ -1423,6 +1567,7 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
           </FormField>
         </div>
         <Button
+          aria-label="اتصال گره‌ها"
           disabled={viewing || !source || !target || source === target}
           onClick={() =>
             setDraft((current) => ({
@@ -1433,8 +1578,10 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
               ],
             }))
           }
+          size="icon"
+          title="اتصال گره‌ها"
         >
-          اتصال گره‌ها
+          <Link2 aria-hidden="true" className="size-4" />
         </Button>
         <p className="text-sm text-muted-foreground">
           {draft.edges.length.toLocaleString('fa-IR')} اتصال معتبر چهارسمتی
@@ -1455,6 +1602,7 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
           ))}
         </ul>
         <Button
+          aria-label="ذخیره اتوماسیون"
           disabled={viewing}
           onClick={async () => {
             if (!data.actor?.branchIds[0]) return;
@@ -1477,9 +1625,10 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
               );
             }
           }}
+          size="icon"
+          title="ذخیره اتوماسیون"
         >
           <Save aria-hidden="true" className="size-4" />
-          ذخیره اتوماسیون
         </Button>
       </Card>
       <Button

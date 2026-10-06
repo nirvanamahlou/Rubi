@@ -275,6 +275,8 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).not.toContain(
       'marketing-asset-confidentiality',
     );
+    expect(referencePagesSource).toContain('marketing-asset-confidential-code');
+    expect(referencePagesSource).toContain('appendMarketingConfidentialCode');
     expect(referencePagesSource).toContain('ثبت در محتوا و اسناد');
     expect(referencePagesSource).toContain('افزودن مخاطبان کمپین');
     expect(referencePagesSource).toContain('افزودن منبع ورود');

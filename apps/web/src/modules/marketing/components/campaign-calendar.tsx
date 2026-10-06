@@ -153,15 +153,17 @@ export function CampaignCalendar({
             <ChevronLeft aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            aria-label="رفتن به ماه جاری"
             onClick={() => {
               const now = new Date();
               setAnchor(now);
               setRange(campaignCalendarMonthRange(now));
             }}
+            size="icon"
+            title="امروز"
             variant="outline"
           >
             <RotateCcw aria-hidden="true" className="size-4" />
-            امروز
           </Button>
           <Button
             aria-label="ماه بعد"

@@ -76,7 +76,7 @@ const selectableChannels: readonly CampaignChannel[] = [
   'OFFLINE',
 ];
 
-function validateDraft(draft: CampaignDraft): string[] {
+export function validateDraft(draft: CampaignDraft): string[] {
   const errors: string[] = [];
   if (!/^MKT-[A-Z0-9-]{3,24}$/.test(draft.internalCode)) {
     errors.push(
@@ -98,7 +98,7 @@ function validateDraft(draft: CampaignDraft): string[] {
   ) {
     errors.push('بازه زمانی شروع و پایان معتبر و صعودی نیست.');
   }
-  if (!/^\d+(?:\.\d{1,2})?$/.test(draft.budgetAmount)) {
+  if (!/^\d+(?:\.\d{1,4})?$/.test(draft.budgetAmount)) {
     errors.push('بودجه باید Decimal غیرمنفی و بدون Float محاسباتی باشد.');
   }
   if (!draft.ownerUserId) errors.push('مسئول کمپین مشخص نیست.');
@@ -655,26 +655,37 @@ export function CampaignForm({
       <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
         <div className="flex flex-wrap gap-2">
           <Button
+            aria-label="مرحله قبلی"
             disabled={step === 0}
             onClick={() => setStep((current) => Math.max(0, current - 1))}
+            size="icon"
+            title="مرحله قبلی"
             type="button"
             variant="outline"
           >
             <ChevronRight aria-hidden="true" className="size-4" />
-            قبلی
           </Button>
           {step < steps.length - 1 ? (
             <Button
+              aria-label="مرحله بعدی"
               onClick={() =>
                 setStep((current) => Math.min(steps.length - 1, current + 1))
               }
+              size="icon"
+              title="مرحله بعدی"
               type="button"
             >
-              بعدی
               <ChevronLeft aria-hidden="true" className="size-4" />
             </Button>
           ) : !readOnly ? (
             <Button
+              aria-label={
+                saving
+                  ? 'در حال ذخیره کمپین'
+                  : mode === 'create'
+                    ? 'انتشار کمپین'
+                    : 'ذخیره تغییرات کمپین'
+              }
               disabled={errors.length > 0 || saving}
               onClick={async () => {
                 setSaving(true);
@@ -692,14 +703,11 @@ export function CampaignForm({
                   setSaving(false);
                 }
               }}
+              size="icon"
+              title={mode === 'create' ? 'انتشار کمپین' : 'ذخیره تغییرات کمپین'}
               type="button"
             >
               <Send aria-hidden="true" className="size-4" />
-              {saving
-                ? 'در حال ذخیره…'
-                : mode === 'create'
-                  ? 'انتشار'
-                  : 'ذخیره تغییرات'}
             </Button>
           ) : (
             <Badge className="gap-1">

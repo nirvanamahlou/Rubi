@@ -105,15 +105,19 @@ describe.skipIf(!enabled)(
         'postgres-replay',
       );
       expect(replay).toEqual(first);
-      await expect(
-        service.createCampaign(
+      const alteredPayloadError = await service
+        .createCampaign(
           { ...request, name: 'درخواست تغییرکرده' },
           actor,
           branchId,
           key,
           'postgres-replay',
-        ),
-      ).rejects.toThrow('IDEMPOTENCY_CONFLICT');
+        )
+        .catch((error: unknown) => error);
+      expect(alteredPayloadError).toMatchObject({
+        response: expect.objectContaining({ code: 'IDEMPOTENCY_CONFLICT' }),
+        status: 409,
+      });
       expect(
         await client.marketingCampaign.count({
           where: { branchId, internalCode: request.internalCode },
@@ -186,7 +190,7 @@ describe.skipIf(!enabled)(
           where: {
             branchId,
             entityId: created.data.id,
-            action: 'UPDATE',
+            action: 'UPDATE_DECLARATIONS',
           },
         }),
       ).toBe(1);

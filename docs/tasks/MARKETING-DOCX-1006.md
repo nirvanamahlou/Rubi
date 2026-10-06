@@ -71,3 +71,13 @@ Current bounded limitation: campaign owner and sales-expert assignment are restr
 - Prisma format, validate and local client generation — exit 0 against the amended schema.
 - Local amended migration replay remains unavailable while `localhost:55473` refuses connections; the existing PostgreSQL 18 job now also runs the opt-in real Marketing concurrent-CAS, replay/altered-payload and rollback proof after all migrations and seed. Its refreshed CI result is pending.
 - `git diff --check` — exit 0 (line-ending warnings only).
+
+### Review2 repair evidence
+
+- MKT-R3-002: protected Marketing uploads collect the six-digit Documents access code when the selected owner type defaults to `CONFIDENTIAL`; the public upload receives `confidentialAccessCode` and Marketing still never overrides classification.
+- MKT-R3-007: the shared graph canvas renders persisted SVG edges from their selected top/right/bottom/left ports. The rendered-component regression verifies line and port output, while the adapter regression preserves graph ID/version/ports across reopen and save.
+- MKT-R3-009: an uncertain create response is reconciled with the original payload and idempotency key before a corrected input updates the same draft ID and publishes it. Publication replay keeps its key and adopts the returned version. Reloaded `DRAFT` detail exposes the separately authorized publish action.
+- MKT-R3-011: active durable controls and campaign/calendar navigation use accessible icon-only buttons. Scheduled sends use one displayed/persisted channel; composer keeps multi-channel selection; successful save and New both reset every message/schedule field through the same state initializer.
+- MKT-R3-013: the genuine PostgreSQL replay proof asserts the structured 409 `IDEMPOTENCY_CONFLICT` response and the actual `UPDATE_DECLARATIONS` audit action without weakening entity/command/audit, CAS or rollback counts. Local PostgreSQL remains unavailable, so the next existing PG18 CI run is still the execution gate.
+- MKT-R3-014/015: FORM and LANDING_PAGE selectors retain their exact same-branch typed relationship in both directions; campaign form validation accepts and preserves four fractional budget digits.
+- Final local checks after these repairs: Web Marketing/calendar 11 files / 46 tests, API Marketing and affected Customer Affairs 61 passed / 3 local PostgreSQL skips, Web/API typechecks and scoped lint pass. No authenticated browser QA is claimed; the new SVG render test is server rendering, not live interaction.

@@ -432,6 +432,8 @@ Baseline برنامه: `origin/develop` در Merge Commit
 
 MARKETING-DOCX-1006 review-repair candidate covers the requested durable campaign, segment, intake/source, content/link and four-port automation editor slice with exact populated-field round trips and stable publication retry. It does not close the broader Marketing roadmap item: cross-user owner/sales-expert selection awaits an IAM public same-branch validator/selector, and external dispatch/site publication/financial attribution remain adapter-owned. Fresh independent review, the opt-in real PostgreSQL proof in refreshed CI and authenticated browser QA are still required.
 
+Review2 adds protected-document code handoff, rendered persisted graph edges, same-draft reconciliation after uncertain create/publication responses, explicit DRAFT publication recovery, exact schedule/reset state, bidirectional FORM/LANDING_PAGE retention and four-decimal budget validation. The roadmap limitations and CI/browser gates above remain unchanged.
+
 ### مرحله 8 — آمادگی انتشار (`P0/P1`)
 
 - [ ] Reporting Views، dashboard، PDF/Excel/CSV/API exports

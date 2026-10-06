@@ -984,7 +984,28 @@ export function MarketingWorkspace({
             </DialogDescription>
           ) : null}
           {campaignDialog.mode === 'view' && campaignDialog.campaign ? (
-            <CampaignDetail campaign={campaignDialog.campaign} />
+            <CampaignDetail
+              campaign={campaignDialog.campaign}
+              onPublish={async () => {
+                const campaign = campaignDialog.campaign;
+                if (!campaign || campaign.status !== 'DRAFT') return;
+                try {
+                  await marketingApi.publishCampaign(
+                    campaign.id,
+                    campaign.version,
+                  );
+                  await loadCampaigns();
+                  setCampaignDialog((current) => ({ ...current, open: false }));
+                  setNotice('پیش‌نویس ذخیره‌شده منتشر شد.');
+                } catch (error) {
+                  setNotice(
+                    error instanceof Error
+                      ? error.message
+                      : 'انتشار پیش‌نویس انجام نشد.',
+                  );
+                }
+              }}
+            />
           ) : (
             <CampaignForm
               campaign={campaignDialog.campaign}

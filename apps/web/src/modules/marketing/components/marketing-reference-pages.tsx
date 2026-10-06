@@ -81,6 +81,10 @@ import {
 } from '@/modules/documents/api/client';
 import { campaignStatusLabels, type CampaignPreview } from '../model/marketing';
 import {
+  appendMarketingConfidentialCode,
+  marketingDocumentCodeError,
+} from '../model/document-upload';
+import {
   marketingSectionTabs,
   type MarketingPreviewItem,
 } from '../model/reference-data';
@@ -2913,6 +2917,7 @@ function MarketingAssetUploadDialog({
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [confidentialAccessCode, setConfidentialAccessCode] = useState('');
   const [assetKind, setAssetKind] = useState<string>(marketingAssetKinds[0][0]);
   const [marketingBranch, setMarketingBranch] = useState<string>(
     marketingBranches[0][0],
@@ -2932,6 +2937,8 @@ function MarketingAssetUploadDialog({
   );
   const [validationError, setValidationError] = useState('');
   const selectedType = brandTypes.find((type) => type.id === documentTypeId);
+  const confidentialCodeRequired =
+    selectedType?.defaultConfidentiality === 'CONFIDENTIAL';
   const selectedAssetKind = marketingAssetKinds.find(
     ([value]) => value === assetKind,
   );
@@ -2971,6 +2978,14 @@ function MarketingAssetUploadDialog({
               setValidationError('نوع سند، دسته‌بندی، شعبه و مالک الزامی است.');
               return;
             }
+            const codeError = marketingDocumentCodeError(
+              selectedType?.defaultConfidentiality,
+              confidentialAccessCode,
+            );
+            if (codeError) {
+              setValidationError(codeError);
+              return;
+            }
             const form = new FormData();
             form.set('file', file);
             form.set('title', title.trim());
@@ -2979,6 +2994,7 @@ function MarketingAssetUploadDialog({
             form.set('categoryId', categoryId);
             form.set('branchId', branchId);
             form.set('ownerUserId', ownerUserId);
+            appendMarketingConfidentialCode(form, confidentialAccessCode);
             form.set('sourceModule', 'marketing');
             form.set('sourceEntityType', 'content-asset');
             form.set(
@@ -3056,6 +3072,32 @@ function MarketingAssetUploadDialog({
                 (owner) => [owner.id, owner.displayName] as const,
               )}
               value={ownerUserId}
+            />
+          </FormField>
+          <FormField
+            description={
+              confidentialCodeRequired
+                ? 'نوع سند انتخابی به‌صورت پیش‌فرض محرمانه است؛ این کد برای مشاهده و دریافت لازم است.'
+                : 'در صورتی که سیاست مالک سند را محرمانه کند، کد ۶ رقمی را وارد کنید.'
+            }
+            id="marketing-asset-confidential-code"
+            label="کد محرمانگی"
+            required={confidentialCodeRequired}
+          >
+            <Input
+              autoComplete="new-password"
+              id="marketing-asset-confidential-code"
+              inputMode="numeric"
+              maxLength={6}
+              onChange={(event) => {
+                setConfidentialAccessCode(
+                  event.target.value.replace(/\D/gu, '').slice(0, 6),
+                );
+                setValidationError('');
+              }}
+              pattern="[0-9]{6}"
+              type="password"
+              value={confidentialAccessCode}
             />
           </FormField>
           <div className="sm:col-span-2">

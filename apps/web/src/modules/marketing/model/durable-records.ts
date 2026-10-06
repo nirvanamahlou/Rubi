@@ -230,7 +230,11 @@ export function campaignInputFromDraft(
 
 export interface CampaignPublicationAttempt {
   fingerprint: string;
+  createFingerprint: string;
+  createInput: MarketingCampaignInputV1;
+  appliedFingerprint?: string;
   createKey: string;
+  updateKey: string;
   publicationKey: string;
   created?: MarketingCampaignViewV1;
 }
@@ -241,10 +245,16 @@ export function ensureCampaignPublicationAttempt(
   keyFactory: () => string = () => crypto.randomUUID(),
 ): CampaignPublicationAttempt {
   const fingerprint = JSON.stringify(input);
-  if (current?.fingerprint === fingerprint) return current;
+  if (current)
+    return current.fingerprint === fingerprint
+      ? current
+      : { ...current, fingerprint, updateKey: keyFactory() };
   return {
     fingerprint,
+    createFingerprint: fingerprint,
+    createInput: input,
     createKey: keyFactory(),
+    updateKey: keyFactory(),
     publicationKey: keyFactory(),
   };
 }
@@ -265,21 +275,74 @@ export async function executeCampaignPublication(
       scheduledFor: null,
       key: string,
     ) => Promise<{ data: MarketingCampaignViewV1 }>;
+    updateCampaign: (
+      id: string,
+      input: MarketingCampaignInputV1,
+      key: string,
+    ) => Promise<{ data: MarketingCampaignViewV1 }>;
   },
 ) {
-  if (!attempt.created)
+  if (!attempt.created) {
     attempt.created = (
-      await api.createCampaign(input, branchId, attempt.createKey)
+      await api.createCampaign(attempt.createInput, branchId, attempt.createKey)
     ).data;
-  return api.publishCampaign(
+    attempt.appliedFingerprint = attempt.createFingerprint;
+  }
+  if (attempt.appliedFingerprint !== attempt.fingerprint) {
+    attempt.created = (
+      await api.updateCampaign(
+        attempt.created.id,
+        { ...input, expectedVersion: attempt.created.version },
+        attempt.updateKey,
+      )
+    ).data;
+    attempt.appliedFingerprint = attempt.fingerprint;
+  }
+  const published = await api.publishCampaign(
     attempt.created.id,
     attempt.created.version,
     null,
     attempt.publicationKey,
   );
+  attempt.created = published.data;
+  return published;
 }
 
 export type ContentTab = 'forms' | 'landing' | 'links';
+
+export interface MessageFormState {
+  name: string;
+  campaignId: string;
+  messageId: string;
+  channels: string[];
+  scheduledChannel: string;
+  status: string;
+  audienceId: string;
+  body: string;
+  sendMode: string;
+  sendAt: string;
+  scheduledAt: string;
+}
+
+export function emptyMessageFormState(): MessageFormState {
+  return {
+    name: '',
+    campaignId: 'none',
+    messageId: 'none',
+    channels: ['SMS'],
+    scheduledChannel: 'SMS',
+    status: 'DRAFT',
+    audienceId: 'none',
+    body: '',
+    sendMode: 'NOW',
+    sendAt: '',
+    scheduledAt: '',
+  };
+}
+
+export function scheduledMessagePayload(channel: string, status: string) {
+  return { channel, status };
+}
 
 export interface ContentDraft {
   id?: string;
@@ -388,7 +451,9 @@ export function contentInputFromDraft(
     status: draft.status,
     campaignId: draft.campaignId === 'none' ? null : draft.campaignId,
     relatedAssetId:
-      tab === 'landing' && draft.relatedId !== 'none' ? draft.relatedId : null,
+      (tab === 'landing' || tab === 'forms') && draft.relatedId !== 'none'
+        ? draft.relatedId
+        : null,
     expiresAt:
       tab === 'links' && draft.expiresAt
         ? new Date(draft.expiresAt).toISOString()
@@ -415,6 +480,50 @@ export interface AutomationDraft {
   name: string;
   nodes: AutomationNode[];
   edges: AutomationEdge[];
+}
+
+export interface AutomationPoint {
+  x: number;
+  y: number;
+}
+
+export function automationNodePoint(index: number, total: number) {
+  const columns = Math.min(3, Math.max(1, total));
+  const row = Math.floor(index / columns);
+  const column = index % columns;
+  return { x: 18 + column * 32, y: 20 + row * 34 };
+}
+
+export function automationPortPoint(
+  center: AutomationPoint,
+  port: AutomationPort,
+): AutomationPoint {
+  const offset = 9;
+  if (port === 'top') return { x: center.x, y: center.y - offset };
+  if (port === 'bottom') return { x: center.x, y: center.y + offset };
+  if (port === 'left') return { x: center.x - offset, y: center.y };
+  return { x: center.x + offset, y: center.y };
+}
+
+export function automationEdgeLines(draft: AutomationDraft) {
+  return draft.edges.flatMap((edge) => {
+    const sourceIndex = draft.nodes.findIndex(
+      (node) => node.id === edge.source,
+    );
+    const targetIndex = draft.nodes.findIndex(
+      (node) => node.id === edge.target,
+    );
+    if (sourceIndex < 0 || targetIndex < 0) return [];
+    const sourcePoint = automationPortPoint(
+      automationNodePoint(sourceIndex, draft.nodes.length),
+      edge.sourcePort,
+    );
+    const targetPoint = automationPortPoint(
+      automationNodePoint(targetIndex, draft.nodes.length),
+      edge.targetPort,
+    );
+    return [{ ...edge, sourcePoint, targetPoint }];
+  });
 }
 
 export function automationDraftFromAsset(
