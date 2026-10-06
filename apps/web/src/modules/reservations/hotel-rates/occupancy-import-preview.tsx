@@ -7,10 +7,12 @@ export function OccupancyImportPreview({
   rows,
   issues,
   excluded,
+  ignoredRoomCount = 0,
 }: {
   rows: readonly ImportedOccupancy[];
   issues: readonly string[];
   excluded: number;
+  ignoredRoomCount?: number;
 }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -66,7 +68,10 @@ export function OccupancyImportPreview({
       <h3 className="font-bold">پیش‌نمایش شیت خروجی نورا</h3>
       <dl className="grid grid-cols-2 gap-3 md:grid-cols-3">
         {[
-          ['کل ردیف‌های داده', rows.length + issues.length + excluded],
+          [
+            'کل ردیف‌های داده',
+            rows.length + issues.length + excluded + ignoredRoomCount,
+          ],
           ['نرخ سالم خوانده‌شده', rows.length],
           ['ردیف نیازمند اصلاح', issues.length],
           ['ردیف کنارگذاشته‌شده IN DBL PP', excluded],
@@ -79,6 +84,12 @@ export function OccupancyImportPreview({
           </div>
         ))}
       </dl>
+      {ignoredRoomCount > 0 && (
+        <p>
+          {count(ignoredRoomCount)} ردیف ROOM طبق انتخاب شما با نرخ ترکیب مشخص
+          جایگزین شده و ثبت نمی‌شود.
+        </p>
+      )}
       <p>
         تعداد قیمت‌های سالم به تفکیک ارز:{' '}
         {summary.currencies
