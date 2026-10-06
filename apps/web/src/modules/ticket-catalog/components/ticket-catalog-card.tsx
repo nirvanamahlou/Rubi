@@ -7,7 +7,6 @@ import {
   Power,
   RefreshCw,
   TrainFront,
-  Trash2,
 } from 'lucide-react';
 import { Badge, Button, Card } from '@/components/ui';
 import {
@@ -49,7 +48,6 @@ type TicketCatalogCardProps = {
   onView: () => void;
   onEdit: () => void;
   onRepeat: () => void;
-  onDelete: () => void;
   onStatus: (status: CatalogStatus) => void;
 };
 
@@ -61,7 +59,6 @@ export function TicketCatalogCard({
   onView,
   onEdit,
   onRepeat,
-  onDelete,
   onStatus,
 }: TicketCatalogCardProps) {
   const capacity = inventoryTotals(inventory);
@@ -210,15 +207,7 @@ export function TicketCatalogCard({
             <RefreshCw className="size-4" aria-hidden />
             تکرار
           </Button>
-          <Button
-            size="icon"
-            variant="destructive"
-            title="حذف بلیط"
-            aria-label="حذف بلیط"
-            onClick={onDelete}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
+
           {powerStatus ? (
             <Button
               size="icon"

@@ -134,61 +134,27 @@ describe('published ticket revision', () => {
     });
     expect(tx.ticketOfferCapacityAllocation.create).not.toHaveBeenCalled();
   });
-  it('archives an expired offer without deleting its contract or finance records', async () => {
-    const updateMany = vi.fn().mockResolvedValue({ count: 1 });
-    const create = vi.fn();
-    const deleteStandalonePrices = vi.fn().mockResolvedValue({ count: 2 });
-    const deleteRoundTripPrices = vi.fn().mockResolvedValue({ count: 3 });
-    const tx = {
-      $queryRaw: vi.fn(),
-      ticketPublishedOffer: { updateMany },
-      ticketOfferStandaloneSalePrice: { deleteMany: deleteStandalonePrices },
-      ticketOfferRoundTripSalePrice: { deleteMany: deleteRoundTripPrices },
-      ticketOfferAudit: { create },
-    };
-    const service = new TicketPublicService(
-      {
-        client: {
-          $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx),
-        },
-      } as unknown as DatabaseService,
-      {} as ProcurementPublicService,
-    );
-    await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
-      data: { id, removedPriceRevisions: 0 },
-    });
-    expect(updateMany).toHaveBeenCalledWith({
-      where: {
-        id,
-        branchId: { in: ['branch'] },
-        version: 1,
-        audit: { none: { action: 'ticket.offer.archived' } },
-        OR: [
-          { departureAt: { lte: expect.any(Date) } },
-          {
-            capacityAllocations: { none: { status: 'ACTIVE' } },
-            capacityHolds: {
-              none: { status: 'ACTIVE', expiresAt: { gt: expect.any(Date) } },
-            },
-            tourOutboundDepartures: { none: {} },
-            tourReturnDepartures: { none: {} },
-          },
-        ],
-      },
-      data: { status: 'PAUSED', version: { increment: 1 } },
-    });
-    expect(deleteStandalonePrices).not.toHaveBeenCalled();
-    expect(deleteRoundTripPrices).not.toHaveBeenCalled();
-    expect(tx.$queryRaw).toHaveBeenCalledOnce();
-    expect(create).toHaveBeenCalledOnce();
-    updateMany.mockResolvedValue({ count: 0 });
-    await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
-      'به قرارداد، رزرو ظرفیت یا تور متصل',
-    );
-    expect(create).toHaveBeenCalledTimes(1);
-    expect(deleteStandalonePrices).not.toHaveBeenCalled();
-    expect(deleteRoundTripPrices).not.toHaveBeenCalled();
-  });
+  it.each(['2000-01-01T00:00:00Z', '2099-01-01T00:00:00Z'])(
+    'rejects deletion of a defined ticket departing %s before any database access',
+    async (departureAt) => {
+      const transaction = vi.fn().mockResolvedValue({ departureAt });
+      const service = new TicketPublicService(
+        { client: { $transaction: transaction } } as unknown as DatabaseService,
+        {} as ProcurementPublicService,
+      );
+      await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
+        'بلیت تعریف‌شده قابل حذف نیست',
+      );
+      expect(transaction).not.toHaveBeenCalled();
+      await expect(
+        service.archiveExpired(id, 1, {
+          ...(actor as object),
+          permissions: [],
+        } as never),
+      ).rejects.toThrow();
+      expect(transaction).not.toHaveBeenCalled();
+    },
+  );
   it('reactivates an automatically expired flight moved into the future', async () => {
     const { tx, service } = setup({
       status: 'PAUSED',

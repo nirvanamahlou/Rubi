@@ -1,3 +1,7 @@
+## TICKET-NO-DELETE-1006 — owner retention policy (2026-10-06)
+
+Defined tickets remain in their management history and cannot be removed, including expired or unallocated tickets. This explicitly supersedes the previous user-triggered visibility archive/delete command. Web removes all corresponding controls; the authenticated legacy DELETE offer endpoint retains its permission/input guards but responds with a clear HTTP400 rejection before database access. Status activation/pause remains available under existing rules. Historical archived records and prior deduplication migration bytes remain untouched. No restoration, deletion of history, schema change or permission grant is introduced.
+
 ## MANIFEST-LOAD-SEARCH-0930 — owner policy update (2026-09-30)
 
 The owner explicitly removes Finance approval as a prerequisite for manifest listing and export. Every contract already received by Reservations participates, subject to branch, passenger assignment and sensitive-read permissions. This supersedes the earlier manifest-specific Finance gate; financial delivery authorization for tickets/vouchers remains unchanged. Ticket Catalog exposes a read-only inventory projection through its public service; Reservations does not query its tables. Optional load fields preserve v1 client compatibility.

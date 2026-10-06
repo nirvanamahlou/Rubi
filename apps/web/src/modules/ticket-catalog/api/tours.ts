@@ -165,14 +165,6 @@ export const toursApi = {
     }
     throw new Error('تعداد صفحات بلیت از حد مجاز بیشتر است.');
   },
-  archiveExpiredOffer: (id: string, expectedVersion: number) =>
-    request<{ data: { id: string; removedPriceRevisions: number } }>(
-      `/offers/${id}`,
-      {
-        method: 'DELETE',
-        body: JSON.stringify({ expectedVersion }),
-      },
-    ),
   reviseOffer: (
     id: string,
     expectedVersion: number,
