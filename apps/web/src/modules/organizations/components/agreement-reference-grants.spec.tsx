@@ -154,10 +154,7 @@ describe('agreement workflow asynchronous request lease', () => {
     };
     expect(agreementWorkflowRequestIsCurrent(live, expected)).toBe(true);
     expect(
-      agreementWorkflowRequestIsCurrent(
-        { ...live, mounted: false },
-        expected,
-      ),
+      agreementWorkflowRequestIsCurrent({ ...live, mounted: false }, expected),
     ).toBe(false);
     expect(
       agreementWorkflowRequestIsCurrent(
