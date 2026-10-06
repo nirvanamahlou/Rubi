@@ -826,7 +826,7 @@ export function AgreementTermsEditor({
                     `سند تضمین ${index + 1}`,
                     guarantee.documentId,
                     (id) => update({ documentId: id, documentVersionId: null }),
-                    false,
+                    true,
                     (pending) =>
                       onPendingDocumentsChange?.({
                         agreement: pendingDocuments?.agreement ?? null,
@@ -898,10 +898,6 @@ export function AgreementTermsEditor({
         </p>
       ) : null}
       <div className="form-grid">{text('notes', 'یادداشت تکمیلی', true)}</div>
-      <div className="boundary-note">
-        ذخیره، پیش‌نویس ایجاد می‌کند. فعال‌سازی قرارداد و سقف‌ها پس از ارسال و
-        تأیید یک کاربر مستقل دارای مجوز انجام می‌شود.
-      </div>
     </fieldset>
   );
 }
