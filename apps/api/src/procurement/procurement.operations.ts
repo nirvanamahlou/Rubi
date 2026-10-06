@@ -242,13 +242,34 @@ export class ProcurementOperations {
       data: { status: 'IN_REVIEW' },
     });
   }
+  private async retirePendingOrderApproval(
+    tx: ProcurementTx,
+    row: ProcurementRow,
+    order: Order,
+  ) {
+    if (row.status !== 'IN_REVIEW') return;
+    const snapshot = await tx.procurementApprovalSnapshot.findFirstOrThrow({
+      where: { requestId: row.id },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    });
+    const commitment = v.object(snapshot.payload).commitment;
+    requireRule(
+      commitment && v.object(commitment).orderId === order.id,
+      'INVALID_STATE',
+      'ابتدا تأیید سفارش جاری را تعیین تکلیف کنید.',
+    );
+    await tx.procurementApprovalStep.updateMany({
+      where: { snapshotId: snapshot.id, status: 'PENDING' },
+      data: { status: 'CANCELLED' },
+    });
+  }
   async execute(
     tx: ProcurementTx,
     row: ProcurementRow,
     action: string,
     input: Record<string, unknown>,
     actor: AuthenticatedActor,
-  ) {
+  ): Promise<unknown> {
     requireRule(
       !['CANCELLED', 'REJECTED'].includes(row.status) &&
         (row.status !== 'CLOSED' ||
@@ -337,6 +358,37 @@ export class ProcurementOperations {
       });
       return;
     }
+    if (action === 'ORDER_FORM') {
+      const quotation = (await this.execute(
+        tx,
+        row,
+        'QUOTE',
+        {
+          ...input,
+          quotedAt: new Date().toISOString(),
+          deliveryAt: input.expectedAt,
+        },
+        actor,
+      )) as { id: string };
+      const selection = (await this.execute(
+        tx,
+        row,
+        'SELECT_QUOTE',
+        {
+          quotationId: quotation.id,
+          singleSource: input.singleSource,
+          reason: input.reason,
+        },
+        actor,
+      )) as { id: string };
+      return this.execute(
+        tx,
+        row,
+        'ORDER',
+        { ...input, selectionId: selection.id },
+        actor,
+      );
+    }
     if (action === 'QUOTE') {
       requireRule(
         ['APPROVED', 'SOURCING'].includes(row.status),
@@ -408,7 +460,7 @@ export class ProcurementOperations {
         where: { id: requestId },
         data: { status: 'SOURCING' },
       });
-      return;
+      return quotation;
     }
     if (action === 'SELECT_QUOTE') {
       requireRule(
@@ -492,7 +544,7 @@ export class ProcurementOperations {
           'SELECTION_REASON_REQUIRED',
           'برای انتخاب پیشنهاد غیرارزان‌تر دلیل لازم است.',
         );
-      await tx.procurementSelection.create({
+      const selection = await tx.procurementSelection.create({
         data: {
           requestId,
           quotationId: quotation.id,
@@ -510,7 +562,7 @@ export class ProcurementOperations {
           }),
         },
       });
-      return;
+      return selection;
     }
     if (action === 'ORDER') {
       requireRule(
@@ -607,6 +659,7 @@ export class ProcurementOperations {
             ),
             makerUserId: actor.userId,
             quotationId: quotation.id,
+            warranty: v.object(quotation.data).warranty ?? '',
             trackingCode: v.text(input.trackingCode, 'trackingCode', 100, true),
             documents,
           }),
@@ -735,7 +788,11 @@ export class ProcurementOperations {
     }
     if (action === 'AMEND_ORDER') {
       const order = await this.order(tx, requestId, input.orderId);
-      this.issued(order);
+      requireRule(
+        ['PENDING_APPROVAL', 'APPROVED', 'ISSUED'].includes(order.status),
+        'INVALID_STATE',
+        'این سفارش قابل ویرایش نیست.',
+      );
       const reason = v.text(input.reason, 'reason', 1000);
       const suppliedSupplierId = input.supplierId
         ? v.uuid(input.supplierId, 'supplierId')
@@ -825,6 +882,9 @@ export class ProcurementOperations {
             paymentTerms,
             deliveryLocation,
             trackingCode,
+            warranty: has('warranty')
+              ? v.text(input.warranty, 'warranty', 2000, true)
+              : String(existingData.warranty ?? ''),
             reason,
             makerUserId: actor.userId,
           }),
@@ -848,6 +908,7 @@ export class ProcurementOperations {
           data: json(draft.items.find((item) => item.id === line.itemId)),
         })),
       });
+      await this.retirePendingOrderApproval(tx, row, order);
       await this.requestOrderApproval(tx, row, amended, actor);
       return;
     }
@@ -1063,6 +1124,13 @@ export class ProcurementOperations {
           }),
         },
       });
+      if (action === 'CANCEL_ORDER' && order.status === 'PENDING_APPROVAL') {
+        await this.retirePendingOrderApproval(tx, row, order);
+        await tx.procurementRequest.update({
+          where: { id: requestId },
+          data: { status: 'SOURCING' },
+        });
+      }
       return;
     }
     if (action === 'DISCREPANCY') {
@@ -1079,7 +1147,12 @@ export class ProcurementOperations {
           orderId: order.id,
           kind,
           description: v.text(input.description, 'description', 2000),
-          data: { createdByUserId: actor.userId },
+          data: {
+            createdByUserId: actor.userId,
+            occurredAt: input.occurredAt
+              ? v.date(input.occurredAt, 'occurredAt')
+              : new Date().toISOString(),
+          },
         },
       });
       return;
@@ -1117,6 +1190,12 @@ export class ProcurementOperations {
       });
       requireRule(item, 'INVALID_REFERENCE', 'قلم رسید پیدا نشد.');
       await this.order(tx, requestId, item.orderId);
+      if (input.orderId)
+        requireRule(
+          v.uuid(input.orderId, 'orderId') === item.orderId,
+          'INVALID_REFERENCE',
+          'قلم رسید متعلق به این سفارش نیست.',
+        );
       const quantity = v.money(input.quantity);
       const disposition = v.text(
         input.disposition ?? 'ACCEPTED',

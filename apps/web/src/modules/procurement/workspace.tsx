@@ -24,19 +24,13 @@ import type {
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input, FormField, Textarea } from '@/components/ui/form-controls';
-import {
-  Alert,
-  Badge,
-  Card,
-  EmptyState,
-  Skeleton,
-} from '@/components/ui/surfaces';
+import { Alert, Badge, Card, Skeleton } from '@/components/ui/surfaces';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
 import { DraftForm, selectClass } from './draft-form';
 import { statusLabels } from './model';
-import { OperationForm } from './operation-form';
 import { InternalSections } from './internal-sections';
-import { RecordCard, DocumentLinks, recordData } from './record-details';
+import { PurchaseOrdersSection } from './orders-section';
+import { DocumentLinks, recordData } from './record-details';
 import { ProcurementOwnerPicker } from './owner-picker';
 import { ProcurementExportPanel } from './export-panel';
 import { formatProcurementDate } from './presentation';
@@ -47,7 +41,6 @@ import {
 } from './sample-requests';
 import { ProcurementSelect } from './procurement-select';
 import { ProcurementRecordActions } from './record-actions';
-import { resolveProcurementRecordStage } from './record-lifecycle';
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { cn } from '@/lib/utils';
 import {
@@ -436,6 +429,7 @@ function WorkspaceState({
         </div>
       </div>
     );
+  if (group === 5) return <PurchaseOrdersSection bootstrap={bootstrap} />;
   if (group > 0)
     return (
       <InternalSections
@@ -736,7 +730,6 @@ function RequestDetail({
   bootstrap,
   onEdit,
   onChanged,
-  initialKind,
 }: {
   request: ProcurementRequestV1;
   bootstrap: Bootstrap;
@@ -752,29 +745,9 @@ function RequestDetail({
   const [owner, setOwner] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const [kind, setKind] = useState(initialKind);
-  const [page, setPage] = useState(1);
   const identity = useRef<ReturnType<typeof commandAttempt> | null>(null);
   const can = (permission: ProcurementPermission) =>
     bootstrap.permissions.includes(permission);
-  const lifecycle = resolveProcurementRecordStage(
-    kind,
-    can('procurement.audit.read'),
-  );
-  const activeKind = lifecycle.activeKind;
-  const records = useQuery({
-    queryKey: [
-      'procurement',
-      'records',
-      request.id,
-      request.version,
-      activeKind,
-      page,
-    ],
-    queryFn: () => procurementApi.records(request.id, activeKind, page),
-    enabled: activeKind !== 'audit' || can('procurement.audit.read'),
-    retry: false,
-  });
   async function command(body: Record<string, unknown>) {
     setBusy(true);
     setError('');
@@ -974,106 +947,6 @@ function RequestDetail({
           )}
         </fieldset>
       </Card>
-      <Card className="space-y-4 p-5">
-        <div className="space-y-2">
-          <nav aria-label="مراحل پرونده خرید" className="flex flex-wrap gap-2">
-            {lifecycle.stages.map((stage) => {
-              const selected = stage.id === lifecycle.stage.id;
-              return (
-                <Button
-                  size="sm"
-                  variant={selected ? 'secondary' : 'ghost'}
-                  key={stage.id}
-                  aria-pressed={selected}
-                  onClick={() => {
-                    setKind(stage.kinds[0]![0]);
-                    setPage(1);
-                  }}
-                >
-                  {stage.label}
-                </Button>
-              );
-            })}
-          </nav>
-          {lifecycle.stage.kinds.length > 1 && (
-            <nav
-              aria-label={`سوابق ${lifecycle.stage.label}`}
-              className="flex flex-wrap gap-2 border-t border-border pt-2"
-            >
-              {lifecycle.stage.kinds.map(([value, label]) => (
-                <Button
-                  key={value}
-                  size="sm"
-                  variant={activeKind === value ? 'outline' : 'ghost'}
-                  aria-pressed={activeKind === value}
-                  onClick={() => {
-                    setKind(value);
-                    setPage(1);
-                  }}
-                >
-                  {label}
-                </Button>
-              ))}
-            </nav>
-          )}
-        </div>
-        {activeKind === 'audit' && !can('procurement.audit.read') ? (
-          <EmptyState title="دسترسی به تاریخچه ندارید" description="" />
-        ) : records.isPending ? (
-          <Skeleton className="h-40" />
-        ) : records.isError ? (
-          <Alert
-            tone="error"
-            title="سوابق دریافت نشد"
-            description={errorText(records.error)}
-          >
-            <Button variant="outline" onClick={() => void records.refetch()}>
-              تلاش دوباره
-            </Button>
-          </Alert>
-        ) : (
-          <>
-            {!records.data.items.length ? (
-              <EmptyState
-                title="رکوردی ثبت نشده است"
-                description="سوابق واقعی این پرونده پس از ثبت عملیات نمایش داده می‌شوند."
-              />
-            ) : (
-              <div className="space-y-3">
-                {activeKind === 'quotations' && (
-                  <QuotationComparison records={records.data.items} />
-                )}
-                {records.data.items.map((record, index) => (
-                  <RecordCard
-                    key={String(record.id ?? index)}
-                    record={record}
-                    showPreviewAction
-                  />
-                ))}
-              </div>
-            )}
-            <Pager
-              page={page}
-              hasMore={records.data.hasMore}
-              setPage={setPage}
-            />
-          </>
-        )}
-      </Card>
-      <OperationForm
-        key={activeKind}
-        kind={activeKind}
-        request={request}
-        bootstrap={bootstrap}
-        onChanged={onChanged}
-      />
-      {activeKind === 'orders' && (
-        <ProcurementExportPanel
-          bootstrap={bootstrap}
-          kind="ORDER"
-          request={request}
-        />
-      )}
     </div>
   );
 }
