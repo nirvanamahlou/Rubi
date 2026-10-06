@@ -29,3 +29,11 @@ The first independent review of candidate `0b8302c3a4b1f6f1ff98fc8f8d9d674802519
 After syncing with refreshed `origin/develop@6c631406`, local verification passed: Organizations 207 tests, B2B workflow/idempotency/documents API 18 tests, Web typecheck, scoped ESLint, and Web production build (55 routes). No authenticated browser upload test or operational database/runtime change was performed.
 
 Contract SHA-256: B7C61210771FED03C9468146C3786361A08CD014B289DC616838C1B4DCAEB920.
+
+## Post-merge Compose closeout — 2026-10-06
+
+PR #678 merged to `develop` as `57385c481aa750e1026c73936ab7727a5caa1d34` from source `153d3e47`. Exact-head CI passed for quality, the full test suite, production build, and PostgreSQL migration/seed; the independent source review reported NO_BLOCKER. The request implementation is running in the local Rubi Compose stack: web on port 3100 and API on port 4192. Both report healthy, `/login` returns HTTP 200, and PostgreSQL, Redis and MinIO remain healthy.
+
+No database migration or operational record was changed. A read-only Prisma status check found two pending migrations, including a ticket-archive migration that changes status for unused duplicate offers and writes audit rows. That broader develop rollout is held until the operational data change is explicitly authorized. The B2B Compose image remains on the PR #678 merge revision. No authenticated agreement-upload browser test was performed.
+
+At the user's direction, this post-merge Compose closeout continued directly without the worker-orchestrator.
