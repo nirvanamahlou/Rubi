@@ -1,5 +1,6 @@
 'use client';
 import { useRouteAccess } from '@/modules/iam/access-context';
+import type { AuthenticatedActor } from '@nora/contracts';
 
 import {
   BadgePercent,
@@ -20,10 +21,11 @@ import {
   Search,
   Settings2,
   UsersRound,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -56,13 +58,12 @@ import {
 } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import { MARKETING_SECTION_CHANGE_EVENT } from '@/lib/navigation';
-import { MARKETING_ATTRIBUTION_STATUS } from '../api/contracts';
+import { marketingApi } from '../api/records-client';
 import {
   campaignChannelLabels,
   campaignStatusLabels,
   executionCompanyLabels,
   filterAndSortCampaigns,
-  marketingPreviewCampaigns,
   normalizeMarketingCampaignQuery,
   paginateCampaigns,
   type CampaignChannel,
@@ -72,6 +73,14 @@ import {
   type MarketingCampaignQuery,
 } from '../model/marketing';
 import {
+  campaignInputFromDraft,
+  campaignPreviewFromRecord,
+  ensureCampaignPublicationAttempt,
+  executeCampaignPublication,
+  type CampaignPublicationAttempt,
+  type SegmentOption,
+} from '../model/durable-records';
+import {
   marketingSectionTabs,
   marketingSections,
   type MarketingPreviewItem,
@@ -80,10 +89,14 @@ import {
 } from '../model/reference-data';
 import { downloadRowsAsExcel } from '../utils/excel-export';
 import { CampaignCalendar } from './campaign-calendar';
-import { CampaignForm, type CampaignFormMode } from './campaign-form';
-import { MarketingProcessTracker } from './marketing-process-tracker';
 import {
-  CampaignDetailReference,
+  CampaignForm,
+  type CampaignDraft,
+  type CampaignFormMode,
+} from './campaign-form';
+import { MarketingProcessTracker } from './marketing-process-tracker';
+import { CampaignDetail } from './campaign-detail';
+import {
   MarketingDashboardReference,
   MarketingReferenceSection,
 } from './marketing-reference-pages';
@@ -296,18 +309,22 @@ function CampaignCard({
             <Power aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            aria-label={`مشاهده ${campaign.name}`}
             onClick={() => onOpen('view', campaign)}
-            size="sm"
+            size="icon"
+            title="مشاهده"
             variant="outline"
           >
-            <Eye aria-hidden="true" className="size-4" /> مشاهده
+            <Eye aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            aria-label={`ویرایش ${campaign.name}`}
             onClick={() => onOpen('edit', campaign)}
-            size="sm"
+            size="icon"
+            title="ویرایش"
             variant="secondary"
           >
-            <FilePenLine aria-hidden="true" className="size-4" /> ویرایش
+            <FilePenLine aria-hidden="true" className="size-4" />
           </Button>
         </div>
       </div>
@@ -331,8 +348,21 @@ function CampaignCard({
         <div>
           <dt className="text-xs text-muted-foreground">بودجه / هزینه</dt>
           <dd className="mt-1 font-semibold" dir="ltr">
-            {formatMoney(campaign.budgetAmount, campaign.currencyCode)} /{' '}
-            {formatMoney(campaign.spendAmount, campaign.currencyCode)}
+            {formatMoney(
+              campaign.budgetAmount,
+              campaign.budgetCurrencyCode ?? campaign.currencyCode,
+            )}
+            {' / '}
+            {(
+              campaign.spendTotals ?? [
+                {
+                  amount: campaign.spendAmount,
+                  currencyCode: campaign.currencyCode,
+                },
+              ]
+            )
+              .map((total) => formatMoney(total.amount, total.currencyCode))
+              .join(' + ')}
           </dd>
         </div>
       </dl>
@@ -373,7 +403,7 @@ function CampaignCard({
           <div>
             <dt className="text-muted-foreground">درآمد منتسب</dt>
             <dd className="mt-1">
-              داده آزمایشی ({MARKETING_ATTRIBUTION_STATUS})
+              انتساب مالی در این قرارداد مارکتینگ موجود نیست.
             </dd>
           </div>
         </dl>
@@ -383,11 +413,19 @@ function CampaignCard({
 }
 
 function CampaignList({
+  campaignsSource,
+  error,
+  loading,
   onOpen,
   onNotice,
+  onRetry,
 }: {
+  campaignsSource: readonly CampaignPreview[];
+  error: string;
+  loading: boolean;
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
+  onRetry: () => void;
 }) {
   const [query, setQuery] = useState<MarketingCampaignQuery>(() =>
     normalizeMarketingCampaignQuery({}),
@@ -396,8 +434,8 @@ function CampaignList({
     () => new Set(),
   );
   const filtered = useMemo(
-    () => filterAndSortCampaigns(marketingPreviewCampaigns, query),
-    [query],
+    () => filterAndSortCampaigns(campaignsSource, query),
+    [campaignsSource, query],
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / query.pageSize));
   const currentPage = Math.min(query.page, totalPages);
@@ -413,12 +451,6 @@ function CampaignList({
   return (
     <div className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-black">فهرست کمپین‌ها</h3>
-          <p className="text-sm text-muted-foreground">
-            جست‌وجو، فیلتر تاریخ و صفحه‌بندی واکنش‌گرا
-          </p>
-        </div>
         <div className="flex flex-wrap gap-2">
           <Button
             onClick={() => {
@@ -450,8 +482,13 @@ function CampaignList({
           >
             <Download aria-hidden="true" className="size-4" /> خروجی اکسل
           </Button>
-          <Button onClick={() => onOpen('create')}>
-            <Plus aria-hidden="true" className="size-4" /> افزودن کمپین جدید
+          <Button
+            aria-label="افزودن کمپین جدید"
+            onClick={() => onOpen('create')}
+            size="icon"
+            title="کمپین جدید"
+          >
+            <Plus aria-hidden="true" className="size-4" />
           </Button>
         </div>
       </div>
@@ -579,7 +616,22 @@ function CampaignList({
           </Button>
         </div>
       </FilterBar>
-      {campaigns.length ? (
+      {loading ? (
+        <Card className="p-6 text-center" role="status">
+          در حال دریافت کمپین‌ها…
+        </Card>
+      ) : error ? (
+        <Card className="grid gap-3 p-6 text-center" role="alert">
+          <p>{error}</p>
+          <Button
+            className="justify-self-center"
+            onClick={onRetry}
+            variant="outline"
+          >
+            تلاش دوباره
+          </Button>
+        </Card>
+      ) : campaigns.length ? (
         <div className="grid gap-4">
           {campaigns.map((campaign) => (
             <CampaignCard
@@ -621,7 +673,7 @@ function CampaignList({
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-3">
         <PaginationShell
           currentPage={currentPage}
-          totalLabel={`${filtered.length.toLocaleString('fa-IR')} کمپین آزمایشی`}
+          totalLabel={`${filtered.length.toLocaleString('fa-IR')} کمپین ثبت‌شده`}
         />
         <div className="flex gap-2">
           <Button
@@ -648,201 +700,58 @@ function CampaignList({
   );
 }
 
-function BudgetPanel({ onNotice }: { onNotice: (message: string) => void }) {
-  const rows = [
-    ['جشنواره تابستان اروپا', 66, '۲.۱ از ۳.۲ میلیارد'],
-    ['پرواز استانبول', 70, '۱.۴ از ۲ میلیارد'],
-    ['هتل‌های دبی', 65, '۹۸۰ از ۱٬۵۰۰ میلیون'],
-    ['معرفی تور نوروز', 18, '۹۰۰ از ۵ میلیارد'],
-  ] as const;
+function BudgetPanel({ campaigns }: { campaigns: readonly CampaignPreview[] }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
-      <Card className="p-5 xl:col-span-2">
+    <div className="grid gap-4">
+      <Card className="p-5">
         <h3 className="font-black">مصرف بودجه کمپین‌ها</h3>
         <div className="mt-5 grid gap-4">
-          {rows.map(([label, percent, value]) => (
-            <button
-              className="grid gap-2 text-start sm:grid-cols-[12rem_1fr_10rem] sm:items-center"
-              key={label}
-              onClick={() => onNotice(`جزئیات بودجه ${label} باز شد.`)}
-              type="button"
+          {campaigns.map((campaign) => (
+            <div
+              className="grid gap-2 text-start sm:grid-cols-[12rem_1fr_18rem] sm:items-center"
+              key={campaign.id}
             >
-              <strong>{label}</strong>
+              <strong>{campaign.name}</strong>
               <span className="h-2.5 overflow-hidden rounded-full bg-muted">
                 <span
                   className="block h-full rounded-full bg-primary"
-                  style={{ width: `${percent}%` }}
+                  style={{
+                    width: `${Math.min(100, Number(campaign.progressPercent))}%`,
+                  }}
                 />
               </span>
-              <small className="text-muted-foreground">{value}</small>
-            </button>
-          ))}
-        </div>
-      </Card>
-      <Card className="p-5">
-        <h3 className="font-black">کنترل هزینه</h3>
-        <dl className="mt-4 grid gap-3">
-          {[
-            ['بودجه مصوب', '۱۱.۷ میلیارد'],
-            ['هزینه قطعی', '۵.۳۸ میلیارد'],
-            ['تعهد باز', '۱.۲ میلیارد'],
-          ].map(([label, value]) => (
-            <div
-              className="flex justify-between border-b border-dashed border-border py-3 last:border-0"
-              key={label}
-            >
-              <dt className="text-muted-foreground">{label}</dt>
-              <dd className="font-black">{value}</dd>
+              <small className="text-muted-foreground" dir="ltr">
+                {formatMoney(
+                  campaign.budgetAmount,
+                  campaign.budgetCurrencyCode ?? campaign.currencyCode,
+                )}
+                {' / '}
+                {(campaign.spendTotals ?? [])
+                  .map((total) => formatMoney(total.amount, total.currencyCode))
+                  .join(' + ') || '—'}
+              </small>
             </div>
           ))}
-        </dl>
-      </Card>
-      <Card className="overflow-x-auto xl:col-span-3">
-        <table className="w-full min-w-[54rem] text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              {[
-                'کمپین',
-                'نوع هزینه',
-                'تأمین‌کننده',
-                'مبلغ',
-                'تاریخ',
-                'سند مالی',
-                'وضعیت',
-              ].map((header) => (
-                <th className="p-4 text-start" key={header}>
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              [
-                'جشنواره تابستان اروپا',
-                'پیامک',
-                'کاوه‌نگار',
-                '۴۲۰ میلیون',
-                '۱۴۰۵/۰۶/۱۰',
-                'FIN-8821',
-                'قطعی',
-              ],
-              [
-                'جشنواره تابستان اروپا',
-                'تبلیغ کلیکی',
-                'گوگل ادز',
-                '۸۸۰ میلیون',
-                '۱۴۰۵/۰۶/۱۲',
-                'FIN-8848',
-                'قطعی',
-              ],
-              [
-                'پرواز استانبول',
-                'بنر سایت',
-                'تیم محتوا',
-                '۱۲۰ میلیون',
-                '۱۴۰۵/۰۶/۱۵',
-                '—',
-                'برآوردی',
-              ],
-            ].map((row) => (
-              <tr className="border-t border-border" key={row.join('-')}>
-                {row.map((cell) => (
-                  <td className="p-4" key={cell}>
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        </div>
       </Card>
     </div>
   );
 }
 
-function ApprovalPanel({
-  onOpen,
-  onNotice,
-}: {
-  onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
-  onNotice: (message: string) => void;
-}) {
-  const requests = [
-    ['تورهای نوروز ۱۴۰۶', '۵ میلیارد', 'حسین موسوی', '۲ ساعت پیش'],
-    ['بازگشت مشتریان غیرفعال', '۸۰۰ میلیون', 'مریم احمدی', '۵ ساعت پیش'],
-    ['پیشنهاد ویژه کیش', '۱.۲ میلیارد', 'علی رضایی', 'دیروز'],
-  ] as const;
-  return (
-    <section className="grid gap-4 md:grid-cols-2">
-      {requests.map(([name, budget, owner, time], index) => (
-        <Card className="p-5" key={name}>
-          <div className="flex justify-between gap-3">
-            <div>
-              <h3 className="font-black">{name}</h3>
-              <p className="mt-1 text-xs text-muted-foreground">
-                درخواست فعال‌سازی کمپین
-              </p>
-            </div>
-            <Badge className="bg-amber-100 text-amber-800">
-              در انتظار تأیید
-            </Badge>
-          </div>
-          <dl className="mt-4 grid grid-cols-3 gap-2 text-sm">
-            <div className="rounded-lg bg-muted/40 p-3">
-              <dt className="text-xs text-muted-foreground">بودجه</dt>
-              <dd className="mt-1 font-bold">{budget}</dd>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <dt className="text-xs text-muted-foreground">درخواست‌کننده</dt>
-              <dd className="mt-1 font-bold">{owner}</dd>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-3">
-              <dt className="text-xs text-muted-foreground">زمان</dt>
-              <dd className="mt-1 font-bold">{time}</dd>
-            </div>
-          </dl>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Button
-              onClick={() => onNotice(`${name} در Preview تأیید شد.`)}
-              size="sm"
-            >
-              تأیید
-            </Button>
-            <Button
-              onClick={() => onNotice(`${name} برای اصلاح بازگردانده شد.`)}
-              size="sm"
-              variant="destructive"
-            >
-              بازگشت برای اصلاح
-            </Button>
-            <Button
-              onClick={() =>
-                onOpen(
-                  'view',
-                  marketingPreviewCampaigns[
-                    index % marketingPreviewCampaigns.length
-                  ],
-                )
-              }
-              size="sm"
-              variant="outline"
-            >
-              مشاهده جزئیات
-            </Button>
-          </div>
-        </Card>
-      ))}
-    </section>
-  );
-}
-
 function CampaignsPanel({
+  campaigns,
+  error,
+  loading,
   onOpen,
   onNotice,
+  onRetry,
 }: {
+  campaigns: readonly CampaignPreview[];
+  error: string;
+  loading: boolean;
   onOpen: (mode: CampaignFormMode, campaign?: CampaignPreview) => void;
   onNotice: (message: string) => void;
+  onRetry: () => void;
 }) {
   const [tab, setTab] = useState('list');
   return (
@@ -863,19 +772,23 @@ function CampaignsPanel({
         ))}
       </TabsList>
       <TabsContent className="mt-5" value="list">
-        <CampaignList onNotice={onNotice} onOpen={onOpen} />
+        <CampaignList
+          campaignsSource={campaigns}
+          error={error}
+          loading={loading}
+          onNotice={onNotice}
+          onOpen={onOpen}
+          onRetry={onRetry}
+        />
       </TabsContent>
       <TabsContent className="mt-5" value="calendar">
         <CampaignCalendar
-          campaigns={marketingPreviewCampaigns}
+          campaigns={campaigns}
           onOpen={(campaign) => onOpen('view', campaign)}
         />
       </TabsContent>
       <TabsContent className="mt-5" value="budget">
-        <BudgetPanel onNotice={onNotice} />
-      </TabsContent>
-      <TabsContent className="mt-5" value="approval">
-        <ApprovalPanel onNotice={onNotice} onOpen={onOpen} />
+        <BudgetPanel campaigns={campaigns} />
       </TabsContent>
     </Tabs>
   );
@@ -900,6 +813,12 @@ export function MarketingWorkspace({
   initialSection?: string | null;
 }) {
   const router = useRouter();
+  const [actor, setActor] = useState<AuthenticatedActor | null>(null);
+  const [campaigns, setCampaigns] = useState<CampaignPreview[]>([]);
+  const [segments, setSegments] = useState<SegmentOption[]>([]);
+  const publicationAttempt = useRef<CampaignPublicationAttempt | null>(null);
+  const [campaignsLoading, setCampaignsLoading] = useState(true);
+  const [campaignsError, setCampaignsError] = useState('');
   const [section, setSection] = useState<MarketingSectionKey | null>(() =>
     resolveMarketingSection(initialSection),
   );
@@ -912,6 +831,38 @@ export function MarketingWorkspace({
     mode: CampaignFormMode;
     campaign?: CampaignPreview;
   }>({ open: false, mode: 'create' });
+  const loadCampaigns = useCallback(async () => {
+    setCampaignsLoading(true);
+    setCampaignsError('');
+    try {
+      const [access, response, segmentResponse] = await Promise.all([
+        marketingApi.access(),
+        marketingApi.campaigns(),
+        marketingApi.assets('SEGMENT'),
+      ]);
+      setActor(access);
+      const nextSegments = segmentResponse.data.map(({ id, name }) => ({
+        id,
+        name,
+      }));
+      setSegments(nextSegments);
+      setCampaigns(
+        response.data.map((record) =>
+          campaignPreviewFromRecord(record, nextSegments),
+        ),
+      );
+    } catch (error) {
+      setCampaignsError(
+        error instanceof Error ? error.message : 'دریافت کمپین‌ها انجام نشد.',
+      );
+    } finally {
+      setCampaignsLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void loadCampaigns(), 0);
+    return () => window.clearTimeout(timer);
+  }, [loadCampaigns]);
   const syncSectionFromHistory = useCallback(() => {
     const requestedSection = new URL(window.location.href).searchParams.get(
       'section',
@@ -983,7 +934,14 @@ export function MarketingWorkspace({
               onOpen={setDetailItem}
             />
           ) : section === 'campaigns' ? (
-            <CampaignsPanel onNotice={setNotice} onOpen={openCampaign} />
+            <CampaignsPanel
+              campaigns={campaigns}
+              error={campaignsError}
+              loading={campaignsLoading}
+              onNotice={setNotice}
+              onOpen={openCampaign}
+              onRetry={() => void loadCampaigns()}
+            />
           ) : genericSection ? (
             <MarketingReferenceSection
               key={genericSection}
@@ -1018,24 +976,76 @@ export function MarketingWorkspace({
             {campaignDialog.mode === 'create'
               ? 'ساخت کمپین جدید'
               : campaignDialog.mode === 'edit'
-                ? 'ویرایش پیش‌نمایش کمپین'
+                ? 'ویرایش کمپین'
                 : 'جزئیات کمپین'}
           </DialogTitle>
           {campaignDialog.mode === 'view' ? (
             <DialogDescription>
-              نمای ۳۶۰ درجه کمپین با داده‌های کاملاً آزمایشی مرجع.
+              نمای ۳۶۰ درجه کمپین با داده‌های ذخیره‌شده سرور.
             </DialogDescription>
           ) : null}
           {campaignDialog.mode === 'view' && campaignDialog.campaign ? (
-            <CampaignDetailReference
+            <CampaignDetail
               campaign={campaignDialog.campaign}
-              onNotice={setNotice}
+              onPublish={async () => {
+                const campaign = campaignDialog.campaign;
+                if (!campaign || campaign.status !== 'DRAFT') return;
+                try {
+                  await marketingApi.publishCampaign(
+                    campaign.id,
+                    campaign.version,
+                  );
+                  await loadCampaigns();
+                  setCampaignDialog((current) => ({ ...current, open: false }));
+                  setNotice('پیش‌نویس ذخیره‌شده منتشر شد.');
+                } catch (error) {
+                  setNotice(
+                    error instanceof Error
+                      ? error.message
+                      : 'انتشار پیش‌نویس انجام نشد.',
+                  );
+                }
+              }}
             />
           ) : (
             <CampaignForm
               campaign={campaignDialog.campaign}
               key={`${campaignDialog.mode}-${campaignDialog.campaign?.id ?? 'new'}`}
               mode={campaignDialog.mode}
+              ownerUserId={actor?.userId ?? ''}
+              segments={segments}
+              onSave={async (draft: CampaignDraft) => {
+                if (!actor?.branchIds[0])
+                  throw new Error('شعبه فعال برای ذخیره مشخص نیست.');
+                const input = campaignInputFromDraft(
+                  draft,
+                  campaignDialog.campaign,
+                );
+                if (campaignDialog.mode === 'create') {
+                  publicationAttempt.current = ensureCampaignPublicationAttempt(
+                    publicationAttempt.current,
+                    input,
+                  );
+                  await executeCampaignPublication(
+                    publicationAttempt.current,
+                    input,
+                    actor.branchIds[0],
+                    marketingApi,
+                  );
+                  publicationAttempt.current = null;
+                  setNotice(
+                    'کمپین در سامانه منتشر شد؛ اتصال خارجی همچنان غیرفعال است.',
+                  );
+                } else if (campaignDialog.campaign) {
+                  await marketingApi.updateCampaign(
+                    campaignDialog.campaign.id,
+                    input,
+                  );
+                  setNotice('تغییرات کمپین با ثبت نسخه و سابقه ذخیره شد.');
+                }
+                await loadCampaigns();
+                setCampaignDialog((current) => ({ ...current, open: false }));
+              }}
             />
           )}
         </DialogContent>
@@ -1068,13 +1078,16 @@ export function MarketingWorkspace({
             </dl>
           ) : null}
           <Button
+            aria-label="تأیید و بستن"
             className="mt-5"
+            size="icon"
+            title="تأیید و بستن"
             onClick={() => {
               if (detailItem) setNotice(`جزئیات ${detailItem.title} تأیید شد.`);
               setDetailItem(null);
             }}
           >
-            تأیید و بستن
+            <X aria-hidden="true" className="size-4" />
           </Button>
         </DialogContent>
       </Dialog>

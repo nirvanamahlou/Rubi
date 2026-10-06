@@ -200,6 +200,14 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
+      - name: Prove Marketing CAS, replay and rollback atomicity
+        env:
+          NORA_RUN_MARKETING_POSTGRES_TESTS: '1'
+        run: |
+          pnpm --filter @nora/contracts build
+          pnpm --filter @nora/database build
+          pnpm --filter @nora/api exec vitest run src/marketing/marketing-records.postgres.spec.ts
+
   build:
     name: Full production build
     runs-on: ubuntu-latest

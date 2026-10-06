@@ -164,6 +164,17 @@ model User {
   customerAffairsCorrectiveActions                 CustomerAffairsCorrectiveAction[]
   customerAffairsCommands                          CustomerAffairsCommand[]
   customerAffairsAuditEvents                       CustomerAffairsAuditEvent[]
+  marketingCampaignsOwned                          MarketingCampaign[]                       @relation("MarketingCampaignOwner")
+  marketingCampaignsCreated                        MarketingCampaign[]                       @relation("MarketingCampaignCreator")
+  marketingCampaignsUpdated                        MarketingCampaign[]                       @relation("MarketingCampaignUpdater")
+  marketingCampaignsDeclared                       MarketingCampaign[]                       @relation("MarketingCampaignDeclarer")
+  marketingAssetsCreated                           MarketingAsset[]                          @relation("MarketingAssetCreator")
+  marketingAssetsUpdated                           MarketingAsset[]                          @relation("MarketingAssetUpdater")
+  marketingCommands                                MarketingCommand[]
+  marketingAuditEvents                             MarketingAuditEvent[]
+  customerAffairsMarketingIntakesAssigned          CustomerAffairsMarketingIntake[]          @relation("CustomerAffairsMarketingIntakeAssignee")
+  customerAffairsMarketingIntakesCreated           CustomerAffairsMarketingIntake[]          @relation("CustomerAffairsMarketingIntakeCreator")
+  customerAffairsMarketingIntakesUpdated           CustomerAffairsMarketingIntake[]          @relation("CustomerAffairsMarketingIntakeUpdater")
   reportingFacts                                   ReportingTravelFact[]                     @relation("ReportingFactOwner")
   reportingSavedReports                            ReportingSavedReport[]                    @relation("ReportingSavedReportOwner")
   reportingSharesReceived                          ReportingSavedReportShare[]               @relation("ReportingSavedReportShareRecipient")
@@ -266,6 +277,11 @@ model Branch {
   customerAffairsLeads                CustomerAffairsLead[]
   customerAffairsTickets              CustomerAffairsTicket[]
   customerAffairsAuditEvents          CustomerAffairsAuditEvent[]
+  marketingCampaigns                  MarketingCampaign[]
+  marketingAssets                     MarketingAsset[]
+  marketingCommands                   MarketingCommand[]
+  marketingAuditEvents                MarketingAuditEvent[]
+  customerAffairsMarketingIntakes     CustomerAffairsMarketingIntake[]
   reportingFacts                      ReportingTravelFact[]
   financeSettlementAccounts           FinanceSettlementAccount[]
   financeProcurementInvoiceRevisions  FinanceProcurementInvoiceRevision[]
@@ -5337,6 +5353,181 @@ model PackagePricingTourPublishedRoomPrice {
   hotelRate        ReservationHotelGroupRate          @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
 
   @@unique([publicationId, hotelRateId, roomCode])
+}
+
+// Marketing stores durable internal planning/publication records. Provider dispatch,
+// website publication and financial posting are intentionally outside this boundary.
+model MarketingCampaign {
+  id                     String                           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId               String                           @map("branch_id") @db.Uuid
+  internalCode           String                           @map("internal_code") @db.VarChar(64)
+  name                   String                           @db.VarChar(200)
+  campaignType           String                           @map("campaign_type") @db.VarChar(80)
+  objective              String                           @db.VarChar(1000)
+  executionCompany       String                           @map("execution_company") @db.VarChar(80)
+  channels               String[]                         @db.VarChar(32)
+  ownerUserId            String                           @map("owner_user_id") @db.Uuid
+  segmentId              String?                          @map("segment_id") @db.Uuid
+  salesTarget            Decimal                          @map("sales_target") @db.Decimal(24, 4)
+  targetCurrencyCode     String                           @map("target_currency_code") @db.VarChar(3)
+  budgetAmount           Decimal                          @map("budget_amount") @db.Decimal(24, 4)
+  budgetCurrencyCode     String                           @map("budget_currency_code") @db.VarChar(3)
+  startsAt               DateTime                         @map("starts_at") @db.Timestamptz(3)
+  endsAt                 DateTime                         @map("ends_at") @db.Timestamptz(3)
+  utmSource              String?                          @map("utm_source") @db.VarChar(160)
+  utmMedium              String?                          @map("utm_medium") @db.VarChar(160)
+  utmCampaign            String?                          @map("utm_campaign") @db.VarChar(160)
+  utmTerm                String?                          @map("utm_term") @db.VarChar(160)
+  utmContent             String?                          @map("utm_content") @db.VarChar(160)
+  frequencyCap           Int                              @map("frequency_cap")
+  progressPercent        Decimal                          @default(0) @map("progress_percent") @db.Decimal(7, 4)
+  links                  Json
+  status                 String                           @default("DRAFT") @db.VarChar(24)
+  publicationRequestedAt DateTime?                        @map("publication_requested_at") @db.Timestamptz(3)
+  scheduledFor           DateTime?                        @map("scheduled_for") @db.Timestamptz(3)
+  declaredByUserId       String                           @map("declared_by_user_id") @db.Uuid
+  declaredAt             DateTime                         @default(now()) @map("declared_at") @db.Timestamptz(3)
+  createdByUserId        String                           @map("created_by_user_id") @db.Uuid
+  updatedByUserId        String                           @map("updated_by_user_id") @db.Uuid
+  version                Int                              @default(1)
+  createdAt              DateTime                         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime                         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch                 Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  owner                  User                             @relation("MarketingCampaignOwner", fields: [ownerUserId], references: [id], onDelete: Restrict)
+  createdBy              User                             @relation("MarketingCampaignCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy              User                             @relation("MarketingCampaignUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  declaredBy             User                             @relation("MarketingCampaignDeclarer", fields: [declaredByUserId], references: [id], onDelete: Restrict)
+  segment                MarketingAsset?                  @relation("MarketingCampaignSegment", fields: [segmentId], references: [id], onDelete: Restrict)
+  assets                 MarketingAsset[]                 @relation("MarketingCampaignAssets")
+  spendLines             MarketingCampaignSpendLine[]
+  firstContactIntakes    CustomerAffairsMarketingIntake[]
+
+  @@unique([branchId, internalCode])
+  @@index([branchId, status, startsAt, endsAt])
+  @@index([branchId, startsAt, id])
+  @@index([ownerUserId, status])
+  @@index([segmentId])
+  @@map("marketing_campaigns")
+}
+
+model MarketingCampaignSpendLine {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaignId   String            @map("campaign_id") @db.Uuid
+  label        String            @db.VarChar(160)
+  amount       Decimal           @db.Decimal(24, 4)
+  currencyCode String            @map("currency_code") @db.VarChar(3)
+  declaredAt   DateTime          @default(now()) @map("declared_at") @db.Timestamptz(3)
+  campaign     MarketingCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId])
+  @@map("marketing_campaign_spend_lines")
+}
+
+model MarketingAsset {
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId         String              @map("branch_id") @db.Uuid
+  kind             String              @db.VarChar(32)
+  name             String              @db.VarChar(200)
+  status           String              @db.VarChar(32)
+  campaignId       String?             @map("campaign_id") @db.Uuid
+  relatedAssetId   String?             @map("related_asset_id") @db.Uuid
+  scheduledAt      DateTime?           @map("scheduled_at") @db.Timestamptz(3)
+  expiresAt        DateTime?           @map("expires_at") @db.Timestamptz(3)
+  payload          Json
+  createdByUserId  String              @map("created_by_user_id") @db.Uuid
+  updatedByUserId  String              @map("updated_by_user_id") @db.Uuid
+  version          Int                 @default(1)
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch           Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  campaign         MarketingCampaign?  @relation("MarketingCampaignAssets", fields: [campaignId], references: [id], onDelete: Restrict)
+  relatedAsset     MarketingAsset?     @relation("MarketingAssetLinks", fields: [relatedAssetId], references: [id], onDelete: Restrict)
+  linkedAssets     MarketingAsset[]    @relation("MarketingAssetLinks")
+  segmentCampaigns MarketingCampaign[] @relation("MarketingCampaignSegment")
+  createdBy        User                @relation("MarketingAssetCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy        User                @relation("MarketingAssetUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, kind, name])
+  @@index([branchId, kind, status, updatedAt])
+  @@index([campaignId, kind])
+  @@index([relatedAssetId])
+  @@map("marketing_assets")
+}
+
+model MarketingCommand {
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId        String   @map("actor_user_id") @db.Uuid
+  branchId           String   @map("branch_id") @db.Uuid
+  operation          String   @db.VarChar(80)
+  idempotencyKey     String   @map("idempotency_key") @db.VarChar(160)
+  requestFingerprint String   @map("request_fingerprint") @db.Char(64)
+  entityType         String   @map("entity_type") @db.VarChar(32)
+  resultEntityId     String   @map("result_entity_id") @db.Uuid
+  resultVersion      Int      @map("result_version")
+  payloadSnapshot    Json     @map("payload_snapshot")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  actor              User     @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  branch             Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+
+  @@unique([actorUserId, branchId, operation, idempotencyKey])
+  @@index([resultEntityId])
+  @@map("marketing_commands")
+}
+
+model MarketingAuditEvent {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId       String   @map("branch_id") @db.Uuid
+  actorUserId    String?  @map("actor_user_id") @db.Uuid
+  entityType     String   @map("entity_type") @db.VarChar(32)
+  entityId       String   @map("entity_id") @db.Uuid
+  action         String   @db.VarChar(80)
+  reason         String?  @db.VarChar(500)
+  traceId        String?  @map("trace_id") @db.VarChar(160)
+  version        Int
+  beforeSnapshot Json?    @map("before_snapshot")
+  afterSnapshot  Json?    @map("after_snapshot")
+  occurredAt     DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  branch         Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actor          User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([branchId, occurredAt])
+  @@index([entityType, entityId, occurredAt])
+  @@map("marketing_audit_events")
+}
+
+model CustomerAffairsMarketingIntake {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId         String             @map("branch_id") @db.Uuid
+  phoneEncrypted   String             @map("phone_encrypted") @db.VarChar(800)
+  phoneIv          String             @map("phone_iv") @db.VarChar(64)
+  phoneAuthTag     String             @map("phone_auth_tag") @db.VarChar(64)
+  phoneKeyVersion  Int                @map("phone_key_version")
+  phoneFingerprint String             @map("phone_fingerprint") @db.Char(64)
+  phoneMasked      String             @map("phone_masked") @db.VarChar(40)
+  sourceCategory   String             @map("source_category") @db.VarChar(80)
+  campaignId       String?            @map("campaign_id") @db.Uuid
+  status           String             @default("NEW") @db.VarChar(24)
+  assigneeUserId   String?            @map("assignee_user_id") @db.Uuid
+  lastFollowUpAt   DateTime?          @map("last_follow_up_at") @db.Timestamptz(3)
+  score            Int                @default(0)
+  scoreRuleIds     String[]           @map("score_rule_ids") @db.VarChar(80)
+  createdByUserId  String             @map("created_by_user_id") @db.Uuid
+  updatedByUserId  String             @map("updated_by_user_id") @db.Uuid
+  version          Int                @default(1)
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch           Branch             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  campaign         MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  assignee         User?              @relation("CustomerAffairsMarketingIntakeAssignee", fields: [assigneeUserId], references: [id], onDelete: Restrict)
+  createdBy        User               @relation("CustomerAffairsMarketingIntakeCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy        User               @relation("CustomerAffairsMarketingIntakeUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([branchId, phoneFingerprint])
+  @@index([branchId, sourceCategory, createdAt])
+  @@index([branchId, createdAt, id])
+  @@index([campaignId, createdAt])
+  @@index([assigneeUserId, status, lastFollowUpAt])
+  @@map("customer_affairs_marketing_intakes")
 }
 
 // Customer Affairs owns request, lead, support and referral persistence. Cross-module

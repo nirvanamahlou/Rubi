@@ -44,7 +44,7 @@ import type {
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { MarketingActionButton as Button } from './marketing-action-button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Checkbox,
@@ -81,6 +81,10 @@ import {
 } from '@/modules/documents/api/client';
 import { campaignStatusLabels, type CampaignPreview } from '../model/marketing';
 import {
+  appendMarketingConfidentialCode,
+  marketingDocumentCodeError,
+} from '../model/document-upload';
+import {
   marketingSectionTabs,
   type MarketingPreviewItem,
 } from '../model/reference-data';
@@ -90,6 +94,14 @@ import {
   type OfferAudienceTargetKind,
   type OfferAudienceTargetReference,
 } from './offer-audience-target-selector';
+import {
+  DurableAutomationBuilder,
+  DurableContentPanel,
+  DurableIntakesPanel,
+  DurableMessagesPanel,
+  DurableSegmentsPanel,
+  DurableSourceChart,
+} from './marketing-durable-panels';
 
 type DetailSection = MarketingPreviewItem['section'];
 type NoticeHandler = (message: string) => void;
@@ -1687,11 +1699,6 @@ function AudienceInputDialog({
         <DialogTitle>
           {isCampaignAudience ? 'افزودن مخاطبان کمپین' : 'افزودن منبع ورود'}
         </DialogTitle>
-        <DialogDescription>
-          {isCampaignAudience
-            ? 'یک گروه تجمیعی را به کمپین متصل کنید؛ اطلاعات هویتی مخاطبان در مارکتینگ نگهداری نمی‌شود.'
-            : 'مشخصات کانال و پارامترهای رهگیری منبع ورودی را ثبت کنید.'}
-        </DialogDescription>
         <form
           className="mt-5 grid gap-4 sm:grid-cols-2"
           onSubmit={(event) => {
@@ -2889,7 +2896,7 @@ const marketingBranches = [
   ['jahan-bastan', 'جهان باستان'],
 ] as const;
 
-function MarketingAssetUploadDialog({
+export function MarketingAssetUploadDialog({
   open,
   options,
   submitting,
@@ -2910,6 +2917,7 @@ function MarketingAssetUploadDialog({
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [confidentialAccessCode, setConfidentialAccessCode] = useState('');
   const [assetKind, setAssetKind] = useState<string>(marketingAssetKinds[0][0]);
   const [marketingBranch, setMarketingBranch] = useState<string>(
     marketingBranches[0][0],
@@ -2927,7 +2935,6 @@ function MarketingAssetUploadDialog({
   const [ownerUserId, setOwnerUserId] = useState(
     options.currentUserId || options.owners[0]?.id || '',
   );
-  const [confidentiality, setConfidentiality] = useState('INTERNAL');
   const [validationError, setValidationError] = useState('');
   const selectedType = brandTypes.find((type) => type.id === documentTypeId);
   const selectedAssetKind = marketingAssetKinds.find(
@@ -2969,6 +2976,13 @@ function MarketingAssetUploadDialog({
               setValidationError('نوع سند، دسته‌بندی، شعبه و مالک الزامی است.');
               return;
             }
+            const codeError = marketingDocumentCodeError(
+              confidentialAccessCode,
+            );
+            if (codeError) {
+              setValidationError(codeError);
+              return;
+            }
             const form = new FormData();
             form.set('file', file);
             form.set('title', title.trim());
@@ -2977,7 +2991,7 @@ function MarketingAssetUploadDialog({
             form.set('categoryId', categoryId);
             form.set('branchId', branchId);
             form.set('ownerUserId', ownerUserId);
-            form.set('confidentiality', confidentiality);
+            appendMarketingConfidentialCode(form, confidentialAccessCode);
             form.set('sourceModule', 'marketing');
             form.set('sourceEntityType', 'content-asset');
             form.set(
@@ -3057,16 +3071,25 @@ function MarketingAssetUploadDialog({
               value={ownerUserId}
             />
           </FormField>
-          <FormField id="marketing-asset-confidentiality" label="محرمانگی">
-            <SimpleSelect
-              ariaLabel="محرمانگی فایل مارکتینگ"
-              onChange={setConfidentiality}
-              options={[
-                ['PUBLIC', 'عمومی'],
-                ['INTERNAL', 'داخلی'],
-                ['CONFIDENTIAL', 'محرمانه'],
-              ]}
-              value={confidentiality}
+          <FormField
+            description="سیاست اسناد تعیین می‌کند کد لازم است یا خیر. در صورت درخواست اسناد، کد ۶ رقمی وارد کنید؛ برای سند غیرمحرمانه خالی بگذارید."
+            id="marketing-asset-confidential-code"
+            label="کد محرمانگی"
+          >
+            <Input
+              autoComplete="new-password"
+              id="marketing-asset-confidential-code"
+              inputMode="numeric"
+              maxLength={6}
+              onChange={(event) => {
+                setConfidentialAccessCode(
+                  event.target.value.replace(/\D/gu, '').slice(0, 6),
+                );
+                setValidationError('');
+              }}
+              pattern="[0-9]{6}"
+              type="password"
+              value={confidentialAccessCode}
             />
           </FormField>
           <div className="sm:col-span-2">
@@ -3089,16 +3112,26 @@ function MarketingAssetUploadDialog({
           ) : null}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button
+              aria-label="انصراف از بارگذاری"
               disabled={submitting}
               onClick={() => onOpenChange(false)}
+              size="icon"
+              title="انصراف از بارگذاری"
               type="button"
               variant="outline"
             >
-              انصراف
+              <X aria-hidden="true" className="size-4" />
             </Button>
-            <Button disabled={submitting || !file} type="submit">
+            <Button
+              aria-label={
+                submitting ? 'در حال بارگذاری…' : 'ثبت در محتوا و اسناد'
+              }
+              title={submitting ? 'در حال بارگذاری…' : 'ثبت در محتوا و اسناد'}
+              size="icon"
+              disabled={submitting || !file}
+              type="submit"
+            >
               <Upload aria-hidden="true" className="size-4" />
-              {submitting ? 'در حال بارگذاری…' : 'ثبت در محتوا و اسناد'}
             </Button>
           </div>
         </form>
@@ -3107,7 +3140,7 @@ function MarketingAssetUploadDialog({
   );
 }
 
-function ContentPage({
+export function ContentPage({
   tab,
   onOpen,
   onNotice,
@@ -3226,9 +3259,16 @@ function ContentPage({
       <>
         <Panel
           actions={
-            <Button disabled={loadingOptions} onClick={() => void openUpload()}>
+            <Button
+              aria-label={
+                loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'
+              }
+              title={loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'}
+              size="icon"
+              disabled={loadingOptions}
+              onClick={() => void openUpload()}
+            >
               <Upload aria-hidden="true" className="size-4" />
-              {loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'}
             </Button>
           }
           title="کتابخانه محتوا"
@@ -5430,9 +5470,11 @@ function SectionEntityFormDialog({
         dir="rtl"
       >
         <DialogTitle>{dialogTitle}</DialogTitle>
-        <DialogDescription>
-          اطلاعات لازم را وارد کنید و برای افزودن به فضای کاری ذخیره کنید.
-        </DialogDescription>
+        {!isDiscountCode ? (
+          <DialogDescription>
+            اطلاعات لازم را وارد کنید و برای افزودن به فضای کاری ذخیره کنید.
+          </DialogDescription>
+        ) : null}
         <form
           className="mt-5 grid gap-4 sm:grid-cols-2"
           onSubmit={(event) => {
@@ -5503,18 +5545,20 @@ function SectionEntityFormDialog({
               />
             </FormField>
           ) : null}
-          <FormField id={`${kind}-entity-status`} label="وضعیت" required>
-            <SimpleSelect
-              ariaLabel={`وضعیت ${definition.title}`}
-              onChange={setStatus}
-              options={[
-                ['draft', 'پیش‌نویس'],
-                ['active', 'فعال'],
-                ['review', 'در انتظار تأیید'],
-              ]}
-              value={status}
-            />
-          </FormField>
+          {!isDiscountCode ? (
+            <FormField id={`${kind}-entity-status`} label="وضعیت" required>
+              <SimpleSelect
+                ariaLabel={`وضعیت ${definition.title}`}
+                onChange={setStatus}
+                options={[
+                  ['draft', 'پیش‌نویس'],
+                  ['active', 'فعال'],
+                  ['review', 'در انتظار تأیید'],
+                ]}
+                value={status}
+              />
+            </FormField>
+          ) : null}
           {isOffer ? (
             <>
               <OfferAudienceTargetSelector
@@ -5630,6 +5674,20 @@ function SectionEntityFormDialog({
                   value={combinability}
                 />
               </FormField>
+              {isDiscountCode ? (
+                <FormField id={`${kind}-entity-status`} label="وضعیت" required>
+                  <SimpleSelect
+                    ariaLabel={`وضعیت ${definition.title}`}
+                    onChange={setStatus}
+                    options={[
+                      ['draft', 'پیش‌نویس'],
+                      ['active', 'فعال'],
+                      ['review', 'در انتظار تأیید'],
+                    ]}
+                    value={status}
+                  />
+                </FormField>
+              ) : null}
             </>
           ) : null}
           {validationError ? (
@@ -5701,19 +5759,6 @@ function getPrimarySectionAction(
   section: DetailSection,
   tab: string,
 ): PrimarySectionAction | null {
-  if (section === 'communications' && tab === 'send') {
-    return {
-      label: 'ارسال پیام',
-      behavior: 'submit',
-      formId: 'marketing-message-composer',
-    };
-  }
-  if (section === 'communications' && tab === 'templates') {
-    return { label: 'قالب جدید', behavior: 'form', formKind: 'template' };
-  }
-  if (section === 'content') {
-    return { label: 'محتوای جدید', behavior: 'form', formKind: 'content' };
-  }
   if (section === 'journeys' && tab === 'all') {
     return { label: 'ساخت اتوماسیون', behavior: 'builder' };
   }
@@ -5773,18 +5818,40 @@ export function MarketingReferenceSection({
         </div>
         {tabs.map(([key, , description]) => (
           <TabsContent className="mt-5" key={key} value={key}>
-            <p className="mb-4 text-sm text-muted-foreground">{description}</p>
-            {section === 'audiences' ? (
+            {section !== 'audiences' ? (
+              <p className="mb-4 text-sm text-muted-foreground">
+                {description}
+              </p>
+            ) : null}
+            {section === 'audiences' && key === 'segments' ? (
+              <DurableSegmentsPanel onNotice={onNotice} />
+            ) : section === 'audiences' && key === 'leads' ? (
+              <DurableIntakesPanel mode="leads" onNotice={onNotice} />
+            ) : section === 'audiences' && key === 'scoring' ? (
+              <DurableIntakesPanel mode="scoring" onNotice={onNotice} />
+            ) : section === 'audiences' && key === 'sources' ? (
+              <DurableSourceChart onNotice={onNotice} />
+            ) : section === 'audiences' ? (
               <AudiencePage onNotice={onNotice} onOpen={onOpen} tab={key} />
             ) : null}
-            {section === 'communications' ? (
+            {section === 'communications' && key === 'send' ? (
+              <DurableMessagesPanel onNotice={onNotice} scheduled={false} />
+            ) : section === 'communications' && key === 'scheduled' ? (
+              <DurableMessagesPanel onNotice={onNotice} scheduled />
+            ) : section === 'communications' ? (
               <CommunicationsPage
                 onNotice={onNotice}
                 onOpen={onOpen}
                 tab={key}
               />
             ) : null}
-            {section === 'content' ? (
+            {section === 'content' &&
+            ['forms', 'landing', 'links'].includes(key) ? (
+              <DurableContentPanel
+                onNotice={onNotice}
+                tab={key as 'forms' | 'landing' | 'links'}
+              />
+            ) : section === 'content' ? (
               <ContentPage onNotice={onNotice} onOpen={onOpen} tab={key} />
             ) : null}
             {section === 'offers' ? (
@@ -5795,7 +5862,9 @@ export function MarketingReferenceSection({
                 tab={key}
               />
             ) : null}
-            {section === 'journeys' ? (
+            {section === 'journeys' && key === 'builder' ? (
+              <DurableAutomationBuilder onNotice={onNotice} />
+            ) : section === 'journeys' ? (
               <JourneysPage
                 onNotice={onNotice}
                 onOpen={onOpen}
@@ -5933,37 +6002,6 @@ export function CampaignDetailReference({
                   ۵.۸ از ۸ میلیارد فروش خالص
                 </p>
               </div>
-            </Panel>
-            <Panel
-              className="xl:col-span-2"
-              title="روند فروش روزانه"
-              description="مقایسه با هدف"
-            >
-              <div className="p-5">
-                <svg
-                  aria-label="روند فروش آزمایشی"
-                  className="h-52 w-full"
-                  viewBox="0 0 700 220"
-                >
-                  <path
-                    className="stroke-border"
-                    d="M20 30H680M20 80H680M20 130H680M20 180H680"
-                  />
-                  <path
-                    className="fill-none stroke-primary [stroke-width:4]"
-                    d="M20 180 C100 160 120 145 180 150 S290 100 360 105 S480 58 540 74 S620 46 680 52"
-                  />
-                </svg>
-              </div>
-            </Panel>
-            <Panel title="وضعیت کانال‌ها">
-              <ProgressRows
-                rows={[
-                  ['پیامک', 82, '۸۲٪'],
-                  ['ایمیل', 61, '۶۱٪'],
-                  ['پوش', 48, '۴۸٪'],
-                ]}
-              />
             </Panel>
           </div>
         </TabsContent>

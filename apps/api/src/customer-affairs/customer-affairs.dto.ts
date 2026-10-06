@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  ArrayMaxSize,
   IsBoolean,
   IsIn,
   IsInt,
@@ -94,6 +95,25 @@ export class LeadMutationDto {
   @IsString() @Length(3, 500) nextAction!: string;
   @IsISO8601({ strict: true }) nextActionAt!: string;
   @IsOptional() @IsInt() @Min(1) expectedVersion?: number;
+}
+
+export class MarketingIntakeDto {
+  @Matches(/^\+?[0-9][0-9\s-]{8,20}$/) phone!: string;
+  @IsString() @Length(1, 80) sourceCategory!: string;
+  @IsOptional() @IsUUID() campaignId?: string | null;
+  @IsIn(['NEW', 'CONTACTED', 'QUALIFIED', 'NURTURE', 'LOST']) status!: string;
+  @IsOptional() @IsUUID() assigneeUserId?: string | null;
+  @IsOptional() @IsISO8601({ strict: true }) lastFollowUpAt?: string | null;
+}
+
+export class MarketingIntakeScoreDto {
+  @IsArray() @ArrayMaxSize(10) @IsString({ each: true }) ruleIds!: string[];
+  @IsInt() @Min(1) expectedVersion!: number;
+}
+
+export class MarketingIntakeSourceQueryDto {
+  @IsISO8601({ strict: true }) startsAt!: string;
+  @IsISO8601({ strict: true }) endsAt!: string;
 }
 
 export class TicketReferenceDto {
