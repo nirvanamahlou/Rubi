@@ -5765,3 +5765,9 @@ B2B-CONTRACT-GUARANTEE-PUBLISH-1006 candidate repair checkpoint: independent rev
 - Implemented four-stage navigation, compact selected-order forms and backend supplier/currency invariants. Procurement Web 46/46 and refreshed form/stage tests 9/9; domain rules 49/49. API/Web lint, API typecheck/build and Web production build passed. Final Web typecheck passed. Fresh PostgreSQL 18 amendment tests passed 3/3 (38 unrelated tests intentionally filtered); all 123 existing migrations deployed successfully to the disposable test DB. Initial attempt ran before database readiness and was rerun successfully. PR #683 awaits exact-head CI before merge. No browser visual QA.
 
 - PR #683 merged to develop at 9993f3d4 after all exact-head CI quality, test, production build and PostgreSQL 18 migration/seed checks passed. Source reservation released. No runtime deployment or authenticated browser visual QA.
+
+## PROCUREMENT-CATEGORY-ADD-1006 — PC-B — IMPLEMENTED
+
+- Reserve draft-form.tsx and existing DraftForm test plus bounded status docs on codex/pc-b-procurement-category-add-1006. Prior request redesign PR #677 is merged and its file reservation released. Add a compact category creation trigger beside the label, reusing branch-scoped category persistence and validation. No API, migration, IAM or dependency changes. User authorizes push and merge after CI.
+
+- Verification: DraftForm 11/11, scoped ESLint, Web typecheck and diff whitespace checks pass. Production build/full gates are delegated to PR CI. Implementation complete and source reservation released; merge requires passing checks. No authenticated browser test or local runtime redeployment.
