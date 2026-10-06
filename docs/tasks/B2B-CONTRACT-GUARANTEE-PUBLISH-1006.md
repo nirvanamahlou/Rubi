@@ -22,4 +22,10 @@ Bounded to the Organizations agreement editor/workflow panel and focused Organiz
 
 No backend/API contract, Documents policy, permission, schema, migration, dependency or operational data change is authorized. Focused and full Organizations tests, existing B2B workflow tests, scoped lint, affected typechecks/builds, a fresh independent exact-candidate review, and exact-head CI are release gates.
 
+## Independent review correction — 2026-10-06
+
+The first independent review of candidate `0b8302c3a4b1f6f1ff98fc8f8d9d674802519107` found two blocking lifecycle issues: async agreement work could continue after panel unmount, and a stale confidential-grant loop could request another document grant after the actor/session/proof context changed. The correction adds an explicit mounted/context/request/proof-scope lease, checks it after each grant response and before any later grant or command, and prevents stale grant responses from updating reference state. Deferred-grant and lease regression tests cover the boundary. The frozen behavior contract remains unchanged; a fresh review of the corrected candidate and exact-head CI are still required before release.
+
+After syncing with refreshed `origin/develop@6c631406`, local verification passed: Organizations 207 tests, B2B workflow/idempotency/documents API 18 tests, Web typecheck, scoped ESLint, and Web production build (55 routes). No authenticated browser upload test or operational database/runtime change was performed.
+
 Contract SHA-256: B7C61210771FED03C9468146C3786361A08CD014B289DC616838C1B4DCAEB920.

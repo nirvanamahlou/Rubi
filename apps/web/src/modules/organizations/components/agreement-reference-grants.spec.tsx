@@ -8,6 +8,8 @@ vi.mock('@/modules/documents/api/client', () => ({
 }));
 
 import {
+  agreementWorkflowRequestIsCurrent,
+  collectAgreementReferenceGrants,
   protectedAgreementProofIds,
   rejectedAgreementReferenceGrantState,
   savedAgreementSubmission,
@@ -131,6 +133,78 @@ describe('agreement save-and-publish request identity', () => {
         grantContextKey: 'fresh-submit-scope',
       }),
     ).toThrow('شناسه‌های درخواست جداگانه');
+  });
+});
+
+describe('agreement workflow asynchronous request lease', () => {
+  const live = {
+    mounted: true,
+    contextKey: 'actor|session|organization|branch|AGENCY|agreements',
+    editorRequestId: 'editor-request',
+    actionRequestId: 'submit-request',
+    referenceScopeKey: 'protected-proof-scope',
+  };
+
+  it('invalidates pending work after unmount or an identity/scope change', () => {
+    const expected = {
+      contextKey: live.contextKey,
+      owner: 'action' as const,
+      requestId: live.actionRequestId,
+      referenceScopeKey: live.referenceScopeKey,
+    };
+    expect(agreementWorkflowRequestIsCurrent(live, expected)).toBe(true);
+    expect(
+      agreementWorkflowRequestIsCurrent(
+        { ...live, mounted: false },
+        expected,
+      ),
+    ).toBe(false);
+    expect(
+      agreementWorkflowRequestIsCurrent(
+        { ...live, contextKey: 'replacement-session' },
+        expected,
+      ),
+    ).toBe(false);
+    expect(
+      agreementWorkflowRequestIsCurrent(
+        { ...live, actionRequestId: 'replacement-request' },
+        expected,
+      ),
+    ).toBe(false);
+    expect(
+      agreementWorkflowRequestIsCurrent(
+        { ...live, referenceScopeKey: 'replacement-proof-scope' },
+        expected,
+      ),
+    ).toBe(false);
+  });
+
+  it('stops before another confidential grant or stale state write after context changes', async () => {
+    let current = true;
+    let resolveFirstGrant!: (token: string) => void;
+    const firstGrant = new Promise<string>((resolve) => {
+      resolveFirstGrant = resolve;
+    });
+    const issueGrant = vi.fn((documentId: string) =>
+      documentId === 'proof-a' ? firstGrant : Promise.resolve('token-b'),
+    );
+    const storeGrant = vi.fn();
+    const pending = collectAgreementReferenceGrants(['proof-a', 'proof-b'], {
+      getExisting: () => undefined,
+      getCode: (documentId) => `code-for-${documentId}`,
+      createGrant: (documentId) => issueGrant(documentId),
+      isCurrent: () => current,
+      onGrant: storeGrant,
+    });
+
+    await Promise.resolve();
+    expect(issueGrant).toHaveBeenCalledTimes(1);
+    current = false;
+    resolveFirstGrant('token-a');
+
+    await expect(pending).rejects.toThrow('درخواست با نشست جاری مطابقت ندارد');
+    expect(issueGrant).toHaveBeenCalledTimes(1);
+    expect(storeGrant).not.toHaveBeenCalled();
   });
 });
 

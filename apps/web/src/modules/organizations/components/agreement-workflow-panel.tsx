@@ -96,6 +96,72 @@ export function savedAgreementSubmitPayload(
   };
 }
 
+export interface AgreementWorkflowRequestLease {
+  mounted: boolean;
+  contextKey: string;
+  editorRequestId?: string | undefined;
+  actionRequestId?: string | undefined;
+  referenceScopeKey?: string | undefined;
+}
+
+export function agreementWorkflowRequestIsCurrent(
+  live: AgreementWorkflowRequestLease,
+  expected: {
+    contextKey: string;
+    owner?: 'editor' | 'action';
+    requestId?: string;
+    referenceScopeKey?: string;
+  },
+) {
+  if (!live.mounted || live.contextKey !== expected.contextKey) return false;
+  if (
+    expected.owner === 'editor' &&
+    live.editorRequestId !== expected.requestId
+  )
+    return false;
+  if (
+    expected.owner === 'action' &&
+    live.actionRequestId !== expected.requestId
+  )
+    return false;
+  if (
+    expected.referenceScopeKey !== undefined &&
+    live.referenceScopeKey !== expected.referenceScopeKey
+  )
+    return false;
+  return true;
+}
+
+export async function collectAgreementReferenceGrants(
+  requiredIds: readonly string[],
+  options: {
+    getExisting: (documentId: string) => string | undefined;
+    getCode: (documentId: string) => string | undefined;
+    createGrant: (documentId: string, code: string) => Promise<string>;
+    isCurrent: () => boolean;
+    onGrant: (documentId: string, token: string) => void;
+  },
+) {
+  const result: { documentId: string; token: string }[] = [];
+  for (const documentId of requiredIds) {
+    if (!options.isCurrent())
+      throw new Error('درخواست با نشست جاری مطابقت ندارد.');
+    const existing = options.getExisting(documentId);
+    if (existing) {
+      result.push({ documentId, token: existing });
+      continue;
+    }
+    const code = options.getCode(documentId);
+    if (!code) throw new Error('کد دسترسی هر سند محرمانه را وارد کنید.');
+    const token = await options.createGrant(documentId, code);
+    if (!options.isCurrent())
+      throw new Error('درخواست با نشست جاری مطابقت ندارد.');
+    result.push({ documentId, token });
+    options.onGrant(documentId, token);
+  }
+  return result;
+}
+
 const proofIds = (terms: B2bAgreementTermsV1) =>
   [...new Set([terms.documentId, ...terms.guarantees.map((g) => g.documentId)])]
     .filter((id): id is string => Boolean(id))
@@ -378,14 +444,34 @@ export function AgreementWorkflowPanel({
     useState<AgreementReferenceState | null>(null);
   const sequence = useRef(0);
   const operationLock = useRef(false);
+  const mounted = useRef(false);
   const liveWorkflowContext = useRef(workflowContextKey);
   const liveEditorRequestId = useRef(editor?.requestId);
   const liveActionRequestId = useRef(action?.requestId);
+  const liveReferenceScopeKey = useRef('');
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      liveWorkflowContext.current = '';
+      liveEditorRequestId.current = undefined;
+      liveActionRequestId.current = undefined;
+      liveReferenceScopeKey.current = '';
+    };
+  }, []);
   useLayoutEffect(() => {
     liveWorkflowContext.current = workflowContextKey;
     liveEditorRequestId.current = editor?.requestId;
     liveActionRequestId.current = action?.requestId;
   }, [workflowContextKey, editor?.requestId, action?.requestId]);
+  const workflowContextIsCurrent = (contextKey: string) =>
+    agreementWorkflowRequestIsCurrent(
+      {
+        mounted: mounted.current,
+        contextKey: liveWorkflowContext.current,
+      },
+      { contextKey },
+    );
   const load = useCallback(async () => {
     const current = ++sequence.current;
     setLoading(true);
@@ -513,6 +599,9 @@ export function AgreementWorkflowPanel({
     activeProofKey,
     grantContextKey,
   ]);
+  useLayoutEffect(() => {
+    liveReferenceScopeKey.current = referenceScopeKey;
+  }, [referenceScopeKey]);
   const currentReferenceState =
     referenceState?.scope === referenceScopeKey ? referenceState : null;
   const protectedReferences =
@@ -651,26 +740,57 @@ export function AgreementWorkflowPanel({
     shouldCheckReferences,
   ]);
 
-  async function grantsFor(ids: readonly string[]) {
+  async function grantsFor(
+    ids: readonly string[],
+    expected: {
+      contextKey: string;
+      owner: 'editor' | 'action';
+      requestId: string;
+      referenceScopeKey: string;
+    },
+  ) {
     const required = ids.filter((id) => protectedReferences.has(id));
-    const result: { documentId: string; token: string }[] = [];
-    for (const documentId of required) {
-      const existing = referenceGrants[documentId];
-      if (existing) {
-        result.push({ documentId, token: existing });
-        continue;
-      }
-      const code = referenceCodes[documentId];
-      if (!code) throw new Error('کد دسترسی هر سند محرمانه را وارد کنید.');
-      const response = await documentsApi.createAccessGrant(documentId, {
-        code,
-        purpose: 'CONFIDENTIAL_VIEW',
-      });
-      const token = response.data.token;
-      result.push({ documentId, token });
-      setReferenceGrant(documentId, token);
-    }
-    return result;
+    const isCurrent = () =>
+      agreementWorkflowRequestIsCurrent(
+        {
+          mounted: mounted.current,
+          contextKey: liveWorkflowContext.current,
+          editorRequestId: liveEditorRequestId.current,
+          actionRequestId: liveActionRequestId.current,
+          referenceScopeKey: liveReferenceScopeKey.current,
+        },
+        expected,
+      );
+    return collectAgreementReferenceGrants(required, {
+      getExisting: (documentId) => referenceGrants[documentId],
+      getCode: (documentId) => referenceCodes[documentId],
+      createGrant: async (documentId, code) => {
+        const response = await documentsApi.createAccessGrant(documentId, {
+          code,
+          purpose: 'CONFIDENTIAL_VIEW',
+        });
+        return response.data.token;
+      },
+      isCurrent,
+      onGrant: (documentId, token) =>
+        setReferenceState((previous) => {
+          if (!isCurrent()) return previous;
+          const current =
+            previous?.scope === expected.referenceScopeKey
+              ? previous
+              : {
+                  scope: expected.referenceScopeKey,
+                  phase: 'ready' as const,
+                  protectedReferences: new Set<string>(),
+                  codes: {},
+                  grants: {},
+                };
+          return {
+            ...current,
+            grants: { ...current.grants, [documentId]: token },
+          };
+        }),
+    });
   }
   const canManage =
     permissions.includes('b2b.agreement.manage') &&
@@ -768,10 +888,21 @@ export function AgreementWorkflowPanel({
     setDialogError('');
     const referenceDocumentIds = proofIds(editorSnapshot.terms);
     try {
-      const grants = await grantsFor(referenceDocumentIds);
+      const grants = await grantsFor(referenceDocumentIds, {
+        contextKey,
+        owner: 'editor',
+        requestId: saveRequestId,
+        referenceScopeKey,
+      });
       if (
-        liveWorkflowContext.current !== contextKey ||
-        liveEditorRequestId.current !== saveRequestId
+        !agreementWorkflowRequestIsCurrent(
+          {
+            mounted: mounted.current,
+            contextKey: liveWorkflowContext.current,
+            editorRequestId: liveEditorRequestId.current,
+          },
+          { contextKey, owner: 'editor', requestId: saveRequestId },
+        )
       )
         return;
       const response = await agencyClient.saveAgreementTerms(
@@ -789,8 +920,14 @@ export function AgreementWorkflowPanel({
         editorSnapshot.record?.id,
       );
       if (
-        liveWorkflowContext.current !== contextKey ||
-        liveEditorRequestId.current !== saveRequestId
+        !agreementWorkflowRequestIsCurrent(
+          {
+            mounted: mounted.current,
+            contextKey: liveWorkflowContext.current,
+            editorRequestId: liveEditorRequestId.current,
+          },
+          { contextKey, owner: 'editor', requestId: saveRequestId },
+        )
       )
         return;
       const savedRecord = response;
@@ -827,7 +964,7 @@ export function AgreementWorkflowPanel({
           branchId,
           submissionProofIds,
         );
-        if (liveWorkflowContext.current !== contextKey) return;
+        if (!workflowContextIsCurrent(contextKey)) return;
         if (
           [...protectedIds].some(
             (documentId) => !codesForPublication[documentId]?.trim(),
@@ -840,14 +977,15 @@ export function AgreementWorkflowPanel({
         }
         const freshGrants: { documentId: string; token: string }[] = [];
         for (const documentId of protectedIds) {
-          if (liveWorkflowContext.current !== contextKey) return;
+          if (!workflowContextIsCurrent(contextKey)) return;
           const grant = await documentsApi.createAccessGrant(documentId, {
             code: codesForPublication[documentId] ?? '',
             purpose: 'CONFIDENTIAL_VIEW',
           });
+          if (!workflowContextIsCurrent(contextKey)) return;
           freshGrants.push({ documentId, token: grant.data.token });
         }
-        if (liveWorkflowContext.current !== contextKey) return;
+        if (!workflowContextIsCurrent(contextKey)) return;
         const actionWithGrants = {
           ...submitAction,
           referenceGrants: freshGrants,
@@ -864,7 +1002,7 @@ export function AgreementWorkflowPanel({
             actionWithGrants.referenceGrants,
           ),
         );
-        if (liveWorkflowContext.current !== contextKey) return;
+        if (!workflowContextIsCurrent(contextKey)) return;
         setAction(null);
         setReferenceState(null);
         setUncertain(false);
@@ -872,7 +1010,7 @@ export function AgreementWorkflowPanel({
         setNotice('نسخه برای تأیید مستقل ارسال شد.');
         setRefresh((n) => n + 1);
       } catch (submitError) {
-        if (liveWorkflowContext.current !== contextKey) return;
+        if (!workflowContextIsCurrent(contextKey)) return;
         const grantRejected = clearRejectedReferenceGrants(
           submitError,
           proofIds(revision),
@@ -898,7 +1036,17 @@ export function AgreementWorkflowPanel({
         );
       }
     } catch (caught) {
-      if (liveWorkflowContext.current !== contextKey) return;
+      if (
+        !agreementWorkflowRequestIsCurrent(
+          {
+            mounted: mounted.current,
+            contextKey: liveWorkflowContext.current,
+            editorRequestId: liveEditorRequestId.current,
+          },
+          { contextKey, owner: 'editor', requestId: saveRequestId },
+        )
+      )
+        return;
       const grantRejected = clearRejectedReferenceGrants(
         caught,
         referenceDocumentIds,
@@ -920,7 +1068,7 @@ export function AgreementWorkflowPanel({
       );
     } finally {
       operationLock.current = false;
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
   async function perform() {
@@ -952,10 +1100,25 @@ export function AgreementWorkflowPanel({
         actionSnapshot.kind === 'REJECT'
           ? []
           : (actionSnapshot.referenceGrants ??
-            (await grantsFor(referenceDocumentIds)));
+            (await grantsFor(referenceDocumentIds, {
+              contextKey,
+              owner: 'action',
+              requestId: actionSnapshot.requestId,
+              referenceScopeKey,
+            })));
       if (
-        liveWorkflowContext.current !== contextKey ||
-        liveActionRequestId.current !== actionSnapshot.requestId
+        !agreementWorkflowRequestIsCurrent(
+          {
+            mounted: mounted.current,
+            contextKey: liveWorkflowContext.current,
+            actionRequestId: liveActionRequestId.current,
+          },
+          {
+            contextKey,
+            owner: 'action',
+            requestId: actionSnapshot.requestId,
+          },
+        )
       )
         return;
       if (!actionSnapshot.referenceGrants)
@@ -977,8 +1140,18 @@ export function AgreementWorkflowPanel({
         },
       );
       if (
-        liveWorkflowContext.current !== contextKey ||
-        liveActionRequestId.current !== actionSnapshot.requestId
+        !agreementWorkflowRequestIsCurrent(
+          {
+            mounted: mounted.current,
+            contextKey: liveWorkflowContext.current,
+            actionRequestId: liveActionRequestId.current,
+          },
+          {
+            contextKey,
+            owner: 'action',
+            requestId: actionSnapshot.requestId,
+          },
+        )
       )
         return;
       setAction(null);
@@ -994,8 +1167,18 @@ export function AgreementWorkflowPanel({
       setRefresh((n) => n + 1);
     } catch (caught) {
       if (
-        liveWorkflowContext.current !== contextKey ||
-        liveActionRequestId.current !== actionSnapshot.requestId
+        !agreementWorkflowRequestIsCurrent(
+          {
+            mounted: mounted.current,
+            contextKey: liveWorkflowContext.current,
+            actionRequestId: liveActionRequestId.current,
+          },
+          {
+            contextKey,
+            owner: 'action',
+            requestId: actionSnapshot.requestId,
+          },
+        )
       )
         return;
       const grantRejected = clearRejectedReferenceGrants(
@@ -1026,7 +1209,7 @@ export function AgreementWorkflowPanel({
       );
     } finally {
       operationLock.current = false;
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
   return (
