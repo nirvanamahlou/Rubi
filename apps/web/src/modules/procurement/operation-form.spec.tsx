@@ -80,6 +80,8 @@ describe('Procurement lifecycle operation forms', () => {
     ])
       expect(html).toContain(text);
     expect(html).not.toContain('انتخاب ثبت‌شده');
+    expect(html).toContain('قیمت واحد');
+    expect(html).toContain('value="12"');
     expect(html).not.toContain('id="proc-operation"');
   });
   it('opens order-bound discrepancy and return forms with their required dates', () => {

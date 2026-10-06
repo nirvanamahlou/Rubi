@@ -357,7 +357,12 @@ function OperationFields({
   const [lines, setLines] = useState<Line[]>(() =>
     action === 'AMEND_ORDER' && initialRecord
       ? orderAmendmentLines(initialRecord)
-      : [],
+      : action === 'ORDER_FORM'
+        ? request.draft.items.map((item) => ({
+            ...makeLine(item.id),
+            quantity: item.quantity ?? '',
+          }))
+        : [],
   );
   const [singleSource, setSingleSource] = useState(false);
   const [documents, setDocuments] = useState(() => [
