@@ -4810,6 +4810,10 @@ Agency registration can advance past phone verification so the remaining form ca
 ## 2026-10-06 — CAMPAIGN-DETAILS-ACTION-1006 — PC-B
 
 Dedicated RTL icon-only campaign declaration action/form persists goal progress, expense titles/exact amounts/currencies and links through existing versioned campaign update. Actual expense is the exact sum of expense rows per currency; refreshed cards/detail/budget tab show persisted values and detailed rows. Frozen idempotent retry preserves uncertain submissions. No schema/migration/dependency/permission/runtime changes. Verification and authorized develop merge are tracked in WORK_ASSIGNMENTS.md.
+
+## 2026-10-06 — PROCUREMENT-REQUEST-HEADING-1006
+
+Request detail breadcrumb uses the saved request title; redundant UUID/version heading removed. Internal identity and routing preserved. Web-only change; no migration/API/IAM/data changes. Web lint/typecheck and 7 focused tests passed; production build/PostgreSQL CI gates passed. PR #693 awaits remaining required gates; live authenticated browser unavailable (CUA initialization failure).
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.

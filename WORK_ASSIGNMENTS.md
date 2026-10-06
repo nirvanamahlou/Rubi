@@ -5806,6 +5806,12 @@ SALES-PASSENGER-PRICE-1006 validation: Sales Web329 pass/one skip; focused Web22
 
 - Verification: full Marketing Web suite passed 76 tests before the additional icon-action regression; refreshed declarations suite passes 5 tests. Existing Marketing records API suite passes 22 tests; Web typecheck and 55-page production build pass. Focused lint/format and final integrated CI gate authorized merge. No authenticated browser submit, new PostgreSQL rehearsal, operational writes or runtime redeployment claimed. Bounded locks released with candidate commit.
 
+## PROCUREMENT-REQUEST-HEADING-1006 — PC-B — IMPLEMENTED
+
+- COMPUTER_ID=PC-B; branch codex/pc-b-procurement-request-heading-1006 from origin/develop. Reserve only procurement/workspace.tsx and this unit's status entries. Replace request UUID breadcrumb with request title and remove redundant UUID/version line from detail heading. Existing identifier, routing, permissions and records remain intact. No migration, dependency, API or IAM change. User authorizes push and merge after checks. No overlapping active workspace.tsx owner found; prior lifecycle task completed.
+
+- Validation: Web lint/typecheck and 7 existing focused tests passed; production build and PostgreSQL CI gates passed. PR #693; no authenticated browser QA because CUA initialization failed. Merge waits for remaining required CI gates.
+
 ## MESSAGE-PERSIAN-SAVE-1006 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch codex/pc-b-message-persian-save-1006 from origin/develop@4668679c. Reserve only Marketing durable message panel and focused presentation tests, bounded status entries. Translate visible message/schedule channels using existing canonical Persian channel labels; retain API enum values and handlers. Align icon-only save at bottom-left in RTL. Prior Marketing locks released; no active overlap. No backend/schema/migration/contract/dependency/runtime or data changes. Standing user authorization covers push/develop merge after verification.
