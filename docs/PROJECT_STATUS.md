@@ -4787,6 +4787,10 @@ PC-B condensed the dossier into four workflow groups and simplified selected-ord
 
 PR #683 merged into develop at `9993f3d4` after all CI gates passed. Source reservation released; no runtime deployment or authenticated browser visual QA.
 
+## 2026-10-06 — CAMPAIGN-OWNER-OPTIONAL-1006 — PC-B
+
+Campaign owner no longer displays a required marker in the form. Automatic authenticated-user ownership and server authorization remain unchanged. 11 focused tests, affected lint, full Web TypeScript and production build (55 pages) passed. No schema/migration/contract/dependency/runtime/data change or authenticated browser QA. PR #685 awaits exact-head CI before user-authorized develop merge; bounded locks released.
+
 
 ## 2026-10-06 — Procurement category add shortcut
 
