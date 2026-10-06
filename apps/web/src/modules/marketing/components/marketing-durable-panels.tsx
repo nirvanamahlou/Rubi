@@ -34,6 +34,12 @@ import {
   Textarea,
 } from '@/components/ui/form-controls';
 import { Badge, Card, EmptyState } from '@/components/ui/surfaces';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/overlays';
 import { marketingApi } from '../api/records-client';
 import { campaignChannelLabels } from '../model/marketing';
 import {
@@ -1135,6 +1141,37 @@ export function DurableContentPanel({
   const [editing, setEditing] = useState<MarketingAssetViewV1 | null>(null);
   const [viewing, setViewing] = useState(false);
   const [draft, setDraft] = useState<ContentDraft>(emptyContentDraft);
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState('');
+  const typeLabels: Record<string, string> = {
+    REGISTRATION: 'ثبت‌نام',
+    CONTACT: 'تماس',
+    SURVEY: 'نظرسنجی',
+    LEAD: 'جذب سرنخ',
+  };
+  const statusLabels: Record<string, string> = {
+    DRAFT: 'پیش‌نویس',
+    ACTIVE: 'فعال',
+    PAUSED: 'متوقف',
+    ARCHIVED: 'بایگانی‌شده',
+  };
+  const normalize = (value: string) =>
+    value.replace(/ي/g, 'ی').replace(/ك/g, 'ک').toLocaleLowerCase().trim();
+  const visibleRows = rows.filter((item) =>
+    normalize(
+      [
+        item.name,
+        item.payload.type ? typeLabels[String(item.payload.type)] : '',
+        statusLabels[item.status],
+        data.campaigns.find((campaign) => campaign.id === item.campaignId)
+          ?.name,
+        item.payload.domainUrl,
+        item.payload.targetUrl,
+      ].join(' '),
+    ).includes(normalize(search)),
+  );
   const labels: readonly [string, string, string, string] =
     tab === 'forms'
       ? ['صفحه فرود', 'نرخ تکمیل', 'تعداد پاسخ', '']
@@ -1146,7 +1183,13 @@ export function DurableContentPanel({
     value: ContentDraft[K],
   ) => setDraft((current) => ({ ...current, [key]: value }));
   const save = async () => {
-    if (!data.actor?.branchIds[0]) return;
+    if (busy) return;
+    if (!data.actor?.branchIds[0]) {
+      setFormError('دسترسی شعبه برای ثبت محتوا موجود نیست.');
+      return;
+    }
+    setBusy(true);
+    setFormError('');
     try {
       await marketingApi.saveAsset(contentInputFromDraft(tab, draft), {
         ...(editing ? { id: editing.id } : {}),
@@ -1155,212 +1198,374 @@ export function DurableContentPanel({
       setEditing(null);
       setViewing(false);
       setDraft(emptyContentDraft());
+      setOpen(false);
       await data.load();
       onNotice(
         'رکورد محتوا با نسخه پایدار ذخیره شد؛ انتشار وب‌سایت انجام نشد.',
       );
     } catch (reason) {
+      setFormError(
+        reason instanceof Error ? reason.message : 'ذخیره محتوا انجام نشد.',
+      );
       onNotice(
         reason instanceof Error ? reason.message : 'ذخیره محتوا انجام نشد.',
       );
+    } finally {
+      setBusy(false);
     }
   };
   const fill = (item: MarketingAssetViewV1, mode: 'view' | 'edit') => {
     setEditing(mode === 'edit' ? item : null);
     setViewing(mode === 'view');
     setDraft(contentDraftFromAsset(item));
+    setFormError('');
+    setOpen(true);
   };
   return (
-    <section className="grid gap-4">
+    <section className="grid gap-4 text-right" dir="rtl">
       <LoadState
         error={data.error}
         loading={data.loading}
         onRetry={() => void data.load()}
       />
-      <Card className="grid gap-4 p-5 md:grid-cols-2 xl:grid-cols-3">
-        <FormField id="content-record-name" label="نام" required>
-          <Input
-            disabled={viewing}
-            id="content-record-name"
-            value={draft.name}
-            onChange={(event) => updateDraft('name', event.target.value)}
-          />
-        </FormField>
-        <FormField id="content-record-type" label="نوع" required>
-          <Select
-            disabled={viewing}
-            value={draft.type}
-            onValueChange={(value) => updateDraft('type', value)}
-          >
-            <SelectTrigger id="content-record-type">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {['REGISTRATION', 'CONTACT', 'SURVEY', 'LEAD'].map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-        <FormField id="content-record-campaign" label="کمپین">
-          <Select
-            disabled={viewing}
-            value={draft.campaignId}
-            onValueChange={(value) => updateDraft('campaignId', value)}
-          >
-            <SelectTrigger id="content-record-campaign">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">بدون کمپین</SelectItem>
-              {data.campaigns.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-        <FormField id="content-record-status" label="وضعیت" required>
-          <Select
-            disabled={viewing}
-            value={draft.status}
-            onValueChange={(value) => updateDraft('status', value)}
-          >
-            <SelectTrigger id="content-record-status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED'].map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-        <FormField id="content-record-primary" label={labels[0]} required>
-          <Input
-            dir={tab === 'forms' ? 'rtl' : 'ltr'}
-            disabled={viewing}
-            id="content-record-primary"
-            value={draft.primary}
-            onChange={(event) => updateDraft('primary', event.target.value)}
-          />
-        </FormField>
-        <FormField id="content-record-secondary" label={labels[1]} required>
-          <Input
-            disabled={viewing}
-            id="content-record-secondary"
-            dir={tab === 'forms' ? 'ltr' : undefined}
-            value={draft.metricOne}
-            onChange={(event) => updateDraft('metricOne', event.target.value)}
-          />
-        </FormField>
-        <FormField id="content-record-metric-two" label={labels[2]} required>
-          <Input
-            disabled={viewing}
-            id="content-record-metric-two"
-            dir="ltr"
-            value={draft.metricTwo}
-            onChange={(event) => updateDraft('metricTwo', event.target.value)}
-          />
-        </FormField>
-        {labels[3] ? (
-          <FormField
-            id="content-record-metric-three"
-            label={labels[3]}
-            required
-          >
+      <Card className="flex flex-wrap items-end gap-4 p-5">
+        <div className="min-w-60 flex-1">
+          <FormField id="content-list-search" label="جست‌وجوی محتوا">
             <Input
-              disabled={viewing}
-              id="content-record-metric-three"
-              dir="ltr"
-              value={draft.metricThree}
-              onChange={(event) =>
-                updateDraft('metricThree', event.target.value)
-              }
+              id="content-list-search"
+              type="search"
+              placeholder="نام، کمپین یا نشانی را جست‌وجو کنید"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
             />
           </FormField>
-        ) : null}
-        {tab === 'landing' || tab === 'forms' ? (
-          <FormField
-            id="content-record-related"
-            label={tab === 'forms' ? 'صفحه فرود متصل' : 'فرم متصل'}
-          >
-            <Select
-              disabled={viewing}
-              value={draft.relatedId}
-              onValueChange={(value) => updateDraft('relatedId', value)}
-            >
-              <SelectTrigger id="content-record-related">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">بدون رکورد متصل</SelectItem>
-                {related.map((item) => (
-                  <SelectItem key={item.id} value={item.id}>
-                    {item.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
-        ) : null}
-        {tab === 'links' ? (
-          <FormField id="content-record-expiry" label="تاریخ انقضا">
-            <DatePicker
-              id="content-record-expiry"
-              includeTime
-              readOnly={viewing}
-              value={draft.expiresAt}
-              onChange={(value) => updateDraft('expiresAt', value)}
-            />
-          </FormField>
-        ) : null}
-        {!viewing ? (
-          <Button
-            aria-label="ذخیره رکورد محتوا"
-            className="md:col-span-2 xl:col-span-3"
-            onClick={() => void save()}
-            size="icon"
-            title="ذخیره"
-          >
-            <Save aria-hidden="true" className="size-4" />
-          </Button>
-        ) : null}
+        </div>
         <Button
-          aria-label="رکورد محتوای جدید"
+          aria-label="افزودن محتوا"
+          title="افزودن محتوا"
+          size="icon"
+          disabled={data.loading || !!data.error}
           onClick={() => {
             setEditing(null);
             setViewing(false);
             setDraft(emptyContentDraft());
+            setFormError('');
+            setOpen(true);
           }}
-          size="icon"
-          title="رکورد جدید"
-          type="button"
-          variant="outline"
         >
           <Plus aria-hidden="true" className="size-4" />
         </Button>
       </Card>
-      <AssetTable
-        items={rows}
-        onDelete={async (item) => {
-          try {
-            await marketingApi.deleteAsset(item.id, item.version);
-            await data.load();
-            onNotice('رکورد حذف شد.');
-          } catch (reason) {
-            onNotice(
-              reason instanceof Error ? reason.message : 'حذف انجام نشد.',
-            );
-          }
+      <Dialog
+        open={open}
+        onOpenChange={(value) => {
+          if (!busy) setOpen(value);
         }}
-        onSelect={fill}
-      />
+      >
+        <DialogContent
+          dir="rtl"
+          className="max-h-[85vh] max-w-3xl overflow-y-auto text-right"
+        >
+          <DialogTitle>
+            {viewing
+              ? 'مشاهده محتوا'
+              : editing
+                ? 'ویرایش محتوا'
+                : 'افزودن محتوا'}
+          </DialogTitle>
+          <DialogDescription>
+            {tab === 'forms'
+              ? 'فرم'
+              : tab === 'landing'
+                ? 'صفحه فرود'
+                : 'لینک رهگیری'}
+          </DialogDescription>
+          <form
+            className="grid gap-4 md:grid-cols-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void save();
+            }}
+          >
+            <fieldset disabled={busy} className="contents">
+              <FormField id="content-record-name" label="نام" required>
+                <Input
+                  disabled={viewing}
+                  id="content-record-name"
+                  required
+                  minLength={2}
+                  value={draft.name}
+                  onChange={(event) => updateDraft('name', event.target.value)}
+                />
+              </FormField>
+              {tab === 'forms' ? (
+                <FormField id="content-record-type" label="نوع" required>
+                  <Select
+                    disabled={viewing}
+                    value={draft.type}
+                    onValueChange={(value) => updateDraft('type', value)}
+                  >
+                    <SelectTrigger id="content-record-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['REGISTRATION', 'CONTACT', 'SURVEY', 'LEAD'].map(
+                        (value) => (
+                          <SelectItem key={value} value={value}>
+                            {typeLabels[value]}
+                          </SelectItem>
+                        ),
+                      )}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ) : null}
+              <FormField id="content-record-campaign" label="کمپین">
+                <Select
+                  disabled={viewing}
+                  value={draft.campaignId}
+                  onValueChange={(value) => updateDraft('campaignId', value)}
+                >
+                  <SelectTrigger id="content-record-campaign">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون کمپین</SelectItem>
+                    {data.campaigns.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField id="content-record-status" label="وضعیت" required>
+                <Select
+                  disabled={viewing}
+                  value={draft.status}
+                  onValueChange={(value) => updateDraft('status', value)}
+                >
+                  <SelectTrigger id="content-record-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED'].map((value) => (
+                      <SelectItem key={value} value={value}>
+                        {statusLabels[value]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField id="content-record-primary" label={labels[0]} required>
+                <Input
+                  dir={tab === 'forms' ? 'rtl' : 'ltr'}
+                  disabled={viewing}
+                  id="content-record-primary"
+                  required
+                  value={draft.primary}
+                  onChange={(event) =>
+                    updateDraft('primary', event.target.value)
+                  }
+                />
+              </FormField>
+              <FormField
+                id="content-record-secondary"
+                label={labels[1]}
+                required
+              >
+                <Input
+                  disabled={viewing}
+                  id="content-record-secondary"
+                  required
+                  dir={tab === 'forms' ? 'ltr' : undefined}
+                  value={draft.metricOne}
+                  onChange={(event) =>
+                    updateDraft('metricOne', event.target.value)
+                  }
+                />
+              </FormField>
+              <FormField
+                id="content-record-metric-two"
+                label={labels[2]}
+                required
+              >
+                <Input
+                  disabled={viewing}
+                  id="content-record-metric-two"
+                  required
+                  type="number"
+                  min={0}
+                  dir="ltr"
+                  value={draft.metricTwo}
+                  onChange={(event) =>
+                    updateDraft('metricTwo', event.target.value)
+                  }
+                />
+              </FormField>
+              {labels[3] ? (
+                <FormField
+                  id="content-record-metric-three"
+                  label={labels[3]}
+                  required
+                >
+                  <Input
+                    disabled={viewing}
+                    id="content-record-metric-three"
+                    dir="ltr"
+                    value={draft.metricThree}
+                    onChange={(event) =>
+                      updateDraft('metricThree', event.target.value)
+                    }
+                  />
+                </FormField>
+              ) : null}
+              {tab === 'landing' || tab === 'forms' ? (
+                <FormField
+                  id="content-record-related"
+                  label={tab === 'forms' ? 'صفحه فرود متصل' : 'فرم متصل'}
+                >
+                  <Select
+                    disabled={viewing}
+                    value={draft.relatedId}
+                    onValueChange={(value) => updateDraft('relatedId', value)}
+                  >
+                    <SelectTrigger id="content-record-related">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون رکورد متصل</SelectItem>
+                      {related.map((item) => (
+                        <SelectItem key={item.id} value={item.id}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ) : null}
+              {tab === 'links' ? (
+                <FormField id="content-record-expiry" label="تاریخ انقضا">
+                  <DatePicker
+                    id="content-record-expiry"
+                    includeTime
+                    readOnly={viewing}
+                    value={draft.expiresAt}
+                    onChange={(value) => updateDraft('expiresAt', value)}
+                  />
+                </FormField>
+              ) : null}
+              {!viewing ? (
+                <Button
+                  aria-label="ذخیره رکورد محتوا"
+                  className="justify-self-end md:col-span-2"
+                  disabled={busy}
+                  type="submit"
+                  size="icon"
+                  title="ذخیره"
+                >
+                  <Save aria-hidden="true" className="size-4" />
+                </Button>
+              ) : null}
+            </fieldset>
+            {formError ? (
+              <p role="alert" className="text-destructive md:col-span-2">
+                {formError}
+              </p>
+            ) : null}
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Card className="overflow-hidden">
+        <div className="border-b p-4">
+          {visibleRows.length.toLocaleString('fa-IR')} رکورد
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-sm">
+            <caption className="sr-only">فهرست محتوای مارکتینگ</caption>
+            <thead className="bg-muted/50">
+              <tr>
+                {[
+                  'نام',
+                  ...(tab === 'forms' ? ['نوع'] : []),
+                  'کمپین',
+                  labels[0],
+                  labels[1],
+                  labels[2],
+                  'وضعیت',
+                  'عملیات',
+                ].map((label) => (
+                  <th key={label} scope="col" className="p-4">
+                    {label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {visibleRows.map((item) => {
+                const row = contentDraftFromAsset(item);
+                return (
+                  <tr key={item.id} className="border-t hover:bg-muted/30">
+                    <td className="p-4 font-medium">{item.name}</td>
+                    {tab === 'forms' ? (
+                      <td className="p-4">{typeLabels[row.type] ?? 'سایر'}</td>
+                    ) : null}
+                    <td className="p-4">
+                      {data.campaigns.find(
+                        (campaign) => campaign.id === item.campaignId,
+                      )?.name ?? 'بدون کمپین'}
+                    </td>
+                    <td
+                      className="max-w-64 truncate p-4"
+                      title={row.primary}
+                      dir={tab === 'forms' ? 'rtl' : 'ltr'}
+                    >
+                      {row.primary || '—'}
+                    </td>
+                    <td className="p-4">{row.metricOne || '۰'}</td>
+                    <td className="p-4">{row.metricTwo || '۰'}</td>
+                    <td className="p-4">
+                      {statusLabels[item.status] ?? 'نامشخص'}
+                    </td>
+                    <td className="p-4">
+                      <AssetActions
+                        item={item}
+                        onView={() => fill(item, 'view')}
+                        onEdit={() => fill(item, 'edit')}
+                        onDelete={async () => {
+                          if (!window.confirm(`«${item.name}» حذف شود؟`))
+                            return;
+                          try {
+                            await marketingApi.deleteAsset(
+                              item.id,
+                              item.version,
+                            );
+                            await data.load();
+                            onNotice('رکورد حذف شد.');
+                          } catch (reason) {
+                            onNotice(
+                              reason instanceof Error
+                                ? reason.message
+                                : 'حذف انجام نشد.',
+                            );
+                          }
+                        }}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {!data.loading && !visibleRows.length ? (
+          <p className="p-8 text-center text-muted-foreground">
+            {search
+              ? 'رکوردی مطابق جست‌وجو پیدا نشد.'
+              : 'هنوز محتوایی ثبت نشده است.'}
+          </p>
+        ) : null}
+      </Card>
     </section>
   );
 }

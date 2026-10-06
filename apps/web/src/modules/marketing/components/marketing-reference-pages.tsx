@@ -12,7 +12,6 @@ import {
   Copy,
   Download,
   Eye,
-  FileImage,
   FileText,
   Filter,
   Gauge,
@@ -41,9 +40,9 @@ import type {
   DocumentDetailV1,
   DocumentOptionsResponseV1,
 } from '@nora/contracts';
-import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
+import { MarketingContentLibrary } from './marketing-content-library';
 import { MarketingActionButton as Button } from './marketing-action-button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -2871,13 +2870,6 @@ const contentTableRows = {
   ],
 } satisfies Record<string, readonly PreviewRow[]>;
 
-type MarketingAsset = {
-  title: string;
-  meta: string;
-  icon: LucideIcon;
-  documentId?: string;
-};
-
 const marketingAssetKinds = [
   ['campaign-banner', 'بنر کمپین'],
   ['brochure', 'بروشور'],
@@ -3149,8 +3141,7 @@ export function ContentPage({
   onOpen: (item: MarketingPreviewItem) => void;
   onNotice: NoticeHandler;
 }) {
-  const router = useRouter();
-  const [uploadedAssets, setUploadedAssets] = useState<MarketingAsset[]>([]);
+  const [libraryRevision, setLibraryRevision] = useState(0);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -3193,18 +3184,7 @@ export function ContentPage({
     try {
       const response = await documentsApi.upload(form);
       const document: DocumentDetailV1 = response.data;
-      const extension = document.currentVersion.extension
-        ? document.currentVersion.extension.toUpperCase()
-        : 'فایل';
-      setUploadedAssets((items) => [
-        {
-          title: document.title,
-          meta: `${extension} · v${document.version.toLocaleString('fa-IR')} · ${document.archiveCode}`,
-          icon: FileText,
-          documentId: document.id,
-        },
-        ...items,
-      ]);
+      setLibraryRevision((current) => current + 1);
       setUploadOpen(false);
       onNotice(
         `«${document.title}» بارگذاری شد و در بخش اسناد و فایل‌ها نیز ثبت شد.`,
@@ -3220,125 +3200,15 @@ export function ContentPage({
     }
   };
 
-  const downloadAsset = async (asset: MarketingAsset) => {
-    if (!asset.documentId) {
-      onNotice(`دانلود آزمایشی «${asset.title}» آماده شد.`);
-      return;
-    }
-    try {
-      const response = await documentsApi.download(asset.documentId);
-      const url = URL.createObjectURL(response.blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = asset.title;
-      anchor.click();
-      URL.revokeObjectURL(url);
-      onNotice(`دانلود «${asset.title}» آغاز شد.`);
-    } catch (caught) {
-      onNotice(
-        caught instanceof Error
-          ? caught.message
-          : 'دریافت فایل از اسناد ناموفق بود.',
-      );
-    }
-  };
-
   if (tab === 'library') {
-    const assets: readonly MarketingAsset[] = [
-      ...uploadedAssets,
-      { title: 'بنر اروپا — دسکتاپ', meta: 'تصویر · v4', icon: FileImage },
-      { title: 'ویدئوی هتل دبی', meta: 'ویدئو · v2', icon: FileImage },
-      { title: 'راهنمای سفر استانبول', meta: 'PDF · v3', icon: FileText },
-      { title: 'بنر نوروز سازمانی', meta: 'تصویر · v1', icon: FileImage },
-      { title: 'قالب ایمیل تابستان', meta: 'HTML · v5', icon: Mail },
-      { title: 'QR بروشور نمایشگاه', meta: 'تصویر · v2', icon: Target },
-      { title: 'لوگوی کمپین اروپا', meta: 'SVG · v1', icon: FileImage },
-      { title: 'فایل بودجه رسانه', meta: 'Excel · v6', icon: FileText },
-    ];
     return (
       <>
-        <Panel
-          actions={
-            <Button
-              aria-label={
-                loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'
-              }
-              title={loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'}
-              size="icon"
-              disabled={loadingOptions}
-              onClick={() => void openUpload()}
-            >
-              <Upload aria-hidden="true" className="size-4" />
-            </Button>
-          }
-          title="کتابخانه محتوا"
-        >
-          <div className="grid gap-4 p-5 sm:grid-cols-2 xl:grid-cols-4">
-            {assets.map(({ title, meta, icon: Icon, documentId }, index) => (
-              <Card className="overflow-hidden" key={documentId ?? title}>
-                <div className="grid h-28 place-items-center bg-gradient-to-br from-blue-50 to-violet-50 dark:from-blue-950/40 dark:to-violet-950/40">
-                  <Icon aria-hidden="true" className="size-10 text-primary" />
-                </div>
-                <div className="p-4">
-                  <strong>{title}</strong>
-                  <small className="mt-1 block text-muted-foreground">
-                    {meta} · تأییدشده
-                  </small>
-                  <div className="mt-3 flex gap-1">
-                    <Button
-                      aria-label={`مشاهده ${title}`}
-                      onClick={() =>
-                        documentId
-                          ? router.push(
-                              `/documents?document=${encodeURIComponent(documentId)}`,
-                            )
-                          : onOpen({
-                              id: `preview-asset-${index}`,
-                              section: 'content',
-                              tab,
-                              title,
-                              description: meta,
-                              status: 'تأییدشده',
-                              meta,
-                              updatedAt: '2026-09-03T08:30:00.000Z',
-                            })
-                      }
-                      size="icon"
-                      variant="outline"
-                    >
-                      <Eye aria-hidden="true" className="size-4" />
-                    </Button>
-                    <Button
-                      aria-label={`دانلود ${title}`}
-                      onClick={() =>
-                        void downloadAsset({
-                          title,
-                          meta,
-                          icon: Icon,
-                          ...(documentId ? { documentId } : {}),
-                        })
-                      }
-                      size="icon"
-                      variant="outline"
-                    >
-                      <Download aria-hidden="true" className="size-4" />
-                    </Button>
-                    <Button
-                      aria-label={`غیرفعال‌سازی ${title}`}
-                      className="border-destructive/35 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => onNotice(`«${title}» غیرفعال شد.`)}
-                      size="icon"
-                      title="غیرفعال‌سازی"
-                      variant="outline"
-                    >
-                      <Power aria-hidden="true" className="size-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </Panel>
+        <MarketingContentLibrary
+          revision={libraryRevision}
+          adding={loadingOptions}
+          onAdd={() => void openUpload()}
+          onNotice={onNotice}
+        />
         {uploadOpen && documentOptions ? (
           <MarketingAssetUploadDialog
             error={uploadError}
