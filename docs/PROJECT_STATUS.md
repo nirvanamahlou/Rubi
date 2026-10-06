@@ -4729,6 +4729,9 @@ Ticket Catalog consumes Reservations actual ticket-document issuance through a n
 
 ISSUED-TICKET-EXPORT-1005 validation: scoped ESLint, API/Web typecheck, API build and 55-page Web production build pass after refreshing existing generated artifacts. Focused actual-issuance/date/filter/workbook/security/UI tests and real synthetic PDF rendering pass. PR665 exact-head full quality, test, build and PostgreSQL CI gate develop merge. No operational data or local runtime change.
 
+## 2026-10-06 — TICKET-DUPLICATES-1006 — PC-A
+
+Read-only local audit found seven identical50-seat Economy flight4512 departures on2026-10-09, created under different catalog request keys; six were retained in the shared test fixture. Publication only deduplicated actor/request keys, and local backfill compared mutable capacity/optional null/default fields. Adds transaction-scoped branch identity protection for publication/revision, semantic flight matching for backfill, exact unused-copy archival migration and archived fixture copies. Preserve distinct cabins/dates/supplies and all referenced/financial history (archived inventory does not remove Finance records). API177/Web183 tests, fixture safety8, API/Web lint/typecheck/build and Web55-route generation pass. Disposable PostgreSQL proof passed concurrent keys/same-key replay and safe archival with price retention; Final committed SQL passed a fresh 121-migration disposable PostgreSQL deploy and both concurrency/archive proof tests; exact-head CI gates the explicitly authorized develop merge. Read-only local repair preview identifies six redundant inventory copies, keeping one canonical offer. No operational database migration or runtime rollout yet.
 
 ## 2026-10-06 — Sidebar groups start closed — PC-A
 
