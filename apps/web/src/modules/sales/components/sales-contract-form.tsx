@@ -17,6 +17,7 @@ import {
 } from '../model/sales-flight-range';
 import { moneyDecimal, moneyUnits, passengerOverSixty } from '@nora/contracts';
 import { PassengerCountField } from './passenger-count-field';
+import { PassengerAgeField } from './passenger-age-field';
 import { ContractOutputButton } from './contract-output';
 
 import { AlertTriangle, Check, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -1090,70 +1091,59 @@ export function SalesContractForm() {
                 onChange={(value) => updatePassengerCount('infants', value)}
               />
             </div>
-            <p className="rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
-              {Array.from({ length: passengerCounts.children }, (_, index) => (
-                <label className="mr-3 inline-block" key={`child-${index}`}>
-                  سن / ردهٔ سنی کودک {index + 1}
-                  <select
-                    aria-label={`سن کودک ${index + 1}`}
-                    className="m-2 rounded border bg-surface p-2"
-                    value={state.childAges?.[index] ?? ''}
-                    onChange={(e) =>
-                      patchState({
-                        childAges: Array.from(
-                          { length: passengerCounts.children },
-                          (_, i) =>
-                            i === index
-                              ? e.target.value === ''
-                                ? null
-                                : Number(e.target.value)
-                              : (state.childAges?.[i] ?? null),
-                        ),
-                      })
-                    }
-                  >
-                    <option value="">انتخاب سن</option>
-                    {Array.from({ length: 10 }, (_, i) => i + 2).map((age) => (
-                      <option key={age} value={age}>
-                        {age} تا کمتر از {age + 1} سال
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              ))}
-              {state.serviceKinds.includes('HOTEL') &&
-                Array.from({ length: passengerCounts.infants }, (_, index) => (
-                  <label className="mr-3 inline-block" key={`infant-${index}`}>
-                    سن نوزاد {index + 1}
-                    <select
-                      aria-label={`سن نوزاد ${index + 1}`}
-                      className="m-2 rounded border bg-surface p-2"
-                      value={state.infantAges?.[index] ?? ''}
-                      onChange={(e) =>
+            <div className="space-y-3 rounded-xl bg-sky-50 p-4 dark:bg-sky-950/40">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from(
+                  { length: passengerCounts.children },
+                  (_, index) => (
+                    <PassengerAgeField
+                      key={`child-${index}`}
+                      label={`سن کودک ${index + 1}`}
+                      value={state.childAges?.[index] ?? null}
+                      onChange={(age) =>
                         patchState({
-                          infantAges: Array.from(
-                            { length: passengerCounts.infants },
+                          childAges: Array.from(
+                            { length: passengerCounts.children },
                             (_, i) =>
                               i === index
-                                ? e.target.value === ''
-                                  ? null
-                                  : Number(e.target.value)
-                                : (state.infantAges?.[i] ?? null),
+                                ? age
+                                : (state.childAges?.[i] ?? null),
                           ),
                         })
                       }
-                    >
-                      <option value="">انتخاب سن</option>
-                      <option value="0">کمتر از ۱ سال</option>
-                      <option value="1">۱ تا کمتر از ۲ سال</option>
-                    </select>
-                  </label>
-                ))}
-              <br />
-              نوزاد لازم نیست در تعداد صندلی بلیط شمرده شود؛ فقط بزرگسال و کودک
-              از ظرفیت بلیط کم می‌شوند. هر نوزاد باید همراه حداقل یک بزرگسال
-              باشد.
-            </p>
+                    />
+                  ),
+                )}
+                {state.serviceKinds.includes('HOTEL') &&
+                  Array.from(
+                    { length: passengerCounts.infants },
+                    (_, index) => (
+                      <PassengerAgeField
+                        key={`infant-${index}`}
+                        infant
+                        label={`سن نوزاد ${index + 1}`}
+                        value={state.infantAges?.[index] ?? null}
+                        onChange={(age) =>
+                          patchState({
+                            infantAges: Array.from(
+                              { length: passengerCounts.infants },
+                              (_, i) =>
+                                i === index
+                                  ? age
+                                  : (state.infantAges?.[i] ?? null),
+                            ),
+                          })
+                        }
+                      />
+                    ),
+                  )}
+              </div>
+              <p className="text-xs text-sky-900 dark:text-sky-200">
+                نوزاد لازم نیست در تعداد صندلی بلیط شمرده شود؛ فقط بزرگسال و
+                کودک از ظرفیت بلیط کم می‌شوند. هر نوزاد باید همراه حداقل یک
+                بزرگسال باشد.
+              </p>
+            </div>
           </section>
         ) : null}
         {step === 0 && state.serviceKinds.includes('FLIGHT') ? (

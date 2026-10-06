@@ -1,3 +1,9 @@
+## SALES-PASSENGER-AGE-THEME-1006 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; bounded follow-up on codex/pc-a-hotel-occupancy-import-preview-1006 / PR671. Reserve Sales age controls/component/tests and own ledger/status entries only. Replace browser-native child/infant selects with existing themed accessible SearchCombobox, enlarge controls and responsive layout. Keep exact age bands, null/zero semantics, pricing and payload unchanged. No shared UI/API/contract/schema/dependency changes. Verify and restart only owned preview3210; no live/develop merge.
+
+Delivered shared themed searchable age fields with48px controls, larger text and responsive1/2/3-column grid. Canonical child2..11 and infant0..1 bands, explicit clear/null and infant zero preserved; pricing/validation/payload untouched. All333 Sales tests pass (one existing skip), scoped ESLint and Web typecheck pass; production build gates owned preview restart. No authenticated UI flow, operational data or live runtime change. Bounded locks release with candidate commit.
+
 ## HOTEL-OCCUPANCY-IMPORT-READER-1006 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; continuation on codex/pc-a-hotel-occupancy-import-preview-1006 / PR671. Reserve only Reservations occupancy-import reader/panel/preview/tests and own status/task entries. Read named Nora output in multi-sheet XLSX via workbook relationships; distinguish file failures from row failures, add bounded searchable read-only counts/rows preview. No dependency, API, shared contract, schema, migration or operational data changes. Restart only owned preview Web3210 after verification; no actual import or develop merge.
