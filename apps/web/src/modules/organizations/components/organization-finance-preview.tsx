@@ -98,10 +98,6 @@ export function OrganizationFinancePreview({
       <header className="panel-head">
         <div>
           <h2 className="panel-title">{titles[current]}</h2>
-          <p className="panel-note">
-            داده‌های این جدول از قراردادها و پرداخت‌های فروش مرتبط با شناسه همین
-            سازمان دریافت می‌شوند.
-          </p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="field">
@@ -132,6 +128,7 @@ export function OrganizationFinancePreview({
             key={`${organization.id}:${current}`}
             organization={organization}
             folderLabel={`اسناد مالی ${titles[current]}`}
+            compact
             toolbar={
               <Button
                 size="sm"
@@ -331,10 +328,6 @@ export function OrganizationFinancePreview({
                   : 'داده‌ای از ماژول فروش برای این بخش و فیلترها ثبت نشده است.'}
               </p>
             ) : null}
-            <p className="panel-note">
-              دفترکل، فاکتور رسمی و مغایرت مالی پس از انتشار API عمومی ماژول
-              Finance نمایش داده می‌شود؛ این جدول جایگزین ثبت حسابداری نیست.
-            </p>
           </>
         ) : null}
       </div>
