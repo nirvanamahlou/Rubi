@@ -3,6 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { RecordCard, RecordPreviewButton } from './record-details';
 
 describe('Persisted procurement record details', () => {
+  it('keeps full text titles visible instead of applying icon-only action styling', () => {
+    const title =
+      'درخواست تجهیزات کامل شعبه مرکزی برای کارشناسان فروش و پشتیبانی';
+    const html = renderToStaticMarkup(
+      <RecordPreviewButton record={{ title }} title={title} variant="ghost">
+        {title}
+      </RecordPreviewButton>,
+    );
+    expect(html).toContain(`aria-label="جزئیات ${title}"`);
+    expect(html).toContain(title);
+    expect(html).not.toContain('text-[0px]');
+    expect(html).not.toContain('size-10');
+  });
   it('shows the saved order tracking and exact archived document version', () => {
     const html = renderToStaticMarkup(
       <RecordCard

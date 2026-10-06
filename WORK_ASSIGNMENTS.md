@@ -5818,6 +5818,12 @@ SALES-PASSENGER-PRICE-1006 validation: Sales Web329 pass/one skip; focused Web22
 
 - Full Marketing Web suite passes 80 tests, including Persian checkbox labels and final RTL left-aligned icon footer in immediate/scheduled forms. First test invocation used the repository root; the existing cwd-dependent contract test was rerun successfully from apps/web. TypeScript, affected lint, production build and exact-head CI gate merge. Bounded locks released with candidate commit; no authenticated browser or runtime deployment claimed.
 
+## PROCUREMENT-RECORD-LISTS-1006 — PC-B — IMPLEMENTED
+
+- COMPUTER_ID=PC-B; branch codex/pc-b-procurement-record-lists-1006 from origin/develop. Reserve Procurement internal-sections.tsx, record-details.tsx, supplier-logo.tsx, workspace.tsx and focused tests. Remove disabled sidebar previews, move creation to list header with scoped request selection dialog, preserve existing permissions/forms, show full titles and authenticated supplier logos. No schema/API/dependency/IAM or data changes. Prior heading PR #693 merged; no overlapping active file owner found. User authorizes push and merge after gates.
+
+- Validation: 8 focused tests, Web typecheck and changed-file lint pass. Local production build passed; full CI gates required before merge. One concurrent test timeout reproduced only under build contention; focused rerun passed. No live browser verification (CUA initialization unavailable).
+
 ## CONTENT-LIST-REDESIGN-1006 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch codex/pc-b-content-list-redesign-1006 from origin/develop@6f507b71. Reserve Marketing durable content/reference library panels, module-local list helpers/components/tests and bounded status docs. List-first RTL layout: icon add, search, tab-specific persisted table and icon view/edit/delete; Persian type/status choices; modal forms retain campaign/related-record values, CAS and API validation. Library consumes existing public Documents contract and retains guarded upload/edit/archive policy. No Documents implementation, shared contract/schema/migration/dependency/IAM/runtime changes. Previous Marketing reservations released; no overlap found. User explicitly authorizes push/develop merge after checks.

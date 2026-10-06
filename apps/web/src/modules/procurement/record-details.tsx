@@ -183,7 +183,7 @@ export function RecordPreviewButton({
           size={children ? 'sm' : 'icon'}
           variant={variant}
           className={className}
-          aria-label={`مشاهده ${label}`}
+          aria-label={`${children ? 'جزئیات' : 'مشاهده'} ${label}`}
           title={`مشاهده ${label}`}
         >
           {children ?? <Eye aria-hidden="true" className="size-4" />}

@@ -671,8 +671,8 @@ function WorkspaceState({
                     key={row.id}
                     className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold">
+                    <div className="min-w-0 max-w-full flex-1">
+                      <p className="whitespace-normal break-words font-semibold">
                         {row.draft.title || 'درخواست بدون عنوان'}
                       </p>
                       <p
