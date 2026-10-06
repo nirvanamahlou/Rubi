@@ -36,12 +36,10 @@ import { DraftForm, selectClass } from './draft-form';
 import { statusLabels } from './model';
 import { OperationForm } from './operation-form';
 import { InternalSections } from './internal-sections';
+import { RecordCard, DocumentLinks, recordData } from './record-details';
 import { ProcurementOwnerPicker } from './owner-picker';
 import { ProcurementExportPanel } from './export-panel';
-import {
-  formatProcurementDate,
-  formatProcurementRecordValue,
-} from './presentation';
+import { formatProcurementDate } from './presentation';
 import {
   filterSampleRequests,
   sampleRequests,
@@ -104,7 +102,7 @@ const sectionKeys = [
 ] as const;
 function sectionIndex(value: string | null): number {
   const index = sectionKeys.findIndex((key) => key === value);
-  return index < 0 ? 0 : index;
+  return index < 0 || index === 7 ? 0 : index;
 }
 const kinds = [
   ['quotations', 'استعلام‌ها'],
@@ -313,16 +311,7 @@ function WorkspaceState({
     retry: false,
   });
   const baselineList = useQuery({
-    queryKey: [
-      'procurement',
-      'requests',
-      1,
-      '',
-      '',
-      queryQueue,
-      '',
-      '',
-    ],
+    queryKey: ['procurement', 'requests', 1, '', '', queryQueue, '', ''],
     queryFn: () =>
       procurementApi.list(
         new URLSearchParams({
@@ -578,7 +567,7 @@ function WorkspaceState({
             ))}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {([1, 3, 5, 7] as const).map((index) => {
+            {([1, 3, 5] as const).map((index) => {
               const tone = areaTone[index];
               const Icon = tone.icon;
               return (
@@ -618,8 +607,7 @@ function WorkspaceState({
           </div>
           <Card className="overflow-hidden border-blue-300/70 dark:border-blue-400/25">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-gradient-to-l from-blue-400/15 to-transparent p-5 dark:from-blue-400/8">
-              <h2 className="font-bold">پیگیری‌های من</h2>
-              <div className="grid w-full items-end gap-3 sm:grid-cols-2 lg:w-auto lg:grid-cols-[minmax(150px,220px)_minmax(130px,170px)_minmax(280px,330px)] lg:[&>fieldset]:col-span-1">
+              <div className="grid w-full items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(180px,1fr)_minmax(140px,200px)_minmax(280px,330px)] lg:[&>fieldset]:col-span-1">
                 <FormField id="proc-home-search" label="شماره یا عنوان">
                   <Input
                     id="proc-home-search"
@@ -809,7 +797,7 @@ function RequestDetail({
   const editable = ['DRAFT', 'CHANGES_REQUESTED'].includes(request.status);
   return (
     <div className="space-y-5">
-      <Card className="space-y-5 p-6">
+      <Card className="overflow-hidden border-primary/15 p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-sm text-muted-foreground">
@@ -821,7 +809,7 @@ function RequestDetail({
           </div>
           <Badge>{statusLabels[request.status]}</Badge>
         </div>
-        <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
           {[
             [
               'برآورد',
@@ -840,7 +828,10 @@ function RequestDetail({
             ['مسئول', request.ownerUserId ?? 'بدون مسئول'],
             ['اقدام بعدی', nextAction[request.status]],
           ].map(([label, value]) => (
-            <div key={label}>
+            <div
+              key={label}
+              className="rounded-xl border border-border bg-muted/20 p-3"
+            >
               <dt className="text-muted-foreground">{label}</dt>
               <dd className="mt-1 break-words leading-6">{value}</dd>
             </div>
@@ -863,7 +854,10 @@ function RequestDetail({
         {error && (
           <Alert tone="error" title="عملیات انجام نشد" description={error} />
         )}
-        <fieldset disabled={busy} className="space-y-4">
+        <fieldset
+          disabled={busy}
+          className="mt-5 space-y-4 rounded-xl border border-primary/15 bg-primary/5 p-4"
+        >
           <legend className="mb-3 font-semibold">اقدامات پرونده</legend>
           <FormField id="proc-action-reason" label="دلیل تصمیم یا لغو">
             <Textarea
@@ -1065,131 +1059,6 @@ function RequestDetail({
     </div>
   );
 }
-const recordLabels: Record<string, string> = {
-  number: 'شماره',
-  status: 'وضعیت',
-  action: 'عملیات',
-  reason: 'دلیل',
-  createdAt: 'زمان ثبت',
-  updatedAt: 'آخرین تغییر',
-  amount: 'مبلغ',
-  totalAmount: 'مبلغ کل',
-  currencyCode: 'ارز',
-  supplierId: 'تأمین‌کننده',
-  supplierName: 'نام تأمین‌کننده',
-  orderId: 'سفارش',
-  invoiceNumber: 'شماره فاکتور',
-  dueAt: 'سررسید',
-  expectedAt: 'موعد تحویل',
-  version: 'نسخه',
-  quantity: 'مقدار',
-  description: 'شرح',
-  deliveryAt: 'تاریخ تحویل',
-  paymentTerms: 'شرایط پرداخت',
-  warranty: 'ضمانت',
-  qualityNote: 'ارزیابی کیفیت',
-  validUntil: 'اعتبار پیشنهاد',
-  quotedAt: 'تاریخ پیشنهاد',
-  acceptedQuantity: 'مقدار پذیرفته‌شده',
-  rejectedQuantity: 'مقدار ردشده',
-  unitPrice: 'قیمت واحد',
-  taxAmount: 'مالیات',
-  discountAmount: 'تخفیف',
-  extraCostAmount: 'هزینه جانبی',
-  resolution: 'نتیجه رسیدگی',
-  evidence: 'شواهد پذیرش',
-  receivedAt: 'تاریخ دریافت',
-  acceptedAt: 'تاریخ پذیرش',
-  returnedAt: 'تاریخ مرجوعی',
-  receivedDelta: 'تغییر مقدار دریافت',
-  acceptedDelta: 'تغییر مقدار پذیرفته‌شده',
-  rejectedDelta: 'تغییر مقدار ردشده',
-  disposition: 'مبدأ مقدار مرجوعی',
-};
-function recordData(record: Record<string, unknown>) {
-  return {
-    ...(typeof record.data === 'object' && record.data !== null
-      ? record.data
-      : {}),
-    ...record,
-  } as Record<string, unknown>;
-}
-function RecordCard({ record }: { record: Record<string, unknown> }) {
-  const entries = Object.entries(recordData(record)).filter(
-    ([key, value]) =>
-      key in recordLabels &&
-      !(key === 'supplierId' && recordData(record).supplierName) &&
-      value !== null &&
-      typeof value !== 'object',
-  );
-  return (
-    <div className="rounded-xl border border-border p-4">
-      <dl className="grid gap-3 text-sm sm:grid-cols-3">
-        {entries.map(([key, value]) => (
-          <div key={key}>
-            <dt className="text-muted-foreground">{recordLabels[key]}</dt>
-            <dd className="mt-1 break-words">
-              {formatProcurementRecordValue(key, value)}
-            </dd>
-          </div>
-        ))}
-      </dl>
-      {!entries.length && <p className="text-sm">رکورد ثبت‌شده</p>}
-      <DocumentLinks documents={recordData(record).documents} />
-      {Array.isArray(record.lines) && record.lines.length > 0 && (
-        <details className="mt-4 rounded-xl bg-muted/30 p-3">
-          <summary className="cursor-pointer text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            اقلام و مبالغ ({record.lines.length.toLocaleString('fa-IR')} ردیف)
-          </summary>
-          <div className="mt-3 space-y-3">
-            {(record.lines as Record<string, unknown>[]).map((line, index) => (
-              <RecordCard key={String(line.id ?? index)} record={line} />
-            ))}
-          </div>
-        </details>
-      )}
-    </div>
-  );
-}
-function DocumentLinks({ documents }: { documents: unknown }) {
-  if (!Array.isArray(documents)) return null;
-  const references = documents.filter(
-    (value): value is { id: string; versionId: string } =>
-      value !== null &&
-      typeof value === 'object' &&
-      typeof value.id === 'string' &&
-      typeof value.versionId === 'string',
-  );
-  if (!references.length) return null;
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">
-        مدرک در آرشیو اسناد باز می‌شود؛ نسخه مرجع این پرونده کنار هر پیوند درج
-        شده است.
-      </p>
-      {references.map((reference, index) => (
-        <div
-          key={`${reference.id}-${reference.versionId}`}
-          className="flex flex-wrap items-center gap-2"
-        >
-          <Button asChild variant="outline" size="sm">
-            <a
-              href={`/documents?document=${encodeURIComponent(reference.id)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              مشاهده مدرک {(index + 1).toLocaleString('fa-IR')} (زبانه جدید)
-            </a>
-          </Button>
-          <span className="break-all text-xs text-muted-foreground">
-            نسخه مرجع: {reference.versionId}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function QuotationComparison({
   records,
 }: {

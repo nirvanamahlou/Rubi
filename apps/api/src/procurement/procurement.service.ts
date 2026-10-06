@@ -362,7 +362,7 @@ export class ProcurementService {
     if (section === 'orders')
       and.push({
         OR: [
-          { status: 'SOURCING' },
+          { status: { in: ['APPROVED', 'SOURCING'] } },
           { procurementOrderRequestidRows: { some: {} } },
         ],
       });

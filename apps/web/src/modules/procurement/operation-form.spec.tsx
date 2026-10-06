@@ -4,7 +4,11 @@ import { describe, expect, it } from 'vitest';
 import type { ProcurementRequestV1 } from '@nora/contracts';
 import type { Bootstrap } from './api';
 import { emptyDraft } from './model';
-import { OperationForm } from './operation-form';
+import {
+  OperationForm,
+  orderAmendmentFields,
+  recordLabel,
+} from './operation-form';
 
 const request: ProcurementRequestV1 = {
   id: 'c1524f14-1b48-4ce4-b276-c2e2be0379db',
@@ -47,6 +51,43 @@ const bootstrap = (permissions: Bootstrap['permissions']): Bootstrap => ({
 });
 
 describe('Procurement lifecycle operation forms', () => {
+  it('loads the selected order currency and supplier instead of draft defaults when amending', () => {
+    expect(
+      orderAmendmentFields({
+        id: 'order-1',
+        payload: { supplierId: 'supplier-2', currencyCode: 'USD' },
+      }),
+    ).toEqual({ supplierId: 'supplier-2', currencyCode: 'USD' });
+    expect(orderAmendmentFields({})).toEqual({
+      supplierId: '',
+      currencyCode: '',
+    });
+  });
+  it('identifies operational choices using their persisted payload and current status', () => {
+    const label = recordLabel({
+      status: 'ISSUED',
+      payload: { number: 'PO-100', currencyCode: 'USD', totalAmount: '480' },
+    });
+    expect(label).toContain('PO-100');
+    expect(label).toContain('صادرشده');
+    expect(label).toContain('480 USD');
+  });
+  it('offers order tracking and archived document upload alongside the approved selection', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <OperationForm
+          request={request}
+          kind="orders"
+          bootstrap={bootstrap(['procurement.order.manage'])}
+          onChanged={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(html).toContain('انتخاب ثبت‌شده');
+    expect(html).toContain('کد پیگیری');
+    expect(html).toContain('بارگذاری فایل سند سفارش');
+    expect(html).toContain('اسناد و فایل‌ها');
+  });
   it('makes the receiver form available and explains versioned corrections', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>

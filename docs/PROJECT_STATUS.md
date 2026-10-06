@@ -4733,3 +4733,7 @@ ISSUED-TICKET-EXPORT-1005 validation: scoped ESLint, API/Web typecheck, API buil
 ## 2026-10-06 — Sidebar groups start closed — PC-A
 
 All desktop/mobile sidebar group IDs initialize closed, including groups made visible after asynchronous permission loading. Manual open/close remains route-independent. No access, navigation destination, API or schema changes. User authorizes develop merge; targeted collapse regression, Web lint/typecheck/build and exact-head CI gate merge.
+
+## 2026-10-05 — PROCUREMENT-DOCX-1005 — PC-B — IN_PROGRESS
+
+Ordered DOCX implementation is in progress on `codex/pc-b-procurement-docx-1005`. Request fields/header and record layout simplified; requester/unit/need text made optional without changing audit identity or scope checks. Supplier logo display uses existing owner preview controls, supplier edit retains its version, and operational records display persisted fields/lines/documents. Orders expose approved requests, supplier/selection consistency, tracking and archived attachments persisted in order snapshots. Web41 tests and API57 rules tests plus34 disposable PostgreSQL18 service cases passed; static checks/API build passed, final Web production build passed (55 routes). Real browser QA unavailable. Company/branch and recipient authority decisions remain open, category catalog and full per-operation edit/delete flows are incomplete. No DOCX PR/merge or operational rollout; detailed ordered status in `docs/tasks/PROCUREMENT-DOCX-1005.md`.

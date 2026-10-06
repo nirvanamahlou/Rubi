@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ClipboardList, FileText, Package, ShoppingBag } from 'lucide-react';
+import { ClipboardList, Package } from 'lucide-react';
 import type {
-  DocumentListItemV1,
   ProcurementDraftV1,
   ProcurementListV1,
   ProcurementRequestV1,
@@ -13,7 +12,6 @@ import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { cleanSalesMoney, MoneyInput } from '@/components/ui/money-input';
 import { Alert, Card } from '@/components/ui/surfaces';
-import { documentsApi } from '@/modules/documents/api/client';
 import {
   ProcurementApiError,
   procurementApi,
@@ -57,9 +55,7 @@ export function validatePublishDraft(
 ): PublishDraftIssue | null {
   const required: readonly [string | null | undefined, string, string][] = [
     [draft.title, 'proc-title', 'عنوان درخواست را وارد کنید.'],
-    [draft.unitId, 'proc-unit', 'واحد سازمانی را انتخاب کنید.'],
     [draft.category, 'proc-category', 'دسته خرید را انتخاب کنید.'],
-    [draft.needReason, 'proc-needReason', 'شرح نیاز را وارد کنید.'],
     [draft.requiredAt, 'proc-requiredAt', 'تاریخ نیاز را انتخاب کنید.'],
     [draft.currencyCode, 'proc-currency', 'ارز را انتخاب کنید.'],
   ];
@@ -76,7 +72,7 @@ export function validatePublishDraft(
       message: 'حداقل یک کالا یا خدمت اضافه کنید.',
     };
   for (const item of draft.items) {
-    if (!item.description?.trim())
+    if (item.kind === 'SERVICE' && !item.description?.trim())
       return {
         controlId: `${item.id}-description`,
         message: 'شرح همهٔ اقلام و خدمات را وارد کنید.',
@@ -225,35 +221,14 @@ export function DraftForm({
   >({});
   const [error, setError] = useState('');
   const [errorTitle, setErrorTitle] = useState('ذخیره انجام نشد');
-  const [documents, setDocuments] = useState<readonly DocumentListItemV1[]>([]);
-  const [documentError, setDocumentError] = useState('');
-  const [documentSearch, setDocumentSearch] = useState('');
-  const [documentsLoaded, setDocumentsLoaded] = useState(false);
-  const [documentsBusy, setDocumentsBusy] = useState(false);
   const identity = useRef<ReturnType<typeof retryIdentity> | null>(null);
   const busyRef = useRef(false);
-  const requesterIsRequired = !baseRequest && !requesterEmployeeId;
-
   function focusControl(controlId: string) {
     requestAnimationFrame(() => {
       const control = document.getElementById(controlId);
       control?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       control?.focus();
     });
-  }
-
-  function showRequesterRequired(mode: 'DRAFT' | 'PUBLISH') {
-    setErrorTitle(
-      mode === 'PUBLISH'
-        ? 'تأیید و انتشار انجام نشد'
-        : 'ذخیره پیش‌نویس انجام نشد',
-    );
-    setError(
-      mode === 'PUBLISH'
-        ? 'برای انتشار، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.'
-        : 'برای ثبت پیش‌نویس، درخواست‌کننده را از فهرست کارکنان فعال انتخاب کنید.',
-    );
-    focusControl('proc-requester');
   }
 
   function update<K extends keyof ProcurementDraftV1>(
@@ -318,6 +293,18 @@ export function DraftForm({
     return (
       <FormField id={`proc-${key}`} label={label} required={required}>
         <div className="space-y-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setCustomFields((previous) => ({ ...previous, [key]: true }));
+              update(key, '');
+              focusControl(`proc-new-${key}`);
+            }}
+          >
+            افزودن دسته خرید
+          </Button>
           <ProcurementSelect
             id={`proc-${key}`}
             required={required}
@@ -342,6 +329,7 @@ export function DraftForm({
           {(custom || existing.length === 0) && (
             <div className="space-y-1.5">
               <Input
+                id={`proc-new-${key}`}
                 aria-label={`مقدار تازهٔ ${label}`}
                 aria-required={required}
                 value={draft[key]}
@@ -433,10 +421,6 @@ export function DraftForm({
   };
   async function save(mode: 'DRAFT' | 'PUBLISH' = 'DRAFT') {
     if (busyRef.current) return;
-    if (requesterIsRequired) {
-      showRequesterRequired(mode);
-      return;
-    }
     if (mode === 'PUBLISH') {
       const issue = validatePublishDraft(draft);
       if (issue) {
@@ -499,27 +483,6 @@ export function DraftForm({
     latest && baseRequest
       ? reconcileDraft(baseRequest.draft, draft, latest.draft)
       : null;
-  async function loadDocuments() {
-    setDocumentsBusy(true);
-    setDocumentError('');
-    try {
-      const result = await documentsApi.list({
-        page: 1,
-        pageSize: 20,
-        domain: 'PROCUREMENT',
-        ...(draft.branchId ? { branchId: draft.branchId } : {}),
-        search: documentSearch,
-      });
-      setDocuments(result.data);
-      setDocumentsLoaded(true);
-    } catch (caught) {
-      setDocumentError(
-        caught instanceof Error ? caught.message : 'اسناد در دسترس نیست.',
-      );
-    } finally {
-      setDocumentsBusy(false);
-    }
-  }
   return (
     <Card className="overflow-hidden p-5 sm:p-7">
       <form
@@ -529,30 +492,9 @@ export function DraftForm({
         }}
         className="space-y-7"
       >
-        <div className="-mx-5 -mt-5 flex flex-wrap items-center gap-4 border-b border-primary/15 bg-gradient-to-l from-primary/10 via-primary/5 to-surface px-5 py-5 sm:-mx-7 sm:-mt-7 sm:px-7 sm:py-6">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
-            <ShoppingBag aria-hidden="true" className="size-6" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2
-              ref={heading}
-              tabIndex={-1}
-              className="break-words text-xl font-extrabold tracking-tight text-foreground sm:text-2xl"
-            >
-              {request ? `ویرایش ${request.number}` : 'درخواست خرید جدید'}
-            </h2>
-            <p className="mt-1 text-xs leading-6 text-muted-foreground sm:text-sm">
-              پیش‌نویس قابل ذخیره است؛ کامل بودن فرم هنگام ارسال بررسی می‌شود.
-            </p>
-            <p
-              className="mt-2 text-xs font-semibold text-primary"
-              aria-live="polite"
-            >
-              شماره درخواست:{' '}
-              {request?.number ?? 'پس از نخستین ثبت، خودکار تعیین می‌شود'}
-            </p>
-          </div>
-        </div>
+        <h2 ref={heading} tabIndex={-1} className="sr-only">
+          درخواست خرید
+        </h2>
         {error && <Alert tone="error" title={errorTitle} description={error} />}
         {conflict && baseRequest && (
           <div className="space-y-4 rounded-xl border border-border p-4">
@@ -641,16 +583,7 @@ export function DraftForm({
           </legend>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {text('title', 'عنوان درخواست', false, true, 300)}
-            <FormField
-              id="proc-requester"
-              label="درخواست‌کننده"
-              required={!request}
-              {...(requesterIsRequired
-                ? {
-                    error: 'یک کارمند فعال را انتخاب کنید.',
-                  }
-                : {})}
-            >
+            <FormField id="proc-requester" label="درخواست‌کننده">
               {request ? (
                 <Input
                   id="proc-requester"
@@ -737,11 +670,10 @@ export function DraftForm({
                 ))}
               </ProcurementSelect>
             </FormField>
-            <FormField id="proc-unit" label="واحد سازمانی" required>
+            <FormField id="proc-unit" label="واحد سازمانی">
               <ProcurementSelect
                 id="proc-unit"
                 className={selectClass}
-                required
                 value={draft.unitId ?? ''}
                 onChange={(event) => {
                   const nextUnit = event.target.value || null;
@@ -749,7 +681,11 @@ export function DraftForm({
                     (item) => item.id === requesterEmployeeId,
                   );
                   update('unitId', nextUnit);
-                  if (requester?.unitId && requester.unitId !== nextUnit) {
+                  if (
+                    nextUnit &&
+                    requester?.unitId &&
+                    requester.unitId !== nextUnit
+                  ) {
                     setRequesterEmployeeId('');
                     setRequesterLabel('');
                   }
@@ -802,15 +738,7 @@ export function DraftForm({
               </ProcurementSelect>
             </FormField>
           </div>
-          <div
-            role="note"
-            className="rounded-xl border border-sky-200/80 bg-sky-50/80 px-4 py-3 text-sm leading-6 text-sky-900 dark:border-sky-400/25 dark:bg-sky-400/10 dark:text-sky-100"
-          >
-            تأمین‌کننده در درخواست اولیه اختیاری است؛ می‌توانید درخواست را بدون
-            انتخاب یا نوشتن تأمین‌کننده ثبت کنید. تأمین‌کنندهٔ فعلی یا
-            تأمین‌کنندهٔ تازه در مرحلهٔ استعلام و سفارش تعیین می‌شود.
-          </div>
-          {text('needReason', 'شرح نیاز و توجیه خرید', true, true, 4000)}
+          {text('needReason', 'شرح نیاز و توجیه خرید', true, false, 4000)}
           <label className="flex min-h-11 items-center gap-3 text-sm font-semibold">
             <input
               type="checkbox"
@@ -924,42 +852,46 @@ export function DraftForm({
                     ['quantity', 'مقدار'],
                     ['unit', 'واحد سنجش'],
                   ] as const
-                ).map(([key, label]) =>
-                  key === 'unit' ? (
-                    <div key={key}>{savedItemChoice(item, key, label)}</div>
-                  ) : (
-                    <FormField
-                      key={key}
-                      id={`${item.id}-${key}`}
-                      label={label}
-                      required={key === 'description' || key === 'quantity'}
-                    >
-                      <Input
+                )
+                  .filter(
+                    ([key]) => item.kind === 'SERVICE' || key !== 'description',
+                  )
+                  .map(([key, label]) =>
+                    key === 'unit' ? (
+                      <div key={key}>{savedItemChoice(item, key, label)}</div>
+                    ) : (
+                      <FormField
+                        key={key}
                         id={`${item.id}-${key}`}
-                        aria-required={
-                          key === 'description' || key === 'quantity'
-                        }
-                        value={item[key]}
-                        onChange={(event) =>
-                          update(
-                            'items',
-                            draft.items.map((value) =>
-                              value.id === item.id
-                                ? {
-                                    ...value,
-                                    [key]:
-                                      key === 'quantity'
-                                        ? cleanSalesMoney(event.target.value)
-                                        : event.target.value,
-                                  }
-                                : value,
-                            ),
-                          )
-                        }
-                      />
-                    </FormField>
-                  ),
-                )}
+                        label={label}
+                        required={key === 'description' || key === 'quantity'}
+                      >
+                        <Input
+                          id={`${item.id}-${key}`}
+                          aria-required={
+                            key === 'description' || key === 'quantity'
+                          }
+                          value={item[key]}
+                          onChange={(event) =>
+                            update(
+                              'items',
+                              draft.items.map((value) =>
+                                value.id === item.id
+                                  ? {
+                                      ...value,
+                                      [key]:
+                                        key === 'quantity'
+                                          ? cleanSalesMoney(event.target.value)
+                                          : event.target.value,
+                                    }
+                                  : value,
+                              ),
+                            )
+                          }
+                        />
+                      </FormField>
+                    ),
+                  )}
               </div>
             </div>
           ))}
@@ -985,121 +917,6 @@ export function DraftForm({
           >
             افزودن کالا یا خدمت
           </Button>
-        </fieldset>
-        <fieldset
-          disabled={busy}
-          className="min-w-0 space-y-4 rounded-2xl border border-teal-200/70 bg-gradient-to-b from-teal-500/5 via-surface to-surface p-4 dark:border-teal-400/25 sm:p-6"
-        >
-          <legend className="mb-5 w-full border-b border-teal-200/70 pb-4 text-base font-bold text-foreground dark:border-teal-400/25">
-            <span className="flex items-center gap-3">
-              <span className="flex size-10 items-center justify-center rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300">
-                <FileText aria-hidden="true" className="size-5" />
-              </span>
-              پیوست‌ها و یادداشت‌ها
-            </span>
-          </legend>
-          {bootstrap.documents === 'AVAILABLE' ? (
-            <>
-              <div className="flex gap-2">
-                <Input
-                  aria-label="جست‌وجوی اسناد موجود"
-                  value={documentSearch}
-                  onChange={(event) => setDocumentSearch(event.target.value)}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  loading={documentsBusy}
-                  onClick={() => void loadDocuments()}
-                >
-                  جست‌وجوی اسناد
-                </Button>
-              </div>
-              {documentError && (
-                <Alert
-                  title="دریافت اسناد ناموفق بود"
-                  tone="error"
-                  description={documentError}
-                />
-              )}
-              {documentsLoaded && !documents.length && (
-                <p className="text-sm text-muted-foreground">
-                  سند قابل دسترسی پیدا نشد.
-                </p>
-              )}
-              {documents.map((document) => (
-                <label
-                  className="flex min-h-11 items-center gap-3 text-sm"
-                  key={document.id}
-                >
-                  <input
-                    type="checkbox"
-                    checked={draft.documents.some(
-                      (value) => value.id === document.id,
-                    )}
-                    onChange={(event) =>
-                      update(
-                        'documents',
-                        event.target.checked
-                          ? [
-                              ...draft.documents.filter(
-                                (value) => value.id !== document.id,
-                              ),
-                              {
-                                id: document.id,
-                                versionId: document.currentVersion.id,
-                              },
-                            ]
-                          : draft.documents.filter(
-                              (value) => value.id !== document.id,
-                            ),
-                      )
-                    }
-                  />
-                  {document.title} · {document.archiveCode}
-                </label>
-              ))}
-            </>
-          ) : (
-            <Alert
-              title="سرویس اسناد در دسترس نیست"
-              description="افزودن پیوست پس از دسترس‌پذیر شدن سرویس اسناد ممکن است."
-            />
-          )}
-          {draft.documents.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm font-semibold">
-                پیوست‌های انتخاب‌شده:{' '}
-                {draft.documents.length.toLocaleString('fa-IR')}
-              </p>
-              {draft.documents.map((document) => (
-                <div
-                  key={document.id}
-                  className="flex flex-wrap items-center gap-2 text-xs"
-                >
-                  <span className="break-all" dir="ltr">
-                    {document.id}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      update(
-                        'documents',
-                        draft.documents.filter(
-                          (value) => value.id !== document.id,
-                        ),
-                      )
-                    }
-                  >
-                    حذف پیوست
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-          {text('notes', 'یادداشت تکمیلی', true)}
         </fieldset>
         <div className="flex flex-wrap gap-3 border-t border-border pt-5">
           <Button type="submit" loading={busy}>

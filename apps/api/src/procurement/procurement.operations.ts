@@ -535,6 +535,13 @@ export class ProcurementOperations {
       const quotation = await tx.procurementQuotation.findUniqueOrThrow({
         where: { id: selection.quotationId },
       });
+      if (input.supplierId)
+        requireRule(
+          v.uuid(input.supplierId, 'supplierId') === quotation.supplierId,
+          'INVALID_REFERENCE',
+          'تأمین‌کننده باید متعلق به پیشنهاد منتخب باشد.',
+          'supplierId',
+        );
       requireRule(
         quotation.validUntil && quotation.validUntil > new Date(),
         'QUOTATION_EXPIRED',
@@ -573,6 +580,11 @@ export class ProcurementOperations {
           'جمع سفارش‌ها از مقدار مصوب بیشتر است.',
         );
       }
+      const documents = await this.documentsFor(
+        input.documents,
+        row.branchId,
+        actor,
+      );
       const id = randomUUID();
       const order = await tx.procurementOrder.create({
         data: {
@@ -595,6 +607,8 @@ export class ProcurementOperations {
             ),
             makerUserId: actor.userId,
             quotationId: quotation.id,
+            trackingCode: v.text(input.trackingCode, 'trackingCode', 100, true),
+            documents,
           }),
         },
       });

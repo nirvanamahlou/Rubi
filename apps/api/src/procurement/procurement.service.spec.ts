@@ -211,13 +211,20 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       let row = await command(selected.row, 'ORDER', {
         selectionId: selected.selection.id,
         expectedAt,
+        supplierId: supplier,
         paymentTerms: 'Upon acceptance',
         deliveryLocation: 'Synthetic office',
+        trackingCode: 'SYNTHETIC-ORDER-TRACKING',
+        documents,
       });
       const order = await database.client.procurementOrder.findFirstOrThrow({
         where: { requestId: row.id },
       });
       expect(order.status).toBe('PENDING_APPROVAL');
+      expect(order.data).toMatchObject({
+        trackingCode: 'SYNTHETIC-ORDER-TRACKING',
+        documents,
+      });
       row = await approve(row);
       if (issue) row = await command(row, 'ISSUE_ORDER', { orderId: order.id });
       const item = await database.client.procurementOrderItem.findFirstOrThrow({
@@ -607,14 +614,24 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         }),
       ).toBe(0);
     });
+    it('persists and publishes optional unit, need text and goods description without changing the audit actor', async () => {
+      const input = fixture({ unitId: null, needReason: '' });
+      input.items[0]!.description = '';
+      const row = await procurementBoundary(() =>
+        service.create({ draft: input, publish: true }, randomUUID(), maker),
+      );
+      expect(row.status).toBe('SUBMITTED');
+      expect(row.requesterUserId).toBe(maker.userId);
+      expect((await service.detail(row.id, maker)).draft).toMatchObject({
+        unitId: null,
+        needReason: '',
+        items: [{ description: '' }],
+      });
+    });
     it('creates and publishes atomically and leaves no draft when validation fails', async () => {
       const complete = fixture();
       const published = await procurementBoundary(() =>
-        service.create(
-          { draft: complete, publish: true },
-          randomUUID(),
-          maker,
-        ),
+        service.create({ draft: complete, publish: true }, randomUUID(), maker),
       );
       expect(published.status).toBe('SUBMITTED');
       expect(published.version).toBe(2);
@@ -928,6 +945,26 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           )
         ).some((event) => event.eventId === intents[0]?.eventId),
       ).toBe(true);
+    });
+    it('rejects an order supplier that differs from the approved selected quotation', async () => {
+      const context = await selectedRequest();
+      await rejected(
+        () =>
+          command(context.row, 'ORDER', {
+            selectionId: context.selection.id,
+            supplierId: randomUUID(),
+            expectedAt: tomorrow,
+            paymentTerms: 'Synthetic terms',
+            deliveryLocation: 'Synthetic office',
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      expect(
+        await database.client.procurementOrder.count({
+          where: { requestId: context.row.id },
+        }),
+      ).toBe(0);
     });
     it('blocks selecting an expired quotation', async () => {
       let row = await approvedRequest();
