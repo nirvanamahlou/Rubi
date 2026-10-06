@@ -4795,3 +4795,7 @@ Campaign owner no longer displays a required marker in the form. Automatic authe
 ## 2026-10-06 — Procurement category add shortcut
 
 PC-B added an accessible, non-submit Add button beside the purchase-category label. It opens/focuses the existing new-category input and reuses branch-scoped category persistence. No API/schema/dependency changes. Source reservation complete; CI and PR merge gate pending.
+
+## 2026-10-06 — B2B agency wizard and commercial toolbar — PC-B
+
+Agency registration can advance past phone verification so the remaining form can be inspected; final save still checks the existing unexpired verification grant and returns to that step if missing. Removed the requested commercial helper copy and agreement heading. In credit/guarantee subsections the visible date captions are removed while date controls keep accessible names, and compact PDF/Excel exports appear alongside filter actions. Organizations focused tests: 22 passed; scoped lint, Web typecheck and production build (55 routes) passed after building the shared contracts package. No API, schema, IAM or operational data changes. Exact-head PR CI is the final gate.

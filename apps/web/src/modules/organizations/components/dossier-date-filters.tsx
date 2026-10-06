@@ -5,15 +5,17 @@ export function DossierDateFilters({
   value,
   onChange,
   basis,
+  showLabels = true,
 }: {
   value: DossierDateRange;
   onChange: (value: DossierDateRange) => void;
   basis: string;
+  showLabels?: boolean;
 }) {
   return (
     <>
       <div className="field">
-        <span>از تاریخ — {basis}</span>
+        {showLabels ? <span>از تاریخ — {basis}</span> : null}
         <DatePicker
           withinDialog
           aria-label={`از تاریخ ${basis}`}
@@ -22,7 +24,7 @@ export function DossierDateFilters({
         />
       </div>
       <div className="field">
-        <span>تا تاریخ — {basis}</span>
+        {showLabels ? <span>تا تاریخ — {basis}</span> : null}
         <DatePicker
           withinDialog
           aria-label={`تا تاریخ ${basis}`}
