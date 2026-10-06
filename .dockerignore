@@ -2,11 +2,17 @@
 .github
 .turbo
 .next
+**/.turbo
+**/.next
 node_modules
 **/node_modules
 dist
 **/dist
 coverage
+tmp
+.ci-log-*
+test.txt
+apps/web/public
 .env
 .env.*
 !.env.example

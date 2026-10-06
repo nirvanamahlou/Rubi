@@ -195,7 +195,7 @@ describe('cooperation wizard writes', () => {
     });
     expect(profile).not.toHaveBeenCalled();
   });
-  it('accepts an empty change reason and uploads staged contract and guarantee files before saving a new agency agreement', async () => {
+  it('uploads staged confidential contract and guarantee files, then supplies their fresh grants when saving a new agency agreement', async () => {
     const organization = {
       id: 'organization-new',
       resource: 'organizations',
@@ -237,6 +237,10 @@ describe('cooperation wizard writes', () => {
       .spyOn(documentsApi, 'upload')
       .mockResolvedValueOnce({ data: { id: 'contract-document' } } as never)
       .mockResolvedValueOnce({ data: { id: 'guarantee-document' } } as never);
+    const grant = vi
+      .spyOn(documentsApi, 'createAccessGrant')
+      .mockResolvedValueOnce({ data: { token: 'contract-grant' } } as never)
+      .mockResolvedValueOnce({ data: { token: 'guarantee-grant' } } as never);
     const save = vi
       .spyOn(agencyClient, 'saveAgreementTerms')
       .mockResolvedValue({} as never);
@@ -294,8 +298,18 @@ describe('cooperation wizard writes', () => {
       'documents.upload',
       'documents.list',
       'documents.organization.read',
+      'documents.metadata.read',
+      'documents.file.read',
     ]);
     expect(upload).toHaveBeenCalledTimes(2);
+    expect(grant).toHaveBeenNthCalledWith(1, 'contract-document', {
+      code: '573921',
+      purpose: 'CONFIDENTIAL_VIEW',
+    });
+    expect(grant).toHaveBeenNthCalledWith(2, 'guarantee-document', {
+      code: '573921',
+      purpose: 'CONFIDENTIAL_VIEW',
+    });
     expect(save).toHaveBeenCalledWith(
       'organization-new',
       expect.objectContaining({
@@ -306,6 +320,10 @@ describe('cooperation wizard writes', () => {
             expect.objectContaining({ documentId: 'guarantee-document' }),
           ],
         }),
+        referenceGrants: [
+          { documentId: 'contract-document', token: 'contract-grant' },
+          { documentId: 'guarantee-document', token: 'guarantee-grant' },
+        ],
       }),
     );
     expect(upload.mock.invocationCallOrder[1]).toBeLessThan(
