@@ -1,6 +1,6 @@
 # PROCUREMENT-DOCX-1005 — PC-B
 
-Status: IMPLEMENTATION IN PROGRESS / final release gate pending tests and approver-policy clarification.
+Status: COMPLETE / merged to `develop` through PR #669 (merge commit `747c42e4`, 2026-10-06).
 
 Scheduled start: 2026-10-05 07:00 UTC (10:30 Tehran). Source: the owner's
 `پراپمت های خرید و تامین.docx`; all 43 paragraphs and four embedded images
@@ -37,20 +37,23 @@ page, and supplier logo/profile queries are refreshed after save.
 
 ## Verification and boundaries
 
-- Web Procurement tests: 10 files / 41 tests passed. Scoped ESLint and Web typecheck passed.
-- API local Procurement unit tests: 57 passed; the ordinary run skipped its database-gated service/export suites (36 at that checkpoint). The service suite was subsequently run explicitly with 34 passing cases; the three export-database tests were not executed.
-- Dedicated PostgreSQL18 service run: 34 passed, including optional-field publication,
+- Web Procurement/Workbench focused tests: 11 files / 45 tests passed. Full Web ESLint and Web typecheck passed.
+- API focused Procurement/Tasks/Workbench run: 60 passed; 37 database-gated tests were skipped in that local-only run. A separate run against the dedicated database exercised the service and export suites.
+- Dedicated PostgreSQL18 service/export run: 40 passed, including optional-field publication,
   tracking/document persistence and mismatched-supplier transaction rollback.
 - Temporary test database only: 119 existing migrations applied at the suite's exact
   localhost:55473 / procurement_001_api_test allowlist; no operational database mutation.
-- API scoped lint/typecheck/build passed. Web scoped lint/typecheck and final production build passed (55 routes), including the final selection/prefill repair. Stale generated Database package caused
+- Full API/Web ESLint and typecheck, API build and Web production build passed (55 routes), including the final selection/prefill repair. Stale generated Contracts dist caused
   initial API static failures; generated client/dist refreshed from unchanged schema.
-- A concurrent heavy build made seven database tests exceed their five-second timeout;
-  repeat with a 30-second harness timeout passed all 34. No business rule was weakened.
+- A concurrent heavy build made four database tests exceed their default five-second timeout;
+  repeat with a 15-second harness timeout passed all 40 service/export tests. No business rule was weakened.
+- PR #669 Full quality, Full test suite, PostgreSQL18 migration/seed and production build
+  gates passed in both CI runs; PR merged to `develop` as `747c42e4`.
 - Chrome did not expose a targetable window. No live UI, mobile/tablet, keyboard-focus,
   real logo upload or network-loss test is claimed.
-- No schema/migration/dependency/IAM, approval policy, legal-company scope or Finance source
-  changes. No payments, external messages, operational seed or service restart.
+- The only schema change is the additive, branch-scoped ProcurementCategory model/migration;
+  no dependency, IAM, approval-policy, legal-company scope or Finance source changes. No
+  payments, external messages, operational seed or service restart.
 - Configured strong worker failed twice at service capacity before editing. Actual failure
   receipts recorded; explicit skill manager takeover owns the checkout. Usage is unknown;
   no worker assessment or independent reviewer approval is fabricated.
@@ -58,7 +61,6 @@ page, and supplier logo/profile queries are refreshed after save.
 ## Next work / release gate
 
 The owner resolved #4 in favor of actual authorized branches and #14 as employee
-follow-up with approval only through the approved procurement policy. Category,
-order-operation and Workbench task read-path changes are implemented; final tests,
-review, PR and merge gates remain. No approver is inferred and no approval permission
-is granted. No PR/merge has been performed.
+follow-up with approval only through the approved procurement policy. All 16 ordered
+items and release checks are complete; PR #669 is merged. No approver was inferred and
+no approval permission was granted.
