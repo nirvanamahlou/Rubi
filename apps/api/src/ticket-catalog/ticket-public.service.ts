@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { assertUniqueTicketIdentity } from './ticket-offer-identity';
 import {
   BadRequestException,
   ConflictException,
@@ -671,30 +672,45 @@ export class TicketPublicService {
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ branchId, ...value }))
       .digest('hex');
-    const row = await this.database.client.ticketPublishedOffer.upsert({
-      where: {
-        createdByUserId_createKey: {
-          createdByUserId: actor.userId,
-          createKey: key,
-        },
-      },
-      update: {},
-      create: {
-        ...value,
-        branchId,
-        departureAt: new Date(value.departureAt),
-        arrivalAt: new Date(value.arrivalAt),
-        createdByUserId: actor.userId,
-        createKey: key,
-        fingerprint,
-        audit: {
-          create: {
-            actorUserId: actor.userId,
-            action: 'ticket.offer.published',
-            version: 1,
+    const row = await this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtext(${`ticket-flight:${branchId}`}))`,
+      );
+      const replay = await tx.ticketPublishedOffer.findUnique({
+        where: {
+          createdByUserId_createKey: {
+            createdByUserId: actor.userId,
+            createKey: key,
           },
         },
-      },
+      });
+      if (replay) return replay;
+      await assertUniqueTicketIdentity(tx, value, branchId);
+      return tx.ticketPublishedOffer.upsert({
+        where: {
+          createdByUserId_createKey: {
+            createdByUserId: actor.userId,
+            createKey: key,
+          },
+        },
+        update: {},
+        create: {
+          ...value,
+          branchId,
+          departureAt: new Date(value.departureAt),
+          arrivalAt: new Date(value.arrivalAt),
+          createdByUserId: actor.userId,
+          createKey: key,
+          fingerprint,
+          audit: {
+            create: {
+              actorUserId: actor.userId,
+              action: 'ticket.offer.published',
+              version: 1,
+            },
+          },
+        },
+      });
     });
     // Legacy fingerprints depended on JSON field order. Compare stored offer facts
     // before rejecting a retried key so semantically identical requests remain safe.
@@ -1280,6 +1296,21 @@ export class TicketPublicService {
       if (!row) throw new ForbiddenException('بلیط در شعبه مجاز شما نیست.');
       if (row.version !== input.expectedVersion)
         throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
+      await assertUniqueTicketIdentity(
+        tx,
+        {
+          ...value,
+          supplyType:
+            value.supplyType === undefined
+              ? ((row.supplyType ?? null) as Exclude<
+                  TicketOfferCreateV1['supplyType'],
+                  undefined
+                >)
+              : value.supplyType,
+        },
+        row.branchId,
+        id,
+      );
       const linkedSale = row.capacityAllocations.length > 0;
       const supplyType =
         value.supplyType === undefined ? row.supplyType : value.supplyType;

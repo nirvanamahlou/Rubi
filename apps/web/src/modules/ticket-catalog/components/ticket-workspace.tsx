@@ -66,6 +66,7 @@ import {
   catalogProductsFromOffers,
   catalogOffer,
   publishedOfferInput,
+  samePublishedFlight,
 } from '../model/published-catalog';
 import { PublishedOfferForm } from './published-offer-form';
 
@@ -463,13 +464,7 @@ function TicketCatalogWorkspace() {
           (offer) =>
             offer.branchId === branchId &&
             (offer.catalogProductId === product.id ||
-              (Object.keys(input) as (keyof TicketOfferCreateV1)[]).every(
-                (key) =>
-                  key === 'departureAt' || key === 'arrivalAt'
-                    ? new Date(offer[key]).getTime() ===
-                      new Date(input[key]).getTime()
-                    : offer[key] === input[key],
-              )),
+              samePublishedFlight(offer, input)),
         );
         return match
           ? Promise.resolve({ data: { id: match.id } })

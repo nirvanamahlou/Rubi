@@ -40,6 +40,7 @@ function setup(patch = {}) {
     $queryRaw: vi.fn(),
     ticketPublishedOffer: {
       findFirst: vi.fn().mockResolvedValue(row),
+      findMany: vi.fn().mockResolvedValue([]),
       update: vi.fn().mockResolvedValue({ ...row, version: 2 }),
     },
     ticketOfferAudit: { create: vi.fn() },
@@ -55,6 +56,20 @@ function setup(patch = {}) {
   return { tx, service };
 }
 describe('published ticket revision', () => {
+  it('rejects moving a separate offer onto another existing flight identity', async () => {
+    const { tx, service } = setup();
+    tx.ticketPublishedOffer.findMany.mockResolvedValue([
+      {
+        carrierName: offer.carrierName,
+        serviceNumber: offer.serviceNumber,
+        supplyType: null,
+      },
+    ] as never);
+    await expect(
+      service.revise(id, { expectedVersion: 1, offer }, actor),
+    ).rejects.toThrow('قبلاً ثبت');
+    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+  });
   it('keeps an existing contract allocation valid after only the offer time changes', async () => {
     const branchId = '10000000-0000-4000-8000-000000000003';
     const contractId = '10000000-0000-4000-8000-000000000004';

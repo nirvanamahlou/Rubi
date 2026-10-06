@@ -1,6 +1,25 @@
 import type { TicketOfferV1 } from '@nora/contracts';
 import type { Product, Reference } from './catalog';
 import { emptyInput } from './preview';
+import type { TicketOfferCreateV1 } from '@nora/contracts';
+
+/** Optional producer defaults/changed capacity are not new dated flights. */
+export function samePublishedFlight(
+  offer: TicketOfferV1,
+  input: TicketOfferCreateV1,
+) {
+  const label = (text: string) =>
+    text.trim().replace(/\s+/g, ' ').toLowerCase();
+  return (
+    offer.originId === input.originId &&
+    offer.destinationId === input.destinationId &&
+    Date.parse(offer.departureAt) === Date.parse(input.departureAt) &&
+    label(offer.carrierName) === label(input.carrierName) &&
+    label(offer.serviceNumber) === label(input.serviceNumber) &&
+    offer.cabinClassCode === input.cabinClassCode &&
+    (offer.supplyType ?? 'COMPANY') === (input.supplyType ?? 'COMPANY')
+  );
+}
 
 const wallDateTimePattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
