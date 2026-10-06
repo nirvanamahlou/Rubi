@@ -138,13 +138,25 @@ describe('Procurement lifecycle operation forms', () => {
           kind="orders"
           initialAction="AMEND_ORDER"
           initialRecord={order}
-          bootstrap={bootstrap(['procurement.order.amend'])}
+          bootstrap={bootstrap([
+            'procurement.order.amend',
+            'procurement.order.cancel',
+            'procurement.order.issue',
+          ])}
           onChanged={() => undefined}
         />
       </QueryClientProvider>,
     );
     expect(edit).toContain('اصلاح سفارش و ارسال برای تأیید مجدد');
     expect(edit).toContain('TRACK-1');
+    expect(edit).not.toContain('id="proc-operation"');
+    expect(edit).not.toContain('سفارش مرجع');
+    expect(edit).not.toContain('تأمین‌کننده جدید یا فعلی');
+    expect(edit).not.toContain('id="operation-currencyCode"');
+    expect(edit).not.toContain('افزودن ردیف');
+    expect(edit).not.toContain('حذف ردیف');
+    expect(edit).toMatch(/id="op-line-0"[^>]*disabled/);
+    expect(edit).toContain('readOnly');
     expect(edit).toContain('شعبه مرکزی');
     expect(edit).toContain('۳۰ روزه');
     const cancel = renderToStaticMarkup(
@@ -162,7 +174,7 @@ describe('Procurement lifecycle operation forms', () => {
     expect(cancel).toContain('لغو سفارش');
     expect(cancel).toContain('دلیل لغو سفارش');
   });
-  it('makes the receiver form available and explains versioned corrections', () => {
+  it('keeps receiver selection without redundant help copy', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>
         <OperationForm
@@ -179,7 +191,9 @@ describe('Procurement lifecycle operation forms', () => {
 
     expect(html).toContain('ثبت رسید کالا');
     expect(html).toContain('سفارش مرجع');
-    expect(html).toContain('ویرایش سوابق عملیاتی به‌صورت نسخه یا اصلاح جبرانی');
+    expect(html).not.toContain(
+      'ویرایش سوابق عملیاتی به‌صورت نسخه یا اصلاح جبرانی',
+    );
   });
 
   it('explains the required operational role instead of leaving a blank lifecycle section', () => {
