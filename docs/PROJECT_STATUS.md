@@ -10,6 +10,10 @@ Supplier-form save is the first action above download and print, with one save b
 
 Corrected reservation module and navigation group to رزرواسیون, including page heading, related notification/Workbench/module-foundation titles and English category mapping. Updated existing navigation/settings assertions. Focused 45 tests, scoped ESLint, Web TypeScript and 55-route production generation pass. Routes, access control, APIs and stored data unchanged; no migration or dependency changes. User authorizes develop merge; bounded locks released.
 
+## 2026-10-06 — SALES-DESTINATION-TOTAL-1006 — PC-A — READY_FOR_REVIEW
+
+Sales contract list displays destination only instead of origin-arrow-destination and adds canonical total beside outstanding. Each currency renders separately with existing exact decimal-string formatting; payment/settlement calculations, filters, export and access remain unchanged. All Sales326 tests pass (one existing skip), including exact large totals, overpaid balances and unknown destination/amounts. Web lint/typecheck/production build and exact-head CI gate authorized develop merge. No API/schema/migration/dependency/database/runtime change or authenticated browser QA; bounded locks release with candidate commit.
+
 ## 2026-10-05 — VOUCHER-SEARCHABLE-LEADER-1005 — PC-A — READY_FOR_REVIEW
 
 Voucher broker and same-broker leader use searchable dropdowns. Leader selection automatically fills and saves authorized canonical Board/name/contact through existing CAS; failed saves retain retry. Reservations accepts the directory's existing 300-character Board without truncation and normalizes absent phones. The bottom voucher action, document/editor and server confirmation/issue require an actual sent supplier form, preserving historical issued vouchers and finance/insurance/branch gates. Web184 and API157 tests pass (two Web and six opt-in API skips), both apps' lint/typecheck/build and 55-route Web generation pass. No schema/migration/dependency/operational database/runtime change or authenticated browser QA. Exact-head CI gates authorized develop merge; bounded locks released with candidate commit.

@@ -56,11 +56,7 @@ export function ContractListContactRouteDate({
         <bdi dir="ltr">{contract.customerPhone || '—'}</bdi>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
-        <span dir="ltr" className="inline-flex items-center gap-2">
-          <bdi>{contract.originName || '—'}</bdi>
-          <span aria-hidden="true">→</span>
-          <bdi>{contract.destinationName || '—'}</bdi>
-        </span>
+        <bdi>{contract.destinationName || '—'}</bdi>
       </td>
       <td className="px-4 py-3 whitespace-nowrap">
         {new Date(contract.createdAt).toLocaleDateString('fa-IR', {
@@ -73,6 +69,30 @@ export function ContractListContactRouteDate({
 
 export function hasContractDateFilter(query: SalesContractListQuery): boolean {
   return Boolean(query.createdFrom || query.createdTo);
+}
+
+export function ContractListAmounts({
+  contract,
+}: {
+  contract: Pick<SalesContractSummary, 'balances'>;
+}) {
+  return (
+    <>
+      {(['amount', 'outstanding'] as const).map((field) => (
+        <td key={field} className="px-4 py-3 font-semibold text-foreground">
+          <div className="max-w-44 text-xs leading-5">
+            {contract.balances.length
+              ? contract.balances.map((balance) => (
+                  <div key={balance.currencyCode}>
+                    {formatMoney(balance[field], balance.currencyCode)}
+                  </div>
+                ))
+              : '—'}
+          </div>
+        </td>
+      ))}
+    </>
+  );
 }
 
 export async function loadSalesWorkspace(
@@ -498,11 +518,12 @@ export function SalesWorkspace() {
                     'شماره',
                     'مشتری',
                     'شماره تلفن مشتری',
-                    'مسیر',
+                    'مقصد',
                     'تاریخ بستن قرارداد',
                     'مسافران و خدمات',
                     'وضعیت',
                     'تسویه',
+                    'مبلغ کل',
                     'مانده',
                     'آخرین تغییر',
                     'عملیات',
@@ -606,18 +627,7 @@ export function SalesWorkspace() {
                           contract.settlementStatus}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 font-semibold text-foreground">
-                      <div className="max-w-44 text-xs leading-5">
-                        {contract.balances
-                          .map((balance) =>
-                            formatMoney(
-                              balance.outstanding,
-                              balance.currencyCode,
-                            ),
-                          )
-                          .join(' + ')}
-                      </div>
-                    </td>
+                    <ContractListAmounts contract={contract} />
                     <td className="px-4 py-3 text-xs text-muted-foreground">
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
