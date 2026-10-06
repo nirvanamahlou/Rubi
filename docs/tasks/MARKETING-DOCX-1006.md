@@ -51,13 +51,23 @@ Current bounded limitation: campaign owner and sales-expert assignment are restr
 - No live-browser interaction check was run. Component source-contract tests and API-client executable tests do not substitute for browser UI verification.
 - The migration was replayed successfully before two additive list-order indexes were added. The amended schema validates and generates, but a fresh amended replay is gated because the isolated PostgreSQL endpoint `localhost:55473` is currently refusing connections.
 
+### Fresh review-repair evidence
+
+- MKT-R3-001/006/010: PATCH authorizes the persisted immutable kind before replay; MESSAGE→SEGMENT, SCHEDULE→MESSAGE and FORM↔LANDING_PAGE references require exact same-branch types. Composer audience, multiple channels, send mode/date and durable segment selection survive View/Edit.
+- MKT-R3-002: Marketing no longer submits a hidden classification; Documents keeps configured/type defaults and its confidential-code policy.
+- MKT-R3-003/004/008: campaign adapters round-trip owner, target/budget currencies, every UTM field, all spend rows and links. Live detail/budget UI uses server data; exact BigInt-scaled sums remain grouped by currency and rendered as strings.
+- MKT-R3-005/007/011: URL and numeric content fields are separate; automation View/Edit retains ID/version and selectable four-sided ports with visible saved edges; lead detail, type dropdown and icon-only New/reset controls are present.
+- MKT-R3-009/012: create/publication retries retain stable idempotency keys and the created draft; Persian calendar defaults/navigation recompute the displayed Persian month range with physical LTR controls.
+- Marketing create/update/delete notification-feed invalidation occurs only after a confirmed server success; failures emit no success event and no phone/code is copied into the event.
+- Executable adapter regressions cover populated campaign save/reload mapping, exact large/fractional mixed currencies, lost-response/publication retry, normal HTTP(S) URL paths and graph CAS/ports. These are functional serialization/retry tests, not claims of live button/browser coverage.
+
 ## Final local verification
 
-- API focused tests: `node node_modules/vitest/vitest.mjs run src/marketing` — exit 0, 8 files / 58 tests. Exported campaign-reference validation denies missing Marketing read/attribution permission and wrong-branch actors; Customer Affairs passes the current actor to the owner service.
-- Web focused tests: `node node_modules/vitest/vitest.mjs run src/modules/marketing` — exit 0, 5 files / 25 tests. These include executable API-client failure/reload behavior; component source-contract assertions are recorded separately and are not claimed as browser interaction proof.
+- API focused tests: `node node_modules/vitest/vitest.mjs run src/marketing` from `apps/api` — exit 0, 8 files / 61 tests; 3 real PostgreSQL proof tests are opt-in and skipped locally. Exported reference validation denies missing Marketing read/attribution permission and wrong-branch actors; Customer Affairs passes the current actor to the owner service.
+- Web focused tests: `node node_modules/vitest/vitest.mjs run src/modules/marketing src/components/ui/calendar-direction.spec.ts` from `apps/web` — exit 0, 8 files / 38 tests. Executable adapters cover failure/reload, populated field mappings, retry, URL and graph behavior; source-contract assertions are not claimed as browser interaction proof.
 - API scoped ESLint, Web scoped ESLint, API and Web TypeScript checks — exit 0.
 - Contracts and Database TypeScript builds — exit 0. Post actor-only-guard API Nest build — exit 0.
-- Web `next build --webpack` — exit 0 with 55 routes before the final actor-only explanatory-copy change; the final Web typecheck/tests/lint pass after that copy-only change.
+- Web `next build --webpack` — exit 0, compile/TypeScript/static generation complete for 55 routes. Two later presentation/state-adoption lines (icon-only campaign New and graph accepting the returned version) have final lint/typecheck/tests but await refreshed exact-source CI build.
 - Prisma format, validate and local client generation — exit 0 against the amended schema.
-- Local amended migration replay remains unavailable while `localhost:55473` refuses connections; `.github/workflows/ci.yml` lines 143–196 provides the pending fresh PostgreSQL 18 all-migrations/status verification path.
+- Local amended migration replay remains unavailable while `localhost:55473` refuses connections; the existing PostgreSQL 18 job now also runs the opt-in real Marketing concurrent-CAS, replay/altered-payload and rollback proof after all migrations and seed. Its refreshed CI result is pending.
 - `git diff --check` — exit 0 (line-ending warnings only).

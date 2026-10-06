@@ -1695,11 +1695,6 @@ function AudienceInputDialog({
         <DialogTitle>
           {isCampaignAudience ? 'افزودن مخاطبان کمپین' : 'افزودن منبع ورود'}
         </DialogTitle>
-        <DialogDescription>
-          {isCampaignAudience
-            ? 'یک گروه تجمیعی را به کمپین متصل کنید؛ اطلاعات هویتی مخاطبان در مارکتینگ نگهداری نمی‌شود.'
-            : 'مشخصات کانال و پارامترهای رهگیری منبع ورودی را ثبت کنید.'}
-        </DialogDescription>
         <form
           className="mt-5 grid gap-4 sm:grid-cols-2"
           onSubmit={(event) => {
@@ -2984,7 +2979,6 @@ function MarketingAssetUploadDialog({
             form.set('categoryId', categoryId);
             form.set('branchId', branchId);
             form.set('ownerUserId', ownerUserId);
-            form.set('confidentiality', 'INTERNAL');
             form.set('sourceModule', 'marketing');
             form.set('sourceEntityType', 'content-asset');
             form.set(

@@ -1,6 +1,13 @@
 'use client';
 
-import { Check, ChevronLeft, ChevronRight, Send } from 'lucide-react';
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Send,
+  Trash2,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -21,11 +28,18 @@ import { Alert, Badge, Card } from '@/components/ui/surfaces';
 import {
   campaignChannelLabels,
   executionCompanyLabels,
-  marketingSegments,
   type CampaignChannel,
   type CampaignPreview,
   type ExecutionCompany,
 } from '../model/marketing';
+import {
+  campaignDraftFromPreview,
+  type CampaignDraft,
+  type MarketingCurrencyCode,
+  type SegmentOption,
+} from '../model/durable-records';
+
+export type { CampaignDraft } from '../model/durable-records';
 
 export type CampaignFormMode = 'create' | 'view' | 'edit';
 
@@ -33,6 +47,7 @@ interface CampaignFormProps {
   mode: CampaignFormMode;
   campaign?: CampaignPreview | undefined;
   ownerUserId: string;
+  segments: readonly SegmentOption[];
   onSave: (draft: CampaignDraft) => Promise<void>;
 }
 
@@ -60,63 +75,6 @@ const selectableChannels: readonly CampaignChannel[] = [
   'REFERRAL',
   'OFFLINE',
 ];
-
-export interface CampaignDraft {
-  internalCode: string;
-  name: string;
-  campaignType: string;
-  objective: string;
-  company: ExecutionCompany;
-  channels: CampaignChannel[];
-  segmentReference: string;
-  startsAt: string;
-  endsAt: string;
-  budgetAmount: string;
-  currencyCode: 'IRR' | 'USD' | 'EUR';
-  ownerUserId: string;
-  salesTarget: string;
-  progressPercent: string;
-  spendLabel: string;
-  spendAmount: string;
-  links: string;
-  utmSource: string;
-  utmMedium: string;
-  utmCampaign: string;
-  frequencyCap: string;
-  expectedVersion: number;
-}
-
-function initialDraft(
-  campaign: CampaignPreview | undefined,
-  ownerUserId: string,
-): CampaignDraft {
-  return {
-    internalCode: campaign?.internalCode ?? 'MKT-PREVIEW-NEW',
-    name: campaign?.name ?? '',
-    campaignType: campaign?.campaignType ?? 'فروش فصلی',
-    objective: campaign?.objective ?? '',
-    company: campaign?.executionCompany ?? 'NIAYESH_SEIR_SAHAR',
-    channels: campaign ? [...campaign.channels] : ['WEBSITE'],
-    segmentReference: campaign?.segmentReference ?? marketingSegments[0].id,
-    startsAt: campaign?.startsAt ?? '',
-    endsAt: campaign?.endsAt ?? '',
-    budgetAmount: campaign?.budgetAmount ?? '',
-    currencyCode: campaign?.currencyCode ?? 'IRR',
-    ownerUserId: campaign?.ownerUserId ?? ownerUserId,
-    salesTarget: campaign?.salesTarget ?? '',
-    progressPercent: campaign?.progressPercent ?? '0',
-    spendLabel: campaign?.spendLines?.[0]?.label ?? '',
-    spendAmount: campaign?.spendLines?.[0]?.amount ?? '',
-    links: campaign?.links?.join('\n') ?? '',
-    utmSource: '',
-    utmMedium: '',
-    utmCampaign: campaign?.utmCampaign ?? '',
-    frequencyCap: /^\d+$/.test(campaign?.frequencyCap ?? '')
-      ? campaign!.frequencyCap
-      : '1',
-    expectedVersion: campaign?.version ?? 1,
-  };
-}
 
 function validateDraft(draft: CampaignDraft): string[] {
   const errors: string[] = [];
@@ -153,8 +111,11 @@ function validateDraft(draft: CampaignDraft): string[] {
     errors.push('پیشرفت هدف باید بین صفر تا صد باشد.');
   if (!/^\d+$/.test(draft.frequencyCap) || Number(draft.frequencyCap) < 1)
     errors.push('محدودیت تکرار باید یک عدد مثبت باشد.');
-  if (draft.spendAmount && !/^\d+(?:\.\d{1,4})?$/.test(draft.spendAmount))
-    errors.push('هزینه واقعی باید Decimal غیرمنفی باشد.');
+  for (const line of draft.spendLines) {
+    if (!line.label.trim()) errors.push('عنوان هر ردیف هزینه الزامی است.');
+    if (!/^\d+(?:\.\d{1,4})?$/.test(line.amount))
+      errors.push('هزینه واقعی باید Decimal غیرمنفی باشد.');
+  }
   return errors;
 }
 
@@ -162,11 +123,12 @@ export function CampaignForm({
   campaign,
   mode,
   ownerUserId,
+  segments,
   onSave,
 }: CampaignFormProps) {
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<CampaignDraft>(() =>
-    initialDraft(campaign, ownerUserId),
+    campaignDraftFromPreview(campaign, ownerUserId),
   );
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -190,6 +152,16 @@ export function CampaignForm({
         : draft.channels.filter((item) => item !== channel),
     );
   };
+  const updateSpend = (
+    index: number,
+    patch: Partial<CampaignDraft['spendLines'][number]>,
+  ) =>
+    update(
+      'spendLines',
+      draft.spendLines.map((line, current) =>
+        current === index ? { ...line, ...patch } : line,
+      ),
+    );
 
   return (
     <div className="mt-5 grid gap-5" dir="rtl">
@@ -346,16 +318,19 @@ export function CampaignForm({
             <FormField id="campaign-segment" label="Segment مخاطب" required>
               <Select
                 disabled={readOnly}
-                value={draft.segmentReference}
-                onValueChange={(value) => update('segmentReference', value)}
+                value={draft.segmentReference || 'none'}
+                onValueChange={(value) =>
+                  update('segmentReference', value === 'none' ? '' : value)
+                }
               >
                 <SelectTrigger id="campaign-segment">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {marketingSegments.map((segment) => (
+                  <SelectItem value="none">بدون سگمنت</SelectItem>
+                  {segments.map((segment) => (
                     <SelectItem key={segment.id} value={segment.id}>
-                      {segment.title}
+                      {segment.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -399,15 +374,37 @@ export function CampaignForm({
                 }
               />
             </FormField>
-            <FormField id="campaign-currency" label="کد ارز" required>
+            <FormField id="campaign-budget-currency" label="ارز بودجه" required>
               <Select
                 disabled={readOnly}
-                value={draft.currencyCode}
+                value={draft.budgetCurrencyCode}
                 onValueChange={(value) =>
-                  update('currencyCode', value as CampaignDraft['currencyCode'])
+                  update('budgetCurrencyCode', value as MarketingCurrencyCode)
                 }
               >
-                <SelectTrigger id="campaign-currency">
+                <SelectTrigger id="campaign-budget-currency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IRR">IRR — ریال</SelectItem>
+                  <SelectItem value="USD">USD — دلار</SelectItem>
+                  <SelectItem value="EUR">EUR — یورو</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField
+              id="campaign-target-currency"
+              label="ارز هدف فروش"
+              required
+            >
+              <Select
+                disabled={readOnly}
+                value={draft.targetCurrencyCode}
+                onValueChange={(value) =>
+                  update('targetCurrencyCode', value as MarketingCurrencyCode)
+                }
+              >
+                <SelectTrigger id="campaign-target-currency">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -429,24 +426,85 @@ export function CampaignForm({
                     }
                   />
                 </FormField>
-                <FormField id="campaign-spend-label" label="عنوان ریز هزینه">
-                  <Input
-                    id="campaign-spend-label"
-                    value={draft.spendLabel}
-                    onChange={(event) =>
-                      update('spendLabel', event.target.value)
-                    }
-                  />
-                </FormField>
-                <FormField id="campaign-spend-amount" label="هزینه واقعی">
-                  <MoneyInput
-                    id="campaign-spend-amount"
-                    value={draft.spendAmount}
-                    onValueChange={(spendAmount) =>
-                      update('spendAmount', spendAmount)
-                    }
-                  />
-                </FormField>
+                <div className="grid gap-3 md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <strong>ریز هزینه‌های اعلامی</strong>
+                    <Button
+                      aria-label="افزودن ردیف هزینه"
+                      onClick={() =>
+                        update('spendLines', [
+                          ...draft.spendLines,
+                          {
+                            label: '',
+                            amount: '',
+                            currencyCode: draft.budgetCurrencyCode,
+                          },
+                        ])
+                      }
+                      size="icon"
+                      title="افزودن ردیف هزینه"
+                      type="button"
+                      variant="outline"
+                    >
+                      <Plus aria-hidden="true" className="size-4" />
+                    </Button>
+                  </div>
+                  {draft.spendLines.map((line, index) => (
+                    <div
+                      className="grid gap-3 rounded-xl border border-border p-3 md:grid-cols-[1fr_1fr_10rem_auto]"
+                      key={line.id ?? `new-spend-${index}`}
+                    >
+                      <Input
+                        aria-label={`عنوان هزینه ${index + 1}`}
+                        value={line.label}
+                        onChange={(event) =>
+                          updateSpend(index, { label: event.target.value })
+                        }
+                      />
+                      <MoneyInput
+                        aria-label={`مبلغ هزینه ${index + 1}`}
+                        value={line.amount}
+                        onValueChange={(amount) =>
+                          updateSpend(index, { amount })
+                        }
+                      />
+                      <Select
+                        value={line.currencyCode}
+                        onValueChange={(currencyCode) =>
+                          updateSpend(index, {
+                            currencyCode: currencyCode as MarketingCurrencyCode,
+                          })
+                        }
+                      >
+                        <SelectTrigger aria-label={`ارز هزینه ${index + 1}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="IRR">IRR</SelectItem>
+                          <SelectItem value="USD">USD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        aria-label={`حذف ردیف هزینه ${index + 1}`}
+                        onClick={() =>
+                          update(
+                            'spendLines',
+                            draft.spendLines.filter(
+                              (_, current) => current !== index,
+                            ),
+                          )
+                        }
+                        size="icon"
+                        title="حذف ردیف"
+                        type="button"
+                        variant="destructive"
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
                 <FormField
                   id="campaign-links"
                   label="لینک‌ها (هر خط یک نشانی HTTP(S))"
@@ -490,6 +548,24 @@ export function CampaignForm({
                 readOnly={readOnly}
                 value={draft.utmCampaign}
                 onChange={(event) => update('utmCampaign', event.target.value)}
+              />
+            </FormField>
+            <FormField id="campaign-utm-term" label="UTM Term">
+              <Input
+                id="campaign-utm-term"
+                dir="ltr"
+                readOnly={readOnly}
+                value={draft.utmTerm}
+                onChange={(event) => update('utmTerm', event.target.value)}
+              />
+            </FormField>
+            <FormField id="campaign-utm-content" label="UTM Content">
+              <Input
+                id="campaign-utm-content"
+                dir="ltr"
+                readOnly={readOnly}
+                value={draft.utmContent}
+                onChange={(event) => update('utmContent', event.target.value)}
               />
             </FormField>
             <FormField
@@ -546,7 +622,7 @@ export function CampaignForm({
               <div>
                 <dt className="text-muted-foreground">بودجه</dt>
                 <dd className="mt-1 font-bold" dir="ltr">
-                  {draft.budgetAmount || '—'} {draft.currencyCode}
+                  {draft.budgetAmount || '—'} {draft.budgetCurrencyCode}
                 </dd>
               </div>
             </dl>

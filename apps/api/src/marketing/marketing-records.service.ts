@@ -648,14 +648,10 @@ export class MarketingRecordsService {
     const branchId = id ? undefined : branchScope(actor, requestedBranch);
     const key = requiredKey(keyValue);
     const normalized = await this.normalizeAsset(input);
-    this.assertAssetPermission(normalized.kind, actor);
+    if (!id) this.assertAssetPermission(normalized.kind, actor);
     const expectedVersion = input.expectedVersion;
     if (id && !expectedVersion)
       throw new BadRequestException('expectedVersion الزامی است.');
-    const operation = id
-      ? `ASSET_${normalized.kind}_UPDATE`
-      : `ASSET_${normalized.kind}_CREATE`;
-    const hash = fingerprint({ id, expectedVersion, ...normalized });
     const row = await this.database.client.$transaction(async (tx) => {
       const current = id
         ? await tx.marketingAsset.findFirst({
@@ -663,7 +659,20 @@ export class MarketingRecordsService {
           })
         : null;
       if (id && !current) throw notFound();
+      if (current) {
+        this.assertAssetPermission(current.kind as MarketingAssetKind, actor);
+        if (current.kind !== normalized.kind)
+          throw new BadRequestException(
+            'نوع رکورد پس از ایجاد قابل تغییر نیست.',
+          );
+      }
       const selectedBranch = current?.branchId ?? branchId!;
+      const persistedKind = (current?.kind ??
+        normalized.kind) as MarketingAssetKind;
+      const operation = id
+        ? `ASSET_${persistedKind}_UPDATE`
+        : `ASSET_${persistedKind}_CREATE`;
+      const hash = fingerprint({ id, expectedVersion, ...normalized });
       const replay = await tx.marketingCommand.findUnique({
         where: {
           actorUserId_branchId_operation_idempotencyKey: {
@@ -716,7 +725,7 @@ export class MarketingRecordsService {
           operation,
           idempotencyKey: key,
           requestFingerprint: hash,
-          entityType: normalized.kind,
+          entityType: persistedKind,
           resultEntityId: saved.id,
           resultVersion: saved.version,
           payloadSnapshot: json(normalized),
@@ -726,7 +735,7 @@ export class MarketingRecordsService {
         data: {
           branchId: selectedBranch,
           actorUserId: actor.userId,
-          entityType: normalized.kind,
+          entityType: persistedKind,
           entityId: saved.id,
           action: current ? 'UPDATE' : 'CREATE',
           traceId: traceId ?? null,
@@ -981,18 +990,49 @@ export class MarketingRecordsService {
       };
     }
     if (kind === 'MESSAGE') {
-      exactKeys(payload, ['channel', 'audience', 'body'], 'پیام');
-      const channel = requiredString(
-        payload.channel,
-        'کانال',
-        40,
-      ).toUpperCase();
-      if (!CHANNELS.has(channel))
+      exactKeys(
+        payload,
+        ['channels', 'audience', 'body', 'sendMode', 'sendAt'],
+        'پیام',
+      );
+      if (
+        !Array.isArray(payload.channels) ||
+        payload.channels.length === 0 ||
+        payload.channels.length > CHANNELS.size
+      )
+        throw new BadRequestException('حداقل یک کانال معتبر لازم است.');
+      const channels = [
+        ...new Set(
+          payload.channels.map((value) =>
+            requiredString(value, 'کانال', 40).toUpperCase(),
+          ),
+        ),
+      ];
+      if (channels.some((channel) => !CHANNELS.has(channel)))
         throw new BadRequestException('کانال پیام معتبر نیست.');
+      const sendMode = requiredString(
+        payload.sendMode,
+        'روش ارسال',
+        20,
+      ).toUpperCase();
+      if (!['NOW', 'SCHEDULED'].includes(sendMode))
+        throw new BadRequestException('روش ارسال معتبر نیست.');
+      const sendAt = payload.sendAt
+        ? assertUtcDate(
+            requiredString(payload.sendAt, 'زمان ارسال'),
+            'زمان ارسال',
+          )?.toISOString()
+        : null;
+      if (sendMode === 'SCHEDULED' && !sendAt)
+        throw new BadRequestException(
+          'زمان ارسال برای روش زمان‌بندی الزامی است.',
+        );
       return {
-        channel,
+        channels,
         audience: requiredString(payload.audience, 'مخاطبان', 300),
         body: requiredString(payload.body, 'متن پیام', 5_000),
+        sendMode,
+        sendAt,
       };
     }
     if (kind === 'SCHEDULE') {
@@ -1153,9 +1193,13 @@ export class MarketingRecordsService {
       const expectedKind =
         input.kind === 'SCHEDULE'
           ? 'MESSAGE'
-          : input.kind === 'LANDING_PAGE'
-            ? 'FORM'
-            : undefined;
+          : input.kind === 'MESSAGE'
+            ? 'SEGMENT'
+            : input.kind === 'FORM'
+              ? 'LANDING_PAGE'
+              : input.kind === 'LANDING_PAGE'
+                ? 'FORM'
+                : undefined;
       const related = await tx.marketingAsset.findFirst({
         where: {
           id: input.relatedAssetId,

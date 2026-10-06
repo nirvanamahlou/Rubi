@@ -38,6 +38,9 @@ export interface CampaignPreview {
   budgetAmount: string;
   spendAmount: string;
   currencyCode: 'IRR' | 'USD' | 'EUR';
+  budgetCurrencyCode?: 'IRR' | 'USD' | 'EUR';
+  targetCurrencyCode?: 'IRR' | 'USD' | 'EUR';
+  spendTotals?: readonly { amount: string; currencyCode: string }[];
   attributedRevenue: null;
   ownerRole: string;
   ownerUserId?: string;
@@ -54,7 +57,15 @@ export interface CampaignPreview {
   offerTitle: string;
   couponCode: string | null;
   utmCampaign: string;
+  utmSource?: string;
+  utmMedium?: string;
+  utmTerm?: string;
+  utmContent?: string;
   frequencyCap: string;
+  declaredByUserId?: string;
+  declaredAt?: string;
+  publicationRequestedAt?: string | null;
+  scheduledFor?: string | null;
   status: CampaignStatus;
   version: number;
   updatedAt: string;

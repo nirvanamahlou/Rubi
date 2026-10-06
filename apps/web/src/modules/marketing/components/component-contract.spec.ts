@@ -203,7 +203,7 @@ describe('marketing workspace component contract', () => {
     expect(workspaceSource).toContain("onOpen('create')");
     expect(workspaceSource).toContain("onOpen('view', campaign)");
     expect(workspaceSource).toContain("onOpen('edit', campaign)");
-    expect(workspaceSource).toContain('CampaignDetailReference');
+    expect(workspaceSource).toContain('CampaignDetail');
     expect(referencePagesSource).toContain('صفحات جزئیات کمپین');
     expect(workspaceSource).toContain('aria-live="polite"');
   });
@@ -269,7 +269,7 @@ describe('marketing workspace component contract', () => {
     expect(referencePagesSource).toContain(
       "form.set('sourceModule', 'marketing')",
     );
-    expect(referencePagesSource).toContain(
+    expect(referencePagesSource).not.toContain(
       "form.set('confidentiality', 'INTERNAL')",
     );
     expect(referencePagesSource).not.toContain(
@@ -321,7 +321,7 @@ describe('marketing workspace component contract', () => {
   });
 
   it('keeps attribution and dispatch contract gates after removing the hub simulator', () => {
-    expect(workspaceSource).toContain('MARKETING_ATTRIBUTION_STATUS');
+    expect(contractsSource).toContain('MARKETING_ATTRIBUTION_STATUS');
     expect(contractsSource).toContain('MARKETING_DISPATCH_STATUS');
   });
 });

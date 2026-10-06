@@ -53,6 +53,16 @@ function campaignsOnDay(
   );
 }
 
+export function campaignCalendarMonthRange(anchor: Date) {
+  const currentDays = calendarMonthDays(anchor, 'persian').filter(
+    (day) => day.isCurrentMonth,
+  );
+  return {
+    startsAt: currentDays[0]!.isoDate,
+    endsAt: currentDays[currentDays.length - 1]!.isoDate,
+  };
+}
+
 export function CampaignCalendar({
   campaigns,
   onOpen,
@@ -62,14 +72,14 @@ export function CampaignCalendar({
 }) {
   const system: CalendarSystem = 'persian';
   const [anchor, setAnchor] = useState(() => new Date());
-  const [range, setRange] = useState(() => {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const local = (value: Date) =>
-      `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
-    return { startsAt: local(start), endsAt: local(end) };
-  });
+  const [range, setRange] = useState(() =>
+    campaignCalendarMonthRange(new Date()),
+  );
+  const moveMonth = (delta: -1 | 1) => {
+    const next = moveCalendarMonth(anchor, delta, system);
+    setAnchor(next);
+    setRange(campaignCalendarMonthRange(next));
+  };
   const days = useMemo(
     () => calendarMonthDays(anchor, system),
     [anchor, system],
@@ -110,7 +120,10 @@ export function CampaignCalendar({
             </p>
           </div>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[14rem_14rem_auto_auto_auto] lg:items-end">
+        <div
+          dir="ltr"
+          className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[14rem_14rem_auto_auto_auto] lg:items-end"
+        >
           <FormField id="campaign-calendar-start" label="از تاریخ">
             <DatePicker
               id="campaign-calendar-start"
@@ -133,23 +146,26 @@ export function CampaignCalendar({
           </FormField>
           <Button
             aria-label="ماه قبل"
-            onClick={() =>
-              setAnchor((value) => moveCalendarMonth(value, -1, system))
-            }
+            onClick={() => moveMonth(-1)}
             size="icon"
             variant="outline"
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
           </Button>
-          <Button onClick={() => setAnchor(new Date())} variant="outline">
+          <Button
+            onClick={() => {
+              const now = new Date();
+              setAnchor(now);
+              setRange(campaignCalendarMonthRange(now));
+            }}
+            variant="outline"
+          >
             <RotateCcw aria-hidden="true" className="size-4" />
             امروز
           </Button>
           <Button
             aria-label="ماه بعد"
-            onClick={() =>
-              setAnchor((value) => moveCalendarMonth(value, 1, system))
-            }
+            onClick={() => moveMonth(1)}
             size="icon"
             variant="outline"
           >

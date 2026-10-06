@@ -266,6 +266,151 @@ describe('MarketingRecordsService durable boundaries', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('authorizes the persisted asset kind and rejects cross-kind PATCH before replay or mutation', async () => {
+    const current = {
+      id: '44444444-4444-4444-8444-444444444444',
+      branchId,
+      kind: 'SCHEDULE',
+      name: 'ارسال پایدار',
+      status: 'DRAFT',
+      campaignId: '55555555-5555-4555-8555-555555555555',
+      relatedAssetId: '66666666-6666-4666-8666-666666666666',
+      scheduledAt: new Date('2026-10-10T10:00:00.000Z'),
+      expiresAt: null,
+      payload: { channel: 'SMS', status: 'DRAFT' },
+      version: 2,
+    };
+    const findUnique = vi.fn();
+    const updateMany = vi.fn();
+    const tx = {
+      marketingAsset: {
+        findFirst: vi.fn().mockResolvedValue(current),
+        updateMany,
+      },
+      marketingCommand: { findUnique },
+    };
+    const records = service({
+      $transaction: (work: (client: typeof tx) => unknown) => work(tx),
+    });
+    const changedKind: MarketingAssetInputV1 = {
+      kind: 'MESSAGE',
+      name: 'پیام تبدیل‌شده',
+      status: 'DRAFT',
+      relatedAssetId: '77777777-7777-4777-8777-777777777777',
+      expectedVersion: 2,
+      payload: {
+        channels: ['SMS'],
+        audience: 'سگمنت',
+        body: 'متن سالم پیام',
+        sendMode: 'NOW',
+        sendAt: null,
+      },
+    };
+
+    await expect(
+      records.saveAsset(
+        current.id,
+        changedKind,
+        actor(['marketing.read', 'marketing.campaign.update']),
+        undefined,
+        'kind-key-1',
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      records.saveAsset(
+        current.id,
+        changedKind,
+        actor(['marketing.read', 'marketing.campaign.schedule']),
+        undefined,
+        'kind-key-2',
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(findUnique).not.toHaveBeenCalled();
+    expect(updateMany).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'MESSAGE',
+      'SEGMENT',
+      {
+        channels: ['SMS', 'EMAIL'],
+        audience: 'سگمنت پایدار',
+        body: 'متن پیام پایدار',
+        sendMode: 'NOW',
+        sendAt: null,
+      },
+    ],
+    [
+      'FORM',
+      'LANDING_PAGE',
+      {
+        type: 'LEAD',
+        landingPage: 'https://example.test/form',
+        completionRate: '15.5',
+        responseCount: '12',
+      },
+    ],
+  ] as const)(
+    'validates %s relatedAssetId against exact same-branch %s kind',
+    async (kind, expectedKind, payload) => {
+      const relatedAssetId = '77777777-7777-4777-8777-777777777777';
+      const findFirst = vi.fn().mockResolvedValue({ id: relatedAssetId });
+      const now = new Date('2026-10-01T00:00:00.000Z');
+      const tx = {
+        marketingCommand: {
+          findUnique: vi.fn().mockResolvedValue(null),
+          create: vi.fn().mockResolvedValue({}),
+        },
+        marketingAsset: {
+          findFirst,
+          create: vi.fn().mockResolvedValue({
+            id: '88888888-8888-4888-8888-888888888888',
+            branchId,
+            kind,
+            name: 'رکورد پایدار',
+            status: 'DRAFT',
+            campaignId: null,
+            relatedAssetId,
+            scheduledAt: null,
+            expiresAt: null,
+            payload,
+            version: 1,
+            createdAt: now,
+            updatedAt: now,
+          }),
+        },
+        marketingAuditEvent: { create: vi.fn().mockResolvedValue({}) },
+      };
+      const records = service({
+        $transaction: (work: (client: typeof tx) => unknown) => work(tx),
+      });
+
+      await records.saveAsset(
+        null,
+        {
+          kind,
+          name: 'رکورد پایدار',
+          status: 'DRAFT',
+          relatedAssetId,
+          payload,
+        },
+        actor(['marketing.read', 'marketing.campaign.update']),
+        branchId,
+        `typed-reference-${kind}`,
+      );
+
+      expect(findFirst).toHaveBeenCalledWith({
+        where: {
+          id: relatedAssetId,
+          branchId,
+          kind: expectedKind,
+          status: { not: 'DELETED' },
+        },
+      });
+    },
+  );
+
   it.each<MarketingAssetInputV1>([
     {
       kind: 'SHORT_LINK',
@@ -304,7 +449,13 @@ describe('MarketingRecordsService durable boundaries', () => {
       kind: 'MESSAGE',
       name: 'پیام',
       status: 'DRAFT',
-      payload: { channel: 'SMS', audience: 'عمومی', body: 'تماس 09121234567' },
+      payload: {
+        channels: ['SMS'],
+        audience: 'عمومی',
+        body: 'تماس 09121234567',
+        sendMode: 'NOW',
+        sendAt: null,
+      },
     },
     {
       kind: 'AUTOMATION',

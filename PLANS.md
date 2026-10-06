@@ -430,7 +430,7 @@ Baseline برنامه: `origin/develop` در Merge Commit
 - [ ] قرارداد تاییدشده HR → Finance برای ورودی پرداخت؛ payroll قانونی کامل خارج از محدوده
 - [ ] Tasks، approvals، automation rules/runs و notifications
 
-MARKETING-DOCX-1006 review candidate covers the requested durable campaign, segment, intake/source, content/link and automation editor slice. It does not close the broader Marketing roadmap item: cross-user owner/sales-expert selection awaits an IAM public same-branch validator/selector, and external dispatch/site publication/financial attribution remain adapter-owned. Independent review, amended disposable migration replay, authenticated browser QA and refreshed-head CI are still required.
+MARKETING-DOCX-1006 review-repair candidate covers the requested durable campaign, segment, intake/source, content/link and four-port automation editor slice with exact populated-field round trips and stable publication retry. It does not close the broader Marketing roadmap item: cross-user owner/sales-expert selection awaits an IAM public same-branch validator/selector, and external dispatch/site publication/financial attribution remain adapter-owned. Fresh independent review, the opt-in real PostgreSQL proof in refreshed CI and authenticated browser QA are still required.
 
 ### مرحله 8 — آمادگی انتشار (`P0/P1`)
 

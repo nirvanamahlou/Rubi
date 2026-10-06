@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { notifyNotificationFeedChanged } from '@/modules/notifications/api/client';
 
 vi.mock('@/lib/environment', () => ({
   getPublicApiBaseUrl: () => 'https://api.example.test',
+}));
+vi.mock('@/modules/notifications/api/client', () => ({
+  notifyNotificationFeedChanged: vi.fn(),
 }));
 
 import { marketingApi } from './records-client';
@@ -43,6 +47,7 @@ describe('marketing durable API client', () => {
       message: 'نسخه تغییر کرده است.',
     });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(notifyNotificationFeedChanged).not.toHaveBeenCalled();
   });
 
   it('reloads campaign data from the server and sends caller idempotency keys', async () => {
@@ -72,5 +77,6 @@ describe('marketing durable API client', () => {
     expect(init.body).toBe(
       JSON.stringify({ expectedVersion: 4, scheduledFor: null }),
     );
+    expect(notifyNotificationFeedChanged).toHaveBeenCalledOnce();
   });
 });

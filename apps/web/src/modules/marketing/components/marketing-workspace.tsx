@@ -1,9 +1,6 @@
 'use client';
 import { useRouteAccess } from '@/modules/iam/access-context';
-import type {
-  AuthenticatedActor,
-  MarketingCampaignViewV1,
-} from '@nora/contracts';
+import type { AuthenticatedActor } from '@nora/contracts';
 
 import {
   BadgePercent,
@@ -27,7 +24,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -60,7 +57,6 @@ import {
 } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import { MARKETING_SECTION_CHANGE_EVENT } from '@/lib/navigation';
-import { MARKETING_ATTRIBUTION_STATUS } from '../api/contracts';
 import { marketingApi } from '../api/records-client';
 import {
   campaignChannelLabels,
@@ -76,6 +72,14 @@ import {
   type MarketingCampaignQuery,
 } from '../model/marketing';
 import {
+  campaignInputFromDraft,
+  campaignPreviewFromRecord,
+  ensureCampaignPublicationAttempt,
+  executeCampaignPublication,
+  type CampaignPublicationAttempt,
+  type SegmentOption,
+} from '../model/durable-records';
+import {
   marketingSectionTabs,
   marketingSections,
   type MarketingPreviewItem,
@@ -90,8 +94,8 @@ import {
   type CampaignFormMode,
 } from './campaign-form';
 import { MarketingProcessTracker } from './marketing-process-tracker';
+import { CampaignDetail } from './campaign-detail';
 import {
-  CampaignDetailReference,
   MarketingDashboardReference,
   MarketingReferenceSection,
 } from './marketing-reference-pages';
@@ -171,59 +175,6 @@ function statusTone(status: CampaignStatus) {
   if (status === 'PAUSED' || status === 'READY_FOR_APPROVAL')
     return 'bg-amber-100 text-amber-800';
   return 'bg-secondary text-secondary-foreground';
-}
-
-function liveCampaign(record: MarketingCampaignViewV1): CampaignPreview {
-  const spendAmount = (record.spendLines ?? []).reduce(
-    (total, line) => total + Number(line.amount),
-    0,
-  );
-  const status: CampaignStatus =
-    record.status === 'ACTIVE'
-      ? 'RUNNING'
-      : record.status === 'SCHEDULED'
-        ? 'SCHEDULED'
-        : record.status === 'PAUSED'
-          ? 'PAUSED'
-          : record.status === 'CANCELLED'
-            ? 'CANCELLED'
-            : 'DRAFT';
-  return {
-    id: record.id,
-    internalCode: record.internalCode,
-    name: record.name,
-    campaignType: record.campaignType,
-    objective: record.objective,
-    channels: record.channels.filter(
-      (channel): channel is CampaignChannel => channel in campaignChannelLabels,
-    ),
-    audienceSummary: record.segmentId ? 'سگمنت ثبت‌شده' : 'بدون سگمنت',
-    segmentReference: record.segmentId ?? '',
-    startsAt: record.startsAt,
-    endsAt: record.endsAt,
-    budgetAmount: record.budgetAmount,
-    spendAmount: String(spendAmount),
-    currencyCode: record.budgetCurrencyCode as CampaignPreview['currencyCode'],
-    attributedRevenue: null,
-    ownerRole: record.ownerUserId,
-    ownerUserId: record.ownerUserId,
-    salesTarget: record.salesTarget,
-    ...(record.progressPercent !== undefined
-      ? { progressPercent: record.progressPercent }
-      : {}),
-    ...(record.links !== undefined ? { links: record.links } : {}),
-    ...(record.spendLines !== undefined
-      ? { spendLines: record.spendLines }
-      : {}),
-    executionCompany: record.executionCompany as ExecutionCompany,
-    offerTitle: '—',
-    couponCode: null,
-    utmCampaign: record.utmCampaign ?? '',
-    frequencyCap: String(record.frequencyCap),
-    status,
-    version: record.version,
-    updatedAt: record.updatedAt,
-  };
 }
 
 function MarketingHub({
@@ -396,8 +347,21 @@ function CampaignCard({
         <div>
           <dt className="text-xs text-muted-foreground">بودجه / هزینه</dt>
           <dd className="mt-1 font-semibold" dir="ltr">
-            {formatMoney(campaign.budgetAmount, campaign.currencyCode)} /{' '}
-            {formatMoney(campaign.spendAmount, campaign.currencyCode)}
+            {formatMoney(
+              campaign.budgetAmount,
+              campaign.budgetCurrencyCode ?? campaign.currencyCode,
+            )}
+            {' / '}
+            {(
+              campaign.spendTotals ?? [
+                {
+                  amount: campaign.spendAmount,
+                  currencyCode: campaign.currencyCode,
+                },
+              ]
+            )
+              .map((total) => formatMoney(total.amount, total.currencyCode))
+              .join(' + ')}
           </dd>
         </div>
       </dl>
@@ -438,7 +402,7 @@ function CampaignCard({
           <div>
             <dt className="text-muted-foreground">درآمد منتسب</dt>
             <dd className="mt-1">
-              داده آزمایشی ({MARKETING_ATTRIBUTION_STATUS})
+              انتساب مالی در این قرارداد مارکتینگ موجود نیست.
             </dd>
           </div>
         </dl>
@@ -517,8 +481,13 @@ function CampaignList({
           >
             <Download aria-hidden="true" className="size-4" /> خروجی اکسل
           </Button>
-          <Button onClick={() => onOpen('create')}>
-            <Plus aria-hidden="true" className="size-4" /> افزودن کمپین جدید
+          <Button
+            aria-label="افزودن کمپین جدید"
+            onClick={() => onOpen('create')}
+            size="icon"
+            title="کمپین جدید"
+          >
+            <Plus aria-hidden="true" className="size-4" />
           </Button>
         </div>
       </div>
@@ -730,114 +699,39 @@ function CampaignList({
   );
 }
 
-function BudgetPanel({ onNotice }: { onNotice: (message: string) => void }) {
-  const rows = [
-    ['جشنواره تابستان اروپا', 66, '۲.۱ از ۳.۲ میلیارد'],
-    ['پرواز استانبول', 70, '۱.۴ از ۲ میلیارد'],
-    ['هتل‌های دبی', 65, '۹۸۰ از ۱٬۵۰۰ میلیون'],
-    ['معرفی تور نوروز', 18, '۹۰۰ از ۵ میلیارد'],
-  ] as const;
+function BudgetPanel({ campaigns }: { campaigns: readonly CampaignPreview[] }) {
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
-      <Card className="p-5 xl:col-span-2">
+    <div className="grid gap-4">
+      <Card className="p-5">
         <h3 className="font-black">مصرف بودجه کمپین‌ها</h3>
         <div className="mt-5 grid gap-4">
-          {rows.map(([label, percent, value]) => (
-            <button
-              className="grid gap-2 text-start sm:grid-cols-[12rem_1fr_10rem] sm:items-center"
-              key={label}
-              onClick={() => onNotice(`جزئیات بودجه ${label} باز شد.`)}
-              type="button"
+          {campaigns.map((campaign) => (
+            <div
+              className="grid gap-2 text-start sm:grid-cols-[12rem_1fr_18rem] sm:items-center"
+              key={campaign.id}
             >
-              <strong>{label}</strong>
+              <strong>{campaign.name}</strong>
               <span className="h-2.5 overflow-hidden rounded-full bg-muted">
                 <span
                   className="block h-full rounded-full bg-primary"
-                  style={{ width: `${percent}%` }}
+                  style={{
+                    width: `${Math.min(100, Number(campaign.progressPercent))}%`,
+                  }}
                 />
               </span>
-              <small className="text-muted-foreground">{value}</small>
-            </button>
-          ))}
-        </div>
-      </Card>
-      <Card className="p-5">
-        <h3 className="font-black">کنترل هزینه</h3>
-        <dl className="mt-4 grid gap-3">
-          {[
-            ['بودجه مصوب', '۱۱.۷ میلیارد'],
-            ['هزینه قطعی', '۵.۳۸ میلیارد'],
-            ['تعهد باز', '۱.۲ میلیارد'],
-          ].map(([label, value]) => (
-            <div
-              className="flex justify-between border-b border-dashed border-border py-3 last:border-0"
-              key={label}
-            >
-              <dt className="text-muted-foreground">{label}</dt>
-              <dd className="font-black">{value}</dd>
+              <small className="text-muted-foreground" dir="ltr">
+                {formatMoney(
+                  campaign.budgetAmount,
+                  campaign.budgetCurrencyCode ?? campaign.currencyCode,
+                )}
+                {' / '}
+                {(campaign.spendTotals ?? [])
+                  .map((total) => formatMoney(total.amount, total.currencyCode))
+                  .join(' + ') || '—'}
+              </small>
             </div>
           ))}
-        </dl>
-      </Card>
-      <Card className="overflow-x-auto xl:col-span-3">
-        <table className="w-full min-w-[54rem] text-sm">
-          <thead className="bg-muted/50 text-muted-foreground">
-            <tr>
-              {[
-                'کمپین',
-                'نوع هزینه',
-                'تأمین‌کننده',
-                'مبلغ',
-                'تاریخ',
-                'سند مالی',
-                'وضعیت',
-              ].map((header) => (
-                <th className="p-4 text-start" key={header}>
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              [
-                'جشنواره تابستان اروپا',
-                'پیامک',
-                'کاوه‌نگار',
-                '۴۲۰ میلیون',
-                '۱۴۰۵/۰۶/۱۰',
-                'FIN-8821',
-                'قطعی',
-              ],
-              [
-                'جشنواره تابستان اروپا',
-                'تبلیغ کلیکی',
-                'گوگل ادز',
-                '۸۸۰ میلیون',
-                '۱۴۰۵/۰۶/۱۲',
-                'FIN-8848',
-                'قطعی',
-              ],
-              [
-                'پرواز استانبول',
-                'بنر سایت',
-                'تیم محتوا',
-                '۱۲۰ میلیون',
-                '۱۴۰۵/۰۶/۱۵',
-                '—',
-                'برآوردی',
-              ],
-            ].map((row) => (
-              <tr className="border-t border-border" key={row.join('-')}>
-                {row.map((cell) => (
-                  <td className="p-4" key={cell}>
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        </div>
       </Card>
     </div>
   );
@@ -893,7 +787,7 @@ function CampaignsPanel({
         />
       </TabsContent>
       <TabsContent className="mt-5" value="budget">
-        <BudgetPanel onNotice={onNotice} />
+        <BudgetPanel campaigns={campaigns} />
       </TabsContent>
     </Tabs>
   );
@@ -920,6 +814,8 @@ export function MarketingWorkspace({
   const router = useRouter();
   const [actor, setActor] = useState<AuthenticatedActor | null>(null);
   const [campaigns, setCampaigns] = useState<CampaignPreview[]>([]);
+  const [segments, setSegments] = useState<SegmentOption[]>([]);
+  const publicationAttempt = useRef<CampaignPublicationAttempt | null>(null);
   const [campaignsLoading, setCampaignsLoading] = useState(true);
   const [campaignsError, setCampaignsError] = useState('');
   const [section, setSection] = useState<MarketingSectionKey | null>(() =>
@@ -938,12 +834,22 @@ export function MarketingWorkspace({
     setCampaignsLoading(true);
     setCampaignsError('');
     try {
-      const [access, response] = await Promise.all([
+      const [access, response, segmentResponse] = await Promise.all([
         marketingApi.access(),
         marketingApi.campaigns(),
+        marketingApi.assets('SEGMENT'),
       ]);
       setActor(access);
-      setCampaigns(response.data.map(liveCampaign));
+      const nextSegments = segmentResponse.data.map(({ id, name }) => ({
+        id,
+        name,
+      }));
+      setSegments(nextSegments);
+      setCampaigns(
+        response.data.map((record) =>
+          campaignPreviewFromRecord(record, nextSegments),
+        ),
+      );
     } catch (error) {
       setCampaignsError(
         error instanceof Error ? error.message : 'دریافت کمپین‌ها انجام نشد.',
@@ -1069,82 +975,42 @@ export function MarketingWorkspace({
             {campaignDialog.mode === 'create'
               ? 'ساخت کمپین جدید'
               : campaignDialog.mode === 'edit'
-                ? 'ویرایش پیش‌نمایش کمپین'
+                ? 'ویرایش کمپین'
                 : 'جزئیات کمپین'}
           </DialogTitle>
           {campaignDialog.mode === 'view' ? (
             <DialogDescription>
-              نمای ۳۶۰ درجه کمپین با داده‌های کاملاً آزمایشی مرجع.
+              نمای ۳۶۰ درجه کمپین با داده‌های ذخیره‌شده سرور.
             </DialogDescription>
           ) : null}
           {campaignDialog.mode === 'view' && campaignDialog.campaign ? (
-            <CampaignDetailReference
-              campaign={campaignDialog.campaign}
-              onNotice={setNotice}
-            />
+            <CampaignDetail campaign={campaignDialog.campaign} />
           ) : (
             <CampaignForm
               campaign={campaignDialog.campaign}
               key={`${campaignDialog.mode}-${campaignDialog.campaign?.id ?? 'new'}`}
               mode={campaignDialog.mode}
               ownerUserId={actor?.userId ?? ''}
+              segments={segments}
               onSave={async (draft: CampaignDraft) => {
                 if (!actor?.branchIds[0])
                   throw new Error('شعبه فعال برای ذخیره مشخص نیست.');
-                const date = (value: string) => new Date(value).toISOString();
-                const input = {
-                  internalCode: draft.internalCode,
-                  name: draft.name,
-                  campaignType: draft.campaignType,
-                  objective: draft.objective,
-                  executionCompany: draft.company,
-                  channels: draft.channels,
-                  ownerUserId: draft.ownerUserId,
-                  segmentId:
-                    draft.segmentReference &&
-                    !draft.segmentReference.startsWith('preview-')
-                      ? draft.segmentReference
-                      : null,
-                  salesTarget: draft.salesTarget,
-                  targetCurrencyCode: draft.currencyCode,
-                  budgetAmount: draft.budgetAmount,
-                  budgetCurrencyCode: draft.currencyCode,
-                  startsAt: date(draft.startsAt),
-                  endsAt: date(draft.endsAt),
-                  utmSource: draft.utmSource || null,
-                  utmMedium: draft.utmMedium || null,
-                  utmCampaign: draft.utmCampaign || null,
-                  utmTerm: null,
-                  utmContent: null,
-                  frequencyCap: Number(draft.frequencyCap),
-                  progressPercent: draft.progressPercent,
-                  spendLines:
-                    draft.spendLabel && draft.spendAmount
-                      ? [
-                          {
-                            label: draft.spendLabel,
-                            amount: draft.spendAmount,
-                            currencyCode: draft.currencyCode,
-                          },
-                        ]
-                      : [],
-                  links: draft.links
-                    .split(/\r?\n/)
-                    .map((value) => value.trim())
-                    .filter(Boolean),
-                  ...(campaignDialog.campaign
-                    ? { expectedVersion: campaignDialog.campaign.version }
-                    : {}),
-                };
+                const input = campaignInputFromDraft(
+                  draft,
+                  campaignDialog.campaign,
+                );
                 if (campaignDialog.mode === 'create') {
-                  const created = await marketingApi.createCampaign(
+                  publicationAttempt.current = ensureCampaignPublicationAttempt(
+                    publicationAttempt.current,
+                    input,
+                  );
+                  await executeCampaignPublication(
+                    publicationAttempt.current,
                     input,
                     actor.branchIds[0],
+                    marketingApi,
                   );
-                  await marketingApi.publishCampaign(
-                    created.data.id,
-                    created.data.version,
-                  );
+                  publicationAttempt.current = null;
                   setNotice(
                     'کمپین در سامانه منتشر شد؛ اتصال خارجی همچنان غیرفعال است.',
                   );

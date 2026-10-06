@@ -11,6 +11,7 @@ import type {
 } from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { notifyNotificationFeedChanged } from '@/modules/notifications/api/client';
 
 export class MarketingApiError extends Error {
   constructor(
@@ -61,6 +62,12 @@ function mutationHeaders(branchId?: string, key = crypto.randomUUID()) {
   };
 }
 
+async function mutation<T>(path: string, init: RequestInit): Promise<T> {
+  const response = await request<T>(path, init);
+  notifyNotificationFeedChanged();
+  return response;
+}
+
 export const marketingApi = {
   access: () => request<AuthenticatedActor>('/iam/auth/access'),
   campaigns: () =>
@@ -70,13 +77,13 @@ export const marketingApi = {
     branchId?: string,
     key?: string,
   ) =>
-    request<{ data: MarketingCampaignViewV1 }>('/marketing/campaigns', {
+    mutation<{ data: MarketingCampaignViewV1 }>('/marketing/campaigns', {
       method: 'POST',
       headers: mutationHeaders(branchId, key),
       body: JSON.stringify(input),
     }),
   updateCampaign: (id: string, input: MarketingCampaignInputV1, key?: string) =>
-    request<{ data: MarketingCampaignViewV1 }>(
+    mutation<{ data: MarketingCampaignViewV1 }>(
       `/marketing/campaigns/${encodeURIComponent(id)}`,
       {
         method: 'PATCH',
@@ -90,7 +97,7 @@ export const marketingApi = {
     scheduledFor?: string | null,
     key?: string,
   ) =>
-    request<{ data: MarketingCampaignViewV1 }>(
+    mutation<{ data: MarketingCampaignViewV1 }>(
       `/marketing/campaigns/${encodeURIComponent(id)}/publication`,
       {
         method: 'POST',
@@ -109,7 +116,7 @@ export const marketingApi = {
     input: MarketingAssetInputV1,
     options: { id?: string; branchId?: string; key?: string } = {},
   ) =>
-    request<{ data: MarketingAssetViewV1 }>(
+    mutation<{ data: MarketingAssetViewV1 }>(
       options.id
         ? `/marketing/assets/${encodeURIComponent(options.id)}`
         : '/marketing/assets',
@@ -120,7 +127,7 @@ export const marketingApi = {
       },
     ),
   deleteAsset: (id: string, expectedVersion: number, key?: string) =>
-    request<{ data: MarketingAssetViewV1 }>(
+    mutation<{ data: MarketingAssetViewV1 }>(
       `/marketing/assets/${encodeURIComponent(id)}`,
       {
         method: 'DELETE',
@@ -137,7 +144,7 @@ export const marketingApi = {
     branchId?: string,
     key?: string,
   ) =>
-    request<{ data: CustomerAffairsMarketingIntakeViewV1 }>(
+    mutation<{ data: CustomerAffairsMarketingIntakeViewV1 }>(
       '/customer-affairs/marketing-intakes',
       {
         method: 'POST',
@@ -151,7 +158,7 @@ export const marketingApi = {
     expectedVersion: number,
     key?: string,
   ) =>
-    request<{ data: CustomerAffairsMarketingIntakeViewV1 }>(
+    mutation<{ data: CustomerAffairsMarketingIntakeViewV1 }>(
       `/customer-affairs/marketing-intakes/${encodeURIComponent(id)}/score`,
       {
         method: 'POST',

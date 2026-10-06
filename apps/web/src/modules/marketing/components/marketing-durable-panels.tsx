@@ -25,6 +25,16 @@ import {
 } from '@/components/ui/form-controls';
 import { Badge, Card, EmptyState } from '@/components/ui/surfaces';
 import { marketingApi } from '../api/records-client';
+import {
+  automationDraftFromAsset,
+  automationInputFromDraft,
+  contentDraftFromAsset,
+  contentInputFromDraft,
+  emptyContentDraft,
+  type AutomationDraft,
+  type AutomationPort,
+  type ContentDraft,
+} from '../model/durable-records';
 
 type Notice = (message: string) => void;
 
@@ -321,6 +331,8 @@ export function DurableIntakesPanel({
   const [status, setStatus] = useState('NEW');
   const [lastFollowUpAt, setLastFollowUpAt] = useState('');
   const [ruleIds, setRuleIds] = useState<string[]>(['PHONE_VALID']);
+  const [selected, setSelected] =
+    useState<CustomerAffairsMarketingIntakeViewV1 | null>(null);
   const load = useCallback(async () => {
     setError('');
     try {
@@ -452,6 +464,22 @@ export function DurableIntakesPanel({
             <Plus aria-hidden="true" className="size-4" />
             سرنخ جدید
           </Button>
+          <Button
+            aria-label="پاک‌کردن فرم سرنخ"
+            onClick={() => {
+              setPhone('');
+              setSource('WEBSITE');
+              setCampaignId('none');
+              setStatus('NEW');
+              setLastFollowUpAt('');
+            }}
+            size="icon"
+            title="سرنخ جدید"
+            type="button"
+            variant="outline"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </Button>
         </Card>
       ) : (
         <Card className="p-5">
@@ -529,9 +557,20 @@ export function DurableIntakesPanel({
                   محاسبه امتیاز
                 </Button>
               ) : (
-                <Badge>
-                  {item.campaignId ? 'منتسب به کمپین' : 'بدون کمپین'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge>
+                    {item.campaignId ? 'منتسب به کمپین' : 'بدون کمپین'}
+                  </Badge>
+                  <Button
+                    aria-label={`مشاهده سرنخ ${item.maskedPhone}`}
+                    onClick={() => setSelected(item)}
+                    size="icon"
+                    title="جزئیات سرنخ"
+                    variant="outline"
+                  >
+                    <Eye aria-hidden="true" className="size-4" />
+                  </Button>
+                </div>
               )}
             </Card>
           ))}
@@ -542,6 +581,38 @@ export function DurableIntakesPanel({
           description="فرم سرنخ جدید را تکمیل کنید."
         />
       )}
+      {selected ? (
+        <Card className="grid gap-3 p-5 md:grid-cols-3">
+          <strong className="md:col-span-3">جزئیات سرنخ محافظت‌شده</strong>
+          {[
+            ['تلفن', selected.maskedPhone],
+            ['منبع', selected.sourceCategory],
+            ['وضعیت', selected.status],
+            ['کمپین', selected.campaignId ?? '—'],
+            ['کارشناس', selected.assigneeUserId ?? '—'],
+            ['آخرین پیگیری', selected.lastFollowUpAt ?? '—'],
+            ['امتیاز', String(selected.score)],
+            ['قواعد امتیاز', selected.scoreRuleIds.join('، ') || '—'],
+            ['نسخه', String(selected.version)],
+            ['ایجاد', selected.createdAt],
+            ['به‌روزرسانی', selected.updatedAt],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <small className="text-muted-foreground">{label}</small>
+              <p className="break-all font-bold">{value}</p>
+            </div>
+          ))}
+          <Button
+            aria-label="بستن جزئیات"
+            onClick={() => setSelected(null)}
+            size="icon"
+            title="بستن"
+            variant="outline"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </Button>
+        </Card>
+      ) : null}
     </section>
   );
 }
@@ -641,9 +712,10 @@ export function DurableMessagesPanel({
   onNotice: Notice;
 }) {
   const data = useMarketingData(
-    scheduled ? ['MESSAGE', 'SCHEDULE'] : ['MESSAGE'],
+    scheduled ? ['MESSAGE', 'SCHEDULE'] : ['MESSAGE', 'SEGMENT'],
   );
   const messages = data.assets.filter((item) => item.kind === 'MESSAGE');
+  const segments = data.assets.filter((item) => item.kind === 'SEGMENT');
   const rows = data.assets.filter(
     (item) => item.kind === (scheduled ? 'SCHEDULE' : 'MESSAGE'),
   );
@@ -652,10 +724,12 @@ export function DurableMessagesPanel({
   const [name, setName] = useState('');
   const [campaignId, setCampaignId] = useState('none');
   const [messageId, setMessageId] = useState('none');
-  const [channel, setChannel] = useState('SMS');
+  const [channels, setChannels] = useState<string[]>(['SMS']);
   const [status, setStatus] = useState('DRAFT');
-  const [audience, setAudience] = useState('');
+  const [audienceId, setAudienceId] = useState('none');
   const [body, setBody] = useState('');
+  const [sendMode, setSendMode] = useState('NOW');
+  const [sendAt, setSendAt] = useState('');
   const [scheduledAt, setScheduledAt] = useState('');
   const fill = (item: MarketingAssetViewV1, mode: 'view' | 'edit') => {
     setEditing(mode === 'edit' ? item : null);
@@ -663,10 +737,18 @@ export function DurableMessagesPanel({
     setName(item.name);
     setCampaignId(item.campaignId ?? 'none');
     setMessageId(item.relatedAssetId ?? 'none');
-    setChannel(String(item.payload.channel ?? 'SMS'));
+    setChannels(
+      Array.isArray(item.payload.channels)
+        ? item.payload.channels.map(String)
+        : [String(item.payload.channel ?? 'SMS')],
+    );
     setStatus(item.status);
-    setAudience(String(item.payload.audience ?? ''));
+    setAudienceId(
+      item.kind === 'MESSAGE' ? (item.relatedAssetId ?? 'none') : 'none',
+    );
     setBody(String(item.payload.body ?? ''));
+    setSendMode(String(item.payload.sendMode ?? 'NOW'));
+    setSendAt(String(item.payload.sendAt ?? ''));
     setScheduledAt(item.scheduledAt ?? '');
   };
   const save = async () => {
@@ -682,11 +764,23 @@ export function DurableMessagesPanel({
             ? messageId === 'none'
               ? null
               : messageId
-            : null,
+            : audienceId === 'none'
+              ? null
+              : audienceId,
           scheduledAt: scheduled ? new Date(scheduledAt).toISOString() : null,
           payload: scheduled
-            ? { channel, status }
-            : { channel, audience, body },
+            ? { channel: channels[0], status }
+            : {
+                channels,
+                audience:
+                  segments.find((item) => item.id === audienceId)?.name ?? '',
+                body,
+                sendMode,
+                sendAt:
+                  sendMode === 'SCHEDULED' && sendAt
+                    ? new Date(sendAt).toISOString()
+                    : null,
+              },
           ...(editing ? { expectedVersion: editing.version } : {}),
         },
         {
@@ -698,6 +792,7 @@ export function DurableMessagesPanel({
       setViewing(false);
       setName('');
       setBody('');
+      setAudienceId('none');
       await data.load();
       onNotice(
         scheduled
@@ -774,22 +869,26 @@ export function DurableMessagesPanel({
             </SelectContent>
           </Select>
         </FormField>
-        <FormField id="message-record-channel" label="کانال" required>
-          <Select disabled={viewing} value={channel} onValueChange={setChannel}>
-            <SelectTrigger id="message-record-channel">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'].map(
-                (value) => (
-                  <SelectItem key={value} value={value}>
-                    {value}
-                  </SelectItem>
-                ),
-              )}
-            </SelectContent>
-          </Select>
-        </FormField>
+        <fieldset className="grid gap-2" disabled={viewing}>
+          <legend className="text-sm font-bold">کانال‌ها</legend>
+          <div className="flex flex-wrap gap-3">
+            {['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION'].map((value) => (
+              <label className="flex items-center gap-2" key={value}>
+                <Checkbox
+                  checked={channels.includes(value)}
+                  onCheckedChange={(checked) =>
+                    setChannels((current) =>
+                      checked
+                        ? [...new Set([...current, value])]
+                        : current.filter((channel) => channel !== value),
+                    )
+                  }
+                />
+                {value}
+              </label>
+            ))}
+          </div>
+        </fieldset>
         {scheduled ? (
           <>
             <FormField id="message-record-time" label="زمان ارسال" required>
@@ -824,13 +923,28 @@ export function DurableMessagesPanel({
           </>
         ) : (
           <>
-            <FormField id="message-record-audience" label="مخاطبان" required>
-              <Input
+            <FormField
+              id="message-record-audience"
+              label="سگمنت مخاطب"
+              required
+            >
+              <Select
                 disabled={viewing}
-                id="message-record-audience"
-                value={audience}
-                onChange={(event) => setAudience(event.target.value)}
-              />
+                value={audienceId}
+                onValueChange={setAudienceId}
+              >
+                <SelectTrigger id="message-record-audience">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">انتخاب کنید</SelectItem>
+                  {segments.map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormField>
             <FormField id="message-record-body" label="متن پیام" required>
               <Textarea
@@ -840,8 +954,55 @@ export function DurableMessagesPanel({
                 onChange={(event) => setBody(event.target.value)}
               />
             </FormField>
+            <FormField id="message-record-send-mode" label="روش ارسال" required>
+              <Select
+                disabled={viewing}
+                value={sendMode}
+                onValueChange={setSendMode}
+              >
+                <SelectTrigger id="message-record-send-mode">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NOW">فوری</SelectItem>
+                  <SelectItem value="SCHEDULED">زمان‌بندی‌شده</SelectItem>
+                </SelectContent>
+              </Select>
+            </FormField>
+            {sendMode === 'SCHEDULED' ? (
+              <FormField
+                id="message-record-send-at"
+                label="زمان ارسال"
+                required
+              >
+                <DatePicker
+                  id="message-record-send-at"
+                  includeTime
+                  readOnly={viewing}
+                  value={sendAt}
+                  onChange={setSendAt}
+                />
+              </FormField>
+            ) : null}
           </>
         )}
+        <Button
+          aria-label="پیام جدید"
+          onClick={() => {
+            setEditing(null);
+            setViewing(false);
+            setName('');
+            setBody('');
+            setMessageId('none');
+            setAudienceId('none');
+          }}
+          size="icon"
+          title="پیام جدید"
+          type="button"
+          variant="outline"
+        >
+          <Plus aria-hidden="true" className="size-4" />
+        </Button>
         {!viewing ? (
           <Button className="md:col-span-2" onClick={() => void save()}>
             <Save aria-hidden="true" className="size-4" />
@@ -890,66 +1051,27 @@ export function DurableContentPanel({
   const related = data.assets.filter((item) => item.kind === 'FORM');
   const [editing, setEditing] = useState<MarketingAssetViewV1 | null>(null);
   const [viewing, setViewing] = useState(false);
-  const [name, setName] = useState('');
-  const [campaignId, setCampaignId] = useState('none');
-  const [status, setStatus] = useState('DRAFT');
-  const [type, setType] = useState('REGISTRATION');
-  const [primary, setPrimary] = useState('');
-  const [secondary, setSecondary] = useState('0');
-  const [relatedId, setRelatedId] = useState('none');
-  const [expiresAt, setExpiresAt] = useState('');
-  const labels: readonly [string, string] =
+  const [draft, setDraft] = useState<ContentDraft>(emptyContentDraft);
+  const labels: readonly [string, string, string, string] =
     tab === 'forms'
-      ? ['صفحه فرود', 'نرخ تکمیل / تعداد پاسخ']
+      ? ['صفحه فرود', 'نرخ تکمیل', 'تعداد پاسخ', '']
       : tab === 'landing'
-        ? ['دامنه یا سایت HTTP(S)', 'بازدید / تبدیل / آخرین انتشار']
-        : ['نشانی مقصد HTTP(S)', 'لینک کوتاه HTTP(S) / کلیک / تبدیل'];
+        ? ['دامنه یا سایت HTTP(S)', 'بازدید', 'تبدیل', 'آخرین انتشار']
+        : ['نشانی مقصد HTTP(S)', 'لینک کوتاه HTTP(S)', 'کلیک', 'تبدیل'];
+  const updateDraft = <K extends keyof ContentDraft>(
+    key: K,
+    value: ContentDraft[K],
+  ) => setDraft((current) => ({ ...current, [key]: value }));
   const save = async () => {
     if (!data.actor?.branchIds[0]) return;
-    const payload =
-      tab === 'forms'
-        ? {
-            type,
-            landingPage: primary,
-            completionRate: secondary.split('/')[0]?.trim() ?? '0',
-            responseCount: secondary.split('/')[1]?.trim() ?? '0',
-          }
-        : tab === 'landing'
-          ? {
-              domainUrl: primary,
-              visits: secondary.split('/')[0]?.trim() ?? '0',
-              conversions: secondary.split('/')[1]?.trim() ?? '0',
-              lastPublishedAt: secondary.split('/')[2]?.trim() ?? '',
-            }
-          : {
-              targetUrl: primary,
-              shortUrl: secondary.split('/')[0]?.trim() ?? '',
-              clicks: secondary.split('/')[1]?.trim() ?? '0',
-              conversions: secondary.split('/')[2]?.trim() ?? '0',
-            };
     try {
-      await marketingApi.saveAsset(
-        {
-          kind,
-          name,
-          status,
-          campaignId: campaignId === 'none' ? null : campaignId,
-          relatedAssetId: relatedId === 'none' ? null : relatedId,
-          expiresAt:
-            tab === 'links' && expiresAt
-              ? new Date(expiresAt).toISOString()
-              : null,
-          payload,
-          ...(editing ? { expectedVersion: editing.version } : {}),
-        },
-        {
-          ...(editing ? { id: editing.id } : {}),
-          branchId: data.actor.branchIds[0],
-        },
-      );
+      await marketingApi.saveAsset(contentInputFromDraft(tab, draft), {
+        ...(editing ? { id: editing.id } : {}),
+        branchId: data.actor.branchIds[0],
+      });
       setEditing(null);
       setViewing(false);
-      setName('');
+      setDraft(emptyContentDraft());
       await data.load();
       onNotice(
         'رکورد محتوا با نسخه پایدار ذخیره شد؛ انتشار وب‌سایت انجام نشد.',
@@ -963,27 +1085,7 @@ export function DurableContentPanel({
   const fill = (item: MarketingAssetViewV1, mode: 'view' | 'edit') => {
     setEditing(mode === 'edit' ? item : null);
     setViewing(mode === 'view');
-    setName(item.name);
-    setCampaignId(item.campaignId ?? 'none');
-    setStatus(item.status);
-    setRelatedId(item.relatedAssetId ?? 'none');
-    setExpiresAt(item.expiresAt ?? '');
-    setType(String(item.payload.type ?? 'REGISTRATION'));
-    setPrimary(
-      String(
-        item.payload.landingPage ??
-          item.payload.domainUrl ??
-          item.payload.targetUrl ??
-          '',
-      ),
-    );
-    setSecondary(
-      tab === 'forms'
-        ? `${item.payload.completionRate ?? 0} / ${item.payload.responseCount ?? 0}`
-        : tab === 'landing'
-          ? `${item.payload.visits ?? 0} / ${item.payload.conversions ?? 0} / ${item.payload.lastPublishedAt ?? ''}`
-          : `${item.payload.shortUrl ?? ''} / ${item.payload.clicks ?? 0} / ${item.payload.conversions ?? 0}`,
-    );
+    setDraft(contentDraftFromAsset(item));
   };
   return (
     <section className="grid gap-4">
@@ -997,23 +1099,33 @@ export function DurableContentPanel({
           <Input
             disabled={viewing}
             id="content-record-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            value={draft.name}
+            onChange={(event) => updateDraft('name', event.target.value)}
           />
         </FormField>
         <FormField id="content-record-type" label="نوع" required>
-          <Input
+          <Select
             disabled={viewing}
-            id="content-record-type"
-            value={type}
-            onChange={(event) => setType(event.target.value)}
-          />
+            value={draft.type}
+            onValueChange={(value) => updateDraft('type', value)}
+          >
+            <SelectTrigger id="content-record-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {['REGISTRATION', 'CONTACT', 'SURVEY', 'LEAD'].map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </FormField>
         <FormField id="content-record-campaign" label="کمپین">
           <Select
             disabled={viewing}
-            value={campaignId}
-            onValueChange={setCampaignId}
+            value={draft.campaignId}
+            onValueChange={(value) => updateDraft('campaignId', value)}
           >
             <SelectTrigger id="content-record-campaign">
               <SelectValue />
@@ -1029,36 +1141,73 @@ export function DurableContentPanel({
           </Select>
         </FormField>
         <FormField id="content-record-status" label="وضعیت" required>
-          <Input
+          <Select
             disabled={viewing}
-            id="content-record-status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          />
+            value={draft.status}
+            onValueChange={(value) => updateDraft('status', value)}
+          >
+            <SelectTrigger id="content-record-status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED'].map((value) => (
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </FormField>
         <FormField id="content-record-primary" label={labels[0]} required>
           <Input
             dir={tab === 'forms' ? 'rtl' : 'ltr'}
             disabled={viewing}
             id="content-record-primary"
-            value={primary}
-            onChange={(event) => setPrimary(event.target.value)}
+            value={draft.primary}
+            onChange={(event) => updateDraft('primary', event.target.value)}
           />
         </FormField>
         <FormField id="content-record-secondary" label={labels[1]} required>
           <Input
             disabled={viewing}
             id="content-record-secondary"
-            value={secondary}
-            onChange={(event) => setSecondary(event.target.value)}
+            dir={tab === 'forms' ? 'ltr' : undefined}
+            value={draft.metricOne}
+            onChange={(event) => updateDraft('metricOne', event.target.value)}
           />
         </FormField>
+        <FormField id="content-record-metric-two" label={labels[2]} required>
+          <Input
+            disabled={viewing}
+            id="content-record-metric-two"
+            dir="ltr"
+            value={draft.metricTwo}
+            onChange={(event) => updateDraft('metricTwo', event.target.value)}
+          />
+        </FormField>
+        {labels[3] ? (
+          <FormField
+            id="content-record-metric-three"
+            label={labels[3]}
+            required
+          >
+            <Input
+              disabled={viewing}
+              id="content-record-metric-three"
+              dir="ltr"
+              value={draft.metricThree}
+              onChange={(event) =>
+                updateDraft('metricThree', event.target.value)
+              }
+            />
+          </FormField>
+        ) : null}
         {tab === 'landing' ? (
           <FormField id="content-record-form" label="فرم متصل">
             <Select
               disabled={viewing}
-              value={relatedId}
-              onValueChange={setRelatedId}
+              value={draft.relatedId}
+              onValueChange={(value) => updateDraft('relatedId', value)}
             >
               <SelectTrigger id="content-record-form">
                 <SelectValue />
@@ -1080,8 +1229,8 @@ export function DurableContentPanel({
               id="content-record-expiry"
               includeTime
               readOnly={viewing}
-              value={expiresAt}
-              onChange={setExpiresAt}
+              value={draft.expiresAt}
+              onChange={(value) => updateDraft('expiresAt', value)}
             />
           </FormField>
         ) : null}
@@ -1094,6 +1243,20 @@ export function DurableContentPanel({
             ذخیره
           </Button>
         ) : null}
+        <Button
+          aria-label="رکورد محتوای جدید"
+          onClick={() => {
+            setEditing(null);
+            setViewing(false);
+            setDraft(emptyContentDraft());
+          }}
+          size="icon"
+          title="رکورد جدید"
+          type="button"
+          variant="outline"
+        >
+          <Plus aria-hidden="true" className="size-4" />
+        </Button>
       </Card>
       <AssetTable
         items={rows}
@@ -1116,28 +1279,28 @@ export function DurableContentPanel({
 
 export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
   const data = useMarketingData(['AUTOMATION']);
-  const [name, setName] = useState('اتوماسیون جدید');
-  const [nodes, setNodes] = useState<Array<{ id: string; title: string }>>([
-    { id: crypto.randomUUID(), title: 'شروع' },
-  ]);
-  const [edges, setEdges] = useState<
-    Array<{
-      source: string;
-      target: string;
-      sourcePort: string;
-      targetPort: string;
-    }>
-  >([]);
+  const emptyAutomation = (): AutomationDraft => ({
+    name: 'اتوماسیون جدید',
+    nodes: [{ id: crypto.randomUUID(), title: 'شروع' }],
+    edges: [],
+  });
+  const [draft, setDraft] = useState<AutomationDraft>(emptyAutomation);
   const [source, setSource] = useState('');
   const [target, setTarget] = useState('');
+  const [sourcePort, setSourcePort] = useState<AutomationPort>('right');
+  const [targetPort, setTargetPort] = useState<AutomationPort>('left');
+  const [viewing, setViewing] = useState(false);
   const addStage = () =>
-    setNodes((current) => [
+    setDraft((current) => ({
       ...current,
-      {
-        id: crypto.randomUUID(),
-        title: `مرحله ${(current.length + 1).toLocaleString('fa-IR')}`,
-      },
-    ]);
+      nodes: [
+        ...current.nodes,
+        {
+          id: crypto.randomUUID(),
+          title: `مرحله ${(current.nodes.length + 1).toLocaleString('fa-IR')}`,
+        },
+      ],
+    }));
   return (
     <section className="grid gap-4">
       <LoadState
@@ -1149,22 +1312,35 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
         <FormField id="automation-name" label="نام اتوماسیون">
           <Input
             id="automation-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            disabled={viewing}
+            value={draft.name}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, name: event.target.value }))
+            }
           />
         </FormField>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {nodes.map((node) => (
+          {draft.nodes.map((node) => (
             <div
               className="relative rounded-2xl border-2 border-primary/30 bg-surface p-6 text-center"
               key={node.id}
             >
-              {['top', 'right', 'bottom', 'left'].map((port) => (
-                <span
+              {(['top', 'right', 'bottom', 'left'] as const).map((port) => (
+                <button
                   aria-label={`درگاه ${port} ${node.title}`}
                   className={`absolute size-3 rounded-full bg-primary ${port === 'top' ? '-top-1.5 left-1/2' : port === 'bottom' ? '-bottom-1.5 left-1/2' : port === 'right' ? 'right-[-6px] top-1/2' : 'left-[-6px] top-1/2'}`}
                   key={port}
-                  role="img"
+                  onClick={() => {
+                    if (!source) {
+                      setSource(node.id);
+                      setSourcePort(port);
+                    } else {
+                      setTarget(node.id);
+                      setTargetPort(port);
+                    }
+                  }}
+                  title={`انتخاب درگاه ${port}`}
+                  type="button"
                 />
               ))}
               <strong>{node.title}</strong>
@@ -1175,7 +1351,7 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
           ))}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={addStage} variant="outline">
+          <Button disabled={viewing} onClick={addStage} variant="outline">
             <Plus aria-hidden="true" className="size-4" />
             افزودن مرحله
           </Button>
@@ -1187,7 +1363,7 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
                 <SelectValue placeholder="انتخاب" />
               </SelectTrigger>
               <SelectContent>
-                {nodes.map((node) => (
+                {draft.nodes.map((node) => (
                   <SelectItem key={node.id} value={node.id}>
                     {node.title}
                   </SelectItem>
@@ -1201,7 +1377,7 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
                 <SelectValue placeholder="انتخاب" />
               </SelectTrigger>
               <SelectContent>
-                {nodes.map((node) => (
+                {draft.nodes.map((node) => (
                   <SelectItem key={node.id} value={node.id}>
                     {node.title}
                   </SelectItem>
@@ -1209,35 +1385,88 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
               </SelectContent>
             </Select>
           </FormField>
+          <FormField id="edge-source-port" label="درگاه مبدا">
+            <Select
+              disabled={viewing}
+              value={sourcePort}
+              onValueChange={(value) => setSourcePort(value as AutomationPort)}
+            >
+              <SelectTrigger id="edge-source-port">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['top', 'right', 'bottom', 'left'] as const).map((port) => (
+                  <SelectItem key={port} value={port}>
+                    {port}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField id="edge-target-port" label="درگاه مقصد">
+            <Select
+              disabled={viewing}
+              value={targetPort}
+              onValueChange={(value) => setTargetPort(value as AutomationPort)}
+            >
+              <SelectTrigger id="edge-target-port">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['top', 'right', 'bottom', 'left'] as const).map((port) => (
+                  <SelectItem key={port} value={port}>
+                    {port}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FormField>
         </div>
         <Button
-          disabled={!source || !target || source === target}
+          disabled={viewing || !source || !target || source === target}
           onClick={() =>
-            setEdges((current) => [
+            setDraft((current) => ({
               ...current,
-              { source, target, sourcePort: 'right', targetPort: 'left' },
-            ])
+              edges: [
+                ...current.edges,
+                { source, target, sourcePort, targetPort },
+              ],
+            }))
           }
         >
           اتصال گره‌ها
         </Button>
         <p className="text-sm text-muted-foreground">
-          {edges.length.toLocaleString('fa-IR')} اتصال معتبر چهارسمتی تعریف شده
-          است.
+          {draft.edges.length.toLocaleString('fa-IR')} اتصال معتبر چهارسمتی
+          تعریف شده است.
         </p>
+        <ul className="grid gap-2 text-sm">
+          {draft.edges.map((edge, index) => (
+            <li
+              className="rounded-lg border border-border p-2"
+              key={`${edge.source}-${edge.target}-${index}`}
+            >
+              {draft.nodes.find((node) => node.id === edge.source)?.title ??
+                edge.source}{' '}
+              · {edge.sourcePort} → {edge.targetPort} ·{' '}
+              {draft.nodes.find((node) => node.id === edge.target)?.title ??
+                edge.target}
+            </li>
+          ))}
+        </ul>
         <Button
+          disabled={viewing}
           onClick={async () => {
             if (!data.actor?.branchIds[0]) return;
             try {
-              await marketingApi.saveAsset(
+              const saved = await marketingApi.saveAsset(
+                automationInputFromDraft(draft),
                 {
-                  kind: 'AUTOMATION',
-                  name,
-                  status: 'DRAFT',
-                  payload: { nodes, edges },
+                  ...(draft.id ? { id: draft.id } : {}),
+                  branchId: data.actor.branchIds[0],
                 },
-                { branchId: data.actor.branchIds[0] },
               );
+              setDraft(automationDraftFromAsset(saved.data));
               await data.load();
               onNotice('گراف اتوماسیون ذخیره شد؛ هیچ اجرای خارجی انجام نشد.');
             } catch (reason) {
@@ -1253,6 +1482,21 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
           ذخیره اتوماسیون
         </Button>
       </Card>
+      <Button
+        aria-label="اتوماسیون جدید"
+        className="justify-self-start"
+        onClick={() => {
+          setDraft(emptyAutomation());
+          setViewing(false);
+          setSource('');
+          setTarget('');
+        }}
+        size="icon"
+        title="اتوماسیون جدید"
+        variant="outline"
+      >
+        <Plus aria-hidden="true" className="size-4" />
+      </Button>
       <AssetTable
         items={data.assets}
         onDelete={async (item) => {
@@ -1265,10 +1509,9 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
             );
           }
         }}
-        onSelect={(item) => {
-          setName(item.name);
-          setNodes((item.payload.nodes as typeof nodes) ?? []);
-          setEdges((item.payload.edges as typeof edges) ?? []);
+        onSelect={(item, mode) => {
+          setDraft(automationDraftFromAsset(item));
+          setViewing(mode === 'view');
         }}
       />
     </section>
