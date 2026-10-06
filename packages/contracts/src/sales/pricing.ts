@@ -138,6 +138,23 @@ export function servicePriceComponents(
   services: readonly SalesServiceInput[],
   stay?: { checkInDate: string; checkOutDate: string } | null,
 ): SalesPriceComponentInput[] | null {
+  if (
+    services.some(
+      (service) =>
+        service.metadata?.passengerPackagePricingVersion !== undefined,
+    )
+  ) {
+    if (
+      services.some(
+        (service) =>
+          service.metadata?.passengerPackagePricingVersion !== 1 ||
+          (service.pricing !== undefined &&
+            service.metadata?.insuranceAgeSurcharge !== true),
+      )
+    )
+      throw new Error('قیمت کل مسافران نباید با قیمت جداگانه خدمات ترکیب شود.');
+    return null;
+  }
   // Explicit inclusion is opt-in: historical, unmarked prices retain their meaning.
   if (
     !services.some(

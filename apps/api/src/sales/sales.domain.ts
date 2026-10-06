@@ -438,7 +438,13 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
       input.services,
       input.hotelSelection,
     );
-    validatePassengerPackagePrices(input.passengers, input.priceComponents);
+    validatePassengerPackagePrices(
+      input.passengers,
+      input.priceComponents,
+      input.services.some(
+        (s) => s.metadata?.passengerPackagePricingVersion === 1,
+      ),
+    );
     if (
       derived &&
       salesFingerprint(derived.map(salesFingerprint).sort()) !==

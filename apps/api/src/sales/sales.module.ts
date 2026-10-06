@@ -1,3 +1,5 @@
+import { SalesProfitService } from './sales-profit.service';
+import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { Module } from '@nestjs/common';
 import { MasterDataModule } from '../master-data/master-data.module';
@@ -21,6 +23,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
 
 @Module({
   imports: [
+    FinanceTicketCostModule,
     MasterDataModule,
     IamModule,
     LegalEntitiesModule,
@@ -34,6 +37,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     SalesRepository,
     SalesBuyerContactCrypto,
     SalesService,
+    SalesProfitService,
     SalesOutputService,
     SalesCustomersPublicAdapter,
     SalesTicketsPublicAdapter,

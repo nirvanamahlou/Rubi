@@ -239,3 +239,45 @@ describe('FinanceTicketCostService', () => {
     expect(create).not.toHaveBeenCalled();
   });
 });
+
+it('reads latest recorded ticket costs independently of payment, within the exact branch and offer set', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      id: 'new',
+      offerId: 'offer',
+      currencyCode: 'IRR',
+      adultUnitCost: new Prisma.Decimal('10.0001'),
+      childUnitCost: new Prisma.Decimal('5'),
+      unitCost: null,
+    },
+    {
+      id: 'old',
+      offerId: 'offer',
+      currencyCode: 'IRR',
+      adultUnitCost: new Prisma.Decimal('99'),
+      childUnitCost: new Prisma.Decimal('99'),
+      unitCost: null,
+    },
+  ]);
+  const service = new FinanceTicketCostService(
+    { client: { financeTicketPurchaseCostRevision: { findMany } } } as never,
+    {} as never,
+  );
+  expect(
+    await service.recordedCostsForOffers(['offer', 'offer'], 'branch'),
+  ).toEqual([
+    {
+      id: 'new',
+      offerId: 'offer',
+      currencyCode: 'IRR',
+      adultUnitCost: '10.0001',
+      childUnitCost: '5',
+      unitCost: null,
+    },
+  ]);
+  expect(findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { offerId: { in: ['offer'] }, branchId: 'branch' },
+    }),
+  );
+});

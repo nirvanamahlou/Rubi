@@ -29,3 +29,14 @@ it('rejects malformed quote metadata rather than bypassing the public catalog gu
       }),
     ).toThrow();
 });
+
+it('checks catalog quote freshness without requiring a service-level sale amount', () => {
+  expect(
+    expectedTicketSale(undefined, {
+      catalogSaleQuoteVersion: 1,
+      catalogSaleQuoteAmount: '125.0001',
+      catalogSaleQuoteCurrency: 'USD',
+    }),
+  ).toEqual({ amount: '125.0001', currencyCode: 'USD' });
+  expect(() => expectedTicketSale(undefined)).toThrow();
+});
