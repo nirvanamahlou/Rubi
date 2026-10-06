@@ -4756,3 +4756,7 @@ Compose now passes `apps/web` as Next.js's project directory. Local image build 
 ## 2026-10-06 — PROCUREMENT-REQUEST-FORM-REDESIGN-1006 — PC-B — READY_FOR_REVIEW
 
 فرم درخواست خرید با گریدهای مستقل و فشرده بازچینی شد تا کنترل‌های بلند باعث ایجاد فضای خالی کنار فیلدهای دیگر نشوند. متن‌های راهنمای تکراری مسئول پیگیری حذف شده‌اند؛ ثبت دستهٔ تازه، برچسب‌ها، اعتبارسنجی و پیام‌های خطا حفظ شدند. تست متمرکز ۱۱/۱۱، ESLint، TypeScript و build تولید وب با ۵۵ مسیر موفق‌اند. CI کامل PR شمارهٔ ۶۷۷ (quality، test، build و PostgreSQL migration/seed) موفق شد. شاخه: `codex/pc-b-procurement-form-redesign-1006`.
+
+## 2026-10-06 — B2B-CONTRACT-GUARANTEE-PUBLISH-1006 — PC-B — IN_PROGRESS
+
+Agreement guarantee rows now use the canonical expanded Documents uploader; the screenshot-marked draft helper copy is removed. Agreement form save returns the exact persisted version and submits it with a separate request ID for independent review; sub-section-only edits remain save-only. Confidential proof submission creates fresh action-scoped grants; retries retain the same request/grant payload and explicit rejected grants can be renewed. Partial save/submit failure remains visible and retry never saves a second version. No API, schema, migration, permission or operational data changes. Focused/full Organizations tests, B2B workflow/idempotency/documents tests, Web typecheck/lint/build, exact-candidate independent review and CI remain release gates. See docs/tasks/B2B-CONTRACT-GUARANTEE-PUBLISH-1006.md.

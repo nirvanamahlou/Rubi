@@ -1,7 +1,13 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import type {
   B2bAgreementCaseV1,
   B2bAgreementRevisionV1,
@@ -47,6 +53,48 @@ import { documentsApi } from '@/modules/documents/api/client';
 import { organizationDocumentQuery } from '../model/organization-documents';
 import { ConfidentialAccessCodeInput } from './inline-document-upload';
 import { useDossierBranch } from './use-dossier-branch';
+
+export function savedAgreementSubmission(
+  record: B2bAgreementCaseV1,
+  input: {
+    actorIdentityKey: string;
+    contextKey: string;
+    saveRequestId: string;
+    requestId: string;
+    grantContextKey: string;
+  },
+) {
+  if (input.requestId === input.saveRequestId)
+    throw new Error(
+      'ذخیره و ارسال باید شناسه‌های درخواست جداگانه داشته باشند.',
+    );
+  return {
+    record,
+    kind: 'submit' as const,
+    reason: 'ارسال برای بررسی قرارداد و اعتبار',
+    requestId: input.requestId,
+    grantContextKey: input.grantContextKey,
+    actorIdentityKey: input.actorIdentityKey,
+    contextKey: input.contextKey,
+    saveRequestId: input.saveRequestId,
+  };
+}
+
+export function savedAgreementSubmitPayload(
+  action: ReturnType<typeof savedAgreementSubmission>,
+  branchId: string,
+  role: B2bCooperationRole,
+  referenceGrants: { documentId: string; token: string }[] = [],
+) {
+  return {
+    branchId,
+    role,
+    requestId: action.requestId,
+    version: action.record.version,
+    reason: action.reason,
+    ...(referenceGrants.length ? { referenceGrants } : {}),
+  };
+}
 
 const proofIds = (terms: B2bAgreementTermsV1) =>
   [...new Set([terms.documentId, ...terms.guarantees.map((g) => g.documentId)])]
@@ -272,6 +320,26 @@ export function AgreementWorkflowPanel({
     actorUserId: userId,
     actorIdentityKey,
   } = useDossierBranch();
+  const workflowContextIdentity = JSON.stringify([
+    actorIdentityKey,
+    sessionContextKey,
+    organizationId,
+    branchId,
+    role,
+    view,
+  ]);
+  const [workflowGeneration, setWorkflowGeneration] = useState(0);
+  const previousWorkflowContext = useRef(workflowContextIdentity);
+  useEffect(() => {
+    if (previousWorkflowContext.current !== workflowContextIdentity) {
+      previousWorkflowContext.current = workflowContextIdentity;
+      setWorkflowGeneration((generation) => generation + 1);
+    }
+  }, [workflowContextIdentity]);
+  const workflowContextKey = JSON.stringify([
+    workflowContextIdentity,
+    workflowGeneration,
+  ]);
   const [records, setRecords] = useState<B2bAgreementCaseV1[]>([]);
   const [page, setPage] = useState(1);
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
@@ -286,6 +354,7 @@ export function AgreementWorkflowPanel({
     requestId: string;
     grantContextKey: string;
     actorIdentityKey: string;
+    contextKey: string;
     permissions: readonly IamPermissionCode[];
   } | null>(null);
   const [action, setAction] = useState<{
@@ -295,6 +364,9 @@ export function AgreementWorkflowPanel({
     requestId: string;
     grantContextKey: string;
     actorIdentityKey: string;
+    contextKey: string;
+    saveRequestId?: string;
+    referenceGrants?: { documentId: string; token: string }[];
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploadingOwnerKey, setUploadingOwnerKey] = useState<string | null>(
@@ -305,6 +377,15 @@ export function AgreementWorkflowPanel({
   const [referenceState, setReferenceState] =
     useState<AgreementReferenceState | null>(null);
   const sequence = useRef(0);
+  const operationLock = useRef(false);
+  const liveWorkflowContext = useRef(workflowContextKey);
+  const liveEditorRequestId = useRef(editor?.requestId);
+  const liveActionRequestId = useRef(action?.requestId);
+  useLayoutEffect(() => {
+    liveWorkflowContext.current = workflowContextKey;
+    liveEditorRequestId.current = editor?.requestId;
+    liveActionRequestId.current = action?.requestId;
+  }, [workflowContextKey, editor?.requestId, action?.requestId]);
   const load = useCallback(async () => {
     const current = ++sequence.current;
     setLoading(true);
@@ -389,9 +470,15 @@ export function AgreementWorkflowPanel({
     };
   }, [load, refresh, invalidate]);
   const currentEditor =
-    editor?.actorIdentityKey === actorIdentityKey ? editor : null;
+    editor?.actorIdentityKey === actorIdentityKey &&
+    editor.contextKey === workflowContextKey
+      ? editor
+      : null;
   const currentAction =
-    action?.actorIdentityKey === actorIdentityKey ? action : null;
+    action?.actorIdentityKey === actorIdentityKey &&
+    action.contextKey === workflowContextKey
+      ? action
+      : null;
   const editorUploadContextKey = currentEditor
     ? agreementUploadContextKey(
         userId,
@@ -579,7 +666,9 @@ export function AgreementWorkflowPanel({
         code,
         purpose: 'CONFIDENTIAL_VIEW',
       });
-      result.push({ documentId, token: response.data.token });
+      const token = response.data.token;
+      result.push({ documentId, token });
+      setReferenceGrant(documentId, token);
     }
     return result;
   }
@@ -620,6 +709,7 @@ export function AgreementWorkflowPanel({
       requestId: crypto.randomUUID(),
       grantContextKey: crypto.randomUUID(),
       actorIdentityKey,
+      contextKey: workflowContextKey,
       permissions,
     });
   }
@@ -637,12 +727,14 @@ export function AgreementWorkflowPanel({
       requestId: crypto.randomUUID(),
       grantContextKey: crypto.randomUUID(),
       actorIdentityKey,
+      contextKey: workflowContextKey,
     });
   }
   async function save() {
     if (
       !currentEditor ||
       busy ||
+      operationLock.current ||
       uploading ||
       checkingReferences ||
       referenceCheckFailed
@@ -667,31 +759,146 @@ export function AgreementWorkflowPanel({
       setDialogError(issue);
       return;
     }
+    const editorSnapshot = currentEditor;
+    const contextKey = editorSnapshot.contextKey;
+    const saveRequestId = editorSnapshot.requestId;
+    const codesForPublication = { ...referenceCodes };
+    operationLock.current = true;
     setBusy(true);
     setDialogError('');
-    const referenceDocumentIds = proofIds(currentEditor.terms);
+    const referenceDocumentIds = proofIds(editorSnapshot.terms);
     try {
       const grants = await grantsFor(referenceDocumentIds);
-      await agencyClient.saveAgreementTerms(
+      if (
+        liveWorkflowContext.current !== contextKey ||
+        liveEditorRequestId.current !== saveRequestId
+      )
+        return;
+      const response = await agencyClient.saveAgreementTerms(
         organizationId,
         {
           branchId,
           role,
-          requestId: currentEditor.requestId,
-          ...(currentEditor.record
-            ? { version: currentEditor.record.version }
+          requestId: saveRequestId,
+          ...(editorSnapshot.record
+            ? { version: editorSnapshot.record.version }
             : {}),
-          terms: currentEditor.terms,
+          terms: editorSnapshot.terms,
           ...(grants.length ? { referenceGrants: grants } : {}),
         },
-        currentEditor.record?.id,
+        editorSnapshot.record?.id,
       );
+      if (
+        liveWorkflowContext.current !== contextKey ||
+        liveEditorRequestId.current !== saveRequestId
+      )
+        return;
+      const savedRecord = response;
       setEditor(null);
       setReferenceState(null);
       setUncertain(false);
-      setNotice('پیش‌نویس قرارداد، سقف‌ها و تضمین‌ها ذخیره شد.');
       setRefresh((n) => n + 1);
+      if (view !== 'agreements') {
+        setNotice('قرارداد، سقف‌ها و تضمین‌ها ذخیره شد.');
+        return;
+      }
+
+      const submitAction = savedAgreementSubmission(savedRecord, {
+        actorIdentityKey,
+        contextKey,
+        saveRequestId,
+        requestId: crypto.randomUUID(),
+        grantContextKey: crypto.randomUUID(),
+      });
+      setAction(submitAction);
+      setNotice('نسخه ذخیره شد؛ در حال ارسال برای بررسی مستقل.');
+
+      const revision = savedRecord.revisions[0];
+      if (!revision) {
+        setDialogError(
+          'نسخه ذخیره شد، اما نسخهٔ قابل ارسال از سرور دریافت نشد.',
+        );
+        return;
+      }
+      try {
+        const submissionProofIds = proofIds(revision);
+        const protectedIds = await protectedAgreementProofIds(
+          organizationId,
+          branchId,
+          submissionProofIds,
+        );
+        if (liveWorkflowContext.current !== contextKey) return;
+        if (
+          [...protectedIds].some(
+            (documentId) => !codesForPublication[documentId]?.trim(),
+          )
+        ) {
+          setNotice(
+            'نسخه ذخیره شد؛ برای ارسال، کد محرمانگی اسناد را وارد کنید.',
+          );
+          return;
+        }
+        const freshGrants: { documentId: string; token: string }[] = [];
+        for (const documentId of protectedIds) {
+          if (liveWorkflowContext.current !== contextKey) return;
+          const grant = await documentsApi.createAccessGrant(documentId, {
+            code: codesForPublication[documentId] ?? '',
+            purpose: 'CONFIDENTIAL_VIEW',
+          });
+          freshGrants.push({ documentId, token: grant.data.token });
+        }
+        if (liveWorkflowContext.current !== contextKey) return;
+        const actionWithGrants = {
+          ...submitAction,
+          referenceGrants: freshGrants,
+        };
+        setAction(actionWithGrants);
+        await agencyClient.agreementAction(
+          organizationId,
+          savedRecord.id,
+          'submit',
+          savedAgreementSubmitPayload(
+            actionWithGrants,
+            branchId,
+            role,
+            actionWithGrants.referenceGrants,
+          ),
+        );
+        if (liveWorkflowContext.current !== contextKey) return;
+        setAction(null);
+        setReferenceState(null);
+        setUncertain(false);
+        setDialogError('');
+        setNotice('نسخه برای تأیید مستقل ارسال شد.');
+        setRefresh((n) => n + 1);
+      } catch (submitError) {
+        if (liveWorkflowContext.current !== contextKey) return;
+        const grantRejected = clearRejectedReferenceGrants(
+          submitError,
+          proofIds(revision),
+        );
+        if (grantRejected) {
+          setReferenceState(null);
+          setAction((previous) => {
+            if (previous?.requestId !== submitAction.requestId) return previous;
+            const renewed = { ...previous };
+            delete renewed.referenceGrants;
+            return renewed;
+          });
+        }
+        setDialogError(
+          submitError instanceof Error
+            ? submitError.message
+            : 'نسخه ذخیره شد، اما ارسال برای بررسی ناموفق بود.',
+        );
+        setUncertain(
+          !(submitError instanceof B2bApiError) ||
+            submitError.status <= 0 ||
+            submitError.status >= 500,
+        );
+      }
     } catch (caught) {
+      if (liveWorkflowContext.current !== contextKey) return;
       const grantRejected = clearRejectedReferenceGrants(
         caught,
         referenceDocumentIds,
@@ -712,61 +919,96 @@ export function AgreementWorkflowPanel({
           ),
       );
     } finally {
+      operationLock.current = false;
       setBusy(false);
     }
   }
   async function perform() {
-    if (!currentAction || busy || checkingReferences || referenceCheckFailed)
+    if (
+      !currentAction ||
+      busy ||
+      operationLock.current ||
+      checkingReferences ||
+      referenceCheckFailed
+    )
       return;
     if (currentAction.reason.trim().length < 3) {
       setDialogError('توضیح ارسال یا نتیجه بررسی را وارد کنید.');
       return;
     }
+    const actionSnapshot = currentAction;
+    const contextKey = actionSnapshot.contextKey;
+    operationLock.current = true;
     setBusy(true);
     setDialogError('');
     const referenceDocumentIds =
-      currentAction.kind === 'REJECT'
+      actionSnapshot.kind === 'REJECT'
         ? []
-        : currentAction.record.revisions[0]
-          ? proofIds(currentAction.record.revisions[0])
+        : actionSnapshot.record.revisions[0]
+          ? proofIds(actionSnapshot.record.revisions[0])
           : [];
     try {
       const grants =
-        currentAction.kind === 'REJECT'
+        actionSnapshot.kind === 'REJECT'
           ? []
-          : await grantsFor(referenceDocumentIds);
+          : (actionSnapshot.referenceGrants ??
+            (await grantsFor(referenceDocumentIds)));
+      if (
+        liveWorkflowContext.current !== contextKey ||
+        liveActionRequestId.current !== actionSnapshot.requestId
+      )
+        return;
+      if (!actionSnapshot.referenceGrants)
+        setAction({ ...actionSnapshot, referenceGrants: grants });
       await agencyClient.agreementAction(
         organizationId,
-        currentAction.record.id,
-        currentAction.kind === 'submit' ? 'submit' : 'review',
+        actionSnapshot.record.id,
+        actionSnapshot.kind === 'submit' ? 'submit' : 'review',
         {
           branchId,
           role,
-          requestId: currentAction.requestId,
-          version: currentAction.record.version,
-          reason: currentAction.reason,
-          ...(currentAction.kind !== 'submit'
-            ? { decision: currentAction.kind }
+          requestId: actionSnapshot.requestId,
+          version: actionSnapshot.record.version,
+          reason: actionSnapshot.reason,
+          ...(actionSnapshot.kind !== 'submit'
+            ? { decision: actionSnapshot.kind }
             : {}),
           ...(grants.length ? { referenceGrants: grants } : {}),
         },
       );
+      if (
+        liveWorkflowContext.current !== contextKey ||
+        liveActionRequestId.current !== actionSnapshot.requestId
+      )
+        return;
       setAction(null);
       setReferenceState(null);
       setUncertain(false);
       setNotice(
-        currentAction.kind === 'submit'
+        actionSnapshot.kind === 'submit'
           ? 'نسخه برای تأیید مستقل ارسال شد.'
-          : currentAction.kind === 'APPROVE'
+          : actionSnapshot.kind === 'APPROVE'
             ? 'قرارداد و شرایط این نسخه تأیید شد.'
             : 'نسخه رد شد؛ علت در تاریخچه ثبت شده است.',
       );
       setRefresh((n) => n + 1);
     } catch (caught) {
+      if (
+        liveWorkflowContext.current !== contextKey ||
+        liveActionRequestId.current !== actionSnapshot.requestId
+      )
+        return;
       const grantRejected = clearRejectedReferenceGrants(
         caught,
         referenceDocumentIds,
       );
+      if (grantRejected)
+        setAction((previous) => {
+          if (previous?.requestId !== actionSnapshot.requestId) return previous;
+          const renewed = { ...previous };
+          delete renewed.referenceGrants;
+          return renewed;
+        });
       setDialogError(
         grantRejected
           ? 'مجوز موقت یکی از اسناد منقضی یا با نشست جاری ناسازگار است؛ کد محرمانگی را دوباره وارد کنید.'
@@ -783,6 +1025,7 @@ export function AgreementWorkflowPanel({
           ),
       );
     } finally {
+      operationLock.current = false;
       setBusy(false);
     }
   }
@@ -1175,10 +1418,14 @@ export function AgreementWorkflowPanel({
                 onClick={() => void save()}
               >
                 {busy
-                  ? 'در حال ذخیره…'
+                  ? view === 'agreements'
+                    ? 'در حال ذخیره و انتشار…'
+                    : 'در حال ذخیره…'
                   : uncertain
-                    ? 'پیگیری درخواست قبلی'
-                    : 'ذخیره پیش‌نویس'}
+                    ? 'پیگیری درخواست ذخیره'
+                    : view === 'agreements'
+                      ? 'ذخیره و انتشار'
+                      : 'ذخیره تغییرات'}
               </button>
             </div>
           </DialogContent>
@@ -1214,13 +1461,20 @@ export function AgreementWorkflowPanel({
               <RevisionSummary revision={currentAction.record.revisions[0]} />
             ) : null}
             {currentAction.kind !== 'REJECT'
-              ? [...protectedReferences].map((documentId) => (
-                  <ConfidentialAccessCodeInput
-                    key={documentId}
-                    value={referenceCodes[documentId] ?? ''}
-                    onChange={(code) => setReferenceCode(documentId, code)}
-                  />
-                ))
+              ? [...protectedReferences]
+                  .filter(
+                    (documentId) =>
+                      !currentAction.referenceGrants?.some(
+                        (grant) => grant.documentId === documentId,
+                      ),
+                  )
+                  .map((documentId) => (
+                    <ConfidentialAccessCodeInput
+                      key={documentId}
+                      value={referenceCodes[documentId] ?? ''}
+                      onChange={(code) => setReferenceCode(documentId, code)}
+                    />
+                  ))
               : null}
             <label className="field">
               <span>توضیح تصمیم *</span>
@@ -1229,13 +1483,17 @@ export function AgreementWorkflowPanel({
                 maxLength={500}
                 disabled={busy || uncertain}
                 value={currentAction.reason}
-                onChange={(e) =>
-                  setAction({
+                onChange={(e) => {
+                  const nextAction = {
                     ...currentAction,
                     reason: e.target.value,
                     requestId: crypto.randomUUID(),
-                  })
-                }
+                    grantContextKey: crypto.randomUUID(),
+                  };
+                  delete nextAction.referenceGrants;
+                  setAction(nextAction);
+                  setReferenceState(null);
+                }}
               />
             </label>
             {dialogError ? (

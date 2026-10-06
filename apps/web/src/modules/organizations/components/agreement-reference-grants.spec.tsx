@@ -10,6 +10,8 @@ vi.mock('@/modules/documents/api/client', () => ({
 import {
   protectedAgreementProofIds,
   rejectedAgreementReferenceGrantState,
+  savedAgreementSubmission,
+  savedAgreementSubmitPayload,
   uploadedAgreementReferenceState,
 } from './agreement-workflow-panel';
 import {
@@ -87,6 +89,48 @@ describe('agreement confidential proof discovery', () => {
       'other-document': '654321',
     });
     expect(state.grants['protected-document']).toBe('expired-token');
+  });
+});
+
+describe('agreement save-and-publish request identity', () => {
+  it('submits the exact saved record with a distinct, version-pinned request', () => {
+    const savedRecord = {
+      id: 'saved-agreement-id',
+      version: 7,
+      revisions: [{ id: 'saved-revision-id', number: 3 }],
+    } as never;
+    const action = savedAgreementSubmission(savedRecord, {
+      actorIdentityKey: 'actor',
+      contextKey: 'actor|session|organization|branch|AGENCY|agreements',
+      saveRequestId: 'save-request-id',
+      requestId: 'submit-request-id',
+      grantContextKey: 'fresh-submit-scope',
+    });
+
+    expect(action.record).toBe(savedRecord);
+    expect(action.record.id).toBe('saved-agreement-id');
+    expect(action.requestId).not.toBe(action.saveRequestId);
+    expect(
+      savedAgreementSubmitPayload(action, 'branch', 'AGENCY', [
+        { documentId: 'proof', token: 'fresh-grant' },
+      ]),
+    ).toEqual({
+      branchId: 'branch',
+      role: 'AGENCY',
+      requestId: 'submit-request-id',
+      version: 7,
+      reason: 'ارسال برای بررسی قرارداد و اعتبار',
+      referenceGrants: [{ documentId: 'proof', token: 'fresh-grant' }],
+    });
+    expect(() =>
+      savedAgreementSubmission(savedRecord, {
+        actorIdentityKey: 'actor',
+        contextKey: 'context',
+        saveRequestId: 'same-id',
+        requestId: 'same-id',
+        grantContextKey: 'fresh-submit-scope',
+      }),
+    ).toThrow('شناسه‌های درخواست جداگانه');
   });
 });
 
@@ -222,11 +266,8 @@ describe('agreement attachment permission preflight', () => {
       'documents.organization.read',
       'documents.upload',
     ]);
-    const input = markup.match(
-      /<input[^>]*aria-label="سند تضمین 1"[^>]*>/,
-    )?.[0];
-    expect(input).toContain(' disabled=""');
-    expect(markup).not.toContain('بارگذاری فایل جدید برای سند تضمین 1');
+    expect(markup).not.toContain('type="file"');
+    expect(markup).not.toContain('بدون پیوست');
   }, 30_000);
 
   it('allows selection and canonical upload when all attachment permissions exist', () => {
@@ -236,10 +277,12 @@ describe('agreement attachment permission preflight', () => {
       'documents.metadata.read',
       'documents.upload',
     ]);
-    const input = markup.match(
-      /<input[^>]*aria-label="سند تضمین 1"[^>]*>/,
-    )?.[0];
-    expect(input).not.toContain(' disabled=""');
-    expect(markup).toContain('بارگذاری فایل جدید برای سند تضمین 1');
+    expect(markup).toContain('type="file"');
+    expect(markup).toContain('اطلاعات و فایل سند تضمین 1');
+    expect(markup).not.toContain('بدون پیوست');
+    expect(markup).not.toContain(
+      '<details class="rounded-xl border border-dashed p-3">',
+    );
+    expect(markup).not.toContain('ذخیره، پیش‌نویس ایجاد می‌کند');
   }, 30_000);
 });
