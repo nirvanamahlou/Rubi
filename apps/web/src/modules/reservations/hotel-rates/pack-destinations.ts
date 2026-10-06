@@ -2,7 +2,33 @@ export type DestinationChoice = {
   id: string;
   name: string;
   countryId?: string;
+  englishName?: string;
 };
+export function preferredPackDestination(
+  options: readonly DestinationChoice[],
+  kind: 'country' | 'city',
+) {
+  const normalize = (value: string) =>
+    value
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f\u064B-\u065F]/g, '')
+      .replace(/آ/g, 'ا')
+      .replace(/ي/g, 'ی')
+      .replace(/ك/g, 'ک')
+      .trim()
+      .toLocaleLowerCase();
+  const names =
+    kind === 'country'
+      ? ['ترکیه', 'turkey', 'turkiye']
+      : ['انتالیا', 'antalya'];
+  return (
+    options.find((option) =>
+      [option.name, option.englishName ?? ''].some((name) =>
+        names.includes(normalize(name)),
+      ),
+    )?.id ?? ''
+  );
+}
 type Request = <T>(path: string, init?: RequestInit) => Promise<T>;
 
 export async function loadPackDestinations(

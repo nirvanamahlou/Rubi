@@ -6,9 +6,10 @@ import type { LoginResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { DatePicker } from '@/components/ui/date-picker';
-import { SearchCombobox } from '@/components/ui/search-combobox';
+import { PackDestinationFields } from './pack-destination-fields';
 import {
   loadPackDestinations,
+  preferredPackDestination,
   type DestinationChoice,
 } from './pack-destinations';
 import { masterDataApi } from '@/modules/master-data/api/client';
@@ -673,6 +674,12 @@ export function HotelRatePacksWorkspace() {
       .then((value) => {
         if (active) {
           setSession(value);
+          if (
+            value?.user.permissions.includes(
+              'reservations.hotel_purchase.write',
+            )
+          )
+            setEditorMode('new');
           setBranch(value?.user.branches[0]?.id ?? '');
           setReady(true);
         }
@@ -690,7 +697,14 @@ export function HotelRatePacksWorkspace() {
     let active = true;
     loadPackDestinations('countries', rateRequest)
       .then((result) => {
-        if (active) setCountries(result);
+        if (active) {
+          setCountries(result);
+          if (editorMode === 'new')
+            setCountryId(
+              (current) =>
+                current || preferredPackDestination(result, 'country'),
+            );
+        }
       })
       .catch((e) => {
         if (active)
@@ -699,7 +713,7 @@ export function HotelRatePacksWorkspace() {
     return () => {
       active = false;
     };
-  }, [session]);
+  }, [session, editorMode]);
 
   useEffect(() => {
     if (!session || !countryId) return;
@@ -707,13 +721,23 @@ export function HotelRatePacksWorkspace() {
     const timer = setTimeout(() => {
       loadPackDestinations('cities', rateRequest, countryId, citySearch)
         .then((result) => {
-          if (active)
+          if (active) {
             setCities((old) => {
               const selected = old.find((city) => city.id === cityId);
               return selected && !result.some((city) => city.id === selected.id)
                 ? [selected, ...result]
                 : result;
             });
+            if (
+              editorMode === 'new' &&
+              !citySearch &&
+              countryId === preferredPackDestination(countries, 'country')
+            )
+              setCityId(
+                (current) =>
+                  current || preferredPackDestination(result, 'city'),
+              );
+          }
         })
         .catch((e) => {
           if (active)
@@ -724,7 +748,7 @@ export function HotelRatePacksWorkspace() {
       active = false;
       clearTimeout(timer);
     };
-  }, [session, citySearch, cityId, countryId]);
+  }, [session, citySearch, cityId, countryId, countries, editorMode]);
 
   useEffect(() => {
     if (!session || !branch) return;
@@ -839,9 +863,14 @@ export function HotelRatePacksWorkspace() {
   function newPack() {
     setEditing(null);
     setEditorMode('new');
-    setCountryId('');
+    setCountryId(preferredPackDestination(countries, 'country'));
     setDestinationChange(null);
-    setCities([]);
+    setCities((current) =>
+      current.filter(
+        (city) =>
+          city.countryId === preferredPackDestination(countries, 'country'),
+      ),
+    );
     setCityId('');
     setCitySearch('');
     setHotelSearch('');
@@ -1252,44 +1281,26 @@ export function HotelRatePacksWorkspace() {
         className="space-y-3 rounded-xl border p-4"
         aria-label="مقصد ورودی اکسل"
       >
-        <h2>کشور و شهر بستهٔ اکسل</h2>
-        <p>
-          ابتدا بستهٔ جدید، سپس کشور و شهر را انتخاب کنید؛ فایل فقط برای شهر
-          انتخاب‌شده نگاشت می‌شود.
+        <PackDestinationFields
+          countries={countries}
+          cities={cities}
+          countryId={countryId}
+          cityId={cityId}
+          disabled={
+            !canWrite ||
+            busy ||
+            opening ||
+            editorMode === 'list' ||
+            editorMode === 'edit'
+          }
+          onCountryChange={(id) => changeDestination('country', id)}
+          onCityChange={(id) => changeDestination('city', id)}
+          onCitySearch={setCitySearch}
+        />
+        <p className="text-xs text-muted-foreground">
+          کشور و شهر از اطلاعات پایه خوانده می‌شوند؛ فایل اکسل برای همین شهر ثبت
+          خواهد شد.
         </p>
-        <SearchCombobox
-          label="کشور بستهٔ هتل"
-          value={countryId}
-          disabled={
-            !canWrite ||
-            busy ||
-            opening ||
-            editorMode === 'list' ||
-            editorMode === 'edit'
-          }
-          options={countries.map((country) => ({
-            value: country.id,
-            label: country.name,
-          }))}
-          onValueChange={(id) => {
-            changeDestination('country', id);
-          }}
-        />
-        <SearchCombobox
-          label="شهر بستهٔ هتل"
-          value={cityId}
-          disabled={
-            !canWrite ||
-            busy ||
-            opening ||
-            !countryId ||
-            editorMode === 'list' ||
-            editorMode === 'edit'
-          }
-          options={cities.map((city) => ({ value: city.id, label: city.name }))}
-          onSearchChange={setCitySearch}
-          onValueChange={(id) => changeDestination('city', id)}
-        />
         {destinationChange && (
           <div role="alert" className="space-y-2 rounded border p-3">
             <p>
