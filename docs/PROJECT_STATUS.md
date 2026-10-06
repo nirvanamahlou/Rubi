@@ -4809,4 +4809,4 @@ Dedicated RTL icon-only campaign declaration action/form persists goal progress,
 
 ## 2026-10-06 — PROCUREMENT-REQUEST-HEADING-1006
 
-Request detail breadcrumb uses the saved request title; redundant UUID/version heading removed. Internal identity and routing preserved. Web-only change; no migration/API/IAM/data changes. Validation in progress; live authenticated browser unavailable (CUA initialization failure).
+Request detail breadcrumb uses the saved request title; redundant UUID/version heading removed. Internal identity and routing preserved. Web-only change; no migration/API/IAM/data changes. Web lint/typecheck and 7 focused tests passed; production build/PostgreSQL CI gates passed. PR #693 awaits remaining required gates; live authenticated browser unavailable (CUA initialization failure).
