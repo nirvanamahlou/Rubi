@@ -4786,6 +4786,12 @@ Supplier logos and per-record read-only previews are available throughout Purcha
 PC-B condensed the dossier into four workflow groups and simplified selected-order amendments without removing record types or audit history. Supplier/currency linkage is enforced in AMEND_ORDER; metadata-only amendments preserve existing commercial lines. Verification and PR status are tracked in WORK_ASSIGNMENTS.md and docs/tasks/PROCUREMENT-ORDER-LIFECYCLE-CLEANUP-1006.md.
 
 PR #683 merged into develop at `9993f3d4` after all CI gates passed. Source reservation released; no runtime deployment or authenticated browser visual QA.
+
 ## 2026-10-06 — CAMPAIGN-OWNER-OPTIONAL-1006 — PC-B
 
 Campaign owner no longer displays a required marker in the form. Automatic authenticated-user ownership and server authorization remain unchanged. 11 focused tests, affected lint, full Web TypeScript and production build (55 pages) passed. No schema/migration/contract/dependency/runtime/data change or authenticated browser QA. PR #685 awaits exact-head CI before user-authorized develop merge; bounded locks released.
+
+
+## 2026-10-06 — Procurement category add shortcut
+
+PC-B added an accessible, non-submit Add button beside the purchase-category label. It opens/focuses the existing new-category input and reuses branch-scoped category persistence. No API/schema/dependency changes. Source reservation complete; CI and PR merge gate pending.

@@ -5771,3 +5771,9 @@ B2B-CONTRACT-GUARANTEE-PUBLISH-1006 candidate repair checkpoint: independent rev
 - COMPUTER_ID=PC-B; branch codex/pc-b-campaign-owner-optional-1006 from origin/develop@2d1343c7. Reserve campaign form and focused regression, bounded WORK_ASSIGNMENTS/PROJECT_STATUS entries. User requests no required marker on the system-assigned campaign owner, push and develop merge. Existing authenticated-actor assignment and server ownership/security checks remain unchanged; no schema, migration, contract or dependency changes. No active Marketing overlap found; unrelated local runtime edits preserved.
 
 - Result: 11 focused tests, affected ESLint, full Web TypeScript and production build (55 pages) passed. Bounded locks released with candidate commit; PR #685 must pass exact-head CI before authorized merge. No authenticated browser or local runtime change.
+
+## PROCUREMENT-CATEGORY-ADD-1006 — PC-B — IMPLEMENTED
+
+- Reserve draft-form.tsx and existing DraftForm test plus bounded status docs on codex/pc-b-procurement-category-add-1006. Prior request redesign PR #677 is merged and its file reservation released. Add a compact category creation trigger beside the label, reusing branch-scoped category persistence and validation. No API, migration, IAM or dependency changes. User authorizes push and merge after CI.
+
+- Verification: DraftForm 11/11, scoped ESLint, Web typecheck and diff whitespace checks pass. Production build/full gates are delegated to PR CI. Implementation complete and source reservation released; merge requires passing checks. No authenticated browser test or local runtime redeployment.
