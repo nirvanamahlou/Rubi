@@ -3,6 +3,7 @@ import type {
   MarketingCampaignViewV1,
 } from '@nora/contracts';
 import { describe, expect, it, vi } from 'vitest';
+import { MarketingApiError } from '../api/records-client';
 import {
   automationDraftFromAsset,
   automationEdgeLines,
@@ -139,8 +140,8 @@ describe('durable Marketing form adapters', () => {
       'key-1',
     ]);
     expect(publish.mock.calls.map((call) => call[3])).toEqual([
-      'key-3',
-      'key-3',
+      'key-2',
+      'key-2',
     ]);
     expect(attempt.created).toMatchObject({ status: 'ACTIVE', version: 8 });
   });
@@ -191,7 +192,7 @@ describe('durable Marketing form adapters', () => {
     expect(updateCampaign).toHaveBeenCalledWith(
       campaign.id,
       expect.objectContaining({ name: 'نام اصلاح‌شده', expectedVersion: 7 }),
-      'key-4',
+      'key-2',
     );
     expect(attempt.created).toMatchObject({ version: 9, status: 'ACTIVE' });
   });
@@ -209,7 +210,7 @@ describe('durable Marketing form adapters', () => {
     });
     const publishCampaign = vi
       .fn()
-      .mockRejectedValueOnce(new Error('publish unavailable'))
+      .mockRejectedValueOnce(new MarketingApiError('publish unavailable', 403))
       .mockResolvedValue({
         data: { ...campaign, version: 9, status: 'ACTIVE' },
       });
@@ -230,7 +231,7 @@ describe('durable Marketing form adapters', () => {
     expect(updateCampaign).toHaveBeenCalledWith(
       campaign.id,
       expect.objectContaining({ name: 'نام اصلاح‌شده', expectedVersion: 7 }),
-      'key-4',
+      'key-3',
     );
     expect(publishCampaign.mock.calls[1]?.[0]).toBe(campaign.id);
     expect(publishCampaign.mock.calls[1]?.[1]).toBe(8);

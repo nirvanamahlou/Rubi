@@ -21,6 +21,7 @@ import {
   Search,
   Settings2,
   UsersRound,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -1077,13 +1078,16 @@ export function MarketingWorkspace({
             </dl>
           ) : null}
           <Button
+            aria-label="تأیید و بستن"
             className="mt-5"
+            size="icon"
+            title="تأیید و بستن"
             onClick={() => {
               if (detailItem) setNotice(`جزئیات ${detailItem.title} تأیید شد.`);
               setDetailItem(null);
             }}
           >
-            تأیید و بستن
+            <X aria-hidden="true" className="size-4" />
           </Button>
         </DialogContent>
       </Dialog>

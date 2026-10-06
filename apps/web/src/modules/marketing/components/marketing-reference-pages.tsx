@@ -44,7 +44,7 @@ import type {
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
+import { MarketingActionButton as Button } from './marketing-action-button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Checkbox,
@@ -2896,7 +2896,7 @@ const marketingBranches = [
   ['jahan-bastan', 'جهان باستان'],
 ] as const;
 
-function MarketingAssetUploadDialog({
+export function MarketingAssetUploadDialog({
   open,
   options,
   submitting,
@@ -2937,8 +2937,6 @@ function MarketingAssetUploadDialog({
   );
   const [validationError, setValidationError] = useState('');
   const selectedType = brandTypes.find((type) => type.id === documentTypeId);
-  const confidentialCodeRequired =
-    selectedType?.defaultConfidentiality === 'CONFIDENTIAL';
   const selectedAssetKind = marketingAssetKinds.find(
     ([value]) => value === assetKind,
   );
@@ -2979,7 +2977,6 @@ function MarketingAssetUploadDialog({
               return;
             }
             const codeError = marketingDocumentCodeError(
-              selectedType?.defaultConfidentiality,
               confidentialAccessCode,
             );
             if (codeError) {
@@ -3075,14 +3072,9 @@ function MarketingAssetUploadDialog({
             />
           </FormField>
           <FormField
-            description={
-              confidentialCodeRequired
-                ? 'نوع سند انتخابی به‌صورت پیش‌فرض محرمانه است؛ این کد برای مشاهده و دریافت لازم است.'
-                : 'در صورتی که سیاست مالک سند را محرمانه کند، کد ۶ رقمی را وارد کنید.'
-            }
+            description="سیاست اسناد تعیین می‌کند کد لازم است یا خیر. در صورت درخواست اسناد، کد ۶ رقمی وارد کنید؛ برای سند غیرمحرمانه خالی بگذارید."
             id="marketing-asset-confidential-code"
             label="کد محرمانگی"
-            required={confidentialCodeRequired}
           >
             <Input
               autoComplete="new-password"
@@ -3120,16 +3112,26 @@ function MarketingAssetUploadDialog({
           ) : null}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button
+              aria-label="انصراف از بارگذاری"
               disabled={submitting}
               onClick={() => onOpenChange(false)}
+              size="icon"
+              title="انصراف از بارگذاری"
               type="button"
               variant="outline"
             >
-              انصراف
+              <X aria-hidden="true" className="size-4" />
             </Button>
-            <Button disabled={submitting || !file} type="submit">
+            <Button
+              aria-label={
+                submitting ? 'در حال بارگذاری…' : 'ثبت در محتوا و اسناد'
+              }
+              title={submitting ? 'در حال بارگذاری…' : 'ثبت در محتوا و اسناد'}
+              size="icon"
+              disabled={submitting || !file}
+              type="submit"
+            >
               <Upload aria-hidden="true" className="size-4" />
-              {submitting ? 'در حال بارگذاری…' : 'ثبت در محتوا و اسناد'}
             </Button>
           </div>
         </form>
@@ -3138,7 +3140,7 @@ function MarketingAssetUploadDialog({
   );
 }
 
-function ContentPage({
+export function ContentPage({
   tab,
   onOpen,
   onNotice,
@@ -3257,9 +3259,16 @@ function ContentPage({
       <>
         <Panel
           actions={
-            <Button disabled={loadingOptions} onClick={() => void openUpload()}>
+            <Button
+              aria-label={
+                loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'
+              }
+              title={loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'}
+              size="icon"
+              disabled={loadingOptions}
+              onClick={() => void openUpload()}
+            >
               <Upload aria-hidden="true" className="size-4" />
-              {loadingOptions ? 'در حال آماده‌سازی…' : 'بارگذاری فایل'}
             </Button>
           }
           title="کتابخانه محتوا"

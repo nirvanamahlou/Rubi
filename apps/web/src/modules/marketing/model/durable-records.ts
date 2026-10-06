@@ -4,6 +4,7 @@ import type {
   MarketingCampaignInputV1,
   MarketingCampaignViewV1,
 } from '@nora/contracts';
+import { MarketingApiError } from '../api/records-client';
 
 import {
   campaignChannelLabels,
@@ -228,15 +229,32 @@ export function campaignInputFromDraft(
   };
 }
 
+type CampaignCommand = {
+  key: string;
+  uncertain: boolean;
+} & (
+  | {
+      kind: 'create';
+      input: MarketingCampaignInputV1;
+      fingerprint: string;
+      branchId: string;
+    }
+  | {
+      kind: 'update';
+      input: MarketingCampaignInputV1;
+      fingerprint: string;
+      id: string;
+    }
+  | { kind: 'publish'; id: string; expectedVersion: number }
+);
+
 export interface CampaignPublicationAttempt {
-  fingerprint: string;
-  createFingerprint: string;
-  createInput: MarketingCampaignInputV1;
+  keyFactory: () => string;
   appliedFingerprint?: string;
-  createKey: string;
-  updateKey: string;
-  publicationKey: string;
   created?: MarketingCampaignViewV1;
+  pending?: CampaignCommand;
+  branchId?: string;
+  publicationConfirmed?: boolean;
 }
 
 export function ensureCampaignPublicationAttempt(
@@ -244,19 +262,17 @@ export function ensureCampaignPublicationAttempt(
   input: MarketingCampaignInputV1,
   keyFactory: () => string = () => crypto.randomUUID(),
 ): CampaignPublicationAttempt {
-  const fingerprint = JSON.stringify(input);
-  if (current)
-    return current.fingerprint === fingerprint
-      ? current
-      : { ...current, fingerprint, updateKey: keyFactory() };
-  return {
-    fingerprint,
-    createFingerprint: fingerprint,
-    createInput: input,
-    createKey: keyFactory(),
-    updateKey: keyFactory(),
-    publicationKey: keyFactory(),
-  };
+  // New form values never alter an outstanding command's identity or payload.
+  void input;
+  return current ?? { keyFactory };
+}
+
+function definitivelyRejected(error: unknown) {
+  return (
+    error instanceof MarketingApiError &&
+    [400, 401, 403, 404, 409, 422].includes(error.status) &&
+    !error.code?.startsWith('IDEMPOTENCY_')
+  );
 }
 
 export async function executeCampaignPublication(
@@ -282,30 +298,78 @@ export async function executeCampaignPublication(
     ) => Promise<{ data: MarketingCampaignViewV1 }>;
   },
 ) {
+  if (attempt.branchId && attempt.branchId !== branchId)
+    throw new Error('ابتدا نتیجه درخواست شعبه قبلی را مشخص کنید.');
+  attempt.branchId = branchId;
+  const fingerprint = JSON.stringify(input);
+  const settle = async () => {
+    const command = attempt.pending!;
+    try {
+      const result =
+        command.kind === 'create'
+          ? await api.createCampaign(
+              command.input,
+              command.branchId,
+              command.key,
+            )
+          : command.kind === 'update'
+            ? await api.updateCampaign(command.id, command.input, command.key)
+            : await api.publishCampaign(
+                command.id,
+                command.expectedVersion,
+                null,
+                command.key,
+              );
+      attempt.created = result.data;
+      if (command.kind === 'publish') attempt.publicationConfirmed = true;
+      else attempt.appliedFingerprint = command.fingerprint;
+      delete attempt.pending;
+    } catch (error) {
+      // A later rejection (e.g. revoked access) says nothing about an earlier
+      // uncertain commit. Keep that original command until replay succeeds.
+      if (!command.uncertain && definitivelyRejected(error))
+        delete attempt.pending;
+      else command.uncertain = true;
+      throw error;
+    }
+  };
+  if (attempt.pending) await settle();
   if (!attempt.created) {
-    attempt.created = (
-      await api.createCampaign(attempt.createInput, branchId, attempt.createKey)
-    ).data;
-    attempt.appliedFingerprint = attempt.createFingerprint;
+    attempt.pending = {
+      kind: 'create',
+      key: attempt.keyFactory(),
+      uncertain: false,
+      input: structuredClone(input),
+      fingerprint,
+      branchId,
+    };
+    await settle();
   }
-  if (attempt.appliedFingerprint !== attempt.fingerprint) {
-    attempt.created = (
-      await api.updateCampaign(
-        attempt.created.id,
-        { ...input, expectedVersion: attempt.created.version },
-        attempt.updateKey,
-      )
-    ).data;
-    attempt.appliedFingerprint = attempt.fingerprint;
+  if (attempt.appliedFingerprint !== fingerprint) {
+    attempt.pending = {
+      kind: 'update',
+      key: attempt.keyFactory(),
+      uncertain: false,
+      id: attempt.created!.id,
+      fingerprint,
+      input: structuredClone({
+        ...input,
+        expectedVersion: attempt.created!.version,
+      }),
+    };
+    await settle();
   }
-  const published = await api.publishCampaign(
-    attempt.created.id,
-    attempt.created.version,
-    null,
-    attempt.publicationKey,
-  );
-  attempt.created = published.data;
-  return published;
+  if (!attempt.publicationConfirmed) {
+    attempt.pending = {
+      kind: 'publish',
+      key: attempt.keyFactory(),
+      uncertain: false,
+      id: attempt.created!.id,
+      expectedVersion: attempt.created!.version,
+    };
+    await settle();
+  }
+  return { data: attempt.created! };
 }
 
 export type ContentTab = 'forms' | 'landing' | 'links';
@@ -487,22 +551,34 @@ export interface AutomationPoint {
   y: number;
 }
 
+export const AUTOMATION_NODE_SIZE = { width: 176, height: 112 };
+
+export function automationCanvasSize(total: number) {
+  const columns = Math.min(3, Math.max(1, total));
+  return {
+    width: columns * 240,
+    height: Math.max(1, Math.ceil(total / columns)) * 176,
+  };
+}
+
 export function automationNodePoint(index: number, total: number) {
   const columns = Math.min(3, Math.max(1, total));
   const row = Math.floor(index / columns);
   const column = index % columns;
-  return { x: 18 + column * 32, y: 20 + row * 34 };
+  return { x: 120 + column * 240, y: 88 + row * 176 };
 }
 
 export function automationPortPoint(
   center: AutomationPoint,
   port: AutomationPort,
 ): AutomationPoint {
-  const offset = 9;
-  if (port === 'top') return { x: center.x, y: center.y - offset };
-  if (port === 'bottom') return { x: center.x, y: center.y + offset };
-  if (port === 'left') return { x: center.x - offset, y: center.y };
-  return { x: center.x + offset, y: center.y };
+  if (port === 'top')
+    return { x: center.x, y: center.y - AUTOMATION_NODE_SIZE.height / 2 };
+  if (port === 'bottom')
+    return { x: center.x, y: center.y + AUTOMATION_NODE_SIZE.height / 2 };
+  if (port === 'left')
+    return { x: center.x - AUTOMATION_NODE_SIZE.width / 2, y: center.y };
+  return { x: center.x + AUTOMATION_NODE_SIZE.width / 2, y: center.y };
 }
 
 export function automationEdgeLines(draft: AutomationDraft) {

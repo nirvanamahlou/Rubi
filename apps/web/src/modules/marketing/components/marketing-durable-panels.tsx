@@ -18,7 +18,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -36,10 +36,13 @@ import {
 import { Badge, Card, EmptyState } from '@/components/ui/surfaces';
 import { marketingApi } from '../api/records-client';
 import {
+  AUTOMATION_NODE_SIZE,
+  automationCanvasSize,
   automationDraftFromAsset,
   automationEdgeLines,
   automationInputFromDraft,
   automationNodePoint,
+  automationPortPoint,
   contentDraftFromAsset,
   contentInputFromDraft,
   emptyContentDraft,
@@ -1365,17 +1368,18 @@ export function AutomationGraphCanvas({
   onPortSelect,
 }: {
   draft: AutomationDraft;
-  onPortSelect?: (nodeId: string, port: AutomationPort) => void;
+  onPortSelect?: ((nodeId: string, port: AutomationPort) => void) | undefined;
 }) {
   const edgeLines = automationEdgeLines(draft);
+  const canvas = automationCanvasSize(draft.nodes.length);
   return (
-    <div className="relative min-h-[28rem] overflow-auto rounded-2xl border border-border bg-muted/20">
+    <div className="overflow-auto rounded-2xl border border-border bg-muted/20">
       <svg
         aria-label="اتصال‌های ذخیره‌شده گراف اتوماسیون"
-        className="pointer-events-none absolute inset-0 size-full"
-        preserveAspectRatio="none"
-        role="img"
-        viewBox="0 0 100 100"
+        className="block w-full min-w-80"
+        style={{ aspectRatio: `${canvas.width} / ${canvas.height}` }}
+        role="group"
+        viewBox={`0 0 ${canvas.width} ${canvas.height}`}
       >
         <defs>
           <marker
@@ -1394,42 +1398,67 @@ export function AutomationGraphCanvas({
           <line
             data-source-port={edge.sourcePort}
             data-target-port={edge.targetPort}
+            data-source={edge.source}
+            data-target={edge.target}
             key={`${edge.source}-${edge.target}-${index}`}
             markerEnd="url(#marketing-automation-arrow)"
             stroke="currentColor"
-            strokeWidth="1.1"
+            strokeWidth="2"
             x1={edge.sourcePoint.x}
             x2={edge.targetPoint.x}
             y1={edge.sourcePoint.y}
             y2={edge.targetPoint.y}
           />
         ))}
+        {draft.nodes.map((node, index) => {
+          const point = automationNodePoint(index, draft.nodes.length);
+          return (
+            <Fragment key={node.id}>
+              <foreignObject
+                data-node={node.id}
+                x={point.x - AUTOMATION_NODE_SIZE.width / 2}
+                y={point.y - AUTOMATION_NODE_SIZE.height / 2}
+                width={AUTOMATION_NODE_SIZE.width}
+                height={AUTOMATION_NODE_SIZE.height}
+              >
+                <div className="box-border size-full overflow-auto rounded-2xl border-2 border-primary/30 bg-surface p-4 text-center shadow-sm">
+                  <strong>{node.title}</strong>
+                  <small className="mt-2 block break-all font-mono text-[10px] text-muted-foreground">
+                    {node.id}
+                  </small>
+                </div>
+              </foreignObject>
+              {(['top', 'right', 'bottom', 'left'] as const).map((port) => {
+                const position = automationPortPoint(point, port);
+                return (
+                  <foreignObject
+                    key={port}
+                    data-node-port={`${node.id}:${port}`}
+                    x={position.x - 12}
+                    y={position.y - 12}
+                    width={24}
+                    height={24}
+                  >
+                    <button
+                      aria-label={`درگاه ${port} ${node.title}`}
+                      className="grid size-full place-items-center rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring"
+                      disabled={!onPortSelect}
+                      onClick={() => onPortSelect?.(node.id, port)}
+                      title={`انتخاب درگاه ${port}`}
+                      type="button"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="size-3 rounded-full bg-primary"
+                      />
+                    </button>
+                  </foreignObject>
+                );
+              })}
+            </Fragment>
+          );
+        })}
       </svg>
-      {draft.nodes.map((node, index) => {
-        const point = automationNodePoint(index, draft.nodes.length);
-        return (
-          <div
-            className="absolute w-44 -translate-x-1/2 -translate-y-1/2 rounded-2xl border-2 border-primary/30 bg-surface p-6 text-center shadow-sm"
-            key={node.id}
-            style={{ left: `${point.x}%`, top: `${point.y}%` }}
-          >
-            {(['top', 'right', 'bottom', 'left'] as const).map((port) => (
-              <button
-                aria-label={`درگاه ${port} ${node.title}`}
-                className={`absolute size-3 rounded-full bg-primary ${port === 'top' ? '-top-1.5 left-1/2' : port === 'bottom' ? '-bottom-1.5 left-1/2' : port === 'right' ? 'right-[-6px] top-1/2' : 'left-[-6px] top-1/2'}`}
-                key={port}
-                onClick={() => onPortSelect?.(node.id, port)}
-                title={`انتخاب درگاه ${port}`}
-                type="button"
-              />
-            ))}
-            <strong>{node.title}</strong>
-            <small className="mt-2 block font-mono text-[10px] text-muted-foreground">
-              {node.id}
-            </small>
-          </div>
-        );
-      })}
     </div>
   );
 }
@@ -1478,15 +1507,19 @@ export function DurableAutomationBuilder({ onNotice }: { onNotice: Notice }) {
         </FormField>
         <AutomationGraphCanvas
           draft={draft}
-          onPortSelect={(nodeId, port) => {
-            if (!source) {
-              setSource(nodeId);
-              setSourcePort(port);
-            } else {
-              setTarget(nodeId);
-              setTargetPort(port);
-            }
-          }}
+          onPortSelect={
+            viewing
+              ? undefined
+              : (nodeId, port) => {
+                  if (!source) {
+                    setSource(nodeId);
+                    setSourcePort(port);
+                  } else {
+                    setTarget(nodeId);
+                    setTargetPort(port);
+                  }
+                }
+          }
         />
         <div className="flex flex-wrap gap-2">
           <Button
