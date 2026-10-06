@@ -13,10 +13,11 @@ The local Compose overlay provides API and Web services on `4192` and `3100`, re
 - Organizations registration/upload and agreement grant regressions: 27 tests passed.
 - Documents multipart HTTP and B2B agreement reference suites: 27 tests passed.
 - Scoped ESLint, Web typecheck, Contracts build, API dependency build and Web production build (55 routes) passed.
-- Compose configuration validation passed.
-- Docker image build and container health/live upload check could not be completed because Docker Engine returned an internal HTTP 500 and then stopped responding. The existing database, Redis, MinIO and host app processes were left untouched.
-- No live browser authentication/upload test, operational data mutation, IAM grant, migration or data-service restart was performed.
+- The first local Compose launch exposed that Next.js was invoked at the monorepo root rather than `apps/web`; this caused the Web healthcheck to fail. The follow-up `B2B-COMPOSE-WEBROOT-1006` adds the app directory to the Compose command.
+- Docker image build now passes. With that startup fix, the API and Web Compose containers are healthy, `GET /api/v1/health` on port 4192 returns `ok`, and `GET /login` on port 3100 returns HTTP 200. Existing PostgreSQL, Redis and MinIO containers remain healthy and were not restarted.
+- No authenticated browser upload was performed. Confidential-reference attachment behavior is covered by the focused Organizations and Documents API regressions; a real upload through the UI remains unverified.
+- No operational data mutation, IAM grant, migration or data-service restart was performed.
 
 ## Handoff
 
-Task branch `codex/pc-b-b2b-compose-appstack-1006` is based on the current `develop` head. Exact-head CI and review remain required before merging. Compose runtime verification is still needed after Docker Engine becomes healthy. The previously user-authorized branch memberships remain outside this upload fix; no branch access was changed here.
+PR #673 from `codex/pc-b-b2b-compose-appstack-1006` was merged to `develop` as `cf696496` after all exact-head CI gates passed. The separate startup correction is tracked in `WORK_ASSIGNMENTS.md` as `B2B-COMPOSE-WEBROOT-1006`; it was built and verified locally on Compose, and its own review/CI flow follows. The previously user-authorized branch memberships remain outside this upload fix; no branch access was changed here.
