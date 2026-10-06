@@ -5670,6 +5670,8 @@ ISSUED-TICKET-EXPORT-1005 candidate: Reservations issuance records and assigned 
 
 ISSUED-TICKET-EXPORT-1005 validation: scoped ESLint, API/Web typecheck, API build and 55-page Web production build pass after refreshing existing generated artifacts. Focused actual-issuance/date/filter/workbook/security/UI tests and real synthetic PDF rendering pass. PR665 exact-head full quality, test, build and PostgreSQL CI gate develop merge. No operational data or local runtime change.
 
-## NAVIGATION-CLOSED-1006 — PC-A — IN_PROGRESS
+## NAVIGATION-CLOSED-1006 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; codex/pc-a-navigation-closed-1006 from origin/develop. Reserve bounded central app-shell.tsx Navigation initial group state, existing collapse regression, own status/assignment entries. All sidebar groups start closed independently of route and asynchronous access loading; manual toggles retained on desktop/mobile. No active target-file collision. No permissions, API, schema, dependency or runtime change. User explicitly authorizes develop merge after checks.
+
+NAVIGATION-CLOSED-1006: closed defaults cover all registered groups before permission loading; existing two collapse regressions, scoped Web lint and typecheck pass. PR666 production build and exact-head CI gate merge. Bounded central Navigation lock released with review candidate; no local runtime or data change.
