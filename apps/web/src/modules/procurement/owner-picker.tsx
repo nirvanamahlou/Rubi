@@ -1,12 +1,21 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { procurementApi } from './api';
 import { selectClass } from './draft-form';
 import { Button } from '@/components/ui/button';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { Alert } from '@/components/ui/surfaces';
 import { ProcurementSelect } from './procurement-select';
+export function procurementOwnerQuery(branchId: string, search = '', page = 1) {
+  const normalizedSearch = search.trim();
+  return queryOptions({
+    queryKey: ['procurement', 'owners', branchId, normalizedSearch, page],
+    queryFn: () => procurementApi.owners(branchId, normalizedSearch, page),
+    enabled: Boolean(branchId),
+    retry: false,
+  });
+}
 export function ProcurementOwnerPicker({
   branchId,
   value,
@@ -38,12 +47,7 @@ export function ProcurementOwnerPicker({
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
-  const query = useQuery({
-    queryKey: ['procurement', 'owners', branchId, debounced, page],
-    queryFn: () => procurementApi.owners(branchId, debounced, page),
-    enabled: Boolean(branchId && debounced.trim()),
-    retry: false,
-  });
+  const query = useQuery(procurementOwnerQuery(branchId, debounced, page));
   return (
     <div
       className={
@@ -59,6 +63,7 @@ export function ProcurementOwnerPicker({
         <Input
           id="proc-owner-search"
           value={search}
+          maxLength={100}
           onChange={(event) => setSearch(event.target.value)}
         />
       </FormField>
@@ -67,9 +72,7 @@ export function ProcurementOwnerPicker({
           id="proc-owner"
           className={selectClass}
           value={value}
-          disabled={
-            Boolean(debounced.trim()) && (query.isPending || query.isError)
-          }
+          disabled={!branchId || query.isPending || query.isError}
           onChange={(event) => {
             const row = query.data?.items.find(
               (item) => item.id === event.target.value,
@@ -79,7 +82,11 @@ export function ProcurementOwnerPicker({
           }}
         >
           <option value="">
-            {query.isPending ? 'در حال دریافت…' : 'انتخاب مسئول'}
+            {!branchId
+              ? 'ابتدا شعبه را انتخاب کنید'
+              : query.isPending
+                ? 'در حال دریافت…'
+                : 'انتخاب مسئول'}
           </option>
           {selected &&
             !query.data?.items.some((item) => item.id === selected.id) && (
@@ -103,15 +110,19 @@ export function ProcurementOwnerPicker({
                 : 'دریافت ناموفق بود'
             }
           >
-            <Button variant="ghost" onClick={() => void query.refetch()}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => void query.refetch()}
+            >
               تلاش دوباره
             </Button>
           </Alert>
         </div>
       )}
-      {showHints && !debounced.trim() ? (
+      {showHints && !branchId ? (
         <p className="text-xs text-muted-foreground" role="status">
-          برای نمایش مسئولان، نام یا کد را جست‌وجو کنید.
+          ابتدا شعبه را انتخاب کنید.
         </p>
       ) : (
         query.data &&
@@ -121,12 +132,13 @@ export function ProcurementOwnerPicker({
           </p>
         )
       )}
-      {(!compact || Boolean(debounced.trim()) || page > 1) && (
+      {(page > 1 || query.data?.hasMore) && (
         <div className={`flex gap-2 ${compact ? 'sm:col-span-2' : ''}`}>
           <Button
+            type="button"
             variant="ghost"
             size="sm"
-            disabled={!debounced.trim() || page <= 1}
+            disabled={query.isFetching || page <= 1}
             onClick={() => setPage(page - 1)}
           >
             قبلی
@@ -135,9 +147,10 @@ export function ProcurementOwnerPicker({
             {page.toLocaleString('fa-IR')}
           </span>
           <Button
+            type="button"
             variant="ghost"
             size="sm"
-            disabled={!debounced.trim() || !query.data?.hasMore}
+            disabled={query.isFetching || !query.data?.hasMore}
             onClick={() => setPage(page + 1)}
           >
             بعدی

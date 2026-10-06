@@ -168,9 +168,8 @@ export function DraftForm({
   const [requesterPage, setRequesterPage] = useState(1);
   const [ownerUserId, setOwnerUserId] = useState(request?.ownerUserId ?? '');
   const canAssign = bootstrap.permissions.includes('procurement.assign');
-  const canChooseOwner = bootstrap.permissions.includes(
-    'procurement.request.create',
-  );
+  const canChooseOwner =
+    canAssign || bootstrap.permissions.includes('procurement.request.create');
   const requesters = useQuery({
     queryKey: [
       'procurement',
@@ -837,13 +836,15 @@ export function DraftForm({
           {canChooseOwner && (!request || canAssign) && (
             <div className="rounded-xl border border-primary/10 bg-surface/70 p-4">
               <ProcurementOwnerPicker
+                key={draft.branchId}
                 branchId={draft.branchId}
                 value={ownerUserId}
                 onChange={setOwnerUserId}
                 label="مسئول پیگیری"
                 compact
                 showHints={false}
-                {...(request?.ownerUserId
+                {...(request?.ownerUserId &&
+                request.draft.branchId === draft.branchId
                   ? {
                       initialOption: {
                         id: request.ownerUserId,

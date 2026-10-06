@@ -5778,6 +5778,14 @@ B2B-CONTRACT-GUARANTEE-PUBLISH-1006 candidate repair checkpoint: independent rev
 
 - Verification: DraftForm 11/11, scoped ESLint, Web typecheck and diff whitespace checks pass. Production build/full gates are delegated to PR CI. Implementation complete and source reservation released; merge requires passing checks. No authenticated browser test or local runtime redeployment.
 
+## PROCUREMENT-OWNER-LOADING-1006 — PC-B — IMPLEMENTED
+
+- Reserve owner-picker.tsx, draft-form.tsx and focused owner-picker regression tests on codex/pc-b-procurement-owner-loading-1006. Prior category PR #687 is merged and its reservation released. Load authorized owners on branch selection without mandatory search; preserve IAM same-branch eligibility and assignment policy. No IAM grant, API contract/schema/dependency or operational data changes. User authorizes push and merge after CI.
+
+- Implementation complete; source reservation released. Focused owner-query and DraftForm tests 14/14, scoped lint, Web typecheck and diff checks pass. Owner-query tests execute automatic blank-search fetch, pagination, no-branch gating and visible error behavior. Full build and project gates required in PR CI. No authenticated browser QA or runtime redeployment.
+
+- CI compatibility correction: retain whitespace normalization in the owner search path; existing shared lookup regression and the owner query tests now validate trimmed searches while permitting initial blank-search suggestions.
+
 ## B2B-AGENCY-WIZARD-CREDIT-UI-1006 — PC-B — IN_PROGRESS
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-agency-phone-next-1006` from `origin/develop@9993f3d4`. Reserve the Organizations cooperation wizard, agreement workflow toolbar, shared dossier date filter, rates panel, corporate design CSS, focused tests and bounded task/status documentation. No backend, contract, schema, migration, dependency, IAM, or operational data change.
