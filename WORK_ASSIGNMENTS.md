@@ -5765,6 +5765,9 @@ B2B-CONTRACT-GUARANTEE-PUBLISH-1006 candidate repair checkpoint: independent rev
 - Implemented four-stage navigation, compact selected-order forms and backend supplier/currency invariants. Procurement Web 46/46 and refreshed form/stage tests 9/9; domain rules 49/49. API/Web lint, API typecheck/build and Web production build passed. Final Web typecheck passed. Fresh PostgreSQL 18 amendment tests passed 3/3 (38 unrelated tests intentionally filtered); all 123 existing migrations deployed successfully to the disposable test DB. Initial attempt ran before database readiness and was rerun successfully. PR #683 awaits exact-head CI before merge. No browser visual QA.
 
 - PR #683 merged to develop at 9993f3d4 after all exact-head CI quality, test, production build and PostgreSQL 18 migration/seed checks passed. Source reservation released. No runtime deployment or authenticated browser visual QA.
-## CAMPAIGN-OWNER-OPTIONAL-1006 — PC-B — IN_PROGRESS
+
+## CAMPAIGN-OWNER-OPTIONAL-1006 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch codex/pc-b-campaign-owner-optional-1006 from origin/develop@2d1343c7. Reserve campaign form and focused regression, bounded WORK_ASSIGNMENTS/PROJECT_STATUS entries. User requests no required marker on the system-assigned campaign owner, push and develop merge. Existing authenticated-actor assignment and server ownership/security checks remain unchanged; no schema, migration, contract or dependency changes. No active Marketing overlap found; unrelated local runtime edits preserved.
+
+- Result: 11 focused tests, affected ESLint, full Web TypeScript and production build (55 pages) passed. Bounded locks released with candidate commit; PR #685 must pass exact-head CI before authorized merge. No authenticated browser or local runtime change.
