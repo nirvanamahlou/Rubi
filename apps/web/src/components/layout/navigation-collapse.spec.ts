@@ -7,9 +7,10 @@ describe('navigation collapse across route changes', () => {
     source.indexOf('const [closedGroups'),
     source.indexOf('function renderItem'),
   );
-  it('starts with all accessible groups expanded and keeps group state route-independent', () => {
+  it('starts with every group closed before access loads and keeps group state route-independent', () => {
     expect(state).not.toContain('pathname');
-    expect(state).toContain('useState<string[]>([])');
+    expect(state).toContain('groupedNavigationItems.map((group) => group.id)');
+    expect(state).not.toContain('visibleGroups.map');
     expect(state).toContain('ids.filter((value) => value !== id)');
     expect(state).toContain('[...ids, id]');
   });
