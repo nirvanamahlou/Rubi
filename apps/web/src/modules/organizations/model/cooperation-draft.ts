@@ -197,6 +197,14 @@ export async function saveCooperation(
     require('documents.upload');
     require('documents.list');
     require('documents.organization.read');
+    require('documents.metadata.read');
+    if (
+      [
+        draft.pendingAgreementDocument,
+        ...draft.pendingGuaranteeDocuments,
+      ].some((document) => document?.input.confidentialAccessCode)
+    )
+      require('documents.file.read');
   }
   if (
     draft.withAgreement &&
@@ -268,12 +276,18 @@ export async function saveCooperation(
       if (!savedOrganization)
         throw new Error('هویت سازمان پیش از ثبت قرارداد ایجاد نشده است.');
       let agreementTerms = draft.agreementTerms;
+      const referenceGrants: { documentId: string; token: string }[] = [];
       if (
         draft.pendingAgreementDocument ||
         draft.pendingGuaranteeDocuments.some(Boolean)
       ) {
         const options = (await documentsApi.options()).data;
         const upload = async (pending: StagedOrganizationDocument) => {
+          const type = options.documentTypes.find(
+            (item) => item.id === pending.input.documentTypeId,
+          );
+          if (!type || type.domain !== 'ORGANIZATION')
+            throw new Error('نوع سند سازمان برای بارگذاری معتبر نیست.');
           const form = organizationDocumentForm(
             savedOrganization,
             { ...pending.input, branchId: draft.branchId },
@@ -281,7 +295,21 @@ export async function saveCooperation(
             options,
             permissions,
           );
-          return (await documentsApi.upload(form)).data.id;
+          const uploaded = await documentsApi.upload(form);
+          if (type.defaultConfidentiality === 'CONFIDENTIAL') {
+            const grant = await documentsApi.createAccessGrant(
+              uploaded.data.id,
+              {
+                code: pending.input.confidentialAccessCode ?? '',
+                purpose: 'CONFIDENTIAL_VIEW',
+              },
+            );
+            referenceGrants.push({
+              documentId: uploaded.data.id,
+              token: grant.data.token,
+            });
+          }
+          return uploaded.data.id;
         };
         const documentId = draft.pendingAgreementDocument
           ? await upload(draft.pendingAgreementDocument)
@@ -315,6 +343,7 @@ export async function saveCooperation(
         role: draft.role,
         requestId: draft.agreementRequestId ?? crypto.randomUUID(),
         terms: agreementTerms,
+        ...(referenceGrants.length ? { referenceGrants } : {}),
       });
     }
     return organization;
