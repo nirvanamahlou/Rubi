@@ -9,10 +9,11 @@ import {
   paymentReferenceSearchQuery,
   SalesWorkspace,
   ContractListContactRouteDate,
+  ContractListAmounts,
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
-  it('renders customer phone and route with the original contract date rather than its last edit', () => {
+  it('renders customer phone and destination only with the original contract date rather than its last edit', () => {
     const createdAt = '2026-09-01T12:00:00.000Z';
     const contract = {
       customerPhone: '09900000001',
@@ -31,7 +32,8 @@ describe('sales dashboard loading', () => {
       </table>,
     );
     expect(html).toContain('<bdi dir="ltr">09900000001</bdi>');
-    expect(html).toContain('تهران');
+    expect(html).not.toContain('تهران');
+    expect(html).not.toContain('→');
     expect(html).toContain('آنتالیا');
     expect(html).toContain(
       new Date(createdAt).toLocaleDateString('fa-IR', {
@@ -43,6 +45,72 @@ describe('sales dashboard loading', () => {
         timeZone: 'Asia/Tehran',
       }),
     );
+  });
+  it('shows canonical totals beside balances separately per currency without recalculating payments', () => {
+    const balances = [
+      {
+        currencyCode: 'IRR',
+        amount: '9007199254740993.25',
+        outstanding: '1234.50',
+        confirmedPaid: '0',
+        pendingFinance: '999',
+      },
+      {
+        currencyCode: 'USD',
+        amount: '25.50',
+        outstanding: '-1.25',
+        confirmedPaid: '0',
+        pendingFinance: '999',
+      },
+    ];
+    const html = renderToStaticMarkup(
+      <table>
+        <tbody>
+          <tr>
+            <ContractListAmounts contract={{ balances }} />
+          </tr>
+        </tbody>
+      </table>,
+    );
+    const cells = html.match(/<td\b[^>]*>[\s\S]*?<\/td>/g)!;
+    expect(cells).toHaveLength(2);
+    expect(cells[0]).toContain(formatMoney(balances[0]!.amount, 'IRR'));
+    expect(cells[0]).toContain(formatMoney('25.50', 'USD'));
+    expect(cells[1]).toContain(formatMoney('1234.50', 'IRR'));
+    expect(cells[1]).toContain(formatMoney('-1.25', 'USD'));
+    expect(html).not.toContain(' + ');
+    expect(html).not.toContain('999');
+  });
+  it('shows explicit unknown amounts rather than invented zeroes when no balances exist', () => {
+    const html = renderToStaticMarkup(
+      <table>
+        <tbody>
+          <tr>
+            <ContractListAmounts contract={{ balances: [] }} />
+          </tr>
+        </tbody>
+      </table>,
+    );
+    expect(html.match(/—/g)).toHaveLength(2);
+    expect(html).not.toContain('ریال');
+  });
+  it('falls back to an unknown destination without substituting the origin', () => {
+    const contract = {
+      originName: 'تهران',
+      destinationName: null,
+      createdAt: '2026-09-01T12:00:00Z',
+    } as SalesContractSummary;
+    const html = renderToStaticMarkup(
+      <table>
+        <tbody>
+          <tr>
+            <ContractListContactRouteDate contract={contract} />
+          </tr>
+        </tbody>
+      </table>,
+    );
+    expect(html).toContain('<bdi>—</bdi>');
+    expect(html).not.toContain('تهران');
   });
   it('places the Excel export beside the contract list with a full-results hint', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);
