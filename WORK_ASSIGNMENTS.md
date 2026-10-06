@@ -5771,3 +5771,9 @@ B2B-CONTRACT-GUARANTEE-PUBLISH-1006 candidate repair checkpoint: independent rev
 - Reserve draft-form.tsx and existing DraftForm test plus bounded status docs on codex/pc-b-procurement-category-add-1006. Prior request redesign PR #677 is merged and its file reservation released. Add a compact category creation trigger beside the label, reusing branch-scoped category persistence and validation. No API, migration, IAM or dependency changes. User authorizes push and merge after CI.
 
 - Verification: DraftForm 11/11, scoped ESLint, Web typecheck and diff whitespace checks pass. Production build/full gates are delegated to PR CI. Implementation complete and source reservation released; merge requires passing checks. No authenticated browser test or local runtime redeployment.
+
+## B2B-AGENCY-WIZARD-CREDIT-UI-1006 — PC-B — IN_PROGRESS
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-agency-phone-next-1006` from `origin/develop@9993f3d4`. Reserve the Organizations cooperation wizard, agreement workflow toolbar, shared dossier date filter, rates panel, corporate design CSS, focused tests and bounded task/status documentation. No backend, contract, schema, migration, dependency, IAM, or operational data change.
+- Allow navigation past phone verification to inspect subsequent registration steps while retaining the existing final-save OTP guard. Remove specified B2B helper headings/copy. Move compact Excel/PDF exports to the filter action area for agreement, credit and guarantee views; keep date inputs accessible.
+- Implementation complete. Focused Organizations tests 22/22, scoped ESLint, Web typecheck, formatting and Web production build (55 routes) pass; exact-head PR CI is the final check. No automated browser interaction or operational data change.

@@ -79,6 +79,15 @@
   .agreement-toolbar.dossier-filter-grid > .field {
     min-width: 0;
   }
+  .agreement-export-position {
+    order: 2;
+    display: flex;
+    align-items: flex-end;
+    min-height: 40px;
+  }
+  .agreement-export-position .commercial-export-actions {
+    width: 100%;
+  }
   .commercial-section-heading {
     display: flex;
     flex-wrap: wrap;
