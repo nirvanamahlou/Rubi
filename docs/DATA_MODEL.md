@@ -417,6 +417,11 @@ erDiagram
 - net purchase از اجزای approved محاسبه می‌شود و margin فیلد قابل ویرایش نیست.
 - Purchase Invoice پس از approval به payable و journal source یکتا تبدیل می‌شود.
 - یک source document بیش از یک posting فعال ندارد؛ correction با reversal است.
+- `ProcurementCategory` فهرست پایدار و branch-scoped دسته خرید است؛ فقط شعبهٔ واقعی را
+  می‌پذیرد، به Branch و کاربر سازنده FK محدودکننده دارد و کلید Unicode نرمال‌شده
+  برای جلوگیری از تکرار نگه می‌دارد. دستهٔ ذخیره‌شده روی درخواست‌های قبلی snapshot
+  است و بازنویسی یا backfill نمی‌شود. خواندن/ساخت دسته به مجوز ثبت درخواست و دسترسی
+  صریح به همان شعبه نیاز دارد؛ Legal Entity دسترسی شعبه ایجاد نمی‌کند.
 
 ### Finance
 

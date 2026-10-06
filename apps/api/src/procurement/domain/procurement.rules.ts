@@ -99,10 +99,8 @@ export function documentTotal(lines: CommercialLine[]): string {
 export function validateSubmission(draft: ProcurementDraftV1): void {
   for (const field of [
     'title',
-    'unitId',
     'purchaseType',
     'category',
-    'needReason',
     'requiredAt',
   ] as const)
     requireRule(
@@ -127,9 +125,9 @@ export function validateSubmission(draft: ProcurementDraftV1): void {
   );
   for (const item of draft.items) {
     requireRule(
-      item.description.trim() && item.unit.trim(),
+      (item.kind === 'GOODS' || item.description.trim()) && item.unit.trim(),
       'VALIDATION_ERROR',
-      'شرح و واحد هر قلم لازم است.',
+      'واحد هر قلم و شرح خدمت لازم است.',
       'items',
     );
     requireRule(

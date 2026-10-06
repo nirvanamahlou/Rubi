@@ -10,6 +10,7 @@ import { HrModule } from '../hr/hr.module';
 import { SalesModule } from '../sales/sales.module';
 import { CustomersModule } from '../customers/customers.module';
 import { SettingsModule } from '../settings/settings.module';
+import { TasksModule } from '../tasks/tasks.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { SettingsModule } from '../settings/settings.module';
     SalesModule,
     CustomersModule,
     SettingsModule,
+    TasksModule,
   ],
   controllers: [WorkbenchController],
   providers: [AuthGuard, WorkbenchService, WorkbenchPerformanceService],

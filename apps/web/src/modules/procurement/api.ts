@@ -173,6 +173,21 @@ export const procurementApi = {
     procurementRequest<{ items: { id: string; label: string }[] }>(
       `/units?${new URLSearchParams({ branchId })}`,
     ),
+  categories: (branchId: string) =>
+    procurementRequest<ProcurementListV1<{ id: string; label: string }>>(
+      `/categories?${new URLSearchParams({ branchId })}`,
+    ),
+  createCategory: (branchId: string, label: string) =>
+    procurementRequest<{
+      id: string;
+      label: string;
+      branchId: string;
+      createdAt: string;
+    }>('/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ branchId, label }),
+    }),
   bootstrap: () => procurementRequest<Bootstrap>('/bootstrap'),
   list: (query: URLSearchParams) =>
     procurementRequest<ProcurementListV1<ProcurementRequestV1>>(
@@ -203,6 +218,7 @@ export const procurementApi = {
     request?: ProcurementRequestV1,
     requesterEmployeeId?: string,
     publish = false,
+    ownerUserId?: string,
   ) =>
     procurementRequest<ProcurementRequestV1>(
       request ? `/requests/${encodeURIComponent(request.id)}` : '/requests',
@@ -219,6 +235,7 @@ export const procurementApi = {
             : {
                 draft,
                 requesterEmployeeId,
+                ...(ownerUserId ? { ownerUserId } : {}),
                 ...(publish ? { publish: true } : {}),
               },
         ),

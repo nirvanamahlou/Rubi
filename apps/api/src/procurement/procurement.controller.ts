@@ -88,6 +88,21 @@ export class ProcurementController {
   ) {
     return procurementBoundary(() => this.service.units(query, req.actor));
   }
+  @Get('categories')
+  @Header('Cache-Control', 'private, no-store')
+  categories(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.categories(query, req.actor));
+  }
+  @Post('categories')
+  @HttpCode(201)
+  createCategory(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
+    return procurementBoundary(() =>
+      this.service.createCategory(body, req.actor),
+    );
+  }
   @Get('requests')
   @Header('Cache-Control', 'private, no-store')
   list(
