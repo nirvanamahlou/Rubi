@@ -6096,3 +6096,13 @@ COMPUTER_ID=PC-B; branch codex/pc-b-hr-recruitment-requisition-links-1007 from o
 
 - Persistence audit reopened at user request: reserve the existing B2B disposable PostgreSQL test setup timeout only, so its real create/read/update assertions can finish on a slower Windows Docker host. No production API or schema behavior changes. User now authorizes push and merge after verification.
 - Verification: disposable PostgreSQL suite passed 19/19 once with the longer setup window; Master Data identity, contact crypto, service and organization directory tests passed 56/56. A further combined organization/contact database assertion was not included because the local Docker daemon became unresponsive on repetition. No authenticated browser submission or live organization write was performed. Scoped lint passed; exact-head PR CI remains required before merge.
+
+## SALES-COPY-CLEANUP-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-copy-cleanup-1007 from origin/develop@7678ead9. Reserve Sales contracts dashboard and new-contract presentation components plus existing assertions and bounded status docs. Remove user-listed explanatory copy and duplicate headings, preserving fields, ticket facts, accessible labels, validation and save actions. No overlapping active Sales source lock. No schema/API/dependency/runtime/data changes. User explicitly authorizes develop merge after verification.
+
+Presentation-only cleanup removes listed dashboard/wizard explanations and duplicate headings. Required customer/service/date/price fields, flight facts/capacity and submit actions remain. Existing rendering assertions updated for removed copy. Scoped source locks release with frozen candidate. Local focused tests, lint/typecheck and Web build plus exact-head full CI gate authorized merge; no browser submit or local rollout claimed.
+
+Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.
+
+Scope also reserves one additive English Sales display translation for the shortened floating-ticket action; no overlapping active catalogue lock.

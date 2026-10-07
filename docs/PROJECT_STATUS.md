@@ -5002,3 +5002,9 @@ The organization edit entry is being aligned with the initial registration secti
 The directory and dossier edit actions now open one edit workspace with the registered identity/role and logo editor, organization addresses, contact editors and agreement workflow. Each section reads the existing record and saves through its owning API; contact details remain masked until separately authorized. All 214 Organizations tests, affected lint and TypeScript, and the Web production build passed. No schema, migration, permission or live-data changes; authenticated browser write not run.
 
 Persistence follow-up: the disposable PostgreSQL B2B suite passed 19/19 after allowing the slower Windows Docker host more setup time. It verifies saved profile, agreement and address records through real database reads. Master Data identity, contact crypto, service and organization directory unit tests passed 56/56. The editor uses the existing owner API writes; an authenticated browser submit and live identity/contact database write were not run. No production API or schema change was needed. The extra combined database assertion was withheld after Docker became unresponsive on repeat runs. Exact-head CI gates the requested develop merge.
+
+## 2026-10-07 — PC-A — Sales contract copy cleanup
+
+Removed user-listed explanatory paragraphs and duplicate headings from contract dashboard and new-contract stages. Preserved form controls, customer confirmation, flight identity/times/capacity, hotel selection, prices, payments and existing business rules. No API, schema, dependency or operational data changes. Focused existing rendering tests updated; local checks and exact-head CI gate the user-authorized develop merge.
+
+Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.

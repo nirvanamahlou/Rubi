@@ -219,13 +219,7 @@ export function SalesWorkspace() {
     <div className="mx-auto grid w-full max-w-7xl gap-5">
       <header className="relative flex flex-wrap items-center justify-between gap-5 overflow-hidden rounded-2xl border border-primary/15 bg-gradient-to-l from-primary/10 via-surface to-surface p-6">
         <div>
-          <p className="mb-2 text-xs font-bold tracking-wide text-primary">
-            فروش و پیگیری سفر
-          </p>
           <h1 className="text-2xl font-black">داشبورد قراردادها</h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            قراردادهای قابل‌دسترسی شما · مانده بر اساس پرداخت تأییدشده مالی
-          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -300,10 +294,6 @@ export function SalesWorkspace() {
                 </span>
               )}
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              فقط پرداخت تأییدشده مالی از مانده کم می‌شود؛ ارزها جدا محاسبه
-              می‌شوند.
-            </p>
           </Card>
           <Card className="p-5">
             <h2 className="font-bold">پیگیری‌های فروش</h2>
@@ -782,9 +772,6 @@ export function SalesDashboardMetrics({
           </div>
           <p className="mt-3 break-words text-3xl font-black tabular-nums">
             {value}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            قراردادهای قابل‌دسترسی شما
           </p>
         </Card>
       ))}

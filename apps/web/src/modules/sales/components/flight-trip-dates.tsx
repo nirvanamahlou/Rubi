@@ -139,9 +139,6 @@ export function FlightTripDates({
       out.roundTripSalePrices?.some((fare) => fare.returnOfferId === offer.id));
   return (
     <div className="grid gap-3 rounded-xl border-2 border-primary/40 bg-primary/5 p-4">
-      <h3 className="font-bold text-primary">
-        انتخاب تاریخ بلیط رفت{roundTrip ? ' و بلیط برگشت' : ''}
-      </h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-semibold">
           بلیط رفت
