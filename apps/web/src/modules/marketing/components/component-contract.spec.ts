@@ -7,6 +7,16 @@ import {
   marketingSectionTabs,
 } from '../model/reference-data';
 
+it('removes customer journeys from cards and legacy section routing', () => {
+  expect(marketingSections.some((section) => section.key === 'journeys')).toBe(
+    false,
+  );
+  expect(workspaceSource).toContain(
+    'marketingSections.some((item) => item.key === requestedSection)',
+  );
+  expect(workspaceSource).not.toContain('و سفر مشتری');
+});
+
 const workspaceSource = readFileSync(
   join(
     process.cwd(),
@@ -83,7 +93,7 @@ describe('marketing workspace component contract', () => {
     expect(pageSource).toContain("key={initialSection ?? 'marketing-hub'}");
   });
 
-  it('covers the eight active sections without the hub preview-state selector', () => {
+  it('covers the remaining active sections without the hub preview-state selector', () => {
     for (const label of [
       'داشبورد',
       'کمپین‌ها',
@@ -91,7 +101,6 @@ describe('marketing workspace component contract', () => {
       'ارتباطات',
       'محتوا و جذب',
       'تخفیف‌ها و پیشنهادها',
-      'سفر مشتری',
     ]) {
       expect(referenceDataSource).toContain(label);
     }
