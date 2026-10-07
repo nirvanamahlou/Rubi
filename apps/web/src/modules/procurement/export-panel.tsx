@@ -27,22 +27,30 @@ export function ProcurementExportPanel({
   kind,
   query,
   request,
+  compact = false,
 }: {
   bootstrap: Bootstrap;
   kind: ProcurementExportJob['kind'];
   query?: Record<string, string>;
   request?: ProcurementRequestV1;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   if (!bootstrap.permissions.includes('procurement.export')) return null;
   return (
-    <Card className="space-y-4 p-5">
+    <Card
+      className={
+        compact
+          ? 'space-y-3 border-0 bg-transparent p-0 shadow-none'
+          : 'space-y-4 p-5'
+      }
+    >
       <Button
         variant="outline"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        {open ? 'بستن خروجی‌ها' : 'خروجی Excel و PDF و سوابق تولید'}
+        {open ? 'بستن خروجی‌ها' : 'Excel و PDF'}
       </Button>
       {open && (
         <ExportContent

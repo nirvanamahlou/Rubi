@@ -319,7 +319,7 @@ function WorkspaceState({
     const items: PageBreadcrumb[] = [
       {
         key: 'purchases',
-        title: 'خرید و تأمین',
+        title: 'تنخواه',
         ...(group > 0 || selectedId
           ? { onSelect: () => navigateGroup(0) }
           : {}),
@@ -360,7 +360,17 @@ function WorkspaceState({
         createdTo,
       })
     : (list.data?.items ?? []);
-  function saved(request: ProcurementRequestV1) {
+  function saved(request: ProcurementRequestV1 & { deleted?: boolean }) {
+    if (request.deleted) {
+      closeRequest();
+      void client.invalidateQueries({ queryKey: ['procurement'] });
+      return;
+    }
+    if (request.status === 'APPROVED' && detail.data?.status === 'IN_REVIEW') {
+      void client.invalidateQueries({ queryKey: ['procurement'] });
+      navigateGroup(5);
+      return;
+    }
     setCreating(false);
     setEditing(false);
     openRequest(request.id);
@@ -482,13 +492,21 @@ function WorkspaceState({
         <>
           <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-black sm:text-3xl">میزکار خرید</h1>
+              <h1 className="text-2xl font-black sm:text-3xl">تنخواه</h1>
             </div>
-            {can('procurement.request.create') && (
-              <Button onClick={() => setCreating(true)}>
-                درخواست خرید جدید
-              </Button>
-            )}
+            <div className="flex flex-wrap items-start gap-2">
+              <ProcurementExportPanel
+                bootstrap={bootstrap}
+                kind="REQUESTS"
+                compact
+                query={{ status, search: querySearch, queue: queryQueue }}
+              />
+              {can('procurement.request.create') && (
+                <Button onClick={() => setCreating(true)}>
+                  درخواست خرید جدید
+                </Button>
+              )}
+            </div>
           </header>
           <div className="grid gap-3 sm:grid-cols-3">
             {(
@@ -715,17 +733,12 @@ function WorkspaceState({
               />
             )}
           </Card>
-          <ProcurementExportPanel
-            bootstrap={bootstrap}
-            kind="REQUESTS"
-            query={{ status, search: querySearch, queue: queryQueue }}
-          />
         </>
       )}
     </div>
   );
 }
-function RequestDetail({
+export function RequestDetail({
   request,
   bootstrap,
   onEdit,
@@ -753,13 +766,12 @@ function RequestDetail({
     setError('');
     identity.current = commandAttempt(identity.current, request, body);
     try {
-      onChanged(
-        await procurementApi.command(
-          identity.current.request,
-          body,
-          identity.current.key,
-        ),
+      const result = await procurementApi.command(
+        identity.current.request,
+        body,
+        identity.current.key,
       );
+      onChanged(result);
       setReason('');
       identity.current = null;
     } catch (caught) {
@@ -871,48 +883,41 @@ function RequestDetail({
                   ارسال برای تأیید
                 </Button>
               )}
-            {['SUBMITTED', 'IN_REVIEW'].includes(request.status) &&
-              can('procurement.approve') && (
-                <>
-                  <Button
-                    onClick={() =>
-                      void command({
-                        action: 'DECIDE',
-                        decision: 'APPROVED',
-                        reason,
-                      })
-                    }
-                  >
-                    تأیید
-                  </Button>
-                  <Button
-                    variant="outline"
-                    disabled={!reason.trim()}
-                    onClick={() =>
-                      void command({
-                        action: 'DECIDE',
-                        decision: 'CHANGES_REQUESTED',
-                        reason,
-                      })
-                    }
-                  >
-                    بازگشت برای اصلاح
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    disabled={!reason.trim()}
-                    onClick={() =>
-                      void command({
-                        action: 'DECIDE',
-                        decision: 'REJECTED',
-                        reason,
-                      })
-                    }
-                  >
-                    رد درخواست
-                  </Button>
-                </>
-              )}
+            {request.status === 'IN_REVIEW' && can('procurement.approve') && (
+              <>
+                <Button
+                  onClick={() =>
+                    void command({
+                      action: 'DECIDE',
+                      decision: 'APPROVED',
+                      reason,
+                    })
+                  }
+                >
+                  تأیید
+                </Button>
+                <Button
+                  variant="destructive"
+                  disabled={
+                    !reason.trim() ||
+                    !can('procurement.request.cancel') ||
+                    !can('procurement.assign')
+                  }
+                  onClick={() => {
+                    if (!window.confirm('درخواست رد و برای همیشه حذف شود؟'))
+                      return;
+                    void command({
+                      action: 'DECIDE',
+                      decision: 'REJECTED',
+                      deleteRejected: true,
+                      reason,
+                    });
+                  }}
+                >
+                  رد درخواست
+                </Button>
+              </>
+            )}
             {!['CANCELLED', 'CLOSED', 'REJECTED'].includes(request.status) &&
               can('procurement.request.cancel') && (
                 <Button
@@ -930,6 +935,8 @@ function RequestDetail({
           {can('procurement.assign') && (
             <div className="flex flex-wrap items-end gap-3">
               <ProcurementOwnerPicker
+                showSearch={false}
+                showHints={false}
                 branchId={request.draft.branchId}
                 value={owner}
                 onChange={setOwner}

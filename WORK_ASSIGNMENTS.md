@@ -1,3 +1,9 @@
+## SALES-CHILD-UNDER18-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-child-age-under18-1007 from origin/develop. Owner explicitly confirms child means under18 and authorizes develop merge. Reserve Sales passenger-age selector/spec, exact occupancy Web model/spec and API capacity service/spec plus bounded own docs. Existing public hotel occupancy contract already accepts ages below18: no wire/schema/dependency changes. Align actual-birthday classification for exact hotel rates in both create/update and confirmation; preserve legacy hotel and flight age categories. Producer Reservations unchanged, consumer Sales aligned; missing age tariffs fail closed rather than fabricating prices. No operational data or deployment.
+
+Delivered child2..17 selector and aligned actual guest ages for exact hotel rates. Sales Web340 tests pass (one existing skip), affected Web/API ESLint and both typechecks pass. Initial API run passes102 but two HTTP setup suites exceed10s on the loaded host; repeat with bounded two workers and longer hook allowance, and normal exact-head full CI remain merge gates. PR699 targets develop; source locks released with candidate. Build verification is through full production CI, with no operational runtime or data mutation.
+
 ## HOTEL-IMPORT-DEVELOP-AGE-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; user authorizes PR671 develop merge and complete child-age options below selector. Reserve Sales passenger-age field/spec and bounded opt-in optionLimit in shared SearchCombobox (default5 unchanged), own docs, develop integration conflict resolution preserving all other owners' changes. No dependencies/schema/migration/database/runtime deployment. Inspect and repair exact-head CI before requested merge; no bypass of failures.
@@ -5891,6 +5897,14 @@ SALES-PASSENGER-PRICE-1006 validation: Sales Web329 pass/one skip; focused Web22
 
 - Verification: isolated PostgreSQL18 container rubi-proc-orders-qa-1006 on guarded 55473/procurement_001_api_test; all123 existing migrations replayed without touching operational data. API49 tests and Web53 Procurement tests pass, including atomic rollback/replay, scope/permissions, pending amendment/cancellation and return context/date. API/Web production builds pass. Bounded locks released for review after final affected lint/typecheck; exact-head CI required for merge. No browser QA (CUA initialization failure), runtime deployment, migration creation or dependency change claimed.
 
+## PROCUREMENT-PETTY-CASH-ACTIONS-1007 — PC-B — IN_PROGRESS
+
+- Branch codex/pc-b-petty-cash-actions-1007 from origin/develop; reserve Procurement API service, Web workspace/orders/owner picker/export panel/internal sections/API and focused tests. Reserve bounded central messages/fa.ts, purchases metadata, navigation label regression and change-notifications label for display rename to تنخواه. Existing module/data/API identity remains Procurement; no financial accounting reclassification, migrations, dependencies or IAM grants. Additive deleteRejected decision option consumed by same-module Web retains independent policy approval and explicit deletion permission; accepted Finance commitments cannot be purged. Approval navigates to order preparation without fabricating supplier/price. User expressly authorizes push/PR/develop merge after gates. Prior Procurement locks released; other Organizations reservation untouched.
+
+PROCUREMENT-PETTY-CASH-ACTIONS-1007 scope extension: reproduced DELETE 500 in isolated PostgreSQL (PROCUREMENT_APPEND_ONLY). Reserve sole Migration Owner=PC-B/PROCUREMENT-PETTY-CASH-ACTIONS-1007 for one new function-only migration, plus bounded DECISIONS/DATA_MODEL entries. Latest Tickets and Procurement-category migration deliveries released their locks; no newer active migration owner found. Retain immutable updates/deletes by default, immutable idempotency deletion receipts, exact-request transaction-local purge authorization and database-level accepted-Finance guard. No existing migration rewriting, schema-model/dependency change, operational data deletion or blanket trigger disabling.
+
+PROCUREMENT-PETTY-CASH-ACTIONS-1007 candidate: source, central display-label and function-only Migration reservations RELEASED with review candidate. Fresh isolated PG replay125 successful; API114 plus final pending-order reject regression and Web71 pass, affected lint/typecheck/API-Web builds pass. Authorization/CAS, immutable normal history, exact-request purge isolation, accepted Finance protection, replay and concurrent deletion tested. No operational data deletion or shared runtime update. User-authorized develop merge requires exact-head CI; rollout requires the new migration before API/Web.
+
 ## HR-WORD-REVISION-1006 — PC-B — READY_FOR_REVIEW
 
 - `COMPUTER_ID=PC-B`; branch `codex/pc-b-hr-word-revision-1006` from `origin/develop@6f507b71`. User-provided Word lists 38 HR changes and explicitly authorizes push and merge to `develop` after verification.
@@ -5907,3 +5921,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-purchase-inbox-1007 from origin/devel
 محدوده مرکزی IAM فقط نگاشت مسیر /ticket-purchases به دسترسی موجود procurement و آزمون عدم اعطای دسترسی جدید را شامل می‌شود؛ هیچ permission یا نقش جدیدی اعطا نمی‌شود.
 
 - Candidate verification: Contracts/API/Web typechecks, scoped lint and focused access/Finance/Procurement/Sales profit tests pass. Isolated PostgreSQL concurrent pricing and installment tests pass; Web production build (56 routes) passed; exact-head CI remains the merge gate. Locks release with candidate commit; exact-head CI must pass before the user-authorized develop merge. No browser QA or runtime rollout claimed.
+
+## SIDEBAR-DOT-COLORS-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; codex/pc-a-sidebar-dot-colors-1007 from origin/develop. Reserve central app-shell.tsx group dot presentation and lib/navigation.ts group palette plus own status entries. Prior Navigation central lock released; no target local changes or active overlapping reservation. Distinct blue/rose/green/amber/purple/cyan/orange dots across desktop and mobile using existing group dotClass. No route, permission, API, schema, dependency or runtime change. User explicitly authorizes develop merge; scoped lint/typecheck/build and repository CI gate merge. Release bounded central locks with committed review candidate.
