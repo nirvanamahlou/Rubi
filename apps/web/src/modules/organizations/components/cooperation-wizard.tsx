@@ -254,9 +254,14 @@ export function CooperationWizard({
     try {
       onSaved(await saveCooperation(draft, permissions, existing));
     } catch (caught) {
-      setStopped(true);
-      if (caught instanceof CooperationSaveError)
+      if (caught instanceof CooperationSaveError) {
         setPartial(caught.organization);
+        setStopped(
+          Boolean(caught.organization) || caught.creationMayHaveSucceeded,
+        );
+      } else {
+        setStopped(false);
+      }
       setError(caught instanceof Error ? caught.message : 'ثبت ناموفق بود.');
     } finally {
       setBusy(false);
@@ -638,7 +643,21 @@ export function CooperationWizard({
                         شماره برای همین پیش‌نویس تأیید شد. این تأیید، احراز هویت
                         شرکت یا حساب کاربری نیست.
                       </div>
-                    ) : null}
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => {
+                          changeIdentity((current) => ({
+                            ...current,
+                            phone: '',
+                          }));
+                          setError('');
+                        }}
+                      >
+                        ادامه بدون ثبت شماره
+                      </button>
+                    )}
                   </div>
                 )}
               </>
@@ -807,6 +826,10 @@ export function CooperationWizard({
                   onClick={() => onSaved(partial)}
                 >
                   مشاهده پرونده ثبت‌شده
+                </button>
+              ) : stopped ? (
+                <button className="btn primary" onClick={onClose}>
+                  بررسی فهرست سازمان‌ها
                 </button>
               ) : (
                 <button

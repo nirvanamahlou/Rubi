@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MasterDataRecord } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
+import { MasterDataApiError } from '@/modules/master-data/api/client';
 import { documentsApi } from '@/modules/documents/api/client';
 import { agencyClient } from '../api/agency-client';
 import {
@@ -19,6 +20,35 @@ const draft = {
   code: 'B2B-TEST-01',
 };
 describe('cooperation wizard writes', () => {
+  it('saves a new agency without an unverified phone and returns its dossier', async () => {
+    const organization = {
+      id: 'new-agency',
+      name: draft.legalName,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [],
+      meta: { total: 0 },
+    } as never);
+    const create = vi
+      .spyOn(masterDataApi, 'create')
+      .mockResolvedValue({ data: organization });
+
+    const saved = await saveCooperation({ ...draft, fullName: '', phone: '' }, [
+      'master_data.read',
+      'master_data.create',
+    ]);
+
+    expect(saved).toBe(organization);
+    expect(create).toHaveBeenCalledWith('organizations', {
+      values: {
+        legalName: draft.legalName,
+        personType: 'LEGAL',
+        nationalId: null,
+        roleCodes: 'AGENCY',
+      },
+    });
+  });
   it.each([
     ['qa@example.com', 'EMAIL'],
     ['', 'OTHER'],
@@ -411,6 +441,55 @@ describe('cooperation wizard writes', () => {
     expect(failure).toBeInstanceOf(CooperationSaveError);
     expect((failure as CooperationSaveError).organization?.id).toBe('identity');
     expect(contact).toHaveBeenCalledTimes(1);
+  });
+  it('allows correction after a duplicate name is rejected before creation', async () => {
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [{ name: draft.legalName }],
+      meta: { total: 1 },
+    } as never);
+    const create = vi.spyOn(masterDataApi, 'create');
+    let failure: unknown;
+    try {
+      await saveCooperation(draft, ['master_data.read', 'master_data.create']);
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeInstanceOf(CooperationSaveError);
+    expect((failure as CooperationSaveError).creationMayHaveSucceeded).toBe(
+      false,
+    );
+    expect(create).not.toHaveBeenCalled();
+  });
+  it('does not offer an unsafe retry when organization creation has an unknown result', async () => {
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [],
+      meta: { total: 0 },
+    } as never);
+    vi.spyOn(masterDataApi, 'create').mockRejectedValue(new Error('timeout'));
+    let failure: unknown;
+    try {
+      await saveCooperation(draft, ['master_data.read', 'master_data.create']);
+    } catch (error) {
+      failure = error;
+    }
+    expect(failure).toBeInstanceOf(CooperationSaveError);
+    expect((failure as CooperationSaveError).creationMayHaveSucceeded).toBe(
+      true,
+    );
+    expect((failure as CooperationSaveError).organization).toBeUndefined();
+  });
+  it('allows correction after a definite create rejection', async () => {
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [],
+      meta: { total: 0 },
+    } as never);
+    vi.spyOn(masterDataApi, 'create').mockRejectedValue(
+      new MasterDataApiError('شناسه ملی نامعتبر است.', 400),
+    );
+
+    await expect(
+      saveCooperation(draft, ['master_data.read', 'master_data.create']),
+    ).rejects.toMatchObject({ creationMayHaveSucceeded: false });
   });
   it('does not accept impossible dates or a partial address', () => {
     expect(
