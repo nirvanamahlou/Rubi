@@ -6005,7 +6005,6 @@ Delivered shared dialog-aware date/time picker with empty landing publication de
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-agency-registration-save-1007` from `origin/develop@82f18200`. Reserve Organizations cooperation wizard/draft, directory refresh callback and focused tests, English catalog entries required by the full-suite gate, plus bounded task/status entries. Fix the final-save retry state so deterministic pre-persistence errors remain correctable, while unknown create outcomes and partially persisted organizations remain protected from duplicate writes. Keep phone verification fail-closed and offer explicit registration without an unverified phone. Catalog also covers one pre-existing untranslated Marketing label exposed by the same gate; no Marketing behavior changes. No API/schema/migration/dependency/IAM or operational data changes. User authorizes push and merge into develop after verification.
 
-
 ## HOTEL-PURCHASE-PRICE-LABEL-1007-B — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-label-1007-b from origin/develop@4322b8f3. Reserve hotel-rate sidebar label, English messages/catalog, navigation expectation, both hotel-rate workspace headings/breadcrumbs and route metadata, plus bounded status docs. Rename the hotel rate management UI to «قیمت خرید هتل». Preserve route, permissions, workflow, data and pricing semantics. No API/schema/migration/dependency/runtime change or active target overlap. User explicitly authorizes merge to develop after checks.
