@@ -2,6 +2,33 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it, vi } from 'vitest';
 import type { ReservationIntakeV1 } from '@nora/contracts';
 import { ReservationInsurancePurchase } from './reservation-insurance-purchase';
+it('opens the selected insurance service when a contract contains multiple policies', () => {
+  const request = {
+    snapshot: {
+      serviceSelections: [
+        {
+          clientKey: 'first',
+          kind: 'INSURANCE',
+          titleSnapshot: 'First policy',
+        },
+        {
+          clientKey: 'second',
+          kind: 'INSURANCE',
+          titleSnapshot: 'Second policy',
+        },
+      ],
+    },
+  } as unknown as ReservationIntakeV1;
+  const html = renderToStaticMarkup(
+    <ReservationInsurancePurchase
+      request={request}
+      serviceClientKey="second"
+      onSaved={vi.fn()}
+    />,
+  );
+  expect(html).toContain('Second policy');
+  expect(html).not.toContain('First policy');
+});
 it('offers insurance cost entry only when the contract selected insurance', () => {
   const request = {
     snapshot: {

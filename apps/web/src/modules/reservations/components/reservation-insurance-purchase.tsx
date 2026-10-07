@@ -11,12 +11,16 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 export function ReservationInsurancePurchase({
   request,
   onSaved,
+  serviceClientKey,
 }: {
   request: ReservationIntakeV1;
   onSaved: () => void;
+  serviceClientKey?: string | undefined;
 }) {
   const service = request.snapshot.serviceSelections.find(
-    (s) => s.kind === 'INSURANCE',
+    (s) =>
+      s.kind === 'INSURANCE' &&
+      (!serviceClientKey || s.clientKey === serviceClientKey),
   );
   const current = request.servicePurchases?.find(
     (p) => p.serviceClientKey === service?.clientKey,

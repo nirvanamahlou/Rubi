@@ -2261,16 +2261,22 @@ export function canViewRoute(
   permissions: readonly string[],
   href: string,
 ): boolean {
-  if (href === '/ticket-purchases' || href.startsWith('/ticket-purchases/'))
+  if (
+    href.split(/[?#]/)[0] === '/ticket-purchases' ||
+    href.startsWith('/ticket-purchases/')
+  )
     return (
-      permissions.some((p) =>
+      (permissions.includes('reservations.read') &&
+        canViewRoute(permissions, '/reservations')) ||
+      (permissions.some((p) =>
         [
           'procurement.read.own',
           'procurement.read.unit',
           'procurement.read.all',
           'procurement.quote.manage',
         ].includes(p),
-      ) && canViewRoute(permissions, '/purchases')
+      ) &&
+        canViewRoute(permissions, '/purchases'))
     );
   if (!href.startsWith('/')) return true;
   const [pathname, search = ''] = href.split('?');

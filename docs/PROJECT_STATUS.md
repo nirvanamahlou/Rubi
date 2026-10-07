@@ -1,3 +1,7 @@
+## 2026-10-07 — RESERVATION-PURCHASES-HUB-1007 — PC-A — READY_FOR_REVIEW
+
+Reservations purchase action now opens Purchasing & Supply for its selected contract. Five themed categories cover All services, Hotel, Flight, Transfer and Insurance. Branch-scoped paginated intake selection shows registered and missing purchases; existing editors preserve canonical batches, versions and permissions. Flight purchases retain the existing inventory inbox and exact offer/branch matching. Fixed presentation text is available in English. No schema/dependency, operational data, payment or3100 runtime change. Review candidate validation and bounded ownership are recorded in docs/tasks/RESERVATION-PURCHASES-HUB-1007.md; develop merge requires owner authorization.
+
 ## 2026-10-07 — SALES-CHILD-UNDER15-1007 — PC-A — READY_FOR_REVIEW
 
 Owner supersedes under18 with under15: selectable child ages2..14, last band14 to less than15. Exact hotel birthday classification aligns Web/save/update/confirmation at15; stale draft ages15+ reject rather than receive child pricing. Infant, legacy capacity, flight categories, original imported tariff bands and stored contracts remain unchanged. Boundary12/14/15 regressions gate the owner-authorized develop merge with affected lint/typechecks and full CI; no database, schema, dependency or runtime deployment.
