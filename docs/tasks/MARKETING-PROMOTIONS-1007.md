@@ -14,6 +14,8 @@ Promotion amounts use Decimal(24,4) and a currency code; canonical UTC starts/en
 
 Existing same-branch Marketing asset commands, CAS, idempotency, transaction audit and soft deletion are reused. Web closes only after validating a persisted response; failed saves retain input. Unknown outcomes freeze the submitted draft and reuse the same key on retry. Real lists replace discount/offer preview rows. Usage/redemption analytics and financial application are outside this delivery.
 
+Public Customer/Master Data eligibility reads run before the write transaction, avoiding nested connection acquisition and pool starvation. Eligibility is checked at submission time; restrictive FKs protect identity existence at commit. Committed retries still use the original idempotency receipt. Deleted promotions cannot be revived by editing.
+
 Migration is additive and leaves existing records unchanged. Deploy it before the new API. Rollback counterpart is staging-only and refuses if any new record/column is populated; do not delete promotion history to force rollback. Prefer retaining the additive schema and reverting application code. Prisma migration ledger rollback needs a separately approved operational procedure.
 
 Verification includes form-shaped PostgreSQL create/reload, exact Decimal and target FK values, replay/altered-key rejection, CAS/update/delete/reload, permission and reference failures, duplicate-code rejection and rollback atomicity. UI tests cover optional/explicit targeting, no PII snapshots, error retention, malformed success and unknown retry keys. No all-project form or authenticated production-browser guarantee is implied.

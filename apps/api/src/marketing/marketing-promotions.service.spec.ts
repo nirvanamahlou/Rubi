@@ -38,6 +38,44 @@ const input: MarketingAssetInputV1 = {
   },
 };
 describe('promotion validation before writes', () => {
+  it('resolves public references before acquiring a write transaction connection', async () => {
+    let inTransaction = false;
+    const stop = new Error('transaction reached');
+    const currency = vi.fn(async () => {
+      expect(inTransaction).toBe(false);
+      return ['IRR'];
+    });
+    const customer = vi.fn(async () => {
+      expect(inTransaction).toBe(false);
+      return { id: actor.userId, branchId };
+    });
+    const service = new MarketingRecordsService(
+      {
+        client: {
+          marketingCommand: { findUnique: vi.fn().mockResolvedValue(null) },
+          $transaction: vi.fn(async () => {
+            inTransaction = true;
+            throw stop;
+          }),
+        },
+      } as unknown as DatabaseService,
+      { marketingTargetReference: customer } as unknown as CustomerService,
+      {
+        activeCurrencyCodes: currency,
+      } as unknown as import('../master-data/master-organization-directory').MasterOrganizationDirectory,
+    );
+    await expect(
+      service.saveAsset(
+        null,
+        { ...input, targetCustomerId: actor.userId },
+        actor,
+        branchId,
+        'preflight',
+      ),
+    ).rejects.toBe(stop);
+    expect(currency).toHaveBeenCalledOnce();
+    expect(customer).toHaveBeenCalledOnce();
+  });
   it.each([
     { payload: { ...input.payload, value: '-1' } },
     { payload: { ...input.payload, value: '101' } },

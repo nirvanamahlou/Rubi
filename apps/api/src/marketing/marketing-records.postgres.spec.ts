@@ -285,6 +285,18 @@ describe.skipIf(!enabled)(
         key,
       );
       expect(removed.data.status).toBe('DELETED');
+      await expect(
+        service.saveAsset(
+          current.id,
+          {
+            ...promotion('OFFER', 'REVIVE'),
+            expectedVersion: removed.data.version,
+          },
+          promotionActor,
+          branchId,
+          randomUUID(),
+        ),
+      ).rejects.toMatchObject({ status: 409 });
       expect(
         await service.deleteAsset(
           current.id,

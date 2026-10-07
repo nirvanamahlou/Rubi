@@ -675,6 +675,58 @@ export class MarketingRecordsService {
     const expectedVersion = input.expectedVersion;
     if (id && !expectedVersion)
       throw new BadRequestException('expectedVersion الزامی است.');
+    // Public module projections use their own connections. Resolve them before
+    // opening a write transaction to avoid pool starvation under concurrency.
+    if (normalized.kind === 'COUPON' || normalized.kind === 'OFFER') {
+      const existing = id
+        ? await this.database.client.marketingAsset.findFirst({
+            where: { id, branchId: { in: actor.branchIds } },
+          })
+        : null;
+      if (id && !existing) throw notFound();
+      this.assertAssetPermission(normalized.kind, actor);
+      if (existing && existing.kind !== normalized.kind)
+        throw new BadRequestException('نوع رکورد پس از ایجاد قابل تغییر نیست.');
+      const selectedBranch = existing?.branchId ?? branchId!;
+      const receipt = await this.database.client.marketingCommand.findUnique({
+        where: {
+          actorUserId_branchId_operation_idempotencyKey: {
+            actorUserId: actor.userId,
+            branchId: selectedBranch,
+            operation: `ASSET_${normalized.kind}_${id ? 'UPDATE' : 'CREATE'}`,
+            idempotencyKey: key,
+          },
+        },
+      });
+      if (!receipt) {
+        if (
+          !this.directory ||
+          !(
+            await this.directory.activeCurrencyCodes([
+              String(normalized.payload.currencyCode),
+            ])
+          ).length
+        )
+          throw new BadRequestException('ارز فعال معتبر نیست.');
+        if (normalized.targetCustomerId) {
+          if (!this.customers)
+            throw new BadRequestException('مرجع مشتری در دسترس نیست.');
+          await this.customers.marketingTargetReference(
+            normalized.targetCustomerId,
+            selectedBranch,
+            actor,
+          );
+        }
+        if (normalized.targetAgencyId) {
+          this.assertPermissions(actor, 'master_data.read');
+          const agency = await this.directory.agencyReference(
+            normalized.targetAgencyId,
+          );
+          if (!agency?.isActive)
+            throw new BadRequestException('آژانس فعال معتبر نیست.');
+        }
+      }
+    }
     const row = await this.database.client
       .$transaction(async (tx) => {
         const current = id
@@ -716,32 +768,7 @@ export class MarketingRecordsService {
         }
         await this.validateAssetReferences(tx, selectedBranch, normalized);
         if (normalized.kind === 'COUPON' || normalized.kind === 'OFFER') {
-          if (
-            !this.directory ||
-            !(
-              await this.directory.activeCurrencyCodes([
-                String(normalized.payload.currencyCode),
-              ])
-            ).length
-          )
-            throw new BadRequestException('ارز فعال معتبر نیست.');
-          if (normalized.targetCustomerId) {
-            if (!this.customers)
-              throw new BadRequestException('مرجع مشتری در دسترس نیست.');
-            await this.customers.marketingTargetReference(
-              normalized.targetCustomerId,
-              selectedBranch,
-              actor,
-            );
-          }
-          if (normalized.targetAgencyId) {
-            this.assertPermissions(actor, 'master_data.read');
-            const agency = await this.directory.agencyReference(
-              normalized.targetAgencyId,
-            );
-            if (!agency?.isActive)
-              throw new BadRequestException('آژانس فعال معتبر نیست.');
-          }
+          if (current?.status === 'DELETED') throw conflict();
         }
         const saved = current
           ? await (async () => {
