@@ -1366,6 +1366,7 @@
   "فایل خروجی هنوز آماده دانلود نیست.": "The output file is not ready to download yet.",
   "فایل قالب MANIFEST باید فعال، غیرمحرمانه، XLSX و اسکن‌شده باشد.": "The MANIFEST template file must be active, non-confidential, XLSX and scanned.",
   "فایل قالب MANIFEST پیدا نشد.": "The MANIFEST template file was not found.",
+  "فایل لوگو در آرشیو موجود نیست؛ لوگو را دوباره بارگذاری کنید.": "The logo file is missing from the archive. Upload it again.",
   "فایل Staging حذف یا تغییر کرده است.": "Staging file has been deleted or changed.",
   "فایل Upload معتبر نیست.": "Upload file is not valid.",
   "فرانشیز": "Franchise",

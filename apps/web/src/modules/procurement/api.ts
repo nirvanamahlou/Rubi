@@ -6,6 +6,7 @@ import type {
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { localizedFetch } from '@/i18n/localized-fetch';
 
 export class ProcurementApiError extends Error {
   constructor(
@@ -46,7 +47,7 @@ export async function procurementRequest<T>(
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new ProcurementApiError('نشانی سرویس تنظیم نشده است.', 0);
-  const response = await fetch(`${base}/procurement${path}`, {
+  const response = await localizedFetch(`${base}/procurement${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,
