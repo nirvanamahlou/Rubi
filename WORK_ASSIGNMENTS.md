@@ -1,3 +1,7 @@
+## HOTEL-IMPORT-DEVELOP-AGE-1007 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; user authorizes PR671 develop merge and complete child-age options below selector. Reserve Sales passenger-age field/spec and bounded opt-in optionLimit in shared SearchCombobox (default5 unchanged), own docs, develop integration conflict resolution preserving all other owners' changes. No dependencies/schema/migration/database/runtime deployment. Inspect and repair exact-head CI before requested merge; no bypass of failures.
+
 ## HOTEL-OCCUPANCY-REIMPORT-1006 — PC-A — PREVIEW_REVIEW
 
 COMPUTER_ID=PC-A; same preview branch /PR671. Reserve Reservations occupancy bulk register/reimport model/panel/tests and own docs only. Owner requests uploading another Excel to update the selected city/supplier. Match exact branch/city/date/currency/STAY/non-tour hotel/supplier/board identity, merge only supplied room/composition tariffs, preserve absent hotels/rooms and other suppliers/boards, CAS existing packs, skip unchanged content, add unmatched periods. Ambiguous duplicate targets fail closed. No API/shared contract/schema/migration/dependency/Master Data producer changes; preview3210 only, no operational import or develop merge.

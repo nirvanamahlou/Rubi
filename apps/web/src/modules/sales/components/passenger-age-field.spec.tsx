@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { PassengerAgeField, passengerAgeOptions } from './passenger-age-field';
+import { searchOptions } from '@/components/ui/search-combobox';
 
 describe('themed passenger age field', () => {
+  it('shows every child-age band without searching while other selectors retain five suggestions', () => {
+    const options = passengerAgeOptions(false);
+    expect(
+      searchOptions(options, '', options.length).map((option) => option.value),
+    ).toEqual(options.map((option) => option.value));
+    expect(searchOptions(options, '')).toHaveLength(5);
+  });
   it('renders a larger shared themed combobox instead of a native select', () => {
     const html = renderToStaticMarkup(
       <PassengerAgeField label="سن کودک ۱" value={6} onChange={() => {}} />,

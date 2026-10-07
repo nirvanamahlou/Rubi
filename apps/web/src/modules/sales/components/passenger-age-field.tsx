@@ -41,6 +41,7 @@ export function PassengerAgeField({
         label={label}
         value={value === null ? '' : String(value)}
         options={options}
+        optionLimit={options.length}
         placeholder="انتخاب سن"
         className="h-12 text-base"
         onValueChange={(next) => {
