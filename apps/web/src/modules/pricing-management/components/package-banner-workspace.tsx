@@ -336,7 +336,7 @@ export function PackageBannerWorkspace({
       ) : null}
       {!embedded ? (
         <PageHeader
-          eyebrow="مدیریت قیمت و پکیج‌ها"
+          eyebrow="مدیریت پکیج"
           title="ساخت بنر پکیج"
           description="پیش‌نمایش بنر از نسخه منتشرشده قیمت و آیتم‌های قابل‌فروش همین پکیج ساخته می‌شود."
           actions={

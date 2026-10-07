@@ -32,12 +32,12 @@ export function PackagePricingHub() {
     <div className="space-y-6">
       <PageHeader
         description="برای قیمت‌گذاری یا آماده‌سازی محتوای تبلیغاتی، بخش موردنظر را انتخاب کنید."
-        title="مدیریت قیمت و پکیج‌ها"
+        title="مدیریت پکیج"
       />
 
       <section aria-labelledby="package-pricing-sections-title">
         <h2 className="sr-only" id="package-pricing-sections-title">
-          بخش‌های مدیریت قیمت و پکیج‌ها
+          بخش‌های مدیریت پکیج
         </h2>
         <div className="grid gap-4 md:grid-cols-2">
           {sections.map((section) => {

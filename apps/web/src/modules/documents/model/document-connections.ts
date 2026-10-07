@@ -21,7 +21,7 @@ const connectionByDomain = {
     domain: 'CUSTOMER_IDENTITY',
     documentsSection: 'customer',
     sectionLabel: 'مشتری و هویت',
-    moduleLabel: 'مشتریان و مسافران',
+    moduleLabel: 'مشتریان B2c',
     moduleHref: '/customers',
     description:
       'مدارک هویتی در پرونده مشتری ثبت می‌شوند و نسخه نهایی آن‌ها در آرشیو اسناد نگه‌داری می‌شود.',
@@ -47,8 +47,8 @@ const connectionByDomain = {
   PROCUREMENT: {
     domain: 'PROCUREMENT',
     documentsSection: 'procurement',
-    sectionLabel: 'خرید و تأمین',
-    moduleLabel: 'خرید و تأمین',
+    sectionLabel: 'تنخواه',
+    moduleLabel: 'تنخواه',
     moduleHref: '/purchases',
     description:
       'استعلام، سفارش و مدارک تأمین در ماژول خرید مدیریت و نسخه نهایی آن‌ها در آرشیو ثبت می‌شود.',
@@ -75,7 +75,7 @@ const connectionByDomain = {
     domain: 'ORGANIZATION',
     documentsSection: 'hr',
     sectionLabel: 'سازمان',
-    moduleLabel: 'آژانس‌ها و مشتریان سازمانی',
+    moduleLabel: 'مشتریان B2B',
     moduleHref: '/organizations',
     description:
       'مدارک ثبتی و همکاری سازمان‌ها در پرونده سازمانی تعریف و نسخه نهایی آن‌ها در آرشیو ثبت می‌شود.',

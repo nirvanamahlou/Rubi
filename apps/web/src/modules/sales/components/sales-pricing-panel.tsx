@@ -102,7 +102,7 @@ export function SalesPricingPanel({
                 <span className="text-xs font-semibold text-primary">
                   {salePriceFromAgreed
                     ? 'قیمت فروش از مبلغ توافق‌شده پر می‌شود'
-                    : 'نرخ فروش از قیمت بلیط ثبت‌شده می‌آید'}
+                    : 'نرخ فروش از قیمت گذاری پرواز ثبت‌شده می‌آید'}
                 </span>
               )}
             </div>

@@ -7,7 +7,7 @@ describe('package pricing hub', () => {
   it('offers separate pricing and generator cards', () => {
     const html = renderToStaticMarkup(<PackagePricingHub />);
 
-    expect(html).toContain('مدیریت قیمت و پکیج‌ها');
+    expect(html).toContain('مدیریت پکیج');
     expect(html).toContain('مدیریت قیمت');
     expect(html).toContain('پک جنریتور');
     expect(html).toContain('href="/sales/pricing/management"');

@@ -1653,7 +1653,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'text',
         placeholder: '',
         required: true,
-        hint: 'تأمین‌کننده به‌صورت مستقل در خرید و تأمین ثبت می‌شود.',
+        hint: 'تأمین‌کننده به‌صورت مستقل در تنخواه ثبت می‌شود.',
       },
       {
         key: 'address',

@@ -371,7 +371,7 @@ export class ProcurementExports implements OnModuleInit, OnModuleDestroy {
       };
     }
     const table: ProcurementExportTable = {
-      title: job.kind === 'ORDER' ? 'سفارش خرید' : 'گزارش خرید و تأمین',
+      title: job.kind === 'ORDER' ? 'سفارش خرید' : 'گزارش تنخواه',
       headings: [],
       rows: [],
       notes: [

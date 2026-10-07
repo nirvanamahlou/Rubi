@@ -5,7 +5,7 @@ import { PricingManagementWorkspace } from './pricing-management-workspace';
 describe('pricing management workspace', () => {
   it('renders the sales sub-section without synthetic prices or fake output success', () => {
     const html = renderToStaticMarkup(<PricingManagementWorkspace />);
-    expect(html).toContain('مدیریت قیمت و پکیج‌ها');
+    expect(html).toContain('مدیریت پکیج');
     expect(html).toContain('فروش و ارتباط با مشتری');
     expect(html).toContain('ساخت پکیج');
     expect(html).toContain('بازه‌های قیمت');

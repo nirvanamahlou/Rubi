@@ -166,7 +166,7 @@ export const REPORTING_CATALOG_V1: readonly ReportingCatalogEntryV1[] = [
   ),
   readyPublicProjection(
     'agency_performance',
-    'کدام آژانس‌ها و مشتریان سازمانی بیشترین فروش و سود را ایجاد کرده‌اند؟',
+    'کدام مشتریان B2B بیشترین فروش و سود را ایجاد کرده‌اند؟',
     'AGENCY',
     'reporting.b2b.read',
     'reporting.travel.facts.v1',

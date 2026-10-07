@@ -49,7 +49,7 @@ describe('Documents connection map', () => {
       ).domain,
     ).toBe('SALES');
     expect(documentRelationSourceLabel(relation, 'CUSTOMER_IDENTITY')).toBe(
-      'داده آزمایشیِ مشتریان و مسافران',
+      'داده آزمایشیِ مشتریان B2c',
     );
     expect(
       documentRelationSourceLabel(relation, 'CUSTOMER_IDENTITY'),
