@@ -242,7 +242,7 @@ export function CorporateProfile({
     () => [
       {
         key: 'organizations',
-        title: 'آژانس‌ها و مشتریان سازمانی',
+        title: 'مشتریان B2B',
         onSelect: onClose,
       },
       {
@@ -299,7 +299,7 @@ export function CorporateProfile({
             onClick={screen === 'home' ? onClose : () => go('home')}
           >
             {screen === 'home'
-              ? 'بازگشت به فهرست آژانس‌ها و مشتریان سازمانی'
+              ? 'بازگشت به فهرست مشتریان B2B'
               : `بازگشت به پرونده ${organization.name}`}
             <ArrowLeft size={18} />
           </button>

@@ -130,10 +130,7 @@ export function ProcurementDocumentPicker({
           240,
         ),
       );
-      form.set(
-        'description',
-        `فایل ${uploadLabel} بارگذاری‌شده از خرید و تأمین`,
-      );
+      form.set('description', `فایل ${uploadLabel} بارگذاری‌شده از تنخواه`);
       form.set('documentTypeId', documentType.id);
       form.set('categoryId', category.id);
       form.set('branchId', branchId);

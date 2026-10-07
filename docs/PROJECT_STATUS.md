@@ -2,6 +2,10 @@
 
 Reservations purchase action now opens Purchasing & Supply for its selected contract. Five themed categories cover All services, Hotel, Flight, Transfer and Insurance. Branch-scoped paginated intake selection shows registered and missing purchases; existing editors preserve canonical batches, versions and permissions. Flight purchases retain the existing inventory inbox and exact offer/branch matching. Fixed presentation text is available in English. No schema/dependency, operational data, payment or3100 runtime change. Review candidate validation and bounded ownership are recorded in docs/tasks/RESERVATION-PURCHASES-HUB-1007.md; develop merge requires owner authorization.
 
+## 2026-10-07 — OFFER-TRASH-CONTRAST-1007 — PC-B
+
+Discount and special-offer row deletion and its confirmation use an explicit white background with a red inherited icon and border, including hover. Shared Button defaults and unrelated actions remain unchanged. Existing deletion/cancellation behavior is preserved; preview deletions remain in-memory. Marketing/translation108 tests pass, including contrast regressions for both tabs; scoped lint and exact-head full CI gate the user-authorized develop merge. No API/schema/migration/dependency/runtime change or authenticated browser verification.
+
 ## 2026-10-07 — SALES-CHILD-UNDER15-1007 — PC-A — READY_FOR_REVIEW
 
 Owner supersedes under18 with under15: selectable child ages2..14, last band14 to less than15. Exact hotel birthday classification aligns Web/save/update/confirmation at15; stale draft ages15+ reject rather than receive child pricing. Infant, legacy capacity, flight categories, original imported tariff bands and stored contracts remain unchanged. Boundary12/14/15 regressions gate the owner-authorized develop merge with affected lint/typechecks and full CI; no database, schema, dependency or runtime deployment.
@@ -4964,3 +4968,11 @@ Validation: API41/Web17 tests, scoped lint, API/Web typechecks and API/Web produ
 ## REMOVE-CUSTOMER-JOURNEY-1007
 
 Removed the customer-journey entry from Marketing's canonical section registry and hub description. Both initial legacy section URLs and browser navigation resolve through that registry, so journeys falls back to the hub instead of mounting journey/automation/scenario screens. Existing automation APIs, stored records and independent process workflows remain intact; no destructive data removal or local rollout. Focused navigation and full Marketing/translation tests plus exact-head CI gate authorized develop merge.
+
+## 2026-10-07 — INTERNAL-MODULE-LABELS-1007 — PC-A
+
+Follow-up to PR701 aligns internal headings, breadcrumbs, customer selectors, package hub/editor labels, IAM/System setting display titles, document/referral connections, dashboard/report categories and Petty cash export/static-page labels with the renamed navigation. Names are Flight pricing, Package management, B2c customers, B2B customers and Petty cash. The separate flight Purchasing & supply inbox keeps its name; Finance displays the appropriate label for each persisted source and a combined source filter. English Web/API/standalone catalogues remain synchronized. Canonical routes, ids, business fields, permissions, data and financial workflow are unchanged. Existing focused tests, affected lint and typechecks verify this display-only change; API and Web production builds pass; complete exact-head CI gates the standing user-authorized develop merge. No migration/dependency/runtime or operational-data change.
+
+## 2026-10-07 — HR-INLINE-REFRESH-1007 — PC-B
+
+Inline HR creation now retains the selected company, refreshes reference data after save, and selects the new employee, company, unit or position in the parent form without discarding its draft. Newly saved employees and catalog records enter the shared HR state so dependent dropdowns and owning sections update without a page reload, including when the bootstrap record list is truncated. Existing branch scoping and API contracts remain intact. Focused HR regression: 55 tests passed (with a 15-second timeout for an existing slow calendar-render test); scoped lint, Web typecheck and build gate the develop merge. No backend, schema, migration or dependency change.

@@ -161,7 +161,7 @@ export function CustomerPicker({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 className="font-bold" id={`${id}-title`}>
-            انتخاب از مشتریان و مسافران
+            انتخاب از مشتریان B2c
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             مشتری یا مسافر ثبت‌شده را انتخاب کنید یا پروندهٔ تازه بسازید.
@@ -186,7 +186,7 @@ export function CustomerPicker({
             rel="noopener noreferrer"
             className="text-sm text-primary underline"
           >
-            بازکردن مشتریان و مسافران
+            بازکردن مشتریان B2c
           </a>
         </div>
       </div>
@@ -233,7 +233,7 @@ export function CustomerPicker({
           <EmptyState
             description="مجوز customers.read برای این عملیات لازم است."
             icon={Ban}
-            title="دسترسی به مشتریان و مسافران مجاز نیست"
+            title="دسترسی به مشتریان B2c مجاز نیست"
           />
         ) : state === 'error' ? (
           <ErrorState

@@ -46,14 +46,14 @@ describe('system management reference implementation', () => {
   it('includes every settings module and its reference card catalog', () => {
     for (const title of [
       'سازمان و نمایش',
-      'مشتریان و مسافران',
+      'مشتریان B2c',
       'امور مشتریان و پشتیبانی',
       'فروش، قرارداد و قیمت‌گذاری',
       'بلیت و برنامه سفر',
       'رزرواسیون و خدمات سفر',
-      'خرید و تأمین',
+      'تنخواه',
       'بازاریابی',
-      'آژانس‌ها و مشتریان سازمانی',
+      'مشتریان B2B',
       'منابع انسانی',
       'میزکار',
       'پیام و اعلان',

@@ -3,6 +3,17 @@ import { useEffect, useState } from 'react';
 import type { HrRecordDto } from '@nora/contracts';
 import { allHrRecords, type HrStore } from './hr-store';
 
+export function mergeHrReferenceRecords(
+  loaded: readonly HrRecordDto[],
+  remembered: readonly HrRecordDto[],
+): HrRecordDto[] {
+  const currentIds = new Set(remembered.map((record) => record.id));
+  return [
+    ...loaded.filter((record) => !currentIds.has(record.id)),
+    ...remembered,
+  ];
+}
+
 export function useHrReferenceData(store: HrStore) {
   const [result, setResult] = useState<{
     revision: number;
@@ -38,7 +49,12 @@ export function useHrReferenceData(store: HrStore) {
   }, [truncated, store.revision]);
   return {
     data:
-      truncated && loaded ? { ...store.data!, records: loaded } : store.data!,
+      truncated && loaded
+        ? {
+            ...store.data!,
+            records: mergeHrReferenceRecords(loaded, store.data!.records),
+          }
+        : store.data!,
     loading: truncated && !loaded && !error,
     error: truncated ? error : '',
   };

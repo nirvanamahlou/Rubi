@@ -143,7 +143,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
   report({
     code: 'purchase_by_supplier',
     title: 'از کدام تأمین‌کنندگان بیشتر خرید کرده‌ایم و سهم هرکدام چقدر است؟',
-    category: 'خرید و تأمین',
+    category: 'تنخواه',
     description:
       'خالص خریدهای تأییدشده، به تفکیک تأمین‌کننده، ارائه‌دهنده و نوع خدمت.',
     grain: 'Purchase Grain',
@@ -357,8 +357,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
   },
   report({
     code: 'agency_performance',
-    title:
-      'کدام آژانس‌ها و مشتریان سازمانی بیشترین فروش و سود را ایجاد کرده‌اند؟',
+    title: 'کدام مشتریان B2B بیشترین فروش و سود را ایجاد کرده‌اند؟',
     category: 'گزارش‌های مدیریتی تجمیعی',
     description:
       'فروش، خرید و سود ناخالص به تفکیک آژانس، نوع مشتری و کانال فروش.',
@@ -418,7 +417,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
     code: 'agency_contract_risk',
     title:
       'کدام قراردادها و تضامین آژانس‌ها رو به انقضا هستند و سقف اعتبارشان چقدر است؟',
-    category: 'آژانس‌ها و مشتریان سازمانی',
+    category: 'مشتریان B2B',
     description:
       'قراردادهای رو به پایان، تضامین در آستانه انقضا و سیاست‌های اعتباری فعال آژانس‌ها به تفکیک ارز.',
     grain: 'Agency Agreement Currency Grain',
@@ -458,7 +457,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
   report({
     code: 'supplier_payment_queue',
     title: 'کدام خریدهای خدمات سفر در انتظار پرداخت به تأمین‌کننده هستند؟',
-    category: 'خرید و تأمین',
+    category: 'تنخواه',
     description:
       'آخرین وضعیت پرداخت خرید هر خدمت، مبلغ، ارز، تأمین‌کننده و مدت انتظار تا تأیید مالی.',
     grain: 'Latest Service Purchase Revision Grain',
@@ -623,7 +622,7 @@ export const reportCatalog: readonly ReportDefinition[] = [
     code: 'hotel_rate_comparison',
     title:
       'نرخ خرید هتل‌ها در هر بازه و نزد هر تأمین‌کننده چگونه مقایسه می‌شود؟',
-    category: 'خرید و تأمین',
+    category: 'تنخواه',
     description:
       'نرخ پایه و عوامل مؤثر ثبت‌شده برای هتل و تأمین‌کننده در بازه اقامت و ارز انتخابی.',
     grain: 'Hotel Broker Rate Grain',
@@ -883,7 +882,7 @@ const reportSearchAliases: Readonly<Record<string, string>> = {
   hr_performance: 'عملکرد منابع انسانی',
   tickets_manifest: 'گزارش بلیت و Manifest',
   export_audit: 'Audit خروجی‌ها',
-  agency_performance: 'عملکرد آژانس‌ها و مشتریان سازمانی',
+  agency_performance: 'عملکرد مشتریان B2B',
   lead_to_order_conversion: 'تبدیل منبع لید به سفارش',
   route_passengers: 'مقصد مسیر سفارش مسافر',
   sales_contract_pipeline: 'قیف قرارداد فروش وضعیت رزرو تسویه',

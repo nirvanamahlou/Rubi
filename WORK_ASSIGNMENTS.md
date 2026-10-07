@@ -6036,3 +6036,27 @@ Verification: API41 focused tests, Web17 form/validation/translation tests, scop
 COMPUTER_ID=PC-B; branch codex/pc-b-remove-customer-journey-1007 from origin/develop. Reserve Marketing section registry, route resolver and landing description plus focused tests and own docs. Remove customer-journey navigation and reject legacy section links; preserve automation data/APIs and independent process workflows. Previous Marketing locks released, no overlapping active source lock. No shared API/schema/dependency/runtime changes. User explicitly authorizes push/develop merge after verification.
 
 Scope includes existing Marketing model/component regressions and one additive English display translation (previous catalogue locks released). Canonical registry removal blocks both initial and browser-popstate journeys routing and removes hub card; stored automation remains intact. Scoped lint passes; Marketing/translation and clean exact-head full quality/typecheck/test/build/PostgreSQL CI gate merge. Bounded source locks released with candidate; no local runtime rollout.
+
+## INTERNAL-MODULE-LABELS-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-internal-module-labels-1007 from latest origin/develop@ba002845. User follows up on merged PR701 and explicitly requests the same names inside modules. Reserve presentation-only titles, breadcrumbs, headings, help/link/module/category labels and their existing assertions in Web Customers, Organizations, Sales/package-pricing, Procurement, Customer Affairs, Documents, Dashboard/Reports, Master Data hints and System settings; bounded IAM access catalog display titles, matching tests/status. No active overlapping target reservation found; prior candidate locks released. PC-B-owned files are touched only for the owner-authorized display rename, not module logic/data. Keep canonical routes/ids/permissions, financial/source keys and actual business fields unchanged. Preserve the newly added /ticket-purchases Purchasing & supply labels; rename old /purchases references to Petty cash. No schema/migration/dependency/runtime/data changes. Standing user authorization for this rename's develop merge persists from the preceding request.
+
+Display scope includes matching English UI catalog/overrides, System locale labels and HR shared referral titles only. B2B registration reservation is stale: PR712 merged into develop@82d5f658; its wizard and directory callbacks remain untouched.
+
+Presentation scope also covers Procurement export workbook/report titles and Reporting catalog B2B display question; no export format, query or financial logic changes.
+
+English coverage requires corresponding offline API and standalone package-editor catalogue entries; reserve those matching display entries and any standalone editor module heading only.
+
+Static Procurement reference page module/title/breadcrumb labels are included; actual ticket-price fields in exported marketing banners retain their monetary meaning.
+
+Existing focused Web tests147 plus refreshed translation/Finance12 pass; scoped lint, Contracts/API/Web typechecks and API display/export checks pass. API and Web production builds pass; exact-head complete CI gates merge. Scoped source locks release with the candidate commit; no authenticated browser QA or local rollout claimed.
+
+## OFFER-TRASH-CONTRAST-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-offer-trash-1007 from origin/develop@ba002845. Reserve only Marketing preview discount/special-offer delete-button styling, focused regression and bounded status docs. White background with red inherited trash icon on row action and confirmation; retain existing confirmation/cancellation/removal behavior. Earlier durable-promotions work is paused in its separate worktree and has no source edits. No active target overlap, shared component/API/schema/migration/dependency/runtime changes. User explicitly authorizes push and develop merge after verification.
+
+Marketing/translation108 tests pass, including both offer tabs' neutral delete/confirmation styling and cancellation/removal. Bounded source locks release with frozen candidate; exact-head CI quality/typecheck/full tests/production build gates authorized merge. No local runtime rollout or operational write.
+
+## HR-INLINE-REFRESH-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-hr-inline-refresh-1007` from `origin/develop@ead11783`. Reserve HR Web inline-reference creation and catalog/list refresh paths, their focused tests, and bounded status documentation. Ensure records created from another HR form become selectable in dropdowns and visible in their owning sections without a page reload. Preserve permissions, branch scope, draft state, API contracts and stored data. No schema, migration, dependency, shared API or unrelated module changes. No overlapping active HR source lock found. User explicitly authorizes push and merge to `develop` after verification.

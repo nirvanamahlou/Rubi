@@ -16,7 +16,7 @@ export function PackagePricingBreadcrumbs({
       {
         key: 'package-pricing',
         href: '/sales/pricing',
-        title: 'مدیریت قیمت و پکیج‌ها',
+        title: 'مدیریت پکیج',
       },
       { key: pathname, title: currentTitle },
     ],

@@ -8,14 +8,14 @@ export type SystemManagementLanguage = 'en' | 'fa';
 
 const moduleTitles: Record<string, string> = {
   general: 'Organization & display',
-  customers: 'Customers & travelers',
+  customers: 'B2c customers',
   affairs: 'Customer service & support',
   sales: 'Sales, contracts & pricing',
   catalog: 'Tickets & itineraries',
   operations: 'Reservations & travel services',
-  procurement: 'Purchasing & procurement',
+  procurement: 'Petty cash',
   marketing: 'Marketing',
-  b2b: 'Agencies & corporate customers',
+  b2b: 'B2B customers',
   hr: 'Human resources',
   tasks: 'Workspace',
   messages: 'Messages & notifications',
