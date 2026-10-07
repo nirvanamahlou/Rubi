@@ -9,6 +9,7 @@ describe('accounting migration ownership', () => {
       '20261007151000_finance_accounting_fx',
       '20261007152000_finance_accounting_integrity',
       '20261007153000_finance_accounting_audit',
+      '20261007154000_finance_accounting_parity',
     ]) {
       const sql = readFileSync(
         resolve(

@@ -24,4 +24,37 @@ describe('accounting decimal and business dates', () => {
     expect(
       v.lines([{ description: '', debit: '0', credit: '0' }])[0]?.accountId,
     ).toBeNull());
+  it('accepts only the bounded journal presentation attributes', () => {
+    expect(
+      v.journalAttributes({
+        auxiliaryNumber: ' 12 ',
+        descriptionEn: ' English description ',
+      }),
+    ).toEqual({
+      auxiliaryNumber: '12',
+      descriptionEn: 'English description',
+    });
+    expect(() => v.journalAttributes({ dailyNumber: '44' })).toThrow(
+      'ویژگی ناشناخته سند حسابداری مجاز نیست.',
+    );
+  });
+  it('validates tracking and second-language line attributes', () => {
+    expect(
+      v.journalLineAttributes({
+        descriptionEn: 'Line',
+        trackingNumber: 'TRACE-1',
+        trackingDate: '2026-10-07',
+      }),
+    ).toEqual({
+      descriptionEn: 'Line',
+      trackingNumber: 'TRACE-1',
+      trackingDate: '2026-10-07',
+    });
+    expect(() =>
+      v.journalLineAttributes({ trackingDate: '2026-02-30' }),
+    ).toThrow();
+    expect(() => v.journalLineAttributes({ taxAmount: '1' })).toThrow(
+      'ویژگی ناشناخته ردیف سند حسابداری مجاز نیست.',
+    );
+  });
 });

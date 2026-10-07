@@ -94,7 +94,44 @@ export function attributes(value: unknown): AccountingAttributes {
   }
   return input as AccountingAttributes;
 }
-export function lines(value: unknown): AccountingLineV1[] {
+export function journalAttributes(
+  value: unknown,
+  internal = false,
+): AccountingAttributes {
+  const input = attributes(value);
+  if (internal) return input;
+  const allowed = new Set(['auxiliaryNumber', 'descriptionEn']);
+  if (Object.keys(input).some((key) => !allowed.has(key)))
+    invalid('ویژگی ناشناخته سند حسابداری مجاز نیست.');
+  return {
+    ...(input.auxiliaryNumber !== undefined
+      ? { auxiliaryNumber: text(input.auxiliaryNumber, 40) }
+      : {}),
+    ...(input.descriptionEn !== undefined
+      ? { descriptionEn: text(input.descriptionEn, 2000) }
+      : {}),
+  };
+}
+export function journalLineAttributes(
+  value: unknown,
+  internal = false,
+): AccountingAttributes {
+  const input = attributes(value);
+  if (internal) return input;
+  const allowed = new Set(['descriptionEn', 'trackingNumber', 'trackingDate']);
+  if (Object.keys(input).some((key) => !allowed.has(key)))
+    invalid('ویژگی ناشناخته ردیف سند حسابداری مجاز نیست.');
+  return {
+    ...(input.descriptionEn !== undefined
+      ? { descriptionEn: text(input.descriptionEn, 2000) }
+      : {}),
+    ...(input.trackingNumber !== undefined
+      ? { trackingNumber: text(input.trackingNumber, 100) }
+      : {}),
+    ...(input.trackingDate ? { trackingDate: date(input.trackingDate)! } : {}),
+  };
+}
+export function lines(value: unknown, internal = false): AccountingLineV1[] {
   if (!Array.isArray(value) || value.length > 500)
     invalid('حداکثر ۵۰۰ ردیف مجاز است.');
   return value.map((raw) => {
@@ -113,7 +150,7 @@ export function lines(value: unknown): AccountingLineV1[] {
       currency,
       foreignAmount: decimal(v.foreignAmount, true),
       rate: decimal(v.rate, true),
-      attributes: attributes(v.attributes),
+      attributes: journalLineAttributes(v.attributes, internal),
     };
   });
 }

@@ -21,6 +21,18 @@ import { allocationTargets, allocateAmount } from './accounting.allocation';
 import { FinanceInboxService } from '../finance-inbox.service';
 
 type Tx = Prisma.TransactionClient;
+type BufferedStateEvent = {
+  journalId: string;
+  eventType: 'CREATE' | 'STATUS' | 'MOVE';
+  fromStatus?: string | null;
+  toStatus?: string | null;
+  journalVersion: number;
+  oldPeriodId?: string | null;
+  newPeriodId?: string | null;
+  oldDocumentDate?: string | null;
+  newDocumentDate?: string | null;
+  reason?: string | null;
+};
 const journalInclude = { lines: { orderBy: { position: 'asc' as const } } };
 const json = (value: unknown) =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -35,6 +47,25 @@ const canonical = (value: unknown): unknown =>
             .map(([k, v]) => [k, canonical(v)]),
         )
       : value;
+const without = (
+  input: Record<string, string | boolean | string[]>,
+  keys: readonly string[],
+) =>
+  Object.fromEntries(
+    Object.entries(input).filter(([key]) => !keys.includes(key)),
+  );
+const journalWritableAttributes = ['auxiliaryNumber', 'descriptionEn'];
+const lineWritableAttributes = [
+  'descriptionEn',
+  'trackingNumber',
+  'trackingDate',
+];
+const resetApprovalAttributes = (value: unknown) =>
+  without(v.attributes(value), [
+    'approvalPolicyId',
+    'approvalPolicyVersion',
+    'warnings',
+  ]);
 const kinds = [
   'approval-policies',
   'fiscal-years',
@@ -173,30 +204,63 @@ export class AccountingService {
     return this.database.client.$transaction(
       async (tx) => {
         const book = await this.book(tx, id, actor);
-        const [periods, accounts, details, configurations, fxRates] =
-          await Promise.all([
-            tx.accountingPeriod.findMany({
-              where: { bookId: id },
-              orderBy: { startDate: 'desc' },
-            }),
-            tx.accountingAccount.findMany({
-              where: { bookId: id },
-              orderBy: { code: 'asc' },
-            }),
-            tx.accountingDetail.findMany({
-              where: { bookId: id },
-              orderBy: { code: 'asc' },
-            }),
-            tx.accountingConfiguration.findMany({
-              where: { bookId: id },
-              orderBy: { code: 'asc' },
-            }),
-            tx.accountingFxSnapshot.findMany({
-              where: { bookId: id },
-              orderBy: { validFrom: 'desc' },
-            }),
-          ]);
-        return { book, periods, accounts, details, configurations, fxRates };
+        const [
+          periods,
+          accounts,
+          details,
+          configurations,
+          fxRates,
+          accountGroups,
+          detailGroups,
+          templates,
+        ] = await Promise.all([
+          tx.accountingPeriod.findMany({
+            where: { bookId: id },
+            orderBy: { startDate: 'desc' },
+          }),
+          tx.accountingAccount.findMany({
+            where: { bookId: id },
+            orderBy: { code: 'asc' },
+          }),
+          tx.accountingDetail.findMany({
+            where: { bookId: id },
+            orderBy: { code: 'asc' },
+          }),
+          tx.accountingConfiguration.findMany({
+            where: { bookId: id },
+            orderBy: { code: 'asc' },
+          }),
+          tx.accountingFxSnapshot.findMany({
+            where: { bookId: id },
+            orderBy: { validFrom: 'desc' },
+          }),
+          tx.accountingAccountGroup.findMany({
+            where: { bookId: id },
+            include: { members: { orderBy: { accountId: 'asc' } } },
+            orderBy: [{ code: 'asc' }, { id: 'asc' }],
+          }),
+          tx.accountingDetailGroup.findMany({
+            where: { bookId: id },
+            include: { members: { orderBy: { detailId: 'asc' } } },
+            orderBy: [{ code: 'asc' }, { id: 'asc' }],
+          }),
+          tx.accountingTemplate.findMany({
+            where: { bookId: id },
+            include: { lines: { orderBy: { position: 'asc' } } },
+            orderBy: [{ kind: 'asc' }, { code: 'asc' }, { id: 'asc' }],
+          }),
+        ]);
+        return {
+          book,
+          periods,
+          accounts,
+          details,
+          configurations,
+          fxRates,
+          accountGroups,
+          detailGroups,
+          templates,
+        };
       },
       { isolationLevel: 'RepeatableRead' },
     );
@@ -234,7 +298,7 @@ export class AccountingService {
           }
         : {}),
     };
-    return this.database.client.$transaction(
+    const pageResult = await this.database.client.$transaction(
       async (tx) => ({
         items: await tx.accountingJournal.findMany({
           where,
@@ -253,6 +317,21 @@ export class AccountingService {
       }),
       { isolationLevel: 'RepeatableRead' },
     );
+    const names = new Map(
+      (
+        await this.identity.displayNames(
+          pageResult.items.map((item) => item.makerId),
+          actor.branchIds,
+        )
+      ).map((user) => [user.id, user.displayName]),
+    );
+    return {
+      ...pageResult,
+      items: pageResult.items.map((item) => ({
+        ...item,
+        makerName: names.get(item.makerId) ?? null,
+      })),
+    };
   }
   async command(
     bookId: string,
@@ -283,6 +362,7 @@ export class AccountingService {
                       'revaluation-preview',
                       'revaluation-run',
                       'number-drafts',
+                      'move-drafts',
                     ].includes(action) ||
                     action.startsWith('journal') ||
                     ['submit', 'return', 'cancel', 'restore'].includes(action)
@@ -313,6 +393,8 @@ export class AccountingService {
           return previous.result;
         }
         const book = await this.book(tx, bookId, actor);
+        const commandId = randomUUID();
+        const stateEvents: BufferedStateEvent[] = [];
         const result = await this.execute(
           tx,
           book,
@@ -320,9 +402,12 @@ export class AccountingService {
           p,
           c.expectedVersion,
           actor,
+          false,
+          stateEvents,
         );
         await tx.accountingCommand.create({
           data: {
+            id: commandId,
             bookId,
             actorId: actor.userId,
             key,
@@ -331,6 +416,16 @@ export class AccountingService {
             result: json(result),
           },
         });
+        if (stateEvents.length)
+          await tx.accountingJournalStateEvent.createMany({
+            data: stateEvents.map((event, index) => ({
+              ...event,
+              bookId,
+              commandId,
+              actorId: actor.userId,
+              sequence: index + 1,
+            })),
+          });
         return result;
       },
       { timeout: 20000 },
@@ -350,6 +445,8 @@ export class AccountingService {
     p: Record<string, unknown>,
     expected: number | undefined,
     actor: AuthenticatedActor,
+    internal = false,
+    stateEvents: BufferedStateEvent[] = [],
   ): Promise<unknown> {
     const bookId = book.id;
     if (
@@ -362,6 +459,28 @@ export class AccountingService {
           where: { id: periodId, bookId },
         });
       if (!period) throw new NotFoundException();
+      const closingTemplateId =
+        action === 'year-end-closing' ? v.uuid(p.templateId, true) : null;
+      const closingTemplate = closingTemplateId
+        ? await tx.accountingTemplate.findFirst({
+            where: {
+              id: closingTemplateId,
+              bookId,
+              kind: 'CLOSING',
+              active: true,
+            },
+            include: { lines: true },
+          })
+        : null;
+      if (closingTemplateId && !closingTemplate)
+        v.rule('الگوی بستن حساب فعال همین دفتر لازم است.');
+      if (closingTemplate) {
+        this.version(closingTemplate.version, p.templateVersion);
+        if (closingTemplate.lines.length)
+          v.rule(
+            'اجرای الگوی بستن دارای ردیف انتخابی یا درصدی هنوز پشتیبانی نمی‌شود.',
+          );
+      }
       const sourceKey =
         action === 'year-end-opening'
           ? `OPEN:${periodId}`
@@ -447,7 +566,9 @@ export class AccountingService {
         rows: Record<string, unknown>[] = [];
       if (action === 'year-end-closing') {
         if (period.status !== 'OPEN') v.rule('دوره مبدأ باید باز باشد.');
-        const retainedId = v.uuid(p.retainedAccountId)!,
+        const retainedId = closingTemplate?.retainedAccountId
+            ? closingTemplate.retainedAccountId
+            : v.uuid(p.retainedAccountId)!,
           retained = accountMap.get(retainedId);
         if (
           !retained ||
@@ -539,7 +660,7 @@ export class AccountingService {
         'journal-save',
         {
           periodId: targetPeriodId,
-          typeId: p.typeId,
+          typeId: closingTemplate?.voucherTypeId ?? p.typeId,
           documentDate: targetDate,
           description:
             action === 'year-end-opening'
@@ -549,6 +670,8 @@ export class AccountingService {
         },
         undefined,
         actor,
+        true,
+        stateEvents,
       )) as { id: string };
       return tx.accountingJournal.update({
         where: { id: result.id },
@@ -558,6 +681,14 @@ export class AccountingService {
             sourcePeriodId: periodId,
             operation: action,
             fxCarryPolicy: hasFx ? 'HISTORICAL_LOTS' : 'BASE',
+            ...(closingTemplate
+              ? {
+                  templateId: closingTemplate.id,
+                  templateVersion: String(closingTemplate.version),
+                  voucherTypeId: closingTemplate.voucherTypeId ?? '',
+                  retainedAccountId: closingTemplate.retainedAccountId ?? '',
+                }
+              : {}),
           },
         },
         include: journalInclude,
@@ -567,9 +698,30 @@ export class AccountingService {
       const periodId = v.uuid(p.periodId)!,
         asOf = v.date(p.asOfDate)!;
       const basis = await this.revaluationBasis(tx, book, periodId, asOf);
+      const templateId = v.uuid(p.templateId, true),
+        template = templateId
+          ? await tx.accountingTemplate.findFirst({
+              where: {
+                id: templateId,
+                bookId,
+                kind: 'REVALUATION',
+                active: true,
+              },
+              include: { lines: true },
+            })
+          : null;
+      if (templateId && !template)
+        v.rule('الگوی تسعیر فعال همین دفتر لازم است.');
+      if (template) {
+        this.version(template.version, p.templateVersion);
+        if (template.lines.length)
+          v.rule(
+            'اجرای الگوی تسعیر دارای ردیف انتخابی یا درصدی هنوز پشتیبانی نمی‌شود.',
+          );
+      }
       const selections = v.object(p.rates),
-        gainId = v.uuid(p.gainAccountId)!,
-        lossId = v.uuid(p.lossAccountId)!;
+        gainId = template?.gainAccountId ?? v.uuid(p.gainAccountId)!,
+        lossId = template?.lossAccountId ?? v.uuid(p.lossAccountId)!;
       const changes: Record<string, unknown>[] = [],
         rows: Record<string, unknown>[] = [];
       for (const position of basis.rows) {
@@ -645,13 +797,15 @@ export class AccountingService {
         'journal-save',
         {
           periodId,
-          typeId: p.typeId,
+          typeId: template?.voucherTypeId ?? p.typeId,
           documentDate: asOf,
           description: v.text(p.reason, 2000, true),
           lines: rows,
         },
         undefined,
         actor,
+        true,
+        stateEvents,
       )) as { id: string };
       return tx.accountingJournal.update({
         where: { id: result.id },
@@ -662,6 +816,15 @@ export class AccountingService {
             asOf,
             periodId,
             basisChecksum: basis.checksum,
+            ...(template
+              ? {
+                  templateId: template.id,
+                  templateVersion: String(template.version),
+                  voucherTypeId: template.voucherTypeId ?? '',
+                  gainAccountId: template.gainAccountId ?? '',
+                  lossAccountId: template.lossAccountId ?? '',
+                }
+              : {}),
           },
         },
         include: journalInclude,
@@ -907,6 +1070,8 @@ export class AccountingService {
         },
         undefined,
         actor,
+        true,
+        stateEvents,
       )) as { id: string };
       return tx.accountingJournal.update({
         where: { id: result.id },
@@ -965,6 +1130,8 @@ export class AccountingService {
         },
         undefined,
         actor,
+        true,
+        stateEvents,
       )) as { id: string };
       return tx.accountingJournal.update({
         where: { id: result.id },
@@ -1068,18 +1235,8 @@ export class AccountingService {
           v.rule('حد بالای تأیید باید بزرگ‌تر از حد پایین باشد.');
       }
 
-      if (kind === 'fiscal-years') {
-        const start = v.date(attributes.startDate)!,
-          end = v.date(attributes.endDate)!;
-        if (start > end) v.rule('تاریخ پایان سال باید بعد از شروع باشد.');
-        if (
-          existing &&
-          (await tx.accountingPeriod.count({ where: { fiscalYearId: id } })) &&
-          (v.attributes(existing.attributes).startDate !== start ||
-            v.attributes(existing.attributes).endDate !== end)
-        )
-          v.rule('بازه سال مالی تخصیص‌یافته قابل تغییر نیست.');
-      }
+      if (kind === 'fiscal-years' && Object.keys(attributes).length)
+        v.invalid('بازه سال مالی فقط در تخصیص سال به دفتر ثبت می‌شود.');
       if (kind === 'detail-types') {
         const length = Number(attributes.classificationNumberLength);
         if (!Number.isInteger(length) || length < 1 || length > 20)
@@ -1176,7 +1333,10 @@ export class AccountingService {
       const data = {
         bookId,
         kind,
-        code: v.text(p.code, 40, true),
+        code:
+          v.text(p.code, 40) ||
+          existing?.code ||
+          `${kind === 'fiscal-years' ? 'FY' : kind === 'voucher-types' ? 'VT' : kind === 'detail-types' ? 'DT' : 'CFG'}-${id.slice(0, 8).toUpperCase()}`,
         title: v.text(p.title, 160, true),
         titleEn: v.text(p.titleEn, 160) || null,
         description: v.text(p.description, 2000) || null,
@@ -1200,14 +1360,6 @@ export class AccountingService {
       const startDate = v.date(p.startDate)!,
         endDate = v.date(p.endDate)!;
       if (startDate > endDate) v.rule('تاریخ پایان باید بعد از شروع باشد.');
-      const yearAttrs = v.attributes(year.attributes);
-      if (
-        yearAttrs.startDate &&
-        yearAttrs.endDate &&
-        (startDate < String(yearAttrs.startDate) ||
-          endDate > String(yearAttrs.endDate))
-      )
-        v.rule('دوره تخصیص‌یافته باید داخل سال مالی باشد.');
       const existing = await tx.accountingPeriod.findFirst({
         where: { id, bookId },
       });
@@ -1219,6 +1371,12 @@ export class AccountingService {
         )
           v.rule('دوره استفاده‌شده قابل تغییر نیست.');
       }
+      if (
+        await tx.accountingPeriod.count({
+          where: { bookId, fiscalYearId, id: { not: id } },
+        })
+      )
+        v.rule('این سال مالی قبلاً به دفتر تخصیص یافته است.');
       if (
         await tx.accountingPeriod.count({
           where: {
@@ -1455,6 +1613,272 @@ export class AccountingService {
           })
         : tx.accountingDetail.create({ data: { id, ...data } });
     }
+    if (action === 'save-account-group' || action === 'save-detail-group') {
+      const accountGroup = action === 'save-account-group';
+      const id = v.uuid(p.id, true) ?? randomUUID();
+      const rawMembers = p.memberIds;
+      if (!Array.isArray(rawMembers) || rawMembers.length > 500)
+        v.invalid('فهرست اعضای گروه معتبر نیست.');
+      const memberIds = rawMembers.map((member) => v.uuid(member)!);
+      if (new Set(memberIds).size !== memberIds.length)
+        v.invalid('عضو تکراری در گروه مجاز نیست.');
+      const existing = accountGroup
+        ? await tx.accountingAccountGroup.findFirst({ where: { id, bookId } })
+        : await tx.accountingDetailGroup.findFirst({ where: { id, bookId } });
+      if (existing) this.version(existing.version, expected);
+      const referenceCount = accountGroup
+        ? await tx.accountingAccount.count({
+            where: { bookId, id: { in: memberIds } },
+          })
+        : await tx.accountingDetail.count({
+            where: { bookId, id: { in: memberIds } },
+          });
+      if (referenceCount !== memberIds.length)
+        v.rule('همه اعضای گروه باید متعلق به همین دفتر باشند.');
+      const common = {
+        bookId,
+        code: v.text(p.code, 40, true),
+        title: v.text(p.title, 160, true),
+        titleEn: v.text(p.titleEn, 160) || null,
+        description: v.text(p.description, 2000) || null,
+        active: p.active !== false,
+      };
+      if (accountGroup) {
+        if (existing) {
+          await tx.accountingAccountGroupMember.deleteMany({
+            where: { groupId: id },
+          });
+          await tx.accountingAccountGroup.update({
+            where: { id },
+            data: {
+              ...common,
+              version: { increment: 1 },
+            },
+          });
+          if (memberIds.length)
+            await tx.accountingAccountGroupMember.createMany({
+              data: memberIds.map((accountId) => ({
+                bookId,
+                groupId: id,
+                accountId,
+              })),
+            });
+          return tx.accountingAccountGroup.findUniqueOrThrow({
+            where: { id },
+            include: { members: { orderBy: { accountId: 'asc' } } },
+          });
+        }
+        await tx.accountingAccountGroup.create({ data: { id, ...common } });
+        if (memberIds.length)
+          await tx.accountingAccountGroupMember.createMany({
+            data: memberIds.map((accountId) => ({
+              bookId,
+              groupId: id,
+              accountId,
+            })),
+          });
+        return tx.accountingAccountGroup.findUniqueOrThrow({
+          where: { id },
+          include: { members: { orderBy: { accountId: 'asc' } } },
+        });
+      }
+      if (existing) {
+        await tx.accountingDetailGroupMember.deleteMany({
+          where: { groupId: id },
+        });
+        await tx.accountingDetailGroup.update({
+          where: { id },
+          data: {
+            ...common,
+            version: { increment: 1 },
+          },
+        });
+        if (memberIds.length)
+          await tx.accountingDetailGroupMember.createMany({
+            data: memberIds.map((detailId) => ({
+              bookId,
+              groupId: id,
+              detailId,
+            })),
+          });
+        return tx.accountingDetailGroup.findUniqueOrThrow({
+          where: { id },
+          include: { members: { orderBy: { detailId: 'asc' } } },
+        });
+      }
+      await tx.accountingDetailGroup.create({ data: { id, ...common } });
+      if (memberIds.length)
+        await tx.accountingDetailGroupMember.createMany({
+          data: memberIds.map((detailId) => ({
+            bookId,
+            groupId: id,
+            detailId,
+          })),
+        });
+      return tx.accountingDetailGroup.findUniqueOrThrow({
+        where: { id },
+        include: { members: { orderBy: { detailId: 'asc' } } },
+      });
+    }
+    if (action === 'save-template') {
+      const id = v.uuid(p.id, true) ?? randomUUID();
+      const existing = await tx.accountingTemplate.findFirst({
+        where: { id, bookId },
+        include: { lines: true },
+      });
+      if (existing) this.version(existing.version, expected);
+      const kind = v.text(p.kind, 16, true);
+      if (!['AUTOMATIC', 'REVALUATION', 'CLOSING'].includes(kind))
+        v.invalid('نوع الگوی حسابداری معتبر نیست.');
+      if (existing && existing.kind !== kind)
+        v.rule('نوع الگوی ثبت‌شده قابل تغییر نیست.');
+      const voucherTypeId = v.uuid(p.voucherTypeId, true);
+      if (
+        voucherTypeId &&
+        !(await tx.accountingConfiguration.findFirst({
+          where: {
+            id: voucherTypeId,
+            bookId,
+            kind: 'voucher-types',
+            active: true,
+          },
+        }))
+      )
+        v.rule('نوع سند فعال همین دفتر لازم است.');
+      const gainAccountId = v.uuid(p.gainAccountId, true);
+      const lossAccountId = v.uuid(p.lossAccountId, true);
+      const retainedAccountId = v.uuid(p.retainedAccountId, true);
+      const accountIds = [
+        gainAccountId,
+        lossAccountId,
+        retainedAccountId,
+      ].filter((value): value is string => Boolean(value));
+      if (
+        accountIds.length &&
+        (await tx.accountingAccount.count({
+          where: { bookId, id: { in: accountIds }, active: true },
+        })) !== new Set(accountIds).size
+      )
+        v.rule('حساب‌های الگو باید فعال و متعلق به همین دفتر باشند.');
+      if (
+        (kind === 'REVALUATION' &&
+          (!voucherTypeId ||
+            !gainAccountId ||
+            !lossAccountId ||
+            retainedAccountId)) ||
+        (kind === 'CLOSING' &&
+          (!voucherTypeId ||
+            !retainedAccountId ||
+            gainAccountId ||
+            lossAccountId)) ||
+        (kind === 'AUTOMATIC' &&
+          (gainAccountId || lossAccountId || retainedAccountId))
+      )
+        v.rule('حساب‌ها و نوع سند با نوع الگو سازگار نیستند.');
+      if (!Array.isArray(p.lines) || p.lines.length > 500)
+        v.invalid('ردیف‌های الگو معتبر نیستند.');
+      const lines = [] as {
+        bookId: string;
+        position: number;
+        accountId: string;
+        detail4Id: string | null;
+        detail5Id: string | null;
+        detail6Id: string | null;
+        side: string;
+        percentage: string;
+        include: boolean;
+      }[];
+      for (const [position, raw] of p.lines.entries()) {
+        const line = v.object(raw),
+          accountId = v.uuid(line.accountId)!,
+          detail4Id = v.uuid(line.detail4Id, true),
+          detail5Id = v.uuid(line.detail5Id, true),
+          detail6Id = v.uuid(line.detail6Id, true),
+          side = v.text(line.side, 8, true),
+          percentage = v.decimal(line.percentage)!;
+        if (!['DEBIT', 'CREDIT'].includes(side))
+          v.invalid('ماهیت ردیف الگو معتبر نیست.');
+        if (
+          DecimalValue.parse(percentage).isZero ||
+          DecimalValue.parse(percentage).compare(DecimalValue.parse('100')) > 0
+        )
+          v.invalid('درصد ردیف الگو باید بیشتر از صفر و حداکثر صد باشد.');
+        if (
+          !(await tx.accountingAccount.findFirst({
+            where: { id: accountId, bookId, active: true },
+          }))
+        )
+          v.rule('حساب ردیف الگو معتبر نیست.');
+        const detailIds = [detail4Id, detail5Id, detail6Id].filter(
+          (value): value is string => Boolean(value),
+        );
+        if (
+          detailIds.length &&
+          (await tx.accountingDetail.count({
+            where: { bookId, id: { in: detailIds }, active: true },
+          })) !== new Set(detailIds).size
+        )
+          v.rule('تفصیلی ردیف الگو معتبر نیست.');
+        lines.push({
+          bookId,
+          position,
+          accountId,
+          detail4Id,
+          detail5Id,
+          detail6Id,
+          side,
+          percentage,
+          include: line.include !== false,
+        });
+      }
+      const data = {
+        bookId,
+        kind,
+        code: v.text(p.code, 40, true),
+        title: v.text(p.title, 160, true),
+        titleEn: v.text(p.titleEn, 160) || null,
+        description: v.text(p.description, 2000) || null,
+        descriptionEn: v.text(p.descriptionEn, 2000) || null,
+        active: p.active !== false,
+        voucherTypeId,
+        gainAccountId,
+        lossAccountId,
+        retainedAccountId,
+      };
+      if (existing) {
+        await tx.accountingTemplateLine.deleteMany({
+          where: { templateId: id },
+        });
+        await tx.accountingTemplate.update({
+          where: { id },
+          data: {
+            ...data,
+            version: { increment: 1 },
+          },
+        });
+        if (lines.length)
+          await tx.accountingTemplateLine.createMany({
+            data: lines.map((line) => ({ ...line, templateId: id })),
+          });
+        return tx.accountingTemplate.findUniqueOrThrow({
+          where: { id },
+          include: { lines: { orderBy: { position: 'asc' } } },
+        });
+      }
+      await tx.accountingTemplate.create({ data: { id, ...data } });
+      if (lines.length)
+        await tx.accountingTemplateLine.createMany({
+          data: lines.map((line) => ({ ...line, templateId: id })),
+        });
+      return tx.accountingTemplate.findUniqueOrThrow({
+        where: { id },
+        include: { lines: { orderBy: { position: 'asc' } } },
+      });
+    }
+    if (action === 'automatic-run')
+      v.rule(
+        'اجرای الگوی سند اتوماتیک تا تعریف قرارداد محاسبه پشتیبانی نمی‌شود.',
+      );
     if (action === 'journal-save') {
       const id = v.uuid(p.id, true) ?? randomUUID();
       const existing = await tx.accountingJournal.findFirst({
@@ -1466,16 +1890,18 @@ export class AccountingService {
         if (existing.status !== 'DRAFT')
           v.rule('فقط پیش‌نویس قابل ویرایش است.');
       }
-      const rows = v.lines(p.lines);
-      if (existing?.sourceKey) {
+      const rows = v.lines(p.lines, internal);
+      if (existing) {
         for (const [i, row] of rows.entries()) {
           const old = existing.lines[i];
           if (!old) continue;
-          row.attributes = {
-            ...row.attributes,
-            ...v.attributes(old.attributes),
-          };
+          if (!internal)
+            row.attributes = {
+              ...without(v.attributes(old.attributes), lineWritableAttributes),
+              ...row.attributes,
+            };
           if (
+            existing.sourceKey &&
             /^(REVALUE|OPEN|CLOSE|REVERSE):/.test(existing.sourceKey) &&
             [4, 5, 6].some(
               (n) =>
@@ -1508,14 +1934,20 @@ export class AccountingService {
       }
 
       const periodId = v.uuid(p.periodId, true),
-        typeId = v.uuid(p.typeId, true);
+        typeId = v.uuid(p.typeId, true),
+        documentDate = v.date(p.documentDate, true);
+      const period = periodId
+        ? await tx.accountingPeriod.findFirst({
+            where: { id: periodId, bookId, status: 'OPEN' },
+          })
+        : null;
+      if (periodId && !period) v.rule('دوره باز معتبر انتخاب کنید.');
       if (
-        periodId &&
-        !(await tx.accountingPeriod.findFirst({
-          where: { id: periodId, bookId, status: 'OPEN' },
-        }))
+        period &&
+        documentDate &&
+        (documentDate < period.startDate || documentDate > period.endDate)
       )
-        v.rule('دوره باز معتبر انتخاب کنید.');
+        v.rule('تاریخ سند باید داخل دوره انتخاب‌شده باشد.');
       if (
         typeId &&
         !(await tx.accountingConfiguration.findFirst({
@@ -1524,19 +1956,52 @@ export class AccountingService {
       )
         v.rule('نوع سند معتبر انتخاب کنید.');
       await this.references(tx, bookId, rows);
+      const moved = Boolean(
+        existing &&
+        (existing.periodId !== periodId ||
+          existing.documentDate !== documentDate),
+      );
+      if (moved && existing) {
+        if (!period || !documentDate)
+          v.rule('جابه‌جایی سند به دوره باز و تاریخ داخل همان دوره نیاز دارد.');
+        const existingAttributes = v.attributes(existing.attributes);
+        if (
+          existing.number !== null ||
+          existing.sourceKey ||
+          existing.reversalOfId ||
+          existingAttributes.operation !== undefined ||
+          existingAttributes.templateId !== undefined ||
+          existingAttributes.sourceRequestId !== undefined
+        )
+          v.rule('سند شماره‌دار، مبدأدار یا برگشتی قابل جابه‌جایی نیست.');
+        if (
+          existing.makerId !== actor.userId &&
+          !actor.permissions.includes('finance.journal.approve')
+        )
+          throw new ForbiddenException();
+      }
+      const submittedAttributes = v.journalAttributes(p.attributes, internal);
       const data = {
         periodId,
         typeId,
-        documentDate: v.date(p.documentDate, true),
+        documentDate,
         description: v.text(p.description, 2000),
         reference: v.text(p.reference, 160) || null,
-        attributes: existing?.sourceKey
-          ? json(existing.attributes)
-          : json(v.attributes(p.attributes)),
+        attributes: json(
+          existing && !internal
+            ? {
+                ...without(
+                  resetApprovalAttributes(existing.attributes),
+                  journalWritableAttributes,
+                ),
+                ...submittedAttributes,
+              }
+            : submittedAttributes,
+        ),
       };
       if (existing) {
         await tx.accountingJournalLine.deleteMany({ where: { journalId: id } });
-        return tx.accountingJournal.update({
+        const updated = await tx.accountingJournal.update({
           where: { id },
           data: {
             ...data,
@@ -1553,8 +2018,22 @@ export class AccountingService {
           },
           include: journalInclude,
         });
+        if (moved)
+          stateEvents.push({
+            journalId: id,
+            eventType: 'MOVE',
+            fromStatus: existing.status,
+            toStatus: updated.status,
+            journalVersion: updated.version,
+            oldPeriodId: existing.periodId,
+            newPeriodId: updated.periodId,
+            oldDocumentDate: existing.documentDate,
+            newDocumentDate: updated.documentDate,
+            reason: v.text(p.moveReason, 2000) || null,
+          });
+        return updated;
       }
-      return tx.accountingJournal.create({
+      const created = await tx.accountingJournal.create({
         data: {
           id,
           bookId,
@@ -1570,6 +2049,97 @@ export class AccountingService {
         },
         include: journalInclude,
       });
+      stateEvents.push({
+        journalId: created.id,
+        eventType: 'CREATE',
+        fromStatus: null,
+        toStatus: created.status,
+        journalVersion: created.version,
+        newPeriodId: created.periodId,
+        newDocumentDate: created.documentDate,
+      });
+      return created;
+    }
+    if (action === 'move-drafts') {
+      if (!Array.isArray(p.items) || !p.items.length || p.items.length > 100)
+        v.invalid('بین یک تا صد سند برای جابه‌جایی انتخاب کنید.');
+      const items = p.items.map((raw) => {
+        const item = v.object(raw),
+          expectedVersion = Number(item.expectedVersion);
+        if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
+          v.invalid('نسخه مورد انتظار همه اسناد لازم است.');
+        return { id: v.uuid(item.id)!, expectedVersion };
+      });
+      if (new Set(items.map((item) => item.id)).size !== items.length)
+        v.invalid('شناسه تکراری سند مجاز نیست.');
+      const periodId = v.uuid(p.periodId)!,
+        documentDate = v.date(p.documentDate)!,
+        reason = v.text(p.reason, 2000, true),
+        period = await tx.accountingPeriod.findFirst({
+          where: { id: periodId, bookId, status: 'OPEN' },
+        });
+      if (
+        !period ||
+        documentDate < period.startDate ||
+        documentDate > period.endDate
+      )
+        v.rule('تاریخ مقصد باید داخل دوره باز انتخاب‌شده باشد.');
+      const journals = await tx.accountingJournal.findMany({
+        where: { bookId, id: { in: items.map((item) => item.id) } },
+        orderBy: { id: 'asc' },
+      });
+      if (journals.length !== items.length) throw new NotFoundException();
+      const versions = new Map(
+        items.map((item) => [item.id, item.expectedVersion]),
+      );
+      for (const journal of journals) {
+        this.version(journal.version, versions.get(journal.id));
+        const journalAttributes = v.attributes(journal.attributes);
+        if (
+          journal.status !== 'DRAFT' ||
+          journal.number !== null ||
+          journal.sourceKey ||
+          journal.reversalOfId ||
+          journalAttributes.operation !== undefined ||
+          journalAttributes.templateId !== undefined ||
+          journalAttributes.sourceRequestId !== undefined
+        )
+          v.rule('فقط پیش‌نویس عادی و بدون شماره قابل جابه‌جایی است.');
+        if (
+          journal.makerId !== actor.userId &&
+          !actor.permissions.includes('finance.journal.approve')
+        )
+          throw new ForbiddenException();
+      }
+      const results = [];
+      for (const journal of journals) {
+        const updated = await tx.accountingJournal.update({
+          where: { id: journal.id },
+          data: {
+            periodId,
+            documentDate,
+            makerId: actor.userId,
+            approverId: null,
+            attributes: json(resetApprovalAttributes(journal.attributes)),
+            version: { increment: 1 },
+          },
+          include: journalInclude,
+        });
+        stateEvents.push({
+          journalId: journal.id,
+          eventType: 'MOVE',
+          fromStatus: journal.status,
+          toStatus: updated.status,
+          journalVersion: updated.version,
+          oldPeriodId: journal.periodId,
+          newPeriodId: updated.periodId,
+          oldDocumentDate: journal.documentDate,
+          newDocumentDate: updated.documentDate,
+          reason,
+        });
+        results.push(updated);
+      }
+      return { items: results };
     }
     if (
       [
@@ -1604,15 +2174,29 @@ export class AccountingService {
           }))
         )
           v.rule('دوره سند برای بازیابی باید باز باشد.');
-        return tx.accountingJournal.update({
+        const restored = await tx.accountingJournal.update({
           where: { id },
           data: {
             status: 'DRAFT',
             approverId: null,
+            attributes: json(resetApprovalAttributes(journal.attributes)),
             version: { increment: 1 },
           },
           include: journalInclude,
         });
+        stateEvents.push({
+          journalId: id,
+          eventType: 'STATUS',
+          fromStatus: journal.status,
+          toStatus: restored.status,
+          journalVersion: restored.version,
+          oldPeriodId: journal.periodId,
+          newPeriodId: restored.periodId,
+          oldDocumentDate: journal.documentDate,
+          newDocumentDate: restored.documentDate,
+          reason: v.text(p.reason, 2000) || null,
+        });
+        return restored;
       }
       if (action === 'return' || action === 'cancel') {
         if (journal.status === 'POSTED' || journal.status === 'CANCELLED')
@@ -1622,15 +2206,29 @@ export class AccountingService {
           !actor.permissions.includes('finance.journal.approve')
         )
           throw new ForbiddenException();
-        return tx.accountingJournal.update({
+        const returned = await tx.accountingJournal.update({
           where: { id },
           data: {
             status: action === 'return' ? 'DRAFT' : 'CANCELLED',
             approverId: null,
+            attributes: json(resetApprovalAttributes(journal.attributes)),
             version: { increment: 1 },
           },
           include: journalInclude,
         });
+        stateEvents.push({
+          journalId: id,
+          eventType: 'STATUS',
+          fromStatus: journal.status,
+          toStatus: returned.status,
+          journalVersion: returned.version,
+          oldPeriodId: journal.periodId,
+          newPeriodId: returned.periodId,
+          oldDocumentDate: journal.documentDate,
+          newDocumentDate: returned.documentDate,
+          reason: v.text(p.reason, 2000) || null,
+        });
+        return returned;
       }
       if (action === 'reverse') {
         if (journal.status !== 'POSTED')
@@ -1650,7 +2248,7 @@ export class AccountingService {
           documentDate > period.endDate
         )
           v.rule('تاریخ برگشت باید در دوره باز باشد.');
-        return tx.accountingJournal.create({
+        const reversal = await tx.accountingJournal.create({
           data: {
             bookId,
             periodId,
@@ -1681,6 +2279,17 @@ export class AccountingService {
           },
           include: journalInclude,
         });
+        stateEvents.push({
+          journalId: reversal.id,
+          eventType: 'CREATE',
+          fromStatus: null,
+          toStatus: reversal.status,
+          journalVersion: reversal.version,
+          newPeriodId: reversal.periodId,
+          newDocumentDate: reversal.documentDate,
+          reason: v.text(p.reason, 2000, true),
+        });
+        return reversal;
       }
       if (
         journal.status !==
@@ -1721,7 +2330,7 @@ export class AccountingService {
         });
         number = current.nextNumber - 1;
       }
-      return tx.accountingJournal.update({
+      const transitioned = await tx.accountingJournal.update({
         where: { id },
         data: {
           status:
@@ -1755,6 +2364,19 @@ export class AccountingService {
         },
         include: journalInclude,
       });
+      stateEvents.push({
+        journalId: id,
+        eventType: 'STATUS',
+        fromStatus: journal.status,
+        toStatus: transitioned.status,
+        journalVersion: transitioned.version,
+        oldPeriodId: journal.periodId,
+        newPeriodId: transitioned.periodId,
+        oldDocumentDate: journal.documentDate,
+        newDocumentDate: transitioned.documentDate,
+        reason: v.text(p.reason, 2000) || null,
+      });
+      return transitioned;
     }
     if (action === 'close-period') {
       const id = v.uuid(p.id)!;
@@ -2187,6 +2809,45 @@ export class AccountingService {
       })),
     };
   }
+  async journalEvents(
+    bookId: string,
+    journalId: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor);
+    await this.book(this.database.client, bookId, actor);
+    const journal = await this.database.client.accountingJournal.findFirst({
+      where: { id: v.uuid(journalId)!, bookId },
+      select: { id: true, status: true },
+    });
+    if (!journal) throw new NotFoundException();
+    const events =
+      await this.database.client.accountingJournalStateEvent.findMany({
+        where: { bookId, journalId },
+        orderBy: [
+          { occurredAt: 'asc' },
+          { commandId: 'asc' },
+          { sequence: 'asc' },
+        ],
+      });
+    const names = new Map(
+      (
+        await this.identity.displayNames(
+          events.map((event) => event.actorId),
+          actor.branchIds,
+        )
+      ).map((user) => [user.id, user.displayName]),
+    );
+    return {
+      events: events.map((event) => ({
+        ...event,
+        actorName: names.get(event.actorId) ?? null,
+      })),
+      historicalGap:
+        journal.status === 'CANCELLED' &&
+        !events.some((event) => event.toStatus === 'CANCELLED'),
+    };
+  }
   private async reportPeriod(
     tx: Tx,
     bookId: string,
@@ -2347,6 +3008,355 @@ export class AccountingService {
       { isolationLevel: 'RepeatableRead' },
     );
   }
+  private async reportData(
+    tx: Tx,
+    bookId: string,
+    query: Record<string, string>,
+  ) {
+    const { period, from, to } = await this.reportPeriod(tx, bookId, query);
+    const groupId = v.uuid(query.groupId, true),
+      group = groupId
+        ? await tx.accountingAccountGroup.findFirst({
+            where: { id: groupId, bookId },
+            include: { members: true },
+          })
+        : null;
+    if (groupId && !group) throw new NotFoundException();
+    const groupMembers = group
+      ? new Set(group.members.map((member) => member.accountId))
+      : null;
+    const accounts = await tx.accountingAccount.findMany({
+      where: {
+        bookId,
+        ...(query.activeOnly === 'true' ? { active: true } : {}),
+      },
+      orderBy: { code: 'asc' },
+    });
+    const journal = {
+      bookId,
+      status: 'POSTED',
+      periodId: period.id,
+      ...(query.typeId ? { typeId: v.uuid(query.typeId)! } : {}),
+    };
+    const detailFilter: Prisma.AccountingJournalLineWhereInput = {};
+    for (const n of [4, 5, 6] as const)
+      if (query[`detail${n}Id`])
+        detailFilter[`detail${n}Id`] = v.uuid(query[`detail${n}Id`])!;
+    const aggregate = async (dateFilter: Prisma.StringNullableFilter) =>
+      tx.accountingJournalLine.groupBy({
+        by: ['accountId'],
+        where: {
+          ...detailFilter,
+          journal: { ...journal, documentDate: dateFilter },
+        },
+        _sum: { debit: true, credit: true },
+      });
+    const [openingRows, currentRows] = await Promise.all([
+      from ? aggregate({ lt: from }) : Promise.resolve([]),
+      aggregate({
+        ...(from ? { gte: from } : {}),
+        ...(to ? { lte: to } : {}),
+      }),
+    ]);
+    const map = new Map(
+      accounts.map((a) => [
+        a.id,
+        {
+          accountId: a.id,
+          code: a.code,
+          title: a.title,
+          level: a.level,
+          opening: DecimalValue.zero(),
+          debit: DecimalValue.zero(),
+          credit: DecimalValue.zero(),
+        },
+      ]),
+    );
+    for (const row of openingRows) {
+      const a = row.accountId ? map.get(row.accountId) : null;
+      if (a)
+        a.opening = DecimalValue.parse(
+          row._sum.debit?.toString() ?? '0',
+        ).subtract(DecimalValue.parse(row._sum.credit?.toString() ?? '0'));
+    }
+    let debit = DecimalValue.zero(),
+      credit = DecimalValue.zero();
+    for (const row of currentRows) {
+      const a = row.accountId ? map.get(row.accountId) : null;
+      if (a) {
+        a.debit = DecimalValue.parse(row._sum.debit?.toString() ?? '0');
+        a.credit = DecimalValue.parse(row._sum.credit?.toString() ?? '0');
+        debit = debit.add(a.debit);
+        credit = credit.add(a.credit);
+      }
+    }
+    // Aggregate each adjacent chart level exactly once; totals count only posting leaves.
+    for (const level of ['SUBSIDIARY', 'GENERAL'])
+      for (const account of accounts.filter((a) => a.level === level)) {
+        const own = map.get(account.id),
+          parent = account.parentId ? map.get(account.parentId) : null;
+        if (own && parent) {
+          parent.opening = parent.opening.add(own.opening);
+          parent.debit = parent.debit.add(own.debit);
+          parent.credit = parent.credit.add(own.credit);
+        }
+      }
+    const rows = [...map.values()]
+      .filter((a) =>
+        query.level ? a.level === query.level : a.level === 'SUBSIDIARY',
+      )
+      .filter((account) => !groupMembers || groupMembers.has(account.accountId))
+      .map((a) => ({
+        accountId: a.accountId,
+        code: a.code,
+        title: a.title,
+        opening: a.opening.toString(),
+        debit: a.debit.toString(),
+        credit: a.credit.toString(),
+        balance: a.opening.add(a.debit).subtract(a.credit).toString(),
+      }));
+    const selectedDebit = rows.reduce(
+        (sum, row) => sum.add(DecimalValue.parse(row.debit)),
+        DecimalValue.zero(),
+      ),
+      selectedCredit = rows.reduce(
+        (sum, row) => sum.add(DecimalValue.parse(row.credit)),
+        DecimalValue.zero(),
+      );
+    return {
+      generatedAt: new Date().toISOString(),
+      rows,
+      debit: (groupMembers ? selectedDebit : debit).toString(),
+      credit: (groupMembers ? selectedCredit : credit).toString(),
+    };
+  }
+  async analyticalReport(
+    bookId: string,
+    kind: string,
+    query: Record<string, string>,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor);
+    if (
+      ![
+        'dormant',
+        'nature-conflict-period',
+        'nature-conflict-running',
+        'comparative',
+      ].includes(kind)
+    )
+      v.invalid('گزارش تحلیلی ناشناخته است.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        await this.book(tx, bookId, actor);
+        const page = Number(query.page ?? 1),
+          pageSize = 50;
+        if (!Number.isSafeInteger(page) || page < 1 || page > 10000)
+          v.invalid('صفحه معتبر نیست.');
+        const paged = <T>(rows: T[]) => ({
+          page,
+          pageSize,
+          total: rows.length,
+          rows: rows.slice((page - 1) * pageSize, page * pageSize),
+        });
+        if (kind === 'comparative') {
+          const left = await this.reportData(tx, bookId, {
+            periodId: query.leftPeriodId ?? '',
+            from: query.leftFrom ?? '',
+            to: query.leftTo ?? '',
+            activeOnly: query.activeOnly ?? '',
+            groupId: query.groupId ?? '',
+          });
+          const right = await this.reportData(tx, bookId, {
+            periodId: query.rightPeriodId ?? '',
+            from: query.rightFrom ?? '',
+            to: query.rightTo ?? '',
+            activeOnly: query.activeOnly ?? '',
+            groupId: query.groupId ?? '',
+          });
+          const ids = new Set([
+            ...left.rows.map((row) => row.accountId),
+            ...right.rows.map((row) => row.accountId),
+          ]);
+          const rows = [...ids]
+            .map((accountId) => {
+              const l = left.rows.find((row) => row.accountId === accountId),
+                r = right.rows.find((row) => row.accountId === accountId),
+                zero = {
+                  accountId,
+                  code: r?.code ?? l?.code ?? '',
+                  title: r?.title ?? l?.title ?? '',
+                  opening: '0',
+                  debit: '0',
+                  credit: '0',
+                  balance: '0',
+                },
+                lv = l ?? zero,
+                rv = r ?? zero;
+              return {
+                accountId,
+                code: lv.code || rv.code,
+                title: lv.title || rv.title,
+                left: lv,
+                right: rv,
+                difference: {
+                  opening: DecimalValue.parse(rv.opening)
+                    .subtract(DecimalValue.parse(lv.opening))
+                    .toString(),
+                  debit: DecimalValue.parse(rv.debit)
+                    .subtract(DecimalValue.parse(lv.debit))
+                    .toString(),
+                  credit: DecimalValue.parse(rv.credit)
+                    .subtract(DecimalValue.parse(lv.credit))
+                    .toString(),
+                  balance: DecimalValue.parse(rv.balance)
+                    .subtract(DecimalValue.parse(lv.balance))
+                    .toString(),
+                },
+              };
+            })
+            .sort(
+              (a, b) =>
+                a.code.localeCompare(b.code) ||
+                a.accountId.localeCompare(b.accountId),
+            );
+          return { generatedAt: new Date().toISOString(), ...paged(rows) };
+        }
+        const { period, from, to } = await this.reportPeriod(tx, bookId, query);
+        const groupId = v.uuid(query.groupId, true);
+        const group = groupId
+          ? await tx.accountingAccountGroup.findFirst({
+              where: { id: groupId, bookId },
+              include: { members: true },
+            })
+          : null;
+        if (groupId && !group) throw new NotFoundException();
+        const memberIds = group?.members.map((member) => member.accountId);
+        const accounts = await tx.accountingAccount.findMany({
+          where: {
+            bookId,
+            level: 'SUBSIDIARY',
+            ...(query.activeOnly === 'true' ? { active: true } : {}),
+            ...(memberIds ? { id: { in: memberIds } } : {}),
+          },
+          orderBy: [{ code: 'asc' }, { id: 'asc' }],
+        });
+        if (kind === 'dormant') {
+          const activeRows = await tx.accountingJournalLine.groupBy({
+            by: ['accountId'],
+            where: {
+              accountId: { in: accounts.map((account) => account.id) },
+              journal: {
+                bookId,
+                periodId: period.id,
+                status: 'POSTED',
+                documentDate: { gte: from, lte: to },
+              },
+            },
+            _count: true,
+          });
+          const activeIds = new Set(activeRows.map((row) => row.accountId));
+          const all = accounts.filter((account) => !activeIds.has(account.id));
+          return {
+            generatedAt: new Date().toISOString(),
+            definition: 'حساب معین بدون هیچ ردیف سند قطعی در بازه انتخاب‌شده',
+            ...paged(all),
+          };
+        }
+        if (kind === 'nature-conflict-period') {
+          const sums = await tx.accountingJournalLine.groupBy({
+            by: ['accountId'],
+            where: {
+              accountId: { in: accounts.map((account) => account.id) },
+              journal: {
+                bookId,
+                periodId: period.id,
+                status: 'POSTED',
+                documentDate: { lte: to },
+              },
+            },
+            _sum: { debit: true, credit: true },
+          });
+          const balances = new Map(
+            sums.map((row) => [
+              row.accountId,
+              DecimalValue.parse(row._sum.debit?.toString() ?? '0').subtract(
+                DecimalValue.parse(row._sum.credit?.toString() ?? '0'),
+              ),
+            ]),
+          );
+          const rows = accounts
+            .filter((account) => {
+              const balance = balances.get(account.id) ?? DecimalValue.zero();
+              return (
+                !balance.isZero &&
+                (account.nature === 'DEBIT'
+                  ? balance.isNegative
+                  : !balance.isNegative)
+              );
+            })
+            .map((account) => ({
+              ...account,
+              balance: (
+                balances.get(account.id) ?? DecimalValue.zero()
+              ).toString(),
+            }));
+          return {
+            generatedAt: new Date().toISOString(),
+            definition: 'مانده پایان بازه با ماهیت تعریف‌شده حساب ناسازگار است',
+            ...paged(rows),
+          };
+        }
+        const running = await tx.$queryRaw<
+          {
+            accountId: string;
+            firstConflictDate: string;
+            balance: Prisma.Decimal;
+          }[]
+        >`
+          WITH per_journal AS (
+            SELECT l."accountId", j.id AS "journalId", j."documentDate", j.number,
+              SUM(l.debit-l.credit) AS movement
+            FROM accounting_journal_lines l
+            JOIN accounting_journals j ON j.id=l."journalId"
+            WHERE j."bookId"=${bookId}::uuid AND j."periodId"=${period.id}::uuid
+              AND j.status='POSTED' AND j."documentDate"<=${to}
+            GROUP BY l."accountId",j.id,j."documentDate",j.number
+          ), running AS (
+            SELECT p.*, SUM(p.movement) OVER (
+              PARTITION BY p."accountId"
+              ORDER BY p."documentDate",p.number,p."journalId"
+              ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) AS balance
+            FROM per_journal p
+          ), conflicts AS (
+            SELECT r.*, ROW_NUMBER() OVER (
+              PARTITION BY r."accountId" ORDER BY r."documentDate",r.number,r."journalId"
+            ) AS occurrence
+            FROM running r JOIN accounting_accounts a ON a.id=r."accountId"
+            WHERE r."documentDate">=${from} AND r.balance<>0
+              AND ((a.nature='DEBIT' AND r.balance<0) OR (a.nature='CREDIT' AND r.balance>0))
+          )
+          SELECT "accountId","documentDate" AS "firstConflictDate",balance
+          FROM conflicts WHERE occurrence=1 ORDER BY "firstConflictDate","accountId"`;
+        const byId = new Map(accounts.map((account) => [account.id, account]));
+        const rows = running
+          .filter((row) => byId.has(row.accountId))
+          .map((row) => ({
+            ...byId.get(row.accountId)!,
+            firstConflictDate: row.firstConflictDate,
+            balance: row.balance.toString(),
+          }));
+        return {
+          generatedAt: new Date().toISOString(),
+          definition:
+            'اولین مانده جاری ناسازگار پس از هر سند قطعی با مانده ابتدای دوره',
+          ...paged(rows),
+        };
+      },
+      { isolationLevel: 'RepeatableRead' },
+    );
+  }
   async report(
     bookId: string,
     query: Record<string, string>,
@@ -2356,102 +3366,7 @@ export class AccountingService {
     return this.database.client.$transaction(
       async (tx) => {
         await this.book(tx, bookId, actor);
-        const { period, from, to } = await this.reportPeriod(tx, bookId, query);
-        const accounts = await tx.accountingAccount.findMany({
-          where: {
-            bookId,
-            ...(query.activeOnly === 'true' ? { active: true } : {}),
-          },
-          orderBy: { code: 'asc' },
-        });
-        const journal = {
-          bookId,
-          status: 'POSTED',
-          periodId: period.id,
-          ...(query.typeId ? { typeId: v.uuid(query.typeId)! } : {}),
-        };
-        const detailFilter: Prisma.AccountingJournalLineWhereInput = {};
-        for (const n of [4, 5, 6] as const)
-          if (query[`detail${n}Id`])
-            detailFilter[`detail${n}Id`] = v.uuid(query[`detail${n}Id`])!;
-        const aggregate = async (dateFilter: Prisma.StringNullableFilter) =>
-          tx.accountingJournalLine.groupBy({
-            by: ['accountId'],
-            where: {
-              ...detailFilter,
-              journal: { ...journal, documentDate: dateFilter },
-            },
-            _sum: { debit: true, credit: true },
-          });
-        const [openingRows, currentRows] = await Promise.all([
-          from ? aggregate({ lt: from }) : Promise.resolve([]),
-          aggregate({
-            ...(from ? { gte: from } : {}),
-            ...(to ? { lte: to } : {}),
-          }),
-        ]);
-        const map = new Map(
-          accounts.map((a) => [
-            a.id,
-            {
-              accountId: a.id,
-              code: a.code,
-              title: a.title,
-              level: a.level,
-              opening: DecimalValue.zero(),
-              debit: DecimalValue.zero(),
-              credit: DecimalValue.zero(),
-            },
-          ]),
-        );
-        for (const row of openingRows) {
-          const a = row.accountId ? map.get(row.accountId) : null;
-          if (a)
-            a.opening = DecimalValue.parse(
-              row._sum.debit?.toString() ?? '0',
-            ).subtract(DecimalValue.parse(row._sum.credit?.toString() ?? '0'));
-        }
-        let debit = DecimalValue.zero(),
-          credit = DecimalValue.zero();
-        for (const row of currentRows) {
-          const a = row.accountId ? map.get(row.accountId) : null;
-          if (a) {
-            a.debit = DecimalValue.parse(row._sum.debit?.toString() ?? '0');
-            a.credit = DecimalValue.parse(row._sum.credit?.toString() ?? '0');
-            debit = debit.add(a.debit);
-            credit = credit.add(a.credit);
-          }
-        }
-        // Aggregate each adjacent chart level exactly once; totals count only posting leaves.
-        for (const level of ['SUBSIDIARY', 'GENERAL'])
-          for (const account of accounts.filter((a) => a.level === level)) {
-            const own = map.get(account.id),
-              parent = account.parentId ? map.get(account.parentId) : null;
-            if (own && parent) {
-              parent.opening = parent.opening.add(own.opening);
-              parent.debit = parent.debit.add(own.debit);
-              parent.credit = parent.credit.add(own.credit);
-            }
-          }
-        const rows = [...map.values()]
-          .filter((a) =>
-            query.level ? a.level === query.level : a.level === 'SUBSIDIARY',
-          )
-          .map((a) => ({
-            accountId: a.accountId,
-            code: a.code,
-            title: a.title,
-            opening: a.opening.toString(),
-            debit: a.debit.toString(),
-            credit: a.credit.toString(),
-            balance: a.opening.add(a.debit).subtract(a.credit).toString(),
-          }));
-        return {
-          generatedAt: new Date().toISOString(),
-          rows,
-          debit: debit.toString(),
-          credit: credit.toString(),
-        };
+        return this.reportData(tx, bookId, query);
       },
       { isolationLevel: 'RepeatableRead' },
     );

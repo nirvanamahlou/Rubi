@@ -55,6 +55,73 @@ export interface AccountingDetailV1 extends AccountingRecord {
 export interface AccountingConfigurationV1 extends AccountingRecord {
   kind: string;
 }
+export interface AccountingAccountGroupV1 {
+  id: string;
+  bookId: string;
+  code: string;
+  title: string;
+  titleEn: string | null;
+  description: string | null;
+  active: boolean;
+  version: number;
+  members: { accountId: string }[];
+}
+export interface AccountingDetailGroupV1 {
+  id: string;
+  bookId: string;
+  code: string;
+  title: string;
+  titleEn: string | null;
+  description: string | null;
+  active: boolean;
+  version: number;
+  members: { detailId: string }[];
+}
+export interface AccountingTemplateLineV1 {
+  id: string;
+  position: number;
+  accountId: string;
+  detail4Id: string | null;
+  detail5Id: string | null;
+  detail6Id: string | null;
+  side: 'DEBIT' | 'CREDIT';
+  percentage: string;
+  include: boolean;
+}
+export interface AccountingTemplateV1 {
+  id: string;
+  bookId: string;
+  kind: 'AUTOMATIC' | 'REVALUATION' | 'CLOSING';
+  code: string;
+  title: string;
+  titleEn: string | null;
+  description: string | null;
+  descriptionEn: string | null;
+  active: boolean;
+  version: number;
+  voucherTypeId: string | null;
+  gainAccountId: string | null;
+  lossAccountId: string | null;
+  retainedAccountId: string | null;
+  lines: AccountingTemplateLineV1[];
+}
+export interface AccountingJournalStateEventV1 {
+  id: string;
+  journalId: string;
+  commandId: string;
+  actorId: string;
+  sequence: number;
+  eventType: 'CREATE' | 'STATUS' | 'MOVE';
+  fromStatus: AccountingJournalStatus | null;
+  toStatus: AccountingJournalStatus | null;
+  journalVersion: number;
+  oldPeriodId: string | null;
+  newPeriodId: string | null;
+  oldDocumentDate: string | null;
+  newDocumentDate: string | null;
+  reason: string | null;
+  occurredAt: string;
+}
 export interface AccountingLineV1 {
   accountId: string | null;
   detail4Id: string | null;
@@ -82,6 +149,7 @@ export interface AccountingJournalV1 {
   status: AccountingJournalStatus;
   number: number | null;
   makerId: string;
+  makerName?: string | null;
   approverId: string | null;
   sourceKey: string | null;
   reversalOfId: string | null;
@@ -97,6 +165,9 @@ export interface AccountingSnapshotV1 {
   details: AccountingDetailV1[];
   configurations: AccountingConfigurationV1[];
   fxRates: AccountingFxSnapshotV1[];
+  accountGroups: AccountingAccountGroupV1[];
+  detailGroups: AccountingDetailGroupV1[];
+  templates: AccountingTemplateV1[];
 }
 export interface AccountingFxSnapshotV1 {
   id: string;

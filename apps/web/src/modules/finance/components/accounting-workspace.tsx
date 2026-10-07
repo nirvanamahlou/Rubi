@@ -26,6 +26,21 @@ import {
   AccountingAutomationWorkspace,
   AccountingMappingWorkspace,
 } from './accounting-automation-workspace';
+import {
+  accountingParityByRoute,
+  accountingParityDefinitions,
+} from './accounting-parity-definitions';
+import {
+  AccountingParityWorkspace,
+  AccountingUnknownRoute,
+} from './accounting-parity-workspace';
+import {
+  AccountingChartEditor,
+  AccountingAnalyticalReport,
+  AccountingGroupingEditor,
+  AccountingMoveDrafts,
+  AccountingTemplateEditor,
+} from './accounting-parity-editors';
 
 type Field = {
   key: string;
@@ -47,6 +62,21 @@ const blankLine = (): AccountingLineV1 => ({
   rate: null,
   attributes: {},
 });
+const writableJournalLines = (lines: AccountingLineV1[]) =>
+  lines.map((line) => ({
+    ...line,
+    attributes: {
+      ...(line.attributes.descriptionEn !== undefined
+        ? { descriptionEn: line.attributes.descriptionEn }
+        : {}),
+      ...(line.attributes.trackingNumber !== undefined
+        ? { trackingNumber: line.attributes.trackingNumber }
+        : {}),
+      ...(line.attributes.trackingDate !== undefined
+        ? { trackingDate: line.attributes.trackingDate }
+        : {}),
+    },
+  }));
 const statuses: Record<string, string> = {
   DRAFT: 'پیش‌نویس',
   PENDING_APPROVAL: 'منتظر تأیید',
@@ -54,32 +84,21 @@ const statuses: Record<string, string> = {
   POSTED: 'قطعی',
   CANCELLED: 'لغوشده',
 };
-const sections = [
+const internalSections: readonly (readonly [string, string])[] = [
   ['general-ledger/base-information/approval-policies', 'قواعد تأیید اسناد'],
-  ['general-ledger/documents/numbering', 'شماره‌گذاری اسناد'],
-  ['general-ledger/documents/automatic-runs', 'صدور از عملیات ERP'],
   ['general-ledger/base-information/fx-rates', 'نرخ‌های ارز مصوب'],
-  ['general-ledger/base-information/fiscal-years', 'دوره‌های مالی'],
-  ['general-ledger/base-information/ledgers', 'دفاتر و تخصیص سال'],
-  ['general-ledger/base-information/voucher-types', 'انواع سند'],
-  ['general-ledger/accounts/chart', 'درخت حساب‌ها'],
-  ['general-ledger/accounts/detail-types', 'انواع تفصیلی'],
-  ['general-ledger/accounts/details', 'حساب‌های تفصیلی'],
-  ['general-ledger/accounts/mappings', 'نگاشت حساب‌ها'],
-  ['general-ledger/documents/journals', 'سند حسابداری'],
+  ['general-ledger/documents/allocation-templates', 'الگوهای تخصیص داخلی'],
   ['general-ledger/documents/list', 'فهرست اسناد'],
-  ['general-ledger/documents/posting', 'تأیید و ثبت قطعی'],
-  ['general-ledger/documents/automatic-templates', 'الگوهای تخصیص'],
-  ['general-ledger/documents/revaluation', 'تسعیر ارز'],
   ['general-ledger/documents/transfer-batches', 'بسته انتقال حسابداری'],
-  ['taxpayer-system/settings', 'تنظیمات مودیان'],
-  ['taxpayer-system/invoices', 'صورتحساب مالیاتی'],
-  ['tax-accounting/returns', 'گزارش مالیاتی'],
   ['general-ledger/reports/catalog', 'فهرست گزارش‌ها'],
-  ['general-ledger/year-end', 'بستن دوره'],
-  ['general-ledger/reports/trial-balance', 'تراز حساب‌ها'],
-  ['general-ledger/reports/account-browser', 'گردش حساب'],
+  ['receipts-payments/reports', 'گزارش پرداخت و دریافت'],
 ] as const;
+const sections: readonly (readonly [string, string])[] = [
+  ...accountingParityDefinitions.map(
+    (definition) => [definition.route, definition.title] as const,
+  ),
+  ...internalSections,
+];
 function FieldControl({
   field,
   value,
@@ -297,13 +316,21 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         'general-ledger/base-information',
         'general-ledger/accounts',
         'general-ledger/documents',
+        'general-ledger/year-end',
         'general-ledger/reports',
+        'receipts-payments',
+        'receipts-payments/base-information',
+        'taxpayer-system',
+        'taxpayer-system/lists',
+        'tax-accounting',
+        'tax-accounting/base-information',
+        'tax-accounting/vat',
       ].includes(section));
   const title = sections.find(([r]) => r === section)?.[1] ?? 'حسابداری';
   const fields: Field[] = [
     { key: 'code', label: 'کد' },
     { key: 'title', label: 'عنوان' },
-    { key: 'titleEn', label: 'عنوان زبان دوم' },
+    { key: 'titleEn', label: 'عنوان به زبان دوم' },
     { key: 'description', label: 'توضیحات', kind: 'area' },
     { key: 'active', label: 'فعال', kind: 'check' },
   ];
@@ -506,15 +533,15 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
     );
   } else if (
     snapshot &&
-    (section === 'receipts-payments/reports' ||
-      section === 'general-ledger/documents/automatic-runs')
+    section === 'receipts-payments/reports'
   )
     content = (
       <AccountingSourceWorkspace book={snapshot} run={run} busy={busy} />
     );
   else if (
     snapshot &&
-    (section.endsWith('/automatic-templates') || section.endsWith('/numbering'))
+    (section.endsWith('/allocation-templates') ||
+      section.endsWith('/numbering'))
   )
     content = (
       <AccountingAutomationWorkspace
@@ -528,7 +555,78 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
     content = (
       <AccountingMappingWorkspace book={snapshot} run={run} busy={busy} />
     );
-  else if (home)
+  else if (snapshot && section === 'general-ledger/accounts/chart')
+    content = <AccountingChartEditor book={snapshot} run={run} busy={busy} />;
+  else if (
+    snapshot &&
+    [
+      'general-ledger/accounts/account-groups',
+      'general-ledger/accounts/detail-groups',
+    ].includes(section)
+  )
+    content = (
+      <AccountingGroupingEditor
+        book={snapshot}
+        run={run}
+        busy={busy}
+        kind={section.endsWith('/detail-groups') ? 'detail' : 'account'}
+      />
+    );
+  else if (
+    snapshot &&
+    accountingParityByRoute.get(section)?.implementation === 'template-list'
+  ) {
+    const templateKind = section.includes('revaluation')
+      ? 'REVALUATION'
+      : section.includes('closing')
+        ? 'CLOSING'
+        : 'AUTOMATIC';
+    content = (
+      <AccountingTemplateEditor
+        book={snapshot}
+        run={run}
+        busy={busy}
+        kind={templateKind}
+        readOnly={section.includes('/lists/')}
+      />
+    );
+  } else if (
+    snapshot &&
+    accountingParityByRoute.get(section)?.implementation === 'move-drafts'
+  ) {
+    content = <AccountingMoveDrafts book={snapshot} run={run} busy={busy} />;
+  } else if (
+    snapshot &&
+    section === 'general-ledger/base-information/lists/ledgers'
+  ) {
+    content = (
+      <Panel title={title}>
+        <p className="text-sm text-muted-foreground">
+          وجود این فهرست در منوی منبع تأیید شده است؛ ستون‌های منبع مشاهده
+          نشده‌اند. داده‌های دفترهای قابل دسترس روبی در ادامه نمایش داده
+          می‌شوند.
+        </p>
+        <Table headers={['کد', 'عنوان', 'ارز پایه', 'وضعیت', 'عملیات']}>
+          {books.map((book) => (
+            <tr key={book.id}>
+              <td className={cell}>{book.code}</td>
+              <td className={cell}>{book.title}</td>
+              <td className={cell}>{book.baseCurrency}</td>
+              <td className={cell}>{book.active ? 'فعال' : 'غیرفعال'}</td>
+              <td className={cell}>
+                <Link
+                  className="inline-flex min-h-9 items-center rounded-lg border px-3 text-sm font-bold text-primary"
+                  href={`/finance/accounting/general-ledger/base-information/ledgers?bookId=${book.id}`}
+                >
+                  بازکردن فرم
+                </Link>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      </Panel>
+    );
+  } else if (home)
     content = (
       <Panel title={title}>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -550,13 +648,26 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
     snapshot &&
     (section.includes('/documents/journals') ||
       section.includes('/documents/list') ||
-      section.endsWith('/documents/posting'))
+      accountingParityByRoute.get(section)?.implementation === 'journal-list' ||
+      section.endsWith('/documents/review') ||
+      section.endsWith('/documents/posting') ||
+      section.endsWith('/documents/deleted'))
   )
     content = (
       <JournalWorkspace
         key={bookId + section}
         book={snapshot}
-        mode={section.endsWith('journals') ? 'edit' : 'list'}
+        mode={
+          section.endsWith('/journals')
+            ? 'edit'
+            : section.endsWith('/review')
+              ? 'review'
+              : section.endsWith('/posting')
+                ? 'posting'
+                : section.endsWith('/deleted')
+                  ? 'deleted'
+                  : 'list'
+        }
         busy={busy}
         run={run}
         can={can}
@@ -566,8 +677,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
     snapshot &&
     (section.endsWith('/revaluation') ||
       section.endsWith('/transfer-batches') ||
-      section.startsWith('taxpayer-system/') ||
-      section.startsWith('tax-accounting/'))
+      section === 'taxpayer-system/settings')
   )
     content = (
       <AccountingAdvancedWorkspace
@@ -604,7 +714,29 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         </p>
       </Panel>
     );
-  else if (snapshot && section.includes('/reports'))
+  else if (
+    snapshot &&
+    accountingParityByRoute.get(section)?.implementation === 'analytical-report'
+  )
+    content = (
+      <AccountingAnalyticalReport
+        book={snapshot}
+        kind={
+          section.endsWith('/dormant-accounts')
+            ? 'dormant'
+            : section.endsWith('/nature-conflict-period')
+              ? 'nature-conflict-period'
+              : section.endsWith('/nature-conflict-range')
+                ? 'nature-conflict-running'
+                : 'comparative'
+        }
+      />
+    );
+  else if (
+    snapshot &&
+    (section === 'general-ledger/reports/trial-balance' ||
+      section === 'general-ledger/reports/account-browser')
+  )
     content = (
       <AccountingReportWorkspace
         key={bookId + section}
@@ -612,12 +744,23 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         turnoverMode={section.endsWith('/account-browser')}
       />
     );
-  else if (snapshot && section === 'general-ledger/year-end')
+  else if (
+    snapshot &&
+    [
+      'general-ledger/year-end/closing',
+      'general-ledger/year-end/opening',
+    ].includes(section)
+  )
     content = (
-      <AccountingYearEndWorkspace book={snapshot} run={run} busy={busy} />
+      <AccountingYearEndWorkspace
+        book={snapshot}
+        run={run}
+        busy={busy}
+        mode={section.endsWith('/opening') ? 'opening' : 'closing'}
+      />
     );
   else if (snapshot) {
-    const chart = section.endsWith('/chart'),
+    const chart = false,
       details = section.endsWith('/details');
     const kind = section.endsWith('approval-policies')
       ? 'approval-policies'
@@ -633,17 +776,28 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                 ? 'allocation-templates'
                 : null;
     if (kind || chart || details) {
+      const listOnly =
+        accountingParityByRoute.get(section)?.implementation ===
+        'configuration-list';
       const rows = chart
         ? snapshot.accounts
         : details
           ? snapshot.details
           : snapshot.configurations.filter((c) => c.kind === kind);
+      const recordFields =
+        kind === 'fiscal-years' ||
+        kind === 'voucher-types' ||
+        kind === 'detail-types'
+          ? fields.filter(
+              (field) =>
+                field.key !== 'code' &&
+                field.key !== 'active' &&
+                field.key !== 'description',
+            )
+          : fields.filter((field) => field.key !== 'description');
       const attrFields: Field[] =
         kind === 'fiscal-years'
-          ? [
-              { key: 'startDate', label: 'شروع سال مالی', kind: 'date' },
-              { key: 'endDate', label: 'پایان سال مالی', kind: 'date' },
-            ]
+          ? []
           : kind === 'approval-policies'
             ? [
                 { key: 'currency', label: 'ارز پایه دفتر' },
@@ -780,7 +934,12 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
               { key: 'currency', label: 'ارز پیش‌فرض' },
             ]
           : [];
-      const save = () => {
+      const listRoute = accountingParityDefinitions.find(
+        (definition) =>
+          definition.implementation === 'configuration-list' &&
+          definition.route.replace('/lists/', '/') === section,
+      )?.route;
+      const save = (after: 'stay' | 'new' | 'close' = 'stay') => {
         const attrs: AccountingAttributes = {};
         for (const f of attrFields) attrs[f.key] = draft[f.key] ?? '';
         return run(
@@ -798,40 +957,85 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
           editing?.version,
         ).then((result) => {
           if (result) {
-            setDraft({ active: true, permanent: true });
-            setEditing(null);
+            if (after === 'stay') {
+              const saved = result as { id: string; version: number };
+              setEditing({ id: saved.id, version: saved.version });
+            } else {
+              setDraft({ active: true, permanent: true });
+              setEditing(null);
+              if (after === 'close' && listRoute)
+                router.push(
+                  `/finance/accounting/${listRoute}?bookId=${bookId}`,
+                );
+            }
           }
         });
       };
       content = (
         <Panel title={title}>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void save();
-            }}
-          >
-            <Fields fields={[...fields, ...specific]} draft={draft} set={set} />
-            {attrFields.length ? (
+          {!listOnly ? (
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void save('stay');
+              }}
+            >
+              <Fields
+                fields={[...recordFields, ...specific]}
+                draft={draft}
+                set={set}
+              />
               <details className="rounded-xl border p-4">
                 <summary className="cursor-pointer font-bold">
-                  قواعد و اطلاعات تکمیلی
+                  یادداشت‌ها
                 </summary>
                 <div className="pt-4">
-                  <Fields fields={attrFields} draft={draft} set={set} />
+                  <FieldControl
+                    field={{
+                      key: 'description',
+                      label: 'یادداشت',
+                      kind: 'area',
+                    }}
+                    value={draft.description ?? ''}
+                    onChange={(value) => set('description', value)}
+                  />
                 </div>
               </details>
-            ) : null}
-            <div className="flex gap-2">
-              <Button
-                permission="finance.account.manage"
-                disabled={busy}
-                type="submit"
-              >
-                {editing ? 'ذخیره تغییرات' : 'ثبت جدید'}
-              </Button>
-              {editing ? (
+              {attrFields.length ? (
+                <details className="rounded-xl border p-4">
+                  <summary className="cursor-pointer font-bold">
+                    تنظیمات عملیاتی روبی
+                  </summary>
+                  <div className="pt-4">
+                    <Fields fields={attrFields} draft={draft} set={set} />
+                  </div>
+                </details>
+              ) : null}
+              <div className="flex gap-2">
+                <Button
+                  permission="finance.account.manage"
+                  disabled={busy}
+                  type="submit"
+                >
+                  ذخیره
+                </Button>
+                <Button
+                  variant="outline"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void save('new')}
+                >
+                  ذخیره و جدید
+                </Button>
+                <Button
+                  variant="outline"
+                  type="button"
+                  disabled={busy || !listRoute}
+                  onClick={() => void save('close')}
+                >
+                  ذخیره و بستن
+                </Button>
                 <Button
                   variant="outline"
                   type="button"
@@ -840,11 +1044,24 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                     setDraft({ active: true, permanent: true });
                   }}
                 >
-                  لغو ویرایش
+                  جدید
                 </Button>
-              ) : null}
-            </div>
-          </form>
+                <Button
+                  variant="outline"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void refresh()}
+                >
+                  بارگذاری مجدد
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              این مسیر فهرست مستقل منبع است؛ برای ثبت یا تغییر، فرم تعریف همان
+              قلم را باز کنید.
+            </p>
+          )}
           <Table headers={['کد', 'عنوان', 'وضعیت', 'عملیات']}>
             {rows.map((r) => (
               <tr key={r.id}>
@@ -852,44 +1069,53 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                 <td className={cell}>{r.title}</td>
                 <td className={cell}>{r.active ? 'فعال' : 'غیرفعال'}</td>
                 <td className={cell}>
-                  <Button
-                    permission="finance.account.manage"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      const base: Draft = {};
-                      for (const [k, value] of Object.entries(r))
-                        if (
-                          typeof value === 'string' ||
-                          typeof value === 'boolean'
-                        )
-                          base[k] = value;
-                      for (const [k, value] of Object.entries(r.attributes))
-                        if (
-                          typeof value === 'string' ||
-                          typeof value === 'boolean'
-                        )
-                          base[k] = value;
-                      setDraft(base);
-                      setEditing({ id: r.id, version: r.version });
-                    }}
-                  >
-                    ویرایش
-                  </Button>
+                  {listOnly ? (
+                    <Link
+                      className="inline-flex min-h-9 items-center rounded-lg border px-3 text-sm font-bold text-primary"
+                      href={`/finance/accounting/${section.replace('/lists/', '/')}?bookId=${bookId}`}
+                    >
+                      بازکردن فرم
+                    </Link>
+                  ) : (
+                    <Button
+                      permission="finance.account.manage"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const base: Draft = {};
+                        for (const [k, value] of Object.entries(r))
+                          if (
+                            typeof value === 'string' ||
+                            typeof value === 'boolean'
+                          )
+                            base[k] = value;
+                        for (const [k, value] of Object.entries(r.attributes))
+                          if (
+                            typeof value === 'string' ||
+                            typeof value === 'boolean'
+                          )
+                            base[k] = value;
+                        setDraft(base);
+                        setEditing({ id: r.id, version: r.version });
+                      }}
+                    >
+                      ویرایش
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
           </Table>
         </Panel>
       );
-    } else
-      content = (
-        <Panel title={title}>
-          <p>
-            این عملیات برای اتصال تأییدشده و قواعد نسخه‌دار آماده‌سازی می‌شود.
-          </p>
-        </Panel>
+    } else {
+      const definition = accountingParityByRoute.get(section);
+      content = definition ? (
+        <AccountingParityWorkspace definition={definition} />
+      ) : (
+        <AccountingUnknownRoute route={section} />
       );
+    }
   }
   return (
     <div className="space-y-5">
@@ -953,6 +1179,7 @@ type Run = <T = unknown>(
   payload: Record<string, unknown>,
   version?: number,
 ) => Promise<T | undefined>;
+type JournalMode = 'edit' | 'list' | 'review' | 'posting' | 'deleted';
 function JournalWorkspace({
   book,
   mode,
@@ -961,7 +1188,7 @@ function JournalWorkspace({
   can,
 }: {
   book: AccountingSnapshotV1;
-  mode: 'edit' | 'list';
+  mode: JournalMode;
   busy: boolean;
   run: Run;
   can: (p: string) => boolean;
@@ -974,9 +1201,17 @@ function JournalWorkspace({
       blankLine(),
     ]);
   const linkedId = useSearchParams().get('journalId') ?? '';
+  const fixedStatus =
+    mode === 'review'
+      ? 'PENDING_APPROVAL'
+      : mode === 'posting'
+        ? 'APPROVED'
+        : mode === 'deleted'
+          ? 'CANCELLED'
+          : '';
   const [page, setPage] = useState(1),
     [search, setSearch] = useState(''),
-    [status, setStatus] = useState('');
+    [status, setStatus] = useState(fixedStatus);
   const journalQuery = useQuery({
     queryKey: [
       'accounting',
@@ -998,6 +1233,11 @@ function JournalWorkspace({
   const items = journalQuery.data?.items ?? [],
     total = journalQuery.data?.total ?? 0,
     failure = journalQuery.error?.message ?? '';
+  const eventQuery = useQuery({
+    queryKey: ['accounting', 'journal-events', book.book.id, journal?.id],
+    queryFn: () => accountingApi.journalEvents(book.book.id, journal!.id),
+    enabled: mode === 'deleted' && Boolean(journal),
+  });
   const load = () => journalQuery.refetch();
   const open = (j: AccountingJournalV1) => {
     setJournal(j);
@@ -1007,6 +1247,8 @@ function JournalWorkspace({
       documentDate: j.documentDate ?? '',
       description: j.description,
       reference: j.reference ?? '',
+      auxiliaryNumber: String(j.attributes.auxiliaryNumber ?? ''),
+      descriptionEn: String(j.attributes.descriptionEn ?? ''),
     });
     setLines(j.lines);
   };
@@ -1016,9 +1258,15 @@ function JournalWorkspace({
     if (!journal) return;
     let current = journal;
     if (name === 'submit') {
+      const { auxiliaryNumber, descriptionEn, ...header } = head;
       const saved = await run<AccountingJournalV1>(
         'journal-save',
-        { ...head, lines, id: journal.id },
+        {
+          ...header,
+          attributes: { auxiliaryNumber, descriptionEn },
+          lines: writableJournalLines(lines),
+          id: journal.id,
+        },
         journal.version,
       );
       if (!saved) return;
@@ -1036,9 +1284,15 @@ function JournalWorkspace({
     }
   };
   const save = async () => {
+    const { auxiliaryNumber, descriptionEn, ...header } = head;
     const result = await run<AccountingJournalV1>(
       'journal-save',
-      { ...head, lines, ...(journal ? { id: journal.id } : {}) },
+      {
+        ...header,
+        attributes: { auxiliaryNumber, descriptionEn },
+        lines: writableJournalLines(lines),
+        ...(journal ? { id: journal.id } : {}),
+      },
       journal?.version,
     );
     if (result) {
@@ -1064,7 +1318,19 @@ function JournalWorkspace({
     />
   );
   return (
-    <Panel title="اسناد حسابداری">
+    <Panel
+      title={
+        mode === 'review'
+          ? 'بررسی اسناد'
+          : mode === 'posting'
+            ? 'قطعی کردن اسناد'
+            : mode === 'deleted'
+              ? 'اسناد حذف‌شده'
+              : mode === 'edit'
+                ? 'صدور سند حسابداری'
+                : 'فهرست اسناد حسابداری'
+      }
+    >
       {failure ? (
         <p role="alert" className="text-destructive">
           {failure}
@@ -1081,37 +1347,81 @@ function JournalWorkspace({
           }}
           className="max-w-sm"
         />
-        <SearchCombobox
-          label="وضعیت سند"
-          value={status}
-          onValueChange={(value) => {
-            setStatus(value);
-            setPage(1);
-          }}
-          options={Object.entries(statuses).map(([value, label]) => ({
-            value,
-            label,
-          }))}
-        />
-        <Button
-          permission="finance.journal.create"
-          variant="outline"
-          onClick={() => {
-            setJournal(null);
-            setHead({});
-            setLines([blankLine(), blankLine()]);
-          }}
-        >
-          سند جدید
-        </Button>
+        {fixedStatus ? (
+          <p className="rounded-xl border bg-muted/30 px-4 py-2 text-sm">
+            وضعیت فهرست: {statuses[fixedStatus]}
+          </p>
+        ) : (
+          <SearchCombobox
+            label="وضعیت سند"
+            value={status}
+            onValueChange={(value) => {
+              setStatus(value);
+              setPage(1);
+            }}
+            options={Object.entries(statuses).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+          />
+        )}
+        {mode === 'edit' || mode === 'list' ? (
+          <Button
+            permission="finance.journal.create"
+            variant="outline"
+            onClick={() => {
+              setJournal(null);
+              setHead({});
+              setLines([blankLine(), blankLine()]);
+            }}
+          >
+            سند جدید
+          </Button>
+        ) : null}
       </div>
-      <Table headers={['شماره', 'تاریخ', 'شرح', 'وضعیت', 'عملیات']}>
+      <p className="text-xs text-muted-foreground">
+        شماره روزانه در روبی هنوز قرارداد مستقل ندارد و با خط تیره نمایش داده
+        می‌شود. پیوست‌ها پس از بازکردن سند از مخزن اسناد خوانده می‌شوند.
+      </p>
+      <Table
+        headers={[
+          'شماره سند',
+          'تاریخ',
+          'وضعیت',
+          'نوع سند',
+          'شرح',
+          'شماره عطف',
+          'شماره فرعی',
+          'شماره روزانه',
+          'مبلغ سند',
+          'صادرکننده',
+          'پیوست',
+          'عملیات',
+        ]}
+      >
         {items.map((j) => (
           <tr key={j.id}>
             <td className={cell}>{j.number ?? '—'}</td>
             <td className={cell}>{j.documentDate ?? '—'}</td>
-            <td className={cell}>{j.description || 'بدون شرح'}</td>
             <td className={cell}>{statuses[j.status]}</td>
+            <td className={cell}>
+              {book.configurations.find((item) => item.id === j.typeId)
+                ?.title ?? '—'}
+            </td>
+            <td className={cell}>{j.description || 'بدون شرح'}</td>
+            <td className={cell}>{j.reference ?? '—'}</td>
+            <td className={cell}>
+              {String(j.attributes.auxiliaryNumber ?? '—')}
+            </td>
+            <td className={cell}>—</td>
+            <td className={cell} dir="ltr">
+              {journalDisplayTotals(j.lines).valid
+                ? journalDisplayTotals(j.lines).debit
+                : '—'}{' '}
+              {book.book.baseCurrency}
+            </td>
+            <td className={cell}>{j.makerName || 'نام در دسترس نیست'}</td>
+            <td className={cell}>پس از مشاهده</td>
             <td className={cell}>
               <Button size="sm" variant="outline" onClick={() => open(j)}>
                 مشاهده
@@ -1139,6 +1449,24 @@ function JournalWorkspace({
           بعدی
         </Button>
       </div>
+      {mode === 'deleted' && journal ? (
+        <section className="space-y-3 rounded-xl border p-4">
+          <h3 className="font-bold">سابقه لغو و بازیابی</h3>
+          {eventQuery.data?.historicalGap ? (
+            <p className="text-sm text-muted-foreground">
+              این سند پیش از فعال‌شدن ثبت رویداد لغو شده است؛ عامل و زمان لغو
+              تاریخی در دسترس نیست.
+            </p>
+          ) : null}
+          {eventQuery.data?.events.map((event) => (
+            <p className="text-sm" key={event.id}>
+              {event.fromStatus ?? 'ایجاد'} ← {event.toStatus ?? '—'} ·{' '}
+              {event.actorName ?? 'نام در دسترس نیست'} · {event.occurredAt}
+              {event.reason ? ` · ${event.reason}` : ''}
+            </p>
+          ))}
+        </section>
+      ) : null}
       {mode === 'edit' || journal ? (
         <form
           className="space-y-5 rounded-2xl border border-border p-4"
@@ -1176,7 +1504,9 @@ function JournalWorkspace({
               },
               { key: 'documentDate', label: 'تاریخ سند', kind: 'date' },
               { key: 'reference', label: 'شماره عطف' },
+              { key: 'auxiliaryNumber', label: 'شماره فرعی' },
               { key: 'description', label: 'شرح سند', kind: 'area' },
+              { key: 'descriptionEn', label: 'شرح به زبان دوم' },
             ]}
             draft={head}
             disabled={readonly}
@@ -1341,6 +1671,21 @@ function JournalWorkspace({
                           }
                         />
                       </FormField>
+                      <FormField label="شرح ردیف به زبان دوم">
+                        <Input
+                          aria-label="شرح ردیف به زبان دوم"
+                          disabled={readonly}
+                          value={String(row.attributes.descriptionEn ?? '')}
+                          onChange={(event) =>
+                            update({
+                              attributes: {
+                                ...row.attributes,
+                                descriptionEn: event.target.value,
+                              },
+                            })
+                          }
+                        />
+                      </FormField>
                     </div>
                   </details>
                 </div>
@@ -1368,7 +1713,8 @@ function JournalWorkspace({
             {journal &&
             ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(
               journal.status,
-            ) ? (
+            ) &&
+            (mode === 'edit' || mode === 'list') ? (
               <Button
                 permission="finance.journal.create"
                 type="button"
@@ -1381,7 +1727,8 @@ function JournalWorkspace({
                 لغو سند
               </Button>
             ) : null}
-            {journal?.status === 'CANCELLED' ? (
+            {journal?.status === 'CANCELLED' &&
+            (mode === 'deleted' || mode === 'list') ? (
               <Button
                 permission="finance.journal.create"
                 type="button"
@@ -1391,7 +1738,7 @@ function JournalWorkspace({
                 بازیابی پیش‌نویس
               </Button>
             ) : null}
-            {!readonly ? (
+            {!readonly && (mode === 'edit' || mode === 'list') ? (
               <>
                 <Button
                   type="button"
@@ -1409,7 +1756,8 @@ function JournalWorkspace({
                 </Button>
               </>
             ) : null}
-            {journal?.status === 'DRAFT' ? (
+            {journal?.status === 'DRAFT' &&
+            (mode === 'edit' || mode === 'list') ? (
               <Button
                 type="button"
                 permission="finance.journal.create"
@@ -1419,7 +1767,8 @@ function JournalWorkspace({
                 ارسال برای تأیید
               </Button>
             ) : null}
-            {journal?.status === 'PENDING_APPROVAL' ? (
+            {journal?.status === 'PENDING_APPROVAL' &&
+            (mode === 'review' || mode === 'list') ? (
               <Button
                 type="button"
                 permission="finance.journal.approve"
@@ -1429,7 +1778,8 @@ function JournalWorkspace({
                 تأیید سند
               </Button>
             ) : null}
-            {journal?.status === 'APPROVED' ? (
+            {journal?.status === 'APPROVED' &&
+            (mode === 'posting' || mode === 'list') ? (
               <Button
                 type="button"
                 permission="finance.journal.post"
@@ -1441,6 +1791,7 @@ function JournalWorkspace({
             ) : null}
             {journal &&
             ['PENDING_APPROVAL', 'APPROVED'].includes(journal.status) &&
+            (mode === 'review' || mode === 'posting' || mode === 'list') &&
             can('finance.journal.create') ? (
               <Button
                 type="button"

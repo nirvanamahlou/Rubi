@@ -28,6 +28,19 @@ export const accountingApi = {
       page: number;
       pageSize: number;
     }>(`${base}/${id}/journals?${new URLSearchParams(query)}`),
+  journalEvents: (id: string, journalId: string) =>
+    apiRequest<{
+      historicalGap: boolean;
+      events: {
+        id: string;
+        eventType: 'CREATE' | 'STATUS' | 'MOVE';
+        fromStatus: string | null;
+        toStatus: string | null;
+        actorName: string | null;
+        reason: string | null;
+        occurredAt: string;
+      }[];
+    }>(`${base}/${id}/journals/${journalId}/events`),
   command: <T = unknown>(
     id: string,
     action: string,
@@ -40,5 +53,13 @@ export const accountingApi = {
   report: (id: string, query: Record<string, string>) =>
     apiRequest<AccountingReportV1>(
       `${base}/${id}/reports/trial-balance?${new URLSearchParams(query)}`,
+    ),
+  analytical: <T = unknown>(
+    id: string,
+    kind: string,
+    query: Record<string, string>,
+  ) =>
+    apiRequest<T>(
+      `${base}/${id}/reports/analytical/${kind}?${new URLSearchParams(query)}`,
     ),
 };

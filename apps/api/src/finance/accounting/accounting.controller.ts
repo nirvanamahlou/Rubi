@@ -108,6 +108,25 @@ export class AccountingController {
   ) {
     return this.accounting.turnover(id, query, request.actor);
   }
+  @Get('books/:bookId/reports/analytical/:kind')
+  @Header('Cache-Control', 'private, no-store')
+  analytical(
+    @Param('bookId') id: string,
+    @Param('kind') kind: string,
+    @Query() query: Record<string, string>,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.analyticalReport(id, kind, query, request.actor);
+  }
+  @Get('books/:bookId/journals/:journalId/events')
+  @Header('Cache-Control', 'private, no-store')
+  journalEvents(
+    @Param('bookId') id: string,
+    @Param('journalId') journalId: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.accounting.journalEvents(id, journalId, request.actor);
+  }
   @Get('books/:bookId/sources')
   @Header('Cache-Control', 'private, no-store')
   sources(

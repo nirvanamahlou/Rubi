@@ -18,9 +18,11 @@ export function AccountingYearEndWorkspace({
   book,
   run,
   busy,
+  mode,
 }: {
   book: AccountingSnapshotV1;
   busy: boolean;
+  mode: 'closing' | 'opening';
   run: <T = unknown>(
     action: string,
     payload: AccountingCommandV1['payload'],
@@ -55,7 +57,9 @@ export function AccountingYearEndWorkspace({
   };
   return (
     <section className="space-y-5">
-      <h2 className="text-lg font-black">عملیات پایان دوره</h2>
+      <h2 className="text-lg font-black">
+        {mode === 'opening' ? 'صدور سند افتتاحیه' : 'صدور سند بستن حساب‌ها'}
+      </h2>
       <p className="text-sm text-muted-foreground">
         افتتاحیه و بستن ارزی، مقادیر و ارزش تاریخی هر نرخ مصوب را از اسناد قطعی
         مبدأ حفظ می‌کند؛ تغییر نرخ با تسعیر جداگانه انجام می‌شود.
@@ -63,9 +67,15 @@ export function AccountingYearEndWorkspace({
       <ol className="grid gap-3 text-sm sm:grid-cols-4">
         {[
           '۱. کنترل اسناد و مانده‌ها',
-          '۲. بستن حساب‌های موقت',
-          '۳. بستن دوره مبدأ',
-          '۴. افتتاحیه دوره بعد',
+          mode === 'opening'
+            ? '۲. کنترل بسته‌بودن دوره مبدأ'
+            : '۲. بستن حساب‌های موقت',
+          mode === 'opening'
+            ? '۳. انتقال مانده‌های دائمی'
+            : '۳. بستن دوره مبدأ',
+          mode === 'opening'
+            ? '۴. ایجاد پیش‌نویس افتتاحیه'
+            : '۴. تأیید و ثبت از فهرست اسناد',
         ].map((t) => (
           <li key={t} className="rounded-xl border bg-muted/30 p-3">
             {t}
@@ -169,46 +179,55 @@ export function AccountingYearEndWorkspace({
             </table>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              permission="finance.period.close"
-              disabled={
-                busy || preflight.unfinished > 0 || period?.status !== 'OPEN'
-              }
-              onClick={() => void generate(false)}
-            >
-              ایجاد سند بستن موقت‌ها
-            </Button>
-            <Button
-              permission="finance.period.close"
-              variant="outline"
-              disabled={
-                busy || preflight.unfinished > 0 || period?.status !== 'OPEN'
-              }
-              onClick={() => {
-                if (
-                  period &&
-                  window.confirm(
-                    'دوره بسته شود؟ ثبت سند جدید در این دوره متوقف خواهد شد.',
-                  )
-                )
-                  void run(
-                    'close-period',
-                    { id: period.id },
-                    period.version,
-                  ).then((r) => {
-                    if (r) setPreflight(null);
-                  });
-              }}
-            >
-              بستن دوره
-            </Button>
-            <Button
-              permission="finance.period.close"
-              disabled={busy || period?.status !== 'CLOSED'}
-              onClick={() => void generate(true)}
-            >
-              ایجاد سند افتتاحیه
-            </Button>
+            {mode === 'closing' ? (
+              <>
+                <Button
+                  permission="finance.period.close"
+                  disabled={
+                    busy ||
+                    preflight.unfinished > 0 ||
+                    period?.status !== 'OPEN'
+                  }
+                  onClick={() => void generate(false)}
+                >
+                  ایجاد سند بستن موقت‌ها
+                </Button>
+                <Button
+                  permission="finance.period.close"
+                  variant="outline"
+                  disabled={
+                    busy ||
+                    preflight.unfinished > 0 ||
+                    period?.status !== 'OPEN'
+                  }
+                  onClick={() => {
+                    if (
+                      period &&
+                      window.confirm(
+                        'دوره بسته شود؟ ثبت سند جدید در این دوره متوقف خواهد شد.',
+                      )
+                    )
+                      void run(
+                        'close-period',
+                        { id: period.id },
+                        period.version,
+                      ).then((r) => {
+                        if (r) setPreflight(null);
+                      });
+                  }}
+                >
+                  بستن دوره
+                </Button>
+              </>
+            ) : (
+              <Button
+                permission="finance.period.close"
+                disabled={busy || period?.status !== 'CLOSED'}
+                onClick={() => void generate(true)}
+              >
+                ایجاد سند افتتاحیه
+              </Button>
+            )}
           </div>
         </>
       ) : null}
