@@ -1,6 +1,8 @@
-## MARKETING-LEADS-SECTION-1007 — PC-B — IN_PROGRESS
+## MARKETING-LEADS-SECTION-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-marketing-leads-section-1007 from origin/develop@1284c0b6. Reserve Marketing section registry, workspace icon map, reference-page routing and focused tests; bounded navigation breadcrumb test, additive English labels/derived catalogues and own status docs. Separate lead list and scoring from audiences into a standalone Marketing hub card/section, preserving persisted data, APIs, permissions and existing controls. Earlier Marketing candidate source locks released; no active overlapping target lock. No schema/migration/dependency/runtime change. User explicitly authorizes push and develop merge after exact-head checks.
+
+Verification: 148 Marketing/navigation/localization tests and scoped ESLint passed. Bounded locks release with this review candidate; clean exact-head CI must pass before merge. No authenticated browser or local runtime update claimed.
 
 ## PURCHASE-FILTERS-DATES-1007 — PC-A — READY_FOR_REVIEW
 

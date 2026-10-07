@@ -17,6 +17,34 @@ it('removes customer journeys from cards and legacy section routing', () => {
   expect(workspaceSource).not.toContain('و سفر مشتری');
 });
 
+it('gives leads and scoring their own hub section, separate from audiences', () => {
+  expect(
+    marketingSections.find((section) => section.key === 'leads')?.title,
+  ).toBe('لیدها');
+  expect(marketingSectionTabs.leads.map(([key]) => key)).toEqual([
+    'leads',
+    'scoring',
+  ]);
+  expect(marketingSectionTabs.audiences.map(([key]) => key)).toEqual([
+    'segments',
+    'campaign-audience',
+    'sources',
+  ]);
+  expect(workspaceSource).toContain('leads: Target');
+  expect(referencePagesSource).toContain(
+    "section === 'leads' && key === 'leads'",
+  );
+  expect(referencePagesSource).toContain(
+    "section === 'leads' && key === 'scoring'",
+  );
+  expect(referencePagesSource).not.toContain(
+    "section === 'audiences' && key === 'leads'",
+  );
+  expect(referencePagesSource).not.toContain(
+    "section === 'audiences' && key === 'scoring'",
+  );
+});
+
 const workspaceSource = readFileSync(
   join(
     process.cwd(),
