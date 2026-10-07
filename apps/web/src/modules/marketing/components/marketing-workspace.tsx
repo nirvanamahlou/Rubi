@@ -957,7 +957,7 @@ export function MarketingWorkspace({
       <PageHeader
         description={
           selectedSection?.description ??
-          'مدیریت یکپارچه کمپین، مخاطب، محتوا، پیشنهاد و سفر مشتری'
+          'مدیریت یکپارچه کمپین، مخاطب، محتوا و پیشنهاد'
         }
         title={selectedSection?.title ?? 'مرکز مارکتینگ'}
       />

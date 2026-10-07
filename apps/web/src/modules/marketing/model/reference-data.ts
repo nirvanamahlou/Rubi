@@ -84,13 +84,6 @@ export const marketingSections: readonly MarketingSectionDefinition[] = [
     highlights: ['کد تخفیف', 'پیشنهاد ویژه', 'استفاده'],
     tone: 'rose',
   },
-  {
-    key: 'journeys',
-    title: 'سفر مشتری',
-    description: 'ساخت سفر، اتوماسیون و سناریوهای آماده',
-    highlights: ['سفر', 'اتوماسیون', 'سناریو'],
-    tone: 'violet',
-  },
 ] as const;
 
 export const marketingSectionTabs = {
