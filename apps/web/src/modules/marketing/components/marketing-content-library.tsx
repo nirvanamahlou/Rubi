@@ -106,6 +106,13 @@ export function MarketingContentLibrary({
   };
   const submit = async () => {
     if (!editor || busy) return;
+    if (
+      editor.mode === 'delete' &&
+      (value.trim().length < 5 || value.trim().length > 500)
+    ) {
+      setMutationError('دلیل حذف باید بین ۵ تا ۵۰۰ نویسه باشد.');
+      return;
+    }
     setBusy(true);
     setMutationError('');
     try {
@@ -115,6 +122,10 @@ export function MarketingContentLibrary({
           reason: value.trim(),
           version: item.version,
         });
+        setItems((current) =>
+          current.filter((record) => record.id !== item.id),
+        );
+        setPage(1);
       } else {
         const { data } = await documentsApi.detail(item.id);
         if (data.version !== item.version)
@@ -248,7 +259,11 @@ export function MarketingContentLibrary({
                         <Button
                           size="icon"
                           variant="destructive"
-                          title="حذف از کتابخانه"
+                          title={
+                            item.capabilities.archive
+                              ? 'حذف از کتابخانه'
+                              : 'مجوز حذف این سند را ندارید'
+                          }
                           aria-label={`حذف ${item.title}`}
                           disabled={!item.capabilities.archive || loading}
                           onClick={() => begin(item, 'delete')}
@@ -319,12 +334,16 @@ export function MarketingContentLibrary({
             <FormField
               id="library-record-value"
               label={editor?.mode === 'delete' ? 'دلیل حذف' : 'عنوان محتوا'}
+              {...(editor?.mode === 'delete'
+                ? { description: 'دلیل حذف را بین ۵ تا ۵۰۰ نویسه وارد کنید.' }
+                : {})}
               required
             >
               <Input
                 id="library-record-value"
                 required
-                minLength={2}
+                minLength={editor?.mode === 'delete' ? 5 : 2}
+                maxLength={editor?.mode === 'delete' ? 500 : undefined}
                 value={value}
                 disabled={busy}
                 onChange={(event) => setValue(event.target.value)}

@@ -394,14 +394,48 @@ describe('content list actions', () => {
     });
   });
   it('does not delete without confirmation and uses the displayed version on approval', async () => {
-    vi.stubGlobal('window', { confirm: vi.fn().mockReturnValue(false) });
+    vi.stubGlobal('window', {
+      confirm: vi.fn(() => {
+        throw new Error('Native popup blocked');
+      }),
+    });
     const actions = content().find((node) => node.props.item === asset)!;
     await (actions.props.onDelete as (...args: unknown[]) => unknown)();
     expect(state.remove).not.toHaveBeenCalled();
-    window.confirm = vi.fn().mockReturnValue(true);
-    await (actions.props.onDelete as (...args: unknown[]) => unknown)();
+    await (
+      find(content(), 'aria-label', 'تأیید حذف محتوا').props
+        .onClick as () => Promise<void>
+    )();
     expect(state.remove).toHaveBeenCalledWith('form-1', 7);
+    expect(window.confirm).not.toHaveBeenCalled();
+    expect(state.values[12]).toBeNull();
     vi.unstubAllGlobals();
+  });
+  it('cancels the content delete dialog without a mutation', () => {
+    (
+      content().find((node) => node.props.item === asset)!.props
+        .onDelete as () => void
+    )();
+    (
+      find(content(), 'aria-label', 'انصراف از حذف محتوا').props
+        .onClick as () => void
+    )();
+    expect(state.values[12]).toBeNull();
+    expect(state.remove).not.toHaveBeenCalled();
+  });
+  it('retains the deletion confirmation and shows CAS/API errors', async () => {
+    state.remove.mockRejectedValueOnce(new Error('نسخه تغییر کرده است'));
+    (
+      content().find((node) => node.props.item === asset)!.props
+        .onDelete as () => void
+    )();
+    await (
+      find(content(), 'aria-label', 'تأیید حذف محتوا').props
+        .onClick as () => Promise<void>
+    )();
+    expect(state.values[12]).toEqual(asset);
+    expect(state.values[13]).toBe('نسخه تغییر کرده است');
+    expect(state.values[14]).toBe(false);
   });
 });
 
@@ -486,6 +520,37 @@ describe('real Documents library', () => {
         version: 3,
       }),
     );
+    expect(state.values[3]).toEqual([]);
+    expect(state.values[1]).toBe(1);
+  });
+  it('rejects short or whitespace-only reasons before sending an archive request', async () => {
+    seedLibrary();
+    (find(library(), 'aria-label', 'حذف بروشور').props.onClick as () => void)();
+    state.values[8] = '  دو  ';
+    const tree = library();
+    expect(find(tree, 'id', 'library-record-value').props.minLength).toBe(5);
+    await (
+      tree.find((node) => node.type === 'form')!.props.onSubmit as (
+        event: unknown,
+      ) => void
+    )({ preventDefault() {} });
+    expect(state.archive).not.toHaveBeenCalled();
+    expect(state.values[10]).toContain('۵ تا ۵۰۰');
+    expect(state.values[7]).not.toBeNull();
+  });
+  it('retains library records and confirmation when the server rejects deletion', async () => {
+    seedLibrary();
+    state.archive.mockRejectedValueOnce(new Error('حذف مجاز نیست'));
+    (find(library(), 'aria-label', 'حذف بروشور').props.onClick as () => void)();
+    state.values[8] = 'محتوای قدیمی';
+    await (
+      library().find((node) => node.type === 'form')!.props.onSubmit as (
+        event: unknown,
+      ) => void
+    )({ preventDefault() {} });
+    await vi.waitFor(() => expect(state.values[10]).toBe('حذف مجاز نیست'));
+    expect(state.values[3]).toEqual([document]);
+    expect(state.values[7]).not.toBeNull();
   });
   it('routes protected files to owner access verification without mutating', () => {
     seedLibrary({ ...document, requiresConfidentialAccessCode: true });

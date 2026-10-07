@@ -4920,3 +4920,7 @@ Audience segments/intakes use shared Rubi RTL toolbars, search/status/source fil
 ## 2026-10-07 — REMOVE-SCHEDULED-TAB-1007 — PC-B
 
 Communications shows only immediate sending: removed scheduled-send tab definition, generated preview metadata and reachable scheduled panel branch; updated landing copy/highlights and regression expectations. Stored schedules and backend contracts remain intact. Full Marketing tests, scoped lint and exact-head CI build/typecheck/quality gates precede authorized develop merge. No API/schema/migration/dependency/runtime change or authenticated browser QA.
+
+## 2026-10-07 — CONTENT-DELETE-REPAIR-1007 — PC-B
+
+Fixed library deletion validation: trimmed archive reasons must meet Documents' existing5–500-character contract (previous UI minimum2). Successful archive removes the row and resets pagination; failure retains the record/dialog with a visible error. Durable form/landing/link deletion uses a shared Rubi confirmation dialog instead of a native popup, preserving ID/version, cancellation and disabled pending state. Documents confidentiality/capability checks and recoverable archive remain unchanged. Marketing101 tests and scoped lint pass; exact-head CI gates authorized develop merge. No backend/schema/migration/dependency/permission/runtime change or authenticated deletion QA.
