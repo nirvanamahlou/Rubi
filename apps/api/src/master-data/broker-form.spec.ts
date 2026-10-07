@@ -131,6 +131,119 @@ describe('broker form aggregate', () => {
       }),
     ).toBe('+905551234567');
   });
+  it.each([
+    ['کارگزار الف / ۱', '۰۹۱۲ ۱۲۳ ۴۵۶۷', '09121234567'],
+    ["O'Neil & Partners", '+90 (555) 123-4567', '+905551234567'],
+    ['旅行社', '123', '123'],
+    ['А', '+1 555 0199 ext 42', '+1 555 0199 ext 42'],
+  ])(
+    'creates broker and nested leader named %s with the supplied phone format',
+    async (name, raw, expected) => {
+      const { service, repository, crypto } = fixture();
+      await service.create(
+        'brokers',
+        {
+          name,
+          countryId,
+          cityIds: cityId,
+          primaryPhone: raw,
+          leaderDrafts: JSON.stringify({
+            items: [{ name, phone: raw }],
+            removed: [],
+          }),
+        },
+        actor,
+      );
+      const data = repository.create.mock.calls[0]?.[1] as Record<
+        string,
+        unknown
+      >;
+      expect(data.name).toBe(name);
+      expect(data.primaryPhone).toBeUndefined();
+      const changes = data.brokerLeaderChanges as {
+        items: { data: Record<string, unknown> }[];
+      };
+      expect(changes.items[0]?.data.name).toBe(name);
+      for (const persisted of [data, changes.items[0]!.data]) {
+        expect(
+          crypto.decrypt('phone', {
+            encrypted: String(persisted.primaryPhoneEncrypted),
+            encryptionIv: String(persisted.primaryPhoneEncryptionIv),
+            encryptionAuthTag: String(persisted.primaryPhoneEncryptionAuthTag),
+            encryptionKeyVersion: Number(
+              persisted.primaryPhoneEncryptionKeyVersion,
+            ),
+          }),
+        ).toBe(expected);
+        expect(persisted).not.toHaveProperty('phone');
+      }
+    },
+  );
+
+  it('allows repeated names and numbers across a multi-leader broker form without conflicting internal codes', async () => {
+    const { service, repository } = fixture();
+    repository.codeExists.mockResolvedValueOnce(true).mockResolvedValue(false);
+    const items = Array.from({ length: 8 }, () => ({
+      name: 'راهنما / Test',
+      phone: '۱۲۳',
+    }));
+    await service.create(
+      'brokers',
+      {
+        name: 'کارگزار تکراری',
+        countryId,
+        cityIds: cityId,
+        primaryPhone: '۱۲۳',
+        leaderDrafts: JSON.stringify({ items, removed: [] }),
+      },
+      actor,
+    );
+    const data = repository.create.mock.calls[0]?.[1] as Record<
+      string,
+      unknown
+    >;
+    const changes = data.brokerLeaderChanges as {
+      items: { data: Record<string, unknown> }[];
+    };
+    expect(changes.items).toHaveLength(8);
+    expect(new Set(changes.items.map((item) => item.data.code)).size).toBe(8);
+    expect(repository.codeExists).toHaveBeenCalledTimes(2);
+  });
+
+  it('accepts short and Persian contacts on the standalone leader save path', async () => {
+    const { service, repository, crypto } = fixture();
+    await service.create(
+      'leaders',
+      {
+        name: "O'Neil / راهنما",
+        cityId,
+        languages: 'فارسی',
+        destinations: 'تهران',
+        primaryPhone: '۱۲۳',
+        roamingPhone: '٠٠٩٠ ٥٥٥ ١٢٣ ٤٥٦٧',
+      },
+      actor,
+    );
+    const data = repository.create.mock.calls[0]?.[1] as Record<
+      string,
+      unknown
+    >;
+    for (const [prefix, expected] of [
+      ['primaryPhone', '123'],
+      ['roamingPhone', '00905551234567'],
+    ])
+      expect(
+        crypto.decrypt('phone', {
+          encrypted: String(data[`${prefix}Encrypted`]),
+          encryptionIv: String(data[`${prefix}EncryptionIv`]),
+          encryptionAuthTag: String(data[`${prefix}EncryptionAuthTag`]),
+          encryptionKeyVersion: Number(data[`${prefix}EncryptionKeyVersion`]),
+        }),
+      ).toBe(expected);
+    expect(data).not.toHaveProperty('primaryPhone');
+    expect(data).not.toHaveProperty('roamingPhone');
+  });
+
   it('rejects a city from another country, foreign/stale leaders and oversized Board before writing', async () => {
     const { service, repository } = fixture();
     await expect(

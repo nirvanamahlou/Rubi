@@ -106,6 +106,32 @@ export class ReservationRequestsController {
     if (!this.ticketDocuments) throw new NotFoundException();
     return this.ticketDocuments.report(query, req.actor!);
   }
+  @Get('purchases')
+  @Header('Cache-Control', 'private, no-store')
+  async purchaseInbox(
+    @Req() req: AuthenticatedRequest,
+    @Query('page') page?: string,
+    @Query('kind') kind?: string,
+    @Query('contractNumber') contractNumber?: string,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const result = await this.service.purchaseInbox(req.actor.branchIds, {
+      page,
+      kind,
+      contractNumber,
+    });
+    return {
+      version: 1,
+      ...result,
+      meta: {
+        ...result.meta,
+        canRecord: req.actor.permissions.includes(
+          'reservations.hotel_purchase.write',
+        ),
+      },
+    };
+  }
   @Get('issued-tickets/export')
   @Header('Cache-Control', 'private, no-store')
   async issuedTicketsExport(

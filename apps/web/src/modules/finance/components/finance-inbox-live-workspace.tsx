@@ -69,7 +69,7 @@ const sourceLabels: Record<FinanceInboxSource, string> = {
   SALES: 'فروش',
   HR: 'منابع انسانی',
   RESERVATIONS: 'رزرواسیون',
-  PURCHASES: 'خرید و تأمین',
+  PURCHASES: 'تنخواه / خرید و تأمین',
   FINANCE: 'درخواست مستقیم مالی',
 };
 const statusLabels: Partial<Record<FinanceRequestStatus, string>> = {
@@ -866,7 +866,12 @@ export function FinanceInboxLiveWorkspace() {
                       {item.title}
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      {sourceLabels[item.source]} · {faDate(item.dueAt)}
+                      {item.source === 'PURCHASES'
+                        ? item.ticketPurchase
+                          ? 'خرید و تأمین'
+                          : 'تنخواه'
+                        : sourceLabels[item.source]}{' '}
+                      · {faDate(item.dueAt)}
                     </span>
                   </span>
                   <ChevronLeft className="size-4 shrink-0 text-primary" />
@@ -1259,7 +1264,11 @@ export function FinanceInboxLiveWorkspace() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge className={sourceTone(item.source)}>
-                          {sourceLabels[item.source]}
+                          {item.source === 'PURCHASES'
+                            ? item.ticketPurchase
+                              ? 'خرید و تأمین'
+                              : 'تنخواه'
+                            : sourceLabels[item.source]}
                         </Badge>
                         <Badge>
                           {statusLabels[item.status] ?? item.status}
@@ -1323,7 +1332,11 @@ export function FinanceInboxLiveWorkspace() {
                 </p>
                 <div className="flex items-center justify-between gap-3">
                   <Badge className={sourceTone(selected.source)}>
-                    {sourceLabels[selected.source]}
+                    {selected.source === 'PURCHASES'
+                      ? selected.ticketPurchase
+                        ? 'خرید و تأمین'
+                        : 'تنخواه'
+                      : sourceLabels[selected.source]}
                   </Badge>
                   <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="size-4" />

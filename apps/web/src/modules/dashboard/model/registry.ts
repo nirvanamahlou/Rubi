@@ -6,13 +6,7 @@ import {
 
 export type DashboardDateBasis = 'created' | 'issued' | 'paid' | 'effective';
 export type DashboardVisualKind =
-  | 'line'
-  | 'bar'
-  | 'donut'
-  | 'stacked-bar'
-  | 'funnel'
-  | 'table'
-  | 'queue';
+  'line' | 'bar' | 'donut' | 'stacked-bar' | 'funnel' | 'table' | 'queue';
 export type DashboardKpiRole =
   'outcome' | 'driver' | 'guardrail' | 'diagnostic';
 
@@ -1782,7 +1776,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
   },
   {
     id: 'procurement-suppliers',
-    title: 'خرید و تأمین‌کنندگان',
+    title: 'تنخواه و تأمین‌کنندگان',
     technicalName: 'Procurement & Suppliers',
     description: 'خرید، هزینه matched، سود معتبر و عملکرد Provider.',
     kpiIds: [
@@ -2125,7 +2119,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
   },
   {
     id: 'partners-b2b',
-    title: 'آژانس‌ها و مشتریان سازمانی',
+    title: 'مشتریان B2B',
     technicalName: 'Partners & B2B',
     description: 'عملکرد آژانس‌ها، اعتبار سازمانی و فرصت‌های B2B.',
     kpiIds: [
@@ -2413,10 +2407,7 @@ const dashboardPageCatalog: readonly DashboardPageDefinition[] = [
 ] as const;
 
 const dashboardPageLayouts: Readonly<
-  Record<
-    string,
-    { kpiIds: readonly string[]; visualIds: readonly string[] }
-  >
+  Record<string, { kpiIds: readonly string[]; visualIds: readonly string[] }>
 > = {
   'executive-overview': {
     kpiIds: [
@@ -2652,8 +2643,7 @@ const dashboardDetailPages: readonly DashboardPageDefinition[] = [
     id: 'tour-hotel-performance',
     title: 'عملکرد تور و هتل',
     technicalName: 'Tour & Hotel Performance',
-    description:
-      'رزرو، ظرفیت، فروش و الگوی اقامت محصولات تور و هتل.',
+    description: 'رزرو، ظرفیت، فروش و الگوی اقامت محصولات تور و هتل.',
     sourcePageId: 'inventory-products',
     kpiIds: [
       'tour-reservations',

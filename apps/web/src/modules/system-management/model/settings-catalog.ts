@@ -165,7 +165,7 @@ export const settingsModules: SettingModule[] = [
       ['شماره اسناد قبلی ثابت است؛ شماره رسمی بلیت از ایرلاین دریافت می‌شود.'],
     ),
   ]),
-  m('customers', 'مشتریان و مسافران', 'مشتری و فروش', 'users', 'teal', [
+  m('customers', 'مشتریان B2c', 'مشتری و فروش', 'users', 'teal', [
     g(
       'duplicates',
       'تشخیص و ادغام تکراری‌ها',
@@ -367,7 +367,7 @@ export const settingsModules: SettingModule[] = [
       ['جریمه و مهلت لغو از قرارداد یا Provider همان خدمت دریافت می‌شود.'],
     ),
   ]),
-  m('procurement', 'خرید و تأمین', 'مالی و همکاری', 'cart', 'violet', [
+  m('procurement', 'تنخواه', 'مالی و همکاری', 'cart', 'violet', [
     g(
       'approval',
       'حد اختیار و مراحل تأیید',
@@ -455,7 +455,7 @@ export const settingsModules: SettingModule[] = [
       true,
     ),
   ]),
-  m('b2b', 'آژانس‌ها و مشتریان سازمانی', 'مالی و همکاری', 'building', 'blue', [
+  m('b2b', 'مشتریان B2B', 'مالی و همکاری', 'building', 'blue', [
     g(
       'credit',
       'کنترل اعتبار سازمانی',

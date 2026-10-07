@@ -3,7 +3,12 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { NewEmployeeForm } from './new-employee-dialog';
 import { HrDirectoryPicker } from './hr-directory-picker';
 import { ContextualHrForm } from './contextual-hr-form';
-import { getHrResource } from '@nora/contracts';
+import {
+  getHrResource,
+  type HrBootstrapDto,
+  type HrRecordDto,
+} from '@nora/contracts';
+import { employeeOrganizationOptions } from './hr-employees';
 import {
   validateDocumentUpload,
   emptyDocumentUploadValues,
@@ -20,6 +25,58 @@ const employee = {
   position: 'سمت',
 };
 describe('cross-module form reference values', () => {
+  it('shows employee units and positions from the selected company catalog', () => {
+    const catalog = (
+      id: string,
+      tab: string,
+      name: string,
+      companyId?: string,
+    ) =>
+      ({
+        id,
+        section: 'organization',
+        tab,
+        branchId: 'scope',
+        status: 'فعال',
+        deletedAt: null,
+        columns: [...getHrResource('organization', tab)!.columns],
+        values: [name],
+        data: companyId ? { organizationBranchId: companyId } : {},
+      }) as unknown as HrRecordDto;
+    const data = {
+      records: [
+        catalog('company-a', 'branches', 'شرکت الف'),
+        catalog('company-b', 'branches', 'شرکت ب'),
+        catalog('unit-a', 'units', 'واحد الف', 'company-a'),
+        catalog('position-a', 'positions', 'سمت الف', 'company-a'),
+        catalog('unit-b', 'units', 'واحد ب', 'company-b'),
+        catalog('position-b', 'positions', 'سمت ب', 'company-b'),
+      ],
+      employees: [],
+      branches: [{ id: 'scope', name: 'شعبه اصلی' }],
+    } as unknown as HrBootstrapDto;
+    const options = employeeOrganizationOptions(data);
+    expect(options.find((item) => item.branch === 'شرکت الف')).toMatchObject({
+      units: ['واحد الف'],
+      positions: ['سمت الف'],
+    });
+    const html = renderToStaticMarkup(
+      <NewEmployeeForm
+        existingPersonnelCodes={[]}
+        managerOptions={[]}
+        branchOptions={['شرکت الف', 'شرکت ب']}
+        organizationOptions={options}
+        unitOptions={['واحد قدیمی از شرکت دیگر']}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    expect(html).toContain('واحد الف');
+    expect(html).toContain('سمت الف');
+    expect(html).not.toContain('واحد ب');
+    expect(html).not.toContain('سمت ب');
+    expect(html).not.toContain('واحد قدیمی از شرکت دیگر');
+  });
   it('preserves the selected canonical employee ID independently of the label or current search page', () => {
     const html = renderToStaticMarkup(
       <HrDirectoryPicker

@@ -28,6 +28,10 @@ const id = '11111111-1111-4111-8111-111111111111';
 describe('reservation summary and mutation HTTP boundary', () => {
   let app: INestApplication, permissions: string[], branches: string[];
   const identity = vi.fn().mockResolvedValue({ data: { ok: true } });
+  const purchaseInbox = vi.fn().mockResolvedValue({
+    data: [],
+    meta: { page: 1, pageSize: 25, hasMore: false },
+  });
   const record = vi.fn().mockResolvedValue(undefined),
     financeRead = vi.fn().mockResolvedValue({
       approved: true,
@@ -45,7 +49,7 @@ describe('reservation summary and mutation HTTP boundary', () => {
         ReservationOperationInterceptor,
         {
           provide: ReservationsPublicService,
-          useValue: { lastRecordedOperation: async () => null },
+          useValue: { lastRecordedOperation: async () => null, purchaseInbox },
         },
         { provide: ReservationHotelPurchaseService, useValue: {} },
         { provide: ReservationServicePurchaseService, useValue: {} },
@@ -99,6 +103,34 @@ describe('reservation summary and mutation HTTP boundary', () => {
     request(app.getHttpServer())
       .get(`/reservations/requests/${id}/operation-summary`)
       .set('Cookie', 'nora_access=allowed');
+  it('lists purchases with the authenticated branch scope and truthful write capability', async () => {
+    const response = await request(app.getHttpServer())
+      .get(
+        '/reservations/requests/purchases?kind=HOTEL&page=2&contractNumber=CTR-42',
+      )
+      .set('Cookie', 'nora_access=allowed')
+      .expect(200);
+    expect(purchaseInbox).toHaveBeenCalledWith(['allowed'], {
+      kind: 'HOTEL',
+      page: '2',
+      contractNumber: 'CTR-42',
+    });
+    expect(response.body.meta.canRecord).toBe(false);
+    permissions.push('reservations.hotel_purchase.write');
+    const writable = await request(app.getHttpServer())
+      .get('/reservations/requests/purchases')
+      .set('Cookie', 'nora_access=allowed')
+      .expect(200);
+    expect(writable.body.meta.canRecord).toBe(true);
+  });
+  it('rejects purchase inbox reads without reservation read permission', async () => {
+    permissions = ['procurement.read.all'];
+    await request(app.getHttpServer())
+      .get('/reservations/requests/purchases')
+      .set('Cookie', 'nora_access=allowed')
+      .expect(403);
+    expect(purchaseInbox).not.toHaveBeenCalled();
+  });
   const patch = () =>
     request(app.getHttpServer())
       .patch(

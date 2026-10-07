@@ -26,7 +26,9 @@ import { ticketPurchaseTotal } from '@/modules/finance/model/ticket-purchase-tot
 import { FinanceInboxApiError } from '@/modules/finance/api/finance-inbox-api';
 import { ticketPurchaseApi } from './api';
 import { purchaseStages, purchaseSummary } from './model';
-export function TicketPurchaseWorkspace() {
+export function TicketPurchaseWorkspace({
+  initialOfferId,
+}: { initialOfferId?: string | undefined } = {}) {
   const [items, setItems] = useState<TicketPurchaseInboxItemV1[]>([]),
     [canPrice, setCanPrice] = useState(false),
     [loading, setLoading] = useState(true),
@@ -71,6 +73,9 @@ export function TicketPurchaseWorkspace() {
   const summary = useMemo(() => purchaseSummary(items), [items]);
   const visible = items.filter(
     (i) =>
+      (!initialOfferId ||
+        i.request.offerId === initialOfferId ||
+        i.request.catalogProductReference === initialOfferId) &&
       (stage === 'ALL' || i.stage === stage) &&
       [
         i.request.title,

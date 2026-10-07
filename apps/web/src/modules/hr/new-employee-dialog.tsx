@@ -1,7 +1,7 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
@@ -150,7 +150,15 @@ interface NewEmployeeFormProps {
     positions: readonly string[];
     grades: readonly string[];
   }[];
-  onAddReference?: (kind: 'branches' | 'units' | 'positions') => void;
+  onAddReference?: (
+    kind: 'branches' | 'units' | 'positions',
+    branch: string,
+  ) => void;
+  createdReference?: {
+    id: string;
+    kind: 'branches' | 'units' | 'positions';
+    value: string;
+  };
 }
 
 export function NewEmployeeForm({
@@ -164,6 +172,7 @@ export function NewEmployeeForm({
   lockAssignment = false,
   organizationOptions,
   onAddReference,
+  createdReference,
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
@@ -177,6 +186,30 @@ export function NewEmployeeForm({
         personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
       },
   );
+  useEffect(() => {
+    if (!createdReference) return;
+    const timer = window.setTimeout(
+      () =>
+        setValue((current) =>
+          createdReference.kind === 'branches'
+            ? {
+                ...current,
+                branch: createdReference.value,
+                userId: '',
+                unit: '',
+                position: '',
+                grade: '',
+              }
+            : {
+                ...current,
+                [createdReference.kind === 'units' ? 'unit' : 'position']:
+                  createdReference.value,
+              },
+        ),
+      0,
+    );
+    return () => window.clearTimeout(timer);
+  }, [createdReference]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
@@ -235,9 +268,7 @@ export function NewEmployeeForm({
     (o) => o.branch === value.branch,
   );
   const currentOptions = (options: readonly string[], current: string) =>
-    Array.from(
-      new Set([...options, ...(initialValue && current ? [current] : [])]),
-    );
+    Array.from(new Set([...options, ...(current ? [current] : [])]));
 
   return (
     <form noValidate onSubmit={submit}>
@@ -338,7 +369,10 @@ export function NewEmployeeForm({
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-branch">
             <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
             {onAddReference && !lockAssignment ? (
-              <button type="button" onClick={() => onAddReference('branches')}>
+              <button
+                type="button"
+                onClick={() => onAddReference('branches', value.branch)}
+              >
                 افزودن شعبه
               </button>
             ) : null}
@@ -363,7 +397,10 @@ export function NewEmployeeForm({
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-unit">
             <RequiredFieldLabel>واحد</RequiredFieldLabel>
             {onAddReference && !lockAssignment ? (
-              <button type="button" onClick={() => onAddReference('units')}>
+              <button
+                type="button"
+                onClick={() => onAddReference('units', value.branch)}
+              >
                 افزودن واحد
               </button>
             ) : null}
@@ -378,7 +415,7 @@ export function NewEmployeeForm({
             >
               <option value="">انتخاب واحد</option>
               {currentOptions(
-                organization?.units ?? unitOptions,
+                organizationOptions ? (organization?.units ?? []) : unitOptions,
                 value.unit,
               ).map((option) => (
                 <option key={option} value={option}>
@@ -394,7 +431,10 @@ export function NewEmployeeForm({
           >
             <RequiredFieldLabel required>سمت</RequiredFieldLabel>
             {onAddReference && !lockAssignment ? (
-              <button type="button" onClick={() => onAddReference('positions')}>
+              <button
+                type="button"
+                onClick={() => onAddReference('positions', value.branch)}
+              >
                 افزودن سمت
               </button>
             ) : null}
@@ -590,6 +630,10 @@ interface NewEmployeeDialogProps {
   lockAssignment?: boolean;
   organizationOptions?: NewEmployeeFormProps['organizationOptions'];
   onAddReference?: NewEmployeeFormProps['onAddReference'];
+  createdReference?: NewEmployeeFormProps['createdReference'];
+  referenceLoading?: boolean;
+  referenceError?: string;
+  onRetryReferences?: () => void;
 }
 
 export function NewEmployeeDialog({
@@ -602,10 +646,24 @@ export function NewEmployeeDialog({
   unitOptions,
   organizationOptions,
   onAddReference,
+  createdReference,
+  referenceLoading = false,
+  referenceError,
+  onRetryReferences,
   lockAssignment = false,
   onClose,
   onSubmit,
 }: NewEmployeeDialogProps) {
+  const [catalogReady, setCatalogReady] = useState(
+    !referenceLoading && !referenceError,
+  );
+  useEffect(() => {
+    if (referenceLoading || referenceError) return;
+    const timer = window.setTimeout(() => setCatalogReady(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [referenceLoading, referenceError]);
+  const waitingForInitialCatalog =
+    !catalogReady && (referenceLoading || referenceError);
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
       <DialogContent
@@ -618,20 +676,32 @@ export function NewEmployeeDialog({
         <DialogDescription>
           مشخصات پایه و جایگاه سازمانی کارمند را مطابق فهرست کارکنان تکمیل کنید.
         </DialogDescription>
-        <NewEmployeeForm
-          userOptions={userOptions}
-          userOptionsError={userOptionsError}
-          existingPersonnelCodes={existingPersonnelCodes}
-          initialValue={initialValue}
-          managerOptions={managerOptions}
-          {...(onAddReference ? { onAddReference } : {})}
-          branchOptions={branchOptions}
-          unitOptions={unitOptions}
-          {...(organizationOptions ? { organizationOptions } : {})}
-          lockAssignment={lockAssignment}
-          onCancel={onClose}
-          onSubmit={onSubmit}
-        />
+        {waitingForInitialCatalog ? (
+          <div role={referenceError ? 'alert' : 'status'}>
+            <p>{referenceError || 'دریافت واحدها و سمت‌ها…'}</p>
+            {referenceError && onRetryReferences ? (
+              <button type="button" onClick={onRetryReferences}>
+                تلاش دوباره
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <NewEmployeeForm
+            userOptions={userOptions}
+            userOptionsError={userOptionsError}
+            existingPersonnelCodes={existingPersonnelCodes}
+            initialValue={initialValue}
+            managerOptions={managerOptions}
+            {...(onAddReference ? { onAddReference } : {})}
+            {...(createdReference ? { createdReference } : {})}
+            branchOptions={branchOptions}
+            unitOptions={unitOptions}
+            {...(organizationOptions ? { organizationOptions } : {})}
+            lockAssignment={lockAssignment}
+            onCancel={onClose}
+            onSubmit={onSubmit}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );

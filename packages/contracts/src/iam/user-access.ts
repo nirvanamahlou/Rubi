@@ -27,7 +27,7 @@ export const USER_ACCESS_GROUPS = [
   },
   {
     id: 'customers',
-    title: 'مشتریان و مسافران',
+    title: 'مشتریان B2c',
     route: '/customers',
     prefixes: ['customers'],
   },
@@ -57,7 +57,7 @@ export const USER_ACCESS_GROUPS = [
   },
   {
     id: 'procurement',
-    title: 'خرید و تامین',
+    title: 'تنخواه',
     route: '/purchases',
     prefixes: ['procurement'],
   },
@@ -75,7 +75,7 @@ export const USER_ACCESS_GROUPS = [
   },
   {
     id: 'organizations',
-    title: 'آژانس‌ها و مشتریان سازمانی',
+    title: 'مشتریان B2B',
     route: '/organizations',
     prefixes: ['b2b'],
   },
@@ -475,7 +475,7 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   {
     id: 'customers.home',
     group: 'customers',
-    title: 'مشتریان و مسافران',
+    title: 'مشتریان B2c',
     route: '/customers',
   },
   {
@@ -505,7 +505,7 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   {
     id: 'procurement.home',
     group: 'procurement',
-    title: 'خرید و تامین',
+    title: 'تنخواه',
     route: '/purchases',
   },
   {
@@ -523,7 +523,7 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   {
     id: 'organizations.home',
     group: 'organizations',
-    title: 'آژانس‌ها و مشتریان سازمانی',
+    title: 'مشتریان B2B',
     route: '/organizations',
   },
   {
@@ -756,7 +756,7 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   {
     id: 'sales.ticket-prices',
     group: 'sales',
-    title: 'قیمت بلیط',
+    title: 'قیمت گذاری پرواز',
     route: '/sales/ticket-prices',
   },
   {
@@ -2261,16 +2261,22 @@ export function canViewRoute(
   permissions: readonly string[],
   href: string,
 ): boolean {
-  if (href === '/ticket-purchases' || href.startsWith('/ticket-purchases/'))
+  if (
+    href.split(/[?#]/)[0] === '/ticket-purchases' ||
+    href.startsWith('/ticket-purchases/')
+  )
     return (
-      permissions.some((p) =>
+      (permissions.includes('reservations.read') &&
+        canViewRoute(permissions, '/reservations')) ||
+      (permissions.some((p) =>
         [
           'procurement.read.own',
           'procurement.read.unit',
           'procurement.read.all',
           'procurement.quote.manage',
         ].includes(p),
-      ) && canViewRoute(permissions, '/purchases')
+      ) &&
+        canViewRoute(permissions, '/purchases'))
     );
   if (!href.startsWith('/')) return true;
   const [pathname, search = ''] = href.split('?');

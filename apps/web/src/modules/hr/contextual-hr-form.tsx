@@ -2,7 +2,7 @@
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { ExternalLink, Upload } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { persianDateToIso } from './hr-dates';
 export { persianDateToIso } from './hr-dates';
@@ -48,6 +48,8 @@ export interface ContextualHrFormContext {
   hiddenLabels?: readonly string[];
   optionalLabels?: readonly string[];
   onCreateReference?: (label: string) => void;
+  skipCreateReferenceLabels?: readonly string[];
+  createdReference?: { id: string; label: string; value: string };
   editableLabels?: readonly string[];
   attendance?: readonly { employee: string; date: string; value: string }[];
   holidayOptions?: readonly string[];
@@ -507,6 +509,19 @@ export function ContextualHrForm({
   const [values, setValues] = useState<Record<string, string>>(() =>
     buildInitialFormValues(context, fields),
   );
+  const appliedReferenceId = useRef('');
+  useEffect(() => {
+    const created = context.createdReference;
+    if (!created || !created.value || appliedReferenceId.current === created.id)
+      return;
+    const field = fields.find((item) => item.label === created.label);
+    if (!field) return;
+    appliedReferenceId.current = created.id;
+    const timer = window.setTimeout(() => {
+      setValues((current) => ({ ...current, [field.id]: created.value }));
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [context.createdReference, fields]);
   const deriveValues = (input: Record<string, string>) => {
     const next = { ...input };
     const field = (label: string) =>
@@ -809,6 +824,7 @@ export function ContextualHrForm({
                   {field.label}
                 </RequiredFieldLabel>
                 {context.onCreateReference &&
+                !context.skipCreateReferenceLabels?.includes(field.label) &&
                 /^(عنوان شغل|عنوان سمت|نام سمت|سمت|سمت جدید|واحد|واحد درخواست‌کننده|واحد درخواست کننده|واحد مقصد|شعبه مقصد|شرکت مقصد|کارمند)$/.test(
                   field.label,
                 ) ? (

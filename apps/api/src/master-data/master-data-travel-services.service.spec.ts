@@ -42,7 +42,7 @@ describe('MasterDataService travel services', () => {
       create,
     } as unknown as MasterDataRepository;
     const contactCrypto = {
-      protect: vi.fn().mockReturnValue({
+      protectTravelPhone: vi.fn().mockReturnValue({
         encrypted: 'ciphertext',
         encryptionIv: 'iv',
         encryptionAuthTag: 'tag',

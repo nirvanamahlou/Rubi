@@ -373,7 +373,7 @@ export const foundationModules: Record<
   },
   purchases: {
     key: 'purchases',
-    title: 'خرید و تأمین',
+    title: 'تنخواه',
     description:
       'مالک درخواست، سفارش و فاکتور خرید، تخفیف کارگزار و قیمت خالص نسخه‌دار.',
     boundary:
@@ -523,7 +523,7 @@ export const foundationModules: Record<
   },
   organizations: {
     key: 'organizations',
-    title: 'آژانس‌ها و مشتریان سازمانی',
+    title: 'مشتریان B2B',
     description:
       'پرونده B2B، قرارداد همکاری، نرخ توافقی، اعتبار و تسویه دوره‌ای.',
     boundary:

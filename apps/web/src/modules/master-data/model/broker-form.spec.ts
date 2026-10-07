@@ -93,6 +93,54 @@ describe('broker form', () => {
       { name: 'Leader 2', phone: '+905551234562' },
     ]);
   });
+  it.each(['کارگزار ۱ / تست', "O'Neil & Partners", '旅行社', 'А'])(
+    'preserves unrestricted names and phone formats for %s in create payload',
+    (name) => {
+      const values = brokerMutationValues(
+        { name, primaryPhone: '۱۲۳', countryId: 'country', cityIds: 'city' },
+        [
+          {
+            key: 'new-1',
+            name,
+            phone: '+90 555 123 4567 ext 42',
+            phoneMasked: '',
+            phoneTouched: true,
+          },
+        ],
+      );
+      expect(values.name).toBe(name);
+      expect(values.primaryPhone).toBe('۱۲۳');
+      expect(JSON.parse(values.leaderDrafts!).items).toEqual([
+        { name, phone: '+90 555 123 4567 ext 42' },
+      ]);
+    },
+  );
+
+  it('uses an English-only name in the save payload and does not require a second name input', () => {
+    const values = brokerMutationValues(
+      { name: '  ', englishName: " O'Neil Travel " },
+      [],
+    );
+    expect(values.name).toBe("O'Neil Travel");
+    const html = renderToStaticMarkup(
+      createElement(MasterDataBrokerForm, {
+        mode: 'edit',
+        record: {
+          ...record,
+          name: '',
+          attributes: { ...record.attributes, englishName: 'English name' },
+        },
+        onOpenChange: () => undefined,
+        onPersist: async () => undefined,
+      }),
+    );
+    const nameInput = html.match(
+      /<input[^>]*id="live-brokers-name"[^>]*>/,
+    )?.[0];
+    expect(nameInput).toBeDefined();
+    expect(nameInput).not.toContain('required');
+  });
+
   it('renders only the requested identity/cities/leader form and a submit action', () => {
     const html = renderToStaticMarkup(
       createElement(MasterDataBrokerForm, {
@@ -102,7 +150,7 @@ describe('broker form', () => {
       }),
     );
     for (const label of [
-      'نام فارسی کارگزار',
+      'نام کارگزار',
       'نام انگلیسی کارگزار',
       'شماره کارگزار',
       'Board',

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   HrBootstrapDto,
+  HrEmployeeDto,
   HrRecordCreate,
   HrRecordDto,
   HrRecordUpdate,
@@ -69,6 +70,18 @@ export function useHrStore() {
       };
     });
   }, []);
+  const rememberEmployee = useCallback((employee: HrEmployeeDto) => {
+    setData((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        employees: [
+          ...current.employees.filter((item) => item.id !== employee.id),
+          employee,
+        ],
+      };
+    });
+  }, []);
   const mutated = useCallback(async () => {
     setRevision((value) => value + 1);
     window.dispatchEvent(new Event('nora:hr-server-change'));
@@ -77,8 +90,8 @@ export function useHrStore() {
   const create = useCallback(
     async (input: HrRecordCreate, key: string) => {
       const record = await hrApi.records.create(input, key);
-      remember([record]);
       await mutated();
+      remember([record]);
       return record;
     },
     [remember, mutated],
@@ -109,6 +122,7 @@ export function useHrStore() {
     revision,
     refresh,
     remember,
+    rememberEmployee,
     create,
     update,
     remove,

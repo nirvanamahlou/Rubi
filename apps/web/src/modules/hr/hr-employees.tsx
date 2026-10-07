@@ -4,7 +4,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useMemo, useRef, useState } from 'react';
 import Link from '@/i18n/link';
 import dynamic from 'next/dynamic';
-import type { HrEmployeeDto } from '@nora/contracts';
+import type { HrBootstrapDto, HrEmployeeDto } from '@nora/contracts';
 import { hrApi } from './hr-api';
 import type { HrStore } from './hr-store';
 import {
@@ -95,26 +95,65 @@ export function employeeFormValue(
       : 'فعال') as NewEmployeeFormValue['status'],
   };
 }
+export function employeeOrganizationOptions(data: HrBootstrapDto) {
+  return hrCompanies(data).map((company) => {
+    const options = hrReferenceOptions(
+      data,
+      'employee',
+      'create',
+      company.branchId,
+      company.organizationBranchId,
+    );
+    return {
+      branch: company.name,
+      units: options['واحد'] ?? [],
+      positions: options['سمت'] ?? [],
+      grades: options['رده'] ?? [],
+    };
+  });
+}
 export function HrEmployeeEditor({
   employee,
   store,
   onClose,
+  onSaved,
+  preferredCompanyId,
 }: {
   employee?: HrEmployeeDto | undefined;
   store: HrStore;
   onClose: () => void;
+  onSaved?: (employee: HrEmployeeDto) => void;
+  preferredCompanyId?: string;
 }) {
   const key = useRef(crypto.randomUUID());
-  const [newReference, setNewReference] = useState<
-    'branches' | 'units' | 'positions' | null
-  >(null);
+  const [newReference, setNewReference] = useState<{
+    kind: 'branches' | 'units' | 'positions';
+    companyId?: string;
+  } | null>(null);
+  const [createdReference, setCreatedReference] = useState<{
+    id: string;
+    kind: 'branches' | 'units' | 'positions';
+    value: string;
+  }>();
   const references = useHrReferenceData(store);
   const external = useHrFormReferences(employee?.id);
   const companies = hrCompanies(references.data);
+  const preferredCompany = companies.find(
+    (company) => company.id === preferredCompanyId,
+  );
   return (
     <>
       <NewEmployeeDialog
-        onAddReference={setNewReference}
+        onAddReference={(kind, branch) => {
+          const companyId = companies.find(
+            (company) => company.name === branch,
+          )?.id;
+          setNewReference({
+            kind,
+            ...(companyId ? { companyId } : {}),
+          });
+        }}
+        createdReference={createdReference}
         userOptions={external.data?.users.map((u) => ({
           ...u,
           branches: companies
@@ -122,6 +161,9 @@ export function HrEmployeeEditor({
             .map((c) => c.name),
         }))}
         userOptionsError={external.error}
+        referenceLoading={references.loading}
+        referenceError={references.error}
+        onRetryReferences={() => void store.refresh().catch(() => undefined)}
         lockAssignment={Boolean(employee)}
         existingPersonnelCodes={store
           .data!.employees.filter((item) => item.id !== employee?.id)
@@ -130,34 +172,14 @@ export function HrEmployeeEditor({
         branchOptions={
           employee?.organizationBranchId
             ? [employee.companyName]
-            : companies.map((company) => company.name)
+            : [
+                ...(preferredCompany ? [preferredCompany.name] : []),
+                ...companies
+                  .filter((company) => company.id !== preferredCompanyId)
+                  .map((company) => company.name),
+              ]
         }
-        unitOptions={Array.from(
-          new Set(
-            store
-              .data!.records.filter(
-                (item) =>
-                  item.section === 'organization' && item.tab === 'units',
-              )
-              .map((item) => item.values[0]!)
-              .concat(store.data!.employees.map((item) => item.unit)),
-          ),
-        )}
-        organizationOptions={companies.map((company) => {
-          const options = hrReferenceOptions(
-            references.data,
-            'employee',
-            'create',
-            company.branchId,
-            company.organizationBranchId,
-          );
-          return {
-            branch: company.name,
-            units: options['واحد'] ?? [],
-            positions: options['سمت'] ?? [],
-            grades: options['رده'] ?? [],
-          };
-        })}
+        organizationOptions={employeeOrganizationOptions(references.data)}
         managerOptions={store
           .data!.employees.filter((item) => item.id !== employee?.id)
           .map((item) => item.name)}
@@ -186,18 +208,20 @@ export function HrEmployeeEditor({
             startedAtValue: value.startedAt,
             status: value.status,
           };
-          if (employee)
-            await hrApi.employees.update(employee.id, {
-              name: input.name,
-              kind: input.kind,
-              status: input.status,
-              ...(input.userId !== employee.userId
-                ? { userId: input.userId }
-                : {}),
-              version: employee.version,
-            });
-          else await hrApi.employees.create(input, key.current);
+          const saved = employee
+            ? await hrApi.employees.update(employee.id, {
+                name: input.name,
+                kind: input.kind,
+                status: input.status,
+                ...(input.userId !== employee.userId
+                  ? { userId: input.userId }
+                  : {}),
+                version: employee.version,
+              })
+            : await hrApi.employees.create(input, key.current);
           await store.mutated();
+          store.rememberEmployee(saved);
+          onSaved?.(saved);
           onClose();
         }}
       />
@@ -207,24 +231,34 @@ export function HrEmployeeEditor({
           target={{
             source: {
               section: 'organization',
-              tab: newReference,
+              tab: newReference.kind,
               label:
-                newReference === 'branches'
+                newReference.kind === 'branches'
                   ? 'شرکت و شعبه'
-                  : newReference === 'units'
+                  : newReference.kind === 'units'
                     ? 'واحد سازمانی'
                     : 'شغل و سمت',
               action:
-                newReference === 'branches'
+                newReference.kind === 'branches'
                   ? 'افزودن شعبه'
-                  : newReference === 'units'
+                  : newReference.kind === 'units'
                     ? 'افزودن واحد'
                     : 'افزودن سمت',
             },
+            ...(newReference.companyId
+              ? { preferredCompanyId: newReference.companyId }
+              : {}),
           }}
           store={store}
           onClose={() => setNewReference(null)}
-          onSaved={() => setNewReference(null)}
+          onSaved={(record) => {
+            setCreatedReference({
+              id: record.id,
+              kind: newReference.kind,
+              value: record.values[0] ?? '',
+            });
+            setNewReference(null);
+          }}
         />
       ) : null}
     </>

@@ -405,7 +405,16 @@ export function ReservationHotelPurchase({
           هتل و ترانسفرهای این قرارداد با یک ثبت به مالی ارسال می‌شوند.
         </p>
       </div>
-      <ReservationInsurancePurchase request={request} onSaved={onSaved} />
+      {request.snapshot.serviceSelections
+        .filter((service) => service.kind === 'INSURANCE')
+        .map((service) => (
+          <ReservationInsurancePurchase
+            key={service.clientKey}
+            request={request}
+            serviceClientKey={service.clientKey}
+            onSaved={onSaved}
+          />
+        ))}
       <SupplierFormPurchaseContext request={request} />
       {hotel ? (
         <section className="space-y-4 rounded-xl border border-border bg-surface p-4">
@@ -591,7 +600,19 @@ export function ReservationHotelPurchase({
   );
 }
 
-export function ReservationPurchaseDialog({ id }: { id: string }) {
+export function ReservationPurchaseDialog({
+  id,
+  category = 'ALL',
+  serviceClientKey,
+  readOnly = false,
+  onSaved,
+}: {
+  id: string;
+  category?: 'ALL' | 'HOTEL' | 'FLIGHT' | 'TRANSFER' | 'INSURANCE';
+  serviceClientKey?: string | undefined;
+  readOnly?: boolean;
+  onSaved?: (() => void) | undefined;
+}) {
   const [request, setRequest] = useState<PurchaseRequest>();
   const [error, setError] = useState('');
   const [refresh, setRefresh] = useState(0);
@@ -613,11 +634,28 @@ export function ReservationPurchaseDialog({ id }: { id: string }) {
   if (error) return <p role="alert">{error}</p>;
   return request ? (
     <>
-      <ReservationHotelPurchase
-        key={request.purchaseVersion}
-        request={request}
-        onSaved={() => setRefresh((value) => value + 1)}
-      />
+      {readOnly ? (
+        <p>مجوز ثبت یا اصلاح خرید خدمات وجود ندارد.</p>
+      ) : category === 'INSURANCE' ? (
+        <ReservationInsurancePurchase
+          key={request.purchaseVersion}
+          request={request}
+          serviceClientKey={serviceClientKey}
+          onSaved={() => {
+            setRefresh((value) => value + 1);
+            onSaved?.();
+          }}
+        />
+      ) : (
+        <ReservationHotelPurchase
+          key={request.purchaseVersion}
+          request={request}
+          onSaved={() => {
+            setRefresh((value) => value + 1);
+            onSaved?.();
+          }}
+        />
+      )}
     </>
   ) : (
     <p>در حال دریافت اطلاعات خرید…</p>

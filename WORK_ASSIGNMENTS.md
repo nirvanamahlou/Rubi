@@ -1,3 +1,9 @@
+## RESERVATION-PURCHASES-HUB-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-purchases-hub-1007 from origin/develop@ba002845. Owner requests linking Reservations purchase action into Purchasing & Supply, themed All/Hotel/Flight/Transfer/Insurance categories and visibility of both registered and missing contract purchases. Reserve new Reservations-owned purchase read model/controller/tests, new reservation-purchases Web hub, existing ticket-purchases route composition and optional focused-flight consumer, Reservations purchase editor/action navigation and own docs. Bounded central locks: navigation presentation/messages, IAM route visibility compatibility only (no grants), checked-in English catalogues and derived catalogue synchronization. Read through Reservations and existing Ticket Purchase public APIs; preserve canonical snapshots, branch permissions, append-only purchase revisions, CAS/idempotency, atomic hotel/transfer batch, Decimal/currency and separate Finance payment. No Procurement-owned command/table changes, schema/migration/dependency or operational database writes. No active overlapping source lock found for these bounded targets; retain unrelated Procurement work. Source implementation and review PR are authorized; no new develop merge/runtime rollout is implied without a matching owner request.
+
+Verification: Web production build56 routes and affected lint/typecheck pass; actual PostgreSQL bound-query plus HTTP tests14 pass; Contracts105 pass. New category/model/UI English tests and canonical insurance-selection regressions pass. Reservations purchase action now navigates to the exact contract hub; synthetic visual proof only, no real purchase or payment submitted. Full affected Web suite and exact-head CI gate the review candidate. Locks release with candidate; no develop merge or3100 deployment authorized by this request.
+
 ## SALES-CHILD-UNDER15-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-child-age-under15-1007 from origin/develop@82d5f658. Owner supersedes under18 with under15 and explicitly authorizes develop merge. Reserve Sales age field/spec, exact occupancy Web model/spec, API capacity service/spec and own bounded docs. Child options2..14; actual-birthday exact hotel checks classify15+ as adults, keep infant0..1, legacy capacity and airline categories unchanged. Reject stale draft child ages15+ even if source tariff extends to18; retain source rate bands and historical records. No shared contract/schema/dependency/DB/runtime mutation. Focused checks and exact-head CI gate merge; source locks release with candidate.
@@ -6017,6 +6023,14 @@ COMPUTER_ID=PC-B; branch codex/pc-b-offer-row-delete-1007 from origin/develop. R
 
 Scope includes one additive display translation in en-overrides.json; prior catalogue locks released. Delivered icon delete per discounts/specials row, guarded shared confirmation, cancellation and filtered export/pagination. Marketing plus translation107 tests pass, including both row types and cancellation. Scoped lint and exact-head full CI gate merge. Bounded source locks released with candidate; no authenticated operational deletion or local runtime deployment.
 
+## BROKER-LEADER-VALIDATION-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-broker-leader-validation-1007 from origin/develop@ead11783. User explicitly requests bounded Master Data broker/leader create validation repair and develop merge; reserve contact crypto travel-phone normalization, broker/leader service/policy and their regressions, broker Web form/model/catalog/validation regressions as needed, and own docs. Permanent Master Data ownership remains PC-B; this is the owner-authorized task scope, no active target overlap. Accept international/local/Persian/Arabic digit and extension contact formats without a national numbering/length rule; preserve encrypted storage, masking, permissions, CAS, real city/broker FK and other modules strict contacts. No schema/migration/dependency/IAM change or operational writes.
+
+BROKER-LEADER-VALIDATION-1007 extension: reserve broker Web form/model and corresponding English catalogue display keys. Scope also reserves the corresponding offline API English contact-error key (CI coverage exposed its omission). Either local/display name or English name is sufficient; persist a nonempty trimmed display name using English fallback, retaining country/city and leader ownership checks. BROKER-LEADER-VALIDATION-1007 scope includes the existing travel-services service regression crypto stub, updated to exercise the new scoped contact boundary. No travel-service producer/API/schema changes.
+
+Verification: API41 focused tests, Web17 form/validation/translation tests, scoped API/Web lint, API/Web typechecks and API/Web production builds pass. No migration, operational data write or authenticated browser submit. Source locks release with the review candidate; complete CI on the submitted commit gates user-authorized develop merge.
+
 ## REMOVE-CUSTOMER-JOURNEY-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-remove-customer-journey-1007 from origin/develop. Reserve Marketing section registry, route resolver and landing description plus focused tests and own docs. Remove customer-journey navigation and reject legacy section links; preserve automation data/APIs and independent process workflows. Previous Marketing locks released, no overlapping active source lock. No shared API/schema/dependency/runtime changes. User explicitly authorizes push/develop merge after verification.
@@ -6025,3 +6039,33 @@ Scope includes existing Marketing model/component regressions and one additive E
 ## DURABLE-PROMOTIONS-1007 — PC-B — IN_PROGRESS
 
 COMPUTER_ID=PC-B; branch codex/pc-b-durable-promotions-1007 from origin/develop. User explicitly requests permanent discount/offer save/list, canonical Customer/Agency audience selection, push/develop merge and3100 rollout. Reserve Marketing promotion API/Web/contracts/tests; narrow Customers public target projection and Master Data public agency projection consumption, Marketing module/controller and task docs. Sole Migration Owner/schema lock=PC-B/DURABLE-PROMOTIONS-1007 for additive promotion persistence with Decimal/currency, UTC dates and real optional Customer/MasterOrganization FKs; previous petty-cash and Marketing migration reservations explicitly released. No dependency lock, Sales/Finance application of discounts, copying raw contact PII or unrelated work removal. API producer Marketing and same-module Web consumer use additive promotion contract; Customer/Master Data remain canonical reference owners. Independently test scoped permissions, persistence/reload, CAS and invalid targets before exact-head CI and authorized rollout. Preserve dirty live checkout.
+
+
+## INTERNAL-MODULE-LABELS-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-internal-module-labels-1007 from latest origin/develop@ba002845. User follows up on merged PR701 and explicitly requests the same names inside modules. Reserve presentation-only titles, breadcrumbs, headings, help/link/module/category labels and their existing assertions in Web Customers, Organizations, Sales/package-pricing, Procurement, Customer Affairs, Documents, Dashboard/Reports, Master Data hints and System settings; bounded IAM access catalog display titles, matching tests/status. No active overlapping target reservation found; prior candidate locks released. PC-B-owned files are touched only for the owner-authorized display rename, not module logic/data. Keep canonical routes/ids/permissions, financial/source keys and actual business fields unchanged. Preserve the newly added /ticket-purchases Purchasing & supply labels; rename old /purchases references to Petty cash. No schema/migration/dependency/runtime/data changes. Standing user authorization for this rename's develop merge persists from the preceding request.
+
+Display scope includes matching English UI catalog/overrides, System locale labels and HR shared referral titles only. B2B registration reservation is stale: PR712 merged into develop@82d5f658; its wizard and directory callbacks remain untouched.
+
+Presentation scope also covers Procurement export workbook/report titles and Reporting catalog B2B display question; no export format, query or financial logic changes.
+
+English coverage requires corresponding offline API and standalone package-editor catalogue entries; reserve those matching display entries and any standalone editor module heading only.
+
+Static Procurement reference page module/title/breadcrumb labels are included; actual ticket-price fields in exported marketing banners retain their monetary meaning.
+
+Existing focused Web tests147 plus refreshed translation/Finance12 pass; scoped lint, Contracts/API/Web typechecks and API display/export checks pass. API and Web production builds pass; exact-head complete CI gates merge. Scoped source locks release with the candidate commit; no authenticated browser QA or local rollout claimed.
+
+## OFFER-TRASH-CONTRAST-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-offer-trash-1007 from origin/develop@ba002845. Reserve only Marketing preview discount/special-offer delete-button styling, focused regression and bounded status docs. White background with red inherited trash icon on row action and confirmation; retain existing confirmation/cancellation/removal behavior. Earlier durable-promotions work is paused in its separate worktree and has no source edits. No active target overlap, shared component/API/schema/migration/dependency/runtime changes. User explicitly authorizes push and develop merge after verification.
+
+Marketing/translation108 tests pass, including both offer tabs' neutral delete/confirmation styling and cancellation/removal. Bounded source locks release with frozen candidate; exact-head CI quality/typecheck/full tests/production build gates authorized merge. No local runtime rollout or operational write.
+
+## HR-INLINE-REFRESH-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-hr-inline-refresh-1007` from `origin/develop@ead11783`. Reserve HR Web inline-reference creation and catalog/list refresh paths, their focused tests, and bounded status documentation. Ensure records created from another HR form become selectable in dropdowns and visible in their owning sections without a page reload. Preserve permissions, branch scope, draft state, API contracts and stored data. No schema, migration, dependency, shared API or unrelated module changes. No overlapping active HR source lock found. User explicitly authorizes push and merge to `develop` after verification.
+
+## HR-EMPLOYEE-ORGANIZATION-OPTIONS-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-organization-options-1007 from origin/develop@746c59a2. Reserve HR employee editor organization unit/position dropdown binding, focused tests and bounded status documentation. Fix catalog-derived choices for the selected company without synthetic fallback or cross-company leakage. Preserve HR API/schema/permissions and existing saved employee values. No overlapping active HR source lock found. User authorizes push and merge to develop after verification.
+Scope extension after exact-head CI: reserve one additive loading label in Web en-overrides.json so English UI coverage remains complete. Existing translation entries and localization behavior remain unchanged; prior catalogue locks are released.

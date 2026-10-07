@@ -243,7 +243,7 @@ export function PricingManagementWorkspace() {
     <main className="mx-auto grid w-full max-w-7xl gap-5">
       <PageHeader
         eyebrow="فروش و ارتباط با مشتری"
-        title="مدیریت قیمت و پکیج‌ها"
+        title="مدیریت پکیج"
         description="پکیج، قواعد، نسخه قیمت، پیش‌فاکتور و خروجی برندشده با کنترل شعبه و سازوکار maker/checker"
         actions={
           <>

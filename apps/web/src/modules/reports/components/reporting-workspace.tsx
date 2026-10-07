@@ -602,9 +602,9 @@ const reportCategoryIcons: Readonly<Record<string, LucideIcon>> = {
   'مالی و خزانه‌داری': WalletCards,
   'رزرواسیون و عملیات سفر': Plane,
   'مدیریت بلیت‌ها': Ticket,
-  'خرید و تأمین': ShoppingBag,
+  تنخواه: ShoppingBag,
   'امور مشتریان و SLA': Headset,
-  'آژانس‌ها و مشتریان سازمانی': Building2,
+  'مشتریان B2B': Building2,
   مارکتینگ: Megaphone,
   'منابع انسانی': UserRound,
   'اسناد و انطباق': FileText,
@@ -666,11 +666,11 @@ const reportCategoryColors: Readonly<Record<string, string>> = {
     'bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300',
   'مدیریت بلیت‌ها':
     'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300',
-  'خرید و تأمین':
+  تنخواه:
     'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300',
   'امور مشتریان و SLA':
     'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300',
-  'آژانس‌ها و مشتریان سازمانی':
+  'مشتریان B2B':
     'bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300',
   مارکتینگ: 'bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300',
   'منابع انسانی':
