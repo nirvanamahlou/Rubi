@@ -1,3 +1,7 @@
+## 2026-10-07 — SALES-CHILD-UNDER18-1007 — PC-A
+
+Owner confirmed under18 (last selectable band17 to less than18) and explicitly authorized develop merge. Sales age selector expands child2..17 while infant0..1 and unrelated selector limits remain unchanged. Actual-birthday exact hotel occupancy checks align Web, API save/update and confirmation at18; matching imported bands remain authoritative and absent age tariffs fail closed. Legacy capacity/flight age categories and existing contracts are not rewritten. Boundary12/17/18 and missing-band regressions cover draft and assigned guests. No schema, shared wire contract, dependency, operational data or runtime deployment; affected tests/lint/typechecks and exact-head CI gate merge.
+
 ## 2026-10-06 — HOTEL-OCCUPANCY-REIMPORT-1006 — PC-A — PREVIEW_REVIEW
 
 Repeated Excel import matches exact branch/city/date/currency/board/hotel/supplier independent of chunk boundaries, updates existing standalone occupancy packs using their current version, skips unchanged content and creates only unmatched rows/periods. Missing source hotels/rooms/compositions and unrelated suppliers/boards/tour packs remain untouched. Ambiguous duplicate targets and oversize merged packs fail closed. User-visible hotel-create failure was caused by unsupported countryId in the consumer payload; removed it while preserving geography preflight, and added actual producer allowlist regression. Reservations256 tests (two existing skips), scoped lint and Web typecheck pass;55-route production build and owned3210 activation are final delivery gates. No actual importer execution, live3100/operational database/develop mutation. Same previewPR671 follow-up.
@@ -4883,3 +4887,8 @@ All Word-listed HR changes are implemented in `codex/pc-b-hr-word-revision-1006`
 ## 2026-10-07 — PROCUREMENT-SUPPLIER-LOGO-1007
 
 Supplier saves now surface partial logo upload failure and preserve the exact saved supplier ID/version in the open edit form, so retry does not create another supplier. Successful profile responses refresh the authenticated logo beside the supplier name. Documents duplicate-image reuse now verifies its encrypted object exists; ENOENT triggers a normal fresh upload and scan, while corruption fails closed. Missing-logo previews return an actionable 404 rather than a generic500, preserving exact-source, branch and scan guards. Read-only mounted-archive diagnostics found three supplier logo references with missing objects and one intact encrypted image; no files/operational records were changed or invented. Existing missing images require re-upload or restored originals. API62 and Web78 targeted tests passed; lint/typecheck/build and exact-head CI gate release. No schema/migration/dependency/IAM change. CUA initialization failed; authenticated browser QA and shared3100 rollout are not claimed.
+
+
+## 2026-10-07 — Distinct sidebar group dots — PC-A
+
+Sidebar headers consume each registered group's distinct palette rather than one shared cyan color. Work blue, Sales rose, Reservations green, Finance amber, HR purple, Documents/Reports cyan, Company settings orange; same colors on mobile and desktop with a slightly larger outlined dot. Group collapse, routes and permissions preserved. No API/schema/dependency/runtime change; user authorizes develop merge after validation.

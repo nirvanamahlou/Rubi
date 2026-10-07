@@ -1,3 +1,9 @@
+## SALES-CHILD-UNDER18-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-child-age-under18-1007 from origin/develop. Owner explicitly confirms child means under18 and authorizes develop merge. Reserve Sales passenger-age selector/spec, exact occupancy Web model/spec and API capacity service/spec plus bounded own docs. Existing public hotel occupancy contract already accepts ages below18: no wire/schema/dependency changes. Align actual-birthday classification for exact hotel rates in both create/update and confirmation; preserve legacy hotel and flight age categories. Producer Reservations unchanged, consumer Sales aligned; missing age tariffs fail closed rather than fabricating prices. No operational data or deployment.
+
+Delivered child2..17 selector and aligned actual guest ages for exact hotel rates. Sales Web340 tests pass (one existing skip), affected Web/API ESLint and both typechecks pass. Initial API run passes102 but two HTTP setup suites exceed10s on the loaded host; repeat with bounded two workers and longer hook allowance, and normal exact-head full CI remain merge gates. PR699 targets develop; source locks released with candidate. Build verification is through full production CI, with no operational runtime or data mutation.
+
 ## HOTEL-IMPORT-DEVELOP-AGE-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; user authorizes PR671 develop merge and complete child-age options below selector. Reserve Sales passenger-age field/spec and bounded opt-in optionLimit in shared SearchCombobox (default5 unchanged), own docs, develop integration conflict resolution preserving all other owners' changes. No dependencies/schema/migration/database/runtime deployment. Inspect and repair exact-head CI before requested merge; no bypass of failures.
@@ -5913,3 +5919,7 @@ COMPUTER_ID=PC-B; branch codex/pc-b-supplier-logo-save-1007 from origin/develop@
 Extension: reserve DocumentsService.uploadMasterDataLogo duplicate-content reuse/read check and previewMasterDataLogo missing-file error, their focused tests. Producer Documents / consumers Master Data logo + Procurement; existing signatures and storage encryption/scan/branch guards unchanged. Read-only diagnostics prove three attached supplier logo objects are missing (ENOENT) from current mounted archive; one decrypts correctly. Missing objects must be replaceable even with the identical original image; no fake data or scan bypass.
 
 PROCUREMENT-SUPPLIER-LOGO-1007 candidate: API62 + Web78 tests, scoped lint/API-Web typecheck/build and55-page Web production generation passed. Source reservations RELEASED with candidate. No migration/dependency/IAM/runtime or operational data change. Exact-head CI gates user-authorized develop merge; three missing historical image objects require original re-upload/recovery.
+
+## SIDEBAR-DOT-COLORS-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; codex/pc-a-sidebar-dot-colors-1007 from origin/develop. Reserve central app-shell.tsx group dot presentation and lib/navigation.ts group palette plus own status entries. Prior Navigation central lock released; no target local changes or active overlapping reservation. Distinct blue/rose/green/amber/purple/cyan/orange dots across desktop and mobile using existing group dotClass. No route, permission, API, schema, dependency or runtime change. User explicitly authorizes develop merge; scoped lint/typecheck/build and repository CI gate merge. Release bounded central locks with committed review candidate.
