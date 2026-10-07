@@ -5,7 +5,7 @@ import type {
 } from '@nora/contracts';
 export const sections = [
   ['dashboard', 'داشبورد'],
-  ['inbox', 'صندوق درخواست‌ها'],
+  ['inbox', 'درخواست‌ها'],
   ['tickets', 'صدور بلیط'],
   ['hotels', 'رزرو هتل'],
   ['vouchers', 'واچر'],

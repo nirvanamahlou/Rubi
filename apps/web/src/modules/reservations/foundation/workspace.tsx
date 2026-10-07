@@ -199,9 +199,7 @@ export function ReservationOperationsWorkspace({
         <div className={styles.operationMain}>
           <header className={styles.header}>
             <div>
-              <p className={styles.eyebrow}>عملیات سفر</p>
               <h1>رزرواسیون</h1>
-              <p>از دریافت درخواست تا آماده‌سازی مدارک سفر</p>
             </div>
             <span className={styles.badge}>
               {preview
@@ -336,7 +334,11 @@ export function ReservationOperationsWorkspace({
                     />
                   </label>
                 </div>
-                {result.dateError && <p role="alert">{result.dateError}</p>}
+                {result.dateError && (
+                  <p id="reservation-date-error" role="alert">
+                    {result.dateError}
+                  </p>
+                )}
               </section>
               <section className={styles.metrics} aria-label="خلاصه رزرواسیون">
                 {(Object.keys(statusLabels) as (keyof typeof statusLabels)[])
@@ -412,7 +414,7 @@ export function ReservationOperationsWorkspace({
           {section === 'inbox' && (
             <section className={styles.panel}>
               <div className={styles.panelTitle}>
-                <h2>صندوق درخواست‌ها</h2>
+                <h2>درخواست‌ها</h2>
                 <span>
                   {available
                     ? `${result.total.toLocaleString('fa-IR')} درخواست`
@@ -462,10 +464,6 @@ export function ReservationOperationsWorkspace({
                     ? 'آماده‌سازی اکسل…'
                     : `خروجی اکسل (${result.total.toLocaleString('fa-IR')} درخواست)`}
                 </button>
-                <small>
-                  همهٔ نتایج مطابق فیلترها و ترتیب فعلی؛ برای ارسال فرم یا صدور
-                  واچر، روی مربع اقدام یا تأیید هتل بزنید.
-                </small>
                 {exportError && <span role="alert">{exportError}</span>}
               </div>
               <div
@@ -629,7 +627,9 @@ export function ReservationOperationsWorkspace({
                       value={effectiveQuery.fromDate}
                       onChange={(fromDate) => changeQuery({ fromDate })}
                       aria-invalid={Boolean(result.dateError)}
-                      aria-describedby="reservation-date-help"
+                      aria-describedby={
+                        result.dateError ? 'reservation-date-error' : undefined
+                      }
                     />
                   </div>
                   <div>
@@ -641,7 +641,9 @@ export function ReservationOperationsWorkspace({
                       value={effectiveQuery.toDate}
                       onChange={(toDate) => changeQuery({ toDate })}
                       aria-invalid={Boolean(result.dateError)}
-                      aria-describedby="reservation-date-help"
+                      aria-describedby={
+                        result.dateError ? 'reservation-date-error' : undefined
+                      }
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -664,13 +666,11 @@ export function ReservationOperationsWorkspace({
                   </div>
                 </div>
               </form>
-              <p id="reservation-date-help" className={styles.filterHelp}>
-                {result.dateError ??
-                  (query.fromDate || query.toDate
-                    ? 'بازه شامل تمام روز شروع و پایان است؛ ساعت‌ها بر مبنای تهران محاسبه می‌شوند.'
-                    : 'نمایش پیش‌فرض: قراردادهای یک ماه اخیر. برای دیدن تاریخ‌های قدیمی، بازهٔ تاریخ را انتخاب کنید.')}
-              </p>
-              {result.dateError && <p role="alert">{result.dateError}</p>}
+              {result.dateError && (
+                <p id="reservation-date-error" role="alert">
+                  {result.dateError}
+                </p>
+              )}
               {result.filteredRows.length === 0 ? (
                 <p className={styles.empty}>
                   {available
@@ -840,7 +840,7 @@ export function ReservationOperationsWorkspace({
             </section>
           )}
         </div>
-        {section !== 'manifests' && (
+        {section === 'inbox' && (
           <ContractActionPanel
             key={selected?.id ?? 'unselected'}
             request={selected}
