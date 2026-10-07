@@ -1,4 +1,5 @@
 'use client';
+import Link from '@/components/access-link';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -156,6 +157,12 @@ export function FinanceHistoryPanel({
             key={row.source + ':' + row.id}
             className="space-y-2 rounded-xl border p-3 text-sm"
           >
+            <Link
+              className="text-primary"
+              href={`/finance/accounting/receipts-payments/reports?source=${row.source}&recordId=${row.id}`}
+            >
+              حسابداری این عملیات
+            </Link>
             <div className="flex flex-wrap justify-between gap-2">
               <strong>
                 {row.direction === 'RECEIPT' ? 'دریافت' : 'پرداخت'} ·{' '}

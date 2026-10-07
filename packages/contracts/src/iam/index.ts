@@ -1,3 +1,4 @@
+import { ACCOUNTING_PERMISSIONS } from '../accounting';
 export * from './user-access';
 import { HR_PERMISSION_CODES } from '../hr';
 import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
@@ -136,6 +137,7 @@ export const IAM_PERMISSION_CODES = [
   'ticket_catalog.tours.manage',
   'reservations.read',
   'reservations.documents.manage',
+  ...ACCOUNTING_PERMISSIONS,
   'finance.read',
   'finance.export',
   'finance.request.manage',

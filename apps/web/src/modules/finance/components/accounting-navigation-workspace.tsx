@@ -1,4 +1,5 @@
 'use client';
+import { AccountingWorkspace } from './accounting-workspace';
 
 import {
   ArrowLeftRight,
@@ -23,12 +24,12 @@ import {
   useAccessPermissions,
 } from '@/modules/iam/access-context';
 import { hasManagedAccess } from '@nora/contracts';
-import { usePathname } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useMemo, useState } from 'react';
 
 import { usePageBreadcrumbs } from '@/components/layout/page-breadcrumbs';
 import { Button } from '@/components/ui/button';
-import { Card, EmptyState, PageHeader } from '@/components/ui/surfaces';
+import { Card, PageHeader } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 
 interface AccountingNavigationItem {
@@ -93,19 +94,38 @@ const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
     id: 'taxpayer-system',
     title: 'ارتباط با سامانه مودیان مالیاتی',
     icon: ScrollText,
-    items: [],
+    items: [
+      {
+        title: 'تنظیمات مودیان',
+        href: '/finance/accounting/taxpayer-system/settings',
+        icon: FolderCog,
+      },
+      {
+        title: 'صورتحساب مالیاتی',
+        href: '/finance/accounting/taxpayer-system/invoices',
+        icon: ReceiptText,
+      },
+    ],
   },
   {
     id: 'tax-accounting',
     title: 'حسابداری مالیاتی',
     icon: Calculator,
-    items: [],
+    items: [
+      {
+        title: 'گزارش مالیاتی',
+        href: '/finance/accounting/tax-accounting/returns',
+        icon: ClipboardList,
+      },
+    ],
   },
 ];
 
 function findSelected(pathname: string) {
   for (const group of accountingNavigationGroups) {
-    const child = group.items.find((item) => item.href === pathname);
+    const child = group.items.find(
+      (item) => pathname === item.href || pathname.startsWith(item.href + '/'),
+    );
     if (child) return { groupTitle: group.title, title: child.title };
   }
   return null;
@@ -119,6 +139,7 @@ function AccountingSecondaryNavigation({
   onToggle: () => void;
 }) {
   const pathname = usePathname();
+  const selectedBook = useSearchParams().get('bookId');
   const allowed = useRouteAccess();
   const permissions = useAccessPermissions();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
@@ -201,7 +222,9 @@ function AccountingSecondaryNavigation({
                   <div className="mt-1 space-y-1 border-s border-border ps-2">
                     {group.items.map((item) => {
                       const ItemIcon = item.icon;
-                      const active = pathname === item.href;
+                      const active =
+                        pathname === item.href ||
+                        pathname.startsWith(item.href + '/');
                       return (
                         <Link
                           aria-current={active ? 'page' : undefined}
@@ -211,7 +234,11 @@ function AccountingSecondaryNavigation({
                               ? 'bg-primary/10 text-primary'
                               : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                           )}
-                          href={item.href}
+                          href={
+                            selectedBook
+                              ? `${item.href}?bookId=${selectedBook}`
+                              : item.href
+                          }
                           key={item.href}
                         >
                           <ItemIcon className="size-4 shrink-0" />
@@ -229,7 +256,7 @@ function AccountingSecondaryNavigation({
   );
 }
 
-export function AccountingNavigationWorkspace() {
+function AccountingNavigationWorkspaceContent() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const selected = findSelected(pathname);
@@ -261,7 +288,7 @@ export function AccountingNavigationWorkspace() {
   return (
     <main className="space-y-6">
       <PageHeader
-        description="ساختار بخش‌های حسابداری؛ محتوای هر بخش پس از اعلام جزئیات تکمیل می‌شود."
+        description="دفاتر، حساب‌ها، اسناد و گزارش‌های حسابداری"
         eyebrow="Nora Accounting"
         title="حسابداری"
       />
@@ -272,20 +299,20 @@ export function AccountingNavigationWorkspace() {
         />
         <section className="min-w-0 flex-1" aria-live="polite">
           <Card className="min-h-[32rem] p-5 sm:p-7">
-            {selected ? (
-              <EmptyState
-                description="این بخش فقط ایجاد شده است و فرم‌ها، جدول‌ها و عملیات آن پس از اعلام جزئیات شما اضافه می‌شوند."
-                title={`${selected.groupTitle} / ${selected.title}`}
-              />
-            ) : (
-              <EmptyState
-                description="یکی از زیرگروه‌های منوی حسابداری را انتخاب کنید. محتوای بخش‌ها هنوز تعریف نشده است."
-                title="در انتظار تعریف جزئیات"
-              />
-            )}
+            <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
+              <AccountingWorkspace key={pathname} pathname={pathname} />
+            </Suspense>
           </Card>
         </section>
       </div>
     </main>
+  );
+}
+
+export function AccountingNavigationWorkspace() {
+  return (
+    <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
+      <AccountingNavigationWorkspaceContent />
+    </Suspense>
   );
 }

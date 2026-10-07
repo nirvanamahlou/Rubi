@@ -8,6 +8,7 @@ import type { SalesService } from '../sales/sales.service';
 import type { ReservationsPublicService } from '../reservations/reservations-public.service';
 import {
   historyAfter,
+  historyDateRange,
   historyCursor,
   historyPage,
   readFinanceHistory,
@@ -82,6 +83,21 @@ function dependencies() {
   };
 }
 describe('persisted finance transaction history', () => {
+  it('uses inclusive UTC days and rejects impossible or reversed date ranges', () => {
+    expect(
+      historyDateRange({ from: '2026-09-28', to: '2026-09-28' }, 'transferAt'),
+    ).toEqual({
+      transferAt: {
+        gte: new Date('2026-09-28T00:00:00Z'),
+        lt: new Date('2026-09-29T00:00:00Z'),
+      },
+    });
+    for (const query of [
+      { from: '2026-02-30' },
+      { from: '2026-10-01', to: '2026-09-30' },
+    ])
+      expect(() => historyCursor(query)).toThrow(BadRequestException);
+  });
   it('Sales public history reads only confirmed receipts in authorized branches', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const repository = new SalesRepository({
