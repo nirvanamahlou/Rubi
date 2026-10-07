@@ -17,19 +17,25 @@ export function ProcurementDocumentPicker({
   onChange,
   available,
   invoiceUpload,
+  onUploadingChange,
 }: {
   branchId: string;
   value: ProcurementDocumentReferenceV1[];
   onChange: (value: ProcurementDocumentReferenceV1[]) => void;
   available: boolean;
+  onUploadingChange?: (uploading: boolean) => void;
   invoiceUpload?: {
     requestId: string;
     requestNumber: string;
-    purpose?: 'ORDER';
+    purpose?: 'ORDER' | 'RETURN';
   };
 }) {
   const uploadLabel =
-    invoiceUpload?.purpose === 'ORDER' ? 'سند سفارش' : 'فاکتور';
+    invoiceUpload?.purpose === 'ORDER'
+      ? 'سند سفارش'
+      : invoiceUpload?.purpose === 'RETURN'
+        ? 'مدرک مرجوعی'
+        : 'فاکتور';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<readonly DocumentListItemV1[]>([]);
@@ -113,6 +119,7 @@ export function ProcurementDocumentPicker({
     setBusy(true);
     setInvoiceUploadError('');
     setInvoiceUploadSuccess('');
+    onUploadingChange?.(true);
     try {
       const form = new FormData();
       form.set('file', file);
@@ -161,6 +168,7 @@ export function ProcurementDocumentPicker({
       );
     } finally {
       setBusy(false);
+      onUploadingChange?.(false);
     }
   }
   return (

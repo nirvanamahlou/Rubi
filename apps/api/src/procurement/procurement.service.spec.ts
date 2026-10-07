@@ -568,6 +568,89 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         ).data,
       ).toMatchObject({ occurredAt: instant });
     });
+    it('saves order-bound discrepancy and documented return form submissions once and reloads their dates and evidence', async () => {
+      const context = await orderedRequest();
+      let row = await command(
+        context.row,
+        'RECEIVE',
+        receiptInput(context.order.id, context.item.id),
+      );
+      const receipts = await service.records(
+        row.id,
+        { kind: 'receipts' },
+        maker,
+      );
+      const receipt = (receipts.items[0] as { lines: { id: string }[] })
+        .lines[0]!;
+      const discrepancyInput = {
+        orderId: context.order.id,
+        kind: 'DAMAGE',
+        description: 'Synthetic form damage',
+        occurredAt: instant,
+        currencyCode: 'IRR',
+        disposition: 'ACCEPTED',
+        resolution: 'REPLACE',
+        receivedDelta: '0',
+        acceptedDelta: '0',
+        rejectedDelta: '0',
+      };
+      const discrepancyKey = randomUUID();
+      const beforeDiscrepancy = row;
+      row = await command(
+        beforeDiscrepancy,
+        'DISCREPANCY',
+        discrepancyInput,
+        maker,
+        discrepancyKey,
+      );
+      await command(
+        beforeDiscrepancy,
+        'DISCREPANCY',
+        discrepancyInput,
+        maker,
+        discrepancyKey,
+      );
+      const discrepancies = await service.records(
+        row.id,
+        { kind: 'discrepancies' },
+        maker,
+      );
+      expect(discrepancies.items).toHaveLength(1);
+      expect(discrepancies.items[0]).toMatchObject({
+        orderId: context.order.id,
+        description: 'Synthetic form damage',
+        data: { occurredAt: instant },
+      });
+      const returnInput = {
+        orderId: context.order.id,
+        receiptItemId: receipt.id,
+        quantity: '0.25',
+        disposition: 'ACCEPTED',
+        returnedAt: instant,
+        reason: 'Synthetic form return',
+        documents,
+      };
+      const returnKey = randomUUID();
+      const beforeReturn = row;
+      row = await command(
+        beforeReturn,
+        'RETURN',
+        returnInput,
+        maker,
+        returnKey,
+      );
+      await command(beforeReturn, 'RETURN', returnInput, maker, returnKey);
+      const returns = await service.records(row.id, { kind: 'returns' }, maker);
+      expect(returns.items).toHaveLength(1);
+      expect(JSON.parse(JSON.stringify(returns.items[0]))).toMatchObject({
+        orderId: context.order.id,
+        receiptItemId: receipt.id,
+        quantity: '0.25',
+        returnedAt: instant,
+        reason: 'Synthetic form return',
+        data: { documents, disposition: 'ACCEPTED' },
+      });
+    });
     async function selectedRequest(draft = fixture(), validUntil = nextMonth) {
       let row = await approvedRequest(draft);
       row = await command(row, 'QUOTE', {
@@ -1472,6 +1555,79 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           where: { requestId: context.row.id },
         }),
       ).toBe(0);
+    });
+    it('persists uploaded invoice references in amended orders and immutable order versions', async () => {
+      const context = await orderedRequest();
+      await database.client.procurementOrder.update({
+        where: { id: context.order.id },
+        data: {
+          data: json({
+            ...(context.order.data as Record<string, unknown>),
+            documents: [],
+          }),
+        },
+      });
+      await command(context.row, 'AMEND_ORDER', {
+        orderId: context.order.id,
+        reason: 'Attach archived invoice',
+        documents,
+      });
+      const saved = await database.client.procurementOrder.findUniqueOrThrow({
+        where: { id: context.order.id },
+      });
+      expect(saved.data).toMatchObject({ documents });
+      const version =
+        await database.client.procurementOrderVersion.findUniqueOrThrow({
+          where: {
+            orderId_version: { orderId: saved.id, version: saved.version },
+          },
+        });
+      expect(version.payload).toMatchObject({ data: { documents } });
+      expect(
+        (await service.orders({}, maker)).items.find(
+          (order) => order.id === saved.id,
+        )?.data,
+      ).toMatchObject({ documents });
+    });
+    it('rejects unverified invoice versions and unauthorized attachments without changing the order', async () => {
+      const context = await orderedRequest();
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Invalid document version',
+            documents: [{ id: documentId, versionId: randomUUID() }],
+          }),
+        503,
+        'DOCUMENTS_UNAVAILABLE',
+      );
+      await rejected(
+        () =>
+          command(
+            context.row,
+            'AMEND_ORDER',
+            {
+              orderId: context.order.id,
+              reason: 'Unauthorized attachment',
+              documents,
+            },
+            {
+              ...maker,
+              permissions: maker.permissions.filter(
+                (p) => p !== 'documents.procurement.read',
+              ),
+            },
+          ),
+        403,
+        'FORBIDDEN',
+      );
+      expect(
+        (
+          await database.client.procurementOrder.findUniqueOrThrow({
+            where: { id: context.order.id },
+          })
+        ).version,
+      ).toBe(context.order.version);
     });
     it('persists order amendments as new approved versions and preserves omitted metadata and exact documents', async () => {
       const context = await orderedRequest();

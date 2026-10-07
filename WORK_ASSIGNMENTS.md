@@ -5918,6 +5918,14 @@ PROCUREMENT-PETTY-CASH-ACTIONS-1007 candidate: source, central display-label and
 - Migration/Dependency/Lockfile owner: none unless a specific additive schema requirement is proven and independently reserved. No destructive migration, operational data mutation or runtime deployment. HR owns employee/record state; Documents owns uploaded files; Workbench owns submissions; cross-module access must use public services.
 - Delivered all Word-listed UI/form/workflow changes using existing HR record storage plus an additive assessment resource. Narrow Workbench Feedback delete and Customer Affairs HR inbox endpoints are recipient/branch scoped. HR Web 102 tests, HR API 114 tests (26 opt-in PostgreSQL tests skipped), final focused 25 API tests, affected lint, Contracts/API/Web typechecks and production builds pass. The optional PostgreSQL run was unavailable because the running local container did not have the test harness's `nora_local` role; no operational DB was changed. CI and exact-head develop integration remain merge gates. Scoped locks release with the candidate commit.
 
+## PROCUREMENT-SUPPLIER-LOGO-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; branch codex/pc-b-supplier-logo-save-1007 from origin/develop@b70a446d. Reserve Procurement supplier persistence helper/internal-sections/supplier-logo and tests; bounded Master Data logo preview error handling if needed; Documents storage diagnostics/read-only recovery investigation and own status entries. Preserve all existing permissions, scan checks, supplier identities and versions. No schema/migration/dependency/IAM change. User authorizes push and develop merge after checks. No overlapping active reservation found.
+
+Extension: reserve DocumentsService.uploadMasterDataLogo duplicate-content reuse/read check and previewMasterDataLogo missing-file error, their focused tests. Producer Documents / consumers Master Data logo + Procurement; existing signatures and storage encryption/scan/branch guards unchanged. Read-only diagnostics prove three attached supplier logo objects are missing (ENOENT) from current mounted archive; one decrypts correctly. Missing objects must be replaceable even with the identical original image; no fake data or scan bypass.
+
+PROCUREMENT-SUPPLIER-LOGO-1007 candidate: API62 + Web78 tests, scoped lint/API-Web typecheck/build and55-page Web production generation passed. Source reservations RELEASED with candidate. No migration/dependency/IAM/runtime or operational data change. Exact-head CI gates user-authorized develop merge; three missing historical image objects require original re-upload/recovery.
+
 ## TICKET-PURCHASE-INBOX-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-ticket-purchase-inbox-1007 from origin/develop@dc77c39b. User explicitly authorizes bounded travel purchase workflow change and menu labels plus develop merge. Reserve shared navigation/messages and corresponding tests; dedicated travel purchase inbox UI/route; Finance ticket-cost public API/service/tests; bounded ProcurementPublicService ticket envelope adapter/controller and tests; additive shared ticket purchase contracts, domain/status docs. General Procurement request/order implementation remains PC-B-owned and untouched; existing /purchases presentation renamed تنخواه. No overlapping active target lock found (PC-B procurement orders/record-list locks released with review candidates). Register charter seat costs in purchase inbox with procurement quote permission, exact unit×seat total, version/retry checks; Finance only pays persisted cost and hides unpriced envelopes. Preserve branch scope, supplier snapshot, payment history, contract profit sources and legacy cost records. No schema/dependency/migration/IAM grant intended. Producer Ticket→Procurement envelope→Finance cost; consumers purchase inbox, Finance payment and Sales actual-cost profit. Existing Finance cost fields retained for compatibility, moved authority through explicit public command, no direct cross-module table access.
@@ -5931,3 +5939,27 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-purchase-inbox-1007 from origin/devel
 ## SIDEBAR-DOT-COLORS-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; codex/pc-a-sidebar-dot-colors-1007 from origin/develop. Reserve central app-shell.tsx group dot presentation and lib/navigation.ts group palette plus own status entries. Prior Navigation central lock released; no target local changes or active overlapping reservation. Distinct blue/rose/green/amber/purple/cyan/orange dots across desktop and mobile using existing group dotClass. No route, permission, API, schema, dependency or runtime change. User explicitly authorizes develop merge; scoped lint/typecheck/build and repository CI gate merge. Release bounded central locks with committed review candidate.
+
+## PROCUREMENT-ORDER-PREVIEW-CLEANUP-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-preview-cleanup-1007 from origin/develop@ce876ce4. Reserve bounded Procurement RecordCard field-visibility option, purchase-order view consumer and focused render regression, own status entries. Hide requestId and version only in order preview including nested lines; retain persisted identity/CAS/document version and other previews. No API/schema/migration/dependency/IAM/runtime change. Target files clean and no active overlapping ownership found. User authorizes push and develop merge after checks.
+
+PROCUREMENT-ORDER-PREVIEW-CLEANUP-1007: source reservation RELEASED with frozen review candidate. Six focused tests, scoped lint/format/diff checks pass; Web typecheck/build and exact-head CI remain merge gates. No operational runtime/data change.
+
+## PROCUREMENT-ORDER-INVOICE-UPLOAD-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-invoice-upload-1007 from origin/develop@eb4d5440. Reserve Procurement operation-form/document picker integration and focused tests, AMEND_ORDER document-reference validation/persistence and scoped tests, own status entries. Use existing Documents upload/archive contract; producer Documents unchanged, consumer AMEND_ORDER additive documents field. Preserve omitted attachments, exact document versions, branch/read/CLEAN scan checks, CAS/idempotency and independent order approval. No financial invoice/payment creation from upload alone. No schema/migration/dependency/IAM/runtime/data change; target locks free. User authorizes push/develop merge after checks.
+
+PROCUREMENT-ORDER-INVOICE-UPLOAD-1007: source reservation RELEASED with frozen review candidate. Web61 plus Documents-client6 tests and focused form10 rerun passed; lint/typecheck/API and Web56-route builds pass. All 54 PostgreSQL regression tests passed; exact-head CI remains the merge gate. No operational runtime/data change.
+
+## PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-discrepancy-return-1007 from origin/develop@ee4353e8. Reserve Procurement discrepancy/return operation form, record selectors/consumer as needed, module-owned API command/history fixes if reproduced, focused tests and own status entries. Preserve receipt-backed return quantities, evidence, branch permissions, CAS/idempotency and Finance boundaries. No schema/migration/dependency/IAM/operational data change. Prior overlapping reservations explicitly released; target files clean. User authorizes push and develop merge after tests/CI.
+
+PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007: source reservation RELEASED with frozen review candidate. PostgreSQL 55 and Web 62 tests passed; lint/typecheck/API build passed. Web production build (56 routes) and final form 11-test rerun passed. Exact-head CI remains the merge gate. No operational data/runtime changes.
+
+## EXPENSE-DELETE-ICON-1007 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch codex/pc-b-expense-delete-icon-1007. Reserve only Marketing campaign declaration delete-button presentation, its focused regression test and bounded status docs. Neutral background with red inherited icon and subtle hover; existing removal handler and frozen state stay intact. No API/data/schema/dependency/shared-control/runtime changes. No active overlap in target files. User authorizes push and develop merge after checks.
+
+- Six declaration tests pass, including named icon-only trash contrast styling. Affected lint and full Marketing tests precede release; exact-head CI lint/typecheck/tests/production build gate merge. Locks released with candidate commit; no local runtime rollout or authenticated browser verification claimed.
