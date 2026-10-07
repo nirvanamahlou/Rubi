@@ -5022,3 +5022,7 @@ Verification: all137 focused Sales component tests pass; Web typecheck passes. S
 ## FINANCE-INBOX-REDESIGN-1007 — PC-A
 
 Finance request inbox uses light cyan header, compact separated request rows, consistent responsive labelled filters and collapsed supplementary metrics. Remove branch-ID/person/due-date filter fields, saved-view controls and global transaction-history panel. Existing backend search finds contract/reference/party; payments, per-request history, exports, manager settings and document delivery remain available under existing authorization. No schema/API/dependency/runtime change. Scoped checks and clean CI gate delivery; no authenticated browser or operational data changes claimed.
+
+## 2026-10-07 — PC-A — Jahan Bastan travel-document branding
+
+Supplied transparent Jahan Bastan logo replaces the own-company logo in contracts, issued tickets, reservation forms and hotel vouchers. Contract notices and contact footer use the issuing company and omit fixed Niyayesh information for Jahan. Jahan previews/PDF exports bypass stale own-company upload references; custom-agency and other company behavior remain. RGB colors remain visible on print; English company name is Jahan Bastan. Four synthetic A4 outputs visually checked, focused tests run and clean exact-head CI gates user-authorized develop merge. No schema/API/data changes or local rollout. Asset provenance and final image prompt are in docs/tasks/JAHAN-DOCUMENT-BRANDING-1007.md.

@@ -6130,3 +6130,11 @@ COMPUTER_ID=PC-A; independent branch from latest origin/develop. Reserve Finance
 FINANCE-INBOX-REDESIGN-1007 candidate: focused Finance12 tests and scoped ESLint pass. Rebuilt shared contracts after stale generated Marketing/purchase types blocked local typecheck; local translation tests hit host-load timeouts. Full clean CI typecheck/test/build is required. Source locks release with the committed review candidate; no runtime rollout or authenticated browser test claimed.
 
 FINANCE-INBOX-REDESIGN-1007 CI repair: reserve existing component-contract title assertion to match the new inbox header. Clean CI quality/build/PostgreSQL gates passed; full tests exposed only this stale display expectation. Local refreshed-contract typecheck passed.
+
+## JAHAN-DOCUMENT-BRANDING-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; reserve own-company JAHAN_BASTAN travel/contract document branding paths, exported template issuer copy, one transparent supplied-logo asset and focused branding/export tests plus bounded status docs. Preserve other company and agency brands. User authorizes develop merge. No overlapping active target lock; no schema/dependency/migration/operational changes.
+Scope additionally reserves Legal Entities display-brand mapping and shared flight-ticket presentation plus reservation contact-footer helper/consumers. Current released candidates have no overlapping lock. New Jahan logo is a sibling asset, preserving old assets and other company/custom-agency output behavior.
+Scope also reserves the existing Jahan Bastan English brand-name entry in the Web/API/offline catalogues so localization retains the company name instead of translating its literal meaning.
+
+Candidate reuses company/workflow snapshots and existing private export authorization. Added company-specific preview/PDF download regressions, transparent RGBA asset and color-preserving Jahan styles. Four synthetic A4 samples visually checked; initial focused78 tests and refreshed44 tests pass. Scoped lint/typecheck, final targeted checks and exact-head full quality/test/build/PostgreSQL CI gate authorized merge. Bounded source locks release with candidate. No schema, migration, operational data write or local rollout.
