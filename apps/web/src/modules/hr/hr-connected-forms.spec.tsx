@@ -43,6 +43,86 @@ function record(
 }
 
 describe('connected HR forms and selection exports', () => {
+  it('fills recruitment requisition fields from the selected company resources', () => {
+    const data = {
+      records: [
+        record('unit-a', 'organization', 'units', ['واحد عملیات'], 'company-a'),
+        record(
+          'position-a',
+          'organization',
+          'positions',
+          ['کارشناس عملیات', '', 'واحد عملیات'],
+          'company-a',
+        ),
+        record(
+          'unit-b',
+          'organization',
+          'units',
+          ['واحد شرکت دیگر'],
+          'company-b',
+        ),
+        record(
+          'position-b',
+          'organization',
+          'positions',
+          ['سمت شرکت دیگر', 'شغل شرکت دیگر'],
+          'company-b',
+        ),
+      ],
+      employees: [
+        {
+          id: 'employee-a',
+          name: 'درخواست‌کننده واقعی',
+          branchId: 'scope',
+          organizationBranchId: 'company-a',
+          status: 'فعال',
+        },
+        {
+          id: 'employee-b',
+          name: 'کارمند شرکت دیگر',
+          branchId: 'scope',
+          organizationBranchId: 'company-b',
+          status: 'فعال',
+        },
+      ],
+      branches: [],
+    } as unknown as HrBootstrapDto;
+    const options = hrReferenceOptions(
+      data,
+      'recruitment',
+      'requisitions',
+      'scope',
+      'company-a',
+    );
+    expect(options['عنوان شغل']).toEqual(['کارشناس عملیات']);
+    expect(options['واحد درخواست‌کننده']).toEqual(['واحد عملیات']);
+    expect(options['درخواست‌کننده']).toEqual(['درخواست‌کننده واقعی']);
+    const html = renderToStaticMarkup(
+      <ContextualHrForm
+        context={{
+          section: 'recruitment',
+          tab: 'requisitions',
+          title: 'درخواست جذب',
+          description: '',
+          mode: 'create',
+          columns: [
+            'شناسه',
+            ...getHrResource('recruitment', 'requisitions')!.columns,
+          ],
+          optionsByLabel: options,
+          peopleOptions: [],
+        }}
+        onCancel={() => undefined}
+        onSubmit={() => undefined}
+      />,
+    );
+    expect(html).toContain('کارشناس عملیات');
+    expect(html).toContain('واحد عملیات');
+    expect(html).toContain('درخواست‌کننده واقعی');
+    expect(html).not.toContain('شغل شرکت دیگر');
+    expect(html).not.toContain('واحد شرکت دیگر');
+    expect(html).not.toContain('کارمند شرکت دیگر');
+  });
   it('uses stored titles, excluding removed entries and other companies', () => {
     const records = [
       record('unit', 'organization', 'units', ['واحد واقعی']),
