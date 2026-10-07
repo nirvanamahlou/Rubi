@@ -6069,6 +6069,7 @@ Scope extension after exact-head CI: reserve one additive loading label in Web e
 ## HR-RECRUITMENT-REQUISITION-LINKS-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-recruitment-requisition-links-1007 from origin/develop@983cd313. Reserve HR recruitment requisition form reference-option mapping, contextual form behavior, focused tests and bounded status docs. Connect job title, requesting unit and requester to company-scoped persisted HR catalog and employee data, preserving existing values, permissions and record contracts. No overlapping active HR source lock found. User explicitly authorizes push and merge to develop after checks.
+
 ## B2B-REGISTRATION-EDIT-1007 — PC-B — IN_PROGRESS
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-agency-edit-registration-1007` from latest `origin/develop`. Reserve Organizations workspace edit entry, registration-edit presentation/owner API orchestration, focused tests, additive English labels in Web en-overrides.json and own status entries. Prior English catalogue source locks are released. The edit entry must expose initial identity, address, representative and agreement data through existing owner contracts, retaining separate phone verification and agreement approval controls. No schema/migration/dependency/IAM/operational data changes. User authorizes push after verification; merge is not requested.
