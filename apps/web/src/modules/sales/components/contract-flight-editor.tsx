@@ -31,7 +31,7 @@ export function ContractFlightEditor({
           })
         }
       >
-        افزودن بلیط شناور؛ فقط این قرارداد
+        افزودن بلیط شناور
       </Button>
     );
   const patch = (next: Partial<ContractFlightDraft>) =>

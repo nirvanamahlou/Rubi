@@ -70,10 +70,7 @@ export function PassengerPackagePrices({
   return (
     <section className="space-y-3 rounded-xl border p-4">
       <h3 className="font-bold">قیمت کل خدمات هر مسافر</h3>
-      <p className="text-sm text-muted-foreground">
-        قیمت کل بلیت، هتل و سایر خدمات هر نفر را به ریال و در صورت نیاز ارز وارد
-        کنید. جمع ردیف‌ها مبلغ قرارداد است. برای مسافر رایگان صفر وارد کنید.
-      </p>
+
       {state.serviceKinds.includes('INSURANCE') &&
         Object.values(state.insuranceExtraToman ?? {}).some(
           (v) => v && v !== '0',

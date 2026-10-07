@@ -6069,3 +6069,10 @@ Scope extension after exact-head CI: reserve one additive loading label in Web e
 ## HR-RECRUITMENT-REQUISITION-LINKS-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-recruitment-requisition-links-1007 from origin/develop@983cd313. Reserve HR recruitment requisition form reference-option mapping, contextual form behavior, focused tests and bounded status docs. Connect job title, requesting unit and requester to company-scoped persisted HR catalog and employee data, preserving existing values, permissions and record contracts. No overlapping active HR source lock found. User explicitly authorizes push and merge to develop after checks.
+## SALES-COPY-CLEANUP-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-copy-cleanup-1007 from origin/develop@7678ead9. Reserve Sales contracts dashboard and new-contract presentation components plus existing assertions and bounded status docs. Remove user-listed explanatory copy and duplicate headings, preserving fields, ticket facts, accessible labels, validation and save actions. No overlapping active Sales source lock. No schema/API/dependency/runtime/data changes. User explicitly authorizes develop merge after verification.
+
+Presentation-only cleanup removes listed dashboard/wizard explanations and duplicate headings. Required customer/service/date/price fields, flight facts/capacity and submit actions remain. Existing rendering assertions updated for removed copy. Scoped source locks release with frozen candidate. Local focused tests, lint/typecheck and Web build plus exact-head full CI gate authorized merge; no browser submit or local rollout claimed.
+
+Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.

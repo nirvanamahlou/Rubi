@@ -103,9 +103,6 @@ export function TicketOfferPicker({
     );
   return (
     <div className="grid gap-3">
-      <p className="text-[11px] text-muted-foreground">
-        ساعت‌ها به وقت تهران · مرتب‌شده از نزدیک‌ترین تاریخ
-      </p>
       {roundTripOutbound &&
       (roundTripOutbound.returnMinDays != null ||
         roundTripOutbound.returnMaxDays != null) ? (

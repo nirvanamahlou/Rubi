@@ -4982,3 +4982,9 @@ The employee form waits for complete HR reference data before first mounting its
 ## 2026-10-07 — HR-RECRUITMENT-REQUISITION-LINKS-1007 — PC-B
 
 Recruitment requisition job titles now use the selected company's stored positions, falling back to the position title when the optional job-title column is empty. Requesting units and requesters stay scoped to that company's active unit and employee records. If a truncated bootstrap initially selected a temporary IAM branch instead of a company, the new requisition form waits for the complete catalog and repairs its company selection before showing reference fields. A focused regression checks all three dropdowns and excludes another company's records. No backend, schema, migration or dependency changes; scoped Web checks and exact-head CI gate the authorized develop merge.
+
+## 2026-10-07 — PC-A — Sales contract copy cleanup
+
+Removed user-listed explanatory paragraphs and duplicate headings from contract dashboard and new-contract stages. Preserved form controls, customer confirmation, flight identity/times/capacity, hotel selection, prices, payments and existing business rules. No API, schema, dependency or operational data changes. Focused existing rendering tests updated; local checks and exact-head CI gate the user-authorized develop merge.
+
+Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.

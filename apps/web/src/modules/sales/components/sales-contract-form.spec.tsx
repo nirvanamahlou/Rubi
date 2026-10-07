@@ -138,11 +138,11 @@ describe('compact sales contract form', () => {
     fixture.flight = true;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.flight = false;
-    expect(html).toContain('انتخاب تاریخ بلیط رفت');
+    expect(html).not.toContain('انتخاب تاریخ بلیط رفت و بلیط برگشت');
     expect(html).toContain('تاریخ بلیط رفت');
     expect(html).toContain('نقطهٔ قرمز');
     expect(html.indexOf('تعداد مسافران')).toBeLessThan(
-      html.indexOf('انتخاب تاریخ بلیط رفت'),
+      html.indexOf('aria-label="تاریخ بلیط رفت"'),
     );
     expect(
       html.match(/aria-label="انتخاب تاریخ بلیط رفت و برگشت"/g),
@@ -184,7 +184,7 @@ it('offers the expert reservation note on sale pricing rather than only at final
   fixture.step = 0;
   expect(html).toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
   expect(html).toMatch(/maxlength="500"/i);
-  expect(html).toContain('در توضیحات درخواست رزرواسیون نمایش داده می‌شود.');
+  expect(html).not.toContain('در توضیحات درخواست رزرواسیون نمایش داده می‌شود.');
   expect(html).toContain('یادداشت قیمت‌گذاری');
   fixture.step = 4;
   const final = renderToStaticMarkup(<SalesContractForm />);

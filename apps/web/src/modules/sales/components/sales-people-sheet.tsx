@@ -373,10 +373,6 @@ export function SalesPeopleSheet({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-black">مشتری و مسافران همراه</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            هر نفر یک ردیف؛ اطلاعات همه را وارد کنید و در پایان یک‌جا تأیید
-            کنید.
-          </p>
         </div>
         <CustomerCalendarSwitch mode={calendar} onChange={setCalendar} />
       </div>
@@ -428,19 +424,10 @@ export function SalesPeopleSheet({
         >
           حقوقی / آژانس
         </Button>
-        {draft.mode !== 'organization' ? (
-          <p className="text-sm text-primary">
-            مشتری طرف حساب را در بخش بالای جدول مسافران مشخص کنید.
-          </p>
-        ) : null}
       </div>
       <div className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.03] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] sm:items-end">
         <div>
           <p className="font-bold">نحوه آشنایی با آژانس</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            یک‌بار برای این قرارداد انتخاب می‌شود و برای همه افراد همین قرارداد
-            ثبت خواهد شد.
-          </p>
         </div>
         <SalesThemedSelect
           label="نحوه آشنایی برای کل قرارداد"
@@ -530,15 +517,7 @@ export function SalesPeopleSheet({
           افزودن نوزاد
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        ردیف‌ها به تعداد مرحله اول باز شده‌اند. برای تغییر تعداد بزرگسال یا کودک
-        به مرحله اول برگردید؛ نوزاد صندلی بلیط کم نمی‌کند.
-      </p>
-      <p className="rounded-xl bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-        {passportIdentity
-          ? 'بلیط خارجی انتخاب شده است: نام لاتین مطابق پاسپورت جای نام فارسی را می‌گیرد؛ سایر مشخصات اجباری فعلی قرارداد حفظ می‌شوند.'
-          : 'برای قرارداد بدون بلیط خارجی، نام، نام خانوادگی و کد ملی فارسی ثبت می‌شود و اطلاعات پاسپورت لازم نیست.'}
-      </p>
+
       {!salesTravelDate(state) ||
       (!state.serviceKinds.includes('FLIGHT') &&
         !(state.serviceKinds.includes('HOTEL') && state.hotel.checkIn)) ? (
@@ -719,10 +698,6 @@ export function SalesPeopleSheet({
             />
           </FormField>
         </div>
-        <p className="text-xs text-muted-foreground sm:col-span-2">
-          نام و نام خانوادگی کامل مشتری را وارد کنید. این مشخصات در قرارداد
-          ذخیره می‌شود و مشتری طرف حساب خواهد بود.
-        </p>
       </section>
 
       <CustomerEntrySheet
@@ -748,13 +723,6 @@ export function SalesPeopleSheet({
         disabled={busy}
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-xs leading-6 text-muted-foreground">
-          ثبت افراد از همین‌جا در بخش مشتریان انجام می‌شود؛ قرارداد در مرحله
-          نهایی ثبت خواهد شد. اصلاح اطلاعات پرونده موجود با «ثبت و تأیید افراد»
-          در مشتریان ذخیره می‌شود و نیازمند مجوز ویرایش است. اطلاعات حساس فقط با
-          مجوز خوانده می‌شوند؛ تماس جدید جای تماس اصلی قرار می‌گیرد و سابقه قبلی
-          حذف نمی‌شود.
-        </p>
         <Button
           type="button"
           disabled={busy}
