@@ -165,6 +165,34 @@ const makeLine = (itemId: string): Line => ({
   acceptedQuantity: '',
   rejectedQuantity: '0',
 });
+export function validateOrderFollowUp(
+  action: string,
+  fields: Record<string, string>,
+  documents: readonly ProcurementDocumentReferenceV1[],
+): string {
+  if (action === 'DISCREPANCY') {
+    if (!fields.orderId) return 'سفارش مرجع را انتخاب کنید.';
+    if (!fields.description?.trim()) return 'شرح مغایرت را وارد کنید.';
+    if (fields.description.length > 2000)
+      return 'شرح مغایرت باید حداکثر ۲۰۰۰ کاراکتر باشد.';
+  }
+  if (action === 'RETURN') {
+    if (!fields.receiptItemId)
+      return 'ردیف رسید را انتخاب کنید؛ مرجوعی پس از ثبت رسید کالا امکان‌پذیر است.';
+    if (
+      !/^(0|[1-9]\d{0,19})(\.\d{1,4})?$/.test(fields.quantity ?? '') ||
+      !/[1-9]/.test(fields.quantity ?? '')
+    )
+      return 'مقدار مرجوعی باید عددی بیشتر از صفر با حداکثر چهار رقم اعشار باشد.';
+    if (!fields.returnedAt) return 'تاریخ مرجوعی را انتخاب کنید.';
+    if (!fields.reason?.trim()) return 'توضیحات مرجوعی را وارد کنید.';
+    if (fields.reason.length > 1000)
+      return 'توضیحات مرجوعی باید حداکثر ۱۰۰۰ کاراکتر باشد.';
+    if (!documents.length)
+      return 'مدرک مرجوعی را بارگذاری یا از اسناد انتخاب کنید.';
+  }
+  return '';
+}
 const operationStatusLabels: Record<string, string> = {
   VALID: 'معتبر',
   SELECTED: 'انتخاب‌شده',
@@ -397,8 +425,15 @@ function OperationFields({
     setFields((previous) => ({ ...previous, [key]: value }));
   };
   const date = (key: string, title: string) => (
-    <FormField id={`operation-${key}`} label={title}>
+    <FormField
+      id={`operation-${key}`}
+      label={title}
+      required={key === 'returnedAt'}
+    >
       <DatePicker
+        withinDialog
+        required={key === 'returnedAt'}
+        aria-required={key === 'returnedAt'}
         id={`operation-${key}`}
         value={fields[key]?.slice(0, 10) ?? ''}
         onChange={(value) => set(key, value ? `${value}T00:00:00.000Z` : '')}
@@ -407,7 +442,10 @@ function OperationFields({
   );
   const input = (key: string, title: string, multiline = false) => {
     const required =
-      key === 'reason' && ['AMEND_ORDER', 'CANCEL_ORDER'].includes(action);
+      (key === 'reason' &&
+        ['AMEND_ORDER', 'CANCEL_ORDER', 'RETURN'].includes(action)) ||
+      (key === 'quantity' && action === 'RETURN') ||
+      (key === 'description' && action === 'DISCREPANCY');
     const field = (
       <FormField id={`operation-${key}`} label={title} required={required}>
         {multiline ? (
@@ -488,6 +526,11 @@ function OperationFields({
   };
   const choose = (key: string, title: string, resource: string) => (
     <RecordSelect
+      key={
+        resource === 'receipt-items'
+          ? `${resource}-${fields.orderId ?? ''}`
+          : resource
+      }
       requestId={request.id}
       resource={resource}
       label={title}
@@ -495,8 +538,8 @@ function OperationFields({
       {...(key === 'orderId' && initialRecord
         ? { selectedRecord: initialRecord }
         : {})}
-      {...(resource === 'receipt-items' && initialRecord
-        ? { orderId: String(initialRecord.id) }
+      {...(resource === 'receipt-items' && fields.orderId
+        ? { orderId: fields.orderId }
         : {})}
       {...(resource === 'selections' && fields.supplierId
         ? { supplierId: fields.supplierId }
@@ -505,6 +548,7 @@ function OperationFields({
         set(key, String(row.id));
         if (action === 'ORDER' && key === 'supplierId') set('selectionId', '');
         if (key === 'orderId') {
+          set('receiptItemId', '');
           setSelectedOrder(row);
           if (action === 'AMEND_ORDER') {
             setDocuments(orderAmendmentDocuments(row));
@@ -538,6 +582,7 @@ function OperationFields({
     'ACCEPT_SERVICE',
     'INVOICE',
     'DISCREPANCY',
+    'RETURN',
   ].includes(action);
   const commercial = ['QUOTE', 'ORDER_FORM', 'INVOICE', 'AMEND_ORDER'].includes(
     action,
@@ -562,6 +607,11 @@ function OperationFields({
         : lineOptions;
   async function submit() {
     if (busy || uploadBusy) return;
+    const followUpError = validateOrderFollowUp(action, fields, documents);
+    if (followUpError) {
+      setError(followUpError);
+      return;
+    }
     if (
       action === 'ORDER' &&
       (!fields.supplierId ||
@@ -1000,16 +1050,22 @@ function OperationFields({
             onChange={setDocuments}
             onUploadingChange={setUploadBusy}
             available={bootstrap.documents === 'AVAILABLE'}
-            {...(['INVOICE', 'ORDER', 'ORDER_FORM', 'AMEND_ORDER'].includes(
-              action,
-            )
+            {...([
+              'INVOICE',
+              'ORDER',
+              'ORDER_FORM',
+              'AMEND_ORDER',
+              'RETURN',
+            ].includes(action)
               ? {
                   invoiceUpload: {
                     requestId: request.id,
                     requestNumber: request.number,
                     ...(['ORDER', 'ORDER_FORM'].includes(action)
                       ? { purpose: 'ORDER' as const }
-                      : {}),
+                      : action === 'RETURN'
+                        ? { purpose: 'RETURN' as const }
+                        : {}),
                   },
                 }
               : {})}
@@ -1069,6 +1125,8 @@ export function RecordSelect({
       'operation-options',
       requestId,
       resource,
+      orderId,
+      supplierId,
       page,
       search,
     ],
@@ -1170,7 +1228,9 @@ export function RecordSelect({
             ? 'پیشنهاد معتبر و انتخاب‌شده‌ای وجود ندارد؛ ابتدا در بخش استعلام‌ها پیشنهاد فعال را انتخاب کنید.'
             : resource === 'suppliers'
               ? 'تأمین‌کنندهٔ فعال و مجازی در این صفحه وجود ندارد.'
-              : 'گزینه‌ای در این صفحه وجود ندارد.'}
+              : resource === 'receipt-items'
+                ? 'در این صفحه ردیف رسیدی برای سفارش وجود ندارد؛ ابتدا رسید کالا را ثبت کنید یا صفحهٔ بعد را بررسی کنید.'
+                : 'گزینه‌ای در این صفحه وجود ندارد.'}
         </p>
       )}
       <div className="flex items-center gap-2">

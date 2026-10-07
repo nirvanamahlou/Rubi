@@ -568,6 +568,89 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         ).data,
       ).toMatchObject({ occurredAt: instant });
     });
+    it('saves order-bound discrepancy and documented return form submissions once and reloads their dates and evidence', async () => {
+      const context = await orderedRequest();
+      let row = await command(
+        context.row,
+        'RECEIVE',
+        receiptInput(context.order.id, context.item.id),
+      );
+      const receipts = await service.records(
+        row.id,
+        { kind: 'receipts' },
+        maker,
+      );
+      const receipt = (receipts.items[0] as { lines: { id: string }[] })
+        .lines[0]!;
+      const discrepancyInput = {
+        orderId: context.order.id,
+        kind: 'DAMAGE',
+        description: 'Synthetic form damage',
+        occurredAt: instant,
+        currencyCode: 'IRR',
+        disposition: 'ACCEPTED',
+        resolution: 'REPLACE',
+        receivedDelta: '0',
+        acceptedDelta: '0',
+        rejectedDelta: '0',
+      };
+      const discrepancyKey = randomUUID();
+      const beforeDiscrepancy = row;
+      row = await command(
+        beforeDiscrepancy,
+        'DISCREPANCY',
+        discrepancyInput,
+        maker,
+        discrepancyKey,
+      );
+      await command(
+        beforeDiscrepancy,
+        'DISCREPANCY',
+        discrepancyInput,
+        maker,
+        discrepancyKey,
+      );
+      const discrepancies = await service.records(
+        row.id,
+        { kind: 'discrepancies' },
+        maker,
+      );
+      expect(discrepancies.items).toHaveLength(1);
+      expect(discrepancies.items[0]).toMatchObject({
+        orderId: context.order.id,
+        description: 'Synthetic form damage',
+        data: { occurredAt: instant },
+      });
+      const returnInput = {
+        orderId: context.order.id,
+        receiptItemId: receipt.id,
+        quantity: '0.25',
+        disposition: 'ACCEPTED',
+        returnedAt: instant,
+        reason: 'Synthetic form return',
+        documents,
+      };
+      const returnKey = randomUUID();
+      const beforeReturn = row;
+      row = await command(
+        beforeReturn,
+        'RETURN',
+        returnInput,
+        maker,
+        returnKey,
+      );
+      await command(beforeReturn, 'RETURN', returnInput, maker, returnKey);
+      const returns = await service.records(row.id, { kind: 'returns' }, maker);
+      expect(returns.items).toHaveLength(1);
+      expect(JSON.parse(JSON.stringify(returns.items[0]))).toMatchObject({
+        orderId: context.order.id,
+        receiptItemId: receipt.id,
+        quantity: '0.25',
+        returnedAt: instant,
+        reason: 'Synthetic form return',
+        data: { documents, disposition: 'ACCEPTED' },
+      });
+    });
     async function selectedRequest(draft = fixture(), validUntil = nextMonth) {
       let row = await approvedRequest(draft);
       row = await command(row, 'QUOTE', {
