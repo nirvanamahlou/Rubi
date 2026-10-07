@@ -911,12 +911,29 @@ export class DocumentsService {
         actor.userId,
       )
     ).rows.find((item) => item.currentVersion?.versionNote === versionNote);
-    if (duplicate?.currentVersion)
-      return {
-        id: duplicate.id,
-        reused: true,
-        scanStatus: duplicate.currentVersion.scanStatus,
-      };
+    if (duplicate?.currentVersion) {
+      try {
+        // A saved metadata reference is not proof that its encrypted object
+        // survived a storage move. Never reuse a missing or corrupt object.
+        await this.storage.readQuarantined(
+          duplicate.currentVersion.storageObjectKey,
+          Number(duplicate.currentVersion.sizeBytes),
+        );
+        return {
+          id: duplicate.id,
+          reused: true,
+          scanStatus: duplicate.currentVersion.scanStatus,
+        };
+      } catch (error) {
+        if (!(
+          error instanceof Error &&
+          'code' in error &&
+          error.code === 'ENOENT'
+        ))
+          throw error;
+        // Replace a missing object through normal upload/scan/attach flow.
+      }
+    }
 
     const uploaded = await this.upload(
       {
@@ -1025,11 +1042,19 @@ export class DocumentsService {
       !ownsReference
     )
       throw new ForbiddenException('لوگوی این رکورد قابل مشاهده نیست.');
-    return this.preview(
-      row.id,
-      masterDataLogoActor(actor, 'documents.file.read'),
-      metadata,
-    );
+    try {
+      return await this.preview(
+        row.id,
+        masterDataLogoActor(actor, 'documents.file.read'),
+        metadata,
+      );
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && error.code === 'ENOENT')
+        throw new NotFoundException(
+          'فایل لوگو در آرشیو موجود نیست؛ لوگو را دوباره بارگذاری کنید.',
+        );
+      throw error;
+    }
   }
 
   /** Archives only the BRAND document related to the supplied Master Data row. */

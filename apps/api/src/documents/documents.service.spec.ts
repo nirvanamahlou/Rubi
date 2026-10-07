@@ -1,5 +1,5 @@
 import { Readable } from 'node:stream';
-import { scryptSync } from 'node:crypto';
+import { createHash, scryptSync } from 'node:crypto';
 
 import type { AuthenticatedActor } from '@nora/contracts';
 import {
@@ -159,6 +159,7 @@ describe('DocumentsService security and persistence flow', () => {
     setFavorite: vi.fn(),
   };
   const storage = {
+    readQuarantined: vi.fn(),
     putQuarantined: vi.fn(),
     removeQuarantined: vi.fn(),
     openQuarantined: vi.fn(),
@@ -365,6 +366,71 @@ describe('DocumentsService security and persistence flow', () => {
     });
   });
 
+  it.each(['available', 'missing', 'corrupt'] as const)(
+    'handles %s duplicate logo storage without reusing missing bytes',
+    async (state) => {
+      const file = {
+        buffer: Buffer.from('logo'),
+        size: 4,
+        mimetype: 'image/png',
+        originalname: 'logo.png',
+      };
+      const bytes = createHash('sha256')
+        .update(file.buffer)
+        .digest()
+        .subarray(0, 16);
+      bytes[6] = (bytes[6]! & 0x0f) | 0x50;
+      bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+      const token = bytes.toString('hex');
+      const duplicate = row({
+        domain: 'BRAND',
+        confidentiality: 'INTERNAL',
+        mimeType: 'image/png',
+        scanStatus: 'CLEAN',
+      });
+      duplicate.currentVersion!.versionNote = `master-data-logo-v1:${token.slice(0, 8)}-${token.slice(8, 12)}-${token.slice(12, 16)}-${token.slice(16, 20)}-${token.slice(20)}`;
+      repository.options.mockResolvedValue({
+        branches: [{ id: branchId }],
+        owners: [{ id: actor.userId }],
+        documentTypes: [{ id: 'brand', code: 'BRAND_ASSET_TEMPLATE' }],
+        categories: [{ id: 'category', code: 'BRAND_ASSETS' }],
+      });
+      repository.list.mockResolvedValue({ rows: [duplicate], total: 1 });
+      if (state === 'available')
+        storage.readQuarantined.mockResolvedValue(file.buffer);
+      else
+        storage.readQuarantined.mockRejectedValue(
+          Object.assign(
+            new Error(state),
+            state === 'missing' ? { code: 'ENOENT' } : {},
+          ),
+        );
+      const upload = vi.spyOn(service, 'upload').mockResolvedValue({
+        data: {
+          id: 'replacement',
+          currentVersion: { scanStatus: 'PENDING_SCAN' },
+        },
+      } as never);
+      const result = service.uploadMasterDataLogo(
+        { resource: 'suppliers', recordId: 'supplier', title: 'لوگو' },
+        file,
+        { ...actor, permissions: ['master_data.update'] },
+        {},
+      );
+      if (state === 'corrupt') {
+        await expect(result).rejects.toThrow('corrupt');
+        expect(upload).not.toHaveBeenCalled();
+      } else {
+        await expect(result).resolves.toMatchObject(
+          state === 'missing'
+            ? { id: 'replacement', reused: false, scanStatus: 'PENDING_SCAN' }
+            : { id: duplicate.id, reused: true },
+        );
+        expect(upload).toHaveBeenCalledTimes(state === 'missing' ? 1 : 0);
+      }
+    },
+  );
+
   it('archives a brand asset only when its primary relation matches the Master Data row', async () => {
     const logoRow = row({ domain: 'BRAND' });
     repository.findDetail.mockResolvedValue({
@@ -447,6 +513,13 @@ describe('DocumentsService security and persistence flow', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(storage.openQuarantined).toHaveBeenCalledOnce();
+    storage.openQuarantined.mockRejectedValueOnce(
+      Object.assign(new Error('missing'), { code: 'ENOENT' }),
+    );
+    await expect(
+      service.previewMasterDataLogo(input, reader, {}),
+    ).rejects.toThrow('فایل لوگو در آرشیو موجود نیست');
+    expect(storage.openQuarantined).toHaveBeenCalledTimes(2);
   });
 
   it('applies branch/domain scope server-side and masks sensitive list metadata', async () => {

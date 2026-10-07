@@ -47,6 +47,7 @@ import { OperationForm } from './operation-form';
 import { ProcurementRecordActions } from './record-actions';
 import { ProcurementSelect } from './procurement-select';
 import { ProcurementSupplierLogo } from './supplier-logo';
+import { persistSupplierProfile } from './supplier-persistence';
 import { RecordCard, RecordPreviewButton } from './record-details';
 import {
   sampleRequests,
@@ -406,19 +407,30 @@ export function InternalSections({
       typeof masterDataApi.persistWithLogo
     >[0]['logoChange'],
   ) {
-    const saved = await masterDataApi.persistWithLogo({
-      resource: 'suppliers',
-      values,
-      title: `تأمین‌کننده ${values.name ?? values.legalName ?? ''}`.trim(),
-      ...(supplierForm?.mode === 'edit'
-        ? { existing: supplierForm.record }
-        : {}),
-      ...(logoChange ? { logoChange } : {}),
-    });
+    const saved = await persistSupplierProfile(
+      {
+        resource: 'suppliers',
+        values,
+        title: `تأمین‌کننده ${values.name ?? values.legalName ?? ''}`.trim(),
+        ...(supplierForm?.mode === 'edit'
+          ? { existing: supplierForm.record }
+          : {}),
+        ...(logoChange ? { logoChange } : {}),
+      },
+      (record) => {
+        setSupplierForm({ mode: 'edit', record });
+        queryClient.setQueryData(
+          ['procurement', 'supplier-profile', record.id],
+          { data: record },
+        );
+        void suppliers.refetch();
+      },
+    );
     queryClient.setQueryData(
       ['procurement', 'supplier-profile', saved.data.id],
       { data: saved.data },
     );
+    setSupplierError(saved.warning ?? '');
     setSupplierForm(null);
     await queryClient.invalidateQueries({
       queryKey: ['procurement', 'supplier-profile'],
