@@ -3,6 +3,7 @@
 import { Children, isValidElement } from 'react';
 import { Check, Eye, Pencil, Save, X } from 'lucide-react';
 import { Button, type ButtonProps } from '@/components/ui/button';
+import { sourceUiText } from '@/i18n/source-text';
 
 /** Reference-page actions share icon-only presentation, including dialog footers. */
 export function MarketingActionButton({ children, ...props }: ButtonProps) {
@@ -10,10 +11,11 @@ export function MarketingActionButton({ children, ...props }: ButtonProps) {
   const label =
     props['aria-label'] ??
     parts
-      .filter((child) => typeof child === 'string' || typeof child === 'number')
+      .map(sourceUiText)
+      .filter((child) => child !== null)
       .join(' ')
       .trim();
-  const icons = parts.filter(isValidElement);
+  const icons = parts.filter((child) => isValidElement(child) && sourceUiText(child) === null);
   const FallbackIcon = /انصراف|بستن/.test(label)
     ? X
     : /ذخیره|ثبت/.test(label)

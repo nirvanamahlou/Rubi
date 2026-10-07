@@ -1,4 +1,6 @@
 'use client';
+import { localizedFetch } from '@/i18n/localized-fetch';
+
 
 import type {
   FinanceHistoryQueryV1,
@@ -43,7 +45,7 @@ export async function apiRequest<T>(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new FinanceInboxApiError('نشانی API کارتابل مالی تنظیم نشده است.', 0);
-  const response = await fetch(`${baseUrl}${path}`, {
+  const response = await localizedFetch(`${baseUrl}${path}`, {
     ...init,
     credentials: 'include',
     cache: 'no-store',

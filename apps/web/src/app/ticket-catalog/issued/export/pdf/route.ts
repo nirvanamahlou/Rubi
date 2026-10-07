@@ -1,3 +1,4 @@
+import { languageFromCookies } from '@/i18n/language';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
   renderIssuedPdf,
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
         { status: response.status, headers },
       );
     const snapshot = (await response.json()) as IssuedPdfData;
-    const bytes = await renderIssuedPdf(snapshot);
+    const bytes = await renderIssuedPdf(snapshot, languageFromCookies(request.headers.get('cookie')));
     return new Response(new Uint8Array(bytes), {
       headers: {
         ...headers,

@@ -1,3 +1,4 @@
+import { requestDisplayLanguage } from '../common/i18n/language';
 import {
   Body,
   Controller,
@@ -137,7 +138,7 @@ export class CustomerAffairsController {
             row.travelNeed,
             row.nextAction,
             row.nextActionAt,
-          ]),
+          ], requestDisplayLanguage(req)),
         ]),
       ),
     );
@@ -294,7 +295,7 @@ export class CustomerAffairsController {
             row.nextAction,
             row.firstResponseDueAt,
             row.resolutionDueAt,
-          ]),
+          ], requestDisplayLanguage(req)),
         ]),
       ),
     );

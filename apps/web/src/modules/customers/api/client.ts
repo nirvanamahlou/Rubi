@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   BranchReference,
   CustomerAddressRequest,
@@ -90,7 +91,7 @@ async function request<T>(
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new CustomersApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/customers${path}`, {
+  const response = await localizedFetch(`${baseUrl}/customers${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

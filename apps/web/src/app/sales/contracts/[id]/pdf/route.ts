@@ -1,3 +1,4 @@
+import { languageFromCookies } from '@/i18n/language';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { MasterDataRecord, SalesContractOutputV1 } from '@nora/contracts';
@@ -82,7 +83,7 @@ export async function GET(
     refs.logoDataUrl =
       'data:image/png;base64,' +
       (await readFile(join(process.cwd(), 'public', logo))).toString('base64');
-    const bytes = await renderContractPdf(output, refs);
+    const bytes = await renderContractPdf(output, refs, languageFromCookies(request.headers.get('cookie')));
     return new Response(new Uint8Array(bytes), {
       headers: {
         ...headers,

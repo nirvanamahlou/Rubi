@@ -17,7 +17,7 @@ import { ContractOutputButton } from './contract-output';
 
 import { AlertTriangle, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
 import type {

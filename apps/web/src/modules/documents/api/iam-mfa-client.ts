@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   IamMfaSetupBeginInputV1,
   IamMfaSetupBeginResponseV1,
@@ -26,7 +27,7 @@ async function request<T>(
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new IamMfaApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/iam/auth/mfa${path}`, {
+  const response = await localizedFetch(`${baseUrl}/iam/auth/mfa${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

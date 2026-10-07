@@ -14,7 +14,7 @@ import {
   Search,
   Upload,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,

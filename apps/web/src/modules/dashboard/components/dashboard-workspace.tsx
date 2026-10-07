@@ -48,7 +48,7 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   useEffect,

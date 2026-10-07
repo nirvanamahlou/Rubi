@@ -38,7 +38,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { ReportingOperationsView } from './reporting-operations-view';
 import { ReportSharingDialog } from './report-sharing-dialog';
 

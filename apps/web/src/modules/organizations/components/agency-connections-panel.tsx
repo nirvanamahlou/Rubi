@@ -19,7 +19,7 @@ import { Alert, Badge, Card, Skeleton } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { documentsApi } from '@/modules/documents/api/client';
 import { organizationDocumentQuery } from '../model/organization-documents';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { agencyClient, B2bApiError } from '../api/agency-client';
 import { moneyLabel, agreementLabel } from '../model/presentation';
 import { projectCredit } from '../model/credit-projection';

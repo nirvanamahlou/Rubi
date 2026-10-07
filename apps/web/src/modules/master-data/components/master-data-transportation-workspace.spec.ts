@@ -9,7 +9,7 @@ const source = readFileSync(
     'src/modules/master-data/components/master-data-transportation-workspace.tsx',
   ),
   'utf8',
-);
+).replace(/\r\n/g, '\n');
 
 describe('transportation workspace', () => {
   it('keeps baggage rules in the airline form without a separate section or profile route', () => {

@@ -34,7 +34,7 @@ import {
   UserRound,
   Users,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import type { ReactNode } from 'react';
 import {
   Fragment,

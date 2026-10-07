@@ -1,3 +1,5 @@
+import { browserDisplayLanguage } from '@/i18n/language';
+import { translateUiText } from '@/i18n/translate';
 // ZIP/XML primitives adapted from the existing customer workbook codec; no customer data is imported.
 import {
   organizationHeaders,
@@ -125,7 +127,7 @@ function worksheetXml(rows: readonly (readonly string[])[]) {
         `<row r="${rowIndex + 1}">${row
           .map(
             (value, columnIndex) =>
-              `<c r="${columnName(columnIndex)}${rowIndex + 1}" t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`,
+              `<c r="${columnName(columnIndex)}${rowIndex + 1}" t="inlineStr"><is><t>${escapeXml(rowIndex === 0 ? translateUiText(value, browserDisplayLanguage()) : value)}</t></is></c>`,
           )
           .join('')}</row>`,
     )
@@ -367,6 +369,7 @@ export async function parseOrganizationXlsx(
     ['personType', organizationHeaders[2]],
     ['roleCodes', organizationHeaders[3]],
   ]);
+  for (const header of organizationHeaders) aliases.set(translateUiText(header, 'en'), header);
   const normalized = headers.map((header) => aliases.get(header) ?? header);
   if (
     new Set(normalized.filter(Boolean)).size !==

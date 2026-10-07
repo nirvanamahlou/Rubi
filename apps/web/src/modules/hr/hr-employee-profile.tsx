@@ -1,7 +1,7 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import { DatePicker } from '@/components/ui/date-picker';
 import { useEffect, useRef, useState } from 'react';
 import type { HrEmployeeDto, HrRecordDto } from '@nora/contracts';

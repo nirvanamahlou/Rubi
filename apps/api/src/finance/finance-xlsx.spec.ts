@@ -22,6 +22,16 @@ const snapshot: FinanceExportSnapshotV1 = {
   warnings: [],
 };
 describe('Finance genuine Excel workbook', () => {
+  it('exports English headings with original record content and exact amounts', () => {
+    const files = unzipSync(buildFinanceXlsx({ ...snapshot, rows: [['ورودی اختصاصی', '10.25']] }, 'en'));
+    const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(sheet).toContain('rightToLeft="0"');
+    expect(sheet).toContain('Title');
+    expect(sheet).toContain('Amount');
+    expect(sheet).not.toContain('>عنوان<');
+    expect(sheet).toContain('ورودی اختصاصی');
+    expect(sheet).toContain('<v>10.25</v>');
+  });
   it('creates an OOXML archive with RTL view and literal text, never formulas', () => {
     const files = unzipSync(buildFinanceXlsx(snapshot));
     expect(Object.keys(files)).toContain('[Content_Types].xml');

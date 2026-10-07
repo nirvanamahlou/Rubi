@@ -1,4 +1,6 @@
 'use client';
+import { translateUiText } from '@/i18n/translate';
+
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
@@ -25,7 +27,7 @@ import {
   WalletCards,
   type LucideIcon,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -2617,7 +2619,7 @@ function TabbedSection({
                         headers.length !== dataset.columns.length ||
                         headers.some(
                           (header, index) =>
-                            header.trim() !== dataset.columns[index],
+                            header.trim() !== dataset.columns[index] && header.trim() !== translateUiText(dataset.columns[index] ?? '', 'en'),
                         )
                       )
                         throw new Error(

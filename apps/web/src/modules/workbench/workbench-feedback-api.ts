@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   WorkbenchFeedbackCreateInputV1,
   WorkbenchFeedbackCreateResponseV1,
@@ -23,7 +24,7 @@ async function sendRequest(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new WorkbenchFeedbackApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/workbench/feedback`, {
+  const response = await localizedFetch(`${baseUrl}/workbench/feedback`, {
     method: 'POST',
     credentials: 'include',
     cache: 'no-store',
@@ -61,7 +62,7 @@ async function detailRequest(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new WorkbenchFeedbackApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(
+  const response = await localizedFetch(
     `${baseUrl}/workbench/feedback/${encodeURIComponent(id)}`,
     { credentials: 'include', cache: 'no-store' },
   );
@@ -105,7 +106,7 @@ async function uploadAttachmentRequest(
   form.set('branchId', input.branchId);
   form.set('subject', input.subject);
   form.set('anonymous', String(input.anonymous));
-  const response = await fetch(
+  const response = await localizedFetch(
     `${baseUrl}/workbench/feedback/${encodeURIComponent(input.feedbackId)}/attachments`,
     {
       method: 'POST',

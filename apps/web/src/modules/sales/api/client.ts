@@ -1,4 +1,6 @@
 'use client';
+import { localizedFetch } from '@/i18n/localized-fetch';
+
 
 import type {
   HotelRoomRateV1,
@@ -33,7 +35,7 @@ async function request<T>(
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new SalesApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/sales${path}`, {
+  const response = await localizedFetch(`${baseUrl}/sales${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

@@ -1,4 +1,6 @@
 'use client';
+import { localizedFetch } from '@/i18n/localized-fetch';
+
 
 import type {
   TicketCatalogPurchaseCreateV1,
@@ -30,7 +32,7 @@ export async function registerTicketPurchase(
     amount: null,
     currencyCode: null,
   };
-  const response = await fetch(baseUrl + '/procurement/ticket-purchases', {
+  const response = await localizedFetch(baseUrl + '/procurement/ticket-purchases', {
     method: 'POST',
     credentials: 'include',
     headers: {

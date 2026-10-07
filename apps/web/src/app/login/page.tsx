@@ -1,11 +1,15 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import { Suspense } from 'react';
 
 import { LoginBackgroundStory } from './login-background-story';
 import { LoginForm } from './login-form';
+import { LanguageSwitcher } from '@/i18n/language-switcher';
 
-export const metadata: Metadata = { title: { absolute: 'ورود امن نورا' } };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: { absolute: 'ورود امن نورا' } });
+}
 
 function CompanyLogos({ compact = false }: { compact?: boolean }) {
   return (
@@ -80,6 +84,7 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="p-7 sm:p-12">
+          <LanguageSwitcher />
           <div className="mb-8 lg:hidden">
             <CompanyLogos compact />
           </div>

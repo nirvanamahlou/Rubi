@@ -1,3 +1,4 @@
+import { requestDisplayLanguage } from '../common/i18n/language';
 import {
   Controller,
   Body,
@@ -132,7 +133,7 @@ export class FinanceInboxController {
         snapshot.scope.toLowerCase() +
         '.xlsx"',
     );
-    response.send(Buffer.from(buildFinanceXlsx(snapshot)));
+    response.send(Buffer.from(buildFinanceXlsx(snapshot, requestDisplayLanguage(request))));
   }
 
   @Get('settlement-accounts')

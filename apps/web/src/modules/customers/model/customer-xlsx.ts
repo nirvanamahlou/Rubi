@@ -1,3 +1,5 @@
+import { browserDisplayLanguage } from '@/i18n/language';
+import { translateUiText } from '@/i18n/translate';
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 export const CUSTOMER_IMPORT_TEMPLATE_VERSION = 'customers-person-v2';
@@ -135,7 +137,7 @@ function worksheetXml(rows: readonly (readonly string[])[]) {
         `<row r="${rowIndex + 1}">${row
           .map(
             (value, columnIndex) =>
-              `<c r="${columnName(columnIndex)}${rowIndex + 1}" t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`,
+              `<c r="${columnName(columnIndex)}${rowIndex + 1}" t="inlineStr"><is><t>${escapeXml(rowIndex === 0 ? translateUiText(value, browserDisplayLanguage()) : value)}</t></is></c>`,
           )
           .join('')}</row>`,
     )
@@ -363,7 +365,7 @@ export async function parseCustomerXlsx(file: File) {
   });
   const [headers = [], ...data] = rows;
   const positions = new Map(
-    headers.map((header, index) => [header.trim(), index]),
+    headers.map((header, index) => [customerImportHeaders.find((source) => source === header.trim() || translateUiText(source, 'en') === header.trim()) ?? header.trim(), index]),
   );
   const nameIndex = positions.get(customerImportHeaders[0]);
   const nationalIdIndex = positions.get(customerImportHeaders[1]);

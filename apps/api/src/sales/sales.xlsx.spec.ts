@@ -52,6 +52,16 @@ const sheet = (records: SalesContractSummary[]) =>
   strFromU8(unzipSync(buildSalesXlsx(records))['xl/worksheets/sheet1.xml']!);
 
 describe('Sales XLSX download', () => {
+  it('exports English statuses and headers while preserving customer input and amounts', () => {
+    const files = unzipSync(buildSalesXlsx([{ ...sample, customerNameSnapshot: 'ورودی اختصاصی' }], {}, new Date('2026-10-07'), 'en'));
+    const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(sheet).toContain('rightToLeft="0"');
+    expect(sheet.match(/<row r="4"[^>]*>([\s\S]*?)<\/row>/)?.[1]).not.toMatch(/[\u0600-\u06ff]/);
+    expect(sheet).toContain('ورودی اختصاصی');
+    expect(sheet).not.toContain('>ارسال به رزرواسیون<');
+    expect(sheet).toContain('<v>100.25</v>');
+    expect(strFromU8(files['xl/workbook.xml']!)).toContain('name="Contracts"');
+  });
   it('writes real OOXML with numeric amounts, separate currencies, RTL, filters and frozen headings', () => {
     const bytes = buildSalesXlsx([sample]);
     expect([...bytes.slice(0, 2)]).toEqual([80, 75]);

@@ -25,7 +25,7 @@ describe('shared date picker contract', () => {
     expect(pickerSource).toContain('calendarSystem?: CalendarSystem');
     expect(pickerSource).toContain('onCalendarSystemChange?:');
     expect(pickerSource).toContain(
-      'controlledCalendarSystem ?? internalCalendarSystem',
+      'controlledCalendarSystem ??',
     );
     expect(pickerSource).toContain("['persian', 'gregorian']");
     expect(pickerSource).toContain("'شمسی'");

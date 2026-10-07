@@ -22,7 +22,7 @@ import {
   Search,
   XCircle,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useCallback, useEffect, useState } from 'react';
 
 import { Button, buttonVariants } from '@/components/ui/button';

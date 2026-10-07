@@ -1,3 +1,4 @@
+import { displayText, type DisplayLanguage } from '../common/i18n/language';
 import type {
   SalesContractListQuery,
   SalesContractSummary,
@@ -96,7 +97,9 @@ export function buildSalesXlsx(
   records: readonly SalesContractSummary[],
   query: SalesContractListQuery = {},
   now = new Date(),
+  language: DisplayLanguage = 'fa',
 ): Uint8Array {
+  const labelCell = (ref: string, value: string, style = 0) => textCell(ref, displayText(value, language), style);
   const headers = [
     'شماره قرارداد',
     'مشتری',
@@ -112,10 +115,10 @@ export function buildSalesXlsx(
     'آخرین تغییر (میلادی)',
   ];
   const rows: string[] = [
-    `<row r="1" ht="32" customHeight="1">${textCell('A1', 'گزارش قراردادهای فروش', 4)}</row>`,
-    `<row r="2" ht="28" customHeight="1">${textCell('A2', `تعداد قرارداد: ${records.length} | زمان تهیه: ${now.toISOString()} | جست‌وجو: ${query.search || 'همه'} | تسویه: ${query.settlementStatus ? settlementLabels[query.settlementStatus] : 'همه'}`, 5)}</row>`,
-    `<row r="3" ht="34" customHeight="1">${textCell('A3', 'هر ردیف یک قرارداد / ارز است؛ ارزها با هم جمع نمی‌شوند. مانده فقط با تأیید مالی کم می‌شود. مبالغ بیش از دقت 15 رقم Excel به‌صورت متن دقیق حفظ می‌شوند.', 5)}</row>`,
-    `<row r="4" ht="32" customHeight="1">${headers.map((label, index) => textCell(`${String.fromCharCode(65 + index)}4`, label, 1)).join('')}</row>`,
+    `<row r="1" ht="32" customHeight="1">${labelCell('A1', 'گزارش قراردادهای فروش', 4)}</row>`,
+    `<row r="2" ht="28" customHeight="1">${labelCell('A2', `تعداد قرارداد: ${records.length} | زمان تهیه: ${now.toISOString()} | جست‌وجو: ${query.search || 'همه'} | تسویه: ${query.settlementStatus ? settlementLabels[query.settlementStatus] : 'همه'}`, 5)}</row>`,
+    `<row r="3" ht="34" customHeight="1">${labelCell('A3', 'هر ردیف یک قرارداد / ارز است؛ ارزها با هم جمع نمی‌شوند. مانده فقط با تأیید مالی کم می‌شود. مبالغ بیش از دقت 15 رقم Excel به‌صورت متن دقیق حفظ می‌شوند.', 5)}</row>`,
+    `<row r="4" ht="32" customHeight="1">${headers.map((label, index) => labelCell(`${String.fromCharCode(65 + index)}4`, label, 1)).join('')}</row>`,
   ];
   for (const record of records) {
     for (const balance of record.balances.length ? record.balances : [null]) {
@@ -124,9 +127,9 @@ export function buildSalesXlsx(
         record.contractNumber,
         record.customerNameSnapshot,
         '',
-        record.services.map((kind) => services[kind]).join('، '),
-        statusLabels[record.status],
-        settlementLabels[record.settlementStatus],
+        record.services.map((kind) => displayText(services[kind], language)).join(language === 'en' ? ', ' : '، '),
+        displayText(statusLabels[record.status], language),
+        displayText(settlementLabels[record.settlementStatus], language),
         balance?.currencyCode ?? '',
       ];
       const cells = values.map((value, column) =>
@@ -159,14 +162,14 @@ export function buildSalesXlsx(
     'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   const pack = 'http://schemas.openxmlformats.org/package/2006/relationships';
   const declaration = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
-  const worksheet = `<worksheet xmlns="${main}"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:L${end}"/><sheetViews><sheetView workbookViewId="0" rightToLeft="1" showGridLines="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="22"/><cols>${[24, 30, 12, 30, 24, 19, 10, 24, 24, 24, 22, 22].map((width, i) => `<col min="${i + 1}" max="${i + 1}" width="${width}" customWidth="1"/>`).join('')}</cols><sheetData>${rows.join('')}</sheetData><autoFilter ref="A4:L${end}"/><mergeCells count="3"><mergeCell ref="A1:L1"/><mergeCell ref="A2:L2"/><mergeCell ref="A3:L3"/></mergeCells><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+  const worksheet = `<worksheet xmlns="${main}"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:L${end}"/><sheetViews><sheetView workbookViewId="0" rightToLeft="${language === 'en' ? '0' : '1'}" showGridLines="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="22"/><cols>${[24, 30, 12, 30, 24, 19, 10, 24, 24, 24, 22, 22].map((width, i) => `<col min="${i + 1}" max="${i + 1}" width="${width}" customWidth="1"/>`).join('')}</cols><sheetData>${rows.join('')}</sheetData><autoFilter ref="A4:L${end}"/><mergeCells count="3"><mergeCell ref="A1:L1"/><mergeCell ref="A2:L2"/><mergeCell ref="A3:L3"/></mergeCells><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
   const xf = (font: number, fill: number, format: number, align = 'right') =>
     `<xf numFmtId="${format}" fontId="${font}" fillId="${fill}" borderId="0" xfId="0" applyFont="1" applyFill="1" applyNumberFormat="1" applyAlignment="1"><alignment horizontal="${align}" vertical="center" wrapText="1"/></xf>`;
   const styles = `<styleSheet xmlns="${main}"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.########;[Red](#,##0.########);0"/><numFmt numFmtId="165" formatCode="yyyy-mm-dd"/></numFmts><fonts count="3"><font><sz val="11"/><color rgb="FF133969"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="16"/><color rgb="FF133969"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF133969"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="8">${xf(0, 0, 0)}${xf(1, 2, 0, 'center')}${xf(0, 0, 164)}${xf(0, 0, 165, 'center')}${xf(2, 0, 0)}${xf(0, 0, 0)}${xf(0, 0, 1, 'center')}${xf(0, 0, 3)}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
   const files = {
     '[Content_Types].xml': `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`,
     '_rels/.rels': `<Relationships xmlns="${pack}"><Relationship Id="rId1" Type="${rel}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
-    'xl/workbook.xml': `<workbook xmlns="${main}" xmlns:r="${rel}"><sheets><sheet name="قراردادها" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'قراردادها'!$4:$4</definedName></definedNames></workbook>`,
+    'xl/workbook.xml': `<workbook xmlns="${main}" xmlns:r="${rel}"><sheets><sheet name="${language === 'en' ? 'Contracts' : 'قراردادها'}" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'${language === 'en' ? 'Contracts' : 'قراردادها'}'!$4:$4</definedName></definedNames></workbook>`,
     'xl/_rels/workbook.xml.rels': `<Relationships xmlns="${pack}"><Relationship Id="rId1" Type="${rel}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${rel}/styles" Target="styles.xml"/></Relationships>`,
     'xl/worksheets/sheet1.xml': worksheet,
     'xl/styles.xml': styles,

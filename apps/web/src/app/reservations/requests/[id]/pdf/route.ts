@@ -1,3 +1,4 @@
+import { languageFromCookies } from '@/i18n/language';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -143,6 +144,7 @@ export async function GET(
       css,
       voucher,
       new URL(request.url).origin,
+      languageFromCookies(request.headers.get('cookie')),
     );
     const name = intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_');
     return new Response(new Uint8Array(bytes), {

@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   MasterCurrencyRateQuoteRequest,
   MasterCurrencyRateRecord,
@@ -108,7 +109,7 @@ async function requestFile(
 ): Promise<{ blob: Blob; fileName: string }> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/master-data${path}`, {
+  const response = await localizedFetch(`${baseUrl}/master-data${path}`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -160,7 +161,7 @@ async function requestFile(
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/master-data${path}`, {
+  const response = await localizedFetch(`${baseUrl}/master-data${path}`, {
     credentials: 'include',
     ...init,
     headers: {
@@ -196,7 +197,7 @@ async function documentsRequest<T>(
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/documents${path}`, {
+  const response = await localizedFetch(`${baseUrl}/documents${path}`, {
     credentials: 'include',
     ...init,
     headers: {
@@ -231,7 +232,7 @@ export const masterDataApi = {
     const baseUrl = getPublicApiBaseUrl();
     if (!baseUrl)
       throw new MasterDataApiError('نشانی API پیکربندی نشده است.', 0);
-    const response = await fetch(
+    const response = await localizedFetch(
       `${baseUrl}/master-data/${input.resource}/${encodeURIComponent(input.recordId)}/logo`,
       {
         credentials: 'include',

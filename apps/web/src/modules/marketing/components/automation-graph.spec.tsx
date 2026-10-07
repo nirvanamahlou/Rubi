@@ -1,3 +1,4 @@
+import { canonicalTestTree } from '@/i18n/test-tree';
 import { isValidElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
@@ -120,6 +121,7 @@ describe('AutomationGraphCanvas shared rendered geometry', () => {
   it('routes all four actual port buttons to the selected node and disables read-only ports', () => {
     const select = vi.fn();
     const buttons = (node: ReactNode): Array<Record<string, unknown>> => {
+  node = canonicalTestTree(node);
       if (Array.isArray(node)) return node.flatMap(buttons);
       if (!isValidElement<{ children?: ReactNode }>(node)) return [];
       return node.type === 'button'

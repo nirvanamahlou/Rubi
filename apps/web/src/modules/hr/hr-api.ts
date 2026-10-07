@@ -1,4 +1,6 @@
 'use client';
+import { localizedFetch } from '@/i18n/localized-fetch';
+
 
 import type {
   HrBootstrapDto,
@@ -30,7 +32,7 @@ export async function hrRequest<T>(
   if (!base) throw new HrApiError('آدرس سرویس منابع انسانی تنظیم نشده است.', 0);
   let response: Response;
   try {
-    response = await fetch(`${base}/hr${path}`, {
+    response = await localizedFetch(`${base}/hr${path}`, {
       ...init,
       credentials: 'include',
       cache: 'no-store',

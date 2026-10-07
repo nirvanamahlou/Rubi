@@ -11,7 +11,7 @@ import {
   ShieldCheck,
   Upload,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import {
   useCallback,
   useEffect,

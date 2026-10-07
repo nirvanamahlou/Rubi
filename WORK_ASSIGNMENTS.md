@@ -1,3 +1,7 @@
+## ENGLISH-UI-1007 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-english-ui-1007 from origin/develop@dc77c39b. Owner explicitly authorizes application-wide English UI, functional language selector, future translation enforcement and develop merge. Reserve Web locale preference/provider, shell, shared UI/formatters, all module presentation translations and locale-aware API error/document/export presentation where needed; central docs and translation-quality configuration scoped to this task. Cross-module work is authorized by owner; preserve producers, permission rules, wire enum values, persisted customer input, existing edits and active feature work. No dependency/lockfile/schema/migration changes. English locale is a per-user display choice, never a company-wide setting mutation from the header. Stable identifiers and stored values must remain unchanged.
+
 ## HOTEL-IMPORT-DEVELOP-AGE-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; user authorizes PR671 develop merge and complete child-age options below selector. Reserve Sales passenger-age field/spec and bounded opt-in optionLimit in shared SearchCombobox (default5 unchanged), own docs, develop integration conflict resolution preserving all other owners' changes. No dependencies/schema/migration/database/runtime deployment. Inspect and repair exact-head CI before requested merge; no bypass of failures.

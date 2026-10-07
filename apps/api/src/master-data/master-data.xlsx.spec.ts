@@ -17,6 +17,14 @@ const record: MasterDataRecord = {
 };
 
 describe('buildMasterDataXlsx', () => {
+  it('exports readable English headers and preserves original record text', () => {
+    const files = unzipSync(buildMasterDataXlsx({ resource: 'countries', columns: ['code', 'name', 'status'], records: [{ ...record, name: 'ورودی اختصاصی' }], locale: 'en-US', timezone: 'Asia/Tehran' }));
+    const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
+    expect(sheet).toContain('rightToLeft="0"');
+    expect(sheet.match(/<row r="1">([\s\S]*?)<\/row>/)?.[1]).not.toMatch(/[\u0600-\u06ff]/);
+    expect(sheet).toContain('ورودی اختصاصی');
+    expect(strFromU8(files['xl/workbook.xml']!)).not.toMatch(/[\u0600-\u06ff]/);
+  });
   it('creates a valid RTL workbook with inline strings and no formulas', () => {
     const files = unzipSync(
       buildMasterDataXlsx({

@@ -11,6 +11,8 @@ import {
 } from 'react';
 
 import { systemManagementApi } from '@/modules/system-management/api/client';
+import { DisplayLocaleContext } from '@/i18n/locale-context';
+import { browserLanguageStorage, displayLanguageChangedEvent, displayLanguageStorageKey, persistDisplayLanguage, parseDisplayLanguage, readDisplayLanguage, type DisplayLanguage } from '@/i18n/language';
 
 export const systemPreferencesChangedEvent = 'nora:system-preferences-changed';
 
@@ -34,7 +36,7 @@ const defaults: SystemPreferences = {
   timezone: 'Asia/Tehran',
 };
 
-const SystemPreferencesContext = createContext<SystemPreferences>(defaults);
+const SystemPreferencesContext = createContext<SystemPreferences & { setLanguage: (language: DisplayLanguage) => void }>({ ...defaults, setLanguage: () => undefined });
 
 function record(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -65,10 +67,18 @@ export function resolveSystemPreferences(
 
 export function SystemPreferencesProvider({
   children,
+  initialLanguage = null,
 }: {
   children: ReactNode;
+  initialLanguage?: DisplayLanguage | null;
 }) {
   const [preferences, setPreferences] = useState(defaults);
+  const [personalLanguage, setPersonalLanguage] = useState<DisplayLanguage | null>(initialLanguage);
+  const setLanguage = useCallback((language: DisplayLanguage) => {
+    setPersonalLanguage(language);
+    persistDisplayLanguage(language, browserLanguageStorage());
+    window.dispatchEvent(new CustomEvent(displayLanguageChangedEvent, { detail: language }));
+  }, []);
 
   const load = useCallback(async () => {
     const locale = await systemManagementApi
@@ -81,29 +91,55 @@ export function SystemPreferencesProvider({
   }, []);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => void load(), 0);
+    const timer = window.setTimeout(() => {
+      setPersonalLanguage(readDisplayLanguage(browserLanguageStorage()) ?? initialLanguage);
+      void load();
+    }, 0);
     const reload = () => void load();
+    const languageChanged = (event?: Event) => setPersonalLanguage(parseDisplayLanguage(event instanceof CustomEvent ? event.detail : null) ?? readDisplayLanguage(browserLanguageStorage()) ?? initialLanguage);
+    const storageChanged = (event: StorageEvent) => {
+      if (event.key === displayLanguageStorageKey || event.key === null) languageChanged();
+    };
     window.addEventListener(systemPreferencesChangedEvent, reload);
+    window.addEventListener(displayLanguageChangedEvent, languageChanged);
+    window.addEventListener('storage', storageChanged);
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener(systemPreferencesChangedEvent, reload);
+      window.removeEventListener(displayLanguageChangedEvent, languageChanged);
+      window.removeEventListener('storage', storageChanged);
     };
-  }, [load]);
+  }, [load, initialLanguage]);
+
+  const value = useMemo(() => {
+    const language = personalLanguage ?? preferences.language;
+    const english = language === 'en';
+    return {
+      ...preferences,
+      language,
+      direction: english ? 'ltr' as const : 'rtl' as const,
+      locale: english ? 'en-US' as const : 'fa-IR' as const,
+      calendar: english ? 'gregorian' as const : preferences.calendar,
+      numberingSystem: english ? 'latn' as const : preferences.numberingSystem,
+      setLanguage,
+    };
+  }, [preferences, personalLanguage, setLanguage]);
 
   useEffect(() => {
     const root = document.documentElement;
-    root.lang = preferences.language;
-    root.dir = preferences.direction;
-    root.dataset.calendar = preferences.calendar;
-    root.dataset.moneyUnit = preferences.moneyUnit;
-    root.dataset.numberingSystem = preferences.numberingSystem;
-    root.dataset.timezone = preferences.timezone;
-  }, [preferences]);
+    root.lang = value.language;
+    root.dir = value.direction;
+    root.dataset.calendar = value.calendar;
+    root.dataset.moneyUnit = value.moneyUnit;
+    root.dataset.numberingSystem = value.numberingSystem;
+    root.dataset.timezone = value.timezone;
+  }, [value]);
 
-  const value = useMemo(() => preferences, [preferences]);
   return (
     <SystemPreferencesContext.Provider value={value}>
-      {children}
+      <DisplayLocaleContext.Provider value={value.language}>
+        {children}
+      </DisplayLocaleContext.Provider>
     </SystemPreferencesContext.Provider>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { CheckCircle2, RefreshCw, Server, WifiOff } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 
 import { Button } from '@/components/ui/button';
 import {

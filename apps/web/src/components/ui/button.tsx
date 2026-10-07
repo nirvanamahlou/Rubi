@@ -6,6 +6,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { LoaderCircle } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { useUiTranslation } from '@/i18n/locale-context';
 import {
   useAccessPermissions,
   useRouteAccess,
@@ -61,6 +62,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    const t = useUiTranslation();
     const permissions = useAccessPermissions();
     const allowedRoute = useRouteAccess();
     if (
@@ -100,8 +102,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         ref={ref}
         aria-busy={loading || undefined}
-        aria-label={ariaLabel}
-        title={title ?? (operationIconOnly ? ariaLabel : undefined)}
+        aria-label={ariaLabel === undefined ? undefined : t(ariaLabel)}
+        title={title !== undefined ? t(title) : operationIconOnly ? t(ariaLabel) : undefined}
         {...props}
       >
         {loading ? (

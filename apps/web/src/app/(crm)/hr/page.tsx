@@ -1,6 +1,9 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 import { HrWorkspace } from '@/modules/hr/hr-workspace';
-export const metadata: Metadata = { title: 'منابع انسانی | Nora' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'منابع انسانی | Nora' });
+}
 export default async function Page({
   searchParams,
 }: {

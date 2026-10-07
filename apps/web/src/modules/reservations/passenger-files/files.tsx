@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import type {
   DocumentListItemV1,
   DocumentListResponseV1,

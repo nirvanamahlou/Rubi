@@ -1,3 +1,5 @@
+import { localizeDocumentHtml } from '@/i18n/document';
+import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
 import { mkdtemp, readFile, writeFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -21,6 +23,7 @@ export async function renderReservationPdf(
   css: string,
   voucher = false,
   origin = '',
+  language: DisplayLanguage = 'fa',
 ): Promise<Buffer> {
   const { chromePath: chrome, fontPath: font } =
     await resolveTicketPdfRuntime();
@@ -29,7 +32,7 @@ export async function renderReservationPdf(
   active++;
   let directory: string | undefined;
   try {
-    let html = reservationPdfHtml(output, refs, logo, css, voucher, origin);
+    let html = localizeDocumentHtml(reservationPdfHtml(output, refs, logo, css, voucher, origin), language);
     if (font) {
       const fontBytes = await readFile(font);
       if (fontBytes.length && fontBytes.length <= 5_000_000)

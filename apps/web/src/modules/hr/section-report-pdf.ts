@@ -1,4 +1,7 @@
 'use client';
+import { browserDisplayLanguage } from '@/i18n/language';
+import { translateUiText } from '@/i18n/translate';
+
 import { reportCellText } from './hr-report-text';
 import type { SectionReport } from './section-reports';
 import {
@@ -96,16 +99,16 @@ export async function downloadSectionPdf(
     textLines = [];
     context.fillStyle = '#fff';
     context.fillRect(0, 0, 1240, 1754);
-    context.direction = 'rtl';
+    context.direction = browserDisplayLanguage() === 'en' ? 'ltr' : 'rtl';
     context.textAlign = 'right';
     context.fillStyle = '#103c78';
     context.font = 'bold 34px Vazirmatn, Tahoma, sans-serif';
-    context.fillText(`گزارش ${title}`, 1170, 75);
-    textLines.push({ text: `گزارش ${title}`, x: 1170, y: 75, size: 34 });
+    context.fillText(translateUiText(`گزارش ${title}`, browserDisplayLanguage()), 1170, 75);
+    textLines.push({ text: translateUiText(`گزارش ${title}`, browserDisplayLanguage()), x: 1170, y: 75, size: 34 });
     context.font = '22px Vazirmatn, Tahoma, sans-serif';
     context.fillStyle = '#52657c';
     context.fillText(
-      `اطلاعات منابع انسانی · ${new Date().toLocaleString('fa-IR')} · صفحه ${page.toLocaleString('fa-IR')}`,
+      translateUiText(`اطلاعات منابع انسانی · ${new Date().toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')} · صفحه ${page.toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`, browserDisplayLanguage()),
       1170,
       117,
     );
@@ -124,6 +127,7 @@ export async function downloadSectionPdf(
       throw new Error('گزارش بیش از ۲۰۰ صفحه است؛ فیلتر را محدود کنید.');
   };
   const line = (text: string, heading = false) => {
+    text = translateUiText(text, browserDisplayLanguage());
     context.font = `${heading ? 'bold ' : ''}25px Vazirmatn, Tahoma, sans-serif`;
     const output: string[] = [];
     let current = '';
@@ -149,12 +153,12 @@ export async function downloadSectionPdf(
   start();
   for (const report of reports) {
     line(
-      `${report.title} — ${report.data.rows.length.toLocaleString('fa-IR')} رکورد`,
+      `${report.title} — ${report.data.rows.length.toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')} رکورد`,
       true,
     );
     if (!report.data.rows.length) line('رکوردی وجود ندارد.');
     report.data.rows.forEach((row, index) => {
-      line(`رکورد ${(index + 1).toLocaleString('fa-IR')}`, true);
+      line(`رکورد ${(index + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`, true);
       report.data.columns.forEach((column, cellIndex) =>
         line(`${column}: ${reportCellText(row[cellIndex] ?? '') || '—'}`),
       );

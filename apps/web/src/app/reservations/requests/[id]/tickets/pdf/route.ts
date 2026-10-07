@@ -1,3 +1,4 @@
+import { languageFromCookies } from '@/i18n/language';
 import { readTicketDocumentFacts } from '@/modules/ticket-catalog/public/document-details';
 import type {
   MasterDataListResponse,
@@ -293,7 +294,7 @@ export async function GET(
       },
       airlineLogos,
     );
-    const bytes = await renderTicketPdf(html);
+    const bytes = await renderTicketPdf(html, languageFromCookies(request.headers.get('cookie')));
     const name = intake.snapshot.contractNumber.replace(/[^A-Za-z0-9_-]/g, '_');
     return new Response(new Uint8Array(bytes), {
       headers: {

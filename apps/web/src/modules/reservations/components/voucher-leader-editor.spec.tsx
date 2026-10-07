@@ -1,3 +1,4 @@
+import { canonicalTestTree } from '@/i18n/test-tree';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
@@ -60,6 +61,7 @@ function render() {
   return VoucherLeaderEditor({ intake, onDirty: vi.fn(), onSaved: vi.fn() });
 }
 function elements(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
+  tree = canonicalTestTree(tree);
   if (Array.isArray(tree)) return tree.flatMap(elements);
   if (!tree || typeof tree !== 'object' || !('props' in tree)) return [];
   const node = tree as ReactElement<Record<string, unknown>>;

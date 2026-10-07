@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
 /** IAM authorizes this public endpoint; a denied lookup never blocks the catalog. */
@@ -6,7 +7,7 @@ export async function loadTourTypeActorNames(signal?: AbortSignal) {
   const base = getPublicApiBaseUrl();
   if (!base) return names;
   try {
-    const response = await fetch(`${base}/iam/users`, {
+    const response = await localizedFetch(`${base}/iam/users`, {
       credentials: 'include',
       cache: 'no-store',
       ...(signal ? { signal } : {}),

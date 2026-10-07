@@ -1,3 +1,4 @@
+import { canonicalTestTree } from '@/i18n/test-tree';
 import { beforeEach, expect, it, vi } from 'vitest';
 import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
@@ -73,6 +74,7 @@ function render() {
   return tree;
 }
 function nodes(tree: ReactNode): ReactElement<Record<string, unknown>>[] {
+  tree = canonicalTestTree(tree);
   if (Array.isArray(tree)) return tree.flatMap(nodes);
   if (!tree || typeof tree !== 'object' || !('props' in tree)) return [];
   const node = tree as ReactElement<Record<string, unknown>>;

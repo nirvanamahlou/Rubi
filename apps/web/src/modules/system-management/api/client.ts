@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   SystemBackupRequestV1,
   SystemFeatureFlagV1,
@@ -110,7 +111,7 @@ async function request<T>(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new SystemManagementApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/system-management/v1${path}`, {
+  const response = await localizedFetch(`${baseUrl}/system-management/v1${path}`, {
     cache: 'no-store',
     credentials: 'include',
     ...init,

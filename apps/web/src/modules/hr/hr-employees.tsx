@@ -2,7 +2,7 @@
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import dynamic from 'next/dynamic';
 import type { HrEmployeeDto } from '@nora/contracts';
 import { hrApi } from './hr-api';

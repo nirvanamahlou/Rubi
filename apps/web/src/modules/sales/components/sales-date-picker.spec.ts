@@ -16,15 +16,11 @@ describe('Sales English Gregorian calendar opt-in', () => {
       formatCalendarValue('2026-09-05T09:30', 'gregorian', true, true),
     ).toBe('5 September 2026, 09:30');
   });
-  it('preserves default calendar language outside Sales and Persian mode inside Sales', () => {
+  it('preserves Persian defaults and supports English names in either calendar', () => {
     const date = parseIsoDate('2026-09-05')!;
     expect(calendarMonthName(date, 'gregorian')).toBe('سپتامبر');
-    expect(calendarMonthName(date, 'persian', true)).toBe(
-      calendarMonthName(date, 'persian'),
-    );
-    expect(formatCalendarValue('2026-09-05', 'persian', false, true)).toBe(
-      formatCalendarValue('2026-09-05', 'persian'),
-    );
+    expect(calendarMonthName(date, 'persian', true)).toBe('Shahrivar');
+    expect(formatCalendarValue('2026-09-05', 'persian', false, true)).not.toMatch(/[\u0600-\u06ff]/);
   });
   it('never changes the stored ISO date while formatting in either language', () => {
     const value = '2026-09-05';

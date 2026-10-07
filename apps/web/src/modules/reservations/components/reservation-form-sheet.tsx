@@ -1,6 +1,6 @@
 'use client';
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import type { MasterDataResource } from '@nora/contracts';

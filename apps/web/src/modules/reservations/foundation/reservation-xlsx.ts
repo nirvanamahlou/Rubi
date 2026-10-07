@@ -1,3 +1,5 @@
+import { browserDisplayLanguage } from '@/i18n/language';
+import { translateUiText } from '@/i18n/translate';
 // Stored ZIP and inline-string OOXML based on the existing repository workbook codec.
 const encoder = new TextEncoder();
 function escapeXml(value: string) {
@@ -105,12 +107,12 @@ function worksheetXml(rows: readonly (readonly string[])[]) {
         `<row r="${rowIndex + 1}">${row
           .map(
             (value, columnIndex) =>
-              `<c r="${columnName(columnIndex)}${rowIndex + 1}" t="inlineStr"><is><t>${escapeXml(value)}</t></is></c>`,
+              `<c r="${columnName(columnIndex)}${rowIndex + 1}" t="inlineStr"><is><t>${escapeXml(rowIndex === 0 ? translateUiText(value, browserDisplayLanguage()) : value)}</t></is></c>`,
           )
           .join('')}</row>`,
     )
     .join('');
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="2" width="22" customWidth="1"/><col min="3" max="3" width="35" customWidth="1"/><col min="4" max="20" width="20" customWidth="1"/></cols><sheetData>${body}</sheetData><autoFilter ref="A1:${columnName(Math.max(0, (rows[0]?.length ?? 1) - 1))}${rows.length}"/></worksheet>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="${browserDisplayLanguage() === 'en' ? '0' : '1'}"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="2" width="22" customWidth="1"/><col min="3" max="3" width="35" customWidth="1"/><col min="4" max="20" width="20" customWidth="1"/></cols><sheetData>${body}</sheetData><autoFilter ref="A1:${columnName(Math.max(0, (rows[0]?.length ?? 1) - 1))}${rows.length}"/></worksheet>`;
 }
 
 export function createReservationXlsx(rows: readonly (readonly string[])[]) {

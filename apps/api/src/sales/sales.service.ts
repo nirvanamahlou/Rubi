@@ -1,3 +1,4 @@
+import type { DisplayLanguage } from '../common/i18n/language';
 import { expectedTicketSale } from './sales-ticket-quote';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { MasterDataService } from '../master-data/master-data.service';
@@ -557,7 +558,7 @@ export class SalesService {
     return { userId: actor.userId, branchId, ...(traceId ? { traceId } : {}) };
   }
 
-  async exportXlsx(query: SalesContractListQuery, actor: AuthenticatedActor) {
+  async exportXlsx(query: SalesContractListQuery, actor: AuthenticatedActor, language: DisplayLanguage = 'fa') {
     if (!has(actor, 'sales.export'))
       throw new ForbiddenException('مجوز دریافت خروجی قرارداد وجود ندارد.');
     const validated = Joi.object({
@@ -589,7 +590,7 @@ export class SalesService {
       throw new BadRequestException(
         'خروجی بیش از ۲۰۰۰ قرارداد است؛ با جست‌وجو یا وضعیت تسویه، نتایج را محدود کنید.',
       );
-    const bytes = buildSalesXlsx(result.data, validated.value);
+    const bytes = buildSalesXlsx(result.data, validated.value, new Date(), language);
     if (result.data.length)
       await this.repository.recordListExport(result.data, actor.userId);
     return bytes;
