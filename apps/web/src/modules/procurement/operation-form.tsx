@@ -433,7 +433,7 @@ function OperationFields({
       <DatePicker
         withinDialog
         required={key === 'returnedAt'}
-        aria-required={key === 'returnedAt' || undefined}
+        aria-required={key === 'returnedAt'}
         id={`operation-${key}`}
         value={fields[key]?.slice(0, 10) ?? ''}
         onChange={(value) => set(key, value ? `${value}T00:00:00.000Z` : '')}
