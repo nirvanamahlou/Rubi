@@ -6092,3 +6092,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-copy-cleanup-1007 from origin/develop@
 Presentation-only cleanup removes listed dashboard/wizard explanations and duplicate headings. Required customer/service/date/price fields, flight facts/capacity and submit actions remain. Existing rendering assertions updated for removed copy. Scoped source locks release with frozen candidate. Local focused tests, lint/typecheck and Web build plus exact-head full CI gate authorized merge; no browser submit or local rollout claimed.
 
 Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.
+
+Scope also reserves one additive English Sales display translation for the shortened floating-ticket action; no overlapping active catalogue lock.
