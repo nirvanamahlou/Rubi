@@ -22,6 +22,7 @@ const expectedRoutes = [
   '/purchases',
   '/finance',
   '/finance/requests',
+  '/ticket-purchases',
   '/marketing',
   '/organizations',
   '/human-resources',
@@ -35,17 +36,18 @@ const expectedRoutes = [
 const expectedTitles = [
   'میزکار من',
   'داشبورد',
-  'مشتریان و مسافران',
+  'مشتریان B2c',
   'امور مشتریان و پشتیبانی',
   'رزرواسیون',
   'مدیریت گروهی نرخ‌های هتل‌ها',
   'تعریف و ظرفیت پرواز',
   'قرارداد',
-  'خرید و تأمین',
+  'تنخواه',
   'حسابداری',
   'کارتابل درخواست‌ها',
+  'خرید و تأمین',
   'مارکتینگ',
-  'آژانس‌ها و مشتریان سازمانی',
+  'مشتریان B2B',
   'منابع انسانی',
   'اسناد و فایل‌ها',
   'گزارش‌ها',
@@ -108,13 +110,13 @@ describe('CRM navigation', () => {
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(19);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(20);
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(19);
+    expect(navigationItems).toHaveLength(20);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(19);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(20);
   });
 
   it('resolves the Human Resources owner route', () => {
@@ -181,20 +183,20 @@ describe('CRM navigation', () => {
     ).toBe(false);
     expect(salesPricingSubsection).toEqual({
       href: '/sales/pricing',
-      title: 'مدیریت قیمت و پکیج‌ها',
+      title: 'مدیریت پکیج',
     });
     expect(getNavigationItem('/sales/pricing')?.href).toBe('/sales');
     expect(getNavigationBreadcrumbs('/sales/pricing')).toEqual([
       { href: '/sales', title: 'قرارداد' },
-      { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+      { href: '/sales/pricing', title: 'مدیریت پکیج' },
     ]);
     expect(salesSubsections[0]).toEqual({
       href: '/sales/ticket-prices',
-      title: 'قیمت بلیط',
+      title: 'قیمت گذاری پرواز',
     });
     expect(getNavigationBreadcrumbs('/sales/ticket-prices')).toEqual([
       { href: '/sales', title: 'قرارداد' },
-      { href: '/sales/ticket-prices', title: 'قیمت بلیط' },
+      { href: '/sales/ticket-prices', title: 'قیمت گذاری پرواز' },
     ]);
   });
 

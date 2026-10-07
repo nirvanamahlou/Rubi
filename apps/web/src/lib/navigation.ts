@@ -46,6 +46,7 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/ticket-management': Ticket,
   '/sales': Handshake,
   '/purchases': PackageSearch,
+  '/ticket-purchases': PackageSearch,
   '/finance': CircleDollarSign,
   '/finance/requests': Inbox,
   '/marketing': Megaphone,
@@ -90,6 +91,12 @@ export const navigationGroups = [
     hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management'],
   },
   {
+    id: 'ticket-purchases',
+    dotClass: 'bg-[#7dd3fc]',
+    title: 'خرید و تأمین',
+    hrefs: ['/ticket-purchases'],
+  },
+  {
     id: 'finance',
     dotClass: 'bg-[#f7d184]',
     title: 'مالی',
@@ -131,8 +138,8 @@ export const groupedNavigationItems = navigationGroups.map((group) => ({
 
 /** A second-level Sales module, separate from the seventeen primary destinations. */
 export const salesSubsections = [
-  { href: '/sales/ticket-prices', title: 'قیمت بلیط' },
-  { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+  { href: '/sales/ticket-prices', title: 'قیمت گذاری پرواز' },
+  { href: '/sales/pricing', title: 'مدیریت پکیج' },
   { href: '/sales/tours', title: 'تعریف تور و خدمات' },
 ] as const;
 export const salesPricingSubsection = salesSubsections[1];
@@ -140,11 +147,11 @@ export const salesPricingSubsection = salesSubsections[1];
 export const navigationAliases = {
   '/sales/ticket-prices': {
     parentHref: '/sales',
-    title: 'قیمت بلیط',
+    title: 'قیمت گذاری پرواز',
   },
   '/sales/pricing': {
     parentHref: '/sales',
-    title: 'مدیریت قیمت و پکیج‌ها',
+    title: 'مدیریت پکیج',
   },
   '/sales/tours': {
     parentHref: '/sales',

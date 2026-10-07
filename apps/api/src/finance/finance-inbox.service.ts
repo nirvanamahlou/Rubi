@@ -184,7 +184,11 @@ export class FinanceInboxService {
           })
         : [];
     const ticketItems =
-      ticketResult.status === 'fulfilled' ? ticketResult.value.items : [];
+      ticketResult.status === 'fulfilled'
+        ? ticketResult.value.items.filter((item) =>
+            ticketResult.value.states.has(item.id),
+          )
+        : [];
     const ticketStates =
       ticketResult.status === 'fulfilled'
         ? ticketResult.value.states
@@ -387,49 +391,51 @@ export class FinanceInboxService {
           };
         },
       ),
-      ...ticketItems.map((purchase): FinanceInboxItemV1 => ({
-        version: 1,
-        id: 'purchases:' + purchase.id,
-        source: 'PURCHASES',
-        kind: 'PAYMENT_REQUEST',
-        sourceReference: purchase.id,
-        sourceContextReference:
-          ticketStates.get(purchase.id)?.costRevisionId ??
-          purchase.catalogProductReference,
-        contractReference: null,
-        title: 'خرید بلیط ' + purchase.title,
-        partyDisplaySnapshot: purchase.supplierDisplaySnapshot,
-        description: purchase.serviceDate
-          ? 'قیمت خرید بلیط برای تاریخ ' + purchase.serviceDate
-          : 'درخواست ثبت قیمت خرید بلیط توسط مالی',
-        amount: ticketStates.has(purchase.id)
-          ? {
-              amount: ticketStates.get(purchase.id)!.invoiceAmount,
-              currencyCode: ticketStates.get(purchase.id)!.currencyCode,
-            }
-          : null,
-        settlement: ticketStates.has(purchase.id)
-          ? {
-              paidAmount: ticketStates.get(purchase.id)!.paidAmount,
-              remainingAmount: ticketStates.get(purchase.id)!.remainingAmount,
-            }
-          : null,
-        status: ticketStates.get(purchase.id)?.status ?? 'NEW',
-        dueAt: purchase.serviceDate
-          ? purchase.serviceDate + 'T00:00:00.000Z'
-          : null,
-        createdAt: purchase.createdAt,
-        requesterDisplaySnapshot: null,
-        branchReference: purchase.branchId,
-        sourceVersion: purchase.requestVersion,
-        origin: 'PERSISTED_SOURCE',
-        ticketPurchase: {
-          seatCount:
-            ticketStates.get(purchase.id)?.seatCount ?? purchase.seatCount,
-          unitCost: ticketStates.get(purchase.id)?.unitCost ?? null,
-          paymentCount: ticketStates.get(purchase.id)?.paymentCount ?? 0,
-        },
-      })),
+      ...ticketItems
+        .filter((purchase) => ticketStates.has(purchase.id))
+        .map((purchase): FinanceInboxItemV1 => ({
+          version: 1,
+          id: 'purchases:' + purchase.id,
+          source: 'PURCHASES',
+          kind: 'PAYMENT_REQUEST',
+          sourceReference: purchase.id,
+          sourceContextReference:
+            ticketStates.get(purchase.id)?.costRevisionId ??
+            purchase.catalogProductReference,
+          contractReference: null,
+          title: 'خرید بلیط ' + purchase.title,
+          partyDisplaySnapshot: purchase.supplierDisplaySnapshot,
+          description: purchase.serviceDate
+            ? 'قیمت خرید بلیط برای تاریخ ' + purchase.serviceDate
+            : 'پرداخت خرید بلیط قیمت‌گذاری‌شده در خرید و تأمین',
+          amount: ticketStates.has(purchase.id)
+            ? {
+                amount: ticketStates.get(purchase.id)!.invoiceAmount,
+                currencyCode: ticketStates.get(purchase.id)!.currencyCode,
+              }
+            : null,
+          settlement: ticketStates.has(purchase.id)
+            ? {
+                paidAmount: ticketStates.get(purchase.id)!.paidAmount,
+                remainingAmount: ticketStates.get(purchase.id)!.remainingAmount,
+              }
+            : null,
+          status: ticketStates.get(purchase.id)?.status ?? 'NEW',
+          dueAt: purchase.serviceDate
+            ? purchase.serviceDate + 'T00:00:00.000Z'
+            : null,
+          createdAt: purchase.createdAt,
+          requesterDisplaySnapshot: null,
+          branchReference: purchase.branchId,
+          sourceVersion: purchase.requestVersion,
+          origin: 'PERSISTED_SOURCE',
+          ticketPurchase: {
+            seatCount:
+              ticketStates.get(purchase.id)?.seatCount ?? purchase.seatCount,
+            unitCost: ticketStates.get(purchase.id)?.unitCost ?? null,
+            paymentCount: ticketStates.get(purchase.id)?.paymentCount ?? 0,
+          },
+        })),
       ...invoiceItems.map((invoice): FinanceInboxItemV1 => {
         const finance = financeBySource.get(invoice.sourceId);
         const status: FinanceRequestStatus =

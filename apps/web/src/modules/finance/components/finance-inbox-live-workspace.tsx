@@ -1,4 +1,3 @@
-import { prepareTicketPayment } from '../model/prepare-ticket-payment';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   ArrowDownLeft,
@@ -28,7 +27,6 @@ import { FinanceExportActions } from './finance-export-actions';
 import { FinancePayrollActions } from './finance-payroll-actions';
 import { FinanceFollowupPanel } from './finance-followup-panel';
 import { FinanceRequestCreate } from './finance-request-create';
-import { ticketPurchaseTotal } from '../model/ticket-purchase-total';
 import type {
   FinanceInboxItemV1,
   FinanceInboxSource,
@@ -214,9 +212,6 @@ export function FinanceInboxLiveWorkspace() {
   const [paidAt, setPaidAt] = useState(new Date().toISOString());
   const [paymentReference, setPaymentReference] = useState('');
   const [ticketReceiptFile, setTicketReceiptFile] = useState<File | null>(null);
-  const [ticketSeatCount, setTicketSeatCount] = useState('');
-  const [ticketUnitCost, setTicketUnitCost] = useState('');
-  const [ticketCurrency, setTicketCurrency] = useState('IRR');
   const [accountDialog, setAccountDialog] = useState(false);
   const [accountTitle, setAccountTitle] = useState('');
   const [accountKind, setAccountKind] =
@@ -266,9 +261,8 @@ export function FinanceInboxLiveWorkspace() {
   const data = loading ? null : state.data;
   const error = loading ? '' : state.error;
   const paymentCurrency = actionItem?.ticketPurchase
-    ? ticketCurrency
+    ? actionItem.amount?.currencyCode
     : actionItem?.amount?.currencyCode;
-  const ticketInvoice = ticketPurchaseTotal(ticketSeatCount, ticketUnitCost);
 
   useEffect(() => {
     let active = true;
@@ -425,9 +419,6 @@ export function FinanceInboxLiveWorkspace() {
     );
     setActionItem(item);
     setActionKind('PAYMENT');
-    setTicketSeatCount(item.ticketPurchase?.seatCount?.toString() ?? '');
-    setTicketUnitCost(item.ticketPurchase?.unitCost ?? '');
-    setTicketCurrency(item.amount?.currencyCode ?? 'IRR');
     setAccountId(eligibleAccounts[0]?.id ?? '');
     setPaymentMethodId(methods[0]?.id ?? '');
     setPaidAmount(
@@ -511,18 +502,13 @@ export function FinanceInboxLiveWorkspace() {
           hrResponseKey.current,
         );
       } else if (actionKind === 'PAYMENT' && actionItem.ticketPurchase) {
-        const prepared = ticketCommand.current
-          ? actionItem
-          : await prepareTicketPayment(
-              actionItem,
-              {
-                seatCount: ticketSeatCount,
-                unitCost: ticketUnitCost,
-                currencyCode: ticketCurrency,
-              },
-              financeInboxApi.recordTicketCost,
-            );
-        setActionItem(prepared);
+        const prepared = actionItem;
+        if (
+          !prepared.amount ||
+          (!prepared.ticketPurchase?.unitCost &&
+            !prepared.ticketPurchase?.paymentCount)
+        )
+          throw new Error('قیمت خرید ابتدا باید در خرید و تأمین ثبت شود.');
         ticketCommand.current ??= {
           version: 1,
           operationId: crypto.randomUUID(),
@@ -1660,67 +1646,15 @@ export function FinanceInboxLiveWorkspace() {
               disabled={actionBusy || paymentUncertain}
             >
               {actionKind === 'PAYMENT' && actionItem?.ticketPurchase ? (
-                <>
-                  <fieldset
-                    disabled={
-                      !!actionItem?.ticketPurchase?.paymentCount ||
-                      paymentUncertain
-                    }
-                    className="grid gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-900 dark:bg-amber-950/20 sm:grid-cols-2"
-                  >
-                    <label className="grid gap-2">
-                      <span>تعداد صندلی خریداری‌شده</span>
-                      <Input
-                        required
-                        dir="ltr"
-                        inputMode="numeric"
-                        min="1"
-                        value={ticketSeatCount}
-                        onChange={(event) =>
-                          setTicketSeatCount(
-                            event.target.value.replace(/[^0-9]/g, ''),
-                          )
-                        }
-                      />
-                    </label>
-                    <label className="grid gap-2">
-                      <span>قیمت خرید هر صندلی</span>
-                      <MoneyInput
-                        required
-                        value={ticketUnitCost}
-                        onValueChange={setTicketUnitCost}
-                      />
-                    </label>
-                    <div className="sm:col-span-2 rounded-xl bg-background/80 p-3 text-sm">
-                      <span className="text-muted-foreground">
-                        جمع فاکتور محاسبه‌شده
-                      </span>
-                      <strong className="mt-1 block text-lg" dir="ltr">
-                        {ticketInvoice ?? '—'} {ticketCurrency}
-                      </strong>
-                    </div>
-                  </fieldset>
-                  <label className="grid gap-2">
-                    <span>کد ارز خرید</span>
-                    <Input
-                      required
-                      dir="ltr"
-                      maxLength={3}
-                      disabled={
-                        !!actionItem?.ticketPurchase?.paymentCount ||
-                        paymentUncertain
-                      }
-                      value={ticketCurrency}
-                      onChange={(event) => {
-                        setTicketCurrency(event.target.value.toUpperCase());
-                        setAccountId('');
-                        setExchangeRate(
-                          event.target.value.toUpperCase() === 'IRR' ? '1' : '',
-                        );
-                      }}
-                    />
-                  </label>
-                </>
+                <div className="rounded-xl border bg-muted/40 p-3 text-sm">
+                  قیمت خرید ثبت‌شده در خرید و تأمین:{' '}
+                  <bdi>
+                    {actionItem.ticketPurchase.seatCount ?? '—'} صندلی · هر
+                    صندلی {actionItem.ticketPurchase.unitCost ?? '—'}{' '}
+                    {actionItem.amount?.currencyCode} · جمع{' '}
+                    {actionItem.amount?.amount}
+                  </bdi>
+                </div>
               ) : null}
               {actionKind === 'PAYMENT' ? (
                 <>
@@ -1803,11 +1737,9 @@ export function FinanceInboxLiveWorkspace() {
                     />
                     <small className="text-muted-foreground">
                       مانده فعلی:{' '}
-                      {(actionItem?.ticketPurchase &&
-                      !actionItem.ticketPurchase.paymentCount
-                        ? ticketInvoice
-                        : (actionItem?.settlement?.remainingAmount ??
-                          actionItem?.amount?.amount)) ?? '—'}{' '}
+                      {actionItem?.settlement?.remainingAmount ??
+                        actionItem?.amount?.amount ??
+                        '—'}{' '}
                       {paymentCurrency}
                     </small>
                   </label>
@@ -1959,14 +1891,7 @@ export function FinanceInboxLiveWorkspace() {
                     actionItem?.source === 'SALES' &&
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
-                    (!accountId || !paymentMethodId || !paidAmount)) ||
-                  (actionKind === 'PAYMENT' &&
-                    Boolean(actionItem?.ticketPurchase) &&
-                    !actionItem?.ticketPurchase?.paymentCount &&
-                    (!ticketSeatCount ||
-                      !ticketUnitCost ||
-                      !ticketInvoice ||
-                      !ticketCurrency))
+                    (!accountId || !paymentMethodId || !paidAmount))
                 }
               >
                 {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}

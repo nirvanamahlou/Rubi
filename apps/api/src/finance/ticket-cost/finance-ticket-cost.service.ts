@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -12,13 +12,14 @@ import type {
   FinancePaidTicketCostV1,
   FinanceTicketCostCommandV1,
   FinanceTicketPaymentCommandV1,
+  TicketPurchaseInboxItemV1,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { DatabaseService } from '../../database/database.service';
 import { ProcurementPublicService } from '../../procurement/procurement-public.service';
 
 const money = (value: string, allowZero = false) => {
-  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,4})?$/.test(value))
+  if (!/^(?:0|[1-9]\d{0,19})(?:\.\d{1,4})?$/.test(value))
     throw new BadRequestException('مبلغ با حداکثر چهار رقم اعشار لازم است.');
   const decimal = new Prisma.Decimal(value);
   if (allowZero ? decimal.lt(0) : decimal.lte(0))
@@ -39,13 +40,31 @@ export class FinanceTicketCostService {
     input: FinanceTicketCostCommandV1,
     actor: AuthenticatedActor,
   ) {
-    this.assertPaymentPermission(actor);
+    if (!actor.permissions.includes('procurement.quote.manage'))
+      throw new ForbiddenException(
+        'مجوز ثبت قیمت خرید در خرید و تأمین لازم است.',
+      );
     if (input?.version !== 1 || !/^[A-Z]{3}$/.test(input.currencyCode ?? ''))
       throw new BadRequestException('جزئیات قیمت خرید معتبر نیست.');
     const request = await this.procurement.forFinance(
       requestId,
       actor.branchIds,
     );
+    if (
+      input.operationId !== undefined &&
+      (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        input.operationId,
+      ) ||
+        !Number.isSafeInteger(input.expectedCostVersion) ||
+        input.expectedCostVersion! < 0)
+    )
+      throw new BadRequestException(
+        'شناسه عملیات و نسخه قیمت خرید معتبر لازم است.',
+      );
+    if (input.operationId && !request.supplierDisplaySnapshot?.trim())
+      throw new BadRequestException(
+        'تأمین‌کننده پرواز باید در درخواست خرید مشخص باشد.',
+      );
     const isSeatPricing =
       input.seatCount !== undefined || input.unitCost !== undefined;
     const seatCount = isSeatPricing
@@ -59,7 +78,11 @@ export class FinanceTicketCostService {
       if (
         seatCount === null ||
         !Number.isSafeInteger(seatCount) ||
-        seatCount < 1
+        seatCount < 1 ||
+        seatCount > 100000 ||
+        (request.seatCount !== null &&
+          request.seatCount !== undefined &&
+          seatCount > request.seatCount)
       )
         throw new BadRequestException(
           'تعداد صندلی خریداری‌شده معتبر لازم است.',
@@ -70,6 +93,7 @@ export class FinanceTicketCostService {
       adult = unitCost;
       child = new Prisma.Decimal(0);
       invoice = unitCost.mul(seatCount).toDecimalPlaces(4);
+      money(invoice.toString());
     } else {
       if (!input.adultUnitCost || !input.childUnitCost || !input.invoiceAmount)
         throw new BadRequestException('جزئیات قیمت خرید معتبر نیست.');
@@ -81,15 +105,58 @@ export class FinanceTicketCostService {
           'حداقل یکی از نرخ‌های بزرگسال یا کودک لازم است.',
         );
     }
+    const reason = input.operationId
+      ? 'purchase-operation:' +
+        input.operationId +
+        ':' +
+        createHash('sha256')
+          .update(
+            JSON.stringify({
+              requestId,
+              seatCount,
+              unitCost: unitCost?.toString() ?? null,
+              adult: adult.toString(),
+              child: child.toString(),
+              invoice: invoice.toString(),
+              currencyCode: input.currencyCode,
+              expectedCostVersion: input.expectedCostVersion,
+            }),
+          )
+          .digest('hex')
+      : '';
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${requestId}, 0))`,
       );
+      if (input.operationId) {
+        const replay = await tx.financeTicketPurchaseCostRevision.findFirst({
+          where: {
+            requestId,
+            reason: {
+              startsWith: 'purchase-operation:' + input.operationId + ':',
+            },
+          },
+        });
+        if (replay) {
+          if (replay.reason !== reason)
+            throw new ConflictException(
+              'شناسه عملیات قبلاً با قیمت دیگری استفاده شده است.',
+            );
+          return this.costSnapshot(replay);
+        }
+      }
       const previous = await tx.financeTicketPurchaseCostRevision.findFirst({
         where: { requestId },
         orderBy: { version: 'desc' },
         include: { payments: { take: 1 } },
       });
+      if (
+        input.expectedCostVersion !== undefined &&
+        input.expectedCostVersion !== (previous?.version ?? 0)
+      )
+        throw new ConflictException(
+          'قیمت خرید هم‌زمان تغییر کرده؛ کارتابل را به‌روز کنید.',
+        );
       if (previous?.payments.length)
         throw new ConflictException(
           'پس از آغاز پرداخت، اصلاح قیمت خرید مجاز نیست.',
@@ -108,22 +175,70 @@ export class FinanceTicketCostService {
           seatCount,
           unitCost,
           currencyCode: input.currencyCode,
-          reason: '',
+          reason,
           actorUserId: actor.userId,
         },
       });
-      return {
-        id: row.id,
-        requestId,
-        version: row.version,
-        adultUnitCost: row.adultUnitCost.toString(),
-        childUnitCost: row.childUnitCost.toString(),
-        seatCount: row.seatCount,
-        unitCost: row.unitCost?.toString() ?? null,
-        invoiceAmount: row.invoiceAmount.toString(),
-        currencyCode: row.currencyCode,
-      };
+      return this.costSnapshot(row);
     });
+  }
+
+  private costSnapshot(row: {
+    id: string;
+    requestId: string;
+    version: number;
+    adultUnitCost: Prisma.Decimal;
+    childUnitCost: Prisma.Decimal;
+    seatCount: number | null;
+    unitCost: Prisma.Decimal | null;
+    invoiceAmount: Prisma.Decimal;
+    currencyCode: string;
+  }) {
+    return {
+      id: row.id,
+      requestId: row.requestId,
+      version: row.version,
+      adultUnitCost: row.adultUnitCost.toString(),
+      childUnitCost: row.childUnitCost.toString(),
+      seatCount: row.seatCount,
+      unitCost: row.unitCost?.toString() ?? null,
+      invoiceAmount: row.invoiceAmount.toString(),
+      currencyCode: row.currencyCode,
+    };
+  }
+
+  async purchaseInbox(actor: AuthenticatedActor): Promise<{
+    data: TicketPurchaseInboxItemV1[];
+    meta: { canPrice: boolean };
+  }> {
+    const requests = await this.procurement.listTicketPurchaseInbox(actor);
+    const states = await this.queueStates(requests.map((r) => r.id));
+    return {
+      meta: {
+        canPrice: actor.permissions.includes('procurement.quote.manage'),
+      },
+      data: requests.map((request) => {
+        const state = states.get(request.id);
+        return {
+          request,
+          cost: state
+            ? {
+                id: state.costRevisionId,
+                version: state.costVersion,
+                seatCount: state.seatCount,
+                unitCost: state.unitCost,
+                invoiceAmount: state.invoiceAmount,
+                currencyCode: state.currencyCode,
+                paidAmount: state.paidAmount,
+                remainingAmount: state.remainingAmount,
+                paymentCount: state.paymentCount,
+              }
+            : null,
+          stage:
+            request.status === 'PAID' ? 'PAID' : (state?.status ?? 'UNPRICED'),
+        };
+      }),
+    };
   }
 
   async recordPayment(
@@ -393,6 +508,7 @@ export class FinanceTicketCostService {
       return new Map<
         string,
         {
+          costVersion: number;
           costRevisionId: string;
           invoiceAmount: string;
           currencyCode: string;
@@ -416,6 +532,7 @@ export class FinanceTicketCostService {
     const states = new Map<
       string,
       {
+        costVersion: number;
         costRevisionId: string;
         invoiceAmount: string;
         currencyCode: string;
@@ -431,6 +548,7 @@ export class FinanceTicketCostService {
       if (states.has(row.requestId)) continue;
       const latest = row.payments[0];
       states.set(row.requestId, {
+        costVersion: row.version,
         costRevisionId: row.id,
         invoiceAmount: row.invoiceAmount.toString(),
         currencyCode: row.currencyCode,
