@@ -4871,3 +4871,8 @@ Owner explicitly authorizes merging hotel occupancy PR671 to develop. Age select
 ## 2026-10-07 — HR-WORD-REVISION-1006 — PC-B — READY_FOR_REVIEW
 
 All Word-listed HR changes are implemented in `codex/pc-b-hr-word-revision-1006`: catalog-backed forms, manager/HR applicant assessment, provisional onboarding, archived contract/leave attachments, Workbench request inbox, survey removal, and updated navigation/labels. Additive assessment and permission-scoped Customer Affairs/Workbench endpoints preserve existing record columns and module ownership. No migration or dependency change. HR Web 102 tests, HR API 114 tests (26 opt-in PostgreSQL tests skipped), final focused 25 API tests, affected ESLint, Contracts/API/Web typechecks and production builds pass. A local opt-in PostgreSQL attempt could not start because the running container has no `nora_local` role expected by the harness; no operational data was changed. Exact-head CI and user-authorized develop merge are pending. See `docs/tasks/HR-WORD-REVISION-1006.md`.
+
+
+## 2026-10-07 — Distinct sidebar group dots — PC-A
+
+Sidebar headers consume each registered group's distinct palette rather than one shared cyan color. Work blue, Sales rose, Reservations green, Finance amber, HR purple, Documents/Reports cyan, Company settings orange; same colors on mobile and desktop with a slightly larger outlined dot. Group collapse, routes and permissions preserved. No API/schema/dependency/runtime change; user authorizes develop merge after validation.
