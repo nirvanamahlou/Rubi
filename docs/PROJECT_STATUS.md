@@ -5036,3 +5036,5 @@ Foreign origin or destination sets the Sales travel/hotel/floating-flight date p
 ## 2026-10-07 — PC-A — Jahan Bastan travel-document branding
 
 Supplied transparent Jahan Bastan logo replaces the own-company logo in contracts, issued tickets, reservation forms and hotel vouchers. Contract notices and contact footer use the issuing company and omit fixed Niyayesh information for Jahan. Jahan previews/PDF exports bypass stale own-company upload references; custom-agency and other company behavior remain. RGB colors remain visible on print; English company name is Jahan Bastan. Four synthetic A4 outputs visually checked, focused tests run and clean exact-head CI gates user-authorized develop merge. No schema/API/data changes or local rollout. Asset provenance and final image prompt are in docs/tasks/JAHAN-DOCUMENT-BRANDING-1007.md.
+
+Final cheque-policy boundary checks prevent removing stored sale terms or adding cheques to new cash sales. Legacy null-term contracts keep their existing payment behavior. All112 Sales API tests, scoped lint and typecheck pass; correction locks released at final candidate freeze.

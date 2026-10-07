@@ -908,6 +908,10 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertUpdate(row, actor);
+    if (row.paymentTerms != null && input.paymentTerms === null)
+      throw new BadRequestException(
+        'نوع فروش ذخیره‌شده قرارداد قابل حذف نیست.',
+      );
     input = {
       ...input,
       paymentTerms:
@@ -1010,6 +1014,12 @@ export class SalesService {
       });
     this.assertRead(row, actor);
     domainCall(() => validateSalesPayment(input));
+    if (
+      (row.paymentTerms as unknown as SalesContractDetail['paymentTerms'])
+        ?.mode === 'CASH' &&
+      input.method === 'CHECK'
+    )
+      throw new BadRequestException('فروش نقدی پرداخت چکی ندارد.');
     const fingerprint = salesFingerprint(input);
     const result = await this.repository.addPayment(
       id,

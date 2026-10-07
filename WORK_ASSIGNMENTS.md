@@ -6150,3 +6150,7 @@ Scope additionally reserves Legal Entities display-brand mapping and shared flig
 Scope also reserves the existing Jahan Bastan English brand-name entry in the Web/API/offline catalogues so localization retains the company name instead of translating its literal meaning.
 
 Candidate reuses company/workflow snapshots and existing private export authorization. Added company-specific preview/PDF download regressions, transparent RGBA asset and color-preserving Jahan styles. Four synthetic A4 samples visually checked; initial focused78 tests and refreshed44 tests pass. Scoped lint/typecheck, final targeted checks and exact-head full quality/test/build/PostgreSQL CI gate authorized merge. Bounded source locks release with candidate. No schema, migration, operational data write or local rollout.
+
+SALES-CHEQUE-CALCULATOR-1007 final policy repair: re-reserve own Sales service/payment-mode guards, focused service regression tests and bounded display entries. Reject clearing persisted terms to bypass cheque policy and reject adding a cheque to a recorded cash sale; legacy null-term contracts stay supported. No new migration/dependency/runtime scope.
+
+Final policy repair verified: all112 Sales API tests, scoped lint and API typecheck pass; persisted sale type cannot be cleared and recorded cash sales reject new cheque payments. Legacy null-term cheque payments remain supported. Bounded correction locks RELEASED with frozen final candidate; exact-head CI gates merge.

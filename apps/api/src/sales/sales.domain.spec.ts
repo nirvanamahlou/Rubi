@@ -139,6 +139,16 @@ describe('Sales contract domain', () => {
         priceComponents: draft.priceComponents,
       }),
     ).toThrow('کارمزد');
+    expect(() =>
+      validateSalesContract(
+        {
+          ...input,
+          paymentTerms: null,
+          priceComponents: draft.priceComponents,
+        },
+        true,
+      ),
+    ).toThrow('نوع فروش چکی');
   });
   it('accepts explicit buyer contact and rejects invalid or mismatched payer details', () => {
     const buyerContact = {

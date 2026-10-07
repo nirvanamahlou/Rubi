@@ -356,5 +356,7 @@
   "برای تغییر برنامه اقساط، ابتدا پرداخت‌های قرارداد را از بخش پرداخت اصلاح کنید.": "Update the contract payments before changing its installment plan.",
   "مبلغ مانده برای تعداد چک‌های انتخاب‌شده کافی نیست.": "The remaining amount is too small for the selected number of cheques.",
   "بانک، شناسه امن و نام صاحب هر چک را در برنامه پرداخت کامل کنید.": "Complete the bank, secure identifier and owner name for each cheque in the payment schedule.",
-  "چکی · سود ماهیانه ۵٪": "Cheque sale · 5% monthly interest"
+  "چکی · سود ماهیانه ۵٪": "Cheque sale · 5% monthly interest",
+  "نوع فروش ذخیره‌شده قرارداد قابل حذف نیست.": "The saved contract sale type cannot be removed.",
+  "فروش نقدی پرداخت چکی ندارد.": "Cash sales do not accept cheque payments."
 }
