@@ -13,18 +13,16 @@ describe('Procurement failure and retry contract', () => {
     process.env.NEXT_PUBLIC_API_BASE_URL = 'http://localhost:4000/api/v1';
     vi.stubGlobal(
       'fetch',
-      vi
-        .fn()
-        .mockResolvedValue(
-          new Response(
-            JSON.stringify({
-              error: {
-                message: 'واحد درخواست باید واحد فعال درخواست‌کننده باشد.',
-              },
-            }),
-            { status: 403 },
-          ),
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              message: 'واحد درخواست باید واحد فعال درخواست‌کننده باشد.',
+            },
+          }),
+          { status: 403 },
         ),
+      ),
     );
     await expect(procurementApi.get('request')).rejects.toThrow(
       'واحد درخواست باید واحد فعال درخواست‌کننده باشد.',
