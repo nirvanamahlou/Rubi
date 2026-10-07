@@ -4951,6 +4951,12 @@ Rename the reservation hotel-rate section to «قیمت خرید هتل» in the
 ## OFFER-ROW-DELETE-1007
 
 Discount and special-offer preview rows have icon-only delete and shared confirmation/cancellation. Deleted IDs are excluded from display, filters and Excel output; unrelated records and usage history stay unchanged. This is explicitly in-memory preview removal, restored on reload; no durable Offers API exists on this surface and no server deletion is claimed. Marketing/translation107 tests passed; exact-head full CI gates user-authorized develop merge. No API/schema/dependency/local runtime changes.
+## 2026-10-07 — BROKER-LEADER-VALIDATION-1007 — PC-A
+
+Broker contacts, nested broker leaders and standalone leader primary/roaming phones accept local/international/short/extension formats up to the existing80-character storage/UI bound. Persian/Arabic digits normalize to ASCII. Shared strict contact/email validation for Organizations and Suppliers remains intact. AES-GCM protection, stable contact fingerprints and authenticated contact readers remain compatible; short numbers stay masked. Regression coverage includes multilingual/punctuation names, repeated names/numbers with distinct internal codes, nested multi-leader create and standalone leader persistence preparation. No schema/migration/dependency/IAM or operational writes. Exact-head CI gates user-authorized develop merge.
+
+Validation: API41/Web13 tests, scoped lint, API/Web typechecks and API production build pass. No authenticated browser submit or runtime rollout claimed; complete PR CI gates merge.
+
 ## REMOVE-CUSTOMER-JOURNEY-1007
 
 Removed the customer-journey entry from Marketing's canonical section registry and hub description. Both initial legacy section URLs and browser navigation resolve through that registry, so journeys falls back to the hub instead of mounting journey/automation/scenario screens. Existing automation APIs, stored records and independent process workflows remain intact; no destructive data removal or local rollout. Focused navigation and full Marketing/translation tests plus exact-head CI gate authorized develop merge.

@@ -88,6 +88,28 @@ export function normalizeMasterContact(
   };
 }
 
+export function normalizeTravelPhone(rawValue: string): {
+  normalized: string;
+  masked: string;
+} {
+  const value = rawValue
+    .normalize('NFKC')
+    .trim()
+    .replace(/[۰-۹٠-٩]/g, (digit) =>
+      String(digit.charCodeAt(0) - (digit >= '۰' ? 0x06f0 : 0x0660)),
+    );
+  if (!value || value.length > 80)
+    throw new BadRequestException('شماره تماس باید بین ۱ تا ۸۰ نویسه باشد.');
+  const compact = value.replace(/[\s().-]/g, '');
+  const normalized = /^\+?[0-9]+$/.test(compact) ? compact : value;
+  // Keep short numbers masked too; the authenticated contact reader can unmask.
+  const suffixLength = Math.min(4, Math.max(0, normalized.length - 4));
+  return {
+    normalized,
+    masked: `${'•'.repeat(normalized.length - suffixLength)}${suffixLength ? normalized.slice(-suffixLength) : ''}`,
+  };
+}
+
 @Injectable()
 export class MasterDataContactCrypto {
   private readonly encryptionKey: Buffer;
@@ -102,7 +124,17 @@ export class MasterDataContactCrypto {
   }
 
   protect(kind: ContactKind, rawValue: string): ProtectedMasterContact {
-    const { masked, normalized } = normalizeMasterContact(kind, rawValue);
+    return this.protectNormalized(kind, normalizeMasterContact(kind, rawValue));
+  }
+
+  protectTravelPhone(rawValue: string): ProtectedMasterContact {
+    return this.protectNormalized('phone', normalizeTravelPhone(rawValue));
+  }
+
+  private protectNormalized(
+    kind: ContactKind,
+    { masked, normalized }: { masked: string; normalized: string },
+  ): ProtectedMasterContact {
     const iv = randomBytes(GCM_IV_BYTES);
     const cipher = createCipheriv('aes-256-gcm', this.encryptionKey, iv);
     cipher.setAAD(aad(kind));

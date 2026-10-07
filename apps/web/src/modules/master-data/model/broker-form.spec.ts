@@ -93,6 +93,29 @@ describe('broker form', () => {
       { name: 'Leader 2', phone: '+905551234562' },
     ]);
   });
+  it.each(['کارگزار ۱ / تست', "O'Neil & Partners", '旅行社', 'А'])(
+    'preserves unrestricted names and phone formats for %s in create payload',
+    (name) => {
+      const values = brokerMutationValues(
+        { name, primaryPhone: '۱۲۳', countryId: 'country', cityIds: 'city' },
+        [
+          {
+            key: 'new-1',
+            name,
+            phone: '+90 555 123 4567 ext 42',
+            phoneMasked: '',
+            phoneTouched: true,
+          },
+        ],
+      );
+      expect(values.name).toBe(name);
+      expect(values.primaryPhone).toBe('۱۲۳');
+      expect(JSON.parse(values.leaderDrafts!).items).toEqual([
+        { name, phone: '+90 555 123 4567 ext 42' },
+      ]);
+    },
+  );
+
   it('renders only the requested identity/cities/leader form and a submit action', () => {
     const html = renderToStaticMarkup(
       createElement(MasterDataBrokerForm, {

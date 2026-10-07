@@ -6017,6 +6017,14 @@ COMPUTER_ID=PC-B; branch codex/pc-b-offer-row-delete-1007 from origin/develop. R
 
 Scope includes one additive display translation in en-overrides.json; prior catalogue locks released. Delivered icon delete per discounts/specials row, guarded shared confirmation, cancellation and filtered export/pagination. Marketing plus translation107 tests pass, including both row types and cancellation. Scoped lint and exact-head full CI gate merge. Bounded source locks released with candidate; no authenticated operational deletion or local runtime deployment.
 
+## BROKER-LEADER-VALIDATION-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-broker-leader-validation-1007 from origin/develop@ead11783. User explicitly requests bounded Master Data broker/leader create validation repair and develop merge; reserve contact crypto travel-phone normalization, broker/leader service/policy and their regressions, broker Web form/model/catalog/validation regressions as needed, and own docs. Permanent Master Data ownership remains PC-B; this is the owner-authorized task scope, no active target overlap. Accept international/local/Persian/Arabic digit and extension contact formats without a national numbering/length rule; preserve encrypted storage, masking, permissions, CAS, real city/broker FK and other modules strict contacts. No schema/migration/dependency/IAM change or operational writes.
+
+BROKER-LEADER-VALIDATION-1007 scope includes the existing travel-services service regression crypto stub, updated to exercise the new scoped contact boundary. No travel-service producer/API/schema changes.
+
+Verification: API41 focused tests, Web13 form/validation tests, scoped API/Web lint, API/Web typechecks and API production build pass. No migration, operational data write or authenticated browser submit. Source locks release with the review candidate; complete CI on the submitted commit gates user-authorized develop merge.
+
 ## REMOVE-CUSTOMER-JOURNEY-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-remove-customer-journey-1007 from origin/develop. Reserve Marketing section registry, route resolver and landing description plus focused tests and own docs. Remove customer-journey navigation and reject legacy section links; preserve automation data/APIs and independent process workflows. Previous Marketing locks released, no overlapping active source lock. No shared API/schema/dependency/runtime changes. User explicitly authorizes push/develop merge after verification.
