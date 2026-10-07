@@ -250,6 +250,7 @@ export function CampaignDeclarationsForm({
               type="button"
               size="icon"
               variant="outline"
+              className="border-destructive/35 bg-background text-destructive hover:bg-destructive/10 hover:text-destructive"
               disabled={frozen}
               aria-label={`حذف هزینه ${index + 1}`}
               title="حذف هزینه"
@@ -260,7 +261,7 @@ export function CampaignDeclarationsForm({
                 }))
               }
             >
-              <Trash2 aria-hidden="true" className="size-4 text-destructive" />
+              <Trash2 aria-hidden="true" className="size-4" />
             </Button>
           </div>
         ))}

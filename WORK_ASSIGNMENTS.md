@@ -5945,3 +5945,9 @@ PROCUREMENT-ORDER-PREVIEW-CLEANUP-1007: source reservation RELEASED with frozen 
 COMPUTER_ID=PC-B; codex/pc-b-order-invoice-upload-1007 from origin/develop@eb4d5440. Reserve Procurement operation-form/document picker integration and focused tests, AMEND_ORDER document-reference validation/persistence and scoped tests, own status entries. Use existing Documents upload/archive contract; producer Documents unchanged, consumer AMEND_ORDER additive documents field. Preserve omitted attachments, exact document versions, branch/read/CLEAN scan checks, CAS/idempotency and independent order approval. No financial invoice/payment creation from upload alone. No schema/migration/dependency/IAM/runtime/data change; target locks free. User authorizes push/develop merge after checks.
 
 PROCUREMENT-ORDER-INVOICE-UPLOAD-1007: source reservation RELEASED with frozen review candidate. Web61 plus Documents-client6 tests and focused form10 rerun passed; lint/typecheck/API and Web56-route builds pass. All 54 PostgreSQL regression tests passed; exact-head CI remains the merge gate. No operational runtime/data change.
+
+## EXPENSE-DELETE-ICON-1007 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch codex/pc-b-expense-delete-icon-1007. Reserve only Marketing campaign declaration delete-button presentation, its focused regression test and bounded status docs. Neutral background with red inherited icon and subtle hover; existing removal handler and frozen state stay intact. No API/data/schema/dependency/shared-control/runtime changes. No active overlap in target files. User authorizes push and develop merge after checks.
+
+- Six declaration tests pass, including named icon-only trash contrast styling. Affected lint and full Marketing tests precede release; exact-head CI lint/typecheck/tests/production build gate merge. Locks released with candidate commit; no local runtime rollout or authenticated browser verification claimed.
