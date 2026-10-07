@@ -6031,6 +6031,12 @@ COMPUTER_ID=PC-B; branch codex/pc-b-remove-customer-journey-1007 from origin/dev
 
 Scope includes existing Marketing model/component regressions and one additive English display translation (previous catalogue locks released). Canonical registry removal blocks both initial and browser-popstate journeys routing and removes hub card; stored automation remains intact. Scoped lint passes; Marketing/translation and clean exact-head full quality/typecheck/test/build/PostgreSQL CI gate merge. Bounded source locks released with candidate; no local runtime rollout.
 
+## OFFER-TRASH-CONTRAST-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-offer-trash-1007 from origin/develop@ba002845. Reserve only Marketing preview discount/special-offer delete-button styling, focused regression and bounded status docs. White background with red inherited trash icon on row action and confirmation; retain existing confirmation/cancellation/removal behavior. Earlier durable-promotions work is paused in its separate worktree and has no source edits. No active target overlap, shared component/API/schema/migration/dependency/runtime changes. User explicitly authorizes push and develop merge after verification.
+
+Marketing/translation108 tests pass, including both offer tabs' neutral delete/confirmation styling and cancellation/removal. Bounded source locks release with frozen candidate; exact-head CI quality/typecheck/full tests/production build gates authorized merge. No local runtime rollout or operational write.
+
 ## HR-INLINE-REFRESH-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-hr-inline-refresh-1007` from `origin/develop@ead11783`. Reserve HR Web inline-reference creation and catalog/list refresh paths, their focused tests, and bounded status documentation. Ensure records created from another HR form become selectable in dropdowns and visible in their owning sections without a page reload. Preserve permissions, branch scope, draft state, API contracts and stored data. No schema, migration, dependency, shared API or unrelated module changes. No overlapping active HR source lock found. User explicitly authorizes push and merge to `develop` after verification.

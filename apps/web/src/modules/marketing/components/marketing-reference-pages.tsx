@@ -543,7 +543,7 @@ export function PreviewTable({
                             title="حذف"
                             size="icon"
                             variant="outline"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="border-destructive/35 bg-white text-destructive hover:bg-white hover:text-destructive"
                             onClick={() => setDeletingRow(row)}
                           >
                             <Trash2 aria-hidden="true" className="size-4" />
@@ -667,7 +667,12 @@ export function PreviewTable({
             </Button>
             <Button
               size="icon"
-              variant="destructive"
+              variant={deletable ? 'outline' : 'destructive'}
+              className={
+                deletable
+                  ? 'border-destructive/35 bg-white text-destructive hover:bg-white hover:text-destructive'
+                  : undefined
+              }
               title="تأیید حذف"
               aria-label="تأیید حذف"
               onClick={() => {
