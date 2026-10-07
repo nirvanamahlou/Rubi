@@ -3859,6 +3859,7 @@ enum PackagePricingRenderStatus {
 }
 
 model SalesContract {
+  paymentTerms              Json?                          @map("payment_terms")
   buyerContact              Json?                          @map("buyer_contact")
   id                        String                         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   contractNumber            String                         @unique @map("contract_number") @db.VarChar(40)

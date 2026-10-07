@@ -28,7 +28,12 @@ import type {
 } from '@nora/contracts';
 
 import { validateSalesCurrencySelection } from './sales-currency-select';
-import { validatePassengerPackagePrices } from '@nora/contracts';
+import {
+  SALES_CHEQUE_FEE,
+  validatePassengerPackagePrices,
+  validateSalesChequePayments,
+} from '@nora/contracts';
+import { SalesChequeCalculator } from './sales-cheque-calculator';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -689,9 +694,18 @@ export function SalesContractForm() {
           servicePricing: pricedState.servicePricing ?? {},
         });
         validateSalesCurrencySelection(payload, references.currencies);
+        validateSalesChequePayments(
+          payload.priceComponents,
+          payload.payments ?? [],
+          payload.paymentTerms,
+        );
         validatePassengerPackagePrices(
           payload.passengers,
-          payload.priceComponents,
+          payload.paymentTerms
+            ? payload.priceComponents.filter(
+                (p) => p.title !== SALES_CHEQUE_FEE,
+              )
+            : payload.priceComponents,
           true,
         );
         return (
@@ -717,10 +731,17 @@ export function SalesContractForm() {
       validateSalesCurrencySelection(payload, references.currencies);
       validatePassengerPackagePrices(
         payload.passengers,
-        payload.priceComponents,
+        payload.paymentTerms
+          ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
+          : payload.priceComponents,
         true,
       );
       const fingerprint = JSON.stringify(payload);
+      validateSalesChequePayments(
+        payload.priceComponents,
+        payload.payments ?? [],
+        payload.paymentTerms,
+      );
       if (submission.current.fingerprint !== fingerprint)
         submission.current = { fingerprint, key: crypto.randomUUID() };
       const response = await salesApi.create(payload, submission.current.key);
@@ -1845,7 +1866,12 @@ export function SalesContractForm() {
                 onChange={(passengerPrices) => patchState({ passengerPrices })}
               />
               <InsuranceExtraSummary state={state} />
+              <SalesChequeCalculator
+                state={pricedState}
+                onChange={patchState}
+              />
               <SalesPaymentPlan
+                allowChecks={state.paymentTerms?.mode === 'CHECK'}
                 payments={state.payments}
                 currencies={references.currencies}
                 banks={references.banks}
@@ -1888,6 +1914,12 @@ export function SalesContractForm() {
               </p>
             ) : null}
             <h2 className="text-xl font-black">بازبینی و ثبت</h2>
+            <p className="font-bold">
+              نوع فروش:{' '}
+              {state.paymentTerms?.mode === 'CHECK'
+                ? 'چکی · سود ماهیانه ۵٪'
+                : 'نقدی'}
+            </p>
             <div className="grid gap-3 md:grid-cols-2">
               <Card className="p-4">
                 <p className="text-xs text-muted-foreground">مشتری</p>

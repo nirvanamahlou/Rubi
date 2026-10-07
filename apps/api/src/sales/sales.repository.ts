@@ -404,6 +404,9 @@ export class SalesRepository {
               ? new Date(input.fxSnapshot.observedAt)
               : null,
             pricingNotes: input.pricingNotes ?? null,
+            paymentTerms: input.paymentTerms
+              ? json(input.paymentTerms)
+              : Prisma.DbNull,
             createIdempotencyKey: idempotencyKey,
             createRequestFingerprint: fingerprint,
           },
@@ -594,6 +597,13 @@ export class SalesRepository {
               ? new Date(input.fxSnapshot.observedAt)
               : null,
             pricingNotes: input.pricingNotes ?? null,
+            ...(input.paymentTerms !== undefined
+              ? {
+                  paymentTerms: input.paymentTerms
+                    ? json(input.paymentTerms)
+                    : Prisma.DbNull,
+                }
+              : {}),
             version: { increment: 1 },
           },
         });

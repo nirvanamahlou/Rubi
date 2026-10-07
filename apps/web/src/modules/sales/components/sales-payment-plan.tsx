@@ -39,12 +39,14 @@ export function SalesPaymentPlan({
   currencies,
   banks,
   disabled = false,
+  allowChecks = true,
   onChange,
 }: {
   payments: SalesPaymentInput[];
   currencies: readonly SalesCurrency[];
   banks: readonly MasterDataRecord[];
   disabled?: boolean;
+  allowChecks?: boolean;
   onChange: (payments: SalesPaymentInput[]) => void;
 }) {
   const id = useId();
@@ -211,7 +213,9 @@ export function SalesPaymentPlan({
                 />
                 <SearchableReference
                   label="روش پرداخت"
-                  options={methods}
+                  options={methods.filter(
+                    (method) => allowChecks || method.id !== 'CHECK',
+                  )}
                   value={payment.method}
                   onChange={(method) =>
                     change(

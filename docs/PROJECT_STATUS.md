@@ -5022,3 +5022,10 @@ Verification: all137 focused Sales component tests pass; Web typecheck passes. S
 ## FINANCE-INBOX-REDESIGN-1007 — PC-A
 
 Finance request inbox uses light cyan header, compact separated request rows, consistent responsive labelled filters and collapsed supplementary metrics. Remove branch-ID/person/due-date filter fields, saved-view controls and global transaction-history panel. Existing backend search finds contract/reference/party; payments, per-request history, exports, manager settings and document delivery remain available under existing authorization. No schema/API/dependency/runtime change. Scoped checks and clean CI gate delivery; no authenticated browser or operational data changes claimed.
+
+
+## SALES-CHEQUE-CALCULATOR-1007 — PC-A
+
+Price/payment stage adds cash or cheque sales and a responsive per-currency calculator: minimum30% down payment, fixed5% simple monthly interest on unpaid principal,3/6/9/12-month plans and editable first cheque date defaulting to departure plus one calendar month. Apply creates canonical down-payment/cheque rows while retaining existing cheque bank/reference/owner data. Server checks policy, fee and payment schedule; form drafts and saved contract details retain optional version1 terms. Passenger service agreements remain unchanged; Finance and customer output include the separate interest surcharge. Exact fixed-point arithmetic and month-end dates have targeted tests. Additive nullable Sales JSON migration, no dependency change or historical backfill. No operational migration or local runtime rollout performed; exact-head CI and user-authorized develop merge remain pending verification.
+
+Local verification passed: Contracts112, Sales API109 and Web326 tests (one pre-existing rendering timeout passed in isolation), scoped lint/typecheck and API/Web builds. Source and migration locks released at candidate freeze; exact-head CI must pass before the user-authorized develop merge. No live migration or runtime rollout.

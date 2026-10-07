@@ -1,7 +1,9 @@
 import type { SalesServicePricingV1 } from './pricing';
 import type { LegalEntityCode } from '../legal-entities';
 export const SALES_CONTRACT_VERSION = 1 as const;
+import type { SalesPaymentTerms } from './cheque-terms';
 export * from './pricing';
+export * from './cheque-terms';
 export * from './contract-flights';
 export const SALES_API_PREFIX = '/api/v1/sales' as const;
 
@@ -188,6 +190,7 @@ export interface SalesBuyerContactV1 {
 }
 
 export interface SalesContractCreateRequest {
+  paymentTerms?: SalesPaymentTerms | null;
   buyerContact?: SalesBuyerContactV1 | null;
   customerId: string;
   payerCustomerId?: string | null;
@@ -279,6 +282,7 @@ export interface SalesContractSummary {
 }
 
 export interface SalesContractDetail extends SalesContractSummary {
+  paymentTerms?: SalesPaymentTerms | null;
   buyerContact?: SalesBuyerContactV1 | null;
   tripType: SalesTripType;
   payerCustomerId: string;
