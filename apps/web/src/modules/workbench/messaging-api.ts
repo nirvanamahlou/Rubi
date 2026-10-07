@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   CreateDirectConversationInputV1,
   CreateGroupConversationInputV1,
@@ -20,7 +21,7 @@ async function request<T>(
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await fetch(`${base}/messaging${path}`, {
+  const response = await localizedFetch(`${base}/messaging${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,
@@ -54,7 +55,7 @@ async function downloadAttachment(
 ): Promise<Blob> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await fetch(
+  const response = await localizedFetch(
     `${base}/messaging/conversations/${encodeURIComponent(conversationId)}/attachments/${encodeURIComponent(documentId)}`,
     { credentials: 'include', cache: 'no-store' },
   );

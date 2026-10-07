@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   DocumentDetailResponseV1,
   DocumentListQueryV1,
@@ -26,7 +27,7 @@ async function request<T>(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new CustomerDocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/documents${path}`, {
+  const response = await localizedFetch(`${baseUrl}/documents${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

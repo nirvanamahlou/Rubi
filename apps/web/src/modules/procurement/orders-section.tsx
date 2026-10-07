@@ -81,7 +81,7 @@ export function PurchaseOrdersSection({ bootstrap }: { bootstrap: Bootstrap }) {
     queryFn: () =>
       procurementApi.list(
         new URLSearchParams({
-          section: 'orders',
+          section: 'order-requests',
           status: 'APPROVED',
           page: String(readyPage),
         }),
@@ -402,7 +402,7 @@ export function PurchaseOrdersSection({ bootstrap }: { bootstrap: Bootstrap }) {
   );
 }
 
-function OrderOperation({
+export function OrderOperation({
   bootstrap,
   action,
   row,
@@ -424,7 +424,11 @@ function OrderOperation({
     queryKey: ['procurement', 'order-requests', page, search],
     queryFn: () =>
       procurementApi.list(
-        new URLSearchParams({ page: String(page), search, section: 'orders' }),
+        new URLSearchParams({
+          page: String(page),
+          search,
+          section: 'order-requests',
+        }),
       ),
     enabled: !row,
     retry: false,

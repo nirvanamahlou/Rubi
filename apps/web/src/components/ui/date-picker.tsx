@@ -91,10 +91,12 @@ export function DatePicker({
     React.useState<CalendarSystem>(
       defaultCalendarSystem ?? systemPreferences.calendar,
     );
-  const calendarSystem = controlledCalendarSystem ?? internalCalendarSystem;
-  const english =
-    (gregorianEnglish || systemPreferences.language === 'en') &&
-    calendarSystem === 'gregorian';
+  const calendarSystem =
+    controlledCalendarSystem ??
+    (systemPreferences.language === 'en' && defaultCalendarSystem === undefined
+      ? 'gregorian'
+      : internalCalendarSystem);
+  const english = gregorianEnglish || systemPreferences.language === 'en';
   const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');
   const [yearGridStart, setYearGridStart] = React.useState(0);
@@ -323,7 +325,7 @@ export function DatePicker({
                 currentValue,
                 calendarSystem,
                 includeTime,
-                gregorianEnglish,
+                english,
               )
             : english && placeholder === 'انتخاب تاریخ'
               ? 'Select date'
@@ -535,7 +537,9 @@ export function DatePicker({
               ) : (
                 <div dir="ltr" className="grid grid-cols-7 gap-1 text-center">
                   {(english
-                    ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+                    ? calendarSystem === 'persian'
+                      ? ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
+                      : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
                     : weekdayLabels[calendarSystem]
                   ).map((label, index) => (
                     <span

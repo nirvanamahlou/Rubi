@@ -19,9 +19,9 @@ import {
   Search,
   Sun,
 } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname, useSearchParams } from 'next/navigation';
+import Link from '@/i18n/link';
+import Image from '@/i18n/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Suspense,
   useEffect,
@@ -394,7 +394,12 @@ function SearchDialog() {
 }
 
 function HeaderActions() {
-  const { language } = useSystemPreferences();
+  const { language, setLanguage } = useSystemPreferences();
+  const router = useRouter();
+  const chooseLanguage = (next: 'fa' | 'en') => {
+    setLanguage(next);
+    router.refresh?.();
+  };
   const messages = language === 'en' ? enMessages : faMessages;
   const { theme, toggleTheme } = useTheme();
   return (
@@ -410,7 +415,7 @@ function HeaderActions() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => chooseLanguage('fa')}>
             {language === 'fa' ? (
               <Check aria-hidden="true" className="size-4 text-primary" />
             ) : (
@@ -418,13 +423,11 @@ function HeaderActions() {
             )}
             {messages.shell.persian}
           </DropdownMenuItem>
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem onSelect={() => chooseLanguage('en')}>
             {language === 'en' ? (
               <Check aria-hidden="true" className="size-4 text-primary" />
             ) : null}
-            {language === 'en'
-              ? enMessages.shell.english
-              : faMessages.shell.englishSoon}
+            {enMessages.shell.english}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -11,7 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import * as SelectPrimitive from '@radix-ui/react-select';
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import {
   createContext,
   useCallback,

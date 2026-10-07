@@ -15,6 +15,7 @@ import {
   audienceStatusLabels,
 } from '../model/audience-presentation';
 import { MarketingContentLibrary } from './marketing-content-library';
+import { canonicalTestTree } from '@/i18n/test-tree';
 
 const state = vi.hoisted(() => ({
   values: [] as unknown[],
@@ -70,6 +71,7 @@ vi.mock('@/modules/documents/api/client', () => ({
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: state.push }) }));
 function nodes(node: ReactNode): ReactElement<Record<string, unknown>>[] {
+  node = canonicalTestTree(node);
   if (Array.isArray(node)) return node.flatMap(nodes);
   if (!isValidElement<Record<string, unknown>>(node)) return [];
   return [node, ...nodes(node.props.children as ReactNode)];

@@ -1,3 +1,4 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 
 import { ReportingWorkspace } from '@/modules/reports/components/reporting-workspace';
@@ -7,7 +8,9 @@ import {
   reportingWorkspaceKey,
 } from '@/modules/reports/model/navigation';
 
-export const metadata: Metadata = { title: 'گزارش‌ها و خروجی‌های مدیریتی' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'گزارش‌ها و خروجی‌های مدیریتی' });
+}
 
 export default async function Page({
   searchParams,

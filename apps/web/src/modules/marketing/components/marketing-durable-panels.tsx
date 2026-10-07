@@ -1,4 +1,5 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
 
 import type {
   AuthenticatedActor,

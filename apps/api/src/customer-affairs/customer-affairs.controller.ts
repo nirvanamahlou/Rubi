@@ -1,3 +1,4 @@
+import { requestDisplayLanguage } from '../common/i18n/language';
 import {
   Body,
   Controller,
@@ -129,15 +130,18 @@ export class CustomerAffairsController {
             'اقدام بعدی',
             'زمان پیگیری',
           ],
-          ...rows.map((row) => [
-            row.trackingNumber,
-            row.title,
-            row.stage,
-            row.priority,
-            row.travelNeed,
-            row.nextAction,
-            row.nextActionAt,
-          ]),
+          ...rows.map(
+            (row) => [
+              row.trackingNumber,
+              row.title,
+              row.stage,
+              row.priority,
+              row.travelNeed,
+              row.nextAction,
+              row.nextActionAt,
+            ],
+            requestDisplayLanguage(req),
+          ),
         ]),
       ),
     );
@@ -285,16 +289,19 @@ export class CustomerAffairsController {
             'مهلت پاسخ',
             'مهلت حل',
           ],
-          ...rows.map((row) => [
-            row.trackingNumber,
-            row.subject,
-            row.status,
-            row.priority,
-            row.category,
-            row.nextAction,
-            row.firstResponseDueAt,
-            row.resolutionDueAt,
-          ]),
+          ...rows.map(
+            (row) => [
+              row.trackingNumber,
+              row.subject,
+              row.status,
+              row.priority,
+              row.category,
+              row.nextAction,
+              row.firstResponseDueAt,
+              row.resolutionDueAt,
+            ],
+            requestDisplayLanguage(req),
+          ),
         ]),
       ),
     );

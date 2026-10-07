@@ -128,7 +128,7 @@ const operations: Operation[] = [
 ];
 const primaryAction: Record<string, string> = {
   quotations: 'QUOTE',
-  orders: 'ORDER',
+  orders: 'ORDER_FORM',
   receipts: 'RECEIVE',
   adjustments: 'ADJUST_RECEIPT',
   acceptances: 'ACCEPT_SERVICE',

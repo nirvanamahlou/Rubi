@@ -1,4 +1,6 @@
 'use client';
+import { translateUiText } from '@/i18n/translate';
+
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useState } from 'react';
@@ -57,7 +59,7 @@ export function HrImport({
     setError('');
     try {
       const { readHrXlsx } = await import('./hr-xlsx');
-      const [headers, ...incoming] = await readHrXlsx(file);
+      const [rawHeaders, ...incoming] = await readHrXlsx(file);
       const expected = [
         'شناسه',
         ...definition.columns,
@@ -65,6 +67,13 @@ export function HrImport({
         'کد پرسنلی',
         'شناسه پرونده مرتبط',
       ];
+      const headers = rawHeaders?.map(
+        (header) =>
+          expected.find(
+            (source) =>
+              source === header || translateUiText(source, 'en') === header,
+          ) ?? header,
+      );
       if (
         !headers ||
         definition.columns.some((column) => !headers.includes(column))

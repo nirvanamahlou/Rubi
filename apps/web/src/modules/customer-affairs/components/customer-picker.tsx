@@ -10,7 +10,7 @@ import {
   Search,
   UserRound,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import dynamic from 'next/dynamic';
 import {
   useCallback,

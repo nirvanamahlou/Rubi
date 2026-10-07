@@ -1,5 +1,5 @@
 import { ArrowLeft, BarChart3, Download, History } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 
 import { reportCatalog } from '../model/reporting';
 import { reportingViewHref, type ReportingView } from '../model/navigation';

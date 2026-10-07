@@ -1,10 +1,13 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { Skeleton } from '@/components/ui/surfaces';
 import { DashboardWorkspace } from '@/modules/dashboard/components/dashboard-workspace';
 
-export const metadata: Metadata = { title: 'داشبورد' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'داشبورد' });
+}
 
 export default function DashboardPage() {
   return (

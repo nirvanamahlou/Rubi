@@ -1,5 +1,5 @@
 'use client';
-import NextLink from 'next/link';
+import NextLink from '@/i18n/link';
 import { forwardRef, type ComponentPropsWithoutRef } from 'react';
 import { useRouteAccess } from '@/modules/iam/access-context';
 const AccessLink = forwardRef<

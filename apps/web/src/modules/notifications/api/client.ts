@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   NotificationListResponseV1,
   NotificationReadResponseV1,
@@ -21,7 +22,7 @@ async function request<T>(
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await fetch(`${baseUrl}/notifications${path}`, {
+  const response = await localizedFetch(`${baseUrl}/notifications${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

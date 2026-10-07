@@ -1,3 +1,4 @@
+import { displayText, type DisplayLanguage } from '../common/i18n/language';
 import { zipSync, strToU8 } from 'fflate';
 
 const escapeXml = (value: string) =>
@@ -26,14 +27,15 @@ const safeCell = (value: unknown) => {
 export function customerAffairsXlsx(
   sheetName: string,
   rows: readonly (readonly unknown[])[],
+  language: DisplayLanguage = 'fa',
 ): Uint8Array {
-  const worksheet = `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews><sheetData>${rows
+  const worksheet = `<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="${language === 'en' ? '0' : '1'}" workbookViewId="0"/></sheetViews><sheetData>${rows
     .map(
       (row, index) =>
         `<row r="${index + 1}">${row
           .map(
             (value) =>
-              `<c t="inlineStr"><is><t>${escapeXml(safeCell(value))}</t></is></c>`,
+              `<c t="inlineStr"><is><t>${escapeXml(safeCell(index === 0 && typeof value === 'string' ? displayText(value, language) : value))}</t></is></c>`,
           )
           .join('')}</row>`,
     )

@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   DocumentAuditResponseV1,
   DocumentAccessGrantInputV1,
@@ -38,7 +39,7 @@ async function request<T>(
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/documents${path}`, {
+  const response = await localizedFetch(`${baseUrl}/documents${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,
@@ -78,7 +79,7 @@ async function requestFile(
 ): Promise<{ blob: Blob; disposition: string | null }> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new DocumentsApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/documents${path}`, {
+  const response = await localizedFetch(`${baseUrl}/documents${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...(signal ? { signal } : {}),

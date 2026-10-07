@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   // Next preserves JSX for its compiler; component tests must transform it.
-  oxc: { jsx: { runtime: 'automatic' } },
+  oxc: { jsx: { runtime: 'automatic', importSource: '@/i18n' } },
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
     include: [

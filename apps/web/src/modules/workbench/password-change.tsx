@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { Eye, EyeOff, KeyRound } from 'lucide-react';
 import {
   Alert,

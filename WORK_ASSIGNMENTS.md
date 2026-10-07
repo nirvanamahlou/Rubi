@@ -1,3 +1,9 @@
+## ENGLISH-UI-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-english-ui-1007 from origin/develop@dc77c39b, integrated develop@6da2afe0. Owner explicitly authorizes application-wide English UI, functional language selector, future translation enforcement and develop merge. Reserve Web locale preference/provider, shell, shared UI/formatters, all module presentation translations and locale-aware API error/document/export presentation where needed; central docs and translation-quality configuration scoped to this task. Cross-module work is authorized by owner; preserve producers, permission rules, wire enum values, persisted customer input, existing edits and active feature work. No dependency/lockfile/schema/migration changes. English locale is a per-user display choice, never a company-wide setting mutation from the header. Stable identifiers and stored values must remain unchanged.
+
+Delivered checked-in offline English catalogues, personal language persistence, LTR presentation, metadata/accessibility, translated API messages and print/Excel outputs, reversible standalone editor localization and future missing-translation CI checks. Full Web suite: 2,609 pass, six existing skips; focused API output/HTTP: 25 pass. Web/API lint, typechecks and production builds pass. Native-browser login proof preserves the synthetic draft across both language directions. Full exact-head monorepo CI gates the explicitly authorized develop merge. No operational database/runtime deployment; authenticated browser workflows remain unverified. Bounded source locks release with the review candidate; canonical data and other owner records are preserved.
+
 ## SALES-CHILD-UNDER18-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-child-age-under18-1007 from origin/develop. Owner explicitly confirms child means under18 and authorizes develop merge. Reserve Sales passenger-age selector/spec, exact occupancy Web model/spec and API capacity service/spec plus bounded own docs. Existing public hotel occupancy contract already accepts ages below18: no wire/schema/dependency changes. Align actual-birthday classification for exact hotel rates in both create/update and confirmation; preserve legacy hotel and flight age categories. Producer Reservations unchanged, consumer Sales aligned; missing age tariffs fail closed rather than fabricating prices. No operational data or deployment.
@@ -5957,6 +5963,12 @@ PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007: source reservation RELEASED with froze
 - COMPUTER_ID=PC-B; branch codex/pc-b-expense-delete-icon-1007. Reserve only Marketing campaign declaration delete-button presentation, its focused regression test and bounded status docs. Neutral background with red inherited icon and subtle hover; existing removal handler and frozen state stay intact. No API/data/schema/dependency/shared-control/runtime changes. No active overlap in target files. User authorizes push and develop merge after checks.
 
 - Six declaration tests pass, including named icon-only trash contrast styling. Affected lint and full Marketing tests precede release; exact-head CI lint/typecheck/tests/production build gate merge. Locks released with candidate commit; no local runtime rollout or authenticated browser verification claimed.
+
+## PROCUREMENT-ORDER-REQUEST-SOURCE-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-request-source-1007 from origin/develop@3b2954e5. Reserve Procurement new-order request selector/query, default order action, module-local request-list filter and focused regressions, own status entries. Add backward-compatible section=order-requests to the existing request list for approved/sourcing requests; it does not list orders or change approval/permission/quantity rules. Preserve supplier choice and request-item order lines. No schema/migration/dependency/IAM/operational data/runtime change. Prior locks released and targets clean. User authorizes push/develop merge after checks.
+
+PROCUREMENT-ORDER-REQUEST-SOURCE-1007: source locks RELEASED with frozen review candidate. All 56 PostgreSQL and 63 Web tests, scoped lint/format, API/Web typechecks and production builds passed. Exact-head CI remains the merge gate; no operational data/runtime changes.
 
 ## AUDIENCES-REDESIGN-1007 — PC-B — READY_FOR_REVIEW
 

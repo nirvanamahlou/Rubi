@@ -1,6 +1,7 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
 
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, Download, Play, RefreshCw, Trash2 } from 'lucide-react';
 
@@ -331,9 +332,7 @@ export function ReportingOperationsView({
                             size="sm"
                             variant="ghost"
                             onClick={async () => {
-                              if (
-                                !window.confirm('این گزارش ذخیره‌شده حذف شود؟')
-                              )
+                              if (!uiConfirm('این گزارش ذخیره‌شده حذف شود؟'))
                                 return;
                               await reportingApi.deleteSaved(savedReportId);
                               setFeedback(

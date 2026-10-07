@@ -10,9 +10,13 @@ import {
 } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useDisplayLanguage, useUiTranslation } from '@/i18n/locale-context';
+import { translateUiText } from '@/i18n/translate';
+import type { DisplayLanguage } from '@/i18n/language';
 export type SearchOption = {
   value: string;
   label: ReactNode;
+  englishLabel?: string;
   searchText?: string;
   disabled?: boolean;
 };
@@ -37,6 +41,7 @@ export function searchOptions(
   options: readonly SearchOption[],
   query: string,
   limit = VISIBLE_OPTION_LIMIT,
+  language: DisplayLanguage = 'fa',
 ) {
   const key = normalizeOptionSearch(query);
   return options
@@ -44,7 +49,7 @@ export function searchOptions(
       (o) =>
         !key ||
         normalizeOptionSearch(
-          `${optionText(o.label)} ${o.searchText ?? ''}`,
+          `${optionText(o.label)} ${o.englishLabel ?? ''} ${o.searchText ?? ''} ${translateUiText(optionText(o.label), language)} ${translateUiText(o.searchText ?? '', language)}`,
         ).includes(key),
     )
     .slice(0, limit);
@@ -105,6 +110,8 @@ export function SearchCombobox({
   style?: CSSProperties | undefined;
   dataAttributes?: Record<string, unknown>;
 }) {
+  const language = useDisplayLanguage();
+  const t = useUiTranslation();
   const generated = useId(),
     id = suppliedId ?? generated,
     input = useRef<HTMLInputElement>(null);
@@ -115,14 +122,18 @@ export function SearchCombobox({
     [active, setActive] = useState(0);
   const matches = remote
     ? options.slice(0, VISIBLE_OPTION_LIMIT)
-    : searchOptions(options, query, optionLimit);
+    : searchOptions(options, query, optionLimit, language);
   const selected = options.find((o) => o.value === value);
-  const display = optionText(selectedLabel ?? selected?.label);
+  const display = t(
+    language === 'en' && selected?.englishLabel?.trim()
+      ? selected.englishLabel
+      : optionText(selectedLabel ?? selected?.label),
+  );
   useEffect(() => {
     input.current?.setCustomValidity(
-      required && !value ? 'یک گزینه از فهرست انتخاب کنید.' : '',
+      required && !value ? t('یک گزینه از فهرست انتخاب کنید.') : '',
     );
-  }, [required, value]);
+  }, [required, value, t]);
   function changeOpen(next: boolean) {
     setOpen(next);
     onOpenChange?.(next);
@@ -310,7 +321,9 @@ export function SearchCombobox({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => choose(o)}
                 >
-                  {o.label}
+                  {language === 'en' && o.englishLabel?.trim()
+                    ? o.englishLabel
+                    : o.label}
                   {o.value === value ? (
                     <Check aria-hidden="true" className="size-4 shrink-0" />
                   ) : null}

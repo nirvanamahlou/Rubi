@@ -1,4 +1,5 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
 
 import {
   Building2,
@@ -11,7 +12,7 @@ import {
   ShieldCheck,
   Upload,
 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import {
   useCallback,
   useEffect,
@@ -208,7 +209,7 @@ export function LegalEntitiesAdmin() {
     if (!selected || !meta?.canManage) return;
     const next = selected.isActive ? 'inactive' : 'active';
     if (
-      !window.confirm(
+      !uiConfirm(
         next === 'inactive'
           ? 'غیرفعال‌سازی تنها پس از بررسی Context کاربران انجام می‌شود. ادامه می‌دهید؟'
           : 'شرکت دوباره فعال شود؟',

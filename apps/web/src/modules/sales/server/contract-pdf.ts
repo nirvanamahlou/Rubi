@@ -1,3 +1,5 @@
+import { localizeDocumentHtml } from '@/i18n/document';
+import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
 import {
   access,
@@ -102,6 +104,7 @@ async function waitForPdf(path: string): Promise<void> {
 export async function renderContractPdf(
   output: SalesContractOutputV1,
   refs: ContractPrintReferences,
+  language: DisplayLanguage = 'fa',
 ): Promise<Buffer> {
   const { chromePath: chrome, fontPath: font } =
     await resolveContractPdfRuntime();
@@ -110,7 +113,7 @@ export async function renderContractPdf(
   active++;
   let directory: string | undefined;
   try {
-    let html = contractPrintHtml(output, refs);
+    let html = localizeDocumentHtml(contractPrintHtml(output, refs), language);
     if (font) {
       const fontBytes = await readFile(/* turbopackIgnore: true */ font);
       if (fontBytes.length && fontBytes.length <= 5_000_000)

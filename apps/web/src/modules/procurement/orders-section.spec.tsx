@@ -2,9 +2,52 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { Bootstrap } from './api';
-import { PurchaseOrdersSection } from './orders-section';
+import { PurchaseOrdersSection, OrderOperation } from './orders-section';
 
 describe('Persisted purchase order table', () => {
+  it('chooses a purchase request for a new order rather than an existing order', () => {
+    const client = new QueryClient();
+    client.setQueryData(['procurement', 'order-requests', 1, ''], {
+      items: [
+        {
+          id: 'approved-request',
+          status: 'APPROVED',
+          draft: { title: 'درخواست خرید میز اداری' },
+        },
+        {
+          id: 'draft-request',
+          status: 'DRAFT',
+          draft: { title: 'پیش‌نویس تأییدنشده' },
+        },
+      ],
+      page: 1,
+      hasMore: false,
+    });
+    const bootstrap: Bootstrap = {
+      branches: [],
+      currencies: [],
+      requester: null,
+      documents: 'UNAVAILABLE',
+      finance: 'NOT_CONNECTED',
+      travel: 'NOT_CONNECTED',
+      policy: 'POLICY_NOT_CONFIGURED',
+      permissions: [],
+    };
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={client}>
+        <OrderOperation
+          action="ORDER_FORM"
+          initialRequestId="approved-request"
+          bootstrap={bootstrap}
+          onChanged={() => undefined}
+        />
+      </QueryClientProvider>,
+    );
+    expect(html).toContain('درخواست خرید میز اداری');
+    expect(html).toContain('درخواست خرید');
+    expect(html).not.toContain('پیش‌نویس تأییدنشده');
+    expect(html).not.toContain('سفارش مرجع');
+  });
   it('renders full titles, supplier identity and accessible icon actions on each saved order', () => {
     const client = new QueryClient();
     const title =

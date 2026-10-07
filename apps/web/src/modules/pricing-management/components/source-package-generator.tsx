@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useDisplayLanguage } from '@/i18n/locale-context';
 
 import { Skeleton } from '@/components/ui/surfaces';
 
@@ -9,6 +10,15 @@ export const sourcePackageGeneratorPath =
 
 export function SourcePackageGenerator() {
   const [loaded, setLoaded] = useState(false);
+  const language = useDisplayLanguage();
+  const frame = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    if (loaded)
+      frame.current?.contentWindow?.postMessage(
+        { type: 'rubi-display-language', language },
+        window.location.origin,
+      );
+  }, [language, loaded]);
 
   return (
     <section
@@ -25,6 +35,7 @@ export function SourcePackageGenerator() {
         </div>
       ) : null}
       <iframe
+        ref={frame}
         className="block h-[calc(100vh-7rem)] min-h-[52rem] w-full border-0"
         onLoad={() => setLoaded(true)}
         referrerPolicy="no-referrer"

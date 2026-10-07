@@ -1,8 +1,11 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 
 import { DocumentsWorkspace } from '@/modules/documents/components/documents-workspace';
 
-export const metadata: Metadata = { title: 'اسناد و فایل‌ها' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'اسناد و فایل‌ها' });
+}
 
 // Dedicated replacement for ModuleFoundationWorkspace / foundationModules['documents'].
 

@@ -2,7 +2,7 @@
 
 import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
 import { ExternalLink, RefreshCw } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useCallback, useEffect, useState, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';

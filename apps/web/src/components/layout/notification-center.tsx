@@ -10,7 +10,7 @@ import {
   RefreshCw,
   Trash2,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';

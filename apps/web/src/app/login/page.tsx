@@ -1,60 +1,14 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
-import Image from 'next/image';
+import { CompanyLogos } from './login-company-logos';
 import { Suspense } from 'react';
 
 import { LoginBackgroundStory } from './login-background-story';
 import { LoginForm } from './login-form';
+import { LanguageSwitcher } from '@/i18n/language-switcher';
 
-export const metadata: Metadata = { title: { absolute: 'ورود امن نورا' } };
-
-function CompanyLogos({ compact = false }: { compact?: boolean }) {
-  return (
-    <div>
-      <p
-        className={
-          compact
-            ? 'mb-2 text-center text-xs font-bold text-muted-foreground'
-            : 'mb-3 text-center text-xs font-bold text-blue-100'
-        }
-      >
-        شرکت‌های فعال در سامانه
-      </p>
-      <div className="grid grid-cols-2 gap-4">
-        <div
-          className={
-            compact
-              ? 'relative h-28 overflow-hidden rounded-2xl border bg-white shadow-sm'
-              : 'relative h-44 overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-950/20'
-          }
-        >
-          <Image
-            alt="لوگوی شرکت نیایش سیر"
-            className={compact ? 'object-contain p-2' : 'object-contain p-3'}
-            fill
-            priority={!compact}
-            sizes={compact ? '45vw' : '220px'}
-            src="/brand/niyayesh-seir-full.png"
-          />
-        </div>
-        <div
-          className={
-            compact
-              ? 'relative h-28 overflow-hidden rounded-2xl border bg-white shadow-sm'
-              : 'relative h-44 overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-950/20'
-          }
-        >
-          <Image
-            alt="لوگوی شرکت جهان باستان"
-            className={compact ? 'object-contain p-2' : 'object-contain p-3'}
-            fill
-            priority={!compact}
-            sizes={compact ? '45vw' : '220px'}
-            src="/brand/jahan-bastan.png"
-          />
-        </div>
-      </div>
-    </div>
-  );
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: { absolute: 'ورود امن نورا' } });
 }
 
 export default function LoginPage() {
@@ -80,6 +34,7 @@ export default function LoginPage() {
           </div>
         </div>
         <div className="p-7 sm:p-12">
+          <LanguageSwitcher />
           <div className="mb-8 lg:hidden">
             <CompanyLogos compact />
           </div>

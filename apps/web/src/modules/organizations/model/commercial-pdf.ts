@@ -1,3 +1,5 @@
+import { browserDisplayLanguage } from '@/i18n/language';
+import { translateUiText } from '@/i18n/translate';
 import type { CommercialReport } from './commercial-export';
 
 export function isolateCommercialIdentifiers(text: string) {
@@ -90,13 +92,20 @@ export async function commercialPdf(
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.textAlign = 'right';
-    ctx.direction = 'rtl';
+    ctx.direction = browserDisplayLanguage() === 'en' ? 'ltr' : 'rtl';
     ctx.fillStyle = '#103c78';
     ctx.font = `bold 30px ${font}`;
-    ctx.fillText('نورا · قرارداد و شرایط تجاری', 1170, 65);
+    ctx.fillText(
+      translateUiText('نورا · قرارداد و شرایط تجاری', browserDisplayLanguage()),
+      1170,
+      65,
+    );
     ctx.font = `20px ${font}`;
     ctx.fillText(
-      `صفحه ${(images.length + 1).toLocaleString('fa-IR')}`,
+      translateUiText(
+        `صفحه ${(images.length + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+        browserDisplayLanguage(),
+      ),
       1170,
       1705,
     );
@@ -109,6 +118,7 @@ export async function commercialPdf(
       throw new Error('گزارش بیش از ۱۵۰ صفحه است؛ بازه تاریخ را محدود کنید.');
   };
   const line = (text: string, heading = false) => {
+    text = translateUiText(text, browserDisplayLanguage());
     const apply = () => {
       ctx.font = `${heading ? 'bold ' : ''}24px ${font}`;
       ctx.fillStyle = heading ? '#103c78' : '#253850';
@@ -139,13 +149,13 @@ export async function commercialPdf(
   for (const section of report.sections) {
     y += 18;
     line(
-      `${section.title} · ${section.rows.length.toLocaleString('fa-IR')} ردیف`,
+      `${section.title} · ${section.rows.length.toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')} ردیف`,
       true,
     );
     if (!section.rows.length) line('رکوردی مطابق فیلترها وجود ندارد.');
     for (const [index, row] of section.rows.entries()) {
       line(
-        `${section.title} — ردیف ${(index + 1).toLocaleString('fa-IR')}`,
+        `${section.title} — ردیف ${(index + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
         true,
       );
       section.columns.forEach((column, i) =>

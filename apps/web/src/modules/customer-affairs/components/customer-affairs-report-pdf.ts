@@ -1,3 +1,5 @@
+import { browserDisplayLanguage } from '@/i18n/language';
+import { translateUiText } from '@/i18n/translate';
 import type { AffairsReport } from '../api/customer-affairs-client';
 import {
   stageLabel,
@@ -73,6 +75,7 @@ export async function downloadAffairsReportPdf(
     bold = false,
   ) => {
     context.font = `${bold ? '700' : '400'} ${size}px Vazirmatn, Tahoma, sans-serif`;
+    value = translateUiText(value, browserDisplayLanguage());
     context.fillText(value, x, top);
     lines.push({ text: value, x, y: top, size });
   };
@@ -80,14 +83,14 @@ export async function downloadAffairsReportPdf(
     lines = [];
     context.fillStyle = '#ffffff';
     context.fillRect(0, 0, canvas.width, canvas.height);
-    context.direction = 'rtl';
+    context.direction = browserDisplayLanguage() === 'en' ? 'ltr' : 'rtl';
     context.textAlign = 'right';
     context.fillStyle = '#103c78';
     draw('خلاصه عملکرد امور مشتریان', 1160, 105, 36, true);
     context.fillStyle = '#687b93';
     draw(`بازه: ${dateRangeLabel}`, 1160, 160, 22);
     draw(
-      `زمان تهیه: ${new Date(report.generatedAt).toLocaleString('fa-IR')}`,
+      `زمان تهیه: ${new Date(report.generatedAt).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
       1160,
       200,
       20,
@@ -101,7 +104,12 @@ export async function downloadAffairsReportPdf(
   };
   const save = () => {
     context.fillStyle = '#71839a';
-    draw(`صفحه ${(pages.length + 1).toLocaleString('fa-IR')}`, 1160, 1680, 19);
+    draw(
+      `صفحه ${(pages.length + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+      1160,
+      1680,
+      19,
+    );
     const binary = atob(canvas.toDataURL('image/jpeg', 0.92).split(',')[1]!);
     pages.push({
       image: Uint8Array.from(binary, (character) => character.charCodeAt(0)),

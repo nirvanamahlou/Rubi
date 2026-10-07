@@ -1,3 +1,4 @@
+import type { DisplayLanguage } from '../common/i18n/language';
 import { randomUUID } from 'node:crypto';
 import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
@@ -1473,6 +1474,7 @@ export class MasterDataService {
     input: ExportInput,
     actor: AuthenticatedActor,
     requestedBranch?: string,
+    displayLanguage: DisplayLanguage = 'fa',
   ) {
     if (input.format !== 'xlsx')
       throw new BadRequestException('این مسیر فقط خروجی Excel را می‌پذیرد.');
@@ -1493,7 +1495,7 @@ export class MasterDataService {
       resource,
       columns: input.columns,
       records: rows.map((row) => toMasterDataRecord(resource, row)),
-      locale: input.locale,
+      locale: displayLanguage === 'en' ? 'en-US' : input.locale,
       timezone: input.timezone,
     });
     const request = await this.repository.createExport({
@@ -1506,7 +1508,7 @@ export class MasterDataService {
       ),
       actorUserId: actor.userId,
       actorBranchId,
-      locale: input.locale,
+      locale: displayLanguage === 'en' ? 'en-US' : input.locale,
       timezone: input.timezone,
       status: 'COMPLETED',
     });

@@ -440,7 +440,9 @@ export class ProcurementService {
     const dates = v.dateRange(query.createdFrom, query.createdTo);
     requireRule(
       !section ||
-        ['quotes', 'orders', 'receipts', 'invoices'].includes(section),
+        ['quotes', 'orders', 'order-requests', 'receipts', 'invoices'].includes(
+          section,
+        ),
       'VALIDATION_ERROR',
       'بخش خرید معتبر نیست.',
     );
@@ -507,6 +509,8 @@ export class ProcurementService {
           ...(dates.endExclusive ? { lt: dates.endExclusive } : {}),
         },
       });
+    if (section === 'order-requests')
+      and.push({ status: { in: ['APPROVED', 'SOURCING'] } });
     if (section === 'quotes')
       and.push({
         OR: [

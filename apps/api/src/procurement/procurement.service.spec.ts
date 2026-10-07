@@ -651,6 +651,34 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         data: { documents, disposition: 'ACCEPTED' },
       });
     });
+    it('offers approved purchase requests without existing orders and excludes unapproved requests before order-selector pagination', async () => {
+      const prefix = `OrderRequestSource-${randomUUID()}`;
+      const approved = await approvedRequest(
+        fixture({ title: `${prefix}-approved` }),
+      );
+      const unapproved = await create(fixture({ title: `${prefix}-draft` }));
+      const listed = await service.list(
+        { section: 'order-requests', search: prefix },
+        maker,
+      );
+      expect(listed.items.map((item) => item.id)).toEqual([approved.id]);
+      expect(listed.items.some((item) => item.id === unapproved.id)).toBe(
+        false,
+      );
+      expect(
+        await database.client.procurementOrder.count({
+          where: { requestId: approved.id },
+        }),
+      ).toBe(0);
+      expect(
+        (
+          await service.list(
+            { section: 'order-requests', search: prefix },
+            { ...outsider, branchIds: [otherBranch] },
+          )
+        ).items,
+      ).toEqual([]);
+    });
     async function selectedRequest(draft = fixture(), validUntil = nextMonth) {
       let row = await approvedRequest(draft);
       row = await command(row, 'QUOTE', {

@@ -1,10 +1,13 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { Skeleton } from '@/components/ui/surfaces';
 import { ProfileWorkspace } from '@/modules/profile/components/profile-workspace';
 
-export const metadata: Metadata = { title: 'پروفایل من' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'پروفایل من' });
+}
 
 export default function ProfilePage() {
   return (
