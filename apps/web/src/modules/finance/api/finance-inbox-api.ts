@@ -75,9 +75,11 @@ export async function apiRequest<T>(
       response.status === 401
         ? 'نشست ورود پایان یافته است؛ دوباره وارد شوید.'
         : response.status === 403
-          ? path === '/finance/inbox'
-            ? 'برای مشاهده کارتابل مالی مجوز ندارید.'
-            : 'برای انجام این عملیات مالی مجوز ندارید.'
+          ? path.startsWith('/procurement/ticket-purchases')
+            ? 'برای این عملیات خرید و تأمین مجوز ندارید.'
+            : path === '/finance/inbox'
+              ? 'برای مشاهده کارتابل مالی مجوز ندارید.'
+              : 'برای انجام این عملیات مالی مجوز ندارید.'
           : (payload?.error?.message ??
             payload?.message ??
             'عملیات کارتابل مالی ناموفق بود.'),

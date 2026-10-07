@@ -87,7 +87,7 @@ export const navigationMessages = [
     description: 'نمای کلی عملکرد و کارهای روزانه',
   },
   {
-    title: 'مشتریان و مسافران',
+    title: 'مشتریان B2c',
     href: '/customers',
     description: 'پرونده و تعاملات مشتریان',
   },
@@ -117,7 +117,7 @@ export const navigationMessages = [
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
   },
   {
-    title: 'خرید و تأمین',
+    title: 'تنخواه',
     href: '/purchases',
     description: 'خرید خدمات و تأمین‌کنندگان',
   },
@@ -131,9 +131,14 @@ export const navigationMessages = [
     href: '/finance/requests',
     description: 'رسیدگی به درخواست‌های دریافت و پرداخت واحدها',
   },
+  {
+    title: 'خرید و تأمین',
+    href: '/ticket-purchases',
+    description: 'ثبت قیمت خرید پرواز و پیگیری پرداخت به ایرلاین',
+  },
   { title: 'مارکتینگ', href: '/marketing', description: 'کمپین‌ها و مخاطبان' },
   {
-    title: 'آژانس‌ها و مشتریان سازمانی',
+    title: 'مشتریان B2B',
     href: '/organizations',
     description: 'قراردادها و ارتباطات سازمانی',
   },

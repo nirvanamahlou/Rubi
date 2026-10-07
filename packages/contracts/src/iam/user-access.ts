@@ -2247,6 +2247,8 @@ export function screenForTab(
   );
 }
 export function accessGroupForRoute(route: string) {
+  if (route === '/ticket-purchases' || route.startsWith('/ticket-purchases/'))
+    return USER_ACCESS_GROUPS.find((g) => g.id === 'procurement');
   if (route.startsWith('/users') || route.startsWith('/settings'))
     return USER_ACCESS_GROUPS.find((g) => g.id === 'system');
   if (route === '/hr' || route.startsWith('/hr/'))
@@ -2255,7 +2257,21 @@ export function accessGroupForRoute(route: string) {
     .sort((a, b) => b.route.length - a.route.length)
     .find((g) => route === g.route || route.startsWith(g.route + '/'));
 }
-export function canViewRoute(permissions: readonly string[], href: string) {
+export function canViewRoute(
+  permissions: readonly string[],
+  href: string,
+): boolean {
+  if (href === '/ticket-purchases' || href.startsWith('/ticket-purchases/'))
+    return (
+      permissions.some((p) =>
+        [
+          'procurement.read.own',
+          'procurement.read.unit',
+          'procurement.read.all',
+          'procurement.quote.manage',
+        ].includes(p),
+      ) && canViewRoute(permissions, '/purchases')
+    );
   if (!href.startsWith('/')) return true;
   const [pathname, search = ''] = href.split('?');
   const query: Record<string, string> = {};

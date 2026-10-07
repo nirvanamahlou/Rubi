@@ -27,7 +27,7 @@ async function sql(database: string, input: string) {
   };
   const connection = new PgClient({
     connectionString: url.toString(),
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 30000,
   });
   try {
     await connection.connect();
@@ -84,6 +84,7 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
         branchId: branch.id,
         catalogProductReference: suffix,
         title: 'Isolated ticket purchase',
+        supplierDisplaySnapshot: 'Isolated airline',
         seatCount: 2,
         createdByUserId: user.id,
         createKey: suffix,
@@ -112,22 +113,35 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
     const actor = {
       userId: user.id,
       branchIds: [branch.id],
-      permissions: ['finance.payment.create'],
+      permissions: ['finance.payment.create', 'procurement.quote.manage'],
     } as unknown as AuthenticatedActor;
     const service = new FinanceTicketCostService(
       { client } as never,
       new ProcurementPublicService({ client } as never),
     );
-    const cost = await service.recordCost(
-      request.id,
-      { version: 1, seatCount: 2, unitCost: '50', currencyCode: 'IRR' },
-      actor,
-    );
+    const price = {
+      version: 1 as const,
+      operationId: randomUUID(),
+      expectedCostVersion: 0,
+      seatCount: 2,
+      unitCost: '50',
+      currencyCode: 'IRR',
+    };
+    const [cost, replay] = await Promise.all([
+      service.recordCost(request.id, price, actor),
+      service.recordCost(request.id, price, actor),
+    ]);
+    expect(cost).toEqual(replay);
+    expect(
+      await client.financeTicketPurchaseCostRevision.count({
+        where: { requestId: request.id },
+      }),
+    ).toBe(1);
     const command = {
       version: 1 as const,
       operationId: randomUUID(),
       expectedPaymentVersion: 0,
-      costRevisionId: cost.id,
+      costRevisionId: cost!.id,
       accountId: account.id,
       paymentMethodId: method.id,
       paidAmount: '40',

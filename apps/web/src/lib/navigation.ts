@@ -46,6 +46,7 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/ticket-management': Ticket,
   '/sales': Handshake,
   '/purchases': PackageSearch,
+  '/ticket-purchases': PackageSearch,
   '/finance': CircleDollarSign,
   '/finance/requests': Inbox,
   '/marketing': Megaphone,
@@ -67,13 +68,13 @@ export const navigationItems = navigationMessages.map((item) => ({
 export const navigationGroups = [
   {
     id: 'work',
-    dotClass: 'bg-[#96c9ff]',
+    dotClass: 'bg-[#60a5fa]',
     title: 'فضای کار',
     hrefs: ['/workbench', '/dashboard'],
   },
   {
     id: 'sales',
-    dotClass: 'bg-[#7dd3fc]',
+    dotClass: 'bg-[#fb7185]',
     title: 'فروش و ارتباط با مشتری',
     hrefs: [
       '/sales',
@@ -85,31 +86,37 @@ export const navigationGroups = [
   },
   {
     id: 'operations',
-    dotClass: 'bg-[#62d5c6]',
+    dotClass: 'bg-[#34d399]',
     title: 'رزرواسیون',
     hrefs: ['/reservations', '/reservations/hotel-rates', '/ticket-management'],
   },
   {
+    id: 'ticket-purchases',
+    dotClass: 'bg-[#7dd3fc]',
+    title: 'خرید و تأمین',
+    hrefs: ['/ticket-purchases'],
+  },
+  {
     id: 'finance',
-    dotClass: 'bg-[#f7d184]',
+    dotClass: 'bg-[#fbbf24]',
     title: 'مالی',
     hrefs: ['/finance', '/finance/requests'],
   },
   {
     id: 'hr',
-    dotClass: 'bg-[#d4b4fc]',
+    dotClass: 'bg-[#c084fc]',
     title: 'سرمایه انسانی',
     hrefs: ['/human-resources', '/purchases'],
   },
   {
     id: 'resources',
-    dotClass: 'bg-[#9cb9dd]',
+    dotClass: 'bg-[#22d3ee]',
     title: 'اسناد و گزارش‌ها',
     hrefs: ['/documents', '/reports'],
   },
   {
     id: 'system',
-    dotClass: 'bg-[#94a3b8]',
+    dotClass: 'bg-[#fb923c]',
     title: 'تنظیمات شرکت',
     hrefs: ['/system', '/master-data', '/integrations'],
   },
@@ -131,8 +138,8 @@ export const groupedNavigationItems = navigationGroups.map((group) => ({
 
 /** A second-level Sales module, separate from the seventeen primary destinations. */
 export const salesSubsections = [
-  { href: '/sales/ticket-prices', title: 'قیمت بلیط' },
-  { href: '/sales/pricing', title: 'مدیریت قیمت و پکیج‌ها' },
+  { href: '/sales/ticket-prices', title: 'قیمت گذاری پرواز' },
+  { href: '/sales/pricing', title: 'مدیریت پکیج' },
   { href: '/sales/tours', title: 'تعریف تور و خدمات' },
 ] as const;
 export const salesPricingSubsection = salesSubsections[1];
@@ -140,11 +147,11 @@ export const salesPricingSubsection = salesSubsections[1];
 export const navigationAliases = {
   '/sales/ticket-prices': {
     parentHref: '/sales',
-    title: 'قیمت بلیط',
+    title: 'قیمت گذاری پرواز',
   },
   '/sales/pricing': {
     parentHref: '/sales',
-    title: 'مدیریت قیمت و پکیج‌ها',
+    title: 'مدیریت پکیج',
   },
   '/sales/tours': {
     parentHref: '/sales',

@@ -252,3 +252,7 @@ Owner-approved MANIFEST-LOAD-SEARCH-0930 removes Finance approval from manifest 
 ### Ticket price destinations — 2026-10-04
 
 A latest sale-destination commission of 100 percent disables publication for that one-way or round-trip price and destination. It must never be interpreted as a publishable zero fare. Administrative base prices and commission history remain editable; lowering the latest commission below 100 enables publication again. The public active price projection omits hidden fares, while administrative commission rows carry isHidden and pair bases remain separate. Provider adapters must ignore hidden commission rows; this rule does not itself initiate external delivery.
+
+## TICKET-PURCHASE-INBOX-1007 — superseding price-entry exception
+
+Per the owner's 2026-10-07 request, actual seat pricing belongs to the dedicated خرید و تأمین inbox. Ticket publication creates the existing offer-linked request, procurement.quote.manage prices it, and only then does it appear in Finance for supplier payment. Payment revisions and their public actual-cost source remain Finance-owned; Sales contract profit subtracts unit cost only for allocated passenger seats and keeps currencies separate. The older text assigning initial price entry to Finance is superseded for this flow. General Procurement domain ownership is unchanged; تنخواه is its requested menu label.

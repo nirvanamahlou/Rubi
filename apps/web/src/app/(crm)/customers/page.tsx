@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import { CustomerWorkspace } from '@/modules/customers/components/customer-workspace';
 
 export async function generateMetadata(): Promise<Metadata> {
-  return localizedMetadata({ title: 'مشتریان و مسافران' });
+  return localizedMetadata({ title: 'مشتریان B2c' });
 }
 
 export default function Page() {

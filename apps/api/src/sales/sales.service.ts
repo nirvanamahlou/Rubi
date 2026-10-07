@@ -423,9 +423,9 @@ export class SalesService {
       if (
         ages.some((age) => age === null) ||
         !quoteHotelOccupancy(roomRate.occupancyRates, {
-          adults: ages.filter((age) => age !== null && age >= 12).length,
+          adults: ages.filter((age) => age !== null && age >= 18).length,
           childAges: ages.filter(
-            (age): age is number => age !== null && age < 12,
+            (age): age is number => age !== null && age < 18,
           ),
           rooms: hotel.roomCount,
           checkIn: hotel.checkInDate,
@@ -474,9 +474,9 @@ export class SalesService {
       if (
         ages.some((age) => age === null) ||
         !quoteHotelOccupancy(roomRate.occupancyRates, {
-          adults: ages.filter((age) => age !== null && age >= 12).length,
+          adults: ages.filter((age) => age !== null && age >= 18).length,
           childAges: ages.filter(
-            (age): age is number => age !== null && age < 12,
+            (age): age is number => age !== null && age < 18,
           ),
           rooms: hotel.roomCount,
           checkIn: hotel.checkInDate,

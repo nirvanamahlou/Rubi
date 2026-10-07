@@ -432,6 +432,8 @@ export interface FinanceInboxItemV1 {
 /** Finance owns these confirmed purchase figures; a catalog estimate is never a cost. */
 export interface FinanceTicketCostCommandV1 {
   version: 1;
+  operationId?: string;
+  expectedCostVersion?: number;
   /** New ticket purchase flow: the server calculates the invoice from these values. */
   seatCount?: number;
   unitCost?: string;

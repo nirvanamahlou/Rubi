@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { PackagePricingHub } from '@/modules/pricing-management/components/package-pricing-hub';
 
 export async function generateMetadata(): Promise<Metadata> {
-  return localizedMetadata({ title: 'مدیریت قیمت و پکیج‌ها' });
+  return localizedMetadata({ title: 'مدیریت پکیج' });
 }
 
 export default function Page() {
