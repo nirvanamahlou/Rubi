@@ -1,3 +1,4 @@
+import styles from './finance-inbox.module.css';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   ArrowDownLeft,
@@ -146,13 +147,9 @@ export function FinanceInboxLiveWorkspace() {
   const [status, setStatus] = useState<
     'ALL' | 'OPEN' | 'CLOSED' | FinanceRequestStatus
   >('OPEN');
-  const [branchId, setBranchId] = useState('');
-  const [person, setPerson] = useState('');
   const [currencyCode, setCurrencyCode] = useState('');
   const [minAmount, setMinAmount] = useState('');
   const [maxAmount, setMaxAmount] = useState('');
-  const [dueFrom, setDueFrom] = useState('');
-  const [dueTo, setDueTo] = useState('');
   const [sortBy, setSortBy] = useState<'createdAt' | 'dueAt' | 'amount'>(
     'createdAt',
   );
@@ -167,13 +164,9 @@ export function FinanceInboxLiveWorkspace() {
     status,
     fromDate,
     toDate,
-    branchId,
-    person,
     currencyCode,
     minAmount,
     maxAmount,
-    dueFrom,
-    dueTo,
     sortBy,
     sortDirection,
   });
@@ -225,13 +218,9 @@ export function FinanceInboxLiveWorkspace() {
       status: status === 'ALL' ? undefined : status,
       fromDate,
       toDate,
-      branchId,
-      person,
       currencyCode,
       minAmount,
       maxAmount,
-      dueFrom,
-      dueTo,
       sortBy,
       sortDirection,
       page,
@@ -243,13 +232,9 @@ export function FinanceInboxLiveWorkspace() {
       status,
       fromDate,
       toDate,
-      branchId,
-      person,
       currencyCode,
       minAmount,
       maxAmount,
-      dueFrom,
-      dueTo,
       sortBy,
       sortDirection,
       page,
@@ -678,7 +663,10 @@ export function FinanceInboxLiveWorkspace() {
   }
 
   return (
-    <section className="space-y-5" aria-label="کارتابل یکپارچه مالی">
+    <section
+      className={`${styles.workspace} space-y-4`}
+      aria-label="کارتابل یکپارچه مالی"
+    >
       {receiptRetries.map((retry) => (
         <Card key={retry.id} className="space-y-3 p-4">
           <p>
@@ -713,8 +701,8 @@ export function FinanceInboxLiveWorkspace() {
           {receiptError ? <p role="alert">{receiptError}</p> : null}
         </Card>
       ))}
-      <Card className="overflow-hidden border-0 bg-gradient-to-l from-slate-950 via-blue-950 to-indigo-900 p-0 text-white shadow-xl shadow-primary/10">
-        <div className="grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+      <Card className={`${styles.hero} overflow-hidden p-0`}>
+        <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <Badge className="border-white/20 bg-white/10 text-white">
@@ -727,7 +715,7 @@ export function FinanceInboxLiveWorkspace() {
               </span>
             </div>
             <h2 className="mt-4 text-2xl font-black sm:text-3xl">
-              امروز چه چیزی نیاز به تصمیم مالی دارد؟
+              کارتابل درخواست‌ها
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-blue-100">
               دریافت‌ها را به حساب مقصد متصل کنید، پرداخت‌های کارگزار را از حساب
@@ -776,192 +764,205 @@ export function FinanceInboxLiveWorkspace() {
         </div>
       </Card>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {kpis.map(({ label, helper, value, icon: Icon, tone }) => (
-          <Card className="group overflow-hidden p-0" key={label}>
-            <div className={`h-1 bg-gradient-to-l ${tone}`} />
-            <div className="flex items-start justify-between gap-3 p-4">
-              <div>
-                <p className="text-xs font-medium text-muted-foreground">
-                  {label}
-                </p>
-                <p className="mt-2 text-3xl font-black">{String(value)}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{helper}</p>
-              </div>
-              <span
-                className={`rounded-2xl bg-gradient-to-br p-3 text-white shadow-lg ${tone}`}
-              >
-                <Icon className="size-5" />
-              </span>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <Card className="p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-black">جریان کارتابل بر اساس واحد</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                حجم درخواست‌های باز در هر واحد عملیاتی
-              </p>
-            </div>
-            <TrendingUp className="size-5 text-primary" />
-          </div>
-          <div className="mt-5 space-y-4">
-            {dashboard.sourceSummary.length ? (
-              dashboard.sourceSummary.map(({ source: sourceName, count }) => {
-                const ratio = openCount
-                  ? Math.round((count / openCount) * 100)
-                  : 0;
-                return (
-                  <div key={sourceName}>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-semibold">
-                        {sourceLabels[sourceName]}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {count} مورد · {ratio}٪
-                      </span>
-                    </div>
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-l from-primary to-cyan-400"
-                        style={{ width: `${Math.max(ratio, 6)}%` }}
-                      />
-                    </div>
+      <details className={styles.summary}>
+        <summary className="cursor-pointer px-5 py-3 text-sm font-semibold">
+          جریان کارتابل بر اساس واحد
+        </summary>
+        <div className="space-y-4 p-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {kpis.map(({ label, helper, value, icon: Icon, tone }) => (
+              <Card className="group overflow-hidden p-0" key={label}>
+                <div className={`h-1 bg-gradient-to-l ${tone}`} />
+                <div className="flex items-start justify-between gap-3 p-4">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-3xl font-black">{String(value)}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {helper}
+                    </p>
                   </div>
-                );
-              })
-            ) : (
-              <p className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
-                درخواستی برای نمایش در بازه و فیلتر فعلی وجود ندارد.
-              </p>
-            )}
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-black">اولویت‌های نزدیک</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                موارد باز با نزدیک‌ترین سررسید
-              </p>
-            </div>
-            <Clock3 className="size-5 text-rose-500" />
-          </div>
-          <div className="mt-4 space-y-2">
-            {dashboard.dueItems.length ? (
-              dashboard.dueItems.map((item) => (
-                <button
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border p-3 text-start transition hover:border-primary/40 hover:bg-muted/40"
-                  key={item.id}
-                  onClick={() => setSelectedId(item.id)}
-                  type="button"
-                >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-bold">
-                      {item.title}
-                    </span>
-                    <span className="mt-1 block text-xs text-muted-foreground">
-                      {item.source === 'PURCHASES'
-                        ? item.ticketPurchase
-                          ? 'خرید و تأمین'
-                          : 'تنخواه'
-                        : sourceLabels[item.source]}{' '}
-                      · {faDate(item.dueAt)}
-                    </span>
+                  <span
+                    className={`rounded-2xl bg-gradient-to-br p-3 text-white shadow-lg ${tone}`}
+                  >
+                    <Icon className="size-5" />
                   </span>
-                  <ChevronLeft className="size-4 shrink-0 text-primary" />
-                </button>
-              ))
-            ) : (
-              <p className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
-                هیچ سررسید بازی در فیلتر فعلی وجود ندارد.
-              </p>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
-        <Card className="p-5">
-          <div className="flex items-center gap-3">
-            <span className="rounded-2xl bg-violet-100 p-3 text-violet-700 dark:bg-violet-950/40 dark:text-violet-200">
-              <Building2 className="size-5" />
-            </span>
-            <div>
-              <p className="text-sm font-black">حساب‌های قابل استفاده</p>
-              <p className="text-xs text-muted-foreground">
-                برای ثبت دریافت و پرداخت
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 space-y-2">
-            {accounts
-              .filter((account) => account.isActive)
-              .slice(0, 3)
-              .map((account) => (
-                <div
-                  className="flex items-center justify-between gap-2 rounded-xl bg-muted/60 px-3 py-2.5"
-                  key={account.id}
-                >
-                  <span className="truncate text-sm font-semibold">
-                    {account.title}
-                  </span>
-                  <Badge>{account.currencyCode}</Badge>
                 </div>
-              ))}
-            {!accounts.filter((account) => account.isActive).length ? (
-              <p className="text-sm text-muted-foreground">
-                حساب فعالی برای شعبه انتخاب‌شده دریافت نشد.
-              </p>
-            ) : null}
+              </Card>
+            ))}
           </div>
-        </Card>
 
-        <Card className="flex flex-col justify-between gap-4 bg-gradient-to-l from-primary/10 via-surface to-cyan-500/10 p-5">
-          <div className="flex items-start gap-3">
-            <span className="rounded-2xl bg-primary p-3 text-primary-foreground">
-              <ShieldCheck className="size-5" />
-            </span>
-            <div>
-              <p className="font-black">راهنمای اقدام مالی</p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                برای دریافت قرارداد، حساب مقصد را تعیین کن؛ برای پرداخت کارگزار،
-                حساب مبدأ، روش پرداخت و شماره پیگیری را ثبت کن.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              onClick={() => {
-                setSource('SALES');
-                setStatus('OPEN');
-              }}
-              size="sm"
-            >
-              <ArrowDownLeft className="size-4" />
-              دریافت‌های فروش
-            </Button>
-            <Button
-              onClick={() => {
-                setSource('RESERVATIONS');
-                setStatus('OPEN');
-              }}
-              size="sm"
-              variant="outline"
-            >
-              <ArrowUpRight className="size-4" />
-              پرداخت کارگزار
-            </Button>
-          </div>
-        </Card>
-      </div>
+          <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+            <Card className="p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black">
+                    جریان کارتابل بر اساس واحد
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    حجم درخواست‌های باز در هر واحد عملیاتی
+                  </p>
+                </div>
+                <TrendingUp className="size-5 text-primary" />
+              </div>
+              <div className="mt-5 space-y-4">
+                {dashboard.sourceSummary.length ? (
+                  dashboard.sourceSummary.map(
+                    ({ source: sourceName, count }) => {
+                      const ratio = openCount
+                        ? Math.round((count / openCount) * 100)
+                        : 0;
+                      return (
+                        <div key={sourceName}>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-semibold">
+                              {sourceLabels[sourceName]}
+                            </span>
+                            <span className="text-muted-foreground">
+                              {count} مورد · {ratio}٪
+                            </span>
+                          </div>
+                          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-l from-primary to-cyan-400"
+                              style={{ width: `${Math.max(ratio, 6)}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    },
+                  )
+                ) : (
+                  <p className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
+                    درخواستی برای نمایش در بازه و فیلتر فعلی وجود ندارد.
+                  </p>
+                )}
+              </div>
+            </Card>
 
-      <Card className="p-4">
+            <Card className="p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black">اولویت‌های نزدیک</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    موارد باز با نزدیک‌ترین سررسید
+                  </p>
+                </div>
+                <Clock3 className="size-5 text-rose-500" />
+              </div>
+              <div className="mt-4 space-y-2">
+                {dashboard.dueItems.length ? (
+                  dashboard.dueItems.map((item) => (
+                    <button
+                      className="flex w-full items-center justify-between gap-3 rounded-2xl border border-border p-3 text-start transition hover:border-primary/40 hover:bg-muted/40"
+                      key={item.id}
+                      onClick={() => setSelectedId(item.id)}
+                      type="button"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-bold">
+                          {item.title}
+                        </span>
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {item.source === 'PURCHASES'
+                            ? item.ticketPurchase
+                              ? 'خرید و تأمین'
+                              : 'تنخواه'
+                            : sourceLabels[item.source]}{' '}
+                          · {faDate(item.dueAt)}
+                        </span>
+                      </span>
+                      <ChevronLeft className="size-4 shrink-0 text-primary" />
+                    </button>
+                  ))
+                ) : (
+                  <p className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+                    هیچ سررسید بازی در فیلتر فعلی وجود ندارد.
+                  </p>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+            <Card className="p-5">
+              <div className="flex items-center gap-3">
+                <span className="rounded-2xl bg-violet-100 p-3 text-violet-700 dark:bg-violet-950/40 dark:text-violet-200">
+                  <Building2 className="size-5" />
+                </span>
+                <div>
+                  <p className="text-sm font-black">حساب‌های قابل استفاده</p>
+                  <p className="text-xs text-muted-foreground">
+                    برای ثبت دریافت و پرداخت
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 space-y-2">
+                {accounts
+                  .filter((account) => account.isActive)
+                  .slice(0, 3)
+                  .map((account) => (
+                    <div
+                      className="flex items-center justify-between gap-2 rounded-xl bg-muted/60 px-3 py-2.5"
+                      key={account.id}
+                    >
+                      <span className="truncate text-sm font-semibold">
+                        {account.title}
+                      </span>
+                      <Badge>{account.currencyCode}</Badge>
+                    </div>
+                  ))}
+                {!accounts.filter((account) => account.isActive).length ? (
+                  <p className="text-sm text-muted-foreground">
+                    حساب فعالی برای شعبه انتخاب‌شده دریافت نشد.
+                  </p>
+                ) : null}
+              </div>
+            </Card>
+
+            <Card className="flex flex-col justify-between gap-4 bg-gradient-to-l from-primary/10 via-surface to-cyan-500/10 p-5">
+              <div className="flex items-start gap-3">
+                <span className="rounded-2xl bg-primary p-3 text-primary-foreground">
+                  <ShieldCheck className="size-5" />
+                </span>
+                <div>
+                  <p className="font-black">راهنمای اقدام مالی</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    برای دریافت قرارداد، حساب مقصد را تعیین کن؛ برای پرداخت
+                    کارگزار، حساب مبدأ، روش پرداخت و شماره پیگیری را ثبت کن.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  onClick={() => {
+                    setSource('SALES');
+                    setStatus('OPEN');
+                  }}
+                  size="sm"
+                >
+                  <ArrowDownLeft className="size-4" />
+                  دریافت‌های فروش
+                </Button>
+                <Button
+                  onClick={() => {
+                    setSource('RESERVATIONS');
+                    setStatus('OPEN');
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  <ArrowUpRight className="size-4" />
+                  پرداخت کارگزار
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </details>
+
+      <Card className={`${styles.filters} p-5`}>
         <FinanceRequestCreate
           onCreated={() => setRevision((value) => value + 1)}
         />
@@ -974,7 +975,7 @@ export function FinanceInboxLiveWorkspace() {
             </p>
           </div>
         </div>
-        <div className="grid items-end gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid items-end gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <label className="grid gap-1 text-xs text-muted-foreground">
             مرتب‌سازی بر اساس
             <Select
@@ -1017,7 +1018,7 @@ export function FinanceInboxLiveWorkspace() {
               مبلغ درخواست‌ها در هر ارز جداگانه مرتب می‌شود.
             </p>
           ) : null}
-          <div className="relative">
+          <div className="relative sm:col-span-2">
             <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
             <Input
               className="pe-10"
@@ -1027,40 +1028,46 @@ export function FinanceInboxLiveWorkspace() {
               value={search}
             />
           </div>
-          <Select
-            onValueChange={(value) => setSource(value as typeof source)}
-            value={source}
-          >
-            <SelectTrigger aria-label="فیلتر واحد ارسال‌کننده">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">همه واحدها</SelectItem>
-              {availableSources.map(({ source: value }) => (
-                <SelectItem key={value} value={value}>
-                  {sourceLabels[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            onValueChange={(value) => setStatus(value as typeof status)}
-            value={status}
-          >
-            <SelectTrigger aria-label="فیلتر وضعیت درخواست">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="OPEN">درخواست‌های باز</SelectItem>
-              <SelectItem value="CLOSED">موارد بسته موجود در صف</SelectItem>
-              <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
-              {Object.entries(statusLabels).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            فیلتر واحد ارسال‌کننده
+            <Select
+              onValueChange={(value) => setSource(value as typeof source)}
+              value={source}
+            >
+              <SelectTrigger aria-label="فیلتر واحد ارسال‌کننده">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">همه واحدها</SelectItem>
+                {availableSources.map(({ source: value }) => (
+                  <SelectItem key={value} value={value}>
+                    {sourceLabels[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            فیلتر وضعیت درخواست
+            <Select
+              onValueChange={(value) => setStatus(value as typeof status)}
+              value={status}
+            >
+              <SelectTrigger aria-label="فیلتر وضعیت درخواست">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="OPEN">درخواست‌های باز</SelectItem>
+                <SelectItem value="CLOSED">موارد بسته موجود در صف</SelectItem>
+                <SelectItem value="ALL">همه وضعیت‌ها</SelectItem>
+                {Object.entries(statusLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
           <label className="grid gap-1 text-xs text-muted-foreground">
             از تاریخ ثبت درخواست
             <DatePicker onChange={setFromDate} value={fromDate} />
@@ -1076,13 +1083,9 @@ export function FinanceInboxLiveWorkspace() {
               setStatus('OPEN');
               setFromDate('');
               setToDate('');
-              setBranchId('');
-              setPerson('');
               setCurrencyCode('');
               setMinAmount('');
               setMaxAmount('');
-              setDueFrom('');
-              setDueTo('');
               setSortBy('createdAt');
               setSortDirection('desc');
               setPage(1);
@@ -1092,47 +1095,36 @@ export function FinanceInboxLiveWorkspace() {
             پاک‌کردن فیلترها
           </Button>
         </div>
-        <div className="my-3 grid gap-3 sm:grid-cols-3">
-          <Input
-            aria-label="فیلتر شعبه"
-            placeholder="شناسه شعبه"
-            value={branchId}
-            onChange={(event) => setBranchId(event.target.value)}
-          />
-          <Input
-            aria-label="فیلتر شخص"
-            placeholder="درخواست‌کننده / ذی‌نفع"
-            value={person}
-            onChange={(event) => setPerson(event.target.value)}
-          />
-          <Input
-            aria-label="فیلتر ارز"
-            placeholder="ارز، مثل IRR"
-            value={currencyCode}
-            onChange={(event) =>
-              setCurrencyCode(event.target.value.toUpperCase())
-            }
-            maxLength={3}
-          />
-          <MoneyInput
-            aria-label="حداقل مبلغ"
-            placeholder="حداقل مبلغ"
-            value={minAmount}
-            onValueChange={setMinAmount}
-          />
-          <MoneyInput
-            aria-label="حداکثر مبلغ"
-            placeholder="حداکثر مبلغ"
-            value={maxAmount}
-            onValueChange={setMaxAmount}
-          />
-          <label className="text-xs">
-            سررسید از
-            <DatePicker value={dueFrom} onChange={setDueFrom} />
+        <div className="my-4 grid items-end gap-4 sm:grid-cols-3">
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            فیلتر ارز
+            <Input
+              aria-label="فیلتر ارز"
+              placeholder="ارز، مثل IRR"
+              value={currencyCode}
+              onChange={(event) =>
+                setCurrencyCode(event.target.value.toUpperCase())
+              }
+              maxLength={3}
+            />
           </label>
-          <label className="text-xs">
-            سررسید تا
-            <DatePicker value={dueTo} onChange={setDueTo} />
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            حداقل مبلغ
+            <MoneyInput
+              aria-label="حداقل مبلغ"
+              placeholder="حداقل مبلغ"
+              value={minAmount}
+              onValueChange={setMinAmount}
+            />
+          </label>
+          <label className="grid gap-1 text-xs text-muted-foreground">
+            حداکثر مبلغ
+            <MoneyInput
+              aria-label="حداکثر مبلغ"
+              placeholder="حداکثر مبلغ"
+              value={maxAmount}
+              onValueChange={setMaxAmount}
+            />
           </label>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -1167,6 +1159,7 @@ export function FinanceInboxLiveWorkspace() {
           query={{ ...inboxQuery, scope: 'INBOX' }}
         />
         <FinanceFollowupPanel
+          showSavedViews={false}
           query={inboxQuery}
           onApply={(value) => {
             setSortBy(value.sortBy ?? 'createdAt');
@@ -1174,39 +1167,16 @@ export function FinanceInboxLiveWorkspace() {
             setSearch(value.search ?? '');
             setSource(value.source ?? 'ALL');
             setStatus(value.status ?? 'ALL');
-            setBranchId(value.branchId ?? '');
-            setPerson(value.person ?? '');
             setCurrencyCode(value.currencyCode ?? '');
             setMinAmount(value.minAmount ?? '');
             setMaxAmount(value.maxAmount ?? '');
             setFromDate(value.fromDate ?? '');
             setToDate(value.toDate ?? '');
-            setDueFrom(value.dueFrom ?? '');
-            setDueTo(value.dueTo ?? '');
             setPage(1);
           }}
         />
       </Card>
 
-      {status === 'CLOSED' ? (
-        <Card className="space-y-2 p-4">
-          <p>
-            این فیلتر فقط موارد بسته‌ای را نشان می‌دهد که منبع در صف ارسال
-            می‌کند. همه دریافت‌ها و پرداخت‌های ثبت‌شده را در تاریخچه مستقل پایین
-            صفحه بررسی کنید؛ فیلترهای صف روی تاریخچه اعمال نمی‌شوند.
-          </p>
-          <Button
-            variant="outline"
-            onClick={() =>
-              document
-                .getElementById('finance-transaction-history')
-                ?.scrollIntoView({ behavior: 'smooth' })
-            }
-          >
-            مشاهده تاریخچه دریافت و پرداخت
-          </Button>
-        </Card>
-      ) : null}
       {error ? (
         <Alert tone="warning" title="کارتابل دریافت نشد" description={error} />
       ) : null}
@@ -1227,7 +1197,7 @@ export function FinanceInboxLiveWorkspace() {
         />
       ) : null}
       {!loading && !error && items.length ? (
-        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(21rem,0.65fr)]">
+        <div className="grid items-start gap-4 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.65fr)]">
           <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-3">
               <h3 className="font-bold">فهرست درخواست‌ها</h3>
@@ -1248,7 +1218,7 @@ export function FinanceInboxLiveWorkspace() {
                 <button
                   aria-pressed={active}
                   aria-controls="finance-request-details"
-                  className={`w-full border-b border-border border-s-4 p-4 text-start transition last:border-b-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
+                  className={`${styles.requestRow} w-full border border-s-4 p-3 text-start transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${active ? 'border-s-primary bg-primary/5' : 'border-s-transparent hover:bg-muted/40'}`}
                   key={item.id}
                   onClick={() => {
                     setSelectedId(item.id);
