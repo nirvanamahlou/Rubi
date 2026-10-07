@@ -3,6 +3,37 @@ import { describe, expect, it } from 'vitest';
 import { RecordCard, RecordPreviewButton } from './record-details';
 
 describe('Persisted procurement record details', () => {
+  it('hides technical request/version fields in an order and its lines while retaining business and document references', () => {
+    const record = {
+      requestId: 'private-request-id',
+      version: 12,
+      number: 'PO-001',
+      requestNumber: 'PR-001',
+      lines: [
+        {
+          requestId: 'private-line-request-id',
+          version: 13,
+          description: 'کاغذ',
+          quantity: '2',
+        },
+      ],
+      documents: [{ id: 'document', versionId: 'document-version' }],
+    };
+    const html = renderToStaticMarkup(
+      <RecordCard record={record} hiddenFields={['requestId', 'version']} />,
+    );
+    expect(html).not.toContain('شناسه درخواست');
+    expect(html).not.toContain('private-request-id');
+    expect(html).not.toContain('private-line-request-id');
+    expect(html).not.toContain('<dt class="text-muted-foreground">نسخه</dt>');
+    expect(html).toContain('PO-001');
+    expect(html).toContain('PR-001');
+    expect(html).toContain('کاغذ');
+    expect(html).toContain('document-version');
+    expect(record.requestId).toBe('private-request-id');
+    const normal = renderToStaticMarkup(<RecordCard record={record} />);
+    expect(normal).toContain('شناسه درخواست');
+  });
   it('keeps full text titles visible instead of applying icon-only action styling', () => {
     const title =
       'درخواست تجهیزات کامل شعبه مرکزی برای کارشناسان فروش و پشتیبانی';

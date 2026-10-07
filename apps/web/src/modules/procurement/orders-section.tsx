@@ -370,7 +370,10 @@ export function PurchaseOrdersSection({ bootstrap }: { bootstrap: Bootstrap }) {
           {modal &&
             (modal.action === 'VIEW' ? (
               <>
-                <RecordCard record={modal.row!} />
+                <RecordCard
+                  record={modal.row!}
+                  hiddenFields={['requestId', 'version']}
+                />
                 {modal.row?.status === 'APPROVED' &&
                   bootstrap.permissions.includes('procurement.order.issue') && (
                     <OrderOperation
