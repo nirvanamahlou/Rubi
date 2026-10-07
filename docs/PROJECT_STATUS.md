@@ -4954,3 +4954,6 @@ Discount and special-offer preview rows have icon-only delete and shared confirm
 ## REMOVE-CUSTOMER-JOURNEY-1007
 
 Removed the customer-journey entry from Marketing's canonical section registry and hub description. Both initial legacy section URLs and browser navigation resolve through that registry, so journeys falls back to the hub instead of mounting journey/automation/scenario screens. Existing automation APIs, stored records and independent process workflows remain intact; no destructive data removal or local rollout. Focused navigation and full Marketing/translation tests plus exact-head CI gate authorized develop merge.
+## 2026-10-07 — HR-INLINE-REFRESH-1007 — PC-B
+
+Inline HR creation now retains the selected company, refreshes reference data after save, and selects the new employee, company, unit or position in the parent form without discarding its draft. Newly saved employees and catalog records enter the shared HR state so dependent dropdowns and owning sections update without a page reload, including when the bootstrap record list is truncated. Existing branch scoping and API contracts remain intact. Focused HR regression: 55 tests passed (with a 15-second timeout for an existing slow calendar-render test); scoped lint, Web typecheck and build gate the develop merge. No backend, schema, migration or dependency change.

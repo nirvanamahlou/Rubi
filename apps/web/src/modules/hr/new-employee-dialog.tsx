@@ -1,7 +1,7 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
@@ -150,7 +150,15 @@ interface NewEmployeeFormProps {
     positions: readonly string[];
     grades: readonly string[];
   }[];
-  onAddReference?: (kind: 'branches' | 'units' | 'positions') => void;
+  onAddReference?: (
+    kind: 'branches' | 'units' | 'positions',
+    branch: string,
+  ) => void;
+  createdReference?: {
+    id: string;
+    kind: 'branches' | 'units' | 'positions';
+    value: string;
+  };
 }
 
 export function NewEmployeeForm({
@@ -164,6 +172,7 @@ export function NewEmployeeForm({
   lockAssignment = false,
   organizationOptions,
   onAddReference,
+  createdReference,
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
@@ -177,6 +186,30 @@ export function NewEmployeeForm({
         personnelCode: nextEmployeePersonnelCode(existingPersonnelCodes),
       },
   );
+  useEffect(() => {
+    if (!createdReference) return;
+    const timer = window.setTimeout(
+      () =>
+        setValue((current) =>
+          createdReference.kind === 'branches'
+            ? {
+                ...current,
+                branch: createdReference.value,
+                userId: '',
+                unit: '',
+                position: '',
+                grade: '',
+              }
+            : {
+                ...current,
+                [createdReference.kind === 'units' ? 'unit' : 'position']:
+                  createdReference.value,
+              },
+        ),
+      0,
+    );
+    return () => window.clearTimeout(timer);
+  }, [createdReference]);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [errors, setErrors] = useState<NewEmployeeFormErrors>({});
@@ -338,7 +371,10 @@ export function NewEmployeeForm({
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-branch">
             <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
             {onAddReference && !lockAssignment ? (
-              <button type="button" onClick={() => onAddReference('branches')}>
+              <button
+                type="button"
+                onClick={() => onAddReference('branches', value.branch)}
+              >
                 افزودن شعبه
               </button>
             ) : null}
@@ -363,7 +399,10 @@ export function NewEmployeeForm({
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-unit">
             <RequiredFieldLabel>واحد</RequiredFieldLabel>
             {onAddReference && !lockAssignment ? (
-              <button type="button" onClick={() => onAddReference('units')}>
+              <button
+                type="button"
+                onClick={() => onAddReference('units', value.branch)}
+              >
                 افزودن واحد
               </button>
             ) : null}
@@ -394,7 +433,10 @@ export function NewEmployeeForm({
           >
             <RequiredFieldLabel required>سمت</RequiredFieldLabel>
             {onAddReference && !lockAssignment ? (
-              <button type="button" onClick={() => onAddReference('positions')}>
+              <button
+                type="button"
+                onClick={() => onAddReference('positions', value.branch)}
+              >
                 افزودن سمت
               </button>
             ) : null}
@@ -590,6 +632,7 @@ interface NewEmployeeDialogProps {
   lockAssignment?: boolean;
   organizationOptions?: NewEmployeeFormProps['organizationOptions'];
   onAddReference?: NewEmployeeFormProps['onAddReference'];
+  createdReference?: NewEmployeeFormProps['createdReference'];
 }
 
 export function NewEmployeeDialog({
@@ -602,6 +645,7 @@ export function NewEmployeeDialog({
   unitOptions,
   organizationOptions,
   onAddReference,
+  createdReference,
   lockAssignment = false,
   onClose,
   onSubmit,
@@ -625,6 +669,7 @@ export function NewEmployeeDialog({
           initialValue={initialValue}
           managerOptions={managerOptions}
           {...(onAddReference ? { onAddReference } : {})}
+          {...(createdReference ? { createdReference } : {})}
           branchOptions={branchOptions}
           unitOptions={unitOptions}
           {...(organizationOptions ? { organizationOptions } : {})}
