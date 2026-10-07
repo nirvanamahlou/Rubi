@@ -1252,6 +1252,7 @@
   "شماره تلفن معتبر نیست.": "The phone number is not valid.",
   "شماره تماس باید ۱۰ تا ۱۵ رقم باشد.": "The contact number should be 10 to 15 digits.",
   "شماره تماس معتبر نیست.": "The contact number is not valid.",
+  "شماره تماس باید بین ۱ تا ۸۰ نویسه باشد.": "The contact number must be between 1 and 80 characters.",
   "شماره تورلیدر الزامی است.": "Tourleader number is required.",
   "شماره تورلیدر معتبر نیست.": "Tourleader number is not valid.",
   "شماره صفحه معتبر نیست.": "The page number is not valid.",

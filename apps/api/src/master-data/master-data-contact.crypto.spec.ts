@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   MasterDataContactCrypto,
   normalizeMasterContact,
+  normalizeTravelPhone,
 } from './master-data-contact.crypto';
 
 function cryptoService() {
@@ -47,6 +48,50 @@ describe('MasterDataContactCrypto', () => {
         encryptionKeyVersion: protectedEmail.encryptionKeyVersion,
       }),
     ).toBe('name@example.com');
+  });
+
+  it.each([
+    ['۰۹۱۲ ۱۲۳ ۴۵۶۷', '09121234567'],
+    ['٠٠٩٠ (٥٥٥) ١٢٣-٤٥٦٧', '00905551234567'],
+    ['123', '123'],
+    ['1', '1'],
+    ['+1 (212) 555-0199 ext. 42', '+1 (212) 555-0199 ext. 42'],
+    ['9'.repeat(80), '9'.repeat(80)],
+  ])(
+    'encrypts unrestricted travel contact format %s and reads it back',
+    (raw, expected) => {
+      const service = cryptoService();
+      const phone = service.protectTravelPhone(raw);
+      expect(
+        service.decrypt('phone', {
+          encrypted: phone.encrypted,
+          encryptionIv: phone.encryptionIv,
+          encryptionAuthTag: phone.encryptionAuthTag,
+          encryptionKeyVersion: phone.encryptionKeyVersion,
+        }),
+      ).toBe(expected);
+      expect(phone.masked).not.toBe(expected);
+      expect(phone.masked.length).toBeLessThanOrEqual(80);
+      if (expected.length <= 4) expect(phone.masked).not.toMatch(/[0-9]/);
+      const equivalent = service.protectTravelPhone(expected);
+      expect(equivalent.fingerprint).toBe(phone.fingerprint);
+      expect(equivalent.encrypted).not.toBe(phone.encrypted);
+    },
+  );
+
+  it('retains storage bounds and authenticated decryption for travel phones', () => {
+    expect(() => normalizeTravelPhone('  ')).toThrow();
+    expect(() => normalizeTravelPhone('9'.repeat(81))).toThrow();
+    const service = cryptoService();
+    const phone = service.protectTravelPhone('۱۲۳');
+    expect(() =>
+      service.decrypt('phone', {
+        encrypted: phone.encrypted,
+        encryptionIv: phone.encryptionIv,
+        encryptionAuthTag: Buffer.alloc(16).toString('base64'),
+        encryptionKeyVersion: phone.encryptionKeyVersion,
+      }),
+    ).toThrow('integrity');
   });
 
   it('rejects malformed contact input', () => {

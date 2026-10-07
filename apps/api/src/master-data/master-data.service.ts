@@ -1729,7 +1729,10 @@ export class MasterDataService {
         const phone = String(data.primaryPhone ?? '').trim();
         delete data.primaryPhone;
         if (phone) {
-          const protectedPhone = this.contactCrypto.protect('phone', phone);
+          const protectedPhone =
+            resource === 'brokers'
+              ? this.contactCrypto.protectTravelPhone(phone)
+              : this.contactCrypto.protect('phone', phone);
           Object.assign(data, {
             primaryPhoneEncrypted: protectedPhone.encrypted,
             primaryPhoneEncryptionIv: protectedPhone.encryptionIv,
@@ -2962,7 +2965,7 @@ export class MasterDataService {
           });
           continue;
         }
-        const protectedPhone = this.contactCrypto.protect('phone', phone);
+        const protectedPhone = this.contactCrypto.protectTravelPhone(phone);
         Object.assign(data, {
           [`${prefix}Encrypted`]: protectedPhone.encrypted,
           [`${prefix}EncryptionIv`]: protectedPhone.encryptionIv,
@@ -3472,7 +3475,7 @@ export class MasterDataService {
             draft.items.map(async (item) => {
               const phoneData: Record<string, unknown> = {};
               if (item.phone !== undefined) {
-                const phone = this.contactCrypto.protect('phone', item.phone);
+                const phone = this.contactCrypto.protectTravelPhone(item.phone);
                 Object.assign(phoneData, {
                   primaryPhoneEncrypted: phone.encrypted,
                   primaryPhoneEncryptionIv: phone.encryptionIv,

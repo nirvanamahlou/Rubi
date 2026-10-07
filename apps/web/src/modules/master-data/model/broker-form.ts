@@ -42,13 +42,20 @@ export function brokerLeaderValues(
     phoneTouched: false,
   }));
 }
+export function brokerName(values: Record<string, string>): string {
+  return (values.name ?? '').trim() || (values.englishName ?? '').trim();
+}
+
 export function brokerMutationValues(
   values: Record<string, string>,
   leaders: BrokerLeaderValue[],
   record?: MasterDataRecord,
   phoneTouched = false,
 ): Record<string, string> {
-  const result = { ...values };
+  const result: Record<string, string> = {
+    ...values,
+    name: brokerName(values),
+  };
   if (record && !phoneTouched) delete result.primaryPhone;
   result.leaderDrafts = JSON.stringify({
     items: leaders.map((l) => ({

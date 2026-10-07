@@ -8,6 +8,7 @@ import { MasterDataProfileDialog } from './master-data-profile-dialog';
 import { MasterDataReferenceSelector } from './master-data-reference-selector';
 import {
   brokerFormValues,
+  brokerName,
   brokerLeaderValues,
   brokerMutationValues,
 } from '../model/broker-form';
@@ -42,12 +43,8 @@ export function MasterDataBrokerForm({
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (disabled || pending.current) return;
-    if (
-      !String(values.name ?? '').trim() ||
-      !values.countryId ||
-      !values.cityIds
-    ) {
-      setError('نام فارسی، کشور و حداقل یک شهر را وارد کنید.');
+    if (!brokerName(values) || !values.countryId || !values.cityIds) {
+      setError('نام کارگزار، کشور و حداقل یک شهر را وارد کنید.');
       return;
     }
     if (
@@ -81,7 +78,7 @@ export function MasterDataBrokerForm({
       >
         <dl className="grid gap-3">
           {[
-            ['نام فارسی کارگزار', record?.name],
+            ['نام کارگزار', record?.name],
             ['نام انگلیسی کارگزار', values.englishName],
             ['شماره کارگزار', record?.attributes.primaryPhoneMasked],
             ['Board', values.boardText],
@@ -119,7 +116,7 @@ export function MasterDataBrokerForm({
         ) : null}
         <div className="grid gap-4 sm:grid-cols-2">
           {[
-            ['name', 'نام فارسی کارگزار', 160],
+            ['name', 'نام کارگزار', 160],
             ['englishName', 'نام انگلیسی کارگزار', 160],
             ['primaryPhone', 'شماره کارگزار', 80],
             ['boardText', 'متن تابلوی استقبال فرودگاه (Board)', 300],
@@ -141,7 +138,9 @@ export function MasterDataBrokerForm({
                     ? String(record?.attributes.primaryPhoneMasked ?? '')
                     : ''
                 }
-                required={key === 'name'}
+                required={
+                  key === 'name' && !String(values.englishName ?? '').trim()
+                }
                 onChange={(e) => change(String(key), e.target.value)}
               />
             </label>
