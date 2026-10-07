@@ -36,7 +36,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     payload: Record<string, unknown>,
     expectedVersion?: number,
     actor = maker,
-    key = randomUUID(),
+    key: string = randomUUID(),
   ) =>
     JSON.parse(
       JSON.stringify(
@@ -174,6 +174,75 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         { accountId: creditId, debit: '0', credit: '100' },
       ],
     });
+  const mutationState = async (id: string) =>
+    JSON.parse(
+      JSON.stringify({
+        journal: await db.accountingJournal.findUniqueOrThrow({
+          where: { id },
+          include: { lines: { orderBy: { position: 'asc' } } },
+        }),
+        events: await db.accountingJournalStateEvent.findMany({
+          where: { journalId: id },
+          orderBy: [{ occurredAt: 'asc' }, { id: 'asc' }],
+        }),
+      }),
+    ) as Record<string, unknown>;
+  const emptyPeriod = async (label: string, year: number) => {
+    const fiscalYear = await command('save-configuration', {
+      kind: 'fiscal-years',
+      code: `${label}-${randomUUID().slice(0, 6)}`,
+      title: `${label} fiscal year`,
+    });
+    return command<{ id: string; version: number; status: string }>(
+      'save-period',
+      {
+        fiscalYearId: fiscalYear.id,
+        startDate: `${year}-01-01`,
+        endDate: `${year}-12-31`,
+      },
+    );
+  };
+  const waitForBookLockWaiters = async (expected: number) => {
+    for (let attempt = 0; attempt < 100; attempt += 1) {
+      const [row] = await db.$queryRaw<{ count: bigint }[]>`
+        SELECT COUNT(*)::bigint AS count
+        FROM pg_stat_activity
+        WHERE datname = current_database()
+          AND wait_event_type = 'Lock'
+          AND query ILIKE '%accounting_books%FOR UPDATE%'`;
+      if (Number(row?.count ?? 0) >= expected) return;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    throw new Error(`Expected ${expected} accounting book lock waiters.`);
+  };
+  const orderedBookRace = async <T, U>(
+    first: () => Promise<T>,
+    second: () => Promise<U>,
+  ) => {
+    let acquired!: () => void, release!: () => void;
+    const acquiredPromise = new Promise<void>((resolve) => {
+        acquired = resolve;
+      }),
+      releasePromise = new Promise<void>((resolve) => {
+        release = resolve;
+      }),
+      holder = db.$transaction(
+        async (tx) => {
+          await tx.$queryRaw`SELECT id FROM accounting_books WHERE id=${bookId}::uuid FOR UPDATE`;
+          acquired();
+          await releasePromise;
+        },
+        { timeout: 20000 },
+      );
+    await acquiredPromise;
+    const firstPromise = first();
+    await waitForBookLockWaiters(1);
+    const secondPromise = second();
+    await waitForBookLockWaiters(2);
+    release();
+    await holder;
+    return Promise.allSettled([firstPromise, secondPromise]);
+  };
   const post = async () => {
     let j = await draft();
     j = await command<AccountingJournalV1>('submit', { id: j.id }, j.version);
@@ -1215,6 +1284,609 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     expect(batchRaceState.documentDate).toBe('2026-05-09');
     await command('cancel', { id: batchRaceState.id }, batchRaceState.version);
   }, 30000);
+
+  it.each([
+    {
+      entrypoint: 'move-drafts' as const,
+      winner: 'close' as const,
+      year: 2015,
+    },
+    { entrypoint: 'move-drafts' as const, winner: 'move' as const, year: 2016 },
+    {
+      entrypoint: 'journal-save' as const,
+      winner: 'close' as const,
+      year: 2017,
+    },
+    {
+      entrypoint: 'journal-save' as const,
+      winner: 'move' as const,
+      year: 2018,
+    },
+  ])(
+    'orders $winner before the competing $entrypoint command on a distinct empty target',
+    async ({ entrypoint, winner, year }) => {
+      const target = await emptyPeriod(`ORDERED-${entrypoint}-${winner}`, year),
+        source = await draft(),
+        before = await mutationState(source.id),
+        moveKey = randomUUID(),
+        closeKey = randomUUID(),
+        move = () =>
+          entrypoint === 'move-drafts'
+            ? command(
+                'move-drafts',
+                {
+                  items: [{ id: source.id, expectedVersion: source.version }],
+                  periodId: target.id,
+                  documentDate: `${year}-06-15`,
+                  reason: `Ordered ${winner} race`,
+                },
+                undefined,
+                maker,
+                moveKey,
+              )
+            : command(
+                'journal-save',
+                {
+                  id: source.id,
+                  periodId: target.id,
+                  typeId,
+                  documentDate: `${year}-06-15`,
+                  description: source.description,
+                  lines: source.lines,
+                  moveReason: `Ordered ${winner} race`,
+                },
+                source.version,
+                maker,
+                moveKey,
+              ),
+        close = () =>
+          command(
+            'close-period',
+            { id: target.id },
+            target.version,
+            maker,
+            closeKey,
+          );
+      expect(
+        await db.accountingJournal.count({ where: { periodId: target.id } }),
+      ).toBe(0);
+      expect(target).toMatchObject({ status: 'OPEN', version: 1 });
+      const results =
+        winner === 'close'
+          ? await orderedBookRace(close, move)
+          : await orderedBookRace(move, close);
+      expect(results[0]!.status).toBe('fulfilled');
+      expect(results[1]!.status).toBe('rejected');
+
+      const storedPeriod = await db.accountingPeriod.findUniqueOrThrow({
+          where: { id: target.id },
+        }),
+        storedJournal = await db.accountingJournal.findUniqueOrThrow({
+          where: { id: source.id },
+        });
+      if (winner === 'close') {
+        expect(storedPeriod.status).toBe('CLOSED');
+        expect(storedJournal).toMatchObject({
+          periodId,
+          documentDate: '2026-05-01',
+          version: source.version,
+        });
+        expect(await mutationState(source.id)).toEqual(before);
+      } else {
+        expect(storedPeriod.status).toBe('OPEN');
+        expect(storedJournal).toMatchObject({
+          periodId: target.id,
+          documentDate: `${year}-06-15`,
+          version: source.version + 1,
+        });
+      }
+      expect(
+        await db.accountingJournal.count({
+          where: {
+            periodId: target.id,
+            status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'] },
+            period: { status: 'CLOSED' },
+          },
+        }),
+      ).toBe(0);
+      expect(
+        await db.accountingCommand.count({
+          where: { bookId, key: { in: [moveKey, closeKey] } },
+        }),
+      ).toBe(1);
+      await command(
+        'cancel',
+        { id: source.id, reason: 'Ordered race cleanup' },
+        storedJournal.version,
+      );
+    },
+    30000,
+  );
+
+  it.each(['move-drafts', 'journal-save'] as const)(
+    'serializes %s into a distinct otherwise-closable target period',
+    async (entrypoint) => {
+      const targetYear = entrypoint === 'move-drafts' ? 2023 : 2024,
+        target = await emptyPeriod(`RACE-${entrypoint}`, targetYear),
+        source = await draft(),
+        before = await mutationState(source.id),
+        moveKey = randomUUID(),
+        closeKey = randomUUID();
+      expect(
+        await db.accountingJournal.count({ where: { periodId: target.id } }),
+      ).toBe(0);
+      expect(target).toMatchObject({ status: 'OPEN', version: 1 });
+
+      const move =
+        entrypoint === 'move-drafts'
+          ? command(
+              'move-drafts',
+              {
+                items: [{ id: source.id, expectedVersion: source.version }],
+                periodId: target.id,
+                documentDate: `${targetYear}-06-15`,
+                reason: 'Distinct target close race',
+              },
+              undefined,
+              maker,
+              moveKey,
+            )
+          : command(
+              'journal-save',
+              {
+                id: source.id,
+                periodId: target.id,
+                typeId,
+                documentDate: `${targetYear}-06-15`,
+                description: source.description,
+                lines: source.lines,
+                moveReason: 'Distinct target close race',
+              },
+              source.version,
+              maker,
+              moveKey,
+            );
+      const [moveResult, closeResult] = await Promise.allSettled([
+        move,
+        command(
+          'close-period',
+          { id: target.id },
+          target.version,
+          maker,
+          closeKey,
+        ),
+      ]);
+      expect(
+        [moveResult, closeResult].filter(
+          (result) => result.status === 'fulfilled',
+        ),
+      ).toHaveLength(1);
+      expect(
+        [moveResult, closeResult].filter(
+          (result) => result.status === 'rejected',
+        ),
+      ).toHaveLength(1);
+
+      const storedPeriod = await db.accountingPeriod.findUniqueOrThrow({
+          where: { id: target.id },
+        }),
+        storedJournal = await db.accountingJournal.findUniqueOrThrow({
+          where: { id: source.id },
+        });
+      if (closeResult.status === 'fulfilled') {
+        expect(moveResult.status).toBe('rejected');
+        expect(storedPeriod.status).toBe('CLOSED');
+        expect(storedJournal).toMatchObject({
+          periodId,
+          documentDate: '2026-05-01',
+          version: source.version,
+        });
+        expect(await mutationState(source.id)).toEqual(before);
+      } else {
+        expect(moveResult.status).toBe('fulfilled');
+        expect(storedPeriod.status).toBe('OPEN');
+        expect(storedJournal).toMatchObject({
+          periodId: target.id,
+          documentDate: `${targetYear}-06-15`,
+          version: source.version + 1,
+        });
+      }
+      expect(
+        await db.accountingJournal.count({
+          where: {
+            periodId: target.id,
+            status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'] },
+            period: { status: 'CLOSED' },
+          },
+        }),
+      ).toBe(0);
+      expect(
+        await db.accountingCommand.count({
+          where: { bookId, key: { in: [moveKey, closeKey] } },
+        }),
+      ).toBe(1);
+      await command(
+        'cancel',
+        { id: source.id, reason: 'Distinct race cleanup' },
+        storedJournal.version,
+      );
+    },
+    30000,
+  );
+
+  it.each(['move-drafts', 'journal-save'] as const)(
+    'reassigns maker after a successful other-actor %s and enforces independent approval',
+    async (entrypoint) => {
+      const source = await draft(),
+        moved =
+          entrypoint === 'move-drafts'
+            ? (
+                await command<{ items: AccountingJournalV1[] }>(
+                  'move-drafts',
+                  {
+                    items: [{ id: source.id, expectedVersion: source.version }],
+                    periodId,
+                    documentDate: '2026-05-12',
+                    reason: 'Authorized maker reassignment',
+                  },
+                  undefined,
+                  checker,
+                )
+              ).items[0]!
+            : await command<AccountingJournalV1>(
+                'journal-save',
+                {
+                  id: source.id,
+                  periodId,
+                  typeId,
+                  documentDate: '2026-05-12',
+                  description: source.description,
+                  lines: source.lines,
+                  moveReason: 'Authorized maker reassignment',
+                },
+                source.version,
+                checker,
+              );
+      expect(moved).toMatchObject({
+        makerId: checkerId,
+        documentDate: '2026-05-12',
+        version: source.version + 1,
+      });
+      const submitted = await command<AccountingJournalV1>(
+          'submit',
+          { id: moved.id },
+          moved.version,
+          checker,
+        ),
+        selfApprovalKey = randomUUID();
+      await expect(
+        command(
+          'approve',
+          { id: submitted.id },
+          submitted.version,
+          checker,
+          selfApprovalKey,
+        ),
+      ).rejects.toThrow('ایجادکننده نمی‌تواند سند خودش را تأیید کند');
+      expect(
+        await db.accountingCommand.count({
+          where: { bookId, key: selfApprovalKey },
+        }),
+      ).toBe(0);
+      expect(
+        await db.accountingJournal.findUniqueOrThrow({
+          where: { id: submitted.id },
+        }),
+      ).toMatchObject({
+        makerId: checkerId,
+        approverId: null,
+        status: 'PENDING_APPROVAL',
+        version: submitted.version,
+      });
+      const approved = await command<AccountingJournalV1>(
+        'approve',
+        { id: submitted.id },
+        submitted.version,
+        maker,
+      );
+      expect(approved).toMatchObject({
+        makerId: checkerId,
+        approverId: makerId,
+        status: 'APPROVED',
+      });
+      await command(
+        'cancel',
+        { id: approved.id, reason: 'Approval cleanup' },
+        approved.version,
+        checker,
+      );
+    },
+  );
+
+  it.each(['move-drafts', 'journal-save'] as const)(
+    'rejects missing permission and foreign maker through %s without effects',
+    async (entrypoint) => {
+      const source = await draft(),
+        before = await mutationState(source.id),
+        noPermission: AuthenticatedActor = {
+          userId: makerId,
+          sessionId: randomUUID(),
+          branchIds: [branchId],
+          permissions: ['finance.read'],
+        },
+        foreignActorId = randomUUID();
+      await db.user.create({
+        data: {
+          id: foreignActorId,
+          username: foreignActorId,
+          displayName: 'Synthetic foreign maker',
+          passwordHash: 'not-a-login-credential',
+        },
+      });
+      const foreignMaker: AuthenticatedActor = {
+          userId: foreignActorId,
+          sessionId: randomUUID(),
+          branchIds: [branchId],
+          permissions: ['finance.read', 'finance.journal.create'],
+        },
+        keys = [randomUUID(), randomUUID()];
+      const attempt = (actor: AuthenticatedActor, key: string) =>
+        entrypoint === 'move-drafts'
+          ? command(
+              'move-drafts',
+              {
+                items: [{ id: source.id, expectedVersion: source.version }],
+                periodId,
+                documentDate: '2026-05-13',
+                reason: 'Denied actor',
+              },
+              undefined,
+              actor,
+              key,
+            )
+          : command(
+              'journal-save',
+              {
+                id: source.id,
+                periodId,
+                typeId,
+                documentDate: '2026-05-13',
+                description: source.description,
+                lines: source.lines,
+                moveReason: 'Denied actor',
+              },
+              source.version,
+              actor,
+              key,
+            );
+      await expect(attempt(noPermission, keys[0]!)).rejects.toThrow();
+      expect(await mutationState(source.id)).toEqual(before);
+      await expect(attempt(foreignMaker, keys[1]!)).rejects.toThrow();
+      expect(await mutationState(source.id)).toEqual(before);
+      expect(
+        await db.accountingCommand.count({
+          where: { bookId, key: { in: keys } },
+        }),
+      ).toBe(0);
+      await command('cancel', { id: source.id }, source.version);
+    },
+  );
+
+  it('rejects every numbered/source/generated provenance shape through both move paths without effects', async () => {
+    const cases = [
+      { name: 'numbered', data: { number: 880000001 } },
+      {
+        name: 'revaluation source',
+        data: { sourceKey: `REVALUE:${randomUUID()}` },
+      },
+      { name: 'opening source', data: { sourceKey: `OPEN:${randomUUID()}` } },
+      { name: 'closing source', data: { sourceKey: `CLOSE:${randomUUID()}` } },
+      {
+        name: 'reversal source',
+        data: { sourceKey: `REVERSE:${randomUUID()}` },
+      },
+      {
+        name: 'allocation source',
+        data: { sourceKey: `ALLOC:${randomUUID()}` },
+      },
+      {
+        name: 'operational source',
+        data: { sourceKey: `OPERATIONAL:${randomUUID()}` },
+      },
+      {
+        name: 'operation attribute',
+        data: { attributes: { operation: 'generated' } },
+      },
+      {
+        name: 'template attribute',
+        data: { attributes: { templateId: randomUUID() } },
+      },
+      {
+        name: 'request attribute',
+        data: { attributes: { sourceRequestId: randomUUID() } },
+      },
+    ] as const;
+    for (const [index, provenance] of cases.entries()) {
+      const source = await draft();
+      await db.accountingJournal.update({
+        where: { id: source.id },
+        data: provenance.data,
+      });
+      const before = await mutationState(source.id),
+        keys = [randomUUID(), randomUUID()];
+      await expect(
+        command(
+          'move-drafts',
+          {
+            items: [{ id: source.id, expectedVersion: source.version }],
+            periodId,
+            documentDate: '2026-05-14',
+            reason: provenance.name,
+          },
+          undefined,
+          maker,
+          keys[0],
+        ),
+      ).rejects.toThrow();
+      expect(await mutationState(source.id)).toEqual(before);
+      await expect(
+        command(
+          'journal-save',
+          {
+            id: source.id,
+            periodId,
+            typeId,
+            documentDate: '2026-05-14',
+            description: source.description,
+            lines: source.lines,
+            moveReason: provenance.name,
+          },
+          source.version,
+          maker,
+          keys[1],
+        ),
+      ).rejects.toThrow();
+      expect(await mutationState(source.id)).toEqual(before);
+      expect(
+        await db.accountingCommand.count({
+          where: { bookId, key: { in: keys } },
+        }),
+      ).toBe(0);
+      await db.accountingJournal.update({
+        where: { id: source.id },
+        data: { number: null, sourceKey: null, attributes: {} },
+      });
+      await command(
+        'cancel',
+        { id: source.id, reason: `Provenance cleanup ${index}` },
+        source.version,
+      );
+    }
+
+    const reversalBasis = await draft(),
+      reversal = await draft();
+    await db.accountingJournal.update({
+      where: { id: reversal.id },
+      data: { reversalOfId: reversalBasis.id },
+    });
+    const before = await mutationState(reversal.id),
+      keys = [randomUUID(), randomUUID()];
+    await expect(
+      command(
+        'move-drafts',
+        {
+          items: [{ id: reversal.id, expectedVersion: reversal.version }],
+          periodId,
+          documentDate: '2026-05-14',
+          reason: 'Reversal provenance',
+        },
+        undefined,
+        maker,
+        keys[0],
+      ),
+    ).rejects.toThrow();
+    expect(await mutationState(reversal.id)).toEqual(before);
+    await expect(
+      command(
+        'journal-save',
+        {
+          id: reversal.id,
+          periodId,
+          typeId,
+          documentDate: '2026-05-14',
+          description: reversal.description,
+          lines: reversal.lines,
+          moveReason: 'Reversal provenance',
+        },
+        reversal.version,
+        maker,
+        keys[1],
+      ),
+    ).rejects.toThrow();
+    expect(await mutationState(reversal.id)).toEqual(before);
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: { in: keys } },
+      }),
+    ).toBe(0);
+    await db.accountingJournal.update({
+      where: { id: reversal.id },
+      data: { reversalOfId: null },
+    });
+    await command('cancel', { id: reversal.id }, reversal.version);
+    await command('cancel', { id: reversalBasis.id }, reversalBasis.version);
+  }, 30000);
+
+  it('rolls duplicate and mixed eligible/forbidden batch moves back completely', async () => {
+    const duplicate = await draft(),
+      duplicateBefore = await mutationState(duplicate.id),
+      duplicateKey = randomUUID();
+    await expect(
+      command(
+        'move-drafts',
+        {
+          items: [
+            { id: duplicate.id, expectedVersion: duplicate.version },
+            { id: duplicate.id, expectedVersion: duplicate.version },
+          ],
+          periodId,
+          documentDate: '2026-05-15',
+          reason: 'Duplicate rollback',
+        },
+        undefined,
+        maker,
+        duplicateKey,
+      ),
+    ).rejects.toThrow();
+    expect(await mutationState(duplicate.id)).toEqual(duplicateBefore);
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: duplicateKey },
+      }),
+    ).toBe(0);
+
+    const eligible = await draft();
+    let forbidden = await draft();
+    forbidden = await command<AccountingJournalV1>(
+      'submit',
+      { id: forbidden.id },
+      forbidden.version,
+    );
+    const eligibleBefore = await mutationState(eligible.id),
+      forbiddenBefore = await mutationState(forbidden.id),
+      mixedKey = randomUUID();
+    await expect(
+      command(
+        'move-drafts',
+        {
+          items: [
+            { id: eligible.id, expectedVersion: eligible.version },
+            { id: forbidden.id, expectedVersion: forbidden.version },
+          ],
+          periodId,
+          documentDate: '2026-05-15',
+          reason: 'Mixed status rollback',
+        },
+        undefined,
+        maker,
+        mixedKey,
+      ),
+    ).rejects.toThrow();
+    expect(await mutationState(eligible.id)).toEqual(eligibleBefore);
+    expect(await mutationState(forbidden.id)).toEqual(forbiddenBefore);
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: mixedKey },
+      }),
+    ).toBe(0);
+    await command('cancel', { id: duplicate.id }, duplicate.version);
+    await command('cancel', { id: eligible.id }, eligible.version);
+    await command(
+      'cancel',
+      { id: forbidden.id, reason: 'Mixed cleanup' },
+      forbidden.version,
+    );
+  });
 
   it('rolls journal, command and events back when prospective event insertion fails', async () => {
     const journal = await draft(),
