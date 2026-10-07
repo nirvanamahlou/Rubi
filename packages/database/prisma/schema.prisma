@@ -1288,6 +1288,7 @@ model MasterPaymentMethod {
 }
 
 model MasterOrganization {
+  marketingPromotions         MarketingAsset[]             @relation("MarketingPromotionAgency")
   b2bOrganizationUsers        B2bOrganizationUser[]
   hotelGroupRates             ReservationHotelGroupRate[]
   reservationServicePurchases ReservationServicePurchase[]
@@ -2878,6 +2879,7 @@ enum CustomerDuplicateReviewStatus {
 }
 
 model Customer {
+  marketingPromotions        MarketingAsset[]             @relation("MarketingPromotionCustomer")
   reservationTicketDocuments ReservationTicketDocument[]
   id                         String                       @id @default(uuid()) @db.Uuid
   kind                       CustomerKind
@@ -5425,30 +5427,39 @@ model MarketingCampaignSpendLine {
 }
 
 model MarketingAsset {
-  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  branchId         String              @map("branch_id") @db.Uuid
-  kind             String              @db.VarChar(32)
-  name             String              @db.VarChar(200)
-  status           String              @db.VarChar(32)
-  campaignId       String?             @map("campaign_id") @db.Uuid
-  relatedAssetId   String?             @map("related_asset_id") @db.Uuid
-  scheduledAt      DateTime?           @map("scheduled_at") @db.Timestamptz(3)
-  expiresAt        DateTime?           @map("expires_at") @db.Timestamptz(3)
-  payload          Json
-  createdByUserId  String              @map("created_by_user_id") @db.Uuid
-  updatedByUserId  String              @map("updated_by_user_id") @db.Uuid
-  version          Int                 @default(1)
-  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
-  branch           Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  campaign         MarketingCampaign?  @relation("MarketingCampaignAssets", fields: [campaignId], references: [id], onDelete: Restrict)
-  relatedAsset     MarketingAsset?     @relation("MarketingAssetLinks", fields: [relatedAssetId], references: [id], onDelete: Restrict)
-  linkedAssets     MarketingAsset[]    @relation("MarketingAssetLinks")
-  segmentCampaigns MarketingCampaign[] @relation("MarketingCampaignSegment")
-  createdBy        User                @relation("MarketingAssetCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
-  updatedBy        User                @relation("MarketingAssetUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  targetCustomerId      String?             @map("target_customer_id") @db.Uuid
+  targetAgencyId        String?             @map("target_agency_id") @db.Uuid
+  promotionValue        Decimal?            @map("promotion_value") @db.Decimal(24, 4)
+  minimumPurchase       Decimal?            @map("minimum_purchase") @db.Decimal(24, 4)
+  promotionCurrencyCode String?             @map("promotion_currency_code") @db.Char(3)
+  targetCustomer        Customer?           @relation("MarketingPromotionCustomer", fields: [targetCustomerId], references: [id], onDelete: Restrict)
+  targetAgency          MasterOrganization? @relation("MarketingPromotionAgency", fields: [targetAgencyId], references: [id], onDelete: Restrict)
+  id                    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  branchId              String              @map("branch_id") @db.Uuid
+  kind                  String              @db.VarChar(32)
+  name                  String              @db.VarChar(200)
+  status                String              @db.VarChar(32)
+  campaignId            String?             @map("campaign_id") @db.Uuid
+  relatedAssetId        String?             @map("related_asset_id") @db.Uuid
+  scheduledAt           DateTime?           @map("scheduled_at") @db.Timestamptz(3)
+  expiresAt             DateTime?           @map("expires_at") @db.Timestamptz(3)
+  payload               Json
+  createdByUserId       String              @map("created_by_user_id") @db.Uuid
+  updatedByUserId       String              @map("updated_by_user_id") @db.Uuid
+  version               Int                 @default(1)
+  createdAt             DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  branch                Branch              @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  campaign              MarketingCampaign?  @relation("MarketingCampaignAssets", fields: [campaignId], references: [id], onDelete: Restrict)
+  relatedAsset          MarketingAsset?     @relation("MarketingAssetLinks", fields: [relatedAssetId], references: [id], onDelete: Restrict)
+  linkedAssets          MarketingAsset[]    @relation("MarketingAssetLinks")
+  segmentCampaigns      MarketingCampaign[] @relation("MarketingCampaignSegment")
+  createdBy             User                @relation("MarketingAssetCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedBy             User                @relation("MarketingAssetUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
 
   @@unique([branchId, kind, name])
+  @@index([targetCustomerId])
+  @@index([targetAgencyId])
   @@index([branchId, kind, status, updatedAt])
   @@index([campaignId, kind])
   @@index([relatedAssetId])

@@ -130,7 +130,9 @@ export type MarketingAssetKind =
   | 'FORM'
   | 'LANDING_PAGE'
   | 'SHORT_LINK'
-  | 'AUTOMATION';
+  | 'AUTOMATION'
+  | 'COUPON'
+  | 'OFFER';
 
 export interface MarketingAssetInputV1 {
   kind: MarketingAssetKind;
@@ -138,6 +140,8 @@ export interface MarketingAssetInputV1 {
   status: string;
   campaignId?: string | null;
   relatedAssetId?: string | null;
+  targetCustomerId?: string | null;
+  targetAgencyId?: string | null;
   scheduledAt?: string | null;
   expiresAt?: string | null;
   payload: Record<string, unknown>;

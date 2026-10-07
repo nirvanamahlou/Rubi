@@ -1,3 +1,7 @@
+## DURABLE-PROMOTIONS-1007 — پیشنهادهای مارکتینگ
+
+MarketingAsset COUPON/OFFER extends the existing branch-owned asset/command/audit aggregate. Optional targetCustomerId and targetAgencyId have real restricted Customer/MasterOrganization FKs; at most one target is allowed. Promotion value and minimum purchase are Decimal(24,4), with currency and existing UTC validity timestamps. Unique non-deleted coupon code per branch, CAS, audit and idempotency protect durable form saves. Only public Customers/agency/currency projections validate references; no Marketing contact/name snapshots or Sales/Finance repricing. See [contract and rollout](tasks/MARKETING-PROMOTIONS-1007.md).
+
 ## HOTEL-OCCUPANCY-IMPORT-PREVIEW-1006 — نرخ ترکیب اتاق
 
 Reservations-owned `ReservationHotelRoomRate.occupancyRates` is an additive nullable JSON array on an immutable room-rate revision. Each entry carries exact adults, separate child min/exclusive-max slots, inclusive start/exclusive end dates, Decimal-string amount, currency, composition and board; the amount is whole room/night, never per person. Existing pack/group/room FKs remain authoritative. API validates bounds and compatible pack dates/currency; NULL preserves legacy factor rates. Multiple legal maxima remain distinct, with actual allocation/age/night validation through the public Reservations contract consumed by Sales. No new Master Data ownership or destructive backfill. See [preview task](tasks/HOTEL-OCCUPANCY-IMPORT-PREVIEW-1006.md).
