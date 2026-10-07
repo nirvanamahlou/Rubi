@@ -166,7 +166,7 @@ describe.skipIf(!enabled)(
           displayOrder: 0,
         })
       ).id;
-    }, 180000);
+    }, 600000);
 
     afterAll(async () => {
       if (client) await client.$disconnect();

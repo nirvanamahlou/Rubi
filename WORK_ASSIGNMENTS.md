@@ -6069,3 +6069,12 @@ Scope extension after exact-head CI: reserve one additive loading label in Web e
 ## HR-RECRUITMENT-REQUISITION-LINKS-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-recruitment-requisition-links-1007 from origin/develop@983cd313. Reserve HR recruitment requisition form reference-option mapping, contextual form behavior, focused tests and bounded status docs. Connect job title, requesting unit and requester to company-scoped persisted HR catalog and employee data, preserving existing values, permissions and record contracts. No overlapping active HR source lock found. User explicitly authorizes push and merge to develop after checks.
+
+## B2B-REGISTRATION-EDIT-1007 — PC-B — IN_PROGRESS
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-agency-edit-registration-1007` from latest `origin/develop`. Reserve Organizations workspace edit entry, registration-edit presentation/owner API orchestration, focused tests, additive English labels in Web en-overrides.json and own status entries. Prior English catalogue source locks are released. The edit entry must expose initial identity, address, representative and agreement data through existing owner contracts, retaining separate phone verification and agreement approval controls. No schema/migration/dependency/IAM/operational data changes. User authorizes push after verification; merge is not requested.
+
+- Verification: 214 Organizations tests, affected ESLint, Web TypeScript and production build (56 routes) passed. Existing owner forms/API paths handle persistence independently; masked contact values remain masked. No authenticated browser write was performed. Source locks release with the pushed review candidate.
+
+- Persistence audit reopened at user request: reserve the existing B2B disposable PostgreSQL test setup timeout only, so its real create/read/update assertions can finish on a slower Windows Docker host. No production API or schema behavior changes. User now authorizes push and merge after verification.
+- Verification: disposable PostgreSQL suite passed 19/19 once with the longer setup window; Master Data identity, contact crypto, service and organization directory tests passed 56/56. A further combined organization/contact database assertion was not included because the local Docker daemon became unresponsive on repetition. No authenticated browser submission or live organization write was performed. Scoped lint passed; exact-head PR CI remains required before merge.
