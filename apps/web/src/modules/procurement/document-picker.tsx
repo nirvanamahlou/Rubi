@@ -27,11 +27,15 @@ export function ProcurementDocumentPicker({
   invoiceUpload?: {
     requestId: string;
     requestNumber: string;
-    purpose?: 'ORDER';
+    purpose?: 'ORDER' | 'RETURN';
   };
 }) {
   const uploadLabel =
-    invoiceUpload?.purpose === 'ORDER' ? 'سند سفارش' : 'فاکتور';
+    invoiceUpload?.purpose === 'ORDER'
+      ? 'سند سفارش'
+      : invoiceUpload?.purpose === 'RETURN'
+        ? 'مدرک مرجوعی'
+        : 'فاکتور';
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<readonly DocumentListItemV1[]>([]);

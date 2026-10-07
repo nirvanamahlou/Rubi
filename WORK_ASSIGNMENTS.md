@@ -5946,6 +5946,12 @@ COMPUTER_ID=PC-B; codex/pc-b-order-invoice-upload-1007 from origin/develop@eb4d5
 
 PROCUREMENT-ORDER-INVOICE-UPLOAD-1007: source reservation RELEASED with frozen review candidate. Web61 plus Documents-client6 tests and focused form10 rerun passed; lint/typecheck/API and Web56-route builds pass. All 54 PostgreSQL regression tests passed; exact-head CI remains the merge gate. No operational runtime/data change.
 
+## PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-discrepancy-return-1007 from origin/develop@ee4353e8. Reserve Procurement discrepancy/return operation form, record selectors/consumer as needed, module-owned API command/history fixes if reproduced, focused tests and own status entries. Preserve receipt-backed return quantities, evidence, branch permissions, CAS/idempotency and Finance boundaries. No schema/migration/dependency/IAM/operational data change. Prior overlapping reservations explicitly released; target files clean. User authorizes push and develop merge after tests/CI.
+
+PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007: source reservation RELEASED with frozen review candidate. PostgreSQL 55 and Web 62 tests passed; lint/typecheck/API build passed. Web production build (56 routes) and final form 11-test rerun passed. Exact-head CI remains the merge gate. No operational data/runtime changes.
+
 ## EXPENSE-DELETE-ICON-1007 — PC-B — READY_FOR_REVIEW
 
 - COMPUTER_ID=PC-B; branch codex/pc-b-expense-delete-icon-1007. Reserve only Marketing campaign declaration delete-button presentation, its focused regression test and bounded status docs. Neutral background with red inherited icon and subtle hover; existing removal handler and frozen state stay intact. No API/data/schema/dependency/shared-control/runtime changes. No active overlap in target files. User authorizes push and develop merge after checks.

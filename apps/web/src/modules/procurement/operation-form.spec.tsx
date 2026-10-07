@@ -9,6 +9,7 @@ import {
   orderAmendmentFields,
   orderAmendmentDocuments,
   recordLabel,
+  validateOrderFollowUp,
 } from './operation-form';
 
 const request: ProcurementRequestV1 = {
@@ -52,6 +53,52 @@ const bootstrap = (permissions: Bootstrap['permissions']): Bootstrap => ({
 });
 
 describe('Procurement lifecycle operation forms', () => {
+  it('rejects incomplete follow-ups with actionable field messages and accepts a receipt-backed return', () => {
+    const fields = {
+      orderId: 'order',
+      receiptItemId: 'receipt',
+      quantity: '0.25',
+      returnedAt: '2026-10-07T00:00:00.000Z',
+      reason: 'آسیب کالا',
+    };
+    const documents = [{ id: 'document', versionId: 'version' }];
+    expect(validateOrderFollowUp('RETURN', fields, documents)).toBe('');
+    expect(
+      validateOrderFollowUp(
+        'RETURN',
+        { ...fields, receiptItemId: '' },
+        documents,
+      ),
+    ).toContain('ردیف رسید');
+    for (const quantity of ['0', '0.0000', '-1', 'abc', '0.00001', '01'])
+      expect(
+        validateOrderFollowUp('RETURN', { ...fields, quantity }, documents),
+      ).toContain('مقدار مرجوعی');
+    expect(
+      validateOrderFollowUp('RETURN', { ...fields, returnedAt: '' }, documents),
+    ).toContain('تاریخ مرجوعی');
+    expect(
+      validateOrderFollowUp('RETURN', { ...fields, reason: ' ' }, documents),
+    ).toContain('توضیحات');
+    expect(validateOrderFollowUp('RETURN', fields, [])).toContain(
+      'مدرک مرجوعی',
+    );
+    expect(
+      validateOrderFollowUp(
+        'DISCREPANCY',
+        { orderId: 'order', description: 'کسری کالا' },
+        [],
+      ),
+    ).toBe('');
+    expect(validateOrderFollowUp('DISCREPANCY', {}, [])).toContain('سفارش');
+    expect(
+      validateOrderFollowUp(
+        'DISCREPANCY',
+        { orderId: 'order', description: ' ' },
+        [],
+      ),
+    ).toContain('شرح مغایرت');
+  });
   it('restores selected order attachments without substituting request attachments', () => {
     expect(
       orderAmendmentDocuments({
@@ -122,6 +169,9 @@ describe('Procurement lifecycle operation forms', () => {
     const returned = render('RETURN', 'returns', 'procurement.return.manage');
     for (const text of ['مقدار مرجوعی', 'تاریخ مرجوعی', 'مبدأ مقدار مرجوعی'])
       expect(returned).toContain(text);
+    expect(returned).toContain('بارگذاری فایل مدرک مرجوعی');
+    expect(returned).toContain('انتخاب فایل مدرک مرجوعی');
+    expect(returned).toContain('aria-required="true"');
   });
   it('loads the selected order currency and supplier instead of draft defaults when amending', () => {
     expect(

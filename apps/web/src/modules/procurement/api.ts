@@ -32,6 +32,12 @@ const procurementFieldLabels: Record<string, string> = {
   quotedAt: 'تاریخ پیشنهاد',
   validUntil: 'اعتبار پیشنهاد',
   deliveryAt: 'موعد تحویل',
+  receiptItemId: 'ردیف رسید مرجوعی',
+  returnedAt: 'تاریخ مرجوعی',
+  occurredAt: 'تاریخ مغایرت',
+  reason: 'توضیحات',
+  description: 'شرح مغایرت',
+  documents: 'مدارک عملیات',
 };
 export async function procurementRequest<T>(
   path: string,
