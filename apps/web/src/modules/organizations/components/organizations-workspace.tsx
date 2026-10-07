@@ -1150,7 +1150,10 @@ export function OrganizationsWorkspace() {
         <CooperationWizard
           role={role}
           permissions={permissions}
-          onClose={() => setWizardOpen(false)}
+          onClose={() => {
+            setWizardOpen(false);
+            void load();
+          }}
           onSaved={(record) => {
             setWizardOpen(false);
             void load();
