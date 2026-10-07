@@ -17,7 +17,7 @@ import {
 import { ContextualHrForm, persianDateToIso } from './contextual-hr-form';
 import type { HrSource } from './hr-navigation';
 import type { HrStore } from './hr-store';
-import { employeeLabel, hrCompanies } from './hr-live-data';
+import { hrCompanies } from './hr-live-data';
 import { prepareHrCommand } from './hr-commands';
 import { DatePicker } from '@/components/ui/date-picker';
 import { RequiredFieldLabel } from './required-field-label';
@@ -28,6 +28,7 @@ import {
 } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
+import { HrEmployeeEditor } from './hr-employees';
 import {
   expenseMissionOptions,
   isMissionExpense,
@@ -64,6 +65,7 @@ interface HrRecordFormProps {
   store: HrStore;
   onClose: () => void;
   onSaved: (record: HrRecordDto) => void;
+  allowInlineCreate?: boolean;
 }
 
 export function HrRecordForm(props: HrRecordFormProps) {
@@ -91,7 +93,7 @@ function HrNodePicker(props: HrRecordFormProps) {
         <option value="">انتخاب واحد ثبت‌شده</option>
         {units.map((r) => (
           <option key={r.id} value={r.id}>
-            {r.values[0]} · {valueOf(r, 'شعبه')}
+            {r.values[0]}
           </option>
         ))}
       </NativeSearchSelect>
@@ -135,6 +137,7 @@ function HrRecordFormFields({
   onClose,
   onSaved,
   nodePicker,
+  allowInlineCreate = true,
 }: HrRecordFormProps & { nodePicker?: ReactNode }) {
   const definition = getHrResource(target.source.section, target.source.tab)!;
   const external = useHrFormReferences();
@@ -187,13 +190,16 @@ function HrRecordFormFields({
         ? data.records.find(
             (r) =>
               r.section === 'recruitment' &&
-              r.tab === 'openings' &&
-              r.values[0] === valueOf(target.record, 'فرصت شغلی'),
+              r.tab === 'staffing' &&
+              r.values[0] === valueOf(target.record, 'برنامه جذب'),
           )?.id
         : undefined) ??
       '',
   );
   const [fileExpiry, setFileExpiry] = useState('');
+  const [newReference, setNewReference] = useState<
+    'employee' | 'units' | 'branches' | 'positions' | null
+  >(null);
   const correction =
     target.source.section === 'time' && target.source.tab === 'corrections';
   const localTime = (value: string | undefined) =>
@@ -239,6 +245,9 @@ function HrRecordFormFields({
             !item.employeeId ||
             item.employeeId === employeeId) &&
           definition.parentResources.includes(`${item.section}.${item.tab}`) &&
+          (target.source.tab !== 'applicants' ||
+            item.tab === 'staffing' ||
+            item.id === target.record?.parentId) &&
           !item.deletedAt,
       );
   const parent = missionExpense
@@ -293,12 +302,35 @@ function HrRecordFormFields({
       branchId,
       company?.organizationBranchId,
     ),
+    ...((target.source.section === 'time' && target.source.tab === 'mission') ||
+    (target.source.section === 'expenses' && target.source.tab === 'claims')
+      ? {
+          وضعیت: [
+            'پیش‌نویس',
+            'در انتظار تأیید',
+            'در حال بررسی',
+            'تأییدشده',
+            'ردشده',
+            'لغوشده',
+          ],
+        }
+      : {}),
   };
   const isUnit =
     target.source.section === 'organization' && target.source.tab === 'units';
   const isApplicant =
     target.source.section === 'recruitment' &&
     target.source.tab === 'applicants';
+  const attachmentLabel =
+    target.source.section === 'contracts' && target.source.tab === 'active'
+      ? 'فایل قرارداد'
+      : target.source.section === 'time' && target.source.tab === 'leave'
+        ? 'مدارک مرخصی'
+        : '';
+  const showStatus =
+    !definition.approval ||
+    (target.source.section === 'time' && target.source.tab === 'mission') ||
+    (target.source.section === 'expenses' && target.source.tab === 'claims');
   const hiddenLabels = [
     ...retiredHrColumns(target.source.section, target.source.tab),
     ...(target.organizationNode ? ['نام واحد'] : []),
@@ -310,6 +342,7 @@ function HrRecordFormFields({
       ? [
           'واحد والد',
           'فرصت شغلی',
+          'برنامه جذب',
           'متقاضی',
           'نام متقاضی',
           'قرارداد مرجع',
@@ -324,7 +357,8 @@ function HrRecordFormFields({
   const columns = [
     'شناسه',
     ...definition.columns,
-    ...(definition.approval ? [] : ['وضعیت']),
+    ...(attachmentLabel ? [attachmentLabel] : []),
+    ...(showStatus ? ['وضعیت'] : []),
   ];
   const employeeRequired = definition.employeeRequired;
   const approvalRequired = definition.approval;
@@ -343,7 +377,11 @@ function HrRecordFormFields({
     )
       result['واحد والد'] = parent?.values[0] || 'بدون والد';
     if (parent) {
-      if (isApplicant) result['فرصت شغلی'] = valueOf(parent, 'عنوان فرصت');
+      if (isApplicant)
+        result['برنامه جذب'] =
+          parent.tab === 'staffing'
+            ? `برنامه ${valueOf(parent, 'سال برنامه')} - ${valueOf(parent, 'واحد')}`
+            : valueOf(parent, 'عنوان فرصت');
       if (
         target.source.section === 'recruitment' &&
         target.source.tab === 'interviews'
@@ -399,6 +437,13 @@ function HrRecordFormFields({
         </DialogDescription>
         <div className={ui.selectorRow}>
           {nodePicker}
+          {allowInlineCreate &&
+          target.source.tab !== 'branches' &&
+          target.source.tab !== 'units' ? (
+            <button type="button" onClick={() => setNewReference('branches')}>
+              افزودن شعبه
+            </button>
+          ) : null}
           <label className={ui.field}>
             <RequiredFieldLabel required>شرکت / شعبه</RequiredFieldLabel>
             <NativeSearchSelect
@@ -439,17 +484,20 @@ function HrRecordFormFields({
                 <option value="">انتخاب کارمند</option>
                 {employees.map((item) => (
                   <option key={item.id} value={item.id}>
-                    {employeeLabel(item)}
+                    {item.name}
                   </option>
                 ))}
               </NativeSearchSelect>
             </label>
           ) : null}
-          {definition.parentResources.length ? (
+          {allowInlineCreate && definition.employeeRequired ? (
+            <button type="button" onClick={() => setNewReference('employee')}>
+              افزودن کارمند
+            </button>
+          ) : null}
+          {definition.parentResources.length && !isUnit ? (
             <label className={ui.field}>
-              <RequiredFieldLabel
-                required={!definition.parentOptional || isApplicant}
-              >
+              <RequiredFieldLabel required={!definition.parentOptional}>
                 {parentFieldLabel(target.source.section, target.source.tab)}
               </RequiredFieldLabel>
               <NativeSearchSelect
@@ -468,7 +516,7 @@ function HrRecordFormFields({
               >
                 <option value="">
                   {isApplicant
-                    ? 'انتخاب فرصت شغلی ثبت‌شده'
+                    ? 'انتخاب برنامه جذب ثبت‌شده'
                     : missionExpense
                       ? 'بدون مأموریت (هزینه مستقل)'
                       : definition.parentOptional
@@ -485,7 +533,9 @@ function HrRecordFormFields({
                   <option key={item.id} value={item.id}>
                     {missionExpense
                       ? missionOptionLabel(item)
-                      : `${item.values[0]} · ${item.code}`}
+                      : isApplicant && item.tab === 'staffing'
+                        ? `برنامه ${valueOf(item, 'سال برنامه')} - ${valueOf(item, 'واحد')}`
+                        : item.values[0]}
                   </option>
                 ))}
               </NativeSearchSelect>
@@ -523,7 +573,8 @@ function HrRecordFormFields({
             </label>
           </div>
         ) : null}
-        {definition.columns.some((label) =>
+        {attachmentLabel ||
+        definition.columns.some((label) =>
           /رزومه|فایل پیوست|^فایل$|^مدرک هزینه$/.test(label),
         ) ? (
           <label className={ui.field}>
@@ -551,7 +602,57 @@ function HrRecordFormFields({
               columns,
               optionsByLabel,
               hiddenLabels,
-              editableLabels: ['سمت فعلی'],
+              optionalLabels: [
+                ...(target.source.section === 'organization' &&
+                target.source.tab === 'branches'
+                  ? ['مدیر']
+                  : []),
+                ...(target.source.section === 'lifecycle' &&
+                target.source.tab === 'onboarding'
+                  ? ['واحد']
+                  : []),
+                ...(target.source.section === 'lifecycle' &&
+                target.source.tab === 'separation'
+                  ? ['مسئول']
+                  : []),
+                ...(target.source.section === 'recruitment' &&
+                target.source.tab === 'requisitions'
+                  ? ['دلیل جذب', 'درخواست‌کننده']
+                  : []),
+                ...(target.source.section === 'time' &&
+                target.source.tab === 'leave'
+                  ? ['جایگزین']
+                  : []),
+                ...(target.source.section === 'time' &&
+                target.source.tab === 'mission'
+                  ? ['مسئول تأیید']
+                  : []),
+                ...(target.source.section === 'development' &&
+                target.source.tab === 'cycles'
+                  ? ['واحد']
+                  : []),
+                ...(target.source.section === 'development' &&
+                target.source.tab === 'training'
+                  ? [
+                      'مهارت هدف',
+                      'محل برگزاری',
+                      'تعداد شرکت‌کننده',
+                      'میانگین امتیاز',
+                    ]
+                  : []),
+                ...(attachmentLabel ? [attachmentLabel] : []),
+              ],
+              ...(allowInlineCreate
+                ? {
+                    onCreateReference: (label: string) => {
+                      if (label === 'کارمند') setNewReference('employee');
+                      else if (/شعبه|شرکت/.test(label))
+                        setNewReference('branches');
+                      else if (/واحد/.test(label)) setNewReference('units');
+                      else setNewReference('positions');
+                    },
+                  }
+                : {}),
               fieldTypes: {
                 'نام واحد': 'text',
                 'نام شعبه': 'text',
@@ -559,6 +660,10 @@ function HrRecordFormFields({
                   ? { 'عنوان شغل': 'text' as const }
                   : {}),
                 'نام سمت': 'text',
+                ...(target.source.section === 'organization' &&
+                target.source.tab === 'branches'
+                  ? { مدیر: 'text' as const }
+                  : {}),
                 ...(target.source.section === 'time' &&
                 target.source.tab === 'leavePolicies'
                   ? { 'نوع مرخصی': 'text' as const }
@@ -579,7 +684,14 @@ function HrRecordFormFields({
                     initialValues: [
                       target.record.code,
                       ...target.record.values,
-                      ...(definition.approval ? [] : [target.record.status]),
+                      ...(attachmentLabel
+                        ? [
+                            target.record.data.documentId
+                              ? `document://${target.record.data.documentId}`
+                              : '',
+                          ]
+                        : []),
+                      ...(showStatus ? [target.record.status] : []),
                     ],
                   }
                 : {}),
@@ -623,25 +735,20 @@ function HrRecordFormFields({
               if (
                 definition.parentResources.length &&
                 !parentId &&
-                (!definition.parentOptional || isApplicant)
+                !definition.parentOptional
               )
                 throw new Error('پرونده مرتبط را انتخاب کنید.');
-              if (
-                target.source.section === 'lifecycle' &&
-                target.source.tab === 'promotion'
-              ) {
-                const currentPosition =
-                  raw[1 + definition.columns.indexOf('سمت فعلی')];
-                if (employee && currentPosition !== employee.position)
-                  throw new Error(
-                    'سمت فعلی انتخاب‌شده باید با پرونده کارمند مطابقت داشته باشد.',
-                  );
-              }
               let values = commandValues(
                 target.source.section,
                 target.source.tab,
                 raw.slice(1, 1 + definition.columns.length),
               );
+              if (
+                target.source.section === 'time' &&
+                target.source.tab === 'leavePolicies' &&
+                values[3] === 'خیر'
+              )
+                values[4] = '';
               const field = (...labels: string[]) => {
                 for (const label of labels) {
                   const i = definition.columns.indexOf(label);
@@ -737,9 +844,31 @@ function HrRecordFormFields({
                   i === index ? `document://${archivedId}` : value,
                 );
               }
-              const status = definition.approval
-                ? (target.record?.status ?? 'پیش‌نویس')
-                : raw.at(-1) || 'فعال';
+              const attachment = attachmentLabel
+                ? (raw[1 + definition.columns.length] ?? '')
+                : '';
+              if (attachment.startsWith('hr-attachment://')) {
+                const { archiveHrFile } = await import('./hr-file-archive');
+                let archivedId = archivedFiles.current.get(attachment);
+                if (!archivedId) {
+                  const archived = await archiveHrFile({
+                    reference: attachment,
+                    branchId,
+                    employeeId: employeeId || undefined,
+                    entityId: target.record?.id ?? (parentId || key.current),
+                    title: `${target.source.label} - ${employee?.name ?? values[0]}`,
+                    validUntil: fileExpiry || end || undefined,
+                  });
+                  archivedId = archived.id;
+                  archivedFiles.current.set(attachment, archivedId);
+                }
+                extra.documentId = archivedId;
+              } else if (attachment.startsWith('document://')) {
+                extra.documentId = attachment.slice('document://'.length);
+              }
+              const status = showStatus
+                ? raw.at(-1) || (definition.approval ? 'پیش‌نویس' : 'فعال')
+                : (target.record?.status ?? 'پیش‌نویس');
               const input: HrRecordCreate = prepareHrCommand(
                 {
                   branchId,
@@ -772,6 +901,39 @@ function HrRecordFormFields({
             }}
           />
         )}
+        {newReference &&
+          target.source.tab !== newReference &&
+          (newReference === 'employee' ? (
+            <HrEmployeeEditor
+              store={store}
+              onClose={() => setNewReference(null)}
+            />
+          ) : (
+            <HrRecordForm
+              allowInlineCreate={false}
+              target={{
+                source: {
+                  section: 'organization',
+                  tab: newReference,
+                  label:
+                    newReference === 'branches'
+                      ? 'شرکت و شعبه'
+                      : newReference === 'units'
+                        ? 'واحد سازمانی'
+                        : 'شغل و سمت',
+                  action:
+                    newReference === 'branches'
+                      ? 'افزودن شعبه'
+                      : newReference === 'units'
+                        ? 'افزودن واحد'
+                        : 'افزودن سمت',
+                },
+              }}
+              store={store}
+              onClose={() => setNewReference(null)}
+              onSaved={() => setNewReference(null)}
+            />
+          ))}
       </DialogContent>
     </Dialog>
   );

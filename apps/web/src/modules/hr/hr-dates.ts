@@ -41,3 +41,17 @@ export function persianDateToIso(value: string): string {
   convertedDates.set(value, result);
   return result;
 }
+
+/** Format canonical Gregorian record dates for display without altering stored values. */
+export function hrDisplayDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/.exec(value.trim());
+  if (!match || Number(match[1]) < 1700) return value;
+  const date = new Date(`${match[1]}-${match[2]}-${match[3]}T12:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+    timeZone: 'Asia/Tehran',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+}

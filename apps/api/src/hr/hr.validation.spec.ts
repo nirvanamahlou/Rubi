@@ -25,6 +25,24 @@ describe('HR resource and time validation', () => {
     expect(() => recordValues(['wrong'], resource('time', 'leave'))).toThrow();
     expect(() => object({ values: [], rawSecret: 'x' }, ['values'])).toThrow();
   });
+  it('requires both HR and manager assessments for a candidate', () => {
+    const assessment = resource('recruitment', 'assessment');
+    const complete = [
+      'متقاضی',
+      'کارشناس منابع انسانی',
+      'مدیر واحد',
+      'مناسب',
+      'تأیید',
+      'پذیرش',
+      '2026-10-07',
+    ];
+    expect(recordValues(complete, assessment)).toEqual(complete);
+    for (const index of [1, 2, 3, 4, 5, 6]) {
+      const missing = [...complete];
+      missing[index] = '';
+      expect(() => recordValues(missing, assessment)).toThrow();
+    }
+  });
   it('rejects ambiguous dates, local timestamps and fake external receipts', () => {
     for (const value of ['۱۴۰۵/۰۶/۰۱', '2026-02-30', '2026-9-1'])
       expect(() => isoDate(value)).toThrow();

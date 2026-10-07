@@ -20,7 +20,7 @@ describe('Legacy Frappe directory compatibility fixtures', () => {
     const linkedWorkspaceIds = Object.values(
       frappeWorkspaceIdsByHubSection,
     ).flatMap((ids) => ids ?? []);
-    expect(frappeWorkspaces).toHaveLength(8);
+    expect(frappeWorkspaces).toHaveLength(7);
     expect(new Set(linkedWorkspaceIds)).toEqual(
       new Set(frappeWorkspaces.map(({ id }) => id)),
     );

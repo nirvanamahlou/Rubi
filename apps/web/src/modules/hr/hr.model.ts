@@ -110,17 +110,16 @@ export const hrHubCards: readonly HrHubCard[] = [
     icon: Building2,
     tone: 'cyan',
     pills: ['HR03', 'HR04', 'HR05'],
-    footer: '۶ زیرصفحه',
+    footer: '۴ زیرصفحه',
   },
   {
     id: 'recruitment',
     title: 'جذب و استخدام',
-    description:
-      'برنامه نیروی انسانی، درخواست جذب، فرصت شغلی، متقاضی، مصاحبه و پیشنهاد',
+    description: 'برنامه نیروی انسانی، درخواست جذب، متقاضی، مصاحبه و پیشنهاد',
     icon: UsersRound,
     tone: 'blue',
     pills: ['برنامه جذب', 'مصاحبه', 'پیشنهاد'],
-    footer: '۸ زیرصفحه',
+    footer: '۷ زیرصفحه',
   },
   {
     id: 'lifecycle',
@@ -139,7 +138,7 @@ export const hrHubCards: readonly HrHubCard[] = [
     icon: FileText,
     tone: 'orange',
     pills: ['HR06', 'HR16', 'نسخه‌بندی'],
-    footer: '۵ زیرصفحه',
+    footer: '۴ زیرصفحه',
   },
   {
     id: 'time',
@@ -226,16 +225,6 @@ export const hrHubCards: readonly HrHubCard[] = [
     pills: ['جبران خدمت', 'محاسبه حقوق', 'قانونی'],
     footer: '۱۰ زیرصفحه',
   },
-  {
-    id: 'hrSettings',
-    title: 'تنظیمات و یکپارچگی',
-    description:
-      'گردش‌کار، نقش، اعلان، فیلدهای سفارشی، API، Webhook و چندشرکتی',
-    icon: ShieldCheck,
-    tone: 'slate',
-    pills: ['Workflow', 'API', 'Multi-company'],
-    footer: '۶ زیرصفحه',
-  },
 ];
 
 export interface HrTab {
@@ -271,15 +260,14 @@ export const sectionTabs: Readonly<
     { id: 'branches', label: 'شعبه‌ها', icon: Building2 },
     { id: 'units', label: 'واحدها', icon: Building2 },
     { id: 'positions', label: 'شغل و سمت', icon: WalletCards },
-    { id: 'grades', label: 'رده شغلی', icon: Gauge },
   ],
   recruitment: [
     { id: 'staffing', label: 'برنامه نیروی انسانی', icon: BarChart3 },
     { id: 'requisitions', label: 'درخواست جذب', icon: ListChecks },
-    { id: 'openings', label: 'فرصت‌های شغلی', icon: WalletCards },
     { id: 'applicants', label: 'متقاضیان', icon: UsersRound },
     { id: 'interviews', label: 'مصاحبه‌ها', icon: CalendarClock },
     { id: 'feedback', label: 'امتیاز و بازخورد', icon: Target },
+    { id: 'assessment', label: 'ارزیابی مدیر و منابع انسانی', icon: Target },
     { id: 'offers', label: 'پیشنهاد استخدام', icon: FileText },
   ],
   lifecycle: [
@@ -292,7 +280,6 @@ export const sectionTabs: Readonly<
   ],
   contracts: [
     { id: 'active', label: 'قراردادهای فعال', icon: FileText },
-    { id: 'templates', label: 'قالب‌ها و انواع', icon: FileArchive },
     { id: 'amendments', label: 'الحاقیه و تمدید', icon: History },
     { id: 'termination', label: 'خاتمه همکاری', icon: UserRoundCheck },
     { id: 'alerts', label: 'هشدار پایان', icon: FileClock },
@@ -408,7 +395,7 @@ export const screenMeta: Readonly<
   recruitment: {
     title: 'جذب و استخدام',
     description:
-      'برنامه‌ریزی نیرو و بودجه، درخواست جذب، فرصت شغلی، متقاضی، مصاحبه چندمرحله‌ای، بازخورد و پیشنهاد',
+      'برنامه‌ریزی نیرو و بودجه، درخواست جذب، متقاضی، مصاحبه چندمرحله‌ای، ارزیابی و پیشنهاد',
   },
   lifecycle: {
     title: 'چرخه همکاری',
@@ -490,6 +477,7 @@ const validSectionIds = new Set<HrSectionId>(
   Object.keys(screenMeta) as HrSectionId[],
 );
 export function normalizeSection(value?: string): HrSectionId {
+  if (value === 'hrSettings') return 'home';
   if (value === 'benefits' || value === 'documents') return 'home';
   if (value === 'fleet') return 'assets';
   return validSectionIds.has(value as HrSectionId)

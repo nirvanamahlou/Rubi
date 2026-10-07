@@ -19,6 +19,21 @@ const record = {
 };
 
 describe('WorkbenchFeedbackRepository', () => {
+  it('deletes only a matching HR survey in its authorized branch', async () => {
+    const deleteMany = vi.fn().mockResolvedValue({ count: 1 });
+    const repository = new WorkbenchFeedbackRepository(
+      { client: { workbenchFeedback: { deleteMany } } } as never,
+      {} as never,
+    );
+    await repository.deleteHr(record.id, record.branchId);
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: {
+        id: record.id,
+        branchId: record.branchId,
+        department: 'HUMAN_RESOURCES',
+      },
+    });
+  });
   it('queries only HR submissions from authorized branches', async () => {
     const findMany = vi.fn().mockResolvedValue([]);
     const count = vi.fn().mockResolvedValue(0);

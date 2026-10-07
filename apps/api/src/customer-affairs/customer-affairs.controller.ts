@@ -476,6 +476,11 @@ export class CustomerAffairsController {
   workbenchRequests(@Req() req: AuthenticatedRequest) {
     return this.service.workbenchRequests(req.actor);
   }
+  @Get('workbench/hr-requests')
+  @Header('Cache-Control', 'private, no-store')
+  hrWorkbenchRequests(@Req() req: AuthenticatedRequest) {
+    return this.service.hrWorkbenchRequests(req.actor);
+  }
 }
 
 @ApiTags('Customer Affairs / Public')

@@ -52,6 +52,7 @@ describe('connected HR forms and selection exports', () => {
       ]),
       record('grade', 'organization', 'grades', ['رده واقعی']),
       record('opening', 'recruitment', 'openings', ['فرصت واقعی']),
+      record('plan', 'recruitment', 'staffing', ['برنامه واقعی']),
       record('other', 'organization', 'units', ['واحد شرکت دیگر'], 'company-b'),
       {
         ...record('deleted', 'organization', 'positions', ['سمت حذف‌شده']),
@@ -73,8 +74,9 @@ describe('connected HR forms and selection exports', () => {
     expect(options['واحد']).toEqual(['واحد واقعی']);
     expect(options['سمت جدید']).toEqual(['سمت واقعی']);
     expect(options['سمت فعلی']).toEqual(['سمت واقعی']);
-    expect(options['رده جدید']).toEqual(['رده واقعی']);
-    expect(options['فرصت شغلی']).toEqual(['فرصت واقعی']);
+    expect(options['رده جدید']).toContain('کارشناس ارشد');
+    expect(options['رده جدید']).toContain('رده واقعی');
+    expect(options['فرصت شغلی']).toEqual(['برنامه واقعی']);
     expect(
       hrReferenceOptions(data, 'organization', 'positions', 'scope')[
         'عنوان شغل'
@@ -174,9 +176,9 @@ describe('connected HR forms and selection exports', () => {
   it('makes the expense receipt a real file input and names parent selectors by purpose', () => {
     expect(buildContextualHrFields(['مدرک هزینه'])[0]?.type).toBe('file');
     expect(parentFieldLabel('organization', 'units')).toBe('واحد والد');
-    expect(parentFieldLabel('recruitment', 'applicants')).toBe('فرصت شغلی');
+    expect(parentFieldLabel('recruitment', 'applicants')).toBe('برنامه جذب');
     expect(getHrResource('recruitment', 'applicants')?.parentResources).toEqual(
-      ['recruitment.openings'],
+      ['recruitment.staffing', 'recruitment.openings'],
     );
   });
 });

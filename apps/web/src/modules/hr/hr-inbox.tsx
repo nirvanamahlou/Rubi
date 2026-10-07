@@ -15,6 +15,11 @@ import { sourceForRecord } from './hr-record-source';
 import type { HrSource } from './hr-navigation';
 import ui from './hr-unified.module.css';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
+import { customerAffairsApi } from '@/modules/customer-affairs/api/customer-affairs-client';
+
+type WorkbenchHrRequest = Awaited<
+  ReturnType<typeof customerAffairsApi.hrWorkbenchRequests>
+>['data'][number];
 
 export function HrInbox({
   store,
@@ -27,6 +32,9 @@ export function HrInbox({
   const [status, setStatus] = useState('در انتظار تأیید');
   const [range, setRange] = useState({ from: '', to: '' });
   const [error, setError] = useState('');
+  const [workbenchItems, setWorkbenchItems] = useState<WorkbenchHrRequest[]>(
+    [],
+  );
   const selection = useHrRowSelection(JSON.stringify([status, range]));
   useEffect(() => {
     let active = true;
@@ -53,6 +61,25 @@ export function HrInbox({
       active = false;
     };
   }, [status, range, store.revision]);
+  useEffect(() => {
+    let active = true;
+    void customerAffairsApi
+      .hrWorkbenchRequests()
+      .then((response) => {
+        if (active) setWorkbenchItems(response.data);
+      })
+      .catch((cause) => {
+        if (active)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : 'درخواست‌های میزکار دریافت نشد.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [store.revision]);
   const data = {
     columns: ['کد', 'نوع درخواست', 'کارمند', 'شرکت', 'آخرین تغییر', 'وضعیت'],
     rows: items.map((item) => [
@@ -131,6 +158,29 @@ export function HrInbox({
             onSelect(items[index]!, sourceForRecord(items[index]!))
           }
         />
+      </HrPanel>
+      <HrPanel title="درخواست‌های میزکار به منابع انسانی">
+        {workbenchItems.length ? (
+          <ul className="space-y-3">
+            {workbenchItems.map((item) => (
+              <li key={item.id} className="rounded-xl border p-4">
+                <div className="flex flex-wrap justify-between gap-2 font-semibold">
+                  <span>{item.subject}</span>
+                  <span>{item.status}</span>
+                </div>
+                <p className="mt-2 whitespace-pre-wrap text-sm">
+                  {item.description}
+                </p>
+                <span className="text-xs text-muted-foreground">
+                  {item.trackingNumber} ·{' '}
+                  {new Date(item.updatedAt).toLocaleDateString('fa-IR')}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>درخواستی از میزکار ثبت نشده است.</p>
+        )}
       </HrPanel>
     </div>
   );

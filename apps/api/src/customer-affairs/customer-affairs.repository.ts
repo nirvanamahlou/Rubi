@@ -423,4 +423,16 @@ export class CustomerAffairsRepository {
       take: 100,
     });
   }
+
+  hrWorkbenchRequests(branchIds: string[]) {
+    return this.database.client.customerAffairsTicket.findMany({
+      where: {
+        branchId: { in: branchIds },
+        category: { startsWith: 'WORKBENCH_' },
+        executionUnit: { in: ['منابع انسانی', 'سرمایه انسانی', 'اداری'] },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 200,
+    });
+  }
 }

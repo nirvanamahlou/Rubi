@@ -27,6 +27,7 @@ describe('Workbench feedback HTTP boundary', () => {
       data: { id: '55555555-5555-4555-8555-555555555555' },
     }),
     detail: vi.fn(),
+    deleteHr: vi.fn().mockResolvedValue(undefined),
   };
   const iam = { authenticate: vi.fn().mockResolvedValue(actor) };
 
@@ -83,5 +84,17 @@ describe('Workbench feedback HTTP boundary', () => {
       actor,
       expect.objectContaining({ ipAddress: expect.any(String) }),
     );
+  });
+
+  it('routes deletion only through the authenticated HR endpoint', async () => {
+    await request(app.getHttpServer())
+      .delete(`/api/v1/workbench/feedback/hr/${feedbackId}`)
+      .set('Cookie', 'nora_access=test')
+      .expect(200);
+    expect(service.deleteHr).toHaveBeenCalledWith(feedbackId, actor);
+    await request(app.getHttpServer())
+      .delete('/api/v1/workbench/feedback/hr/not-an-id')
+      .set('Cookie', 'nora_access=test')
+      .expect(400);
   });
 });

@@ -18,6 +18,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { parseWeightedGoals, weightedProgress } from './weighted-goals';
 import { RequiredFieldLabel } from './required-field-label';
 import { HrArchiveDocumentPicker } from './hr-archive-document-picker';
+import { HR_GRADE_OPTIONS } from './hr-grade-options';
 
 export interface ContextualHrFormContext {
   branchId?: string;
@@ -45,6 +46,8 @@ export interface ContextualHrFormContext {
   optionsByLabel?: Readonly<Record<string, readonly string[]>>;
   fieldTypes?: Readonly<Record<string, ContextualFieldType>>;
   hiddenLabels?: readonly string[];
+  optionalLabels?: readonly string[];
+  onCreateReference?: (label: string) => void;
   editableLabels?: readonly string[];
   attendance?: readonly { employee: string; date: string; value: string }[];
   holidayOptions?: readonly string[];
@@ -191,8 +194,7 @@ const fieldOptions = (
     ];
   if (label.includes('شعبه')) return ['نیایش سیر', 'جهان باستان'];
   if (label === 'شرکت') return ['نیایش سیر', 'جهان باستان'];
-  if (/رده (شغلی|فعلی|جدید)/.test(label))
-    return ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'مدیریتی'];
+  if (/^رده$|رده (شغلی|فعلی|جدید)/.test(label)) return HR_GRADE_OPTIONS;
   if (label.includes('نوع همکاری'))
     return ['تمام‌وقت', 'پاره‌وقت', 'پروژه‌ای', 'کارآموزی'];
   if (label.includes('منبع جذب'))
@@ -246,7 +248,10 @@ const fieldOptions = (
 };
 
 const fieldType = (label: string): ContextualFieldType => {
-  if (/رزومه|فایل پیوست|^فایل$|^مدرک هزینه$/.test(label)) return 'file';
+  if (
+    /رزومه|فایل پیوست|^فایل$|^مدرک هزینه$|فایل قرارداد|مدارک مرخصی/.test(label)
+  )
+    return 'file';
   if (label.includes('لینک')) return 'url';
   if (/ارزیاب|مصاحبه‌کننده|تأییدکننده/.test(label)) return 'combobox';
   if (/ساعت (شروع|پایان|مصاحبه|تردد|تحویل|عودت)/.test(label)) return 'time';
@@ -455,8 +460,11 @@ export function ContextualHrForm({
   const fields = useMemo(
     () =>
       buildContextualHrFields(context.columns, context.peopleOptions).map(
-        (field) =>
-          context.fieldTypes?.[field.label]
+        (original) => {
+          const field = context.optionalLabels?.includes(original.label)
+            ? { ...original, required: false }
+            : original;
+          return context.fieldTypes?.[field.label]
             ? {
                 ...field,
                 type: context.fieldTypes[field.label]!,
@@ -482,7 +490,8 @@ export function ContextualHrForm({
                   ? field.label === 'تاریخ انقضا'
                     ? { ...field, required: true }
                     : field
-                  : field,
+                  : field;
+        },
       ),
     [
       context.columns,
@@ -492,6 +501,7 @@ export function ContextualHrForm({
       context.holidayOptions,
       context.optionsByLabel,
       context.fieldTypes,
+      context.optionalLabels,
     ],
   );
   const [values, setValues] = useState<Record<string, string>>(() =>
@@ -516,6 +526,12 @@ export function ContextualHrForm({
           : '',
       );
     }
+    if (
+      context.section === 'time' &&
+      context.tab === 'leavePolicies' &&
+      read('قابل انتقال') === 'خیر'
+    )
+      write('حداکثر انتقال', '');
     if (context.section === 'time' && context.tab === 'corrections') {
       const record = context.attendance?.find(
         (item) =>
@@ -769,6 +785,13 @@ export function ContextualHrForm({
               id: inputId,
               name: field.id,
               required: field.required,
+              disabled:
+                field.label === 'حداکثر انتقال' &&
+                context.section === 'time' &&
+                context.tab === 'leavePolicies' &&
+                derivedValues[
+                  fields.find((item) => item.label === 'قابل انتقال')?.id ?? ''
+                ] === 'خیر',
             };
             const readOnly =
               isAutomaticCodeField(field, index) ||
@@ -785,6 +808,21 @@ export function ContextualHrForm({
                 <RequiredFieldLabel required={field.required}>
                   {field.label}
                 </RequiredFieldLabel>
+                {context.onCreateReference &&
+                /^(عنوان شغل|عنوان سمت|نام سمت|سمت|سمت جدید|واحد|واحد درخواست‌کننده|واحد درخواست کننده|واحد مقصد|شعبه مقصد|شرکت مقصد|کارمند)$/.test(
+                  field.label,
+                ) ? (
+                  <button
+                    type="button"
+                    className={buttonVariants({
+                      variant: 'outline',
+                      size: 'sm',
+                    })}
+                    onClick={() => context.onCreateReference?.(field.label)}
+                  >
+                    افزودن {field.label}
+                  </button>
+                ) : null}
                 {field.type === 'select' ? (
                   <NativeSearchSelect
                     {...commonProps}
