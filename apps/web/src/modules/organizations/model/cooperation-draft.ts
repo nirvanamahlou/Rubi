@@ -8,7 +8,10 @@ import type {
   MasterDataRecord,
 } from '@nora/contracts';
 import { blankAgreementTerms } from './agreement-terms';
-import { masterDataApi } from '@/modules/master-data/api/client';
+import {
+  masterDataApi,
+  MasterDataApiError,
+} from '@/modules/master-data/api/client';
 import { agencyClient } from '../api/agency-client';
 import { documentsApi } from '@/modules/documents/api/client';
 import {
@@ -144,6 +147,7 @@ export class CooperationSaveError extends Error {
   constructor(
     message: string,
     readonly organization?: MasterDataRecord,
+    readonly creationMayHaveSucceeded = false,
   ) {
     super(message);
   }
@@ -212,9 +216,11 @@ export async function saveCooperation(
   )
     require('b2b.credit.manage');
   let organization: MasterDataRecord | undefined;
+  let creationAttempted = false;
   try {
     roles.add(draft.role);
-    if (existing)
+    if (existing) {
+      organization = existing;
       organization = needsRole
         ? (
             await masterDataApi.update('organizations', existing.id, {
@@ -223,11 +229,12 @@ export async function saveCooperation(
             })
           ).data
         : existing;
-    else {
+    } else {
       if (await organizationByName(draft.legalName.trim()))
         throw new Error(
           'سازمانی با این نام قبلاً ثبت شده است؛ سازمان موجود را انتخاب کنید.',
         );
+      creationAttempted = true;
       organization = (
         await masterDataApi.create('organizations', {
           values: {
@@ -350,6 +357,13 @@ export async function saveCooperation(
     throw new CooperationSaveError(
       caught instanceof Error ? caught.message : 'ذخیره پرونده ناموفق بود.',
       organization,
+      creationAttempted &&
+        !organization &&
+        !(
+          caught instanceof MasterDataApiError &&
+          caught.status >= 400 &&
+          caught.status < 500
+        ),
     );
   }
 }
