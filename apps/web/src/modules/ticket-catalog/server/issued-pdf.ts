@@ -41,7 +41,11 @@ const columns = [
   ['source', 'نوع صدور'],
   ['status', 'وضعیت'],
 ];
-export function issuedPrintHtml(snapshot: IssuedPdfData, fontData: string, language: DisplayLanguage = 'fa') {
+export function issuedPrintHtml(
+  snapshot: IssuedPdfData,
+  fontData: string,
+  language: DisplayLanguage = 'fa',
+) {
   const display = (key: string, value: string | null) => {
     if (!value) return '—';
     if (['issuedAt', 'departureAt', 'arrivalAt'].includes(key))
@@ -86,7 +90,10 @@ export async function resolveIssuedChrome(
       return path;
   throw new Error('TICKET_REPORT_PDF_RUNTIME_UNAVAILABLE');
 }
-export async function renderIssuedPdf(snapshot: IssuedPdfData, language: DisplayLanguage = 'fa') {
+export async function renderIssuedPdf(
+  snapshot: IssuedPdfData,
+  language: DisplayLanguage = 'fa',
+) {
   if (active >= 2) throw new Error('TICKET_REPORT_PDF_BUSY');
   const chrome = await resolveIssuedChrome();
   active++;
@@ -95,7 +102,10 @@ export async function renderIssuedPdf(snapshot: IssuedPdfData, language: Display
     const font = await readFile(
       join(process.cwd(), 'public/fonts/vazirmatn-arabic-wght-normal.woff2'),
     );
-    const html = localizeDocumentHtml(issuedPrintHtml(snapshot, font.toString('base64'), language), language);
+    const html = localizeDocumentHtml(
+      issuedPrintHtml(snapshot, font.toString('base64'), language),
+      language,
+    );
     if (Buffer.byteLength(html) > 10000000)
       throw new Error('TICKET_REPORT_PDF_TOO_LARGE');
     directory = await mkdtemp(join(tmpdir(), 'nora-issued-pdf-'));

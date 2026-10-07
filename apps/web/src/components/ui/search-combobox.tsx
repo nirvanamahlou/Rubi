@@ -16,6 +16,7 @@ import type { DisplayLanguage } from '@/i18n/language';
 export type SearchOption = {
   value: string;
   label: ReactNode;
+  englishLabel?: string;
   searchText?: string;
   disabled?: boolean;
 };
@@ -48,7 +49,7 @@ export function searchOptions(
       (o) =>
         !key ||
         normalizeOptionSearch(
-          `${optionText(o.label)} ${o.searchText ?? ''} ${translateUiText(optionText(o.label), language)} ${translateUiText(o.searchText ?? '', language)}`,
+          `${optionText(o.label)} ${o.englishLabel ?? ''} ${o.searchText ?? ''} ${translateUiText(optionText(o.label), language)} ${translateUiText(o.searchText ?? '', language)}`,
         ).includes(key),
     )
     .slice(0, limit);
@@ -123,7 +124,11 @@ export function SearchCombobox({
     ? options.slice(0, VISIBLE_OPTION_LIMIT)
     : searchOptions(options, query, optionLimit, language);
   const selected = options.find((o) => o.value === value);
-  const display = t(optionText(selectedLabel ?? selected?.label));
+  const display = t(
+    language === 'en' && selected?.englishLabel?.trim()
+      ? selected.englishLabel
+      : optionText(selectedLabel ?? selected?.label),
+  );
   useEffect(() => {
     input.current?.setCustomValidity(
       required && !value ? t('یک گزینه از فهرست انتخاب کنید.') : '',
@@ -316,7 +321,9 @@ export function SearchCombobox({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => choose(o)}
                 >
-                  {o.label}
+                  {language === 'en' && o.englishLabel?.trim()
+                    ? o.englishLabel
+                    : o.label}
                   {o.value === value ? (
                     <Check aria-hidden="true" className="size-4 shrink-0" />
                   ) : null}

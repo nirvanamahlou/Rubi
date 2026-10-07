@@ -133,7 +133,9 @@ export class FinanceInboxController {
         snapshot.scope.toLowerCase() +
         '.xlsx"',
     );
-    response.send(Buffer.from(buildFinanceXlsx(snapshot, requestDisplayLanguage(request))));
+    response.send(
+      Buffer.from(buildFinanceXlsx(snapshot, requestDisplayLanguage(request))),
+    );
   }
 
   @Get('settlement-accounts')

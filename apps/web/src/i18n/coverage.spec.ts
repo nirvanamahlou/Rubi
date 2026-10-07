@@ -16,19 +16,35 @@ describe('English UI completeness', () => {
   }, 30000);
 
   it('does not accept empty, Persian or placeholder English translations', () => {
-    const invalid = Object.entries(englishUiCatalog).filter(([, text]) =>
-      !text.trim() || /[\u0600-\u06ff]|\b(?:TODO|TRANSLATE_ME)\b/.test(text),
+    const invalid = Object.entries(englishUiCatalog).filter(
+      ([, text]) =>
+        !text.trim() || /[\u0600-\u06ff]|\b(?:TODO|TRANSLATE_ME)\b/.test(text),
     );
     expect(invalid).toEqual([]);
   });
 
   it('keeps offline API and standalone editor display catalogues in sync', () => {
-    const api = JSON.parse(readFileSync(resolve(process.cwd(), '../api/src/common/i18n/en-catalog.json'), 'utf8')) as Record<string, string>;
-    const legacySource = readFileSync(resolve(process.cwd(), 'public/package-generator/i18n-catalog.js'), 'utf8');
-    const legacy = JSON.parse(legacySource.slice('window.RUBI_ENGLISH_UI = '.length).trim().slice(0, -1)) as Record<string, string>;
+    const api = JSON.parse(
+      readFileSync(
+        resolve(process.cwd(), '../api/src/common/i18n/en-catalog.json'),
+        'utf8',
+      ),
+    ) as Record<string, string>;
+    const legacySource = readFileSync(
+      resolve(process.cwd(), 'public/package-generator/i18n-catalog.js'),
+      'utf8',
+    );
+    const legacy = JSON.parse(
+      legacySource
+        .slice('window.RUBI_ENGLISH_UI = '.length)
+        .trim()
+        .slice(0, -1),
+    ) as Record<string, string>;
     for (const { text, files } of inventory()) {
-      if (files.some((file) => file.startsWith('apps/api/src/'))) expect(api[text], text).toBe(englishUiCatalog[text]);
-      if (files.some((file) => file.startsWith('apps/web/public/'))) expect(legacy[text], text).toBe(englishUiCatalog[text]);
+      if (files.some((file) => file.startsWith('apps/api/src/')))
+        expect(api[text], text).toBe(englishUiCatalog[text]);
+      if (files.some((file) => file.startsWith('apps/web/public/')))
+        expect(legacy[text], text).toBe(englishUiCatalog[text]);
     }
   }, 30000);
 });

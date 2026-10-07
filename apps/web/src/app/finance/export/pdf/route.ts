@@ -42,7 +42,10 @@ export async function GET(request: Request) {
         { status: response.status, headers },
       );
     const snapshot = (await response.json()) as FinanceExportSnapshotV1;
-    const bytes = await renderFinancePdf(snapshot, languageFromCookies(request.headers.get('cookie')));
+    const bytes = await renderFinancePdf(
+      snapshot,
+      languageFromCookies(request.headers.get('cookie')),
+    );
     return new Response(new Uint8Array(bytes), {
       headers: {
         ...headers,

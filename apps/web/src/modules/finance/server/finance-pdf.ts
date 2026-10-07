@@ -23,7 +23,11 @@ const escape = (value: string) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-function display(value: string | null | undefined, type: string, language: DisplayLanguage = 'fa') {
+function display(
+  value: string | null | undefined,
+  type: string,
+  language: DisplayLanguage = 'fa',
+) {
   if (value == null) return '—';
   return type === 'DATE'
     ? new Intl.DateTimeFormat(language === 'en' ? 'en-US' : 'fa-IR', {
@@ -76,7 +80,10 @@ export async function resolveFinanceChrome(
       return path;
   throw new Error('FINANCE_PDF_RUNTIME_UNAVAILABLE');
 }
-export async function renderFinancePdf(snapshot: FinanceExportSnapshotV1, language: DisplayLanguage = 'fa') {
+export async function renderFinancePdf(
+  snapshot: FinanceExportSnapshotV1,
+  language: DisplayLanguage = 'fa',
+) {
   if (active >= 2) throw new Error('FINANCE_PDF_BUSY');
   const chrome = await resolveFinanceChrome();
   active++;
@@ -85,7 +92,10 @@ export async function renderFinancePdf(snapshot: FinanceExportSnapshotV1, langua
     const font = await readFile(
       join(process.cwd(), 'public/fonts/vazirmatn-arabic-wght-normal.woff2'),
     );
-    const html = localizeDocumentHtml(financePrintHtml(snapshot, font.toString('base64'), language), language);
+    const html = localizeDocumentHtml(
+      financePrintHtml(snapshot, font.toString('base64'), language),
+      language,
+    );
     if (Buffer.byteLength(html) > 10000000)
       throw new Error('FINANCE_PDF_TOO_LARGE');
     directory = await mkdtemp(join(tmpdir(), 'nora-finance-pdf-'));

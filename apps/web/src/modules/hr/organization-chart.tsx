@@ -1,4 +1,6 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
+
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { Building2, Info, PencilLine, Trash2 } from 'lucide-react';
@@ -675,7 +677,7 @@ export function OrganizationChart({
                 onClick={() => {
                   if (
                     !confirmDelete ||
-                    window.confirm(
+                    uiConfirm(
                       `«${node.name}» و همه زیرشاخه‌های آن از چارت موقت حذف شوند؟`,
                     )
                   )

@@ -20,7 +20,9 @@ describe('Sales English Gregorian calendar opt-in', () => {
     const date = parseIsoDate('2026-09-05')!;
     expect(calendarMonthName(date, 'gregorian')).toBe('سپتامبر');
     expect(calendarMonthName(date, 'persian', true)).toBe('Shahrivar');
-    expect(formatCalendarValue('2026-09-05', 'persian', false, true)).not.toMatch(/[\u0600-\u06ff]/);
+    expect(
+      formatCalendarValue('2026-09-05', 'persian', false, true),
+    ).not.toMatch(/[\u0600-\u06ff]/);
   });
   it('never changes the stored ISO date while formatting in either language', () => {
     const value = '2026-09-05';

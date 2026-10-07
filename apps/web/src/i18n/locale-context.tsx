@@ -12,5 +12,8 @@ export function useDisplayLanguage(): DisplayLanguage {
 
 export function useUiTranslation() {
   const language = useDisplayLanguage();
-  return useCallback((text: string) => translateUiText(text, language), [language]);
+  return useCallback(
+    (text: string) => translateUiText(text, language),
+    [language],
+  );
 }

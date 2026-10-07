@@ -15,7 +15,9 @@ export function MarketingActionButton({ children, ...props }: ButtonProps) {
       .filter((child) => child !== null)
       .join(' ')
       .trim();
-  const icons = parts.filter((child) => isValidElement(child) && sourceUiText(child) === null);
+  const icons = parts.filter(
+    (child) => isValidElement(child) && sourceUiText(child) === null,
+  );
   const FallbackIcon = /انصراف|بستن/.test(label)
     ? X
     : /ذخیره|ثبت/.test(label)

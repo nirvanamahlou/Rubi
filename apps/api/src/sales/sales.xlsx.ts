@@ -99,7 +99,8 @@ export function buildSalesXlsx(
   now = new Date(),
   language: DisplayLanguage = 'fa',
 ): Uint8Array {
-  const labelCell = (ref: string, value: string, style = 0) => textCell(ref, displayText(value, language), style);
+  const labelCell = (ref: string, value: string, style = 0) =>
+    textCell(ref, displayText(value, language), style);
   const headers = [
     'شماره قرارداد',
     'مشتری',
@@ -127,7 +128,9 @@ export function buildSalesXlsx(
         record.contractNumber,
         record.customerNameSnapshot,
         '',
-        record.services.map((kind) => displayText(services[kind], language)).join(language === 'en' ? ', ' : '، '),
+        record.services
+          .map((kind) => displayText(services[kind], language))
+          .join(language === 'en' ? ', ' : '، '),
         displayText(statusLabels[record.status], language),
         displayText(settlementLabels[record.settlementStatus], language),
         balance?.currencyCode ?? '',

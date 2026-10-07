@@ -24,9 +24,7 @@ describe('shared date picker contract', () => {
   it('uses the blue theme and exposes grid month and year selection', () => {
     expect(pickerSource).toContain('calendarSystem?: CalendarSystem');
     expect(pickerSource).toContain('onCalendarSystemChange?:');
-    expect(pickerSource).toContain(
-      'controlledCalendarSystem ??',
-    );
+    expect(pickerSource).toContain('controlledCalendarSystem ??');
     expect(pickerSource).toContain("['persian', 'gregorian']");
     expect(pickerSource).toContain("'شمسی'");
     expect(pickerSource).toContain("'میلادی'");

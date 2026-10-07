@@ -4,7 +4,18 @@ import { customerAffairsXlsx } from './customer-affairs-xlsx';
 
 describe('Customer Affairs Excel export', () => {
   it('exports English headers without rewriting stored descriptions', () => {
-    const sheet = strFromU8(unzipSync(customerAffairsXlsx('Tickets', [['موضوع', 'وضعیت'], ['ورودی اختصاصی', 'ACTIVE']], 'en'))['xl/worksheets/sheet1.xml']!);
+    const sheet = strFromU8(
+      unzipSync(
+        customerAffairsXlsx(
+          'Tickets',
+          [
+            ['موضوع', 'وضعیت'],
+            ['ورودی اختصاصی', 'ACTIVE'],
+          ],
+          'en',
+        ),
+      )['xl/worksheets/sheet1.xml']!,
+    );
     expect(sheet).toContain('rightToLeft="0"');
     expect(sheet).toContain('Subject');
     expect(sheet).toContain('Status');

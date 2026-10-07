@@ -95,10 +95,17 @@ export async function commercialPdf(
     ctx.direction = browserDisplayLanguage() === 'en' ? 'ltr' : 'rtl';
     ctx.fillStyle = '#103c78';
     ctx.font = `bold 30px ${font}`;
-    ctx.fillText(translateUiText('نورا · قرارداد و شرایط تجاری', browserDisplayLanguage()), 1170, 65);
+    ctx.fillText(
+      translateUiText('نورا · قرارداد و شرایط تجاری', browserDisplayLanguage()),
+      1170,
+      65,
+    );
     ctx.font = `20px ${font}`;
     ctx.fillText(
-      translateUiText(`صفحه ${(images.length + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`, browserDisplayLanguage()),
+      translateUiText(
+        `صفحه ${(images.length + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+        browserDisplayLanguage(),
+      ),
       1170,
       1705,
     );

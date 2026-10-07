@@ -1,4 +1,5 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
 
 import { useEffect, useRef, useState } from 'react';
 import Link from '@/i18n/link';
@@ -1534,7 +1535,7 @@ function ApprovalForm({
                 !bootstrap.permissions.includes('procurement.assign')
               }
               onClick={() => {
-                if (window.confirm('درخواست رد و برای همیشه حذف شود؟'))
+                if (uiConfirm('درخواست رد و برای همیشه حذف شود؟'))
                   void decide('REJECTED');
               }}
             >

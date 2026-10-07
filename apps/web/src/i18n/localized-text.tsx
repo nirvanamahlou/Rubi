@@ -8,7 +8,14 @@ export function LocalizedText({ children }: { children: string }) {
   return translateUiText(children, useDisplayLanguage());
 }
 
-const textAttributes = ['title', 'placeholder', 'alt', 'aria-label', 'aria-description', 'aria-valuetext'] as const;
+const textAttributes = [
+  'title',
+  'placeholder',
+  'alt',
+  'aria-label',
+  'aria-description',
+  'aria-valuetext',
+] as const;
 
 export function LocalizedElement({
   tag,
@@ -20,7 +27,8 @@ export function LocalizedElement({
   const props = { ...attributes };
   for (const key of textAttributes) {
     const value = props[key];
-    if (typeof value === 'string') props[key] = translateUiText(value, language);
+    if (typeof value === 'string')
+      props[key] = translateUiText(value, language);
   }
   if (language === 'en' && props.dir === 'rtl') props.dir = 'ltr';
   return createElement(tag, props as HTMLAttributes<HTMLElement>);

@@ -1,4 +1,5 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
 
 import type {
   AuthenticatedActor,
@@ -1533,8 +1534,7 @@ export function DurableContentPanel({
                         onView={() => fill(item, 'view')}
                         onEdit={() => fill(item, 'edit')}
                         onDelete={async () => {
-                          if (!window.confirm(`«${item.name}» حذف شود؟`))
-                            return;
+                          if (!uiConfirm(`«${item.name}» حذف شود؟`)) return;
                           try {
                             await marketingApi.deleteAsset(
                               item.id,

@@ -7,6 +7,9 @@ export function canonicalTestTree(node: ReactNode): ReactNode {
   if (!isValidElement<Record<string, unknown>>(node)) return node;
   if (node.type === LocalizedText) return node.props.children as string;
   const { children, tag, ...props } = node.props;
-  return createElement(node.type === LocalizedElement ? tag as string : node.type, props,
-    canonicalTestTree(children as ReactNode));
+  return createElement(
+    node.type === LocalizedElement ? (tag as string) : node.type,
+    props,
+    canonicalTestTree(children as ReactNode),
+  );
 }

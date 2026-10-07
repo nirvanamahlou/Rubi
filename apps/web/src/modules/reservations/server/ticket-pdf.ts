@@ -95,7 +95,10 @@ async function waitForPdf(path: string): Promise<void> {
   throw new Error('PDF_NOT_CREATED');
 }
 
-export async function renderTicketPdf(html: string, language: DisplayLanguage = 'fa'): Promise<Buffer> {
+export async function renderTicketPdf(
+  html: string,
+  language: DisplayLanguage = 'fa',
+): Promise<Buffer> {
   const { chromePath: chrome, fontPath: font } =
     await resolveTicketPdfRuntime();
   if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');

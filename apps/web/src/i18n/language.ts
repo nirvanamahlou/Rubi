@@ -37,14 +37,26 @@ export function persistDisplayLanguage(
   }
 }
 
-export function languageFromCookies(cookie: string | null | undefined): DisplayLanguage {
-  const raw = cookie?.split(';').map((part) => part.trim()).find((part) => part.startsWith(`${displayLanguageCookieName}=`));
-  return parseDisplayLanguage(raw?.slice(displayLanguageCookieName.length + 1)) ?? 'fa';
+export function languageFromCookies(
+  cookie: string | null | undefined,
+): DisplayLanguage {
+  const raw = cookie
+    ?.split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${displayLanguageCookieName}=`));
+  return (
+    parseDisplayLanguage(raw?.slice(displayLanguageCookieName.length + 1)) ??
+    'fa'
+  );
 }
 
 export function browserDisplayLanguage(): DisplayLanguage {
-  return readDisplayLanguage(browserLanguageStorage()) ??
-    languageFromCookies(typeof document === 'undefined' ? undefined : document.cookie);
+  return (
+    readDisplayLanguage(browserLanguageStorage()) ??
+    languageFromCookies(
+      typeof document === 'undefined' ? undefined : document.cookie,
+    )
+  );
 }
 
 export function browserLanguageStorage(): Storage | null {

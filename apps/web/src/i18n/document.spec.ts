@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { localizeDocumentHtml } from './document';
 
 describe('English document output', () => {
-  const html = '<!doctype html><html lang="fa" dir="rtl"><head><style>.x{direction:rtl}</style></head><body><h1>قرارداد</h1><button title="چاپ">چاپ</button><p>۱۲۳٫۴۵</p><p>&lt;img src=x onerror=alert(1)&gt;</p><script>const label="فارسی";</script></body></html>';
+  const html =
+    '<!doctype html><html lang="fa" dir="rtl"><head><style>.x{direction:rtl}</style></head><body><h1>قرارداد</h1><button title="چاپ">چاپ</button><p>۱۲۳٫۴۵</p><p>&lt;img src=x onerror=alert(1)&gt;</p><script>const label="فارسی";</script></body></html>';
   it('localizes print text and direction without executing or changing code', () => {
     const result = localizeDocumentHtml(html, 'en');
     expect(result).toContain('lang="en" dir="ltr"');

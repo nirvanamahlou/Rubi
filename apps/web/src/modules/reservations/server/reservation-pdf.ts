@@ -32,7 +32,10 @@ export async function renderReservationPdf(
   active++;
   let directory: string | undefined;
   try {
-    let html = localizeDocumentHtml(reservationPdfHtml(output, refs, logo, css, voucher, origin), language);
+    let html = localizeDocumentHtml(
+      reservationPdfHtml(output, refs, logo, css, voucher, origin),
+      language,
+    );
     if (font) {
       const fontBytes = await readFile(font);
       if (fontBytes.length && fontBytes.length <= 5_000_000)

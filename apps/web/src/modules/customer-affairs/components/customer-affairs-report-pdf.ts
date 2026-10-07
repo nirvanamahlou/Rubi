@@ -104,7 +104,12 @@ export async function downloadAffairsReportPdf(
   };
   const save = () => {
     context.fillStyle = '#71839a';
-    draw(`صفحه ${(pages.length + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`, 1160, 1680, 19);
+    draw(
+      `صفحه ${(pages.length + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+      1160,
+      1680,
+      19,
+    );
     const binary = atob(canvas.toDataURL('image/jpeg', 0.92).split(',')[1]!);
     pages.push({
       image: Uint8Array.from(binary, (character) => character.charCodeAt(0)),

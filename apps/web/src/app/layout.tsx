@@ -4,7 +4,10 @@ import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 
 import { Providers } from '@/components/providers';
-import { displayLanguageCookieName, parseDisplayLanguage } from '@/i18n/language';
+import {
+  displayLanguageCookieName,
+  parseDisplayLanguage,
+} from '@/i18n/language';
 import { translateUiText } from '@/i18n/translate';
 import './globals.css';
 
@@ -17,14 +20,21 @@ const metadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const language = parseDisplayLanguage((await cookies()).get(displayLanguageCookieName)?.value) ?? 'fa';
+  const language =
+    parseDisplayLanguage(
+      (await cookies()).get(displayLanguageCookieName)?.value,
+    ) ?? 'fa';
   return {
     ...metadata,
     title: {
       default: translateUiText('CRM شرکت نیایش سیر سحر', language),
-      template: language === 'en' ? '%s | Niayesh Seir Sahar' : '%s | نیایش سیر سحر',
+      template:
+        language === 'en' ? '%s | Niayesh Seir Sahar' : '%s | نیایش سیر سحر',
     },
-    description: language === 'en' ? 'Integrated customer relationship and travel operations management' : metadata.description,
+    description:
+      language === 'en'
+        ? 'Integrated customer relationship and travel operations management'
+        : metadata.description,
   };
 }
 
@@ -39,9 +49,15 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  const initialLanguage = parseDisplayLanguage((await cookies()).get(displayLanguageCookieName)?.value);
+  const initialLanguage = parseDisplayLanguage(
+    (await cookies()).get(displayLanguageCookieName)?.value,
+  );
   return (
-    <html lang={initialLanguage ?? 'fa'} dir={initialLanguage === 'en' ? 'ltr' : 'rtl'} suppressHydrationWarning>
+    <html
+      lang={initialLanguage ?? 'fa'}
+      dir={initialLanguage === 'en' ? 'ltr' : 'rtl'}
+      suppressHydrationWarning
+    >
       <body>
         <Providers initialLanguage={initialLanguage}>
           <a className="skip-link" href="#main-content">

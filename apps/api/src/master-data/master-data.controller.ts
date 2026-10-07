@@ -53,7 +53,12 @@ export class MasterDataController {
     @Res({ passthrough: true }) response: Response,
     @Headers('x-branch-id') branchId?: string,
   ) {
-    const file = await this.service.downloadXlsx(dto, request.actor, branchId, requestDisplayLanguage(request));
+    const file = await this.service.downloadXlsx(
+      dto,
+      request.actor,
+      branchId,
+      requestDisplayLanguage(request),
+    );
     response.setHeader('content-type', file.mimeType);
     response.setHeader(
       'content-disposition',

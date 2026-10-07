@@ -53,10 +53,19 @@ const sheet = (records: SalesContractSummary[]) =>
 
 describe('Sales XLSX download', () => {
   it('exports English statuses and headers while preserving customer input and amounts', () => {
-    const files = unzipSync(buildSalesXlsx([{ ...sample, customerNameSnapshot: 'ورودی اختصاصی' }], {}, new Date('2026-10-07'), 'en'));
+    const files = unzipSync(
+      buildSalesXlsx(
+        [{ ...sample, customerNameSnapshot: 'ورودی اختصاصی' }],
+        {},
+        new Date('2026-10-07'),
+        'en',
+      ),
+    );
     const sheet = strFromU8(files['xl/worksheets/sheet1.xml']!);
     expect(sheet).toContain('rightToLeft="0"');
-    expect(sheet.match(/<row r="4"[^>]*>([\s\S]*?)<\/row>/)?.[1]).not.toMatch(/[\u0600-\u06ff]/);
+    expect(sheet.match(/<row r="4"[^>]*>([\s\S]*?)<\/row>/)?.[1]).not.toMatch(
+      /[\u0600-\u06ff]/,
+    );
     expect(sheet).toContain('ورودی اختصاصی');
     expect(sheet).not.toContain('>ارسال به رزرواسیون<');
     expect(sheet).toContain('<v>100.25</v>');

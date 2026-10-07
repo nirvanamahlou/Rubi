@@ -82,7 +82,8 @@ export function MarketingProcessTracker() {
         setProjection(response.data);
       })
       .catch((cause: unknown) => {
-        if (cause instanceof DOMException && cause.name === 'AbortError') return;
+        if (cause instanceof DOMException && cause.name === 'AbortError')
+          return;
         setProjection(null);
         setError(
           cause instanceof MarketingProcessApiError || cause instanceof Error

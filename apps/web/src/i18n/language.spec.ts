@@ -10,7 +10,11 @@ import {
 
 describe('personal display language', () => {
   it('recognizes only the personal locale cookie and rejects invalid values', () => {
-    expect(languageFromCookies('session=abc; nora-display-language=en; unrelated=fa')).toBe('en');
+    expect(
+      languageFromCookies(
+        'session=abc; nora-display-language=en; unrelated=fa',
+      ),
+    ).toBe('en');
     expect(languageFromCookies('nora-display-language=enough')).toBe('fa');
     expect(languageFromCookies('nora-display-language=fa')).toBe('fa');
     expect(languageFromCookies(null)).toBe('fa');
@@ -37,8 +41,12 @@ describe('personal display language', () => {
 
   it('does not break the application when browser storage is unavailable', () => {
     const storage = {
-      getItem: () => { throw new Error('Storage blocked'); },
-      setItem: () => { throw new Error('Storage blocked'); },
+      getItem: () => {
+        throw new Error('Storage blocked');
+      },
+      setItem: () => {
+        throw new Error('Storage blocked');
+      },
     };
     expect(readDisplayLanguage(storage)).toBeNull();
     expect(() => persistDisplayLanguage('en', storage)).not.toThrow();

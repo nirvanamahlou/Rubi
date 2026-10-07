@@ -111,12 +111,15 @@ async function request<T>(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new SystemManagementApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await localizedFetch(`${baseUrl}/system-management/v1${path}`, {
-    cache: 'no-store',
-    credentials: 'include',
-    ...init,
-    headers: { accept: 'application/json', ...init?.headers },
-  });
+  const response = await localizedFetch(
+    `${baseUrl}/system-management/v1${path}`,
+    {
+      cache: 'no-store',
+      credentials: 'include',
+      ...init,
+      headers: { accept: 'application/json', ...init?.headers },
+    },
+  );
   if (
     response.status === 401 &&
     !retriedAfterRefresh &&

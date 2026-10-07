@@ -21,4 +21,4 @@ The initial machine translation received only fixed UI labels and visible API/co
 
 ## Validation and integration
 
-Validation is in progress. Production compilation, personal-language persistence, English rendering, canonical form values, calendar labels, print HTML escaping and current output tests have passed. Final integrated results and develop PR are recorded in PROJECT_STATUS and WORK_ASSIGNMENTS when complete. No runtime/database deployment is implied by this implementation.
+Integrated with develop@6da2afe0. The full Web suite passes 2,609 tests with six existing skips; 25 focused API output/HTTP tests pass. Web/API typechecks, lint and production builds pass. Offline catalogue consistency passes. Native-browser login proof covers both language directions, English metadata/wordmarks and preservation of an unsubmitted synthetic username. Authenticated operational workflows were not exercised in the browser; their existing module tests remain the regression evidence. Exact-head full monorepo CI remains the final develop merge gate. No runtime/database deployment is implied by this implementation.

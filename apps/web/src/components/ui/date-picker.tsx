@@ -91,7 +91,11 @@ export function DatePicker({
     React.useState<CalendarSystem>(
       defaultCalendarSystem ?? systemPreferences.calendar,
     );
-  const calendarSystem = controlledCalendarSystem ?? (systemPreferences.language === 'en' && defaultCalendarSystem === undefined ? 'gregorian' : internalCalendarSystem);
+  const calendarSystem =
+    controlledCalendarSystem ??
+    (systemPreferences.language === 'en' && defaultCalendarSystem === undefined
+      ? 'gregorian'
+      : internalCalendarSystem);
   const english = gregorianEnglish || systemPreferences.language === 'en';
   const t = (fa: string, en: string) => (english ? en : fa);
   const [calendarView, setCalendarView] = React.useState<CalendarView>('days');

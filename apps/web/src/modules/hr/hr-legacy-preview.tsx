@@ -1,4 +1,6 @@
 'use client';
+import { uiAlert, uiConfirm } from '@/i18n/dialogs';
+
 import { translateUiText } from '@/i18n/translate';
 
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
@@ -1362,11 +1364,7 @@ function Employees({
           aria-label={`حذف کارمند ${employee.name}`}
           className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDanger}`}
           onClick={() => {
-            if (
-              window.confirm(
-                `«${employee.name}» از فهرست موقت کارکنان حذف شود؟`,
-              )
-            )
+            if (uiConfirm(`«${employee.name}» از فهرست موقت کارکنان حذف شود؟`))
               onDelete(employee);
           }}
           type="button"
@@ -1728,7 +1726,7 @@ function genericTable(
           className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDanger}`}
           onClick={() => {
             if (
-              window.confirm(
+              uiConfirm(
                 `«${previewCellText(row[0] ?? '')}» از داده‌های موقت این نشست حذف شود؟`,
               )
             )
@@ -1779,7 +1777,7 @@ function readonlyTable(dataset: HrPreviewDataset): PreviewTableData {
               key={`attachment-${rowIndex}-${cellIndex}`}
               onClick={() => {
                 if (!openHrAttachment(cell))
-                  window.alert('فایل در این نشست مرورگر در دسترس نیست.');
+                  uiAlert('فایل در این نشست مرورگر در دسترس نیست.');
               }}
               type="button"
             >
@@ -1793,9 +1791,7 @@ function readonlyTable(dataset: HrPreviewDataset): PreviewTableData {
               key={`applicant-${rowIndex}`}
               onClick={() => {
                 if (!openHrAttachment(rowAttachmentValue))
-                  window.alert(
-                    'رزومه متقاضی در این نشست مرورگر در دسترس نیست.',
-                  );
+                  uiAlert('رزومه متقاضی در این نشست مرورگر در دسترس نیست.');
               }}
               type="button"
             >
@@ -2520,7 +2516,7 @@ function TabbedSection({
   const exportContract = (row: readonly HrPreviewCell[]) => {
     void downloadContractPdf(contractRecordFromRow(dataset.columns, row)).catch(
       (error: unknown) =>
-        window.alert(
+        uiAlert(
           error instanceof Error
             ? error.message
             : 'ساخت PDF قرارداد انجام نشد.',
@@ -2619,7 +2615,12 @@ function TabbedSection({
                         headers.length !== dataset.columns.length ||
                         headers.some(
                           (header, index) =>
-                            header.trim() !== dataset.columns[index] && header.trim() !== translateUiText(dataset.columns[index] ?? '', 'en'),
+                            header.trim() !== dataset.columns[index] &&
+                            header.trim() !==
+                              translateUiText(
+                                dataset.columns[index] ?? '',
+                                'en',
+                              ),
                         )
                       )
                         throw new Error(

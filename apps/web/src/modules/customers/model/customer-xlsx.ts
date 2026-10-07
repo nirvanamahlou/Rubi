@@ -365,7 +365,14 @@ export async function parseCustomerXlsx(file: File) {
   });
   const [headers = [], ...data] = rows;
   const positions = new Map(
-    headers.map((header, index) => [customerImportHeaders.find((source) => source === header.trim() || translateUiText(source, 'en') === header.trim()) ?? header.trim(), index]),
+    headers.map((header, index) => [
+      customerImportHeaders.find(
+        (source) =>
+          source === header.trim() ||
+          translateUiText(source, 'en') === header.trim(),
+      ) ?? header.trim(),
+      index,
+    ]),
   );
   const nameIndex = positions.get(customerImportHeaders[0]);
   const nationalIdIndex = positions.get(customerImportHeaders[1]);

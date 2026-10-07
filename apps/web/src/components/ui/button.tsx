@@ -103,7 +103,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         aria-busy={loading || undefined}
         aria-label={ariaLabel === undefined ? undefined : t(ariaLabel)}
-        title={title !== undefined ? t(title) : operationIconOnly ? t(ariaLabel) : undefined}
+        title={
+          title !== undefined
+            ? t(title)
+            : operationIconOnly
+              ? t(ariaLabel)
+              : undefined
+        }
         {...props}
       >
         {loading ? (

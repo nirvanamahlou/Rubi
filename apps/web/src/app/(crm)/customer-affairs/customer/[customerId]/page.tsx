@@ -5,8 +5,8 @@ import { Customer360View } from '@/modules/customer-affairs/components/customer-
 
 export async function generateMetadata(): Promise<Metadata> {
   return localizedMetadata({
-  title: 'Customer 360 | امور مشتریان',
-});
+    title: 'Customer 360 | امور مشتریان',
+  });
 }
 
 export default async function CustomerAffairsCustomerPage({

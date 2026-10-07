@@ -67,7 +67,13 @@ export function HrImport({
         'کد پرسنلی',
         'شناسه پرونده مرتبط',
       ];
-      const headers = rawHeaders?.map((header) => expected.find((source) => source === header || translateUiText(source, 'en') === header) ?? header);
+      const headers = rawHeaders?.map(
+        (header) =>
+          expected.find(
+            (source) =>
+              source === header || translateUiText(source, 'en') === header,
+          ) ?? header,
+      );
       if (
         !headers ||
         definition.columns.some((column) => !headers.includes(column))

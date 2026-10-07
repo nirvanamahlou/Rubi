@@ -1,4 +1,8 @@
-import type { createElement as reactCreateElement, ElementType, ReactNode } from 'react';
+import type {
+  createElement as reactCreateElement,
+  ElementType,
+  ReactNode,
+} from 'react';
 import { jsx } from './jsx-runtime';
 
 export { Fragment } from 'react';
@@ -10,7 +14,8 @@ export const createElement: typeof reactCreateElement = ((
   ...children: ReactNode[]
 ) => {
   const input = { ...props };
-  if (children.length) input.children = children.length === 1 ? children[0] : children;
+  if (children.length)
+    input.children = children.length === 1 ? children[0] : children;
   const key = input.key as string | undefined;
   delete input.key;
   return jsx(type, input, key);

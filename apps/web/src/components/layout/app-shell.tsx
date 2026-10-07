@@ -396,7 +396,10 @@ function SearchDialog() {
 function HeaderActions() {
   const { language, setLanguage } = useSystemPreferences();
   const router = useRouter();
-  const chooseLanguage = (next: 'fa' | 'en') => { setLanguage(next); router.refresh?.(); };
+  const chooseLanguage = (next: 'fa' | 'en') => {
+    setLanguage(next);
+    router.refresh?.();
+  };
   const messages = language === 'en' ? enMessages : faMessages;
   const { theme, toggleTheme } = useTheme();
   return (

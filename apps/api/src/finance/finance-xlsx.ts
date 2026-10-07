@@ -46,7 +46,8 @@ export function buildFinanceXlsx(
   snapshot: FinanceExportSnapshotV1,
   language: DisplayLanguage = 'fa',
 ): Uint8Array {
-  const label = (ref: string, value: string, style = 0) => text(ref, displayText(value, language), style);
+  const label = (ref: string, value: string, style = 0) =>
+    text(ref, displayText(value, language), style);
   const last = letter(snapshot.columns.length - 1),
     header = 5,
     end = header + snapshot.rows.length,

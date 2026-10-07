@@ -5,7 +5,10 @@ import { NextIntlClientProvider } from 'next-intl';
 import { useState, type ReactNode } from 'react';
 
 import { faMessages } from '@/messages/fa';
-import { SystemPreferencesProvider, useSystemPreferences } from './system-preferences-provider';
+import {
+  SystemPreferencesProvider,
+  useSystemPreferences,
+} from './system-preferences-provider';
 import { translateUiText } from '@/i18n/translate';
 import type { DisplayLanguage } from '@/i18n/language';
 import { ThemeProvider } from './theme-provider';
@@ -15,7 +18,12 @@ function localizeMessages<T>(value: T): T {
   if (typeof value === 'string') return translateUiText(value, 'en') as T;
   if (Array.isArray(value)) return value.map(localizeMessages) as T;
   if (value && typeof value === 'object')
-    return Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, localizeMessages(entry)])) as T;
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        localizeMessages(entry),
+      ]),
+    ) as T;
   return value;
 }
 
@@ -37,7 +45,10 @@ function ApplicationProviders({ children }: { children: ReactNode }) {
   );
 
   return (
-    <NextIntlClientProvider locale={language} messages={language === 'en' ? englishMessages : faMessages}>
+    <NextIntlClientProvider
+      locale={language}
+      messages={language === 'en' ? englishMessages : faMessages}
+    >
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <TooltipProvider delayDuration={250}>{children}</TooltipProvider>
@@ -47,7 +58,13 @@ function ApplicationProviders({ children }: { children: ReactNode }) {
   );
 }
 
-export function Providers({ children, initialLanguage = null }: { children: ReactNode; initialLanguage?: DisplayLanguage | null }) {
+export function Providers({
+  children,
+  initialLanguage = null,
+}: {
+  children: ReactNode;
+  initialLanguage?: DisplayLanguage | null;
+}) {
   return (
     <SystemPreferencesProvider initialLanguage={initialLanguage}>
       <ApplicationProviders>{children}</ApplicationProviders>

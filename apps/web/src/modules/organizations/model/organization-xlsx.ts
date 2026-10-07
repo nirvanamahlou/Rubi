@@ -369,7 +369,8 @@ export async function parseOrganizationXlsx(
     ['personType', organizationHeaders[2]],
     ['roleCodes', organizationHeaders[3]],
   ]);
-  for (const header of organizationHeaders) aliases.set(translateUiText(header, 'en'), header);
+  for (const header of organizationHeaders)
+    aliases.set(translateUiText(header, 'en'), header);
   const normalized = headers.map((header) => aliases.get(header) ?? header);
   if (
     new Set(normalized.filter(Boolean)).size !==

@@ -1,4 +1,6 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
+
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { Info, PencilLine, Trash2 } from 'lucide-react';
@@ -771,7 +773,7 @@ export function OrganizationCatalogTable({
                       className={`${styles.button} ${styles.buttonSmall} ${styles.buttonDanger}`}
                       onClick={() => {
                         if (
-                          window.confirm(
+                          uiConfirm(
                             `«${item.title}» از داده‌های موقت این نشست حذف شود؟`,
                           )
                         )

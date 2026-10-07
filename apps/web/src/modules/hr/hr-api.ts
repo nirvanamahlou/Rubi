@@ -1,7 +1,6 @@
 'use client';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
-
 import type {
   HrBootstrapDto,
   HrEmployeeCreate,

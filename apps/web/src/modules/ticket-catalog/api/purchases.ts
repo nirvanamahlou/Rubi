@@ -1,7 +1,6 @@
 'use client';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
-
 import type {
   TicketCatalogPurchaseCreateV1,
   TicketCatalogPurchaseV1,
@@ -32,24 +31,28 @@ export async function registerTicketPurchase(
     amount: null,
     currencyCode: null,
   };
-  const response = await localizedFetch(baseUrl + '/procurement/ticket-purchases', {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-      'x-branch-id': branchId,
-      'idempotency-key':
-        'ticket-purchase:' + product.id + ':v' + product.version,
+  const response = await localizedFetch(
+    baseUrl + '/procurement/ticket-purchases',
+    {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        'x-branch-id': branchId,
+        'idempotency-key':
+          'ticket-purchase:' + product.id + ':v' + product.version,
+      },
+      body: JSON.stringify(input),
     },
-    body: JSON.stringify(input),
-  });
+  );
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
       message?: string;
     } | null;
     throw new Error(
-      payload?.message || 'ثبت درخواست قیمت خرید بلیط در کارتابل مالی ناموفق بود.',
+      payload?.message ||
+        'ثبت درخواست قیمت خرید بلیط در کارتابل مالی ناموفق بود.',
     );
   }
   return response.json() as Promise<TicketCatalogPurchaseV1>;

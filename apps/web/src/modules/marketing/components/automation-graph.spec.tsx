@@ -121,7 +121,7 @@ describe('AutomationGraphCanvas shared rendered geometry', () => {
   it('routes all four actual port buttons to the selected node and disables read-only ports', () => {
     const select = vi.fn();
     const buttons = (node: ReactNode): Array<Record<string, unknown>> => {
-  node = canonicalTestTree(node);
+      node = canonicalTestTree(node);
       if (Array.isArray(node)) return node.flatMap(buttons);
       if (!isValidElement<{ children?: ReactNode }>(node)) return [];
       return node.type === 'button'

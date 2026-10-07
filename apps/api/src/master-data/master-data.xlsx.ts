@@ -255,7 +255,14 @@ export function buildMasterDataXlsx(input: {
   });
   const header = input.columns
     .map((column, index) =>
-      cell(`${columnName(index)}1`, displayText(columnLabels[column] ?? column, input.locale === 'en-US' ? 'en' : 'fa'), 1),
+      cell(
+        `${columnName(index)}1`,
+        displayText(
+          columnLabels[column] ?? column,
+          input.locale === 'en-US' ? 'en' : 'fa',
+        ),
+        1,
+      ),
     )
     .join('');
   const dataRows = input.records
@@ -265,8 +272,12 @@ export function buildMasterDataXlsx(input: {
         .map((column, columnIndex) =>
           cell(
             `${columnName(columnIndex)}${rowNumber}`,
-            input.locale === 'en-US' && ['status', 'transportStatus'].includes(column)
-              ? displayText(recordValue(record, column, formatter), 'en')
+            input.locale === 'en-US' &&
+              ['status', 'transportStatus'].includes(column)
+              ? displayText(
+                  String(recordValue(record, column, formatter)),
+                  'en',
+                )
               : recordValue(record, column, formatter),
           ),
         )

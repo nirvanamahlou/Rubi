@@ -83,7 +83,11 @@ export class SalesController {
     @Query() query: SalesContractListQuery,
     @Req() request: AuthenticatedRequest,
   ) {
-    const bytes = await this.service.exportXlsx(query, request.actor, requestDisplayLanguage(request));
+    const bytes = await this.service.exportXlsx(
+      query,
+      request.actor,
+      requestDisplayLanguage(request),
+    );
     return new StreamableFile(bytes, {
       type: SALES_XLSX_MIME,
       disposition: `attachment; filename="sales-contracts-${new Date().toISOString().slice(0, 10)}.xlsx"`,

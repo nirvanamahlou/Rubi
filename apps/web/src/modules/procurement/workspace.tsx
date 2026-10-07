@@ -1,4 +1,6 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
+
 import {
   Suspense,
   useCallback,
@@ -862,7 +864,7 @@ export function RequestDetail({
                   disabled={!reason.trim()}
                   onClick={() => {
                     if (
-                      window.confirm(
+                      uiConfirm(
                         'پرونده پس از کنترل بسته‌بودن سفارش‌ها و تعیین تکلیف مغایرت‌ها بسته شود؟',
                       )
                     )
@@ -904,8 +906,7 @@ export function RequestDetail({
                     !can('procurement.assign')
                   }
                   onClick={() => {
-                    if (!window.confirm('درخواست رد و برای همیشه حذف شود؟'))
-                      return;
+                    if (!uiConfirm('درخواست رد و برای همیشه حذف شود؟')) return;
                     void command({
                       action: 'DECIDE',
                       decision: 'REJECTED',
@@ -924,7 +925,7 @@ export function RequestDetail({
                   variant="outline"
                   disabled={!reason.trim()}
                   onClick={() => {
-                    if (window.confirm('درخواست با دلیل واردشده لغو شود؟'))
+                    if (uiConfirm('درخواست با دلیل واردشده لغو شود؟'))
                       void command({ action: 'CANCEL', reason });
                   }}
                 >

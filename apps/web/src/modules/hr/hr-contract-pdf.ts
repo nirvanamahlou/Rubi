@@ -2,7 +2,6 @@
 import { browserDisplayLanguage } from '@/i18n/language';
 import { translateUiText } from '@/i18n/translate';
 
-
 import { JAHAN_BASTAN_LOGO, NIYAYESH_SEIR_LOGO } from './contract-logos';
 import type { HrPreviewCell } from './hr-preview-data';
 import {

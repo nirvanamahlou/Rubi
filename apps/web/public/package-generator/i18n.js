@@ -2,7 +2,10 @@
 (() => {
   const originalTitle = document.title;
   const catalog = window.RUBI_ENGLISH_UI || {};
-  const phrases = Object.keys(catalog).sort((a, b) => b.length - a.length);
+  const phrases = Object.keys(catalog).sort((a, b) => b.length - a.length).map((source) => ({
+    source,
+    pattern: new RegExp('(?<![\\p{L}\\p{N}])' + source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\p{L}\\p{N}])', 'gu'),
+  }));
   let language = /(?:^|;\s*)nora-display-language=en(?:;|$)/.test(document.cookie) ? 'en' : 'fa';
   const digits = (text) => text.replace(/[۰-۹٠-٩]/g, (digit) => String(digit.charCodeAt(0) - (digit >= '۰' ? 1776 : 1632)));
   const translate = (text) => {
@@ -10,7 +13,7 @@
     const normalized = text.replace(/\s+/g, ' ').trim();
     if (catalog[normalized]) return digits((text.match(/^\s*/)?.[0] || '') + catalog[normalized] + (text.match(/\s*$/)?.[0] || '')); 
     let result = text;
-    for (const source of phrases) if (result.includes(source)) result = result.split(source).join(catalog[source]);
+    for (const { source, pattern } of phrases) if (result.includes(source)) result = result.replace(pattern, () => catalog[source]);
     return digits(result);
   };
   const sources = new WeakMap();
@@ -27,12 +30,12 @@
     }
     if (root.nodeType !== Node.ELEMENT_NODE) return;
     const saved = attributes.get(root) || {};
-    for (const name of ['title', 'placeholder', 'alt', 'aria-label']) {
+    for (const name of ['title', 'placeholder', 'alt', 'aria-label', 'dir']) {
       const current = root.getAttribute(name);
       if (current === null) continue;
       const previous = saved[name];
       const original = previous && current === previous.rendered ? previous.original : current;
-      const rendered = translate(original);
+      const rendered = name === 'dir' ? (language === 'en' && original === 'rtl' ? 'ltr' : original) : translate(original);
       saved[name] = { original, rendered };
       if (current !== rendered) root.setAttribute(name, rendered);
     }

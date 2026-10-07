@@ -103,12 +103,24 @@ export async function downloadSectionPdf(
     context.textAlign = 'right';
     context.fillStyle = '#103c78';
     context.font = 'bold 34px Vazirmatn, Tahoma, sans-serif';
-    context.fillText(translateUiText(`گزارش ${title}`, browserDisplayLanguage()), 1170, 75);
-    textLines.push({ text: translateUiText(`گزارش ${title}`, browserDisplayLanguage()), x: 1170, y: 75, size: 34 });
+    context.fillText(
+      translateUiText(`گزارش ${title}`, browserDisplayLanguage()),
+      1170,
+      75,
+    );
+    textLines.push({
+      text: translateUiText(`گزارش ${title}`, browserDisplayLanguage()),
+      x: 1170,
+      y: 75,
+      size: 34,
+    });
     context.font = '22px Vazirmatn, Tahoma, sans-serif';
     context.fillStyle = '#52657c';
     context.fillText(
-      translateUiText(`اطلاعات منابع انسانی · ${new Date().toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')} · صفحه ${page.toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`, browserDisplayLanguage()),
+      translateUiText(
+        `اطلاعات منابع انسانی · ${new Date().toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')} · صفحه ${page.toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+        browserDisplayLanguage(),
+      ),
       1170,
       117,
     );
@@ -158,7 +170,10 @@ export async function downloadSectionPdf(
     );
     if (!report.data.rows.length) line('رکوردی وجود ندارد.');
     report.data.rows.forEach((row, index) => {
-      line(`رکورد ${(index + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`, true);
+      line(
+        `رکورد ${(index + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+        true,
+      );
       report.data.columns.forEach((column, cellIndex) =>
         line(`${column}: ${reportCellText(row[cellIndex] ?? '') || '—'}`),
       );

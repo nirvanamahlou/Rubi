@@ -1,4 +1,7 @@
 'use client';
+import { referenceDisplayName } from '@/i18n/reference-name';
+import { useDisplayLanguage } from '@/i18n/locale-context';
+
 import { useScreenAccess } from '@/modules/iam/access-context';
 import { useSearchParams } from 'next/navigation';
 
@@ -81,6 +84,7 @@ function GenericMasterDataWorkspace({
 }: {
   section: MasterDataSectionDefinition;
 }) {
+  const language = useDisplayLanguage();
   const allowedResource = useScreenAccess();
   const visibleResources = section.resources.filter((key) =>
     allowedResource('master-data.resource.' + key),
@@ -579,7 +583,9 @@ function GenericMasterDataWorkspace({
                         {record.code}
                       </td>
                       <MasterDataLogoCell record={record} />
-                      <td className="p-4 font-semibold">{record.name}</td>
+                      <td className="p-4 font-semibold">
+                        {referenceDisplayName(record, language)}
+                      </td>
                       <td className="p-4">
                         <Badge
                           className={
@@ -594,19 +600,19 @@ function GenericMasterDataWorkspace({
                       <td className="p-4 text-center">
                         <div className="flex flex-wrap justify-center gap-2">
                           <Button
-                            aria-label={`مشاهده ${record.name}`}
+                            aria-label={`مشاهده ${referenceDisplayName(record, language)}`}
                             onClick={() => openForm('view', record)}
                             size="icon"
-                            title={`مشاهده ${record.name}`}
+                            title={`مشاهده ${referenceDisplayName(record, language)}`}
                             variant="outline"
                           >
                             <Eye aria-hidden="true" className="size-4" />
                           </Button>
                           <Button
-                            aria-label={`ویرایش ${record.name}`}
+                            aria-label={`ویرایش ${referenceDisplayName(record, language)}`}
                             onClick={() => openForm('edit', record)}
                             size="icon"
-                            title={`ویرایش ${record.name}`}
+                            title={`ویرایش ${referenceDisplayName(record, language)}`}
                             variant="outline"
                           >
                             <FilePenLine
@@ -622,12 +628,12 @@ function GenericMasterDataWorkspace({
                           record.attributes.status === 'DRAFT' ? (
                             <>
                               <Button
-                                aria-label={`تأیید ${record.name}`}
+                                aria-label={`تأیید ${referenceDisplayName(record, language)}`}
                                 onClick={() =>
                                   void decideRate(record, 'approve')
                                 }
                                 size="icon"
-                                title={`تأیید ${record.name}`}
+                                title={`تأیید ${referenceDisplayName(record, language)}`}
                                 variant="outline"
                               >
                                 <CheckCircle2
@@ -636,12 +642,12 @@ function GenericMasterDataWorkspace({
                                 />
                               </Button>
                               <Button
-                                aria-label={`رد ${record.name}`}
+                                aria-label={`رد ${referenceDisplayName(record, language)}`}
                                 onClick={() =>
                                   void decideRate(record, 'reject')
                                 }
                                 size="icon"
-                                title={`رد ${record.name}`}
+                                title={`رد ${referenceDisplayName(record, language)}`}
                                 variant="outline"
                               >
                                 <XCircle

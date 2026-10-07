@@ -13,9 +13,11 @@ export function SourcePackageGenerator() {
   const language = useDisplayLanguage();
   const frame = useRef<HTMLIFrameElement>(null);
   useEffect(() => {
-    if (loaded) frame.current?.contentWindow?.postMessage(
-      { type: 'rubi-display-language', language }, window.location.origin,
-    );
+    if (loaded)
+      frame.current?.contentWindow?.postMessage(
+        { type: 'rubi-display-language', language },
+        window.location.origin,
+      );
   }, [language, loaded]);
 
   return (
