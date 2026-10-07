@@ -144,13 +144,6 @@ export function TicketOfferCard({
             </strong>
           </span>
         </span>
-        <span className="col-span-2 flex items-center justify-center gap-1.5 rounded-md bg-muted/60 px-2 py-1.5 text-[11px] text-muted-foreground">
-          <Plane
-            aria-hidden="true"
-            className="size-3.5 -rotate-45 text-primary"
-          />
-          مدت پرواز: {ticketDuration(offer)} · ساعت‌ها به وقت تهران
-        </span>
       </span>
       <span className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/40 px-3 py-2 text-[11px]">
         <span>

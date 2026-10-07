@@ -1,13 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import {
-  Plus,
-  Trash2,
-  WalletCards,
-  ShieldCheck,
-  ReceiptText,
-} from 'lucide-react';
+import { Plus, Trash2, WalletCards, ReceiptText } from 'lucide-react';
 import type {
   MasterDataRecord,
   SalesPaymentInput,
@@ -320,11 +314,6 @@ export function SalesPaymentPlan({
             </article>
           );
         })}
-        <p className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2 text-xs leading-6 text-muted-foreground">
-          <ShieldCheck className="mt-1 size-4 shrink-0" aria-hidden="true" />
-          این بخش فقط برنامهٔ پرداخت است؛ مانده قرارداد تنها پس از تأیید دریافت
-          وجه توسط واحد مالی کاهش می‌یابد.
-        </p>
       </div>
     </section>
   );

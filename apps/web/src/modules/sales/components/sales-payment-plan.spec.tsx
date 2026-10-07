@@ -30,12 +30,12 @@ const render = (payments: SalesPaymentInput[], disabled = false) =>
     />,
   );
 describe('compact contract payment plan', () => {
-  it('shows an actionable empty state and explains Finance confirmation', () => {
+  it('shows an actionable empty state without redundant Finance copy', () => {
     const html = render([]);
     expect(html).toContain('هنوز پرداختی برنامه‌ریزی نشده');
     expect(html).toContain('افزودن پرداخت');
-    expect(html).toContain('واحد مالی');
-    expect(html).toContain('برنامهٔ پرداخت');
+    expect(html).not.toContain('واحد مالی');
+    expect(html).toContain('برنامه پرداخت قرارداد');
   });
   it('numbers rows and explicitly labels amount, currency, method and due date', () => {
     const html = render([cash, cash]);

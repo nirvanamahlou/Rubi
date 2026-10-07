@@ -116,8 +116,6 @@ describe('readable sales ticket card', () => {
       'ظرفیت کل',
       'aria-pressed="true"',
       'ring-primary/20',
-      'مدت پرواز:',
-      'ساعت‌ها به وقت تهران',
     ])
       expect(html).toContain(text);
     expect(html).toContain('مانده');

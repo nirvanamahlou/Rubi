@@ -259,6 +259,10 @@ describe('CRM navigation', () => {
   });
 
   it('shows the selected marketing section in breadcrumbs', () => {
+    expect(getNavigationBreadcrumbs('/marketing', 'leads')).toEqual([
+      { href: '/marketing', title: 'مارکتینگ' },
+      { href: '/marketing?section=leads', title: 'لیدها' },
+    ]);
     expect(getNavigationBreadcrumbs('/marketing', 'audiences')).toEqual([
       { href: '/marketing', title: 'مارکتینگ' },
       {

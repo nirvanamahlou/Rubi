@@ -63,7 +63,7 @@ describe('Sales uses the Customers entry spreadsheet', () => {
     expect(html).toContain('مشتری و مسافر اول');
     expect(html).not.toContain('sales-entry-primary-first-name');
     expect(html).not.toContain('انقضای پاسپورت');
-    expect(html).toContain(
+    expect(html).not.toContain(
       'مشتری طرف حساب را در بخش بالای جدول مسافران مشخص کنید',
     );
     expect(html).not.toContain('این مشتری مسافر اول هم هست');

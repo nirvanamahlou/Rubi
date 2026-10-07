@@ -5755,16 +5755,16 @@ export function MarketingReferenceSection({
         </div>
         {tabs.map(([key, , description]) => (
           <TabsContent className="mt-5" key={key} value={key}>
-            {section !== 'audiences' ? (
+            {section !== 'audiences' && section !== 'leads' ? (
               <p className="mb-4 text-sm text-muted-foreground">
                 {description}
               </p>
             ) : null}
             {section === 'audiences' && key === 'segments' ? (
               <DurableSegmentsPanel onNotice={onNotice} />
-            ) : section === 'audiences' && key === 'leads' ? (
+            ) : section === 'leads' && key === 'leads' ? (
               <DurableIntakesPanel mode="leads" onNotice={onNotice} />
-            ) : section === 'audiences' && key === 'scoring' ? (
+            ) : section === 'leads' && key === 'scoring' ? (
               <DurableIntakesPanel mode="scoring" onNotice={onNotice} />
             ) : section === 'audiences' && key === 'sources' ? (
               <DurableSourceChart onNotice={onNotice} />

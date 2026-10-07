@@ -3,6 +3,7 @@ export type MarketingSectionKey =
   | 'dashboard'
   | 'campaigns'
   | 'audiences'
+  | 'leads'
   | 'communications'
   | 'content'
   | 'offers'
@@ -59,9 +60,16 @@ export const marketingSections: readonly MarketingSectionDefinition[] = [
   {
     key: 'audiences',
     title: 'مخاطبان',
-    description: 'سگمنت‌ها، سرنخ‌ها، منابع ورود و کنترل رضایت مخاطبان',
-    highlights: ['سگمنت', 'سرنخ', 'منبع', 'رضایت'],
+    description: 'سگمنت‌ها، مخاطبان کمپین، منابع ورود و کنترل رضایت مخاطبان',
+    highlights: ['سگمنت', 'مخاطب کمپین', 'منبع', 'رضایت'],
     tone: 'emerald',
+  },
+  {
+    key: 'leads',
+    title: 'لیدها',
+    description: 'مدیریت سرنخ‌های مارکتینگ و امتیازدهی سرنخ‌ها',
+    highlights: ['سرنخ', 'امتیازدهی'],
+    tone: 'violet',
   },
   {
     key: 'communications',
@@ -95,9 +103,11 @@ export const marketingSectionTabs = {
   audiences: [
     ['segments', 'گروه‌ها و سگمنت‌ها', 'قواعد مخاطب بدون نگهداری PII'],
     ['campaign-audience', 'مخاطبان کمپین', 'انتساب سگمنت‌ها به کمپین‌ها'],
+    ['sources', 'منابع ورود', 'کانال و منبع اولیه ورود'],
+  ],
+  leads: [
     ['leads', 'سرنخ‌های مارکتینگ', 'نمای تجمیعی سرنخ‌های ورودی'],
     ['scoring', 'امتیازدهی سرنخ', 'قواعد پیشنهادی امتیازدهی'],
-    ['sources', 'منابع ورود', 'کانال و منبع اولیه ورود'],
   ],
   communications: [
     ['send', 'ارسال پیام', 'ساخت و ثبت نیت ارسال برای کانال‌های انتخاب‌شده'],
@@ -143,7 +153,7 @@ const itemOverrides: Readonly<
     'اتصال به preview-segment-domestic',
     'متصل',
   ],
-  'audiences-leads': [
+  'leads-leads': [
     'سرنخ‌های ورودی هفته',
     'نمای تجمیعی؛ رکورد فردی نمایش داده نمی‌شود',
     'در انتظار قرارداد',

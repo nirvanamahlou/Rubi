@@ -931,10 +931,6 @@ export function SalesContractForm() {
               </p>
             ) : (
               <>
-                <p className="text-xs text-muted-foreground">
-                  با انتخاب پرواز، قطار و اتوبوس قابل انتخاب نیستند. ترانسفر فقط
-                  روی خروجی بلیط درج می‌شود.
-                </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {(['FLIGHT', 'TRANSFER'] as const).map((kind) => (
                     <fieldset
@@ -1023,10 +1019,6 @@ export function SalesContractForm() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="text-sm font-bold">تعداد مسافران</h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  این تعداد پیش از انتخاب بلیط کنترل می‌شود تا بیشتر از ظرفیت
-                  باقی‌مانده فروخته نشود.
-                </p>
               </div>
               <Badge>
                 {passengerCounts.seated.toLocaleString('fa-IR')} صندلی ·{' '}
@@ -1298,7 +1290,6 @@ export function SalesContractForm() {
                   ) : null}
                   {flightDirections.includes('RETURN') ? (
                     <section className="grid gap-3 min-w-0">
-                      <h3 className="font-bold">انتخاب بلیط برگشت</h3>
                       <ContractFlightEditor
                         airlines={references.airlines}
                         value={state.contractFlights?.RETURN}
@@ -1310,10 +1301,6 @@ export function SalesContractForm() {
                       />
                       {!state.contractFlights?.RETURN ? (
                         <>
-                          <p className="text-sm text-muted-foreground">
-                            بلیط‌های برگشت در بازه انتخابی و پس از رسیدن بلیط
-                            رفت نمایش داده می‌شوند.
-                          </p>
                           {!flightDirections.includes('OUTBOUND') ||
                           salesFlightSelection(state, 'OUTBOUND') ? (
                             <TicketOfferPicker
@@ -1435,16 +1422,6 @@ export function SalesContractForm() {
             (activeDetail === 'FLIGHT' &&
               state.serviceKinds.includes('HOTEL')) ? (
               <section className="grid gap-4 rounded-xl border p-4">
-                <h3 className="font-bold">هتل مقصد</h3>
-                <p className="text-xs text-muted-foreground">
-                  فقط هتل‌های فعالِ ثبت‌شده برای شهر{' '}
-                  {references.cities.find(
-                    (city) => city.id === state.destinationId,
-                  )?.name ?? 'مقصد'}{' '}
-                  قابل جست‌وجو هستند. نام هتل را جست‌وجو کنید. ورود پیشنهادی روز
-                  بعد از پرواز رفت و خروج روز قبل از پرواز برگشت است؛ هر دو
-                  تاریخ قابل تغییرند.
-                </p>
                 <div className="grid gap-4 md:grid-cols-3">
                   <SearchableReference
                     label="هتل"
@@ -1821,10 +1798,7 @@ export function SalesContractForm() {
                   )}
                 </section>
               ))}
-            <p className="text-xs text-muted-foreground">
-              حذف مسافر فقط از همین قرارداد است؛ پرونده او در مشتریان باقی
-              می‌ماند.
-            </p>
+
             {!canContinue ? (
               <p
                 role="status"
@@ -1888,9 +1862,6 @@ export function SalesContractForm() {
                   }
                   placeholder="توضیحات لازم برای اجرای خدمات سفر"
                 />
-                <p className="text-sm text-muted-foreground">
-                  در توضیحات درخواست رزرواسیون نمایش داده می‌شود.
-                </p>
               </FormField>
               <details className="rounded-xl border p-3">
                 <summary className="cursor-pointer text-sm font-semibold">
