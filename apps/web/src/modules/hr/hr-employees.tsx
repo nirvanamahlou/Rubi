@@ -99,22 +99,44 @@ export function HrEmployeeEditor({
   employee,
   store,
   onClose,
+  onSaved,
+  preferredCompanyId,
 }: {
   employee?: HrEmployeeDto | undefined;
   store: HrStore;
   onClose: () => void;
+  onSaved?: (employee: HrEmployeeDto) => void;
+  preferredCompanyId?: string;
 }) {
   const key = useRef(crypto.randomUUID());
-  const [newReference, setNewReference] = useState<
-    'branches' | 'units' | 'positions' | null
-  >(null);
+  const [newReference, setNewReference] = useState<{
+    kind: 'branches' | 'units' | 'positions';
+    companyId?: string;
+  } | null>(null);
+  const [createdReference, setCreatedReference] = useState<{
+    id: string;
+    kind: 'branches' | 'units' | 'positions';
+    value: string;
+  }>();
   const references = useHrReferenceData(store);
   const external = useHrFormReferences(employee?.id);
   const companies = hrCompanies(references.data);
+  const preferredCompany = companies.find(
+    (company) => company.id === preferredCompanyId,
+  );
   return (
     <>
       <NewEmployeeDialog
-        onAddReference={setNewReference}
+        onAddReference={(kind, branch) => {
+          const companyId = companies.find(
+            (company) => company.name === branch,
+          )?.id;
+          setNewReference({
+            kind,
+            ...(companyId ? { companyId } : {}),
+          });
+        }}
+        createdReference={createdReference}
         userOptions={external.data?.users.map((u) => ({
           ...u,
           branches: companies
@@ -130,7 +152,12 @@ export function HrEmployeeEditor({
         branchOptions={
           employee?.organizationBranchId
             ? [employee.companyName]
-            : companies.map((company) => company.name)
+            : [
+                ...(preferredCompany ? [preferredCompany.name] : []),
+                ...companies
+                  .filter((company) => company.id !== preferredCompanyId)
+                  .map((company) => company.name),
+              ]
         }
         unitOptions={Array.from(
           new Set(
@@ -186,18 +213,20 @@ export function HrEmployeeEditor({
             startedAtValue: value.startedAt,
             status: value.status,
           };
-          if (employee)
-            await hrApi.employees.update(employee.id, {
-              name: input.name,
-              kind: input.kind,
-              status: input.status,
-              ...(input.userId !== employee.userId
-                ? { userId: input.userId }
-                : {}),
-              version: employee.version,
-            });
-          else await hrApi.employees.create(input, key.current);
+          const saved = employee
+            ? await hrApi.employees.update(employee.id, {
+                name: input.name,
+                kind: input.kind,
+                status: input.status,
+                ...(input.userId !== employee.userId
+                  ? { userId: input.userId }
+                  : {}),
+                version: employee.version,
+              })
+            : await hrApi.employees.create(input, key.current);
           await store.mutated();
+          store.rememberEmployee(saved);
+          onSaved?.(saved);
           onClose();
         }}
       />
@@ -207,24 +236,34 @@ export function HrEmployeeEditor({
           target={{
             source: {
               section: 'organization',
-              tab: newReference,
+              tab: newReference.kind,
               label:
-                newReference === 'branches'
+                newReference.kind === 'branches'
                   ? 'شرکت و شعبه'
-                  : newReference === 'units'
+                  : newReference.kind === 'units'
                     ? 'واحد سازمانی'
                     : 'شغل و سمت',
               action:
-                newReference === 'branches'
+                newReference.kind === 'branches'
                   ? 'افزودن شعبه'
-                  : newReference === 'units'
+                  : newReference.kind === 'units'
                     ? 'افزودن واحد'
                     : 'افزودن سمت',
             },
+            ...(newReference.companyId
+              ? { preferredCompanyId: newReference.companyId }
+              : {}),
           }}
           store={store}
           onClose={() => setNewReference(null)}
-          onSaved={() => setNewReference(null)}
+          onSaved={(record) => {
+            setCreatedReference({
+              id: record.id,
+              kind: newReference.kind,
+              value: record.values[0] ?? '',
+            });
+            setNewReference(null);
+          }}
         />
       ) : null}
     </>
