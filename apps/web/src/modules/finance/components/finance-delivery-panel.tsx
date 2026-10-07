@@ -30,6 +30,7 @@ import {
   DialogTitle,
 } from '@/components/ui/overlays';
 import { Badge, EmptyState } from '@/components/ui/surfaces';
+import { ContractProfit } from './contract-profit';
 import { financeInboxApi } from '../api/finance-inbox-api';
 
 const basisLabels: Record<FinanceCustomerDocumentDeliveryBasisV1, string> = {
@@ -268,7 +269,7 @@ export function FinanceDeliveryPanel() {
           {rows.map((row) => (
             <article
               key={row.contractId}
-              className="flex flex-col gap-4 rounded-3xl border border-border bg-background p-4 md:flex-row md:items-center md:justify-between md:p-5"
+              className="flex flex-col gap-4 rounded-3xl border border-border bg-background p-4 md:flex-row md:flex-wrap md:items-center md:justify-between md:p-5"
             >
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">قرارداد / مشتری</p>
@@ -308,6 +309,9 @@ export function FinanceDeliveryPanel() {
                 <FileCheck2 className="size-4" />
                 {row.delivery.approved ? 'لغو مجوز' : 'صدور مجوز'}
               </Button>
+              <div className="w-full">
+                <ContractProfit id={row.contractId} />
+              </div>
             </article>
           ))}
         </div>

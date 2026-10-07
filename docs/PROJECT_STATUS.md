@@ -5018,3 +5018,7 @@ FLIGHT-ISSUED-SPEED-1007 verification: affected API/Web lint and typechecks, API
 Removed user-listed explanatory paragraphs and duplicate headings from contract dashboard and new-contract stages. Preserved form controls, customer confirmation, flight identity/times/capacity, hotel selection, prices, payments and existing business rules. No API, schema, dependency or operational data changes. Focused existing rendering tests updated; local checks and exact-head CI gate the user-authorized develop merge.
 
 Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.
+
+## 2026-10-07 — PC-A — Finance contract profit placement
+
+Removed purchase-cost/profit display from Sales payments and placed it alongside searched contracts in Finance document-delivery results. Reused existing lazy finance-authorized profit endpoint and retained per-currency calculations and branch/contract checks. Web14 and API6 targeted rendering/security tests pass; scoped lint/typecheck and production CI gate handoff. No schema/API/data changes or local rollout.
