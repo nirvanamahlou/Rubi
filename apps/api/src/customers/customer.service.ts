@@ -547,6 +547,31 @@ export class CustomerService {
     return { data: rows.map(auditDto) };
   }
 
+  /** Minimal public projection; Marketing must never persist contact/name snapshots. */
+  async marketingTargetReference(
+    id: string,
+    branchId: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (
+      !actor.permissions.includes('customers.read') ||
+      !actor.branchIds.includes(branchId)
+    )
+      throw new ForbiddenException('مجوز مشاهده مخاطب وجود ندارد.');
+    const row = await this.repository.find(id, [branchId]);
+    const consent = row?.consents?.find((item) => item.purpose === 'MARKETING');
+    if (
+      !row ||
+      !row.isActive ||
+      !row.isCustomer ||
+      consent?.status !== 'GRANTED'
+    )
+      throw new BadRequestException(
+        'مشتری فعال دارای رضایت مارکتینگ پیدا نشد.',
+      );
+    return { id: row.id, branchId: row.ownerBranchId };
+  }
+
   async detail(
     id: string,
     actor: AuthenticatedActor,

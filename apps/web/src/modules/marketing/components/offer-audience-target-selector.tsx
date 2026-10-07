@@ -109,7 +109,6 @@ export function OfferAudienceTargetSelector({
   const [options, setOptions] = useState<AudienceOption[]>([]);
   const [state, setState] = useState<LookupState>('idle');
   const [error, setError] = useState('');
-  const [open, setOpen] = useState(false);
   const generation = useRef(0);
   const invalidate = useCallback(() => {
     generation.current++;
@@ -176,13 +175,13 @@ export function OfferAudienceTargetSelector({
   }, [kind, search, lookupKey]);
 
   useEffect(() => {
-    if (kind === 'none' || !open) return;
+    if (kind === 'none') return;
     const timer = window.setTimeout(() => void load(), 300);
     return () => {
       window.clearTimeout(timer);
       invalidate();
     };
-  }, [kind, load, search, open, invalidate]);
+  }, [kind, load, search, invalidate]);
 
   return (
     <section
@@ -194,6 +193,8 @@ export function OfferAudienceTargetSelector({
           ariaLabel="نوع مخاطب هدف پیشنهاد"
           onChange={(nextKind) => {
             const normalized = nextKind as OfferAudienceTargetKind;
+            invalidate();
+            setLoadedKey(null);
             setSearch('');
             setOptions([]);
             setState('idle');
@@ -233,7 +234,6 @@ export function OfferAudienceTargetSelector({
               }
               error={state === 'error' ? error : undefined}
               onSearchChange={setSearch}
-              onOpenChange={setOpen}
               onValueChange={(id) => {
                 const selected = options.find((option) => option.id === id);
                 onChange(

@@ -44,6 +44,7 @@ import type {
 import { useMemo, useState } from 'react';
 
 import { MarketingContentLibrary } from './marketing-content-library';
+import { MarketingPromotionsPanel } from './marketing-promotions-panel';
 import { MarketingActionButton as Button } from './marketing-action-button';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -3475,7 +3476,7 @@ const discountUsageRows: readonly PreviewRow[] = [
   },
 ];
 
-function OffersPage({
+export function OffersPage({
   tab,
   onOpen,
   onNotice,
@@ -5789,10 +5790,11 @@ export function MarketingReferenceSection({
               <ContentPage onNotice={onNotice} onOpen={onOpen} tab={key} />
             ) : null}
             {section === 'offers' ? (
-              <OffersPage
-                onCreate={() => setFormKind('offer')}
+              <MarketingPromotionsPanel
+                adding={formKind === 'offer'}
+                onAdd={() => setFormKind('offer')}
+                onClose={() => setFormKind(null)}
                 onNotice={onNotice}
-                onOpen={onOpen}
                 tab={key}
               />
             ) : null}
@@ -5819,7 +5821,7 @@ export function MarketingReferenceSection({
           </TabsContent>
         ))}
       </Tabs>
-      {formKind ? (
+      {formKind && formKind !== 'offer' ? (
         <SectionEntityFormDialog
           key={formKind}
           kind={formKind}
@@ -5827,15 +5829,7 @@ export function MarketingReferenceSection({
           onOpenChange={(open) => {
             if (!open) setFormKind(null);
           }}
-          onSaved={(name, target) => {
-            onNotice(
-              formKind === 'offer'
-                ? target
-                  ? `«${name}» برای مخاطب هدف «${target.label}» ذخیره شد.`
-                  : `«${name}» بدون مخاطب هدف مشخص ذخیره شد.`
-                : `«${name}» ذخیره شد.`,
-            );
-          }}
+          onSaved={(name) => onNotice(`«${name}» ذخیره شد.`)}
           open
         />
       ) : null}

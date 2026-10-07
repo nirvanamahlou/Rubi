@@ -7,6 +7,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -20,6 +21,8 @@ import { MARKETING_RECORDS_CONTRACT_VERSION } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
+import { CustomerService } from '../customers/customer.service';
+import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 
 const ASSET_KINDS = new Set<MarketingAssetKind>([
   'SEGMENT',
@@ -29,6 +32,8 @@ const ASSET_KINDS = new Set<MarketingAssetKind>([
   'LANDING_PAGE',
   'SHORT_LINK',
   'AUTOMATION',
+  'COUPON',
+  'OFFER',
 ]);
 const PORTS = new Set(['top', 'right', 'bottom', 'left']);
 const CHANNELS = new Set(['SMS', 'EMAIL', 'WHATSAPP', 'PUSH_NOTIFICATION']);
@@ -40,6 +45,8 @@ const ASSET_STATUSES: Record<MarketingAssetKind, ReadonlySet<string>> = {
   LANDING_PAGE: new Set(['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED']),
   SHORT_LINK: new Set(['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED']),
   AUTOMATION: new Set(['DRAFT', 'ACTIVE', 'PAUSED']),
+  COUPON: new Set(['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED']),
+  OFFER: new Set(['DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED']),
 };
 
 type CampaignRow = Prisma.MarketingCampaignGetPayload<{
@@ -285,9 +292,19 @@ function presentAsset(row: AssetRow): MarketingAssetViewV1 {
     status: row.status,
     campaignId: row.campaignId,
     relatedAssetId: row.relatedAssetId,
+    targetCustomerId: row.targetCustomerId ?? null,
+    targetAgencyId: row.targetAgencyId ?? null,
     scheduledAt: row.scheduledAt?.toISOString() ?? null,
     expiresAt: row.expiresAt?.toISOString() ?? null,
-    payload: row.payload as Record<string, unknown>,
+    payload:
+      row.kind === 'COUPON' || row.kind === 'OFFER'
+        ? {
+            ...(row.payload as Record<string, unknown>),
+            value: row.promotionValue?.toFixed(),
+            minimumPurchase: row.minimumPurchase?.toFixed(),
+            currencyCode: row.promotionCurrencyCode,
+          }
+        : (row.payload as Record<string, unknown>),
     version: row.version,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -299,6 +316,12 @@ function presentAsset(row: AssetRow): MarketingAssetViewV1 {
 export class MarketingRecordsService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(CustomerService)
+    private readonly customers?: CustomerService,
+    @Optional()
+    @Inject(MasterOrganizationDirectory)
+    private readonly directory?: MasterOrganizationDirectory,
   ) {}
 
   async listCampaigns(actor: AuthenticatedActor) {
@@ -652,100 +675,142 @@ export class MarketingRecordsService {
     const expectedVersion = input.expectedVersion;
     if (id && !expectedVersion)
       throw new BadRequestException('expectedVersion الزامی است.');
-    const row = await this.database.client.$transaction(async (tx) => {
-      const current = id
-        ? await tx.marketingAsset.findFirst({
-            where: { id, branchId: { in: actor.branchIds } },
-          })
-        : null;
-      if (id && !current) throw notFound();
-      if (current) {
-        this.assertAssetPermission(current.kind as MarketingAssetKind, actor);
-        if (current.kind !== normalized.kind)
-          throw new BadRequestException(
-            'نوع رکورد پس از ایجاد قابل تغییر نیست.',
-          );
-      }
-      const selectedBranch = current?.branchId ?? branchId!;
-      const persistedKind = (current?.kind ??
-        normalized.kind) as MarketingAssetKind;
-      const operation = id
-        ? `ASSET_${persistedKind}_UPDATE`
-        : `ASSET_${persistedKind}_CREATE`;
-      const hash = fingerprint({ id, expectedVersion, ...normalized });
-      const replay = await tx.marketingCommand.findUnique({
-        where: {
-          actorUserId_branchId_operation_idempotencyKey: {
+    const row = await this.database.client
+      .$transaction(async (tx) => {
+        const current = id
+          ? await tx.marketingAsset.findFirst({
+              where: { id, branchId: { in: actor.branchIds } },
+            })
+          : null;
+        if (id && !current) throw notFound();
+        if (current) {
+          this.assertAssetPermission(current.kind as MarketingAssetKind, actor);
+          if (current.kind !== normalized.kind)
+            throw new BadRequestException(
+              'نوع رکورد پس از ایجاد قابل تغییر نیست.',
+            );
+        }
+        const selectedBranch = current?.branchId ?? branchId!;
+        const persistedKind = (current?.kind ??
+          normalized.kind) as MarketingAssetKind;
+        const operation = id
+          ? `ASSET_${persistedKind}_UPDATE`
+          : `ASSET_${persistedKind}_CREATE`;
+        const hash = fingerprint({ id, expectedVersion, ...normalized });
+        const replay = await tx.marketingCommand.findUnique({
+          where: {
+            actorUserId_branchId_operation_idempotencyKey: {
+              actorUserId: actor.userId,
+              branchId: selectedBranch,
+              operation,
+              idempotencyKey: key,
+            },
+          },
+        });
+        if (replay) {
+          if (replay.requestFingerprint !== hash)
+            throw conflict('IDEMPOTENCY_CONFLICT');
+          return tx.marketingAsset.findUniqueOrThrow({
+            where: { id: replay.resultEntityId },
+          });
+        }
+        await this.validateAssetReferences(tx, selectedBranch, normalized);
+        if (normalized.kind === 'COUPON' || normalized.kind === 'OFFER') {
+          if (
+            !this.directory ||
+            !(
+              await this.directory.activeCurrencyCodes([
+                String(normalized.payload.currencyCode),
+              ])
+            ).length
+          )
+            throw new BadRequestException('ارز فعال معتبر نیست.');
+          if (normalized.targetCustomerId) {
+            if (!this.customers)
+              throw new BadRequestException('مرجع مشتری در دسترس نیست.');
+            await this.customers.marketingTargetReference(
+              normalized.targetCustomerId,
+              selectedBranch,
+              actor,
+            );
+          }
+          if (normalized.targetAgencyId) {
+            this.assertPermissions(actor, 'master_data.read');
+            const agency = await this.directory.agencyReference(
+              normalized.targetAgencyId,
+            );
+            if (!agency?.isActive)
+              throw new BadRequestException('آژانس فعال معتبر نیست.');
+          }
+        }
+        const saved = current
+          ? await (async () => {
+              const changed = await tx.marketingAsset.updateMany({
+                where: {
+                  id: current.id,
+                  branchId: selectedBranch,
+                  version: expectedVersion!,
+                },
+                data: {
+                  ...this.assetData(normalized),
+                  updatedByUserId: actor.userId,
+                  version: { increment: 1 },
+                },
+              });
+              if (changed.count !== 1) throw conflict();
+              return tx.marketingAsset.findUniqueOrThrow({
+                where: { id: current.id },
+              });
+            })()
+          : await tx.marketingAsset.create({
+              data: {
+                ...this.assetData(normalized),
+                branchId: selectedBranch,
+                createdByUserId: actor.userId,
+                updatedByUserId: actor.userId,
+              },
+            });
+        await tx.marketingCommand.create({
+          data: {
             actorUserId: actor.userId,
             branchId: selectedBranch,
             operation,
             idempotencyKey: key,
+            requestFingerprint: hash,
+            entityType: persistedKind,
+            resultEntityId: saved.id,
+            resultVersion: saved.version,
+            payloadSnapshot: json(normalized),
           },
-        },
-      });
-      if (replay) {
-        if (replay.requestFingerprint !== hash)
-          throw conflict('IDEMPOTENCY_CONFLICT');
-        return tx.marketingAsset.findUniqueOrThrow({
-          where: { id: replay.resultEntityId },
         });
-      }
-      await this.validateAssetReferences(tx, selectedBranch, normalized);
-      const saved = current
-        ? await (async () => {
-            const changed = await tx.marketingAsset.updateMany({
-              where: {
-                id: current.id,
-                branchId: selectedBranch,
-                version: expectedVersion!,
-              },
-              data: {
-                ...this.assetData(normalized),
-                updatedByUserId: actor.userId,
-                version: { increment: 1 },
-              },
-            });
-            if (changed.count !== 1) throw conflict();
-            return tx.marketingAsset.findUniqueOrThrow({
-              where: { id: current.id },
-            });
-          })()
-        : await tx.marketingAsset.create({
-            data: {
-              ...this.assetData(normalized),
-              branchId: selectedBranch,
-              createdByUserId: actor.userId,
-              updatedByUserId: actor.userId,
-            },
-          });
-      await tx.marketingCommand.create({
-        data: {
-          actorUserId: actor.userId,
-          branchId: selectedBranch,
-          operation,
-          idempotencyKey: key,
-          requestFingerprint: hash,
-          entityType: persistedKind,
-          resultEntityId: saved.id,
-          resultVersion: saved.version,
-          payloadSnapshot: json(normalized),
-        },
+        await tx.marketingAuditEvent.create({
+          data: {
+            branchId: selectedBranch,
+            actorUserId: actor.userId,
+            entityType: persistedKind,
+            entityId: saved.id,
+            action: current ? 'UPDATE' : 'CREATE',
+            traceId: traceId ?? null,
+            version: saved.version,
+            ...(current ? { beforeSnapshot: json(presentAsset(current)) } : {}),
+            afterSnapshot: json(presentAsset(saved)),
+          },
+        });
+        return saved;
+      })
+      .catch((error: unknown) => {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        )
+          throw new ConflictException('نام یا کد تخفیف تکراری است.');
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2003'
+        )
+          throw new BadRequestException('مرجع پیشنهاد معتبر نیست.');
+        throw error;
       });
-      await tx.marketingAuditEvent.create({
-        data: {
-          branchId: selectedBranch,
-          actorUserId: actor.userId,
-          entityType: persistedKind,
-          entityId: saved.id,
-          action: current ? 'UPDATE' : 'CREATE',
-          traceId: traceId ?? null,
-          version: saved.version,
-          ...(current ? { beforeSnapshot: json(presentAsset(current)) } : {}),
-          afterSnapshot: json(presentAsset(saved)),
-        },
-      });
-      return saved;
-    });
     return { data: presentAsset(row) };
   }
 
@@ -944,6 +1009,13 @@ export class MarketingRecordsService {
     validatePayloadUrls(payload);
     const scheduledAt = assertUtcDate(input.scheduledAt, 'زمان ارسال');
     const expiresAt = assertUtcDate(input.expiresAt, 'تاریخ انقضا');
+    const promotion = input.kind === 'COUPON' || input.kind === 'OFFER';
+    if (input.targetCustomerId && input.targetAgencyId)
+      throw new BadRequestException('فقط یک نوع مخاطب هدف مجاز است.');
+    if (!promotion && (input.targetCustomerId || input.targetAgencyId))
+      throw new BadRequestException('مخاطب هدف فقط برای پیشنهاد مجاز است.');
+    if (promotion && (!scheduledAt || !expiresAt || scheduledAt >= expiresAt))
+      throw new BadRequestException('بازه اعتبار پیشنهاد معتبر نیست.');
     if (
       input.kind === 'SCHEDULE' &&
       (!input.campaignId || !input.relatedAssetId || !scheduledAt)
@@ -969,6 +1041,85 @@ export class MarketingRecordsService {
     raw: Record<string, unknown>,
   ): Record<string, unknown> {
     const payload = payloadObject(raw);
+    if (kind === 'COUPON' || kind === 'OFFER') {
+      exactKeys(
+        payload,
+        [
+          'code',
+          'discountType',
+          'value',
+          'currencyCode',
+          'minimumPurchase',
+          'usageLimit',
+          'perCustomerLimit',
+          'service',
+          'combinability',
+          'description',
+        ],
+        'پیشنهاد',
+      );
+      const value = decimal(String(payload.value), 'مقدار تخفیف');
+      const minimum = decimal(String(payload.minimumPurchase), 'حداقل خرید');
+      const discountType = requiredString(
+        payload.discountType,
+        'نوع تخفیف',
+        20,
+      );
+      if (
+        !['PERCENT', 'AMOUNT'].includes(discountType) ||
+        value.lte(0) ||
+        (discountType === 'PERCENT' && value.gt(100))
+      )
+        throw new BadRequestException('مقدار تخفیف معتبر نیست.');
+      const currencyCode = requiredString(payload.currencyCode, 'ارز', 3);
+      if (!/^[A-Z]{3}$/.test(currencyCode))
+        throw new BadRequestException('ارز معتبر نیست.');
+      const code =
+        kind === 'COUPON'
+          ? requiredString(payload.code, 'کد تخفیف', 64).toUpperCase()
+          : '';
+      if (kind === 'COUPON' && !/^[A-Z0-9_-]{3,64}$/.test(code))
+        throw new BadRequestException('کد تخفیف معتبر نیست.');
+      const usageLimit = Number(payload.usageLimit);
+      const perCustomerLimit = Number(payload.perCustomerLimit);
+      if (
+        ![usageLimit, perCustomerLimit].every(
+          (limit) =>
+            Number.isSafeInteger(limit) && limit > 0 && limit <= 1000000,
+        ) ||
+        perCustomerLimit > usageLimit
+      )
+        throw new BadRequestException('سقف استفاده معتبر نیست.');
+      const service = requiredString(payload.service, 'خدمت', 32);
+      const combinability = requiredString(
+        payload.combinability,
+        'ترکیب‌پذیری',
+        32,
+      );
+      if (
+        !['ALL', 'TOUR', 'FLIGHT', 'HOTEL'].includes(service) ||
+        !['EXCLUSIVE', 'COMBINABLE'].includes(combinability)
+      )
+        throw new BadRequestException('قانون استفاده معتبر نیست.');
+      if (
+        payload.description !== undefined &&
+        (typeof payload.description !== 'string' ||
+          payload.description.length > 2000)
+      )
+        throw new BadRequestException('توضیحات معتبر نیست.');
+      return {
+        code,
+        discountType,
+        value: value.toFixed(),
+        currencyCode,
+        minimumPurchase: minimum.toFixed(),
+        usageLimit,
+        perCustomerLimit,
+        service,
+        combinability,
+        description: String(payload.description ?? '').trim(),
+      };
+    }
     if (kind === 'SEGMENT') {
       exactKeys(payload, ['rules'], 'قاعده سگمنت');
       if (
@@ -1157,6 +1308,17 @@ export class MarketingRecordsService {
       status: input.status,
       campaignId: input.campaignId ?? null,
       relatedAssetId: input.relatedAssetId ?? null,
+      targetCustomerId: input.targetCustomerId ?? null,
+      targetAgencyId: input.targetAgencyId ?? null,
+      promotionValue: ['COUPON', 'OFFER'].includes(input.kind)
+        ? new Prisma.Decimal(String(input.payload.value))
+        : null,
+      minimumPurchase: ['COUPON', 'OFFER'].includes(input.kind)
+        ? new Prisma.Decimal(String(input.payload.minimumPurchase))
+        : null,
+      promotionCurrencyCode: ['COUPON', 'OFFER'].includes(input.kind)
+        ? String(input.payload.currencyCode)
+        : null,
       scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
       expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
       payload: json(input.payload),
@@ -1168,11 +1330,13 @@ export class MarketingRecordsService {
     actor: AuthenticatedActor,
   ) {
     const required =
-      kind === 'SEGMENT'
-        ? 'marketing.audience.manage'
-        : kind === 'SCHEDULE'
-          ? 'marketing.campaign.schedule'
-          : 'marketing.campaign.update';
+      kind === 'COUPON' || kind === 'OFFER'
+        ? 'marketing.offer.manage'
+        : kind === 'SEGMENT'
+          ? 'marketing.audience.manage'
+          : kind === 'SCHEDULE'
+            ? 'marketing.campaign.schedule'
+            : 'marketing.campaign.update';
     if (!actor.permissions.includes(required))
       throw new ForbiddenException('مجوز عملیات این رکورد وجود ندارد.');
   }
