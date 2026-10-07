@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 import { describe, expect, it, vi } from 'vitest';
@@ -94,5 +94,45 @@ describe('Procurement ticket purchase requests', () => {
         'new-request-key',
       ),
     ).rejects.toBeInstanceOf(ConflictException);
+  });
+});
+
+describe('Ticket purchase inbox scope', () => {
+  it('enforces branch and own-request visibility without Finance payment privileges', async () => {
+    const findMany = vi.fn().mockResolvedValue([row()]);
+    const service = new ProcurementPublicService({
+      client: { procurementTicketPurchaseRequest: { findMany } },
+    } as never);
+    await expect(
+      service.listTicketPurchaseInbox({
+        ...actor,
+        permissions: ['finance.payment.create'],
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(findMany).not.toHaveBeenCalled();
+    await service.listTicketPurchaseInbox({
+      ...actor,
+      permissions: ['procurement.read.own'],
+    });
+    expect(findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          branchId: { in: actor.branchIds },
+          createdByUserId: actor.userId,
+          status: { in: ['PENDING', 'PAID'] },
+        }),
+      }),
+    );
+    await service.listTicketPurchaseInbox({
+      ...actor,
+      permissions: ['procurement.quote.manage'],
+    });
+    expect(findMany).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        where: expect.not.objectContaining({
+          createdByUserId: expect.anything(),
+        }),
+      }),
+    );
   });
 });

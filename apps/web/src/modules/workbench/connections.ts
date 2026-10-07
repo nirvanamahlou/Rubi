@@ -34,13 +34,13 @@ export const workbenchDestinations = [
   },
   {
     href: '/purchases',
-    title: 'خرید و تأمین',
+    title: 'تنخواه',
     description: 'ورود به بخش خرید؛ اتصال اجرایی درخواست خرید هنوز آماده نیست',
     prefixes: ['procurement.'],
   },
   {
     href: '/organizations',
-    title: 'آژانس‌ها و مشتریان سازمانی',
+    title: 'مشتریان B2B',
     description: 'پیگیری توافق‌ها و مدارک در پرونده سازمان',
     prefixes: ['b2b.'],
   },

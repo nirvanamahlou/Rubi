@@ -27,7 +27,7 @@ export const englishNavigation: Record<
   '/workbench': { title: 'My workspace', description: 'My tasks and files' },
   '/dashboard': { title: 'Dashboard', description: 'Performance overview' },
   '/customers': {
-    title: 'Customers & travelers',
+    title: 'B2c customers',
     description: 'Customer records',
   },
   '/customer-affairs': {
@@ -51,8 +51,12 @@ export const englishNavigation: Record<
     description: 'Contracts and traveler allocation',
   },
   '/purchases': {
-    title: 'Purchasing & procurement',
+    title: 'Petty cash',
     description: 'Services and suppliers',
+  },
+  '/ticket-purchases': {
+    title: 'Purchasing & supply',
+    description: 'Flight purchase costs and airline settlement',
   },
   '/finance': { title: 'Accounting', description: 'Accounting & treasury' },
   '/finance/requests': {
@@ -61,7 +65,7 @@ export const englishNavigation: Record<
   },
   '/marketing': { title: 'Marketing', description: 'Campaigns and audiences' },
   '/organizations': {
-    title: 'Agencies & corporate customers',
+    title: 'B2B customers',
     description: 'Corporate accounts',
   },
   '/human-resources': {
@@ -83,13 +87,14 @@ export const englishNavigationGroups: Record<string, string> = {
   sales: 'Sales & customer relations',
   operations: 'Reservations',
   finance: 'Finance',
+  'ticket-purchases': 'Purchasing & supply',
   hr: 'Human resources',
   resources: 'Documents & reports',
   system: 'Company settings',
 };
 
 export function englishNavigationTitle(href: string, fallback: string) {
-  if (href === '/sales/ticket-prices') return 'Ticket prices';
-  if (href === '/sales/pricing') return 'Pricing & packages';
+  if (href === '/sales/ticket-prices') return 'Flight pricing';
+  if (href === '/sales/pricing') return 'Package management';
   return englishNavigation[href as NavigationHref]?.title ?? fallback;
 }

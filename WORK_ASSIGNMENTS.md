@@ -5920,6 +5920,16 @@ Extension: reserve DocumentsService.uploadMasterDataLogo duplicate-content reuse
 
 PROCUREMENT-SUPPLIER-LOGO-1007 candidate: API62 + Web78 tests, scoped lint/API-Web typecheck/build and55-page Web production generation passed. Source reservations RELEASED with candidate. No migration/dependency/IAM/runtime or operational data change. Exact-head CI gates user-authorized develop merge; three missing historical image objects require original re-upload/recovery.
 
+## TICKET-PURCHASE-INBOX-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-purchase-inbox-1007 from origin/develop@dc77c39b. User explicitly authorizes bounded travel purchase workflow change and menu labels plus develop merge. Reserve shared navigation/messages and corresponding tests; dedicated travel purchase inbox UI/route; Finance ticket-cost public API/service/tests; bounded ProcurementPublicService ticket envelope adapter/controller and tests; additive shared ticket purchase contracts, domain/status docs. General Procurement request/order implementation remains PC-B-owned and untouched; existing /purchases presentation renamed تنخواه. No overlapping active target lock found (PC-B procurement orders/record-list locks released with review candidates). Register charter seat costs in purchase inbox with procurement quote permission, exact unit×seat total, version/retry checks; Finance only pays persisted cost and hides unpriced envelopes. Preserve branch scope, supplier snapshot, payment history, contract profit sources and legacy cost records. No schema/dependency/migration/IAM grant intended. Producer Ticket→Procurement envelope→Finance cost; consumers purchase inbox, Finance payment and Sales actual-cost profit. Existing Finance cost fields retained for compatibility, moved authority through explicit public command, no direct cross-module table access.
+
+تکمیل محدوده TICKET-PURCHASE-INBOX-1007: نگاشت منوی انگلیسی و دسته‌بندی تنظیمات مرکزی برای مسیر جدید نیز در همین واحد رزرو است.
+
+محدوده مرکزی IAM فقط نگاشت مسیر /ticket-purchases به دسترسی موجود procurement و آزمون عدم اعطای دسترسی جدید را شامل می‌شود؛ هیچ permission یا نقش جدیدی اعطا نمی‌شود.
+
+- Candidate verification: Contracts/API/Web typechecks, scoped lint and focused access/Finance/Procurement/Sales profit tests pass. Isolated PostgreSQL concurrent pricing and installment tests pass; Web production build (56 routes) passed; exact-head CI remains the merge gate. Locks release with candidate commit; exact-head CI must pass before the user-authorized develop merge. No browser QA or runtime rollout claimed.
+
 ## SIDEBAR-DOT-COLORS-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; codex/pc-a-sidebar-dot-colors-1007 from origin/develop. Reserve central app-shell.tsx group dot presentation and lib/navigation.ts group palette plus own status entries. Prior Navigation central lock released; no target local changes or active overlapping reservation. Distinct blue/rose/green/amber/purple/cyan/orange dots across desktop and mobile using existing group dotClass. No route, permission, API, schema, dependency or runtime change. User explicitly authorizes develop merge; scoped lint/typecheck/build and repository CI gate merge. Release bounded central locks with committed review candidate.

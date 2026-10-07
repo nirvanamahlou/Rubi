@@ -56,11 +56,8 @@ const notificationAreas: readonly (readonly [string, NotificationArea])[] = [
   ['purchases', { label: 'تنخواه', href: '/purchases' }],
   ['finance', { label: 'کارتابل درخواست‌های مالی', href: '/finance/requests' }],
   ['marketing', { label: 'مارکتینگ', href: '/marketing' }],
-  ['b2b', { label: 'آژانس‌ها و مشتریان سازمانی', href: '/organizations' }],
-  [
-    'organizations',
-    { label: 'آژانس‌ها و مشتریان سازمانی', href: '/organizations' },
-  ],
+  ['b2b', { label: 'مشتریان B2B', href: '/organizations' }],
+  ['organizations', { label: 'مشتریان B2B', href: '/organizations' }],
   ['human-resources', { label: 'منابع انسانی', href: '/human-resources' }],
   ['tasks', { label: 'میزکار من', href: '/workbench' }],
   ['documents', { label: 'اسناد و فایل‌ها', href: '/documents' }],

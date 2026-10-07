@@ -13,7 +13,7 @@ import { FinanceTicketCostService } from './finance-ticket-cost.service';
 const actor = {
   userId: 'finance-user',
   branchIds: ['branch-a'],
-  permissions: ['finance.payment.create'],
+  permissions: ['finance.payment.create', 'procurement.quote.manage'],
 } as unknown as AuthenticatedActor;
 
 describe('FinanceTicketCostService', () => {
