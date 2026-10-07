@@ -9,10 +9,12 @@ import type { ContractFlightDraft } from '../model/sales-form';
 
 export function ContractFlightEditor({
   value,
+  international = false,
   airlines = [],
   onChange,
 }: {
   value: ContractFlightDraft | undefined;
+  international?: boolean;
   airlines?: readonly MasterDataRecord[];
   onChange: (value: ContractFlightDraft | undefined) => void;
 }) {
@@ -91,6 +93,8 @@ export function ContractFlightEditor({
         </FormField>
         <FormField label="تاریخ و ساعت حرکت" required>
           <SalesDatePicker
+            key={international ? 'foreign' : 'local'}
+            defaultCalendarSystem={international ? 'gregorian' : undefined}
             includeTime
             value={value.departureAt}
             onChange={(departureAt) => patch({ departureAt })}
@@ -98,6 +102,8 @@ export function ContractFlightEditor({
         </FormField>
         <FormField label="تاریخ و ساعت رسیدن" required>
           <SalesDatePicker
+            key={international ? 'foreign' : 'local'}
+            defaultCalendarSystem={international ? 'gregorian' : undefined}
             includeTime
             value={value.arrivalAt}
             onChange={(arrivalAt) => patch({ arrivalAt })}

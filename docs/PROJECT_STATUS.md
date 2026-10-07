@@ -5022,3 +5022,7 @@ Verification: all137 focused Sales component tests pass; Web typecheck passes. S
 ## FINANCE-INBOX-REDESIGN-1007 — PC-A
 
 Finance request inbox uses light cyan header, compact separated request rows, consistent responsive labelled filters and collapsed supplementary metrics. Remove branch-ID/person/due-date filter fields, saved-view controls and global transaction-history panel. Existing backend search finds contract/reference/party; payments, per-request history, exports, manager settings and document delivery remain available under existing authorization. No schema/API/dependency/runtime change. Scoped checks and clean CI gate delivery; no authenticated browser or operational data changes claimed.
+
+## INTERNATIONAL-TRAVEL-DATES-1007 — PC-A
+
+Foreign origin or destination sets the Sales travel/hotel/floating-flight date picker default to Gregorian while preserving user calendar switching and ISO date values. Ticket and reservation output formatters explicitly use Gregorian; saved voucher/supplier-form ISO flight and hotel dates share the same Gregorian formatter in browser preview/PDF. Domestic picker preferences remain unchanged. No schema/API/dependency/runtime/data changes. Focused calendar, route and output regressions plus exact-head full CI gate authorized develop merge.

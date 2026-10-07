@@ -675,6 +675,16 @@ function salesIranCountry(
   return /(^|\s)(IR|IRN|IRAN)(\s|$)/.test(value);
 }
 
+/** Use a Gregorian default once a selected endpoint is known to be outside Iran. */
+export function salesInternationalTravel(state: SalesFormState): boolean {
+  return (
+    [
+      [state.originCountryId, state.originCountryCode],
+      [state.destinationCountryId, state.destinationCountryCode],
+    ] as const
+  ).some(([id, code]) => Boolean(id || code) && !salesIranCountry(id, code));
+}
+
 /** A route is domestic only when both endpoints are inside Iran. */
 export function salesDomesticIranRoute(state: SalesFormState): boolean {
   return (

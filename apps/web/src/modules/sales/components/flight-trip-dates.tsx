@@ -31,6 +31,7 @@ export async function flightCalendarOffers(
 
 export function FlightTripDates({
   originId,
+  international = false,
   destinationId,
   roundTrip,
   seats,
@@ -39,6 +40,7 @@ export function FlightTripDates({
   onChange,
 }: {
   originId: string;
+  international?: boolean;
   destinationId: string;
   roundTrip: boolean;
   seats: number;
@@ -143,6 +145,9 @@ export function FlightTripDates({
         <label className="grid gap-2 text-sm font-semibold">
           بلیط رفت
           <DatePicker
+            key={international ? 'foreign' : 'local'}
+            defaultCalendarSystem={international ? 'gregorian' : undefined}
+            gregorianEnglish
             value={value.from}
             markedDates={days}
             minimumDate={salesFlightToday()}
@@ -155,6 +160,9 @@ export function FlightTripDates({
           <label className="grid gap-2 text-sm font-semibold">
             بلیط برگشت
             <DatePicker
+              key={international ? 'foreign' : 'local'}
+              defaultCalendarSystem={international ? 'gregorian' : undefined}
+              gregorianEnglish
               value={value.to}
               markedDates={returnDays}
               minimumDate={value.from || salesFlightToday()}
