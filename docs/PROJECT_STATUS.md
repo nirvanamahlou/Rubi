@@ -4912,3 +4912,7 @@ Order follow-up calendars now mount within their dialog instead of outside its f
 ## 2026-10-07 — EXPENSE-DELETE-ICON-1007 — PC-B
 
 Campaign expense-row removal uses a neutral background, red inherited foreground and subtle hover background to keep the trash icon legible. Icon-only accessible label, removal handler and frozen submission protections are unchanged. Six focused declaration tests pass; scoped lint, full Marketing suite and exact-head CI quality/build gates precede authorized develop merge. No API, schema, migration, dependency, data or runtime change.
+
+## 2026-10-07 — PROCUREMENT-ORDER-REQUEST-SOURCE-1007
+
+New order selection explicitly uses purchase requests through the additive module-local section=order-requests filter. Approval eligibility (APPROVED/SOURCING) is applied before pagination rather than mixing existing-order cases and filtering afterward. Approved requests without orders remain selectable. The default request-scoped order form uses request items and supplier choice, not the legacy selected-quotation shortcut. Existing commands preserve request scope, quantities, supplier/approval policy and independent final order approval. Web 63 tests, scoped lint and API/Web typechecks passed; isolated PostgreSQL regression, production builds and exact-head CI gate release. No schema/migration/dependency/permission/operational data/runtime changes; authenticated browser QA and shared3100 rollout are not claimed.

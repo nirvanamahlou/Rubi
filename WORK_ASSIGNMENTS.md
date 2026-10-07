@@ -5957,3 +5957,9 @@ PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007: source reservation RELEASED with froze
 - COMPUTER_ID=PC-B; branch codex/pc-b-expense-delete-icon-1007. Reserve only Marketing campaign declaration delete-button presentation, its focused regression test and bounded status docs. Neutral background with red inherited icon and subtle hover; existing removal handler and frozen state stay intact. No API/data/schema/dependency/shared-control/runtime changes. No active overlap in target files. User authorizes push and develop merge after checks.
 
 - Six declaration tests pass, including named icon-only trash contrast styling. Affected lint and full Marketing tests precede release; exact-head CI lint/typecheck/tests/production build gate merge. Locks released with candidate commit; no local runtime rollout or authenticated browser verification claimed.
+
+## PROCUREMENT-ORDER-REQUEST-SOURCE-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-request-source-1007 from origin/develop@3b2954e5. Reserve Procurement new-order request selector/query, default order action, module-local request-list filter and focused regressions, own status entries. Add backward-compatible section=order-requests to the existing request list for approved/sourcing requests; it does not list orders or change approval/permission/quantity rules. Preserve supplier choice and request-item order lines. No schema/migration/dependency/IAM/operational data/runtime change. Prior locks released and targets clean. User authorizes push/develop merge after checks.
+
+PROCUREMENT-ORDER-REQUEST-SOURCE-1007: source locks RELEASED with frozen review candidate. Web 63 tests, scoped lint/format, API/Web typechecks passed. Isolated PostgreSQL regression, API/Web builds and exact-head CI remain merge gates; no operational data/runtime changes.
