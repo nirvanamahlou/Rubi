@@ -1,3 +1,4 @@
+import { purchaseFilters } from './model';
 import { writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -6,9 +7,13 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { AccessPermissionsProvider } from '@/modules/iam/access-context';
 import { DisplayLocaleContext } from '@/i18n/locale-context';
 import { ReservationPurchaseWorkspace } from './workspace';
-const state = vi.hoisted(() => ({ index: 0, records: undefined as unknown }));
+const state = vi.hoisted(() => ({
+  index: 0,
+  records: undefined as unknown,
+  query: '',
+}));
 vi.mock('next/navigation', () => ({
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(state.query),
   useRouter: () => ({ replace: vi.fn() }),
   usePathname: () => '/ticket-purchases',
 }));
@@ -18,7 +23,16 @@ vi.mock('react', async (original) => ({
     const index = state.index++;
     return [
       index === 3
-        ? { key: '["ALL",1,"",0]', response: state.records }
+        ? {
+            key: JSON.stringify([
+              'ALL',
+              1,
+              '',
+              0,
+              JSON.stringify(purchaseFilters(new URLSearchParams(state.query))),
+            ]),
+            response: state.records,
+          }
         : typeof initial === 'function'
           ? initial()
           : initial,
@@ -28,8 +42,36 @@ vi.mock('react', async (original) => ({
 }));
 beforeEach(() => {
   state.index = 0;
+  state.query = '';
   state.records = {
-    meta: { page: 1, pageSize: 25, hasMore: false, canRecord: true },
+    meta: {
+      page: 1,
+      pageSize: 25,
+      hasMore: false,
+      canRecord: true,
+      services: [
+        {
+          id: 'intake',
+          clientKey: 'hotel',
+          status: 'REGISTERED',
+          entryAt: '2026-10-07T12:00:00Z',
+          purchasedAt: '2026-10-09',
+          checkInAt: '2026-10-15',
+          departureAt: null,
+          sortAt: '2026-10-07T12:00:00Z',
+        },
+        {
+          id: 'intake',
+          clientKey: 'insurance',
+          status: 'UNREGISTERED',
+          entryAt: '2026-10-07T12:00:00Z',
+          purchasedAt: null,
+          checkInAt: null,
+          departureAt: null,
+          sortAt: '2026-10-07T12:00:00Z',
+        },
+      ],
+    },
     data: [
       {
         id: 'intake',
@@ -109,4 +151,29 @@ it('renders English labels without translating identifiers or prices', () => {
   expect(html).toContain('Purchase not recorded');
   expect(html).toContain('125.50');
   expect(html).toContain('DEMO-42');
+});
+
+it('renders only the matching service rows and retains bookmarked status/date controls', () => {
+  state.query =
+    'status=REGISTERED&dateBy=CHECK_IN&from=2026-10-15&to=2026-10-15&direction=ASC';
+  const records = state.records as {
+    meta: { services: { sortAt: string; clientKey: string }[] };
+  };
+  records.meta.services = records.meta.services
+    .filter((r) => r.clientKey === 'hotel')
+    .map((r) => ({ ...r, sortAt: '2026-10-15' }));
+  const html = render('en');
+  expect(html).toContain('value="REGISTERED" selected=""');
+  expect(html).toContain('value="CHECK_IN" selected=""');
+  expect(html).toContain('Hotel check-in date');
+  expect(html).toContain('15/10/2026');
+  expect(html).not.toContain('Example Policy');
+});
+it('preserves the global service row ordering returned by the server', () => {
+  const records = state.records as { meta: { services: unknown[] } };
+  records.meta.services.reverse();
+  const html = render('en');
+  expect(html.indexOf('Example Policy')).toBeLessThan(
+    html.indexOf('Example Hotel'),
+  );
 });

@@ -1,3 +1,4 @@
+import { FinanceTicketCostService } from '../finance/ticket-cost/finance-ticket-cost.service';
 import 'reflect-metadata';
 import {
   beforeAll,
@@ -27,6 +28,9 @@ import { IamService } from '../iam/iam.service';
 const id = '11111111-1111-4111-8111-111111111111';
 describe('reservation summary and mutation HTTP boundary', () => {
   let app: INestApplication, permissions: string[], branches: string[];
+  const flightInbox = vi
+    .fn()
+    .mockResolvedValue({ data: [], meta: { canPrice: false } });
   const identity = vi.fn().mockResolvedValue({ data: { ok: true } });
   const purchaseInbox = vi.fn().mockResolvedValue({
     data: [],
@@ -50,6 +54,10 @@ describe('reservation summary and mutation HTTP boundary', () => {
         {
           provide: ReservationsPublicService,
           useValue: { lastRecordedOperation: async () => null, purchaseInbox },
+        },
+        {
+          provide: FinanceTicketCostService,
+          useValue: { purchaseInbox: flightInbox },
         },
         { provide: ReservationHotelPurchaseService, useValue: {} },
         { provide: ReservationServicePurchaseService, useValue: {} },
@@ -110,18 +118,46 @@ describe('reservation summary and mutation HTTP boundary', () => {
       )
       .set('Cookie', 'nora_access=allowed')
       .expect(200);
-    expect(purchaseInbox).toHaveBeenCalledWith(['allowed'], {
-      kind: 'HOTEL',
-      page: '2',
-      contractNumber: 'CTR-42',
-    });
+    expect(purchaseInbox).toHaveBeenCalledWith(
+      ['allowed'],
+      { kind: 'HOTEL', page: '2', contractNumber: 'CTR-42' },
+      undefined,
+    );
     expect(response.body.meta.canRecord).toBe(false);
+    expect(flightInbox).not.toHaveBeenCalled();
     permissions.push('reservations.hotel_purchase.write');
     const writable = await request(app.getHttpServer())
       .get('/reservations/requests/purchases')
       .set('Cookie', 'nora_access=allowed')
       .expect(200);
     expect(writable.body.meta.canRecord).toBe(true);
+  });
+  it('validates filters before any flight read and composes only authorized public facts', async () => {
+    permissions.push('procurement.read.all');
+    await request(app.getHttpServer())
+      .get('/reservations/requests/purchases?from=2026-02-30')
+      .set('Cookie', 'nora_access=allowed')
+      .expect(400);
+    expect(flightInbox).not.toHaveBeenCalled();
+    expect(purchaseInbox).not.toHaveBeenCalled();
+    await request(app.getHttpServer())
+      .get(
+        '/reservations/requests/purchases?status=UNREGISTERED&dateBy=CHECK_IN&from=2026-10-10&to=2026-10-15&direction=ASC',
+      )
+      .set('Cookie', 'nora_access=allowed')
+      .expect(200);
+    expect(flightInbox).toHaveBeenCalledTimes(1);
+    expect(purchaseInbox).toHaveBeenCalledWith(
+      ['allowed'],
+      {
+        status: 'UNREGISTERED',
+        dateBy: 'CHECK_IN',
+        from: '2026-10-10',
+        to: '2026-10-15',
+        direction: 'ASC',
+      },
+      [],
+    );
   });
   it('rejects purchase inbox reads without reservation read permission', async () => {
     permissions = ['procurement.read.all'];

@@ -1,3 +1,7 @@
+## 2026-10-07 — PURCHASE-FILTERS-DATES-1007 — PC-A — READY_FOR_REVIEW
+
+Purchasing & Supply now supports All/Recorded/Not recorded filters, date ranges and oldest/newest sorting by inbox entry, flight departure, hotel check-in or actual purchase recording. Filtering is per selected service across all branch-authorized records before pagination, so mixed contracts do not incorrectly hide or relabel services. Existing flight inventory consumes the same selected filters. Optional public Finance latest-cost timestamp distinguishes purchase recording from payment and inventory request creation. Fixed labels are translated into English. Owner authorizes develop merge after exact-head checks; no runtime/database change. See docs/tasks/PURCHASE-FILTERS-DATES-1007.md.
+
 ## 2026-10-07 — RESERVATION-PURCHASES-HUB-1007 — PC-A — READY_FOR_REVIEW
 
 Reservations purchase action now opens Purchasing & Supply for its selected contract. Five themed categories cover All services, Hotel, Flight, Transfer and Insurance. Branch-scoped paginated intake selection shows registered and missing purchases; existing editors preserve canonical batches, versions and permissions. Flight purchases retain the existing inventory inbox and exact offer/branch matching. Fixed presentation text is available in English. No schema/dependency, operational data, payment or3100 runtime change. Review candidate validation and bounded ownership are recorded in docs/tasks/RESERVATION-PURCHASES-HUB-1007.md; develop merge requires owner authorization.
