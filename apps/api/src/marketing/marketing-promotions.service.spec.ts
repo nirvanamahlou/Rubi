@@ -10,6 +10,7 @@ import { CustomerService } from '../customers/customer.service';
 import type { CustomerRepository } from '../customers/customer.repository';
 import type { CustomerContactCrypto } from '../customers/customer-contact.crypto';
 import type { CustomerNationalIdProtector } from '../customers/customer-national-id';
+import type { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
 
 const branchId = '33333333-3333-4333-8333-333333333333';
 const actor: AuthenticatedActor = {
@@ -62,7 +63,7 @@ describe('promotion validation before writes', () => {
       { marketingTargetReference: customer } as unknown as CustomerService,
       {
         activeCurrencyCodes: currency,
-      } as unknown as import('../master-data/master-organization-directory').MasterOrganizationDirectory,
+      } as unknown as MasterOrganizationDirectory,
     );
     await expect(
       service.saveAsset(
