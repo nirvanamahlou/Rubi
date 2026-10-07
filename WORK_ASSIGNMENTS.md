@@ -6154,3 +6154,7 @@ Candidate reuses company/workflow snapshots and existing private export authoriz
 SALES-CHEQUE-CALCULATOR-1007 final policy repair: re-reserve own Sales service/payment-mode guards, focused service regression tests and bounded display entries. Reject clearing persisted terms to bypass cheque policy and reject adding a cheque to a recorded cash sale; legacy null-term contracts stay supported. No new migration/dependency/runtime scope.
 
 Final policy repair verified: all112 Sales API tests, scoped lint and API typecheck pass; persisted sale type cannot be cleared and recorded cash sales reject new cheque payments. Legacy null-term cheque payments remain supported. Bounded correction locks RELEASED with frozen final candidate; exact-head CI gates merge.
+
+SALES-CHEQUE-CALCULATOR-1007 CI repair: reserve only own new labels in Web/API English display catalogues and own service-test formatting. Full production/migration gates passed; CI identified eight missing print/UI translation fragments and a non-idempotent first formatter pass on the new test. No business/schema/dependency changes.
+
+CI repair verified: English coverage3 tests and stable formatting checks pass. Eight new print/UI translation fragments are mapped consistently; the service regression test is formatter-idempotent. Correction display/test locks RELEASED with final candidate. Exact-head CI still gates merge.

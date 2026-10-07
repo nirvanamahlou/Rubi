@@ -24,14 +24,12 @@ const actor = {
 } as unknown as AuthenticatedActor;
 function setup(terms: SalesPaymentTerms | null) {
   const repository = {
-    findById: vi
-      .fn()
-      .mockResolvedValue({
-        id: 'contract',
-        branchId: 'branch',
-        ownerUserId: 'owner',
-        paymentTerms: terms,
-      }),
+    findById: vi.fn().mockResolvedValue({
+      id: 'contract',
+      branchId: 'branch',
+      ownerUserId: 'owner',
+      paymentTerms: terms,
+    }),
     addPayment: vi.fn().mockResolvedValue('created'),
     updateDraft: vi.fn(),
   };
