@@ -268,9 +268,7 @@ export function NewEmployeeForm({
     (o) => o.branch === value.branch,
   );
   const currentOptions = (options: readonly string[], current: string) =>
-    Array.from(
-      new Set([...options, ...(initialValue && current ? [current] : [])]),
-    );
+    Array.from(new Set([...options, ...(current ? [current] : [])]));
 
   return (
     <form noValidate onSubmit={submit}>
@@ -417,7 +415,7 @@ export function NewEmployeeForm({
             >
               <option value="">انتخاب واحد</option>
               {currentOptions(
-                organization?.units ?? unitOptions,
+                organizationOptions ? (organization?.units ?? []) : unitOptions,
                 value.unit,
               ).map((option) => (
                 <option key={option} value={option}>
@@ -633,6 +631,9 @@ interface NewEmployeeDialogProps {
   organizationOptions?: NewEmployeeFormProps['organizationOptions'];
   onAddReference?: NewEmployeeFormProps['onAddReference'];
   createdReference?: NewEmployeeFormProps['createdReference'];
+  referenceLoading?: boolean;
+  referenceError?: string;
+  onRetryReferences?: () => void;
 }
 
 export function NewEmployeeDialog({
@@ -646,10 +647,23 @@ export function NewEmployeeDialog({
   organizationOptions,
   onAddReference,
   createdReference,
+  referenceLoading = false,
+  referenceError,
+  onRetryReferences,
   lockAssignment = false,
   onClose,
   onSubmit,
 }: NewEmployeeDialogProps) {
+  const [catalogReady, setCatalogReady] = useState(
+    !referenceLoading && !referenceError,
+  );
+  useEffect(() => {
+    if (referenceLoading || referenceError) return;
+    const timer = window.setTimeout(() => setCatalogReady(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [referenceLoading, referenceError]);
+  const waitingForInitialCatalog =
+    !catalogReady && (referenceLoading || referenceError);
   return (
     <Dialog onOpenChange={(open) => !open && onClose()} open>
       <DialogContent
@@ -662,21 +676,32 @@ export function NewEmployeeDialog({
         <DialogDescription>
           مشخصات پایه و جایگاه سازمانی کارمند را مطابق فهرست کارکنان تکمیل کنید.
         </DialogDescription>
-        <NewEmployeeForm
-          userOptions={userOptions}
-          userOptionsError={userOptionsError}
-          existingPersonnelCodes={existingPersonnelCodes}
-          initialValue={initialValue}
-          managerOptions={managerOptions}
-          {...(onAddReference ? { onAddReference } : {})}
-          {...(createdReference ? { createdReference } : {})}
-          branchOptions={branchOptions}
-          unitOptions={unitOptions}
-          {...(organizationOptions ? { organizationOptions } : {})}
-          lockAssignment={lockAssignment}
-          onCancel={onClose}
-          onSubmit={onSubmit}
-        />
+        {waitingForInitialCatalog ? (
+          <div role={referenceError ? 'alert' : 'status'}>
+            <p>{referenceError || 'دریافت واحدها و سمت‌ها…'}</p>
+            {referenceError && onRetryReferences ? (
+              <button type="button" onClick={onRetryReferences}>
+                تلاش دوباره
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <NewEmployeeForm
+            userOptions={userOptions}
+            userOptionsError={userOptionsError}
+            existingPersonnelCodes={existingPersonnelCodes}
+            initialValue={initialValue}
+            managerOptions={managerOptions}
+            {...(onAddReference ? { onAddReference } : {})}
+            {...(createdReference ? { createdReference } : {})}
+            branchOptions={branchOptions}
+            unitOptions={unitOptions}
+            {...(organizationOptions ? { organizationOptions } : {})}
+            lockAssignment={lockAssignment}
+            onCancel={onClose}
+            onSubmit={onSubmit}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
