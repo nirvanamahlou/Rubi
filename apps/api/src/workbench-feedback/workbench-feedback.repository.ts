@@ -69,6 +69,12 @@ export class WorkbenchFeedbackRepository {
     });
   }
 
+  deleteHr(id: string, branchId: string) {
+    return this.database.client.workbenchFeedback.deleteMany({
+      where: { id, branchId, department: 'HUMAN_RESOURCES' },
+    });
+  }
+
   async create(
     input: CreateFeedbackRecord,
   ): Promise<WorkbenchFeedbackReceiptV1> {

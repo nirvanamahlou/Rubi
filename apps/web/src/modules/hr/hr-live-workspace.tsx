@@ -169,7 +169,7 @@ export function HrLiveWorkspace({
                 )
                 .map((card) => (
                   <option key={card.id} value={card.id}>
-                    {card.id === 'payroll' ? 'حقوق و ارتباط مالی' : card.title}
+                    {card.title}
                   </option>
                 ))}
             </NativeSearchSelect>

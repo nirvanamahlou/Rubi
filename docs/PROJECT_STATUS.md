@@ -4849,8 +4849,6 @@ Request detail breadcrumb uses the saved request title; redundant UUID/version h
 ## 2026-10-06 — MESSAGE-PERSIAN-SAVE-1006 — PC-B
 
 Visible message/scheduled-channel names use existing Persian labels while canonical enum values stay unchanged. The icon-only save action is placed in a final full-width RTL flex row aligned physically left, preserving its original handler. No API/data/schema/migration/permission/dependency/runtime changes. Targeted rendering tests and affected quality gates precede authorized push/develop merge.
-
-
 ## 2026-10-06 — PROCUREMENT-RECORD-LISTS-1006
 
 Removed inert sidebar form previews from all seven Procurement sections. Scoped creation/decision actions now sit above full-width records, with a paginated authorized request chooser for dependent forms. Text preview triggers no longer match the shared icon-only action rule; full record titles wrap in lists and workbench. Supplier logos continue using authenticated Master Data document previews, and newly persisted logo profiles immediately refresh the adjacent title cache. No API/schema/IAM/dependency or operational data changes. Eight focused tests, Web typecheck and changed-file lint pass; local production build passed; full CI gates required before merge; authenticated browser verification unavailable because CUA initialization fails.
@@ -4870,3 +4868,6 @@ Purchase orders now use a scoped persisted order table, named icon-only view/edi
 
 Owner explicitly authorizes merging hotel occupancy PR671 to develop. Age selectors now show every canonical child-age option, without expanding the age domain or changing unrelated combobox defaults. Develop integration preserves its passenger-total pricing and additive owner records; tariff editor uses the shared DatePicker. Integrated Sales/Reservations/shared tests607 pass (three existing skips), scoped lint and Web typecheck pass. Production build and exact-head CI remain merge gates; no operational data import or live deployment.
 
+## 2026-10-07 — HR-WORD-REVISION-1006 — PC-B — READY_FOR_REVIEW
+
+All Word-listed HR changes are implemented in `codex/pc-b-hr-word-revision-1006`: catalog-backed forms, manager/HR applicant assessment, provisional onboarding, archived contract/leave attachments, Workbench request inbox, survey removal, and updated navigation/labels. Additive assessment and permission-scoped Customer Affairs/Workbench endpoints preserve existing record columns and module ownership. No migration or dependency change. HR Web 102 tests, HR API 114 tests (26 opt-in PostgreSQL tests skipped), final focused 25 API tests, affected ESLint, Contracts/API/Web typechecks and production builds pass. A local opt-in PostgreSQL attempt could not start because the running container has no `nora_local` role expected by the harness; no operational data was changed. Exact-head CI and user-authorized develop merge are pending. See `docs/tasks/HR-WORD-REVISION-1006.md`.

@@ -252,4 +252,22 @@ export class WorkbenchFeedbackService {
       total,
     };
   }
+
+  async deleteHr(id: string, actor: AuthenticatedActor): Promise<void> {
+    const row = await this.repository.findById(id);
+    if (
+      !row ||
+      row.department !== 'HUMAN_RESOURCES' ||
+      !actor.branchIds.includes(row.branchId)
+    )
+      throw new NotFoundException('نظرسنجی پیدا نشد.');
+    const recipients = await this.hrDirectory.workbenchFeedbackRecipientUserIds(
+      row.branchId,
+      departmentConfiguration.hr.terms,
+    );
+    if (!recipients.includes(actor.userId))
+      throw new NotFoundException('نظرسنجی پیدا نشد.');
+    const result = await this.repository.deleteHr(id, row.branchId);
+    if (!result.count) throw new NotFoundException('نظرسنجی پیدا نشد.');
+  }
 }

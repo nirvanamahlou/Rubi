@@ -34,7 +34,6 @@ export function expenseMissionOptions(
 
 export function missionOptionLabel(record: HrRecordDto): string {
   return [
-    record.code,
     recordValue(record, 'کارمند'),
     recordValue(record, 'مقصد'),
     [recordValue(record, 'تاریخ رفت'), recordValue(record, 'تاریخ برگشت')]

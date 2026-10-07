@@ -27,7 +27,7 @@ export interface HrResourceDefinition {
 
 const parentResources: Record<string, string[]> = {
   'organization.units': ['organization.units'],
-  'recruitment.applicants': ['recruitment.openings'],
+  'recruitment.applicants': ['recruitment.staffing', 'recruitment.openings'],
   'expenses.travel': ['time.mission', 'expenses.mission'],
   'expenses.advances': ['time.mission', 'expenses.mission'],
   'expenses.claims': ['time.mission', 'expenses.mission'],
@@ -37,6 +37,7 @@ const parentResources: Record<string, string[]> = {
   'lifecycle.settlement': ['lifecycle.separation'],
   'recruitment.interviews': ['recruitment.applicants'],
   'recruitment.feedback': ['recruitment.applicants'],
+  'recruitment.assessment': ['recruitment.applicants'],
   'recruitment.offers': ['recruitment.applicants'],
   'development.goals': ['development.cycles'],
   'development.selfReview': ['development.cycles'],
@@ -130,7 +131,8 @@ export function getHrResource(
               : ['تعداد روز', 'ظرفیت'].includes(label)
                 ? 'decimal'
                 : 'text',
-    required: index === 0 || label === 'کارمند',
+    required:
+      index === 0 || label === 'کارمند' || key === 'recruitment.assessment',
     maxLength: /شرح|تعهدات|بازخورد|توضیح/.test(label) ? 4000 : 500,
   }));
   return {
@@ -162,7 +164,6 @@ export function getHrResource(
     parentResources: parentResources[key] ?? [],
     parentOptional: [
       'organization.units',
-      'recruitment.applicants',
       'expenses.travel',
       'expenses.advances',
       'expenses.claims',

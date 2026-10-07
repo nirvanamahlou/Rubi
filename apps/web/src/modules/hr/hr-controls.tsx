@@ -1,14 +1,13 @@
 'use client';
 import { useId, useState, type ReactNode } from 'react';
 import {
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
   Download,
   Eye,
   FilePenLine,
   FileText,
-  Filter,
   Inbox,
   LoaderCircle,
   Trash2,
@@ -16,7 +15,6 @@ import {
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { Card } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
-import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -139,9 +137,7 @@ export function HrTabs({
   );
 }
 export function HrRangeBar({
-  onApply,
   actions,
-  initialRange,
   children,
 }: {
   initialRange?: { from: string; to: string };
@@ -149,45 +145,10 @@ export function HrRangeBar({
   actions?: ReactNode;
   children?: ReactNode;
 }) {
-  const [from, setFrom] = useState(initialRange?.from ?? '');
-  const [to, setTo] = useState(initialRange?.to ?? '');
-  const [error, setError] = useState('');
   return (
-    <section className={ui.rangePanel} aria-label="بازه گزارش">
-      <div className={ui.range}>
-        <span>
-          <CalendarDays size={18} aria-hidden="true" /> بازه گزارش
-        </span>
-        <label>
-          از تاریخ
-          <DatePicker value={from} onChange={setFrom} aria-label="از تاریخ" />
-        </label>
-        <label>
-          تا تاریخ
-          <DatePicker value={to} onChange={setTo} aria-label="تا تاریخ" />
-        </label>
-        <div className={ui.actions}>
-          <HrButton
-            onClick={() => {
-              if (from && to && from > to) {
-                setError('تاریخ پایان باید پس از شروع باشد.');
-                return;
-              }
-              setError('');
-              onApply(from, to);
-            }}
-          >
-            <Filter size={15} /> اعمال بازه
-          </HrButton>
-          {actions}
-        </div>
-      </div>
+    <section className={ui.rangePanel} aria-label="ابزارهای فهرست">
       {children ? <div className={ui.rangeFilters}>{children}</div> : null}
-      {error ? (
-        <p role="alert" className={ui.error}>
-          {error}
-        </p>
-      ) : null}
+      {actions ? <div className={ui.actions}>{actions}</div> : null}
     </section>
   );
 }
@@ -196,6 +157,7 @@ export function HrTable({
   onOpen,
   onEdit,
   onDelete,
+  onAssess,
   empty = 'رکوردی مطابق این فیلترها وجود ندارد.',
   showPagination = true,
   busy = false,
@@ -207,6 +169,7 @@ export function HrTable({
   onOpen?: (index: number) => void;
   onEdit?: (index: number) => void;
   onDelete?: (index: number) => void;
+  onAssess?: (index: number) => void;
   empty?: string;
   showPagination?: boolean;
   busy?: boolean;
@@ -218,7 +181,8 @@ export function HrTable({
   const selected = selectedIds ?? localSelection.selectedIds;
   const select = onSelectionChange ?? localSelection.onSelectionChange;
   const exportSelection = selectedHrDataset(data, selected);
-  const hasActions = (onOpen && showOpenButton) || onEdit || onDelete;
+  const hasActions =
+    (onOpen && showOpenButton) || onEdit || onDelete || onAssess;
   const [page, setPage] = useState(0);
   const currentPage = Math.min(
     page,
@@ -320,6 +284,23 @@ export function HrTable({
                   {hasActions ? (
                     <td className={ui.operationCell}>
                       <div className={ui.rowActions}>
+                        {onAssess ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            aria-label={`ارزیابی ${cellText(row[1]) || cellText(row[0])}`}
+                            title="ارزیابی متقاضی"
+                            disabled={busy}
+                            onClick={() => onAssess(index)}
+                          >
+                            <ClipboardCheck
+                              className="size-4"
+                              aria-hidden="true"
+                            />{' '}
+                            ارزیابی
+                          </Button>
+                        ) : null}
                         {onOpen && showOpenButton ? (
                           <Button
                             type="button"
@@ -353,7 +334,7 @@ export function HrTable({
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="text-destructive hover:text-destructive"
+                            className="bg-destructive text-white hover:bg-destructive/85 hover:text-white"
                             aria-label={`حذف ${cellText(row[1]) || cellText(row[0])}`}
                             disabled={busy}
                             onClick={() => onDelete(index)}
@@ -534,18 +515,15 @@ export function HrSelectionSummary({
   count: number;
   onClear: () => void;
 }) {
+  if (!count) return null;
   return (
     <div className={ui.selectionSummary}>
       <span aria-live="polite">
-        {count
-          ? `${count.toLocaleString('fa-IR')} رکورد انتخاب‌شده`
-          : 'برای خروجی، رکوردها را انتخاب کنید'}
+        {`${count.toLocaleString('fa-IR')} رکورد انتخاب‌شده`}
       </span>
-      {count ? (
-        <HrButton variant="ghost" size="sm" onClick={onClear}>
-          لغو انتخاب
-        </HrButton>
-      ) : null}
+      <HrButton variant="ghost" size="sm" onClick={onClear}>
+        لغو انتخاب
+      </HrButton>
     </div>
   );
 }

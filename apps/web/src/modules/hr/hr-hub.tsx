@@ -45,27 +45,16 @@ const toneClasses: Record<Tone, { icon: string; glow: string }> = {
 const sectionLabels: Partial<Record<HrSectionId, readonly string[]>> = {
   dashboard: ['شاخص‌های کارکنان', 'حضور و مرخصی', 'هشدار قراردادها'],
   employees: employeeGroups.map((group) => group.label),
-  organization: ['چارت سازمانی', 'شعبه‌ها', 'واحدها', 'شغل و سمت', 'رده شغلی'],
+  organization: ['چارت سازمانی', 'شعبه‌ها', 'واحدها', 'شغل و سمت'],
   requests: ['کارتابل', 'درخواست‌ها', 'تأییدها'],
   surveys: ['نظرسنجی‌های میزکار', 'پیشنهادها'],
   reports: ['گزارش کارکنان', 'گزارش بخش‌ها', 'تاریخچه تغییرات'],
-  hrSettings: [
-    'گردش‌کار',
-    'دسترسی‌ها',
-    'اعلان‌ها',
-    'فیلدها',
-    'اتصال‌ها',
-    'شرکت‌ها',
-  ],
 };
 
 export function HrHub({ data }: { data: HrBootstrapDto }) {
   return (
     <div className="space-y-6" data-hr-hub>
-      <PageHeader
-        title="منابع انسانی"
-        description="پرونده کارکنان و فرایندهای مرتبط در یک فضای کاری؛ برای ورود به هر حوزه، کارت مربوط را انتخاب کنید."
-      />
+      <PageHeader title="منابع انسانی" />
       <section aria-labelledby="hr-sections-title">
         <h2 className="sr-only" id="hr-sections-title">
           بخش‌های اصلی منابع انسانی
@@ -88,8 +77,7 @@ export function HrHub({ data }: { data: HrBootstrapDto }) {
                         ? /انتظار|بررسی/.test(record.status)
                         : record.section === card.id,
                     ).length;
-              const title =
-                card.id === 'payroll' ? 'حقوق و ارتباط مالی' : card.title;
+              const title = card.title;
               return (
                 <Link
                   aria-label={`ورود به بخش ${title}`}

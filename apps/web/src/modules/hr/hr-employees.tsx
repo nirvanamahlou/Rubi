@@ -21,7 +21,10 @@ import type { NewEmployeeFormValue } from './new-employee-dialog';
 const NewEmployeeDialog = dynamic(() =>
   import('./new-employee-dialog').then((module) => module.NewEmployeeDialog),
 );
-import { employeeLabel, hrCompanies } from './hr-live-data';
+const HrRecordForm = dynamic(() =>
+  import('./hr-record-form').then((module) => module.HrRecordForm),
+);
+import { hrCompanies } from './hr-live-data';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { normalizeHrText } from './hr-data-utils';
 import ui from './hr-unified.module.css';
@@ -29,6 +32,7 @@ import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import { hrReferenceOptions } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
+import { hrDisplayDate } from './hr-dates';
 
 export function employeeDataset(
   employees: readonly HrEmployeeDto[],
@@ -54,7 +58,7 @@ export function employeeDataset(
       item.position,
       item.grade,
       item.manager,
-      item.startedAtValue,
+      hrDisplayDate(item.startedAtValue),
       item.status,
     ]),
     recordIds: employees.map((item) => item.id),
@@ -82,11 +86,8 @@ export function employeeFormValue(
     position: employee.position,
     grade: employee.grade,
     manager: employee.managerId
-      ? employeeLabel(
-          store.data!.employees.find(
-            (item) => item.id === employee.managerId,
-          ) ?? { name: employee.manager, personnelCode: '' },
-        )
+      ? (store.data!.employees.find((item) => item.id === employee.managerId)
+          ?.name ?? employee.manager)
       : 'بدون مدیر مستقیم',
     startedAt: employee.startedAtValue,
     status: (['فعال', 'در حال تکمیل', 'تعلیق‌شده'].includes(employee.status)
@@ -104,95 +105,129 @@ export function HrEmployeeEditor({
   onClose: () => void;
 }) {
   const key = useRef(crypto.randomUUID());
+  const [newReference, setNewReference] = useState<
+    'branches' | 'units' | 'positions' | null
+  >(null);
   const references = useHrReferenceData(store);
   const external = useHrFormReferences(employee?.id);
   const companies = hrCompanies(references.data);
   return (
-    <NewEmployeeDialog
-      userOptions={external.data?.users.map((u) => ({
-        ...u,
-        branches: companies
-          .filter((c) => u.branchIds.includes(c.branchId))
-          .map((c) => c.name),
-      }))}
-      userOptionsError={external.error}
-      lockAssignment={Boolean(employee)}
-      existingPersonnelCodes={store
-        .data!.employees.filter((item) => item.id !== employee?.id)
-        .map((item) => item.personnelCode)}
-      initialValue={employee ? employeeFormValue(employee, store) : undefined}
-      branchOptions={
-        employee?.organizationBranchId
-          ? [employee.companyName]
-          : companies.map((company) => company.name)
-      }
-      unitOptions={Array.from(
-        new Set(
-          store
-            .data!.records.filter(
-              (item) => item.section === 'organization' && item.tab === 'units',
-            )
-            .map((item) => item.values[0]!)
-            .concat(store.data!.employees.map((item) => item.unit)),
-        ),
-      )}
-      organizationOptions={companies.map((company) => {
-        const options = hrReferenceOptions(
-          references.data,
-          'employee',
-          'create',
-          company.branchId,
-          company.organizationBranchId,
-        );
-        return {
-          branch: company.name,
-          units: options['واحد'] ?? [],
-          positions: options['سمت'] ?? [],
-          grades: options['رده'] ?? [],
-        };
-      })}
-      managerOptions={store
-        .data!.employees.filter((item) => item.id !== employee?.id)
-        .map(employeeLabel)}
-      onClose={onClose}
-      onSubmit={async (value) => {
-        const branch = companies.find((item) => item.name === value.branch);
-        if (!branch) throw new Error('شرکت یا شعبه مجاز را انتخاب کنید.');
-        const manager = store.data!.employees.find(
-          (item) => employeeLabel(item) === value.manager,
-        );
-        if (value.manager !== 'بدون مدیر مستقیم' && !manager)
-          throw new Error('مدیر مستقیم را از فهرست کارکنان انتخاب کنید.');
-        const input = {
-          userId: value.userId || null,
-          branchId: branch.branchId,
-          ...(branch.organizationBranchId
-            ? { organizationBranchId: branch.organizationBranchId }
-            : {}),
-          name: `${value.firstName} ${value.lastName}`.trim(),
-          kind: value.employmentType,
-          unit: value.unit,
-          position: value.position,
-          grade: value.grade,
-          managerId: manager?.id ?? null,
-          startedAtValue: value.startedAt,
-          status: value.status,
-        };
-        if (employee)
-          await hrApi.employees.update(employee.id, {
-            name: input.name,
-            kind: input.kind,
-            status: input.status,
-            ...(input.userId !== employee.userId
-              ? { userId: input.userId }
+    <>
+      <NewEmployeeDialog
+        onAddReference={setNewReference}
+        userOptions={external.data?.users.map((u) => ({
+          ...u,
+          branches: companies
+            .filter((c) => u.branchIds.includes(c.branchId))
+            .map((c) => c.name),
+        }))}
+        userOptionsError={external.error}
+        lockAssignment={Boolean(employee)}
+        existingPersonnelCodes={store
+          .data!.employees.filter((item) => item.id !== employee?.id)
+          .map((item) => item.personnelCode)}
+        initialValue={employee ? employeeFormValue(employee, store) : undefined}
+        branchOptions={
+          employee?.organizationBranchId
+            ? [employee.companyName]
+            : companies.map((company) => company.name)
+        }
+        unitOptions={Array.from(
+          new Set(
+            store
+              .data!.records.filter(
+                (item) =>
+                  item.section === 'organization' && item.tab === 'units',
+              )
+              .map((item) => item.values[0]!)
+              .concat(store.data!.employees.map((item) => item.unit)),
+          ),
+        )}
+        organizationOptions={companies.map((company) => {
+          const options = hrReferenceOptions(
+            references.data,
+            'employee',
+            'create',
+            company.branchId,
+            company.organizationBranchId,
+          );
+          return {
+            branch: company.name,
+            units: options['واحد'] ?? [],
+            positions: options['سمت'] ?? [],
+            grades: options['رده'] ?? [],
+          };
+        })}
+        managerOptions={store
+          .data!.employees.filter((item) => item.id !== employee?.id)
+          .map((item) => item.name)}
+        onClose={onClose}
+        onSubmit={async (value) => {
+          const branch = companies.find((item) => item.name === value.branch);
+          if (!branch) throw new Error('شرکت یا شعبه مجاز را انتخاب کنید.');
+          const managers = store.data!.employees.filter(
+            (item) => item.name === value.manager && item.id !== employee?.id,
+          );
+          const manager = managers[0];
+          if (value.manager !== 'بدون مدیر مستقیم' && managers.length !== 1)
+            throw new Error('مدیر مستقیم را از فهرست کارکنان انتخاب کنید.');
+          const input = {
+            userId: value.userId || null,
+            branchId: branch.branchId,
+            ...(branch.organizationBranchId
+              ? { organizationBranchId: branch.organizationBranchId }
               : {}),
-            version: employee.version,
-          });
-        else await hrApi.employees.create(input, key.current);
-        await store.mutated();
-        onClose();
-      }}
-    />
+            name: `${value.firstName} ${value.lastName}`.trim(),
+            kind: value.employmentType,
+            unit: value.unit,
+            position: value.position,
+            grade: value.grade,
+            managerId: manager?.id ?? null,
+            startedAtValue: value.startedAt,
+            status: value.status,
+          };
+          if (employee)
+            await hrApi.employees.update(employee.id, {
+              name: input.name,
+              kind: input.kind,
+              status: input.status,
+              ...(input.userId !== employee.userId
+                ? { userId: input.userId }
+                : {}),
+              version: employee.version,
+            });
+          else await hrApi.employees.create(input, key.current);
+          await store.mutated();
+          onClose();
+        }}
+      />
+      {newReference ? (
+        <HrRecordForm
+          allowInlineCreate={false}
+          target={{
+            source: {
+              section: 'organization',
+              tab: newReference,
+              label:
+                newReference === 'branches'
+                  ? 'شرکت و شعبه'
+                  : newReference === 'units'
+                    ? 'واحد سازمانی'
+                    : 'شغل و سمت',
+              action:
+                newReference === 'branches'
+                  ? 'افزودن شعبه'
+                  : newReference === 'units'
+                    ? 'افزودن واحد'
+                    : 'افزودن سمت',
+            },
+          }}
+          store={store}
+          onClose={() => setNewReference(null)}
+          onSaved={() => setNewReference(null)}
+        />
+      ) : null}
+    </>
   );
 }
 export function HrEmployees({
@@ -215,6 +250,7 @@ export function HrEmployees({
     () =>
       store.data!.employees.filter(
         (item) =>
+          item.status !== 'پایان همکاری' &&
           (!branch ||
             (item.organizationBranchId || item.branchId) === branch) &&
           (!unit || item.unit === unit) &&

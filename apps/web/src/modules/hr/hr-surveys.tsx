@@ -5,6 +5,7 @@ import type { WorkbenchFeedbackInboxResponseV1 } from '@nora/contracts';
 import { Button, Card } from '@/components/ui';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { getPublicApiBaseUrl } from '@/lib/environment';
+import { Trash2 } from 'lucide-react';
 
 async function loadSurveys(
   page: number,
@@ -45,6 +46,7 @@ export function HrSurveys() {
   );
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState('');
   const refresh = useCallback(() => {
     setLoading(true);
     setError('');
@@ -82,12 +84,7 @@ export function HrSurveys() {
   return (
     <section className="space-y-5" aria-label="نظرسنجی‌های منابع انسانی">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-black">نظرسنجی‌ها و پیشنهادها</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            نظرهای ثبت‌شده در میزکار کاربران با مقصد منابع انسانی
-          </p>
-        </div>
+        <h1 className="text-xl font-black">نظرسنجی‌ها و پیشنهادها</h1>
         <Button
           type="button"
           variant="outline"
@@ -114,9 +111,55 @@ export function HrSurveys() {
         <Card key={item.id} className="space-y-3 p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <h2 className="font-bold">{item.subject}</h2>
-            <span className="text-xs text-muted-foreground">
-              {new Date(item.submittedAt).toLocaleString('fa-IR')}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">
+                {new Date(item.submittedAt).toLocaleString('fa-IR')}
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                aria-label={`حذف ${item.subject}`}
+                title="حذف"
+                disabled={Boolean(deletingId)}
+                onClick={async () => {
+                  if (!window.confirm('این نظرسنجی حذف شود؟')) return;
+                  setDeletingId(item.id);
+                  try {
+                    const baseUrl = getPublicApiBaseUrl();
+                    if (!baseUrl)
+                      throw new Error('نشانی سرویس تنظیم نشده است.');
+                    const response = await fetch(
+                      `${baseUrl}/workbench/feedback/hr/${item.id}`,
+                      {
+                        method: 'DELETE',
+                        credentials: 'include',
+                      },
+                    );
+                    if (!response.ok) throw new Error('حذف نظرسنجی انجام نشد.');
+                    setResult((current) =>
+                      current
+                        ? {
+                            ...current,
+                            data: current.data.filter(
+                              (row) => row.id !== item.id,
+                            ),
+                            total: Math.max(0, current.total - 1),
+                          }
+                        : current,
+                    );
+                  } catch (cause) {
+                    setError(
+                      cause instanceof Error ? cause.message : 'حذف انجام نشد.',
+                    );
+                  } finally {
+                    setDeletingId('');
+                  }
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden="true" />
+              </Button>
+            </div>
           </div>
           <p className="whitespace-pre-wrap break-words text-sm leading-7">
             {item.body}

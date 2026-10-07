@@ -31,6 +31,7 @@ describe('WorkbenchFeedbackService', () => {
     findById: vi.fn(),
     listHr: vi.fn(),
     countHr: vi.fn(),
+    deleteHr: vi.fn(),
   };
   const hrDirectory = { workbenchFeedbackRecipientUserIds: vi.fn() };
   const documents = {
@@ -61,6 +62,34 @@ describe('WorkbenchFeedbackService', () => {
     repository.findById.mockReset();
     repository.listHr.mockReset();
     repository.countHr.mockReset();
+    repository.deleteHr.mockReset();
+  });
+
+  it('allows an HR recipient to remove a survey in an authorized branch', async () => {
+    repository.findById.mockResolvedValue({
+      id: input.id,
+      branchId: input.branchId,
+      department: 'HUMAN_RESOURCES',
+    });
+    hrDirectory.workbenchFeedbackRecipientUserIds.mockResolvedValue([
+      actor.userId,
+    ]);
+    repository.deleteHr.mockResolvedValue({ count: 1 });
+    await expect(service.deleteHr(input.id, actor)).resolves.toBeUndefined();
+    expect(repository.deleteHr).toHaveBeenCalledWith(input.id, input.branchId);
+  });
+
+  it('does not allow the sender to delete an HR survey without recipient authority', async () => {
+    repository.findById.mockResolvedValue({
+      id: input.id,
+      branchId: input.branchId,
+      department: 'HUMAN_RESOURCES',
+      submittedByUserId: actor.userId,
+    });
+    await expect(service.deleteHr(input.id, actor)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(repository.deleteHr).not.toHaveBeenCalled();
   });
 
   it('validates linked documents, trims content and routes to the selected unit', async () => {

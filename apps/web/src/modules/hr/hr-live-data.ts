@@ -5,6 +5,7 @@ import {
 } from '@nora/contracts';
 import type { HrPreviewDataset } from './hr-preview-data';
 import { retiredHrColumns } from './hr-form-model';
+import { hrDisplayDate } from './hr-dates';
 
 export function recordsDataset(
   section: string,
@@ -25,7 +26,11 @@ export function recordsDataset(
     columns: ['شناسه', ...visible.map((item) => item.label), 'وضعیت'],
     rows: items.map((record) => [
       record.code,
-      ...visible.map((item) => record.values[item.index] ?? ''),
+      ...visible.map((item) =>
+        /تاریخ|موعد|آخرین روز کاری/.test(item.label)
+          ? hrDisplayDate(record.values[item.index] ?? '')
+          : (record.values[item.index] ?? ''),
+      ),
       record.status,
     ]),
     recordIds: items.map((r) => r.id),

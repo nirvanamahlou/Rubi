@@ -244,6 +244,41 @@ export function HrRecordDetail({
           </p>
         ) : null}
         <dl className={ui.properties}>
+          {record.data.documentId &&
+          !record.values.some(
+            (value) => value === `document://${record.data.documentId}`,
+          ) ? (
+            <div>
+              <dt>
+                {record.section === 'contracts'
+                  ? 'فایل قرارداد'
+                  : 'مدارک پیوست'}
+              </dt>
+              <dd>
+                <HrButton
+                  onClick={async () => {
+                    try {
+                      const { previewHrDocument } =
+                        await import('./hr-file-archive');
+                      setFileUrl(
+                        await previewHrDocument(
+                          `document://${record.data.documentId}`,
+                        ),
+                      );
+                    } catch (cause) {
+                      setError(
+                        cause instanceof Error
+                          ? cause.message
+                          : 'نمایش فایل مجاز نیست.',
+                      );
+                    }
+                  }}
+                >
+                  نمایش فایل پیوست
+                </HrButton>
+              </dd>
+            </div>
+          ) : null}
           {record.columns.map((label, index) => (
             <div key={`${label}-${index}`}>
               <dt>{label}</dt>

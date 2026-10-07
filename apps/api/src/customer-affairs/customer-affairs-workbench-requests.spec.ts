@@ -47,4 +47,43 @@ describe('CustomerAffairsService workbenchRequests', () => {
       'branch-1',
     ]);
   });
+
+  it('shows HR-directed workbench requests only to a branch recipient', async () => {
+    const repository = {
+      hrWorkbenchRequests: vi.fn().mockResolvedValue([
+        {
+          id: 'request-1',
+          trackingNumber: 'CA-T-1',
+          subject: 'نیاز پرسنلی',
+          description: 'شرح درخواست',
+          executionUnit: 'منابع انسانی',
+          status: 'NEW',
+          priority: 'NORMAL',
+          nextActionAt: new Date('2026-09-28T08:00:00.000Z'),
+          updatedAt: new Date('2026-09-27T08:00:00.000Z'),
+        },
+      ]),
+    };
+    const directory = {
+      workbenchFeedbackRecipientUserIds: vi
+        .fn()
+        .mockResolvedValue([actor.userId]),
+    };
+    const service = new CustomerAffairsService(
+      repository as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      directory as never,
+    );
+    const result = await service.hrWorkbenchRequests(actor);
+    expect(repository.hrWorkbenchRequests).toHaveBeenCalledWith(['branch-1']);
+    expect(result.data[0]?.description).toBe('شرح درخواست');
+    directory.workbenchFeedbackRecipientUserIds.mockResolvedValue([]);
+    await expect(service.hrWorkbenchRequests(actor)).resolves.toEqual({
+      data: [],
+    });
+  });
 });

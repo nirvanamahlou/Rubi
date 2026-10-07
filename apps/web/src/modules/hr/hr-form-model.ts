@@ -1,5 +1,6 @@
 import type { HrBootstrapDto, HrRecordDto } from '@nora/contracts';
 import { hrCompanies } from './hr-live-data';
+import { HR_GRADE_OPTIONS } from './hr-grade-options';
 
 export const recordValue = (record: HrRecordDto | undefined, label: string) =>
   record?.values[record.columns.indexOf(label)] ?? '';
@@ -10,18 +11,24 @@ export function retiredHrColumns(section: string, tab: string): string[] {
   return key === 'organization.branches'
     ? ['تاریخ اثر']
     : key === 'organization.units'
-      ? ['مدیر']
-      : key === 'recruitment.interviews'
-        ? ['عنوان شغل']
-        : key === 'assets.list'
-          ? ['شماره سریال']
-          : [];
+      ? ['مدیر', 'واحد والد']
+      : key === 'lifecycle.promotion'
+        ? ['سمت فعلی', 'رده فعلی']
+        : key === 'contracts.active'
+          ? ['موضوع و تعهدات', 'مرجع حل اختلاف']
+          : key === 'time.shift'
+            ? ['تقویم تعطیلات']
+            : key === 'recruitment.interviews'
+              ? ['عنوان شغل']
+              : key === 'assets.list'
+                ? ['شماره سریال']
+                : [];
 }
 
 export function parentFieldLabel(section: string, tab: string): string {
   if (section === 'organization') return 'واحد والد';
   if (section === 'recruitment')
-    return tab === 'applicants' ? 'فرصت شغلی' : 'متقاضی';
+    return tab === 'applicants' ? 'برنامه جذب' : 'متقاضی';
   if (section === 'contracts') return 'قرارداد مرجع';
   if (section === 'development') return 'دوره ارزیابی';
   if (section === 'lifecycle') return 'پرونده پایان همکاری';
@@ -67,7 +74,9 @@ export function hrReferenceOptions(
     .map((e) => e.name);
   const units = titles('organization', 'units');
   const positions = titles('organization', 'positions');
-  const grades = titles('organization', 'grades');
+  const grades = [
+    ...new Set([...HR_GRADE_OPTIONS, ...titles('organization', 'grades')]),
+  ];
   const companies = hrCompanies(data).map((c) => c.name);
   const options: Record<string, readonly string[]> = {};
   const bind = (labels: string[], values: readonly string[]) =>
@@ -125,14 +134,25 @@ export function hrReferenceOptions(
     ],
     people,
   );
-  bind(['فرصت شغلی'], titles('recruitment', 'openings'));
+  bind(['فرصت شغلی', 'برنامه جذب'], titles('recruitment', 'staffing'));
   bind(['عنوان شغل'], titles('organization', 'positions', 'عنوان شغل'));
   bind(['تقویم تعطیلات'], titles('time', 'holidays', 'تقویم'));
   bind(
     ['شیفت', 'شیفت فعلی', 'شیفت درخواستی'],
     titles('time', 'shift', 'عنوان شیفت'),
   );
-  bind(['نوع مرخصی'], titles('time', 'leavePolicies', 'نوع مرخصی'));
+  bind(
+    ['نوع مرخصی'],
+    [
+      ...new Set([
+        ...titles('time', 'leavePolicies', 'نوع مرخصی'),
+        'استحقاقی',
+        'استعلاجی',
+        'بدون حقوق',
+        'جبرانی',
+      ]),
+    ],
+  );
   bind(['سیاست مرخصی'], titles('time', 'leavePolicies'));
   bind(['دوره ارزیابی'], titles('development', 'cycles'));
   bind(['برنامه آموزشی', 'برنامه پیشنهادی'], titles('development', 'training'));
