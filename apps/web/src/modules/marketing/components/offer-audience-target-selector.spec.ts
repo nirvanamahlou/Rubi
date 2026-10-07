@@ -37,6 +37,7 @@ describe('marketing offer audience target contract', () => {
     expect(selectorSource).toContain('/customers?customerId=');
     expect(selectorSource).toContain("'/organizations'");
     expect(selectorSource).toContain('متصل به «{value.label}»');
-    expect(referencePagesSource).toContain('target.label');
+    expect(referencePagesSource).toContain('<MarketingPromotionsPanel');
+    expect(referencePagesSource).toContain("formKind !== 'offer'");
   });
 });

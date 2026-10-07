@@ -28,6 +28,8 @@ const ASSET_KINDS = [
   'LANDING_PAGE',
   'SHORT_LINK',
   'AUTOMATION',
+  'COUPON',
+  'OFFER',
 ] as const;
 
 export class MarketingSpendLineDto {
@@ -87,6 +89,8 @@ export class MarketingAssetMutationDto {
   @IsString() @Length(1, 32) status!: string;
   @IsOptional() @IsUUID() campaignId?: string | null;
   @IsOptional() @IsUUID() relatedAssetId?: string | null;
+  @IsOptional() @IsUUID() targetCustomerId?: string | null;
+  @IsOptional() @IsUUID() targetAgencyId?: string | null;
   @IsOptional() @IsISO8601({ strict: true }) scheduledAt?: string | null;
   @IsOptional() @IsISO8601({ strict: true }) expiresAt?: string | null;
   @IsObject() payload!: Record<string, unknown>;

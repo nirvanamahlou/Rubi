@@ -1,4 +1,6 @@
 'use client';
+import { PurchaseFilterControls } from './filters';
+import { useDisplayLanguage } from '@/i18n/locale-context';
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -32,6 +34,9 @@ import { TicketPurchaseWorkspace } from '@/modules/ticket-purchases/workspace';
 import { ticketPurchaseApi } from '@/modules/ticket-purchases/api';
 import { ReservationPurchaseDialog } from '@/modules/reservations/components/reservation-hotel-purchase';
 import {
+  purchaseFilters,
+  writePurchaseFilters,
+  purchaseDateFields,
   purchaseCategories,
   purchaseCategory,
   contractPurchaseServices,
@@ -85,6 +90,12 @@ function PurchaseHub() {
       ].includes(p),
     ) &&
     canViewRoute(permissions, '/purchases');
+  const language = useDisplayLanguage();
+  const filters = purchaseFilters(query);
+  const filterKey = JSON.stringify(filters);
+  const dateLabel = purchaseDateFields.find(
+    ([key]) => key === filters.dateBy,
+  )![1];
   const kind = purchaseCategory(query?.get('kind') ?? null);
   const filter = query?.get('contractNumber') ?? '';
   const reservationId = query?.get('reservationId');
@@ -104,7 +115,7 @@ function PurchaseHub() {
     data?: TicketPurchaseInboxItemV1[];
     error?: string;
   }>();
-  const lookupKey = JSON.stringify([kind, page, filter, revision]);
+  const lookupKey = JSON.stringify([kind, page, filter, revision, filterKey]);
   const result = loaded?.key === lookupKey ? loaded.response : undefined;
   const error = loaded?.key === lookupKey ? (loaded.error ?? '') : '';
   const loading = canRead && loaded?.key !== lookupKey;
@@ -121,7 +132,13 @@ function PurchaseHub() {
   useEffect(() => {
     if (!canRead) return;
     const controller = new AbortController();
-    loadPurchaseInbox(kind, page, filter, controller.signal)
+    loadPurchaseInbox(
+      kind,
+      page,
+      filter,
+      controller.signal,
+      JSON.parse(filterKey),
+    )
       .then((value) => {
         if (!controller.signal.aborted)
           setLoaded({ key: lookupKey, response: value });
@@ -137,7 +154,7 @@ function PurchaseHub() {
           });
       });
     return () => controller.abort();
-  }, [canRead, kind, page, filter, lookupKey]);
+  }, [canRead, kind, page, filter, lookupKey, filterKey]);
   useEffect(() => {
     let live = true;
     if (canReadFlights)
@@ -166,6 +183,7 @@ function PurchaseHub() {
     nextOfferId?: string,
   ) {
     const next = new URLSearchParams();
+    writePurchaseFilters(next, filters);
     if (nextKind !== 'ALL') next.set('kind', nextKind);
     if (nextFilter) next.set('contractNumber', nextFilter);
     if (nextOfferId) next.set('offerId', nextOfferId);
@@ -191,6 +209,30 @@ function PurchaseHub() {
       router.replace('/ticket-purchases' + (next.size ? '?' + next : ''));
     }
   }
+  const displayRows = result?.meta.services
+    ? result.meta.services.flatMap((row) => {
+        const request = result.data.find((r) => r.id === row.id);
+        const service =
+          request &&
+          contractPurchaseServices(request).find(
+            (s) => s.clientKey === row.clientKey,
+          );
+        return request && service ? [{ request, service, row }] : [];
+      })
+    : (result?.data.flatMap((request) =>
+        contractPurchaseServices(request)
+          .filter((service) => kind === 'ALL' || service.kind === kind)
+          .map((service) => ({ request, service, row: undefined })),
+      ) ?? []);
+  const formatDate = (value: string | null | undefined) =>
+    value && Number.isFinite(Date.parse(value))
+      ? new Intl.DateTimeFormat(language === 'en' ? 'en-GB' : 'fa-IR', {
+          timeZone: 'UTC',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        }).format(new Date(value))
+      : '—';
   return (
     <section className="space-y-6">
       <PageHeader
@@ -254,6 +296,16 @@ function PurchaseHub() {
               </Button>
             )}
           </form>
+          <PurchaseFilterControls
+            value={filters}
+            onChange={(value) => {
+              const next = new URLSearchParams(query?.toString());
+              writePurchaseFilters(next, value);
+              next.delete('reservationId');
+              next.delete('offerId');
+              router.replace('/ticket-purchases?' + next);
+            }}
+          />
           {error && <Alert tone="error" title={error} />}
           {loading ? (
             <p role="status" className="p-6">
@@ -270,6 +322,7 @@ function PurchaseHub() {
                       'شماره قرارداد',
                       'خدمت قرارداد',
                       'وضعیت خرید',
+                      dateLabel,
                       'کارگزار و مبلغ خرید',
                       'عملیات',
                     ].map((label) => (
@@ -280,144 +333,135 @@ function PurchaseHub() {
                   </tr>
                 </thead>
                 <tbody>
-                  {result?.data.flatMap((request) =>
-                    contractPurchaseServices(request)
-                      .filter(
-                        (service) => kind === 'ALL' || service.kind === kind,
-                      )
-                      .map((service) => {
-                        const purchase = servicePurchase(
-                          request,
-                          service.clientKey,
-                        );
-                        const flight =
-                          service.kind === 'FLIGHT'
-                            ? flightPurchase(
-                                request,
-                                service,
-                                flightItems ?? [],
-                              )
-                            : undefined;
-                        const legacy =
-                          service.kind === 'HOTEL' && !purchase
-                            ? request.hotelPurchases
-                            : undefined;
-                        const known =
-                          service.kind !== 'FLIGHT' || !!flightItems;
-                        const registered =
-                          !!purchase || !!legacy?.length || !!flight?.cost;
-                        return (
-                          <tr
-                            key={`${request.id}:${service.clientKey}`}
-                            className="border-t align-top"
+                  {displayRows.map(({ request, service, row }) => {
+                    const purchase = servicePurchase(
+                      request,
+                      service.clientKey,
+                    );
+                    const flight =
+                      service.kind === 'FLIGHT'
+                        ? flightPurchase(request, service, flightItems ?? [])
+                        : undefined;
+                    const legacy =
+                      service.kind === 'HOTEL' && !purchase
+                        ? request.hotelPurchases
+                        : undefined;
+                    const known = row
+                      ? row.status !== 'UNKNOWN'
+                      : service.kind !== 'FLIGHT' || !!flightItems;
+                    const registered = row
+                      ? row.status === 'REGISTERED'
+                      : !!purchase || !!legacy?.length || !!flight?.cost;
+                    return (
+                      <tr
+                        key={`${request.id}:${service.clientKey}`}
+                        className="border-t align-top"
+                      >
+                        <td className="p-4 font-bold">
+                          <Link
+                            href={`/reservations?contractNumber=${encodeURIComponent(request.snapshot.contractNumber)}`}
                           >
-                            <td className="p-4 font-bold">
-                              <Link
-                                href={`/reservations?contractNumber=${encodeURIComponent(request.snapshot.contractNumber)}`}
-                              >
-                                {request.snapshot.contractNumber}
-                              </Link>
-                              <p className="mt-1 text-xs font-normal text-muted-foreground">
-                                نسخه قرارداد {request.contractVersion}
+                            {request.snapshot.contractNumber}
+                          </Link>
+                          <p className="mt-1 text-xs font-normal text-muted-foreground">
+                            نسخه قرارداد {request.contractVersion}
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          <Badge>
+                            {
+                              purchaseCategories.find(
+                                ([key]) => key === service.kind,
+                              )?.[1]
+                            }
+                          </Badge>
+                          <p className="mt-2">{service.titleSnapshot}</p>
+                        </td>
+                        <td className="p-4">
+                          <Badge
+                            className={
+                              registered
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
+                                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
+                            }
+                          >
+                            {registered
+                              ? 'خرید ثبت‌شده'
+                              : known
+                                ? 'خرید ثبت نشده'
+                                : 'وضعیت خرید پرواز در دسترس نیست'}
+                          </Badge>
+                          {purchase?.finance && (
+                            <p className="mt-2 text-xs">
+                              {purchase.finance.status === 'PAID'
+                                ? 'تسویه‌شده'
+                                : purchase.finance.status === 'REJECTED'
+                                  ? 'نیازمند اصلاح خرید'
+                                  : 'در انتظار تسویه مالی'}
+                            </p>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <bdi>{formatDate(row?.sortAt)}</bdi>
+                        </td>
+                        <td className="p-4">
+                          {purchase ? (
+                            <>
+                              <p>{purchase.supplierName}</p>
+                              <p>
+                                <bdi>
+                                  {formatSalesMoney(purchase.amount)}{' '}
+                                  {purchase.currencyCode}
+                                </bdi>
                               </p>
-                            </td>
-                            <td className="p-4">
-                              <Badge>
-                                {
-                                  purchaseCategories.find(
-                                    ([key]) => key === service.kind,
-                                  )?.[1]
-                                }
-                              </Badge>
-                              <p className="mt-2">{service.titleSnapshot}</p>
-                            </td>
-                            <td className="p-4">
-                              <Badge
-                                className={
-                                  registered
-                                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-                                    : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200'
-                                }
-                              >
-                                {registered
-                                  ? 'خرید ثبت‌شده'
-                                  : known
-                                    ? 'خرید ثبت نشده'
-                                    : 'وضعیت خرید پرواز در دسترس نیست'}
-                              </Badge>
-                              {purchase?.finance && (
-                                <p className="mt-2 text-xs">
-                                  {purchase.finance.status === 'PAID'
-                                    ? 'تسویه‌شده'
-                                    : purchase.finance.status === 'REJECTED'
-                                      ? 'نیازمند اصلاح خرید'
-                                      : 'در انتظار تسویه مالی'}
-                                </p>
-                              )}
-                            </td>
-                            <td className="p-4">
-                              {purchase ? (
-                                <>
-                                  <p>{purchase.supplierName}</p>
-                                  <p>
-                                    <bdi>
-                                      {formatSalesMoney(purchase.amount)}{' '}
-                                      {purchase.currencyCode}
-                                    </bdi>
-                                  </p>
-                                </>
-                              ) : flight?.cost ? (
-                                <>
-                                  <p>
-                                    {flight.request.supplierDisplaySnapshot}
-                                  </p>
-                                  <p>
-                                    {flight.cost.unitCost
-                                      ? 'قیمت هر صندلی'
-                                      : 'کل خرید پرواز'}
-                                    :{' '}
-                                    <bdi>
-                                      {formatSalesMoney(
-                                        flight.cost.unitCost ??
-                                          flight.cost.invoiceAmount,
-                                      )}{' '}
-                                      {flight.cost.currencyCode}
-                                    </bdi>
-                                  </p>
-                                </>
-                              ) : legacy?.length ? (
-                                legacy.map((cost) => (
-                                  <p key={cost.id}>
-                                    خرید قدیمی هتل:{' '}
-                                    <bdi>
-                                      {formatSalesMoney(cost.amount)}{' '}
-                                      {cost.currencyCode}
-                                    </bdi>
-                                  </p>
-                                ))
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                            <td className="p-4">
-                              <Button
-                                variant="outline"
-                                disabled={
-                                  service.kind === 'FLIGHT'
-                                    ? !canReadFlights
-                                    : !result.meta.canRecord
-                                }
-                                onClick={() => open(request, service)}
-                              >
-                                {registered
-                                  ? 'مشاهده و اصلاح خرید'
-                                  : 'ثبت خرید'}
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      }),
-                  )}
+                            </>
+                          ) : flight?.cost ? (
+                            <>
+                              <p>{flight.request.supplierDisplaySnapshot}</p>
+                              <p>
+                                {flight.cost.unitCost
+                                  ? 'قیمت هر صندلی'
+                                  : 'کل خرید پرواز'}
+                                :{' '}
+                                <bdi>
+                                  {formatSalesMoney(
+                                    flight.cost.unitCost ??
+                                      flight.cost.invoiceAmount,
+                                  )}{' '}
+                                  {flight.cost.currencyCode}
+                                </bdi>
+                              </p>
+                            </>
+                          ) : legacy?.length ? (
+                            legacy.map((cost) => (
+                              <p key={cost.id}>
+                                خرید قدیمی هتل:{' '}
+                                <bdi>
+                                  {formatSalesMoney(cost.amount)}{' '}
+                                  {cost.currencyCode}
+                                </bdi>
+                              </p>
+                            ))
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <Button
+                            variant="outline"
+                            disabled={
+                              service.kind === 'FLIGHT'
+                                ? !canReadFlights
+                                : !result?.meta.canRecord
+                            }
+                            onClick={() => open(request, service)}
+                          >
+                            {registered ? 'مشاهده و اصلاح خرید' : 'ثبت خرید'}
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -454,6 +498,8 @@ function PurchaseHub() {
           <TicketPurchaseWorkspace
             key={focusedOffer ?? 'all'}
             initialOfferId={focusedOffer}
+            filters={filters}
+            onSaved={() => setRevision((v) => v + 1)}
           />
         </section>
       )}

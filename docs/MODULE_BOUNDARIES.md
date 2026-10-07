@@ -1,5 +1,9 @@
 # مرز ماژول‌ها
 
+## DURABLE-PROMOTIONS-1007
+
+Marketing owns COUPON/OFFER assets and their optional canonical target IDs. Customers exports minimal marketingTargetReference identity/branch validation with current read scope, active customer and marketing consent; Master Data exports existing active agency/currency directory projections. Marketing never queries those modules' tables directly or persists their names/contact data. Existing Marketing assets API gains additive kinds/nullable IDs; the Web forms and producer ship together. Sales redemption and Finance effects are not introduced.
+
 ## قواعد عمومی
 
 1. هر table، invariant و state transition دقیقاً یک Owner دارد.

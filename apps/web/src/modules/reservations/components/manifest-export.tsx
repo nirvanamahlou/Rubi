@@ -250,11 +250,6 @@ export function ManifestExport() {
     <div className="grid gap-4 rounded-xl border border-border p-4">
       <div>
         <strong>MANIFEST بلیط‌ها</strong>
-        <p className="mt-1 text-sm text-muted-foreground">
-          بازه را انتخاب کنید، سپس روی بلیط هوایی، اتوبوس یا قطار موردنظر بزنید.
-          خروجی با قالب انتخاب‌شدهٔ بلیط ساخته می‌شود؛ بلیط‌های بدون قالب از
-          «پیش‌فرض» استفاده می‌کنند.
-        </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium">

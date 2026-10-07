@@ -1,3 +1,10 @@
+import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
+import { FinanceTicketCostService } from '../finance/ticket-cost/finance-ticket-cost.service';
+import {
+  parsePurchaseQuery,
+  purchaseFlightFacts,
+  type PurchaseQueryInput,
+} from './reservation-purchase-query';
 import { issuedColumns, issuedValues } from './issued-ticket-report';
 import { buildIssuedTicketWorkbook } from './issued-ticket-workbook';
 import { ReservationTicketDocumentsService } from './reservation-ticket-documents';
@@ -96,6 +103,9 @@ export class ReservationRequestsController {
     @Optional()
     @Inject(MasterTravelDirectory)
     private readonly directory?: MasterTravelDirectory,
+    @Optional()
+    @Inject(FinanceTicketCostService)
+    private readonly flightCosts?: FinanceTicketCostService,
   ) {}
   @Get('issued-tickets')
   @Header('Cache-Control', 'private, no-store')
@@ -110,17 +120,30 @@ export class ReservationRequestsController {
   @Header('Cache-Control', 'private, no-store')
   async purchaseInbox(
     @Req() req: AuthenticatedRequest,
-    @Query('page') page?: string,
-    @Query('kind') kind?: string,
-    @Query('contractNumber') contractNumber?: string,
+    @Query() query: PurchaseQueryInput,
   ) {
     if (!req.actor.permissions.includes('reservations.read'))
       throw new ForbiddenException();
-    const result = await this.service.purchaseInbox(req.actor.branchIds, {
-      page,
-      kind,
-      contractNumber,
-    });
+    parsePurchaseQuery(query);
+    const canReadFlights = req.actor.permissions.some((p) =>
+      [
+        'procurement.read.own',
+        'procurement.read.unit',
+        'procurement.read.all',
+        'procurement.quote.manage',
+      ].includes(p),
+    );
+    const flights =
+      canReadFlights && this.flightCosts
+        ? purchaseFlightFacts(
+            (await this.flightCosts.purchaseInbox(req.actor)).data,
+          )
+        : undefined;
+    const result = await this.service.purchaseInbox(
+      req.actor.branchIds,
+      query,
+      flights,
+    );
     return {
       version: 1,
       ...result,
@@ -591,6 +614,7 @@ export class ReservationRequestsController {
 }
 @Module({
   imports: [
+    FinanceTicketCostModule,
     SalesOperationalAmendmentModule,
     SalesReservationTableModule,
     IamModule,

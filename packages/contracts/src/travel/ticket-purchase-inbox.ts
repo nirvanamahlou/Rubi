@@ -2,6 +2,8 @@ import type { TicketCatalogPurchaseV1 } from './index';
 export interface TicketPurchaseInboxItemV1 {
   request: TicketCatalogPurchaseV1;
   cost: {
+    /** Timestamp of the latest recorded cost revision; absent in legacy responses. */
+    createdAt?: string | null;
     id: string;
     version: number;
     seatCount: number | null;

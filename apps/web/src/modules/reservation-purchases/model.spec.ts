@@ -1,3 +1,4 @@
+import { filterTicketPurchases, purchaseFilters } from './model';
 import { describe, expect, it } from 'vitest';
 import {
   canViewRoute,
@@ -120,5 +121,57 @@ describe('contract purchases share canonical reservation records', () => {
       false,
     );
     expect(canViewRoute(['reservations.read'], '/finance')).toBe(false);
+  });
+});
+
+describe('purchase date and status filters', () => {
+  const item = (id: string, createdAt: string, purchasedAt: string | null) =>
+    ({
+      request: { id, createdAt, serviceDate: '2026-10-20' },
+      cost: purchasedAt ? { createdAt: purchasedAt } : null,
+    }) as TicketPurchaseInboxItemV1;
+  it('filters inclusive purchase dates using cost recording rather than request entry', () => {
+    const rows = [
+      item('a', '2026-10-01', '2026-10-10T23:59:59Z'),
+      item('b', '2026-10-10', null),
+      item('c', '2026-10-10', '2026-10-11T00:00:00Z'),
+    ];
+    const q = purchaseFilters(
+      new URLSearchParams({
+        status: 'REGISTERED',
+        dateBy: 'PURCHASE',
+        from: '2026-10-10',
+        to: '2026-10-10',
+      }),
+    );
+    expect(filterTicketPurchases(rows, q).map((r) => r.request.id)).toEqual([
+      'a',
+    ]);
+  });
+  it('orders both directions globally and keeps unknown dates last without mutating input', () => {
+    const rows = [
+      item('a', '2026-10-03', '2026-10-09'),
+      item('b', '2026-10-01', null),
+      item('c', '2026-10-02', '2026-10-08'),
+    ];
+    expect(
+      filterTicketPurchases(rows, {
+        ...purchaseFilters(null),
+        direction: 'ASC',
+      }).map((r) => r.request.id),
+    ).toEqual(['b', 'c', 'a']);
+    expect(
+      filterTicketPurchases(rows, {
+        ...purchaseFilters(null),
+        dateBy: 'PURCHASE',
+      }).map((r) => r.request.id),
+    ).toEqual(['a', 'c', 'b']);
+    expect(rows.map((r) => r.request.id)).toEqual(['a', 'b', 'c']);
+    expect(
+      filterTicketPurchases(rows, {
+        ...purchaseFilters(null),
+        status: 'UNREGISTERED',
+      }).map((r) => r.request.id),
+    ).toEqual(['b']);
   });
 });

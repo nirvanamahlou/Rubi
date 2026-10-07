@@ -224,6 +224,7 @@ export class FinanceTicketCostService {
           cost: state
             ? {
                 id: state.costRevisionId,
+                createdAt: state.createdAt,
                 version: state.costVersion,
                 seatCount: state.seatCount,
                 unitCost: state.unitCost,
@@ -508,6 +509,7 @@ export class FinanceTicketCostService {
       return new Map<
         string,
         {
+          createdAt: string | null;
           costVersion: number;
           costRevisionId: string;
           invoiceAmount: string;
@@ -532,6 +534,7 @@ export class FinanceTicketCostService {
     const states = new Map<
       string,
       {
+        createdAt: string | null;
         costVersion: number;
         costRevisionId: string;
         invoiceAmount: string;
@@ -548,6 +551,7 @@ export class FinanceTicketCostService {
       if (states.has(row.requestId)) continue;
       const latest = row.payments[0];
       states.set(row.requestId, {
+        createdAt: row.createdAt?.toISOString() ?? null,
         costVersion: row.version,
         costRevisionId: row.id,
         invoiceAmount: row.invoiceAmount.toString(),

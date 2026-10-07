@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { CustomersModule } from '../customers/customers.module';
+import { MasterDataModule } from '../master-data/master-data.module';
 
 import { AuthGuard } from '../iam/auth.guard';
 import { IamModule } from '../iam/iam.module';
@@ -8,7 +10,7 @@ import { MarketingProcessService } from './marketing-process.service';
 import { MarketingRecordsService } from './marketing-records.service';
 
 @Module({
-  imports: [IamModule],
+  imports: [IamModule, CustomersModule, MasterDataModule],
   controllers: [MarketingController],
   providers: [
     AuthGuard,

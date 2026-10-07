@@ -19,9 +19,8 @@ it('starts with a date-range ticket search before showing manifest cards', () =>
   expect(html).toContain('از تاریخ حرکت');
   expect(html).toContain('تا تاریخ حرکت');
   expect(html).toContain('جست‌وجوی بلیط‌ها');
-  expect(html).toContain('پیش‌فرض');
-  expect(html).toContain('اتوبوس یا قطار');
-  expect(html).toContain('قالب انتخاب‌شده');
+  expect(html).not.toContain('بازه را انتخاب کنید، سپس');
+  expect(html).not.toContain('قالب انتخاب‌شده');
   expect(html).not.toContain('MANIFEST ایران ایرتور');
 });
 
