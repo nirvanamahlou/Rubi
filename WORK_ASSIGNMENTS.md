@@ -5906,4 +5906,4 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-purchase-inbox-1007 from origin/devel
 
 محدوده مرکزی IAM فقط نگاشت مسیر /ticket-purchases به دسترسی موجود procurement و آزمون عدم اعطای دسترسی جدید را شامل می‌شود؛ هیچ permission یا نقش جدیدی اعطا نمی‌شود.
 
-- Candidate verification: Contracts/API/Web typechecks, scoped lint and focused access/Finance/Procurement/Sales profit tests pass. Isolated PostgreSQL installment tests passed; expanded concurrent pricing verification and final Web build are pending gates. Locks release with candidate commit; exact-head CI must pass before the user-authorized develop merge. No browser QA or runtime rollout claimed.
+- Candidate verification: Contracts/API/Web typechecks, scoped lint and focused access/Finance/Procurement/Sales profit tests pass. Isolated PostgreSQL concurrent pricing and installment tests pass; Web production build (56 routes) passed; exact-head CI remains the merge gate. Locks release with candidate commit; exact-head CI must pass before the user-authorized develop merge. No browser QA or runtime rollout claimed.

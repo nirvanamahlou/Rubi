@@ -503,11 +503,7 @@ export function FinanceInboxLiveWorkspace() {
         );
       } else if (actionKind === 'PAYMENT' && actionItem.ticketPurchase) {
         const prepared = actionItem;
-        if (
-          !prepared.amount ||
-          (!prepared.ticketPurchase?.unitCost &&
-            !prepared.ticketPurchase?.paymentCount)
-        )
+        if (!prepared.amount)
           throw new Error('قیمت خرید ابتدا باید در خرید و تأمین ثبت شود.');
         ticketCommand.current ??= {
           version: 1,
