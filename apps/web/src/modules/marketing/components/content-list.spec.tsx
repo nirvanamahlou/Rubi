@@ -344,9 +344,9 @@ describe('content list actions', () => {
     (tab) => {
       state.values = [];
       const rows = [
-        { id: 'one', cells: ['اول'] },
-        { id: 'two', cells: ['دوم'] },
-      ];
+        { id: 'preview-one', cells: ['اول'] },
+        { id: 'preview-two', cells: ['دوم'] },
+      ] as const;
       const render = () => {
         state.index = 0;
         return nodes(
