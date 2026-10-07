@@ -674,7 +674,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         (
           await service.list(
             { section: 'order-requests', search: prefix },
-            outsider,
+            { ...outsider, branchIds: [otherBranch] },
           )
         ).items,
       ).toEqual([]);
