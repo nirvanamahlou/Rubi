@@ -45,7 +45,6 @@ import {
   PageHeader,
 } from '@/components/ui/surfaces';
 import { FinanceWorkspace } from './finance-workspace';
-import { FinanceHistoryPanel } from './finance-history-panel';
 import { FinanceInboxLiveWorkspace } from './finance-inbox-live-workspace';
 import { FinanceDeliveryPanel } from './finance-delivery-panel';
 import {
@@ -989,9 +988,6 @@ export function FinanceRequestInboxWorkspace() {
         aria-label="تحویل مدارک"
       >
         <FinanceDeliveryPanel />
-      </section>
-      <section id="finance-transaction-history">
-        <FinanceHistoryPanel />
       </section>
     </main>
   );

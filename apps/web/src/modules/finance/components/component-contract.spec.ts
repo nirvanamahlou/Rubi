@@ -180,7 +180,7 @@ describe('finance workspace component contract', () => {
     expect(coreSource).toContain('<FinanceDeliveryPanel />');
     expect(componentSource).not.toContain('<FinanceDeliveryPanel />');
     expect(coreSource).not.toContain('<InboxSpace />');
-    expect(liveInboxSource).toContain('امروز چه چیزی نیاز به تصمیم مالی دارد؟');
+    expect(liveInboxSource).toContain('کارتابل درخواست‌ها');
     expect(liveInboxSource).toContain('مرکز کنترل مالی');
     expect(liveInboxSource).toContain('جریان کارتابل بر اساس واحد');
     expect(liveInboxSource).toContain('اولویت‌های نزدیک');
