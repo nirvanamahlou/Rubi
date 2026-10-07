@@ -49,9 +49,11 @@ export function PurchaseOrdersSection({ bootstrap }: { bootstrap: Bootstrap }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [page, setPage] = useState(1);
-  const [modal, setModal] = useState<{ action: string; row?: Row } | null>(
-    null,
-  );
+  const [modal, setModal] = useState<{
+    action: string;
+    row?: Row;
+    requestId?: string;
+  } | null>(null);
   const canCreate = [
     'procurement.order.manage',
     'procurement.quote.manage',
@@ -73,6 +75,19 @@ export function PurchaseOrdersSection({ bootstrap }: { bootstrap: Bootstrap }) {
       ),
     retry: false,
   });
+  const [readyPage, setReadyPage] = useState(1);
+  const ready = useQuery({
+    queryKey: ['procurement', 'approved-for-orders', readyPage],
+    queryFn: () =>
+      procurementApi.list(
+        new URLSearchParams({
+          section: 'orders',
+          status: 'APPROVED',
+          page: String(readyPage),
+        }),
+      ),
+    retry: false,
+  });
   function changed() {
     void client.invalidateQueries({ queryKey: ['procurement'] });
     setModal(null);
@@ -89,6 +104,65 @@ export function PurchaseOrdersSection({ bootstrap }: { bootstrap: Bootstrap }) {
           سفارش جدید
         </Button>
       </div>
+      <Card className="space-y-3 p-4">
+        <h2 className="font-semibold">درخواست‌های تأییدشده آماده سفارش</h2>
+        {ready.isPending ? (
+          <Skeleton className="h-16" />
+        ) : ready.isError ? (
+          <Alert
+            tone="error"
+            title="درخواست‌ها دریافت نشدند"
+            description={
+              ready.error instanceof Error
+                ? ready.error.message
+                : 'دریافت ناموفق بود.'
+            }
+          />
+        ) : ready.data?.items.length ? (
+          ready.data.items.map((request) => (
+            <div
+              key={request.id}
+              className="flex items-center justify-between gap-3 border-b border-border py-2 last:border-0"
+            >
+              <span className="break-words font-medium">
+                {request.draft.title}
+              </span>
+              <Button
+                variant="outline"
+                disabled={!canCreate}
+                onClick={() =>
+                  setModal({ action: 'ORDER_FORM', requestId: request.id })
+                }
+              >
+                ثبت سفارش
+              </Button>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            درخواست تأییدشده‌ای در انتظار سفارش نیست.
+          </p>
+        )}
+        {ready.data && (
+          <div className="flex items-center justify-between gap-3">
+            <Button
+              variant="outline"
+              disabled={readyPage === 1}
+              onClick={() => setReadyPage((p) => p - 1)}
+            >
+              قبلی
+            </Button>
+            <span className="text-sm">صفحه {readyPage}</span>
+            <Button
+              variant="outline"
+              disabled={!ready.data.hasMore}
+              onClick={() => setReadyPage((p) => p + 1)}
+            >
+              بعدی
+            </Button>
+          </div>
+        )}
+      </Card>
       <Card className="grid items-end gap-3 p-4 md:grid-cols-[2fr_1fr_2fr]">
         <FormField id="orders-search" label="عنوان یا شماره سفارش">
           <Input
@@ -312,6 +386,9 @@ export function PurchaseOrdersSection({ bootstrap }: { bootstrap: Bootstrap }) {
                 key={`${modal.action}-${String(modal.row?.id ?? 'new')}`}
                 bootstrap={bootstrap}
                 action={modal.action}
+                {...(modal.requestId
+                  ? { initialRequestId: modal.requestId }
+                  : {})}
                 {...(modal.row ? { row: modal.row } : {})}
                 onChanged={changed}
               />
@@ -326,14 +403,18 @@ function OrderOperation({
   bootstrap,
   action,
   row,
+  initialRequestId,
   onChanged,
 }: {
   bootstrap: Bootstrap;
   action: string;
   row?: Row;
+  initialRequestId?: string;
   onChanged: () => void;
 }) {
-  const [requestId, setRequestId] = useState(String(row?.requestId ?? ''));
+  const [requestId, setRequestId] = useState(
+    String(row?.requestId ?? initialRequestId ?? ''),
+  );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const requests = useQuery({

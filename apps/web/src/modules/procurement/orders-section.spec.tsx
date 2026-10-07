@@ -25,6 +25,17 @@ describe('Persisted purchase order table', () => {
       page: 1,
       hasMore: false,
     });
+    client.setQueryData(['procurement', 'approved-for-orders', 1], {
+      items: [
+        {
+          id: 'approved-1',
+          status: 'APPROVED',
+          draft: { title: 'درخواست تأییدشده جدید' },
+        },
+      ],
+      page: 1,
+      hasMore: false,
+    });
     const bootstrap: Bootstrap = {
       branches: [],
       currencies: [],
@@ -60,6 +71,8 @@ describe('Persisted purchase order table', () => {
     ])
       expect(html).toContain(`aria-label="${label}"`);
     expect(html).toContain('سفارش جدید');
+    expect(html).toContain('درخواست تأییدشده جدید');
+    expect(html).toContain('ثبت سفارش');
     expect(html).not.toContain('پیش‌نمایش فرم');
   });
 });

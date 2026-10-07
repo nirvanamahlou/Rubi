@@ -24,6 +24,7 @@ export function ProcurementOwnerPicker({
   initialOption,
   compact = false,
   showHints = true,
+  showSearch = true,
 }: {
   branchId: string;
   value: string;
@@ -32,6 +33,7 @@ export function ProcurementOwnerPicker({
   initialOption?: { id: string; label: string };
   compact?: boolean;
   showHints?: boolean;
+  showSearch?: boolean;
 }) {
   const [search, setSearch] = useState('');
   const [debounced, setDebounced] = useState('');
@@ -56,17 +58,21 @@ export function ProcurementOwnerPicker({
           : 'min-w-64 space-y-2'
       }
     >
-      <FormField
-        id="proc-owner-search"
-        label={compact ? `جست‌وجوی ${label}` : `جست‌وجوی ${label} واجد دسترسی`}
-      >
-        <Input
+      {showSearch && (
+        <FormField
           id="proc-owner-search"
-          value={search}
-          maxLength={100}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-      </FormField>
+          label={
+            compact ? `جست‌وجوی ${label}` : `جست‌وجوی ${label} واجد دسترسی`
+          }
+        >
+          <Input
+            id="proc-owner-search"
+            value={search}
+            maxLength={100}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </FormField>
+      )}
       <FormField id="proc-owner" label={label}>
         <ProcurementSelect
           id="proc-owner"

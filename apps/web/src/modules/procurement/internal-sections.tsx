@@ -1475,12 +1475,17 @@ function ApprovalForm({
   const [error, setError] = useState('');
   const identity = useRef<ReturnType<typeof commandAttempt> | null>(null);
   const eligible =
-    ['SUBMITTED', 'IN_REVIEW'].includes(request.status) &&
+    request.status === 'IN_REVIEW' &&
     bootstrap.permissions.includes('procurement.approve');
   async function decide(
     decision: 'APPROVED' | 'CHANGES_REQUESTED' | 'REJECTED',
   ) {
-    const body = { action: 'DECIDE', decision, reason };
+    const body = {
+      action: 'DECIDE',
+      decision,
+      reason,
+      ...(decision === 'REJECTED' ? { deleteRejected: true } : {}),
+    };
     setBusy(true);
     setError('');
     identity.current = commandAttempt(identity.current, request, body);
@@ -1522,16 +1527,16 @@ function ApprovalForm({
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => void decide('APPROVED')}>تأیید</Button>
             <Button
-              variant="outline"
-              disabled={!reason.trim()}
-              onClick={() => void decide('CHANGES_REQUESTED')}
-            >
-              بازگشت برای اصلاح
-            </Button>
-            <Button
               variant="destructive"
-              disabled={!reason.trim()}
-              onClick={() => void decide('REJECTED')}
+              disabled={
+                !reason.trim() ||
+                !bootstrap.permissions.includes('procurement.request.cancel') ||
+                !bootstrap.permissions.includes('procurement.assign')
+              }
+              onClick={() => {
+                if (window.confirm('درخواست رد و برای همیشه حذف شود؟'))
+                  void decide('REJECTED');
+              }}
             >
               رد
             </Button>

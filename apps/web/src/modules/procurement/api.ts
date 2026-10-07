@@ -75,7 +75,7 @@ export async function procurementRequest<T>(
       response.status === 401
         ? 'نشست پایان یافته است. دوباره وارد شوید؛ فرم را باز نگه دارید.'
         : response.status === 403
-          ? 'اجازه انجام این عملیات را ندارید.'
+          ? (labelledDetail ?? 'اجازه انجام این عملیات را ندارید.')
           : response.status === 409
             ? `اطلاعات هم‌زمان تغییر کرده است. ورودی شما حفظ شد؛ نسخه جدید را بررسی کنید. ${labelledDetail ?? ''}`
             : (labelledDetail ?? 'عملیات انجام نشد؛ دوباره تلاش کنید.'),
@@ -259,7 +259,7 @@ export const procurementApi = {
     body: Record<string, unknown>,
     key: string,
   ) =>
-    procurementRequest<ProcurementRequestV1>(
+    procurementRequest<ProcurementRequestV1 & { deleted?: boolean }>(
       `/requests/${encodeURIComponent(request.id)}/commands`,
       {
         method: 'POST',
