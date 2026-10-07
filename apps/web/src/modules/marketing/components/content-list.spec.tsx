@@ -17,6 +17,7 @@ import {
 import { MarketingContentLibrary } from './marketing-content-library';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { DatePicker } from '@/components/ui/date-picker';
+import { PreviewTable } from './marketing-reference-pages';
 
 const state = vi.hoisted(() => ({
   values: [] as unknown[],
@@ -49,6 +50,7 @@ vi.mock('react', async (original) => ({
     ];
   },
   useEffect: vi.fn(),
+  useMemo: (callback: () => unknown) => callback(),
   useCallback: (callback: unknown) => callback,
 }));
 vi.mock('../api/records-client', () => ({
@@ -337,6 +339,44 @@ describe('audience presentation and canonical mutations', () => {
   });
 });
 describe('content list actions', () => {
+  it.each(['discounts', 'specials'])(
+    'confirms deletion of only the selected %s preview row',
+    (tab) => {
+      state.values = [];
+      const rows = [
+        { id: 'one', cells: ['اول'] },
+        { id: 'two', cells: ['دوم'] },
+      ];
+      const render = () => {
+        state.index = 0;
+        return nodes(
+          PreviewTable({
+            title: 'فهرست',
+            columns: ['عنوان'],
+            rows,
+            totalLabel: '',
+            section: 'offers',
+            tab,
+            onOpen: vi.fn(),
+            onNotice: notice,
+          }),
+        );
+      };
+      let tree = render();
+      const remove = find(tree, 'aria-label', 'حذف اول');
+      expect(remove.props.size).toBe('icon');
+      (remove.props.onClick as () => void)();
+      (find(render(), 'aria-label', 'انصراف').props.onClick as () => void)();
+      expect(find(render(), 'aria-label', 'حذف اول')).toBeDefined();
+      (find(render(), 'aria-label', 'حذف اول').props.onClick as () => void)();
+      (find(render(), 'aria-label', 'تأیید حذف').props.onClick as () => void)();
+      tree = render();
+      expect(tree.some((node) => node.props['aria-label'] === 'حذف اول')).toBe(
+        false,
+      );
+      expect(find(tree, 'aria-label', 'حذف دوم')).toBeDefined();
+    },
+  );
   it('selects publication date with the shared dialog calendar and saves the timestamp', async () => {
     const landing = {
       ...asset,
