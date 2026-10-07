@@ -102,7 +102,7 @@ export const navigationMessages = [
     description: 'بررسی ظرفیت، صدور خدمات، واچر، بیمه و منیفست',
   },
   {
-    title: 'مدیریت گروهی نرخ‌های هتل‌ها',
+    title: 'قیمت خرید هتل',
     href: '/reservations/hotel-rates',
     description: 'ثبت گروهی قیمت خرید هتل در بازه اقامت',
   },

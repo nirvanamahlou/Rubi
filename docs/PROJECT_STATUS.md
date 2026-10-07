@@ -4943,3 +4943,7 @@ Marketing landing-content last publication now uses the existing shared DatePick
 ## 2026-10-07 — B2B agency registration save recovery — PC-B
 
 The cooperation wizard final-save state distinguishes correctable validation/lookup errors from uncertain organization creation and partial persistence. Users may explicitly omit an unverified phone and save the other agency details; a supplied phone still requires the development-only verification grant. Focused regression tests and quality gates precede merge.
+
+## 2026-10-07 — HOTEL-PURCHASE-PRICE-LABEL-1007-B — PC-A
+
+Rename the reservation hotel-rate section to «قیمت خرید هتل» in the sidebar, English UI, page headings, breadcrumb, browser metadata and navigation regression expectation. Route, permissions and hotel pricing behavior remain unchanged. No migration, API, dependency or runtime change. User authorizes develop merge after scoped checks and exact-head CI.
