@@ -134,7 +134,7 @@ export const navigationMessages = [
   {
     title: 'خرید و تأمین',
     href: '/ticket-purchases',
-    description: 'ثبت قیمت خرید پرواز و پیگیری پرداخت به ایرلاین',
+    description: 'خرید هتل، پرواز، ترانسفر و بیمه قراردادهای رزرواسیون',
   },
   { title: 'مارکتینگ', href: '/marketing', description: 'کمپین‌ها و مخاطبان' },
   {
