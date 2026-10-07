@@ -16,6 +16,7 @@ import {
 } from '../model/audience-presentation';
 import { MarketingContentLibrary } from './marketing-content-library';
 import { canonicalTestTree } from '@/i18n/test-tree';
+import { DatePicker } from '@/components/ui/date-picker';
 
 const state = vi.hoisted(() => ({
   values: [] as unknown[],
@@ -336,6 +337,59 @@ describe('audience presentation and canonical mutations', () => {
   });
 });
 describe('content list actions', () => {
+  it('selects publication date with the shared dialog calendar and saves the timestamp', async () => {
+    const landing = {
+      ...asset,
+      kind: 'LANDING_PAGE' as const,
+      payload: {
+        domainUrl: 'https://example.test',
+        visits: 12,
+        conversions: 2,
+        lastPublishedAt: '2026-10-01T12:30',
+      },
+    };
+    state.values[2] = [landing];
+    const render = () => {
+      state.index = 0;
+      return nodes(DurableContentPanel({ tab: 'landing', onNotice: notice }));
+    };
+    let tree = render();
+    (find(tree, 'aria-label', 'افزودن محتوا').props.onClick as () => void)();
+    expect(
+      find(render(), 'id', 'content-record-metric-three').props.value,
+    ).toBe('');
+    (
+      tree.find((node) => node.props.item === landing)!.props
+        .onEdit as () => void
+    )();
+    tree = render();
+    const calendar = find(tree, 'id', 'content-record-metric-three');
+    expect(calendar.type).toBe(DatePicker);
+    expect(calendar.props).toMatchObject({
+      includeTime: true,
+      withinDialog: true,
+      required: true,
+      value: '2026-10-01T12:30',
+    });
+    (calendar.props.onChange as (value: string) => void)('2026-10-07T09:15');
+    (
+      render().find((node) => node.type === 'form')!.props.onSubmit as (
+        event: unknown,
+      ) => void
+    )({ preventDefault() {} });
+    await vi.waitFor(() => expect(state.save).toHaveBeenCalled());
+    expect(state.save.mock.calls[0]![0]).toMatchObject({
+      expectedVersion: 7,
+      payload: { lastPublishedAt: '2026-10-07T09:15' },
+    });
+    (
+      render().find((node) => node.props.item === landing)!.props
+        .onView as () => void
+    )();
+    expect(
+      find(render(), 'id', 'content-record-metric-three').props.readOnly,
+    ).toBe(true);
+  });
   it('starts list-first with Persian labels, RTL and an icon add entry', () => {
     const tree = content();
     expect(tree[0]!.props.dir).toBe('rtl');
