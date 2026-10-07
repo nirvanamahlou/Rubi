@@ -6038,3 +6038,4 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-hr-inline-refresh-1007` from `origin/develo
 ## HR-EMPLOYEE-ORGANIZATION-OPTIONS-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-hr-employee-organization-options-1007 from origin/develop@746c59a2. Reserve HR employee editor organization unit/position dropdown binding, focused tests and bounded status documentation. Fix catalog-derived choices for the selected company without synthetic fallback or cross-company leakage. Preserve HR API/schema/permissions and existing saved employee values. No overlapping active HR source lock found. User authorizes push and merge to develop after verification.
+Scope extension after exact-head CI: reserve one additive loading label in Web en-overrides.json so English UI coverage remains complete. Existing translation entries and localization behavior remain unchanged; prior catalogue locks are released.
