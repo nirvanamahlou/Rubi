@@ -39,10 +39,20 @@ export class ReservationTicketDocumentsService {
         issuedAt: range,
         intake: { branchId: { in: [...actor.branchIds] } },
       },
-      include: {
+      select: {
+        id: true,
+        customerId: true,
+        number: true,
+        source: true,
+        issuedAt: true,
         intake: {
-          include: {
-            workflowRevisions: { orderBy: { version: 'desc' }, take: 1 },
+          select: {
+            snapshot: true,
+            workflowRevisions: {
+              orderBy: { version: 'desc' },
+              take: 1,
+              select: { state: true },
+            },
           },
         },
       },
@@ -68,17 +78,25 @@ export class ReservationTicketDocumentsService {
         'بازه را کوچک‌تر کنید؛ گزارش بیش از ۲۰۰۰۰ قطعه پرواز دارد.',
       );
     const names = new Map<string, string>();
-    for (const id of new Set(
-      rows.flatMap((r) => [r.originCityId, r.destinationCityId]),
-    )) {
-      try {
-        names.set(
-          id,
-          (await this.directory?.cityReference(id))?.name ?? 'نام شهر ثبت نشده',
-        );
-      } catch {
-        names.set(id, 'نام شهر ثبت نشده');
-      }
+    const cityIds = [
+      ...new Set(rows.flatMap((r) => [r.originCityId, r.destinationCityId])),
+    ];
+    // Bounded parallel public lookups avoid one database round trip per city
+    // being added serially to the report's response time.
+    for (let offset = 0; offset < cityIds.length; offset += 8) {
+      await Promise.all(
+        cityIds.slice(offset, offset + 8).map(async (id) => {
+          try {
+            names.set(
+              id,
+              (await this.directory?.cityReference(id))?.name ??
+                'نام شهر ثبت نشده',
+            );
+          } catch {
+            names.set(id, 'نام شهر ثبت نشده');
+          }
+        }),
+      );
     }
     for (const row of rows) {
       row.origin = names.get(row.originCityId)!;
