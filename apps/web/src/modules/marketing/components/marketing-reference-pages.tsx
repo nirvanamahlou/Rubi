@@ -29,6 +29,7 @@ import {
   Send,
   ShoppingCart,
   Target,
+  Trash2,
   Upload,
   UserRound,
   UsersRound,
@@ -246,7 +247,7 @@ function Panel({
   );
 }
 
-function PreviewTable({
+export function PreviewTable({
   title,
   columns,
   rows,
@@ -284,6 +285,10 @@ function PreviewTable({
   const [editedTitles, setEditedTitles] = useState<Record<string, string>>({});
   const [editingRow, setEditingRow] = useState<PreviewRow | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+  const [deletedRows, setDeletedRows] = useState<Set<string>>(() => new Set());
+  const [deletingRow, setDeletingRow] = useState<PreviewRow | null>(null);
+  const deletable =
+    section === 'offers' && (tab === 'discounts' || tab === 'specials');
   const statuses = useMemo(
     () =>
       Array.from(
@@ -302,6 +307,7 @@ function PreviewTable({
         row.occurredAt ??
         `2026-${index < 3 ? '09' : '08'}-${String(index < 3 ? 5 - index * 2 : 30 - index).padStart(2, '0')}`;
       return (
+        !deletedRows.has(row.id) &&
         (!needle ||
           [editedTitles[row.id] ?? row.cells[0], ...row.cells.slice(1)]
             .join(' ')
@@ -314,7 +320,7 @@ function PreviewTable({
         (!endDate || occurredAt <= endDate)
       );
     });
-  }, [editedTitles, endDate, rows, search, startDate, status]);
+  }, [deletedRows, editedTitles, endDate, rows, search, startDate, status]);
   const pageSize = 3;
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const currentPage = Math.min(page, pages);
@@ -531,6 +537,18 @@ function PreviewTable({
                         >
                           <Power aria-hidden="true" className="size-4" />
                         </Button>
+                        {deletable ? (
+                          <Button
+                            aria-label={`حذف ${row.cells[0]}`}
+                            title="حذف"
+                            size="icon"
+                            variant="outline"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => setDeletingRow(row)}
+                          >
+                            <Trash2 aria-hidden="true" className="size-4" />
+                          </Button>
+                        ) : null}
                       </div>
                     </td>
                   ) : null}
@@ -621,6 +639,49 @@ function PreviewTable({
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(deletingRow)}
+        onOpenChange={(open) => {
+          if (!open) setDeletingRow(null);
+        }}
+      >
+        <DialogContent dir="rtl" className="max-w-lg text-right">
+          <DialogTitle>حذف</DialogTitle>
+          <DialogDescription>
+            {editedTitles[deletingRow?.id ?? ''] ?? deletingRow?.cells[0]}
+          </DialogDescription>
+          <p className="mt-4 text-sm text-muted-foreground">
+            حذف فقط در همین نمایش اعمال می‌شود و با بارگذاری مجدد بازمی‌گردد.
+          </p>
+          <div className="mt-5 flex justify-end gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              title="انصراف"
+              aria-label="انصراف"
+              onClick={() => setDeletingRow(null)}
+            >
+              <X aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="destructive"
+              title="تأیید حذف"
+              aria-label="تأیید حذف"
+              onClick={() => {
+                if (!deletingRow) return;
+                setDeletedRows(
+                  (current) => new Set([...current, deletingRow.id]),
+                );
+                setPage(1);
+                setDeletingRow(null);
+              }}
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </Panel>
