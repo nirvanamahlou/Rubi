@@ -277,8 +277,8 @@ function Navigation({
                   <span
                     aria-hidden="true"
                     className={cn(
-                      'size-1.5 shrink-0 rounded-full',
-                      mobile ? 'bg-primary/50' : 'bg-cyan-200/70',
+                      'size-2 shrink-0 rounded-full ring-1 ring-black/10',
+                      group.dotClass,
                     )}
                   />
                   {english
