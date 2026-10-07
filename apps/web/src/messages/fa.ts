@@ -117,7 +117,7 @@ export const navigationMessages = [
     description: 'قرارداد جدید و تخصیص مسافر به خدمات',
   },
   {
-    title: 'خرید و تأمین',
+    title: 'تنخواه',
     href: '/purchases',
     description: 'خرید خدمات و تأمین‌کنندگان',
   },

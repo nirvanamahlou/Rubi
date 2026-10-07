@@ -1012,37 +1012,79 @@ export class ProcurementService {
       'FORBIDDEN',
       'حذف این درخواست مجاز نیست.',
     );
-    return this.database.client.$transaction(async (tx) => {
-      const before = await this.claim(tx, id, expectedVersion);
-      const acceptedHandoff = await tx.procurementFinanceHandoff.count({
-        where: {
+    return this.database.client.$transaction(
+      async (tx) => {
+        const before = await this.claim(tx, id, expectedVersion);
+        const acceptedHandoff = await tx.procurementFinanceHandoff.count({
+          where: {
+            requestId: id,
+            OR: [
+              { acceptedSourceId: { not: null } },
+              { status: { in: ['ACCEPTED', 'PAID'] } },
+            ],
+          },
+        });
+        requireRule(
+          acceptedHandoff === 0,
+          'INVALID_STATE',
+          'این پرونده به مالی تحویل شده است؛ برای حفظ سابقه مالی قابل حذف دائمی نیست.',
+        );
+        await this.purgeRequest(tx, id, actor);
+        await this.tasks.syncProcurementWithinTransaction(tx, {
+          eventId: randomUUID(),
           requestId: id,
-          OR: [
-            { acceptedSourceId: { not: null } },
-            { status: { in: ['ACCEPTED', 'PAID'] } },
-          ],
-        },
-      });
-      requireRule(
-        acceptedHandoff === 0,
-        'INVALID_STATE',
-        'این پرونده به مالی تحویل شده است؛ برای حفظ سابقه مالی قابل حذف دائمی نیست.',
-      );
-      await this.purgeRequest(tx, id);
-      await this.tasks.syncProcurementWithinTransaction(tx, {
-        eventId: randomUUID(),
-        requestId: id,
-        requestNumber: before.number,
-        branchId: before.branchId,
-        status: 'CANCELLED',
-        ownerUserId: before.ownerUserId,
-        approverUserId: null,
-        action: 'DELETE_PERMANENT',
-      });
-      return { id, number: before.number, deleted: true as const };
-    });
+          requestNumber: before.number,
+          branchId: before.branchId,
+          status: 'CANCELLED',
+          ownerUserId: before.ownerUserId,
+          approverUserId: null,
+          action: 'DELETE_PERMANENT',
+        });
+        return { id, number: before.number, deleted: true as const };
+      },
+      { timeout: 30000 },
+    );
   }
-  private async purgeRequest(tx: ProcurementTx, requestId: string) {
+  private async purgeRequest(
+    tx: ProcurementTx,
+    requestId: string,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'procurement.request.cancel');
+    const request = await tx.procurementRequest.findUniqueOrThrow({
+      where: { id: requestId },
+    });
+    await tx.$queryRaw`SELECT id FROM procurement_finance_handoff WHERE "requestId" = ${requestId}::uuid FOR UPDATE`;
+    const committed = await tx.procurementFinanceHandoff.count({
+      where: {
+        requestId,
+        OR: [
+          { acceptedSourceId: { not: null } },
+          { status: { in: ['ACCEPTED', 'PAID'] } },
+        ],
+      },
+    });
+    requireRule(
+      committed === 0,
+      'INVALID_STATE',
+      'پرونده تحویل‌شده به مالی قابل حذف دائمی نیست.',
+    );
+    await tx.procurementIdempotency.create({
+      data: {
+        actorUserId: actor.userId,
+        branchId: request.branchId,
+        key: randomUUID(),
+        operation: 'DELETE_PERMANENT',
+        requestHash: fingerprint({ requestId, version: request.version }),
+        response: {
+          id: requestId,
+          number: request.number,
+          deleted: true,
+          version: request.version,
+        },
+      },
+    });
+    await tx.$queryRaw`SELECT set_config('rubi.procurement_purge_request_id', ${requestId}, true)`;
     const [orders, snapshots] = await Promise.all([
       tx.procurementOrder.findMany({
         where: { requestId },
@@ -1101,11 +1143,17 @@ export class ProcurementService {
     await tx.procurementRequestVersion.deleteMany({ where: { requestId } });
     await tx.procurementRequestItem.deleteMany({ where: { requestId } });
     await tx.procurementRequest.delete({ where: { id: requestId } });
+    await tx.$queryRaw`SELECT set_config('rubi.procurement_purge_request_id', '', true)`;
   }
   private async claim(tx: ProcurementTx, id: string, version: number) {
-    const before = await tx.procurementRequest.findUniqueOrThrow({
+    const before = await tx.procurementRequest.findUnique({
       where: { id },
     });
+    requireRule(
+      before,
+      'CONCURRENT_MODIFICATION',
+      'پرونده حذف شده یا هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.',
+    );
     const claim = await tx.procurementRequest.updateMany({
       where: { id, version },
       data: { version: { increment: 1 } },
@@ -1233,9 +1281,48 @@ export class ProcurementService {
     const permission = permissions[action];
     requireRule(permission, 'VALIDATION_ERROR', 'اقدام معتبر نیست.');
     this.require(actor, permission);
+    if (input.deleteRejected !== undefined) {
+      requireRule(
+        typeof input.deleteRejected === 'boolean' &&
+          action === 'DECIDE' &&
+          input.decision === 'REJECTED',
+        'VALIDATION_ERROR',
+        'حذف پس از تصمیم فقط برای رد درخواست مجاز است.',
+      );
+      if (input.deleteRejected) {
+        this.require(actor, 'procurement.request.cancel');
+        // Independent approvers are not the requester. Preserve the existing
+        // permanent-delete rule for deleting somebody else's request.
+        this.require(actor, 'procurement.assign');
+      }
+    }
     if (action === 'ORDER_FORM') {
       this.require(actor, 'procurement.quote.manage');
       this.require(actor, 'procurement.quote.select');
+    }
+    if (input.deleteRejected === true) {
+      const receipt =
+        await this.database.client.procurementIdempotency.findFirst({
+          where: {
+            actorUserId: actor.userId,
+            operation: `${action}:${id}`,
+            key: v.text(key, 'key', 160),
+          },
+        });
+      if (
+        receipt &&
+        (receipt.response as { deleted?: boolean }).deleted === true
+      ) {
+        this.branch(actor, receipt.branchId);
+        requireRule(
+          receipt.requestHash === fingerprint(input),
+          'IDEMPOTENCY_CONFLICT',
+          'این کلید قبلاً برای ورودی دیگری استفاده شده است.',
+        );
+        return receipt.response as unknown as ProcurementRequestV1 & {
+          deleted: true;
+        };
+      }
     }
     const version = v.integer(input.expectedVersion);
     const existing = await this.detail(id, actor);
@@ -1462,6 +1549,26 @@ export class ProcurementService {
         const after = await tx.procurementRequest.findUniqueOrThrow({
           where: { id },
         });
+        if (input.deleteRejected === true) {
+          requireRule(
+            after.status === 'REJECTED',
+            'INVALID_STATE',
+            'فقط درخواست ردشده قابل حذف پس از تصمیم است.',
+          );
+          const result = requestDto(after);
+          await this.tasks.syncProcurementWithinTransaction(tx, {
+            eventId: randomUUID(),
+            requestId: id,
+            requestNumber: after.number,
+            branchId: after.branchId,
+            status: 'CANCELLED',
+            ownerUserId: after.ownerUserId,
+            approverUserId: null,
+            action: 'DELETE_PERMANENT',
+          });
+          await this.purgeRequest(tx, id, actor);
+          return { ...result, deleted: true };
+        }
         await this.audit(tx, after, actor, action, reason);
         return requestDto(after);
       },

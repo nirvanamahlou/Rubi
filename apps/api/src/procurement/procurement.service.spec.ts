@@ -177,6 +177,213 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
     async function approvedRequest(draft = fixture()) {
       return approve(await command(await create(draft), 'SUBMIT'));
     }
+    it('rejects and permanently deletes atomically only for the independent approver with deletion permission', async () => {
+      const row = await command(await create(), 'SUBMIT');
+      const body = {
+        decision: 'REJECTED',
+        reason: 'Synthetic rejection',
+        deleteRejected: true,
+      };
+      await rejected(
+        () => command(row, 'DECIDE', body, maker),
+        403,
+        'NO_VALID_APPROVER',
+      );
+      await rejected(
+        () =>
+          command(row, 'DECIDE', body, {
+            ...checker1,
+            permissions: checker1.permissions.filter(
+              (p) => p !== 'procurement.request.cancel',
+            ),
+          }),
+        403,
+      );
+      expect((await service.detail(row.id, maker)).version).toBe(row.version);
+      await rejected(
+        () =>
+          command(row, 'DECIDE', body, {
+            ...checker1,
+            permissions: checker1.permissions.filter(
+              (p) => p !== 'procurement.assign',
+            ),
+          }),
+        403,
+      );
+      const key = randomUUID();
+      const result = await command(row, 'DECIDE', body, checker1, key);
+      expect(await command(row, 'DECIDE', body, checker1, key)).toEqual(result);
+      expect(result).toMatchObject({ status: 'REJECTED', deleted: true });
+      expect(
+        await database.client.procurementRequest.findUnique({
+          where: { id: row.id },
+        }),
+      ).toBeNull();
+      expect(
+        await database.client.procurementApprovalSnapshot.count({
+          where: { requestId: row.id },
+        }),
+      ).toBe(0);
+    });
+    it('permanently deletes the entire uncommitted order graph without leaving restrictive foreign keys', async () => {
+      const ordered = await orderedRequest();
+      let row = await command(
+        ordered.row,
+        'RECEIVE',
+        receiptInput(ordered.order.id, ordered.item.id),
+      );
+      row = await command(
+        row,
+        'INVOICE',
+        invoiceInput(ordered.order.id, ordered.item.id),
+      );
+      await service.remove(row.id, { expectedVersion: row.version }, maker);
+      expect(
+        await database.client.procurementRequest.findUnique({
+          where: { id: row.id },
+        }),
+      ).toBeNull();
+      expect(
+        await database.client.procurementOrder.count({
+          where: { requestId: row.id },
+        }),
+      ).toBe(0);
+      expect(
+        await database.client.procurementIdempotency.count({
+          where: {
+            operation: 'DELETE_PERMANENT',
+            response: { path: ['id'], equals: row.id },
+          },
+        }),
+      ).toBe(1);
+    });
+    it('also rejects and deletes a pending order commitment atomically without bypassing its independent reviewer', async () => {
+      const selected = await selectedRequest();
+      const row = await command(selected.row, 'ORDER', {
+        selectionId: selected.selection.id,
+        expectedAt: tomorrow,
+        paymentTerms: 'Synthetic',
+        deliveryLocation: 'Synthetic office',
+      });
+      const result = await command(
+        row,
+        'DECIDE',
+        {
+          decision: 'REJECTED',
+          reason: 'Synthetic commitment rejection',
+          deleteRejected: true,
+        },
+        checker1,
+      );
+      expect(result).toMatchObject({ deleted: true, status: 'REJECTED' });
+      expect(
+        await database.client.procurementOrder.count({
+          where: { requestId: row.id },
+        }),
+      ).toBe(0);
+    });
+    it('keeps history immutable outside the exact-request purge and keeps deletion receipts immutable', async () => {
+      const first = await create();
+      const second = await create();
+      await expect(
+        database.client.procurementRequestVersion.deleteMany({
+          where: { requestId: first.id },
+        }),
+      ).rejects.toThrow('PROCUREMENT_APPEND_ONLY');
+      await expect(
+        database.client.$transaction(async (tx) => {
+          await tx.$queryRaw`SELECT set_config('rubi.procurement_purge_request_id', ${first.id}, true)`;
+          await tx.procurementRequestVersion.deleteMany({
+            where: { requestId: second.id },
+          });
+        }),
+      ).rejects.toThrow('PROCUREMENT_APPEND_ONLY');
+      await service.remove(first.id, { expectedVersion: first.version }, maker);
+      await expect(
+        database.client.procurementIdempotency.deleteMany({
+          where: {
+            operation: 'DELETE_PERMANENT',
+            response: { path: ['id'], equals: first.id },
+          },
+        }),
+      ).rejects.toThrow('PROCUREMENT_APPEND_ONLY');
+      expect((await service.detail(second.id, maker)).id).toBe(second.id);
+    });
+    it('handles repeated simultaneous deletion without an internal server error or a duplicate deletion receipt', async () => {
+      const row = await create();
+      const attempts = await Promise.allSettled(
+        [1, 2].map(() =>
+          procurementBoundary(() =>
+            service.remove(row.id, { expectedVersion: row.version }, maker),
+          ),
+        ),
+      );
+      expect(
+        attempts.filter((result) => result.status === 'fulfilled'),
+      ).toHaveLength(1);
+      for (const result of attempts)
+        if (result.status === 'rejected') {
+          expect(result.reason).toBeInstanceOf(HttpException);
+          expect([404, 409]).toContain(
+            (result.reason as HttpException).getStatus(),
+          );
+        }
+      expect(
+        await database.client.procurementIdempotency.count({
+          where: {
+            operation: 'DELETE_PERMANENT',
+            response: { path: ['id'], equals: row.id },
+          },
+        }),
+      ).toBe(1);
+    });
+    it('rejects deletion of an accepted Finance commitment at both API and history-trigger boundaries', async () => {
+      const ordered = await orderedRequest();
+      const row = await command(
+        ordered.row,
+        'INVOICE',
+        invoiceInput(ordered.order.id, ordered.item.id),
+      );
+      const invoice = await invoiceFor(row);
+      const handoff = await database.client.procurementFinanceHandoff.create({
+        data: {
+          requestId: row.id,
+          invoiceId: invoice.id,
+          invoiceVersion: invoice.version,
+          sourceKey: randomUUID(),
+          status: 'ACCEPTED',
+          acceptedSourceId: 'synthetic-finance-source',
+          payload: {},
+        },
+      });
+      await rejected(
+        () =>
+          procurementBoundary(() =>
+            service.remove(row.id, { expectedVersion: row.version }, maker),
+          ),
+        409,
+        'INVALID_STATE',
+      );
+      await expect(
+        database.client.$transaction(async (tx) => {
+          await tx.$queryRaw`SELECT set_config('rubi.procurement_purge_request_id', ${row.id}, true)`;
+          await tx.procurementAudit.deleteMany({
+            where: { requestId: row.id },
+          });
+        }),
+      ).rejects.toThrow('PROCUREMENT_APPEND_ONLY');
+      expect((await service.detail(row.id, maker)).version).toBe(row.version);
+      expect(
+        await database.client.procurementFinanceHandoff.findUnique({
+          where: { id: handoff.id },
+        }),
+      ).not.toBeNull();
+      // Remove only this synthetic fixture so subsequent Finance-source list
+      // regressions do not observe a deliberately minimal handoff payload.
+      await database.client.procurementFinanceHandoff.delete({
+        where: { id: handoff.id },
+      });
+    });
     it('creates a form order atomically, with warranty, scoped listing and final approval still required', async () => {
       const draft = fixture();
       const request = await approvedRequest(draft);
