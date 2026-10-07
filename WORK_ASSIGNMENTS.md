@@ -5939,3 +5939,9 @@ COMPUTER_ID=PC-A; codex/pc-a-sidebar-dot-colors-1007 from origin/develop. Reserv
 COMPUTER_ID=PC-B; codex/pc-b-order-preview-cleanup-1007 from origin/develop@ce876ce4. Reserve bounded Procurement RecordCard field-visibility option, purchase-order view consumer and focused render regression, own status entries. Hide requestId and version only in order preview including nested lines; retain persisted identity/CAS/document version and other previews. No API/schema/migration/dependency/IAM/runtime change. Target files clean and no active overlapping ownership found. User authorizes push and develop merge after checks.
 
 PROCUREMENT-ORDER-PREVIEW-CLEANUP-1007: source reservation RELEASED with frozen review candidate. Six focused tests, scoped lint/format/diff checks pass; Web typecheck/build and exact-head CI remain merge gates. No operational runtime/data change.
+
+## PROCUREMENT-ORDER-INVOICE-UPLOAD-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-invoice-upload-1007 from origin/develop@eb4d5440. Reserve Procurement operation-form/document picker integration and focused tests, AMEND_ORDER document-reference validation/persistence and scoped tests, own status entries. Use existing Documents upload/archive contract; producer Documents unchanged, consumer AMEND_ORDER additive documents field. Preserve omitted attachments, exact document versions, branch/read/CLEAN scan checks, CAS/idempotency and independent order approval. No financial invoice/payment creation from upload alone. No schema/migration/dependency/IAM/runtime/data change; target locks free. User authorizes push/develop merge after checks.
+
+PROCUREMENT-ORDER-INVOICE-UPLOAD-1007: source reservation RELEASED with frozen review candidate. Web61 plus Documents-client6 tests and focused form10 rerun passed; lint/typecheck/API and Web56-route builds pass. All 54 PostgreSQL regression tests passed; exact-head CI remains the merge gate. No operational runtime/data change.

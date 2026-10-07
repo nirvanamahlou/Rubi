@@ -867,6 +867,9 @@ export class ProcurementOperations {
       const trackingCode = has('trackingCode')
         ? v.text(input.trackingCode, 'trackingCode', 100, true)
         : String(existingData.trackingCode ?? '');
+      const documents = has('documents')
+        ? await this.documentsFor(input.documents, row.branchId, actor)
+        : existingData.documents;
       const amended = await tx.procurementOrder.update({
         where: { id: order.id },
         data: {
@@ -878,6 +881,7 @@ export class ProcurementOperations {
           status: 'PENDING_APPROVAL',
           data: json({
             ...existingData,
+            ...(has('documents') ? { documents } : {}),
             supplier,
             paymentTerms,
             deliveryLocation,

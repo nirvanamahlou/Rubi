@@ -7,6 +7,7 @@ import { emptyDraft } from './model';
 import {
   OperationForm,
   orderAmendmentFields,
+  orderAmendmentDocuments,
   recordLabel,
 } from './operation-form';
 
@@ -51,6 +52,14 @@ const bootstrap = (permissions: Bootstrap['permissions']): Bootstrap => ({
 });
 
 describe('Procurement lifecycle operation forms', () => {
+  it('restores selected order attachments without substituting request attachments', () => {
+    expect(
+      orderAmendmentDocuments({
+        data: { documents: [{ id: 'invoice', versionId: 'invoice-version' }] },
+      }),
+    ).toEqual([{ id: 'invoice', versionId: 'invoice-version' }]);
+    expect(orderAmendmentDocuments({})).toEqual([]);
+  });
   it('shows the consolidated order form with price, warranty, dates and archived upload', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>
@@ -214,6 +223,8 @@ describe('Procurement lifecycle operation forms', () => {
     );
     expect(edit).toContain('اصلاح سفارش و ارسال برای تأیید مجدد');
     expect(edit).toContain('TRACK-1');
+    expect(edit).toContain('بارگذاری فایل فاکتور');
+    expect(edit).toContain('انتخاب فایل فاکتور');
     expect(edit).not.toContain('id="proc-operation"');
     expect(edit).not.toContain('سفارش مرجع');
     expect(edit).not.toContain('تأمین‌کننده جدید یا فعلی');

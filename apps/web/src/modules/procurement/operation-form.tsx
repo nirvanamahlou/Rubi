@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
   ProcurementPermission,
+  ProcurementDocumentReferenceV1,
   ProcurementRequestV1,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
@@ -199,6 +200,21 @@ export const recordLabel = (record: Row) => {
       .join(' · ') || 'رکورد ثبت‌شده'
   );
 };
+export const orderAmendmentDocuments = (
+  record: Row,
+): ProcurementDocumentReferenceV1[] => {
+  const documents = flatten(record).documents;
+  return Array.isArray(documents)
+    ? documents
+        .filter(
+          (document): document is ProcurementDocumentReferenceV1 =>
+            !!document &&
+            typeof document.id === 'string' &&
+            typeof document.versionId === 'string',
+        )
+        .map(({ id, versionId }) => ({ id, versionId }))
+    : [];
+};
 export const orderAmendmentFields = (record: Row) => {
   const row = flatten(record);
   return {
@@ -365,9 +381,12 @@ function OperationFields({
         : [],
   );
   const [singleSource, setSingleSource] = useState(false);
-  const [documents, setDocuments] = useState(() => [
-    ...request.draft.documents,
-  ]);
+  const [documents, setDocuments] = useState(() =>
+    action === 'AMEND_ORDER' && initialRecord
+      ? orderAmendmentDocuments(initialRecord)
+      : [...request.draft.documents],
+  );
+  const [uploadBusy, setUploadBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -487,11 +506,13 @@ function OperationFields({
         if (action === 'ORDER' && key === 'supplierId') set('selectionId', '');
         if (key === 'orderId') {
           setSelectedOrder(row);
-          if (action === 'AMEND_ORDER')
+          if (action === 'AMEND_ORDER') {
+            setDocuments(orderAmendmentDocuments(row));
             setFields((previous) => ({
               ...previous,
               ...orderAmendmentFields(row),
             }));
+          }
           setLines(
             action === 'AMEND_ORDER' && Array.isArray(row.lines)
               ? (row.lines as Row[]).map((line) => ({
@@ -540,6 +561,7 @@ function OperationFields({
         ? lineOptions.filter((row) => row.kind !== 'GOODS')
         : lineOptions;
   async function submit() {
+    if (busy || uploadBusy) return;
     if (
       action === 'ORDER' &&
       (!fields.supplierId ||
@@ -562,7 +584,7 @@ function OperationFields({
     if (commercial)
       body = {
         ...body,
-        ...(action !== 'AMEND_ORDER' ? { documents } : {}),
+        documents,
         lines: lines.map(
           ({ itemId, quantity, unitPrice, discount, tax, extraCost }) => ({
             itemId,
@@ -634,7 +656,7 @@ function OperationFields({
           <span>{String(flatten(initialRecord).currencyCode ?? '')}</span>
         </div>
       )}
-      <fieldset disabled={busy} className="space-y-3">
+      <fieldset disabled={busy || uploadBusy} className="space-y-3">
         <legend className="sr-only">{label}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           {hasOrder &&
@@ -965,6 +987,7 @@ function OperationFields({
           'QUOTE',
           'ORDER',
           'ORDER_FORM',
+          'AMEND_ORDER',
           'INVOICE',
           'RECEIVE',
           'ACCEPT_SERVICE',
@@ -975,8 +998,11 @@ function OperationFields({
             branchId={request.draft.branchId}
             value={documents}
             onChange={setDocuments}
+            onUploadingChange={setUploadBusy}
             available={bootstrap.documents === 'AVAILABLE'}
-            {...(['INVOICE', 'ORDER', 'ORDER_FORM'].includes(action)
+            {...(['INVOICE', 'ORDER', 'ORDER_FORM', 'AMEND_ORDER'].includes(
+              action,
+            )
               ? {
                   invoiceUpload: {
                     requestId: request.id,
@@ -1002,6 +1028,7 @@ function OperationFields({
           loading={busy}
           disabled={
             !!success ||
+            uploadBusy ||
             (action === 'SUBMIT_FINANCE' && bootstrap.finance !== 'CONNECTED')
           }
         >

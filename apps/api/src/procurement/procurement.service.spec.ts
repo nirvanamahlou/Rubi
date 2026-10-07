@@ -1473,6 +1473,79 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         }),
       ).toBe(0);
     });
+    it('persists uploaded invoice references in amended orders and immutable order versions', async () => {
+      const context = await orderedRequest();
+      await database.client.procurementOrder.update({
+        where: { id: context.order.id },
+        data: {
+          data: json({
+            ...(context.order.data as Record<string, unknown>),
+            documents: [],
+          }),
+        },
+      });
+      await command(context.row, 'AMEND_ORDER', {
+        orderId: context.order.id,
+        reason: 'Attach archived invoice',
+        documents,
+      });
+      const saved = await database.client.procurementOrder.findUniqueOrThrow({
+        where: { id: context.order.id },
+      });
+      expect(saved.data).toMatchObject({ documents });
+      const version =
+        await database.client.procurementOrderVersion.findUniqueOrThrow({
+          where: {
+            orderId_version: { orderId: saved.id, version: saved.version },
+          },
+        });
+      expect(version.payload).toMatchObject({ data: { documents } });
+      expect(
+        (await service.orders({}, maker)).items.find(
+          (order) => order.id === saved.id,
+        )?.data,
+      ).toMatchObject({ documents });
+    });
+    it('rejects unverified invoice versions and unauthorized attachments without changing the order', async () => {
+      const context = await orderedRequest();
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Invalid document version',
+            documents: [{ id: documentId, versionId: randomUUID() }],
+          }),
+        503,
+        'DOCUMENTS_UNAVAILABLE',
+      );
+      await rejected(
+        () =>
+          command(
+            context.row,
+            'AMEND_ORDER',
+            {
+              orderId: context.order.id,
+              reason: 'Unauthorized attachment',
+              documents,
+            },
+            {
+              ...maker,
+              permissions: maker.permissions.filter(
+                (p) => p !== 'documents.procurement.read',
+              ),
+            },
+          ),
+        403,
+        'FORBIDDEN',
+      );
+      expect(
+        (
+          await database.client.procurementOrder.findUniqueOrThrow({
+            where: { id: context.order.id },
+          })
+        ).version,
+      ).toBe(context.order.version);
+    });
     it('persists order amendments as new approved versions and preserves omitted metadata and exact documents', async () => {
       const context = await orderedRequest();
       const original = await database.client.procurementOrder.findUniqueOrThrow(

@@ -17,11 +17,13 @@ export function ProcurementDocumentPicker({
   onChange,
   available,
   invoiceUpload,
+  onUploadingChange,
 }: {
   branchId: string;
   value: ProcurementDocumentReferenceV1[];
   onChange: (value: ProcurementDocumentReferenceV1[]) => void;
   available: boolean;
+  onUploadingChange?: (uploading: boolean) => void;
   invoiceUpload?: {
     requestId: string;
     requestNumber: string;
@@ -113,6 +115,7 @@ export function ProcurementDocumentPicker({
     setBusy(true);
     setInvoiceUploadError('');
     setInvoiceUploadSuccess('');
+    onUploadingChange?.(true);
     try {
       const form = new FormData();
       form.set('file', file);
@@ -161,6 +164,7 @@ export function ProcurementDocumentPicker({
       );
     } finally {
       setBusy(false);
+      onUploadingChange?.(false);
     }
   }
   return (
