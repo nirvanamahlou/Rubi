@@ -98,9 +98,11 @@ export function recordData(record: Record<string, unknown>) {
 export function RecordCard({
   record,
   showPreviewAction = false,
+  hiddenFields = [],
 }: {
   record: Record<string, unknown>;
   showPreviewAction?: boolean;
+  hiddenFields?: readonly string[];
 }) {
   const data = recordData(record);
   const draft =
@@ -110,6 +112,7 @@ export function RecordCard({
   const entries = Object.entries(data).filter(
     ([key, value]) =>
       key in recordLabels &&
+      !hiddenFields.includes(key) &&
       !(key === 'supplierId' && data.supplierName) &&
       value !== null &&
       typeof value !== 'object',
@@ -146,7 +149,11 @@ export function RecordCard({
             </summary>
             <div className="mt-3 space-y-3">
               {(lines as Record<string, unknown>[]).map((line, index) => (
-                <RecordCard key={String(line.id ?? index)} record={line} />
+                <RecordCard
+                  key={String(line.id ?? index)}
+                  record={line}
+                  hiddenFields={hiddenFields}
+                />
               ))}
             </div>
           </details>

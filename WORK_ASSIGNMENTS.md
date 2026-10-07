@@ -5933,3 +5933,9 @@ COMPUTER_ID=PC-A; branch codex/pc-a-ticket-purchase-inbox-1007 from origin/devel
 ## SIDEBAR-DOT-COLORS-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; codex/pc-a-sidebar-dot-colors-1007 from origin/develop. Reserve central app-shell.tsx group dot presentation and lib/navigation.ts group palette plus own status entries. Prior Navigation central lock released; no target local changes or active overlapping reservation. Distinct blue/rose/green/amber/purple/cyan/orange dots across desktop and mobile using existing group dotClass. No route, permission, API, schema, dependency or runtime change. User explicitly authorizes develop merge; scoped lint/typecheck/build and repository CI gate merge. Release bounded central locks with committed review candidate.
+
+## PROCUREMENT-ORDER-PREVIEW-CLEANUP-1007 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B; codex/pc-b-order-preview-cleanup-1007 from origin/develop@ce876ce4. Reserve bounded Procurement RecordCard field-visibility option, purchase-order view consumer and focused render regression, own status entries. Hide requestId and version only in order preview including nested lines; retain persisted identity/CAS/document version and other previews. No API/schema/migration/dependency/IAM/runtime change. Target files clean and no active overlapping ownership found. User authorizes push and develop merge after checks.
+
+PROCUREMENT-ORDER-PREVIEW-CLEANUP-1007: source reservation RELEASED with frozen review candidate. Six focused tests, scoped lint/format/diff checks pass; Web typecheck/build and exact-head CI remain merge gates. No operational runtime/data change.

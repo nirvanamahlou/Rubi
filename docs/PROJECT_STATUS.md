@@ -4896,3 +4896,7 @@ Menu labels now use Flight pricing, Package management, B2c/B2B customers and Pe
 ## 2026-10-07 — Distinct sidebar group dots — PC-A
 
 Sidebar headers consume each registered group's distinct palette rather than one shared cyan color. Work blue, Sales rose, Reservations green, Finance amber, HR purple, Documents/Reports cyan, Company settings orange; same colors on mobile and desktop with a slightly larger outlined dot. Group collapse, routes and permissions preserved. No API/schema/dependency/runtime change; user authorizes develop merge after validation.
+
+## 2026-10-07 — PROCUREMENT-ORDER-PREVIEW-CLEANUP-1007
+
+Order view hides requestId and record version from the main summary and nested item cards. Request/order numbers, commercial details and exact document-version links remain visible. Persisted IDs, optimistic versions, routing/API and other record previews are unchanged. Six focused render/table tests passed; affected lint/typecheck/Web production build and exact-head CI gate user-authorized develop merge. No schema/migration/dependency/IAM/runtime/data change; authenticated browser verification unavailable.
