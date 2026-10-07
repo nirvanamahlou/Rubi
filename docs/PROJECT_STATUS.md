@@ -1,3 +1,7 @@
+## 2026-10-07 — PURCHASE-FILTERS-DATES-1007 — PC-A — READY_FOR_REVIEW
+
+Purchasing & Supply now supports All/Recorded/Not recorded filters, date ranges and oldest/newest sorting by inbox entry, flight departure, hotel check-in or actual purchase recording. Filtering is per selected service across all branch-authorized records before pagination, so mixed contracts do not incorrectly hide or relabel services. Existing flight inventory consumes the same selected filters. Optional public Finance latest-cost timestamp distinguishes purchase recording from payment and inventory request creation. Fixed labels are translated into English. Owner authorizes develop merge after exact-head checks; no runtime/database change. See docs/tasks/PURCHASE-FILTERS-DATES-1007.md.
+
 ## 2026-10-07 — RESERVATION-PURCHASES-HUB-1007 — PC-A — READY_FOR_REVIEW
 
 Reservations purchase action now opens Purchasing & Supply for its selected contract. Five themed categories cover All services, Hotel, Flight, Transfer and Insurance. Branch-scoped paginated intake selection shows registered and missing purchases; existing editors preserve canonical batches, versions and permissions. Flight purchases retain the existing inventory inbox and exact offer/branch matching. Fixed presentation text is available in English. No schema/dependency, operational data, payment or3100 runtime change. Review candidate validation and bounded ownership are recorded in docs/tasks/RESERVATION-PURCHASES-HUB-1007.md; develop merge requires owner authorization.
@@ -4982,6 +4986,14 @@ The employee form waits for complete HR reference data before first mounting its
 ## 2026-10-07 — HR-RECRUITMENT-REQUISITION-LINKS-1007 — PC-B
 
 Recruitment requisition job titles now use the selected company's stored positions, falling back to the position title when the optional job-title column is empty. Requesting units and requesters stay scoped to that company's active unit and employee records. If a truncated bootstrap initially selected a temporary IAM branch instead of a company, the new requisition form waits for the complete catalog and repairs its company selection before showing reference fields. A focused regression checks all three dropdowns and excludes another company's records. No backend, schema, migration or dependency changes; scoped Web checks and exact-head CI gate the authorized develop merge.
+
+## 2026-10-07 — B2B registration edit coverage — PC-B
+
+The organization edit entry is being aligned with the initial registration sections. Identity, address, representative and agreement changes must stay within their existing owner APIs and permission checks; verification and approval are not bypassed.
+
+The directory and dossier edit actions now open one edit workspace with the registered identity/role and logo editor, organization addresses, contact editors and agreement workflow. Each section reads the existing record and saves through its owning API; contact details remain masked until separately authorized. All 214 Organizations tests, affected lint and TypeScript, and the Web production build passed. No schema, migration, permission or live-data changes; authenticated browser write not run.
+
+Persistence follow-up: the disposable PostgreSQL B2B suite passed 19/19 after allowing the slower Windows Docker host more setup time. It verifies saved profile, agreement and address records through real database reads. Master Data identity, contact crypto, service and organization directory unit tests passed 56/56. The editor uses the existing owner API writes; an authenticated browser submit and live identity/contact database write were not run. No production API or schema change was needed. The extra combined database assertion was withheld after Docker became unresponsive on repeat runs. Exact-head CI gates the requested develop merge.
 
 ## 2026-10-07 — PC-A — Sales contract copy cleanup
 

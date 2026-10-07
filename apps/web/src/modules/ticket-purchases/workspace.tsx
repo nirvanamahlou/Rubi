@@ -25,10 +25,20 @@ import {
 import { ticketPurchaseTotal } from '@/modules/finance/model/ticket-purchase-total';
 import { FinanceInboxApiError } from '@/modules/finance/api/finance-inbox-api';
 import { ticketPurchaseApi } from './api';
+import {
+  filterTicketPurchases,
+  type PurchaseFilters,
+} from '@/modules/reservation-purchases/model';
 import { purchaseStages, purchaseSummary } from './model';
 export function TicketPurchaseWorkspace({
   initialOfferId,
-}: { initialOfferId?: string | undefined } = {}) {
+  filters,
+  onSaved,
+}: {
+  initialOfferId?: string | undefined;
+  filters?: PurchaseFilters | undefined;
+  onSaved?: (() => void) | undefined;
+} = {}) {
   const [items, setItems] = useState<TicketPurchaseInboxItemV1[]>([]),
     [canPrice, setCanPrice] = useState(false),
     [loading, setLoading] = useState(true),
@@ -71,7 +81,9 @@ export function TicketPurchaseWorkspace({
     };
   }, [revision]);
   const summary = useMemo(() => purchaseSummary(items), [items]);
-  const visible = items.filter(
+  const visible = (
+    filters ? filterTicketPurchases(items, filters) : items
+  ).filter(
     (i) =>
       (!initialOfferId ||
         i.request.offerId === initialOfferId ||
@@ -115,6 +127,7 @@ export function TicketPurchaseWorkspace({
       setUncertain(false);
       setLoading(true);
       setRevision((v) => v + 1);
+      onSaved?.();
     } catch (e) {
       const pending = e instanceof FinanceInboxApiError && e.status === 0;
       setUncertain(pending);
