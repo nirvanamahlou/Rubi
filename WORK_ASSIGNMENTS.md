@@ -1,6 +1,8 @@
-## HOTEL-IMPORT-DEVELOP-AGE-1007 — PC-A — IN_PROGRESS
+## HOTEL-IMPORT-DEVELOP-AGE-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; user authorizes PR671 develop merge and complete child-age options below selector. Reserve Sales passenger-age field/spec and bounded opt-in optionLimit in shared SearchCombobox (default5 unchanged), own docs, develop integration conflict resolution preserving all other owners' changes. No dependencies/schema/migration/database/runtime deployment. Inspect and repair exact-head CI before requested merge; no bypass of failures.
+
+Delivered complete canonical child-age options through opt-in selector limit, retaining default five options for unrelated consumers. Integrated develop while preserving its passenger-total pricing and all other owner records. Replaced browser-native tariff date inputs with shared DatePicker. Focused age tests12 pass; integrated Sales/Reservations/shared tests607 pass (three existing skips), Web typecheck and scoped lint pass. Production build and exact-head CI gate the explicitly authorized PR671 merge; no operational import, database mutation or live deployment. Bounded implementation locks release with review candidate.
 
 ## HOTEL-OCCUPANCY-REIMPORT-1006 — PC-A — PREVIEW_REVIEW
 
