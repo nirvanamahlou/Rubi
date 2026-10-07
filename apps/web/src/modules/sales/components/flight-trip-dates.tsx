@@ -146,7 +146,9 @@ export function FlightTripDates({
           بلیط رفت
           <DatePicker
             key={international ? 'foreign' : 'local'}
-            defaultCalendarSystem={international ? 'gregorian' : undefined}
+            {...(international
+              ? { defaultCalendarSystem: 'gregorian' as const }
+              : {})}
             gregorianEnglish
             value={value.from}
             markedDates={days}
@@ -161,7 +163,9 @@ export function FlightTripDates({
             بلیط برگشت
             <DatePicker
               key={international ? 'foreign' : 'local'}
-              defaultCalendarSystem={international ? 'gregorian' : undefined}
+              {...(international
+                ? { defaultCalendarSystem: 'gregorian' as const }
+                : {})}
               gregorianEnglish
               value={value.to}
               markedDates={returnDays}

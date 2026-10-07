@@ -94,7 +94,9 @@ export function ContractFlightEditor({
         <FormField label="تاریخ و ساعت حرکت" required>
           <SalesDatePicker
             key={international ? 'foreign' : 'local'}
-            defaultCalendarSystem={international ? 'gregorian' : undefined}
+            {...(international
+              ? { defaultCalendarSystem: 'gregorian' as const }
+              : {})}
             includeTime
             value={value.departureAt}
             onChange={(departureAt) => patch({ departureAt })}
@@ -103,7 +105,9 @@ export function ContractFlightEditor({
         <FormField label="تاریخ و ساعت رسیدن" required>
           <SalesDatePicker
             key={international ? 'foreign' : 'local'}
-            defaultCalendarSystem={international ? 'gregorian' : undefined}
+            {...(international
+              ? { defaultCalendarSystem: 'gregorian' as const }
+              : {})}
             includeTime
             value={value.arrivalAt}
             onChange={(arrivalAt) => patch({ arrivalAt })}

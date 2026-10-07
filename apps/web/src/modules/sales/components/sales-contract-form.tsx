@@ -1527,11 +1527,9 @@ export function SalesContractForm() {
                       key={
                         salesInternationalTravel(state) ? 'foreign' : 'local'
                       }
-                      defaultCalendarSystem={
-                        salesInternationalTravel(state)
-                          ? 'gregorian'
-                          : undefined
-                      }
+                      {...(salesInternationalTravel(state)
+                        ? { defaultCalendarSystem: 'gregorian' as const }
+                        : {})}
                       value={state.hotel.checkIn}
                       onChange={(checkIn) =>
                         patchState({
@@ -1549,11 +1547,9 @@ export function SalesContractForm() {
                       key={
                         salesInternationalTravel(state) ? 'foreign' : 'local'
                       }
-                      defaultCalendarSystem={
-                        salesInternationalTravel(state)
-                          ? 'gregorian'
-                          : undefined
-                      }
+                      {...(salesInternationalTravel(state)
+                        ? { defaultCalendarSystem: 'gregorian' as const }
+                        : {})}
                       value={state.hotel.checkOut}
                       onChange={(checkOut) =>
                         patchState({
