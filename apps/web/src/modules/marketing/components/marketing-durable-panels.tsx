@@ -777,9 +777,9 @@ export function DurableIntakesPanel({
                   }
                 }}
                 size="icon"
-                title="سرنخ جدید"
+                title="ذخیره سرنخ"
               >
-                <Plus aria-hidden="true" className="size-4" />
+                <Save aria-hidden="true" className="size-4" />
               </Button>
               <Button
                 aria-label="پاک‌کردن فرم سرنخ"
@@ -791,7 +791,7 @@ export function DurableIntakesPanel({
                   setLastFollowUpAt('');
                 }}
                 size="icon"
-                title="سرنخ جدید"
+                title="پاک‌کردن فرم سرنخ"
                 type="button"
                 variant="outline"
               >
