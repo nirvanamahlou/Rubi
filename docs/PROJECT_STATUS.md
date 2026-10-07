@@ -1,3 +1,7 @@
+## 2026-10-07 — SALES-CHILD-UNDER15-1007 — PC-A — READY_FOR_REVIEW
+
+Owner supersedes under18 with under15: selectable child ages2..14, last band14 to less than15. Exact hotel birthday classification aligns Web/save/update/confirmation at15; stale draft ages15+ reject rather than receive child pricing. Infant, legacy capacity, flight categories, original imported tariff bands and stored contracts remain unchanged. Boundary12/14/15 regressions gate the owner-authorized develop merge with affected lint/typechecks and full CI; no database, schema, dependency or runtime deployment.
+
 ## 2026-10-07 — ENGLISH-UI-1007 — PC-A — READY_FOR_REVIEW
 
 Application display now supports personal Persian/English selection at login and in the header, with offline fixed-text translation, English accessibility/metadata, LTR layout, Latin digits, calendar labels and locale-aware PDF/Excel outputs. Canonical customer input, wire values, permissions, Decimal amounts and concurrency controls remain unchanged. Existing English reference names are preferred where available; unknown stored names are retained. The isolated legacy editor uses a reversible same-origin adapter. Translation coverage and derived catalogue checks gate future fixed-text additions through existing CI.

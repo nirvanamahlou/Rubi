@@ -420,14 +420,14 @@ export function salesHotelOccupancyQuote(
       hotelAgeOn(p.birthDate, state.hotel.checkIn),
     );
     if (actual.some((age) => age === null)) return null;
-    adults = actual.filter((age) => age !== null && age >= 18).length;
-    ages = actual.filter((age) => age !== null && age < 18);
+    adults = actual.filter((age) => age !== null && age >= 15).length;
+    ages = actual.filter((age) => age !== null && age < 15);
   } else if (
     (state.childAges?.length ?? 0) !== counts.children ||
     (state.infantAges?.length ?? 0) !== counts.infants
   )
     return null;
-  if (ages.some((age) => age === null)) return null;
+  if (ages.some((age) => age === null || age >= 15)) return null;
   return quoteHotelOccupancy(room.occupancyRates, {
     adults,
     childAges: ages as number[],
