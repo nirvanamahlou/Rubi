@@ -1,3 +1,10 @@
+import {
+  parsePurchaseQuery,
+  type PurchaseQueryInput,
+  type PurchaseFlightFacts,
+  type PurchaseServiceRow,
+} from './reservation-purchase-query';
+import { purchaseSelectionSql } from './reservation-purchase-selection';
 import { createHash } from 'node:crypto';
 import {
   BadRequestException,
@@ -268,64 +275,41 @@ export class ReservationsPublicService {
     return present(row);
   }
 
-  /** Purchases and unpurchased services share the same authorized intake source. */
+  /** Service-level filters and ordering run before pagination; branch scope is repeated at hydration. */
   async purchaseInbox(
     branchIds: readonly string[],
-    options: {
-      page?: string | undefined;
-      kind?: string | undefined;
-      contractNumber?: string | undefined;
-    },
+    options: PurchaseQueryInput,
+    flights?: PurchaseFlightFacts,
   ) {
-    if (
-      Object.values(options).some(
-        (value) => value !== undefined && typeof value !== 'string',
-      )
-    )
-      throw new BadRequestException('فیلتر کارتابل خرید معتبر نیست.');
-    const page = options.page === undefined ? 1 : Number(options.page);
-    const kind = options.kind ?? 'ALL';
-    const search = options.contractNumber?.trim() ?? '';
-    if (
-      !Number.isSafeInteger(page) ||
-      page < 1 ||
-      page > 1000000 ||
-      !['ALL', 'HOTEL', 'FLIGHT', 'TRANSFER', 'INSURANCE'].includes(kind) ||
-      search.length > 100
-    )
-      throw new BadRequestException('فیلتر کارتابل خرید معتبر نیست.');
-    const meta = { page, pageSize: 25, hasMore: false };
+    const q = parsePurchaseQuery(options);
+    const meta = {
+      page: q.page,
+      pageSize: 25,
+      hasMore: false,
+      services: [] as PurchaseServiceRow[],
+    };
     if (!branchIds.length) return { data: [], meta };
-    const kinds =
-      kind === 'ALL' ? ['HOTEL', 'FLIGHT', 'TRANSFER', 'INSURANCE'] : [kind];
-    const ids = await this.database.client.$queryRaw<
-      { id: string }[]
-    >(Prisma.sql`
-      SELECT i."id" FROM "ReservationIntake" i
-      WHERE i."branchId" IN (${Prisma.join(branchIds.map((id) => Prisma.sql`${id}::uuid`))})
-      AND (${search} = '' OR strpos(i."snapshot"->>'contractNumber', ${search}) > 0)
-      AND (
-        EXISTS (SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(i."snapshot"->'serviceSelections') = 'array' THEN i."snapshot"->'serviceSelections' ELSE '[]'::jsonb END) s WHERE s->>'kind' IN (${Prisma.join(kinds)}))
-        OR (${kinds.includes('HOTEL')} AND jsonb_typeof(i."snapshot"->'hotelSelection') = 'object')
-        OR (${kinds.includes('FLIGHT')}
-          AND (jsonb_array_length(CASE WHEN jsonb_typeof(i."snapshot"->'selectedTicketOfferIds') = 'array' THEN i."snapshot"->'selectedTicketOfferIds' ELSE '[]'::jsonb END) > 0 OR jsonb_array_length(CASE WHEN jsonb_typeof(i."snapshot"->'ticketSelections') = 'array' THEN i."snapshot"->'ticketSelections' ELSE '[]'::jsonb END) > 0)
-          AND NOT EXISTS (SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(i."snapshot"->'serviceSelections') = 'array' THEN i."snapshot"->'serviceSelections' ELSE '[]'::jsonb END) t WHERE t->>'kind' IN ('TRAIN', 'BUS')))
-      )
-      ORDER BY i."receivedAt" DESC, i."id" ASC LIMIT 26 OFFSET ${(page - 1) * 25}
-    `);
-    const selected = ids.slice(0, 25);
-    if (!selected.length) return { data: [], meta };
+    const selected = await this.database.client.$queryRaw<PurchaseServiceRow[]>(
+      purchaseSelectionSql(branchIds, q, flights),
+    );
+    const services = selected.slice(0, 25);
+    if (!services.length) return { data: [], meta };
     const rows = await this.database.client.reservationIntake.findMany({
       where: {
-        id: { in: selected.map((row) => row.id) },
+        id: { in: [...new Set(services.map((r) => r.id))] },
         branchId: { in: [...branchIds] },
       },
       include: intakeInclude,
       orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
     });
+    const authorized = new Set(rows.map((row) => row.id));
     return {
       data: rows.map(present),
-      meta: { ...meta, hasMore: ids.length > 25 },
+      meta: {
+        ...meta,
+        services: services.filter((s) => authorized.has(s.id)),
+        hasMore: selected.length > 25,
+      },
     };
   }
   /** Branch-scoped descriptors, including replaced purchases with payment evidence. */
