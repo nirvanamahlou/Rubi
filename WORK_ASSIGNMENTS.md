@@ -6112,3 +6112,9 @@ Presentation-only cleanup removes listed dashboard/wizard explanations and dupli
 Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.
 
 Scope also reserves one additive English Sales display translation for the shortened floating-ticket action; no overlapping active catalogue lock.
+
+## FINANCE-CONTRACT-PROFIT-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; reserve Sales contract payment-dialog profit placement, Finance selected-contract detail placement and focused assertions plus bounded status docs. Move profit display out of Sales into Finance; retain finance.read backend authorization, branch/sales record scope and calculations. No active overlap, API/schema/dependency or operational changes.
+
+Moved the lazy profit panel into Finance searched-contract results; Sales payment dialog no longer imports or displays it. Existing API finance.read and record/branch checks remain. Web14 rendering/Finance contract tests and API6 profit/security HTTP tests pass; lint/typecheck and full production CI gate handoff. Source locks release with candidate. No local runtime rollout or operational data write.
