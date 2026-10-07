@@ -219,7 +219,7 @@ export function MarketingPromotionsPanel({
     setSaving(true);
     try {
       const result = await marketingApi.saveAsset(input, {
-        id: editor?.id,
+        ...(editor ? { id: editor.id } : {}),
         branchId,
         key: attempt.current.key,
       });
