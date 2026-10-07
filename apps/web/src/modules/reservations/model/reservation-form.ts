@@ -173,7 +173,11 @@ export function reservationFormData(
     extra: intake.arrangement?.extraBedCount ?? hotel?.extraBedCount ?? '-',
     passengers,
     notes: workflow.note || '',
-    brand: workflow.branding?.name ?? '',
+    brand:
+      workflow.branding?.kind === 'OWN' &&
+      workflow.branding.companyCode === 'JAHAN_BASTAN'
+        ? 'جهان باستان'
+        : (workflow.branding?.name ?? ''),
   };
 }
 /** Estimate wrapped name rows so long names get room without shrinking or clipping. */

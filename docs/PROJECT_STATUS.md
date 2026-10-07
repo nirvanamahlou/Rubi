@@ -5026,3 +5026,7 @@ Finance request inbox uses light cyan header, compact separated request rows, co
 ## INTERNATIONAL-TRAVEL-DATES-1007 — PC-A
 
 Foreign origin or destination sets the Sales travel/hotel/floating-flight date picker default to Gregorian while preserving user calendar switching and ISO date values. Ticket and reservation output formatters explicitly use Gregorian; saved voucher/supplier-form ISO flight and hotel dates share the same Gregorian formatter in browser preview/PDF. Domestic picker preferences remain unchanged. No schema/API/dependency/runtime/data changes. Focused calendar, route and output regressions plus exact-head full CI gate authorized develop merge.
+
+## 2026-10-07 — PC-A — Jahan Bastan travel-document branding
+
+Supplied transparent Jahan Bastan logo replaces the own-company logo in contracts, issued tickets, reservation forms and hotel vouchers. Contract notices and contact footer use the issuing company and omit fixed Niyayesh information for Jahan. Jahan previews/PDF exports bypass stale own-company upload references; custom-agency and other company behavior remain. RGB colors remain visible on print; English company name is Jahan Bastan. Four synthetic A4 outputs visually checked, focused tests run and clean exact-head CI gates user-authorized develop merge. No schema/API/data changes or local rollout. Asset provenance and final image prompt are in docs/tasks/JAHAN-DOCUMENT-BRANDING-1007.md.

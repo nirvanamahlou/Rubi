@@ -300,3 +300,16 @@ describe('Saved contract print output', () => {
       expect(html).toContain(p.displayNameSnapshot);
   });
 });
+
+it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contact data', () => {
+  const output = structuredClone(printFixture);
+  output.company.code = 'JAHAN_BASTAN';
+  output.company.persianName = 'شرکت نیایش سیر سحر';
+  output.company.latinName = 'JAHAN BASTAN';
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('ارسال درخواست به آژانس جهان باستان');
+  expect(html).toContain('jahan-brand');
+  expect(html).not.toContain('نیایش');
+  expect(html).not.toContain('Nystkt.ir');
+  expect(html).not.toContain('niyayeshseir.com');
+});
