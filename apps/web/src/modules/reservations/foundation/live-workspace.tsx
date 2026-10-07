@@ -133,11 +133,6 @@ export function LiveReservationQueue() {
           setView((current) => ({ ...current, newCount: 0 }))
         }
       />
-      <p dir="rtl" className="mt-3 text-xs leading-6 text-muted-foreground">
-        اعلان درخواست جدید داخل همین صفحه نمایش داده می‌شود. ارسال دائمی به
-        زنگوله پس از اتصال سرویس اعلان فعال می‌شود. وضعیت کارگزار، ابطال و صدور
-        از آخرین ثبت عملیاتی خوانده می‌شود.
-      </p>
     </>
   );
 }

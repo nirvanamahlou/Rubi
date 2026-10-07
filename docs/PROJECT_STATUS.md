@@ -4973,6 +4973,10 @@ Broker contacts, nested broker leaders and standalone leader primary/roaming pho
 
 Validation: API41/Web17 tests, scoped lint, API/Web typechecks and API/Web production builds pass. No authenticated browser submit or runtime rollout claimed; complete PR CI gates merge.
 
+## RESERVATION-COPY-CLEANUP-1007 — PC-A
+
+Reservations inbox is labelled Requests. Contract action footer mounts only in Requests, keeping Dashboard and Manifest free of contract actions. Removed the owner-listed introductory, date-default, export-guide, live-service and Manifest explanatory text while retaining date defaults/errors, filters, exports and actual notifications. No API/schema/dependency/runtime changes. Affected lint/typecheck/build and full exact-head CI gate authorized develop merge.
+
 ## REMOVE-CUSTOMER-JOURNEY-1007
 
 Removed the customer-journey entry from Marketing's canonical section registry and hub description. Both initial legacy section URLs and browser navigation resolve through that registry, so journeys falls back to the hub instead of mounting journey/automation/scenario screens. Existing automation APIs, stored records and independent process workflows remain intact; no destructive data removal or local rollout. Focused navigation and full Marketing/translation tests plus exact-head CI gate authorized develop merge.

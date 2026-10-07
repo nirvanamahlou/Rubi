@@ -6037,6 +6037,12 @@ BROKER-LEADER-VALIDATION-1007 extension: reserve broker Web form/model and corre
 
 Verification: API41 focused tests, Web17 form/validation/translation tests, scoped API/Web lint, API/Web typechecks and API/Web production builds pass. No migration, operational data write or authenticated browser submit. Source locks release with the review candidate; complete CI on the submitted commit gates user-authorized develop merge.
 
+## RESERVATION-COPY-CLEANUP-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-copy-cleanup-1007 from origin/develop@ba002845. Reserve only Reservations foundation workspace/model/live-workspace and Manifest export presentation/existing render regression, bounded docs. Rename inbox to Requests, show contract action footer exclusively in inbox, remove owner-listed explanatory copy. Dashboard here is Reservations-owned; no central Dashboard changes. No active overlapping source reservation, schema/API/dependency/IAM/runtime change. Date filtering, live notification behavior, export and contract actions remain intact. User explicitly authorizes develop merge after quality gates.
+
+Verification: 77 focused reservation/manifest tests pass, scoped lint/typecheck and Web56-route production build pass. Local translation tests timed out under host load; full exact-head CI must pass before merge. Bounded source locks release with candidate. No authenticated browser or runtime rollout claimed.
+
 ## REMOVE-CUSTOMER-JOURNEY-1007 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-remove-customer-journey-1007 from origin/develop. Reserve Marketing section registry, route resolver and landing description plus focused tests and own docs. Remove customer-journey navigation and reject legacy section links; preserve automation data/APIs and independent process workflows. Previous Marketing locks released, no overlapping active source lock. No shared API/schema/dependency/runtime changes. User explicitly authorizes push/develop merge after verification.
