@@ -135,7 +135,24 @@ export function hrReferenceOptions(
     people,
   );
   bind(['فرصت شغلی', 'برنامه جذب'], titles('recruitment', 'staffing'));
-  bind(['عنوان شغل'], titles('organization', 'positions', 'عنوان شغل'));
+  bind(
+    ['عنوان شغل'],
+    Array.from(
+      new Set(
+        eligible
+          .filter(
+            (record) =>
+              record.section === 'organization' && record.tab === 'positions',
+          )
+          .map(
+            (record) =>
+              recordValue(record, 'عنوان شغل') ||
+              recordValue(record, 'عنوان سمت'),
+          )
+          .filter(Boolean),
+      ),
+    ),
+  );
   bind(['تقویم تعطیلات'], titles('time', 'holidays', 'تقویم'));
   bind(
     ['شیفت', 'شیفت فعلی', 'شیفت درخواستی'],

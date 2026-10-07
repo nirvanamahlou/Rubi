@@ -1,7 +1,7 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   getHrResource,
   type HrRecordCreate,
@@ -178,6 +178,29 @@ function HrRecordFormFields({
       data.branches[0]?.id ??
       '',
   );
+  const isNewRequisition =
+    target.source.section === 'recruitment' &&
+    target.source.tab === 'requisitions' &&
+    !target.record;
+  const fallbackCompany =
+    companies.find((item) => item.id === target.preferredCompanyId) ??
+    companies[0];
+  const fallbackCompanyId = fallbackCompany?.id;
+  const fallbackBranchId = fallbackCompany?.branchId;
+  const repairCompany =
+    isNewRequisition &&
+    !company &&
+    !references.loading &&
+    !references.error &&
+    Boolean(fallbackCompanyId && fallbackBranchId);
+  useEffect(() => {
+    if (!repairCompany || !fallbackCompanyId || !fallbackBranchId) return;
+    const timer = window.setTimeout(() => {
+      setCompanyId(fallbackCompanyId);
+      setBranchId(fallbackBranchId);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [repairCompany, fallbackCompanyId, fallbackBranchId]);
   const [employeeId, setEmployeeId] = useState(
     target.employeeId ??
       target.record?.employeeId ??
@@ -600,7 +623,7 @@ function HrRecordFormFields({
         ) : null}
         {references.error ? (
           <p role="alert">{references.error}</p>
-        ) : references.loading ? (
+        ) : references.loading || (isNewRequisition && !company) ? (
           <p role="status">در حال دریافت گزینه‌ها…</p>
         ) : (
           <ContextualHrForm
