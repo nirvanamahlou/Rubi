@@ -1,3 +1,7 @@
+## 2026-10-07 — OFFER-TRASH-CONTRAST-1007 — PC-B
+
+Discount and special-offer row deletion and its confirmation use an explicit white background with a red inherited icon and border, including hover. Shared Button defaults and unrelated actions remain unchanged. Existing deletion/cancellation behavior is preserved; preview deletions remain in-memory. Marketing/translation108 tests pass, including contrast regressions for both tabs; scoped lint and exact-head full CI gate the user-authorized develop merge. No API/schema/migration/dependency/runtime change or authenticated browser verification.
+
 ## 2026-10-07 — SALES-CHILD-UNDER15-1007 — PC-A — READY_FOR_REVIEW
 
 Owner supersedes under18 with under15: selectable child ages2..14, last band14 to less than15. Exact hotel birthday classification aligns Web/save/update/confirmation at15; stale draft ages15+ reject rather than receive child pricing. Infant, legacy capacity, flight categories, original imported tariff bands and stored contracts remain unchanged. Boundary12/14/15 regressions gate the owner-authorized develop merge with affected lint/typechecks and full CI; no database, schema, dependency or runtime deployment.
