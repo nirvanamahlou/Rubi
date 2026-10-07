@@ -170,4 +170,18 @@ describe('campaign declarations', () => {
       expect(html).toContain(label);
     expect(html).not.toContain('هدف فروش');
   });
+  it('keeps the expense trash icon legible on a neutral background with an inherited red foreground', () => {
+    const html = renderToStaticMarkup(
+      <CampaignDeclarationsForm campaign={campaign} onSave={async () => {}} />,
+    );
+    const button = [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
+      .map((match) => match[0])
+      .find((item) => item.includes('aria-label="حذف هزینه 1"'))!;
+    expect(button).toContain('bg-background');
+    expect(button).toContain('text-destructive');
+    expect(button).toContain('hover:bg-destructive/10');
+    expect(button).not.toMatch(/class="[^"]*(?:^|\s)bg-destructive(?:\s|")/);
+    expect(button).toContain('lucide-trash-2 size-4');
+    expect(button.replace(/<[^>]+>/g, '').trim()).toBe('');
+  });
 });

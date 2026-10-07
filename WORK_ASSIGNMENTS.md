@@ -5950,4 +5950,10 @@ PROCUREMENT-ORDER-INVOICE-UPLOAD-1007: source reservation RELEASED with frozen r
 
 COMPUTER_ID=PC-B; codex/pc-b-order-discrepancy-return-1007 from origin/develop@ee4353e8. Reserve Procurement discrepancy/return operation form, record selectors/consumer as needed, module-owned API command/history fixes if reproduced, focused tests and own status entries. Preserve receipt-backed return quantities, evidence, branch permissions, CAS/idempotency and Finance boundaries. No schema/migration/dependency/IAM/operational data change. Prior overlapping reservations explicitly released; target files clean. User authorizes push and develop merge after tests/CI.
 
-PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007: source reservation RELEASED with frozen review candidate. PostgreSQL 55 and Web 62 tests passed; lint/typecheck/API build passed. Web production build and exact-head CI remain merge gates. No operational data/runtime changes.
+PROCUREMENT-DISCREPANCY-RETURN-SAVE-1007: source reservation RELEASED with frozen review candidate. PostgreSQL 55 and Web 62 tests passed; lint/typecheck/API build passed. Web production build (56 routes) and final form 11-test rerun passed. Exact-head CI remains the merge gate. No operational data/runtime changes.
+
+## EXPENSE-DELETE-ICON-1007 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch codex/pc-b-expense-delete-icon-1007. Reserve only Marketing campaign declaration delete-button presentation, its focused regression test and bounded status docs. Neutral background with red inherited icon and subtle hover; existing removal handler and frozen state stay intact. No API/data/schema/dependency/shared-control/runtime changes. No active overlap in target files. User authorizes push and develop merge after checks.
+
+- Six declaration tests pass, including named icon-only trash contrast styling. Affected lint and full Marketing tests precede release; exact-head CI lint/typecheck/tests/production build gate merge. Locks released with candidate commit; no local runtime rollout or authenticated browser verification claimed.
