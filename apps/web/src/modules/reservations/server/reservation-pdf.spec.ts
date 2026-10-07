@@ -375,3 +375,52 @@ it('rejects supplier PDF with a typed name but no directory broker', async () =>
   ).toBe(409);
   expect(renderer).not.toHaveBeenCalled();
 });
+
+it.each([false, true])(
+  'prints the Jahan reservation/voucher=%s without Niyayesh footer details',
+  (voucher) => {
+    const companyIntake = structuredClone(intake);
+    companyIntake.workflow.branding = {
+      kind: 'OWN',
+      companyCode: 'JAHAN_BASTAN',
+      referenceId: 'company',
+      name: 'نیایش سیر سحر',
+      logoFileId: null,
+    };
+    const html = reservationPdfHtml(
+      companyIntake,
+      {},
+      'data:image/png;base64,c2FmZQ==',
+      '',
+      voucher,
+      'https://example.test',
+    );
+    expect(html).toContain('jahanLogo');
+    expect(html).not.toContain('Nystkt.ir');
+    expect(html).not.toContain('niyayehseir.com');
+    expect(html).not.toContain('نیایش');
+  },
+);
+
+it('loads the new Jahan logo for the authorized reservation PDF instead of an old company upload', async () => {
+  const companyIntake = structuredClone(intake);
+  companyIntake.workflow.branding = {
+    kind: 'OWN',
+    companyCode: 'JAHAN_BASTAN',
+    referenceId: 'company',
+    name: 'نیایش سیر سحر',
+    logoFileId: 'old-logo',
+  };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValue(Response.json({ data: companyIntake }));
+  vi.stubGlobal('fetch', fetcher);
+  const response = await GET(request(), { params: Promise.resolve({ id }) });
+  expect(response.status).toBe(200);
+  expect(
+    fetcher.mock.calls.some(([url]) =>
+      String(url).includes('/documents/old-logo'),
+    ),
+  ).toBe(false);
+  expect(renderer.mock.calls[0]?.[2]).toBe('data:image/png;base64,c2FmZQ==');
+});

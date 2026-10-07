@@ -190,6 +190,10 @@ export function contractPrintHtml(
     .filter((s) => s.kind === 'TRANSFER')
     .map((s) => s.titleSnapshot)
     .join('، ');
+  const issuerName =
+    output.company.code === 'JAHAN_BASTAN'
+      ? 'جهان باستان'
+      : output.company.persianName;
   const niyayeshIssuer = output.company.code === 'NIYAYESH_SEIR_SAHAR';
   const contactIcon = (path: string) =>
     `<svg viewBox="0 0 24 24" aria-hidden="true">${path}</svg>`;
@@ -218,7 +222,7 @@ export function contractPrintHtml(
   header .subtitle:before,header .subtitle:after{content:"";height:1px;background:#38aeb1;flex:1;min-width:6mm}
   header .brand{width:54mm;flex-shrink:0;text-align:center;font-size:10.5pt}
   header img{display:block;max-width:52mm;max-height:17mm;margin:0 auto 1mm;object-fit:contain;filter:brightness(0) invert(1)}
-  header .brand small{color:white}
+  header .brand small{color:white}header .jahan-brand{background:white;color:#102d54;border-radius:2mm;padding:1mm}header .jahan-brand small{color:#102d54}header .jahan-brand img{filter:none}
   .meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#eaf0f4;padding:2mm 0;margin-bottom:2mm}
   .meta>div{text-align:center;border-left:1px solid #aebccc;font-size:10pt}.meta>div:last-child{border-left:0}.meta strong{display:block;font-size:11pt;margin-top:.4mm}
   small{display:block;font-size:8pt;color:#59708b;font-weight:normal;margin-top:.5mm}
@@ -256,7 +260,7 @@ export function contractPrintHtml(
   .signatures{min-height:10mm}.signatures>div{padding:.7mm}.signature-line{margin-top:1.5mm}
   .customer-terms{line-height:1.2;margin-top:1mm;padding-top:.6mm}footer{padding-top:1mm;margin-top:1mm}.contact-row{margin:.2mm 0}.footer-contact strong{font-size:11pt}
   </style></head><body><article class="document">
-  <header><div class="brand">${logo}<div>${e(output.company.persianName)}</div><small>${e(output.company.latinName ?? '')}</small></div><div class="title"><h1>قرارداد فروش خدمات مسافرتی</h1><p class="subtitle" dir="ltr">TRAVEL SERVICES CONTRACT</p></div></header>
+  <header><div class="brand${output.company.code === 'JAHAN_BASTAN' ? ' jahan-brand' : ''}">${logo}<div>${e(issuerName)}</div><small>${e(output.company.code === 'JAHAN_BASTAN' ? 'JAHAN BASTAN' : (output.company.latinName ?? ''))}</small></div><div class="title"><h1>قرارداد فروش خدمات مسافرتی</h1><p class="subtitle" dir="ltr">TRAVEL SERVICES CONTRACT</p></div></header>
   ${c.status === 'CANCELLED' ? '<div class="cancelled">این قرارداد لغو شده است</div>' : ''}
   <div class="meta"><div>شماره قرارداد<strong><bdi>${e(c.contractNumber)}</bdi></strong></div><div>تاریخ ثبت<strong>${e(date(c.createdAt))}</strong></div><div>ساعت<strong>${e(time(c.createdAt))}</strong></div><div>مسئول فروش<strong>${e(output.ownerName)}</strong></div></div>
   <section>${heading(1, 'CONTRACT PARTIES', 'طرفین قرارداد')}<div class="fields"><div>دفتر خریدار / مشتری: <b>${e(contractPartyName)}</b></div><div>شماره مشتری: <bdi>${e(output.customer.phone)}</bdi></div><div class="wide">نشانی: ${e(output.customer.address)}</div><div>کد پستی: <bdi>${e(output.customer.postalCode)}</bdi></div><div>مقصد: ${e(name(c.destinationId))}</div><div>تعداد: ${c.passengersDetail.length} نفر</div><div>درخواست‌کننده: ${e(contractPartyName)}</div><div>خدمات: ${e(c.services.map(kind).join('، '))}</div></div></section>
@@ -280,8 +284,8 @@ export function contractPrintHtml(
   <div class="customer-terms">
     <p>در صورت تأیید نشدن هتل درخواستی، هتل مشابه جایگزین می‌گردد.</p>
     <p>توجه داشته باشید این برگه بدون قبض رسید صندوق فاقد هرگونه اعتبار می‌باشد.</p>
-    <p>با آگاهی از مفاد قراردادهای خارج از کشور که توسط سازمان میراث فرهنگی و گردشگری تهیه گردیده است، نسبت به ارسال درخواست به آژانس نیایش سیر سحر اقدام نموده و ارسال درخواست به منزله قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.</p>
+    <p>با آگاهی از مفاد قراردادهای خارج از کشور که توسط سازمان میراث فرهنگی و گردشگری تهیه گردیده است، نسبت به ارسال درخواست به آژانس ${e(niyayeshIssuer ? 'نیایش سیر سحر' : issuerName)} اقدام نموده و ارسال درخواست به منزله قبول تمامی شرایط، مواد و تبصره‌های قرارداد فوق می‌باشد.</p>
   </div>
-  <footer>${contractPendingQrHtml()}<div class="footer-contact"><strong>${e(output.company.persianName)}</strong><div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer>
+  <footer>${contractPendingQrHtml()}<div class="footer-contact"><strong>${e(issuerName)}</strong>${niyayeshIssuer ? `<div class="contact-row">${websiteIcon}<bdi>Nystkt.ir</bdi></div>` : ''}${niyayeshIssuer ? `<div class="contact-row">${phoneIcon}<bdi>021-72075000</bdi></div><div class="contact-row">${emailIcon}<bdi>support@niyayeshseir.com</bdi></div>` : ''}</div></footer>
   </article></body></html>`;
 }

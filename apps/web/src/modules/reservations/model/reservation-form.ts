@@ -23,7 +23,7 @@ export function reservationPassengerAgeLabel(
 
 export function reservationFormDate(value?: string, timeZone = 'UTC') {
   if (!value || !Number.isFinite(Date.parse(value))) return '-';
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -140,7 +140,7 @@ export function reservationFormData(
       airline: f.carrierNameSnapshot,
       number: f.serviceNumberSnapshot,
       date: reservationFormDate(f.departureAt, 'Asia/Tehran'),
-      time: new Intl.DateTimeFormat('en-GB', {
+      time: new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,
@@ -173,7 +173,11 @@ export function reservationFormData(
     extra: intake.arrangement?.extraBedCount ?? hotel?.extraBedCount ?? '-',
     passengers,
     notes: workflow.note || '',
-    brand: workflow.branding?.name ?? '',
+    brand:
+      workflow.branding?.kind === 'OWN' &&
+      workflow.branding.companyCode === 'JAHAN_BASTAN'
+        ? 'جهان باستان'
+        : (workflow.branding?.name ?? ''),
   };
 }
 /** Estimate wrapped name rows so long names get room without shrinking or clipping. */

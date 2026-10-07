@@ -65,6 +65,7 @@ import type { SalesPeopleDraft } from '../model/sales-people-sheet';
 import { type FlightDateRange } from './flight-date-range';
 import {
   emptySalesForm,
+  salesInternationalTravel,
   salesFlightSelection,
   salesFlightsValid,
   patchContractFlight,
@@ -1127,6 +1128,7 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              international={salesInternationalTravel(state)}
               originId={
                 salesDirections(state, 'FLIGHT').includes('OUTBOUND')
                   ? state.originId
@@ -1241,6 +1243,7 @@ export function SalesContractForm() {
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">بلیط رفت</h3>
                       <ContractFlightEditor
+                        international={salesInternationalTravel(state)}
                         airlines={references.airlines}
                         value={state.contractFlights?.OUTBOUND}
                         onChange={(value) =>
@@ -1312,6 +1315,7 @@ export function SalesContractForm() {
                   {flightDirections.includes('RETURN') ? (
                     <section className="grid gap-3 min-w-0">
                       <ContractFlightEditor
+                        international={salesInternationalTravel(state)}
                         airlines={references.airlines}
                         value={state.contractFlights?.RETURN}
                         onChange={(value) =>
@@ -1541,6 +1545,12 @@ export function SalesContractForm() {
                   ) : null}
                   <FormField label="ورود (چک‌این)" required>
                     <DatePicker
+                      key={
+                        salesInternationalTravel(state) ? 'foreign' : 'local'
+                      }
+                      {...(salesInternationalTravel(state)
+                        ? { defaultCalendarSystem: 'gregorian' as const }
+                        : {})}
                       value={state.hotel.checkIn}
                       onChange={(checkIn) =>
                         patchState({
@@ -1555,6 +1565,12 @@ export function SalesContractForm() {
                   </FormField>
                   <FormField label="خروج (چک‌اوت)" required>
                     <DatePicker
+                      key={
+                        salesInternationalTravel(state) ? 'foreign' : 'local'
+                      }
+                      {...(salesInternationalTravel(state)
+                        ? { defaultCalendarSystem: 'gregorian' as const }
+                        : {})}
                       value={state.hotel.checkOut}
                       onChange={(checkOut) =>
                         patchState({
