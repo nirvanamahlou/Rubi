@@ -159,7 +159,7 @@ describe.skipIf(!enabled)(
           displayName: 'آژانس آزمایشی',
           createdByUserId: userId,
           updatedByUserId: userId,
-          roles: { create: { roleCode: 'AGENCY' } },
+          roles: { create: { roleCode: 'AGENCY', assignedByUserId: userId } },
         },
       });
     });
