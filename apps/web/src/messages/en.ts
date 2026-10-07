@@ -39,7 +39,7 @@ export const englishNavigation: Record<
     description: 'Travel services',
   },
   '/reservations/hotel-rates': {
-    title: 'Bulk hotel rates',
+    title: 'Hotel purchase rates',
     description: 'Hotel purchase rates',
   },
   '/ticket-management': {

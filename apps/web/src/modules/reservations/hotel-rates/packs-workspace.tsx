@@ -1267,8 +1267,8 @@ export function HotelRatePacksWorkspace() {
     <main className={styles.root} dir="rtl">
       <header className={styles.toolbar}>
         <div>
-          <p>رزرواسیون / نرخ خرید هتل</p>
-          <h1>مدیریت گروهی نرخ‌های هتل‌ها</h1>
+          <p>رزرواسیون / قیمت خرید هتل</p>
+          <h1>قیمت خرید هتل</h1>
           <p>
             نرخ هتل‌های یک شهر را برای بازهٔ اقامت ثبت کنید. ترکیب تور، بلیط و
             نرخ هتل در مدیریت پکیج انجام می‌شود.

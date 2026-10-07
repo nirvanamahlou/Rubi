@@ -167,8 +167,8 @@ export function HotelGroupRates() {
   return (
     <main className={styles.root} dir="rtl">
       <header>
-        <p>رزرواسیون / نرخ هتل‌ها</p>
-        <h1>مدیریت گروهی نرخ‌های هتل‌ها</h1>
+        <p>رزرواسیون / قیمت خرید هتل</p>
+        <h1>قیمت خرید هتل</h1>
         <p>ثبت قیمت خرید دریافتی از کارگزار در بازهٔ اقامت مشخص</p>
       </header>
       <form onSubmit={save}>
