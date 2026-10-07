@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import type { HrNotificationDto } from '@nora/contracts';
 import {
   Alert,

@@ -1,4 +1,6 @@
 'use client';
+import { localizedFetch } from '@/i18n/localized-fetch';
+
 import type {
   TourPackageV1,
   TourDepartureV1,
@@ -22,7 +24,7 @@ async function request<T>(
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
-  const response = await fetch(`${base}/ticket-catalog${path}`, {
+  const response = await localizedFetch(`${base}/ticket-catalog${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

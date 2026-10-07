@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import {
   CUSTOMERS_API_PREFIX,
   CUSTOMERS_CONTRACT_VERSION,
@@ -39,7 +40,7 @@ async function request<T>(
       'Public API base URL is not configured.',
       0,
     );
-  const response = await fetch(
+  const response = await localizedFetch(
     `${baseUrl}${relativeCustomerPath(publicPath)}`,
     {
       credentials: 'include',

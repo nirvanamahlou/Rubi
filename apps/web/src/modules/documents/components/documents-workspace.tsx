@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useRouter } from 'next/navigation';
 import {
   Archive,

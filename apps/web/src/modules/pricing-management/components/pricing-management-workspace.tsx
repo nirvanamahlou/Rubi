@@ -22,7 +22,7 @@ import {
   Scale,
   Search,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';

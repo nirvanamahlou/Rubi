@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   CustomerAffairsDashboard,
   CustomerAffairsLeadInput,
@@ -24,7 +25,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base)
     throw new CustomerAffairsApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${base}/customer-affairs${path}`, {
+  const response = await localizedFetch(`${base}/customer-affairs${path}`, {
     credentials: 'include',
     ...init,
     headers: {
@@ -107,7 +108,7 @@ async function downloadXlsx(path: string, filename: string) {
   const base = getPublicApiBaseUrl();
   if (!base)
     throw new CustomerAffairsApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${base}/customer-affairs${path}`, {
+  const response = await localizedFetch(`${base}/customer-affairs${path}`, {
     credentials: 'include',
     headers: {
       accept:

@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   IamPersonalProfileResponseV1,
   IamPersonalProfileUpdateInputV1,
@@ -32,7 +33,7 @@ async function request<T>(
 ): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await fetch(`${base}/workbench${path}`, {
+  const response = await localizedFetch(`${base}/workbench${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,
@@ -68,7 +69,7 @@ async function requestBlob(
 ): Promise<Blob> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی API پیکربندی نشده است.');
-  const response = await fetch(`${base}/workbench${path}`, {
+  const response = await localizedFetch(`${base}/workbench${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

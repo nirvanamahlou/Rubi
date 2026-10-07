@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type { TicketOfferSearchV1, TicketOfferV1 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -29,7 +30,7 @@ export async function searchTickets(
       .map(([key, value]) => [key, String(value)]),
   );
   const get = () =>
-    fetch(base + '/ticket-catalog/offers?' + params, {
+    localizedFetch(base + '/ticket-catalog/offers?' + params, {
       credentials: 'include',
       signal,
       cache: 'no-store',

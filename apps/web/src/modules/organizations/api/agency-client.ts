@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   OrganizationActivityQuery,
   OrganizationActivityPage,
@@ -66,7 +67,7 @@ async function b2bRequest<T>(
 ): Promise<T> {
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl) throw new B2bApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/b2b${path}`, {
+  const response = await localizedFetch(`${baseUrl}/b2b${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

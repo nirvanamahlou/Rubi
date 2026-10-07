@@ -1,6 +1,7 @@
 {
   "extends": "@nora/typescript-config/next.json",
   "compilerOptions": {
+    "jsxImportSource": "@/i18n",
     "paths": {
       "@/*": ["./src/*"]
     }

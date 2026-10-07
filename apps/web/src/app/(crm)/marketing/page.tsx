@@ -1,9 +1,12 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { MarketingWorkspace } from '@/modules/marketing/components/marketing-workspace';
 
-export const metadata: Metadata = { title: 'مارکتینگ' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'مارکتینگ' });
+}
 
 // Graduation marker for the shared route-foundation contract: this page replaces
 // ModuleFoundationWorkspace configured with foundationModules['marketing'].

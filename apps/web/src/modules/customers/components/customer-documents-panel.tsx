@@ -13,7 +13,7 @@ import {
   RefreshCw,
   ShieldCheck,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {

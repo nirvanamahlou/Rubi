@@ -1,3 +1,4 @@
+import { displayText, type DisplayLanguage } from '../common/i18n/language';
 import type { FinanceExportSnapshotV1 } from '@nora/contracts';
 import { strToU8, zipSync } from 'fflate';
 export const FINANCE_XLSX_MIME =
@@ -43,30 +44,33 @@ function cell(ref: string, value: string | null, type: string) {
 }
 export function buildFinanceXlsx(
   snapshot: FinanceExportSnapshotV1,
+  language: DisplayLanguage = 'fa',
 ): Uint8Array {
+  const label = (ref: string, value: string, style = 0) =>
+    text(ref, displayText(value, language), style);
   const last = letter(snapshot.columns.length - 1),
     header = 5,
     end = header + snapshot.rows.length,
     totalsEnd = end + snapshot.totals.length + 2,
     finalEnd = snapshot.scope === 'RECEIPT' ? totalsEnd + 2 : totalsEnd;
   const rows = [
-    `<row r="1" ht="34" customHeight="1">${text('A1', snapshot.title, 4)}</row>`,
-    `<row r="2" ht="28" customHeight="1">${text('A2', `زمان تهیه UTC: ${snapshot.generatedAt} | تعداد ردیف: ${snapshot.rows.length}`, 0)}</row>`,
-    `<row r="3" ht="38" customHeight="1">${text('A3', snapshot.warnings.join(' '), 0)}</row>`,
-    `<row r="4" ht="28" customHeight="1">${text('A4', `فیلتر: ${JSON.stringify(snapshot.filterSnapshot)}`, 0)}</row>`,
-    `<row r="5" ht="36" customHeight="1">${snapshot.columns.map((col, i) => text(letter(i) + '5', col.label, 1)).join('')}</row>`,
+    `<row r="1" ht="34" customHeight="1">${label('A1', snapshot.title, 4)}</row>`,
+    `<row r="2" ht="28" customHeight="1">${label('A2', `زمان تهیه UTC: ${snapshot.generatedAt} | تعداد ردیف: ${snapshot.rows.length}`, 0)}</row>`,
+    `<row r="3" ht="38" customHeight="1">${label('A3', snapshot.warnings.map((warning) => displayText(warning, language)).join(' '), 0)}</row>`,
+    `<row r="4" ht="28" customHeight="1">${label('A4', `فیلتر: ${JSON.stringify(snapshot.filterSnapshot)}`, 0)}</row>`,
+    `<row r="5" ht="36" customHeight="1">${snapshot.columns.map((col, i) => label(letter(i) + '5', col.label, 1)).join('')}</row>`,
     ...snapshot.rows.map(
       (values, index) =>
         `<row r="${index + 6}" ht="48" customHeight="1">${values.map((value, i) => cell(letter(i) + (index + 6), value, snapshot.columns[i]!.type)).join('')}</row>`,
     ),
-    `<row r="${end + 2}" ht="28" customHeight="1">${text('A' + (end + 2), 'تهیه‌کننده: ' + snapshot.preparedBy)}</row>`,
+    `<row r="${end + 2}" ht="28" customHeight="1">${label('A' + (end + 2), 'تهیه‌کننده: ' + snapshot.preparedBy)}</row>`,
     ...snapshot.totals.map(
       (total, index) =>
-        `<row r="${end + 3 + index}" ht="28" customHeight="1">${text('A' + (end + 3 + index), 'جمع در ' + total.currencyCode)}${cell('B' + (end + 3 + index), total.amount, 'DECIMAL')}</row>`,
+        `<row r="${end + 3 + index}" ht="28" customHeight="1">${label('A' + (end + 3 + index), 'جمع در ' + total.currencyCode)}${cell('B' + (end + 3 + index), total.amount, 'DECIMAL')}</row>`,
     ),
     ...(snapshot.scope === 'RECEIPT'
       ? [
-          `<row r="${finalEnd}" ht="45" customHeight="1">${text('A' + finalEnd, 'امضای دریافت‌کننده')}${text('D' + finalEnd, 'امضای پرداخت‌کننده')}${text('G' + finalEnd, 'تأیید مالی')}</row>`,
+          `<row r="${finalEnd}" ht="45" customHeight="1">${label('A' + finalEnd, 'امضای دریافت‌کننده')}${label('D' + finalEnd, 'امضای پرداخت‌کننده')}${label('G' + finalEnd, 'تأیید مالی')}</row>`,
         ]
       : []),
   ].join('');
@@ -80,7 +84,7 @@ export function buildFinanceXlsx(
     '_rels/.rels': `<Relationships xmlns="${pack}"><Relationship Id="rId1" Type="${rel}/officeDocument" Target="xl/workbook.xml"/></Relationships>`,
     'xl/workbook.xml': `<workbook xmlns="${ns}" xmlns:r="${rel}"><sheets><sheet name="مالی" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'مالی'!$5:$5</definedName><definedName name="_xlnm.Print_Area" localSheetId="0">'مالی'!$A$1:$${last}$${finalEnd}</definedName></definedNames></workbook>`,
     'xl/_rels/workbook.xml.rels': `<Relationships xmlns="${pack}"><Relationship Id="rId1" Type="${rel}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${rel}/styles" Target="styles.xml"/></Relationships>`,
-    'xl/worksheets/sheet1.xml': `<worksheet xmlns="${ns}"><dimension ref="A1:${last}${finalEnd}"/><sheetViews><sheetView workbookViewId="0" rightToLeft="1" showGridLines="0"><pane ySplit="5" topLeftCell="A6" state="frozen" activePane="bottomLeft"/></sheetView></sheetViews><cols>${snapshot.columns.map((col, i) => `<col min="${i + 1}" max="${i + 1}" width="${col.type === 'TEXT' ? 34 : 23}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData><autoFilter ref="A5:${last}${end}"/><mergeCells count="4">${[1, 2, 3, 4].map((n) => `<mergeCell ref="A${n}:${last}${n}"/>`).join('')}</mergeCells><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`,
+    'xl/worksheets/sheet1.xml': `<worksheet xmlns="${ns}"><dimension ref="A1:${last}${finalEnd}"/><sheetViews><sheetView workbookViewId="0" rightToLeft="${language === 'en' ? '0' : '1'}" showGridLines="0"><pane ySplit="5" topLeftCell="A6" state="frozen" activePane="bottomLeft"/></sheetView></sheetViews><cols>${snapshot.columns.map((col, i) => `<col min="${i + 1}" max="${i + 1}" width="${col.type === 'TEXT' ? 34 : 23}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData><autoFilter ref="A5:${last}${end}"/><mergeCells count="4">${[1, 2, 3, 4].map((n) => `<mergeCell ref="A${n}:${last}${n}"/>`).join('')}</mergeCells><pageMargins left="0.25" right="0.25" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`,
     'xl/styles.xml': `<styleSheet xmlns="${ns}"><numFmts count="2"><numFmt numFmtId="164" formatCode="#,##0.########"/><numFmt numFmtId="165" formatCode="yyyy-mm-dd hh:mm"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Arial"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Arial"/></font><font><b/><sz val="16"/><name val="Arial"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF133969"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5">${xf(0, 0, 0)}${xf(1, 2, 0)}${xf(0, 0, 164)}${xf(0, 0, 165)}${xf(2, 0, 0)}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`,
   };
   return zipSync(

@@ -1,7 +1,10 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 import { PackageBannerWorkspace } from '@/modules/pricing-management/components/package-banner-workspace';
 
-export const metadata: Metadata = { title: 'ساخت بنر پکیج' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'ساخت بنر پکیج' });
+}
 
 export default async function Page({
   params,

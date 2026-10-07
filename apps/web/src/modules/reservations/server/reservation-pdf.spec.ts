@@ -202,6 +202,7 @@ it('downloads an issued voucher using saved voucher settings and a voucher filen
     expect.anything(),
     true,
     'http://localhost',
+    'fa',
   );
 });
 it('renders voucher booking references and a separated summary without letterhead', () => {

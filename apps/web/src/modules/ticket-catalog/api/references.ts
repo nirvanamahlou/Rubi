@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import {
   MASTER_DATA_API_PREFIX,
   masterDataEndpoints,
@@ -65,7 +66,7 @@ export async function listReferences(
   const path = masterDataEndpoints
     .list(resource)
     .slice(MASTER_DATA_API_PREFIX.length);
-  const response = await fetch(`${base}/master-data${path}?${query}`, {
+  const response = await localizedFetch(`${base}/master-data${path}?${query}`, {
     method: 'GET',
     credentials: 'include',
     headers: { accept: 'application/json' },
@@ -137,7 +138,7 @@ export async function getActiveCityReference(
   const path = masterDataEndpoints
     .detail('cities', id)
     .slice(MASTER_DATA_API_PREFIX.length);
-  const response = await fetch(`${base}/master-data${path}`, {
+  const response = await localizedFetch(`${base}/master-data${path}`, {
     credentials: 'include',
     headers: { accept: 'application/json' },
   });

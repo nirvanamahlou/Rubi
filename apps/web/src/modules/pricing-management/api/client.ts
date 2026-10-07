@@ -1,4 +1,5 @@
 'use client';
+import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
   LoginResponse,
@@ -60,7 +61,7 @@ async function request<T>(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new PackagePricingApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/sales/pricing${path}`, {
+  const response = await localizedFetch(`${baseUrl}/sales/pricing${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

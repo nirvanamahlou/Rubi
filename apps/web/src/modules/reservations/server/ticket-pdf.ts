@@ -1,3 +1,5 @@
+import { localizeDocumentHtml } from '@/i18n/document';
+import type { DisplayLanguage } from '@/i18n/language';
 import { execFile } from 'node:child_process';
 import {
   access,
@@ -93,7 +95,10 @@ async function waitForPdf(path: string): Promise<void> {
   throw new Error('PDF_NOT_CREATED');
 }
 
-export async function renderTicketPdf(html: string): Promise<Buffer> {
+export async function renderTicketPdf(
+  html: string,
+  language: DisplayLanguage = 'fa',
+): Promise<Buffer> {
   const { chromePath: chrome, fontPath: font } =
     await resolveTicketPdfRuntime();
   if (!chrome) throw new Error('PDF_RUNTIME_UNAVAILABLE');
@@ -101,11 +106,11 @@ export async function renderTicketPdf(html: string): Promise<Buffer> {
   active++;
   let directory: string | undefined;
   try {
-    let document = html;
+    let document = localizeDocumentHtml(html, language);
     if (font) {
       const fontBytes = await readFile(/* turbopackIgnore: true */ font);
       if (fontBytes.length && fontBytes.length <= 5_000_000)
-        document = html.replace(
+        document = document.replace(
           '</style>',
           `@font-face{font-family:ReservationNazanin;src:url(data:font/ttf;base64,${fontBytes.toString('base64')}) format("truetype")}</style>`,
         );

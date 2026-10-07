@@ -1,4 +1,6 @@
 'use client';
+import { localizedFetch } from '@/i18n/localized-fetch';
+
 import { z } from 'zod';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -37,7 +39,7 @@ async function reportFetch(
 ): Promise<Response> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
-  const response = await fetch(
+  const response = await localizedFetch(
     path.startsWith('/') ? path : base + '/reservations/requests/' + path,
     {
       credentials: 'include',

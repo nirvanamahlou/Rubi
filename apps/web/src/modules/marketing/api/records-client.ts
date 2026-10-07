@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import {
   MARKETING_RECORDS_CONTRACT_VERSION,
   type AuthenticatedActor,
@@ -169,7 +170,7 @@ export class MarketingApiError extends Error {
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const base = getPublicApiBaseUrl();
   if (!base) throw new MarketingApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${base}${path}`, {
+  const response = await localizedFetch(`${base}${path}`, {
     credentials: 'include',
     cache: 'no-store',
     ...init,

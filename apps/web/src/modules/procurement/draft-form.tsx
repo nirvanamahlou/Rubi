@@ -1,4 +1,6 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
+
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ClipboardList, Package } from 'lucide-react';
@@ -1082,7 +1084,7 @@ export function DraftForm({
                           '',
                       ),
                   ) ||
-                window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شود؟')
+                uiConfirm('تغییرات ذخیره‌نشده کنار گذاشته شود؟')
               )
                 onClose();
             }}

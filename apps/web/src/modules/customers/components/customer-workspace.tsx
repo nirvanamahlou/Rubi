@@ -1,4 +1,6 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
+
 import { CustomerBasicFields } from './customer-basic-fields';
 
 import type {
@@ -986,7 +988,7 @@ export function CustomerDrawer({
     const safeCount = count;
     if (
       count < newCompanions.length &&
-      !window.confirm(
+      !uiConfirm(
         'ردیف‌های حذف‌شده و اطلاعات ذخیره‌نشده آن‌ها پاک می‌شوند. ادامه می‌دهید؟',
       )
     )
@@ -1005,7 +1007,7 @@ export function CustomerDrawer({
   }
 
   function removeCompanion(index: number) {
-    if (!window.confirm('این ردیف و مدارک ذخیره‌نشده آن حذف شوند؟')) return;
+    if (!uiConfirm('این ردیف و مدارک ذخیره‌نشده آن حذف شوند؟')) return;
     setNewCompanions((current) =>
       current.filter((_, itemIndex) => itemIndex !== index),
     );
@@ -1016,7 +1018,7 @@ export function CustomerDrawer({
     source: 'new' | 'primaryCustomer',
   ) {
     if (
-      !window.confirm(
+      !uiConfirm(
         'با تغییر شخص این ردیف، اطلاعات و مدارک ذخیره‌نشده آن پاک می‌شوند. ادامه می‌دهید؟',
       )
     )

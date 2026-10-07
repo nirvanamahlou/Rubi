@@ -1,4 +1,6 @@
 'use client';
+import { browserDisplayLanguage } from '@/i18n/language';
+import { translateUiText } from '@/i18n/translate';
 
 import { JAHAN_BASTAN_LOGO, NIYAYESH_SEIR_LOGO } from './contract-logos';
 import type { HrPreviewCell } from './hr-preview-data';
@@ -142,6 +144,7 @@ export async function createContractPdf(
     bold = false,
   ) => {
     context.font = `${bold ? '700' : '400'} ${size}px Vazirmatn, Tahoma, sans-serif`;
+    text = translateUiText(text, browserDisplayLanguage());
     context.fillText(text, x, top);
     lines.push({ text, x, y: top, size });
   };
@@ -149,7 +152,7 @@ export async function createContractPdf(
     lines = [];
     context.fillStyle = '#fff';
     context.fillRect(0, 0, 1240, 1754);
-    context.direction = 'rtl';
+    context.direction = browserDisplayLanguage() === 'en' ? 'ltr' : 'rtl';
     context.textAlign = 'right';
     context.fillStyle = '#103c78';
     if (logo) context.drawImage(logo, 70, 45, 145, 145);
@@ -175,7 +178,7 @@ export async function createContractPdf(
   const save = () => {
     context.fillStyle = '#71839a';
     draw(
-      `منابع انسانی Nora · صفحه ${(pages.length + 1).toLocaleString('fa-IR')}`,
+      `منابع انسانی Nora · صفحه ${(pages.length + 1).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
       1140,
       1685,
       20,
@@ -189,6 +192,7 @@ export async function createContractPdf(
     });
   };
   const paragraph = (text: string, heading = false) => {
+    text = translateUiText(text, browserDisplayLanguage());
     context.font = `${heading ? '700' : '400'} ${heading ? 29 : 25}px Vazirmatn, Tahoma, sans-serif`;
     let line = '';
     const output: string[] = [];

@@ -83,7 +83,9 @@ function latinNumber(value: string): number {
 
 function localeFor(system: CalendarSystem, gregorianEnglish = false): string {
   return system === 'persian'
-    ? 'fa-IR-u-ca-persian'
+    ? gregorianEnglish
+      ? 'en-GB-u-ca-persian-nu-latn'
+      : 'fa-IR-u-ca-persian'
     : gregorianEnglish
       ? 'en-GB-u-ca-gregory-nu-latn'
       : 'fa-IR-u-ca-gregory-nu-latn';
@@ -279,7 +281,7 @@ export function formatCalendarValue(
   if (!includeTime) return formattedDate;
   const time = /T(\d{2}:\d{2})/.exec(value)?.[1];
   return time
-    ? `${formattedDate}${system === 'gregorian' && gregorianEnglish ? ', ' : '، ساعت '}${time}`
+    ? `${formattedDate}${gregorianEnglish ? ', ' : '، ساعت '}${time}`
     : formattedDate;
 }
 

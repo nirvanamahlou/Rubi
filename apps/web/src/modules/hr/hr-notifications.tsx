@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import styles from './hr-workspace.module.css';

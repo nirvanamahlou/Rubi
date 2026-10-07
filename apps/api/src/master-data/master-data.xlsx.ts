@@ -1,3 +1,4 @@
+import { displayText } from '../common/i18n/language';
 import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 import { strToU8, zipSync } from 'fflate';
 
@@ -244,7 +245,7 @@ export function buildMasterDataXlsx(input: {
   resource: MasterDataResource;
   columns: readonly string[];
   records: readonly MasterDataRecord[];
-  locale: 'fa-IR';
+  locale: 'fa-IR' | 'en-US';
   timezone: string;
 }): Uint8Array {
   const formatter = new Intl.DateTimeFormat(input.locale, {
@@ -254,7 +255,14 @@ export function buildMasterDataXlsx(input: {
   });
   const header = input.columns
     .map((column, index) =>
-      cell(`${columnName(index)}1`, columnLabels[column] ?? column, 1),
+      cell(
+        `${columnName(index)}1`,
+        displayText(
+          columnLabels[column] ?? column,
+          input.locale === 'en-US' ? 'en' : 'fa',
+        ),
+        1,
+      ),
     )
     .join('');
   const dataRows = input.records
@@ -264,7 +272,13 @@ export function buildMasterDataXlsx(input: {
         .map((column, columnIndex) =>
           cell(
             `${columnName(columnIndex)}${rowNumber}`,
-            recordValue(record, column, formatter),
+            input.locale === 'en-US' &&
+              ['status', 'transportStatus'].includes(column)
+              ? displayText(
+                  String(recordValue(record, column, formatter)),
+                  'en',
+                )
+              : recordValue(record, column, formatter),
           ),
         )
         .join('');
@@ -276,14 +290,14 @@ export function buildMasterDataXlsx(input: {
   const range = `A1:${lastColumn}${lastRow}`;
   const worksheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetViews><sheetView workbookViewId="0" rightToLeft="1"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+  <sheetViews><sheetView workbookViewId="0" rightToLeft="${input.locale === 'en-US' ? '0' : '1'}"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
   <dimension ref="${range}"/>
   <sheetData><row r="1">${header}</row>${dataRows}</sheetData>
   <autoFilter ref="${range}"/>
 </worksheet>`;
   const workbook = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-  <sheets><sheet name="${escapeXml(resourceLabels[input.resource])}" sheetId="1" r:id="rId1"/></sheets>
+  <sheets><sheet name="${escapeXml(displayText(resourceLabels[input.resource], input.locale === 'en-US' ? 'en' : 'fa'))}" sheetId="1" r:id="rId1"/></sheets>
 </workbook>`;
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">

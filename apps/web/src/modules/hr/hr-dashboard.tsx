@@ -2,7 +2,7 @@
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import {
   ArrowLeft,
   CalendarCheck2,

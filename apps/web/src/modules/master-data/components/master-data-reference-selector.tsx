@@ -1,4 +1,6 @@
 'use client';
+import { referenceDisplayName } from '@/i18n/reference-name';
+import { useDisplayLanguage } from '@/i18n/locale-context';
 
 import type { MasterDataRecord } from '@nora/contracts';
 import { Search } from 'lucide-react';
@@ -52,6 +54,7 @@ export function MasterDataReferenceSelector({
   closeOnSelect?: boolean;
   invalid?: boolean;
 }) {
+  const language = useDisplayLanguage();
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const [options, setOptions] = useState<readonly MasterDataRecord[]>([]);
@@ -209,7 +212,10 @@ export function MasterDataReferenceSelector({
         {config.multiple
           ? selectedOptions.length
             ? selectedOptions
-                .map((record) => `${record.name} (${record.code})`)
+                .map(
+                  (record) =>
+                    `${referenceDisplayName(record, language)} (${record.code})`,
+                )
                 .join('، ')
             : selectedValues.length
               ? `${selectedValues.length.toLocaleString('fa-IR')} مرجع ثبت‌شده`
@@ -292,7 +298,7 @@ export function MasterDataReferenceSelector({
                 selectedOptions.map((record) => (
                   <Badge
                     key={record.id}
-                  >{`${record.name} · ${record.code}`}</Badge>
+                  >{`${referenceDisplayName(record, language)} · ${record.code}`}</Badge>
                 ))
               ) : (
                 <Badge>
@@ -332,7 +338,7 @@ export function MasterDataReferenceSelector({
           remote
           options={options.map((record) => ({
             value: mapReferenceOption(config, record),
-            label: record.name,
+            label: referenceDisplayName(record, language),
           }))}
           onSearchChange={setQuery}
           onOpenChange={setExpanded}
@@ -444,7 +450,9 @@ export function MasterDataReferenceSelector({
                       role="option"
                       type="button"
                     >
-                      <span className="font-semibold">{record.name}</span>
+                      <span className="font-semibold">
+                        {referenceDisplayName(record, language)}
+                      </span>
                       {config.target === 'organization-contacts' ? (
                         <span className="ms-2 text-xs" dir="ltr">
                           {String(

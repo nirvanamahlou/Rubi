@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type { MarketingProcessResponseV1 } from '@nora/contracts';
 
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -18,7 +19,7 @@ export async function fetchMarketingProcess(
   if (!base)
     throw new MarketingProcessApiError('نشانی API پیکربندی نشده است.', 0);
 
-  const response = await fetch(`${base}/marketing/process`, {
+  const response = await localizedFetch(`${base}/marketing/process`, {
     credentials: 'include',
     headers: { accept: 'application/json' },
     ...(signal ? { signal } : {}),

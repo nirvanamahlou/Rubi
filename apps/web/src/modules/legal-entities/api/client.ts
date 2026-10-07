@@ -1,3 +1,4 @@
+import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   LegalEntityContext,
   LegalEntityDetail,
@@ -27,7 +28,7 @@ async function request<T>(
   const baseUrl = getPublicApiBaseUrl();
   if (!baseUrl)
     throw new LegalEntitiesApiError('نشانی API پیکربندی نشده است.', 0);
-  const response = await fetch(`${baseUrl}/legal-entities${path}`, {
+  const response = await localizedFetch(`${baseUrl}/legal-entities${path}`, {
     credentials: 'include',
     ...init,
     headers: {

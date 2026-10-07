@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { redirect, usePathname, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import {
   canViewRoute,
   accessGroupForRoute,

@@ -2,7 +2,7 @@
 
 import type { IamPermissionCode, MasterDataRecord } from '@nora/contracts';
 import { Building2 } from 'lucide-react';
-import Image from 'next/image';
+import Image from '@/i18n/image';
 import { useEffect, useState } from 'react';
 import {
   canViewOrganizationLogo,

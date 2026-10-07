@@ -69,6 +69,7 @@ export function ContractFlightEditor({
               .map((airline) => ({
                 value: airline.name,
                 label: airline.name,
+                englishLabel: String(airline.attributes.englishName ?? ''),
                 searchText:
                   airline.name +
                   ' ' +

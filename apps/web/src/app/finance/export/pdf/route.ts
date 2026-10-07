@@ -1,3 +1,4 @@
+import { languageFromCookies } from '@/i18n/language';
 import type { FinanceExportSnapshotV1 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { renderFinancePdf } from '@/modules/finance/server/finance-pdf';
@@ -41,7 +42,10 @@ export async function GET(request: Request) {
         { status: response.status, headers },
       );
     const snapshot = (await response.json()) as FinanceExportSnapshotV1;
-    const bytes = await renderFinancePdf(snapshot);
+    const bytes = await renderFinancePdf(
+      snapshot,
+      languageFromCookies(request.headers.get('cookie')),
+    );
     return new Response(new Uint8Array(bytes), {
       headers: {
         ...headers,

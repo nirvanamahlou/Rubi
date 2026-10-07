@@ -1,4 +1,5 @@
 'use client';
+import { uiConfirm } from '@/i18n/dialogs';
 
 import { useCallback, useEffect, useState } from 'react';
 import type { WorkbenchFeedbackInboxResponseV1 } from '@nora/contracts';
@@ -123,7 +124,7 @@ export function HrSurveys() {
                 title="حذف"
                 disabled={Boolean(deletingId)}
                 onClick={async () => {
-                  if (!window.confirm('این نظرسنجی حذف شود؟')) return;
+                  if (!uiConfirm('این نظرسنجی حذف شود؟')) return;
                   setDeletingId(item.id);
                   try {
                     const baseUrl = getPublicApiBaseUrl();

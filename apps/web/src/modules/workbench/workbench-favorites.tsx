@@ -6,7 +6,7 @@ import type {
   WorkbenchNoteV1,
 } from '@nora/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/i18n/link';
 import { FileText, RefreshCw, Star, StickyNote } from 'lucide-react';
 import { Alert, Button, Card, EmptyState, Skeleton } from '@/components/ui';
 import { DOCUMENT_FAVORITES_CHANGED } from '@/modules/documents/model/favorites';

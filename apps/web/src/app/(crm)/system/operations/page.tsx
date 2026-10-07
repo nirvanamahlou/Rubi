@@ -1,8 +1,11 @@
+import { localizedMetadata } from '@/i18n/metadata';
 import type { Metadata } from 'next';
 
 import { SystemOperationsPanel } from '@/modules/system-management/components/system-operations-panel';
 
-export const metadata: Metadata = { title: 'عملیات مدیریت سیستم' };
+export async function generateMetadata(): Promise<Metadata> {
+  return localizedMetadata({ title: 'عملیات مدیریت سیستم' });
+}
 
 export default function Page() {
   return (

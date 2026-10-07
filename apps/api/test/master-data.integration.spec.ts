@@ -99,6 +99,37 @@ describe('Master Data HTTP contract', () => {
       expect.objectContaining({ resource: 'countries', format: 'xlsx' }),
       expect.objectContaining({ userId: expect.any(String) }),
       undefined,
+      'fa',
+    );
+  });
+
+  it('forwards the personal English display language without rewriting the export payload', async () => {
+    await request(app.getHttpServer())
+      .post('/master-data/exports/xlsx/download')
+      .set('Accept-Language', 'en-US,en;q=0.9')
+      .send({
+        resource: 'countries',
+        format: 'xlsx',
+        filters: {
+          search: 'ایران',
+          status: 'all',
+          sortBy: 'name',
+          sortDirection: 'asc',
+        },
+        columns: ['code', 'name', 'status'],
+        locale: 'fa-IR',
+        timezone: 'Asia/Tehran',
+      })
+      .expect(200);
+    expect(service.downloadXlsx).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resource: 'countries',
+        filters: expect.objectContaining({ search: 'ایران' }),
+        locale: 'fa-IR',
+      }),
+      expect.objectContaining({ userId: expect.any(String) }),
+      undefined,
+      'en',
     );
   });
 
