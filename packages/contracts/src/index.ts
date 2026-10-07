@@ -22,3 +22,5 @@ export * from './workbench';
 export * from './customer-affairs';
 export * from './procurement';
 export * from './system-management';
+
+export * from './accounting';

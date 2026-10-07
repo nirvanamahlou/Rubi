@@ -32,6 +32,7 @@ export function historyCursor(query: FinanceHistoryQueryV1): Cursor | null {
       (typeof query.requestId !== 'string' || !uuid.test(query.requestId)))
   )
     throw new BadRequestException('فیلتر تاریخچه معتبر نیست.');
+  historyDateRange(query, 'transferAt');
   if (query.cursor === undefined) return null;
   try {
     if (typeof query.cursor !== 'string' || query.cursor.length > 500)
@@ -51,6 +52,27 @@ export function historyCursor(query: FinanceHistoryQueryV1): Cursor | null {
   } catch {
     throw new BadRequestException('صفحه تاریخچه معتبر نیست.');
   }
+}
+export function historyDateRange(query: FinanceHistoryQueryV1, field: string) {
+  const valid = (date: string) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+    Number.isFinite(Date.parse(date)) &&
+    new Date(date).toISOString().slice(0, 10) === date;
+  if (
+    (query.from !== undefined && !valid(query.from)) ||
+    (query.to !== undefined && !valid(query.to)) ||
+    (query.from && query.to && query.from > query.to)
+  )
+    throw new BadRequestException('بازه تاریخچه معتبر نیست.');
+  if (!query.from && !query.to) return {};
+  return {
+    [field]: {
+      ...(query.from ? { gte: new Date(query.from + 'T00:00:00.000Z') } : {}),
+      ...(query.to
+        ? { lt: new Date(Date.parse(query.to + 'T00:00:00.000Z') + 86400000) }
+        : {}),
+    },
+  };
 }
 /** Global descending (date, source, id) order, including equal-date installments. */
 export function historyAfter(
@@ -125,6 +147,7 @@ export async function readFinanceHistory(
             actor,
             {
               ...historyAfter(cursor, 'SALES', 'financeConfirmedAt'),
+              ...historyDateRange(query, 'financeConfirmedAt'),
               ...(query.recordId ? { id: query.recordId } : {}),
             },
             take,
@@ -139,6 +162,7 @@ export async function readFinanceHistory(
                 ...(query.requestId ? { requestId: query.requestId } : {}),
               },
               ...historyAfter(cursor, 'TICKET', 'transferAt'),
+              ...historyDateRange(query, 'transferAt'),
               ...(query.recordId ? { id: query.recordId } : {}),
             },
             include: { cost: true, account: true, paymentMethod: true },
@@ -154,6 +178,7 @@ export async function readFinanceHistory(
               transferAt: { not: null },
               ...(query.requestId ? { sourceId: query.requestId } : {}),
               ...historyAfter(cursor, 'INVOICE', 'transferAt'),
+              ...historyDateRange(query, 'transferAt'),
               ...(query.recordId ? { id: query.recordId } : {}),
             },
             include: { account: true, paymentMethod: true },
@@ -175,6 +200,7 @@ export async function readFinanceHistory(
                 ...(query.requestId ? { id: query.requestId } : {}),
               },
               ...historyAfter(cursor, 'OPERATIONAL', 'transferAt'),
+              ...historyDateRange(query, 'transferAt'),
               ...(query.recordId ? { id: query.recordId } : {}),
             },
             include: { request: true, account: true },
@@ -191,6 +217,7 @@ export async function readFinanceHistory(
           paidAmount: { gt: 0 },
           transferAt: { not: null },
           ...historyAfter(cursor, 'RESERVATIONS', 'transferAt'),
+          ...historyDateRange(query, 'transferAt'),
           ...(query.recordId ? { id: query.recordId } : {}),
         },
         include: { account: true, paymentMethod: true },
