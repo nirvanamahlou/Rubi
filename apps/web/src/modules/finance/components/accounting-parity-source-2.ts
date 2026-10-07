@@ -530,7 +530,7 @@ export const accountingParitySource2 = [
     fields: [
       {
         label: 'گروه حساب',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdbAccountGroup',
       },
@@ -554,7 +554,7 @@ export const accountingParitySource2 = [
       },
       {
         label: 'حساب کل',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdbGL',
       },
@@ -590,7 +590,7 @@ export const accountingParitySource2 = [
       },
       {
         label: 'معین',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdbSL',
       },
@@ -668,25 +668,25 @@ export const accountingParitySource2 = [
       },
       {
         label: 'گزارش ساختاری',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdbStructural',
       },
       {
         label: 'ساختار حساب ها',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdCOA',
       },
       {
         label: 'انواع تفصیلی تخصیص داده شده به سطوح',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdDLLevels',
       },
       {
         label: 'حساب های معین طرف مقابل',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdCounterPart',
       },

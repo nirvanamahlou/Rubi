@@ -33,7 +33,7 @@ export type AccountingParityImplementation =
   | 'evidence-only';
 export interface AccountingParityField {
   label: string;
-  type: 'text' | 'date' | 'checkbox' | 'textarea' | 'password';
+  type: 'text' | 'date' | 'checkbox' | 'radio' | 'textarea' | 'password';
   disabled: boolean;
   sourceControlId?: string;
 }
@@ -103,7 +103,7 @@ const implementationByRoute: Readonly<
   'general-ledger/accounts/lists/details': 'configuration-list',
   'general-ledger/accounts/lists/detail-type-converters': 'evidence-only',
   'general-ledger/documents/lists/journals': 'journal-list',
-  'general-ledger/documents/lists/gl-vouchers': 'journal-list',
+  'general-ledger/documents/lists/gl-vouchers': 'evidence-only',
   'general-ledger/documents/lists/automatic-templates': 'template-list',
   'general-ledger/documents/lists/revaluation-templates': 'template-list',
   'general-ledger/year-end/lists/closing-templates': 'template-list',
@@ -114,6 +114,7 @@ const menuOnly = (
   title: string,
   parentPath: string,
   sourceMenuKey: string,
+  blocker?: string,
 ): AccountingParityCapture => ({
   route,
   title,
@@ -123,6 +124,7 @@ const menuOnly = (
   fields: [],
   columns: [],
   actions: [],
+  ...(blocker ? { blocker } : {}),
   stage: title,
 });
 
@@ -174,6 +176,7 @@ const menuOnlyCaptures: readonly AccountingParityCapture[] = [
     'سند کل',
     'مالی / دفتر کل / اسناد / فهرست ها',
     'Financial.GL.VoucherManagement.Lists.GLVoucherList',
+    'موجودیت و قرارداد تجمیع سند کل در روبی تعریف نشده و فهرست سند حسابداری جایگزین آن نیست',
   ),
   menuOnly(
     'general-ledger/documents/issue-gl-voucher',

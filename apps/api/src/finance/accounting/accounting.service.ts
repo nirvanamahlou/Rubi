@@ -33,6 +33,16 @@ type BufferedStateEvent = {
   newDocumentDate?: string | null;
   reason?: string | null;
 };
+type AccountingTemplateWithLines = Prisma.AccountingTemplateGetPayload<{
+  include: { lines: true };
+}>;
+const templateDto = (template: AccountingTemplateWithLines) => ({
+  ...template,
+  lines: template.lines.map((line) => ({
+    ...line,
+    percentage: v.decimal(line.percentage.toFixed(8))!,
+  })),
+});
 const journalInclude = { lines: { orderBy: { position: 'asc' as const } } };
 const json = (value: unknown) =>
   JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
@@ -259,7 +269,7 @@ export class AccountingService {
           fxRates,
           accountGroups,
           detailGroups,
-          templates,
+          templates: templates.map(templateDto),
         };
       },
       { isolationLevel: 'RepeatableRead' },
@@ -1795,7 +1805,7 @@ export class AccountingService {
           detail5Id = v.uuid(line.detail5Id, true),
           detail6Id = v.uuid(line.detail6Id, true),
           side = v.text(line.side, 8, true),
-          percentage = v.decimal(line.percentage)!;
+          percentage = v.decimalAtScale(line.percentage, 8);
         if (!['DEBIT', 'CREDIT'].includes(side))
           v.invalid('ماهیت ردیف الگو معتبر نیست.');
         if (
@@ -1860,20 +1870,24 @@ export class AccountingService {
           await tx.accountingTemplateLine.createMany({
             data: lines.map((line) => ({ ...line, templateId: id })),
           });
-        return tx.accountingTemplate.findUniqueOrThrow({
-          where: { id },
-          include: { lines: { orderBy: { position: 'asc' } } },
-        });
+        return templateDto(
+          await tx.accountingTemplate.findUniqueOrThrow({
+            where: { id },
+            include: { lines: { orderBy: { position: 'asc' } } },
+          }),
+        );
       }
       await tx.accountingTemplate.create({ data: { id, ...data } });
       if (lines.length)
         await tx.accountingTemplateLine.createMany({
           data: lines.map((line) => ({ ...line, templateId: id })),
         });
-      return tx.accountingTemplate.findUniqueOrThrow({
-        where: { id },
-        include: { lines: { orderBy: { position: 'asc' } } },
-      });
+      return templateDto(
+        await tx.accountingTemplate.findUniqueOrThrow({
+          where: { id },
+          include: { lines: { orderBy: { position: 'asc' } } },
+        }),
+      );
     }
     if (action === 'automatic-run')
       v.rule(

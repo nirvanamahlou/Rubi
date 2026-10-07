@@ -76,6 +76,13 @@ export function decimal(value: unknown, optional = false): string | null {
     invalid('مبلغ یا نرخ باید عدد مثبت با حداکثر ۱۸ رقم اعشار باشد.');
   return DecimalValue.parse(value).toString();
 }
+export function decimalAtScale(value: unknown, scale: number): string {
+  const normalized = decimal(value)!;
+  const fractionalDigits = normalized.split('.')[1]?.length ?? 0;
+  if (fractionalDigits > scale)
+    invalid(`عدد باید در حداکثر ${scale} رقم اعشار دقیق باشد.`);
+  return normalized;
+}
 export function attributes(value: unknown): AccountingAttributes {
   const input = value === undefined ? {} : object(value);
   if (JSON.stringify(input).length > 16000 || Object.keys(input).length > 50)

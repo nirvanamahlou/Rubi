@@ -51,6 +51,20 @@ function EvidenceField({
         />
       </FormField>
     );
+  if (field.type === 'radio')
+    return (
+      <FormField id={id} label={field.label}>
+        <input
+          aria-label={field.label}
+          checked={false}
+          className="size-5 accent-primary"
+          disabled
+          id={id}
+          readOnly
+          type="radio"
+        />
+      </FormField>
+    );
   if (field.type === 'textarea')
     return (
       <FormField id={id} label={field.label}>

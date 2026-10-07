@@ -546,6 +546,308 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       }),
     ).rejects.toThrow();
   });
+  it('enforces concurrent group/template CAS, exact percentages, replacement rollback and same-book database constraints', async () => {
+    const group = await command<{
+      id: string;
+      version: number;
+      members: { accountId: string }[];
+    }>('save-account-group', {
+      code: `CAS-${randomUUID().slice(0, 6)}`,
+      title: 'Concurrent group',
+      memberIds: [debitId],
+    });
+    const groupKeys = [randomUUID(), randomUUID()];
+    const groupRace = await Promise.allSettled([
+      command(
+        'save-account-group',
+        {
+          id: group.id,
+          code: group.id.slice(0, 20),
+          title: 'Winner A',
+          memberIds: [debitId],
+        },
+        group.version,
+        maker,
+        groupKeys[0],
+      ),
+      command(
+        'save-account-group',
+        {
+          id: group.id,
+          code: group.id.slice(0, 20),
+          title: 'Winner B',
+          memberIds: [creditId],
+        },
+        group.version,
+        maker,
+        groupKeys[1],
+      ),
+    ]);
+    expect(
+      groupRace.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      groupRace.filter((result) => result.status === 'rejected'),
+    ).toHaveLength(1);
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: { in: groupKeys } },
+      }),
+    ).toBe(1);
+    const storedGroup = await db.accountingAccountGroup.findUniqueOrThrow({
+      where: { id: group.id },
+      include: { members: true },
+    });
+    expect(storedGroup.version).toBe(2);
+    expect(storedGroup.members).toHaveLength(1);
+
+    const template = await command<{
+      id: string;
+      version: number;
+      lines: { percentage: { toString(): string } | string }[];
+    }>('save-template', {
+      kind: 'AUTOMATIC',
+      code: `PCT-${randomUUID().slice(0, 6)}`,
+      title: 'Exact percentage template',
+      voucherTypeId: typeId,
+      lines: [{ accountId: debitId, side: 'DEBIT', percentage: '1.12345678' }],
+    });
+    expect(template.lines[0]!.percentage.toString()).toBe('1.12345678');
+    const tiny = await command<{
+      id: string;
+      version: number;
+      lines: { percentage: string }[];
+    }>('save-template', {
+      kind: 'AUTOMATIC',
+      code: `TINY-${randomUUID().slice(0, 6)}`,
+      title: 'Tiny exact percentage',
+      voucherTypeId: typeId,
+      lines: [{ accountId: debitId, side: 'DEBIT', percentage: '0.00000001' }],
+    });
+    expect(tiny.lines[0]!.percentage).toBe('0.00000001');
+    const tinyUpdated = await command<typeof tiny>(
+      'save-template',
+      {
+        id: tiny.id,
+        kind: 'AUTOMATIC',
+        code: `TINY-${tiny.id.slice(0, 6)}`,
+        title: 'Tiny exact percentage saved again',
+        voucherTypeId: typeId,
+        lines: [
+          {
+            accountId: debitId,
+            side: 'DEBIT',
+            percentage: tiny.lines[0]!.percentage,
+          },
+        ],
+      },
+      tiny.version,
+    );
+    expect(tinyUpdated.lines[0]!.percentage).toBe('0.00000001');
+    const tinySnapshot = await service.snapshot(bookId, maker);
+    expect(
+      tinySnapshot.templates.find((item) => item.id === tiny.id)?.lines[0]
+        ?.percentage,
+    ).toBe('0.00000001');
+    const normalized = await command<typeof template>(
+      'save-template',
+      {
+        id: template.id,
+        kind: 'AUTOMATIC',
+        code: `PCT-${template.id.slice(0, 6)}`,
+        title: 'Exact percentage template',
+        voucherTypeId: typeId,
+        lines: [
+          { accountId: debitId, side: 'DEBIT', percentage: '1.123456780000' },
+        ],
+      },
+      template.version,
+    );
+    expect(normalized.lines[0]!.percentage.toString()).toBe('1.12345678');
+    for (const percentage of ['1.123456789', '0.000000001'])
+      await expect(
+        command(
+          'save-template',
+          {
+            id: template.id,
+            kind: 'AUTOMATIC',
+            code: `PCT-${template.id.slice(0, 6)}`,
+            title: 'Rejected replacement',
+            voucherTypeId: typeId,
+            lines: [{ accountId: creditId, side: 'CREDIT', percentage }],
+          },
+          normalized.version,
+        ),
+      ).rejects.toThrow();
+    const afterRejectedReplacement =
+      await db.accountingTemplate.findUniqueOrThrow({
+        where: { id: template.id },
+        include: { lines: true },
+      });
+    expect(afterRejectedReplacement.version).toBe(normalized.version);
+    expect(afterRejectedReplacement.lines).toHaveLength(1);
+    expect(afterRejectedReplacement.lines[0]!.accountId).toBe(debitId);
+    expect(afterRejectedReplacement.lines[0]!.percentage.toString()).toBe(
+      '1.12345678',
+    );
+
+    const templateKeys = [randomUUID(), randomUUID()];
+    const templateRace = await Promise.allSettled([
+      command(
+        'save-template',
+        {
+          id: template.id,
+          kind: 'AUTOMATIC',
+          code: `PCT-${template.id.slice(0, 6)}`,
+          title: 'Template winner A',
+          voucherTypeId: typeId,
+          lines: [{ accountId: debitId, side: 'DEBIT', percentage: '25' }],
+        },
+        normalized.version,
+        maker,
+        templateKeys[0],
+      ),
+      command(
+        'save-template',
+        {
+          id: template.id,
+          kind: 'AUTOMATIC',
+          code: `PCT-${template.id.slice(0, 6)}`,
+          title: 'Template winner B',
+          voucherTypeId: typeId,
+          lines: [{ accountId: creditId, side: 'CREDIT', percentage: '75' }],
+        },
+        normalized.version,
+        maker,
+        templateKeys[1],
+      ),
+    ]);
+    expect(
+      templateRace.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      templateRace.filter((result) => result.status === 'rejected'),
+    ).toHaveLength(1);
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: { in: templateKeys } },
+      }),
+    ).toBe(1);
+    const storedTemplate = await db.accountingTemplate.findUniqueOrThrow({
+      where: { id: template.id },
+      include: { lines: true },
+    });
+    expect(storedTemplate.version).toBe(normalized.version + 1);
+    expect(storedTemplate.lines).toHaveLength(1);
+
+    const otherBook = await service.createBook(
+      {
+        id: randomUUID(),
+        branchId,
+        code: `FK-${randomUUID().slice(0, 6)}`,
+        title: 'Foreign FK book',
+        baseCurrency: 'IRR',
+        approvalPolicy: 'DUAL_CONTROL',
+      },
+      maker,
+    );
+    const foreignType = (await service.command(
+      otherBook.id,
+      'save-configuration',
+      {
+        key: randomUUID(),
+        payload: {
+          kind: 'detail-types',
+          code: '01',
+          title: 'Foreign type',
+          attributes: {
+            classificationNumberLength: '2',
+            defaultFirstCode: '01',
+          },
+        },
+      },
+      maker,
+    )) as { id: string };
+    const foreignDetail = (await service.command(
+      otherBook.id,
+      'save-detail',
+      {
+        key: randomUUID(),
+        payload: {
+          typeId: foreignType.id,
+          code: '01',
+          title: 'Foreign detail',
+        },
+      },
+      maker,
+    )) as { id: string };
+    const detailGroup = await command<{ id: string }>('save-detail-group', {
+      code: `DG-${randomUUID().slice(0, 6)}`,
+      title: 'Database FK group',
+      memberIds: [],
+    });
+    await expect(
+      db.accountingDetailGroupMember.create({
+        data: {
+          bookId,
+          groupId: detailGroup.id,
+          detailId: foreignDetail.id,
+        },
+      }),
+    ).rejects.toThrow();
+    await expect(
+      db.accountingTemplateLine.create({
+        data: {
+          bookId,
+          templateId: template.id,
+          position: 20,
+          accountId: debitId,
+          detail4Id: foreignDetail.id,
+          side: 'DEBIT',
+          percentage: '1',
+        },
+      }),
+    ).rejects.toThrow();
+    await expect(
+      db.accountingTemplateLine.create({
+        data: {
+          bookId,
+          templateId: template.id,
+          position: storedTemplate.lines[0]!.position,
+          accountId: debitId,
+          side: 'DEBIT',
+          percentage: '1',
+        },
+      }),
+    ).rejects.toThrow();
+
+    const foreignJournal = (await service.command(
+      otherBook.id,
+      'journal-save',
+      { key: randomUUID(), payload: { lines: [] } },
+      maker,
+    )) as { id: string; version: number };
+    const foreignCommand = await db.accountingCommand.findFirstOrThrow({
+      where: { bookId: otherBook.id, action: 'journal-save' },
+      orderBy: { createdAt: 'desc' },
+    });
+    await expect(
+      db.accountingJournalStateEvent.create({
+        data: {
+          bookId: otherBook.id,
+          journalId: foreignJournal.id,
+          commandId: foreignCommand.id,
+          actorId: makerId,
+          sequence: 99,
+          eventType: 'MOVE',
+          fromStatus: 'DRAFT',
+          toStatus: 'DRAFT',
+          journalVersion: 99,
+          oldPeriodId: periodId,
+        },
+      }),
+    ).rejects.toThrow();
+  }, 30000);
   it('moves returned drafts atomically, resets approval residue and appends immutable events once', async () => {
     let journal = await draft();
     journal = await command<AccountingJournalV1>(
@@ -686,6 +988,293 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     await command('cancel', { id: first.id }, first.version);
     await command('cancel', { id: second.id }, second.version);
   });
+  it('rejects move authority/provenance violations and serializes both move entrypoints against transitions', async () => {
+    const unprivileged: AuthenticatedActor = {
+      userId: makerId,
+      sessionId: randomUUID(),
+      branchIds: [branchId],
+      permissions: ['finance.read'],
+    };
+    const permissionDraft = await draft();
+    await expect(
+      command(
+        'move-drafts',
+        {
+          items: [
+            {
+              id: permissionDraft.id,
+              expectedVersion: permissionDraft.version,
+            },
+          ],
+          periodId,
+          documentDate: '2026-05-07',
+          reason: 'Must not move',
+        },
+        undefined,
+        unprivileged,
+      ),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingJournal.findUniqueOrThrow({
+        where: { id: permissionDraft.id },
+      }),
+    ).toMatchObject({
+      version: permissionDraft.version,
+      documentDate: '2026-05-01',
+    });
+
+    const foreignActorId = randomUUID();
+    await db.user.create({
+      data: {
+        id: foreignActorId,
+        username: foreignActorId,
+        displayName: 'Synthetic restricted accountant',
+        passwordHash: 'not-a-login-credential',
+      },
+    });
+    const foreignActor: AuthenticatedActor = {
+      userId: foreignActorId,
+      sessionId: randomUUID(),
+      branchIds: [branchId],
+      permissions: ['finance.read', 'finance.journal.create'],
+    };
+    await expect(
+      command(
+        'move-drafts',
+        {
+          items: [
+            {
+              id: permissionDraft.id,
+              expectedVersion: permissionDraft.version,
+            },
+          ],
+          periodId,
+          documentDate: '2026-05-07',
+          reason: 'Foreign maker',
+        },
+        undefined,
+        foreignActor,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      command('move-drafts', {
+        items: [
+          { id: permissionDraft.id, expectedVersion: permissionDraft.version },
+          { id: permissionDraft.id, expectedVersion: permissionDraft.version },
+        ],
+        periodId,
+        documentDate: '2026-05-07',
+        reason: 'Duplicate ids',
+      }),
+    ).rejects.toThrow();
+
+    await db.accountingJournal.update({
+      where: { id: permissionDraft.id },
+      data: { number: 991001 },
+    });
+    await expect(
+      command('move-drafts', {
+        items: [
+          { id: permissionDraft.id, expectedVersion: permissionDraft.version },
+        ],
+        periodId,
+        documentDate: '2026-05-07',
+        reason: 'Numbered draft',
+      }),
+    ).rejects.toThrow();
+    await db.accountingJournal.update({
+      where: { id: permissionDraft.id },
+      data: { number: null, sourceKey: `GENERATED:${randomUUID()}` },
+    });
+    await expect(
+      command(
+        'journal-save',
+        {
+          id: permissionDraft.id,
+          periodId,
+          typeId,
+          documentDate: '2026-05-07',
+          description: permissionDraft.description,
+          lines: permissionDraft.lines,
+        },
+        permissionDraft.version,
+      ),
+    ).rejects.toThrow();
+    await db.accountingJournal.update({
+      where: { id: permissionDraft.id },
+      data: { sourceKey: null },
+    });
+
+    const ownApproval = await command<AccountingJournalV1>(
+      'submit',
+      { id: permissionDraft.id },
+      permissionDraft.version,
+    );
+    await expect(
+      command('approve', { id: ownApproval.id }, ownApproval.version),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingJournal.findUniqueOrThrow({
+        where: { id: ownApproval.id },
+      }),
+    ).toMatchObject({
+      status: 'PENDING_APPROVAL',
+      version: ownApproval.version,
+    });
+    const returned = await command<AccountingJournalV1>(
+      'return',
+      { id: ownApproval.id, reason: 'Cleanup' },
+      ownApproval.version,
+      checker,
+    );
+    await command('cancel', { id: returned.id }, returned.version);
+
+    const saveRaceDraft = await draft();
+    const saveMoveKey = randomUUID(),
+      submitKey = randomUUID();
+    const saveMoveRace = await Promise.allSettled([
+      command<AccountingJournalV1>(
+        'journal-save',
+        {
+          id: saveRaceDraft.id,
+          periodId,
+          typeId,
+          documentDate: '2026-05-08',
+          description: saveRaceDraft.description,
+          lines: saveRaceDraft.lines,
+          moveReason: 'Concurrent save move',
+        },
+        saveRaceDraft.version,
+        maker,
+        saveMoveKey,
+      ),
+      command<AccountingJournalV1>(
+        'submit',
+        { id: saveRaceDraft.id },
+        saveRaceDraft.version,
+        maker,
+        submitKey,
+      ),
+    ]);
+    expect(
+      saveMoveRace.filter((result) => result.status === 'fulfilled'),
+    ).toHaveLength(1);
+    expect(
+      saveMoveRace.filter((result) => result.status === 'rejected'),
+    ).toHaveLength(1);
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: { in: [saveMoveKey, submitKey] } },
+      }),
+    ).toBe(1);
+    const saveRaceState = await command<AccountingJournalV1>(
+      'cancel',
+      { id: saveRaceDraft.id, reason: 'Race cleanup' },
+      (
+        await db.accountingJournal.findUniqueOrThrow({
+          where: { id: saveRaceDraft.id },
+        })
+      ).version,
+      checker,
+    );
+    expect(saveRaceState.status).toBe('CANCELLED');
+
+    const batchRaceDraft = await draft();
+    const batchMoveKey = randomUUID(),
+      closeKey = randomUUID();
+    const batchCloseRace = await Promise.allSettled([
+      command(
+        'move-drafts',
+        {
+          items: [
+            { id: batchRaceDraft.id, expectedVersion: batchRaceDraft.version },
+          ],
+          periodId,
+          documentDate: '2026-05-09',
+          reason: 'Concurrent batch move',
+        },
+        undefined,
+        maker,
+        batchMoveKey,
+      ),
+      command('close-period', { id: periodId }, 1, maker, closeKey),
+    ]);
+    expect(batchCloseRace[0]!.status).toBe('fulfilled');
+    expect(batchCloseRace[1]!.status).toBe('rejected');
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: { in: [batchMoveKey, closeKey] } },
+      }),
+    ).toBe(1);
+    expect(
+      await db.accountingPeriod.findUniqueOrThrow({ where: { id: periodId } }),
+    ).toMatchObject({ status: 'OPEN', version: 1 });
+    const batchRaceState = await db.accountingJournal.findUniqueOrThrow({
+      where: { id: batchRaceDraft.id },
+    });
+    expect(batchRaceState.documentDate).toBe('2026-05-09');
+    await command('cancel', { id: batchRaceState.id }, batchRaceState.version);
+  }, 30000);
+
+  it('rolls journal, command and events back when prospective event insertion fails', async () => {
+    const journal = await draft(),
+      key = randomUUID(),
+      beforeEventCount = await db.accountingJournalStateEvent.count({
+        where: { journalId: journal.id },
+      });
+    await db.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION accounting_test_reject_event() RETURNS trigger AS $$
+      BEGIN
+        IF NEW.reason = 'FORCE_EVENT_FAILURE' THEN
+          RAISE EXCEPTION 'forced accounting event failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $$ LANGUAGE plpgsql;
+      DROP TRIGGER IF EXISTS accounting_test_reject_event_trigger ON accounting_journal_state_events;
+      CREATE TRIGGER accounting_test_reject_event_trigger
+      BEFORE INSERT ON accounting_journal_state_events
+      FOR EACH ROW EXECUTE FUNCTION accounting_test_reject_event();
+    `);
+    try {
+      await expect(
+        command(
+          'journal-save',
+          {
+            id: journal.id,
+            periodId,
+            typeId,
+            documentDate: '2026-05-10',
+            description: journal.description,
+            lines: journal.lines,
+            moveReason: 'FORCE_EVENT_FAILURE',
+          },
+          journal.version,
+          maker,
+          key,
+        ),
+      ).rejects.toThrow('forced accounting event failure');
+    } finally {
+      await db.$executeRawUnsafe(`
+        DROP TRIGGER IF EXISTS accounting_test_reject_event_trigger ON accounting_journal_state_events;
+        DROP FUNCTION IF EXISTS accounting_test_reject_event();
+      `);
+    }
+    expect(
+      await db.accountingJournal.findUniqueOrThrow({
+        where: { id: journal.id },
+      }),
+    ).toMatchObject({ version: journal.version, documentDate: '2026-05-01' });
+    expect(await db.accountingCommand.count({ where: { bookId, key } })).toBe(
+      0,
+    );
+    expect(
+      await db.accountingJournalStateEvent.count({
+        where: { journalId: journal.id },
+      }),
+    ).toBe(beforeEventCount);
+    await command('cancel', { id: journal.id }, journal.version);
+  }, 30000);
   it('marks a pre-event cancelled journal as historical and records only prospective restore evidence', async () => {
     const journal = await db.accountingJournal.create({
       data: {
@@ -1624,6 +2213,76 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
           where: { journalId: journal.id, eventType: 'CREATE' },
         }),
       ).toBe(1);
+  });
+  it('rejects selected or percentage closing and revaluation template execution without effects', async () => {
+    const closing = await command<{ id: string; version: number }>(
+      'save-template',
+      {
+        kind: 'CLOSING',
+        code: `CLOSE-SELECTED-${randomUUID().slice(0, 6)}`,
+        title: 'Unsupported selected closing',
+        voucherTypeId: typeId,
+        retainedAccountId: debitId,
+        lines: [
+          { accountId: creditId, side: 'CREDIT', percentage: '50.00000000' },
+        ],
+      },
+    );
+    const revaluation = await command<{ id: string; version: number }>(
+      'save-template',
+      {
+        kind: 'REVALUATION',
+        code: `REVALUE-SELECTED-${randomUUID().slice(0, 6)}`,
+        title: 'Unsupported selected revaluation',
+        voucherTypeId: typeId,
+        gainAccountId: debitId,
+        lossAccountId: creditId,
+        lines: [
+          { accountId: debitId, side: 'DEBIT', percentage: '100.00000000' },
+        ],
+      },
+    );
+    const before = await db.accountingJournal.count({ where: { bookId } }),
+      closingKey = randomUUID(),
+      revaluationKey = randomUUID();
+    await expect(
+      command(
+        'year-end-closing',
+        {
+          periodId,
+          templateId: closing.id,
+          templateVersion: closing.version,
+          documentDate: '2026-12-31',
+          fxCarryPolicy: 'HISTORICAL_LOTS',
+        },
+        undefined,
+        maker,
+        closingKey,
+      ),
+    ).rejects.toThrow('دارای ردیف انتخابی یا درصدی هنوز پشتیبانی نمی‌شود');
+    await expect(
+      command(
+        'revaluation-preview',
+        {
+          periodId,
+          asOfDate: '2026-10-07',
+          templateId: revaluation.id,
+          templateVersion: revaluation.version,
+          rates: {},
+        },
+        undefined,
+        maker,
+        revaluationKey,
+      ),
+    ).rejects.toThrow('دارای ردیف انتخابی یا درصدی هنوز پشتیبانی نمی‌شود');
+    expect(await db.accountingJournal.count({ where: { bookId } })).toBe(
+      before,
+    );
+    expect(
+      await db.accountingCommand.count({
+        where: { bookId, key: { in: [closingKey, revaluationKey] } },
+      }),
+    ).toBe(0);
   });
   it('executes only the supported all-temporary closing template shape', async () => {
     const base = await db.accountingAccount.findUniqueOrThrow({

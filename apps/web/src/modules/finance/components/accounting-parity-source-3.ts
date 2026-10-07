@@ -685,19 +685,19 @@ export const accountingParitySource3 = [
       },
       {
         label: 'اقلام تطبیق نشده',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdoMisMatchedItem',
       },
       {
         label: 'اقلام تطبیق شده',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdoMatchedItem',
       },
       {
         label: 'همه اقلام',
-        type: 'text',
+        type: 'radio',
         disabled: false,
         sourceControlId: 'rdoAllItems',
       },

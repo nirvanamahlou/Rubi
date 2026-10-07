@@ -15,6 +15,7 @@ import { Input, Textarea, FormField } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { accountingApi } from '../api/accounting-api';
+import { submitPersistedEditor } from './accounting-persisted-editor';
 
 type Run = <T = unknown>(
   action: string,
@@ -407,14 +408,15 @@ export function AccountingGroupingEditor({
           className="space-y-4 rounded-xl border p-4"
           onSubmit={(event) => {
             event.preventDefault();
-            void run(
+            void submitPersistedEditor(
+              run,
               kind === 'account' ? 'save-account-group' : 'save-detail-group',
               {
                 ...draft,
                 memberIds: members,
-                ...(selected ? { id: selected.id } : {}),
               },
-              selected?.version,
+              selected,
+              open,
             );
           }}
         >
@@ -568,15 +570,16 @@ export function AccountingTemplateEditor({
           className="space-y-4 rounded-xl border p-4"
           onSubmit={(event) => {
             event.preventDefault();
-            void run(
+            void submitPersistedEditor(
+              run,
               'save-template',
               {
                 ...draft,
                 kind,
                 lines,
-                ...(selected ? { id: selected.id } : {}),
               },
-              selected?.version,
+              selected,
+              open,
             );
           }}
         >
