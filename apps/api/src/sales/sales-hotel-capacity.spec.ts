@@ -36,6 +36,85 @@ function serviceWithRoomAvailability(
 }
 
 describe('Sales hotel room capacity validation', () => {
+  it.each([12, 17])(
+    'validates under18 child age %i consistently on save and confirmation',
+    async (age) => {
+      const rate = {
+        adults: 2,
+        childAges: [{ min: 12, maxExclusive: 18 }],
+        startsOn: '2026-10-01',
+        endsOnExclusive: '2026-11-01',
+        amount: '120.50',
+        currencyCode: 'EUR',
+        composition: '2 AD + 1 CHD',
+        board: 'BB',
+      };
+      const roomAvailability = vi
+        .fn()
+        .mockResolvedValue({ occupancyRates: [rate] });
+      const service = serviceWithRoomAvailability(roomAvailability);
+      const hotelSelection = {
+        hotelId: 'hotel-1',
+        roomTypeId: 'room-1',
+        checkInDate: '2026-10-05',
+        checkOutDate: '2026-10-07',
+        roomCount: 1,
+        serviceClientKey: 'hotel-service',
+      };
+      const passengers = [
+        '1990-01-01',
+        '1991-01-01',
+        `${2026 - age}-10-05`,
+      ].map((birthDate) => ({
+        birthDate,
+        serviceClientKeys: ['hotel-service'],
+      }));
+      const input = {
+        departureDate: '2026-10-05',
+        hotelSelection,
+        passengers,
+      } as unknown as SalesContractCreateRequest;
+      const contract = {
+        branchId: 'branch-1',
+        departureDate: '2026-10-05',
+        hotelSelection,
+        passengersDetail: passengers,
+      } as unknown as SalesContractDetail;
+      await expect(
+        service.assertHotelRoomCapacity(input, 'branch-1'),
+      ).resolves.toBeUndefined();
+      await expect(
+        service.assertPresentedHotelRoomCapacity(contract),
+      ).resolves.toBeUndefined();
+      roomAvailability.mockResolvedValue({
+        occupancyRates: [
+          { ...rate, childAges: [{ min: 2, maxExclusive: 12 }] },
+        ],
+      });
+      await expect(
+        service.assertHotelRoomCapacity(input, 'branch-1'),
+      ).rejects.toMatchObject({
+        response: { code: 'HOTEL_OCCUPANCY_RATE_UNAVAILABLE' },
+      });
+      await expect(
+        service.assertPresentedHotelRoomCapacity(contract),
+      ).rejects.toMatchObject({
+        response: { code: 'HOTEL_OCCUPANCY_RATE_UNAVAILABLE' },
+      });
+      roomAvailability.mockResolvedValue({ occupancyRates: [rate] });
+      passengers[2]!.birthDate = '2008-10-05';
+      await expect(
+        service.assertHotelRoomCapacity(input, 'branch-1'),
+      ).rejects.toMatchObject({
+        response: { code: 'HOTEL_OCCUPANCY_RATE_UNAVAILABLE' },
+      });
+      await expect(
+        service.assertPresentedHotelRoomCapacity(contract),
+      ).rejects.toMatchObject({
+        response: { code: 'HOTEL_OCCUPANCY_RATE_UNAVAILABLE' },
+      });
+    },
+  );
   it('allows create and update when the selected room has no active rate factor', async () => {
     const roomAvailability = vi.fn().mockResolvedValue(null);
     const service = serviceWithRoomAvailability(roomAvailability);

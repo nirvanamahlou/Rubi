@@ -7,7 +7,7 @@ import { SearchCombobox } from '@/components/ui/search-combobox';
 export function passengerAgeOptions(infant: boolean) {
   return [
     { value: '', label: 'انتخاب سن' },
-    ...Array.from({ length: infant ? 2 : 10 }, (_, i) => {
+    ...Array.from({ length: infant ? 2 : 16 }, (_, i) => {
       const age = infant ? i : i + 2;
       return {
         value: String(age),
