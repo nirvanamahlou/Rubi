@@ -70,7 +70,7 @@ const baggageIcon = icon(
 );
 const fmt = (v: string, options: Intl.DateTimeFormatOptions) => {
   if (!Number.isFinite(Date.parse(v))) return '—';
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
     timeZone: 'Asia/Tehran',
     ...options,
   })
