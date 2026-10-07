@@ -6131,6 +6131,12 @@ FINANCE-INBOX-REDESIGN-1007 candidate: focused Finance12 tests and scoped ESLint
 
 FINANCE-INBOX-REDESIGN-1007 CI repair: reserve existing component-contract title assertion to match the new inbox header. Clean CI quality/build/PostgreSQL gates passed; full tests exposed only this stale display expectation. Local refreshed-contract typecheck passed.
 
+## INTERNATIONAL-TRAVEL-DATES-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; codex/pc-a-international-travel-dates-1007 from origin/develop@9951a2fd. Reserve Sales route-calendar policy, contract travel date consumers/flight editors, Reservations form/voucher date projection and shared flight-ticket display date formatter with regressions; own docs. Explicit Gregorian output calendar and canonical saved voucher dates formatted consistently for preview/PDF. Foreign endpoint selects Gregorian default while users can switch calendar and saved ISO values stay unchanged. No schema/API/dependency/IAM/runtime/data changes; prior Sales presentation locks released. User explicitly authorizes develop merge after checks.
+
+INTERNATIONAL-TRAVEL-DATES-1007 candidate:69 focused route/date/output tests and scoped ESLint pass. Existing floating-flight editor regressions also passed in the initial63-test set. Full Web typecheck/build and clean final-commit CI are required before user-authorized merge. Bounded source locks release with candidate; no operational data/runtime changes or authenticated browser submit claimed.
+
 ## JAHAN-DOCUMENT-BRANDING-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; reserve own-company JAHAN_BASTAN travel/contract document branding paths, exported template issuer copy, one transparent supplied-logo asset and focused branding/export tests plus bounded status docs. Preserve other company and agency brands. User authorizes develop merge. No overlapping active target lock; no schema/dependency/migration/operational changes.

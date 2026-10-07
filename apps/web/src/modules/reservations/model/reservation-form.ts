@@ -23,7 +23,7 @@ export function reservationPassengerAgeLabel(
 
 export function reservationFormDate(value?: string, timeZone = 'UTC') {
   if (!value || !Number.isFinite(Date.parse(value))) return '-';
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
@@ -140,7 +140,7 @@ export function reservationFormData(
       airline: f.carrierNameSnapshot,
       number: f.serviceNumberSnapshot,
       date: reservationFormDate(f.departureAt, 'Asia/Tehran'),
-      time: new Intl.DateTimeFormat('en-GB', {
+      time: new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
         hour: '2-digit',
         minute: '2-digit',
         hour12: false,

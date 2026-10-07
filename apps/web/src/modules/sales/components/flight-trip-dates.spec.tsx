@@ -237,3 +237,32 @@ it('does not fetch after cancellation', async () => {
   ).rejects.toThrow();
   expect(searchTickets).not.toHaveBeenCalled();
 });
+
+it.each([true, false])(
+  'sets travel calendar default without changing saved ISO dates (%s)',
+  (international) => {
+    const onChange = vi.fn();
+    renderToStaticMarkup(
+      <FlightTripDates
+        international={international}
+        originId="origin"
+        destinationId="destination"
+        roundTrip
+        seats={1}
+        requireFare
+        value={{ from: '2099-10-01', to: '2099-10-03' }}
+        onChange={onChange}
+      />,
+    );
+    expect(fixture.pickers).toHaveLength(2);
+    for (const picker of fixture.pickers) {
+      expect(picker.defaultCalendarSystem).toBe(
+        international ? 'gregorian' : undefined,
+      );
+      expect(picker.gregorianEnglish).toBe(true);
+    }
+    expect(fixture.pickers[0]!.value).toBe('2099-10-01');
+    expect(fixture.pickers[1]!.value).toBe('2099-10-03');
+    expect(onChange).not.toHaveBeenCalled();
+  },
+);
