@@ -39,7 +39,7 @@ describe('themed passenger age field', () => {
     expect(missing).toContain('value="انتخاب سن"');
     expect(zero).toContain('value="کمتر از ۱ سال"');
   });
-  it('offers child ages 2..17 (under18) and infant ages 0..1 plus explicit clear', () => {
+  it('offers child ages 2..14 (under15) and infant ages 0..1 plus explicit clear', () => {
     expect(passengerAgeOptions(false).map((option) => option.value)).toEqual([
       '',
       '2',
@@ -55,12 +55,9 @@ describe('themed passenger age field', () => {
       '12',
       '13',
       '14',
-      '15',
-      '16',
-      '17',
     ]);
     expect(passengerAgeOptions(false).at(-1)?.label).toBe(
-      '۱۷ تا کمتر از ۱۸ سال',
+      '۱۴ تا کمتر از ۱۵ سال',
     );
     expect(passengerAgeOptions(true).map((option) => option.value)).toEqual([
       '',

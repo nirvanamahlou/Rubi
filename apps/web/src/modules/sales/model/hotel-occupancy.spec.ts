@@ -42,7 +42,7 @@ const draft = (): SalesFormState => ({
   },
 });
 describe('new sales hotel occupancy pricing', () => {
-  it.each([12, 17])(
+  it.each([12, 14])(
     'prices child age %i from draft and actual birthday using the matching hotel band',
     (age) => {
       const teenRoom: HotelRoomRateV1 = {
@@ -64,11 +64,18 @@ describe('new sales hotel occupancy pricing', () => {
       ];
       expect(salesHotelOccupancyQuote(s, teenRoom)?.amount).toBe('241');
       expect(salesHotelOccupancyQuote(s, room)).toBeNull();
-      s.passengers[2]!.birthDate = '2008-10-05';
+      s.passengers[2]!.birthDate = '2011-10-05';
       expect(salesHotelOccupancyQuote(s, teenRoom)).toBeNull();
       expect(
-        salesHotelOccupancyQuote({ ...draft(), childAges: [18] }, teenRoom),
+        salesHotelOccupancyQuote({ ...draft(), childAges: [15] }, teenRoom),
       ).toBeNull();
+      const adultRoom = {
+        ...teenRoom,
+        occupancyRates: [
+          { ...teenRoom.occupancyRates![0]!, adults: 3, childAges: [] },
+        ],
+      };
+      expect(salesHotelOccupancyQuote(s, adultRoom)?.amount).toBe('241');
     },
   );
   it('shows eligible rooms and defaults total nightly quote rather than per-person factors', () => {
