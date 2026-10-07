@@ -5232,6 +5232,7 @@ model ReservationHotelGroupRate {
  * Sales-owned, editable per-tour and per-hotel source batch.
  */
 model ReservationHotelRoomRate {
+  occupancyRates   Json?
   id               String                    @id @default(uuid()) @db.Uuid
   groupRateId      String                    @db.Uuid
   roomTypeId       String                    @db.Uuid

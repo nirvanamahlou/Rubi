@@ -8,6 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { AuthenticatedActor } from '@nora/contracts';
+import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 import { TourPublicService } from '../ticket-catalog/tour-public.service';
@@ -94,6 +95,12 @@ export class HotelRatePacksService {
               maxChildren2To6: room.maxChildren2To6,
               maxChildren6To12: room.maxChildren6To12,
               maxInfants: room.maxInfants,
+              ...(room.occupancyRates
+                ? {
+                    occupancyRates:
+                      room.occupancyRates as unknown as Prisma.InputJsonValue,
+                  }
+                : {}),
             })),
           },
         };
@@ -219,6 +226,12 @@ export class HotelRatePacksService {
     if (prior) return prior;
     const pack = await this.db.client.reservationHotelRatePack.findFirst({
       where: { id, branchId: { in: actor.branchIds } },
+      include: {
+        versions: {
+          where: { version: expectedVersion },
+          include: { rows: { include: { roomRates: true } } },
+        },
+      },
     });
     if (!pack) throw new NotFoundException('بستهٔ نرخ پیدا نشد.');
     if (pack.branchId !== input.branchId) throw new ForbiddenException();
@@ -234,6 +247,30 @@ export class HotelRatePacksService {
       throw new ConflictException(
         'این بسته هم‌زمان تغییر کرده است؛ نسخهٔ تازه را باز کنید.',
       );
+    for (const previous of pack.versions?.[0]?.rows ?? []) {
+      const next = input.rows.find((row) => row.hotelId === previous.hotelId);
+      if (
+        next &&
+        !next.roomRates.length &&
+        previous.roomRates.some((room) => Array.isArray(room.occupancyRates))
+      )
+        throw new BadRequestException(
+          'نرخ‌های ترکیبی با ویرایشگر قدیمی حذف نمی‌شوند؛ نسخه تازهٔ بسته را باز کنید.',
+        );
+      for (const room of previous.roomRates) {
+        const submitted = next?.roomRates.find(
+          (r) => r.roomTypeId === room.roomTypeId,
+        );
+        if (
+          Array.isArray(room.occupancyRates) &&
+          submitted &&
+          !submitted.occupancyRates
+        )
+          throw new BadRequestException(
+            'برای حفظ نرخ‌های ترکیبی، نسخه تازهٔ ویرایشگر را باز کنید؛ نرخ‌های قبلی حذف نشدند.',
+          );
+      }
+    }
     const rows = await this.references(input);
     try {
       return await this.db.client.$transaction(async (tx) => {
@@ -398,6 +435,9 @@ export class HotelRatePacksService {
           maxChildren2To6: room.maxChildren2To6,
           maxChildren6To12: room.maxChildren6To12,
           maxInfants: room.maxInfants,
+          ...(room.occupancyRates
+            ? { occupancyRates: room.occupancyRates }
+            : {}),
         })),
         prices: roomPrices(
           row.base.toString(),

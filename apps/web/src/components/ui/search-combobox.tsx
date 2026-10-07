@@ -33,7 +33,11 @@ export function normalizeOptionSearch(text: string) {
     .trim()
     .toLocaleLowerCase();
 }
-export function searchOptions(options: readonly SearchOption[], query: string) {
+export function searchOptions(
+  options: readonly SearchOption[],
+  query: string,
+  limit = VISIBLE_OPTION_LIMIT,
+) {
   const key = normalizeOptionSearch(query);
   return options
     .filter(
@@ -43,7 +47,7 @@ export function searchOptions(options: readonly SearchOption[], query: string) {
           `${optionText(o.label)} ${o.searchText ?? ''}`,
         ).includes(key),
     )
-    .slice(0, VISIBLE_OPTION_LIMIT);
+    .slice(0, limit);
 }
 export function dropdownBelowPosition(
   triggerBottom: number,
@@ -76,7 +80,9 @@ export function SearchCombobox({
   describedBy,
   style,
   dataAttributes,
+  optionLimit = VISIBLE_OPTION_LIMIT,
 }: {
+  optionLimit?: number;
   id?: string | undefined;
   value: string;
   options: readonly SearchOption[];
@@ -109,7 +115,7 @@ export function SearchCombobox({
     [active, setActive] = useState(0);
   const matches = remote
     ? options.slice(0, VISIBLE_OPTION_LIMIT)
-    : searchOptions(options, query);
+    : searchOptions(options, query, optionLimit);
   const selected = options.find((o) => o.value === value);
   const display = optionText(selectedLabel ?? selected?.label);
   useEffect(() => {

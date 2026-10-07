@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import Joi from 'joi';
 import { Prisma } from '@nora/database';
+import type { HotelOccupancyRateV1 } from '@nora/contracts';
 
 export const roomKinds = [
   'double',
@@ -13,6 +14,7 @@ export const roomKinds = [
 export type RoomKind = (typeof roomKinds)[number];
 
 export interface HotelRoomRateInput {
+  occupancyRates?: HotelOccupancyRateV1[];
   roomTypeId: string;
   factor: string;
   maxAdults: number;
@@ -84,6 +86,41 @@ const legacyRow = Joi.object({
   factors: legacyFactors.required(),
 });
 const roomRate = Joi.object({
+  occupancyRates: Joi.array()
+    .min(1)
+    .max(2000)
+    .items(
+      Joi.object({
+        adults: Joi.number().integer().min(1).max(20).required(),
+        childAges: Joi.array()
+          .max(10)
+          .items(
+            Joi.object({
+              min: Joi.number().min(0).max(17.99).required(),
+              maxExclusive: Joi.number()
+                .greater(Joi.ref('min'))
+                .max(18)
+                .required(),
+            }).unknown(false),
+          )
+          .required(),
+        startsOn: Joi.string()
+          .pattern(/^\d{4}-\d{2}-\d{2}$/)
+          .required(),
+        endsOnExclusive: Joi.string()
+          .pattern(/^\d{4}-\d{2}-\d{2}$/)
+          .required(),
+        amount: Joi.string()
+          .pattern(/^\d{1,12}(\.\d{1,12})?$/)
+          .required(),
+        currencyCode: Joi.string()
+          .valid('EUR', 'USD', 'IRR', 'TRY', 'AED', 'GBP')
+          .required(),
+        composition: Joi.string().max(300).required(),
+        board: Joi.string().allow('').max(100).required(),
+      }).unknown(false),
+    )
+    .optional(),
   roomTypeId: Joi.string().uuid().required(),
   factor,
   maxAdults: Joi.number().integer().min(1).max(20).required(),
@@ -219,9 +256,63 @@ export function validateRatePack(raw: unknown): RatePackInput {
       throw new BadRequestException(
         'هر نوع اتاق برای یک هتل فقط یک‌بار قابل ثبت است.',
       );
-    for (const room of row.roomRates)
+    for (const room of row.roomRates) {
+      const tariffs = room.occupancyRates ?? [];
+      const shape = (rate: HotelOccupancyRateV1) =>
+        JSON.stringify([
+          rate.adults,
+          rate.childAges
+            .map((a) => [a.min, a.maxExclusive])
+            .sort((a, b) => a[0]! - b[0]! || a[1]! - b[1]!),
+          rate.board,
+        ]);
+      tariffs.forEach((rate, index) => {
+        if (
+          tariffs
+            .slice(0, index)
+            .some(
+              (previous) =>
+                shape(previous) === shape(rate) &&
+                previous.startsOn < rate.endsOnExclusive &&
+                rate.startsOn < previous.endsOnExclusive &&
+                !new Prisma.Decimal(previous.amount).equals(rate.amount),
+            )
+        )
+          throw new BadRequestException(
+            `نرخ‌های هم‌پوشان و متفاوت برای ترکیب ${rate.composition} وجود دارد؛ تاریخ یا قیمت را اصلاح کنید.`,
+          );
+      });
+      if (room.occupancyRates && input.tourDepartureId)
+        throw new BadRequestException(
+          'نرخ ترکیبی فعلاً فقط برای بسته مستقل هتل است، نه قیمت‌گذاری تور.',
+        );
+      if (new Set(room.occupancyRates?.map((rate) => rate.board)).size > 1)
+        throw new BadRequestException(
+          'برای هر نوع اتاق یک بورد مشخص انتخاب کنید.',
+        );
+      for (const tariff of room.occupancyRates ?? []) {
+        assertDates({
+          checkIn: tariff.startsOn,
+          checkOut: tariff.endsOnExclusive,
+        });
+        if (
+          new Prisma.Decimal(tariff.amount).lt(0) ||
+          (tariff.currencyCode === 'IRR' &&
+            !new Prisma.Decimal(tariff.amount).isInteger())
+        )
+          throw new BadRequestException('نرخ ترکیب اتاق نامعتبر است.');
+        if (
+          tariff.startsOn < input.checkIn ||
+          tariff.endsOnExclusive > input.checkOut ||
+          tariff.currencyCode !== row.currency
+        )
+          throw new BadRequestException(
+            'تاریخ و ارز نرخ ترکیب باید داخل بستهٔ انتخاب‌شده باشد.',
+          );
+      }
       if (new Prisma.Decimal(room.factor).lte(0))
         throw new BadRequestException('ضریب نوع اتاق باید مثبت باشد.');
+    }
   }
   return input;
 }

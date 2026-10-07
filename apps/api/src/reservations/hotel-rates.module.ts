@@ -202,10 +202,11 @@ export class HotelRatesController {
     @Query('search') search = '',
     @Query('page') page = '1',
     @Query('cityId') cityId?: string,
+    @Query('countryId') countryId?: string,
   ) {
     this.packs.require(req.actor);
     if (
-      !['cities', 'hotels'].includes(kind) ||
+      !['countries', 'cities', 'hotels'].includes(kind) ||
       search.length > 100 ||
       !/^\d+$/.test(page) ||
       Number(page) < 1 ||
@@ -213,14 +214,19 @@ export class HotelRatesController {
       (cityId &&
         !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
           cityId,
+        )) ||
+      (countryId &&
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          countryId,
         ))
     )
       throw new BadRequestException();
     return this.directory.hotelRatePackChoices(
-      kind as 'cities' | 'hotels',
+      kind as 'countries' | 'cities' | 'hotels',
       search,
       Number(page),
       cityId,
+      countryId,
     );
   }
 

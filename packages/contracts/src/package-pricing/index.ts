@@ -254,7 +254,16 @@ export interface PackagePageV1 {
   meta: { page: number; pageSize: number; total: number };
 }
 
+export {
+  hotelChildrenFit,
+  quoteHotelOccupancy,
+  hotelAgeOn,
+  hotelMaximumCombinations,
+} from './hotel-occupancy';
+
 export interface HotelRoomRateV1 {
+  /** Exact room-per-night occupancy tariffs; absence preserves legacy factors. */
+  occupancyRates?: readonly HotelOccupancyRateV1[];
   roomTypeId: string;
   roomTypeName: string;
   factor: string;
@@ -266,6 +275,17 @@ export interface HotelRoomRateV1 {
   maxChildren6To12?: number;
   /** Capacity for infants under 2 years old. */
   maxInfants?: number;
+}
+
+export interface HotelOccupancyRateV1 {
+  adults: number;
+  childAges: readonly { min: number; maxExclusive: number }[];
+  startsOn: string;
+  endsOnExclusive: string;
+  amount: string;
+  currencyCode: string;
+  composition: string;
+  board: string;
 }
 
 export interface PackageTourHotelPurchaseRowV1 {
