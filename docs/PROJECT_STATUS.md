@@ -4933,3 +4933,6 @@ Communications shows only immediate sending: removed scheduled-send tab definiti
 ## 2026-10-07 — CONTENT-DELETE-REPAIR-1007 — PC-B
 
 Fixed library deletion validation: trimmed archive reasons must meet Documents' existing5–500-character contract (previous UI minimum2). Successful archive removes the row and resets pagination; failure retains the record/dialog with a visible error. Durable form/landing/link deletion uses a shared Rubi confirmation dialog instead of a native popup, preserving ID/version, cancellation and disabled pending state. Documents confidentiality/capability checks and recoverable archive remain unchanged. Marketing101 tests and scoped lint pass; exact-head CI gates authorized develop merge. No backend/schema/migration/dependency/permission/runtime change or authenticated deletion QA.
+## CONTENT-PUBLICATION-CALENDAR-1007
+
+Marketing landing-content last publication now uses the existing shared DatePicker with date/time and dialog placement, retaining required validation, canonical timestamp payload and read-only detail mode. New landing drafts start with no fabricated publication date; short-link conversion input is unchanged. Focused regression verifies calendar selection, save payload/CAS and view mode. No API/schema/dependency or local runtime changes. Exact-head CI gates the user-authorized develop merge.

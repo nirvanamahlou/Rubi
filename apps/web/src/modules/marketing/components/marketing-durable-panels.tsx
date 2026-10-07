@@ -1505,7 +1505,11 @@ export function DurableContentPanel({
   );
   const [editing, setEditing] = useState<MarketingAssetViewV1 | null>(null);
   const [viewing, setViewing] = useState(false);
-  const [draft, setDraft] = useState<ContentDraft>(emptyContentDraft);
+  const newDraft = (): ContentDraft => ({
+    ...emptyContentDraft(),
+    metricThree: tab === 'landing' ? '' : '0',
+  });
+  const [draft, setDraft] = useState<ContentDraft>(newDraft);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
@@ -1566,7 +1570,7 @@ export function DurableContentPanel({
       });
       setEditing(null);
       setViewing(false);
-      setDraft(emptyContentDraft());
+      setDraft(newDraft());
       setOpen(false);
       await data.load();
       onNotice(
@@ -1617,7 +1621,7 @@ export function DurableContentPanel({
           onClick={() => {
             setEditing(null);
             setViewing(false);
-            setDraft(emptyContentDraft());
+            setDraft(newDraft());
             setFormError('');
             setOpen(true);
           }}
@@ -1778,15 +1782,27 @@ export function DurableContentPanel({
                   label={labels[3]}
                   required
                 >
-                  <Input
-                    disabled={viewing}
-                    id="content-record-metric-three"
-                    dir="ltr"
-                    value={draft.metricThree}
-                    onChange={(event) =>
-                      updateDraft('metricThree', event.target.value)
-                    }
-                  />
+                  {tab === 'landing' ? (
+                    <DatePicker
+                      includeTime
+                      withinDialog
+                      required
+                      readOnly={viewing}
+                      id="content-record-metric-three"
+                      value={draft.metricThree}
+                      onChange={(value) => updateDraft('metricThree', value)}
+                    />
+                  ) : (
+                    <Input
+                      disabled={viewing}
+                      id="content-record-metric-three"
+                      dir="ltr"
+                      value={draft.metricThree}
+                      onChange={(event) =>
+                        updateDraft('metricThree', event.target.value)
+                      }
+                    />
+                  )}
                 </FormField>
               ) : null}
               {tab === 'landing' || tab === 'forms' ? (
