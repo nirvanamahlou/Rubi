@@ -4,7 +4,7 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useMemo, useRef, useState } from 'react';
 import Link from '@/i18n/link';
 import dynamic from 'next/dynamic';
-import type { HrEmployeeDto } from '@nora/contracts';
+import type { HrBootstrapDto, HrEmployeeDto } from '@nora/contracts';
 import { hrApi } from './hr-api';
 import type { HrStore } from './hr-store';
 import {
@@ -95,6 +95,23 @@ export function employeeFormValue(
       : 'فعال') as NewEmployeeFormValue['status'],
   };
 }
+export function employeeOrganizationOptions(data: HrBootstrapDto) {
+  return hrCompanies(data).map((company) => {
+    const options = hrReferenceOptions(
+      data,
+      'employee',
+      'create',
+      company.branchId,
+      company.organizationBranchId,
+    );
+    return {
+      branch: company.name,
+      units: options['واحد'] ?? [],
+      positions: options['سمت'] ?? [],
+      grades: options['رده'] ?? [],
+    };
+  });
+}
 export function HrEmployeeEditor({
   employee,
   store,
@@ -144,6 +161,9 @@ export function HrEmployeeEditor({
             .map((c) => c.name),
         }))}
         userOptionsError={external.error}
+        referenceLoading={references.loading}
+        referenceError={references.error}
+        onRetryReferences={() => void store.refresh().catch(() => undefined)}
         lockAssignment={Boolean(employee)}
         existingPersonnelCodes={store
           .data!.employees.filter((item) => item.id !== employee?.id)
@@ -159,32 +179,7 @@ export function HrEmployeeEditor({
                   .map((company) => company.name),
               ]
         }
-        unitOptions={Array.from(
-          new Set(
-            store
-              .data!.records.filter(
-                (item) =>
-                  item.section === 'organization' && item.tab === 'units',
-              )
-              .map((item) => item.values[0]!)
-              .concat(store.data!.employees.map((item) => item.unit)),
-          ),
-        )}
-        organizationOptions={companies.map((company) => {
-          const options = hrReferenceOptions(
-            references.data,
-            'employee',
-            'create',
-            company.branchId,
-            company.organizationBranchId,
-          );
-          return {
-            branch: company.name,
-            units: options['واحد'] ?? [],
-            positions: options['سمت'] ?? [],
-            grades: options['رده'] ?? [],
-          };
-        })}
+        organizationOptions={employeeOrganizationOptions(references.data)}
         managerOptions={store
           .data!.employees.filter((item) => item.id !== employee?.id)
           .map((item) => item.name)}
