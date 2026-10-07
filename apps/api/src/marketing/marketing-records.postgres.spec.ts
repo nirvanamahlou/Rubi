@@ -131,6 +131,8 @@ describe.skipIf(!enabled)(
         data: {
           id: customerId,
           kind: 'PERSON',
+          firstName: 'مخاطب',
+          lastName: 'آزمایشی',
           displayName: 'مخاطب آزمایشی پیشنهاد',
           ownerBranchId: branchId,
           createdByUserId: userId,
