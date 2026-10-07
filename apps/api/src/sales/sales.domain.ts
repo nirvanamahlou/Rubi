@@ -1,4 +1,9 @@
 import { validateInsuranceExtras } from '@nora/contracts';
+import {
+  SALES_CHEQUE_FEE,
+  salesChequeComponents,
+  validateSalesChequePayments,
+} from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import { salesAccommodationValid, salesContractFlights } from '@nora/contracts';
 import {
@@ -129,7 +134,10 @@ export function passengerAgeCategory(
   return age < 2 ? 'INF' : age < 12 ? 'CHD' : 'ADT';
 }
 
-export function validateSalesContract(input: SalesContractCreateRequest): void {
+export function validateSalesContract(
+  input: SalesContractCreateRequest,
+  requireChequeTerms = false,
+): void {
   try {
     validateInsuranceExtras(input);
   } catch (error) {
@@ -434,21 +442,37 @@ export function validateSalesContract(input: SalesContractCreateRequest): void {
       );
   }
   try {
+    validateSalesChequePayments(
+      input.priceComponents,
+      input.payments ?? [],
+      input.paymentTerms,
+    );
+    if (
+      requireChequeTerms &&
+      input.payments?.some((p) => p.method === 'CHECK') &&
+      !input.paymentTerms
+    )
+      throw new Error('برای پرداخت چکی، نوع فروش چکی را انتخاب کنید.');
     const derived = servicePriceComponents(
       input.services,
       input.hotelSelection,
     );
     validatePassengerPackagePrices(
       input.passengers,
-      input.priceComponents,
+      input.paymentTerms
+        ? input.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
+        : input.priceComponents,
       input.services.some(
         (s) => s.metadata?.passengerPackagePricingVersion === 1,
       ),
     );
     if (
       derived &&
-      salesFingerprint(derived.map(salesFingerprint).sort()) !==
-        salesFingerprint(input.priceComponents.map(salesFingerprint).sort())
+      salesFingerprint(
+        salesChequeComponents(derived, input.paymentTerms)
+          .map(salesFingerprint)
+          .sort(),
+      ) !== salesFingerprint(input.priceComponents.map(salesFingerprint).sort())
     )
       throw new Error(
         'مجموع قیمت‌ها با قیمت روز و مبلغ توافقی خدمات مطابقت ندارد.',

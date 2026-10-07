@@ -7,6 +7,7 @@ import Joi from 'joi';
 import { buildSalesXlsx, SALES_EXPORT_LIMIT } from './sales.xlsx';
 import {
   validatePassengerPackagePrices,
+  SALES_CHEQUE_FEE,
   quoteHotelOccupancy,
   hotelAgeOn,
 } from '@nora/contracts';
@@ -330,6 +331,9 @@ export function presentSalesContract(
           }
         : null,
     pricingNotes: row.pricingNotes,
+    paymentTerms:
+      (row.paymentTerms as unknown as SalesContractDetail['paymentTerms']) ??
+      null,
     buyerContact:
       row.buyerContact != null
         ? (buyerCrypto?.decrypt(row.buyerContact) ?? null)
@@ -863,6 +867,8 @@ export class SalesService {
         meta: { idempotentReplay: true },
       };
     }
+    // Preserve recorded legacy idempotent replays; enforce terms for new cheque sales.
+    domainCall(() => validateSalesContract(input, true));
     const branchId = branch(actor, requestedBranch);
     await this.assertTour(input, branchId);
     await this.assertHotelRoomCapacity(input, branchId);
@@ -895,7 +901,6 @@ export class SalesService {
   ) {
     if (!Number.isInteger(input.version) || input.version < 1)
       throw new BadRequestException('نسخه معتبر قرارداد الزامی است.');
-    domainCall(() => validateSalesContract(input));
     const row = await this.repository.findById(id);
     if (!row)
       throw new NotFoundException({
@@ -903,6 +908,22 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertUpdate(row, actor);
+    if (row.paymentTerms != null && input.paymentTerms === null)
+      throw new BadRequestException(
+        'نوع فروش ذخیره‌شده قرارداد قابل حذف نیست.',
+      );
+    input = {
+      ...input,
+      paymentTerms:
+        input.paymentTerms === undefined
+          ? ((row.paymentTerms as unknown as SalesContractDetail['paymentTerms']) ??
+            null)
+          : input.paymentTerms,
+    };
+    // Draft updates do not replace payment rows: validate the actual stored schedule.
+    if (input.paymentTerms)
+      input = { ...input, payments: row.payments.map(paymentInput) };
+    domainCall(() => validateSalesContract(input));
     await this.assertTour(input, row.branchId);
     await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
@@ -927,7 +948,11 @@ export class SalesService {
         try {
           validatePassengerPackagePrices(
             input.passengers,
-            input.priceComponents,
+            input.paymentTerms
+              ? input.priceComponents.filter(
+                  (p) => p.title !== SALES_CHEQUE_FEE,
+                )
+              : input.priceComponents,
             true,
           );
         } catch (error) {
@@ -989,6 +1014,12 @@ export class SalesService {
       });
     this.assertRead(row, actor);
     domainCall(() => validateSalesPayment(input));
+    if (
+      (row.paymentTerms as unknown as SalesContractDetail['paymentTerms'])
+        ?.mode === 'CASH' &&
+      input.method === 'CHECK'
+    )
+      throw new BadRequestException('فروش نقدی پرداخت چکی ندارد.');
     const fingerprint = salesFingerprint(input);
     const result = await this.repository.addPayment(
       id,

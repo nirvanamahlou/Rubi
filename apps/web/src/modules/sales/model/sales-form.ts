@@ -1,4 +1,6 @@
 import { passengerSaleTotals } from './passenger-sale-totals';
+import { salesChequeComponents } from '@nora/contracts';
+import type { SalesPaymentTerms } from '@nora/contracts';
 import {
   addInsuranceExtra,
   insuranceExtraRials,
@@ -166,6 +168,7 @@ export interface SalesFormState {
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
   pricingNotes: string;
+  paymentTerms?: SalesPaymentTerms | null;
   reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
   passengerAccommodations?: Record<string, SalesAccommodationKind>;
@@ -345,6 +348,7 @@ export const emptySalesForm: SalesFormState = {
     },
   ],
   payments: [],
+  paymentTerms: { version: 1, mode: 'CASH', plans: [] },
   pricingNotes: '',
 };
 
@@ -1186,18 +1190,23 @@ export function salesPayload(
             inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
           }
         : null,
-    priceComponents:
+    ...(state.paymentTerms !== undefined
+      ? { paymentTerms: state.paymentTerms }
+      : {}),
+    priceComponents: salesChequeComponents(
       packagePrices?.components ??
-      servicePriceComponents(
-        services,
-        state.serviceKinds.includes('HOTEL')
-          ? {
-              checkInDate: state.hotel.checkIn,
-              checkOutDate: state.hotel.checkOut,
-            }
-          : null,
-      ) ??
-      state.priceComponents,
+        servicePriceComponents(
+          services,
+          state.serviceKinds.includes('HOTEL')
+            ? {
+                checkInDate: state.hotel.checkIn,
+                checkOutDate: state.hotel.checkOut,
+              }
+            : null,
+        ) ??
+        state.priceComponents,
+      state.paymentTerms,
+    ),
     payments: state.payments.map((payment) => ({
       ...payment,
       dueAt: utc(payment.dueAt),

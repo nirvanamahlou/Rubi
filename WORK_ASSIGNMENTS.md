@@ -6131,6 +6131,12 @@ FINANCE-INBOX-REDESIGN-1007 candidate: focused Finance12 tests and scoped ESLint
 
 FINANCE-INBOX-REDESIGN-1007 CI repair: reserve existing component-contract title assertion to match the new inbox header. Clean CI quality/build/PostgreSQL gates passed; full tests exposed only this stale display expectation. Local refreshed-contract typecheck passed.
 
+## SALES-CHEQUE-CALCULATOR-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-cheque-calculator-1007 from origin/develop@9951a2fd. Reserve Sales price/payment wizard, draft restoration, public payment-term contract/helper, API domain/repository/presenter and print projections/tests, additive English display entries and bounded docs. Producer Sales and consumer Sales Web ship optional version1 CASH/CHECK terms together; Finance continues consuming canonical price components/payments unchanged. 5% simple monthly fee on unpaid principal, minimum30% down payment,3/6/9/12 months, first monthly due defaults to travel date plus one Gregorian calendar month; exact decimal sums and monthly clamp preserve currencies separately. Sole Migration Owner/schema lock PC-A for one nullable SalesContract paymentTerms JSON field, no historical backfill; prior Marketing migration/source locks released and no active overlapping target lock. No dependency/version lockfile changes, operational writes or live runtime rollout. User explicitly authorizes push and develop merge after verification.
+
+Verification: Contracts112 tests, Sales API109 tests and Sales Web326 tests pass (one existing rendering timeout passed on isolated retry). Affected lint/typechecks, schema generation/format, API build and Web56-route production build pass. Source/schema/Migration locks RELEASED with frozen candidate; exact-head CI gates explicitly authorized develop merge. Additive migration has not been deployed locally; no historical/operational data or local runtime changed.
+
 ## INTERNATIONAL-TRAVEL-DATES-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; codex/pc-a-international-travel-dates-1007 from origin/develop@9951a2fd. Reserve Sales route-calendar policy, contract travel date consumers/flight editors, Reservations form/voucher date projection and shared flight-ticket display date formatter with regressions; own docs. Explicit Gregorian output calendar and canonical saved voucher dates formatted consistently for preview/PDF. Foreign endpoint selects Gregorian default while users can switch calendar and saved ISO values stay unchanged. No schema/API/dependency/IAM/runtime/data changes; prior Sales presentation locks released. User explicitly authorizes develop merge after checks.
@@ -6144,3 +6150,11 @@ Scope additionally reserves Legal Entities display-brand mapping and shared flig
 Scope also reserves the existing Jahan Bastan English brand-name entry in the Web/API/offline catalogues so localization retains the company name instead of translating its literal meaning.
 
 Candidate reuses company/workflow snapshots and existing private export authorization. Added company-specific preview/PDF download regressions, transparent RGBA asset and color-preserving Jahan styles. Four synthetic A4 samples visually checked; initial focused78 tests and refreshed44 tests pass. Scoped lint/typecheck, final targeted checks and exact-head full quality/test/build/PostgreSQL CI gate authorized merge. Bounded source locks release with candidate. No schema, migration, operational data write or local rollout.
+
+SALES-CHEQUE-CALCULATOR-1007 final policy repair: re-reserve own Sales service/payment-mode guards, focused service regression tests and bounded display entries. Reject clearing persisted terms to bypass cheque policy and reject adding a cheque to a recorded cash sale; legacy null-term contracts stay supported. No new migration/dependency/runtime scope.
+
+Final policy repair verified: all112 Sales API tests, scoped lint and API typecheck pass; persisted sale type cannot be cleared and recorded cash sales reject new cheque payments. Legacy null-term cheque payments remain supported. Bounded correction locks RELEASED with frozen final candidate; exact-head CI gates merge.
+
+SALES-CHEQUE-CALCULATOR-1007 CI repair: reserve only own new labels in Web/API English display catalogues and own service-test formatting. Full production/migration gates passed; CI identified eight missing print/UI translation fragments and a non-idempotent first formatter pass on the new test. No business/schema/dependency changes.
+
+CI repair verified: English coverage3 tests and stable formatting checks pass. Eight new print/UI translation fragments are mapped consistently; the service regression test is formatter-idempotent. Correction display/test locks RELEASED with final candidate. Exact-head CI still gates merge.

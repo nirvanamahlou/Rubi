@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { SalesContractCreateRequest } from '@nora/contracts';
-import { servicePriceComponents } from '@nora/contracts';
+import {
+  servicePriceComponents,
+  salesChequeComponents,
+  calculateSalesCheque,
+  type SalesPaymentTerms,
+} from '@nora/contracts';
 
 import {
   calculateSalesBalances,
@@ -73,6 +78,78 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('validates financed fees separately from passenger service prices and rejects an underfunded down payment', () => {
+    const terms: SalesPaymentTerms = {
+      version: 1,
+      mode: 'CHECK',
+      plans: [
+        {
+          currencyCode: 'USD',
+          downPayment: '60.15',
+          months: 3,
+          firstDueDate: '2026-11-01',
+        },
+      ],
+    };
+    const components = salesChequeComponents(draft.priceComponents, terms);
+    const input: SalesContractCreateRequest = {
+      ...draft,
+      paymentTerms: terms,
+      passengers: draft.passengers.map((p) => ({
+        ...p,
+        agreedPrices: [{ amount: '200.50', currencyCode: 'USD' }],
+      })),
+      priceComponents: components,
+      payments: [
+        {
+          method: 'CASH',
+          amount: '60.15',
+          currencyCode: 'USD',
+          dueAt: '2026-10-01',
+        },
+        ...calculateSalesCheque('200.50', terms.plans[0]!).schedule.map(
+          (row) => ({
+            method: 'CHECK' as const,
+            amount: row.amount,
+            currencyCode: 'USD',
+            dueAt: row.dueDate,
+            check: {
+              bankId: '10000000-0000-4000-8000-000000000005',
+              secureIdentifier: 'synthetic',
+              ownerName: 'Test',
+              dueDate: row.dueDate,
+            },
+          }),
+        ),
+      ],
+    };
+    expect(() => validateSalesContract(input)).not.toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...input,
+        paymentTerms: {
+          ...terms,
+          plans: [{ ...terms.plans[0]!, downPayment: '60' }],
+        },
+      }),
+    ).toThrow('۳۰٪');
+    expect(() =>
+      validateSalesContract({
+        ...input,
+        priceComponents: draft.priceComponents,
+      }),
+    ).toThrow('کارمزد');
+    expect(() =>
+      validateSalesContract(
+        {
+          ...input,
+          paymentTerms: null,
+          priceComponents: draft.priceComponents,
+        },
+        true,
+      ),
+    ).toThrow('نوع فروش چکی');
+  });
   it('accepts explicit buyer contact and rejects invalid or mismatched payer details', () => {
     const buyerContact = {
       name: 'Synthetic Buyer',
