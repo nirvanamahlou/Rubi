@@ -117,7 +117,6 @@ describe('marketing workspace component contract', () => {
       'مخاطبان کمپین',
       'منابع ورود',
       'ارسال پیام',
-      'ارسال‌های زمان‌بندی‌شده',
       'کتابخانه محتوا و فایل‌ها',
       'ساخت اتوماسیون',
       'کانال‌ها و سرویس‌ها',
@@ -146,8 +145,10 @@ describe('marketing workspace component contract', () => {
     );
     expect(marketingSectionTabs.communications.map((item) => item[0])).toEqual([
       'send',
-      'scheduled',
     ]);
+    expect(referencePagesSource).not.toContain(
+      "section === 'communications' && key === 'scheduled'",
+    );
     expect(marketingSectionTabs.offers.map((item) => item[0])).not.toContain(
       'rules',
     );
