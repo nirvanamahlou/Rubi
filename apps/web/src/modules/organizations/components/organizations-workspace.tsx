@@ -77,6 +77,7 @@ import { CooperationWizard } from './cooperation-wizard';
 import { OrganizationExcelDialog } from './organization-excel-dialog';
 import { OrganizationDeleteDialog } from './organization-delete-dialog';
 import { OrganizationLogo } from './organization-logo';
+import { OrganizationRegistrationEditor } from './organization-registration-editor';
 import {
   saveOrganizationChanges,
   type OrganizationDeletionTarget,
@@ -112,6 +113,7 @@ export function OrganizationsWorkspace() {
   const [state, setState] = useState<RequestState>('loading');
   const [selected, setSelected] = useState<MasterDataRecord>();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [registrationEditOpen, setRegistrationEditOpen] = useState(false);
   const contactDisclosures = useOrganizationContactDisclosures({
     active: profileOpen && Boolean(selected),
     organizationId: selected?.id ?? '',
@@ -306,6 +308,7 @@ export function OrganizationsWorkspace() {
         openedOrganization.current = null;
         ++contactRequestId.current;
         setProfileOpen(false);
+        setRegistrationEditOpen(false);
         setSelected(undefined);
         setContactForm(undefined);
         setFormMode(null);
@@ -703,8 +706,8 @@ export function OrganizationsWorkspace() {
                       variant="outline"
                       disabled={!permissions.includes('master_data.update')}
                       onClick={() => {
-                        setSelected(record);
-                        setFormMode('edit');
+                        void openProfile(record);
+                        setRegistrationEditOpen(true);
                       }}
                       title="ویرایش"
                       aria-label={`ویرایش ${record.name}`}
@@ -815,8 +818,8 @@ export function OrganizationsWorkspace() {
                               !permissions.includes('master_data.update')
                             }
                             onClick={() => {
-                              setSelected(record);
-                              setFormMode('edit');
+                              void openProfile(record);
+                              setRegistrationEditOpen(true);
                             }}
                             size="icon"
                             variant="outline"
@@ -877,7 +880,28 @@ export function OrganizationsWorkspace() {
           </div>
         </div>
       </div>
-      {profileOpen && selected ? (
+      {profileOpen && selected && registrationEditOpen ? (
+        <OrganizationRegistrationEditor
+          key={selected.id}
+          organization={selected}
+          contacts={contacts}
+          contactsLoading={contactsLoading}
+          contactsError={contactsError}
+          contactPage={contactPage}
+          contactTotal={contactTotal}
+          permissions={permissions}
+          onClose={() => setRegistrationEditOpen(false)}
+          onEditIdentity={() => setFormMode('edit')}
+          onAddContact={() => setContactForm({ mode: 'create' })}
+          onEditContact={(contact) =>
+            setContactForm({ mode: 'edit', record: contact })
+          }
+          onContactPageChange={(nextPage) =>
+            void openProfile(selected, nextPage)
+          }
+        />
+      ) : null}
+      {profileOpen && selected && !registrationEditOpen ? (
         <CorporateProfile
           key={selected.id}
           organization={selected}
@@ -896,6 +920,7 @@ export function OrganizationsWorkspace() {
             pushDossierHistory(null);
             ++contactRequestId.current;
             setProfileOpen(false);
+            setRegistrationEditOpen(false);
             setSelected(undefined);
             setContactForm(undefined);
             window.requestAnimationFrame(() => {
@@ -904,7 +929,7 @@ export function OrganizationsWorkspace() {
             });
           }}
           canEdit={permissions.includes('master_data.update')}
-          onEdit={() => setFormMode('edit')}
+          onEdit={() => setRegistrationEditOpen(true)}
           canDelete={permissions.includes('master_data.delete')}
           onDelete={() =>
             setDeleteTarget({ resource: 'organizations', record: selected })

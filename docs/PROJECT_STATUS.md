@@ -4982,3 +4982,9 @@ The employee form waits for complete HR reference data before first mounting its
 ## 2026-10-07 — HR-RECRUITMENT-REQUISITION-LINKS-1007 — PC-B
 
 Recruitment requisition job titles now use the selected company's stored positions, falling back to the position title when the optional job-title column is empty. Requesting units and requesters stay scoped to that company's active unit and employee records. If a truncated bootstrap initially selected a temporary IAM branch instead of a company, the new requisition form waits for the complete catalog and repairs its company selection before showing reference fields. A focused regression checks all three dropdowns and excludes another company's records. No backend, schema, migration or dependency changes; scoped Web checks and exact-head CI gate the authorized develop merge.
+
+## 2026-10-07 — B2B registration edit coverage — PC-B
+
+The organization edit entry is being aligned with the initial registration sections. Identity, address, representative and agreement changes must stay within their existing owner APIs and permission checks; verification and approval are not bypassed.
+
+The directory and dossier edit actions now open one edit workspace with the registered identity/role and logo editor, organization addresses, contact editors and agreement workflow. Each section reads the existing record and saves through its owning API; contact details remain masked until separately authorized. All 214 Organizations tests, affected lint and TypeScript, and the Web production build passed. No schema, migration, permission or live-data changes; authenticated browser write not run.
