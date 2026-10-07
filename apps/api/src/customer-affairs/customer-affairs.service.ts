@@ -2193,6 +2193,33 @@ export class CustomerAffairsService {
       })),
     };
   }
+  async hrWorkbenchRequests(actor: AuthenticatedActor) {
+    const authorizedBranches: string[] = [];
+    for (const branchId of actor.branchIds) {
+      const recipients =
+        await this.hrDirectory.workbenchFeedbackRecipientUserIds(
+          branchId,
+          this.workbenchUnitTerms('منابع انسانی'),
+        );
+      if (recipients.includes(actor.userId)) authorizedBranches.push(branchId);
+    }
+    const rows = authorizedBranches.length
+      ? await this.repository.hrWorkbenchRequests(authorizedBranches)
+      : [];
+    return {
+      data: rows.map((row) => ({
+        id: row.id,
+        trackingNumber: row.trackingNumber,
+        subject: row.subject,
+        description: row.description,
+        destinationUnit: row.executionUnit,
+        status: row.status,
+        priority: row.priority,
+        nextActionAt: row.nextActionAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
+      })),
+    };
+  }
   private workbenchUnitTerms(unit: string | null | undefined): string[] {
     const normalized = unit?.trim() ?? '';
     const terms: Readonly<Record<string, string[]>> = {

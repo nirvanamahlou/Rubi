@@ -21,11 +21,7 @@
   letter-spacing: -0.025em;
 }
 .heading p {
-  margin: 5px 0 0;
-  color: var(--muted-foreground);
-  font-size: 14px;
-  line-height: 1.9;
-  max-width: 760px;
+  display: none;
 }
 .heading > a {
   color: var(--primary);

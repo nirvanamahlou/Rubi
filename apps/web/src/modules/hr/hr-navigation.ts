@@ -48,7 +48,7 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
     group(
       'leaves',
       'مرخصی',
-      [source('time', 'leave', 'درخواست مرخصی', 'درخواست مرخصی')],
+      [source('time', 'leave', 'تعریف مرخصی', 'تعریف مرخصی')],
       'پرونده مرخصی',
     ),
     group('settings', 'تنظیمات کارکرد', [
@@ -72,9 +72,6 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
       ],
       'پرونده قرارداد',
     ),
-    group('templates', 'تنظیمات قرارداد', [
-      source('contracts', 'templates', 'قالب‌ها و انواع', 'تعریف قالب قرارداد'),
-    ]),
   ],
   recruitment: [
     group('planning', 'برنامه و درخواست جذب', [
@@ -92,18 +89,18 @@ export const hrGroups: Partial<Record<HrSectionId, readonly HrGroup[]>> = {
       ),
     ]),
     group(
-      'openings',
-      'فرصت‌های شغلی',
-      [source('recruitment', 'openings', 'فرصت‌های شغلی', 'ثبت فرصت شغلی')],
-      'پرونده فرصت شغلی',
-    ),
-    group(
       'candidates',
       'متقاضیان',
       [
         source('recruitment', 'applicants', 'متقاضیان', 'افزودن متقاضی'),
         source('recruitment', 'interviews', 'مصاحبه‌ها', 'زمان‌بندی مصاحبه'),
         source('recruitment', 'feedback', 'ارزیابی مصاحبه', 'ثبت ارزیابی'),
+        source(
+          'recruitment',
+          'assessment',
+          'ارزیابی مدیر و منابع انسانی',
+          'ثبت ارزیابی',
+        ),
         source(
           'recruitment',
           'offers',

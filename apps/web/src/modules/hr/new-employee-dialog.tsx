@@ -12,6 +12,7 @@ import {
 import styles from './hr-forms.module.css';
 import { buttonVariants } from '@/components/ui/button';
 import { RequiredFieldLabel } from './required-field-label';
+import { HR_GRADE_OPTIONS } from './hr-grade-options';
 
 const employmentTypes = [
   'تمام‌وقت',
@@ -61,7 +62,7 @@ const defaultEmployeeValue: NewEmployeeFormValue = {
   branch: previewBranches[0],
   unit: previewUnits[0],
   position: '',
-  grade: 'G4',
+  grade: 'کارشناس',
   manager: 'بدون مدیر مستقیم',
   startedAt: '',
   status: employeeStatuses[0],
@@ -108,7 +109,6 @@ export function validateNewEmployeeForm(
     errors.personnelCode = 'این کد پرسنلی قبلاً استفاده شده است.';
 
   if (!value.branch.trim()) errors.branch = 'شعبه را انتخاب کنید.';
-  if (!value.unit.trim()) errors.unit = 'واحد را انتخاب کنید.';
   if (!value.position.trim()) errors.position = 'سمت الزامی است.';
   if (!value.grade.trim()) errors.grade = 'رده شغلی الزامی است.';
   if (!value.startedAt) errors.startedAt = 'تاریخ شروع همکاری الزامی است.';
@@ -150,6 +150,7 @@ interface NewEmployeeFormProps {
     positions: readonly string[];
     grades: readonly string[];
   }[];
+  onAddReference?: (kind: 'branches' | 'units' | 'positions') => void;
 }
 
 export function NewEmployeeForm({
@@ -162,6 +163,7 @@ export function NewEmployeeForm({
   unitOptions = previewUnits,
   lockAssignment = false,
   organizationOptions,
+  onAddReference,
   onCancel,
   onSubmit,
 }: NewEmployeeFormProps) {
@@ -335,6 +337,11 @@ export function NewEmployeeForm({
         <div className={styles.formGrid}>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-branch">
             <RequiredFieldLabel required>شعبه</RequiredFieldLabel>
+            {onAddReference && !lockAssignment ? (
+              <button type="button" onClick={() => onAddReference('branches')}>
+                افزودن شعبه
+              </button>
+            ) : null}
             <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-branch"
@@ -354,7 +361,12 @@ export function NewEmployeeForm({
             <FieldError errors={errors} field="branch" />
           </label>
           <label className={styles.fieldLabel} htmlFor="hr-new-employee-unit">
-            <RequiredFieldLabel required>واحد</RequiredFieldLabel>
+            <RequiredFieldLabel>واحد</RequiredFieldLabel>
+            {onAddReference && !lockAssignment ? (
+              <button type="button" onClick={() => onAddReference('units')}>
+                افزودن واحد
+              </button>
+            ) : null}
             <NativeSearchSelect
               className={styles.control}
               id="hr-new-employee-unit"
@@ -362,7 +374,6 @@ export function NewEmployeeForm({
               disabled={lockAssignment}
               name="unit"
               onChange={(event) => update('unit', event.target.value)}
-              required
               value={value.unit}
             >
               <option value="">انتخاب واحد</option>
@@ -382,6 +393,11 @@ export function NewEmployeeForm({
             htmlFor="hr-new-employee-position"
           >
             <RequiredFieldLabel required>سمت</RequiredFieldLabel>
+            {onAddReference && !lockAssignment ? (
+              <button type="button" onClick={() => onAddReference('positions')}>
+                افزودن سمت
+              </button>
+            ) : null}
             {organizationOptions ? (
               <NativeSearchSelect
                 {...errorProps('position')}
@@ -431,9 +447,7 @@ export function NewEmployeeForm({
             >
               <option value="">انتخاب رده شغلی</option>
               {currentOptions(
-                organizationOptions
-                  ? (organization?.grades ?? [])
-                  : ['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'مدیریتی'],
+                [...HR_GRADE_OPTIONS, ...(organization?.grades ?? [])],
                 value.grade,
               ).map((option) => (
                 <option key={option} value={option}>
@@ -497,10 +511,6 @@ export function NewEmployeeForm({
                 </option>
               ))}
           </NativeSearchSelect>
-          <small>
-            حساب فعال همان شعبه؛ برای دسترسی شخصی، اعلان‌ها و انتخاب مسئول در
-            بخش‌های دیگر.
-          </small>
           {userOptionsError ? (
             <small role="alert">{userOptionsError}</small>
           ) : null}
@@ -579,6 +589,7 @@ interface NewEmployeeDialogProps {
   unitOptions?: readonly string[] | undefined;
   lockAssignment?: boolean;
   organizationOptions?: NewEmployeeFormProps['organizationOptions'];
+  onAddReference?: NewEmployeeFormProps['onAddReference'];
 }
 
 export function NewEmployeeDialog({
@@ -590,6 +601,7 @@ export function NewEmployeeDialog({
   branchOptions,
   unitOptions,
   organizationOptions,
+  onAddReference,
   lockAssignment = false,
   onClose,
   onSubmit,
@@ -612,6 +624,7 @@ export function NewEmployeeDialog({
           existingPersonnelCodes={existingPersonnelCodes}
           initialValue={initialValue}
           managerOptions={managerOptions}
+          {...(onAddReference ? { onAddReference } : {})}
           branchOptions={branchOptions}
           unitOptions={unitOptions}
           {...(organizationOptions ? { organizationOptions } : {})}

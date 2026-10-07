@@ -660,7 +660,7 @@ export class HrService {
           : `HR-${randomUUID().slice(0, 12).toUpperCase()}`,
         name: validate.text(input.name, 'نام'),
         kind: validate.text(input.kind, 'نوع همکاری', 80),
-        unit: validate.text(input.unit, 'واحد'),
+        unit: input.unit ? validate.text(input.unit, 'واحد') : '',
         position: validate.text(input.position, 'سمت'),
         grade: validate.text(input.grade, 'رده', 40),
         managerId: await this.manager(tx, input.managerId, branchId, actor),
@@ -1233,6 +1233,10 @@ export class HrService {
           if (referenceIndex >= 0) values[referenceIndex] = parent?.code ?? '';
         }
         if (schema.key === 'recruitment.applicants' && parent) {
+          if (parent.section !== 'recruitment' || parent.tab !== 'staffing')
+            throw new BadRequestException(
+              'متقاضی جدید باید به برنامه جذب ثبت‌شده متصل شود.',
+            );
           const openingCompany = (parent.data as HrWorkflowData)
             .organizationBranchId;
           if (
@@ -1241,9 +1245,10 @@ export class HrService {
             openingCompany !== data.organizationBranchId
           )
             throw new BadRequestException(
-              'فرصت شغلی باید متعلق به شرکت انتخاب‌شده باشد.',
+              'برنامه جذب باید متعلق به شرکت انتخاب‌شده باشد.',
             );
-          values[1] = (parent.values as string[])[0] ?? '';
+          const plan = parent.values as string[];
+          values[1] = `برنامه ${plan[0] ?? ''} - ${plan[2] ?? ''}`.trim();
         }
         const state = validate.status(input.status, schema.approval);
         if (schema.approval && validate.APPROVED.has(state))
@@ -1269,6 +1274,31 @@ export class HrService {
             effectiveAt: this.effective(schema, values, input.effectiveAt),
           },
         });
+        if (
+          schema.key === 'lifecycle.onboarding' &&
+          !validate.FINAL.has(state)
+        ) {
+          const created = await this.insertEmployee(
+            tx,
+            {
+              branchId: row.branchId,
+              organizationBranchId: data.organizationBranchId,
+              name: values[0],
+              unit: values[2],
+              kind: values[3],
+              position: values[4],
+              grade: values[5],
+              managerId: data.managerId,
+              startedAtValue: values[7],
+              status: 'در حال تکمیل',
+            },
+            actor,
+          );
+          await tx.hrRecord.update({
+            where: { id: row.id },
+            data: { employeeId: created.id },
+          });
+        }
         await this.amounts(tx, row, schema, values, data);
         if (schema.approval && validate.APPROVED.has(state))
           await this.effects(tx, row, schema, actor, employee);
@@ -1483,8 +1513,12 @@ export class HrService {
           values[referenceIndex] = missionParent?.code ?? '';
       }
       if (schema.key === 'recruitment.applicants' && parentId) {
-        const opening = await this.record(tx, parentId, actor);
-        const openingCompany = (opening.data as HrWorkflowData)
+        const plan = await this.record(tx, parentId, actor);
+        if (plan.tab !== 'staffing' && parentId !== row.parentId)
+          throw new BadRequestException(
+            'متقاضی باید به برنامه جذب ثبت‌شده متصل شود.',
+          );
+        const openingCompany = (plan.data as HrWorkflowData)
           .organizationBranchId;
         if (
           openingCompany &&
@@ -1492,9 +1526,39 @@ export class HrService {
           openingCompany !== data.organizationBranchId
         )
           throw new BadRequestException(
-            'فرصت شغلی باید متعلق به شرکت انتخاب‌شده باشد.',
+            'برنامه جذب باید متعلق به شرکت انتخاب‌شده باشد.',
           );
-        values[1] = (opening.values as string[])[0] ?? '';
+        const source = plan.values as string[];
+        values[1] =
+          plan.tab === 'staffing'
+            ? `برنامه ${source[0] ?? ''} - ${source[2] ?? ''}`.trim()
+            : (source[0] ?? '');
+      }
+      if (
+        schema.key === 'lifecycle.onboarding' &&
+        row.employeeId &&
+        input.values !== undefined &&
+        !validate.APPROVED.has(state)
+      ) {
+        await tx.hrEmployee.update({
+          where: { id: row.employeeId },
+          data: {
+            name: validate.text(values[0], 'نام'),
+            unit: values[2] ?? '',
+            kind: validate.text(values[3], 'نوع همکاری', 80),
+            position: validate.text(values[4], 'سمت'),
+            grade: validate.text(values[5], 'رده', 40),
+            managerId: await this.manager(
+              tx,
+              data.managerId,
+              row.branchId,
+              actor,
+              row.employeeId,
+            ),
+            startedAt: validate.isoDate(values[7]),
+            version: { increment: 1 },
+          },
+        });
       }
       const changed = await tx.hrRecord.updateMany({
         where: { id, version: expected, deletedAt: null },
@@ -1515,6 +1579,24 @@ export class HrService {
       if (changed.count !== 1)
         throw new ConflictException('نسخه رکورد تغییر کرده است.');
       const updated = await tx.hrRecord.findUniqueOrThrow({ where: { id } });
+      if (
+        schema.key === 'lifecycle.onboarding' &&
+        row.employeeId &&
+        ['ردشده', 'لغوشده'].includes(state)
+      ) {
+        await tx.hrEmployee.updateMany({
+          where: {
+            id: row.employeeId,
+            status: 'در حال تکمیل',
+            deletedAt: null,
+          },
+          data: {
+            status: 'لغوشده',
+            deletedAt: new Date(),
+            version: { increment: 1 },
+          },
+        });
+      }
       await this.amounts(tx, updated, schema, values, data);
       if (approvalAction && validate.APPROVED.has(state))
         await this.effects(tx, updated, schema, actor, employee);
@@ -1713,6 +1795,20 @@ export class HrService {
       });
       if (changed.count !== 1)
         throw new ConflictException('نسخه رکورد تغییر کرده است.');
+      if (schema.key === 'lifecycle.onboarding' && row.employeeId) {
+        await tx.hrEmployee.updateMany({
+          where: {
+            id: row.employeeId,
+            status: 'در حال تکمیل',
+            deletedAt: null,
+          },
+          data: {
+            status: 'لغوشده',
+            deletedAt: new Date(),
+            version: { increment: 1 },
+          },
+        });
+      }
       await this.audit(
         tx,
         actor,
@@ -1734,8 +1830,23 @@ export class HrService {
     const values = row.values as string[];
     const data = row.data as HrWorkflowData;
     if (schema.key === 'lifecycle.onboarding') {
-      if (row.employeeId)
-        throw new ConflictException('ورود این نیرو قبلاً انجام شده است.');
+      if (row.employeeId) {
+        const changed = await tx.hrEmployee.updateMany({
+          where: {
+            id: row.employeeId,
+            status: 'در حال تکمیل',
+            deletedAt: null,
+          },
+          data: { status: 'فعال', version: { increment: 1 } },
+        });
+        if (!changed.count)
+          throw new ConflictException('وضعیت نیروی جدید معتبر نیست.');
+        await tx.hrRecord.update({
+          where: { id: row.id },
+          data: { appliedAt: new Date() },
+        });
+        return;
+      }
       const created = await this.insertEmployee(
         tx,
         {

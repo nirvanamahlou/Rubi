@@ -64,7 +64,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
 
   it('renders the eighteen capability hub cards as deep links', () => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId="home" />);
-    expect(hrHubCards).toHaveLength(16);
+    expect(hrHubCards).toHaveLength(15);
     expect(html).toContain('dir="rtl"');
     expect(html).toContain('data-hr-mode="preview"');
     for (const card of hrHubCards) {
@@ -92,7 +92,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
 
   it('provides the complete employee profile and section tab sets', () => {
     expect(employeeTabs).toHaveLength(17);
-    expect(sectionTabs.organization).toHaveLength(5);
+    expect(sectionTabs.organization).toHaveLength(4);
     expect(sectionTabs.organization?.map((tab) => tab.label)).not.toContain(
       'نوع کارکنان',
     );
@@ -101,7 +101,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       'معرفی کارکنان',
     );
     expect(sectionTabs.lifecycle).toHaveLength(6);
-    expect(sectionTabs.contracts).toHaveLength(5);
+    expect(sectionTabs.contracts).toHaveLength(4);
     expect(sectionTabs.time).toHaveLength(10);
     expect(sectionTabs.development).toHaveLength(6);
     expect(sectionTabs.expenses).toHaveLength(4);
@@ -177,7 +177,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       'وضعیت',
     ])
       expect(html).toContain(label);
-    expect(html.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(10);
+    expect(html.match(/data-required-indicator="true"/g)?.length ?? 0).toBe(9);
     expect(html).not.toContain('عنوان نمایشی');
     expect(html).toContain('name="firstName"');
     expect(html).toContain('name="lastName"');
@@ -239,7 +239,6 @@ describe('Legacy HR preview and migration regression fixtures', () => {
       validateNewEmployeeForm({ ...value, branch: '', unit: '' }, []),
     ).toMatchObject({
       branch: 'شعبه را انتخاب کنید.',
-      unit: 'واحد را انتخاب کنید.',
     });
     expect(
       validateNewEmployeeForm(
@@ -741,7 +740,6 @@ describe('Legacy HR preview and migration regression fixtures', () => {
     ['lifecycle', 'چرخه همکاری', 'preview-lifecycle-onboarding-1'],
     ['expenses', 'مأموریت و هزینه‌ها', 'preview-time-mission-1'],
     ['assets', 'تجهیزات تحویلی', 'preview-assets-list-1'],
-    ['hrSettings', 'تنظیمات و یکپارچگی', 'preview-settings-workflow-1'],
   ] as const)('renders the %s capability preview', (section, title, id) => {
     const html = renderToStaticMarkup(<HrWorkspace sectionId={section} />);
     expect(html).toContain(title);
@@ -752,12 +750,7 @@ describe('Legacy HR preview and migration regression fixtures', () => {
   });
 
   it('states the exact Iran localization boundary', () => {
-    const html = renderToStaticMarkup(
-      <HrWorkspace sectionId="hrSettings" tabId="companies" />,
-    );
-    expect(html).toContain('چندشرکتی و بومی‌سازی');
-    expect(html).toContain('در انتظار تأیید قانونی');
-    expect(html).toContain('BLOCKED_FOR_APPROVED_RULES');
+    expect(hrHubCards.some((card) => card.id === 'hrSettings')).toBe(false);
     expect(iranLocalizationStatus).toEqual([
       {
         id: 'persian-calendar',

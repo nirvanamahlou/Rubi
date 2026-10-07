@@ -79,10 +79,10 @@ describe('expense mission references', () => {
       expenseMissionOptions(snapshot, 'branch-a', 'empty-company'),
     ).toEqual([]);
   });
-  it('distinguishes trips by their stored ID, destination and dates, even for the same employee', () => {
+  it('shows destination and dates without exposing stored IDs in mission choices', () => {
     const trip = mission('mission-001');
     expect(missionOptionLabel(trip)).toBe(
-      'HR-mission-001 · همکار آزمایشی · شیراز · 2026-09-10 تا 2026-09-12',
+      'همکار آزمایشی · شیراز · 2026-09-10 تا 2026-09-12',
     );
     const next = { ...trip, id: 'mission-002', code: 'HR-mission-002' };
     expect(

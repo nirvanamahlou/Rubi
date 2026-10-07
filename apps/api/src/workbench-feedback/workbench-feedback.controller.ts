@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   DefaultValuePipe,
+  Delete,
   Get,
   Header,
   Inject,
@@ -113,5 +114,14 @@ export class WorkbenchFeedbackController {
     @Query('pageSize', new DefaultValuePipe(20), ParseIntPipe) pageSize: number,
   ) {
     return this.service.hrInbox(request.actor, page, pageSize);
+  }
+
+  @Delete('hr/:id')
+  @Header('Cache-Control', 'private, no-store')
+  deleteHr(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.deleteHr(id, request.actor);
   }
 }

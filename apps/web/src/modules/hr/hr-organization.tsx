@@ -98,9 +98,7 @@ export function HrOrganization({
   onSelect: (record: HrRecordDto, source: HrSource) => void;
 }) {
   const [group, setGroup] = useState(
-    initialTab === 'positions' || initialTab === 'grades'
-      ? 'jobs'
-      : 'structure',
+    initialTab === 'positions' ? 'jobs' : 'structure',
   );
   const [view, setView] = useState(initialTab ?? 'orgchart');
   const [removing, setRemoving] = useState<HrRecordDto | null>(null);
@@ -131,7 +129,7 @@ export function HrOrganization({
         label="گروه‌های ساختار سازمانی"
         items={[
           { id: 'structure', label: 'چارت، شرکت‌ها و واحدها' },
-          { id: 'jobs', label: 'شغل و رده' },
+          { id: 'jobs', label: 'شغل و سمت' },
         ]}
         value={group}
         onChange={(id) => {
@@ -148,10 +146,7 @@ export function HrOrganization({
                 { id: 'branches', label: 'شعبه‌ها' },
                 { id: 'units', label: 'واحدها' },
               ]
-            : [
-                { id: 'positions', label: 'شغل و سمت' },
-                { id: 'grades', label: 'رده شغلی' },
-              ]
+            : [{ id: 'positions', label: 'شغل و سمت' }]
         }
         value={view}
         onChange={setView}

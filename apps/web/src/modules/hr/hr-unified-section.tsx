@@ -359,7 +359,7 @@ function AccessibleHrSection({
                   )
                   .map((item) => (
                     <option value={item.id} key={item.id}>
-                      {item.name} · {item.personnelCode}
+                      {item.name}
                     </option>
                   ))}
               </NativeSearchSelect>
@@ -474,6 +474,22 @@ function AccessibleHrSection({
           <>
             <HrTable
               data={dataset}
+              {...(source.section === 'recruitment' &&
+              source.tab === 'applicants' &&
+              writable
+                ? {
+                    onAssess: (index: number) =>
+                      onForm({
+                        source: {
+                          section: 'recruitment',
+                          tab: 'assessment',
+                          label: 'ارزیابی متقاضی',
+                          action: 'ثبت ارزیابی',
+                        },
+                        parent: currentItems[index]!,
+                      }),
+                  }
+                : {})}
               {...selection}
               showPagination={false}
               busy={loading}

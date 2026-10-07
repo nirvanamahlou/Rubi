@@ -169,6 +169,20 @@ export const customerAffairsApi = {
         updatedAt: string;
       }>;
     }>('/workbench/requests'),
+  hrWorkbenchRequests: () =>
+    request<{
+      data: Array<{
+        id: string;
+        trackingNumber: string;
+        subject: string;
+        description: string;
+        destinationUnit: string | null;
+        status: string;
+        priority: string;
+        nextActionAt: string;
+        updatedAt: string;
+      }>;
+    }>('/workbench/hr-requests'),
   sendSms: (
     id: string,
     input: { mobile: string; message: string },
