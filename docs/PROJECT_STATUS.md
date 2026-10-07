@@ -1,3 +1,7 @@
+## 2026-10-07 — CLEANUP-LOCAL-1007 — PC-A — COMPLETED
+
+Owner-authorized local cleanup removed five clean merged worktrees, 42 generated cache directories and 296 merged local branches accepted by git branch -d. Dirty or unmerged worktrees, current runtime roots, primary checkout and database backups remain. Ignored private files from removed clean checkouts were preserved locally. Net free-space increase during cleanup: 4,212,842,496 bytes; free after: 12,394,442,752 bytes. Primary tracked status clean on codex/sales. No product source, database, remote branch or runtime changes; product lint/typecheck/tests/build not applicable. Bounded cleanup locks released.
+
 ## 2026-10-06 — TICKET-NO-DELETE-1006 — PC-A — READY_FOR_REVIEW
 
 Defined-ticket deletion is removed from flight-load future/expired row actions and the legacy ticket card/confirmation flow. The Web API client no longer exposes delete. The authenticated legacy DELETE command rejects with HTTP400 before any DB transaction; existing status controls, history, prices, finance references, tour deletion and historical migration bytes remain. 184 Ticket Catalog Web tests (one existing skip), scoped Web/API ESLint and API typecheck pass. 181 API tests (19 opt-in skips) include three real PostgreSQL/HTTP lifecycle tests; fresh synthetic DB was fully migrated and removed after success. API typecheck/build passed. Web production build and exact-head CI gate user-authorized develop merge; bounded locks released with commit. No schema/migration/permission/dependency change or runtime rollout.
