@@ -4947,3 +4947,7 @@ The cooperation wizard final-save state distinguishes correctable validation/loo
 ## 2026-10-07 — HOTEL-PURCHASE-PRICE-LABEL-1007-B — PC-A
 
 Rename the reservation hotel-rate section to «قیمت خرید هتل» in the sidebar, English UI, page headings, breadcrumb, browser metadata and navigation regression expectation. Route, permissions and hotel pricing behavior remain unchanged. No migration, API, dependency or runtime change. User authorizes develop merge after scoped checks and exact-head CI.
+
+## OFFER-ROW-DELETE-1007
+
+Discount and special-offer preview rows have icon-only delete and shared confirmation/cancellation. Deleted IDs are excluded from display, filters and Excel output; unrelated records and usage history stay unchanged. This is explicitly in-memory preview removal, restored on reload; no durable Offers API exists on this surface and no server deletion is claimed. Marketing/translation107 tests passed; exact-head full CI gates user-authorized develop merge. No API/schema/dependency/local runtime changes.

@@ -6005,8 +6005,15 @@ Delivered shared dialog-aware date/time picker with empty landing publication de
 
 - COMPUTER_ID=PC-B; branch `codex/pc-b-agency-registration-save-1007` from `origin/develop@82f18200`. Reserve Organizations cooperation wizard/draft, directory refresh callback and focused tests, English catalog entries required by the full-suite gate, plus bounded task/status entries. Fix the final-save retry state so deterministic pre-persistence errors remain correctable, while unknown create outcomes and partially persisted organizations remain protected from duplicate writes. Keep phone verification fail-closed and offer explicit registration without an unverified phone. Catalog also covers one pre-existing untranslated Marketing label exposed by the same gate; no Marketing behavior changes. No API/schema/migration/dependency/IAM or operational data changes. User authorizes push and merge into develop after verification.
 
+
 ## HOTEL-PURCHASE-PRICE-LABEL-1007-B — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-hotel-purchase-price-label-1007-b from origin/develop@4322b8f3. Reserve hotel-rate sidebar label, English messages/catalog, navigation expectation, both hotel-rate workspace headings/breadcrumbs and route metadata, plus bounded status docs. Rename the hotel rate management UI to «قیمت خرید هتل». Preserve route, permissions, workflow, data and pricing semantics. No API/schema/migration/dependency/runtime change or active target overlap. User explicitly authorizes merge to develop after checks.
 
 Verification: navigation15 tests, scoped ESLint, Web typecheck, Web production build (56 routes), Prettier and git diff --check pass. Initial Web typecheck before building local Contracts artifacts showed missing generated workspace declarations; after `pnpm --filter @nora/contracts build`, Web typecheck passed. No migration or runtime rollout. Exact-head CI gates the user-authorized develop merge.
+
+## OFFER-ROW-DELETE-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-offer-row-delete-1007 from origin/develop. Reserve Marketing reference offer-table row deletion, focused tests and own status entries. Existing discounts/specials are preview rows without durable offer API; scope is confirmed in-memory removal, excluding usage history and unrelated tables. Preserve all other owner changes. No active overlapping Marketing source lock; no backend/schema/dependency/runtime changes. Standing user instruction authorizes push/develop merge after gates. Preview removals do not persist across reload.
+
+Scope includes one additive display translation in en-overrides.json; prior catalogue locks released. Delivered icon delete per discounts/specials row, guarded shared confirmation, cancellation and filtered export/pagination. Marketing plus translation107 tests pass, including both row types and cancellation. Scoped lint and exact-head full CI gate merge. Bounded source locks released with candidate; no authenticated operational deletion or local runtime deployment.
