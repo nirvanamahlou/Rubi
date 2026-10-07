@@ -1,3 +1,7 @@
+## SALES-CHILD-UNDER18-1007 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-child-age-under18-1007 from origin/develop. Owner explicitly confirms child means under18 and authorizes develop merge. Reserve Sales passenger-age selector/spec, exact occupancy Web model/spec and API capacity service/spec plus bounded own docs. Existing public hotel occupancy contract already accepts ages below18: no wire/schema/dependency changes. Align actual-birthday classification for exact hotel rates in both create/update and confirmation; preserve legacy hotel and flight age categories. Producer Reservations unchanged, consumer Sales aligned; missing age tariffs fail closed rather than fabricating prices. No operational data or deployment.
+
 ## HOTEL-IMPORT-DEVELOP-AGE-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; user authorizes PR671 develop merge and complete child-age options below selector. Reserve Sales passenger-age field/spec and bounded opt-in optionLimit in shared SearchCombobox (default5 unchanged), own docs, develop integration conflict resolution preserving all other owners' changes. No dependencies/schema/migration/database/runtime deployment. Inspect and repair exact-head CI before requested merge; no bypass of failures.
