@@ -1688,7 +1688,7 @@ function AudienceInputDialog({
     europe: 'جشنواره تابستان اروپا',
     istanbul: 'پرواز استانبول',
     dubai: 'هتل‌های دبی',
-    corporate: 'کمپین B2B پاییز',
+    corporate: 'کمپین سازمانی پاییز',
   };
   const statusLabel = status === 'active' ? 'فعال' : 'پیش‌نویس';
 
@@ -1718,8 +1718,8 @@ function AudienceInputDialog({
                 partner: 'آژانس همکار',
               };
               const sourceLabels: Record<string, string> = {
-                customers: 'قرارداد Customers',
-                organizations: 'CRM سازمانی',
+                customers: 'مشتریان',
+                organizations: 'مشتریان سازمانی',
                 marketing: 'سگمنت مارکتینگ',
               };
               onCreate({
@@ -1739,7 +1739,7 @@ function AudienceInputDialog({
               onNotice(`گروه مخاطبان «${name.trim()}» به کمپین افزوده شد.`);
             } else {
               if (utmSource.trim().length < 2 || utmMedium.trim().length < 2) {
-                onNotice('UTM Source و UTM Medium را کامل وارد کنید.');
+                onNotice('منبع و رسانه رهگیری را کامل وارد کنید.');
                 return;
               }
               const typeLabels: Record<string, string> = {
@@ -1821,7 +1821,7 @@ function AudienceInputDialog({
                 ['europe', 'جشنواره تابستان اروپا'],
                 ['istanbul', 'پرواز استانبول'],
                 ['dubai', 'هتل‌های دبی'],
-                ['corporate', 'کمپین B2B پاییز'],
+                ['corporate', 'کمپین سازمانی پاییز'],
               ]}
               value={campaign}
             />
@@ -1837,8 +1837,8 @@ function AudienceInputDialog({
                   ariaLabel="منبع داده مخاطبان"
                   onChange={setSource}
                   options={[
-                    ['customers', 'قرارداد Customers'],
-                    ['organizations', 'CRM سازمانی'],
+                    ['customers', 'مشتریان'],
+                    ['organizations', 'مشتریان سازمانی'],
                     ['marketing', 'سگمنت مارکتینگ'],
                   ]}
                   value={source}
@@ -1862,7 +1862,7 @@ function AudienceInputDialog({
             </>
           ) : (
             <>
-              <FormField id="source-utm-source" label="UTM Source" required>
+              <FormField id="source-utm-source" label="منبع رهگیری" required>
                 <Input
                   dir="ltr"
                   id="source-utm-source"
@@ -1871,7 +1871,7 @@ function AudienceInputDialog({
                   value={utmSource}
                 />
               </FormField>
-              <FormField id="source-utm-medium" label="UTM Medium" required>
+              <FormField id="source-utm-medium" label="رسانه رهگیری" required>
                 <Input
                   dir="ltr"
                   id="source-utm-medium"
@@ -1960,7 +1960,7 @@ const sourceRows: readonly PreviewRow[] = [
       'رویداد و نمایشگاه',
       'tourism-expo',
       'offline',
-      'کمپین B2B پاییز',
+      'کمپین سازمانی پاییز',
       '۶۰ روز',
       'فعال',
     ],
@@ -2201,9 +2201,9 @@ function AudiencePage({
             cells: [
               'گروه آژانس‌های همکار',
               'آژانس‌ها',
-              'کمپین B2B پاییز',
+              'کمپین سازمانی پاییز',
               '۳۴۲',
-              'B2B',
+              'آژانس‌ها و سازمان‌ها',
               'امروز',
               'فعال',
             ],
@@ -2229,7 +2229,7 @@ function AudiencePage({
               'مشتریان',
               'تابستان اروپا',
               '۱۲٬۸۴۰',
-              'Customers',
+              'مشتریان',
               'امروز',
               'فعال',
             ],

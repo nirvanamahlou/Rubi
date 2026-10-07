@@ -2,7 +2,18 @@ import type { MarketingAssetViewV1, DocumentListItemV1 } from '@nora/contracts';
 import { isValidElement, type ReactNode, type ReactElement } from 'react';
 import type * as ReactModule from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DurableContentPanel } from './marketing-durable-panels';
+import {
+  DurableContentPanel,
+  DurableIntakesPanel,
+  DurableSegmentsPanel,
+} from './marketing-durable-panels';
+import { AudienceToolbar } from './audience-toolbar';
+import {
+  audienceMatches,
+  audienceRuleLabels,
+  audienceSourceLabel,
+  audienceStatusLabels,
+} from '../model/audience-presentation';
 import { MarketingContentLibrary } from './marketing-content-library';
 
 const state = vi.hoisted(() => ({
@@ -17,6 +28,9 @@ const state = vi.hoisted(() => ({
   update: vi.fn(),
   archive: vi.fn(),
   push: vi.fn(),
+  intakes: vi.fn(),
+  createIntake: vi.fn(),
+  scoreIntake: vi.fn(),
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof ReactModule>()),
@@ -42,6 +56,9 @@ vi.mock('../api/records-client', () => ({
     campaigns: state.campaigns,
     access: state.access,
     deleteAsset: state.remove,
+    intakes: state.intakes,
+    createIntake: state.createIntake,
+    scoreIntake: state.scoreIntake,
   },
 }));
 vi.mock('@/modules/documents/api/client', () => ({
@@ -111,6 +128,210 @@ beforeEach(() => {
   state.campaigns.mockResolvedValue({ data: [] });
   state.save.mockResolvedValue({ data: asset });
   state.remove.mockResolvedValue({});
+});
+
+function intake(mode: 'leads' | 'scoring' = 'leads') {
+  state.index = 0;
+  return nodes(DurableIntakesPanel({ mode, onNotice: notice }));
+}
+function seedIntakes() {
+  state.values = [
+    { branchIds: ['branch-1'], userId: 'actor-secret-id' },
+    [{ id: 'campaign-1', name: 'کمپین تهران' }],
+    [],
+    false,
+    '',
+    [
+      {
+        id: 'intake-1',
+        maskedPhone: '0912***1234',
+        sourceCategory: 'WEBSITE',
+        campaignId: 'campaign-1',
+        status: 'QUALIFIED',
+        score: 40,
+        version: 9,
+        scoreRuleIds: ['PHONE_VALID'],
+        assigneeUserId: 'actor-secret-id',
+      },
+    ],
+    '',
+    '',
+    'WEBSITE',
+    'none',
+    'NEW',
+    '',
+    ['PHONE_VALID'],
+    null,
+    false,
+    '',
+    'all',
+    'all',
+    false,
+    '',
+    false,
+  ];
+  state.intakes.mockResolvedValue({ data: [] });
+  state.createIntake.mockResolvedValue({});
+  state.scoreIntake.mockResolvedValue({});
+}
+describe('audience presentation and canonical mutations', () => {
+  it('uses Persian labels and normalized Persian search without exposing raw source codes', () => {
+    expect(audienceSourceLabel('WEBSITE')).toBe('وب‌سایت');
+    expect(audienceSourceLabel('EXTERNAL_UNKNOWN')).toBe('منبع دیگر');
+    expect(audienceSourceLabel('نمایشگاه')).toBe('نمایشگاه');
+    expect(audienceStatusLabels.QUALIFIED).toBe('واجد شرایط');
+    expect(audienceRuleLabels.PHONE_VALID).toBe('شماره تماس معتبر');
+    expect(audienceMatches('كمپين', ['کمپین تهران'])).toBe(true);
+    expect(audienceMatches('ناشناخته', ['کمپین تهران'])).toBe(false);
+  });
+  it('renders RTL masked-intake tables and readable scoring rules', () => {
+    seedIntakes();
+    const tree = intake('scoring');
+    expect(tree[0]!.props.dir).toBe('rtl');
+    expect(tree.some((node) => node.type === 'table')).toBe(true);
+    expect(tree.some((node) => node.props.children === 'وب‌سایت')).toBe(true);
+    expect(tree.some((node) => node.props.children === 'واجد شرایط')).toBe(
+      true,
+    );
+    expect(tree.some((node) => node.props.children === '0912***1234')).toBe(
+      true,
+    );
+    expect(tree.some((node) => node.props.children === 'actor-secret-id')).toBe(
+      false,
+    );
+    expect(
+      tree.some(
+        (node) =>
+          node.type === 'label' &&
+          (node.props.children as unknown[]).includes('شماره تماس معتبر'),
+      ),
+    ).toBe(true);
+  });
+  it('filters intakes by status and source through the shared toolbar', () => {
+    seedIntakes();
+    const tree = intake();
+    const toolbar = tree.find((node) => node.type === AudienceToolbar)!;
+    (toolbar.props.onStatus as (value: string) => void)('LOST');
+    expect(intake().filter((node) => node.type === 'td')).toHaveLength(0);
+    (toolbar.props.onStatus as (value: string) => void)('all');
+    (toolbar.props.onSource as (value: string) => void)('WEBSITE');
+    expect(intake().filter((node) => node.type === 'td')).toHaveLength(6);
+    (toolbar.props.onSource as (value: string) => void)('PHONE');
+    expect(intake().filter((node) => node.type === 'td')).toHaveLength(0);
+  });
+  it('creates from Persian controls while retaining canonical owner, status and source', async () => {
+    seedIntakes();
+    let tree = intake();
+    const toolbar = tree.find((node) => node.type === AudienceToolbar)!;
+    (toolbar.props.onAdd as () => void)();
+    tree = intake();
+    (
+      find(tree, 'id', 'intake-phone').props.onChange as (
+        event: unknown,
+      ) => void
+    )({ target: { value: '09123456789' } });
+    tree = intake();
+    await (
+      find(tree, 'aria-label', 'ذخیره سرنخ جدید').props
+        .onClick as () => Promise<void>
+    )();
+    expect(state.createIntake).toHaveBeenCalledWith(
+      {
+        phone: '09123456789',
+        sourceCategory: 'WEBSITE',
+        campaignId: null,
+        status: 'NEW',
+        assigneeUserId: 'actor-secret-id',
+        lastFollowUpAt: null,
+      },
+      'branch-1',
+    );
+    expect(state.values[14]).toBe(false);
+  });
+  it('scores with original rule IDs and displayed CAS version', async () => {
+    seedIntakes();
+    await (
+      find(intake('scoring'), 'aria-label', 'محاسبه امتیاز 0912***1234').props
+        .onClick as () => Promise<void>
+    )();
+    expect(state.scoreIntake).toHaveBeenCalledWith(
+      'intake-1',
+      ['PHONE_VALID'],
+      9,
+    );
+  });
+  it('renders at most 25 intake rows and navigates the remaining records', () => {
+    seedIntakes();
+    const item = (state.values[5] as Record<string, unknown>[])[0]!;
+    state.values[5] = Array.from({ length: 26 }, (_, index) => ({
+      ...item,
+      id: `intake-${index}`,
+      maskedPhone: `شماره ${index}`,
+    }));
+    let tree = intake();
+    expect(tree.filter((node) => node.type === 'td')).toHaveLength(150);
+    (
+      find(tree, 'aria-label', 'صفحه بعد سرنخ‌ها').props.onClick as () => void
+    )();
+    tree = intake();
+    expect(tree.filter((node) => node.type === 'td')).toHaveLength(6);
+    expect(tree.some((node) => node.props.children === 'شماره 25')).toBe(true);
+  });
+  it('keeps the intake dialog open with server errors and allows correction', async () => {
+    seedIntakes();
+    state.values[7] = '09123456789';
+    state.values[14] = true;
+    state.createIntake.mockRejectedValueOnce(new Error('ثبت مجاز نیست'));
+    await (
+      find(intake(), 'aria-label', 'ذخیره سرنخ جدید').props
+        .onClick as () => Promise<void>
+    )();
+    expect(state.values[14]).toBe(true);
+    expect(state.values[19]).toBe('ثبت مجاز نیست');
+    expect(state.values[18]).toBe(false);
+  });
+  it('retains segment status, additional rules and CAS on editor save', async () => {
+    const segment = {
+      ...asset,
+      kind: 'SEGMENT',
+      status: 'PAUSED',
+      payload: {
+        rules: [{ expression: 'شرط نخست' }, { expression: 'شرط دوم' }],
+      },
+    };
+    state.values = [
+      { branchIds: ['branch-1'] },
+      [],
+      [segment],
+      false,
+      '',
+      'گروه سفر',
+      'شرط ویرایش‌شده',
+      segment,
+      false,
+      false,
+      true,
+      '',
+      'all',
+      '',
+    ];
+    state.index = 0;
+    const tree = nodes(DurableSegmentsPanel({ onNotice: notice }));
+    await (
+      tree.find((node) => node.type === 'form')!.props.onSubmit as (
+        event: unknown,
+      ) => void
+    )({ preventDefault() {} });
+    await vi.waitFor(() => expect(state.save).toHaveBeenCalled());
+    expect(state.save.mock.calls[0]![0]).toMatchObject({
+      kind: 'SEGMENT',
+      status: 'PAUSED',
+      expectedVersion: 7,
+      payload: {
+        rules: [{ expression: 'شرط ویرایش‌شده' }, { expression: 'شرط دوم' }],
+      },
+    });
+  });
 });
 describe('content list actions', () => {
   it('starts list-first with Persian labels, RTL and an icon add entry', () => {
