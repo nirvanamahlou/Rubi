@@ -1,3 +1,4 @@
+import type { FinanceHistoryItemV1 } from './finance';
 /** Finance-owned accounting v1. Money and rates are canonical decimal strings. */
 export const ACCOUNTING_PERMISSIONS = [
   'finance.journal.read',
@@ -147,7 +148,7 @@ export interface AccountingTurnoverV1 {
 }
 export interface AccountingSourcePageV1 {
   nextCursor: string | null;
-  items: (import('./finance').FinanceHistoryItemV1 & {
+  items: (FinanceHistoryItemV1 & {
     accounting: {
       id: string;
       status: AccountingJournalStatus;
