@@ -4916,3 +4916,7 @@ Campaign expense-row removal uses a neutral background, red inherited foreground
 ## 2026-10-07 — AUDIENCES-REDESIGN-1007 — PC-B
 
 Audience segments/intakes use shared Rubi RTL toolbars, search/status/source filters, 25-row semantic lists and separate guarded modal editors/details. Intakes show real aggregate counts, Persian statuses/sources/rule names and masked identities; canonical Customer Affairs source/status/rule IDs and scoring CAS remain unchanged. Segment editing retains additional rules, existing status and version. Source chart and legacy campaign-audience presentation use Persian labels; campaign-audience preview persistence is unchanged, not newly implemented. Marketing97 Web tests pass; affected lint and clean exact-head CI quality/build gates precede authorized develop merge. No API/schema/migration/IAM/dependency/live-runtime change or authenticated browser QA.
+
+## 2026-10-07 — REMOVE-SCHEDULED-TAB-1007 — PC-B
+
+Communications shows only immediate sending: removed scheduled-send tab definition, generated preview metadata and reachable scheduled panel branch; updated landing copy/highlights and regression expectations. Stored schedules and backend contracts remain intact. Full Marketing tests, scoped lint and exact-head CI build/typecheck/quality gates precede authorized develop merge. No API/schema/migration/dependency/runtime change or authenticated browser QA.

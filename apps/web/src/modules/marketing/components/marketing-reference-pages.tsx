@@ -5706,8 +5706,6 @@ export function MarketingReferenceSection({
             ) : null}
             {section === 'communications' && key === 'send' ? (
               <DurableMessagesPanel onNotice={onNotice} scheduled={false} />
-            ) : section === 'communications' && key === 'scheduled' ? (
-              <DurableMessagesPanel onNotice={onNotice} scheduled />
             ) : section === 'communications' ? (
               <CommunicationsPage
                 onNotice={onNotice}

@@ -66,9 +66,8 @@ export const marketingSections: readonly MarketingSectionDefinition[] = [
   {
     key: 'communications',
     title: 'ارتباطات',
-    description:
-      'ساخت پیام، زمان‌بندی ارسال، تاریخچه و مدیریت قالب‌های ارتباطی',
-    highlights: ['ارسال پیام', 'زمان‌بندی', 'قالب پیام'],
+    description: 'ساخت پیام و ثبت ارسال برای کانال‌های ارتباطی',
+    highlights: ['ارسال پیام'],
     tone: 'cyan',
   },
   {
@@ -109,11 +108,6 @@ export const marketingSectionTabs = {
   ],
   communications: [
     ['send', 'ارسال پیام', 'ساخت و ثبت نیت ارسال برای کانال‌های انتخاب‌شده'],
-    [
-      'scheduled',
-      'ارسال‌های زمان‌بندی‌شده',
-      'صف پیام‌های آماده ارسال در آینده',
-    ],
   ],
   content: [
     ['library', 'کتابخانه محتوا و فایل‌ها', 'دارایی‌های نسخه‌دار بازاریابی'],
@@ -165,11 +159,6 @@ const itemOverrides: Readonly<
     'پیام معرفی سفر پاییزی',
     'نیت ارسال برای پیامک و ایمیل با مخاطب انتخاب‌شده',
     'پیش‌نویس',
-  ],
-  'communications-scheduled': [
-    'یادآوری شروع کمپین اروپا',
-    'زمان‌بندی‌شده برای ۱۴ شهریور در کانال پیامک',
-    'زمان‌بندی‌شده',
   ],
   'communications-history': [
     'پیام موج دوم استانبول',
