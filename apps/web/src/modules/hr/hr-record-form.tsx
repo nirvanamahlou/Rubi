@@ -43,6 +43,7 @@ export interface HrFormTarget {
   parent?: HrRecordDto;
   employeeId?: string;
   organizationNode?: boolean;
+  preferredCompanyId?: string;
 }
 const valueOf = (record: HrRecordDto | undefined, label: string) =>
   record?.values[record.columns.indexOf(label)] ?? '';
@@ -163,6 +164,7 @@ function HrRecordFormFields({
       )?.organizationBranchId ??
       target.record?.data.organizationBranchId ??
       target.parent?.data.organizationBranchId ??
+      target.preferredCompanyId ??
       companies.find((item) => item.name === valueOf(target.record, 'شرکت'))
         ?.id ??
       companies[0]?.id ??
@@ -197,9 +199,19 @@ function HrRecordFormFields({
       '',
   );
   const [fileExpiry, setFileExpiry] = useState('');
-  const [newReference, setNewReference] = useState<
-    'employee' | 'units' | 'branches' | 'positions' | null
-  >(null);
+  const [newReference, setNewReference] = useState<{
+    kind: 'employee' | 'units' | 'branches' | 'positions';
+    label?: string;
+  } | null>(null);
+  const [createdReference, setCreatedReference] = useState<{
+    id: string;
+    label: string;
+    value: string;
+  }>();
+  const openReference = (
+    kind: 'employee' | 'units' | 'branches' | 'positions',
+    label?: string,
+  ) => setNewReference({ kind, ...(label ? { label } : {}) });
   const correction =
     target.source.section === 'time' && target.source.tab === 'corrections';
   const localTime = (value: string | undefined) =>
@@ -440,7 +452,7 @@ function HrRecordFormFields({
           {allowInlineCreate &&
           target.source.tab !== 'branches' &&
           target.source.tab !== 'units' ? (
-            <button type="button" onClick={() => setNewReference('branches')}>
+            <button type="button" onClick={() => openReference('branches')}>
               افزودن شعبه
             </button>
           ) : null}
@@ -491,7 +503,7 @@ function HrRecordFormFields({
             </label>
           ) : null}
           {allowInlineCreate && definition.employeeRequired ? (
-            <button type="button" onClick={() => setNewReference('employee')}>
+            <button type="button" onClick={() => openReference('employee')}>
               افزودن کارمند
             </button>
           ) : null}
@@ -644,12 +656,18 @@ function HrRecordFormFields({
               ],
               ...(allowInlineCreate
                 ? {
+                    skipCreateReferenceLabels:
+                      target.source.section === 'organization' &&
+                      target.source.tab === 'positions'
+                        ? ['عنوان سمت', 'عنوان شغل']
+                        : [],
                     onCreateReference: (label: string) => {
-                      if (label === 'کارمند') setNewReference('employee');
+                      if (label === 'کارمند') openReference('employee', label);
                       else if (/شعبه|شرکت/.test(label))
-                        setNewReference('branches');
-                      else if (/واحد/.test(label)) setNewReference('units');
-                      else setNewReference('positions');
+                        openReference('branches', label);
+                      else if (/واحد/.test(label))
+                        openReference('units', label);
+                      else openReference('positions', label);
                     },
                   }
                 : {}),
@@ -679,6 +697,7 @@ function HrRecordFormFields({
                 grade: item.grade,
               })),
               presetValues: presets,
+              ...(createdReference ? { createdReference } : {}),
               ...(target.record
                 ? {
                     initialValues: [
@@ -902,11 +921,23 @@ function HrRecordFormFields({
           />
         )}
         {newReference &&
-          target.source.tab !== newReference &&
-          (newReference === 'employee' ? (
+          target.source.tab !== newReference.kind &&
+          (newReference.kind === 'employee' ? (
             <HrEmployeeEditor
               store={store}
+              preferredCompanyId={companyId}
               onClose={() => setNewReference(null)}
+              onSaved={(item) => {
+                setCompanyId(item.organizationBranchId || item.branchId);
+                setBranchId(item.branchId);
+                setEmployeeId(item.id);
+                if (newReference.label)
+                  setCreatedReference({
+                    id: item.id,
+                    label: newReference.label,
+                    value: item.name,
+                  });
+              }}
             />
           ) : (
             <HrRecordForm
@@ -914,24 +945,44 @@ function HrRecordFormFields({
               target={{
                 source: {
                   section: 'organization',
-                  tab: newReference,
+                  tab: newReference.kind,
                   label:
-                    newReference === 'branches'
+                    newReference.kind === 'branches'
                       ? 'شرکت و شعبه'
-                      : newReference === 'units'
+                      : newReference.kind === 'units'
                         ? 'واحد سازمانی'
                         : 'شغل و سمت',
                   action:
-                    newReference === 'branches'
+                    newReference.kind === 'branches'
                       ? 'افزودن شعبه'
-                      : newReference === 'units'
+                      : newReference.kind === 'units'
                         ? 'افزودن واحد'
                         : 'افزودن سمت',
                 },
+                preferredCompanyId: companyId,
               }}
               store={store}
               onClose={() => setNewReference(null)}
-              onSaved={() => setNewReference(null)}
+              onSaved={(record) => {
+                if (newReference.kind === 'branches' && !newReference.label) {
+                  setCompanyId(record.id);
+                  setBranchId(record.branchId);
+                  setEmployeeId('');
+                  setParentId('');
+                }
+                if (newReference.label) {
+                  const value =
+                    newReference.label === 'عنوان شغل'
+                      ? valueOf(record, 'عنوان شغل')
+                      : (record.values[0] ?? '');
+                  setCreatedReference({
+                    id: record.id,
+                    label: newReference.label,
+                    value,
+                  });
+                }
+                setNewReference(null);
+              }}
             />
           ))}
       </DialogContent>

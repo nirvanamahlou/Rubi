@@ -6043,4 +6043,14 @@ English coverage requires corresponding offline API and standalone package-edito
 
 Static Procurement reference page module/title/breadcrumb labels are included; actual ticket-price fields in exported marketing banners retain their monetary meaning.
 
-Existing focused Web tests147 plus refreshed translation/Finance12 pass; scoped lint, Contracts/API/Web typechecks and API display/export checks pass. Final production builds and exact-head complete CI gate merge. Scoped source locks release with the candidate commit; no authenticated browser QA or local rollout claimed.
+Existing focused Web tests147 plus refreshed translation/Finance12 pass; scoped lint, Contracts/API/Web typechecks and API display/export checks pass. API and Web production builds pass; exact-head complete CI gates merge. Scoped source locks release with the candidate commit; no authenticated browser QA or local rollout claimed.
+
+## OFFER-TRASH-CONTRAST-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-offer-trash-1007 from origin/develop@ba002845. Reserve only Marketing preview discount/special-offer delete-button styling, focused regression and bounded status docs. White background with red inherited trash icon on row action and confirmation; retain existing confirmation/cancellation/removal behavior. Earlier durable-promotions work is paused in its separate worktree and has no source edits. No active target overlap, shared component/API/schema/migration/dependency/runtime changes. User explicitly authorizes push and develop merge after verification.
+
+Marketing/translation108 tests pass, including both offer tabs' neutral delete/confirmation styling and cancellation/removal. Bounded source locks release with frozen candidate; exact-head CI quality/typecheck/full tests/production build gates authorized merge. No local runtime rollout or operational write.
+
+## HR-INLINE-REFRESH-1007 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-hr-inline-refresh-1007` from `origin/develop@ead11783`. Reserve HR Web inline-reference creation and catalog/list refresh paths, their focused tests, and bounded status documentation. Ensure records created from another HR form become selectable in dropdowns and visible in their owning sections without a page reload. Preserve permissions, branch scope, draft state, API contracts and stored data. No schema, migration, dependency, shared API or unrelated module changes. No overlapping active HR source lock found. User explicitly authorizes push and merge to `develop` after verification.

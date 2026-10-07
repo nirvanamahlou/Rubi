@@ -365,7 +365,16 @@ describe('content list actions', () => {
       let tree = render();
       const remove = find(tree, 'aria-label', 'حذف اول');
       expect(remove.props.size).toBe('icon');
+      expect(remove.props.variant).toBe('outline');
+      expect(remove.props.className).toContain('bg-white');
+      expect(remove.props.className).toContain('text-destructive');
+      expect(remove.props.className).toContain('hover:bg-white');
       (remove.props.onClick as () => void)();
+      const confirm = find(render(), 'aria-label', 'تأیید حذف');
+      expect(confirm.props.variant).toBe('outline');
+      expect(confirm.props.className).toContain('bg-white');
+      expect(confirm.props.className).toContain('text-destructive');
+      expect(confirm.props.className).not.toContain('bg-destructive');
       (find(render(), 'aria-label', 'انصراف').props.onClick as () => void)();
       expect(find(render(), 'aria-label', 'حذف اول')).toBeDefined();
       (find(render(), 'aria-label', 'حذف اول').props.onClick as () => void)();
