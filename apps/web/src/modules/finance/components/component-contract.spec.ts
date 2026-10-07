@@ -104,14 +104,10 @@ describe('finance workspace component contract', () => {
     expect(liveInboxSource).toContain('aria-pressed={active}');
     expect(liveInboxSource).toContain('بررسی درخواست');
     expect(liveInboxSource).toContain('scrollIntoView');
-    for (const action of [
-      'recordTicketCost',
-      'payTicket',
-      'paySupplier',
-      'decideReceipt',
-    ]) {
+    for (const action of ['payTicket', 'paySupplier', 'decideReceipt']) {
       expect(liveInboxSource).toContain(`financeInboxApi.${action}`);
     }
+    expect(liveInboxSource).not.toContain('financeInboxApi.recordTicketCost');
     expect(liveInboxSource).toContain(
       'expectedVersion: actionItem.sourceVersion',
     );

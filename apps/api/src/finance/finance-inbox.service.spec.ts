@@ -313,7 +313,6 @@ describe('FinanceInboxService', () => {
       'SALES',
       'HR',
       'PURCHASES',
-      'PURCHASES',
       'RESERVATIONS',
     ]);
     expect(
@@ -323,9 +322,12 @@ describe('FinanceInboxService', () => {
       { source: 'SALES', connection: 'CONNECTED', itemCount: 1 },
       { source: 'HR', connection: 'CONNECTED', itemCount: 1 },
       { source: 'RESERVATIONS', connection: 'CONNECTED', itemCount: 1 },
-      { source: 'PURCHASES', connection: 'CONNECTED', itemCount: 2 },
+      { source: 'PURCHASES', connection: 'CONNECTED', itemCount: 1 },
       { source: 'FINANCE', connection: 'CONNECTED', itemCount: 0 },
     ]);
+    expect(
+      result.items.some((item) => item.sourceReference === 'ticket-purchase-1'),
+    ).toBe(false);
     expect(hr.list).toHaveBeenCalledWith({ target: 'finance', page: 1 }, actor);
     expect(reservations.list).toHaveBeenCalledWith(['branch-a']);
     expect(procurement.listFinanceTicketPurchases).toHaveBeenCalledWith([

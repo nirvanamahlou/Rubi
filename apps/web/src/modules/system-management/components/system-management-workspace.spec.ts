@@ -184,7 +184,10 @@ describe('system management reference implementation', () => {
     expect(workspace).toContain(
       "'reservations-supply': ['catalog', 'operations']",
     );
-    expect(workspace).toContain("'human-resources': ['hr', 'procurement']");
+    expect(workspace).toContain("'human-resources': ['hr']");
+    expect(workspace).toContain("'procurement-supply': ['procurement']");
+    expect(workspace).toContain("'ticket-purchases': 'procurement-supply'");
+    expect(navigation).toContain("hrefs: ['/ticket-purchases']");
     expect(workspace).not.toContain(
       "'reservations-supply': ['catalog', 'operations', 'procurement']",
     );

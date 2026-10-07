@@ -170,6 +170,7 @@ type SystemCategoryId =
   | 'company-settings'
   | 'documents-reports'
   | 'human-resources'
+  | 'procurement-supply'
   | 'reservations-supply'
   | 'sales-customers'
   | 'workspace';
@@ -184,6 +185,7 @@ const systemCategoryIdByNavigationGroup = {
   work: 'workspace',
   sales: 'sales-customers',
   operations: 'reservations-supply',
+  'ticket-purchases': 'procurement-supply',
   hr: 'human-resources',
   resources: 'documents-reports',
   system: 'company-settings',
@@ -199,7 +201,8 @@ const moduleIdsBySystemCategory: Record<
   workspace: ['tasks', 'messages'],
   'sales-customers': ['customers', 'affairs', 'sales', 'marketing', 'b2b'],
   'reservations-supply': ['catalog', 'operations'],
-  'human-resources': ['hr', 'procurement'],
+  'human-resources': ['hr'],
+  'procurement-supply': ['procurement'],
   'documents-reports': ['documents', 'reports'],
   'company-settings': ['general', 'master'],
 };

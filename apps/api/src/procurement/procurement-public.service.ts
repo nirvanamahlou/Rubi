@@ -211,6 +211,29 @@ export class ProcurementPublicService {
       throw new ConflictException('نسخه درخواست خرید بلیت تغییر کرده است.');
   }
 
+  /** Branch-scoped public travel-purchase inbox; general requests/orders are separate. */
+  async listTicketPurchaseInbox(actor: AuthenticatedActor) {
+    const broad = actor.permissions.some((p) =>
+      [
+        'procurement.read.all',
+        'procurement.read.unit',
+        'procurement.quote.manage',
+      ].includes(p),
+    );
+    if (!broad && !actor.permissions.includes('procurement.read.own'))
+      throw new ForbiddenException('مجوز مشاهده کارتابل خرید وجود ندارد.');
+    const rows =
+      await this.database.client.procurementTicketPurchaseRequest.findMany({
+        where: {
+          branchId: { in: [...actor.branchIds] },
+          status: { in: ['PENDING', 'PAID'] },
+          ...(broad ? {} : { createdByUserId: actor.userId }),
+        },
+        orderBy: [{ serviceDate: 'asc' }, { createdAt: 'asc' }],
+      });
+    return rows.map((row) => this.toTicketPurchase(row));
+  }
+
   async listFinanceTicketPurchases(
     branchIds: readonly string[],
   ): Promise<readonly TicketCatalogPurchaseV1[]> {
