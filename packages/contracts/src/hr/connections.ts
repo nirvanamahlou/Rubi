@@ -43,7 +43,7 @@ export const HR_CONNECTION_MODULES = [
   },
   {
     key: 'customers',
-    title: 'مشتریان و مسافران',
+    title: 'مشتریان B2c',
     path: '/customers',
     purpose: 'بررسی ارتباط کارمند با پرونده مستقل مشتری یا مسافر',
     mode: 'REFERRAL',
@@ -57,7 +57,7 @@ export const HR_CONNECTION_MODULES = [
   },
   {
     key: 'organizations',
-    title: 'آژانس‌ها و مشتریان سازمانی',
+    title: 'مشتریان B2B',
     path: '/organizations',
     purpose: 'تعیین جانشین مدیر حساب و تحویل حساب‌های سازمانی',
     mode: 'REFERRAL',
@@ -92,7 +92,7 @@ export const HR_CONNECTION_MODULES = [
   },
   {
     key: 'purchases',
-    title: 'خرید و تأمین',
+    title: 'تنخواه',
     path: '/purchases',
     purpose: 'پیگیری خرید تجهیزات و خدمات آموزشی کارکنان',
     mode: 'REFERRAL',

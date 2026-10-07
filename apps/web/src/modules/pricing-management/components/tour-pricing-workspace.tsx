@@ -498,7 +498,7 @@ export function TourPricingWorkspace() {
           </Link>
         }
         eyebrow="فروش و ارتباط با مشتری · ماژول مدیریت قیمت"
-        title="مدیریت قیمت و پکیج تور"
+        title="مدیریت پکیج تور"
         description="قیمت خرید هتل‌های همان نوبت تور را ببینید، قیمت فروش هر گزینه هتل و پرواز را تنظیم کنید و نسخه قیمت را برای انتشار آماده کنید."
       />
       {notice ? <Alert title="وضعیت قیمت‌گذاری" description={notice} /> : null}

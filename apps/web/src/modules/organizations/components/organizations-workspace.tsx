@@ -444,7 +444,7 @@ export function OrganizationsWorkspace() {
         <div className="page-head">
           <div className="title">
             <h1 ref={directoryHeading} tabIndex={-1}>
-              آژانس‌ها و مشتریان سازمانی
+              مشتریان B2B
             </h1>
           </div>
         </div>

@@ -1143,7 +1143,7 @@ export function DetailPanel({
                   <option value="reservations">رزرواسیون و عملیات سفر</option>
                   <option value="sales">فروش و قراردادها</option>
                   <option value="finance">مالی</option>
-                  <option value="customers">مشتریان و مسافران</option>
+                  <option value="customers">مشتریان B2c</option>
                   <option value="documents">اسناد</option>
                 </AffairsSelect>
               </FormField>

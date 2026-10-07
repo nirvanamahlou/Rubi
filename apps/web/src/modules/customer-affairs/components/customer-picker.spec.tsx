@@ -14,7 +14,7 @@ describe('Customers and passengers picker', () => {
     const html = renderToStaticMarkup(
       <CustomerPicker selected={selected} onSelect={() => {}} />,
     );
-    expect(html).toContain('انتخاب از مشتریان و مسافران');
+    expect(html).toContain('انتخاب از مشتریان B2c');
     expect(html).toContain('نام انتخاب‌شده');
     expect(html).toContain('***1234');
     expect(html).not.toContain('CustomerReference');
@@ -116,7 +116,7 @@ describe('Customers and passengers picker', () => {
     expect(customersForm).toContain('انتخاب پروندهٔ ایجادشده');
     expect(customersForm).toContain('setCreationOutcomeUncertain(true)');
     expect(customersForm).toContain('isUncertainCustomerCreateFailure(error)');
-    expect(customersForm).toContain('بررسی فهرست مشتریان و مسافران');
+    expect(customersForm).toContain('بررسی فهرست مشتریان B2c');
     expect(customersForm).toContain('customersApi.create(submittedDraft)');
     expect(customersForm).toContain('if (createSubmitting.current) return;');
     expect(customersForm).toContain('validateCustomerEntryRows');

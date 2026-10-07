@@ -1269,7 +1269,7 @@ export function CustomerDrawer({
               rel="noopener noreferrer"
               target="_blank"
             >
-              بررسی فهرست مشتریان و مسافران
+              بررسی فهرست مشتریان B2c
             </a>
           ) : null}
           {conflictRefreshPending && customer ? (
@@ -3390,7 +3390,7 @@ export function CustomerWorkspace() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="مشتریان و مسافران" />
+      <PageHeader title="مشتریان B2c" />
       <section
         aria-label="شاخص‌های مشتریان"
         className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"

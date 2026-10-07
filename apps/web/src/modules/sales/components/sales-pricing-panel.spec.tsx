@@ -20,7 +20,7 @@ describe('sales pricing entry', () => {
         onChange={vi.fn()}
       />,
     );
-    expect(html).toContain('نرخ فروش از قیمت بلیط ثبت‌شده می‌آید');
+    expect(html).toContain('نرخ فروش از قیمت گذاری پرواز ثبت‌شده می‌آید');
     expect(html).toMatch(/قیمت روز فروش بلیط رفت کل[^>]*readOnly=""/);
     expect(html).toContain('aria-label="مبلغ توافق‌شده با مشتری بلیط رفت کل"');
     expect(html).not.toContain('افزودن ارز');

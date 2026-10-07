@@ -625,7 +625,7 @@ export function TicketPricesWorkspace() {
     <div className="space-y-6" dir="rtl">
       <PageHeader
         eyebrow="فروش"
-        title="قیمت بلیط"
+        title="قیمت گذاری پرواز"
         actions={
           <div className="flex flex-wrap gap-2">
             <Button

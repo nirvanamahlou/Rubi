@@ -198,7 +198,7 @@ export const financeFeatures: readonly FinanceFeature[] = [
   },
   {
     id: 20,
-    title: 'تسویه آژانس‌ها و مشتریان سازمانی',
+    title: 'تسویه مشتریان B2B',
     description: 'صورت‌حساب، اعتبار و تخصیص وصول سازمانی',
     group: 'travel-settlement',
     keywords: ['آژانس', 'سازمانی', 'B2B'],
