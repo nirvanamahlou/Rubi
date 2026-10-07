@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 
 import { CustomersModule } from '../customers/customers.module';
+import { CustomerContactCrypto } from '../customers/customer-contact.crypto';
 import { HrDirectoryModule } from '../hr/hr-directory.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { IamModule } from '../iam/iam.module';
 import { AuthGuard } from '../iam/auth.guard';
 import { PermissionGuard } from '../iam/permission.guard';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { MarketingModule } from '../marketing/marketing.module';
 import { ReservationsRuntimeModule } from '../reservations/reservations-runtime.module';
 import { SalesModule } from '../sales/sales.module';
 import { SettingsModule } from '../settings/settings.module';
@@ -24,6 +26,8 @@ import { CustomerAffairsInternalController } from './customer-affairs-internal.c
 import { CustomerAffairsRemindersService } from './customer-affairs-reminders.service';
 import { CustomerAffairsSmsService } from './customer-affairs-sms.service';
 import { CustomerAffairsSmsController } from './customer-affairs-sms.controller';
+import { CustomerAffairsMarketingIntakeController } from './customer-affairs-marketing-intake.controller';
+import { CustomerAffairsMarketingIntakeService } from './customer-affairs-marketing-intake.service';
 
 @Module({
   imports: [
@@ -34,6 +38,7 @@ import { CustomerAffairsSmsController } from './customer-affairs-sms.controller'
     SalesModule,
     ReservationsRuntimeModule,
     NotificationsModule,
+    MarketingModule,
     SettingsModule,
   ],
   controllers: [
@@ -42,6 +47,7 @@ import { CustomerAffairsSmsController } from './customer-affairs-sms.controller'
     CustomerAffairsSiteController,
     CustomerAffairsInternalController,
     CustomerAffairsSmsController,
+    CustomerAffairsMarketingIntakeController,
   ],
   providers: [
     AuthGuard,
@@ -51,7 +57,9 @@ import { CustomerAffairsSmsController } from './customer-affairs-sms.controller'
     CustomerAffairsSiteGuard,
     CustomerAffairsRemindersService,
     CustomerAffairsSmsService,
+    CustomerContactCrypto,
+    CustomerAffairsMarketingIntakeService,
   ],
-  exports: [CustomerAffairsService],
+  exports: [CustomerAffairsService, CustomerAffairsMarketingIntakeService],
 })
 export class CustomerAffairsModule {}

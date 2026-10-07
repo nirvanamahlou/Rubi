@@ -101,7 +101,7 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
 
     it('searches return offers beyond the outbound window and scopes to authorized branches', async () => {
       const outbound = await tickets.publish(
-        definition,
+        { ...definition, serviceNumber: 'TEST-SEARCH' },
         actor,
         branchId,
         randomUUID(),
@@ -159,7 +159,11 @@ describe.skipIf(!process.env.TRAVEL_TEST_DATABASE_URL)(
     });
 
     it('atomically prevents overselling and reports remaining capacity', async () => {
-      const offerDefinition = { ...definition, totalCapacity: 3 };
+      const offerDefinition = {
+        ...definition,
+        serviceNumber: 'TEST-CAPACITY',
+        totalCapacity: 3,
+      };
       const published = await tickets.publish(
         offerDefinition,
         actor,

@@ -9,19 +9,14 @@ import {
 import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   calendarMonthDays,
   calendarMonthLabel,
   moveCalendarMonth,
   type CalendarSystem,
 } from '@/components/ui/date-picker.utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/form-controls';
+import { FormField } from '@/components/ui/form-controls';
 import { Badge, Card, EmptyState } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 import { campaignStatusLabels, type CampaignPreview } from '../model/marketing';
@@ -58,6 +53,16 @@ function campaignsOnDay(
   );
 }
 
+export function campaignCalendarMonthRange(anchor: Date) {
+  const currentDays = calendarMonthDays(anchor, 'persian').filter(
+    (day) => day.isCurrentMonth,
+  );
+  return {
+    startsAt: currentDays[0]!.isoDate,
+    endsAt: currentDays[currentDays.length - 1]!.isoDate,
+  };
+}
+
 export function CampaignCalendar({
   campaigns,
   onOpen,
@@ -65,15 +70,32 @@ export function CampaignCalendar({
   campaigns: readonly CampaignPreview[];
   onOpen: (campaign: CampaignPreview) => void;
 }) {
-  const [system, setSystem] = useState<CalendarSystem>('persian');
-  const [anchor, setAnchor] = useState(() => new Date(2026, 8, 2, 12));
+  const system: CalendarSystem = 'persian';
+  const [anchor, setAnchor] = useState(() => new Date());
+  const [range, setRange] = useState(() =>
+    campaignCalendarMonthRange(new Date()),
+  );
+  const moveMonth = (delta: -1 | 1) => {
+    const next = moveCalendarMonth(anchor, delta, system);
+    setAnchor(next);
+    setRange(campaignCalendarMonthRange(next));
+  };
   const days = useMemo(
     () => calendarMonthDays(anchor, system),
     [anchor, system],
   );
+  const rangeCampaigns = useMemo(
+    () =>
+      campaigns.filter(
+        (campaign) =>
+          campaign.startsAt.slice(0, 10) <= range.endsAt &&
+          campaign.endsAt.slice(0, 10) >= range.startsAt,
+      ),
+    [campaigns, range],
+  );
   const monthCampaigns = useMemo(
     () =>
-      campaigns.filter((campaign) =>
+      rangeCampaigns.filter((campaign) =>
         days.some(
           (day) =>
             day.isCurrentMonth &&
@@ -81,7 +103,7 @@ export function CampaignCalendar({
             campaign.endsAt.slice(0, 10) >= day.isoDate,
         ),
       ),
-    [campaigns, days],
+    [rangeCampaigns, days],
   );
 
   return (
@@ -98,41 +120,54 @@ export function CampaignCalendar({
             </p>
           </div>
         </div>
-        <div dir="ltr" className="flex flex-wrap items-center gap-2">
-          <Select
-            value={system}
-            onValueChange={(value) => setSystem(value as CalendarSystem)}
-          >
-            <SelectTrigger aria-label="نوع تقویم" className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="persian">تقویم شمسی</SelectItem>
-              <SelectItem value="gregorian">تقویم میلادی</SelectItem>
-            </SelectContent>
-          </Select>
+        <div
+          dir="ltr"
+          className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[14rem_14rem_auto_auto_auto] lg:items-end"
+        >
+          <FormField id="campaign-calendar-start" label="از تاریخ">
+            <DatePicker
+              id="campaign-calendar-start"
+              value={range.startsAt}
+              onChange={(startsAt) => {
+                setRange((current) => ({ ...current, startsAt }));
+                const next = new Date(`${startsAt}T12:00:00`);
+                if (Number.isFinite(next.getTime())) setAnchor(next);
+              }}
+            />
+          </FormField>
+          <FormField id="campaign-calendar-end" label="تا تاریخ">
+            <DatePicker
+              id="campaign-calendar-end"
+              value={range.endsAt}
+              onChange={(endsAt) =>
+                setRange((current) => ({ ...current, endsAt }))
+              }
+            />
+          </FormField>
           <Button
             aria-label="ماه قبل"
-            onClick={() =>
-              setAnchor((value) => moveCalendarMonth(value, -1, system))
-            }
+            onClick={() => moveMonth(-1)}
             size="icon"
             variant="outline"
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
           </Button>
           <Button
-            onClick={() => setAnchor(new Date(2026, 8, 2, 12))}
+            aria-label="رفتن به ماه جاری"
+            onClick={() => {
+              const now = new Date();
+              setAnchor(now);
+              setRange(campaignCalendarMonthRange(now));
+            }}
+            size="icon"
+            title="امروز"
             variant="outline"
           >
             <RotateCcw aria-hidden="true" className="size-4" />
-            امروز
           </Button>
           <Button
             aria-label="ماه بعد"
-            onClick={() =>
-              setAnchor((value) => moveCalendarMonth(value, 1, system))
-            }
+            onClick={() => moveMonth(1)}
             size="icon"
             variant="outline"
           >
@@ -156,7 +191,7 @@ export function CampaignCalendar({
           </div>
           <div dir="ltr" className="grid grid-cols-7">
             {days.map((day) => {
-              const events = campaignsOnDay(campaigns, day.isoDate);
+              const events = campaignsOnDay(rangeCampaigns, day.isoDate);
               return (
                 <div
                   className={cn(

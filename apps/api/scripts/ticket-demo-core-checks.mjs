@@ -109,7 +109,20 @@ test('only explicit local development/test connections are accepted', () => {
 test('snapshot contains only approved ticket data and closed references', () => {
   validateFixture(fixture, config);
   assert.equal(fixture.offers.length, 20);
-  assert.equal(fixture.offers.filter((r) => r.archived).length, 9);
+  assert.equal(fixture.offers.filter((r) => r.archived).length, 14);
+  const visibleKeys = fixture.offers
+    .filter((r) => !r.archived)
+    .map((r) =>
+      JSON.stringify([
+        r.originId,
+        r.destinationId,
+        r.departureAt,
+        r.carrierName,
+        r.serviceNumber,
+        r.cabinClassCode,
+      ]),
+    );
+  assert.equal(new Set(visibleKeys).size, visibleKeys.length);
   assert.equal(fixture.standalone.length, 4);
   assert.equal(fixture.roundTrips.length, 4);
   assert.equal(fixture.commissions.length, 12);
@@ -143,7 +156,7 @@ test('import preserves archived state, prices and decimal precision; repeated im
     state.offers.filter((r) =>
       r.audit.some((a) => a.action === 'ticket.offer.archived'),
     ).length,
-    9,
+    14,
   );
   assert.equal(state.roundTrips.length, 4);
   assert.equal(state.commissions.length, 12);
@@ -195,7 +208,7 @@ test('clear touches only marked records in the configured branch and preserves i
     apply: true,
     clear: true,
   });
-  assert.equal(result.archived, 10);
+  assert.equal(result.archived, 5);
   assert.equal(state.targetCleanupWhere.isActive, true);
   assert.equal(
     state.targetCleanupWhere.commissions.none.OR[1].returnOfferId.notIn.length,
@@ -221,7 +234,7 @@ test('a linked ticket aborts the entire batch, including earlier archives', asyn
     state.offers.filter((r) =>
       r.audit.some((a) => a.action === 'ticket.offer.archived'),
     ).length,
-    9,
+    14,
   );
 });
 test('clearing in preview mode leaves visibility unchanged', async () => {
@@ -229,12 +242,12 @@ test('clearing in preview mode leaves visibility unchanged', async () => {
   await runTicketDemo(client, fixture, config, { apply: true });
   assert.equal(
     (await runTicketDemo(client, fixture, config, { clear: true })).archived,
-    11,
+    6,
   );
   assert.equal(
     state.offers.filter((r) =>
       r.audit.some((a) => a.action === 'ticket.offer.archived'),
     ).length,
-    9,
+    14,
   );
 });

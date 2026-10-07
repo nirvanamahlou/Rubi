@@ -9,13 +9,22 @@ import {
   MessagesSquare,
   Package,
   PackageCheck,
+  Plus,
+  Pencil,
   ReceiptText,
+  Trash2,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { MasterDataRecord, ProcurementRequestV1 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/overlays';
 import { MoneyInput } from '@/components/ui/money-input';
 import {
   Alert,
@@ -30,12 +39,15 @@ import { MasterDataLiveForm } from '@/modules/master-data/components/master-data
 import { MasterDataDateRangeFilter } from '@/modules/master-data/components/master-data-date-range-filter';
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
 import { cn } from '@/lib/utils';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { procurementApi, commandAttempt, type Bootstrap } from './api';
 import { DraftForm, selectClass } from './draft-form';
 import { statusLabels } from './model';
 import { OperationForm } from './operation-form';
 import { ProcurementRecordActions } from './record-actions';
 import { ProcurementSelect } from './procurement-select';
+import { ProcurementSupplierLogo } from './supplier-logo';
+import { RecordCard, RecordPreviewButton } from './record-details';
 import {
   sampleRequests,
   sampleSuppliers,
@@ -175,45 +187,9 @@ const sectionStatuses: Partial<
     'CLOSED',
   ],
   4: ['APPROVED', 'SOURCING'],
-  5: ['SOURCING', 'CLOSED'],
+  5: ['APPROVED', 'SOURCING', 'CLOSED'],
   6: ['SOURCING', 'CLOSED'],
   7: ['SOURCING', 'CLOSED'],
-};
-const previewFields: Record<SectionIndex, readonly [string, string][]> = {
-  1: [
-    ['عنوان درخواست', 'تجهیزات پشتیبانی شعبه'],
-    ['درخواست‌کننده', 'کارمند شعبه مرکزی'],
-    ['موعد موردنیاز', '۱۴۰۵/۰۶/۲۸'],
-  ],
-  2: [
-    ['تصمیم', 'تأیید / بازگشت / رد'],
-    ['دلیل تصمیم', 'شرح تصمیم'],
-  ],
-  3: [
-    ['نام تأمین‌کننده', 'تأمین تجهیزات آریا'],
-    ['کد تأمین‌کننده', 'SUP-DEMO-101'],
-    ['وضعیت همکاری', 'در حال بررسی'],
-  ],
-  4: [
-    ['تأمین‌کننده', 'تأمین تجهیزات آریا'],
-    ['مبلغ پیشنهاد', '۲۸۰٬۰۰۰٬۰۰۰ IRR'],
-    ['اعتبار پیشنهاد', '۱۴۰۵/۰۶/۳۰'],
-  ],
-  5: [
-    ['پیشنهاد منتخب', 'QT-DEMO-108'],
-    ['موعد تحویل', '۱۴۰۵/۰۷/۰۵'],
-    ['محل تحویل', 'شعبه مرکزی'],
-  ],
-  6: [
-    ['سفارش خرید', 'PO-DEMO-110'],
-    ['مقدار تحویل', '۱۰'],
-    ['مقدار پذیرفته‌شده', '۹'],
-  ],
-  7: [
-    ['شماره فاکتور', 'INV-DEMO-114'],
-    ['سفارش خرید', 'PO-DEMO-110'],
-    ['مبلغ فاکتور', '۳۹۰٬۰۰۰٬۰۰۰ IRR'],
-  ],
 };
 const errorText = (error: unknown) =>
   error instanceof Error ? error.message : 'دریافت اطلاعات ناموفق بود.';
@@ -245,6 +221,8 @@ export function InternalSections({
   onSaved: (request: ProcurementRequestV1) => void;
   onDelete?: (request: ProcurementRequestV1) => Promise<void>;
 }) {
+  const queryClient = useQueryClient();
+  const accessPermissions = useAccessPermissions();
   const [search, setSearch] = useState('');
   const [querySearch, setQuerySearch] = useState('');
   const [status, setStatus] = useState('');
@@ -252,10 +230,13 @@ export function InternalSections({
   const [createdTo, setCreatedTo] = useState('');
   const [page, setPage] = useState(1);
   const [candidate, setCandidate] = useState('');
+  const [createOpen, setCreateOpen] = useState(false);
+  const [choicePage, setChoicePage] = useState(1);
   const [openedSampleId, setOpenedSampleId] = useState('');
   const [supplierForm, setSupplierForm] = useState<
     { mode: 'create' } | { mode: 'edit'; record: MasterDataRecord } | null
   >(null);
+  const [supplierError, setSupplierError] = useState('');
   const [hiddenSamples, setHiddenSamples] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -357,6 +338,27 @@ export function InternalSections({
   const openedSample = rows.find(
     (row) => row.sample && row.id === openedSampleId,
   );
+  const requestChoices = useQuery({
+    queryKey: ['procurement', 'creation-requests', group, choicePage],
+    queryFn: () =>
+      procurementApi.list(
+        new URLSearchParams({
+          page: String(choicePage),
+          queue: group === 2 ? 'approvals' : '',
+        }),
+      ),
+    enabled: createOpen && group !== 1 && group !== 3 && !openedSample,
+    retry: false,
+  });
+  const choiceRows: ProcurementListRow[] = (
+    requestChoices.data?.items.length
+      ? requestChoices.data.items
+      : requestChoices.isSuccess && choicePage === 1
+        ? rows.filter((row) => row.sample)
+        : []
+  ).filter(
+    (row) => group !== 5 || ['APPROVED', 'SOURCING'].includes(row.status),
+  );
   const supplierRows = (
     suppliers.data?.items.length
       ? suppliers.data.items
@@ -373,6 +375,30 @@ export function InternalSections({
   const title = sections[group];
   const tone = sectionTone[group];
   const Icon = sectionIcons[group];
+  const canCreate =
+    group === 3
+      ? accessPermissions === undefined ||
+        !!accessPermissions?.includes('master_data.create')
+      : group === 6
+        ? (
+            [
+              'procurement.receipt.manage',
+              'procurement.acceptance.manage',
+              'procurement.discrepancy.manage',
+              'procurement.return.manage',
+            ] as const
+          ).some((permission) => bootstrap.permissions.includes(permission))
+        : bootstrap.permissions.includes(
+            group === 1
+              ? 'procurement.request.create'
+              : group === 2
+                ? 'procurement.approve'
+                : group === 4
+                  ? 'procurement.quote.manage'
+                  : group === 5
+                    ? 'procurement.order.manage'
+                    : 'procurement.invoice.manage',
+          );
 
   async function persistSupplier(
     values: Record<string, string>,
@@ -380,13 +406,23 @@ export function InternalSections({
       typeof masterDataApi.persistWithLogo
     >[0]['logoChange'],
   ) {
-    await masterDataApi.persistWithLogo({
+    const saved = await masterDataApi.persistWithLogo({
       resource: 'suppliers',
       values,
       title: `تأمین‌کننده ${values.name ?? values.legalName ?? ''}`.trim(),
+      ...(supplierForm?.mode === 'edit'
+        ? { existing: supplierForm.record }
+        : {}),
       ...(logoChange ? { logoChange } : {}),
     });
+    queryClient.setQueryData(
+      ['procurement', 'supplier-profile', saved.data.id],
+      { data: saved.data },
+    );
     setSupplierForm(null);
+    await queryClient.invalidateQueries({
+      queryKey: ['procurement', 'supplier-profile'],
+    });
     await suppliers.refetch();
   }
   function hideSample(id: string) {
@@ -400,8 +436,13 @@ export function InternalSections({
     });
   }
   async function editSupplier(id: string) {
-    const result = await masterDataApi.detail('suppliers', id);
-    setSupplierForm({ mode: 'edit', record: result.data });
+    setSupplierError('');
+    try {
+      const result = await masterDataApi.detail('suppliers', id);
+      setSupplierForm({ mode: 'edit', record: result.data });
+    } catch (caught) {
+      setSupplierError(errorText(caught));
+    }
   }
   async function deleteRequest(row: ProcurementListRow) {
     const result = await procurementApi.get(row.id);
@@ -411,6 +452,13 @@ export function InternalSections({
 
   return (
     <div className="space-y-5" data-procurement-section={group}>
+      {supplierError && (
+        <Alert
+          tone="error"
+          title="اطلاعات تأمین‌کننده دریافت نشد"
+          description={supplierError}
+        />
+      )}
       <PageHeader
         title={title.title}
         actions={
@@ -458,7 +506,7 @@ export function InternalSections({
           ) : null}
         </>
       ) : (
-        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+        <div className="space-y-4">
           <section className="min-w-0 space-y-4" aria-label={title.list}>
             <Card className={cn('overflow-hidden', tone.border)}>
               <div
@@ -479,10 +527,30 @@ export function InternalSections({
                   </span>
                   <h2 className="font-bold">{title.list}</h2>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {group === 3 ? supplierRows.length : rows.length} مورد در این
-                  صفحه
-                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-xs text-muted-foreground">
+                    {group === 3 ? supplierRows.length : rows.length} مورد در
+                    این صفحه
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!canCreate}
+                    onClick={() => {
+                      if (group === 1) onCreate();
+                      else if (group === 3) setSupplierForm({ mode: 'create' });
+                      else {
+                        setCandidate('');
+                        setChoicePage(1);
+                        setOpenedSampleId('');
+                        setCreateOpen(true);
+                      }
+                    }}
+                  >
+                    <Plus aria-hidden="true" className="size-4" />
+                    {group === 2 ? 'بررسی درخواست' : 'ثبت جدید'}
+                  </Button>
+                </div>
               </div>
               <FilterBar
                 className={cn(
@@ -587,16 +655,36 @@ export function InternalSections({
                           tone.row,
                         )}
                       >
-                        <div>
-                          <p className="font-semibold">
-                            {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
-                          </p>
-                          <p
-                            className="mt-1 text-xs text-muted-foreground"
-                            dir="ltr"
-                          >
-                            {supplier.code}
-                          </p>
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          {!('sample' in supplier) && (
+                            <ProcurementSupplierLogo id={supplier.id} />
+                          )}
+                          <div className="min-w-0">
+                            {'sample' in supplier ? (
+                              <RecordPreviewButton
+                                record={supplier as Record<string, unknown>}
+                                title={
+                                  supplier.name?.trim() ||
+                                  'تأمین‌کننده بدون نام'
+                                }
+                                variant="ghost"
+                                className="h-auto max-w-full justify-start whitespace-normal break-words px-0 py-0 text-right font-semibold text-primary hover:bg-transparent hover:underline"
+                              >
+                                {supplier.name?.trim() ||
+                                  'تأمین‌کننده بدون نام'}
+                              </RecordPreviewButton>
+                            ) : (
+                              <SupplierRecordPreviewButton
+                                supplier={supplier}
+                              />
+                            )}
+                            <p
+                              className="mt-1 text-xs text-muted-foreground"
+                              dir="ltr"
+                            >
+                              {supplier.code}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge>
@@ -604,8 +692,7 @@ export function InternalSections({
                           </Badge>
                           <ProcurementRecordActions
                             label={
-                              supplier.name?.trim() ||
-                              'تأمین‌کننده بدون نام'
+                              supplier.name?.trim() || 'تأمین‌کننده بدون نام'
                             }
                             onEdit={() => {
                               if ('sample' in supplier && supplier.sample)
@@ -656,9 +743,14 @@ export function InternalSections({
                       )}
                     >
                       <div className="min-w-0">
-                        <p className="truncate font-semibold">
+                        <RecordPreviewButton
+                          record={requestPreviewRecord(row)}
+                          title={row.draft.title || 'درخواست بدون عنوان'}
+                          variant="ghost"
+                          className="h-auto max-w-full justify-start whitespace-normal break-words px-0 py-0 text-right font-semibold text-primary hover:bg-transparent hover:underline"
+                        >
                           {row.draft.title || 'درخواست بدون عنوان'}
-                        </p>
+                        </RecordPreviewButton>
                         <p
                           className="mt-1 text-xs text-muted-foreground"
                           dir="ltr"
@@ -668,12 +760,28 @@ export function InternalSections({
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge>{statusLabels[row.status]}</Badge>
+                        {group === 5 &&
+                          !row.sample &&
+                          ['APPROVED', 'SOURCING'].includes(row.status) &&
+                          bootstrap.permissions.includes(
+                            'procurement.order.manage',
+                          ) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => onOpen(row.id)}
+                            >
+                              <Plus aria-hidden="true" className="size-4" />
+                              سفارش جدید
+                            </Button>
+                          )}
                         <ProcurementRecordActions
                           label={row.draft.title || row.number}
                           onEdit={() => {
                             if (row.sample) {
                               setCandidate(row.id);
                               setOpenedSampleId(row.id);
+                              setCreateOpen(true);
                             } else {
                               onOpen(row.id);
                             }
@@ -737,119 +845,116 @@ export function InternalSections({
               ) : null}
             </Card>
           </section>
-
-          <Card
-            className={cn(
-              'relative overflow-hidden p-5 xl:sticky xl:top-4',
-              tone.border,
-            )}
-            aria-label={title.form}
-          >
-            <span
-              aria-hidden="true"
-              className={cn(
-                'pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b to-transparent',
-                tone.glow,
-              )}
-            />
-            <div className="relative space-y-4">
-              <div className="border-b border-border pb-3">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={cn(
-                      'grid size-10 place-items-center rounded-xl',
-                      tone.icon,
-                    )}
-                  >
-                    <Icon aria-hidden="true" className="size-5" />
-                  </span>
-                  <h2 className="font-bold">{title.form}</h2>
-                </div>
-              </div>
-              {group === 1 ? (
-                <Button
-                  className="w-full"
-                  disabled={
-                    !bootstrap.permissions.includes(
-                      'procurement.request.create',
-                    )
-                  }
-                  onClick={onCreate}
-                >
-                  ثبت درخواست جدید
-                </Button>
-              ) : group === 3 ? (
-                <Button
-                  className="w-full"
-                  onClick={() => setSupplierForm({ mode: 'create' })}
-                >
-                  ثبت تأمین‌کننده
-                </Button>
-              ) : (
-                <>
-                  <FormField id="proc-section-request" label="پرونده خرید">
-                    <ProcurementSelect
-                      id="proc-section-request"
-                      className={selectClass}
-                      value={candidate}
-                      onChange={(event) => setCandidate(event.target.value)}
-                    >
-                      <option value="">انتخاب پرونده</option>
-                      {rows.map((row) => (
-                        <option key={row.id} value={row.id}>
-                          {row.number} · {row.draft.title}
-                        </option>
-                      ))}
-                    </ProcurementSelect>
-                  </FormField>
-                  <Button
-                    className="w-full"
-                    disabled={!candidate}
-                    onClick={() => {
-                      const row = rows.find((item) => item.id === candidate);
-                      if (row?.sample) setOpenedSampleId(row.id);
-                      else onOpen(candidate);
-                    }}
-                  >
-                    باز کردن فرم
-                  </Button>
-                </>
-              )}
-              {group === 5 && openedSample ? (
-                <SampleOrderForm
-                  key={openedSample.id}
-                  request={openedSample}
-                  branches={bootstrap.branches}
-                />
-              ) : group === 7 && openedSample ? (
-                <SampleInvoiceForm
-                  key={openedSample.id}
-                  request={openedSample}
-                  currencies={bootstrap.currencies}
-                />
-              ) : (
-                <div className="border-t border-border pt-4">
-                  <Badge className={tone.chip}>پیش‌نمایش فرم</Badge>
-                  <fieldset disabled className="mt-3 space-y-3">
-                    {previewFields[group].map(([label, value], index) => (
-                      <FormField
-                        key={label}
-                        id={`proc-preview-${group}-${index}`}
-                        label={label}
-                      >
-                        <Input
-                          id={`proc-preview-${group}-${index}`}
-                          defaultValue={value}
-                        />
-                      </FormField>
-                    ))}
-                  </fieldset>
-                </div>
-              )}
-            </div>
-          </Card>
         </div>
       )}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent
+          dir="rtl"
+          className="max-h-[90vh] max-w-2xl overflow-y-auto"
+        >
+          <DialogTitle>{title.form}</DialogTitle>
+          <DialogDescription>انتخاب پرونده خرید</DialogDescription>
+          {openedSample ? (
+            group === 5 ? (
+              <SampleOrderForm
+                key={openedSample.id}
+                request={openedSample}
+                branches={bootstrap.branches}
+              />
+            ) : group === 7 ? (
+              <SampleInvoiceForm
+                key={openedSample.id}
+                request={openedSample}
+                currencies={bootstrap.currencies}
+              />
+            ) : (
+              <RecordCard record={requestPreviewRecord(openedSample)} />
+            )
+          ) : (
+            <div className="space-y-4">
+              {requestChoices.isPending ? <Skeleton className="h-12" /> : null}
+              {requestChoices.isError ? (
+                <Alert
+                  tone="error"
+                  title="فهرست درخواست‌ها دریافت نشد"
+                  description={errorText(requestChoices.error)}
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => void requestChoices.refetch()}
+                  >
+                    تلاش دوباره
+                  </Button>
+                </Alert>
+              ) : null}
+              <FormField id="proc-section-request" label="پرونده خرید">
+                <ProcurementSelect
+                  id="proc-section-request"
+                  className={selectClass}
+                  value={candidate}
+                  onChange={(event) => setCandidate(event.target.value)}
+                >
+                  <option value="">انتخاب پرونده</option>
+                  {choiceRows.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.draft.title || 'درخواست بدون عنوان'} · {row.number}
+                    </option>
+                  ))}
+                </ProcurementSelect>
+              </FormField>
+              {requestChoices.isSuccess && !choiceRows.length ? (
+                <p role="status" className="text-sm text-muted-foreground">
+                  درخواست قابل انتخابی در این صفحه وجود ندارد.
+                </p>
+              ) : null}
+              {choicePage > 1 || requestChoices.data?.hasMore ? (
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={choicePage === 1}
+                    onClick={() => {
+                      setChoicePage(choicePage - 1);
+                      setCandidate('');
+                    }}
+                  >
+                    قبلی
+                  </Button>
+                  <span className="text-sm">
+                    صفحه {choicePage.toLocaleString('fa-IR')}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!requestChoices.data?.hasMore}
+                    onClick={() => {
+                      setChoicePage(choicePage + 1);
+                      setCandidate('');
+                    }}
+                  >
+                    بعدی
+                  </Button>
+                </div>
+              ) : null}
+              <Button
+                type="button"
+                disabled={!candidate}
+                onClick={() => {
+                  const row = choiceRows.find((item) => item.id === candidate);
+                  if (row?.sample) setOpenedSampleId(row.id);
+                  else {
+                    setCreateOpen(false);
+                    onOpen(candidate);
+                  }
+                }}
+              >
+                ادامه
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       {supplierForm && group === 3 && (
         <MasterDataLiveForm
           definition={getMasterDataDefinition('suppliers')}
@@ -865,6 +970,100 @@ export function InternalSections({
         />
       )}
     </div>
+  );
+}
+
+function requestPreviewRecord(row: ProcurementListRow) {
+  return {
+    id: row.id,
+    number: row.number,
+    version: row.version,
+    status: row.status,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    ...row.draft,
+    data: row.draft,
+    lines: row.draft.items ?? [],
+    documents: row.draft.documents ?? [],
+  } as Record<string, unknown>;
+}
+
+function SupplierRecordPreviewButton({
+  supplier,
+}: {
+  supplier: {
+    id: string;
+    code: string;
+    name: string;
+    isActive: boolean;
+    collaborationStatus: string;
+  };
+}) {
+  const [open, setOpen] = useState(false);
+  const profile = useQuery({
+    queryKey: ['procurement', 'supplier-profile', supplier.id],
+    queryFn: () => masterDataApi.detail('suppliers', supplier.id),
+    enabled: open,
+    retry: false,
+  });
+  const value = profile.data?.data;
+  const snapshot = value
+    ? {
+        id: value.id,
+        name: value.name,
+        code: value.code,
+        status: value.status,
+        version: value.version,
+        createdAt: value.createdAt,
+        updatedAt: value.updatedAt,
+        ...value.attributes,
+      }
+    : null;
+  return (
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        className="h-auto max-w-full justify-start gap-1 whitespace-normal break-words px-0 py-0 text-right font-semibold text-primary hover:bg-transparent hover:underline"
+        onClick={() => setOpen(true)}
+      >
+        {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          dir="rtl"
+          className="max-h-[90vh] max-w-3xl overflow-y-auto"
+        >
+          <DialogTitle className="pe-8">
+            {supplier.name?.trim() || 'تأمین‌کننده بدون نام'}
+          </DialogTitle>
+          <DialogDescription>اطلاعات ثبت‌شدهٔ تأمین‌کننده</DialogDescription>
+          {profile.isPending ? (
+            <Skeleton className="mt-4 h-36" />
+          ) : profile.isError ? (
+            <Alert
+              tone="error"
+              title="پروفایل تأمین‌کننده دریافت نشد"
+              description={errorText(profile.error)}
+            >
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-3"
+                onClick={() => void profile.refetch()}
+              >
+                تلاش دوباره
+              </Button>
+            </Alert>
+          ) : snapshot ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)]">
+              <ProcurementSupplierLogo id={supplier.id} />
+              <RecordCard record={snapshot} />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -1222,6 +1421,18 @@ function SectionRequestForm({
           </h2>
         </div>
         <Badge className="relative">{statusLabels[request.status]}</Badge>
+        <div className="relative">
+          <RecordPreviewButton
+            record={{
+              ...request,
+              ...request.draft,
+              data: request.draft,
+              lines: request.draft.items,
+              documents: request.draft.documents,
+            }}
+            title={request.draft.title || request.number}
+          />
+        </div>
       </Card>
       {group === 2 ? (
         <ApprovalForm
@@ -1344,6 +1555,10 @@ function SectionOperations({
 }) {
   const kinds = sectionKinds[group] ?? [];
   const [kind, setKind] = useState(kinds[0]?.[0] ?? 'quotations');
+  const [orderAction, setOrderAction] = useState<{
+    action: 'AMEND_ORDER' | 'CANCEL_ORDER';
+    record: Record<string, unknown>;
+  } | null>(null);
   const records = useQuery({
     queryKey: [
       'procurement',
@@ -1402,23 +1617,102 @@ function SectionOperations({
           <div className="divide-y divide-border">
             {records.data.items.map((row, index) => {
               const record = row as Record<string, unknown>;
+              const selectedOrderAction =
+                orderAction?.record.id === record.id ? orderAction : null;
               return (
-                <div
+                <details
                   key={String(record.id ?? index)}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 text-sm"
+                  className="px-5 py-4 text-sm"
                 >
-                  <strong>
-                    {String(
-                      record.number ??
-                        record.invoiceNumber ??
-                        record.id ??
-                        'رکورد',
+                  <summary className="cursor-pointer rounded-lg px-2 py-1 text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <strong>
+                      {String(
+                        record.number ??
+                          record.invoiceNumber ??
+                          record.id ??
+                          'رکورد',
+                      )}
+                    </strong>
+                    <span className="text-muted-foreground">
+                      {String(record.status ?? '')}
+                    </span>
+                  </summary>
+                  <div className="mt-3">
+                    <RecordCard record={record} showPreviewAction />
+                    {group === 5 &&
+                      (bootstrap.permissions.includes(
+                        'procurement.order.amend',
+                      ) ||
+                        bootstrap.permissions.includes(
+                          'procurement.order.cancel',
+                        )) && (
+                        <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+                          {bootstrap.permissions.includes(
+                            'procurement.order.amend',
+                          ) &&
+                            String(record.status) === 'ISSUED' && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                aria-label="ویرایش سفارش"
+                                title="ویرایش سفارش"
+                                onClick={() =>
+                                  setOrderAction({
+                                    action: 'AMEND_ORDER',
+                                    record,
+                                  })
+                                }
+                              >
+                                <Pencil aria-hidden="true" className="size-4" />
+                              </Button>
+                            )}
+                          {bootstrap.permissions.includes(
+                            'procurement.order.cancel',
+                          ) && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              aria-label="لغو سفارش"
+                              title="لغو سفارش"
+                              disabled={['CANCELLED', 'CLOSED'].includes(
+                                String(record.status),
+                              )}
+                              onClick={() =>
+                                setOrderAction({
+                                  action: 'CANCEL_ORDER',
+                                  record,
+                                })
+                              }
+                            >
+                              <Trash2 aria-hidden="true" className="size-4" />
+                            </Button>
+                          )}
+                          <span className="self-center text-xs text-muted-foreground">
+                            لغو سفارش سابقه را حفظ می‌کند و سفارش دارای دریافت
+                            یا فاکتور لغو نمی‌شود.
+                          </span>
+                        </div>
+                      )}
+                    {group === 5 && selectedOrderAction && (
+                      <div className="mt-4">
+                        <OperationForm
+                          key={`${selectedOrderAction.action}-${String(record.id)}`}
+                          kind="orders"
+                          initialAction={selectedOrderAction.action}
+                          initialRecord={record}
+                          request={request}
+                          bootstrap={bootstrap}
+                          onChanged={(updated) => {
+                            onSaved(updated);
+                            setOrderAction(null);
+                          }}
+                        />
+                      </div>
                     )}
-                  </strong>
-                  <span className="text-muted-foreground">
-                    {String(record.status ?? '')}
-                  </span>
-                </div>
+                  </div>
+                </details>
               );
             })}
           </div>

@@ -2,6 +2,7 @@
 import { useMemo, useState } from 'react';
 import type { HotelOccupancyRateV1 } from '@nora/contracts';
 import { SearchCombobox } from '@/components/ui/search-combobox';
+import { DatePicker } from '@/components/ui/date-picker';
 import { OccupancyImportPreview } from './occupancy-import-preview';
 import {
   occupancyImportRows,
@@ -82,34 +83,34 @@ export function OccupancyRateEditor({
                       .join(' / ') || '—'}
                   </td>
                   <td>
-                    <input
-                      type="date"
+                    <DatePicker
+                      id={`occupancy-start-${index}`}
                       aria-label={`شروع نرخ ${index + 1}`}
+                      defaultCalendarSystem="gregorian"
+                      gregorianEnglish
                       disabled={disabled}
                       value={rate.startsOn}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         onChange(
                           rates.map((r, i) =>
-                            i === index
-                              ? { ...r, startsOn: e.target.value }
-                              : r,
+                            i === index ? { ...r, startsOn: value } : r,
                           ),
                         )
                       }
                     />
                   </td>
                   <td>
-                    <input
-                      type="date"
+                    <DatePicker
+                      id={`occupancy-end-${index}`}
                       aria-label={`پایان غیرشامل نرخ ${index + 1}`}
+                      defaultCalendarSystem="gregorian"
+                      gregorianEnglish
                       disabled={disabled}
                       value={rate.endsOnExclusive}
-                      onChange={(e) =>
+                      onChange={(value) =>
                         onChange(
                           rates.map((r, i) =>
-                            i === index
-                              ? { ...r, endsOnExclusive: e.target.value }
-                              : r,
+                            i === index ? { ...r, endsOnExclusive: value } : r,
                           ),
                         )
                       }

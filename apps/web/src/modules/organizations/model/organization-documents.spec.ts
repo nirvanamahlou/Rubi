@@ -207,6 +207,25 @@ describe('organization Documents public integration', () => {
       validUntil: '2026-12-01T20:29:59.999Z',
     });
   });
+  it('sends optional financial notes with the uploaded document and bounds their length', () => {
+    const form = organizationDocumentForm(
+      organization,
+      { ...input, description: '  رسید پرداخت مرحله نخست  ' },
+      file(),
+      options,
+      permissions,
+    );
+    expect(form.get('description')).toBe('رسید پرداخت مرحله نخست');
+    expect(() =>
+      organizationDocumentForm(
+        organization,
+        { ...input, description: 'x'.repeat(1001) },
+        file(),
+        options,
+        permissions,
+      ),
+    ).toThrow('۱۰۰۰');
+  });
   it('keeps and displays expiry on the selected Tehran day without a date shift', () => {
     const form = organizationDocumentForm(
       organization,

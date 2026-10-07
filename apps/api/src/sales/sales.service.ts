@@ -1061,11 +1061,13 @@ export class SalesService {
                   .filter(
                     (service) =>
                       service.kind === 'FLIGHT' &&
-                      service.pricing?.[0]?.daySale.basis === 'TOTAL',
+                      (service.pricing?.[0]?.daySale.basis === 'TOTAL' ||
+                        service.metadata?.catalogSaleQuoteVersion !==
+                          undefined),
                   )
                   .map((service) => [
                     service.clientKey,
-                    expectedTicketSale(service.pricing![0]!, service.metadata),
+                    expectedTicketSale(service.pricing?.[0], service.metadata),
                   ]),
               ),
         )

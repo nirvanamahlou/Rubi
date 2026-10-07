@@ -38,6 +38,10 @@ describe('Purchase section date filters', () => {
       expect(html).toContain(`proc-section-${group}-from-date`);
       expect(html).toContain(`proc-section-${group}-to-date`);
       expect(html).toContain('شمسی / میلادی');
+      expect(html).not.toContain('پیش‌نمایش فرم');
+      expect(html).not.toContain('proc-preview-');
+      expect(html).not.toContain('xl:sticky');
+      expect(html).toContain(group === 2 ? 'بررسی درخواست' : 'ثبت جدید');
     }
   }, 40_000);
 

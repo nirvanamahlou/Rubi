@@ -81,7 +81,7 @@ describe('Purchase draft accessibility and persisted input', () => {
       ],
     });
   });
-  it('renders an incomplete draft with optional delivery location and explicit unavailable documents', () => {
+  it('renders the simplified draft without the header, attachments or supplier explanation', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>
         <DraftForm
@@ -97,16 +97,16 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('aria-required="true"');
     expect(html).not.toContain('علت نامشخص بودن برآورد');
     expect(html).toContain('انتخاب محل تحویل (اختیاری)');
-    expect(html).toContain('سرویس اسناد در دسترس نیست');
+    expect(html).not.toContain('سرویس اسناد در دسترس نیست');
     expect(html).toContain('کاربر جاری');
     expect(html).toContain('شعبه مرکزی');
     expect(html).toContain('انتخاب واحد از منابع انسانی');
-    expect(html).toContain('تأمین‌کننده در درخواست اولیه اختیاری است');
-    expect(html).toContain('بدون انتخاب یا نوشتن تأمین‌کننده');
+    expect(html).not.toContain('تأمین‌کننده در درخواست اولیه اختیاری است');
+    expect(html).not.toContain('بدون انتخاب یا نوشتن تأمین‌کننده');
     expect(html).not.toContain('id="proc-supplier"');
     expect(html).not.toContain('id="proc-purchaseType"');
     expect(html).not.toContain('id="proc-priority"');
-    expect(html).toContain('پیوست‌ها و یادداشت‌ها');
+    expect(html).not.toContain('پیوست‌ها و یادداشت‌ها');
     expect(html).not.toContain('نوع منشأ درخواست');
     expect(html).not.toContain('ارجاع از رزرواسیون');
     expect(html).not.toContain('type="date"');
@@ -114,9 +114,25 @@ describe('Purchase draft accessibility and persisted input', () => {
     expect(html).toContain('تأیید و انتشار');
     expect(html).not.toContain('>ثبت پیش‌نویس</span>');
     expect(html).not.toContain('>ویرایش پیش‌نویس</span>');
-    expect(html).toContain(
-      'شماره درخواست: پس از نخستین ثبت، خودکار تعیین می‌شود',
+    expect(html).not.toContain('شماره درخواست:');
+    expect(html).toContain('aria-label="افزودن دسته خرید"');
+  });
+  it('offers a follow-up recipient only to authorized assigners and keeps approval policy separate', () => {
+    const html = renderToStaticMarkup(
+      <QueryClientProvider client={new QueryClient()}>
+        <DraftForm
+          bootstrap={{
+            ...bootstrap,
+            permissions: ['procurement.request.create', 'procurement.assign'],
+          }}
+          onClose={() => undefined}
+          onSaved={() => undefined}
+        />
+      </QueryClientProvider>,
     );
+    expect(html).toContain('مسئول پیگیری');
+    expect(html).not.toContain('برای نمایش مسئولان');
+    expect(html).not.toContain('اختیار تأیید فقط از سیاست مصوب خرید می‌آید');
   });
   it('blocks publish before persistence when required or line values are invalid', () => {
     const draft = {
@@ -145,6 +161,9 @@ describe('Purchase draft accessibility and persisted input', () => {
       message: 'مقدار هر قلم باید عددی مثبت باشد.',
     });
     draft.items[0]!.quantity = '2';
+    draft.unitId = '';
+    draft.needReason = '';
+    draft.items[0]!.description = '';
     expect(validatePublishDraft(draft)).toBeNull();
     Reflect.deleteProperty(draft.items[0]!, 'unit');
     expect(validatePublishDraft(draft)).toEqual({
@@ -152,7 +171,7 @@ describe('Purchase draft accessibility and persisted input', () => {
       message: 'واحد سنجش همهٔ اقلام و خدمات را انتخاب کنید.',
     });
   });
-  it('makes the requester requirement visible before saving a new draft', () => {
+  it('permits omission of an HR requester without showing a validation error', () => {
     const html = renderToStaticMarkup(
       <QueryClientProvider client={new QueryClient()}>
         <DraftForm
@@ -163,8 +182,8 @@ describe('Purchase draft accessibility and persisted input', () => {
       </QueryClientProvider>,
     );
 
-    expect(html).toContain('یک کارمند فعال را انتخاب کنید.');
-    expect(html).toContain('id="proc-requester-error"');
+    expect(html).not.toContain('یک کارمند فعال را انتخاب کنید.');
+    expect(html).not.toContain('id="proc-requester-error"');
   });
   it('loads HR employees and units immediately from the requester branch', () => {
     const client = new QueryClient();
@@ -240,7 +259,7 @@ describe('Purchase draft accessibility and persisted input', () => {
       </QueryClientProvider>,
     );
     expect(html).toContain('9,007,199,254,740,993.1234');
-    expect(html).toContain('شماره درخواست: PR-1');
+    expect(html).not.toContain('شماره درخواست: PR-1');
     expect(html).toContain('اختلال در عملیات');
     expect(html).toContain('1.5000');
     expect(html).not.toContain('for="line-1-acceptanceCriteria"');

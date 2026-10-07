@@ -86,12 +86,16 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
     if (app) await app.close();
     if (client) await client.$disconnect();
   }, 60000);
-  it('creates ten identical-schedule independent offers, edits, pauses, activates, holds and archives safely', async () => {
+  it('creates ten distinct services, rejects duplicate stock, and edits/archives safely', async () => {
     const ids: string[] = [];
     for (let index = 0; index < 10; index++) {
       const key = 'ticket-catalog:qa-' + userId + '-' + index;
-      const first = await service.publish(definition, actor, branchId, key);
-      expect(await service.publish(definition, actor, branchId, key)).toEqual(
+      const occurrence =
+        index === 0
+          ? definition
+          : { ...definition, serviceNumber: `QA-${index}` };
+      const first = await service.publish(occurrence, actor, branchId, key);
+      expect(await service.publish(occurrence, actor, branchId, key)).toEqual(
         first,
       );
       ids.push(first.data.id);
@@ -103,6 +107,9 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
       list.every((o) => o.catalogProductId?.startsWith('qa-' + userId)),
     ).toBe(true);
     const id = ids[0]!;
+    await expect(
+      service.publish(definition, actor, branchId, randomUUID()),
+    ).rejects.toThrow('قبلاً ثبت');
     await expect(
       service.publish(
         { ...definition, totalCapacity: 60 },
@@ -201,7 +208,7 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
         ?.remainingCapacity,
     ).toBe(58);
     await expect(service.archiveExpired(id, 4, actor)).rejects.toThrow(
-      'رزرو ظرفیت',
+      'بلیت تعریف‌شده قابل حذف نیست',
     );
     await expect(
       service.revise(
@@ -236,8 +243,10 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
       (await service.managed(actor)).data.find((o) => o.id === id)
         ?.standaloneSalePrice?.amount,
     ).toBe('9600000');
-    await service.archiveExpired(id, 4, actor);
-    expect((await service.managed(actor)).data).toHaveLength(9);
+    await expect(service.archiveExpired(id, 4, actor)).rejects.toThrow(
+      'بلیت تعریف‌شده قابل حذف نیست',
+    );
+    expect((await service.managed(actor)).data).toHaveLength(10);
     expect(
       await client.ticketOfferStandaloneSalePrice.count({
         where: { offerId: id },
@@ -252,10 +261,18 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
       (await purchases.listFinanceTicketPurchases([branchId])).length,
     ).toBe(10);
     await expect(
-      service.revise(id, { expectedVersion: 5, offer: definition }, actor),
+      service.revise(
+        id,
+        { expectedVersion: 5, offer: definition },
+        { ...actor, branchIds: [] },
+      ),
     ).rejects.toThrow('شعبه');
     await expect(
-      service.updateStatus(id, { expectedVersion: 5, status: 'ACTIVE' }, actor),
+      service.updateStatus(
+        id,
+        { expectedVersion: 5, status: 'ACTIVE' },
+        { ...actor, branchIds: [] },
+      ),
     ).rejects.toThrow('شعبه');
   }, 120000);
   it('runs the actual HTTP create/edit/status/delete routes and rejects unauthorized and stale writes', async () => {
@@ -299,10 +316,10 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
     await api
       .delete(endpoint + '/' + id)
       .send({ expectedVersion: 4 })
-      .expect(200);
+      .expect(400);
     expect(
       (await api.get(endpoint + '/management').expect(200)).body.data,
-    ).toHaveLength(before.body.data.length);
+    ).toHaveLength(before.body.data.length + 1);
   }, 60000);
   it('keeps expired nonarchived capacity visible in management history without exposing it to default future listings', async () => {
     const published = await service.publish(

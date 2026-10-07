@@ -4,10 +4,13 @@ export type ProcurementListRow = Pick<
   ProcurementRequestV1,
   'id' | 'number' | 'status'
 > & {
+  version?: number;
+  updatedAt?: string;
   draft: Pick<
     ProcurementRequestV1['draft'],
     'title' | 'estimatedAmount' | 'currencyCode'
-  >;
+  > &
+    Partial<Pick<ProcurementRequestV1['draft'], 'items' | 'documents'>>;
   sample?: true;
   section?: number;
   createdAt?: string;
@@ -41,7 +44,10 @@ export function filterSampleRequests(
     )
       return false;
     const createdDay = row.createdAt?.slice(0, 10);
-    if (filters.createdFrom && (!createdDay || createdDay < filters.createdFrom))
+    if (
+      filters.createdFrom &&
+      (!createdDay || createdDay < filters.createdFrom)
+    )
       return false;
     if (filters.createdTo && (!createdDay || createdDay > filters.createdTo))
       return false;

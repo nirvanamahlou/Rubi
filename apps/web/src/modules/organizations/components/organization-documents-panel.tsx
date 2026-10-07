@@ -74,10 +74,12 @@ export function OrganizationDocumentsPanel({
   organization,
   folderLabel,
   toolbar,
+  compact = false,
 }: {
   organization: MasterDataRecord;
   folderLabel?: string;
   toolbar?: ReactNode;
+  compact?: boolean;
 }) {
   const [options, setOptions] = useState<OrganizationDocumentOptions>();
   const [permissions, setPermissions] = useState<readonly IamPermissionCode[]>(
@@ -178,18 +180,38 @@ export function OrganizationDocumentsPanel({
       invalidateRequests();
     };
   }, [load, revision, invalidateRequests]);
+  const Listing = compact ? 'details' : 'div';
   return (
-    <section className="panel" aria-label="اسناد سازمان">
-      <header className="panel-head">
+    <section
+      className={
+        compact ? 'rounded-xl border border-border bg-surface p-3' : 'panel'
+      }
+      aria-label="اسناد سازمان"
+    >
+      <header
+        className={
+          compact
+            ? 'flex flex-wrap items-center justify-between gap-3'
+            : 'panel-head'
+        }
+      >
         <div>
-          <h2 className="panel-title">
+          <h2
+            className={
+              compact
+                ? 'flex items-center gap-2 text-sm font-semibold'
+                : 'panel-title'
+            }
+          >
             <FileText size={20} /> {folderLabel ?? 'اسناد سازمان و همکاری'}
           </h2>
-          <p className="panel-note">
-            {folderLabel
-              ? 'مشخصات و فایل مدارک این بخش را ثبت کنید؛ نسخه‌ها و دانلود فایل در اسناد و فایل‌ها در دسترس‌اند. این ثبت، تراکنش حسابداری ایجاد نمی‌کند.'
-              : 'قرارداد، الحاقیه، مجوز و تضمین؛ نسخه‌ها و دریافت فایل در آرشیو اسناد در دسترس‌اند.'}
-          </p>
+          {!compact ? (
+            <p className="panel-note">
+              {folderLabel
+                ? 'مشخصات و فایل مدارک این بخش را ثبت کنید؛ نسخه‌ها و دانلود فایل در اسناد و فایل‌ها در دسترس‌اند. این ثبت، تراکنش حسابداری ایجاد نمی‌کند.'
+                : 'قرارداد، الحاقیه، مجوز و تضمین؛ نسخه‌ها و دریافت فایل در آرشیو اسناد در دسترس‌اند.'}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-row-reverse flex-wrap items-center gap-2">
           <Button
@@ -235,7 +257,12 @@ export function OrganizationDocumentsPanel({
           {toolbar}
         </div>
       </header>
-      <div className="panel-body space-y-4">
+      <Listing className={compact ? 'mt-3 space-y-4' : 'panel-body space-y-4'}>
+        {compact ? (
+          <summary className="cursor-pointer text-sm font-semibold text-primary">
+            مشاهده اسناد ثبت‌شده ({total.toLocaleString('fa-IR')})
+          </summary>
+        ) : null}
         <div className="dossier-filter-grid">
           <DossierDateFilters
             value={dateRange}
@@ -372,7 +399,7 @@ export function OrganizationDocumentsPanel({
             </div>
           </div>
         )}
-      </div>
+      </Listing>
       {upload && options && (
         <OrganizationDocumentUpload
           folderLabel={folderLabel}
@@ -418,6 +445,7 @@ function OrganizationDocumentUpload({
   );
   const [values, setValues] = useState<OrganizationDocumentInput>({
     title: '',
+    description: '',
     branchId,
     documentTypeId: types[0]?.id ?? '',
     categoryId:
@@ -523,6 +551,19 @@ function OrganizationDocumentUpload({
                 }
               />
             </label>
+            {folderLabel ? (
+              <label className="field sm:col-span-2">
+                <span>توضیحات مالی</span>
+                <textarea
+                  className="input min-h-20"
+                  maxLength={1000}
+                  value={values.description ?? ''}
+                  onChange={(event) =>
+                    setValues({ ...values, description: event.target.value })
+                  }
+                />
+              </label>
+            ) : null}
             <label className="field">
               <span>نوع سند *</span>
               <NativeSearchSelect

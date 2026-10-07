@@ -51,6 +51,14 @@ export class ProcurementController {
   exportDetail(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return procurementBoundary(() => this.exports.detail(id, req.actor));
   }
+  @Get('orders')
+  @Header('Cache-Control', 'private, no-store')
+  orders(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.orders(query, req.actor));
+  }
   @Get('bootstrap')
   @Header('Cache-Control', 'private, no-store')
   bootstrap(@Req() req: AuthenticatedRequest) {
@@ -87,6 +95,21 @@ export class ProcurementController {
     @Req() req: AuthenticatedRequest,
   ) {
     return procurementBoundary(() => this.service.units(query, req.actor));
+  }
+  @Get('categories')
+  @Header('Cache-Control', 'private, no-store')
+  categories(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return procurementBoundary(() => this.service.categories(query, req.actor));
+  }
+  @Post('categories')
+  @HttpCode(201)
+  createCategory(@Body() body: unknown, @Req() req: AuthenticatedRequest) {
+    return procurementBoundary(() =>
+      this.service.createCategory(body, req.actor),
+    );
   }
   @Get('requests')
   @Header('Cache-Control', 'private, no-store')

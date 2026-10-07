@@ -3,7 +3,7 @@ import { flightCabinCode } from '../model/flight-cabins';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
-import { Power, Plus, Ticket, TicketCheck, Trash2 } from 'lucide-react';
+import { Power, Plus, Ticket, TicketCheck } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -66,6 +66,7 @@ import {
   catalogProductsFromOffers,
   catalogOffer,
   publishedOfferInput,
+  samePublishedFlight,
 } from '../model/published-catalog';
 import { PublishedOfferForm } from './published-offer-form';
 
@@ -248,7 +249,6 @@ function TicketCatalogWorkspace() {
     product: Product;
     status: CatalogStatus;
   } | null>(null);
-  const [deleteProduct, setDeleteProduct] = useState<Product>();
   const [repeat, setRepeat] = useState<{
     product: Product;
     cadence: RepeatCadence;
@@ -463,13 +463,7 @@ function TicketCatalogWorkspace() {
           (offer) =>
             offer.branchId === branchId &&
             (offer.catalogProductId === product.id ||
-              (Object.keys(input) as (keyof TicketOfferCreateV1)[]).every(
-                (key) =>
-                  key === 'departureAt' || key === 'arrivalAt'
-                    ? new Date(offer[key]).getTime() ===
-                      new Date(input[key]).getTime()
-                    : offer[key] === input[key],
-              )),
+              samePublishedFlight(offer, input)),
         );
         return match
           ? Promise.resolve({ data: { id: match.id } })
@@ -794,38 +788,6 @@ function TicketCatalogWorkspace() {
       setRepeatSaving(false);
     }
   }
-  async function removeProduct() {
-    if (!deleteProduct) return;
-    setStatusSaving(deleteProduct.id);
-    try {
-      const offer =
-        catalogOffer(deleteProduct, publishedOffers) ??
-        findPublishedOffer(
-          deleteProduct.definition,
-          references,
-          publishedOffers,
-        );
-      if (offer) {
-        await toursApi.archiveExpiredOffer(offer.id, offer.version);
-        await refreshPublishedOffers();
-      }
-      setProducts((rows) =>
-        rows.filter(
-          (row) =>
-            row.id !== deleteProduct.id && row.id !== offer?.catalogProductId,
-        ),
-      );
-      setDeleteProduct(undefined);
-      setNotice('بلیط حذف شد؛ سوابق مرتبط حفظ شدند.');
-      setProblem('');
-    } catch (error) {
-      setProblem(
-        error instanceof Error ? error.message : 'حذف بلیط ناموفق بود.',
-      );
-    } finally {
-      setStatusSaving(undefined);
-    }
-  }
   async function applyStatus() {
     if (!statusChange) return;
     try {
@@ -894,39 +856,7 @@ function TicketCatalogWorkspace() {
       >
         مشاهده
       </Button>
-      {new Date(offer.departureAt).getTime() <= catalogNow ? (
-        <Button
-          size="sm"
-          variant="outline"
-          aria-label={`حذف بلیط تاریخ‌گذشته ${offer.serviceNumber}`}
-          title="حذف بلیط تاریخ‌گذشته"
-          onClick={async () => {
-            if (
-              !window.confirm(
-                `بلیط ${offer.serviceNumber} از فهرست حذف شود؟ سوابق قرارداد و مالی حفظ می‌شود.`,
-              )
-            )
-              return;
-            try {
-              const result = await toursApi.archiveExpiredOffer(
-                offer.id,
-                offer.version,
-              );
-              await refreshPublishedOffers();
-              if (result.data.removedPriceRevisions)
-                setPublishedNotice(
-                  `${result.data.removedPriceRevisions.toLocaleString('fa-IR')} نسخه قیمت مرتبط نیز حذف شد.`,
-                );
-            } catch (error) {
-              setPublishedProblem(
-                error instanceof Error ? error.message : 'حذف بلیط ناموفق بود.',
-              );
-            }
-          }}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      ) : (
+      {new Date(offer.departureAt).getTime() > catalogNow ? (
         <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
@@ -937,36 +867,7 @@ function TicketCatalogWorkspace() {
           >
             ویرایش
           </Button>
-          <Button
-            aria-label={`حذف بلیت ${offer.serviceNumber}`}
-            title="حذف بلیت"
-            size="sm"
-            variant="outline"
-            onClick={async () => {
-              if (
-                !window.confirm(
-                  `بلیط ${offer.serviceNumber} حذف شود؟ سوابق مرتبط حفظ می‌شوند.`,
-                )
-              )
-                return;
-              try {
-                await toursApi.archiveExpiredOffer(offer.id, offer.version);
-                setProducts((rows) =>
-                  rows.filter((item) => item.id !== offer.catalogProductId),
-                );
-                await refreshPublishedOffers();
-                setPublishedNotice('بلیط حذف شد.');
-              } catch (error) {
-                setPublishedProblem(
-                  error instanceof Error
-                    ? error.message
-                    : 'حذف بلیط ناموفق بود.',
-                );
-              }
-            }}
-          >
-            <Trash2 className="size-4" aria-hidden />
-          </Button>
+
           <Button
             size="sm"
             variant="outline"
@@ -1006,7 +907,7 @@ function TicketCatalogWorkspace() {
             </Button>
           ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
   return (
@@ -1027,7 +928,7 @@ function TicketCatalogWorkspace() {
         }
       />
       {notice ? <Alert title={notice} /> : null}
-      {problem && !statusChange && !repeat && !deleteProduct ? (
+      {problem && !statusChange && !repeat ? (
         <Alert tone="error" title={problem} />
       ) : null}
       {publishedNotice ? <Alert title={publishedNotice} /> : null}
@@ -1295,38 +1196,7 @@ function TicketCatalogWorkspace() {
           </Button>
         </DialogContent>
       </Dialog>
-      <Dialog
-        open={Boolean(deleteProduct)}
-        onOpenChange={(open) => {
-          if (!open && !statusSaving) setDeleteProduct(undefined);
-        }}
-      >
-        <DialogContent dir="rtl" className="start-auto! left-1/2!">
-          <DialogTitle>حذف بلیط</DialogTitle>
-          {problem ? <Alert tone="error" title={problem} /> : null}
-          <DialogDescription>
-            «{deleteProduct?.definition.title}» حذف شود؟ بلیط آینده فقط در نبود
-            قرارداد، رزرو ظرفیت یا تور متصل قابل حذف است؛ سوابق مرتبط حفظ
-            می‌شوند.
-          </DialogDescription>
-          <div className="mt-4 flex gap-2">
-            <Button
-              disabled={Boolean(statusSaving)}
-              variant="destructive"
-              onClick={() => void removeProduct()}
-            >
-              حذف بلیط
-            </Button>
-            <Button
-              variant="outline"
-              disabled={Boolean(statusSaving)}
-              onClick={() => setDeleteProduct(undefined)}
-            >
-              انصراف
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+
       <Dialog
         open={Boolean(statusChange)}
         onOpenChange={(open) => {

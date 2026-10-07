@@ -16,6 +16,7 @@ import type { LegalEntitiesService } from '../legal-entities/legal-entities.serv
 import type { MasterProcurementDirectory } from '../master-data/master-procurement-directory';
 import { NotificationsRepository } from '../notifications/notifications.repository';
 import { NotificationsService } from '../notifications/notifications.service';
+import { AutomationTasksService } from '../tasks/automation-tasks.service';
 import type {
   ApprovalPolicy,
   CommercialLine,
@@ -26,6 +27,7 @@ import { ProcurementPublicService } from './procurement-public.service';
 import {
   json,
   procurementBoundary,
+  procurementCategoryKey,
   ProcurementService,
 } from './procurement.service';
 
@@ -39,6 +41,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
     let branch: string;
     let otherBranch: string;
     let supplier: string;
+    let supplierEnabled = true;
     let issuer: string;
     let maker: AuthenticatedActor;
     let checker1: AuthenticatedActor;
@@ -174,6 +177,190 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
     async function approvedRequest(draft = fixture()) {
       return approve(await command(await create(draft), 'SUBMIT'));
     }
+    it('creates a form order atomically, with warranty, scoped listing and final approval still required', async () => {
+      const draft = fixture();
+      const request = await approvedRequest(draft);
+      const key = randomUUID();
+      const input = {
+        supplierId: supplier,
+        currencyCode: 'IRR',
+        lines: [commercial(draft.items[0]!.id)],
+        validUntil: nextMonth,
+        expectedAt: tomorrow,
+        paymentTerms: 'On acceptance',
+        warranty: '12 months',
+        deliveryLocation: 'Synthetic office',
+        trackingCode: 'FORM-1',
+        documents,
+      };
+      const saved = await command(request, 'ORDER_FORM', input, maker, key);
+      await command(request, 'ORDER_FORM', input, maker, key);
+      const orders = await database.client.procurementOrder.findMany({
+        where: { requestId: request.id },
+      });
+      expect(orders).toHaveLength(1);
+      expect(orders[0]!.status).toBe('PENDING_APPROVAL');
+      expect(orders[0]!.data).toMatchObject({
+        warranty: '12 months',
+        trackingCode: 'FORM-1',
+        documents,
+      });
+      const own = await service.orders({ search: draft.title }, maker);
+      expect(own.items.some((order) => order.id === orders[0]!.id)).toBe(true);
+      const outside = await service.orders(
+        { search: draft.title },
+        { ...outsider, branchIds: [otherBranch] },
+      );
+      expect(outside.items).toHaveLength(0);
+      await rejected(
+        () => command(saved, 'ISSUE_ORDER', { orderId: orders[0]!.id }),
+        422,
+        'FINAL_APPROVAL_REQUIRED',
+      );
+    });
+    it('rolls back quote, selection and version when the form order has an invalid tracking code', async () => {
+      const draft = fixture();
+      const request = await approvedRequest(draft);
+      await rejected(
+        () =>
+          command(request, 'ORDER_FORM', {
+            supplierId: supplier,
+            currencyCode: 'IRR',
+            lines: [commercial(draft.items[0]!.id)],
+            validUntil: nextMonth,
+            expectedAt: tomorrow,
+            paymentTerms: 'On acceptance',
+            deliveryLocation: 'Synthetic office',
+            trackingCode: 'x'.repeat(101),
+            documents,
+          }),
+        422,
+        'VALIDATION_ERROR',
+      );
+      expect(
+        await database.client.procurementQuotation.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+      expect(
+        await database.client.procurementSelection.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+      expect(
+        await database.client.procurementOrder.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+      expect((await service.detail(request.id, maker)).version).toBe(
+        request.version,
+      );
+    });
+    it('rejects form order without quote-select permission before writing any quotation', async () => {
+      const request = await approvedRequest();
+      await rejected(
+        () =>
+          command(
+            request,
+            'ORDER_FORM',
+            {},
+            {
+              ...maker,
+              permissions: maker.permissions.filter(
+                (permission) => permission !== 'procurement.quote.select',
+              ),
+            },
+          ),
+        403,
+      );
+      expect(
+        await database.client.procurementQuotation.count({
+          where: { requestId: request.id },
+        }),
+      ).toBe(0);
+    });
+    it('replaces pending order approval on amendment and retires it on cancellation', async () => {
+      const context = await orderedRequest('GOODS', false);
+      // The helper has approved the initial order, but has not issued it.
+      const amended = await command(context.row, 'AMEND_ORDER', {
+        orderId: context.order.id,
+        warranty: '24 months',
+        reason: 'Synthetic updated warranty',
+      });
+      expect(amended.status).toBe('IN_REVIEW');
+      const again = await command(amended, 'AMEND_ORDER', {
+        orderId: context.order.id,
+        warranty: '36 months',
+        reason: 'Synthetic second amendment',
+      });
+      const cancelled = await command(again, 'CANCEL_ORDER', {
+        orderId: context.order.id,
+        reason: 'Synthetic cancellation',
+      });
+      expect(cancelled.status).toBe('SOURCING');
+      const snapshots =
+        await database.client.procurementApprovalSnapshot.findMany({
+          where: { requestId: cancelled.id },
+        });
+      expect(
+        await database.client.procurementApprovalStep.count({
+          where: {
+            snapshotId: { in: snapshots.map((snapshot) => snapshot.id) },
+            status: 'PENDING',
+          },
+        }),
+      ).toBe(0);
+      expect(
+        (await service.orders({ search: cancelled.draft.title }, maker)).items,
+      ).toHaveLength(0);
+      expect(
+        (
+          await service.orders(
+            { search: cancelled.draft.title, status: 'CANCELLED' },
+            maker,
+          )
+        ).items,
+      ).toHaveLength(1);
+    });
+    it('stores discrepancy date and rejects return using a different order context', async () => {
+      const context = await orderedRequest();
+      let row = await command(
+        context.row,
+        'RECEIVE',
+        receiptInput(context.order.id, context.item.id),
+      );
+      const receipt =
+        await database.client.procurementReceiptItem.findFirstOrThrow({
+          where: { orderId: context.order.id },
+        });
+      await rejected(
+        () =>
+          command(row, 'RETURN', {
+            orderId: randomUUID(),
+            receiptItemId: receipt.id,
+            quantity: '1',
+            disposition: 'ACCEPTED',
+            returnedAt: instant,
+            reason: 'Synthetic mismatch',
+            documents,
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      row = await command(row, 'DISCREPANCY', {
+        orderId: context.order.id,
+        kind: 'DAMAGE',
+        description: 'Synthetic damage',
+        occurredAt: instant,
+      });
+      expect(
+        (
+          await database.client.procurementDiscrepancy.findFirstOrThrow({
+            where: { requestId: row.id },
+          })
+        ).data,
+      ).toMatchObject({ occurredAt: instant });
+    });
     async function selectedRequest(draft = fixture(), validUntil = nextMonth) {
       let row = await approvedRequest(draft);
       row = await command(row, 'QUOTE', {
@@ -211,13 +398,20 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       let row = await command(selected.row, 'ORDER', {
         selectionId: selected.selection.id,
         expectedAt,
+        supplierId: supplier,
         paymentTerms: 'Upon acceptance',
         deliveryLocation: 'Synthetic office',
+        trackingCode: 'SYNTHETIC-ORDER-TRACKING',
+        documents,
       });
       const order = await database.client.procurementOrder.findFirstOrThrow({
         where: { requestId: row.id },
       });
       expect(order.status).toBe('PENDING_APPROVAL');
+      expect(order.data).toMatchObject({
+        trackingCode: 'SYNTHETIC-ORDER-TRACKING',
+        documents,
+      });
       row = await approve(row);
       if (issue) row = await command(row, 'ISSUE_ORDER', { orderId: order.id });
       const item = await database.client.procurementOrderItem.findFirstOrThrow({
@@ -434,6 +628,7 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         },
         supplier: async (id: string) => {
           expect(id).toBe(supplier);
+          if (!supplierEnabled) throw new Error('Synthetic inactive supplier');
           return { id, version: 1, label: 'Synthetic Supplier' };
         },
         supplierLabels: async (ids: readonly string[]) =>
@@ -474,6 +669,21 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         },
       } as unknown as HrProcurementDirectory;
       const iam = {
+        candidates: async (branchId: string) => ({
+          items: [...identities.values()]
+            .filter(
+              ({ actor }) =>
+                actor.branchIds.includes(branchId) &&
+                actor.permissions.includes('procurement.quote.manage'),
+            )
+            .map(({ actor }) => ({
+              id: actor.userId,
+              label: 'Synthetic buyer',
+            })),
+          page: 1,
+          pageSize: 50,
+          hasMore: false,
+        }),
         authorizedUsers: async (
           ids: string[],
           branchId: string,
@@ -542,13 +752,14 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         port,
         operations,
         new NotificationsService(new NotificationsRepository(database)),
-        { syncProcurementWithinTransaction: async () => null } as never,
+        new AutomationTasksService(database),
       );
     }, 30000);
     afterAll(async () => {
       await database?.onModuleDestroy();
     });
     beforeEach(() => {
+      supplierEnabled = true;
       approvedPolicy = {
         id: 'synthetic-approved-policy',
         version: 1,
@@ -571,6 +782,47 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
       };
     });
 
+    it('persists normalized categories within the authorized branch and retains legacy request categories', async () => {
+      expect(procurementCategoryKey('مهندسی\u200c شبکه ك')).toBe(
+        'مهندسی شبکه ک',
+      );
+      await create(fixture({ category: 'دفتر و لوازم' }));
+      const saved = await service.createCategory(
+        { branchId: branch, label: 'مهندسی\u200c شبکه ك' },
+        maker,
+      );
+      expect(saved).toMatchObject({
+        branchId: branch,
+        label: 'مهندسی\u200c شبکه ك',
+      });
+      const list = await service.categories({ branchId: branch }, maker);
+      expect(list.items).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ label: 'مهندسی\u200c شبکه ك' }),
+          expect.objectContaining({ label: 'دفتر و لوازم' }),
+        ]),
+      );
+      const duplicateActor: AuthenticatedActor = {
+        ...maker,
+        userId: colleague.userId,
+      };
+      await rejected(
+        () =>
+          procurementBoundary(() =>
+            service.createCategory(
+              { branchId: branch, label: 'مهندسی شبکه ک' },
+              duplicateActor,
+            ),
+          ),
+        409,
+        'CONFLICT',
+      );
+      await rejected(
+        () => service.categories({ branchId: otherBranch }, maker),
+        403,
+      );
+    });
+
     it('stores an incomplete draft and rolls back unsuccessful submission without losing its contents', async () => {
       const row = await create(
         fixture({ title: '', items: [], needReason: '', requiredAt: null }),
@@ -583,6 +835,61 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           where: { requestId: row.id },
         }),
       ).toBe(0);
+    });
+    it('routes a created request to an authorized buyer for follow-up without creating approval authority', async () => {
+      const requester: AuthenticatedActor = {
+        ...maker,
+        permissions: ['procurement.request.create'],
+      };
+      const ownerChoices = await service.owners(
+        { branchId: branch, search: '', page: 1 },
+        requester,
+      );
+      expect(ownerChoices.items.map((item) => item.id)).toContain(
+        checker1.userId,
+      );
+      const row = await procurementBoundary(() =>
+        service.create(
+          {
+            draft: fixture(),
+            ownerUserId: checker1.userId,
+          },
+          randomUUID(),
+          requester,
+        ),
+      );
+
+      expect(row.ownerUserId).toBe(checker1.userId);
+      expect(
+        await database.client.automationTask.findFirst({
+          where: {
+            sourceModule: 'PROCUREMENT',
+            sourceReference: row.id,
+            assigneeUserId: checker1.userId,
+            kind: 'PROCUREMENT_FOLLOW_UP',
+            status: 'OPEN',
+          },
+        }),
+      ).toMatchObject({ assigneeUserId: checker1.userId });
+      expect(
+        await database.client.procurementApprovalSnapshot.count({
+          where: { requestId: row.id },
+        }),
+      ).toBe(0);
+    });
+    it('rejects a follow-up recipient who is not an authorized same-branch buyer', async () => {
+      await rejected(
+        () =>
+          procurementBoundary(() =>
+            service.create(
+              { draft: fixture(), ownerUserId: randomUUID() },
+              randomUUID(),
+              { ...maker, permissions: ['procurement.request.create'] },
+            ),
+          ),
+        422,
+        'INVALID_OWNER',
+      );
     });
     it('leaves a complete draft intact when the production policy port is unconfigured', async () => {
       approvedPolicy = await new ProcurementPolicyPort().resolve(fixture());
@@ -607,14 +914,24 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
         }),
       ).toBe(0);
     });
+    it('persists and publishes optional unit, need text and goods description without changing the audit actor', async () => {
+      const input = fixture({ unitId: null, needReason: '' });
+      input.items[0]!.description = '';
+      const row = await procurementBoundary(() =>
+        service.create({ draft: input, publish: true }, randomUUID(), maker),
+      );
+      expect(row.status).toBe('SUBMITTED');
+      expect(row.requesterUserId).toBe(maker.userId);
+      expect((await service.detail(row.id, maker)).draft).toMatchObject({
+        unitId: null,
+        needReason: '',
+        items: [{ description: '' }],
+      });
+    });
     it('creates and publishes atomically and leaves no draft when validation fails', async () => {
       const complete = fixture();
       const published = await procurementBoundary(() =>
-        service.create(
-          { draft: complete, publish: true },
-          randomUUID(),
-          maker,
-        ),
+        service.create({ draft: complete, publish: true }, randomUUID(), maker),
       );
       expect(published.status).toBe('SUBMITTED');
       expect(published.version).toBe(2);
@@ -928,6 +1245,229 @@ describe.skipIf(process.env.PROCUREMENT_API_DATABASE_TEST !== '1')(
           )
         ).some((event) => event.eventId === intents[0]?.eventId),
       ).toBe(true);
+    });
+    it('rejects an order supplier that differs from the approved selected quotation', async () => {
+      const context = await selectedRequest();
+      await rejected(
+        () =>
+          command(context.row, 'ORDER', {
+            selectionId: context.selection.id,
+            supplierId: randomUUID(),
+            expectedAt: tomorrow,
+            paymentTerms: 'Synthetic terms',
+            deliveryLocation: 'Synthetic office',
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      expect(
+        await database.client.procurementOrder.count({
+          where: { requestId: context.row.id },
+        }),
+      ).toBe(0);
+    });
+    it('persists order amendments as new approved versions and preserves omitted metadata and exact documents', async () => {
+      const context = await orderedRequest();
+      const original = await database.client.procurementOrder.findUniqueOrThrow(
+        { where: { id: context.order.id } },
+      );
+      const originalVersion =
+        await database.client.procurementOrderVersion.findUniqueOrThrow({
+          where: {
+            orderId_version: { orderId: context.order.id, version: 1 },
+          },
+        });
+      const updatedExpectedAt = nextMonth;
+      const amended = await command(context.row, 'AMEND_ORDER', {
+        orderId: context.order.id,
+        reason: 'Synthetic delivery plan update',
+        supplierId: supplier,
+        currencyCode: 'IRR',
+        expectedAt: updatedExpectedAt,
+        deliveryLocation: 'Synthetic west branch',
+        paymentTerms: 'Net 30 after acceptance',
+        trackingCode: 'SYNTHETIC-TRACK-UPDATED',
+        lines: [commercial(context.item.requestItemId)],
+      });
+      const updated = await database.client.procurementOrder.findUniqueOrThrow({
+        where: { id: context.order.id },
+      });
+      expect(amended.status).toBe('IN_REVIEW');
+      expect(updated).toMatchObject({
+        version: 2,
+        status: 'PENDING_APPROVAL',
+        expectedAt: new Date(updatedExpectedAt),
+        data: {
+          deliveryLocation: 'Synthetic west branch',
+          paymentTerms: 'Net 30 after acceptance',
+          trackingCode: 'SYNTHETIC-TRACK-UPDATED',
+          documents,
+        },
+      });
+      expect(
+        await database.client.procurementOrder.findUniqueOrThrow({
+          where: { id: context.order.id },
+        }),
+      ).not.toEqual(original);
+      expect(
+        await database.client.procurementOrderVersion.findUniqueOrThrow({
+          where: {
+            orderId_version: { orderId: context.order.id, version: 1 },
+          },
+        }),
+      ).toEqual(originalVersion);
+      expect(original.data).toMatchObject({
+        deliveryLocation: 'Synthetic office',
+        paymentTerms: 'Upon acceptance',
+        trackingCode: 'SYNTHETIC-ORDER-TRACKING',
+        documents,
+      });
+
+      const second = await orderedRequest();
+      const omitted = await command(second.row, 'AMEND_ORDER', {
+        orderId: second.order.id,
+        reason: 'Synthetic reason-only amendment',
+      });
+      const preserved =
+        await database.client.procurementOrder.findUniqueOrThrow({
+          where: { id: second.order.id },
+        });
+      expect(omitted.status).toBe('IN_REVIEW');
+      expect(preserved).toMatchObject({
+        version: 2,
+        expectedAt: second.order.expectedAt,
+        data: {
+          deliveryLocation: 'Synthetic office',
+          paymentTerms: 'Upon acceptance',
+          trackingCode: 'SYNTHETIC-ORDER-TRACKING',
+          documents,
+        },
+      });
+      const preservedVersion =
+        await database.client.procurementOrderVersion.findUniqueOrThrow({
+          where: {
+            orderId_version: { orderId: second.order.id, version: 2 },
+          },
+        });
+      expect(
+        await database.client.procurementOrderItem.findMany({
+          where: {
+            orderId: second.order.id,
+            orderVersionId: preservedVersion.id,
+          },
+        }),
+      ).toHaveLength(1);
+    });
+    it('keeps an amended order bound to its selected supplier and currency', async () => {
+      const context = await orderedRequest();
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Synthetic supplier change',
+            supplierId: randomUUID(),
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Synthetic currency change',
+            currencyCode: 'USD',
+          }),
+        422,
+        'INVALID_REFERENCE',
+      );
+      expect(
+        await database.client.procurementOrder.findUniqueOrThrow({
+          where: { id: context.order.id },
+        }),
+      ).toMatchObject({
+        version: 1,
+        status: 'ISSUED',
+        supplierId: context.order.supplierId,
+        currencyCode: context.order.currencyCode,
+      });
+    });
+    it('rejects malformed or oversized amended order metadata without changing the saved version', async () => {
+      const context = await orderedRequest();
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Synthetic invalid date',
+            supplierId: supplier,
+            currencyCode: 'IRR',
+            expectedAt: 'not-a-date',
+            lines: [commercial(context.item.requestItemId)],
+          }),
+        422,
+        'VALIDATION_ERROR',
+      );
+      await rejected(
+        () =>
+          command(context.row, 'AMEND_ORDER', {
+            orderId: context.order.id,
+            reason: 'Synthetic oversized tracking code',
+            supplierId: supplier,
+            currencyCode: 'IRR',
+            trackingCode: 'x'.repeat(101),
+            lines: [commercial(context.item.requestItemId)],
+          }),
+        422,
+        'VALIDATION_ERROR',
+      );
+      expect(
+        await database.client.procurementOrder.findUniqueOrThrow({
+          where: { id: context.order.id },
+        }),
+      ).toMatchObject({ version: 1, status: 'ISSUED' });
+    });
+    it('offers only current unexpired selections whose suppliers remain active', async () => {
+      const context = await selectedRequest();
+      const available = await service.records(
+        context.row.id,
+        { kind: 'selections', page: 1 },
+        maker,
+      );
+      expect(available.items).toEqual([
+        expect.objectContaining({
+          id: context.selection.id,
+          supplierId: supplier,
+          supplierName: 'Synthetic Supplier',
+          quotation: expect.objectContaining({
+            id: context.quotation.id,
+            currencyCode: 'IRR',
+          }),
+        }),
+      ]);
+
+      supplierEnabled = false;
+      try {
+        expect(
+          await service.records(
+            context.row.id,
+            { kind: 'selections', page: 1 },
+            maker,
+          ),
+        ).toMatchObject({ items: [], hasMore: false });
+      } finally {
+        supplierEnabled = true;
+      }
+
+      await database.client.procurementQuotation.update({
+        where: { id: context.quotation.id },
+        data: { validUntil: new Date(Date.now() - 1000) },
+      });
+      expect(
+        await service.records(
+          context.row.id,
+          { kind: 'selections', page: 1 },
+          maker,
+        ),
+      ).toMatchObject({ items: [], hasMore: false });
     });
     it('blocks selecting an expired quotation', async () => {
       let row = await approvedRequest();

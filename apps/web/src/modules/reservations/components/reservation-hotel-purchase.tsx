@@ -1,4 +1,5 @@
 'use client';
+import { ReservationInsurancePurchase } from './reservation-insurance-purchase';
 
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -404,6 +405,7 @@ export function ReservationHotelPurchase({
           هتل و ترانسفرهای این قرارداد با یک ثبت به مالی ارسال می‌شوند.
         </p>
       </div>
+      <ReservationInsurancePurchase request={request} onSaved={onSaved} />
       <SupplierFormPurchaseContext request={request} />
       {hotel ? (
         <section className="space-y-4 rounded-xl border border-border bg-surface p-4">
@@ -610,11 +612,13 @@ export function ReservationPurchaseDialog({ id }: { id: string }) {
   }, [id, refresh]);
   if (error) return <p role="alert">{error}</p>;
   return request ? (
-    <ReservationHotelPurchase
-      key={request.purchaseVersion}
-      request={request}
-      onSaved={() => setRefresh((value) => value + 1)}
-    />
+    <>
+      <ReservationHotelPurchase
+        key={request.purchaseVersion}
+        request={request}
+        onSaved={() => setRefresh((value) => value + 1)}
+      />
+    </>
   ) : (
     <p>در حال دریافت اطلاعات خرید…</p>
   );

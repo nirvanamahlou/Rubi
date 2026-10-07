@@ -37,6 +37,7 @@ import {
 } from './workbench.dto';
 import { WorkbenchService } from './workbench.service';
 import { WorkbenchPerformanceService } from './workbench-performance.service';
+import { AutomationTasksService } from '../tasks/automation-tasks.service';
 
 function requestMetadata(
   request: AuthenticatedRequest,
@@ -60,12 +61,20 @@ export class WorkbenchController {
     @Inject(IamService) private readonly iam: IamService,
     @Inject(WorkbenchPerformanceService)
     private readonly performanceService: WorkbenchPerformanceService,
+    @Inject(AutomationTasksService)
+    private readonly tasks: AutomationTasksService,
   ) {}
 
   @Get('performance')
   @Header('Cache-Control', 'private, no-store')
   performance(@Req() req: AuthenticatedRequest, @Query('days') days?: string) {
     return this.performanceService.get(req.actor, days);
+  }
+
+  @Get('procurement-follow-ups')
+  @Header('Cache-Control', 'private, no-store')
+  procurementFollowUps(@Req() req: AuthenticatedRequest) {
+    return this.tasks.assignedProcurementFollowUps(req.actor);
   }
 
   @Get('notes')

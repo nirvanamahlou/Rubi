@@ -245,6 +245,20 @@ export class ReservationsPublicService {
     return { id: row.id, requestId: row.requestId, status: row.status };
   }
 
+  /** Public branch-scoped latest execution costs for the owning Sales contract. */
+  async contractPurchaseContext(contractId: string, branchId: string) {
+    const row = await this.database.client.reservationIntake.findFirst({
+      where: { contractId, branchId },
+      include: intakeInclude,
+      orderBy: [
+        { contractVersion: 'desc' },
+        { receivedAt: 'desc' },
+        { id: 'asc' },
+      ],
+    });
+    return row ? present(row) : null;
+  }
+
   async purchaseContext(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.reservationIntake.findFirst({
       where: { id, branchId: { in: [...branchIds] } },

@@ -421,6 +421,11 @@ erDiagram
 - net purchase از اجزای approved محاسبه می‌شود و margin فیلد قابل ویرایش نیست.
 - Purchase Invoice پس از approval به payable و journal source یکتا تبدیل می‌شود.
 - یک source document بیش از یک posting فعال ندارد؛ correction با reversal است.
+- `ProcurementCategory` فهرست پایدار و branch-scoped دسته خرید است؛ فقط شعبهٔ واقعی را
+  می‌پذیرد، به Branch و کاربر سازنده FK محدودکننده دارد و کلید Unicode نرمال‌شده
+  برای جلوگیری از تکرار نگه می‌دارد. دستهٔ ذخیره‌شده روی درخواست‌های قبلی snapshot
+  است و بازنویسی یا backfill نمی‌شود. خواندن/ساخت دسته به مجوز ثبت درخواست و دسترسی
+  صریح به همان شعبه نیاز دارد؛ Legal Entity دسترسی شعبه ایجاد نمی‌کند.
 
 ### Finance
 
@@ -699,3 +704,13 @@ Master Data organization addresses retain required bounded addressLine and organ
 ## 2026-10-05 — Reservations purchase broker references
 
 ReservationServicePurchase supports either supplierBrokerId → MasterBroker or its historical supplierOrganizationId → MasterOrganization. Both are restrictive real FKs; exactly one must be present (database CHECK). Historical organization references remain unchanged. Registered broker choices no longer require an organization link or BROKER organization role. Existing supplierOrganizationId v1 request/response key remains the supplier reference ID for compatibility; public MasterTravelDirectory resolves an active registered broker first and only a genuine missing broker permits legacy organization resolution. Supplier names remain immutable purchase snapshots. Finance/Reservations project the canonical broker ID when present.
+
+## TICKET-DUPLICATES-1006 — dated flight identity and historical repair
+
+Ticket Catalog publication/revision serializes branch-scoped flight identity checks in the same transaction: route, UTC departure, normalized carrier/service number, cabin and supply source (legacy null equals COMPANY). Capacity, arrival and optional producer defaults are edits of existing inventory, not a new dated flight. Request-key replay remains unchanged. A non-destructive migration retains every ID and audit, archiving only exact duplicate offers without any Sales selection, capacity/hold history or tour reference, preferring a priced/financial canonical source and preserving every pricing/financial reference unchanged; protected historical copies stay intact. The shared synthetic fixture marks five previously duplicated copies archived. No schema/wire/FK rewrite or capacity aggregation occurs.
+
+## Passenger package pricing and actual contract profit (SALES-PASSENGER-PRICE-1006)
+
+New Sales forms use existing nonnegative Decimal(24,4) passenger/currency rows as whole-package revenue. Existing priceComponents contain exact positive per-currency sums; explicit free passengers remain zero in a contract currency, with no fabricated positive amount. All new service metadata marks passengerPackagePricingVersion=1 and does not store day/agreed service sale amounts, except the separately validated insurance age surcharge. Old unmarked contracts/drafts remain supported by existing domain semantics. Buyer/allocations, Finance balances, output snapshots and inventory quote metadata keep their existing sources.
+
+Sales profit reads current public Reservations service purchases once per covered group, legacy hotel revisions only when no modern hotel purchase exists, and Finance-recorded ticket costs once per selected flight with ADT/CHD units (INF consumes no seat). Actual service costs include insurance when selected; a missing service cost keeps final profit null. Different currencies never mix. Insurance purchase uses the existing Reservations service-purchase FK, CAS, idempotency, directory and Finance payment/history path; no new table or financial settlement is fabricated. GET Sales contract profit requires existing Sales contract read access, finance.read and branch membership, with private/no-store response.

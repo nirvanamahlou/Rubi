@@ -1,3 +1,4 @@
+import { SalesProfitService } from './sales-profit.service';
 import { TravelWorkflowService } from '../reservations/travel-workflow.service';
 import { FinanceDeliveryService } from '../finance/document-delivery/finance-delivery.module';
 import 'reflect-metadata';
@@ -29,6 +30,7 @@ describe('authenticated Sales XLSX HTTP route', () => {
     const module = await Test.createTestingModule({
       controllers: [SalesController],
       providers: [
+        { provide: SalesProfitService, useValue: {} },
         { provide: TravelWorkflowService, useValue: {} },
         { provide: FinanceDeliveryService, useValue: {} },
         { provide: SalesService, useValue: service },

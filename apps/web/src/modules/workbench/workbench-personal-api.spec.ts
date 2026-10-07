@@ -48,4 +48,32 @@ describe('profile photo save request', () => {
     expect(body.get('phone')).toBe(saved.phone);
     expect(response.data.profile).toEqual(saved);
   });
+
+  it('loads only the authenticated user’s assigned Procurement follow-ups', async () => {
+    const payload = {
+      items: [
+        {
+          id: 'task-1',
+          requestId: 'request-1',
+          title: 'پیگیری درخواست خرید PR-1',
+          dueAt: '2026-10-07T10:00:00.000Z',
+          createdAt: '2026-10-06T10:00:00.000Z',
+        },
+      ],
+    };
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify(payload),
+    });
+    vi.stubGlobal('fetch', fetchImpl);
+
+    await expect(workbenchPersonalApi.procurementFollowUps()).resolves.toEqual(
+      payload,
+    );
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'http://api.local/api/v1/workbench/procurement-follow-ups',
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
+    );
+  });
 });

@@ -8,6 +8,7 @@ import {
   arrivalWallTimeAfterMidnight,
   catalogProductsFromOffers,
   catalogOffer,
+  samePublishedFlight,
 } from './published-catalog';
 const offers = Array.from(
   { length: 10 },
@@ -111,4 +112,29 @@ describe('authoritative ticket catalog', () => {
     expect(products).toHaveLength(11);
     expect(products.at(-1)).toBe(ground);
   });
+});
+
+it('matches backfill by dated flight rather than optional null fields or changed capacity', () => {
+  const offer = offers[1]!;
+  const input = {
+    ...offer,
+    totalCapacity: 60,
+    supplyType: 'COMPANY' as const,
+    manifestTemplateId: null,
+    originAirportId: null,
+    arrivalAt: '2099-10-01T13:00:00Z',
+  };
+  expect(samePublishedFlight(offer, input)).toBe(true);
+  expect(
+    samePublishedFlight(offer, { ...input, cabinClassCode: 'BUSINESS' }),
+  ).toBe(false);
+  expect(
+    samePublishedFlight(offer, {
+      ...input,
+      departureAt: '2099-10-02T10:00:00Z',
+    }),
+  ).toBe(false);
+  expect(samePublishedFlight(offer, { ...input, supplyType: 'API' })).toBe(
+    false,
+  );
 });
