@@ -1,5 +1,4 @@
 'use client';
-import { uiConfirm } from '@/i18n/dialogs';
 
 import type {
   AuthenticatedActor,
@@ -1511,6 +1510,10 @@ export function DurableContentPanel({
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState('');
+  const [pendingDelete, setPendingDelete] =
+    useState<MarketingAssetViewV1 | null>(null);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const typeLabels: Record<string, string> = {
     REGISTRATION: 'ثبت‌نام',
     CONTACT: 'تماس',
@@ -1898,22 +1901,9 @@ export function DurableContentPanel({
                         item={item}
                         onView={() => fill(item, 'view')}
                         onEdit={() => fill(item, 'edit')}
-                        onDelete={async () => {
-                          if (!uiConfirm(`«${item.name}» حذف شود؟`)) return;
-                          try {
-                            await marketingApi.deleteAsset(
-                              item.id,
-                              item.version,
-                            );
-                            await data.load();
-                            onNotice('رکورد حذف شد.');
-                          } catch (reason) {
-                            onNotice(
-                              reason instanceof Error
-                                ? reason.message
-                                : 'حذف انجام نشد.',
-                            );
-                          }
+                        onDelete={() => {
+                          setPendingDelete(item);
+                          setDeleteError('');
                         }}
                       />
                     </td>
@@ -1931,6 +1921,65 @@ export function DurableContentPanel({
           </p>
         ) : null}
       </Card>
+      <Dialog
+        open={!!pendingDelete}
+        onOpenChange={(value) => {
+          if (!value && !deleting) setPendingDelete(null);
+        }}
+      >
+        <DialogContent dir="rtl" className="text-right">
+          <DialogTitle>حذف محتوا</DialogTitle>
+          <DialogDescription>
+            آیا «{pendingDelete?.name}» از فهرست محتوا حذف شود؟
+          </DialogDescription>
+          {deleteError ? (
+            <p role="alert" className="text-destructive">
+              {deleteError}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              title="انصراف"
+              aria-label="انصراف از حذف محتوا"
+              disabled={deleting}
+              onClick={() => setPendingDelete(null)}
+            >
+              <X aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="destructive"
+              title="تأیید حذف"
+              aria-label="تأیید حذف محتوا"
+              disabled={deleting}
+              onClick={async () => {
+                if (!pendingDelete || deleting) return;
+                setDeleting(true);
+                setDeleteError('');
+                try {
+                  await marketingApi.deleteAsset(
+                    pendingDelete.id,
+                    pendingDelete.version,
+                  );
+                  setPendingDelete(null);
+                  await data.load();
+                  onNotice('رکورد محتوا حذف شد.');
+                } catch (reason) {
+                  setDeleteError(
+                    reason instanceof Error ? reason.message : 'حذف انجام نشد.',
+                  );
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
