@@ -222,3 +222,8 @@
     min-width: 200px;
   }
 }
+
+.ltrComposition {
+  display: block;
+  text-align: left;
+}

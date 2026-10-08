@@ -5090,3 +5090,8 @@ Removed the four introductory pricing cards and opted the embedded departure edi
 Removed publication-basis explanation/family controls. Checked hotel/broker rows populate single, double and child-with-bed per-person columns using cheapest complete nightly tariffs. Child derives the same-room occupancy difference. Shared exact arithmetic drives preview/publication with independent currencies, and additive nullable selection/source metadata preserves legacy drafts and immutable publications. Existing native Pack Generator imports sale-only selected published rows through a validated same-origin parent bridge and retains template choice/PDF/PNG export. No operational data/runtime/dependency change. Focused verification and clean exact-head CI gate explicitly authorized develop merge; delivery in docs/tasks/PACKAGE-HOTEL-TABLE-GENERATOR-1008.md.
 
 Verification:24 Contracts,43 Web and33 API focused tests; scoped lint/formatting, shared/API/Web typechecks and production builds pass (56 Web routes). Schema formatted/generated. Origin develop integrated with both translation additions retained and derived catalogues regenerated. Additive migration rehearsed by clean exact-head CI before user-authorized merge; no local operational DB/runtime rollout.
+
+
+## 2026-10-08 — PC-A — Hotel adult/child composition alignment
+
+English occupancy labels in hotel coefficient and room-price tables now render in isolated LTR, left-aligned blocks; Persian labels retain RTL. Counts and financial calculations unchanged. Eight focused tests and scoped lint pass; Web typecheck/build and exact-head CI gate the explicitly authorized develop merge. No migration, dependencies, data or runtime changes.

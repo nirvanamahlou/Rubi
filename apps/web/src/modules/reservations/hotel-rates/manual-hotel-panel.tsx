@@ -404,8 +404,20 @@ export function HotelCoefficients({
               {combinations.map((combination, index) => (
                 <tr key={combination.id}>
                   <td>
-                    {combination.label ||
-                      `${combination.adults} AD + ${combination.childAges.length} CHD`}
+                    <bdi
+                      dir={
+                        /[A-Za-z]/.test(combinationName(combination))
+                          ? 'ltr'
+                          : 'rtl'
+                      }
+                      className={
+                        /[A-Za-z]/.test(combinationName(combination))
+                          ? styles.ltrComposition
+                          : undefined
+                      }
+                    >
+                      {combinationName(combination)}
+                    </bdi>
                   </td>
                   <td>
                     <Choice
@@ -709,7 +721,20 @@ export function HotelCoefficients({
                           />
                         </td>
                         <td>
-                          {combinationName(combination)}
+                          <bdi
+                            dir={
+                              /[A-Za-z]/.test(combinationName(combination))
+                                ? 'ltr'
+                                : 'rtl'
+                            }
+                            className={
+                              /[A-Za-z]/.test(combinationName(combination))
+                                ? styles.ltrComposition
+                                : undefined
+                            }
+                          >
+                            {combinationName(combination)}
+                          </bdi>
                           {combination.childAges.map((a, i) => (
                             <small key={i}>
                               {' '}
