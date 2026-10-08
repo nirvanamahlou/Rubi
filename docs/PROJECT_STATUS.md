@@ -5060,6 +5060,27 @@ Verification:9 targeted tests, affected ESLint/formatting and Web typecheck pass
 
 Purchase hub defaults to unregistered while preserving explicit bookmarks. Dashboard totals use authorized category/search/date scope across all statuses/pages. Transfer work items group before pagination: fresh/shared round-trip purchases appear once, split latest revisions stay independent. Separate-broker purchase mode preserves supplier/currency drafts and canonical covered-key atomic batch semantics.32 Web and34 API focused tests plus8 temporary PostgreSQL query tests pass. No schema/dependency/permission/operational data/runtime changes. Exact-head full CI gates user-authorized develop merge; handoff in docs/tasks/PURCHASE-DASHBOARD-TRANSFERS-1008.md.
 
+## 2026-10-08 — PC-A — Hotel table-first redesign
+
+Manual entry now starts with stacked country/city/searchable hotel selection, one
+hotel-wide composition coefficient table and separate room-base purchase/sale
+tables. Inline sale edits, clicked-row selection and contextual purchase-baseline
+group adjustments replace the crowded layout. New Package visibly opens and resets
+the editor including local panel state. Saved packages are collapsed at the bottom;
+Excel import remains a separate mode.637 Sales/Reservations tests pass across full
+and isolated runs with3 existing skips; scoped lint/typecheck and final production
+build pass. Exact source candidate3632ba9a passes all8 GitHub checks. Local concurrent
+build load causes i18n test timeouts without assertion failures; CI passes these
+checks, and no thresholds were weakened. Owner-authorized one-time
+cleanup removed old rates and the explicitly approved single dependent pricing draft
+in both preview3210 and main3100 after verified backups.251 other tables and9
+contracts per environment retained exact fingerprints. No schema/dependency/API
+change or automatic wipe. Only preview3210 UI rolls out locally; main runtimes and
+unrelated local edits are preserved. Exact-head CI gates the authorized develop
+merge. Verified backups and manifests are preserved in the primary workspace's
+ignored `.runtime/backups/hotel-rate-reset-1008`, outside the preview worktree.
+See [delivery and cleanup](tasks/HOTEL-TABLE-REDESIGN-1008.md).
+
 ## 2026-10-08 — PC-A — Editable package price fields
 
 Removed the four introductory pricing cards and opted the embedded departure editor out of its heading/explanation and current/upcoming overview; standalone tour management remains unchanged. Default adult flight/child flight/business/commission rows are editable/removable; custom typed monetary rows have independent currency and a fixed per-room-package sale contribution. Nullable additive draft/publication JSON stores validated Decimal strings; explicit empty lists remain empty and historical null restores legacy defaults. Exact shared calculation drives preview/publication; currencies never combine. Existing maker/checker, branch/source authorization, CAS and immutable history remain intact.8 Contracts,47 Web and30 API focused tests pass; scoped lint, Contracts/API/Web typechecks pass. Schema formatting/generation pass; production builds and exact-head CI gate user-authorized develop merge. Local temporary PostgreSQL migration probe timed out waiting for Docker; clean CI must rehearse migrations before merge. No operational migration, data change or runtime rollout. See docs/tasks/PACKAGE-PRICE-FIELDS-1008.md.
