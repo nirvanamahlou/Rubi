@@ -5,6 +5,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
+import { TimePicker } from '@/components/ui/time-picker';
 import {
   calendarMonthDays,
   calendarParts,
@@ -479,14 +480,13 @@ export function TicketDatePicker({
                   >
                     ساعت
                   </label>
-                  <input
+                  <TimePicker
                     className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
                     id={`${fieldId}-time`}
                     onChange={(event) => {
                       const date = selectedDate || today;
                       emit(`${date}T${event.target.value}`);
                     }}
-                    type="time"
                     value={/T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00'}
                   />
                   <Button

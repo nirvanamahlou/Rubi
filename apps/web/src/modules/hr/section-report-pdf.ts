@@ -118,7 +118,7 @@ export async function downloadSectionPdf(
     context.fillStyle = '#52657c';
     context.fillText(
       translateUiText(
-        `اطلاعات منابع انسانی · ${new Date().toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')} · صفحه ${page.toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+        `اطلاعات منابع انسانی · ${new Date().toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR', { hourCycle: 'h23' })} · صفحه ${page.toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
         browserDisplayLanguage(),
       ),
       1170,

@@ -400,5 +400,7 @@
   "دقت مبلغ یا درصد قیمت معتبر نیست.": "Invalid amount precision or percentage.",
   "ردیف قیمت معتبر نیست.": "Invalid price field.",
   "حذف فیلد": "Remove field",
-  "نام فیلد قیمت": "Price field name"
+  "نام فیلد قیمت": "Price field name",
+  "ساعت ۲۴ساعته معتبر در محدودهٔ مجاز وارد کنید.": "Enter a valid 24-hour time within the allowed range.",
+  "انتخاب ساعت": "Choose time"
 }
