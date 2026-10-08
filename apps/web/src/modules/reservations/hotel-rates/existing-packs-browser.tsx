@@ -368,7 +368,7 @@ export function ExistingPacksBrowser({
           <SavedPackHotelPrices
             pack={opened}
             search={search}
-            disabled={!canWrite || busy}
+            disabled={!canWrite || busy || !!opened.sharedPeriod}
             {...(onEdit
               ? { onEdit: (id: string) => navigate(() => onEdit(id)) }
               : {})}
@@ -383,7 +383,7 @@ export function ExistingPacksBrowser({
             <button
               className={styles.primary}
               type="button"
-              disabled={!canWrite || busy || !dirty}
+              disabled={!canWrite || busy || !dirty || !!opened.sharedPeriod}
               onClick={() => void save()}
             >
               {busy ? 'در حال ثبت…' : 'ثبت تغییرات قیمت · نسخهٔ جدید'}

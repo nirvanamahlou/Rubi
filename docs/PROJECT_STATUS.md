@@ -5106,6 +5106,10 @@ Price-field editors use two columns on desktop and a single column on narrow scr
 
 Verification: both existing price-field/workspace regressions and scoped lint pass. Typecheck and full CI build gate review; bounded component lock released with candidate.
 
+## 2026-10-08 — PC-A — Shared hotel periods for packages
+
+Compact saved hotel periods now open their exact existing editor; city dates filter saved periods and identify fully covered hotels for a shared package stay. Reservations materializes selected nightly tariffs into an immutable shared pack linked to source batches with restrictive FKs. Package Pricing selects that batch and its hotels; exact-night totals remain authoritative across multiple source periods. Original coefficients/history and maker/checker/CAS/branch boundaries remain intact. Additive source-link migration requires deployment before API rollout; no local operational migration/data/runtime change. Focused calculation, API/security and Web interaction tests pass; final lint/typecheck and exact-head full CI/build/migration gates precede the authorized develop merge. See tasks/HOTEL-SHARED-PERIODS-1008.md.
+
 
 HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up: priced room combinations default to selected until explicit user selection; manual deselection/clear-all retained. Room cards use a compact two-column grid on wide screens and single column below 1000px, with shorter price rows. No calculations, persistence, API, migrations or runtime changes. Focused interaction regression and final CI gate combined user-authorized merge.
 

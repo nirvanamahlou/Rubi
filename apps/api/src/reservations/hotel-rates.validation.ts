@@ -225,7 +225,10 @@ export function validateRateBatch(raw: unknown): RateBatchInput {
   return input;
 }
 
-export function validateRatePack(raw: unknown): RatePackInput {
+export function validateRatePack(
+  raw: unknown,
+  derivedSnapshot = false,
+): RatePackInput {
   const { error, value } = packSchema.validate(raw, { convert: false });
   if (error)
     throw new BadRequestException(
@@ -361,7 +364,7 @@ export function validateRatePack(raw: unknown): RatePackInput {
             throw new BadRequestException(
               'قیمت خرید و فروش با قیمت پایه و ضریب ترکیب هماهنگ نیست.',
             );
-        } else if (tariff.saleAmount !== undefined) {
+        } else if (tariff.saleAmount !== undefined && !derivedSnapshot) {
           throw new BadRequestException(
             'قیمت فروش مستقل باید همراه ضریب و قیمت پایه ثبت شود.',
           );
