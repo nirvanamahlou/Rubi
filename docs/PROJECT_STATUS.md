@@ -5095,6 +5095,11 @@ Removed publication-basis explanation/family controls. Checked hotel/broker rows
 
 Verification:24 Contracts,43 Web and33 API focused tests; scoped lint/formatting, shared/API/Web typechecks and production builds pass (56 Web routes). Schema formatted/generated. Origin develop integrated with both translation additions retained and derived catalogues regenerated. Additive migration rehearsed by clean exact-head CI before user-authorized merge; no local operational DB/runtime rollout.
 
+
+## 2026-10-08 — PC-A — Hotel adult/child composition alignment
+
+English occupancy labels in hotel coefficient and room-price tables now render in isolated LTR, left-aligned blocks; Persian labels retain RTL. Counts and financial calculations unchanged. Eight focused tests and scoped lint pass; Web typecheck/build and exact-head CI gate the explicitly authorized develop merge. No migration, dependencies, data or runtime changes.
+
 ## 2026-10-08 — PC-A — Compact price field pairs
 
 Price-field editors use two columns on desktop and a single column on narrow screens. Each editor keeps a full-width field-name input and amount/currency controls below. Delete uses an accessible red trash icon, preserving the existing keyed callback and disabled state. Presentation-only; no data/API/schema/runtime changes. Scoped verification and review PR follow.
@@ -5104,3 +5109,8 @@ Verification: both existing price-field/workspace regressions and scoped lint pa
 ## 2026-10-08 — PC-A — Shared hotel periods for packages
 
 Compact saved hotel periods now open their exact existing editor; city dates filter saved periods and identify fully covered hotels for a shared package stay. Reservations materializes selected nightly tariffs into an immutable shared pack linked to source batches with restrictive FKs. Package Pricing selects that batch and its hotels; exact-night totals remain authoritative across multiple source periods. Original coefficients/history and maker/checker/CAS/branch boundaries remain intact. Additive source-link migration requires deployment before API rollout; no local operational migration/data/runtime change. Focused calculation, API/security and Web interaction tests pass; final lint/typecheck and exact-head full CI/build/migration gates precede the authorized develop merge. See tasks/HOTEL-SHARED-PERIODS-1008.md.
+
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up: priced room combinations default to selected until explicit user selection; manual deselection/clear-all retained. Room cards use a compact two-column grid on wide screens and single column below 1000px, with shorter price rows. No calculations, persistence, API, migrations or runtime changes. Focused interaction regression and final CI gate combined user-authorized merge.
+
+Combined verification:18 focused hotel tests pass (local timeout raised only at invocation under host load); scoped lint passes. Final Web types/build and exact-head CI required before merge. Bounded follow-up locks released.

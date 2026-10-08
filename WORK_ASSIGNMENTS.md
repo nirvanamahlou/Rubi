@@ -6215,6 +6215,12 @@ COMPUTER_ID=PC-A; branch codex/pc-a-package-hotel-table-generator-1008 from orig
 
 PACKAGE-HOTEL-TABLE-GENERATOR-1008 review candidate:24 Contracts/43 Web/33 API tests and scoped lint/typechecks/builds pass; schema formatted/generated. Bounded schema/shared/central locks release with this candidate; no operational migration. Exact-head CI gates human-authorized develop merge.
 
+## HOTEL-OCCUPANCY-LABEL-LTR-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-occupancy-label-ltr-1008 from origin/develop. Reserve only manual-hotel-panel.tsx and manual-tables.module.css plus own status records. Prior HOTEL-TABLE-REDESIGN source locks released at review freeze. User requests LTR/left-aligned English adult/child compositions and explicitly authorizes develop merge. Preserve Persian labels, counts, calculations, API and data; no schema, dependencies or runtime changes.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008: eight focused tests and scoped lint pass; source locks released at review freeze. Web typecheck/build and exact-head CI gate explicitly authorized develop merge.
+
 ## PRICE-FIELD-PAIRS-1008 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-price-field-pairs-1008 from develop c2764fbf. Reserve only TourPriceFields presentation and own status/assignment records. User requests two price-field editors per row and red trash icon instead of delete text. Preserve labels, amount/currency editing, commission modes, stable keys and delete callbacks. No schema/API/contracts/dependencies or operational runtime/data change. Prior package locks released; no overlapping active component reservation. Push review PR to develop after scoped lint, existing targeted regression, typecheck and build gates; no new merge authorization inferred.
@@ -6226,3 +6232,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-hotel-shared-periods-1008 from origin/develo
 HOTEL-SHARED-PERIODS-1008 schema reservation: sole Migration Owner PC-A for additive ReservationHotelRatePackSource join linking a derived shared pack to immutable source batches using real restrictive FKs. Prior migration owners explicitly released. Shared packs are immutable source snapshots, excluded from future source aggregation; original periods remain independently versioned/editable. Existing package batch FK and legacy calculations remain compatible. Reservation periods read/create endpoints and optional sharedPeriod projection ship with Web consumer; shared creation validates selected source batch IDs against current versions, permissions, full-night coverage and replay key before atomic materialization.
 
 HOTEL-SHARED-PERIODS-1008 verification:13 pure pricing/coverage,28 API permission/version/replay/persistence and16 existing Web editor/package regressions pass;7 new UI/package/English checks pass. Schema format and isolated Prisma generation succeed; Web/API typechecks and scoped lint plus exact-head CI builds/migration gate merge. Source/shared/schema/Migration/catalogue locks release with frozen review candidate. No operational migration, local runtime deployment or data deletion. Delivery in docs/tasks/HOTEL-SHARED-PERIODS-1008.md.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up reservation: same branch/PR749, user additionally requests automatic default selection of priced combinations and compact two-column room tables. Reserve same panel/CSS plus focused manual interaction test; preserve user deselection and unpriced-row exclusion, no purchase/sale arithmetic or persistence changes. User explicitly authorizes combined develop merge.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 combined review freeze:18 focused tests and scoped lint pass. Follow-up source locks RELEASED; Web typecheck/build and exact-head CI gate authorized develop merge. No runtime rollout.
