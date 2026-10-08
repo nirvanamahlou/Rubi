@@ -5108,3 +5108,5 @@ Verification: both existing price-field/workspace regressions and scoped lint pa
 
 
 HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up: priced room combinations default to selected until explicit user selection; manual deselection/clear-all retained. Room cards use a compact two-column grid on wide screens and single column below 1000px, with shorter price rows. No calculations, persistence, API, migrations or runtime changes. Focused interaction regression and final CI gate combined user-authorized merge.
+
+Combined verification:18 focused hotel tests pass (local timeout raised only at invocation under host load); scoped lint passes. Final Web types/build and exact-head CI required before merge. Bounded follow-up locks released.

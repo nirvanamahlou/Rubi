@@ -6227,3 +6227,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-price-field-pairs-1008 from develop c2764fbf
 
 
 HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up reservation: same branch/PR749, user additionally requests automatic default selection of priced combinations and compact two-column room tables. Reserve same panel/CSS plus focused manual interaction test; preserve user deselection and unpriced-row exclusion, no purchase/sale arithmetic or persistence changes. User explicitly authorizes combined develop merge.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 combined review freeze:18 focused tests and scoped lint pass. Follow-up source locks RELEASED; Web typecheck/build and exact-head CI gate authorized develop merge. No runtime rollout.
