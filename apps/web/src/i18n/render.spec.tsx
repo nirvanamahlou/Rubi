@@ -6,6 +6,7 @@ import { jsx } from './jsx-runtime';
 import { DisplayLocaleContext } from './locale-context';
 import { translateUiText, latinDigits } from './translate';
 import { searchOptions } from '@/components/ui/search-combobox';
+import { Input, Textarea } from '@/components/ui/form-controls';
 import {
   formatCalendarValue,
   calendarMonthName,
@@ -62,6 +63,34 @@ describe('application English rendering', () => {
     expect(render('en', textarea)).toContain('یادداشت شخصی');
     const script = jsx('script', { children: 'const text = "فارسی";' });
     expect(render('en', script)).toContain('const text = "فارسی";');
+  });
+
+  it('translates textarea guidance while preserving typed and default content', () => {
+    const tree = jsx('textarea', {
+      placeholder: 'نام کاربری',
+      'aria-label': 'نام کاربری',
+      defaultValue: 'یادداشت شخصی',
+    });
+    const english = render('en', tree);
+    expect(english).toContain('placeholder="Username"');
+    expect(english).toContain('aria-label="Username"');
+    expect(english).toContain('یادداشت شخصی');
+    expect(render('fa', tree)).toContain('placeholder="نام کاربری"');
+  });
+
+  it('translates real form-control examples without altering input values', () => {
+    const tree = (
+      <section>
+        <Input placeholder="مثلاً 10,000,000" defaultValue="مقدار کاربر" />
+        <Textarea placeholder="توضیحات لازم برای اجرای خدمات سفر" />
+      </section>
+    );
+    const english = render('en', tree);
+    expect(english).toContain('placeholder="For example, 10,000,000"');
+    expect(english).toContain(
+      'placeholder="Necessary explanations for the implementation of travel services"',
+    );
+    expect(english).toContain('value="مقدار کاربر"');
   });
 
   it('supports English option search without changing option identifiers', () => {
