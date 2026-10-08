@@ -18,7 +18,7 @@ import { journalDisplayTotals } from '../accounting-money';
 import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
 import { AccountingAttachments } from './accounting-attachments';
-import { AccountingBookSettings } from './accounting-book-settings';
+import { AccountingLedgerEditor } from './accounting-ledger-editor';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
@@ -291,22 +291,6 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
       setBusy(false);
     }
   };
-  const createBook = async () => {
-    setBusy(true);
-    setError('');
-    const id = String(draft.id || crypto.randomUUID());
-    set('id', id);
-    try {
-      const book = await accountingApi.createBook({ ...draft, id });
-      setBookId(book.id);
-      setDraft({ active: true });
-      await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'ثبت ناموفق بود.');
-    } finally {
-      setBusy(false);
-    }
-  };
   const home =
     pathname === '/finance' ||
     section === '' ||
@@ -342,116 +326,21 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
   let content: ReactNode = null;
   if (!books.length || section === 'general-ledger/base-information/ledgers')
     content = (
-      <Panel title="دفتر کل">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void createBook();
-          }}
-          className="space-y-4"
-        >
-          <Fields
-            fields={[
-              {
-                key: 'branchId',
-                label: 'شعبه',
-                kind: 'select',
-                options: branches.map((b) => ({ value: b.id, label: b.name })),
-              },
-              { key: 'code', label: 'کد دفتر' },
-              { key: 'title', label: 'عنوان دفتر' },
-              { key: 'baseCurrency', label: 'ارز پایه (کد سه حرفی)' },
-              {
-                key: 'approvalPolicy',
-                label: 'قاعده تأیید',
-                kind: 'select',
-                options: [
-                  {
-                    value: 'DUAL_CONTROL',
-                    label: 'تأیید مستقل پیش از ثبت قطعی',
-                  },
-                ],
-              },
-              { key: 'isMain', label: 'دفتر اصلی', kind: 'check' },
-            ]}
-            draft={draft}
-            set={set}
-          />
-          <Button
-            permission="finance.account.manage"
-            type="submit"
-            disabled={busy}
-          >
-            ایجاد دفتر
-          </Button>
-        </form>
-        {snapshot ? (
-          <>
-            <AccountingBookSettings
-              key={snapshot.book.id + snapshot.book.version}
-              book={snapshot.book}
-              run={run}
-              busy={busy}
-            />
-            <h3 className="font-bold">تخصیص سال مالی به دفتر انتخاب‌شده</h3>
-            <form
-              className="space-y-4"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void run('save-period', draft, editing?.version).then(
-                  (result) => {
-                    if (result) setEditing(null);
-                  },
-                );
-              }}
-            >
-              <Fields
-                fields={[
-                  {
-                    key: 'fiscalYearId',
-                    label: 'سال مالی',
-                    kind: 'select',
-                    options: options(
-                      snapshot.configurations.filter(
-                        (c) => c.kind === 'fiscal-years',
-                      ),
-                    ),
-                  },
-                  { key: 'startDate', label: 'تاریخ شروع', kind: 'date' },
-                  { key: 'endDate', label: 'تاریخ پایان', kind: 'date' },
-                ]}
-                draft={draft}
-                set={set}
-              />
-              <Button
-                permission="finance.account.manage"
-                type="submit"
-                disabled={busy}
-              >
-                تخصیص دوره
-              </Button>
-            </form>
-            <Table headers={['سال مالی', 'شروع', 'پایان', 'وضعیت']}>
-              {snapshot.periods.map((p) => (
-                <tr key={p.id}>
-                  <td className={cell}>
-                    {
-                      snapshot.configurations.find(
-                        (c) => c.id === p.fiscalYearId,
-                      )?.title
-                    }
-                  </td>
-                  <td className={cell}>{p.startDate}</td>
-                  <td className={cell}>{p.endDate}</td>
-                  <td className={cell}>
-                    {p.status === 'OPEN' ? 'باز' : 'بسته'}
-                  </td>
-                </tr>
-              ))}
-            </Table>
-          </>
-        ) : null}
-      </Panel>
+      <AccountingLedgerEditor
+        key={`${bookId || 'new-ledger'}:${snapshot?.book.version ?? 0}`}
+        snapshot={snapshot}
+        branches={branches}
+        busy={busy}
+        run={run}
+        refresh={refresh}
+        onCreated={async (book) => {
+          setBookId(book.id);
+          const params = new URLSearchParams(urlParams.toString());
+          params.set('bookId', book.id);
+          router.replace(`${pathname}?${params}`, { scroll: false });
+          await refresh();
+        }}
+      />
     );
   else if (snapshot && section === 'general-ledger/base-information/fx-rates') {
     content = (
@@ -531,10 +420,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         </Table>
       </Panel>
     );
-  } else if (
-    snapshot &&
-    section === 'receipts-payments/reports'
-  )
+  } else if (snapshot && section === 'receipts-payments/reports')
     content = (
       <AccountingSourceWorkspace book={snapshot} run={run} busy={busy} />
     );
@@ -1119,8 +1005,17 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
   }
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end gap-3">
-        {section !== 'general-ledger/base-information/fiscal-years' && (
+      <div
+        className={
+          section === 'general-ledger/base-information/ledgers'
+            ? 'hidden'
+            : 'flex flex-wrap items-end gap-3'
+        }
+      >
+        {![
+          'general-ledger/base-information/fiscal-years',
+          'general-ledger/base-information/ledgers',
+        ].includes(section) && (
           <div className="min-w-60 flex-1">
             <FormField label="دفتر حسابداری" id="accounting-book">
               <SearchCombobox

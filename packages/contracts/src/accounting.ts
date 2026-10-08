@@ -26,6 +26,9 @@ export interface AccountingBookV1 {
   branchId: string;
   code: string;
   title: string;
+  titleEn?: string | null;
+  description?: string | null;
+  notes?: string | null;
   baseCurrency: string;
   isMain: boolean;
   allowsPosting: boolean;

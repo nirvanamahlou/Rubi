@@ -254,6 +254,62 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     );
     return command<AccountingJournalV1>('post', { id: j.id }, j.version);
   };
+  it('persists ledger form metadata with version and replay guards', async () => {
+    const original = (await service.snapshot(bookId, maker)).book;
+    const payload = {
+      code: original.code,
+      title: original.title,
+      active: original.active,
+      isMain: original.isMain,
+      allowsPosting: original.allowsPosting,
+      titleEn: 'General ledger',
+      description: 'Synthetic ledger description',
+      notes: 'Synthetic notes',
+    };
+    const key = randomUUID();
+    const saved = await command(
+      'save-book',
+      payload,
+      original.version,
+      maker,
+      key,
+    );
+    const snapshot = await service.snapshot(bookId, maker);
+    expect(snapshot.book).toMatchObject({
+      ...payload,
+      version: original.version + 1,
+    });
+    expect(
+      await command('save-book', payload, original.version, maker, key),
+    ).toEqual(saved);
+    await expect(
+      command(
+        'save-book',
+        { ...payload, notes: 'Different notes' },
+        original.version,
+        maker,
+        key,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      command('save-book', payload, original.version),
+    ).rejects.toThrow();
+    // Older settings consumers omit the new optional fields; preserve them.
+    await command(
+      'save-book',
+      {
+        title: original.title,
+        active: original.active,
+        isMain: original.isMain,
+        allowsPosting: original.allowsPosting,
+      },
+      snapshot.book.version,
+    );
+    expect((await service.snapshot(bookId, maker)).book.notes).toBe(
+      payload.notes,
+    );
+  });
+
   it('persists incomplete drafts without effects', async () => {
     const j = await command<AccountingJournalV1>('journal-save', { lines: [] });
     expect(j.status).toBe('DRAFT');

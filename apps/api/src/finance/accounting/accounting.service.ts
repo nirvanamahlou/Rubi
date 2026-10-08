@@ -174,7 +174,13 @@ export class AccountingService {
           existing.branchId !== branchId ||
           existing.code !== code ||
           existing.title !== title ||
-          existing.baseCurrency !== baseCurrency
+          existing.baseCurrency !== baseCurrency ||
+          existing.titleEn !== (v.text(p.titleEn, 160) || null) ||
+          existing.description !== (v.text(p.description, 2000) || null) ||
+          existing.notes !== (v.text(p.notes, 2000) || null) ||
+          existing.isMain !== (p.isMain === true) ||
+          existing.active !== (p.active !== false) ||
+          existing.allowsPosting !== (p.allowsPosting !== false)
         )
           throw new ConflictException(
             'شناسه قبلاً با اطلاعات دیگری ثبت شده است.',
@@ -189,6 +195,11 @@ export class AccountingService {
           title,
           baseCurrency,
           isMain: p.isMain === true,
+          titleEn: v.text(p.titleEn, 160) || null,
+          description: v.text(p.description, 2000) || null,
+          notes: v.text(p.notes, 2000) || null,
+          active: p.active !== false,
+          allowsPosting: p.allowsPosting !== false,
         },
       });
       await tx.accountingConfiguration.create({
@@ -1214,6 +1225,16 @@ export class AccountingService {
         where: { id: bookId },
         data: {
           title: v.text(p.title, 160, true),
+          ...(p.code !== undefined ? { code: v.text(p.code, 20, true) } : {}),
+          ...(p.titleEn !== undefined
+            ? { titleEn: v.text(p.titleEn, 160) || null }
+            : {}),
+          ...(p.description !== undefined
+            ? { description: v.text(p.description, 2000) || null }
+            : {}),
+          ...(p.notes !== undefined
+            ? { notes: v.text(p.notes, 2000) || null }
+            : {}),
           active: p.active === true,
           allowsPosting: p.allowsPosting === true,
           isMain: p.isMain === true,
