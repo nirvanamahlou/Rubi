@@ -182,7 +182,7 @@ describe('finance workspace component contract', () => {
     expect(coreSource).not.toContain('<InboxSpace />');
     expect(liveInboxSource).toContain('کارتابل درخواست‌ها');
     expect(liveInboxSource).toContain('مرکز کنترل مالی');
-    expect(liveInboxSource).toContain('جریان کارتابل بر اساس واحد');
+    expect(liveInboxSource).not.toContain('جریان کارتابل بر اساس واحد');
     expect(liveInboxSource).toContain('اولویت‌های نزدیک');
     expect(liveInboxSource).toContain('حساب‌های قابل استفاده');
     expect(liveInboxSource).not.toContain('Live sources');

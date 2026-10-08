@@ -17,7 +17,6 @@ import {
   RotateCcw,
   Search,
   ShieldCheck,
-  TrendingUp,
   WalletCards,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -315,17 +314,10 @@ export function FinanceInboxLiveWorkspace() {
         (left.dueAt ?? '').localeCompare(right.dueAt ?? ''),
       )
       .slice(0, 3);
-    const sourceSummary = (Object.keys(sourceLabels) as FinanceInboxSource[])
-      .map((key) => ({
-        source: key,
-        count: openItems.filter((item) => item.source === key).length,
-      }))
-      .filter((item) => item.count > 0);
     return {
       receiptCount: data?.summary.receiptCount ?? receiptItems.length,
       paymentCount: data?.summary.paymentCount ?? paymentItems.length,
       dueItems,
-      sourceSummary,
       activeAccountCount: accounts.filter((account) => account.isActive).length,
     };
   }, [accounts, items, data]);
@@ -766,7 +758,7 @@ export function FinanceInboxLiveWorkspace() {
 
       <details className={styles.summary}>
         <summary className="cursor-pointer px-5 py-3 text-sm font-semibold">
-          جریان کارتابل بر اساس واحد
+          نمای کلی عملیات مالی
         </summary>
         <div className="space-y-4 p-4">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -793,54 +785,7 @@ export function FinanceInboxLiveWorkspace() {
             ))}
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-            <Card className="p-5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black">
-                    جریان کارتابل بر اساس واحد
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    حجم درخواست‌های باز در هر واحد عملیاتی
-                  </p>
-                </div>
-                <TrendingUp className="size-5 text-primary" />
-              </div>
-              <div className="mt-5 space-y-4">
-                {dashboard.sourceSummary.length ? (
-                  dashboard.sourceSummary.map(
-                    ({ source: sourceName, count }) => {
-                      const ratio = openCount
-                        ? Math.round((count / openCount) * 100)
-                        : 0;
-                      return (
-                        <div key={sourceName}>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-semibold">
-                              {sourceLabels[sourceName]}
-                            </span>
-                            <span className="text-muted-foreground">
-                              {count} مورد · {ratio}٪
-                            </span>
-                          </div>
-                          <div className="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-l from-primary to-cyan-400"
-                              style={{ width: `${Math.max(ratio, 6)}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    },
-                  )
-                ) : (
-                  <p className="rounded-2xl bg-muted/60 p-4 text-sm text-muted-foreground">
-                    درخواستی برای نمایش در بازه و فیلتر فعلی وجود ندارد.
-                  </p>
-                )}
-              </div>
-            </Card>
-
+          <div className="grid gap-4">
             <Card className="p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -1181,7 +1126,7 @@ export function FinanceInboxLiveWorkspace() {
         <Alert tone="warning" title="کارتابل دریافت نشد" description={error} />
       ) : null}
       {loading ? (
-        <div className="grid gap-3 xl:grid-cols-[1.35fr_0.65fr]">
+        <div className="flex flex-col gap-3">
           <div className="space-y-3">
             {Array.from({ length: 3 }, (_, index) => (
               <Card className="h-36 animate-pulse bg-muted/60" key={index} />
@@ -1197,14 +1142,19 @@ export function FinanceInboxLiveWorkspace() {
         />
       ) : null}
       {!loading && !error && items.length ? (
-        <div className="grid items-start gap-4 2xl:grid-cols-[minmax(0,1.6fr)_minmax(22rem,0.65fr)]">
+        <div className="flex flex-col gap-4">
           <div className="min-w-0 overflow-hidden rounded-2xl border border-border bg-surface">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/40 px-4 py-3">
-              <h3 className="font-bold">فهرست درخواست‌ها</h3>
-              <span className="text-xs text-muted-foreground">
-                {items.length.toLocaleString('fa-IR')} درخواست · برای بررسی، یک
-                مورد را انتخاب کنید
-              </span>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/40 px-4 py-4">
+              <div>
+                <h3 className="font-bold">فهرست درخواست‌ها</h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  یک درخواست را انتخاب کنید تا جزئیات و اقداماتش پایین فهرست باز
+                  شود.
+                </p>
+              </div>
+              <Badge className="px-3 py-1">
+                {items.length.toLocaleString('fa-IR')} درخواست
+              </Badge>
             </div>
             {items.map((item) => {
               const active = selected?.id === item.id;
@@ -1222,11 +1172,9 @@ export function FinanceInboxLiveWorkspace() {
                   key={item.id}
                   onClick={() => {
                     setSelectedId(item.id);
-                    if (window.matchMedia('(max-width: 1279px)').matches) {
-                      document
-                        .getElementById('finance-request-details')
-                        ?.scrollIntoView({ block: 'start' });
-                    }
+                    document
+                      .getElementById('finance-request-details')
+                      ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
                   }}
                   type="button"
                 >
@@ -1293,7 +1241,7 @@ export function FinanceInboxLiveWorkspace() {
           {selected ? (
             <Card
               id="finance-request-details"
-              className="scroll-mt-24 overflow-hidden p-0 xl:sticky xl:top-24 xl:max-h-[calc(100dvh-7rem)] xl:overflow-y-auto"
+              className="scroll-mt-24 overflow-hidden p-0"
               aria-label="جزئیات درخواست انتخاب‌شده"
             >
               <div className="border-b border-border bg-primary/5 p-5">
