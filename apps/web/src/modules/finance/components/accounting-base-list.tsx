@@ -26,7 +26,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { AccountingBookV1, AccountingSnapshotV1 } from '@nora/contracts';
 import Link from '@/i18n/link';
-import { Button } from '@/components/ui/button';
+import { AccountingButton as Button } from './accounting-operations';
 import { Input } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -419,12 +419,18 @@ export function AccountingBaseList({
   books,
   busy,
   refresh,
+  run,
 }: {
   kind: AccountingListKind;
   snapshot: AccountingSnapshotV1;
   books: AccountingBookV1[];
   busy: boolean;
   refresh: () => Promise<void>;
+  run: (
+    action: string,
+    payload: Record<string, unknown>,
+    version?: number,
+  ) => Promise<unknown>;
 }) {
   const router = useRouter();
   const [draft, setDraft] = useState<FilterGroup>(emptyFilter);
@@ -452,6 +458,10 @@ export function AccountingBaseList({
   const selectedIds = selected.filter((id) =>
     filtered.some((row) => row.id === id),
   );
+  const deleteTarget =
+    kind !== 'ledgers' && selectedIds.length === 1
+      ? snapshot.configurations.find((item) => item.id === selectedIds[0])
+      : undefined;
   const allPageSelected =
     visible.length > 0 && visible.every((row) => selectedIds.includes(row.id));
   const somePageSelected =
@@ -557,7 +567,7 @@ export function AccountingBaseList({
       KeyT: () => setShowFilters(!showFilters),
       KeyF: apply,
       KeyC: clear,
-      KeyA: addRule,
+      KeyB: addRule,
       KeyG: addGroup,
       KeyO: openDefinition,
       KeyQ: () => searchRef.current?.focus(),
@@ -607,6 +617,49 @@ export function AccountingBaseList({
       aria-label={definition.title}
       className="overflow-hidden rounded-2xl border bg-surface shadow-sm"
     >
+      <Button
+        permission="finance.account.manage"
+        disabled={busy}
+        onClick={() =>
+          router.push(`${definitionRoute(kind)}?bookId=${snapshot.book.id}`)
+        }
+      >
+        جدید
+      </Button>
+      {(['close', 'new'] as const).map((after) => (
+        <Button
+          key={after}
+          permission="finance.account.manage"
+          disabled={busy || !deleteTarget}
+          onClick={() => {
+            if (
+              !deleteTarget ||
+              !window.confirm(
+                'رکورد انتخاب‌شده برای همیشه حذف شود؟ رکورد استفاده‌شده حذف نمی‌شود.',
+              )
+            )
+              return;
+            void run(
+              'delete-base-record',
+              { entity: 'configuration', id: deleteTarget.id },
+              deleteTarget.version,
+            ).then((result) => {
+              if (!result) return;
+              setSelected([]);
+              if (after === 'new')
+                router.push(
+                  `${definitionRoute(kind)}?bookId=${snapshot.book.id}`,
+                );
+              if (after === 'close')
+                router.push(
+                  `/finance/accounting/general-ledger/base-information?bookId=${snapshot.book.id}`,
+                );
+            });
+          }}
+        >
+          {after === 'close' ? 'حذف و بستن' : 'حذف و جدید'}
+        </Button>
+      ))}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
         <div>
           <h2 className="text-lg font-bold">{definition.title}</h2>
@@ -765,7 +818,7 @@ export function AccountingBaseList({
             <div className="flex gap-1.5">
               <IconAction
                 label="افزودن شرط"
-                shortcut="Alt+Shift+A"
+                shortcut="Alt+Shift+B"
                 disabled={nodeCount(draft) >= 32}
                 onClick={addRule}
               >

@@ -174,6 +174,285 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         { accountId: creditId, debit: '0', credit: '100' },
       ],
     });
+  it('deletes only unused base records with version, scope, permission and replay guards', async () => {
+    const record = await command<{ id: string; version: number }>(
+      'save-configuration',
+      {
+        kind: 'voucher-types',
+        code: randomUUID(),
+        title: 'Disposable toolbar fixture',
+        active: true,
+        attributes: {},
+      },
+    );
+    const payload = { entity: 'configuration', id: record.id };
+    await expect(
+      command('delete-base-record', payload, record.version + 1),
+    ).rejects.toThrow();
+    await expect(
+      command('delete-base-record', payload, record.version, {
+        ...maker,
+        permissions: ['finance.read', 'finance.journal.read'],
+      }),
+    ).rejects.toThrow();
+    await expect(
+      command('delete-base-record', payload, record.version, {
+        ...maker,
+        branchIds: [],
+      }),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingConfiguration.count({ where: { id: record.id } }),
+    ).toBe(1);
+    const key = randomUUID();
+    const deleted = await command(
+      'delete-base-record',
+      payload,
+      record.version,
+      maker,
+      key,
+    );
+    expect(deleted).toMatchObject({ id: record.id, deleted: true });
+    expect(
+      await command('delete-base-record', payload, record.version, maker, key),
+    ).toEqual(deleted);
+    await expect(
+      command('delete-base-record', payload, record.version, checker, key),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingConfiguration.count({ where: { id: record.id } }),
+    ).toBe(0);
+  });
+  it('rejects deletion of FK-used and JSON-used records without losing financial data', async () => {
+    const used = await db.accountingConfiguration.findUniqueOrThrow({
+      where: { id: typeId },
+    });
+    // Add an explicit restrictive dependency independent of test execution order.
+    const dependencyJournal = await draft();
+    await expect(
+      command(
+        'delete-base-record',
+        { entity: 'configuration', id: typeId },
+        used.version,
+      ),
+    ).rejects.toThrow();
+    const disposable = await command<{ id: string; version: number }>(
+      'save-configuration',
+      {
+        kind: 'voucher-types',
+        code: randomUUID(),
+        title: 'JSON referenced fixture',
+        active: true,
+        attributes: {},
+      },
+    );
+    await db.accountingConfiguration.create({
+      data: {
+        bookId,
+        kind: 'toolbar-reference-test',
+        code: randomUUID(),
+        title: 'Reference fixture',
+        attributes: { target: disposable.id },
+      },
+    });
+    await expect(
+      command(
+        'delete-base-record',
+        { entity: 'configuration', id: disposable.id },
+        disposable.version,
+      ),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingConfiguration.count({
+        where: { id: { in: [typeId, disposable.id] } },
+      }),
+    ).toBe(2);
+    await expect(
+      command('delete-base-record', { entity: 'book', id: bookId }, 1),
+    ).rejects.toThrow();
+    expect(await db.accountingBook.count({ where: { id: bookId } })).toBe(1);
+    await command(
+      'cancel',
+      { id: dependencyJournal.id },
+      dependencyJournal.version,
+    );
+  });
+  it('deletes unused accounts, details, groups and templates without deleting historical dependencies', async () => {
+    const account = await db.accountingAccount.create({
+      data: {
+        bookId,
+        code: randomUUID().slice(0, 20),
+        title: 'Disposable account',
+        level: 'GROUP',
+        nature: 'DEBIT',
+        attributes: {},
+      },
+    });
+    const detailType = await db.accountingConfiguration.create({
+      data: {
+        bookId,
+        kind: 'detail-types',
+        code: randomUUID(),
+        title: 'Disposable detail type',
+        attributes: { classificationNumberLength: 4 },
+      },
+    });
+    const detail = await db.accountingDetail.create({
+      data: {
+        bookId,
+        typeId: detailType.id,
+        code: randomUUID().slice(0, 20),
+        title: 'Disposable detail',
+        attributes: {},
+      },
+    });
+    const accountGroup = await db.accountingAccountGroup.create({
+      data: {
+        bookId,
+        code: randomUUID().slice(0, 20),
+        title: 'Disposable account group',
+      },
+    });
+    const detailGroup = await db.accountingDetailGroup.create({
+      data: {
+        bookId,
+        code: randomUUID().slice(0, 20),
+        title: 'Disposable detail group',
+      },
+    });
+    const template = await db.accountingTemplate.create({
+      data: {
+        bookId,
+        kind: 'AUTOMATIC',
+        code: randomUUID().slice(0, 20),
+        title: 'Disposable template',
+      },
+    });
+    const allocation = await command<{ id: string; version: number }>(
+      'save-configuration',
+      {
+        kind: 'allocation-templates',
+        code: randomUUID(),
+        title: 'Disposable allocation',
+        active: true,
+        attributes: {
+          sourceAccountId: debitId,
+          targets: JSON.stringify([{ accountId: creditId, percentage: '100' }]),
+        },
+      },
+    );
+    const mapping = await command<{ id: string; version: number }>(
+      'save-configuration',
+      {
+        kind: 'account-mappings',
+        code: randomUUID(),
+        title: 'Disposable mapping',
+        active: true,
+        attributes: {
+          effectiveFrom: '2026-01-01',
+          reason: 'Synthetic fixture',
+          rows: JSON.stringify([{ accountId: debitId, targetCode: 'X' }]),
+        },
+      },
+    );
+    for (const [entity, row] of [
+      ['account', account],
+      ['detail', detail],
+      ['account-group', accountGroup],
+      ['detail-group', detailGroup],
+      ['template', template],
+      ['configuration', allocation],
+      ['configuration', mapping],
+    ] as const) {
+      await expect(
+        command('delete-base-record', { entity, id: row.id }),
+      ).rejects.toThrow();
+      await expect(
+        command('delete-base-record', { entity, id: row.id }, row.version),
+      ).resolves.toMatchObject({ deleted: true, id: row.id });
+    }
+    expect(
+      await db.accountingAccount.count({ where: { id: account.id } }),
+    ).toBe(0);
+    expect(await db.accountingDetail.count({ where: { id: detail.id } })).toBe(
+      0,
+    );
+    expect(
+      await db.accountingAccountGroup.count({ where: { id: accountGroup.id } }),
+    ).toBe(0);
+    expect(
+      await db.accountingDetailGroup.count({ where: { id: detailGroup.id } }),
+    ).toBe(0);
+    expect(
+      await db.accountingTemplate.count({ where: { id: template.id } }),
+    ).toBe(0);
+    const protectedTemplate = await db.accountingTemplate.create({
+      data: {
+        bookId,
+        kind: 'AUTOMATIC',
+        code: randomUUID().slice(0, 20),
+        title: 'Historical template',
+      },
+    });
+    const historical = await draft();
+    const overlappingId = await db.accountingConfiguration.create({
+      data: {
+        id: historical.id,
+        bookId,
+        kind: 'voucher-types',
+        code: randomUUID(),
+        title: 'Overlapping UUID fixture',
+        attributes: {},
+      },
+    });
+    await db.accountingJournal.update({
+      where: { id: historical.id },
+      data: {
+        attributes: {
+          templateId: protectedTemplate.id.toUpperCase(),
+          configurationReference: overlappingId.id,
+        },
+      },
+    });
+    await expect(
+      command(
+        'delete-base-record',
+        { entity: 'template', id: protectedTemplate.id.toUpperCase() },
+        protectedTemplate.version,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      command(
+        'delete-base-record',
+        { entity: 'configuration', id: overlappingId.id },
+        overlappingId.version,
+      ),
+    ).rejects.toThrow();
+    await command('cancel', { id: historical.id }, historical.version);
+    expect(
+      (
+        await service.journals(
+          bookId,
+          { id: historical.id, excludeCancelled: 'true' },
+          maker,
+        )
+      ).total,
+    ).toBe(0);
+    expect(
+      (
+        await service.journals(
+          bookId,
+          { id: historical.id, status: 'CANCELLED', excludeCancelled: 'true' },
+          maker,
+        )
+      ).total,
+    ).toBe(1);
+    expect(
+      await db.accountingTemplate.count({
+        where: { id: protectedTemplate.id },
+      }),
+    ).toBe(1);
+  });
   const mutationState = async (id: string) =>
     JSON.parse(
       JSON.stringify({

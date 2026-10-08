@@ -10,7 +10,13 @@ import type {
   AccountingTemplateV1,
 } from '@nora/contracts';
 
-import { Button } from '@/components/ui/button';
+import {
+  AccountingButton as Button,
+  AccountingSaveButtons,
+  AccountingDeleteButtons,
+  accountingSaveDisposition,
+} from './accounting-operations';
+import { useRouter } from 'next/navigation';
 import { Input, Textarea, FormField } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -35,6 +41,7 @@ export function AccountingChartEditor({
   run: Run;
   busy: boolean;
 }) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState('');
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState<Record<string, string | boolean>>({});
@@ -132,6 +139,34 @@ export function AccountingChartEditor({
       </div>
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => reset('GROUP')}>گروه حساب جدید</Button>
+        {(['close', 'new'] as const).map((after) => (
+          <Button
+            key={after}
+            permission="finance.account.manage"
+            disabled={busy || !selected}
+            onClick={() => {
+              if (
+                !selected ||
+                !window.confirm(
+                  'حساب انتخاب‌شده برای همیشه حذف شود؟ حساب استفاده‌شده حذف نمی‌شود.',
+                )
+              )
+                return;
+              void run(
+                'delete-base-record',
+                { entity: 'account', id: selected.id },
+                selected.version,
+              ).then((result) => {
+                if (!result) return;
+                reset('GROUP');
+                if (after === 'close')
+                  router.push('/finance/accounting/general-ledger/accounts');
+              });
+            }}
+          >
+            {after === 'close' ? 'حذف و بستن' : 'حذف و جدید'}
+          </Button>
+        ))}
         <Button variant="outline" onClick={() => reset('GENERAL')}>
           حساب کل جدید
         </Button>
@@ -157,7 +192,8 @@ export function AccountingChartEditor({
           className="space-y-4 rounded-xl border p-4"
           onSubmit={(event) => {
             event.preventDefault();
-            void run(
+            const after = accountingSaveDisposition(event);
+            void run<{ id: string; version: number }>(
               'save-account',
               {
                 ...draft,
@@ -165,7 +201,17 @@ export function AccountingChartEditor({
                 attributes,
               },
               selected?.version,
-            );
+            ).then((saved) => {
+              if (!saved) return;
+              setSelectedId(saved.id);
+              if (after === 'new')
+                reset(
+                  String(draft.level ?? 'GROUP') as
+                    'GROUP' | 'GENERAL' | 'SUBSIDIARY',
+                );
+              if (after === 'close')
+                router.push('/finance/accounting/general-ledger/accounts');
+            });
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -312,13 +358,7 @@ export function AccountingChartEditor({
               ))}
             </div>
           </details>
-          <Button
-            permission="finance.account.manage"
-            disabled={busy}
-            type="submit"
-          >
-            ذخیره
-          </Button>
+          <AccountingSaveButtons busy={busy} />
         </form>
       </div>
     </section>
@@ -337,6 +377,7 @@ export function AccountingGroupingEditor({
   kind: 'account' | 'detail';
 }) {
   type Group = AccountingAccountGroupV1 | AccountingDetailGroupV1;
+  const router = useRouter();
   const groups: Group[] =
     kind === 'account' ? book.accountGroups : book.detailGroups;
   const candidates = kind === 'account' ? book.accounts : book.details;
@@ -386,6 +427,16 @@ export function AccountingGroupingEditor({
       </h2>
       <div className="flex gap-2">
         <Button onClick={fresh}>گروه جدید</Button>
+        <AccountingDeleteButtons
+          busy={busy}
+          selected={selected}
+          entity={kind === 'account' ? 'account-group' : 'detail-group'}
+          run={run}
+          reset={fresh}
+          close={() =>
+            router.push('/finance/accounting/general-ledger/accounts')
+          }
+        />
         <Button variant="outline" disabled>
           حذف — پشتیبانی نمی‌شود
         </Button>
@@ -408,6 +459,7 @@ export function AccountingGroupingEditor({
           className="space-y-4 rounded-xl border p-4"
           onSubmit={(event) => {
             event.preventDefault();
+            const after = accountingSaveDisposition(event);
             void submitPersistedEditor(
               run,
               kind === 'account' ? 'save-account-group' : 'save-detail-group',
@@ -417,7 +469,12 @@ export function AccountingGroupingEditor({
               },
               selected,
               open,
-            );
+            ).then((saved) => {
+              if (!saved) return;
+              if (after === 'new') fresh();
+              if (after === 'close')
+                router.push('/finance/accounting/general-ledger/accounts');
+            });
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -490,13 +547,7 @@ export function AccountingGroupingEditor({
               </label>
             ))}
           </fieldset>
-          <Button
-            permission="finance.account.manage"
-            disabled={busy}
-            type="submit"
-          >
-            ذخیره
-          </Button>
+          <AccountingSaveButtons busy={busy} />
         </form>
       </div>
     </section>
@@ -516,6 +567,12 @@ export function AccountingTemplateEditor({
   kind: AccountingTemplateV1['kind'];
   readOnly?: boolean;
 }) {
+  const router = useRouter();
+  const fresh = () => {
+    setSelected(null);
+    setDraft({ active: true });
+    setLines([]);
+  };
   const rows = book.templates.filter((template) => template.kind === kind);
   const [selected, setSelected] = useState<AccountingTemplateV1 | null>(null);
   const [draft, setDraft] = useState<Record<string, string | boolean>>({
@@ -566,10 +623,23 @@ export function AccountingTemplateEditor({
         </p>
       ) : null}
       {!readOnly ? (
+        <AccountingDeleteButtons
+          busy={busy}
+          selected={selected}
+          entity="template"
+          run={run}
+          reset={fresh}
+          close={() =>
+            router.push('/finance/accounting/general-ledger/documents')
+          }
+        />
+      ) : null}
+      {!readOnly ? (
         <form
           className="space-y-4 rounded-xl border p-4"
           onSubmit={(event) => {
             event.preventDefault();
+            const after = accountingSaveDisposition(event);
             void submitPersistedEditor(
               run,
               'save-template',
@@ -580,7 +650,12 @@ export function AccountingTemplateEditor({
               },
               selected,
               open,
-            );
+            ).then((saved) => {
+              if (!saved) return;
+              if (after === 'new') fresh();
+              if (after === 'close')
+                router.push('/finance/accounting/general-ledger/documents');
+            });
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -858,13 +933,7 @@ export function AccountingTemplateEditor({
             </Button>
           </fieldset>
           <div className="flex gap-2">
-            <Button
-              permission="finance.account.manage"
-              disabled={busy}
-              type="submit"
-            >
-              ذخیره
-            </Button>
+            <AccountingSaveButtons busy={busy} />
             <Button
               type="button"
               variant="outline"

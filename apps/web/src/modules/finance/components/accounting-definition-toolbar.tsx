@@ -9,7 +9,10 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import {
+  AccountingButton as Button,
+  useAccountingOperationsActive,
+} from './accounting-operations';
 import {
   Tooltip,
   TooltipContent,
@@ -23,6 +26,7 @@ export function AccountingDefinitionToolbar({
   reset,
   refresh,
   close,
+  deleteRecord,
 }: {
   busy: boolean;
   canClose: boolean;
@@ -30,8 +34,26 @@ export function AccountingDefinitionToolbar({
   reset: () => void;
   refresh: () => void;
   close: () => void;
+  deleteRecord?: (after: 'new' | 'close') => void;
 }) {
+  const shared = useAccountingOperationsActive();
   const actions = [
+    {
+      label: 'حذف و بستن',
+      key: 'D',
+      icon: X,
+      run: () => deleteRecord?.('close'),
+      disabled: busy || !canClose || !deleteRecord,
+      permission: 'finance.account.manage',
+    },
+    {
+      label: 'حذف و جدید',
+      key: 'H',
+      icon: X,
+      run: () => deleteRecord?.('new'),
+      disabled: busy || !deleteRecord,
+      permission: 'finance.account.manage',
+    },
     {
       label: 'ذخیره',
       key: 'S',
@@ -102,13 +124,16 @@ export function AccountingDefinitionToolbar({
   return (
     <div
       role="toolbar"
-      aria-label="عملیات معرفی دوره مالی"
+      aria-label="عملیات فرم تعریف"
       className="flex justify-end gap-2 border-b pb-3"
     >
       {actions.map((action) => (
         <Tooltip key={action.key}>
           <TooltipTrigger asChild>
-            <span tabIndex={action.disabled ? 0 : undefined}>
+            <span
+              hidden={shared && action.label !== 'بستن'}
+              tabIndex={!shared && action.disabled ? 0 : undefined}
+            >
               <Button
                 type="button"
                 size="sm"

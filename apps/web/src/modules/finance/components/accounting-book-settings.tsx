@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import type { AccountingBookV1 } from '@nora/contracts';
-import { Button } from '@/components/ui/button';
+import { AccountingButton as Button } from './accounting-operations';
 import { Input, FormField } from '@/components/ui/form-controls';
 export function AccountingBookSettings({
   book,

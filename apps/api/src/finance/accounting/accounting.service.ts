@@ -301,7 +301,11 @@ export class AccountingService {
       bookId,
       ...(query.id ? { id: v.uuid(query.id)! } : {}),
       ...(query.periodId ? { periodId: v.uuid(query.periodId)! } : {}),
-      ...(query.status ? { status: query.status } : {}),
+      ...(query.status
+        ? { status: query.status }
+        : query.excludeCancelled === 'true'
+          ? { status: { not: 'CANCELLED' } }
+          : {}),
       ...(query.search
         ? {
             OR: [
@@ -470,6 +474,130 @@ export class AccountingService {
     stateEvents: BufferedStateEvent[] = [],
   ): Promise<unknown> {
     const bookId = book.id;
+    if (action === 'delete-base-record') {
+      const id = v.uuid(p.id)!.toLowerCase();
+      const entity = v.text(p.entity, 30, true);
+      const row =
+        entity === 'configuration'
+          ? await tx.accountingConfiguration.findFirst({
+              where: { id, bookId },
+            })
+          : entity === 'account'
+            ? await tx.accountingAccount.findFirst({ where: { id, bookId } })
+            : entity === 'detail'
+              ? await tx.accountingDetail.findFirst({ where: { id, bookId } })
+              : entity === 'account-group'
+                ? await tx.accountingAccountGroup.findFirst({
+                    where: { id, bookId },
+                  })
+                : entity === 'detail-group'
+                  ? await tx.accountingDetailGroup.findFirst({
+                      where: { id, bookId },
+                    })
+                  : entity === 'template'
+                    ? await tx.accountingTemplate.findFirst({
+                        where: { id, bookId },
+                      })
+                    : null;
+      if (!row) throw new NotFoundException('رکورد اطلاعات پایه پیدا نشد.');
+      this.version(row.version, expected);
+      if (
+        entity === 'configuration' &&
+        'kind' in row &&
+        (typeof row.kind !== 'string' ||
+          ![
+            'fiscal-years',
+            'voucher-types',
+            'detail-types',
+            'allocation-templates',
+            'account-mappings',
+          ].includes(row.kind))
+      )
+        v.rule('حذف این نوع رکورد عملیاتی پشتیبانی نمی‌شود.');
+      // JSON references supplement the restrictive foreign keys; never orphan a
+      // mapping, template or hierarchy setting that refers to the selected UUID.
+      const [configurations, accounts, templates, journals] = await Promise.all(
+        [
+          tx.accountingConfiguration.findMany({
+            where: { bookId },
+            select: { id: true, attributes: true },
+          }),
+          tx.accountingAccount.findMany({
+            where: { bookId },
+            select: { id: true, attributes: true },
+          }),
+          tx.accountingTemplate.findMany({
+            where: { bookId },
+            include: { lines: true },
+          }),
+          tx.accountingJournal.findMany({
+            where: { bookId },
+            select: { id: true, attributes: true },
+          }),
+        ],
+      );
+      if (
+        configurations.some(
+          (item) =>
+            !(entity === 'configuration' && item.id === id) &&
+            JSON.stringify(item.attributes).toLowerCase().includes(id),
+        ) ||
+        accounts.some(
+          (item) =>
+            !(entity === 'account' && item.id === id) &&
+            JSON.stringify(item.attributes).toLowerCase().includes(id),
+        ) ||
+        templates.some(
+          (item) =>
+            !(entity === 'template' && item.id === id) &&
+            JSON.stringify(item).toLowerCase().includes(id),
+        ) ||
+        journals.some((item) =>
+          JSON.stringify(item.attributes).toLowerCase().includes(id),
+        )
+      )
+        v.rule('رکورد در نگاشت، تنظیمات یا الگو استفاده شده و قابل حذف نیست.');
+      // DeleteMany includes book and version even under the per-book command lock.
+      // Restrict FKs reject any referenced period, journal, detail or group member.
+      try {
+        const deleted =
+          entity === 'configuration'
+            ? await tx.accountingConfiguration.deleteMany({
+                where: { id, bookId, version: row.version },
+              })
+            : entity === 'account'
+              ? await tx.accountingAccount.deleteMany({
+                  where: { id, bookId, version: row.version },
+                })
+              : entity === 'detail'
+                ? await tx.accountingDetail.deleteMany({
+                    where: { id, bookId, version: row.version },
+                  })
+                : entity === 'account-group'
+                  ? await tx.accountingAccountGroup.deleteMany({
+                      where: { id, bookId, version: row.version },
+                    })
+                  : entity === 'detail-group'
+                    ? await tx.accountingDetailGroup.deleteMany({
+                        where: { id, bookId, version: row.version },
+                      })
+                    : await tx.accountingTemplate.deleteMany({
+                        where: { id, bookId, version: row.version },
+                      });
+        if (deleted.count !== 1)
+          throw new ConflictException('رکورد هم‌زمان تغییر کرده است.');
+      } catch (cause) {
+        if (
+          cause &&
+          typeof cause === 'object' &&
+          'code' in cause &&
+          cause.code === 'P2003'
+        )
+          v.rule('رکورد در اطلاعات حسابداری استفاده شده و قابل حذف نیست.');
+        throw cause;
+      }
+      return { id, entity, deleted: true };
+    }
     if (
       ['year-end-preview', 'year-end-closing', 'year-end-opening'].includes(
         action,

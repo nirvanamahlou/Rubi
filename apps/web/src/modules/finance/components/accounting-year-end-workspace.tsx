@@ -5,7 +5,7 @@ import type {
   AccountingCommandV1,
   AccountingJournalV1,
 } from '@nora/contracts';
-import { Button } from '@/components/ui/button';
+import { AccountingButton as Button } from './accounting-operations';
 import { FormField } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';

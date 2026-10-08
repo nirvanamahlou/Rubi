@@ -1,3 +1,10 @@
+## ACCOUNTING-SHARED-OPERATIONS-1008 — PC-A — READY_FOR_REVIEW
+
+Direct sole-writer UI standardization across Accounting: shared nine-icon toolbar, callback bindings preserving native forms/permissions, tooltip/shortcuts, displayed-view Excel/PDF exports and guarded unused base-record deletion. Finance Web/API service/focused tests and own docs reserved; no schema/dependency changes or delegation. Reuse branch3100/4217 synthetic preview.
+
+
+Delivered shared nine-operation icon toolbar on Accounting routes with Alt+Shift+A/S/N/W/D/H/R/E/P, permission-aware native callbacks and tooltips. Save/new/close dispositions supported by editable base, chart/group/template/mapping and journal editors; inapplicable/read-only operations disabled. Unused base-record deletion uses scoped permissions, version checks, book locks, replay protection, restrictive references and confirmation; journal deletion remains recoverable cancellation with posted-state guards. Displayed-view XLSX/PDF fallback preserves textual decimals; existing server report exports retained. PG48/48 broad regression and final deletion3/3 passed; focused Web19/19, scoped checks and affected builds validated. Final browser caught and repaired missing generic-definition bindings; verified voucher selection and shortcut tooltip. Synthetic local3100/4217 only, no Rahkaran writes or delegation. No schema/dependency changes. Full source parity remains37 functional/46 dependency/4 source-error routes; this unit completes the shared toolbar request within implemented editors, not blocked form functionality.
+
 ## ACCOUNTING-FISCAL-YEAR-BUTTONS-1008 — PC-A — READY_FOR_REVIEW
 
 Sole-writer fiscal-year definition icon toolbar repair; existing save actions, new/reload/close, real shortcuts/tooltips, no backend/data changes. Reserve Finance Web workspace/new toolbar and own docs; reuse current branch and3100. No delegation. Scoped lint/typecheck and Web build56 routes passed. Browser verified edit via Enter, new shortcut clearing draft, close shortcut navigation and reload; no saved business data. Delete/export lifecycle remains separate unfinished work.

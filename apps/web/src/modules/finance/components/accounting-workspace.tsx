@@ -10,7 +10,7 @@ import type {
   AccountingLineV1,
   AccountingSnapshotV1,
 } from '@nora/contracts';
-import { Button } from '@/components/ui/button';
+import { AccountingButton as Button } from './accounting-operations';
 import { Input, Textarea, FormField } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
@@ -22,6 +22,12 @@ import { AccountingAttachments } from './accounting-attachments';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
 import { AccountingBaseList } from './accounting-base-list';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
+import {
+  AccountingOperations,
+  AccountingSaveButtons,
+  accountingSaveDisposition,
+} from './accounting-operations';
+import { exportAccountingView } from '../accounting-view-export';
 import type { AccountingListKind } from '../accounting-list-filters';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
@@ -220,6 +226,24 @@ function Table({
 const cell = 'border-t border-border px-3 py-3';
 
 export function AccountingWorkspace({ pathname }: { pathname: string }) {
+  const viewRef = useRef<HTMLDivElement>(null);
+  const params = useSearchParams();
+  return (
+    <AccountingOperations
+      key={`${pathname}:${params.get('bookId') ?? ''}:${params.get('new') ?? ''}`}
+      exportView={async (format) => {
+        if (viewRef.current)
+          return await exportAccountingView(viewRef.current, format);
+      }}
+    >
+      <div ref={viewRef}>
+        <AccountingWorkspaceContent pathname={pathname} />
+      </div>
+    </AccountingOperations>
+  );
+}
+
+function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const permissions = useAccessPermissions();
   const can = (p: string) => !!permissions?.includes(p);
   const queryClient = useQueryClient();
@@ -329,17 +353,24 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
   if (!books.length || section === 'general-ledger/base-information/ledgers')
     content = (
       <AccountingLedgerEditor
-        key={`${bookId || 'new-ledger'}:${snapshot?.book.version ?? 0}`}
+        key={`${bookId || 'new-ledger'}:${urlParams.get('new') ?? ''}`}
+        startNew={urlParams.get('new') === '1'}
         snapshot={snapshot}
         branches={branches}
         busy={busy}
         run={run}
         refresh={refresh}
-        onCreated={async (book) => {
+        onCreated={async (book, after) => {
           setBookId(book.id);
           const params = new URLSearchParams(urlParams.toString());
           params.set('bookId', book.id);
-          router.replace(`${pathname}?${params}`, { scroll: false });
+          if (after === 'new') params.set('new', '1');
+          else params.delete('new');
+          if (after === 'close')
+            router.push(
+              `/finance/accounting/general-ledger/base-information/lists/ledgers?bookId=${book.id}`,
+            );
+          else router.replace(`${pathname}?${params}`, { scroll: false });
           await refresh();
         }}
       />
@@ -420,6 +451,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         books={books}
         busy={busy || loading}
         refresh={refresh}
+        run={run}
       />
     );
   } else if (home)
@@ -711,11 +743,12 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
               { key: 'currency', label: 'ارز پیش‌فرض' },
             ]
           : [];
-      const listRoute = accountingParityDefinitions.find(
-        (definition) =>
-          definition.implementation === 'configuration-list' &&
-          definition.route.replace('/lists/', '/') === section,
-      )?.route;
+      const listRoute =
+        accountingParityDefinitions.find(
+          (definition) =>
+            definition.implementation === 'configuration-list' &&
+            definition.route.replace('/lists/', '/') === section,
+        )?.route ?? 'general-ledger/accounts';
       const save = (after: 'stay' | 'new' | 'close' = 'stay') => {
         const attrs: AccountingAttributes = {};
         for (const f of attrFields) attrs[f.key] = draft[f.key] ?? '';
@@ -752,22 +785,52 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         <Panel title={title}>
           {!listOnly ? (
             <form
-              id={
-                kind === 'fiscal-years' ? 'fiscal-year-definition' : undefined
-              }
+              id={'accounting-base-definition'}
               className="space-y-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 void save('stay');
               }}
             >
-              {kind === 'fiscal-years' ? (
+              {
                 <AccountingDefinitionToolbar
                   busy={busy}
                   canClose={!!listRoute}
+                  {...(editing &&
+                  (details ||
+                    ['fiscal-years', 'voucher-types', 'detail-types'].includes(
+                      kind ?? '',
+                    ))
+                    ? {
+                        deleteRecord: (after: 'new' | 'close') => {
+                          if (
+                            !window.confirm(
+                              'رکورد انتخاب‌شده برای همیشه حذف شود؟ رکورد استفاده‌شده حذف نمی‌شود.',
+                            )
+                          )
+                            return;
+                          void run(
+                            'delete-base-record',
+                            {
+                              id: editing.id,
+                              entity: details ? 'detail' : 'configuration',
+                            },
+                            editing.version,
+                          ).then((result) => {
+                            if (!result) return;
+                            setEditing(null);
+                            setDraft({ active: true, permanent: true });
+                            if (after === 'close' && listRoute)
+                              router.push(
+                                `/finance/accounting/${listRoute}?bookId=${bookId}`,
+                              );
+                          });
+                        },
+                      }
+                    : {})}
                   save={(after) => {
                     const form = document.getElementById(
-                      'fiscal-year-definition',
+                      'accounting-base-definition',
                     ) as HTMLFormElement | null;
                     if (form?.reportValidity()) void save(after);
                   }}
@@ -783,7 +846,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                       );
                   }}
                 />
-              ) : null}
+              }
               <Fields
                 fields={[...recordFields, ...specific]}
                 draft={draft}
@@ -814,51 +877,6 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                     <Fields fields={attrFields} draft={draft} set={set} />
                   </div>
                 </details>
-              ) : null}
-              {kind !== 'fiscal-years' ? (
-                <div className="flex gap-2">
-                  <Button
-                    permission="finance.account.manage"
-                    disabled={busy}
-                    type="submit"
-                  >
-                    ذخیره
-                  </Button>
-                  <Button
-                    variant="outline"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void save('new')}
-                  >
-                    ذخیره و جدید
-                  </Button>
-                  <Button
-                    variant="outline"
-                    type="button"
-                    disabled={busy || !listRoute}
-                    onClick={() => void save('close')}
-                  >
-                    ذخیره و بستن
-                  </Button>
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => {
-                      setEditing(null);
-                      setDraft({ active: true, permanent: true });
-                    }}
-                  >
-                    جدید
-                  </Button>
-                  <Button
-                    variant="outline"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => void refresh()}
-                  >
-                    بارگذاری مجدد
-                  </Button>
-                </div>
               ) : null}
             </form>
           ) : (
@@ -1025,6 +1043,16 @@ function JournalWorkspace({
   run: Run;
   can: (p: string) => boolean;
 }) {
+  const router = useRouter();
+  const fresh = () => {
+    setJournal(null);
+    setHead({});
+    setLines([blankLine(), blankLine()]);
+  };
+  const closeEditor = () =>
+    router.push(
+      `/finance/accounting/general-ledger/documents/list?bookId=${book.book.id}`,
+    );
   const [journal, setJournal] = useState<AccountingJournalV1 | null>(null),
     [head, setHead] = useState<Draft>({}),
     [reverseHead, setReverseHead] = useState<Draft>({}),
@@ -1052,6 +1080,7 @@ function JournalWorkspace({
       page,
       search,
       status,
+      !status,
       linkedId,
     ],
     queryFn: () =>
@@ -1060,6 +1089,7 @@ function JournalWorkspace({
         id: linkedId,
         search,
         status,
+        excludeCancelled: status ? '' : 'true',
       }),
   });
   const items = journalQuery.data?.items ?? [],
@@ -1115,7 +1145,7 @@ function JournalWorkspace({
       await load();
     }
   };
-  const save = async () => {
+  const save = async (after: 'stay' | 'new' | 'close' = 'stay') => {
     const { auxiliaryNumber, descriptionEn, ...header } = head;
     const result = await run<AccountingJournalV1>(
       'journal-save',
@@ -1130,6 +1160,11 @@ function JournalWorkspace({
     if (result) {
       open(result);
       await load();
+      if (after === 'new') fresh();
+      if (after === 'close') {
+        fresh();
+        closeEditor();
+      }
     }
   };
   const selection = (
@@ -1168,6 +1203,40 @@ function JournalWorkspace({
           {failure}
         </p>
       ) : null}
+      {(['close', 'new'] as const).map((after) => (
+        <Button
+          key={after}
+          type="button"
+          permission="finance.journal.create"
+          disabled={
+            busy ||
+            !journal ||
+            journal.status === 'POSTED' ||
+            journal.status === 'CANCELLED'
+          }
+          onClick={() => {
+            if (
+              !journal ||
+              !window.confirm(
+                'سند انتخاب‌شده به فهرست اسناد حذف‌شده منتقل شود؟ امکان بازیابی پیش‌نویس وجود دارد.',
+              )
+            )
+              return;
+            void run(
+              'cancel',
+              { id: journal.id, reason: 'حذف از نوار عملیات حسابداری' },
+              journal.version,
+            ).then(async (result) => {
+              if (!result) return;
+              fresh();
+              await load();
+              if (after === 'close') closeEditor();
+            });
+          }}
+        >
+          {after === 'close' ? 'حذف و بستن' : 'حذف و جدید'}
+        </Button>
+      ))}
       <div className="flex flex-wrap gap-3">
         <Input
           aria-label="جست‌وجوی اسناد"
@@ -1201,11 +1270,7 @@ function JournalWorkspace({
           <Button
             permission="finance.journal.create"
             variant="outline"
-            onClick={() => {
-              setJournal(null);
-              setHead({});
-              setLines([blankLine(), blankLine()]);
-            }}
+            onClick={fresh}
           >
             سند جدید
           </Button>
@@ -1304,7 +1369,7 @@ function JournalWorkspace({
           className="space-y-5 rounded-2xl border border-border p-4"
           onSubmit={(e) => {
             e.preventDefault();
-            void save();
+            void save(accountingSaveDisposition(e));
           }}
         >
           <div className="flex justify-between">
@@ -1579,13 +1644,10 @@ function JournalWorkspace({
                 >
                   افزودن ردیف
                 </Button>
-                <Button
+                <AccountingSaveButtons
+                  busy={busy}
                   permission="finance.journal.create"
-                  type="submit"
-                  disabled={busy}
-                >
-                  ذخیره پیش‌نویس
-                </Button>
+                />
               </>
             ) : null}
             {journal?.status === 'DRAFT' &&

@@ -7,7 +7,7 @@ import type {
 } from '@nora/contracts';
 import { documentsApi } from '@/modules/documents/api/client';
 import { useAccessPermissions } from '@/modules/iam/access-context';
-import { Button } from '@/components/ui/button';
+import { AccountingButton as Button } from './accounting-operations';
 import { FormField, Input } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import Link from '@/components/access-link';

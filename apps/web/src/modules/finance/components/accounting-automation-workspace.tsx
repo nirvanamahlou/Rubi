@@ -5,7 +5,13 @@ import type {
   AccountingCommandV1,
   AccountingJournalV1,
 } from '@nora/contracts';
-import { Button } from '@/components/ui/button';
+import {
+  AccountingButton as Button,
+  AccountingSaveButtons,
+  AccountingDeleteButtons,
+  accountingSaveDisposition,
+} from './accounting-operations';
+import { useRouter } from 'next/navigation';
 import { FormField, Input, Textarea } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -26,6 +32,7 @@ export function AccountingAutomationWorkspace({
   run: Run;
   busy: boolean;
 }) {
+  const router = useRouter();
   const [id, setId] = useState(''),
     [title, setTitle] = useState(''),
     [code, setCode] = useState(''),
@@ -58,8 +65,15 @@ export function AccountingAutomationWorkspace({
         book.configurations.find((c) => c.id === p.fiscalYearId)?.title ??
         p.startDate,
     }));
-  const save = async () => {
-    const r = await run(
+  const fresh = () => {
+    setId('');
+    setTitle('');
+    setCode('');
+    setSource('');
+    setTargets([{ accountId: '', percentage: '100' }]);
+  };
+  const save = async (after: 'stay' | 'new' | 'close' = 'stay') => {
+    const r = await run<{ id: string; version: number }>(
       'save-configuration',
       {
         kind: 'allocation-templates',
@@ -75,11 +89,10 @@ export function AccountingAutomationWorkspace({
       selected?.version,
     );
     if (r) {
-      setId('');
-      setTitle('');
-      setCode('');
-      setSource('');
-      setTargets([{ accountId: '', percentage: '100' }]);
+      setId(r.id);
+      if (after === 'new') fresh();
+      if (after === 'close')
+        router.push('/finance/accounting/general-ledger/documents');
     }
   };
   const payload = () => ({
@@ -132,7 +145,7 @@ export function AccountingAutomationWorkspace({
             className="space-y-4 rounded-xl border p-4"
             onSubmit={(e) => {
               e.preventDefault();
-              void save();
+              void save(accountingSaveDisposition(e));
             }}
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -220,28 +233,20 @@ export function AccountingAutomationWorkspace({
               >
                 افزودن مقصد
               </Button>
-              <Button
-                disabled={busy}
-                permission="finance.account.manage"
-                type="submit"
-              >
-                ذخیره الگو
+              <AccountingSaveButtons busy={busy} />
+              <AccountingDeleteButtons
+                busy={busy}
+                selected={selected}
+                entity="configuration"
+                run={run}
+                reset={fresh}
+                close={() =>
+                  router.push('/finance/accounting/general-ledger/documents')
+                }
+              />
+              <Button type="button" variant="outline" onClick={fresh}>
+                الگوی جدید
               </Button>
-              {id ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setId('');
-                    setCode('');
-                    setTitle('');
-                    setSource('');
-                    setTargets([{ accountId: '', percentage: '100' }]);
-                  }}
-                >
-                  الگوی جدید
-                </Button>
-              ) : null}
             </div>
           </form>
           <form
@@ -397,23 +402,53 @@ export function AccountingMappingWorkspace({
   run: Run;
   busy: boolean;
 }) {
+  const router = useRouter();
+  const [saved, setSaved] = useState<{ id: string; version: number } | null>(
+    null,
+  );
   const [title, setTitle] = useState(''),
     [code, setCode] = useState(''),
     [effectiveFrom, setEffectiveFrom] = useState(''),
     [reason, setReason] = useState(''),
     [rows, setRows] = useState([{ accountId: '', targetCode: '' }]);
+  const fresh = () => {
+    setSaved(null);
+    setCode('');
+    setTitle('');
+    setEffectiveFrom('');
+    setReason('');
+    setRows([{ accountId: '', targetCode: '' }]);
+  };
   return (
     <section className="space-y-5">
       <h2 className="text-lg font-black">نگاشت حساب داخلی به حساب بیرونی</h2>
+      <Button type="button" disabled={busy} onClick={fresh}>
+        جدید
+      </Button>
+      <AccountingDeleteButtons
+        busy={busy}
+        selected={saved}
+        entity="configuration"
+        run={run}
+        reset={fresh}
+        close={() => router.push('/finance/accounting/general-ledger/accounts')}
+      />
       <form
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          void run('save-configuration', {
+          const after = accountingSaveDisposition(e);
+          void run<{ id: string; version: number }>('save-configuration', {
             kind: 'account-mappings',
             code,
             title,
             attributes: { effectiveFrom, reason, rows: JSON.stringify(rows) },
+          }).then((result) => {
+            if (!result) return;
+            setSaved(result);
+            if (after === 'new') fresh();
+            if (after === 'close')
+              router.push('/finance/accounting/general-ledger/accounts');
           });
         }}
       >
@@ -491,13 +526,7 @@ export function AccountingMappingWorkspace({
           >
             افزودن نگاشت
           </Button>
-          <Button
-            permission="finance.account.manage"
-            type="submit"
-            disabled={busy}
-          >
-            ثبت نسخه نگاشت
-          </Button>
+          <AccountingSaveButtons busy={busy || !!saved} />
         </div>
       </form>
       <div className="space-y-3">

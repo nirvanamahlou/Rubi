@@ -29,7 +29,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
 
 import { usePageBreadcrumbs } from '@/components/layout/page-breadcrumbs';
-import { Button } from '@/components/ui/button';
+import { AccountingButton as Button } from './accounting-operations';
 import { Card, PageHeader } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 

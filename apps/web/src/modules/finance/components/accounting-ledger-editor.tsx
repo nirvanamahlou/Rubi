@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, useEffectEvent, useRef } from 'react';
-import { FilePlus2, RefreshCw, Save, Plus, X, Pencil } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
+import { Plus, X, Pencil, Save } from 'lucide-react';
 import type {
   AccountingBookV1,
   AccountingPeriodV1,
   AccountingSnapshotV1,
 } from '@nora/contracts';
-import { Button } from '@/components/ui/button';
+import { AccountingButton as Button } from './accounting-operations';
 import { Input, Textarea, FormField } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { SearchCombobox } from '@/components/ui/search-combobox';
@@ -24,7 +26,11 @@ type Props = {
   busy: boolean;
   run: Run;
   refresh: () => Promise<void>;
-  onCreated: (book: AccountingBookV1) => Promise<void>;
+  onCreated: (
+    book: AccountingBookV1,
+    after: 'stay' | 'new' | 'close',
+  ) => Promise<void>;
+  startNew?: boolean;
 };
 
 export function AccountingLedgerEditor({
@@ -34,26 +40,29 @@ export function AccountingLedgerEditor({
   run,
   refresh,
   onCreated,
+  startNew = false,
 }: Props) {
+  const router = useRouter();
   const book = snapshot?.book;
+  const initialBook = startNew ? undefined : book;
   const formRef = useRef<HTMLFormElement>(null);
-  const [creating, setCreating] = useState(!book);
-  const [version, setVersion] = useState(book?.version);
+  const [creating, setCreating] = useState(!initialBook);
+  const [version, setVersion] = useState(initialBook?.version);
   const [tab, setTab] = useState<'main' | 'notes'>('main');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [createId, setCreateId] = useState<string | null>(null);
   const [draft, setDraft] = useState({
-    code: book?.code ?? '',
-    title: book?.title ?? '',
-    titleEn: book?.titleEn ?? '',
-    description: book?.description ?? '',
-    notes: book?.notes ?? '',
-    active: book?.active ?? true,
-    isMain: book?.isMain ?? false,
-    allowsPosting: book?.allowsPosting ?? true,
-    branchId: book?.branchId ?? branches[0]?.id ?? '',
-    baseCurrency: book?.baseCurrency ?? 'IRR',
+    code: initialBook?.code ?? '',
+    title: initialBook?.title ?? '',
+    titleEn: initialBook?.titleEn ?? '',
+    description: initialBook?.description ?? '',
+    notes: initialBook?.notes ?? '',
+    active: initialBook?.active ?? true,
+    isMain: initialBook?.isMain ?? false,
+    allowsPosting: initialBook?.allowsPosting ?? true,
+    branchId: initialBook?.branchId ?? branches[0]?.id ?? '',
+    baseCurrency: initialBook?.baseCurrency ?? 'IRR',
   });
   const [period, setPeriod] = useState<{
     id?: string;
@@ -65,8 +74,8 @@ export function AccountingLedgerEditor({
   const locked = busy || saving;
   const set = (key: keyof typeof draft, value: string | boolean) =>
     setDraft((current) => ({ ...current, [key]: value }));
-  const save = async () => {
-    if (locked) return;
+  const save = async (after: 'stay' | 'new' | 'close' = 'stay') => {
+    if (locked) return false;
     setError('');
     setSaving(true);
     try {
@@ -80,13 +89,21 @@ export function AccountingLedgerEditor({
         });
         setCreating(false);
         setVersion(created.version);
-        await onCreated(created);
+        await onCreated(created, after);
       } else {
         const saved = await run<AccountingBookV1>('save-book', draft, version);
-        if (saved) setVersion(saved.version);
+        if (!saved) return false;
+        setVersion(saved.version);
+        if (after === 'new') newBook();
+        if (after === 'close')
+          router.push(
+            `/finance/accounting/general-ledger/base-information/lists/ledgers?bookId=${book?.id ?? ''}`,
+          );
       }
+      return true;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ذخیره ناموفق بود.');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -132,46 +149,6 @@ export function AccountingLedgerEditor({
     } else newBook();
     void refresh();
   };
-  const shortcut = useEffectEvent((event: KeyboardEvent) => {
-    if (
-      locked ||
-      event.defaultPrevented ||
-      event.repeat ||
-      event.isComposing ||
-      !event.altKey ||
-      !event.shiftKey ||
-      event.ctrlKey ||
-      event.metaKey ||
-      document.querySelector('[role="dialog"], [role="alertdialog"]') ||
-      (event.target instanceof Element &&
-        event.target.closest(
-          'input, textarea, select, [contenteditable="true"], [role="combobox"]',
-        ))
-    )
-      return;
-    if (event.code === 'KeyN') {
-      event.preventDefault();
-      newBook();
-    }
-    if (event.code === 'KeyR') {
-      event.preventDefault();
-      reload();
-    }
-    if (event.code === 'KeyS') {
-      const button = document.querySelector<HTMLButtonElement>(
-        'button[form="accounting-ledger-form"]',
-      );
-      if (button && !button.disabled) {
-        event.preventDefault();
-        formRef.current?.requestSubmit(button);
-      }
-    }
-  });
-  useEffect(() => {
-    const listener = (event: KeyboardEvent) => shortcut(event);
-    document.addEventListener('keydown', listener);
-    return () => document.removeEventListener('keydown', listener);
-  }, []);
   const years =
     snapshot?.configurations.filter((row) => row.kind === 'fiscal-years') ?? [];
   return (
@@ -180,47 +157,20 @@ export function AccountingLedgerEditor({
       aria-label="معرفی دفتر کل"
       className="overflow-hidden rounded-md border border-border bg-surface"
     >
-      <div
-        className="flex justify-end gap-1 border-b bg-muted/30 p-2"
-        aria-label="عملیات دفتر کل"
-      >
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          aria-label="جدید"
-          title="جدید (Alt+Shift+N)"
-          aria-keyshortcuts="Alt+Shift+N"
-          disabled={locked}
-          onClick={newBook}
-        >
-          <FilePlus2 className="size-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          aria-label="بارگذاری مجدد"
-          title="بارگذاری مجدد (Alt+Shift+R)"
-          aria-keyshortcuts="Alt+Shift+R"
-          disabled={locked}
-          onClick={reload}
-        >
-          <RefreshCw className="size-4" />
-        </Button>
-        <Button
-          type="submit"
-          form="accounting-ledger-form"
-          size="sm"
-          aria-label="ذخیره"
-          title="ذخیره (Alt+Shift+S)"
-          aria-keyshortcuts="Alt+Shift+S"
-          permission="finance.account.manage"
-          disabled={locked}
-        >
-          <Save className="size-4" />
-        </Button>
-      </div>
+      <AccountingDefinitionToolbar
+        busy={locked}
+        canClose={!!book}
+        save={(after) => {
+          if (formRef.current?.reportValidity()) void save(after);
+        }}
+        reset={newBook}
+        refresh={reload}
+        close={() =>
+          router.push(
+            `/finance/accounting/general-ledger/base-information/lists/ledgers?bookId=${book?.id ?? ''}`,
+          )
+        }
+      />
       <div
         role="tablist"
         aria-label="اطلاعات دفتر کل"
