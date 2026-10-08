@@ -6215,6 +6215,16 @@ COMPUTER_ID=PC-A; branch codex/pc-a-package-hotel-table-generator-1008 from orig
 
 PACKAGE-HOTEL-TABLE-GENERATOR-1008 review candidate:24 Contracts/43 Web/33 API tests and scoped lint/typechecks/builds pass; schema formatted/generated. Bounded schema/shared/central locks release with this candidate; no operational migration. Exact-head CI gates human-authorized develop merge.
 
+## HOTEL-OCCUPANCY-LABEL-LTR-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-occupancy-label-ltr-1008 from origin/develop. Reserve only manual-hotel-panel.tsx and manual-tables.module.css plus own status records. Prior HOTEL-TABLE-REDESIGN source locks released at review freeze. User requests LTR/left-aligned English adult/child compositions and explicitly authorizes develop merge. Preserve Persian labels, counts, calculations, API and data; no schema, dependencies or runtime changes.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008: eight focused tests and scoped lint pass; source locks released at review freeze. Web typecheck/build and exact-head CI gate explicitly authorized develop merge.
+
 ## PRICE-FIELD-PAIRS-1008 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-price-field-pairs-1008 from develop c2764fbf. Reserve only TourPriceFields presentation and own status/assignment records. User requests two price-field editors per row and red trash icon instead of delete text. Preserve labels, amount/currency editing, commission modes, stable keys and delete callbacks. No schema/API/contracts/dependencies or operational runtime/data change. Prior package locks released; no overlapping active component reservation. Push review PR to develop after scoped lint, existing targeted regression, typecheck and build gates; no new merge authorization inferred.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up reservation: same branch/PR749, user additionally requests automatic default selection of priced combinations and compact two-column room tables. Reserve same panel/CSS plus focused manual interaction test; preserve user deselection and unpriced-row exclusion, no purchase/sale arithmetic or persistence changes. User explicitly authorizes combined develop merge.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 combined review freeze:18 focused tests and scoped lint pass. Follow-up source locks RELEASED; Web typecheck/build and exact-head CI gate authorized develop merge. No runtime rollout.

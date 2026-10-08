@@ -191,7 +191,7 @@ export function HotelCoefficients({
       ]),
     ),
   );
-  const [selection, setSelection] = useState<string[]>([]);
+  const [selection, setSelection] = useState<string[] | null>(null);
   const [operation, setOperation] = useState('PERCENT');
   const [direction, setDirection] = useState('increase');
   const [value, setValue] = useState('');
@@ -305,11 +305,16 @@ export function HotelCoefficients({
       )
       .map((c) => `${room.roomTypeId}:${c.id}`),
   );
-  const selectedKeys = selection.filter((key) => pricedKeys.includes(key));
+  const selectedKeys = (selection ?? pricedKeys).filter((key) =>
+    pricedKeys.includes(key),
+  );
   function toggle(key: string) {
-    setSelection((old) =>
-      old.includes(key) ? old.filter((s) => s !== key) : [...old, key],
-    );
+    setSelection((old) => {
+      const current = old ?? pricedKeys;
+      return current.includes(key)
+        ? current.filter((s) => s !== key)
+        : [...current, key];
+    });
   }
   function editSale(room: ManualRoom, combination: Combination, value: string) {
     const key = `${room.roomTypeId}:${combination.id}`;
@@ -404,8 +409,20 @@ export function HotelCoefficients({
               {combinations.map((combination, index) => (
                 <tr key={combination.id}>
                   <td>
-                    {combination.label ||
-                      `${combination.adults} AD + ${combination.childAges.length} CHD`}
+                    <bdi
+                      dir={
+                        /[A-Za-z]/.test(combinationName(combination))
+                          ? 'ltr'
+                          : 'rtl'
+                      }
+                      className={
+                        /[A-Za-z]/.test(combinationName(combination))
+                          ? styles.ltrComposition
+                          : undefined
+                      }
+                    >
+                      {combinationName(combination)}
+                    </bdi>
                   </td>
                   <td>
                     <Choice
@@ -624,144 +641,159 @@ export function HotelCoefficients({
           </button>
         </div>
       )}
-      {allRooms.map((room) => {
-        const rates = buildManualRates(
-          combinations,
-          bases[room.roomTypeId] ?? '',
-          row.currency,
-          checkIn,
-          checkOut,
-          adjustments[room.roomTypeId],
-        );
-        return (
-          <section key={room.roomTypeId} className={styles.roomCard}>
-            <div className={styles.roomHeader}>
-              <h3>{room.roomTypeName}</h3>
-              <label className={styles.baseField}>
-                قیمت پایهٔ اتاق / هر شب
-                <input
-                  aria-label={`قیمت پایه ${room.roomTypeName}`}
-                  inputMode="decimal"
-                  value={bases[room.roomTypeId] ?? ''}
-                  onChange={(e) => {
-                    const next = {
-                      ...bases,
-                      [room.roomTypeId]: e.target.value,
-                    };
-                    setBases(next);
-                    update(combinations, next);
-                  }}
-                />
-              </label>
-            </div>
-            <div className={styles.tableScroll}>
-              <table
-                className={styles.priceTable}
-                aria-label={`قیمت ترکیب‌های ${room.roomTypeName}`}
-              >
-                <thead>
-                  <tr>
-                    <th>انتخاب</th>
-                    <th>ترکیب</th>
-                    <th>قیمت خرید</th>
-                    <th>قیمت فروش</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {combinations.map((combination) => {
-                    const key = `${room.roomTypeId}:${combination.id}`;
-                    const calculated = calculateManualHotelPrices(
-                      bases[room.roomTypeId] ?? '',
-                      combination.coefficient,
-                      row.currency,
-                      adjustments[room.roomTypeId]?.[
-                        combinationKey(combination)
-                      ] ?? { kind: 'AMOUNT', value: '0' },
-                    );
-                    const invalidSale =
-                      key in saleDrafts &&
-                      !calculateManualHotelPrices(
+      <div className={styles.roomGrid}>
+        {allRooms.map((room) => {
+          const rates = buildManualRates(
+            combinations,
+            bases[room.roomTypeId] ?? '',
+            row.currency,
+            checkIn,
+            checkOut,
+            adjustments[room.roomTypeId],
+          );
+          return (
+            <section key={room.roomTypeId} className={styles.roomCard}>
+              <div className={styles.roomHeader}>
+                <h3>{room.roomTypeName}</h3>
+                <label className={styles.baseField}>
+                  قیمت پایهٔ اتاق / هر شب
+                  <input
+                    aria-label={`قیمت پایه ${room.roomTypeName}`}
+                    inputMode="decimal"
+                    value={bases[room.roomTypeId] ?? ''}
+                    onChange={(e) => {
+                      const next = {
+                        ...bases,
+                        [room.roomTypeId]: e.target.value,
+                      };
+                      setBases(next);
+                      update(combinations, next);
+                    }}
+                  />
+                </label>
+              </div>
+              <div className={styles.tableScroll}>
+                <table
+                  className={styles.priceTable}
+                  aria-label={`قیمت ترکیب‌های ${room.roomTypeName}`}
+                >
+                  <thead>
+                    <tr>
+                      <th>انتخاب</th>
+                      <th>ترکیب</th>
+                      <th>قیمت خرید</th>
+                      <th>قیمت فروش</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {combinations.map((combination) => {
+                      const key = `${room.roomTypeId}:${combination.id}`;
+                      const calculated = calculateManualHotelPrices(
                         bases[room.roomTypeId] ?? '',
                         combination.coefficient,
                         row.currency,
-                        { kind: 'SET', value: saleDrafts[key]! },
+                        adjustments[room.roomTypeId]?.[
+                          combinationKey(combination)
+                        ] ?? { kind: 'AMOUNT', value: '0' },
                       );
-                    return (
-                      <tr
-                        key={key}
-                        className={
-                          selectedKeys.includes(key)
-                            ? styles.selected
-                            : undefined
-                        }
-                        onClick={() => {
-                          if (calculated) toggle(key);
-                        }}
-                      >
-                        <td>
-                          <input
-                            type="checkbox"
-                            disabled={!calculated}
-                            aria-label="انتخاب ترکیب برای تغییر فروش"
-                            checked={selectedKeys.includes(key)}
-                            onClick={(e) => e.stopPropagation()}
-                            onChange={() => toggle(key)}
-                          />
-                        </td>
-                        <td>
-                          {combinationName(combination)}
-                          {combination.childAges.map((a, i) => (
-                            <small key={i}>
-                              {' '}
-                              / {a.min} تا کمتر از {a.maxExclusive}
-                            </small>
-                          ))}
-                        </td>
-                        <td dir="ltr">
-                          {calculated?.purchase ?? '—'}{' '}
-                          <small>{row.currency}</small>
-                        </td>
-                        <td dir="ltr" onClick={(e) => e.stopPropagation()}>
-                          <input
-                            aria-label={`قیمت فروش ${room.roomTypeName} ${combinationName(combination)}`}
-                            className={styles.saleInput}
-                            inputMode="decimal"
-                            disabled={!calculated}
-                            aria-invalid={invalidSale}
-                            value={saleDrafts[key] ?? calculated?.sale ?? ''}
-                            placeholder="—"
-                            onChange={(e) =>
-                              editSale(room, combination, e.target.value)
-                            }
-                            onBlur={() => {
-                              if (invalidSale) return;
-                              setSaleDrafts((old) => {
-                                const next = { ...old };
-                                delete next[key];
-                                return next;
-                              });
-                            }}
-                          />
-                          <small>{row.currency}</small>
-                          {invalidSale && (
-                            <span role="alert">قیمت فروش معتبر نیست.</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            {bases[room.roomTypeId] && checkIn && checkOut && !rates && (
-              <p role="alert">
-                قیمت پایه، ضریب، ردهٔ سنی یا بازهٔ اقامت این اتاق معتبر نیست؛
-                ثبت بسته تا اصلاح آن انجام نمی‌شود.
-              </p>
-            )}
-          </section>
-        );
-      })}
+                      const invalidSale =
+                        key in saleDrafts &&
+                        !calculateManualHotelPrices(
+                          bases[room.roomTypeId] ?? '',
+                          combination.coefficient,
+                          row.currency,
+                          { kind: 'SET', value: saleDrafts[key]! },
+                        );
+                      return (
+                        <tr
+                          key={key}
+                          className={
+                            selectedKeys.includes(key)
+                              ? styles.selected
+                              : undefined
+                          }
+                          onClick={() => {
+                            if (calculated) toggle(key);
+                          }}
+                        >
+                          <td>
+                            <input
+                              type="checkbox"
+                              disabled={!calculated}
+                              aria-label="انتخاب ترکیب برای تغییر فروش"
+                              checked={selectedKeys.includes(key)}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={() => toggle(key)}
+                            />
+                          </td>
+                          <td>
+                            <bdi
+                              dir={
+                                /[A-Za-z]/.test(combinationName(combination))
+                                  ? 'ltr'
+                                  : 'rtl'
+                              }
+                              className={
+                                /[A-Za-z]/.test(combinationName(combination))
+                                  ? styles.ltrComposition
+                                  : undefined
+                              }
+                            >
+                              {combinationName(combination)}
+                            </bdi>
+                            {combination.childAges.map((a, i) => (
+                              <small key={i}>
+                                {' '}
+                                / {a.min} تا کمتر از {a.maxExclusive}
+                              </small>
+                            ))}
+                          </td>
+                          <td dir="ltr">
+                            {calculated?.purchase ?? '—'}{' '}
+                            <small>{row.currency}</small>
+                          </td>
+                          <td dir="ltr" onClick={(e) => e.stopPropagation()}>
+                            <input
+                              aria-label={`قیمت فروش ${room.roomTypeName} ${combinationName(combination)}`}
+                              className={styles.saleInput}
+                              inputMode="decimal"
+                              disabled={!calculated}
+                              aria-invalid={invalidSale}
+                              value={saleDrafts[key] ?? calculated?.sale ?? ''}
+                              placeholder="—"
+                              onChange={(e) =>
+                                editSale(room, combination, e.target.value)
+                              }
+                              onBlur={() => {
+                                if (invalidSale) return;
+                                setSaleDrafts((old) => {
+                                  const next = { ...old };
+                                  delete next[key];
+                                  return next;
+                                });
+                              }}
+                            />
+                            <small>{row.currency}</small>
+                            {invalidSale && (
+                              <span role="alert">قیمت فروش معتبر نیست.</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {bases[room.roomTypeId] && checkIn && checkOut && !rates && (
+                <p role="alert">
+                  قیمت پایه، ضریب، ردهٔ سنی یا بازهٔ اقامت این اتاق معتبر نیست؛
+                  ثبت بسته تا اصلاح آن انجام نمی‌شود.
+                </p>
+              )}
+            </section>
+          );
+        })}
+      </div>
       {!allRooms.length && (
         <p role="alert">
           برای این هتل ابتدا نوع اتاق را در اطلاعات پایه ثبت کنید.
