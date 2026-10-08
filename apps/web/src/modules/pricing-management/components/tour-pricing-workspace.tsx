@@ -819,10 +819,7 @@ export function TourPricingWorkspace() {
               </table>
             </div>
             {invalidSale && !invalidFields ? (
-              <Alert
-                title="مقدار تغییر معتبر نیست"
-                description="عدد نامعتبر یا کاهش بیشتر از قیمت خرید، قیمت فروش این ردیف را نامعتبر می‌کند."
-              />
+              <Alert title="قیمت فروش معتبر نیست." />
             ) : null}
             {draft ? (
               <Badge>پیش‌نویس ذخیره‌شده · نسخه {draft.draftVersion}</Badge>
