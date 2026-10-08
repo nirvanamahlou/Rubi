@@ -8,6 +8,7 @@ import type {
   PackageTourDraftV1,
   PackageTourPublicationV1,
   TourDepartureV1,
+  PackageTourPriceFieldV1,
 } from '@nora/contracts';
 import {
   ArrowRight,
@@ -32,6 +33,12 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
+import { TourPriceFields } from './tour-price-fields';
+import {
+  tourPriceFields,
+  tourPriceFieldValues,
+  validateTourPriceFields,
+} from '@nora/contracts';
 import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
 import { previewHotelRoomSale } from './tour-price-math';
 import { packageBannerHref } from '../model/package-banner';
@@ -70,7 +77,6 @@ const defaultAdjustment = (): Adjustment => ({
   mode: 'percent',
   value: '0',
 });
-const currencyOptions = ['IRR', 'USD', 'EUR', 'AED', 'TRY'] as const;
 
 export function TourPricingWorkspace() {
   const [session, setSession] = useState<LoginResponse | null>(null);
@@ -82,17 +88,22 @@ export function TourPricingWorkspace() {
   const [adjustments, setAdjustments] = useState<Record<string, Adjustment>>(
     {},
   );
-  const [adultFlight, setAdultFlight] = useState('');
-  const [adultFlightCurrency, setAdultFlightCurrency] = useState('IRR');
-  const [childFlight, setChildFlight] = useState('');
-  const [childFlightCurrency, setChildFlightCurrency] = useState('IRR');
-  const [businessIncrease, setBusinessIncrease] = useState('');
-  const [businessCurrency, setBusinessCurrency] = useState('IRR');
-  const [commission, setCommission] = useState('');
-  const [commissionMode, setCommissionMode] = useState<'percent' | 'fixed'>(
-    'percent',
+  const [priceFields, setPriceFields] = useState<PackageTourPriceFieldV1[]>(
+    () => tourPriceFields(),
   );
-  const [commissionCurrency, setCommissionCurrency] = useState('IRR');
+  const values = tourPriceFieldValues(priceFields);
+  const adultFlight = values.adultFlightSale;
+  const adultFlightCurrency = values.adultFlightSaleCurrencyCode;
+  const childFlight = values.childFlightSale;
+  const childFlightCurrency = values.childFlightSaleCurrencyCode;
+  const businessIncrease = values.businessUplift;
+  const businessCurrency = values.businessUpliftCurrencyCode;
+  const commissionMode = values.commissionMode;
+  const commission =
+    commissionMode === 'fixed'
+      ? values.commissionAmount
+      : values.commissionPercent;
+  const commissionCurrency = values.commissionCurrencyCode;
   const [familyAdults, setFamilyAdults] = useState('2');
   const [familyChildren, setFamilyChildren] = useState('0');
   const [draft, setDraft] = useState<PackageTourDraftV1 | null>(null);
@@ -161,20 +172,7 @@ export function TourPricingWorkspace() {
         ]),
       ),
     );
-    setAdultFlight(value?.adultFlightSale ?? '');
-    setAdultFlightCurrency(value?.adultFlightSaleCurrencyCode ?? 'IRR');
-    setChildFlight(value?.childFlightSale ?? '');
-    setChildFlightCurrency(value?.childFlightSaleCurrencyCode ?? 'IRR');
-    setBusinessIncrease(value?.businessUplift ?? '');
-    setBusinessCurrency(value?.businessUpliftCurrencyCode ?? 'IRR');
-    const savedCommissionMode = value?.commissionMode ?? 'percent';
-    setCommissionMode(savedCommissionMode);
-    setCommission(
-      savedCommissionMode === 'fixed'
-        ? (value?.commissionAmount ?? '')
-        : (value?.commissionPercent ?? ''),
-    );
-    setCommissionCurrency(value?.commissionCurrencyCode ?? 'IRR');
+    setPriceFields(tourPriceFields(value ?? {}));
     setFamilyAdults(String(value?.familyAdults ?? 2));
     setFamilyChildren(String(value?.familyChildren ?? 0));
   }
@@ -312,6 +310,7 @@ export function TourPricingWorkspace() {
     if (!passengers) return null;
     try {
       return calculateTourRoom({
+        extraSaleFields: priceFields.filter((field) => field.kind === 'custom'),
         basePerNight: row.basePerNight,
         factor: roomRate?.factor ?? row.factors[roomCode] ?? '',
         nights: stayNights,
@@ -348,15 +347,25 @@ export function TourPricingWorkspace() {
       return null;
     }
   }
+  const invalidFields = (() => {
+    try {
+      validateTourPriceFields(priceFields);
+      return false;
+    } catch {
+      return true;
+    }
+  })();
   const invalidSale =
-    batch?.rows.some((row) =>
-      activeRoomColumns.some(
-        ([key]) =>
-          (row.factors[key] ||
-            row.roomRates.some((room) => room.roomTypeId === key)) &&
-          !roomPreview(row, key),
-      ),
-    ) ?? false;
+    (invalidFields ||
+      batch?.rows.some((row) =>
+        activeRoomColumns.some(
+          ([key]) =>
+            (row.factors[key] ||
+              row.roomRates.some((room) => room.roomTypeId === key)) &&
+            !roomPreview(row, key),
+        ),
+      )) ??
+    false;
   const publication =
     publications.find((item) => item.id === publicationId) ?? publications[0];
   const bannerHref = (() => {
@@ -370,6 +379,7 @@ export function TourPricingWorkspace() {
   })();
   const unsaved =
     !draft ||
+    JSON.stringify(priceFields) !== JSON.stringify(tourPriceFields(draft)) ||
     Number(familyAdults) !== draft.familyAdults ||
     Number(familyChildren) !== draft.familyChildren ||
     adultFlight !== draft.adultFlightSale ||
@@ -411,6 +421,7 @@ export function TourPricingWorkspace() {
         {
           version: 1,
           expectedVersion: draft?.draftVersion ?? 0,
+          priceFields,
           tourDepartureId: grid.tour.id,
           batchId: batch.id,
           currencyCode: batch.currencyCode,
@@ -502,37 +513,12 @@ export function TourPricingWorkspace() {
         description="قیمت خرید هتل‌های همان نوبت تور را ببینید، قیمت فروش هر گزینه هتل و پرواز را تنظیم کنید و نسخه قیمت را برای انتشار آماده کنید."
       />
       {notice ? <Alert title="وضعیت قیمت‌گذاری" description={notice} /> : null}
-      <div className="grid gap-3 md:grid-cols-4">
-        {[
-          ['۱', 'تور', 'ابتدا تور موردنظر را انتخاب کنید'],
-          ['۲', 'نوبت تور', 'تاریخ سفر و ظرفیت از تعریف بلیت'],
-          ['۳', 'جدول خرید هتل', 'نرخ هر اتاق/شب و کارگزار از رزرواسیون'],
-          ['۴', 'قیمت فروش و انتشار', 'افزایش/کاهش، پرواز، بیزینس و کمیسیون'],
-        ].map(([number, title, description]) => (
-          <Card className="flex items-start gap-3 p-4" key={number}>
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-sm font-black text-primary">
-              {number}
-            </span>
-            <div>
-              <h2 className="text-sm font-black">{title}</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {description}
-              </p>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <TourWorkspace mode="departures" />
+      <TourWorkspace mode="departures" compact />
 
       <Card className="grid gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-black">۱ · انتخاب تور و نوبت</h2>
-            <p className="text-sm text-muted-foreground">
-              نوبت را در بخش بالا بسازید یا یکی از نوبت‌های موجود را انتخاب
-              کنید؛ هتل‌های متصل به همان بازه پایین نمایش داده می‌شوند.
-            </p>
           </div>
           <Button
             aria-label="به‌روزرسانی نوبت‌های تور"
@@ -811,7 +797,7 @@ export function TourPricingWorkspace() {
               محاسبه می‌شود. گزینه‌های هتل مستقل‌اند و هزینه آن‌ها با هم جمع
               نمی‌شود.
             </p>
-            {invalidSale ? (
+            {invalidSale && !invalidFields ? (
               <Alert
                 title="مقدار تغییر معتبر نیست"
                 description="عدد نامعتبر یا کاهش بیشتر از قیمت خرید، قیمت فروش این ردیف را نامعتبر می‌کند."
@@ -827,9 +813,7 @@ export function TourPricingWorkspace() {
       <Card className="grid gap-4 p-5">
         <div className="flex items-center gap-2">
           <Banknote className="size-5 text-primary" />
-          <h2 className="text-lg font-black">
-            ۴ · پرواز، بیزینس، کمیسیون و انتشار
-          </h2>
+          <h2 className="text-lg font-black">قیمت فروش و انتشار</h2>
         </div>
         {grid ? (
           <div className="grid gap-2 sm:grid-cols-2">
@@ -866,124 +850,12 @@ export function TourPricingWorkspace() {
             })}
           </div>
         ) : null}
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <label className="grid gap-2 text-sm font-bold">
-            قیمت فروش پرواز بزرگسال
-            <div className="flex gap-2">
-              <MoneyInput
-                className="min-w-0 flex-1"
-                onValueChange={setAdultFlight}
-                placeholder="0"
-                value={adultFlight}
-              />
-              <NativeSearchSelect
-                aria-label="ارز قیمت فروش پرواز بزرگسال"
-                className="h-11 rounded-xl border border-input bg-surface px-3"
-                value={adultFlightCurrency}
-                onChange={(event) => setAdultFlightCurrency(event.target.value)}
-              >
-                {currencyOptions.map((code) => (
-                  <option key={code}>{code}</option>
-                ))}
-              </NativeSearchSelect>
-            </div>
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            قیمت فروش پرواز کودک
-            <div className="flex gap-2">
-              <MoneyInput
-                className="min-w-0 flex-1"
-                onValueChange={setChildFlight}
-                placeholder="0"
-                value={childFlight}
-              />
-              <NativeSearchSelect
-                aria-label="ارز قیمت فروش پرواز کودک"
-                className="h-11 rounded-xl border border-input bg-surface px-3"
-                value={childFlightCurrency}
-                onChange={(event) => setChildFlightCurrency(event.target.value)}
-              >
-                {currencyOptions.map((code) => (
-                  <option key={code}>{code}</option>
-                ))}
-              </NativeSearchSelect>
-            </div>
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            افزایش نرخ بیزینس
-            <div className="flex gap-2">
-              <MoneyInput
-                className="min-w-0 flex-1"
-                onValueChange={setBusinessIncrease}
-                placeholder="0"
-                value={businessIncrease}
-              />
-              <NativeSearchSelect
-                aria-label="ارز افزایش نرخ بیزینس"
-                className="h-11 rounded-xl border border-input bg-surface px-3"
-                value={businessCurrency}
-                onChange={(event) => setBusinessCurrency(event.target.value)}
-              >
-                {currencyOptions.map((code) => (
-                  <option key={code}>{code}</option>
-                ))}
-              </NativeSearchSelect>
-            </div>
-          </label>
-          <div className="grid gap-2 text-sm font-bold">
-            <span>کمیسیون</span>
-            <div className="flex gap-2">
-              <NativeSearchSelect
-                aria-label="نوع کمیسیون"
-                className="h-11 rounded-xl border border-input bg-surface px-3"
-                value={commissionMode}
-                onChange={(event) => {
-                  setCommissionMode(event.target.value as 'percent' | 'fixed');
-                  setCommission('');
-                }}
-              >
-                <option value="percent">درصدی</option>
-                <option value="fixed">مبلغ ثابت</option>
-              </NativeSearchSelect>
-              {commissionMode === 'fixed' ? (
-                <MoneyInput
-                  aria-label="مبلغ ثابت کمیسیون"
-                  className="min-w-0 flex-1"
-                  onValueChange={setCommission}
-                  placeholder="0"
-                  value={commission}
-                />
-              ) : (
-                <Input
-                  aria-label="درصد کمیسیون"
-                  className="min-w-0 flex-1"
-                  inputMode="decimal"
-                  onChange={(event) => setCommission(event.target.value)}
-                  placeholder="0"
-                  value={commission}
-                />
-              )}
-              {commissionMode === 'fixed' ? (
-                <NativeSearchSelect
-                  aria-label="ارز مبلغ ثابت کمیسیون"
-                  className="h-11 rounded-xl border border-input bg-surface px-3"
-                  value={commissionCurrency}
-                  onChange={(event) =>
-                    setCommissionCurrency(event.target.value)
-                  }
-                >
-                  {currencyOptions.map((code) => (
-                    <option key={code}>{code}</option>
-                  ))}
-                </NativeSearchSelect>
-              ) : (
-                <span className="flex h-11 items-center rounded-xl border border-input px-3">
-                  ٪
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
+        <TourPriceFields
+          value={priceFields}
+          onChange={setPriceFields}
+          disabled={saving}
+        />
+        {invalidFields ? <Alert title="ردیف‌های قیمت معتبر نیستند." /> : null}
         <Alert
           title="مبنای انتشار قیمت پکیج"
           description="قیمت پرواز، مجموع رفت‌وبرگشت برای هر مسافر است. پکیج به ازای کل مسافران هر اتاق محاسبه می‌شود؛ ارزهای متفاوت به شکل مبلغ + مبلغ نمایش داده می‌شوند. کمیسیون درصدی از سود هر ارز و کمیسیون ثابت از سود ارز انتخاب‌شده کم می‌شود و قیمت فروش را تغییر نمی‌دهد. نرخ خرید پرداخت‌شده مالی مبنای سود است. انتشار نسخه ذخیره‌شده با تأییدکننده مجاز انجام می‌شود."
@@ -1095,27 +967,12 @@ export function TourPricingWorkspace() {
           {publication ? (
             <>
               <div className="flex flex-wrap gap-2 text-xs">
-                <Badge>
-                  پرواز بزرگسال {publication.adultFlightSale}{' '}
-                  {publication.adultFlightSaleCurrencyCode}
-                </Badge>
-                <Badge>
-                  پرواز کودک {publication.childFlightSale}{' '}
-                  {publication.childFlightSaleCurrencyCode}
-                </Badge>
-                <Badge>
-                  افزایش بیزینس {publication.businessUplift}{' '}
-                  {publication.businessUpliftCurrencyCode}
-                </Badge>
-                <Badge>
-                  کمیسیون هزینهٔ سود{' '}
-                  {(publication.commissionMode ?? 'percent') === 'fixed'
-                    ? (publication.commissionAmount ?? '0') +
-                      ' ' +
-                      (publication.commissionCurrencyCode ??
-                        publication.currencyCode)
-                    : publication.commissionPercent + '٪'}
-                </Badge>
+                {tourPriceFields(publication).map((field) => (
+                  <Badge key={field.id}>
+                    {field.title} {field.amount}{' '}
+                    {field.mode === 'percent' ? '٪' : field.currencyCode}
+                  </Badge>
+                ))}
               </div>
               <div className="overflow-x-auto rounded-xl border border-border">
                 <table className="min-w-[900px] w-full text-sm">

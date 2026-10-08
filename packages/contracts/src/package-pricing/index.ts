@@ -350,6 +350,7 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
+  priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
   familyChildren?: number;
   version: 1;
@@ -391,6 +392,7 @@ export interface PackageTourPublishedRoomPriceV1 {
 }
 
 export interface PackageTourPublicationV1 {
+  priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
   familyChildren?: number;
   version: 1;
@@ -465,3 +467,11 @@ export type {
   TourRoomCurrencyAmount,
   TourRoomCalculationInput,
 } from './tour-calculation';
+
+import type { PackageTourPriceFieldV1 } from './price-fields';
+export type { PackageTourPriceFieldV1 } from './price-fields';
+export {
+  tourPriceFields,
+  tourPriceFieldValues,
+  validateTourPriceFields,
+} from './price-fields';

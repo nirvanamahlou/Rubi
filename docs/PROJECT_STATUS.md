@@ -5080,3 +5080,7 @@ unrelated local edits are preserved. Exact-head CI gates the authorized develop
 merge. Verified backups and manifests are preserved in the primary workspace's
 ignored `.runtime/backups/hotel-rate-reset-1008`, outside the preview worktree.
 See [delivery and cleanup](tasks/HOTEL-TABLE-REDESIGN-1008.md).
+
+## 2026-10-08 — PC-A — Editable package price fields
+
+Removed the four introductory pricing cards and opted the embedded departure editor out of its heading/explanation and current/upcoming overview; standalone tour management remains unchanged. Default adult flight/child flight/business/commission rows are editable/removable; custom typed monetary rows have independent currency and a fixed per-room-package sale contribution. Nullable additive draft/publication JSON stores validated Decimal strings; explicit empty lists remain empty and historical null restores legacy defaults. Exact shared calculation drives preview/publication; currencies never combine. Existing maker/checker, branch/source authorization, CAS and immutable history remain intact.8 Contracts,47 Web and30 API focused tests pass; scoped lint, Contracts/API/Web typechecks pass. Schema formatting/generation pass; production builds and exact-head CI gate user-authorized develop merge. Local temporary PostgreSQL migration probe timed out waiting for Docker; clean CI must rehearse migrations before merge. No operational migration, data change or runtime rollout. See docs/tasks/PACKAGE-PRICE-FIELDS-1008.md.

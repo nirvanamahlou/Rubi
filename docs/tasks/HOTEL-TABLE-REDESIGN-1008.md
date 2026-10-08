@@ -76,12 +76,22 @@ grid children to shrink, keeping wide tables within their own scroll container.
 Sale input preserves raw text during typing and formats on blur, avoiding caret
 movement and accidental numeric rewriting. A regression verifies each keystroke.
 
+Final authenticated browser check confirms body width731 equals scroll width731,
+two room bases100/200 and shared coefficients2/1.5/2.5. Typing235.2 into one sale
+cell retains the input until blur, while purchase remains200. Adding a two-child
+composition with distinct age bounds and coefficient3 creates purchase300/600;
+selecting that composition across rooms and applying10% twice yields sale330/660,
+not a compounded amount. All of these inputs are unsaved and cleared after QA.
+
 Only the already-owned Web3210 preview is restarted after build. API4210 and main
 Web3100/API4000 processes are not restarted or overwritten. Root workspace and the
 other runtime's local edits are preserved. Operational rate cleanup is distinct
 from source deployment: main needs its normal develop update/rebuild to show the
-new UI. Source integrated with develop@b322d3c9, including both append-only work
-records and synchronized display catalogs. Final documentation commit requires
-fresh exact-head CI before the authorized merge; private backups and test inputs
+new UI. Source integrated first with develop@b322d3c9 and then develop@ce960122,
+preserving other work records and synchronizing both new hotel labels and package
+price-field labels. The second integration includes another module's additive
+migration in Git only: it is NOT applied to either operational database or used
+to restart their APIs in this task. Final integration requires fresh exact-head
+CI before the authorized merge; private backups and test inputs
 never enter Git. Do not refresh the owner's unsaved form for browser verification;
 use a separately authenticated tab or their explicit refresh approval.
