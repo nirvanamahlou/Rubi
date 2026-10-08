@@ -6163,9 +6163,7 @@ CI repair verified: English coverage3 tests and stable formatting checks pass. E
 
 COMPUTER_ID=PC-A; branch codex/pc-a-jsx-static-children-1008 from latest origin/develop. Reserve shared Web i18n JSX runtime/development adapter, focused regression tests and own status docs. Prior English runtime locks released; no active overlap. Preserve React static-child validation and development metadata through localization, without masking real dynamic-list key errors. No API/schema/dependency/data/runtime changes. User requests correction; merge authorization is not inferred for this new task.
 
-
 Reserve bounded hotfix rollout to the running _runtime-develop-1004 i18n adapter after checking both target files are tracked-clean; no listener, data, environment or other source change.
-
 
 JSX-STATIC-CHILDREN-1008: nine targeted tests pass and local login returns HTTP200 after bounded two-file hotfix. No other runtime files or data changed; candidate locks release at commit. Local clean-generated Contracts build refreshed unchanged types before final Web validation.
 
