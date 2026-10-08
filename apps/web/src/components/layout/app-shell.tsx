@@ -27,6 +27,7 @@ import {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -143,6 +144,7 @@ function Navigation({
     }))
     .filter((group) => group.items.length > 0);
   const groupId = useId();
+  const navigationRef = useRef<HTMLElement>(null);
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
     groupedNavigationItems.map((group) => group.id),
   );
@@ -152,6 +154,20 @@ function Navigation({
       ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
     );
   }
+  useEffect(() => {
+    if (closedGroups.length === groupedNavigationItems.length) return;
+    function dismissOutside(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        navigationRef.current &&
+        !navigationRef.current.contains(event.target)
+      ) {
+        setClosedGroups(groupedNavigationItems.map((group) => group.id));
+      }
+    }
+    document.addEventListener('pointerdown', dismissOutside, true);
+    return () => document.removeEventListener('pointerdown', dismissOutside, true);
+  }, [closedGroups.length]);
   function renderItem({
     href,
     title,
@@ -243,6 +259,12 @@ function Navigation({
   }
   return (
     <nav
+      ref={navigationRef}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          setClosedGroups(groupedNavigationItems.map((group) => group.id));
+        }
+      }}
       aria-label={english ? 'Main navigation' : 'منوی اصلی'}
       className={cn(
         'grid min-w-0 content-start overflow-x-hidden',
