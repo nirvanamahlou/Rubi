@@ -33,7 +33,7 @@ function localizedChildren(children: unknown, index?: number): unknown {
 
 type Factory = typeof reactJsx;
 
-function localize(
+export function localize(
   factory: Factory,
   type: Parameters<Factory>[0],
   props: Parameters<Factory>[1],
