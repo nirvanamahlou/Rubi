@@ -1,3 +1,9 @@
+## ACCOUNTING-LEDGER-LIST-1008 — PC-A — READY_FOR_REVIEW
+
+Direct screenshot-led ledger list columns/inline filters and clear/multi-select icon actions. Own shared Finance base-list UI only; preserve scoped reads, filtering and selection. No backend/schema/dependency/data changes/delegation.
+
+Delivered screenshot ledger columns code/title/main-book/posting/status and per-column text/boolean filters intersecting advanced tree/search. Added always-visible FilterX clear action Alt+Shift+C and ListChecks multi-selection Alt+Shift+M; tooltips preserved. Clear resets all filters/selection/page, column changes reset selection/page, preset view resets column filters. Browser verified main=false0 results, shortcut clear1 result, multi-select and selected count1. Tests9/9, scoped lint/typecheck and Web build56 routes passed; final key-only repair/scoped lint passed. Same3100 preview retained; no data writes/API/schema/dependency changes or delegation.
+
 ## ACCOUNTING-FISCAL-FILTER-TREE-1008 — PC-A — READY_FOR_REVIEW
 
 Sole-writer fiscal-year list branching filter UI and semantics: recursive per-branch add menu, source screenshot fields/modes and related-period grouped predicates. Own Finance Web filters/list/tests; no backend/schema/dependencies or source writes. Existing isolated3100 preview and branch reused; no delegation.

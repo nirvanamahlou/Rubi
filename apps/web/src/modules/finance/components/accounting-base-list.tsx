@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import {
-  CheckCheck,
+  ListChecks,
   Calculator,
   List,
   RefreshCw,
@@ -406,8 +406,12 @@ function GroupEditor({
                             })
                           }
                         >
-                          <option value="true">بله</option>
-                          <option value="false">خیر</option>
+                          <option key="true" value="true">
+                            بله
+                          </option>
+                          <option key="false" value="false">
+                            خیر
+                          </option>
                         </select>
                       ) : field.type === 'date' ? (
                         <DatePicker
@@ -531,6 +535,9 @@ export function AccountingBaseList({
   const [draft, setDraft] = useState<FilterGroup>(emptyFilter);
   const [applied, setApplied] = useState<FilterGroup>(emptyFilter);
   const [search, setSearch] = useState('');
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
+    {},
+  );
   const [showFilters, setShowFilters] = useState(true);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
@@ -543,7 +550,56 @@ export function AccountingBaseList({
   const searchRef = useRef<HTMLInputElement>(null);
   const fields = listFields(kind);
   const records = listRecords(kind, snapshot, books);
-  const filtered = filterRecords(records, applied, fields, search);
+  const columns =
+    kind === 'ledgers'
+      ? [
+          { key: 'code', label: 'کد', type: 'text' },
+          { key: 'title', label: 'عنوان', type: 'text' },
+          { key: 'isMain', label: 'دفتر کل اصلی', type: 'boolean' },
+          {
+            key: 'allowsPosting',
+            label: 'امکان صدور سند حسابداری در دفتر کل',
+            type: 'boolean',
+          },
+          { key: 'active', label: 'وضعیت', type: 'boolean' },
+        ]
+      : fields
+          .filter((field) =>
+            ['code', 'title', 'titleEn', 'description', 'active'].includes(
+              field.key,
+            ),
+          )
+          .sort(
+            (a, b) =>
+              ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
+                a.key,
+              ) -
+              ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
+                b.key,
+              ),
+          );
+  const filtered = filterRecords(
+    records,
+    {
+      type: 'group',
+      id: 'combined',
+      mode: 'all',
+      children: [
+        applied,
+        ...columns
+          .filter((column) => columnFilters[column.key])
+          .map((column): FilterRule => ({
+            ...newRule(),
+            id: `column-${column.key}`,
+            field: column.key,
+            operator: column.type === 'boolean' ? 'equals' : 'contains',
+            value: columnFilters[column.key]!,
+          })),
+      ],
+    },
+    fields,
+    search,
+  );
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const actualPage = Math.min(page, pages);
   const visible = filtered.slice(
@@ -564,8 +620,9 @@ export function AccountingBaseList({
   const definition = accountingLists.find((list) => list.kind === kind)!;
   const dirty = JSON.stringify(applied) !== JSON.stringify(draft);
   const presetRule = applied.children[0];
-  const presetValue =
-    applied.children.length === 0
+  const presetValue = Object.values(columnFilters).some(Boolean)
+    ? 'custom'
+    : applied.children.length === 0
       ? 'all'
       : applied.mode === 'all' &&
           applied.children.length === 1 &&
@@ -591,6 +648,7 @@ export function AccountingBaseList({
     setDraft(emptyFilter());
     setApplied(emptyFilter());
     setSearch('');
+    setColumnFilters({});
     setSelected([]);
     setPage(1);
     setMessage('فیلترها پاک شدند.');
@@ -704,6 +762,7 @@ export function AccountingBaseList({
     setSelected([]);
     setSearch('');
     setPage(1);
+    setColumnFilters({});
     setMessage('فهرست انتخاب شد.');
   };
   return (
@@ -776,7 +835,15 @@ export function AccountingBaseList({
             disabled={locked}
             onClick={toggleSelection}
           >
-            <CheckCheck className="size-4" />
+            <ListChecks className="size-4" />
+          </IconAction>
+          <IconAction
+            label="حذف فیلتر"
+            shortcut="Alt+Shift+C"
+            disabled={locked}
+            onClick={clear}
+          >
+            <FilterX className="size-4" />
           </IconAction>
           <IconAction
             label="محاسبه تعداد رکوردها"
@@ -874,8 +941,12 @@ export function AccountingBaseList({
           }
         >
           <option value="all">{definition.allTitle}</option>
-          <option value="true">فقط فعال‌ها</option>
-          <option value="false">فقط غیرفعال‌ها</option>
+          <option key="true" value="true">
+            فقط فعال‌ها
+          </option>
+          <option key="false" value="false">
+            فقط غیرفعال‌ها
+          </option>
           <option value="custom" disabled>
             فیلتر سفارشی
           </option>
@@ -988,7 +1059,7 @@ export function AccountingBaseList({
         <table className="w-full min-w-[640px] text-right text-sm">
           <caption className="sr-only">{definition.title}</caption>
           <thead className="border-y bg-muted/40">
-            <tr>
+            <tr key="titles">
               {selectionMode && (
                 <th className="w-12 p-3">
                   <input
@@ -1017,16 +1088,9 @@ export function AccountingBaseList({
                   />
                 </th>
               )}
-              {[
-                'کد',
-                'عنوان',
-                'عنوان به زبان دوم',
-                'توضیحات',
-                ...(kind === 'ledgers' ? ['ارز پایه'] : []),
-                'وضعیت',
-              ].map((label) => (
+              {columns.map(({ key, label }) => (
                 <th
-                  key={label}
+                  key={key}
                   scope="col"
                   className="px-4 py-3 font-semibold text-muted-foreground"
                 >
@@ -1034,6 +1098,60 @@ export function AccountingBaseList({
                 </th>
               ))}
             </tr>
+            {kind === 'ledgers' && (
+              <tr key="filters" className="bg-surface">
+                {selectionMode && <th key="selection-filter" />}
+                {columns.map((column) => (
+                  <th key={column.key} className="px-2 pb-3">
+                    <div className="flex items-center gap-1 rounded-lg border border-input bg-surface px-2">
+                      <Filter
+                        className="size-3.5 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      {column.type === 'boolean' ? (
+                        <select
+                          aria-label={`فیلتر ${column.label}`}
+                          className="h-9 min-w-0 w-full bg-transparent text-sm font-normal"
+                          value={columnFilters[column.key] ?? ''}
+                          onChange={(event) => {
+                            setColumnFilters({
+                              ...columnFilters,
+                              [column.key]: event.target.value,
+                            });
+                            setSelected([]);
+                            setPage(1);
+                          }}
+                        >
+                          <option key="all" value="">
+                            همه
+                          </option>
+                          <option key="true" value="true">
+                            {column.key === 'active' ? 'فعال' : 'بله'}
+                          </option>
+                          <option key="false" value="false">
+                            {column.key === 'active' ? 'غیرفعال' : 'خیر'}
+                          </option>
+                        </select>
+                      ) : (
+                        <Input
+                          aria-label={`فیلتر ${column.label}`}
+                          className="h-9 border-0 bg-transparent font-normal shadow-none"
+                          value={columnFilters[column.key] ?? ''}
+                          onChange={(event) => {
+                            setColumnFilters({
+                              ...columnFilters,
+                              [column.key]: event.target.value,
+                            });
+                            setSelected([]);
+                            setPage(1);
+                          }}
+                        />
+                      )}
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            )}
           </thead>
           <tbody>
             {visible.map((record) => (
@@ -1061,19 +1179,19 @@ export function AccountingBaseList({
                     />
                   </td>
                 )}
-                {[
-                  'code',
-                  'title',
-                  'titleEn',
-                  'description',
-                  ...(kind === 'ledgers' ? ['baseCurrency'] : []),
-                ].map((field) => (
-                  <td key={field} className="max-w-80 px-4 py-4">
-                    <span className="line-clamp-2">
-                      {record.values[field] || '—'}
-                    </span>
-                  </td>
-                ))}
+                {columns
+                  .filter((column) => column.key !== 'active')
+                  .map(({ key: field, type }) => (
+                    <td key={field} className="max-w-80 px-4 py-4">
+                      <span className="line-clamp-2">
+                        {type === 'boolean'
+                          ? record.values[field] === 'true'
+                            ? 'بله'
+                            : 'خیر'
+                          : record.values[field] || '—'}
+                      </span>
+                    </td>
+                  ))}
                 <td className="px-4 py-4">
                   <span
                     className={`rounded-full px-2 py-1 text-xs ${record.values.active === 'true' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground'}`}

@@ -1,3 +1,7 @@
+## 2026-10-08 — ACCOUNTING-LEDGER-LIST-1008 — PC-A
+
+Ledger list displays code/title/main-book/posting/status with immediate column filters. Persistent FilterX clear and ListChecks multi-select actions include real shortcuts/tooltips. Clear resets advanced/column/search filters; selection/page reset when filters change. Browser verified0/1-result filters and selected count on3100; tests9/9, scoped lint/typecheck and affected Web build56 routes passed. Existing authorized reads unchanged; Web-only, no data/backend/schema/dependency changes or delegation.
+
 ## 2026-10-08 — ACCOUNTING-FISCAL-FILTER-TREE-1008 — PC-A
 
 Fiscal-year list now offers per-branch add menus containing title/titleEn/description, related-period all/any branches and all/any/not-all/none logical groups. Recursive nesting replaces the former three-level restriction; existing32-node size guard retained. Related-branch conditions bind to the same actual current-book allocation. Shared list editor preserves other lists and current authorization. Tests9/9, scoped lint/typecheck and Web build56 routes passed; browser verified four-level construction and actual filtered result on3100. No API/schema/dependency or business-data writes; no Rahkaran interaction/delegation.
