@@ -1,7 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 import Joi from 'joi';
 import { Prisma } from '@nora/database';
-import type { HotelOccupancyRateV1 } from '@nora/contracts';
+import {
+  calculateManualHotelPrices,
+  type HotelOccupancyRateV1,
+} from '@nora/contracts';
 
 export const roomKinds = [
   'double',
@@ -91,6 +94,21 @@ const roomRate = Joi.object({
     .max(2000)
     .items(
       Joi.object({
+        saleAmount: money.optional(),
+        manualPricing: Joi.object({
+          baseAmount: money,
+          coefficient: factor,
+          adjustment: Joi.object({
+            kind: Joi.string().valid('AMOUNT', 'PERCENT', 'SET').required(),
+            value: Joi.string()
+              .pattern(/^-?\d{1,12}(\.\d{1,2})?$/)
+              .required(),
+          })
+            .unknown(false)
+            .required(),
+        })
+          .unknown(false)
+          .optional(),
         adults: Joi.number().integer().min(1).max(20).required(),
         childAges: Joi.array()
           .max(10)
@@ -252,12 +270,14 @@ export function validateRatePack(raw: unknown): RatePackInput {
     );
   for (const row of input.rows) {
     const roomIds = row.roomRates.map((room) => room.roomTypeId);
+    const manualCoefficients = new Map<string, string>();
     if (new Set(roomIds).size !== roomIds.length)
       throw new BadRequestException(
         'هر نوع اتاق برای یک هتل فقط یک‌بار قابل ثبت است.',
       );
     for (const room of row.roomRates) {
       const tariffs = room.occupancyRates ?? [];
+      let manualBase: string | undefined;
       const shape = (rate: HotelOccupancyRateV1) =>
         JSON.stringify([
           rate.adults,
@@ -275,7 +295,10 @@ export function validateRatePack(raw: unknown): RatePackInput {
                 shape(previous) === shape(rate) &&
                 previous.startsOn < rate.endsOnExclusive &&
                 rate.startsOn < previous.endsOnExclusive &&
-                !new Prisma.Decimal(previous.amount).equals(rate.amount),
+                (!new Prisma.Decimal(previous.amount).equals(rate.amount) ||
+                  !new Prisma.Decimal(
+                    previous.saleAmount ?? previous.amount,
+                  ).equals(rate.saleAmount ?? rate.amount)),
             )
         )
           throw new BadRequestException(
@@ -291,6 +314,58 @@ export function validateRatePack(raw: unknown): RatePackInput {
           'برای هر نوع اتاق یک بورد مشخص انتخاب کنید.',
         );
       for (const tariff of room.occupancyRates ?? []) {
+        if (tariff.manualPricing) {
+          const composition = JSON.stringify([
+            tariff.adults,
+            tariff.childAges
+              .map((a) => [a.min, a.maxExclusive])
+              .sort((a, b) => a[0]! - b[0]! || a[1]! - b[1]!),
+          ]);
+          const previousCoefficient = manualCoefficients.get(composition);
+          if (
+            (manualBase !== undefined &&
+              !new Prisma.Decimal(manualBase).equals(
+                tariff.manualPricing.baseAmount,
+              )) ||
+            (previousCoefficient !== undefined &&
+              !new Prisma.Decimal(previousCoefficient).equals(
+                tariff.manualPricing.coefficient,
+              ))
+          ) {
+            throw new BadRequestException(
+              'قیمت پایهٔ هر اتاق و ضریب هر ترکیب باید در جدول هتل یکسان باشد.',
+            );
+          }
+          manualBase = tariff.manualPricing.baseAmount;
+          manualCoefficients.set(composition, tariff.manualPricing.coefficient);
+          const expected = calculateManualHotelPrices(
+            tariff.manualPricing.baseAmount,
+            tariff.manualPricing.coefficient,
+            tariff.currencyCode,
+            tariff.manualPricing.adjustment,
+          );
+          if (
+            !expected ||
+            !tariff.saleAmount ||
+            !new Prisma.Decimal(expected.purchase).equals(tariff.amount) ||
+            !new Prisma.Decimal(expected.sale).equals(tariff.saleAmount) ||
+            tariff.childAges.some(
+              (age) =>
+                age.maxExclusive > 15 ||
+                !Number.isInteger(age.min) ||
+                !Number.isInteger(age.maxExclusive),
+            ) ||
+            tariff.startsOn !== input.checkIn ||
+            tariff.endsOnExclusive !== input.checkOut
+          )
+            throw new BadRequestException(
+              'قیمت خرید و فروش با قیمت پایه و ضریب ترکیب هماهنگ نیست.',
+            );
+        } else if (tariff.saleAmount !== undefined) {
+          throw new BadRequestException(
+            'قیمت فروش مستقل باید همراه ضریب و قیمت پایه ثبت شود.',
+          );
+        }
         assertDates({
           checkIn: tariff.startsOn,
           checkOut: tariff.endsOnExclusive,

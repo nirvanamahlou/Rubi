@@ -278,6 +278,14 @@ export interface HotelRoomRateV1 {
 }
 
 export interface HotelOccupancyRateV1 {
+  /** Manual room base and composition coefficient; absent for imported tariffs. */
+  manualPricing?: {
+    baseAmount: string;
+    coefficient: string;
+    adjustment: HotelSaleAdjustmentV1;
+  };
+  /** Derived sale/night; amount remains purchase/night. */
+  saleAmount?: string;
   adults: number;
   childAges: readonly { min: number; maxExclusive: number }[];
   startsOn: string;
@@ -287,6 +295,12 @@ export interface HotelOccupancyRateV1 {
   composition: string;
   board: string;
 }
+
+export interface HotelSaleAdjustmentV1 {
+  kind: 'AMOUNT' | 'PERCENT' | 'SET';
+  value: string;
+}
+export { calculateManualHotelPrices } from './manual-hotel-pricing';
 
 export interface PackageTourHotelPurchaseRowV1 {
   id: string;

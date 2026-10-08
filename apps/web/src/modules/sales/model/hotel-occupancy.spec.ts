@@ -42,6 +42,27 @@ const draft = (): SalesFormState => ({
   },
 });
 describe('new sales hotel occupancy pricing', () => {
+  it('defaults a manual composition to sale, not purchase, while imported prices remain unchanged', () => {
+    const priced = {
+      ...room,
+      occupancyRates: room.occupancyRates!.map((r) => ({
+        ...r,
+        amount: '200',
+        saleAmount: '220',
+        manualPricing: {
+          baseAmount: '100',
+          coefficient: '2',
+          adjustment: { kind: 'PERCENT' as const, value: '10' },
+        },
+      })),
+    };
+    expect(salesHotelOccupancyQuote(draft(), priced)?.amount).toBe('440');
+    expect(
+      hotelOccupancySaleDefaults(draft(), priced).servicePricing?.hotel?.[0]
+        ?.daySale,
+    ).toEqual({ basis: 'TOTAL', amount: '440' });
+    expect(salesHotelOccupancyQuote(draft(), room)?.amount).toBe('241');
+  });
   it.each([12, 14])(
     'prices child age %i from draft and actual birthday using the matching hotel band',
     (age) => {

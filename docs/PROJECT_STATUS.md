@@ -5041,6 +5041,10 @@ Final cheque-policy boundary checks prevent removing stored sale terms or adding
 
 CI display repair: all three English coverage/sync tests pass; new print/UI fragments are translated and the new service test has stable formatting. No calculation or migration changes.
 
+## 2026-10-08 — HOTEL-MANUAL-COEFFICIENTS-1008 — PC-A — READY_FOR_REVIEW
+
+Replaced the legacy manual hotel grid with stacked country/city/hotel selection, a hotel composition coefficient table and independent room-type bases. Purchase remains base×coefficient; selected sale-only fixed/percentage/set adjustments use purchase as baseline and do not compound. Exact child ranges stay below15. Existing saved manual prices reopen the new panel; imported Nora rates and historical revisions are preserved. Additive metadata remains in existing immutable occupancy JSON, with API derivation checks and explicit Sales sale quoting. Web464/API315/Contracts120 tests pass, with one/seven existing skips, scoped lint/typechecks and production builds (56 routes). No migration/dependency/operational data/runtime change. Owner authorizes develop merge after exact-head CI and integration; bounded locks release with candidate. See [delivery](tasks/HOTEL-MANUAL-COEFFICIENTS-1008.md).
+
 ## 2026-10-08 — PC-A — JSX development child validation
 
 Localization now delegates to React jsxDEV while preserving static-child/source/self metadata instead of routing development calls through jsx. RootLayout fixed siblings no longer emit false key warnings; genuine dynamic arrays still warn and explicit keys/refs/handlers and translation remain intact. Nine focused regressions pass. Two tracked-clean adapter files applied as a bounded hotfix to existing local runtime; login returns HTTP200. No data/schema/dependency/permission change. Production checks and review PR follow; no new merge authorization inferred.
