@@ -33,17 +33,20 @@
 }
 .requestRow {
   width: calc(100% - 24px);
-  margin: 6px 12px;
-  border-radius: 14px;
-  border-color: #e0edf5;
-  background: color-mix(in srgb, var(--surface) 96%, #d6efff);
+  margin: 8px 12px;
+  border-radius: 18px;
+  border-color: #d8e7f2;
+  background: color-mix(in srgb, var(--surface) 97%, #d6efff);
+  box-shadow: 0 3px 12px #1845760a;
 }
 .requestRow:hover {
-  background: color-mix(in srgb, var(--surface) 88%, #bce5ff);
+  background: color-mix(in srgb, var(--surface) 90%, #bce5ff);
+  box-shadow: 0 8px 20px #18457616;
 }
 .requestRow[aria-pressed='true'] {
   background: color-mix(in srgb, var(--surface) 78%, #a9dcff);
   border-color: #64b6ef;
+  box-shadow: 0 8px 22px #2877b51f;
 }
 :global(.dark) .hero {
   background: linear-gradient(110deg, #132d40, #152337);
