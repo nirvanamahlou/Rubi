@@ -38,6 +38,7 @@ export function StatusPanel() {
     ? new Intl.DateTimeFormat('fa-IR', {
         dateStyle: 'medium',
         timeStyle: 'medium',
+        hourCycle: 'h23',
       }).format(new Date(query.data.checkedAt))
     : faMessages.status.neverChecked;
 

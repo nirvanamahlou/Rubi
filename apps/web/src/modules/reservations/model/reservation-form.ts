@@ -143,7 +143,7 @@ export function reservationFormData(
       time: new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
         hour: '2-digit',
         minute: '2-digit',
-        hour12: false,
+        hourCycle: 'h23',
         timeZone: 'Asia/Tehran',
       }).format(new Date(f.departureAt)),
     })),

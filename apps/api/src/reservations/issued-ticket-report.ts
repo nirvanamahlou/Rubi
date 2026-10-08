@@ -162,6 +162,7 @@ export function issuedValues(rows: IssuedTicketRow[]) {
           timeZone: 'Asia/Tehran',
           dateStyle: 'short',
           timeStyle: 'short',
+          hourCycle: 'h23',
         }).format(new Date(v));
       if (key === 'direction') return v === 'OUTBOUND' ? 'رفت' : 'برگشت';
       if (key === 'status') return v === 'voided' ? 'ابطال شده' : 'صادرشده';

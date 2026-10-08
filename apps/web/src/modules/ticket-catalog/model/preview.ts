@@ -733,6 +733,7 @@ export function displayTime(value: string, zone = 'Asia/Tehran') {
   return new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hourCycle: 'h23',
     timeZone: zone,
   }).format(new Date(value));
 }

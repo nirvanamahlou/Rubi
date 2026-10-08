@@ -80,6 +80,7 @@ export function formatProfileDate(value: string | null | undefined): string {
   return new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hourCycle: 'h23',
   }).format(date);
 }
 

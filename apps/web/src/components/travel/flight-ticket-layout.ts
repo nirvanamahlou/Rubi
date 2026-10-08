@@ -80,7 +80,7 @@ const fmt = (v: string, options: Intl.DateTimeFormatOptions) => {
 const day = (v: string) =>
   fmt(v, { day: '2-digit', month: 'short', year: 'numeric' });
 const time = (v: string) =>
-  fmt(v, { hour: '2-digit', minute: '2-digit', hour12: false });
+  fmt(v, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const duration = (from: string, to?: string) => {
   const minutes = to
     ? Math.round((Date.parse(to) - Date.parse(from)) / 60000)

@@ -20,6 +20,7 @@ import type { HrStore } from './hr-store';
 import { hrCompanies } from './hr-live-data';
 import { prepareHrCommand } from './hr-commands';
 import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 import { RequiredFieldLabel } from './required-field-label';
 import {
   hrReferenceOptions,
@@ -242,6 +243,7 @@ function HrRecordFormFields({
       ? new Date(value).toLocaleTimeString('en-GB', {
           timeZone: 'Asia/Tehran',
           hour: '2-digit',
+          hourCycle: 'h23',
           minute: '2-digit',
         })
       : '';
@@ -590,8 +592,7 @@ function HrRecordFormFields({
               <RequiredFieldLabel required>
                 ورود اصلاح‌شده (زمان تهران)
               </RequiredFieldLabel>
-              <input
-                type="time"
+              <TimePicker
                 value={correctionStart}
                 onChange={(event) => setCorrectionStart(event.target.value)}
               />
@@ -600,8 +601,7 @@ function HrRecordFormFields({
               <RequiredFieldLabel required>
                 خروج اصلاح‌شده (زمان تهران)
               </RequiredFieldLabel>
-              <input
-                type="time"
+              <TimePicker
                 value={correctionEnd}
                 onChange={(event) => setCorrectionEnd(event.target.value)}
               />
