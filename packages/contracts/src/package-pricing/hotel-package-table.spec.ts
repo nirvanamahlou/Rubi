@@ -242,10 +242,11 @@ describe('hotel package per-person composition table', () => {
         ...input,
         row: {
           ...row,
-          roomRates: row.roomRates.map((r) => ({
-            ...r,
-            occupancyRates: undefined,
-          })),
+          roomRates: row.roomRates.map((r) => {
+            const room = { ...r };
+            delete room.occupancyRates;
+            return room;
+          }),
         },
       }),
     ).toEqual([]);
