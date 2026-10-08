@@ -18,4 +18,6 @@ Add nullable selectedHotelRateIds JSON to Package Pricing draft/publication and 
 
 ## Verification
 
+Local verification: Contracts24, Web43, API33 focused tests, scoped ESLint and formatting, Contracts/API/Web typechecks and API/Web production builds pass (56 Web routes). Schema formatting/generation and generator JS syntax pass. Full exact-head CI, including fresh PostgreSQL migration/seed, remains the merge gate. No authenticated browser or local operational migration/runtime rollout.
+
 Focused tests cover exact prices, varying nights, incomplete/context-ambiguous tariffs, same-room child difference, fixed cancellation, large integers, legacy factors, selection persistence/clear and immutable publication, unchecked hotel exclusion, sale-only transfer, spoofed messages and native exact currency rendering. Scoped lint/typechecks, API/Web production builds and exact-head CI are merge gates. Browser authentication/operational writes are not claimed.

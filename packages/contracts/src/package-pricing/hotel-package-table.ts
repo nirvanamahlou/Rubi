@@ -111,6 +111,11 @@ export function buildHotelPackageTable(input: {
         rate.startsOn < input.checkOut && rate.endsOnExclusive > input.checkIn,
     ),
   );
+  if (
+    row.roomRates.some((room) => room.occupancyRates?.length) &&
+    !occupancy.length
+  )
+    return [];
   const contexts = new Set(
     occupancy.map((rate) => rate.currencyCode + '\0' + rate.board),
   );
@@ -274,19 +279,28 @@ export function buildHotelPackageTable(input: {
       result = {
         hotelPurchase: divide(result.hotelPurchase, currency),
         hotelSale: divide(result.hotelSale, currency),
-        currencyAmounts: result.currencyAmounts.map((part) => ({
-          ...part,
-          sale: divide(part.sale, part.currencyCode),
-          commission: divide(part.commission, part.currencyCode),
-          purchase:
+        currencyAmounts: result.currencyAmounts.map((part) => {
+          const sale = divide(part.sale, part.currencyCode),
+            commission = divide(part.commission, part.currencyCode);
+          const purchase =
             part.purchase === null
               ? null
-              : divide(part.purchase, part.currencyCode),
-          profit:
-            part.profit === null
-              ? null
-              : divide(part.profit, part.currencyCode),
-        })),
+              : divide(part.purchase, part.currencyCode);
+          const p = precision(part.currencyCode);
+          return {
+            ...part,
+            sale,
+            commission,
+            purchase,
+            profit:
+              purchase === null
+                ? null
+                : decimal(
+                    units(sale, p) - units(purchase, p) - units(commission, p),
+                    p,
+                  ),
+          };
+        }),
       };
     if (roomCode === 'doubleChild') {
       const base = candidate.base!;

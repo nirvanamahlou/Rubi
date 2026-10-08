@@ -79,6 +79,56 @@ const input = {
   },
 };
 describe('hotel package per-person composition table', () => {
+  it('chooses the cheapest child-inclusive room before subtracting its matching double tariff', () => {
+    const rates = {
+      ...row,
+      roomRates: [
+        {
+          ...row.roomRates[0]!,
+          occupancyRates: [tariff(2, '200'), tariff(2, '205', true)],
+        },
+        {
+          ...row.roomRates[1]!,
+          occupancyRates: [tariff(2, '100'), tariff(2, '120', true)],
+        },
+      ],
+    };
+    const child = buildHotelPackageTable({ ...input, row: rates }).find(
+      (price) => price.roomCode === 'doubleChild',
+    );
+    expect(child).toMatchObject({
+      roomTypeName: 'Standard',
+      hotelPurchase: '40.00',
+    });
+  });
+  it('balances per-person profit after cent rounding', () => {
+    const rates = {
+      ...row,
+      roomRates: [
+        { ...row.roomRates[0]!, occupancyRates: [tariff(2, '0.01')] },
+      ],
+    };
+    const double = buildHotelPackageTable({
+      ...input,
+      checkOut: '2026-10-02',
+      row: rates,
+      calculation: {
+        ...input.calculation,
+        adjustment: { direction: 'decrease', mode: 'percent', value: '100' },
+        adultFlight: { amount: '0.50', currencyCode: 'EUR' },
+        flightCosts: [],
+        commissionPercent: '0',
+      },
+    }).find((price) => price.roomCode === 'double')!;
+    expect(
+      double.currencyAmounts.find((price) => price.currencyCode === 'EUR'),
+    ).toMatchObject({
+      sale: '0.50',
+      purchase: '0.01',
+      commission: '0.00',
+      profit: '0.49',
+    });
+  });
   it('chooses cheapest complete occupancy rates and divides double by two, keeping currencies separate', () => {
     const prices = buildHotelPackageTable(input);
     expect(
