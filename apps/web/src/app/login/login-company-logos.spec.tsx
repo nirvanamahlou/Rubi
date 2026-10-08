@@ -17,7 +17,7 @@ describe('login company branding', () => {
         );
         expect(html.match(/<img\b/g)).toHaveLength(2);
         expect(html).toContain('niyayesh-seir-full.png');
-        expect(html).toContain('jahan-bastan.png');
+        expect(html).toContain('jahan-bastan-transparent.png');
         expect(html).not.toContain('Travel agency');
       });
     }

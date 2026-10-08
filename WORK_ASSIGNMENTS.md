@@ -6198,3 +6198,5 @@ COMPUTER_ID=PC-A; branch codex/pc-a-login-english-fields-1008 from origin/develo
 LOGIN-ENGLISH-FIELDS-1008 verification:16 targeted regressions pass, English-cookie local login preserves both logo URLs. No editable/submitted data translation. Source locks release at frozen candidate; lint/typecheck/build and PR CI required. No merge authorization inferred for this new fix.
 
 LOGIN-ENGLISH-FIELDS-1008 — READY_FOR_REVIEW: scoped ESLint, Web TypeScript, 16 focused tests and all56-route production build passed. Source locks RELEASED. PR745; no migration or develop merge performed.
+
+LOGIN-ENGLISH-FIELDS-1008 follow-up: re-reserve own login page/logo presentation to remove user-listed credential instruction and fit real logos more prominently inside white cards. No other form/authentication/background or shared localization changes.

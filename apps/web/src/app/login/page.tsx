@@ -42,9 +42,6 @@ export default function LoginPage() {
             سامانه یکپارچه آژانس نورا
           </h1>
           <h2 className="text-2xl font-black">ورود به سامانه</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            نام کاربری اختصاص‌یافته توسط مدیر و رمز عبور خود را وارد کنید.
-          </p>
           <Suspense
             fallback={
               <p className="mt-8 text-sm text-muted-foreground">

@@ -17,13 +17,13 @@ export function CompanyLogos({ compact = false }: { compact?: boolean }) {
         <div
           className={
             compact
-              ? 'relative h-28 overflow-hidden rounded-2xl border bg-white shadow-sm'
-              : 'relative h-44 overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-950/20'
+              ? 'relative aspect-square w-full overflow-hidden rounded-2xl border bg-white shadow-sm'
+              : 'relative aspect-square w-full overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-950/20'
           }
         >
           <Image
             alt="لوگوی شرکت نیایش سیر"
-            className={compact ? 'object-contain p-2' : 'object-contain p-3'}
+            className="scale-110 object-contain"
             fill
             priority={!compact}
             sizes={compact ? '45vw' : '220px'}
@@ -33,17 +33,17 @@ export function CompanyLogos({ compact = false }: { compact?: boolean }) {
         <div
           className={
             compact
-              ? 'relative h-28 overflow-hidden rounded-2xl border bg-white shadow-sm'
-              : 'relative h-44 overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-950/20'
+              ? 'relative aspect-square w-full overflow-hidden rounded-2xl border bg-white shadow-sm'
+              : 'relative aspect-square w-full overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-950/20'
           }
         >
           <Image
             alt="لوگوی شرکت جهان باستان"
-            className={compact ? 'object-contain p-2' : 'object-contain p-3'}
+            className="scale-110 object-contain"
             fill
             priority={!compact}
             sizes={compact ? '45vw' : '220px'}
-            src="/brand/jahan-bastan.png"
+            src="/brand/jahan-bastan-transparent.png"
           />
         </div>
       </div>
