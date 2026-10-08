@@ -156,22 +156,33 @@ describe('purchase date and status filters', () => {
     ];
     expect(
       filterTicketPurchases(rows, {
-        ...purchaseFilters(null),
+        ...purchaseFilters(new URLSearchParams({ status: 'ALL' })),
         direction: 'ASC',
       }).map((r) => r.request.id),
     ).toEqual(['b', 'c', 'a']);
     expect(
       filterTicketPurchases(rows, {
-        ...purchaseFilters(null),
+        ...purchaseFilters(new URLSearchParams({ status: 'ALL' })),
         dateBy: 'PURCHASE',
       }).map((r) => r.request.id),
     ).toEqual(['a', 'c', 'b']);
     expect(rows.map((r) => r.request.id)).toEqual(['a', 'b', 'c']);
     expect(
       filterTicketPurchases(rows, {
-        ...purchaseFilters(null),
+        ...purchaseFilters(new URLSearchParams({ status: 'ALL' })),
         status: 'UNREGISTERED',
       }).map((r) => r.request.id),
     ).toEqual(['b']);
   });
+});
+
+it('defaults to unregistered purchases while preserving explicit bookmarks', () => {
+  expect(purchaseFilters(null).status).toBe('UNREGISTERED');
+  expect(purchaseFilters(new URLSearchParams()).status).toBe('UNREGISTERED');
+  expect(purchaseFilters(new URLSearchParams({ status: 'ALL' })).status).toBe(
+    'ALL',
+  );
+  expect(
+    purchaseFilters(new URLSearchParams({ status: 'REGISTERED' })).status,
+  ).toBe('REGISTERED');
 });

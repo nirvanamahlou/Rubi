@@ -6,6 +6,7 @@ import type { PurchaseCategory, PurchaseFilters } from './model';
 export interface PurchaseServiceRow {
   id: string;
   clientKey: string;
+  coveredServiceClientKeys?: string[];
   status: 'REGISTERED' | 'UNREGISTERED' | 'UNKNOWN';
   entryAt: string;
   departureAt: string | null;
@@ -21,6 +22,13 @@ export interface PurchaseInbox {
     hasMore: boolean;
     canRecord: boolean;
     services?: PurchaseServiceRow[];
+    summary?: {
+      total: number;
+      registered: number;
+      unregistered: number;
+      unknown: number;
+      contracts: number;
+    };
   };
 }
 export async function loadPurchaseInbox(
