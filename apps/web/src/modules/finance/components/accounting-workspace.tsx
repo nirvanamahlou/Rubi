@@ -85,7 +85,6 @@ const statuses: Record<string, string> = {
   CANCELLED: 'لغوشده',
 };
 const internalSections: readonly (readonly [string, string])[] = [
-  ['general-ledger/base-information/approval-policies', 'قواعد تأیید اسناد'],
   ['general-ledger/base-information/fx-rates', 'نرخ‌های ارز مصوب'],
   ['general-ledger/documents/allocation-templates', 'الگوهای تخصیص داخلی'],
   ['general-ledger/documents/list', 'فهرست اسناد'],
@@ -648,19 +647,17 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
   else if (snapshot) {
     const chart = false,
       details = section.endsWith('/details');
-    const kind = section.endsWith('approval-policies')
-      ? 'approval-policies'
-      : section.endsWith('fiscal-years')
-        ? 'fiscal-years'
-        : section.endsWith('voucher-types')
-          ? 'voucher-types'
-          : section.endsWith('detail-types')
-            ? 'detail-types'
-            : section.endsWith('mappings')
-              ? 'account-mappings'
-              : section.endsWith('automatic-templates')
-                ? 'allocation-templates'
-                : null;
+    const kind = section.endsWith('fiscal-years')
+      ? 'fiscal-years'
+      : section.endsWith('voucher-types')
+        ? 'voucher-types'
+        : section.endsWith('detail-types')
+          ? 'detail-types'
+          : section.endsWith('mappings')
+            ? 'account-mappings'
+            : section.endsWith('automatic-templates')
+              ? 'allocation-templates'
+              : null;
     if (kind || chart || details) {
       const listOnly =
         accountingParityByRoute.get(section)?.implementation ===
@@ -684,90 +681,73 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
       const attrFields: Field[] =
         kind === 'fiscal-years'
           ? []
-          : kind === 'approval-policies'
+          : chart
             ? [
-                { key: 'currency', label: 'ارز پایه دفتر' },
-                { key: 'minAmount', label: 'حداقل مبلغ' },
-                { key: 'maxAmount', label: 'حداکثر مبلغ (خالی برای بدون سقف)' },
                 {
-                  key: 'permission',
-                  label: 'مجوز تأیید',
+                  key: 'natureControl',
+                  label: 'کنترل ماهیت',
                   kind: 'select',
                   options: [
-                    {
-                      value: 'finance.journal.approve',
-                      label: 'تأیید سند حسابداری',
-                    },
+                    { value: 'NONE', label: 'بدون کنترل' },
+                    { value: 'WARN', label: 'هشدار' },
+                    { value: 'BLOCK', label: 'منع ثبت' },
                   ],
                 },
-              ]
-            : chart
-              ? [
+                { key: 'traceable', label: 'دارای پیگیری', kind: 'check' },
+                { key: 'multiCurrency', label: 'ارزی', kind: 'check' },
+                { key: 'revaluable', label: 'تسعیرپذیر', kind: 'check' },
+                {
+                  key: 'zeroBalanceAtClose',
+                  label: 'مانده صفر در پایان دوره',
+                  kind: 'check',
+                },
+                ...[4, 5, 6].flatMap((n) => [
                   {
-                    key: 'natureControl',
-                    label: 'کنترل ماهیت',
-                    kind: 'select',
-                    options: [
-                      { value: 'NONE', label: 'بدون کنترل' },
-                      { value: 'WARN', label: 'هشدار' },
-                      { value: 'BLOCK', label: 'منع ثبت' },
-                    ],
+                    key: `detail${n}Required`,
+                    label: `تفصیلی سطح ${n} اجباری`,
+                    kind: 'check' as const,
                   },
-                  { key: 'traceable', label: 'دارای پیگیری', kind: 'check' },
-                  { key: 'multiCurrency', label: 'ارزی', kind: 'check' },
-                  { key: 'revaluable', label: 'تسعیرپذیر', kind: 'check' },
                   {
-                    key: 'zeroBalanceAtClose',
-                    label: 'مانده صفر در پایان دوره',
+                    key: `detail${n}TypeId`,
+                    label: `نوع تفصیلی سطح ${n}`,
+                    kind: 'select' as const,
+                    options: options(
+                      snapshot.configurations.filter(
+                        (c) => c.kind === 'detail-types',
+                      ),
+                    ),
+                  },
+                ]),
+              ]
+            : kind === 'detail-types'
+              ? [
+                  { key: 'defaultFirstCode', label: 'اولین کد پیش‌فرض' },
+                  {
+                    key: 'parentTypeId',
+                    label: 'نوع تفصیلی پدر',
+                    kind: 'select',
+                    options: options(
+                      snapshot.configurations.filter(
+                        (c) => c.kind === 'detail-types',
+                      ),
+                    ),
+                  },
+                  {
+                    key: 'classificationNumberLength',
+                    label: 'طول شماره طبقه‌بندی',
+                  },
+                  {
+                    key: 'enforceParent',
+                    label: 'کنترل والد',
                     kind: 'check',
                   },
-                  ...[4, 5, 6].flatMap((n) => [
-                    {
-                      key: `detail${n}Required`,
-                      label: `تفصیلی سطح ${n} اجباری`,
-                      kind: 'check' as const,
-                    },
-                    {
-                      key: `detail${n}TypeId`,
-                      label: `نوع تفصیلی سطح ${n}`,
-                      kind: 'select' as const,
-                      options: options(
-                        snapshot.configurations.filter(
-                          (c) => c.kind === 'detail-types',
-                        ),
-                      ),
-                    },
-                  ]),
                 ]
-              : kind === 'detail-types'
+              : details
                 ? [
-                    { key: 'defaultFirstCode', label: 'اولین کد پیش‌فرض' },
-                    {
-                      key: 'parentTypeId',
-                      label: 'نوع تفصیلی پدر',
-                      kind: 'select',
-                      options: options(
-                        snapshot.configurations.filter(
-                          (c) => c.kind === 'detail-types',
-                        ),
-                      ),
-                    },
-                    {
-                      key: 'classificationNumberLength',
-                      label: 'طول شماره طبقه‌بندی',
-                    },
-                    {
-                      key: 'enforceParent',
-                      label: 'کنترل والد',
-                      kind: 'check',
-                    },
+                    { key: 'classificationNumber', label: 'شماره طبقه‌بندی' },
+                    { key: 'ownerReference', label: 'مرجع مشتری یا سازمان' },
                   ]
-                : details
-                  ? [
-                      { key: 'classificationNumber', label: 'شماره طبقه‌بندی' },
-                      { key: 'ownerReference', label: 'مرجع مشتری یا سازمان' },
-                    ]
-                  : [];
+                : [];
       const specific: Field[] = chart
         ? [
             {

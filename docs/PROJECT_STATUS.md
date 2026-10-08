@@ -1,3 +1,7 @@
+## 2026-10-08 — ACCOUNTING-REMOVE-APPROVAL-POLICIES-1008 — PC-A
+
+Removed Rubi approval-policy menu, page registration and editing fields from Accounting UI. Former route resolves to the unknown-route view; server independent approval and stored policies preserved. Includes prior active accordion manual-collapse repair. Same3100 preview, browser verification and affected Web checks. No migration/data writes or delegation.
+
 ## 2026-10-08 — ACCOUNTING-VOUCHER-TYPE-FIELD-1008 — PC-A
 
 Removed the visible book selector from the voucher-type definition form; underlying selected-book resolution remains unchanged. Local3100 UI verification; no backend/schema/data changes. Direct execution without delegation.

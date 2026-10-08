@@ -7,7 +7,7 @@ import {
   BookOpenText,
   Calculator,
   ChevronDown,
-  ChevronLeft,
+  ChevronUp,
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
@@ -77,11 +77,6 @@ const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
         title: 'اطلاعات پایه',
         items: [
           ...parityItems('general-ledger/base-information/', FolderCog),
-          {
-            title: 'قواعد تأیید اسناد روبی',
-            href: '/finance/accounting/general-ledger/base-information/approval-policies',
-            icon: FolderCog,
-          },
           {
             title: 'نرخ‌های ارز مصوب',
             href: '/finance/accounting/general-ledger/base-information/fx-rates',
@@ -312,14 +307,7 @@ function AccountingSecondaryNavigation({
           )
           .map((group) => {
             const GroupIcon = group.icon;
-            const groupActive = group.sections.some((section) =>
-              section.items.some(
-                (item) =>
-                  pathname === item.href ||
-                  pathname.startsWith(item.href + '/'),
-              ),
-            );
-            const groupClosed = closedGroups.includes(group.id) && !groupActive;
+            const groupClosed = closedGroups.includes(group.id);
             return (
               <section className="min-w-0" key={group.id}>
                 <button
@@ -337,9 +325,9 @@ function AccountingSecondaryNavigation({
                     <>
                       <span className="min-w-0 flex-1">{group.title}</span>
                       {groupClosed ? (
-                        <ChevronLeft className="size-4 shrink-0" />
-                      ) : (
                         <ChevronDown className="size-4 shrink-0" />
+                      ) : (
+                        <ChevronUp className="size-4 shrink-0" />
                       )}
                     </>
                   ) : null}
@@ -348,22 +336,14 @@ function AccountingSecondaryNavigation({
                   <div className="mt-1 space-y-3 border-s border-border ps-2">
                     {group.sections.map((section) => {
                       const sectionId = `${group.id}:${section.title}`;
-                      const activeItem = section.items.find(
-                        (item) =>
-                          pathname === item.href ||
-                          pathname.startsWith(item.href + '/'),
-                      );
-                      const sectionClosed =
-                        closedSections.includes(sectionId) && !activeItem;
+                      const sectionClosed = closedSections.includes(sectionId);
                       const directItems = section.items.filter(
                         (item) => !item.href.includes('/lists/'),
                       );
                       const listItems = section.items.filter((item) =>
                         item.href.includes('/lists/'),
                       );
-                      const listClosed =
-                        closedLists.includes(sectionId) &&
-                        !activeItem?.href.includes('/lists/');
+                      const listClosed = closedLists.includes(sectionId);
                       const renderItem = (item: AccountingNavigationItem) => {
                         const ItemIcon = item.icon;
                         const active =
@@ -402,9 +382,9 @@ function AccountingSecondaryNavigation({
                               {section.title}
                             </span>
                             {sectionClosed ? (
-                              <ChevronLeft className="size-3.5" />
-                            ) : (
                               <ChevronDown className="size-3.5" />
+                            ) : (
+                              <ChevronUp className="size-3.5" />
                             )}
                           </button>
                           {!sectionClosed ? (
@@ -423,9 +403,9 @@ function AccountingSecondaryNavigation({
                                       فهرست‌ها
                                     </span>
                                     {listClosed ? (
-                                      <ChevronLeft className="size-3.5" />
-                                    ) : (
                                       <ChevronDown className="size-3.5" />
+                                    ) : (
+                                      <ChevronUp className="size-3.5" />
                                     )}
                                   </button>
                                   {!listClosed ? (

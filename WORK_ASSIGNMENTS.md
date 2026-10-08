@@ -1,3 +1,7 @@
+## ACCOUNTING-REMOVE-APPROVAL-POLICIES-1008 — PC-A — READY_FOR_REVIEW
+
+Direct user request: remove Rubi approval-policy management UI entirely. Reserve Accounting navigation/workspace and own docs; reuse same task branch. Removed menu item, internal section registration and editable form/attribute branch, so the former URL no longer opens a policy editor. Preserve all backend independent approval, scoped permissions, audit and existing policy data; no backend or DB writes. Includes already-owned, previously browser-verified active accordion collapse fix from toolbar work. Local3100 navigation verified. No orchestration/delegation.
+
 ## ACCOUNTING-VOUCHER-TYPE-FIELD-1008 — PC-A — READY_FOR_REVIEW
 
 Direct user request: remove the book selector only on general-ledger/base-information/voucher-types. Existing task branch and accounting-workspace.tsx reservation reused. Selected book resolution and server scope preserved; other routes unchanged. Local3100 browser verification and scoped lint/typecheck; no backend, migration, data writes or delegation. Separate toolbar task remains unfinished.
