@@ -930,9 +930,9 @@ export function TourPricingWorkspace() {
         <Card className="grid gap-4 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-black">قیمت‌های منتشرشدهٔ همین بازه</h2>
-            {bannerHref &&
-            session?.user.permissions.includes('package_pricing.read') &&
-            session.user.permissions.includes('package_pricing.render') ? (
+            {publication?.selectedHotelRateIds ? null : bannerHref &&
+              session?.user.permissions.includes('package_pricing.read') &&
+              session.user.permissions.includes('package_pricing.render') ? (
               <Link
                 className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
                 href={bannerHref}
@@ -1022,10 +1022,12 @@ export function TourPricingWorkspace() {
                                         : `${price.packageSale ?? price.hotelSale} ${price.currencyCode}`}
                                     </strong>
                                     <span className="block text-xs text-muted-foreground">
-                                      {price.currencyAmounts ||
-                                      price.packageSale
-                                        ? 'پکیج کامل'
-                                        : 'فقط اقامت؛ ترکیب خانواده نامعلوم'}
+                                      {publication.selectedHotelRateIds
+                                        ? `${price.roomTypeName ?? ''} · ${price.board ?? ''}`
+                                        : price.currencyAmounts ||
+                                            price.packageSale
+                                          ? 'پکیج کامل'
+                                          : 'فقط اقامت؛ ترکیب خانواده نامعلوم'}
                                     </span>
                                     {price.currencyAmounts ||
                                     price.netProfit ? (
