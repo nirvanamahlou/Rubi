@@ -75,14 +75,7 @@ const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
     sections: [
       {
         title: 'اطلاعات پایه',
-        items: [
-          ...parityItems('general-ledger/base-information/', FolderCog),
-          {
-            title: 'نرخ‌های ارز مصوب',
-            href: '/finance/accounting/general-ledger/base-information/fx-rates',
-            icon: Calculator,
-          },
-        ],
+        items: [...parityItems('general-ledger/base-information/', FolderCog)],
       },
       {
         title: 'حساب‌ها',

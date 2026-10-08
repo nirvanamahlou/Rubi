@@ -85,7 +85,6 @@ const statuses: Record<string, string> = {
   CANCELLED: 'لغوشده',
 };
 const internalSections: readonly (readonly [string, string])[] = [
-  ['general-ledger/base-information/fx-rates', 'نرخ‌های ارز مصوب'],
   ['general-ledger/documents/allocation-templates', 'الگوهای تخصیص داخلی'],
   ['general-ledger/documents/list', 'فهرست اسناد'],
   ['general-ledger/documents/transfer-batches', 'بسته انتقال حسابداری'],
@@ -341,85 +340,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         }}
       />
     );
-  else if (snapshot && section === 'general-ledger/base-information/fx-rates') {
-    content = (
-      <Panel title="نرخ‌های ارز مصوب">
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const from = new Date(String(draft.validFrom)),
-              to = new Date(String(draft.validTo));
-            if (
-              !Number.isFinite(from.getTime()) ||
-              !Number.isFinite(to.getTime())
-            ) {
-              setError('بازه اعتبار نرخ را انتخاب کنید.');
-              return;
-            }
-            void run('save-fx', {
-              ...draft,
-              validFrom: from.toISOString(),
-              validTo: to.toISOString(),
-            });
-          }}
-        >
-          <Fields
-            fields={[
-              { key: 'currency', label: 'کد ارز معامله' },
-              { key: 'rate', label: 'نرخ تبدیل به ارز پایه' },
-              { key: 'source', label: 'منبع نرخ' },
-              { key: 'validFrom', label: 'شروع اعتبار', kind: 'datetime' },
-              { key: 'validTo', label: 'پایان اعتبار', kind: 'datetime' },
-            ]}
-            draft={draft}
-            set={set}
-          />
-          <Button
-            type="submit"
-            disabled={busy}
-            permission="finance.account.manage"
-          >
-            ثبت نرخ برای تأیید
-          </Button>
-        </form>
-        <Table
-          headers={['ارز', 'نرخ', 'منبع', 'شروع', 'پایان', 'وضعیت', 'عملیات']}
-        >
-          {snapshot.fxRates.map((r) => (
-            <tr key={r.id}>
-              {[
-                r.currency,
-                r.rate,
-                r.source,
-                r.validFrom,
-                r.validTo,
-                r.status === 'APPROVED' ? 'مصوب' : 'پیش‌نویس',
-              ].map((value, i) => (
-                <td className={cell} key={i}>
-                  {value}
-                </td>
-              ))}
-              <td className={cell}>
-                {r.status === 'DRAFT' ? (
-                  <Button
-                    permission="finance.journal.approve"
-                    size="sm"
-                    disabled={busy}
-                    onClick={() =>
-                      void run('approve-fx', { id: r.id }, r.version)
-                    }
-                  >
-                    تأیید نرخ
-                  </Button>
-                ) : null}
-              </td>
-            </tr>
-          ))}
-        </Table>
-      </Panel>
-    );
-  } else if (snapshot && section === 'receipts-payments/reports')
+  else if (snapshot && section === 'receipts-payments/reports')
     content = (
       <AccountingSourceWorkspace book={snapshot} run={run} busy={busy} />
     );

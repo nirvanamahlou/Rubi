@@ -1,3 +1,7 @@
+## ACCOUNTING-REMOVE-FX-RATES-1008 — PC-A — READY_FOR_REVIEW
+
+Direct user request: remove approved-FX-rate management UI entirely, following approval-policy removal. Accounting navigation/workspace and own docs reserved on existing branch. Removed menu item, internal page registration, rate form/table and approval action controls. Old URL no longer opens an FX editor. Retain historical snapshots and server currency/approval safeguards used by journals; no backend/schema/data writes. Same3100 preview, scoped Web verification; no orchestration or delegation.
+
 ## ACCOUNTING-REMOVE-APPROVAL-POLICIES-1008 — PC-A — READY_FOR_REVIEW
 
 Direct user request: remove Rubi approval-policy management UI entirely. Reserve Accounting navigation/workspace and own docs; reuse same task branch. Removed menu item, internal section registration and editable form/attribute branch, so the former URL no longer opens a policy editor. Preserve all backend independent approval, scoped permissions, audit and existing policy data; no backend or DB writes. Includes already-owned, previously browser-verified active accordion collapse fix from toolbar work. Local3100 navigation verified. No orchestration/delegation.

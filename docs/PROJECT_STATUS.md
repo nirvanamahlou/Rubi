@@ -1,3 +1,7 @@
+## 2026-10-08 — ACCOUNTING-REMOVE-FX-RATES-1008 — PC-A
+
+Removed approved FX-rate management menu/page/form/table from Accounting UI; prior URL no longer opens the editor. Historical FX snapshots and journal currency/approval checks remain intact. Same3100 preview; no backend, migration or data writes. Direct execution without delegation.
+
 ## 2026-10-08 — ACCOUNTING-REMOVE-APPROVAL-POLICIES-1008 — PC-A
 
 Removed Rubi approval-policy menu, page registration and editing fields from Accounting UI. Former route resolves to the unknown-route view; server independent approval and stored policies preserved. Includes prior active accordion manual-collapse repair. Same3100 preview, browser verification and affected Web checks. No migration/data writes or delegation.
