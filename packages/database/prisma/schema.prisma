@@ -5256,6 +5256,7 @@ model ReservationHotelRoomRate {
 }
 
 model PackagePricingTourDraft {
+  selectedHotelRateIds        Json?
   priceFields                 Json?
   familyAdults                Int?
   familyChildren              Int?
@@ -5308,6 +5309,7 @@ model PackagePricingTourAdjustment {
  * Immutable publication. Hotel alternatives are separate, never summed together.
  */
 model PackagePricingTourPublishedVersion {
+  selectedHotelRateIds        Json?
   priceFields                 Json?
   familyAdults                Int?
   familyChildren              Int?
@@ -5343,20 +5345,24 @@ model PackagePricingTourPublishedVersion {
 }
 
 model PackagePricingTourPublishedRoomPrice {
-  currencyAmounts  Json?
-  id               String                             @id @default(uuid()) @db.Uuid
-  publicationId    String                             @db.Uuid
-  hotelRateId      String                             @db.Uuid
-  roomCode         String                             @db.VarChar(32)
-  hotelPurchase    Decimal                            @db.Decimal(24, 4)
-  hotelSale        Decimal                            @db.Decimal(24, 4)
-  packagePurchase  Decimal?                           @db.Decimal(24, 4)
-  packageSale      Decimal?                           @db.Decimal(24, 4)
-  commissionAmount Decimal?                           @db.Decimal(24, 4)
-  netProfit        Decimal?                           @db.Decimal(24, 4)
-  currencyCode     String                             @db.VarChar(3)
-  publication      PackagePricingTourPublishedVersion @relation(fields: [publicationId], references: [id], onDelete: Restrict)
-  hotelRate        ReservationHotelGroupRate          @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
+  roomTypeName         String?                            @db.VarChar(160)
+  board                String?                            @db.VarChar(120)
+  childAgeMin          Int?
+  childAgeMaxExclusive Int?
+  currencyAmounts      Json?
+  id                   String                             @id @default(uuid()) @db.Uuid
+  publicationId        String                             @db.Uuid
+  hotelRateId          String                             @db.Uuid
+  roomCode             String                             @db.VarChar(32)
+  hotelPurchase        Decimal                            @db.Decimal(24, 4)
+  hotelSale            Decimal                            @db.Decimal(24, 4)
+  packagePurchase      Decimal?                           @db.Decimal(24, 4)
+  packageSale          Decimal?                           @db.Decimal(24, 4)
+  commissionAmount     Decimal?                           @db.Decimal(24, 4)
+  netProfit            Decimal?                           @db.Decimal(24, 4)
+  currencyCode         String                             @db.VarChar(3)
+  publication          PackagePricingTourPublishedVersion @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  hotelRate            ReservationHotelGroupRate          @relation(fields: [hotelRateId], references: [id], onDelete: Restrict)
 
   @@unique([publicationId, hotelRateId, roomCode])
 }

@@ -19,6 +19,7 @@ import type {
 import { Prisma } from '@nora/database';
 import {
   calculateTourRoom,
+  buildHotelPackageTable,
   validateTourPriceFields,
   tourPriceFields,
   tourPriceFieldValues,
@@ -117,6 +118,20 @@ export class PackageTourPricingService {
     );
     if (!batch || input.currencyCode !== batch.currencyCode)
       throw new BadRequestException('بازه خرید و ارز همان نوبت تور لازم است.');
+    if (
+      input.selectedHotelRateIds !== undefined &&
+      (!Array.isArray(input.selectedHotelRateIds) ||
+        input.selectedHotelRateIds.length > 500 ||
+        new Set(input.selectedHotelRateIds).size !==
+          input.selectedHotelRateIds.length ||
+        input.selectedHotelRateIds.some(
+          (id) =>
+            typeof id !== 'string' || !batch.rows.some((row) => row.id === id),
+        ))
+    )
+      throw new BadRequestException(
+        'هتل‌های منتخب باید متعلق به همین بازه باشند.',
+      );
     const adult = amount(
       input.adultFlightSale,
       adultCurrency === 'IRR' ? 0 : 2,
@@ -218,6 +233,14 @@ export class PackageTourPricingService {
               ...tourPriceFieldValues(storedFields),
               priceFields: storedFields as unknown as Prisma.InputJsonValue,
             };
+      const selectedData =
+        input.selectedHotelRateIds === undefined
+          ? {}
+          : {
+              selectedHotelRateIds: [
+                ...input.selectedHotelRateIds,
+              ] as Prisma.InputJsonValue,
+            };
       const now = new Date();
       const draft = existing
         ? await tx.packagePricingTourDraft.update({
@@ -238,6 +261,7 @@ export class PackageTourPricingService {
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
               ...fieldsData,
+              ...selectedData,
               updatedByUserId: actor.userId,
               updatedAt: now,
             },
@@ -262,6 +286,7 @@ export class PackageTourPricingService {
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
               ...fieldsData,
+              ...selectedData,
               createdByUserId: actor.userId,
               updatedByUserId: actor.userId,
               updatedAt: now,
@@ -363,99 +388,199 @@ export class PackageTourPricingService {
     const byRow = new Map(
       draft.adjustments.map((item) => [item.hotelRateId, item]),
     );
-    const prices = batch.rows.flatMap((row) => {
-      const sellableRooms =
-        !Object.values(row.factors).some(Boolean) && row.roomRates.length
-          ? row.roomRates.map((room) => ({
-              roomCode: room.roomTypeId,
-              factor: room.factor,
-              passengers: {
-                adults: room.maxAdults,
-                children: room.maxChildren,
-              },
-            }))
-          : roomCodes
-              .filter((roomCode) => Boolean(row.factors[roomCode]))
-              .map((roomCode) => ({
-                roomCode,
-                factor: row.factors[roomCode]!,
-                passengers: tourRoomOccupancy(
+    const legacyPrices = () =>
+      batch.rows.flatMap((row) => {
+        const sellableRooms =
+          !Object.values(row.factors).some(Boolean) && row.roomRates.length
+            ? row.roomRates.map((room) => ({
+                roomCode: room.roomTypeId,
+                factor: room.factor,
+                passengers: {
+                  adults: room.maxAdults,
+                  children: room.maxChildren,
+                },
+              }))
+            : roomCodes
+                .filter((roomCode) => Boolean(row.factors[roomCode]))
+                .map((roomCode) => ({
                   roomCode,
-                  draft.familyAdults ?? undefined,
-                  draft.familyChildren ?? undefined,
-                ),
-              }));
-      return sellableRooms.map(({ roomCode, factor, passengers }) => {
-        if (!passengers)
-          throw new UnprocessableEntityException(
-            'تعداد بزرگسال و کودک اتاق خانوادگی را مشخص کنید.',
-          );
-        const adjustment = byRow.get(row.id);
-        try {
-          const calculated = calculateTourRoom({
-            extraSaleFields: Array.isArray(draft.priceFields)
-              ? validateTourPriceFields(draft.priceFields).filter(
-                  (field) => field.kind === 'custom',
-                )
-              : [],
-            basePerNight: row.basePerNight,
-            factor,
-            nights,
-            hotelCurrency: row.currencyCode ?? batch.currencyCode,
-            adjustment: {
-              direction:
-                (adjustment?.direction as 'increase' | 'decrease') ??
-                'increase',
-              mode: (adjustment?.mode as 'percent' | 'fixed') ?? 'percent',
-              value: adjustment?.value.toString() ?? '0',
-            },
-            ...passengers,
-            adultFlight: {
-              amount: draft.adultFlightSale.toString(),
-              currencyCode: draft.adultFlightSaleCurrencyCode,
-            },
-            childFlight: {
-              amount: draft.childFlightSale.toString(),
-              currencyCode: draft.childFlightSaleCurrencyCode,
-            },
-            businessUplift: {
-              amount: draft.businessUplift.toString(),
-              currencyCode: draft.businessUpliftCurrencyCode,
-            },
-            businessCabin,
-            commissionPercent: draft.commissionPercent.toString(),
-            commissionMode: (draft.commissionMode ?? 'percent') as
-              'percent' | 'fixed',
-            commissionAmount: {
-              amount: draft.commissionAmount?.toString() ?? '0',
-              currencyCode: draft.commissionCurrencyCode ?? draft.currencyCode,
-            },
-            flightCosts: [outbound, ...(returning ? [returning] : [])],
-          });
-          const single =
-            calculated.currencyAmounts.length === 1
-              ? calculated.currencyAmounts[0]
-              : undefined;
-          return {
-            hotelRateId: row.id,
-            roomCode,
-            hotelPurchase: new Prisma.Decimal(calculated.hotelPurchase),
-            hotelSale: new Prisma.Decimal(calculated.hotelSale),
-            packagePurchase: single?.purchase ?? null,
-            packageSale: single?.sale ?? null,
-            commissionAmount: single?.commission ?? null,
-            netProfit: single?.profit ?? null,
-            currencyCode: row.currencyCode ?? batch.currencyCode,
-            currencyAmounts:
-              calculated.currencyAmounts as unknown as Prisma.InputJsonValue,
-          };
-        } catch (error) {
-          throw new BadRequestException(
-            error instanceof Error ? error.message : 'محاسبه قیمت معتبر نیست.',
-          );
-        }
+                  factor: row.factors[roomCode]!,
+                  passengers: tourRoomOccupancy(
+                    roomCode,
+                    draft.familyAdults ?? undefined,
+                    draft.familyChildren ?? undefined,
+                  ),
+                }));
+        return sellableRooms.map(({ roomCode, factor, passengers }) => {
+          if (!passengers)
+            throw new UnprocessableEntityException(
+              'تعداد بزرگسال و کودک اتاق خانوادگی را مشخص کنید.',
+            );
+          const adjustment = byRow.get(row.id);
+          try {
+            const calculated = calculateTourRoom({
+              extraSaleFields: Array.isArray(draft.priceFields)
+                ? validateTourPriceFields(draft.priceFields).filter(
+                    (field) => field.kind === 'custom',
+                  )
+                : [],
+              basePerNight: row.basePerNight,
+              factor,
+              nights,
+              hotelCurrency: row.currencyCode ?? batch.currencyCode,
+              adjustment: {
+                direction:
+                  (adjustment?.direction as 'increase' | 'decrease') ??
+                  'increase',
+                mode: (adjustment?.mode as 'percent' | 'fixed') ?? 'percent',
+                value: adjustment?.value.toString() ?? '0',
+              },
+              ...passengers,
+              adultFlight: {
+                amount: draft.adultFlightSale.toString(),
+                currencyCode: draft.adultFlightSaleCurrencyCode,
+              },
+              childFlight: {
+                amount: draft.childFlightSale.toString(),
+                currencyCode: draft.childFlightSaleCurrencyCode,
+              },
+              businessUplift: {
+                amount: draft.businessUplift.toString(),
+                currencyCode: draft.businessUpliftCurrencyCode,
+              },
+              businessCabin,
+              commissionPercent: draft.commissionPercent.toString(),
+              commissionMode: (draft.commissionMode ?? 'percent') as
+                'percent' | 'fixed',
+              commissionAmount: {
+                amount: draft.commissionAmount?.toString() ?? '0',
+                currencyCode:
+                  draft.commissionCurrencyCode ?? draft.currencyCode,
+              },
+              flightCosts: [outbound, ...(returning ? [returning] : [])],
+            });
+            const single =
+              calculated.currencyAmounts.length === 1
+                ? calculated.currencyAmounts[0]
+                : undefined;
+            return {
+              hotelRateId: row.id,
+              roomCode,
+              hotelPurchase: new Prisma.Decimal(calculated.hotelPurchase),
+              hotelSale: new Prisma.Decimal(calculated.hotelSale),
+              packagePurchase: single?.purchase ?? null,
+              packageSale: single?.sale ?? null,
+              commissionAmount: single?.commission ?? null,
+              netProfit: single?.profit ?? null,
+              currencyCode: row.currencyCode ?? batch.currencyCode,
+              currencyAmounts:
+                calculated.currencyAmounts as unknown as Prisma.InputJsonValue,
+            };
+          } catch (error) {
+            throw new BadRequestException(
+              error instanceof Error
+                ? error.message
+                : 'محاسبه قیمت معتبر نیست.',
+            );
+          }
+        });
       });
-    });
+    const prices = Array.isArray(draft.selectedHotelRateIds)
+      ? (() => {
+          const ids = draft.selectedHotelRateIds;
+          if (
+            !ids.length ||
+            ids.some((id) => typeof id !== 'string' || !rateIds.has(id)) ||
+            new Set(ids).size !== ids.length
+          )
+            throw new UnprocessableEntityException(
+              'هتل‌های منتخب این بازه معتبر نیستند.',
+            );
+          return batch.rows
+            .filter((row) => ids.includes(row.id))
+            .flatMap((row) => {
+              const adjustment = byRow.get(row.id);
+              const calculated = (() => {
+                try {
+                  return buildHotelPackageTable({
+                    row,
+                    checkIn: grid.tour.startsOn,
+                    checkOut: grid.tour.endsOn,
+                    currencyCode: batch.currencyCode,
+                    calculation: {
+                      adjustment: {
+                        direction:
+                          (adjustment?.direction as 'increase' | 'decrease') ??
+                          'increase',
+                        mode:
+                          (adjustment?.mode as 'fixed' | 'percent') ??
+                          'percent',
+                        value: adjustment?.value.toString() ?? '0',
+                      },
+                      adultFlight: {
+                        amount: draft.adultFlightSale.toString(),
+                        currencyCode: draft.adultFlightSaleCurrencyCode,
+                      },
+                      childFlight: {
+                        amount: draft.childFlightSale.toString(),
+                        currencyCode: draft.childFlightSaleCurrencyCode,
+                      },
+                      businessUplift: {
+                        amount: draft.businessUplift.toString(),
+                        currencyCode: draft.businessUpliftCurrencyCode,
+                      },
+                      businessCabin,
+                      commissionPercent: draft.commissionPercent.toString(),
+                      commissionMode: (draft.commissionMode ?? 'percent') as
+                        'percent' | 'fixed',
+                      commissionAmount: {
+                        amount: draft.commissionAmount?.toString() ?? '0',
+                        currencyCode:
+                          draft.commissionCurrencyCode ?? draft.currencyCode,
+                      },
+                      extraSaleFields: Array.isArray(draft.priceFields)
+                        ? validateTourPriceFields(draft.priceFields).filter(
+                            (field) => field.kind === 'custom',
+                          )
+                        : [],
+                      flightCosts: [
+                        outbound,
+                        ...(returning ? [returning] : []),
+                      ],
+                    },
+                  });
+                } catch (error) {
+                  throw new BadRequestException(
+                    error instanceof Error
+                      ? error.message
+                      : 'محاسبه قیمت معتبر نیست.',
+                  );
+                }
+              })();
+              if (calculated.length !== 3)
+                throw new UnprocessableEntityException(
+                  'تعرفه سینگل، دبل و کودک با تخت برای تمام شب‌ها لازم است.',
+                );
+              return calculated.map((item) => {
+                const single =
+                  item.currencyAmounts.length === 1
+                    ? item.currencyAmounts[0]
+                    : undefined;
+                return {
+                  ...item,
+                  hotelPurchase: new Prisma.Decimal(item.hotelPurchase),
+                  hotelSale: new Prisma.Decimal(item.hotelSale),
+                  packagePurchase: single?.purchase ?? null,
+                  packageSale: single?.sale ?? null,
+                  commissionAmount: single?.commission ?? null,
+                  netProfit: single?.profit ?? null,
+                  currencyAmounts:
+                    item.currencyAmounts as unknown as Prisma.InputJsonValue,
+                };
+              });
+            });
+        })()
+      : legacyPrices();
     const fingerprint = sourceHash({
       tour: grid.tour,
       batch,
@@ -463,6 +588,7 @@ export class PackageTourPricingService {
       draftVersion: draft.version,
       adjustments: draft.adjustments,
       priceFields: draft.priceFields,
+      selectedHotelRateIds: draft.selectedHotelRateIds,
       prices: prices.map((item) => ({
         ...item,
         hotelPurchase: item.hotelPurchase.toString(),
@@ -487,6 +613,12 @@ export class PackageTourPricingService {
         data: {
           id: randomUUID(),
           draftId,
+          ...(Array.isArray(draft.selectedHotelRateIds)
+            ? {
+                selectedHotelRateIds:
+                  draft.selectedHotelRateIds as Prisma.InputJsonValue,
+              }
+            : {}),
           ...(draft.priceFields != null
             ? { priceFields: draft.priceFields as Prisma.InputJsonValue }
             : {}),
@@ -565,6 +697,9 @@ export class PackageTourPricingService {
       ...(Array.isArray(row.priceFields)
         ? { priceFields: validateTourPriceFields(row.priceFields) }
         : {}),
+      ...(Array.isArray(row.selectedHotelRateIds)
+        ? { selectedHotelRateIds: row.selectedHotelRateIds as string[] }
+        : {}),
       currencyCode: row.currencyCode,
       adultFlightSale: row.adultFlightSale.toString(),
       adultFlightSaleCurrencyCode: row.adultFlightSaleCurrencyCode,
@@ -607,6 +742,9 @@ export class PackageTourPricingService {
       ...(Array.isArray(row.priceFields)
         ? { priceFields: validateTourPriceFields(row.priceFields) }
         : {}),
+      ...(Array.isArray(row.selectedHotelRateIds)
+        ? { selectedHotelRateIds: row.selectedHotelRateIds as string[] }
+        : {}),
       currencyCode: row.currencyCode,
       adultFlightSale: row.adultFlightSale.toString(),
       adultFlightSaleCurrencyCode: row.adultFlightSaleCurrencyCode,
@@ -627,6 +765,15 @@ export class PackageTourPricingService {
       roomPrices: row.roomPrices.map((item) => ({
         hotelRateId: item.hotelRateId,
         roomCode: item.roomCode,
+        ...(item.roomTypeName
+          ? { roomTypeName: item.roomTypeName, board: item.board ?? '' }
+          : {}),
+        ...(item.childAgeMin == null || item.childAgeMaxExclusive == null
+          ? {}
+          : {
+              childAgeMin: item.childAgeMin,
+              childAgeMaxExclusive: item.childAgeMaxExclusive,
+            }),
         hotelPurchase: item.hotelPurchase.toString(),
         hotelSale: item.hotelSale.toString(),
         packagePurchase: item.packagePurchase?.toString() ?? null,
