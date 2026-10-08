@@ -5056,3 +5056,19 @@ Verification:9 targeted tests, affected ESLint/formatting and Web typecheck pass
 ## 2026-10-08 — PC-A — Purchase dashboard and combined transfers
 
 Purchase hub defaults to unregistered while preserving explicit bookmarks. Dashboard totals use authorized category/search/date scope across all statuses/pages. Transfer work items group before pagination: fresh/shared round-trip purchases appear once, split latest revisions stay independent. Separate-broker purchase mode preserves supplier/currency drafts and canonical covered-key atomic batch semantics.32 Web and34 API focused tests plus8 temporary PostgreSQL query tests pass. No schema/dependency/permission/operational data/runtime changes. Exact-head full CI gates user-authorized develop merge; handoff in docs/tasks/PURCHASE-DASHBOARD-TRANSFERS-1008.md.
+
+## 2026-10-08 — PC-A — Hotel table-first redesign
+
+Manual entry now starts with stacked country/city/searchable hotel selection, one
+hotel-wide composition coefficient table and separate room-base purchase/sale
+tables. Inline sale edits, clicked-row selection and contextual purchase-baseline
+group adjustments replace the crowded layout. New Package visibly opens and resets
+the editor including local panel state. Saved packages are collapsed at the bottom;
+Excel import remains a separate mode.636 Sales/Reservations tests pass with3 existing
+skips; scoped lint/typecheck and production build pass. Owner-authorized one-time
+cleanup removed old rates and the explicitly approved single dependent pricing draft
+in both preview3210 and main3100 after verified backups.251 other tables and9
+contracts per environment retained exact fingerprints. No schema/dependency/API
+change or automatic wipe. Only preview3210 UI rolls out locally; main runtimes and
+unrelated local edits are preserved. Exact-head CI gates the authorized develop
+merge. See [delivery and cleanup](tasks/HOTEL-TABLE-REDESIGN-1008.md).

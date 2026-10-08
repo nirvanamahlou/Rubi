@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useEffectEvent, useState } from 'react';
+import { calculateManualHotelPrices } from '@nora/contracts';
 import type {
   HotelOccupancyRateV1,
   HotelSaleAdjustmentV1,
@@ -12,6 +13,7 @@ import {
   combinationsFromRates,
   type Combination,
 } from './manual-coefficients';
+import styles from './manual-tables.module.css';
 
 export type ManualRoom = {
   roomTypeId: string;
@@ -53,7 +55,7 @@ export function ManualHotelPanel({
   hideSelector?: boolean;
 }) {
   return (
-    <section className="grid gap-4" aria-label="پنل دستی هتل">
+    <div className={styles.panels} aria-label="پنل دستی هتل">
       {!hideSelector && (
         <ManualHotelSelector
           rows={rows}
@@ -77,24 +79,27 @@ export function ManualHotelPanel({
             />
           </div>
         ))}
-    </section>
+    </div>
   );
 }
 export function ManualHotelSelector({
   rows,
   hotelId,
   onChoose,
+  disabled = false,
 }: {
   rows: readonly ManualHotelRow[];
   hotelId: string;
   onChoose: (id: string) => void;
+  disabled?: boolean;
 }) {
   const row = rows.find((r) => r.hotel.id === hotelId);
   return (
-    <div className="grid gap-3">
-      <label className="grid max-w-xl gap-2">
+    <div className={styles.hotelSelector}>
+      <label className={styles.field}>
         هتل
         <SearchCombobox
+          disabled={disabled}
           label="انتخاب هتل شهر"
           placeholder="جست‌وجوی هتل در شهر انتخاب‌شده"
           value={hotelId}
@@ -110,7 +115,7 @@ export function ManualHotelSelector({
         />
       </label>
       {rows.filter((r) => r.selected).length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className={styles.hotelTabs}>
           {rows
             .filter((r) => r.selected)
             .map((r) => (
@@ -118,6 +123,7 @@ export function ManualHotelSelector({
                 type="button"
                 key={r.hotel.id}
                 aria-pressed={r.hotel.id === hotelId}
+                disabled={disabled}
                 onClick={() => onChoose(r.hotel.id)}
               >
                 {r.hotel.name}
@@ -154,9 +160,6 @@ export function HotelCoefficients({
         maxInfants: '0',
       },
   );
-  const manual = row.roomRates
-    .flatMap((r) => r.occupancyRates ?? [])
-    .filter((r) => r.manualPricing);
   const first = row.roomRates.find((r) =>
     r.occupancyRates?.some((p) => p.manualPricing),
   );
@@ -193,6 +196,7 @@ export function HotelCoefficients({
   const [direction, setDirection] = useState('increase');
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
+  const [saleDrafts, setSaleDrafts] = useState<Record<string, string>>({});
   const imported = row.roomRates.some((r) =>
     r.occupancyRates?.some((p) => !p.manualPricing),
   );
@@ -200,6 +204,7 @@ export function HotelCoefficients({
     nextCombinations = combinations,
     nextBases = bases,
     nextAdjustments = adjustments,
+    nextSaleDrafts = saleDrafts,
   ) {
     const rooms: ManualRoom[] = [];
     let valid = true;
@@ -229,7 +234,24 @@ export function HotelCoefficients({
         occupancyRates: rates,
       });
     }
-    onValidityChange(valid && rooms.length > 0);
+    const invalidSale = Object.entries(nextSaleDrafts).some(([key, value]) =>
+      allRooms.some(
+        (room) =>
+          nextBases[room.roomTypeId] &&
+          nextCombinations.some(
+            (c) =>
+              c.coefficient &&
+              `${room.roomTypeId}:${c.id}` === key &&
+              !calculateManualHotelPrices(
+                nextBases[room.roomTypeId]!,
+                c.coefficient,
+                row.currency,
+                { kind: 'SET', value },
+              ),
+          ),
+      ),
+    );
+    onValidityChange(valid && rooms.length > 0 && !invalidSale);
     // Incomplete form remains invalid, never silently persists older prices.
     onChange({ selected: true, base: '1', roomRates: rooms });
   }
@@ -265,6 +287,59 @@ export function HotelCoefficients({
       id: String(i + min),
       name: String(i + min),
     }));
+  const combinationName = (combination: Combination) =>
+    combination.label ||
+    `${combination.adults} AD + ${combination.childAges.length} CHD`;
+  const pricedKeys = allRooms.flatMap((room) =>
+    combinations
+      .filter((c) =>
+        calculateManualHotelPrices(
+          bases[room.roomTypeId] ?? '',
+          c.coefficient,
+          row.currency,
+          adjustments[room.roomTypeId]?.[combinationKey(c)] ?? {
+            kind: 'AMOUNT',
+            value: '0',
+          },
+        ),
+      )
+      .map((c) => `${room.roomTypeId}:${c.id}`),
+  );
+  const selectedKeys = selection.filter((key) => pricedKeys.includes(key));
+  function toggle(key: string) {
+    setSelection((old) =>
+      old.includes(key) ? old.filter((s) => s !== key) : [...old, key],
+    );
+  }
+  function editSale(room: ManualRoom, combination: Combination, value: string) {
+    const key = `${room.roomTypeId}:${combination.id}`;
+    const rule: HotelSaleAdjustmentV1 = { kind: 'SET', value };
+    const nextDrafts = { ...saleDrafts, [key]: value };
+    if (
+      !calculateManualHotelPrices(
+        bases[room.roomTypeId] ?? '',
+        combination.coefficient,
+        row.currency,
+        rule,
+      )
+    ) {
+      setSaleDrafts(nextDrafts);
+      onValidityChange(false);
+      return;
+    }
+    // Keep the user's text while typing; formatting after each key moves the
+    // caret and turns ordinary typing (e.g. 2 -> 23 -> 235) into another value.
+    const next = {
+      ...adjustments,
+      [room.roomTypeId]: {
+        ...adjustments[room.roomTypeId],
+        [combinationKey(combination)]: rule,
+      },
+    };
+    setSaleDrafts(nextDrafts);
+    setAdjustments(next);
+    update(combinations, bases, next, nextDrafts);
+  }
   if (imported)
     return (
       <div role="status">
@@ -273,12 +348,20 @@ export function HotelCoefficients({
       </div>
     );
   return (
-    <article className="grid gap-5 rounded-xl border p-5">
-      <h2>{row.hotel.name}</h2>
-      <button type="button" onClick={() => onChange({ selected: false })}>
-        کنارگذاشتن هتل از این بسته
-      </button>
-      <div className="grid max-w-xl gap-3">
+    <article className={styles.panel}>
+      <div className={styles.hotelHeader}>
+        <h2>{row.hotel.name}</h2>
+        <button
+          type="button"
+          onClick={() => {
+            onValidityChange(true);
+            onChange({ selected: false });
+          }}
+        >
+          کنارگذاشتن هتل از این بسته
+        </button>
+      </div>
+      <div className={styles.hotelSettings}>
         <Lookup
           kind="organizations"
           label="کارگزار هتل"
@@ -299,12 +382,14 @@ export function HotelCoefficients({
           ]}
         />
       </div>
-      <details>
-        <summary className="cursor-pointer rounded-lg border p-3 font-semibold">
-          جدول ضرایب هتل
-        </summary>
-        <div className="overflow-x-auto">
-          <table className="w-full" style={{ minWidth: 780 }}>
+      <details className={styles.coefficients}>
+        <summary>جدول ضرایب هتل</summary>
+        <p>این جدول برای همهٔ نوع اتاق‌های همین هتل اعمال می‌شود.</p>
+        <div className={styles.tableScroll}>
+          <table
+            className={styles.coefficientTable}
+            aria-label="جدول ضرایب مشترک هتل"
+          >
             <thead>
               <tr>
                 <th>ترکیب اتاق</th>
@@ -353,7 +438,7 @@ export function HotelCoefficients({
                   </td>
                   <td>
                     {combination.childAges.map((age, i) => (
-                      <div key={i} className="flex gap-2 py-1">
+                      <div key={i} className={styles.childRange}>
                         <span>کودک {i + 1}</span>
                         <Choice
                           label="حداقل سن کودک"
@@ -416,8 +501,8 @@ export function HotelCoefficients({
                   <button
                     type="button"
                     disabled={combinations.length >= 100}
-                    onClick={() =>
-                      setCombinations([
+                    onClick={() => {
+                      const next = [
                         ...combinations,
                         {
                           id: crypto.randomUUID(),
@@ -426,8 +511,10 @@ export function HotelCoefficients({
                           childAges: [],
                           coefficient: '',
                         },
-                      ])
-                    }
+                      ];
+                      setCombinations(next);
+                      update(next);
+                    }}
                   >
                     افزودن ردیف
                   </button>
@@ -437,120 +524,106 @@ export function HotelCoefficients({
           </table>
         </div>
       </details>
-      <p>
-        خرید هر شب = قیمت پایهٔ همین اتاق × ضریب ترکیب. تغییر فروش نسبت به قیمت
-        خرید است و با تغییر قبلی جمع نمی‌شود. ضریب خالی ثبت نمی‌شود.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() =>
-            setSelection(
-              allRooms.flatMap((room) =>
-                bases[room.roomTypeId]
-                  ? combinations
-                      .filter((c) => c.coefficient)
-                      .map((c) => `${room.roomTypeId}:${c.id}`)
-                  : [],
-              ),
-            )
-          }
-        >
+      <div className={styles.selectionTools}>
+        <button type="button" onClick={() => setSelection(pricedKeys)}>
           انتخاب همهٔ ترکیب‌های قیمت‌دار
         </button>
         <button type="button" onClick={() => setSelection([])}>
           لغو انتخاب‌ها
         </button>
-        {combinations
-          .filter((c) => c.coefficient)
-          .map((c) => (
-            <button
-              type="button"
-              key={c.id}
-              onClick={() =>
-                setSelection(
-                  allRooms
-                    .filter((room) => bases[room.roomTypeId])
-                    .map((room) => `${room.roomTypeId}:${c.id}`),
-                )
-              }
-            >
-              انتخاب در همهٔ اتاق‌ها:{' '}
-              {c.label || `${c.adults} AD + ${c.childAges.length} CHD`}
-            </button>
-          ))}
-      </div>
-      <div className="flex flex-wrap items-end gap-3 rounded-lg border p-3">
         <Choice
-          label="نوع تغییر قیمت فروش"
-          value={operation}
-          onChange={setOperation}
-          options={[
-            { id: 'PERCENT', name: 'درصدی' },
-            { id: 'AMOUNT', name: 'مبلغ ثابت' },
-            { id: 'SET', name: 'تعیین قیمت فروش' },
-          ]}
+          label="انتخاب یک ترکیب در همهٔ اتاق‌ها"
+          value=""
+          options={combinations
+            .filter((c) => c.coefficient)
+            .map((c) => ({ id: c.id, name: combinationName(c) }))}
+          onChange={(id) =>
+            setSelection(pricedKeys.filter((key) => key.endsWith(`:${id}`)))
+          }
         />
-        {operation !== 'SET' && (
+      </div>
+      {selectedKeys.length > 0 && (
+        <div className={styles.bulkBar} aria-label="تغییر گروهی فروش">
+          <span>{selectedKeys.length.toLocaleString('fa-IR')} ردیف منتخب</span>
           <Choice
-            label="افزایش یا کاهش"
-            value={direction}
-            onChange={setDirection}
+            label="نوع تغییر قیمت فروش"
+            value={operation}
+            onChange={setOperation}
             options={[
-              { id: 'increase', name: 'افزایش' },
-              { id: 'decrease', name: 'کاهش' },
+              { id: 'PERCENT', name: 'درصدی' },
+              { id: 'AMOUNT', name: 'مبلغ ثابت' },
+              { id: 'SET', name: 'تعیین قیمت فروش' },
             ]}
           />
-        )}
-        <input
-          aria-label="مقدار تغییر قیمت فروش"
-          inputMode="decimal"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <button
-          type="button"
-          disabled={!selection.length}
-          onClick={() => {
-            if (!/^\d{1,12}(\.\d{1,2})?$/.test(value)) {
-              setError('مقدار تغییر قیمت معتبر نیست.');
-              return;
-            }
-            const next = { ...adjustments };
-            for (const room of allRooms) {
-              next[room.roomTypeId] = { ...next[room.roomTypeId] };
-              for (const combination of combinations)
-                if (selection.includes(`${room.roomTypeId}:${combination.id}`))
-                  next[room.roomTypeId]![combinationKey(combination)] = {
-                    kind: operation as HotelSaleAdjustmentV1['kind'],
-                    value:
-                      direction === 'decrease' && operation !== 'SET'
-                        ? `-${value}`
-                        : value,
-                  };
-              if (
-                bases[room.roomTypeId] &&
-                !buildManualRates(
-                  combinations,
-                  bases[room.roomTypeId]!,
-                  row.currency,
-                  checkIn,
-                  checkOut,
-                  next[room.roomTypeId],
-                )
-              ) {
-                setError('تغییر باعث قیمت منفی یا نرخ نامعتبر می‌شود.');
+          {operation !== 'SET' && (
+            <Choice
+              label="افزایش یا کاهش"
+              value={direction}
+              onChange={setDirection}
+              options={[
+                { id: 'increase', name: 'افزایش' },
+                { id: 'decrease', name: 'کاهش' },
+              ]}
+            />
+          )}
+          <input
+            aria-label="مقدار تغییر قیمت فروش"
+            inputMode="decimal"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+          <button
+            type="button"
+            disabled={!selectedKeys.length}
+            onClick={() => {
+              if (!/^\d{1,12}(\.\d{1,2})?$/.test(value)) {
+                setError('مقدار تغییر قیمت معتبر نیست.');
                 return;
               }
-            }
-            setError('');
-            setAdjustments(next);
-            update(combinations, bases, next);
-          }}
-        >
-          اعمال روی ترکیب‌های منتخب
-        </button>
-      </div>
+              const next = { ...adjustments };
+              for (const room of allRooms) {
+                next[room.roomTypeId] = { ...next[room.roomTypeId] };
+                for (const combination of combinations)
+                  if (
+                    selectedKeys.includes(
+                      `${room.roomTypeId}:${combination.id}`,
+                    )
+                  )
+                    next[room.roomTypeId]![combinationKey(combination)] = {
+                      kind: operation as HotelSaleAdjustmentV1['kind'],
+                      value:
+                        direction === 'decrease' && operation !== 'SET'
+                          ? `-${value}`
+                          : value,
+                    };
+                if (
+                  combinations.some(
+                    (c) =>
+                      selectedKeys.includes(`${room.roomTypeId}:${c.id}`) &&
+                      !calculateManualHotelPrices(
+                        bases[room.roomTypeId] ?? '',
+                        c.coefficient,
+                        row.currency,
+                        next[room.roomTypeId]![combinationKey(c)]!,
+                      ),
+                  )
+                ) {
+                  setError('تغییر باعث قیمت منفی یا نرخ نامعتبر می‌شود.');
+                  return;
+                }
+              }
+              setError('');
+              const nextDrafts = { ...saleDrafts };
+              selectedKeys.forEach((key) => delete nextDrafts[key]);
+              setSaleDrafts(nextDrafts);
+              setAdjustments(next);
+              update(combinations, bases, next, nextDrafts);
+            }}
+          >
+            اعمال روی ترکیب‌های منتخب
+          </button>
+        </div>
+      )}
       {allRooms.map((room) => {
         const rates = buildManualRates(
           combinations,
@@ -561,31 +634,35 @@ export function HotelCoefficients({
           adjustments[room.roomTypeId],
         );
         return (
-          <section
-            key={room.roomTypeId}
-            className="grid gap-3 rounded-xl border p-4"
-          >
-            <h3>{room.roomTypeName}</h3>
-            <label className="grid max-w-sm gap-2">
-              قیمت پایهٔ اتاق / هر شب
-              <input
-                aria-label={`قیمت پایه ${room.roomTypeName}`}
-                inputMode="decimal"
-                value={bases[room.roomTypeId] ?? ''}
-                onChange={(e) => {
-                  const next = { ...bases, [room.roomTypeId]: e.target.value };
-                  setBases(next);
-                  update(combinations, next);
-                }}
-              />
-            </label>
-            <div className="overflow-x-auto">
-              <table className="w-full" style={{ minWidth: 600 }}>
+          <section key={room.roomTypeId} className={styles.roomCard}>
+            <div className={styles.roomHeader}>
+              <h3>{room.roomTypeName}</h3>
+              <label className={styles.baseField}>
+                قیمت پایهٔ اتاق / هر شب
+                <input
+                  aria-label={`قیمت پایه ${room.roomTypeName}`}
+                  inputMode="decimal"
+                  value={bases[room.roomTypeId] ?? ''}
+                  onChange={(e) => {
+                    const next = {
+                      ...bases,
+                      [room.roomTypeId]: e.target.value,
+                    };
+                    setBases(next);
+                    update(combinations, next);
+                  }}
+                />
+              </label>
+            </div>
+            <div className={styles.tableScroll}>
+              <table
+                className={styles.priceTable}
+                aria-label={`قیمت ترکیب‌های ${room.roomTypeName}`}
+              >
                 <thead>
                   <tr>
                     <th>انتخاب</th>
                     <th>ترکیب</th>
-                    <th>ضریب</th>
                     <th>قیمت خرید</th>
                     <th>قیمت فروش</th>
                   </tr>
@@ -593,30 +670,46 @@ export function HotelCoefficients({
                 <tbody>
                   {combinations.map((combination) => {
                     const key = `${room.roomTypeId}:${combination.id}`;
-                    const rate = rates?.find(
-                      (r) => combinationKey(r) === combinationKey(combination),
+                    const calculated = calculateManualHotelPrices(
+                      bases[room.roomTypeId] ?? '',
+                      combination.coefficient,
+                      row.currency,
+                      adjustments[room.roomTypeId]?.[
+                        combinationKey(combination)
+                      ] ?? { kind: 'AMOUNT', value: '0' },
                     );
+                    const invalidSale =
+                      key in saleDrafts &&
+                      !calculateManualHotelPrices(
+                        bases[room.roomTypeId] ?? '',
+                        combination.coefficient,
+                        row.currency,
+                        { kind: 'SET', value: saleDrafts[key]! },
+                      );
                     return (
-                      <tr key={key}>
+                      <tr
+                        key={key}
+                        className={
+                          selectedKeys.includes(key)
+                            ? styles.selected
+                            : undefined
+                        }
+                        onClick={() => {
+                          if (calculated) toggle(key);
+                        }}
+                      >
                         <td>
                           <input
                             type="checkbox"
-                            className="!w-5 !min-h-5"
-                            disabled={!rate}
+                            disabled={!calculated}
                             aria-label="انتخاب ترکیب برای تغییر فروش"
-                            checked={selection.includes(key)}
-                            onChange={(e) =>
-                              setSelection(
-                                e.target.checked
-                                  ? [...selection, key]
-                                  : selection.filter((s) => s !== key),
-                              )
-                            }
+                            checked={selectedKeys.includes(key)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={() => toggle(key)}
                           />
                         </td>
                         <td>
-                          {combination.label ||
-                            `${combination.adults} AD + ${combination.childAges.length} CHD`}
+                          {combinationName(combination)}
                           {combination.childAges.map((a, i) => (
                             <small key={i}>
                               {' '}
@@ -624,12 +717,35 @@ export function HotelCoefficients({
                             </small>
                           ))}
                         </td>
-                        <td>{combination.coefficient || '—'}</td>
                         <td dir="ltr">
-                          {rate?.amount ?? '—'} {row.currency}
+                          {calculated?.purchase ?? '—'}{' '}
+                          <small>{row.currency}</small>
                         </td>
-                        <td dir="ltr">
-                          {rate?.saleAmount ?? '—'} {row.currency}
+                        <td dir="ltr" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            aria-label={`قیمت فروش ${room.roomTypeName} ${combinationName(combination)}`}
+                            className={styles.saleInput}
+                            inputMode="decimal"
+                            disabled={!calculated}
+                            aria-invalid={invalidSale}
+                            value={saleDrafts[key] ?? calculated?.sale ?? ''}
+                            placeholder="—"
+                            onChange={(e) =>
+                              editSale(room, combination, e.target.value)
+                            }
+                            onBlur={() => {
+                              if (invalidSale) return;
+                              setSaleDrafts((old) => {
+                                const next = { ...old };
+                                delete next[key];
+                                return next;
+                              });
+                            }}
+                          />
+                          <small>{row.currency}</small>
+                          {invalidSale && (
+                            <span role="alert">قیمت فروش معتبر نیست.</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -637,7 +753,7 @@ export function HotelCoefficients({
                 </tbody>
               </table>
             </div>
-            {bases[room.roomTypeId] && !rates && (
+            {bases[room.roomTypeId] && checkIn && checkOut && !rates && (
               <p role="alert">
                 قیمت پایه، ضریب، ردهٔ سنی یا بازهٔ اقامت این اتاق معتبر نیست؛
                 ثبت بسته تا اصلاح آن انجام نمی‌شود.
@@ -646,12 +762,6 @@ export function HotelCoefficients({
           </section>
         );
       })}
-      {!manual.length && (
-        <p>
-          ضرایب دستی قدیمی وارد این جدول نمی‌شوند؛ قیمت پایه و ضریب‌های جدید را
-          وارد کنید.
-        </p>
-      )}
       {!allRooms.length && (
         <p role="alert">
           برای این هتل ابتدا نوع اتاق را در اطلاعات پایه ثبت کنید.

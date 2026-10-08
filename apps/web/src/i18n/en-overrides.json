@@ -372,5 +372,21 @@
   "کل خریدهای خدمات": "Total service purchases",
   "در انتظار ثبت خرید": "Awaiting purchase registration",
   "خریدهای ثبت‌شده": "Recorded purchases",
-  "وضعیت نامشخص": "Unknown status"
+  "وضعیت نامشخص": "Unknown status",
+  "انتخاب مقصد و هتل": "Choose destination and hotel",
+  "انتخاب یک ترکیب در همهٔ اتاق‌ها": "Select a composition across all room types",
+  "این جدول برای همهٔ نوع اتاق‌های همین هتل اعمال می‌شود.": "This coefficient table applies to all room types of this hotel.",
+  "بازهٔ نرخ": "Rate period",
+  "برای نمایش هتل‌ها، شهر را انتخاب کنید.": "Select a city to view its hotels.",
+  "بسته‌های ثبت‌شده و ویرایش نرخ": "Saved packages and rate editing",
+  "تغییر گروهی فروش": "Bulk sale price adjustment",
+  "ثبت دستی نرخ": "Manual rates",
+  "جدول ضرایب مشترک هتل": "Shared hotel coefficient table",
+  "ردیف منتخب": "selected rows",
+  "رزرواسیون / نرخ هتل": "Reservations / Hotel rates",
+  "روش ورود نرخ": "Rate entry method",
+  "قیمت ترکیب‌های": "Composition prices for",
+  "قیمت فروش معتبر نیست.": "Invalid sale price.",
+  "مدیریت نرخ‌های هتل": "Hotel rate management",
+  "ویرایش دستی بستهٔ نرخ": "Manual rate package editor"
 }
