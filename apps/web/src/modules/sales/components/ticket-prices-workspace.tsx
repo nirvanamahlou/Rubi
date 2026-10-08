@@ -261,6 +261,7 @@ const faDay = new Intl.DateTimeFormat('fa-IR', {
   timeZone: 'Asia/Tehran',
 });
 const faTime = new Intl.DateTimeFormat('fa-IR', {
+  hourCycle: 'h23',
   hour: '2-digit',
   minute: '2-digit',
   timeZone: 'Asia/Tehran',

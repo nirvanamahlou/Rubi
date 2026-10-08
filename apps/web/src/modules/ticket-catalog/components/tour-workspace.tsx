@@ -87,7 +87,7 @@ const shiftWeek = (value: string) => {
   return date.toISOString().slice(0, 10);
 };
 const timeLabel = (offer: TicketOfferV1) =>
-  `${offer.carrierName} · ${offer.serviceNumber} · ${new Date(offer.departureAt).toLocaleTimeString('fa-IR', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit' })} · ${offer.remainingCapacity} صندلی`;
+  `${offer.carrierName} · ${offer.serviceNumber} · ${new Date(offer.departureAt).toLocaleTimeString('fa-IR', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} · ${offer.remainingCapacity} صندلی`;
 
 export function TourWorkspace({
   mode = 'definition',

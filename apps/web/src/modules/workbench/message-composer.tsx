@@ -53,6 +53,7 @@ const initials = (name: string) => name.trim().slice(0, 2) || 'ر';
 const messageTime = (value: string) =>
   new Intl.DateTimeFormat('fa-IR', {
     hour: '2-digit',
+    hourCycle: 'h23',
     minute: '2-digit',
     month: 'short',
     day: 'numeric',

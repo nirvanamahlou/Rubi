@@ -414,5 +414,7 @@
   "هتل‌های منتخب باید متعلق به همین بازه باشند.": "Selected hotels must belong to this rate period.",
   "هتلی برای خروجی انتخاب نشده است.": "No hotel is selected for export.",
   "اقامت هتل و پرواز رفت": "Hotel accommodation and outbound flight",
-  "اقامت هتل و پرواز رفت‌وبرگشت": "Hotel accommodation and return flights"
+  "اقامت هتل و پرواز رفت‌وبرگشت": "Hotel accommodation and return flights",
+  "انتخاب ساعت": "Choose time",
+  "ساعت ۲۴ساعته معتبر در محدودهٔ مجاز وارد کنید.": "Enter a valid 24-hour time within the allowed range."
 }

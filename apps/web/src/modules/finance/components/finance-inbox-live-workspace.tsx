@@ -103,6 +103,7 @@ function faDate(value: string | null) {
     timeZone: 'Asia/Tehran',
     dateStyle: 'medium',
     timeStyle: 'short',
+    hourCycle: 'h23',
   });
 }
 

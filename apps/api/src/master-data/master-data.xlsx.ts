@@ -251,6 +251,7 @@ export function buildMasterDataXlsx(input: {
   const formatter = new Intl.DateTimeFormat(input.locale, {
     dateStyle: 'short',
     timeStyle: 'short',
+    hourCycle: 'h23',
     timeZone: input.timezone,
   });
   const header = input.columns

@@ -147,6 +147,7 @@ function airportLocalTime(record: MasterDataRecord) {
     return new Intl.DateTimeFormat('fa-IR', {
       timeZone: attribute(record, 'ianaTimezone'),
       hour: '2-digit',
+      hourCycle: 'h23',
       minute: '2-digit',
     }).format(new Date());
   } catch {

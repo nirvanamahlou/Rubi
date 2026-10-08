@@ -55,6 +55,7 @@ export function workbenchDate(value: string): string {
     : new Intl.DateTimeFormat('fa-IR', {
         dateStyle: 'medium',
         timeStyle: 'short',
+        hourCycle: 'h23',
         timeZone: 'Asia/Tehran',
       }).format(date);
 }
