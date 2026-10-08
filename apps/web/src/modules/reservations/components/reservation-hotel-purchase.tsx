@@ -157,6 +157,29 @@ function totalOf(amounts: readonly string[]) {
   }
 }
 
+export function latestTransferPurchase(
+  request: PurchaseRequest,
+  keys: readonly string[],
+) {
+  const purchases = [...(request.servicePurchases ?? [])].sort(
+    (a, b) => b.version - a.version,
+  );
+  const covers = (
+    purchase: NonNullable<PurchaseRequest['servicePurchases']>[number],
+  ) =>
+    purchase.coveredServiceClientKeys?.length
+      ? purchase.coveredServiceClientKeys
+      : [purchase.serviceClientKey];
+  const latest = keys.map((key) =>
+    purchases.find((purchase) => covers(purchase).includes(key)),
+  );
+  const purchase = latest[0];
+  return purchase &&
+    latest.every((p) => p === purchase) &&
+    covers(purchase).length === keys.length
+    ? purchase
+    : undefined;
+}
 export function ReservationHotelPurchase({
   request,
   onSaved,
@@ -197,16 +220,7 @@ export function ReservationHotelPurchase({
     count: string;
   };
   const latestTransfer = (keys: string[]) =>
-    request.servicePurchases?.find(
-      (purchase) =>
-        keys.every((key) =>
-          (
-            purchase.coveredServiceClientKeys ?? [purchase.serviceClientKey]
-          ).includes(key),
-        ) &&
-        (purchase.coveredServiceClientKeys ?? [purchase.serviceClientKey])
-          .length === keys.length,
-    );
+    latestTransferPurchase(request, keys);
   const initialTransfer = (keys: string[]): TransferDraft => {
     const purchase = latestTransfer(keys);
     return {
@@ -485,7 +499,20 @@ export function ReservationHotelPurchase({
               <input
                 type="checkbox"
                 checked={splitTransfers}
-                onChange={(event) => setSplitTransfers(event.target.checked)}
+                onChange={(event) => {
+                  const split = event.target.checked;
+                  if (split) {
+                    const supplier = combinedTransfer.supplier ?? hotelSupplier;
+                    setSeparateTransfers((rows) =>
+                      rows.map((row) => ({
+                        ...row,
+                        supplier: row.supplier ?? supplier,
+                        currency: row.currency ?? combinedTransfer.currency,
+                      })),
+                    );
+                  }
+                  setSplitTransfers(split);
+                }}
               />
               کارگزار جدا برای ترانسفر رفت و برگشت
             </label>

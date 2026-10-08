@@ -3,6 +3,7 @@ import {
   type PurchaseQueryInput,
   type PurchaseFlightFacts,
   type PurchaseServiceRow,
+  type PurchaseInboxSummary,
 } from './reservation-purchase-query';
 import { purchaseSelectionSql } from './reservation-purchase-selection';
 import { createHash } from 'node:crypto';
@@ -287,8 +288,19 @@ export class ReservationsPublicService {
       pageSize: 25,
       hasMore: false,
       services: [] as PurchaseServiceRow[],
+      summary: {
+        total: 0,
+        registered: 0,
+        unregistered: 0,
+        unknown: 0,
+        contracts: 0,
+      } as PurchaseInboxSummary,
     };
     if (!branchIds.length) return { data: [], meta };
+    const [summary] = await this.database.client.$queryRaw<
+      PurchaseInboxSummary[]
+    >(purchaseSelectionSql(branchIds, q, flights, true));
+    if (summary) meta.summary = summary;
     const selected = await this.database.client.$queryRaw<PurchaseServiceRow[]>(
       purchaseSelectionSql(branchIds, q, flights),
     );

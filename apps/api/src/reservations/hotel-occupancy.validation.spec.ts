@@ -38,6 +38,85 @@ const pack = () => ({
   ],
 });
 describe('hotel occupancy API validation', () => {
+  const manualPack = () => {
+    const p = pack();
+    return {
+      ...p,
+      rows: p.rows.map((row) => ({
+        ...row,
+        roomRates: row.roomRates.map((room) => ({
+          ...room,
+          occupancyRates: room.occupancyRates.map((r) => ({
+            ...r,
+            amount: '200.00',
+            saleAmount: '220.00',
+            manualPricing: {
+              baseAmount: '100',
+              coefficient: '2',
+              adjustment: { kind: 'PERCENT', value: '10' },
+            },
+          })),
+        })),
+      })),
+    };
+  };
+  it('persists validated purchase/sale derivation inside existing occupancy JSON', () => {
+    const rate =
+      validateRatePack(manualPack()).rows[0]!.roomRates[0]!.occupancyRates![0]!;
+    expect(rate.amount).toBe('200.00');
+    expect(rate.saleAmount).toBe('220.00');
+    expect(rate.manualPricing?.coefficient).toBe('2');
+  });
+  it.each(['amount', 'saleAmount'] as const)(
+    'rejects forged derived %s',
+    (field) => {
+      const p = manualPack();
+      p.rows[0]!.roomRates[0]!.occupancyRates[0]![field] = '999';
+      expect(() => validateRatePack(p)).toThrow('هماهنگ نیست');
+    },
+  );
+  it('rejects invalid or negative sale and manual ages over the configured boundary', () => {
+    const p = manualPack();
+    p.rows[0]!.roomRates[0]!.occupancyRates[0]!.manualPricing.adjustment.value =
+      '-101';
+    expect(() => validateRatePack(p)).toThrow();
+    const q = manualPack();
+    q.rows[0]!.roomRates[0]!.occupancyRates[0]!.childAges[0]!.maxExclusive = 18;
+    expect(() => validateRatePack(q)).toThrow();
+  });
+  it('rejects inconsistent bases in one room and inconsistent hotel coefficients across rooms', () => {
+    const p = manualPack();
+    const r = p.rows[0]!.roomRates[0]!;
+    r.occupancyRates.push({
+      ...r.occupancyRates[0]!,
+      adults: 1,
+      amount: '400',
+      saleAmount: '440',
+      manualPricing: {
+        ...r.occupancyRates[0]!.manualPricing,
+        baseAmount: '200',
+      },
+    });
+    expect(() => validateRatePack(p)).toThrow('یکسان');
+    const q = manualPack();
+    const second = structuredClone(q.rows[0]!.roomRates[0]!);
+    second.roomTypeId = randomUUID();
+    second.occupancyRates[0]!.manualPricing.coefficient = '3';
+    second.occupancyRates[0]!.amount = '300';
+    second.occupancyRates[0]!.saleAmount = '330';
+    q.rows[0]!.roomRates.push(second);
+    expect(() => validateRatePack(q)).toThrow('یکسان');
+  });
+  it('allows separate room bases with one common hotel combination coefficient', () => {
+    const q = manualPack();
+    const second = structuredClone(q.rows[0]!.roomRates[0]!);
+    second.roomTypeId = randomUUID();
+    second.occupancyRates[0]!.manualPricing.baseAmount = '200';
+    second.occupancyRates[0]!.amount = '400';
+    second.occupancyRates[0]!.saleAmount = '440';
+    q.rows[0]!.roomRates.push(second);
+    expect(validateRatePack(q).rows[0]!.roomRates).toHaveLength(2);
+  });
   it('rejects conflicting overlapping prices for the same exact composition', () => {
     const p = pack();
     const rates = p.rows[0]!.roomRates[0]!.occupancyRates;

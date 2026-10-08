@@ -5044,6 +5044,10 @@ Final cheque-policy boundary checks prevent removing stored sale terms or adding
 
 CI display repair: all three English coverage/sync tests pass; new print/UI fragments are translated and the new service test has stable formatting. No calculation or migration changes.
 
+## 2026-10-08 — HOTEL-MANUAL-COEFFICIENTS-1008 — PC-A — READY_FOR_REVIEW
+
+Replaced the legacy manual hotel grid with stacked country/city/hotel selection, a hotel composition coefficient table and independent room-type bases. Purchase remains base×coefficient; selected sale-only fixed/percentage/set adjustments use purchase as baseline and do not compound. Exact child ranges stay below15. Existing saved manual prices reopen the new panel; imported Nora rates and historical revisions are preserved. Additive metadata remains in existing immutable occupancy JSON, with API derivation checks and explicit Sales sale quoting. Web464/API315/Contracts120 tests pass, with one/seven existing skips, scoped lint/typechecks and production builds (56 routes). No migration/dependency/operational data/runtime change. Owner authorizes develop merge after exact-head CI and integration; bounded locks release with candidate. See [delivery](tasks/HOTEL-MANUAL-COEFFICIENTS-1008.md).
+
 ## 2026-10-08 — PC-A — JSX development child validation
 
 Localization now delegates to React jsxDEV while preserving static-child/source/self metadata instead of routing development calls through jsx. RootLayout fixed siblings no longer emit false key warnings; genuine dynamic arrays still warn and explicit keys/refs/handlers and translation remain intact. Nine focused regressions pass. Two tracked-clean adapter files applied as a bounded hotfix to existing local runtime; login returns HTTP200. No data/schema/dependency/permission change. Production checks and review PR follow; no new merge authorization inferred.
@@ -5051,3 +5055,7 @@ Localization now delegates to React jsxDEV while preserving static-child/source/
 Verification:9 targeted tests, affected ESLint/formatting and Web typecheck passed after refreshing generated shared Contracts output. Local login HTTP200. Final production build and exact-head CI remain review gates; no develop merge claimed.
 
 2026-10-08 follow-up: diagnosed two3100 listeners. Browser localhost uses root workspace next dev on IPv6, while prior source hotfix was applied to the separate IPv4 production workspace. Applied the same validated two-file adapter correction to tracked-clean root targets, preserving all existing edits/data/processes; explicit IPv6 login returns200. Loading skeleton regression passes with translated accessible parent, static siblings and keyed card list. All10 targeted tests pass; previous exact-head full8 CI checks passed. No new production logic change or merge performed.
+
+## 2026-10-08 — PC-A — Purchase dashboard and combined transfers
+
+Purchase hub defaults to unregistered while preserving explicit bookmarks. Dashboard totals use authorized category/search/date scope across all statuses/pages. Transfer work items group before pagination: fresh/shared round-trip purchases appear once, split latest revisions stay independent. Separate-broker purchase mode preserves supplier/currency drafts and canonical covered-key atomic batch semantics.32 Web and34 API focused tests plus8 temporary PostgreSQL query tests pass. No schema/dependency/permission/operational data/runtime changes. Exact-head full CI gates user-authorized develop merge; handoff in docs/tasks/PURCHASE-DASHBOARD-TRANSFERS-1008.md.

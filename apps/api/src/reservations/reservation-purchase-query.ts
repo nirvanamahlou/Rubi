@@ -73,10 +73,19 @@ export type PurchaseFlightFacts = ReturnType<typeof purchaseFlightFacts>;
 export interface PurchaseServiceRow {
   id: string;
   clientKey: string;
+  coveredServiceClientKeys?: string[];
   status: 'REGISTERED' | 'UNREGISTERED' | 'UNKNOWN';
   entryAt: string;
   departureAt: string | null;
   checkInAt: string | null;
   purchasedAt: string | null;
   sortAt: string | null;
+}
+
+export interface PurchaseInboxSummary {
+  total: number;
+  registered: number;
+  unregistered: number;
+  unknown: number;
+  contracts: number;
 }

@@ -1,4 +1,6 @@
 {
+  "نمای کلی عملیات مالی": "Financial operations overview",
+  "یک درخواست را انتخاب کنید تا جزئیات و اقداماتش پایین فهرست باز شود.": "Select a request to open its details and actions below the list.",
   "امتیازدهی": "Scoring",
   "لیدها": "Leads",
   "مدیریت سرنخ‌های مارکتینگ و امتیازدهی سرنخ‌ها": "Manage marketing leads and lead scoring",
@@ -366,5 +368,11 @@
   "فروش چکی · سود ماهیانه ۵٪ روی مانده خرید": "Cheque sale · 5% monthly interest on the unpaid purchase balance",
   "ماشین‌حساب اقساط ·": "Installment calculator ·",
   "نوع فروش:": "Sale type:",
-  "نوع فروش: نقدی": "Sale type: Cash"
+  "نوع فروش: نقدی": "Sale type: Cash",
+  "داشبورد خرید خدمات": "Purchase dashboard",
+  "آمار همه وضعیت‌ها در دسته، جست‌وجو و بازه انتخاب‌شده": "All statuses within the selected category, search and date range",
+  "کل خریدهای خدمات": "Total service purchases",
+  "در انتظار ثبت خرید": "Awaiting purchase registration",
+  "خریدهای ثبت‌شده": "Recorded purchases",
+  "وضعیت نامشخص": "Unknown status"
 }
