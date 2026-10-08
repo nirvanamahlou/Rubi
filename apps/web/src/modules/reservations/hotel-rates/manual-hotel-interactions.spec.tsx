@@ -226,6 +226,7 @@ it('selects a row by clicking the table and replaces an invalid sale draft with 
   input('قیمت پایه Land', '100');
   input('قیمت پایه Sea', '200');
   input(saleLabel('Land'), '-1');
+  click('لغو انتخاب‌ها');
   const tableRow = nodes(render()).find(
     (n) => n.type === 'tr' && typeof n.props.onClick === 'function',
   )!;
@@ -257,4 +258,25 @@ it('shares adult/child age compositions and coefficients across every room type'
       childAges: [{ min: 4, maxExclusive: 15 }],
     });
   });
+});
+
+it('selects priced rows automatically and preserves explicit deselection', () => {
+  const checks = () =>
+    nodes(render()).filter(
+      (n) => n.type === 'input' && n.props.type === 'checkbox',
+    );
+  expect(checks().every((n) => !n.props.checked)).toBe(true);
+  input('قیمت پایه Land', '100');
+  expect(checks().filter((n) => n.props.checked)).toHaveLength(1);
+  input('قیمت پایه Sea', '200');
+  expect(checks().filter((n) => n.props.checked)).toHaveLength(2);
+  const selected = checks().find((n) => n.props.checked)!;
+  (selected.props.onChange as () => void)();
+  expect(checks().filter((n) => n.props.checked)).toHaveLength(1);
+  input('قیمت پایه Land', '150');
+  expect(checks().filter((n) => n.props.checked)).toHaveLength(1);
+  click('لغو انتخاب‌ها');
+  expect(checks().every((n) => !n.props.checked)).toBe(true);
+  click('انتخاب همهٔ ترکیب‌های قیمت‌دار');
+  expect(checks().filter((n) => n.props.checked)).toHaveLength(2);
 });

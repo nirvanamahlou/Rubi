@@ -5105,3 +5105,6 @@ English occupancy labels in hotel coefficient and room-price tables now render i
 Price-field editors use two columns on desktop and a single column on narrow screens. Each editor keeps a full-width field-name input and amount/currency controls below. Delete uses an accessible red trash icon, preserving the existing keyed callback and disabled state. Presentation-only; no data/API/schema/runtime changes. Scoped verification and review PR follow.
 
 Verification: both existing price-field/workspace regressions and scoped lint pass. Typecheck and full CI build gate review; bounded component lock released with candidate.
+
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up: priced room combinations default to selected until explicit user selection; manual deselection/clear-all retained. Room cards use a compact two-column grid on wide screens and single column below 1000px, with shorter price rows. No calculations, persistence, API, migrations or runtime changes. Focused interaction regression and final CI gate combined user-authorized merge.
