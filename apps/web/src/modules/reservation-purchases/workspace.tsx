@@ -11,6 +11,10 @@ import {
   ShieldCheck,
   RefreshCw,
   Search,
+  ClipboardList,
+  CheckCircle2,
+  Clock3,
+  CircleHelp,
 } from 'lucide-react';
 import type {
   ReservationIntakeV1,
@@ -214,9 +218,14 @@ function PurchaseHub() {
         const request = result.data.find((r) => r.id === row.id);
         const service =
           request &&
-          contractPurchaseServices(request).find(
-            (s) => s.clientKey === row.clientKey,
-          );
+          contractPurchaseServices(request)
+            .map((s) => ({ ...s }))
+            .find((s) => s.clientKey === row.clientKey);
+        if (
+          service?.kind === 'TRANSFER' &&
+          (row.coveredServiceClientKeys?.length ?? 0) > 1
+        )
+          service.titleSnapshot = 'ترانسفر رفت‌وبرگشت';
         return request && service ? [{ request, service, row }] : [];
       })
     : (result?.data.flatMap((request) =>
@@ -245,6 +254,59 @@ function PurchaseHub() {
           </Button>
         }
       />
+      {canRead && (
+        <section aria-label="داشبورد خرید خدمات" className="space-y-3">
+          <h2 className="text-lg font-bold">داشبورد خرید خدمات</h2>
+          <p className="text-xs text-muted-foreground">
+            آمار همه وضعیت‌ها در دسته، جست‌وجو و بازه انتخاب‌شده
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {(
+              [
+                [
+                  ClipboardList,
+                  'کل خریدهای خدمات',
+                  'total',
+                  'border-blue-200 bg-blue-50 text-blue-800',
+                ],
+                [
+                  Clock3,
+                  'در انتظار ثبت خرید',
+                  'unregistered',
+                  'border-amber-200 bg-amber-50 text-amber-800',
+                ],
+                [
+                  CheckCircle2,
+                  'خریدهای ثبت‌شده',
+                  'registered',
+                  'border-emerald-200 bg-emerald-50 text-emerald-800',
+                ],
+                [
+                  CircleHelp,
+                  'وضعیت نامشخص',
+                  'unknown',
+                  'border-slate-200 bg-slate-50 text-slate-800',
+                ],
+              ] as const
+            ).map(([Icon, label, key, tone]) => (
+              <Card
+                key={key}
+                className={`${tone} space-y-3 dark:bg-card dark:text-foreground`}
+              >
+                <Icon className="size-6" />
+                <p className="text-sm font-medium">{label}</p>
+                <strong className="text-3xl" aria-label={label}>
+                  {result?.meta.summary && !loading && !error
+                    ? result.meta.summary[key].toLocaleString(
+                        language === 'en' ? 'en-GB' : 'fa-IR',
+                      )
+                    : '—'}
+                </strong>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
       <nav
         aria-label="دسته‌های خرید خدمات"
         className="grid grid-cols-2 gap-3 md:grid-cols-5"

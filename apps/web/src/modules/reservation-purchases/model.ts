@@ -131,7 +131,7 @@ export function purchaseFilters(
   const dateBy = query?.get('dateBy');
   return {
     status:
-      status === 'REGISTERED' || status === 'UNREGISTERED' ? status : 'ALL',
+      status === 'ALL' || status === 'REGISTERED' ? status : 'UNREGISTERED',
     dateBy: purchaseDateFields.some(([key]) => key === dateBy)
       ? (dateBy as PurchaseFilters['dateBy'])
       : 'ENTRY',
