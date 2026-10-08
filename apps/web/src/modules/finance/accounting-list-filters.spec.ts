@@ -32,6 +32,65 @@ const rule = (field: string, value: string): FilterRule => ({
   relationMode: 'any',
 });
 describe('accounting list filter semantics', () => {
+  it('keeps conditions in a related-period branch on the same allocation', () => {
+    const branch: FilterGroup = {
+      type: 'group',
+      id: 'related',
+      scope: 'allocations',
+      relationMode: 'any',
+      mode: 'all',
+      children: [
+        rule('allocation.title', 'اصلی'),
+        {
+          ...rule('allocation.startDate', '2027-01-01'),
+          operator: 'after' as const,
+        },
+      ],
+    };
+    // One row has the matching title, a different row has the matching date.
+    expect(matchesFilter(record, branch, fields)).toBe(false);
+    const matching = {
+      ...record,
+      allocations: [{ title: 'دفتر اصلی', startDate: '2027-03-21' }],
+    };
+    expect(matchesFilter(matching, branch, fields)).toBe(true);
+    expect(
+      matchesFilter(matching, { ...branch, relationMode: 'none' }, fields),
+    ).toBe(false);
+    expect(matchesFilter({ ...record, allocations: [] }, branch, fields)).toBe(
+      false,
+    );
+    expect(
+      matchesFilter(
+        { ...record, allocations: [] },
+        { ...branch, relationMode: 'all' },
+        fields,
+      ),
+    ).toBe(true);
+  });
+  it('evaluates branching beyond three levels without losing negated child logic', () => {
+    let nested: FilterGroup = {
+      type: 'group',
+      id: 'leaf',
+      mode: 'none',
+      children: [rule('title', '۱۴۰۴')],
+    };
+    for (let depth = 0; depth < 6; depth++)
+      nested = {
+        type: 'group',
+        id: `branch-${depth}`,
+        mode: 'all',
+        children: [nested, rule('title', '۱۴۰۵')],
+      };
+    expect(matchesFilter(record, nested, fields)).toBe(true);
+    expect(
+      matchesFilter(
+        { ...record, values: { ...record.values, title: '۱۴۰۴' } },
+        nested,
+        fields,
+      ),
+    ).toBe(false);
+  });
   it('ignores unfinished empty subgroups even under negation', () => {
     expect(
       matchesFilter(
@@ -142,14 +201,17 @@ describe('accounting list filter semantics', () => {
     expect(
       matchesFilter(
         record,
-        { ...rule('titleEn', ''), operator: 'empty' },
+        { ...rule('titleEn', ''), operator: 'empty' as const },
         fields,
       ),
     ).toBe(true);
     expect(
       matchesFilter(
         record,
-        { ...rule('allocation.startDate', '2027-01-01'), operator: 'before' },
+        {
+          ...rule('allocation.startDate', '2027-01-01'),
+          operator: 'before' as const,
+        },
         fields,
       ),
     ).toBe(true);

@@ -136,7 +136,7 @@ function IconAction({
 
 function GroupEditor({
   group,
-  fields,
+  fields: availableFields,
   onChange,
   depth = 0,
   limit,
@@ -147,6 +147,43 @@ function GroupEditor({
   depth?: number;
   limit: boolean;
 }) {
+  const fields =
+    group.scope === 'allocations'
+      ? availableFields
+          .filter((field) => field.relation)
+          .map((field) => ({ ...field, relation: false }))
+      : availableFields;
+  const createRule = () => ({ ...newRule(), field: fields[0]!.key });
+  const append = (choice: string) => {
+    if (!choice || limit) return;
+    const [type, value] = choice.split(':');
+    const field = fields.find((item) => item.key === value);
+    const node: FilterNode =
+      type === 'field' && field
+        ? {
+            ...createRule(),
+            field: field.key,
+            operator:
+              field.type === 'text'
+                ? ('contains' as const)
+                : ('equals' as const),
+            value: field.type === 'boolean' ? 'true' : '',
+          }
+        : {
+            type: 'group',
+            id: crypto.randomUUID(),
+            mode:
+              type === 'allocation' ? 'all' : (value as FilterGroup['mode']),
+            children: [],
+            ...(type === 'allocation'
+              ? {
+                  scope: 'allocations' as const,
+                  relationMode: value as FilterGroup['mode'],
+                }
+              : {}),
+          };
+    onChange({ ...group, children: [...group.children, node] });
+  };
   const update = (id: string, next: FilterNode) =>
     onChange({
       ...group,
@@ -159,12 +196,35 @@ function GroupEditor({
     });
   return (
     <div
-      className={`space-y-3 rounded-xl border p-3 ${depth ? 'border-primary/20 bg-primary/5' : 'bg-surface'}`}
+      className={`space-y-3 rounded-xl border p-3 ${depth ? 'border-s-4 border-primary/20 bg-primary/5' : 'bg-surface'}`}
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs font-bold text-muted-foreground">
-          {depth ? 'گروه شرط‌ها' : 'رکوردهایی که'}
+          {group.scope === 'allocations'
+            ? 'دوره‌های مالی دفتر کل جاری'
+            : depth
+              ? 'شاخه شرط‌ها'
+              : 'رکوردهایی که'}
         </span>
+        {group.scope === 'allocations' && (
+          <select
+            aria-label="تطبیق دوره‌های مالی مرتبط"
+            className={selectClass}
+            value={group.relationMode ?? 'any'}
+            onChange={(event) =>
+              onChange({
+                ...group,
+                relationMode: event.target.value as FilterGroup['mode'],
+              })
+            }
+          >
+            {filterModes.map((mode) => (
+              <option key={mode.value} value={mode.value}>
+                {mode.label}
+              </option>
+            ))}
+          </select>
+        )}
         <select
           aria-label={depth ? 'ترکیب شرط‌های گروه' : 'ترکیب شرط‌های فیلتر'}
           className={selectClass}
@@ -185,11 +245,41 @@ function GroupEditor({
         <span className="text-xs text-muted-foreground">
           از شرط‌های زیر برقرار باشد
         </span>
-        {depth > 0 && (
-          <span className="text-xs text-muted-foreground">
-            حداکثر ۳ سطح گروه
-          </span>
-        )}
+        <select
+          aria-label="افزودن شرط یا شاخه به این گروه"
+          className={`${selectClass} border-primary/30 text-primary`}
+          value=""
+          disabled={limit}
+          onChange={(event) => append(event.target.value)}
+        >
+          <option value="">＋ افزودن شرط یا شاخه</option>
+          <optgroup label="فیلدها">
+            {fields
+              .filter((field) => !field.relation)
+              .map((field) => (
+                <option key={field.key} value={`field:${field.key}`}>
+                  {field.label}
+                </option>
+              ))}
+          </optgroup>
+          {fields.some((field) => field.relation) && (
+            <optgroup label="دوره‌های مالی مرتبط با دفتر کل جاری">
+              <option value="allocation:all">
+                همه دوره‌های مالی دفتر کل‌ها
+              </option>
+              <option value="allocation:any">
+                حداقل یکی از دوره‌های مالی دفتر کل‌ها
+              </option>
+            </optgroup>
+          )}
+          <optgroup label="شاخه شرط‌ها">
+            {filterModes.map((mode) => (
+              <option key={mode.value} value={`group:${mode.value}`}>
+                {mode.label}
+              </option>
+            ))}
+          </optgroup>
+        </select>
       </div>
       {group.children.length === 0 && (
         <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
@@ -238,7 +328,9 @@ function GroupEditor({
                           ...child,
                           field: nextField.key,
                           operator:
-                            nextField.type === 'text' ? 'contains' : 'equals',
+                            nextField.type === 'text'
+                              ? ('contains' as const)
+                              : ('equals' as const),
                           value: nextField.type === 'boolean' ? 'true' : '',
                         });
                       }}
@@ -381,7 +473,10 @@ function GroupEditor({
             shortcut="Enter"
             disabled={limit}
             onClick={() =>
-              onChange({ ...group, children: [...group.children, newRule()] })
+              onChange({
+                ...group,
+                children: [...group.children, createRule()],
+              })
             }
           >
             <Plus className="size-4" />
@@ -389,7 +484,7 @@ function GroupEditor({
           <IconAction
             label="افزودن زیرگروه به این گروه"
             shortcut="Enter"
-            disabled={limit || depth >= 2}
+            disabled={limit}
             onClick={() =>
               onChange({
                 ...group,
@@ -599,7 +694,7 @@ export function AccountingBaseList({
               {
                 ...newRule(),
                 field: 'active',
-                operator: 'equals',
+                operator: 'equals' as const,
                 value: active,
               },
             ],

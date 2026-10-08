@@ -1,3 +1,9 @@
+## ACCOUNTING-FISCAL-FILTER-TREE-1008 — PC-A — READY_FOR_REVIEW
+
+Sole-writer fiscal-year list branching filter UI and semantics: recursive per-branch add menu, source screenshot fields/modes and related-period grouped predicates. Own Finance Web filters/list/tests; no backend/schema/dependencies or source writes. Existing isolated3100 preview and branch reused; no delegation.
+
+Delivered recursive branch-local add menu with screenshot field/relation/logical choices, four combination modes and removal; removed three-level depth restriction while retaining existing32-node size guard. Related-period branches evaluate all child predicates against the same allocation within authorized current book; no cross-book reads implied by source captions. Shared group editor also benefits existing ledger/voucher lists. Tests9/9, scoped lint/typecheck and Web build56 routes passed after correcting explicit literal/optional types. Authenticated3100 browser built four nested branches, added related-period title condition, applied negative root logic and confirmed0 results. Proof Fiscal-Year-Branching-Filters.png retained; no data mutations, backend/schema/dependency changes or delegation.
+
 ## ACCOUNTING-SHARED-OPERATIONS-1008 — PC-A — READY_FOR_REVIEW
 
 Direct sole-writer UI standardization across Accounting: shared nine-icon toolbar, callback bindings preserving native forms/permissions, tooltip/shortcuts, displayed-view Excel/PDF exports and guarded unused base-record deletion. Finance Web/API service/focused tests and own docs reserved; no schema/dependency changes or delegation. Reuse branch3100/4217 synthetic preview.

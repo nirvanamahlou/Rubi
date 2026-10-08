@@ -25,6 +25,8 @@ export type FilterGroup = {
   id: string;
   mode: FilterMode;
   children: FilterNode[];
+  scope?: 'allocations';
+  relationMode?: FilterMode;
 };
 export type FilterNode = FilterRule | FilterGroup;
 export type ListField = {
@@ -199,6 +201,35 @@ export function matchesFilter(
   fields: ListField[],
 ): boolean {
   if (node.type === 'group') {
+    if (node.scope === 'allocations') {
+      if (filterRuleCount(node) === 0) return true;
+      // All child conditions must refer to the same related period, rather than
+      // independently finding different periods that satisfy individual rules.
+      return combineMatches(
+        record.allocations.map((allocation) =>
+          matchesFilter(
+            {
+              ...record,
+              values: Object.fromEntries(
+                Object.entries(allocation).map(([key, value]) => [
+                  `allocation.${key}`,
+                  value,
+                ]),
+              ),
+              allocations: [],
+            },
+            {
+              type: 'group',
+              id: node.id,
+              mode: node.mode,
+              children: node.children,
+            },
+            fields.map((field) => ({ ...field, relation: false })),
+          ),
+        ),
+        node.relationMode ?? 'any',
+      );
+    }
     // An empty group is an unused filter, independent of its chosen logical mode.
     const children = node.children.filter(
       (child) => filterRuleCount(child) > 0,
