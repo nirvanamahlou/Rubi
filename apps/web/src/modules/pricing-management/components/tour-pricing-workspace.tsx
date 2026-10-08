@@ -40,12 +40,12 @@ import {
   validateTourPriceFields,
 } from '@nora/contracts';
 import { TourWorkspace } from '@/modules/ticket-catalog/components/tour-workspace';
-import { previewHotelRoomSale } from './tour-price-math';
+import { SourcePackageGenerator } from './source-package-generator';
+import { packageGeneratorData } from '../model/package-generator-data';
 import { packageBannerHref } from '../model/package-banner';
 import { PackagePricingBreadcrumbs } from './package-pricing-breadcrumbs';
 import {
-  calculateTourRoom,
-  tourRoomOccupancy,
+  buildHotelPackageTable,
   type TourRoomCurrencyAmount,
 } from '@nora/contracts';
 
@@ -104,6 +104,10 @@ export function TourPricingWorkspace() {
       ? values.commissionAmount
       : values.commissionPercent;
   const commissionCurrency = values.commissionCurrencyCode;
+  const [selectedHotelRateIds, setSelectedHotelRateIds] = useState<string[]>(
+    [],
+  );
+  const [showGenerator, setShowGenerator] = useState(false);
   const [familyAdults, setFamilyAdults] = useState('2');
   const [familyChildren, setFamilyChildren] = useState('0');
   const [draft, setDraft] = useState<PackageTourDraftV1 | null>(null);
@@ -164,6 +168,8 @@ export function TourPricingWorkspace() {
 
   function applyDraft(value: PackageTourDraftV1 | null) {
     setDraft(value);
+    setSelectedHotelRateIds([...(value?.selectedHotelRateIds ?? [])]);
+    setShowGenerator(false);
     setAdjustments(
       Object.fromEntries(
         (value?.adjustments ?? []).map((item) => [
@@ -279,7 +285,6 @@ export function TourPricingWorkspace() {
 
   const batch: PackageTourHotelPurchaseBatchV1 | undefined =
     grid?.purchaseBatches.find((item) => item.id === batchId);
-  const stayNights = grid?.nights ?? 0;
   const activeRoomColumns = useMemo(() => {
     const columns = new Map<string, string>();
     for (const row of batch?.rows ?? []) {
@@ -294,59 +299,52 @@ export function TourPricingWorkspace() {
     }
     return [...columns.entries()];
   }, [batch]);
-  function roomPreview(
+  const tablePrices = (
     row: PackageTourHotelPurchaseBatchV1['rows'][number],
-    roomCode: string,
-  ) {
-    if (!batch || !grid) return null;
-    const roomRate = row.roomRates.find((room) => room.roomTypeId === roomCode);
-    const passengers = roomRate
-      ? { adults: roomRate.maxAdults, children: roomRate.maxChildren }
-      : tourRoomOccupancy(
-          roomCode,
-          Number(familyAdults),
-          Number(familyChildren),
-        );
-    if (!passengers) return null;
+  ) => {
+    if (!batch || !grid) return [];
     try {
-      return calculateTourRoom({
-        extraSaleFields: priceFields.filter((field) => field.kind === 'custom'),
-        basePerNight: row.basePerNight,
-        factor: roomRate?.factor ?? row.factors[roomCode] ?? '',
-        nights: stayNights,
-        hotelCurrency: row.currencyCode ?? batch.currencyCode,
-        adjustment: adjustments[row.id] ?? defaultAdjustment(),
-        ...passengers,
-        adultFlight: {
-          amount: adultFlight || '0',
-          currencyCode: adultFlightCurrency,
+      return buildHotelPackageTable({
+        row,
+        checkIn: grid.tour.startsOn,
+        checkOut: grid.tour.endsOn,
+        currencyCode: batch.currencyCode,
+        calculation: {
+          extraSaleFields: priceFields.filter(
+            (field) => field.kind === 'custom',
+          ),
+          adjustment: adjustments[row.id] ?? defaultAdjustment(),
+          adultFlight: {
+            amount: adultFlight || '0',
+            currencyCode: adultFlightCurrency,
+          },
+          childFlight: {
+            amount: childFlight || '0',
+            currencyCode: childFlightCurrency,
+          },
+          businessUplift: {
+            amount: businessIncrease || '0',
+            currencyCode: businessCurrency,
+          },
+          businessCabin:
+            grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
+            grid.tour.returning?.cabinClassCode === 'BUSINESS',
+          commissionPercent:
+            commissionMode === 'percent' ? commission || '0' : '0',
+          commissionMode,
+          commissionAmount: {
+            amount: commissionMode === 'fixed' ? commission || '0' : '0',
+            currencyCode: commissionCurrency,
+          },
+          flightCosts: grid.missingFlightOfferIds.length
+            ? undefined
+            : grid.flightPurchaseCosts,
         },
-        childFlight: {
-          amount: childFlight || '0',
-          currencyCode: childFlightCurrency,
-        },
-        businessUplift: {
-          amount: businessIncrease || '0',
-          currencyCode: businessCurrency,
-        },
-        businessCabin:
-          grid.tour.outbound.cabinClassCode === 'BUSINESS' ||
-          grid.tour.returning?.cabinClassCode === 'BUSINESS',
-        commissionPercent:
-          commissionMode === 'percent' ? commission || '0' : '0',
-        commissionMode,
-        commissionAmount: {
-          amount: commissionMode === 'fixed' ? commission || '0' : '0',
-          currencyCode: commissionCurrency,
-        },
-        flightCosts: grid.missingFlightOfferIds.length
-          ? undefined
-          : grid.flightPurchaseCosts,
       });
     } catch {
-      return null;
+      return [];
     }
-  }
+  };
   const invalidFields = (() => {
     try {
       validateTourPriceFields(priceFields);
@@ -356,18 +354,28 @@ export function TourPricingWorkspace() {
     }
   })();
   const invalidSale =
-    (invalidFields ||
-      batch?.rows.some((row) =>
-        activeRoomColumns.some(
-          ([key]) =>
-            (row.factors[key] ||
-              row.roomRates.some((room) => room.roomTypeId === key)) &&
-            !roomPreview(row, key),
-        ),
-      )) ??
-    false;
+    invalidFields ||
+    selectedHotelRateIds.some(
+      (id) => !batch?.rows.some((row) => row.id === id),
+    ) ||
+    !!batch?.rows
+      .filter((row) => selectedHotelRateIds.includes(row.id))
+      .some((row) => tablePrices(row).length !== 3);
+  const tableColumns = [
+    ['single', 'سینگل · هر نفر'],
+    ['double', 'دبل · هر نفر'],
+    ['doubleChild', 'کودک با تخت'],
+  ] as const;
   const publication =
     publications.find((item) => item.id === publicationId) ?? publications[0];
+  const generatorData = useMemo(() => {
+    if (!grid || !batch || !publication?.selectedHotelRateIds) return null;
+    try {
+      return packageGeneratorData(grid, batch, publication);
+    } catch {
+      return null;
+    }
+  }, [grid, batch, publication]);
   const bannerHref = (() => {
     if (!grid || !batch || !publication) return '';
     return packageBannerHref({
@@ -379,6 +387,8 @@ export function TourPricingWorkspace() {
   })();
   const unsaved =
     !draft ||
+    JSON.stringify([...selectedHotelRateIds].sort()) !==
+      JSON.stringify([...(draft.selectedHotelRateIds ?? [])].sort()) ||
     JSON.stringify(priceFields) !== JSON.stringify(tourPriceFields(draft)) ||
     Number(familyAdults) !== draft.familyAdults ||
     Number(familyChildren) !== draft.familyChildren ||
@@ -422,6 +432,7 @@ export function TourPricingWorkspace() {
           version: 1,
           expectedVersion: draft?.draftVersion ?? 0,
           priceFields,
+          selectedHotelRateIds,
           tourDepartureId: grid.tour.id,
           batchId: batch.id,
           currencyCode: batch.currencyCode,
@@ -616,7 +627,7 @@ export function TourPricingWorkspace() {
             icon={Hotel}
           />
         ) : null}
-        {grid && grid.purchaseBatches.length > 0 ? (
+        {grid && batch && grid.purchaseBatches.length > 0 ? (
           <>
             <label className="grid max-w-2xl gap-2 text-sm font-bold">
               ثبت خرید / بازه
@@ -642,166 +653,173 @@ export function TourPricingWorkspace() {
               </NativeSearchSelect>
             </label>
             <Badge>
-              {stayNights} شب اقامت · {batch?.rows.length ?? 0} هتل منتخب این
-              نوبت
+              {grid.nights} شب اقامت · {selectedHotelRateIds.length} هتل منتخب
+              این نوبت
             </Badge>
+            <div className="flex flex-wrap gap-3">
+              {batch.rows.map((row) => (
+                <label
+                  key={row.id}
+                  className="flex items-center gap-2 rounded-xl border border-border p-3 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedHotelRateIds.includes(row.id)}
+                    onChange={(event) =>
+                      setSelectedHotelRateIds((current) =>
+                        event.target.checked
+                          ? [...current, row.id]
+                          : current.filter((id) => id !== row.id),
+                      )
+                    }
+                  />
+                  {row.hotelName} · {row.brokerName}
+                </label>
+              ))}
+            </div>
             <div className="overflow-x-auto rounded-xl border border-border">
-              <table className="min-w-[1120px] w-full text-sm">
-                <thead className="sticky top-0 bg-muted/80 text-xs text-muted-foreground">
+              <table className="w-full min-w-[800px] text-sm">
+                <thead className="bg-muted/80">
                   <tr>
-                    <th className="sticky right-0 bg-muted/95 p-3 text-right">
-                      هتل / کارگزار
-                    </th>
-                    <th className="p-3 text-right">خرید پایه / شب</th>
-                    {activeRoomColumns.map(([key, title]) => (
-                      <th className="p-3 text-right" key={key}>
+                    <th className="p-3 text-right">هتل / کارگزار</th>
+                    {tableColumns.map(([code, title]) => (
+                      <th className="p-3 text-right" key={code}>
                         {title}
-                        <span className="block font-normal">
-                          خرید اقامت ← فروش اقامت ← پکیج کامل
-                        </span>
                       </th>
                     ))}
-                    <th className="p-3 text-right">تغییر قیمت فروش</th>
+                    <th className="p-3 text-right">تغییر قیمت هتل</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {batch?.rows.map((row) => {
-                    const adjustment =
-                      adjustments[row.id] ?? defaultAdjustment();
-                    return (
-                      <tr className="border-t border-border" key={row.id}>
-                        <td className="sticky right-0 bg-surface p-3">
-                          <strong className="block">{row.hotelName}</strong>
-                          <span className="text-xs text-muted-foreground">
-                            {row.brokerName}
-                          </span>
-                        </td>
-                        <td className="p-3 font-bold">
-                          {row.basePerNight}{' '}
-                          {row.currencyCode ?? batch.currencyCode}
-                        </td>
-                        {activeRoomColumns.map(([key]) => {
-                          const roomRate = row.roomRates.find(
-                            (room) => room.roomTypeId === key,
-                          );
-                          const preview = previewHotelRoomSale(
-                            row.basePerNight,
-                            roomRate?.factor ?? row.factors[key] ?? '',
-                            stayNights,
-                            row.currencyCode ?? batch.currencyCode,
-                            adjustment,
-                          );
-                          return (
-                            <td className="min-w-32 p-3 tabular-nums" key={key}>
-                              <span className="block text-xs text-muted-foreground">
-                                × {roomRate?.factor ?? row.factors[key] ?? '—'}
-                              </span>
-                              <span className="block text-xs text-muted-foreground">
-                                {preview?.purchase ?? '—'}
-                              </span>
-                              <strong className="block text-primary">
-                                {preview?.sale ?? '—'}{' '}
-                                {row.currencyCode ?? batch.currencyCode}
-                              </strong>
-                              <strong className="mt-2 block rounded-lg bg-primary/10 p-2 text-primary">
-                                {roomPreview(row, key)
-                                  ? displayAmounts(
-                                      roomPreview(row, key)!.currencyAmounts,
-                                      'sale',
-                                    )
-                                  : '—'}
-                              </strong>
-                            </td>
-                          );
-                        })}
-                        <td className="min-w-64 p-3">
-                          <div className="flex gap-1">
-                            <NativeSearchSelect
-                              aria-label={'جهت تغییر قیمت ' + row.hotelName}
-                              className="h-9 rounded-lg border border-input bg-surface px-1"
-                              onChange={(event) =>
-                                setAdjustments((current) => ({
-                                  ...current,
-                                  [row.id]: {
-                                    ...adjustment,
-                                    direction: event.target
-                                      .value as Adjustment['direction'],
-                                  },
-                                }))
-                              }
-                              value={adjustment.direction}
-                            >
-                              <option value="increase">افزایش</option>
-                              <option value="decrease">کاهش</option>
-                            </NativeSearchSelect>
-                            <NativeSearchSelect
-                              aria-label={'نوع تغییر قیمت ' + row.hotelName}
-                              className="h-9 rounded-lg border border-input bg-surface px-1"
-                              onChange={(event) =>
-                                setAdjustments((current) => ({
-                                  ...current,
-                                  [row.id]: {
-                                    ...adjustment,
-                                    mode: event.target
-                                      .value as Adjustment['mode'],
-                                  },
-                                }))
-                              }
-                              value={adjustment.mode}
-                            >
-                              <option value="percent">٪</option>
-                              <option value="fixed">
-                                {row.currencyCode ?? batch.currencyCode}
-                              </option>
-                            </NativeSearchSelect>
-                            {adjustment.mode === 'fixed' ? (
-                              <MoneyInput
-                                aria-label={'مقدار تغییر قیمت ' + row.hotelName}
-                                className="h-9 min-w-20"
-                                onValueChange={(value) =>
-                                  setAdjustments((current) => ({
-                                    ...current,
-                                    [row.id]: { ...adjustment, value },
-                                  }))
-                                }
-                                value={adjustment.value}
-                              />
-                            ) : (
-                              <Input
-                                aria-label={'درصد تغییر قیمت ' + row.hotelName}
-                                className="h-9 min-w-20"
-                                inputMode="decimal"
+                  {batch.rows
+                    .filter((row) => selectedHotelRateIds.includes(row.id))
+                    .map((row) => {
+                      const adjustment =
+                        adjustments[row.id] ?? defaultAdjustment();
+                      const prices = tablePrices(row);
+                      return (
+                        <tr key={row.id} className="border-t border-border">
+                          <td className="p-3">
+                            <strong className="block">{row.hotelName}</strong>
+                            <span className="text-xs text-muted-foreground">
+                              {row.brokerName}
+                            </span>
+                          </td>
+                          {tableColumns.map(([code]) => {
+                            const price = prices.find(
+                              (item) => item.roomCode === code,
+                            );
+                            return (
+                              <td className="p-3" key={code}>
+                                {price ? (
+                                  <>
+                                    <strong className="block text-primary">
+                                      {displayAmounts(
+                                        price.currencyAmounts,
+                                        'sale',
+                                      )}
+                                    </strong>
+                                    <span className="block text-xs text-muted-foreground">
+                                      {price.roomTypeName} · {price.board}
+                                    </span>
+                                    {price.childAgeMin === undefined ? null : (
+                                      <span className="text-xs">
+                                        {price.childAgeMin}–
+                                        {price.childAgeMaxExclusive} سال
+                                      </span>
+                                    )}
+                                  </>
+                                ) : (
+                                  <span className="text-muted-foreground">
+                                    تعرفه کامل موجود نیست
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })}
+                          <td className="min-w-64 p-3">
+                            <div className="flex gap-1">
+                              <NativeSearchSelect
+                                aria-label={'جهت تغییر قیمت ' + row.hotelName}
+                                className="h-9 rounded-lg border border-input bg-surface px-1"
                                 onChange={(event) =>
                                   setAdjustments((current) => ({
                                     ...current,
                                     [row.id]: {
                                       ...adjustment,
-                                      value: event.target.value,
+                                      direction: event.target
+                                        .value as Adjustment['direction'],
                                     },
                                   }))
                                 }
-                                value={adjustment.value}
-                              />
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                                value={adjustment.direction}
+                              >
+                                <option value="increase">افزایش</option>
+                                <option value="decrease">کاهش</option>
+                              </NativeSearchSelect>
+                              <NativeSearchSelect
+                                aria-label={'نوع تغییر قیمت ' + row.hotelName}
+                                className="h-9 rounded-lg border border-input bg-surface px-1"
+                                onChange={(event) =>
+                                  setAdjustments((current) => ({
+                                    ...current,
+                                    [row.id]: {
+                                      ...adjustment,
+                                      mode: event.target
+                                        .value as Adjustment['mode'],
+                                    },
+                                  }))
+                                }
+                                value={adjustment.mode}
+                              >
+                                <option value="percent">٪</option>
+                                <option value="fixed">
+                                  {row.currencyCode ?? batch.currencyCode}
+                                </option>
+                              </NativeSearchSelect>
+                              {adjustment.mode === 'fixed' ? (
+                                <MoneyInput
+                                  aria-label={
+                                    'مقدار تغییر قیمت ' + row.hotelName
+                                  }
+                                  className="h-9 min-w-20"
+                                  onValueChange={(value) =>
+                                    setAdjustments((current) => ({
+                                      ...current,
+                                      [row.id]: { ...adjustment, value },
+                                    }))
+                                  }
+                                  value={adjustment.value}
+                                />
+                              ) : (
+                                <Input
+                                  aria-label={
+                                    'درصد تغییر قیمت ' + row.hotelName
+                                  }
+                                  className="h-9 min-w-20"
+                                  inputMode="decimal"
+                                  onChange={(event) =>
+                                    setAdjustments((current) => ({
+                                      ...current,
+                                      [row.id]: {
+                                        ...adjustment,
+                                        value: event.target.value,
+                                      },
+                                    }))
+                                  }
+                                  value={adjustment.value}
+                                />
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-muted-foreground">
-              قیمت خرید و ضرایب فقط‌خواندنی‌اند؛ پیش‌نمایش فروش هر اتاق برای کل{' '}
-              {stayNights} شب، با گردکردن نرخ هر شب و یک تغییر روی کل اقامت
-              محاسبه می‌شود. گزینه‌های هتل مستقل‌اند و هزینه آن‌ها با هم جمع
-              نمی‌شود.
-            </p>
             {invalidSale && !invalidFields ? (
-              <Alert
-                title="مقدار تغییر معتبر نیست"
-                description="عدد نامعتبر یا کاهش بیشتر از قیمت خرید، قیمت فروش این ردیف را نامعتبر می‌کند."
-              />
+              <Alert title="قیمت فروش معتبر نیست." />
             ) : null}
             {draft ? (
               <Badge>پیش‌نویس ذخیره‌شده · نسخه {draft.draftVersion}</Badge>
@@ -856,32 +874,6 @@ export function TourPricingWorkspace() {
           disabled={saving}
         />
         {invalidFields ? <Alert title="ردیف‌های قیمت معتبر نیستند." /> : null}
-        <Alert
-          title="مبنای انتشار قیمت پکیج"
-          description="قیمت پرواز، مجموع رفت‌وبرگشت برای هر مسافر است. پکیج به ازای کل مسافران هر اتاق محاسبه می‌شود؛ ارزهای متفاوت به شکل مبلغ + مبلغ نمایش داده می‌شوند. کمیسیون درصدی از سود هر ارز و کمیسیون ثابت از سود ارز انتخاب‌شده کم می‌شود و قیمت فروش را تغییر نمی‌دهد. نرخ خرید پرداخت‌شده مالی مبنای سود است. انتشار نسخه ذخیره‌شده با تأییدکننده مجاز انجام می‌شود."
-        />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label>
-            بزرگسال اتاق خانوادگی
-            <Input
-              type="number"
-              min="1"
-              max="20"
-              value={familyAdults}
-              onChange={(event) => setFamilyAdults(event.target.value)}
-            />
-          </label>
-          <label>
-            کودک اتاق خانوادگی
-            <Input
-              type="number"
-              min="0"
-              max="20"
-              value={familyChildren}
-              onChange={(event) => setFamilyChildren(event.target.value)}
-            />
-          </label>
-        </div>
         <div className="flex flex-wrap gap-2">
           <Button
             disabled={!batch || !grid || invalidSale || saving}
@@ -904,6 +896,7 @@ export function TourPricingWorkspace() {
               draft.lastEditorUserId === session?.user.id ||
               !!grid?.missingFlightOfferIds.length ||
               invalidSale ||
+              !selectedHotelRateIds.length ||
               !grid?.tour.remainingCapacity
             }
             onClick={() => void publishDraft()}
@@ -934,9 +927,9 @@ export function TourPricingWorkspace() {
         <Card className="grid gap-4 p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-black">قیمت‌های منتشرشدهٔ همین بازه</h2>
-            {bannerHref &&
-            session?.user.permissions.includes('package_pricing.read') &&
-            session.user.permissions.includes('package_pricing.render') ? (
+            {publication?.selectedHotelRateIds ? null : bannerHref &&
+              session?.user.permissions.includes('package_pricing.read') &&
+              session.user.permissions.includes('package_pricing.render') ? (
               <Link
                 className="inline-flex min-h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
                 href={bannerHref}
@@ -979,7 +972,10 @@ export function TourPricingWorkspace() {
                   <thead className="bg-muted/80 text-xs">
                     <tr>
                       <th className="p-3 text-right">گزینهٔ هتل</th>
-                      {activeRoomColumns.map(([code, title]) => (
+                      {(publication.selectedHotelRateIds
+                        ? tableColumns
+                        : activeRoomColumns
+                      ).map(([code, title]) => (
                         <th key={code} className="p-3 text-right">
                           {title}
                         </th>
@@ -987,68 +983,90 @@ export function TourPricingWorkspace() {
                     </tr>
                   </thead>
                   <tbody>
-                    {batch.rows.map((row) => (
-                      <tr key={row.id} className="border-t border-border">
-                        <td className="p-3 font-bold">
-                          {row.hotelName} · {row.brokerName}
-                        </td>
-                        {activeRoomColumns.map(([code]) => {
-                          const price = publication.roomPrices.find(
-                            (item) =>
-                              item.hotelRateId === row.id &&
-                              item.roomCode === code,
-                          );
-                          return (
-                            <td
-                              key={code}
-                              className="p-3 tabular-nums text-primary"
-                            >
-                              {price ? (
-                                <>
-                                  <strong className="block">
-                                    {price.currencyAmounts
-                                      ? displayAmounts(
-                                          price.currencyAmounts,
-                                          'sale',
-                                        )
-                                      : `${price.packageSale ?? price.hotelSale} ${price.currencyCode}`}
-                                  </strong>
-                                  <span className="block text-xs text-muted-foreground">
-                                    {price.currencyAmounts || price.packageSale
-                                      ? 'پکیج کامل'
-                                      : 'فقط اقامت؛ ترکیب خانواده نامعلوم'}
-                                  </span>
-                                  {price.currencyAmounts || price.netProfit ? (
-                                    <span className="block text-xs text-muted-foreground">
-                                      سود پس از کمیسیون:{' '}
+                    {batch.rows
+                      .filter(
+                        (row) =>
+                          !publication.selectedHotelRateIds ||
+                          publication.selectedHotelRateIds.includes(row.id),
+                      )
+                      .map((row) => (
+                        <tr key={row.id} className="border-t border-border">
+                          <td className="p-3 font-bold">
+                            {row.hotelName} · {row.brokerName}
+                          </td>
+                          {(publication.selectedHotelRateIds
+                            ? tableColumns
+                            : activeRoomColumns
+                          ).map(([code]) => {
+                            const price = publication.roomPrices.find(
+                              (item) =>
+                                item.hotelRateId === row.id &&
+                                item.roomCode === code,
+                            );
+                            return (
+                              <td
+                                key={code}
+                                className="p-3 tabular-nums text-primary"
+                              >
+                                {price ? (
+                                  <>
+                                    <strong className="block">
                                       {price.currencyAmounts
                                         ? displayAmounts(
                                             price.currencyAmounts,
-                                            'profit',
+                                            'sale',
                                           )
-                                        : price.netProfit}
+                                        : `${price.packageSale ?? price.hotelSale} ${price.currencyCode}`}
+                                    </strong>
+                                    <span className="block text-xs text-muted-foreground">
+                                      {publication.selectedHotelRateIds
+                                        ? `${price.roomTypeName ?? ''} · ${price.board ?? ''}`
+                                        : price.currencyAmounts ||
+                                            price.packageSale
+                                          ? 'پکیج کامل'
+                                          : 'فقط اقامت؛ ترکیب خانواده نامعلوم'}
                                     </span>
-                                  ) : null}
-                                </>
-                              ) : (
-                                '—'
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                                    {price.currencyAmounts ||
+                                    price.netProfit ? (
+                                      <span className="block text-xs text-muted-foreground">
+                                        سود پس از کمیسیون:{' '}
+                                        {price.currencyAmounts
+                                          ? displayAmounts(
+                                              price.currencyAmounts,
+                                              'profit',
+                                            )
+                                          : price.netProfit}
+                                      </span>
+                                    ) : null}
+                                  </>
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
-              <p className="text-xs text-muted-foreground">
-                قیمت پکیج برای اتاق یک‌تخته، دوتخته، سه‌تخته و گزینه‌های کودک با
-                تعداد مسافران متناظر محاسبه شده است. افزایش بیزینس برای هر
-                بزرگسال فقط در نوبت پرواز بیزینس اعمال می‌شود. ترکیب مسافر اتاق
-                خانوادگی از تعداد بزرگسال و کودک ذخیره‌شده در نسخه قیمت استفاده
-                می‌کند. کمیسیون از سود کسر شده و قیمت فروش را تغییر نمی‌دهد؛
-                هتل‌ها با هم جمع نمی‌شوند.
-              </p>
+              {publication.selectedHotelRateIds &&
+              grid &&
+              session?.user.permissions.includes('package_pricing.render') ? (
+                <>
+                  <Button
+                    disabled={!generatorData}
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowGenerator((current) => !current)}
+                  >
+                    خروجی با پک‌جنریتور
+                  </Button>
+                  {showGenerator && generatorData ? (
+                    <SourcePackageGenerator importData={generatorData} />
+                  ) : null}
+                </>
+              ) : null}
             </>
           ) : null}
         </Card>

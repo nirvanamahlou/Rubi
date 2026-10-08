@@ -350,6 +350,7 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
+  selectedHotelRateIds?: readonly string[];
   priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
   familyChildren?: number;
@@ -379,6 +380,10 @@ export interface PackageTourDraftV1 extends PackageTourDraftSaveV1 {
 }
 
 export interface PackageTourPublishedRoomPriceV1 {
+  roomTypeName?: string;
+  board?: string;
+  childAgeMin?: number;
+  childAgeMaxExclusive?: number;
   currencyAmounts?: readonly TourRoomCurrencyAmount[];
   hotelRateId: string;
   roomCode: string;
@@ -392,6 +397,7 @@ export interface PackageTourPublishedRoomPriceV1 {
 }
 
 export interface PackageTourPublicationV1 {
+  selectedHotelRateIds?: readonly string[];
   priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
   familyChildren?: number;
@@ -475,3 +481,6 @@ export {
   tourPriceFieldValues,
   validateTourPriceFields,
 } from './price-fields';
+
+export { buildHotelPackageTable } from './hotel-package-table';
+export type { HotelPackageTablePrice } from './hotel-package-table';

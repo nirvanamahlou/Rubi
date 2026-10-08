@@ -4,14 +4,37 @@ import { useEffect, useRef, useState } from 'react';
 import { useDisplayLanguage } from '@/i18n/locale-context';
 
 import { Skeleton } from '@/components/ui/surfaces';
+import type { PackageGeneratorData } from '../model/package-generator-data';
 
 export const sourcePackageGeneratorPath =
   '/package-generator/index.html?v=rubi-template-refresh';
 
-export function SourcePackageGenerator() {
+export function SourcePackageGenerator({
+  importData,
+}: { importData?: PackageGeneratorData } = {}) {
   const [loaded, setLoaded] = useState(false);
   const language = useDisplayLanguage();
   const frame = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    const send = () => {
+      if (importData)
+        frame.current?.contentWindow?.postMessage(
+          { type: 'rubi-package-pricing', data: importData },
+          window.location.origin,
+        );
+    };
+    const ready = (event: MessageEvent) => {
+      if (
+        event.origin === window.location.origin &&
+        event.source === frame.current?.contentWindow &&
+        event.data?.type === 'rubi-package-pricing-ready'
+      )
+        send();
+    };
+    window.addEventListener('message', ready);
+    if (loaded) send();
+    return () => window.removeEventListener('message', ready);
+  }, [importData, loaded]);
   useEffect(() => {
     if (loaded)
       frame.current?.contentWindow?.postMessage(
