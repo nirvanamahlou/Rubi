@@ -82,6 +82,7 @@ export function quoteHotelOccupancy(
     checkOut: string;
     currencyCode?: string;
     board?: string;
+    priceBasis?: 'PURCHASE' | 'SALE';
   },
 ): { amount: string; currencyCode: string } | null {
   const start = dateStamp(input.checkIn),
@@ -115,7 +116,12 @@ export function quoteHotelOccupancy(
   if (board === undefined) return null;
   const options = activeRates.filter(
     (row) =>
-      row.board === board && /^\d{1,12}(?:\.\d{1,12})?$/.test(row.amount),
+      row.board === board &&
+      /^\d{1,12}(?:\.\d{1,12})?$/.test(
+        input.priceBasis === 'SALE'
+          ? (row.saleAmount ?? row.amount)
+          : row.amount,
+      ),
   );
   const day = (stamp: number) => new Date(stamp).toISOString().slice(0, 10);
   let budget = 25000;
@@ -132,7 +138,13 @@ export function quoteHotelOccupancy(
             row.endsOnExclusive > date &&
             hotelChildrenFit(ages, row.childAges),
         )
-        .map((row) => units(row.amount));
+        .map((row) =>
+          units(
+            input.priceBasis === 'SALE'
+              ? (row.saleAmount ?? row.amount)
+              : row.amount,
+          ),
+        );
       if (!prices.length) return null;
       if (new Set(prices.map(String)).size !== 1) return null;
       total += prices.reduce((a, b) => (a < b ? a : b));

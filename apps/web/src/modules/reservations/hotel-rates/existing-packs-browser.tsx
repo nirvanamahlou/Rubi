@@ -19,11 +19,13 @@ export function SavedPackHotelPrices({
   search,
   disabled,
   onChange,
+  onEdit,
 }: {
   pack: PackDetail;
   search: string;
   disabled: boolean;
   onChange: (pack: PackDetail) => void;
+  onEdit?: (id: string) => void;
 }) {
   const visible = visiblePackHotels(pack, search);
   return (
@@ -38,6 +40,9 @@ export function SavedPackHotelPrices({
         const exact = row.roomRates.some((room) => room.occupancyRates?.length);
         const onlyExact =
           exact && row.roomRates.every((room) => room.occupancyRates?.length);
+        const manual = row.roomRates.some((room) =>
+          room.occupancyRates?.some((rate) => rate.manualPricing),
+        );
         return (
           <article
             key={row.hotelId}
@@ -47,61 +52,110 @@ export function SavedPackHotelPrices({
             <p>
               کارگزار: {row.brokerName} · ارز: {row.currency}
             </p>
-            {exact && (
+            {exact && !manual && (
               <p>
                 قیمت واقعی ترکیبی، کل اتاق در هر شب است؛ پایه و ضرایب قدیمی روی
                 آن اعمال نمی‌شوند.
               </p>
             )}
-            <label className="flex items-center gap-3">
-              {onlyExact
-                ? 'پایهٔ سازگاری نرخ قدیمی (نه قیمت ترکیب)'
-                : 'قیمت پایهٔ هر نفر / هر شب'}
-              <input
-                aria-label={`قیمت پایهٔ ${row.hotelName}`}
-                dir="ltr"
-                className="w-40 rounded border p-2"
-                inputMode="decimal"
-                disabled={disabled || onlyExact}
-                value={row.base}
-                onChange={(event) =>
-                  onChange({
-                    ...pack,
-                    rows: pack.rows.map((item) =>
-                      item.hotelId === row.hotelId
-                        ? { ...item, base: event.target.value }
-                        : item,
-                    ),
-                  })
-                }
-              />
-            </label>
+            {!exact && (
+              <p>
+                جدول و ضرایب دستی قدیمی کنار گذاشته شده‌اند؛ برای تعیین قیمت
+                معتبر، این بسته را در پنل جدید هتل باز کنید.
+              </p>
+            )}
+            {(manual || !exact) && onEdit && (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onEdit(pack.id)}
+              >
+                باز کردن پنل ضرایب و قیمت پایه
+              </button>
+            )}
+            {exact && !manual && (
+              <label className="flex items-center gap-3">
+                {onlyExact
+                  ? 'پایهٔ سازگاری نرخ قدیمی (نه قیمت ترکیب)'
+                  : 'قیمت پایهٔ هر نفر / هر شب'}
+                <input
+                  aria-label={`قیمت پایهٔ ${row.hotelName}`}
+                  dir="ltr"
+                  className="w-40 rounded border p-2"
+                  inputMode="decimal"
+                  disabled={disabled || onlyExact}
+                  value={row.base}
+                  onChange={(event) =>
+                    onChange({
+                      ...pack,
+                      rows: pack.rows.map((item) =>
+                        item.hotelId === row.hotelId
+                          ? { ...item, base: event.target.value }
+                          : item,
+                      ),
+                    })
+                  }
+                />
+              </label>
+            )}
             {row.roomRates
               .filter((room) => room.occupancyRates?.length)
               .map((room) => (
                 <div key={room.roomTypeId}>
                   <h4>{room.roomTypeName}</h4>
-                  <OccupancyRateEditor
-                    disabled={disabled}
-                    rates={room.occupancyRates!}
-                    onChange={(rates) =>
-                      onChange({
-                        ...pack,
-                        rows: pack.rows.map((item) =>
-                          item.hotelId !== row.hotelId
-                            ? item
-                            : {
-                                ...item,
-                                roomRates: item.roomRates.map((saved) =>
-                                  saved.roomTypeId === room.roomTypeId
-                                    ? { ...saved, occupancyRates: rates }
-                                    : saved,
-                                ),
-                              },
-                        ),
-                      })
-                    }
-                  />
+                  {room.occupancyRates!.some((rate) => rate.manualPricing) ? (
+                    <div className="overflow-x-auto">
+                      <table aria-label="قیمت‌های دستی ذخیره‌شده">
+                        <thead>
+                          <tr>
+                            <th>ترکیب</th>
+                            <th>قیمت پایهٔ اتاق</th>
+                            <th>ضریب</th>
+                            <th>قیمت خرید</th>
+                            <th>قیمت فروش</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {room.occupancyRates!.map((rate, index) => (
+                            <tr key={index}>
+                              <td>{rate.composition}</td>
+                              <td>{rate.manualPricing?.baseAmount ?? '—'}</td>
+                              <td>{rate.manualPricing?.coefficient ?? '—'}</td>
+                              <td dir="ltr">
+                                {rate.amount} {rate.currencyCode}
+                              </td>
+                              <td dir="ltr">
+                                {rate.saleAmount ?? rate.amount}{' '}
+                                {rate.currencyCode}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <OccupancyRateEditor
+                      disabled={disabled}
+                      rates={room.occupancyRates!}
+                      onChange={(rates) =>
+                        onChange({
+                          ...pack,
+                          rows: pack.rows.map((item) =>
+                            item.hotelId !== row.hotelId
+                              ? item
+                              : {
+                                  ...item,
+                                  roomRates: item.roomRates.map((saved) =>
+                                    saved.roomTypeId === room.roomTypeId
+                                      ? { ...saved, occupancyRates: rates }
+                                      : saved,
+                                  ),
+                                },
+                          ),
+                        })
+                      }
+                    />
+                  )}
                 </div>
               ))}
           </article>
@@ -117,12 +171,14 @@ export function ExistingPacksBrowser({
   canWrite,
   onSaved,
   onLockChange,
+  onEdit,
 }: {
   branchId: string;
   revision: number;
   canWrite: boolean;
   onSaved: () => void;
   onLockChange: (locked: boolean) => void;
+  onEdit?: (id: string) => void;
 }) {
   const [packs, setPacks] = useState<PackSummary[]>([]);
   const [cityId, setCityId] = useState('');
@@ -313,6 +369,9 @@ export function ExistingPacksBrowser({
             pack={opened}
             search={search}
             disabled={!canWrite || busy}
+            {...(onEdit
+              ? { onEdit: (id: string) => navigate(() => onEdit(id)) }
+              : {})}
             onChange={(updated) => {
               setDetail(updated);
               setDirty(true);

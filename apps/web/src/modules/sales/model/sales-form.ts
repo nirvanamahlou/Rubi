@@ -433,6 +433,7 @@ export function salesHotelOccupancyQuote(
     return null;
   if (ages.some((age) => age === null || age >= 15)) return null;
   return quoteHotelOccupancy(room.occupancyRates, {
+    priceBasis: 'SALE',
     adults,
     childAges: ages as number[],
     rooms: state.hotel.roomCount,
