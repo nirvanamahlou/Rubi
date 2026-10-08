@@ -1,3 +1,7 @@
+## 2026-10-08 — ACCOUNTING-FISCAL-YEAR-BUTTONS-1008 — PC-A
+
+Fiscal-year definition uses a top-left icon toolbar for existing save/save-new/save-close plus new/reload/close. Tooltip labels and real Alt+Shift shortcuts, permission-aware keyboard clicks, native form validity preserved; row edit icon supports focused Enter. Duplicate textual refresh suppressed on this definition only. Scoped lint/typecheck and Web build56 routes passed; authenticated3100 browser verified edit/new reset/close navigation/reload with no record saves. No backend/data mutations or delegation. Separate deletion/export request remains unfinished.
+
 ## 2026-10-08 — ACCOUNTING-BASE-LIST-FILTERS-1008 — PC-A
 
 All three Accounting base-information lists (fiscal years, ledgers, voucher types) now share grouped filters with all/any/not-all/none modes, nested conditions, Persian text matching, current-book allocation predicates, pagination and scope-reset selection. Icon actions provide tooltips and real shortcuts for multi-selection, complete filtered-result counts, list navigation, reload and filter operations. Web-only; no API/schema/dependency/permission/data changes. Focused tests10/10, scoped lint/typecheck, Web production build56 routes and authenticated browser checks across all three lists passed. Final delete-condition icon contrast corrected and lint/visual rechecked. Current3100 preview retained; sole-writer execution without delegation. Full financial parity and the separate delete/export toolbar task remain unfinished.

@@ -1,5 +1,6 @@
 'use client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil } from 'lucide-react';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import Link from '@/i18n/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ import { AccountingReportWorkspace } from './accounting-report-workspace';
 import { AccountingAttachments } from './accounting-attachments';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
 import { AccountingBaseList } from './accounting-base-list';
+import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
 import type { AccountingListKind } from '../accounting-list-filters';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
@@ -750,12 +752,38 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         <Panel title={title}>
           {!listOnly ? (
             <form
+              id={
+                kind === 'fiscal-years' ? 'fiscal-year-definition' : undefined
+              }
               className="space-y-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 void save('stay');
               }}
             >
+              {kind === 'fiscal-years' ? (
+                <AccountingDefinitionToolbar
+                  busy={busy}
+                  canClose={!!listRoute}
+                  save={(after) => {
+                    const form = document.getElementById(
+                      'fiscal-year-definition',
+                    ) as HTMLFormElement | null;
+                    if (form?.reportValidity()) void save(after);
+                  }}
+                  reset={() => {
+                    setEditing(null);
+                    setDraft({ active: true, permanent: true });
+                  }}
+                  refresh={() => void refresh()}
+                  close={() => {
+                    if (listRoute)
+                      router.push(
+                        `/finance/accounting/${listRoute}?bookId=${bookId}`,
+                      );
+                  }}
+                />
+              ) : null}
               <Fields
                 fields={[...recordFields, ...specific]}
                 draft={draft}
@@ -787,49 +815,51 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                   </div>
                 </details>
               ) : null}
-              <div className="flex gap-2">
-                <Button
-                  permission="finance.account.manage"
-                  disabled={busy}
-                  type="submit"
-                >
-                  ذخیره
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void save('new')}
-                >
-                  ذخیره و جدید
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={busy || !listRoute}
-                  onClick={() => void save('close')}
-                >
-                  ذخیره و بستن
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => {
-                    setEditing(null);
-                    setDraft({ active: true, permanent: true });
-                  }}
-                >
-                  جدید
-                </Button>
-                <Button
-                  variant="outline"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void refresh()}
-                >
-                  بارگذاری مجدد
-                </Button>
-              </div>
+              {kind !== 'fiscal-years' ? (
+                <div className="flex gap-2">
+                  <Button
+                    permission="finance.account.manage"
+                    disabled={busy}
+                    type="submit"
+                  >
+                    ذخیره
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void save('new')}
+                  >
+                    ذخیره و جدید
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    disabled={busy || !listRoute}
+                    onClick={() => void save('close')}
+                  >
+                    ذخیره و بستن
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => {
+                      setEditing(null);
+                      setDraft({ active: true, permanent: true });
+                    }}
+                  >
+                    جدید
+                  </Button>
+                  <Button
+                    variant="outline"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void refresh()}
+                  >
+                    بارگذاری مجدد
+                  </Button>
+                </div>
+              ) : null}
             </form>
           ) : (
             <p className="text-sm text-muted-foreground">
@@ -856,6 +886,14 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                       permission="finance.account.manage"
                       size="sm"
                       variant="outline"
+                      {...(kind === 'fiscal-years'
+                        ? {
+                            'aria-label': 'ویرایش دوره مالی',
+                            'aria-keyshortcuts': 'Enter',
+                            title:
+                              'ویرایش دوره مالی · Enter هنگام تمرکز روی دکمه',
+                          }
+                        : {})}
                       onClick={() => {
                         const base: Draft = {};
                         for (const [k, value] of Object.entries(r))
@@ -874,7 +912,11 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
                         setEditing({ id: r.id, version: r.version });
                       }}
                     >
-                      ویرایش
+                      {kind === 'fiscal-years' ? (
+                        <Pencil className="size-4" />
+                      ) : (
+                        'ویرایش'
+                      )}
                     </Button>
                   )}
                 </td>
@@ -932,15 +974,16 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
             </FormField>
           </div>
         )}
-        {!section.startsWith('general-ledger/base-information/lists/') && (
-          <Button
-            variant="outline"
-            onClick={() => void refresh()}
-            disabled={loading || busy}
-          >
-            به‌روزرسانی
-          </Button>
-        )}
+        {!section.startsWith('general-ledger/base-information/lists/') &&
+          section !== 'general-ledger/base-information/fiscal-years' && (
+            <Button
+              variant="outline"
+              onClick={() => void refresh()}
+              disabled={loading || busy}
+            >
+              به‌روزرسانی
+            </Button>
+          )}
       </div>
       {error || booksQuery.error || snapshotQuery.error ? (
         <div
