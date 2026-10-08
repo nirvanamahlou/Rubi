@@ -47,100 +47,105 @@ export function TourPriceFields({
           <Plus className="size-4" /> افزودن فیلد قیمت
         </Button>
       </div>
-      {value.map((field, index) => (
-        <div
-          key={field.id}
-          className="grid items-end gap-3 rounded-xl border border-border p-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_6rem_auto]"
-        >
-          <label className="grid gap-2 text-sm font-bold">
-            نام فیلد
-            <Input
-              aria-label={`نام فیلد قیمت ${index + 1}`}
-              maxLength={120}
-              disabled={disabled}
-              value={field.title}
-              onChange={(event) =>
-                update(field.id, { title: event.target.value })
-              }
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            {field.mode === 'percent' ? 'درصد' : 'مبلغ'}
-            <MoneyInput
-              aria-label={`مبلغ ${field.title || index + 1}`}
-              disabled={disabled}
-              value={field.amount}
-              onValueChange={(amount) => update(field.id, { amount })}
-            />
-          </label>
-          <label className="grid gap-2 text-sm font-bold">
-            {field.mode === 'percent' ? 'نوع کمیسیون' : 'ارز'}
-            {field.mode === 'percent' ? (
-              <NativeSearchSelect
-                aria-label="نوع کمیسیون"
-                disabled={disabled}
-                value={field.mode}
-                onChange={(event) =>
-                  update(field.id, {
-                    mode: event.target.value as 'fixed' | 'percent',
-                  })
-                }
-              >
-                <option value="percent">درصدی</option>
-                <option value="fixed">مبلغ ثابت</option>
-              </NativeSearchSelect>
-            ) : (
+      <div className="grid gap-3 lg:grid-cols-2">
+        {value.map((field, index) => (
+          <div
+            key={field.id}
+            className="grid grid-cols-[minmax(0,1fr)_5rem_2.5rem] items-end gap-3 rounded-xl border border-border p-3"
+          >
+            <label className="col-span-full grid gap-2 text-sm font-bold">
+              نام فیلد
               <Input
-                aria-label={`ارز ${field.title || index + 1}`}
-                dir="ltr"
-                maxLength={3}
-                placeholder="IRR"
+                aria-label={`نام فیلد قیمت ${index + 1}`}
+                maxLength={120}
                 disabled={disabled}
-                value={field.currencyCode}
+                value={field.title}
                 onChange={(event) =>
-                  update(field.id, {
-                    currencyCode: event.target.value
-                      .toUpperCase()
-                      .replace(/[^A-Z]/g, ''),
-                  })
+                  update(field.id, { title: event.target.value })
                 }
               />
-            )}
-          </label>
-          <Button
-            aria-label={`حذف فیلد ${field.title || index + 1}`}
-            type="button"
-            variant="outline"
-            disabled={disabled}
-            onClick={() => onChange(value.filter((row) => row.id !== field.id))}
-          >
-            <Trash2 className="size-4" /> حذف
-          </Button>
-          {field.kind === 'commission' && field.mode === 'fixed' ? (
-            <label className="grid gap-2 text-sm sm:col-span-full">
-              نوع کمیسیون
-              <NativeSearchSelect
-                aria-label="نوع کمیسیون"
-                disabled={disabled}
-                value={field.mode}
-                onChange={(event) =>
-                  update(field.id, {
-                    mode: event.target.value as 'fixed' | 'percent',
-                  })
-                }
-              >
-                <option value="percent">درصدی</option>
-                <option value="fixed">مبلغ ثابت</option>
-              </NativeSearchSelect>
             </label>
-          ) : null}
-          {field.kind === 'custom' ? (
-            <span className="text-xs text-muted-foreground sm:col-span-full">
-              مبلغ هر پکیج اتاق
-            </span>
-          ) : null}
-        </div>
-      ))}
+            <label className="grid gap-2 text-sm font-bold">
+              {field.mode === 'percent' ? 'درصد' : 'مبلغ'}
+              <MoneyInput
+                aria-label={`مبلغ ${field.title || index + 1}`}
+                disabled={disabled}
+                value={field.amount}
+                onValueChange={(amount) => update(field.id, { amount })}
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-bold">
+              {field.mode === 'percent' ? 'نوع کمیسیون' : 'ارز'}
+              {field.mode === 'percent' ? (
+                <NativeSearchSelect
+                  aria-label="نوع کمیسیون"
+                  disabled={disabled}
+                  value={field.mode}
+                  onChange={(event) =>
+                    update(field.id, {
+                      mode: event.target.value as 'fixed' | 'percent',
+                    })
+                  }
+                >
+                  <option value="percent">درصدی</option>
+                  <option value="fixed">مبلغ ثابت</option>
+                </NativeSearchSelect>
+              ) : (
+                <Input
+                  aria-label={`ارز ${field.title || index + 1}`}
+                  dir="ltr"
+                  maxLength={3}
+                  placeholder="IRR"
+                  disabled={disabled}
+                  value={field.currencyCode}
+                  onChange={(event) =>
+                    update(field.id, {
+                      currencyCode: event.target.value
+                        .toUpperCase()
+                        .replace(/[^A-Z]/g, ''),
+                    })
+                  }
+                />
+              )}
+            </label>
+            <Button
+              aria-label={`حذف فیلد ${field.title || index + 1}`}
+              className="size-10 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              type="button"
+              variant="outline"
+              disabled={disabled}
+              onClick={() =>
+                onChange(value.filter((row) => row.id !== field.id))
+              }
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+            </Button>
+            {field.kind === 'commission' && field.mode === 'fixed' ? (
+              <label className="grid gap-2 text-sm col-span-full">
+                نوع کمیسیون
+                <NativeSearchSelect
+                  aria-label="نوع کمیسیون"
+                  disabled={disabled}
+                  value={field.mode}
+                  onChange={(event) =>
+                    update(field.id, {
+                      mode: event.target.value as 'fixed' | 'percent',
+                    })
+                  }
+                >
+                  <option value="percent">درصدی</option>
+                  <option value="fixed">مبلغ ثابت</option>
+                </NativeSearchSelect>
+              </label>
+            ) : null}
+            {field.kind === 'custom' ? (
+              <span className="col-span-full text-xs text-muted-foreground">
+                مبلغ هر پکیج اتاق
+              </span>
+            ) : null}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -5094,3 +5094,9 @@ Shared time Input and date/time calendars use an app-themed hour/minute panel wi
 Removed publication-basis explanation/family controls. Checked hotel/broker rows populate single, double and child-with-bed per-person columns using cheapest complete nightly tariffs. Child derives the same-room occupancy difference. Shared exact arithmetic drives preview/publication with independent currencies, and additive nullable selection/source metadata preserves legacy drafts and immutable publications. Existing native Pack Generator imports sale-only selected published rows through a validated same-origin parent bridge and retains template choice/PDF/PNG export. No operational data/runtime/dependency change. Focused verification and clean exact-head CI gate explicitly authorized develop merge; delivery in docs/tasks/PACKAGE-HOTEL-TABLE-GENERATOR-1008.md.
 
 Verification:24 Contracts,43 Web and33 API focused tests; scoped lint/formatting, shared/API/Web typechecks and production builds pass (56 Web routes). Schema formatted/generated. Origin develop integrated with both translation additions retained and derived catalogues regenerated. Additive migration rehearsed by clean exact-head CI before user-authorized merge; no local operational DB/runtime rollout.
+
+## 2026-10-08 — PC-A — Compact price field pairs
+
+Price-field editors use two columns on desktop and a single column on narrow screens. Each editor keeps a full-width field-name input and amount/currency controls below. Delete uses an accessible red trash icon, preserving the existing keyed callback and disabled state. Presentation-only; no data/API/schema/runtime changes. Scoped verification and review PR follow.
+
+Verification: both existing price-field/workspace regressions and scoped lint pass. Typecheck and full CI build gate review; bounded component lock released with candidate.
