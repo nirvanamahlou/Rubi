@@ -3,6 +3,76 @@
   margin: auto;
   color: var(--foreground);
 }
+.root fieldset {
+  min-inline-size: 0;
+}
+.modeBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.modeBar .branchFilter {
+  margin-inline-start: auto;
+}
+.modeBar button[aria-pressed='true'] {
+  color: white;
+  background: #1557b8;
+  border-color: #1557b8;
+}
+.root .destinationSetup {
+  max-width: 660px;
+}
+.destinationHotel {
+  margin-top: 18px;
+}
+.root .staySetup {
+  padding: 16px 20px;
+}
+.stayFields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+.stayFields output {
+  min-height: 40px;
+  padding: 10px;
+  background: var(--muted);
+  border-radius: 7px;
+  margin: 0;
+}
+.saveBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 0;
+}
+.saveBar > div {
+  display: flex;
+  gap: 8px;
+}
+.savedPackages {
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.savedPackages > summary {
+  font-weight: 600;
+}
+.confirmation {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 12px;
+}
+@media (max-width: 700px) {
+  .stayFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 .root header {
   margin-bottom: 24px;
 }

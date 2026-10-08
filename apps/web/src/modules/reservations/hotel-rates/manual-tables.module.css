@@ -1,0 +1,224 @@
+.panels {
+  display: grid;
+  gap: 20px;
+}
+.panels > div {
+  min-width: 0;
+}
+.panel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 20px;
+}
+.hotelHeader,
+.roomHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.hotelHeader h2,
+.roomHeader h3 {
+  margin: 0;
+  font-weight: 700;
+}
+.hotelHeader {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.hotelSettings {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(100px, 180px);
+  gap: 16px;
+  max-width: 650px;
+  margin: 20px 0;
+}
+.hotelSelector,
+.field {
+  display: grid;
+  gap: 8px;
+  max-width: 620px;
+}
+.hotelTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hotelTabs button[aria-pressed='true'] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.panel .coefficients {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.panel .coefficients summary {
+  padding: 14px 16px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+.coefficients p {
+  padding: 0 16px;
+}
+.tableScroll {
+  overflow-x: auto;
+}
+.panel table.coefficientTable {
+  width: 100%;
+  min-width: 740px;
+  font-size: 13px;
+}
+.panel table.coefficientTable td {
+  min-width: 90px;
+  vertical-align: middle;
+}
+.panel table.coefficientTable td:nth-child(4) {
+  min-width: 310px;
+}
+.panel table.coefficientTable td:nth-child(5) {
+  width: 105px;
+}
+.childRange {
+  display: grid;
+  grid-template-columns: auto 90px auto 90px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  white-space: nowrap;
+}
+.selectionTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 0 0 16px;
+}
+.selectionTools > :last-child {
+  min-width: 260px;
+  max-width: 350px;
+}
+.bulkBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  padding: 14px;
+  margin-bottom: 18px;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+.bulkBar > :not(span) {
+  width: auto;
+  min-width: 100px;
+  max-width: 210px;
+}
+.bulkBar > input {
+  width: 150px;
+}
+.panel .roomCard {
+  padding: 0;
+  margin: 0 0 18px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.roomHeader {
+  padding: 16px 20px;
+  background: color-mix(in srgb, var(--muted) 30%, var(--surface));
+}
+.baseField {
+  display: grid;
+  grid-template-columns: auto 150px;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.baseField input {
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.panel table.priceTable {
+  min-width: 540px;
+  width: 100%;
+  font-size: 14px;
+  table-layout: fixed;
+}
+.panel table.priceTable th,
+.panel table.priceTable td {
+  padding: 12px 16px;
+  min-width: 0;
+  vertical-align: middle;
+}
+.panel table.priceTable th:first-child,
+.panel table.priceTable td:first-child {
+  width: 52px;
+  min-width: 52px;
+}
+.panel table.priceTable th:nth-child(2) {
+  width: 40%;
+}
+.panel table.priceTable th {
+  font-size: 12px;
+  background: var(--surface);
+  color: var(--muted-foreground);
+}
+.panel table.priceTable tbody tr {
+  cursor: pointer;
+}
+.panel table.priceTable tbody tr:hover {
+  background: color-mix(in srgb, var(--primary) 4%, var(--surface));
+}
+.panel table.priceTable tr.selected {
+  background: color-mix(in srgb, var(--primary) 9%, var(--surface));
+}
+.panel table.priceTable input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  padding: 0;
+  accent-color: var(--primary);
+}
+.panel table.priceTable .saleInput {
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  direction: ltr;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--primary) 3%, var(--surface));
+}
+.panel table.priceTable .saleInput[aria-invalid='true'] {
+  border-color: var(--destructive);
+}
+.panel table.priceTable small {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-top: 3px;
+}
+.roomCard > p {
+  padding: 0 16px;
+}
+@media (max-width: 700px) {
+  .panel {
+    padding: 12px;
+  }
+  .hotelSettings {
+    grid-template-columns: 1fr;
+  }
+  .roomHeader {
+    align-items: stretch;
+    padding: 12px;
+  }
+  .baseField {
+    width: 100%;
+    grid-template-columns: 1fr 130px;
+  }
+  .selectionTools > :last-child {
+    min-width: 200px;
+  }
+}
