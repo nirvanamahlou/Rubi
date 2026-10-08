@@ -1015,6 +1015,7 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
         {![
           'general-ledger/base-information/fiscal-years',
           'general-ledger/base-information/ledgers',
+          'general-ledger/base-information/voucher-types',
         ].includes(section) && (
           <div className="min-w-60 flex-1">
             <FormField label="دفتر حسابداری" id="accounting-book">

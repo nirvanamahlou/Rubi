@@ -1,3 +1,7 @@
+## 2026-10-08 — ACCOUNTING-VOUCHER-TYPE-FIELD-1008 — PC-A
+
+Removed the visible book selector from the voucher-type definition form; underlying selected-book resolution remains unchanged. Local3100 UI verification; no backend/schema/data changes. Direct execution without delegation.
+
 ## 2026-10-08 — ACCOUNTING-LEDGER-FORM-1008 — PC-A
 
 Unified screenshot-guided ledger definition form: main/notes tabs, code/title/titleEn/description, main/active/posting flags, fiscal-year allocation grid, existing guarded period edits/additions and icon save/new/reload with Alt+Shift+S/N/R. Optional book metadata persisted using additive migration on synthetic55437 only; older API consumers preserve omitted values. Same3100/4217 preview. Real PG45/45 passed with test timeout15s after initial resource contention; affected builds/lint/typechecks and authenticated browser notes round-trip/new-shortcut checks. No operational/source writes, dependency changes, delegation or merge. Full source parity and the separate all-accounting toolbar request are not claimed complete.
