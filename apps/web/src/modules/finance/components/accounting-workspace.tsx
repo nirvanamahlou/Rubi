@@ -1120,31 +1120,33 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="min-w-60 flex-1">
-          <FormField label="دفتر حسابداری" id="accounting-book">
-            <SearchCombobox
-              id="accounting-book"
-              value={bookId}
-              onValueChange={(id) => {
-                setBookId(id);
-                const params = new URLSearchParams(urlParams.toString());
-                params.set('bookId', id);
-                router.replace(`${pathname}?${params}`, { scroll: false });
-                setDraft({
-                  active: true,
-                  permanent: true,
-                  allowsPosting: true,
-                });
-                setEditing(null);
-                pending.current = null;
-              }}
-              options={books.map((b) => ({
-                value: b.id,
-                label: `${b.code} — ${b.title}`,
-              }))}
-            />
-          </FormField>
-        </div>
+        {section !== 'general-ledger/base-information/fiscal-years' && (
+          <div className="min-w-60 flex-1">
+            <FormField label="دفتر حسابداری" id="accounting-book">
+              <SearchCombobox
+                id="accounting-book"
+                value={bookId}
+                onValueChange={(id) => {
+                  setBookId(id);
+                  const params = new URLSearchParams(urlParams.toString());
+                  params.set('bookId', id);
+                  router.replace(`${pathname}?${params}`, { scroll: false });
+                  setDraft({
+                    active: true,
+                    permanent: true,
+                    allowsPosting: true,
+                  });
+                  setEditing(null);
+                  pending.current = null;
+                }}
+                options={books.map((b) => ({
+                  value: b.id,
+                  label: `${b.code} — ${b.title}`,
+                }))}
+              />
+            </FormField>
+          </div>
+        )}
         <Button
           variant="outline"
           onClick={() => void refresh()}

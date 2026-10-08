@@ -1,3 +1,7 @@
+## 2026-10-08 — ACCOUNTING-FISCAL-YEAR-FIELD-1008 — PC-A
+
+Removed the book selector only from the fiscal-year definition form at general-ledger/base-information/fiscal-years, retaining implicit selected-book resolution and all other route selectors. Authenticated synthetic3100 UI verified; no business data writes or backend changes. Toolbar work remains a separate unfinished task.
+
 ## SIDEBAR-DISMISS-1008 — PC-A — READY_FOR_REVIEW
 
 Opened sidebar groups now close on an outside pointer click or Escape; inside clicks and independent header toggles remain functional. Verified on the authenticated synthetic3100 preview in desktop mode and restored the default viewport. Navigation regressions2/2, scoped lint, Web typecheck and production build56 routes pass. Branch codex/pc-a-sidebar-dismiss-1008 preserves the partial accounting candidate; this UI repair does not change its financial parity acceptance or dependencies. No API/schema/dependency/data changes or merge.
