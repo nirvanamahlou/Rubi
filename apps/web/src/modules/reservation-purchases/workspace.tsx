@@ -255,7 +255,10 @@ function PurchaseHub() {
         }
       />
       {canRead && (
-        <section aria-label="داشبورد خرید خدمات" className="space-y-3">
+        <section
+          aria-label="داشبورد خرید خدمات"
+          className="space-y-3 text-center"
+        >
           <h2 className="text-lg font-bold">داشبورد خرید خدمات</h2>
           <p className="text-xs text-muted-foreground">
             آمار همه وضعیت‌ها در دسته، جست‌وجو و بازه انتخاب‌شده
@@ -291,7 +294,7 @@ function PurchaseHub() {
             ).map(([Icon, label, key, tone]) => (
               <Card
                 key={key}
-                className={`${tone} space-y-3 dark:bg-card dark:text-foreground`}
+                className={`${tone} flex flex-col items-center gap-3 text-center dark:bg-card dark:text-foreground`}
               >
                 <Icon className="size-6" />
                 <p className="text-sm font-medium">{label}</p>

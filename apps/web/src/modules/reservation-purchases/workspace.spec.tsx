@@ -195,6 +195,30 @@ it('shows global dashboard counts rather than counting one loaded page and defau
   expect(html).toContain('>33</strong>');
 });
 
+it.each(['fa', 'en'] as const)(
+  'centers the dashboard heading and all summary card contents in %s without changing surrounding layout',
+  (language) => {
+    const html = render(language);
+    const dashboard = html.match(
+      /<section aria-label="[^"]+" class="space-y-3 text-center">([\s\S]*?)<\/section>/,
+    )?.[1];
+    expect(dashboard).toBeDefined();
+    expect(dashboard).toContain('grid gap-3 sm:grid-cols-2 xl:grid-cols-4');
+    expect(
+      dashboard?.match(/flex flex-col items-center gap-3 text-center/g),
+    ).toHaveLength(4);
+    expect(dashboard?.match(/<svg /g)).toHaveLength(4);
+    expect(dashboard?.match(/<strong /g)).toHaveLength(4);
+    for (const count of [99, 33, 64, 2]) {
+      expect(dashboard).toContain(
+        `>${count.toLocaleString(language === 'en' ? 'en-GB' : 'fa-IR')}</strong>`,
+      );
+    }
+    expect(html).toContain('<section class="space-y-6">');
+    expect(html).toContain('class="grid grid-cols-2 gap-3 md:grid-cols-5"');
+  },
+);
+
 it('renders a combined transfer purchase once with its canonical amount', () => {
   const records = state.records as {
     data: ReservationIntakeV1[];
