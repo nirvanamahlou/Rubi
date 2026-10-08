@@ -39,6 +39,49 @@ describe('localized development JSX children', () => {
     expect(Object.isFrozen(children)).toBe(false);
   });
 
+  it('keeps loading skeleton siblings valid inside a localized accessible container', () => {
+    const errors = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    const placeholders = ['first', 'second', 'third'].map((id) =>
+      jsxDEV('span', { className: id }, undefined, false, undefined, undefined),
+    );
+    const heading = jsxDEV(
+      'div',
+      { children: placeholders },
+      undefined,
+      true,
+      undefined,
+      undefined,
+    );
+    const keyedCards = ['1', '2', '3', '4'].map((id) =>
+      element('span', 'Loading card', id),
+    );
+    const cards = jsxDEV(
+      'div',
+      { children: keyedCards },
+      undefined,
+      false,
+      undefined,
+      undefined,
+    );
+    const loading = jsxDEV(
+      'div',
+      {
+        'aria-busy': 'true',
+        'aria-label': 'در حال بارگذاری صفحه',
+        children: [heading, cards, element('span', 'Loading table')],
+      },
+      undefined,
+      true,
+      undefined,
+      undefined,
+    );
+    const html = renderToStaticMarkup(createElement(Provider, null, loading));
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('Loading table');
+    expect(errors).not.toHaveBeenCalled();
+  });
   it('still warns for a genuine dynamic list without keys', () => {
     const errors = vi
       .spyOn(console, 'error')
