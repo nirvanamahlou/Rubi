@@ -19,6 +19,8 @@ import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
 import { AccountingAttachments } from './accounting-attachments';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
+import { AccountingBaseList } from './accounting-base-list';
+import type { AccountingListKind } from '../accounting-list-filters';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
@@ -403,34 +405,20 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
     content = <AccountingMoveDrafts book={snapshot} run={run} busy={busy} />;
   } else if (
     snapshot &&
-    section === 'general-ledger/base-information/lists/ledgers'
+    ['fiscal-years', 'ledgers', 'voucher-types'].some(
+      (kind) => section === `general-ledger/base-information/lists/${kind}`,
+    )
   ) {
+    const kind = section.split('/').at(-1) as AccountingListKind;
     content = (
-      <Panel title={title}>
-        <p className="text-sm text-muted-foreground">
-          وجود این فهرست در منوی منبع تأیید شده است؛ ستون‌های منبع مشاهده
-          نشده‌اند. داده‌های دفترهای قابل دسترس روبی در ادامه نمایش داده
-          می‌شوند.
-        </p>
-        <Table headers={['کد', 'عنوان', 'ارز پایه', 'وضعیت', 'عملیات']}>
-          {books.map((book) => (
-            <tr key={book.id}>
-              <td className={cell}>{book.code}</td>
-              <td className={cell}>{book.title}</td>
-              <td className={cell}>{book.baseCurrency}</td>
-              <td className={cell}>{book.active ? 'فعال' : 'غیرفعال'}</td>
-              <td className={cell}>
-                <Link
-                  className="inline-flex min-h-9 items-center rounded-lg border px-3 text-sm font-bold text-primary"
-                  href={`/finance/accounting/general-ledger/base-information/ledgers?bookId=${book.id}`}
-                >
-                  بازکردن فرم
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </Table>
-      </Panel>
+      <AccountingBaseList
+        key={`${bookId}:${kind}`}
+        kind={kind}
+        snapshot={snapshot}
+        books={books}
+        busy={busy || loading}
+        refresh={refresh}
+      />
     );
   } else if (home)
     content = (
@@ -944,13 +932,15 @@ export function AccountingWorkspace({ pathname }: { pathname: string }) {
             </FormField>
           </div>
         )}
-        <Button
-          variant="outline"
-          onClick={() => void refresh()}
-          disabled={loading || busy}
-        >
-          به‌روزرسانی
-        </Button>
+        {!section.startsWith('general-ledger/base-information/lists/') && (
+          <Button
+            variant="outline"
+            onClick={() => void refresh()}
+            disabled={loading || busy}
+          >
+            به‌روزرسانی
+          </Button>
+        )}
       </div>
       {error || booksQuery.error || snapshotQuery.error ? (
         <div
