@@ -118,7 +118,7 @@ export const TimePicker = React.forwardRef<
     React.useLayoutEffect(() => {
       const element = panel.current;
       if (!open || !element || !input.current || !element.showPopover) return;
-      element.showPopover();
+      if (!element.matches(':popover-open')) element.showPopover();
       const position = () => {
         const rect = input.current!.getBoundingClientRect();
         const width = Math.min(300, window.innerWidth - 24);
