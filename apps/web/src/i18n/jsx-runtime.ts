@@ -17,7 +17,7 @@ const attributes = [
   'aria-description',
   'aria-valuetext',
 ];
-const verbatimTags = new Set(['script', 'style', 'title', 'textarea']);
+const verbatimTags = new Set(['script', 'style', 'title']);
 
 function localizedChildren(children: unknown, index?: number): unknown {
   if (typeof children === 'string' && persian.test(children))
@@ -48,7 +48,8 @@ export function localize(
   const input = props as Record<string, unknown>;
   const localized: Record<string, unknown> = {
     ...input,
-    children: localizedChildren(input.children),
+    children:
+      type === 'textarea' ? input.children : localizedChildren(input.children),
   };
   if (
     typeof type === 'string' &&

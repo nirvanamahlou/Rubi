@@ -6190,3 +6190,9 @@ COMPUTER_ID=PC-A; codex/pc-a-purchase-dashboard-transfers-1008 from origin/devel
 PURCHASE-DASHBOARD-TRANSFERS-1008 validation:32 Web,34 API focused tests and8 opt-in temporary PostgreSQL query tests pass. Grouped pair is counted once across pagination; newer separate broker revisions replace stale combined grouping. Dashboard uses total query independent of status/page; no false zero on missing legacy metadata. Existing atomic batch/idempotency/CAS and Finance lifecycle retained. Generated local Prisma/Contracts outputs refresh unchanged schema before final typechecks; no migration/data/runtime mutation. Source locks release with the review candidate; exact-head CI gates explicitly authorized develop merge.
 
 FINANCE-INBOX-REQUESTS-1008 follow-up: user explicitly authorizes develop merge and local update. Reserve own two missing English display labels; retain both append-only assignment sections during develop integration.
+
+## LOGIN-ENGLISH-FIELDS-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-login-english-fields-1008 from origin/develop@b322d3c9. Reserve Login company logo presentation and shared JSX textarea attribute localization with focused regressions and own status notes. Prior JSX adapter locks released. Preserve actual logos in both languages and editable/submitted data; translate textarea UI hints without translating user content. No schema/API/dependency/migration changes. User requests correction; merge not newly requested.
+
+LOGIN-ENGLISH-FIELDS-1008 verification:16 targeted regressions pass, English-cookie local login preserves both logo URLs. No editable/submitted data translation. Source locks release at frozen candidate; lint/typecheck/build and PR CI required. No merge authorization inferred for this new fix.
