@@ -6200,3 +6200,5 @@ LOGIN-ENGLISH-FIELDS-1008 verification:16 targeted regressions pass, English-coo
 LOGIN-ENGLISH-FIELDS-1008 — READY_FOR_REVIEW: scoped ESLint, Web TypeScript, 16 focused tests and all56-route production build passed. Source locks RELEASED. PR745; no migration or develop merge performed.
 
 LOGIN-ENGLISH-FIELDS-1008 follow-up: re-reserve own login page/logo presentation to remove user-listed credential instruction and fit real logos more prominently inside white cards. No other form/authentication/background or shared localization changes.
+
+Login fit follow-up: scoped lint and6 focused tests passed. Source locks RELEASED with75362f8e; Web production build/typecheck (56 routes) passed. Local English login confirms instruction removal and updated logo layout. Existing PR745 updated; no merge performed.
