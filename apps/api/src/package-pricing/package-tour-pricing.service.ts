@@ -19,6 +19,9 @@ import type {
 import { Prisma } from '@nora/database';
 import {
   calculateTourRoom,
+  validateTourPriceFields,
+  tourPriceFields,
+  tourPriceFieldValues,
   tourRoomOccupancy,
   type TourRoomCurrencyAmount,
 } from '@nora/contracts';
@@ -76,6 +79,17 @@ export class PackageTourPricingService {
   ): Promise<PackageTourDraftV1> {
     if (!input || typeof input !== 'object')
       throw new BadRequestException('پیش‌نویس قیمت معتبر نیست.');
+    let priceFields: PackageTourDraftSaveV1['priceFields'];
+    if (input.priceFields !== undefined) {
+      try {
+        priceFields = validateTourPriceFields(input.priceFields);
+      } catch (error) {
+        throw new BadRequestException(
+          error instanceof Error ? error.message : 'ردیف قیمت معتبر نیست.',
+        );
+      }
+      input = { ...input, ...tourPriceFieldValues(priceFields), priceFields };
+    }
     const adultCurrency =
       input.adultFlightSaleCurrencyCode ?? input.currencyCode;
     const childCurrency =
@@ -180,6 +194,30 @@ export class PackageTourPricingService {
         throw new ConflictException(
           'پیش‌نویس هم‌زمان تغییر کرده است؛ دوباره بارگذاری کنید.',
         );
+      const storedFields =
+        priceFields ??
+        (Array.isArray(existing?.priceFields)
+          ? validateTourPriceFields(existing.priceFields).map((field) => {
+              if (field.kind === 'custom') return field;
+              const legacy = tourPriceFields({
+                ...input,
+                priceFields: undefined,
+              }).find((item) => item.kind === field.kind)!;
+              return {
+                ...field,
+                amount: legacy.amount,
+                currencyCode: legacy.currencyCode,
+                mode: legacy.mode,
+              };
+            })
+          : undefined);
+      const fieldsData =
+        storedFields === undefined
+          ? {}
+          : {
+              ...tourPriceFieldValues(storedFields),
+              priceFields: storedFields as unknown as Prisma.InputJsonValue,
+            };
       const now = new Date();
       const draft = existing
         ? await tx.packagePricingTourDraft.update({
@@ -199,6 +237,7 @@ export class PackageTourPricingService {
               commissionCurrencyCode: commissionCurrency,
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
+              ...fieldsData,
               updatedByUserId: actor.userId,
               updatedAt: now,
             },
@@ -222,6 +261,7 @@ export class PackageTourPricingService {
               commissionCurrencyCode: commissionCurrency,
               familyAdults: input.familyAdults ?? null,
               familyChildren: input.familyChildren ?? null,
+              ...fieldsData,
               createdByUserId: actor.userId,
               updatedByUserId: actor.userId,
               updatedAt: now,
@@ -353,6 +393,11 @@ export class PackageTourPricingService {
         const adjustment = byRow.get(row.id);
         try {
           const calculated = calculateTourRoom({
+            extraSaleFields: Array.isArray(draft.priceFields)
+              ? validateTourPriceFields(draft.priceFields).filter(
+                  (field) => field.kind === 'custom',
+                )
+              : [],
             basePerNight: row.basePerNight,
             factor,
             nights,
@@ -417,6 +462,7 @@ export class PackageTourPricingService {
       costs: grid.flightPurchaseCosts,
       draftVersion: draft.version,
       adjustments: draft.adjustments,
+      priceFields: draft.priceFields,
       prices: prices.map((item) => ({
         ...item,
         hotelPurchase: item.hotelPurchase.toString(),
@@ -441,6 +487,9 @@ export class PackageTourPricingService {
         data: {
           id: randomUUID(),
           draftId,
+          ...(draft.priceFields != null
+            ? { priceFields: draft.priceFields as Prisma.InputJsonValue }
+            : {}),
           version: (latest?.version ?? 0) + 1,
           draftVersion: draft.version,
           tourVersion: grid.tour.version,
@@ -513,6 +562,9 @@ export class PackageTourPricingService {
       lastEditorUserId: row.updatedByUserId,
       tourDepartureId: row.tourDepartureId,
       batchId: row.batchId,
+      ...(Array.isArray(row.priceFields)
+        ? { priceFields: validateTourPriceFields(row.priceFields) }
+        : {}),
       currencyCode: row.currencyCode,
       adultFlightSale: row.adultFlightSale.toString(),
       adultFlightSaleCurrencyCode: row.adultFlightSaleCurrencyCode,
@@ -552,6 +604,9 @@ export class PackageTourPricingService {
       priceVersion: row.version,
       draftVersion: row.draftVersion,
       tourVersion: row.tourVersion,
+      ...(Array.isArray(row.priceFields)
+        ? { priceFields: validateTourPriceFields(row.priceFields) }
+        : {}),
       currencyCode: row.currencyCode,
       adultFlightSale: row.adultFlightSale.toString(),
       adultFlightSaleCurrencyCode: row.adultFlightSaleCurrencyCode,

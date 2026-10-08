@@ -5256,6 +5256,7 @@ model ReservationHotelRoomRate {
 }
 
 model PackagePricingTourDraft {
+  priceFields                 Json?
   familyAdults                Int?
   familyChildren              Int?
   id                          String                               @id @default(uuid()) @db.Uuid
@@ -5307,6 +5308,7 @@ model PackagePricingTourAdjustment {
  * Immutable publication. Hotel alternatives are separate, never summed together.
  */
 model PackagePricingTourPublishedVersion {
+  priceFields                 Json?
   familyAdults                Int?
   familyChildren              Int?
   id                          String                                 @id @default(uuid()) @db.Uuid

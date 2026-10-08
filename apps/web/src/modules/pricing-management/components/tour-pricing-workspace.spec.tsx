@@ -10,6 +10,10 @@ describe('tour package pricing workspace', () => {
     expect(html).toContain('فروش و ارتباط با مشتری · ماژول مدیریت قیمت');
     expect(html).toContain('نوبت تور');
     expect(html).toContain('قیمت خرید هتل‌های تور');
+    expect(html).toContain('افزودن فیلد قیمت');
+    expect(html).not.toContain('ابتدا تور موردنظر را انتخاب کنید');
+    expect(html).not.toContain('تورهای جاری و پیش‌رو');
+    expect(html).not.toContain('نوبت برگزاری تور و بلیط‌ها');
     expect(html).toContain('پرواز بزرگسال');
     expect(html).toContain('پرواز کودک');
     expect(html).toContain('افزایش نرخ بیزینس');

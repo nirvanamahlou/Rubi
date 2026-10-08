@@ -374,5 +374,15 @@
   "کل خریدهای خدمات": "Total service purchases",
   "در انتظار ثبت خرید": "Awaiting purchase registration",
   "خریدهای ثبت‌شده": "Recorded purchases",
-  "وضعیت نامشخص": "Unknown status"
+  "وضعیت نامشخص": "Unknown status",
+  "فیلدهای قیمت": "Price fields",
+  "افزودن فیلد قیمت": "Add price field",
+  "نام فیلد": "Field name",
+  "مبلغ هر پکیج اتاق": "Amount per room package",
+  "ردیف‌های قیمت معتبر نیستند.": "Invalid price fields.",
+  "ردیف قیمت، نام، مبلغ یا ارز معتبر نیست.": "Invalid price field, name, amount or currency.",
+  "دقت مبلغ یا درصد قیمت معتبر نیست.": "Invalid amount precision or percentage.",
+  "ردیف قیمت معتبر نیست.": "Invalid price field.",
+  "حذف فیلد": "Remove field",
+  "نام فیلد قیمت": "Price field name"
 }
