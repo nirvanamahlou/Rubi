@@ -5160,20 +5160,21 @@ model FinanceCustomerDocumentDeliveryRevision {
 }
 
 model ReservationHotelRatePack {
-  tourDepartureId String?                     @db.Uuid
-  tourDeparture   TourDeparture?              @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
-  id              String                      @id @default(uuid()) @db.Uuid
-  branchId        String                      @db.Uuid
-  cityId          String                      @db.Uuid
-  checkIn         DateTime                    @db.Date
-  checkOut        DateTime                    @db.Date
-  currency        String                      @db.VarChar(3)
-  method          String                      @db.VarChar(16)
-  currentVersion  Int                         @default(1)
-  createdAt       DateTime                    @default(now()) @db.Timestamptz(3)
-  updatedAt       DateTime                    @updatedAt @db.Timestamptz(3)
-  branch          Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  city            MasterCity                  @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  sourcePeriods   ReservationHotelRatePackSource[]
+  tourDepartureId String?                          @db.Uuid
+  tourDeparture   TourDeparture?                   @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  id              String                           @id @default(uuid()) @db.Uuid
+  branchId        String                           @db.Uuid
+  cityId          String                           @db.Uuid
+  checkIn         DateTime                         @db.Date
+  checkOut        DateTime                         @db.Date
+  currency        String                           @db.VarChar(3)
+  method          String                           @db.VarChar(16)
+  currentVersion  Int                              @default(1)
+  createdAt       DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime                         @updatedAt @db.Timestamptz(3)
+  branch          Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  city            MasterCity                       @relation(fields: [cityId], references: [id], onDelete: Restrict)
   versions        ReservationHotelRateBatch[]
 
   @@index([branchId, cityId, checkIn, checkOut])
@@ -5181,32 +5182,44 @@ model ReservationHotelRatePack {
 }
 
 model ReservationHotelRateBatch {
-  tourDepartureId String?                     @db.Uuid
-  tourDeparture   TourDeparture?              @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
+  sharedPeriods   ReservationHotelRatePackSource[]
+  tourDepartureId String?                          @db.Uuid
+  tourDeparture   TourDeparture?                   @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
   pricingDrafts   PackagePricingTourDraft[]
-  id              String                      @id @default(uuid()) @db.Uuid
-  branchId        String                      @db.Uuid
-  packId          String?                     @db.Uuid
-  cityId          String?                     @db.Uuid
-  version         Int                         @default(1)
-  actorId         String                      @db.Uuid
-  requestKey      String                      @db.Uuid
-  fingerprint     String                      @db.VarChar(64)
-  checkIn         DateTime                    @db.Date
-  checkOut        DateTime                    @db.Date
-  currency        String                      @db.VarChar(3)
-  method          String                      @db.VarChar(16)
-  createdAt       DateTime                    @default(now()) @db.Timestamptz(3)
-  branch          Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  pack            ReservationHotelRatePack?   @relation(fields: [packId], references: [id], onDelete: Restrict)
-  city            MasterCity?                 @relation(fields: [cityId], references: [id], onDelete: Restrict)
-  actor           User                        @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  id              String                           @id @default(uuid()) @db.Uuid
+  branchId        String                           @db.Uuid
+  packId          String?                          @db.Uuid
+  cityId          String?                          @db.Uuid
+  version         Int                              @default(1)
+  actorId         String                           @db.Uuid
+  requestKey      String                           @db.Uuid
+  fingerprint     String                           @db.VarChar(64)
+  checkIn         DateTime                         @db.Date
+  checkOut        DateTime                         @db.Date
+  currency        String                           @db.VarChar(3)
+  method          String                           @db.VarChar(16)
+  createdAt       DateTime                         @default(now()) @db.Timestamptz(3)
+  branch          Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  pack            ReservationHotelRatePack?        @relation(fields: [packId], references: [id], onDelete: Restrict)
+  city            MasterCity?                      @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  actor           User                             @relation(fields: [actorId], references: [id], onDelete: Restrict)
   rows            ReservationHotelGroupRate[]
 
   @@unique([actorId, requestKey])
   @@unique([packId, version])
   @@index([branchId, checkIn, checkOut])
   @@map("reservation_hotel_rate_batches")
+}
+
+model ReservationHotelRatePackSource {
+  packId        String                    @db.Uuid
+  sourceBatchId String                    @db.Uuid
+  pack          ReservationHotelRatePack  @relation(fields: [packId], references: [id], onDelete: Restrict)
+  sourceBatch   ReservationHotelRateBatch @relation(fields: [sourceBatchId], references: [id], onDelete: Restrict)
+
+  @@id([packId, sourceBatchId])
+  @@index([sourceBatchId])
+  @@map("reservation_hotel_rate_pack_sources")
 }
 
 model ReservationHotelGroupRate {

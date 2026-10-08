@@ -5100,3 +5100,7 @@ Verification:24 Contracts,43 Web and33 API focused tests; scoped lint/formatting
 Price-field editors use two columns on desktop and a single column on narrow screens. Each editor keeps a full-width field-name input and amount/currency controls below. Delete uses an accessible red trash icon, preserving the existing keyed callback and disabled state. Presentation-only; no data/API/schema/runtime changes. Scoped verification and review PR follow.
 
 Verification: both existing price-field/workspace regressions and scoped lint pass. Typecheck and full CI build gate review; bounded component lock released with candidate.
+
+## 2026-10-08 — PC-A — Shared hotel periods for packages
+
+Compact saved hotel periods now open their exact existing editor; city dates filter saved periods and identify fully covered hotels for a shared package stay. Reservations materializes selected nightly tariffs into an immutable shared pack linked to source batches with restrictive FKs. Package Pricing selects that batch and its hotels; exact-night totals remain authoritative across multiple source periods. Original coefficients/history and maker/checker/CAS/branch boundaries remain intact. Additive source-link migration requires deployment before API rollout; no local operational migration/data/runtime change. Focused calculation, API/security and Web interaction tests pass; final lint/typecheck and exact-head full CI/build/migration gates precede the authorized develop merge. See tasks/HOTEL-SHARED-PERIODS-1008.md.

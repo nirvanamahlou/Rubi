@@ -14,6 +14,7 @@ import {
 } from './pack-destinations';
 import { Choice, rateRequest, type Option } from './controls';
 import { ExistingPacksBrowser } from './existing-packs-browser';
+import { HotelPeriodsPanel } from './hotel-periods-panel';
 import { kinds, type Factors } from './model';
 import styles from './rates.module.css';
 import type { HotelOccupancyRateV1 } from '@nora/contracts';
@@ -58,6 +59,7 @@ type GridRow = {
   inCityList: boolean;
 };
 export type PackSummary = {
+  sharedPeriod?: boolean;
   tourLabel?: string;
   tourDepartureId?: string | null;
   id: string;
@@ -516,7 +518,7 @@ export function HotelRatePacksWorkspace() {
     setRows([]);
     pending.current = null;
   }
-  async function openPack(id: string) {
+  async function openPack(id: string, hotelId?: string) {
     if (busy || browserLocked || opening) return;
     setOpening(true);
     setError('');
@@ -554,7 +556,11 @@ export function HotelRatePacksWorkspace() {
       setCheckOut(item.checkOut);
       setStayNights(String(dayCount(item.checkIn, item.checkOut)));
       setCurrency(item.currency);
-      setManualHotelId(item.rows[0]?.hotelId ?? '');
+      setManualHotelId(
+        item.rows.find((row) => row.hotelId === hotelId)?.hotelId ??
+          item.rows[0]?.hotelId ??
+          '',
+      );
       setManualValidity(
         Object.fromEntries(
           item.rows.map((row) => [
@@ -876,6 +882,19 @@ export function HotelRatePacksWorkspace() {
             </div>
           )}
         </section>
+      )}
+      {cityId && branch && (
+        <HotelPeriodsPanel
+          key={`${branch}:${cityId}`}
+          branchId={branch}
+          cityId={cityId}
+          hotelId={manualHotelId}
+          revision={revision}
+          disabled={busy || opening || browserLocked}
+          canWrite={canWrite}
+          onEdit={(id, hotelId) => void openPack(id, hotelId)}
+          onSaved={() => setRevision((value) => value + 1)}
+        />
       )}
       <div hidden={inputMode !== 'manual'}>
         {editorMode !== 'list' && (

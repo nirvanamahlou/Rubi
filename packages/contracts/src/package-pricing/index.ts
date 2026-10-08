@@ -319,6 +319,7 @@ export interface PackageTourHotelPurchaseRowV1 {
 }
 
 export interface PackageTourHotelPurchaseBatchV1 {
+  sharedPeriod?: boolean;
   tourDepartureId?: string | null;
   id: string;
   version: 1;

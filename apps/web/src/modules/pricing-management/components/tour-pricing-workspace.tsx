@@ -133,9 +133,17 @@ export function TourPricingWorkspace() {
       setTours(result.data);
       const requested = new URL(globalThis.location.href).searchParams;
       const requestedDepartureId = requested.get('departure');
-      const requestedDeparture = result.data.find(
-        (item) => item.id === requestedDepartureId,
-      );
+      const requestedDeparture =
+        result.data.find((item) => item.id === requestedDepartureId) ??
+        (requested.get('batch')
+          ? result.data.find(
+              (item) =>
+                item.package.destinationId === requested.get('city') &&
+                item.branchId === requested.get('branch') &&
+                item.startsOn === requested.get('from') &&
+                item.endsOn === requested.get('to'),
+            )
+          : undefined);
       if (requestedDeparture) {
         setTourPackageId(requestedDeparture.package.id);
         await selectDeparture(
@@ -188,6 +196,7 @@ export function TourPricingWorkspace() {
     purchaseBatchId: string,
     activeSession = session,
     requestedPublicationId?: string,
+    defaultHotelIds: readonly string[] = [],
   ) {
     if (!activeSession || !purchaseBatchId) return;
     try {
@@ -204,6 +213,7 @@ export function TourPricingWorkspace() {
         ),
       ]);
       applyDraft(saved);
+      if (!saved) setSelectedHotelRateIds([...defaultHotelIds]);
       setPublications(versions);
       setPublicationId(
         versions.some((item) => item.id === requestedPublicationId)
@@ -248,10 +258,13 @@ export function TourPricingWorkspace() {
     try {
       const result = await packagePricingApi.tourCosts(id, activeSession);
       setGrid(result);
+      const preferredBatch =
+        requestedBatchId ??
+        new URL(globalThis.location.href).searchParams.get('batch');
       const selectedBatchId = result.purchaseBatches.some(
-        (item) => item.id === requestedBatchId,
+        (item) => item.id === preferredBatch,
       )
-        ? requestedBatchId!
+        ? preferredBatch!
         : (result.purchaseBatches[0]?.id ?? '');
       setBatchId(selectedBatchId);
       if (selectedBatchId)
@@ -260,6 +273,9 @@ export function TourPricingWorkspace() {
           selectedBatchId,
           activeSession,
           requestedPublicationId,
+          result.purchaseBatches
+            .find((item) => item.id === selectedBatchId && item.sharedPeriod)
+            ?.rows.map((row) => row.id),
         );
     } catch (cause) {
       setCostError(
@@ -640,12 +656,21 @@ export function TourPricingWorkspace() {
                   setPublications([]);
                   setPublicationId('');
                   setNotice('');
-                  void loadDraft(tourId, id);
+                  void loadDraft(
+                    tourId,
+                    id,
+                    session,
+                    undefined,
+                    grid.purchaseBatches
+                      .find((item) => item.id === id && item.sharedPeriod)
+                      ?.rows.map((row) => row.id),
+                  );
                 }}
                 value={batchId}
               >
                 {grid.purchaseBatches.map((item) => (
                   <option key={item.id} value={item.id}>
+                    {item.sharedPeriod ? 'بازهٔ مشترک · ' : ''}
                     {item.checkIn} تا {item.checkOut} · {item.currencyCode} ·{' '}
                     {item.rows.length} هتل
                   </option>
