@@ -61,5 +61,34 @@ that root checkout and command for rollback. Stop only the owned3110 preflight
 listener after successful3100 activation. No broad process kill, application/data
 directory deletion or preview restart is authorized.
 
-The final activation result is appended after smoke checks. Private launchers,
-environment values, backups and runtime process/log manifests are never committed.
+## Final activation
+
+Full exact-head integration CI37755417877 for2ddb7f70 passes quality (lint,
+typecheck, formatting), all repository tests, all production builds and the
+PostgreSQL18 migration/seed gate. Local Web production build generates56 routes
+with buildID `HGpSzDQmYum26HuBtam-3`; API build and27 focused regressions pass.
+
+The single allowlisted migration is successfully applied. All257 application
+tables retain their exact normalized data fingerprints, and the five historical
+checksum differences remain unchanged. No automatic reconciliation SQL is run.
+
+Main API4000 PID20908 starts successfully. Temporary Web3110 PID9316 verifies
+login200, exact build identity, five JavaScript/CSS assets and five protected
+route307 redirects. API health200, hotel pack-options unauthorized401 and CORS204
+for both main localhost/IPv4 origins pass. Only the validated old root Next dev
+listener6236 and controller24952 are stopped. New Web3100 PID11212 serves the same
+verified build on both `localhost` and `127.0.0.1`. The owned temporary3110 listener
+is then stopped; preview3210 PID16156 and API4210 PID5688 remain unchanged.
+
+Root source/branch and all user files are preserved. Private full backup,
+fingerprint/migration proof, process records/logs and original-runtime rollback
+recipe remain in `.runtime/main3100-1008`, outside the release checkout and Git.
+All transient deployment/database locks are released. The active production
+release checkout must be retained; editing root no longer hot-reloads3100.
+Neither main/develop nor PR745 is merged or updated. Completion documentation is
+the only follow-up change after the frozen tested application sources. No real
+user credentials, authenticated operational submissions or synthetic records
+were used for smoke checks.
+
+Private launchers, environment values, backups and runtime process/log manifests
+are never committed.

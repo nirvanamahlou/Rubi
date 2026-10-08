@@ -1,6 +1,8 @@
-## 2026-10-08 — MAIN3100-ROLLOUT-1008 — PC-A — PREPARING
+## 2026-10-08 — MAIN3100-ROLLOUT-1008 — PC-A — ACTIVE / VERIFIED
 
 Owner explicitly requests local3100 activation after hotel PR743 merge. Isolated release integrates develop@8b805570 and preserves root login@042dd9af, with only additive documentation conflict resolution; no root/preview source replacement. Frozen offline dependencies, generated client/shared builds, API build and27 focused hotel/New Package/login/localization tests pass. Full257-table database backup/list/checksum/fingerprint proof completed. Only the released two nullable package price-field columns may be added; pre-existing historical/schema drift is recorded and preserved, never auto-reconciled or reset. Full Web build, integration CI and startup smoke gate runtime switching. No seed, permissions, credentials, new data removal or remote main/develop merge. See [runtime handoff](tasks/MAIN3100-ROLLOUT-1008.md).
+
+Activation: full exact-head integration CI37755417877 passed all four jobs. Web56-route production build and API build pass. BuildHGpSzDQmYum26HuBtam-3 now serves3100 from `.runtime/releases/main3100-1008` (Web11212/API4000 PID20908), replacing only the verified root dev listener6236/controller24952. Both localhost/IPv4 login200/build/asset/protected-route proof pass; API health200/options guard401/main login CORS204 pass. Two nullable columns were added with all257 application-table data fingerprints preserved. Temporary3110 test listener stopped; root files and preview3210/API4210 untouched. Private full backup, migration/data proof and rollback manifest retained outside Git. Release/database locks released; no automatic legacy drift repair, seed or remote main/develop merge. Authenticated submission of operational records was not performed.
 
 ## 2026-10-08 — FINANCE-INBOX-REQUESTS-1008 — PC-A
 
