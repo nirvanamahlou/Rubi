@@ -6158,3 +6158,15 @@ Final policy repair verified: all112 Sales API tests, scoped lint and API typech
 SALES-CHEQUE-CALCULATOR-1007 CI repair: reserve only own new labels in Web/API English display catalogues and own service-test formatting. Full production/migration gates passed; CI identified eight missing print/UI translation fragments and a non-idempotent first formatter pass on the new test. No business/schema/dependency changes.
 
 CI repair verified: English coverage3 tests and stable formatting checks pass. Eight new print/UI translation fragments are mapped consistently; the service regression test is formatter-idempotent. Correction display/test locks RELEASED with final candidate. Exact-head CI still gates merge.
+
+## JSX-STATIC-CHILDREN-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-jsx-static-children-1008 from latest origin/develop. Reserve shared Web i18n JSX runtime/development adapter, focused regression tests and own status docs. Prior English runtime locks released; no active overlap. Preserve React static-child validation and development metadata through localization, without masking real dynamic-list key errors. No API/schema/dependency/data/runtime changes. User requests correction; merge authorization is not inferred for this new task.
+
+Reserve bounded hotfix rollout to the running _runtime-develop-1004 i18n adapter after checking both target files are tracked-clean; no listener, data, environment or other source change.
+
+JSX-STATIC-CHILDREN-1008: nine targeted tests pass and local login returns HTTP200 after bounded two-file hotfix. No other runtime files or data changed; candidate locks release at commit. Local clean-generated Contracts build refreshed unchanged types before final Web validation.
+
+JSX-STATIC-CHILDREN-1008 — READY_FOR_REVIEW:9 focused tests, scoped ESLint/formatting and refreshed Web typecheck pass. Local runtime adapter hotfix serves login HTTP200. Initial local build used stale generated Contracts declarations; regenerated unchanged output and repeated build. No merge performed; source locks released with review candidate.
+
+JSX-STATIC-CHILDREN-1008 follow-up: reserve bounded root workspace i18n runtime hotfix (both targets tracked-clean). Two simultaneous3100 listeners found: root next dev on IPv6 localhost, separate _runtime-develop-1004 next start on IPv4. Previous hotfix updated only the latter's source. Apply the validated two-file fix to root dev source; preserve existing next-env and all other edits, listeners and data. Include loading-screen static-sibling regression in the same PR.

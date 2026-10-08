@@ -5040,3 +5040,11 @@ Supplied transparent Jahan Bastan logo replaces the own-company logo in contract
 Final cheque-policy boundary checks prevent removing stored sale terms or adding cheques to new cash sales. Legacy null-term contracts keep their existing payment behavior. All112 Sales API tests, scoped lint and typecheck pass; correction locks released at final candidate freeze.
 
 CI display repair: all three English coverage/sync tests pass; new print/UI fragments are translated and the new service test has stable formatting. No calculation or migration changes.
+
+## 2026-10-08 — PC-A — JSX development child validation
+
+Localization now delegates to React jsxDEV while preserving static-child/source/self metadata instead of routing development calls through jsx. RootLayout fixed siblings no longer emit false key warnings; genuine dynamic arrays still warn and explicit keys/refs/handlers and translation remain intact. Nine focused regressions pass. Two tracked-clean adapter files applied as a bounded hotfix to existing local runtime; login returns HTTP200. No data/schema/dependency/permission change. Production checks and review PR follow; no new merge authorization inferred.
+
+Verification:9 targeted tests, affected ESLint/formatting and Web typecheck passed after refreshing generated shared Contracts output. Local login HTTP200. Final production build and exact-head CI remain review gates; no develop merge claimed.
+
+2026-10-08 follow-up: diagnosed two3100 listeners. Browser localhost uses root workspace next dev on IPv6, while prior source hotfix was applied to the separate IPv4 production workspace. Applied the same validated two-file adapter correction to tracked-clean root targets, preserving all existing edits/data/processes; explicit IPv6 login returns200. Loading skeleton regression passes with translated accessible parent, static siblings and keyed card list. All10 targeted tests pass; previous exact-head full8 CI checks passed. No new production logic change or merge performed.
