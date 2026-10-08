@@ -5067,11 +5067,16 @@ hotel-wide composition coefficient table and separate room-base purchase/sale
 tables. Inline sale edits, clicked-row selection and contextual purchase-baseline
 group adjustments replace the crowded layout. New Package visibly opens and resets
 the editor including local panel state. Saved packages are collapsed at the bottom;
-Excel import remains a separate mode.636 Sales/Reservations tests pass with3 existing
-skips; scoped lint/typecheck and production build pass. Owner-authorized one-time
+Excel import remains a separate mode.637 Sales/Reservations tests pass across full
+and isolated runs with3 existing skips; scoped lint/typecheck and final production
+build pass. Exact source candidate3632ba9a passes all8 GitHub checks. Local concurrent
+build load causes i18n test timeouts without assertion failures; CI passes these
+checks, and no thresholds were weakened. Owner-authorized one-time
 cleanup removed old rates and the explicitly approved single dependent pricing draft
 in both preview3210 and main3100 after verified backups.251 other tables and9
 contracts per environment retained exact fingerprints. No schema/dependency/API
 change or automatic wipe. Only preview3210 UI rolls out locally; main runtimes and
 unrelated local edits are preserved. Exact-head CI gates the authorized develop
-merge. See [delivery and cleanup](tasks/HOTEL-TABLE-REDESIGN-1008.md).
+merge. Verified backups and manifests are preserved in the primary workspace's
+ignored `.runtime/backups/hotel-rate-reset-1008`, outside the preview worktree.
+See [delivery and cleanup](tasks/HOTEL-TABLE-REDESIGN-1008.md).

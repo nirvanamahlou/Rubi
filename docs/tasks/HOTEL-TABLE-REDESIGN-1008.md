@@ -38,8 +38,8 @@ Only local PostgreSQL database `rubi_hotel_manual_preview_1008` (preview3210) an
 `rubi` (main3100) were targeted. The preserved original preview database was not
 modified. Database location and role were checked before each operation.
 
-Scoped PostgreSQL custom-format backups were saved outside Git under the private
-`outputs/hotel-occupancy-1006` folder, verified with pg_restore's table-data listing
+Scoped PostgreSQL custom-format backups were saved privately, verified with
+pg_restore's table-data listing
 and SHA256 manifests. Locked target snapshots were checked before deletion to
 prevent removal of records created after backup. Deletions were transactional and
 referentially ordered; every other public table was compared before and after
@@ -53,21 +53,35 @@ within the operation.
 Both target catalogs are now empty. Published package-pricing rows were zero and
 not deleted. All251 other public tables, including9 existing contracts in each
 environment and Master Data, retained their exact row fingerprints. Backups and
-operation manifests contain private data and are never committed.
+operation manifests contain private data and are never committed. Both backups,
+SHA256 manifests and completion records were moved with checksum verification to
+the primary workspace's ignored `.runtime/backups/hotel-rate-reset-1008` folder,
+outside the preview worktree, so later worktree cleanup does not remove them.
 
 ## Verification and runtime handoff
 
-Local Sales/Reservations Web tests:636 pass,3 existing skips. Hotel-rate/i18n
-tests:99 pass before the three added New Package regressions; all new regressions
-also pass in the larger run. Scoped ESLint and Web typecheck pass; production build
-generates56 routes. Browser verification on3210 uses the owner's existing session,
+Local Sales/Reservations Web tests:637 pass across full and isolated runs,3
+existing skips. Under concurrent local builds, three existing rendering/import
+tests hit their timeout and passed in isolation; two i18n tests also timed out
+locally. No assertions or test thresholds were weakened. Exact source candidate
+`3632ba9a` passes all8 GitHub push/PR checks, including the full test suite, full
+quality gate, production build and PostgreSQL migration/seed gate. Scoped ESLint
+and Web typecheck pass; the final production build generates56 routes. Browser
+verification on3210 uses the owner's existing session,
 no credentials or permission changes. Actual city/hotel options, shared factors,
 two independent bases, inline sale changes, selected-row changes and noncompounding
 adjustments are checked using unsaved synthetic inputs, not persisted test rates.
-Narrow-view table overflow is contained within the table rather than the page.
+The narrow-view overflow fix removes fieldset intrinsic minimum width and permits
+grid children to shrink, keeping wide tables within their own scroll container.
+Sale input preserves raw text during typing and formats on blur, avoiding caret
+movement and accidental numeric rewriting. A regression verifies each keystroke.
 
 Only the already-owned Web3210 preview is restarted after build. API4210 and main
 Web3100/API4000 processes are not restarted or overwritten. Root workspace and the
 other runtime's local edits are preserved. Operational rate cleanup is distinct
 from source deployment: main needs its normal develop update/rebuild to show the
-new UI. Exact-head full CI and latest develop integration remain merge gates.
+new UI. Source integrated with develop@b322d3c9, including both append-only work
+records and synchronized display catalogs. Final documentation commit requires
+fresh exact-head CI before the authorized merge; private backups and test inputs
+never enter Git. Do not refresh the owner's unsaved form for browser verification;
+use a separately authenticated tab or their explicit refresh approval.
