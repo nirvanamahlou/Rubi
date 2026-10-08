@@ -5063,3 +5063,5 @@ Purchase hub defaults to unregistered while preserving explicit bookmarks. Dashb
 ## 2026-10-08 — PC-A — Login logos and English field guidance
 
 Login desktop/mobile variants retain both actual company logo images in Persian and English instead of replacing branding with text. Shared JSX localization now translates textarea placeholder/accessibility guidance while preserving children, values and default values. Sixteen targeted logo/form/JSX regressions pass; English-cookie localhost login contains both logo assets. Browser automation timed out, so no visual QA claimed. No API/schema/migration/dependency change. Final lint/typecheck/build gate review candidate; local source hot reload includes correction.
+
+Final verification: scoped ESLint, Web typecheck and production build (56 routes) passed alongside16 focused tests. PR745 is ready for review; local source correction is active. No develop merge performed.

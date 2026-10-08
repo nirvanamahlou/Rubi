@@ -6196,3 +6196,5 @@ FINANCE-INBOX-REQUESTS-1008 follow-up: user explicitly authorizes develop merge 
 COMPUTER_ID=PC-A; branch codex/pc-a-login-english-fields-1008 from origin/develop@b322d3c9. Reserve Login company logo presentation and shared JSX textarea attribute localization with focused regressions and own status notes. Prior JSX adapter locks released. Preserve actual logos in both languages and editable/submitted data; translate textarea UI hints without translating user content. No schema/API/dependency/migration changes. User requests correction; merge not newly requested.
 
 LOGIN-ENGLISH-FIELDS-1008 verification:16 targeted regressions pass, English-cookie local login preserves both logo URLs. No editable/submitted data translation. Source locks release at frozen candidate; lint/typecheck/build and PR CI required. No merge authorization inferred for this new fix.
+
+LOGIN-ENGLISH-FIELDS-1008 — READY_FOR_REVIEW: scoped ESLint, Web TypeScript, 16 focused tests and all56-route production build passed. Source locks RELEASED. PR745; no migration or develop merge performed.
