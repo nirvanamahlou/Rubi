@@ -1,6 +1,28 @@
 .workspace {
   color: var(--foreground);
 }
+
+.requestDialog,
+.actionDialog {
+  width: min(72rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.actionDialog {
+  width: min(48rem, calc(100vw - 2rem));
+}
+
+.requestDialog :is(input, textarea, select),
+.actionDialog :is(input, textarea, select) {
+  min-width: 0;
+  max-width: 100%;
+}
 .hero {
   background: linear-gradient(110deg, #e5f6fa, #f7fbff 65%, #ecf5ff);
   border: 1px solid #d7eaf3;

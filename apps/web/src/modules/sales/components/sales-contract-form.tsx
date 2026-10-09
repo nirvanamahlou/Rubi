@@ -635,6 +635,39 @@ export function SalesContractForm() {
           : {}),
     });
   };
+  const finalStepError = (() => {
+    if (step !== 3) return '';
+    if (hotelCapacityError) return hotelCapacityError;
+    try {
+      const payload = salesPayload({
+        ...pricedState,
+        servicePricing: pricedState.servicePricing ?? {},
+      });
+      validateSalesCurrencySelection(payload, references.currencies);
+      validateSalesChequePayments(
+        payload.priceComponents,
+        payload.payments ?? [],
+        payload.paymentTerms,
+      );
+      validatePassengerPackagePrices(
+        payload.passengers,
+        payload.paymentTerms
+          ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
+          : payload.priceComponents,
+        true,
+      );
+      return payload.priceComponents.length > 0 ||
+        (payload.services.length > 0 &&
+          payload.services.every((service) => service.kind === 'TRANSFER') &&
+          !payload.payments?.length)
+        ? ''
+        : 'قیمت خدمات قرارداد را تکمیل کنید.';
+    } catch (reason) {
+      return reason instanceof Error
+        ? reason.message
+        : 'قیمت و پرداخت‌های قرارداد را بررسی کنید.';
+    }
+  })();
   const canContinue = (() => {
     if (step === 0)
       return Boolean(
@@ -687,38 +720,7 @@ export function SalesContractForm() {
             hotelGuestIds.includes(customerId),
         )
       );
-    if (step === 3) {
-      if (hotelCapacityError) return false;
-      try {
-        const payload = salesPayload({
-          ...pricedState,
-          servicePricing: pricedState.servicePricing ?? {},
-        });
-        validateSalesCurrencySelection(payload, references.currencies);
-        validateSalesChequePayments(
-          payload.priceComponents,
-          payload.payments ?? [],
-          payload.paymentTerms,
-        );
-        validatePassengerPackagePrices(
-          payload.passengers,
-          payload.paymentTerms
-            ? payload.priceComponents.filter(
-                (p) => p.title !== SALES_CHEQUE_FEE,
-              )
-            : payload.priceComponents,
-          true,
-        );
-        return (
-          payload.priceComponents.length > 0 ||
-          (payload.services.length > 0 &&
-            payload.services.every((service) => service.kind === 'TRANSFER') &&
-            !payload.payments?.length)
-        );
-      } catch {
-        return false;
-      }
-    }
+    if (step === 3) return !finalStepError;
     return true;
   })();
   const submit = async (event: FormEvent) => {
@@ -2007,6 +2009,21 @@ export function SalesContractForm() {
           </div>
         ) : null}
       </Card>
+      {finalStepError ? (
+        <Alert
+          tone="warning"
+          title="نیازمند اصلاح قبل از ثبت"
+          description={finalStepError}
+        />
+      ) : null}
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          {error}
+        </p>
+      ) : null}
       <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
         <Button
           type="button"
