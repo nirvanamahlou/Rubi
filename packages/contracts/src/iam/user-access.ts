@@ -515,6 +515,13 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     route: '/purchases',
   },
   {
+    id: 'procurement.suppliers',
+    group: 'procurement',
+    title: 'تأمین‌کنندگان',
+    route: '/purchases',
+    query: { section: 'suppliers' },
+  },
+  {
     id: 'finance.home',
     group: 'finance',
     title: 'مالی و خزانه‌داری',

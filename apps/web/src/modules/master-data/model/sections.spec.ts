@@ -13,7 +13,7 @@ describe('master data sections', () => {
     expect(masterDataSections.map((section) => section.title)).toEqual([
       'مالی و پولی',
       'جغرافیا',
-      'سازمان‌ها و تأمین‌کنندگان',
+      'سازمان‌ها و همکاران',
       'اقامت',
       'حمل‌ونقل',
       'بیمه',
@@ -58,6 +58,7 @@ describe('master data sections', () => {
         'transportation',
       );
     expect(unlistedMasterDataResources).toEqual([
+      'suppliers',
       'cip-services',
       'lead-sources',
       'customer-types',
