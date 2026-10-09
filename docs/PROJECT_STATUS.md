@@ -5120,3 +5120,7 @@ Combined verification:18 focused hotel tests pass (local timeout raised only at 
 Workbench Stars is renamed to Important notes and moved immediately after Notes with the matching star icon. The note section heading, empty/error copy and English labels follow the new name. Existing pinned-note behavior, document favorites and deep-link identifiers remain intact. No API, migration, dependency, operational data or runtime change. Owner explicitly authorizes develop merge after checks.
 
 Verification:18 existing Workbench tests, scoped ESLint, Web typecheck and offline catalogue consistency pass. Production build and exact-head CI gate merge; no runtime rollout requested.
+
+## 2026-10-09 — RECEIVABLE-FILTERS-1009 — PC-A
+
+Sales receivables now has independent inclusive date range, contract/travel date basis, searchable route, agency/direct-passenger type and individual agency filters. Server-side aggregation preserves all/branch/own scope, includes every matching contract regardless of list pagination and keeps exact signed balances per currency. Internal Customers reference returns only buyer ID/kind. API/Web typechecks and production builds pass; focused tests/lint and full CI gate the user-authorized develop merge. No migration, dependency, operational-data or runtime changes. See [RECEIVABLE-FILTERS-1009](tasks/RECEIVABLE-FILTERS-1009.md).

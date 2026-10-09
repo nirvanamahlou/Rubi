@@ -94,6 +94,10 @@ export class AwaitingTicketCatalogPublicApi implements SalesTicketAvailabilityPo
 
 @Injectable()
 export class SalesCustomersPublicAdapter {
+  partyKinds(ids: readonly string[], actor: AuthenticatedActor) {
+    return this.customers.salesPartyKinds(ids, actor);
+  }
+
   constructor(
     @Inject(CustomerService) private readonly customers: CustomerService,
   ) {}

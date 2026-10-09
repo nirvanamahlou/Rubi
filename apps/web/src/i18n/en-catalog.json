@@ -17124,5 +17124,20 @@
   "یادداشت‌های مهم من": "My important notes",
   "دریافت یادداشت‌های مهم انجام نشد.": "Unable to load important notes.",
   "یادداشت‌های مهم دریافت نشدند": "Important notes could not be loaded",
-  "یادداشت مهمی ندارید": "You have no important notes"
+  "یادداشت مهمی ندارید": "You have no important notes",
+  "· همه تاریخ‌ها": "· All dates",
+  "آژانس مانده قابل دریافت": "Receivables agency",
+  "از تاریخ مانده قابل دریافت": "Receivables start date",
+  "بر اساس تاریخ سفر": "By travel date",
+  "بر اساس تاریخ قرارداد": "By contract date",
+  "تا تاریخ مانده قابل دریافت": "Receivables end date",
+  "دریافت مانده قابل دریافت ناموفق بود.": "Unable to load receivable balances.",
+  "فیلتر مانده قابل دریافت معتبر نیست.": "The receivables filter is invalid.",
+  "مانده‌ای برای این فیلترها ثبت نشده است.": "No balance matches these filters.",
+  "مبنای تاریخ مانده": "Receivables date basis",
+  "مسافر حضوری": "Direct passenger",
+  "مسیر مانده قابل دریافت": "Receivables route",
+  "نوع مشتری مانده": "Receivables customer type",
+  "همه آژانس‌ها": "All agencies",
+  "همه مشتریان": "All customers"
 }

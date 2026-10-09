@@ -10,6 +10,27 @@ vi.mock('@/lib/auth-session', () => ({
 
 afterEach(() => vi.unstubAllGlobals());
 describe('sales API dashboard connection', () => {
+  it('sends independent receivables date, route and agency filters with the session', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ data: { balances: [] } })),
+      );
+    vi.stubGlobal('fetch', fetch);
+    await salesApi.receivables({
+      from: '2026-10-01',
+      to: '2026-10-31',
+      dateBasis: 'TRAVEL',
+      originId: 'origin',
+      destinationId: 'destination',
+      customerType: 'AGENCY',
+      agencyCustomerId: 'agency',
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      'http://localhost:4000/api/v1/sales/receivables?from=2026-10-01&to=2026-10-31&dateBasis=TRAVEL&originId=origin&destinationId=destination&customerType=AGENCY&agencyCustomerId=agency',
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
+    );
+  });
   it('downloads all applied results as a Blob and omits list pagination', async () => {
     const fetch = vi.fn().mockResolvedValue(
       new Response('PK-test', {
