@@ -13,10 +13,10 @@ export const workbenchTabs = [
   ['requests', 'کارتابل درخواست‌ها'],
   ['messages', 'پیام‌ها'],
   ['files', 'فایل‌های من'],
-  ['stars', 'ستاره‌دارها'],
   ['activity', 'فعالیت‌های من'],
   ['performance', 'عملکرد من'],
   ['notes', 'یادداشت‌ها'],
+  ['stars', 'یادداشت‌های مهم'],
   ['calendar', 'تقویم من'],
   ['account', 'حساب و تنظیمات'],
 ] as const;

@@ -6236,3 +6236,9 @@ HOTEL-SHARED-PERIODS-1008 verification:13 pure pricing/coverage,28 API permissio
 HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up reservation: same branch/PR749, user additionally requests automatic default selection of priced combinations and compact two-column room tables. Reserve same panel/CSS plus focused manual interaction test; preserve user deselection and unpriced-row exclusion, no purchase/sale arithmetic or persistence changes. User explicitly authorizes combined develop merge.
 
 HOTEL-OCCUPANCY-LABEL-LTR-1008 combined review freeze:18 focused tests and scoped lint pass. Follow-up source locks RELEASED; Web typecheck/build and exact-head CI gate authorized develop merge. No runtime rollout.
+
+## IMPORTANT-NOTES-1009 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-important-notes-1009` from `origin/develop@6b436312`. User authorizes the bounded Workbench presentation change and develop merge: rename Stars to Important notes and place it immediately after Notes. Reserve Workbench model/tab icon ordering, note section copy, additive English catalogue labels and own status entries. Existing older Workbench runtime/integration reservations do not cover this source presentation change; preserve their runtime. No API, schema, migration, dependency or data changes.
+
+Verification:18 existing Workbench tests, scoped ESLint, Web typecheck and offline catalogue consistency pass. Production build and exact-head CI gate the authorized develop merge; bounded source locks release with candidate.

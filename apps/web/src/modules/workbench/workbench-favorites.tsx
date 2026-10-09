@@ -35,7 +35,7 @@ function StarredNotes() {
         setError(
           reason instanceof Error
             ? reason.message
-            : 'دریافت یادداشت‌های ستاره‌دار انجام نشد.',
+            : 'دریافت یادداشت‌های مهم انجام نشد.',
         );
     } finally {
       if (request === generation.current) setLoading(false);
@@ -52,11 +52,11 @@ function StarredNotes() {
     };
   }, [load, invalidate]);
   return (
-    <section className="space-y-3" aria-label="یادداشت‌های ستاره‌دار من">
+    <section className="space-y-3" aria-label="یادداشت‌های مهم من">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 font-bold">
           <StickyNote aria-hidden="true" className="size-5" />
-          یادداشت‌های ستاره‌دار من
+          یادداشت‌های مهم من
         </h2>
         <Button asChild variant="outline" size="sm">
           <Link href="/workbench?tab=notes">همه یادداشت‌ها</Link>
@@ -67,14 +67,14 @@ function StarredNotes() {
       ) : error ? (
         <Alert
           tone="error"
-          title="یادداشت‌های ستاره‌دار دریافت نشدند"
+          title="یادداشت‌های مهم دریافت نشدند"
           description={error}
         />
       ) : !notes.length ? (
         <Card>
           <EmptyState
             icon={Star}
-            title="یادداشت ستاره‌دار ندارید"
+            title="یادداشت مهمی ندارید"
             description="در دفتر یادداشت، ستاره کنار یادداشت ذخیره‌شده را بزنید."
           />
         </Card>

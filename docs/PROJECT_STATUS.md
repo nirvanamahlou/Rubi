@@ -5114,3 +5114,9 @@ Compact saved hotel periods now open their exact existing editor; city dates fil
 HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up: priced room combinations default to selected until explicit user selection; manual deselection/clear-all retained. Room cards use a compact two-column grid on wide screens and single column below 1000px, with shorter price rows. No calculations, persistence, API, migrations or runtime changes. Focused interaction regression and final CI gate combined user-authorized merge.
 
 Combined verification:18 focused hotel tests pass (local timeout raised only at invocation under host load); scoped lint passes. Final Web types/build and exact-head CI required before merge. Bounded follow-up locks released.
+
+## 2026-10-09 — IMPORTANT-NOTES-1009 — PC-A
+
+Workbench Stars is renamed to Important notes and moved immediately after Notes with the matching star icon. The note section heading, empty/error copy and English labels follow the new name. Existing pinned-note behavior, document favorites and deep-link identifiers remain intact. No API, migration, dependency, operational data or runtime change. Owner explicitly authorizes develop merge after checks.
+
+Verification:18 existing Workbench tests, scoped ESLint, Web typecheck and offline catalogue consistency pass. Production build and exact-head CI gate merge; no runtime rollout requested.
