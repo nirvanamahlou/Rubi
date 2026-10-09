@@ -138,14 +138,6 @@ export function validateSalesContract(
   input: SalesContractCreateRequest,
   requireChequeTerms = false,
 ): void {
-  try {
-    validateInsuranceExtras(input);
-  } catch (error) {
-    throw new SalesDomainError(
-      'SALES_INSURANCE_EXTRA_INVALID',
-      error instanceof Error ? error.message : 'هزینه بیمه معتبر نیست',
-    );
-  }
   if (
     !input ||
     !['ONE_WAY', 'ROUND_TRIP'].includes(input.tripType) ||
@@ -157,6 +149,14 @@ export function validateSalesContract(
       'SALES_CONTRACT_INVALID',
       'ساختار قرارداد معتبر نیست.',
     );
+  try {
+    validateInsuranceExtras(input);
+  } catch (error) {
+    throw new SalesDomainError(
+      'SALES_INSURANCE_EXTRA_INVALID',
+      error instanceof Error ? error.message : 'هزینه بیمه معتبر نیست',
+    );
+  }
   for (const [label, value] of [
     ['مشتری', input.customerId],
     ['مبدأ', input.originId],

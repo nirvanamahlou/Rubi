@@ -78,6 +78,20 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it.each([
+    null,
+    {},
+    { ...draft, services: undefined },
+    { ...draft, passengers: null },
+    { ...draft, priceComponents: {} },
+  ])(
+    'rejects malformed structure before insurance calculations (%j)',
+    (input) => {
+      expect(() =>
+        validateSalesContract(input as SalesContractCreateRequest),
+      ).toThrow('ساختار قرارداد معتبر نیست.');
+    },
+  );
   it('validates financed fees separately from passenger service prices and rejects an underfunded down payment', () => {
     const terms: SalesPaymentTerms = {
       version: 1,
