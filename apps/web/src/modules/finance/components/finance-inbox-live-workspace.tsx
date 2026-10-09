@@ -322,8 +322,7 @@ export function FinanceInboxLiveWorkspace() {
       activeAccountCount: accounts.filter((account) => account.isActive).length,
     };
   }, [accounts, items, data]);
-  const selected =
-    items.find(({ id }) => id === selectedId) ?? items[0] ?? null;
+  const selected = items.find(({ id }) => id === selectedId) ?? null;
   const openCount =
     data?.summary.openCount ?? items.filter((item) => !isClosed(item)).length;
   const overdueCount =
@@ -1149,8 +1148,7 @@ export function FinanceInboxLiveWorkspace() {
               <div>
                 <h3 className="font-bold">فهرست درخواست‌ها</h3>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  یک درخواست را انتخاب کنید تا جزئیات و اقداماتش پایین فهرست باز
-                  شود.
+                  برای مشاهده فرم و رسیدگی، روی درخواست کلیک کنید.
                 </p>
               </div>
               <Badge className="px-3 py-1">
@@ -1173,9 +1171,6 @@ export function FinanceInboxLiveWorkspace() {
                   key={item.id}
                   onClick={() => {
                     setSelectedId(item.id);
-                    document
-                      .getElementById('finance-request-details')
-                      ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
                   }}
                   type="button"
                 >
@@ -1240,190 +1235,274 @@ export function FinanceInboxLiveWorkspace() {
             })}
           </div>
           {selected ? (
-            <Card
-              id="finance-request-details"
-              className="scroll-mt-24 overflow-hidden p-0"
-              aria-label="جزئیات درخواست انتخاب‌شده"
+            <Dialog
+              open={actionItem === null && !accountDialog}
+              onOpenChange={(open) => {
+                if (!open) setSelectedId(null);
+              }}
             >
-              <div className="border-b border-border bg-primary/5 p-5">
-                <p className="mb-3 text-xs font-bold text-primary">
-                  جزئیات درخواست انتخاب‌شده
-                </p>
-                <div className="flex items-center justify-between gap-3">
-                  <Badge className={sourceTone(selected.source)}>
-                    {selected.source === 'PURCHASES'
-                      ? selected.ticketPurchase
-                        ? 'خرید و تأمین'
-                        : 'تنخواه'
-                      : sourceLabels[selected.source]}
-                  </Badge>
-                  <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
-                    <CheckCircle2 className="size-4" />
-                    {selected.origin === 'PERSISTED_SOURCE'
-                      ? 'منبع ثبت‌شده'
-                      : 'منبع نامشخص'}
-                  </span>
-                </div>
-                <h3 className="mt-4 text-lg font-black">{selected.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {selected.description}
-                </p>
-              </div>
-              <div className="space-y-4 p-5">
-                {selected.reservationPurchase ? (
-                  <div className="space-y-3 rounded-xl border border-border p-3">
-                    <strong className="text-sm">خریدهای این درخواست</strong>
-                    {selected.reservationPurchase.lines.map((line) => (
-                      <div
-                        key={line.purchaseId}
-                        className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm"
-                      >
-                        <span>
-                          {line.serviceTitle} · {line.supplierName}
-                        </span>
-                        <span dir="ltr">
-                          {line.amount} {line.currencyCode}
-                        </span>
-                        {line.status !== 'PAID' ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              openSupplierPayment({
-                                ...selected,
-                                sourceReference: line.purchaseId,
-                                title: line.serviceTitle,
-                                amount: {
-                                  amount: line.amount,
-                                  currencyCode: line.currencyCode,
-                                },
-                                settlement: {
-                                  paidAmount: line.paidAmount,
-                                  remainingAmount: line.remainingAmount,
-                                },
-                                sourceVersion: line.financeVersion,
-                              })
-                            }
-                          >
-                            ثبت پرداخت این خرید
-                          </Button>
-                        ) : (
-                          <span>پرداخت‌شده</span>
-                        )}
-                      </div>
-                    ))}
-                    {selected.reservationPurchase.totals.map((total) => (
-                      <p key={total.currencyCode} className="text-sm font-bold">
-                        جمع درخواست: {total.amount} {total.currencyCode}
-                      </p>
-                    ))}
-                  </div>
-                ) : null}
-                {[
-                  ['شماره منبع', selected.sourceReference],
-                  ['قرارداد', selected.contractReference ?? '—'],
-                  ['طرف‌حساب / کارمند', selected.partyDisplaySnapshot ?? '—'],
-                  ['مبلغ', money(selected)],
-                  ...(selected.ticketPurchase
-                    ? [
-                        [
-                          'تعداد صندلی',
-                          selected.ticketPurchase.seatCount?.toLocaleString(
-                            'fa-IR',
-                          ) ?? 'در انتظار تعیین مالی',
-                        ],
-                        [
-                          'قیمت خرید هر صندلی',
-                          selected.ticketPurchase.unitCost
-                            ? selected.ticketPurchase.unitCost +
-                              ' ' +
-                              (selected.amount?.currencyCode ?? '')
-                            : 'ثبت نشده',
-                        ],
-                        [
-                          'پرداخت‌های ثبت‌شده',
-                          selected.ticketPurchase.paymentCount.toLocaleString(
-                            'fa-IR',
-                          ),
-                        ],
-                      ]
-                    : []),
-                  ...(selected.settlement
-                    ? [
-                        [
-                          'پرداخت‌شده',
-                          `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
-                        ],
-                        [
-                          'مانده',
-                          `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
-                        ],
-                      ]
-                    : []),
-                  ['درخواست‌کننده', selected.requesterDisplaySnapshot ?? '—'],
-                  ['تاریخ ایجاد', faDate(selected.createdAt)],
-                  ['تاریخ سررسید', faDate(selected.dueAt)],
-                  ['نسخه منبع', selected.sourceVersion.toLocaleString('fa-IR')],
-                ].map(([label, value]) => (
-                  <div
-                    className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-0"
-                    key={label}
-                  >
-                    <span className="text-xs text-muted-foreground">
-                      {label}
-                    </span>
-                    <strong className="max-w-[65%] break-words text-end text-sm [overflow-wrap:anywhere]">
-                      {value}
-                    </strong>
-                  </div>
-                ))}
-                {selected.hrReferral ? (
-                  <div className="space-y-2">
-                    {selected.hrReferral.response ? (
-                      <p>پاسخ مالی: {selected.hrReferral.response}</p>
-                    ) : null}
-                    {selected.hrReferral.canRespond ? (
-                      <div className="flex flex-wrap gap-2">
-                        {selected.status === 'NEW' ? (
-                          <Button
-                            onClick={() =>
-                              openHrResponse(selected, 'HR_REVIEW')
-                            }
-                          >
-                            شروع بررسی ارجاع
-                          </Button>
-                        ) : null}
-                        {selected.status === 'UNDER_REVIEW' ? (
-                          <Button
-                            onClick={() =>
-                              openHrResponse(selected, 'HR_ANSWER')
-                            }
-                          >
-                            ثبت پاسخ ارجاع
-                          </Button>
-                        ) : null}
-                        <Button
-                          variant="outline"
-                          onClick={() => openHrResponse(selected, 'HR_REJECT')}
-                        >
-                          رد ارجاع با علت
-                        </Button>
-                      </div>
-                    ) : null}
-                    <p className="text-xs text-muted-foreground">
-                      این مورد ارجاع منابع انسانی است؛ ثبت پاسخ به معنی ثبت
-                      پرداخت حقوق نیست.
+              <DialogContent dir="rtl" className={styles.requestDialog}>
+                <DialogTitle className="pe-10">فرم درخواست مالی</DialogTitle>
+                <DialogDescription>{selected.title}</DialogDescription>
+                <Card
+                  id="finance-request-details"
+                  className="scroll-mt-24 overflow-hidden p-0"
+                  aria-label="جزئیات درخواست انتخاب‌شده"
+                >
+                  <div className="border-b border-border bg-primary/5 p-5">
+                    <p className="mb-3 text-xs font-bold text-primary">
+                      جزئیات درخواست انتخاب‌شده
+                    </p>
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge className={sourceTone(selected.source)}>
+                        {selected.source === 'PURCHASES'
+                          ? selected.ticketPurchase
+                            ? 'خرید و تأمین'
+                            : 'تنخواه'
+                          : sourceLabels[selected.source]}
+                      </Badge>
+                      <span className="flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+                        <CheckCircle2 className="size-4" />
+                        {selected.origin === 'PERSISTED_SOURCE'
+                          ? 'منبع ثبت‌شده'
+                          : 'منبع نامشخص'}
+                      </span>
+                    </div>
+                    <h3 className="mt-4 text-lg font-black">
+                      {selected.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {selected.description}
                     </p>
                   </div>
-                ) : null}
-                {selected.source === 'PURCHASES' && !selected.ticketPurchase ? (
-                  <div className="space-y-2">
-                    {selected.status === 'UNDER_REVIEW' ? (
-                      <div className="flex gap-2">
+                  <div className="space-y-4 p-5">
+                    {selected.reservationPurchase ? (
+                      <div className="space-y-3 rounded-xl border border-border p-3">
+                        <strong className="text-sm">خریدهای این درخواست</strong>
+                        {selected.reservationPurchase.lines.map((line) => (
+                          <div
+                            key={line.purchaseId}
+                            className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm"
+                          >
+                            <span>
+                              {line.serviceTitle} · {line.supplierName}
+                            </span>
+                            <span dir="ltr">
+                              {line.amount} {line.currencyCode}
+                            </span>
+                            {line.status !== 'PAID' ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  openSupplierPayment({
+                                    ...selected,
+                                    sourceReference: line.purchaseId,
+                                    title: line.serviceTitle,
+                                    amount: {
+                                      amount: line.amount,
+                                      currencyCode: line.currencyCode,
+                                    },
+                                    settlement: {
+                                      paidAmount: line.paidAmount,
+                                      remainingAmount: line.remainingAmount,
+                                    },
+                                    sourceVersion: line.financeVersion,
+                                  })
+                                }
+                              >
+                                ثبت پرداخت این خرید
+                              </Button>
+                            ) : (
+                              <span>پرداخت‌شده</span>
+                            )}
+                          </div>
+                        ))}
+                        {selected.reservationPurchase.totals.map((total) => (
+                          <p
+                            key={total.currencyCode}
+                            className="text-sm font-bold"
+                          >
+                            جمع درخواست: {total.amount} {total.currencyCode}
+                          </p>
+                        ))}
+                      </div>
+                    ) : null}
+                    {[
+                      ['شماره منبع', selected.sourceReference],
+                      ['قرارداد', selected.contractReference ?? '—'],
+                      [
+                        'طرف‌حساب / کارمند',
+                        selected.partyDisplaySnapshot ?? '—',
+                      ],
+                      ['مبلغ', money(selected)],
+                      ...(selected.ticketPurchase
+                        ? [
+                            [
+                              'تعداد صندلی',
+                              selected.ticketPurchase.seatCount?.toLocaleString(
+                                'fa-IR',
+                              ) ?? 'در انتظار تعیین مالی',
+                            ],
+                            [
+                              'قیمت خرید هر صندلی',
+                              selected.ticketPurchase.unitCost
+                                ? selected.ticketPurchase.unitCost +
+                                  ' ' +
+                                  (selected.amount?.currencyCode ?? '')
+                                : 'ثبت نشده',
+                            ],
+                            [
+                              'پرداخت‌های ثبت‌شده',
+                              selected.ticketPurchase.paymentCount.toLocaleString(
+                                'fa-IR',
+                              ),
+                            ],
+                          ]
+                        : []),
+                      ...(selected.settlement
+                        ? [
+                            [
+                              'پرداخت‌شده',
+                              `${selected.settlement.paidAmount} ${selected.amount?.currencyCode ?? ''}`,
+                            ],
+                            [
+                              'مانده',
+                              `${selected.settlement.remainingAmount} ${selected.amount?.currencyCode ?? ''}`,
+                            ],
+                          ]
+                        : []),
+                      [
+                        'درخواست‌کننده',
+                        selected.requesterDisplaySnapshot ?? '—',
+                      ],
+                      ['تاریخ ایجاد', faDate(selected.createdAt)],
+                      ['تاریخ سررسید', faDate(selected.dueAt)],
+                      [
+                        'نسخه منبع',
+                        selected.sourceVersion.toLocaleString('fa-IR'),
+                      ],
+                    ].map(([label, value]) => (
+                      <div
+                        className="flex items-start justify-between gap-4 border-b border-border/60 pb-3 last:border-0"
+                        key={label}
+                      >
+                        <span className="text-xs text-muted-foreground">
+                          {label}
+                        </span>
+                        <strong className="max-w-[65%] break-words text-end text-sm [overflow-wrap:anywhere]">
+                          {value}
+                        </strong>
+                      </div>
+                    ))}
+                    {selected.hrReferral ? (
+                      <div className="space-y-2">
+                        {selected.hrReferral.response ? (
+                          <p>پاسخ مالی: {selected.hrReferral.response}</p>
+                        ) : null}
+                        {selected.hrReferral.canRespond ? (
+                          <div className="flex flex-wrap gap-2">
+                            {selected.status === 'NEW' ? (
+                              <Button
+                                onClick={() =>
+                                  openHrResponse(selected, 'HR_REVIEW')
+                                }
+                              >
+                                شروع بررسی ارجاع
+                              </Button>
+                            ) : null}
+                            {selected.status === 'UNDER_REVIEW' ? (
+                              <Button
+                                onClick={() =>
+                                  openHrResponse(selected, 'HR_ANSWER')
+                                }
+                              >
+                                ثبت پاسخ ارجاع
+                              </Button>
+                            ) : null}
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                openHrResponse(selected, 'HR_REJECT')
+                              }
+                            >
+                              رد ارجاع با علت
+                            </Button>
+                          </div>
+                        ) : null}
+                        <p className="text-xs text-muted-foreground">
+                          این مورد ارجاع منابع انسانی است؛ ثبت پاسخ به معنی ثبت
+                          پرداخت حقوق نیست.
+                        </p>
+                      </div>
+                    ) : null}
+                    {selected.source === 'PURCHASES' &&
+                    !selected.ticketPurchase ? (
+                      <div className="space-y-2">
+                        {selected.status === 'UNDER_REVIEW' ? (
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() =>
+                                openReceiptAction(selected, 'APPROVE')
+                              }
+                            >
+                              تأیید درخواست خرید
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() =>
+                                openReceiptAction(
+                                  selected,
+                                  'CORRECTION_REQUIRED',
+                                )
+                              }
+                            >
+                              برگشت برای اصلاح
+                            </Button>
+                          </div>
+                        ) : null}
+                        {isActionablePayment(selected) ? (
+                          <Button onClick={() => openSupplierPayment(selected)}>
+                            ثبت پرداخت فاکتور خرید
+                          </Button>
+                        ) : null}
+                        {selected.kind === 'PAYMENT_REQUEST' ? (
+                          <FinanceHistoryPanel
+                            requestId={selected.sourceReference}
+                            source="INVOICE"
+                            compact
+                          />
+                        ) : null}
+                      </div>
+                    ) : null}
+                    {selected.reservationPurchase
+                      ? selected.reservationPurchase.lines.map((line) => (
+                          <FinanceHistoryPanel
+                            key={line.purchaseId}
+                            requestId={line.purchaseId}
+                            source="RESERVATIONS"
+                            compact
+                          />
+                        ))
+                      : null}
+                    {['PAYROLL_REQUEST', 'OPERATIONAL_REQUEST'].includes(
+                      selected.kind,
+                    ) ? (
+                      <FinancePayrollActions
+                        key={selected.id}
+                        item={selected}
+                        accounts={accounts}
+                        methods={methods}
+                        onChanged={() => setRevision((value) => value + 1)}
+                      />
+                    ) : null}
+                    {selected.kind === 'RECEIPT_VERIFICATION' ? (
+                      <div className="grid grid-cols-2 gap-2 pt-2">
                         <Button
                           onClick={() => openReceiptAction(selected, 'APPROVE')}
                         >
-                          تأیید درخواست خرید
+                          <CheckCircle2 className="size-4" />
+                          تأیید دریافت
                         </Button>
                         <Button
                           variant="outline"
@@ -1431,109 +1510,59 @@ export function FinanceInboxLiveWorkspace() {
                             openReceiptAction(selected, 'CORRECTION_REQUIRED')
                           }
                         >
-                          برگشت برای اصلاح
+                          <RotateCcw className="size-4" />
+                          درخواست اصلاح
                         </Button>
                       </div>
                     ) : null}
-                    {isActionablePayment(selected) ? (
-                      <Button onClick={() => openSupplierPayment(selected)}>
-                        ثبت پرداخت فاکتور خرید
-                      </Button>
+                    {selected.kind === 'PAYMENT_REQUEST' &&
+                    selected.source === 'RESERVATIONS' &&
+                    !selected.reservationPurchase ? (
+                      <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          پرداخت به کارگزار با انتخاب حساب مبدأ و روش پرداخت ثبت
+                          می‌شود. پرداخت جزئی نیز مجاز است.
+                        </p>
+                        <Button
+                          className="w-full"
+                          onClick={() => openSupplierPayment(selected)}
+                        >
+                          <WalletCards className="size-4" />
+                          ثبت پرداخت کارگزار
+                        </Button>
+                      </div>
                     ) : null}
-                    {selected.kind === 'PAYMENT_REQUEST' ? (
+                    {selected.kind === 'PAYMENT_REQUEST' &&
+                    selected.source === 'RESERVATIONS' &&
+                    !selected.reservationPurchase ? (
                       <FinanceHistoryPanel
                         requestId={selected.sourceReference}
-                        source="INVOICE"
-                        compact
-                      />
-                    ) : null}
-                  </div>
-                ) : null}
-                {selected.reservationPurchase
-                  ? selected.reservationPurchase.lines.map((line) => (
-                      <FinanceHistoryPanel
-                        key={line.purchaseId}
-                        requestId={line.purchaseId}
                         source="RESERVATIONS"
                         compact
                       />
-                    ))
-                  : null}
-                {['PAYROLL_REQUEST', 'OPERATIONAL_REQUEST'].includes(
-                  selected.kind,
-                ) ? (
-                  <FinancePayrollActions
-                    key={selected.id}
-                    item={selected}
-                    accounts={accounts}
-                    methods={methods}
-                    onChanged={() => setRevision((value) => value + 1)}
-                  />
-                ) : null}
-                {selected.kind === 'RECEIPT_VERIFICATION' ? (
-                  <div className="grid grid-cols-2 gap-2 pt-2">
-                    <Button
-                      onClick={() => openReceiptAction(selected, 'APPROVE')}
-                    >
-                      <CheckCircle2 className="size-4" />
-                      تأیید دریافت
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() =>
-                        openReceiptAction(selected, 'CORRECTION_REQUIRED')
-                      }
-                    >
-                      <RotateCcw className="size-4" />
-                      درخواست اصلاح
-                    </Button>
+                    ) : null}
+                    {selected.kind === 'PAYMENT_REQUEST' &&
+                    selected.source === 'PURCHASES' &&
+                    selected.ticketPurchase ? (
+                      <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+                        <Button
+                          className="w-full"
+                          onClick={() => openSupplierPayment(selected)}
+                        >
+                          <WalletCards className="size-4" /> ثبت پرداخت خرید
+                          بلیت
+                        </Button>
+                        <FinanceHistoryPanel
+                          requestId={selected.sourceReference}
+                          source="TICKET"
+                          compact
+                        />
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-                {selected.kind === 'PAYMENT_REQUEST' &&
-                selected.source === 'RESERVATIONS' &&
-                !selected.reservationPurchase ? (
-                  <div className="space-y-2 rounded-2xl border border-blue-200 bg-blue-50/50 p-3 dark:border-blue-900 dark:bg-blue-950/20">
-                    <p className="text-xs leading-5 text-muted-foreground">
-                      پرداخت به کارگزار با انتخاب حساب مبدأ و روش پرداخت ثبت
-                      می‌شود. پرداخت جزئی نیز مجاز است.
-                    </p>
-                    <Button
-                      className="w-full"
-                      onClick={() => openSupplierPayment(selected)}
-                    >
-                      <WalletCards className="size-4" />
-                      ثبت پرداخت کارگزار
-                    </Button>
-                  </div>
-                ) : null}
-                {selected.kind === 'PAYMENT_REQUEST' &&
-                selected.source === 'RESERVATIONS' &&
-                !selected.reservationPurchase ? (
-                  <FinanceHistoryPanel
-                    requestId={selected.sourceReference}
-                    source="RESERVATIONS"
-                    compact
-                  />
-                ) : null}
-                {selected.kind === 'PAYMENT_REQUEST' &&
-                selected.source === 'PURCHASES' &&
-                selected.ticketPurchase ? (
-                  <div className="space-y-2 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
-                    <Button
-                      className="w-full"
-                      onClick={() => openSupplierPayment(selected)}
-                    >
-                      <WalletCards className="size-4" /> ثبت پرداخت خرید بلیت
-                    </Button>
-                    <FinanceHistoryPanel
-                      requestId={selected.sourceReference}
-                      source="TICKET"
-                      compact
-                    />
-                  </div>
-                ) : null}
-              </div>
-            </Card>
+                </Card>
+              </DialogContent>
+            </Dialog>
           ) : null}
         </div>
       ) : null}
@@ -1547,7 +1576,7 @@ export function FinanceInboxLiveWorkspace() {
           }
         }}
       >
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className={styles.actionDialog}>
           <DialogTitle>
             {actionItem?.kind === 'HR_REFERRAL'
               ? 'رسیدگی به ارجاع منابع انسانی'
@@ -1841,7 +1870,7 @@ export function FinanceInboxLiveWorkspace() {
       </Dialog>
 
       <Dialog open={accountDialog} onOpenChange={setAccountDialog}>
-        <DialogContent dir="rtl">
+        <DialogContent dir="rtl" className={styles.actionDialog}>
           <DialogTitle>
             {actionKind === 'APPROVE'
               ? 'تعریف حساب دریافت'

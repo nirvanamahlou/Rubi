@@ -103,7 +103,10 @@ describe('finance workspace component contract', () => {
     );
     expect(liveInboxSource).toContain('aria-pressed={active}');
     expect(liveInboxSource).toContain('بررسی درخواست');
-    expect(liveInboxSource).toContain('scrollIntoView');
+    expect(liveInboxSource).not.toContain('scrollIntoView');
+    expect(liveInboxSource).toContain('فرم درخواست مالی');
+    expect(liveInboxSource).toContain('className={styles.requestDialog}');
+    expect(liveInboxSource).toContain('className={styles.actionDialog}');
     for (const action of ['payTicket', 'paySupplier', 'decideReceipt']) {
       expect(liveInboxSource).toContain(`financeInboxApi.${action}`);
     }
