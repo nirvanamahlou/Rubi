@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+  canViewRoute,
+  USER_ACCESS_PROFILE_PERMISSION,
+  screenPermission,
+} from '@nora/contracts';
 
 import {
   getNavigationBreadcrumbs,
@@ -22,6 +27,7 @@ const expectedRoutes = [
   '/purchases',
   '/finance',
   '/finance/requests',
+  '/finance/delivery',
   '/ticket-purchases',
   '/marketing',
   '/organizations',
@@ -45,6 +51,7 @@ const expectedTitles = [
   'تنخواه',
   'حسابداری',
   'کارتابل درخواست‌ها',
+  'تحویل مدارک',
   'خرید و تأمین',
   'مارکتینگ',
   'مشتریان B2B',
@@ -57,6 +64,23 @@ const expectedTitles = [
 ];
 
 describe('CRM navigation', () => {
+  it('protects the independent delivery screen with Finance and managed screen access', () => {
+    expect(canViewRoute([], '/finance/delivery')).toBe(false);
+    expect(canViewRoute(['finance.read'], '/finance/delivery')).toBe(true);
+    const requestsOnly = [
+      'finance.read',
+      USER_ACCESS_PROFILE_PERMISSION,
+      screenPermission('finance.requests'),
+    ];
+    expect(canViewRoute(requestsOnly, '/finance/requests')).toBe(true);
+    expect(canViewRoute(requestsOnly, '/finance/delivery')).toBe(false);
+    expect(
+      canViewRoute(
+        [...requestsOnly, screenPermission('finance.delivery')],
+        '/finance/delivery',
+      ),
+    ).toBe(true);
+  });
   it('groups every existing module exactly once without changing routes or labels', () => {
     const grouped = groupedNavigationItems.flatMap((group) => group.items);
     expect(grouped).toHaveLength(navigationItems.length);
@@ -85,7 +109,8 @@ describe('CRM navigation', () => {
       groupedNavigationItems
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
-    ).toEqual(['/finance', '/finance/requests']);
+    ).toEqual(['/finance', '/finance/requests', '/finance/delivery']);
+    expect(getNavigationItem('/finance/delivery')?.title).toBe('تحویل مدارک');
     expect(
       groupedNavigationItems.find((group) => group.id === 'finance')?.title,
     ).toBe('مالی');
@@ -110,13 +135,13 @@ describe('CRM navigation', () => {
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(21);
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(20);
+    expect(navigationItems).toHaveLength(21);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(21);
   });
 
   it('resolves the Human Resources owner route', () => {

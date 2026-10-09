@@ -177,7 +177,14 @@ describe('finance workspace component contract', () => {
     expect(coreSource).not.toContain('label="Version"');
     expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
     expect(coreSource).toContain('<FinanceInboxLiveWorkspace />');
-    expect(coreSource).toContain('<FinanceDeliveryPanel />');
+    expect(coreSource).not.toContain('<FinanceDeliveryPanel />');
+    expect(coreSource).not.toContain('#finance-document-delivery');
+    const deliveryPage = readFileSync(
+      join(process.cwd(), 'src/app/(crm)/finance/delivery/page.tsx'),
+      'utf8',
+    );
+    expect(deliveryPage).toContain('<FinanceDeliveryPanel />');
+    expect(deliveryPage).toContain('<PageHeader title="تحویل مدارک" />');
     expect(componentSource).not.toContain('<FinanceDeliveryPanel />');
     expect(coreSource).not.toContain('<InboxSpace />');
     expect(liveInboxSource).toContain('کارتابل درخواست‌ها');
