@@ -24,6 +24,7 @@ import type {
   SalesContractCommandRequest,
   SalesContractCreateRequest,
   SalesContractListQuery,
+  SalesReceivablesQuery,
   SalesContractUpdateRequest,
   SalesPaymentCreateRequest,
 } from '@nora/contracts';
@@ -98,6 +99,15 @@ export class SalesController {
   @Header('Cache-Control', 'private, no-store')
   dashboard(@Req() request: AuthenticatedRequest) {
     return this.service.dashboard(request.actor);
+  }
+
+  @Get('receivables')
+  @Header('Cache-Control', 'private, no-store')
+  receivables(
+    @Query() query: SalesReceivablesQuery,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.receivables(query, request.actor);
   }
 
   @Get('hotel-room-rates')

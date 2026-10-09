@@ -355,6 +355,29 @@ export interface SalesDashboard {
   };
 }
 
+export interface SalesReceivablesQuery {
+  from?: string | undefined;
+  to?: string | undefined;
+  dateBasis?: 'CONTRACT' | 'TRAVEL' | undefined;
+  originId?: string | undefined;
+  destinationId?: string | undefined;
+  customerType?: 'ALL' | 'AGENCY' | 'IN_PERSON' | undefined;
+  agencyCustomerId?: string | undefined;
+}
+
+export interface SalesReceivables {
+  data: {
+    balances: readonly SalesMoney[];
+    contractCount: number;
+    routes: readonly {
+      originId: string;
+      destinationId: string;
+      label: string;
+    }[];
+    agencies: readonly { id: string; name: string }[];
+  };
+}
+
 export interface SalesReservationRequestV1 {
   passengerAssignments?: readonly {
     customerId: string;

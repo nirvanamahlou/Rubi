@@ -1611,6 +1611,7 @@
   "فیلتر کارتابل خرید معتبر نیست.": "Invalid purchase inbox filter.",
   "فیلتر کارتابل معتبر نیست.": "Cartable filter is not valid.",
   "فیلتر گزارش نامعتبر است.": "Report filter is invalid.",
+  "فیلتر مانده قابل دریافت معتبر نیست.": "The receivables filter is invalid.",
   "فیلتر مسیر و تاریخ معتبر لازم است.": "A valid route and date filter is required.",
   "فیلتر نامعتبر است.": "The filter is invalid.",
   "فیلتر وضعیت وعده/سرویس معتبر نیست.": "The promise/service state filter is not valid.",

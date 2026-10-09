@@ -32,6 +32,8 @@ import type {
   SalesContractListQuery,
   SalesContractPage,
   SalesContractSummary,
+  SalesReceivables,
+  SalesReceivablesQuery,
   SalesPaymentCreateRequest,
   SalesReservationRequestV1,
   SalesFinanceInboxPaymentV1,
@@ -1232,6 +1234,135 @@ export class SalesService {
   async history(id: string, actor: AuthenticatedActor) {
     await this.detail(id, actor);
     return { data: await this.repository.history(id) };
+  }
+
+  async receivables(
+    query: SalesReceivablesQuery,
+    actor: AuthenticatedActor,
+  ): Promise<SalesReceivables> {
+    const day = Joi.string()
+      .pattern(/^\d{4}-\d{2}-\d{2}$/)
+      .custom((value, helpers) => {
+        const parsed = new Date(`${value}T00:00:00.000Z`);
+        return Number.isFinite(parsed.getTime()) &&
+          parsed.toISOString().slice(0, 10) === value
+          ? value
+          : helpers.error('any.invalid');
+      });
+    const validated = Joi.object({
+      from: day,
+      to: day,
+      dateBasis: Joi.string().valid('CONTRACT', 'TRAVEL').default('CONTRACT'),
+      originId: Joi.string().guid(),
+      destinationId: Joi.string().guid(),
+      customerType: Joi.string()
+        .valid('ALL', 'AGENCY', 'IN_PERSON')
+        .default('ALL'),
+      agencyCustomerId: Joi.string().guid(),
+    })
+      .unknown(false)
+      .validate(query);
+    if (
+      validated.error ||
+      (query.from && query.to && query.from > query.to) ||
+      (query.agencyCustomerId && query.customerType !== 'AGENCY')
+    )
+      throw new BadRequestException('فیلتر مانده قابل دریافت معتبر نیست.');
+    const filters = validated.value as SalesReceivablesQuery;
+    const rows = await this.repository.dashboardRows(this.readScope(actor));
+    const buyers = await this.customers.partyKinds(
+      [...new Set(rows.map((row) => row.customerId))],
+      actor,
+    );
+    const kinds = new Map(buyers.map((buyer) => [buyer.id, buyer.kind]));
+    const cities = [
+      ...new Set(rows.flatMap((row) => [row.originId, row.destinationId])),
+    ];
+    const names = new Map<string, string>();
+    let cursor = 0;
+    await Promise.all(
+      Array.from({ length: Math.min(cities.length, 8) }, async () => {
+        while (cursor < cities.length) {
+          const id = cities[cursor++]!;
+          const city = this.references
+            ? await this.references.detail('cities', id)
+            : null;
+          names.set(id, city?.data.name ?? id);
+        }
+      }),
+    );
+    const routes = new Map<
+      string,
+      SalesReceivables['data']['routes'][number]
+    >();
+    const agencies = new Map<string, { id: string; name: string }>();
+    for (const row of rows) {
+      routes.set(`${row.originId}:${row.destinationId}`, {
+        originId: row.originId,
+        destinationId: row.destinationId,
+        label: `${names.get(row.originId)} ← ${names.get(row.destinationId)}`,
+      });
+      if (kinds.get(row.customerId) === 'ORGANIZATION')
+        agencies.set(row.customerId, {
+          id: row.customerId,
+          name: row.customerNameSnapshot,
+        });
+    }
+    const matched = rows.filter((row) => {
+      const value = (
+        filters.dateBasis === 'TRAVEL' ? row.departureDate : row.createdAt
+      )
+        .toISOString()
+        .slice(0, 10);
+      return (
+        (!filters.from || value >= filters.from) &&
+        (!filters.to || value <= filters.to) &&
+        (!filters.originId || row.originId === filters.originId) &&
+        (!filters.destinationId ||
+          row.destinationId === filters.destinationId) &&
+        (!filters.agencyCustomerId ||
+          row.customerId === filters.agencyCustomerId) &&
+        (filters.customerType === 'ALL' ||
+          kinds.get(row.customerId) ===
+            (filters.customerType === 'AGENCY' ? 'ORGANIZATION' : 'PERSON'))
+      );
+    });
+    const balances = matched.flatMap(
+      (row) => presentSalesContract(row, undefined, this.buyerCrypto).balances,
+    );
+    return {
+      data: {
+        balances: [...new Set(balances.map((balance) => balance.currencyCode))]
+          .sort()
+          .map((currencyCode) => ({
+            currencyCode,
+            amount: sumSalesDecimals(
+              balances
+                .filter((balance) => balance.currencyCode === currencyCode)
+                .map((balance) => balance.outstanding),
+            ),
+          })),
+        contractCount: matched.length,
+        routes: [...routes.values()].sort((a, b) =>
+          a.label.localeCompare(b.label, 'fa'),
+        ),
+        agencies: [...agencies.values()].sort((a, b) =>
+          a.name.localeCompare(b.name, 'fa'),
+        ),
+      },
+    };
+  }
+
+  private readScope(actor: AuthenticatedActor): Prisma.SalesContractWhereInput {
+    if (has(actor, 'sales.contracts.read.all')) return {};
+    if (has(actor, 'sales.contracts.read.branch'))
+      return { branchId: { in: actor.branchIds } };
+    if (has(actor, 'sales.contracts.read.own'))
+      return {
+        branchId: { in: actor.branchIds },
+        OR: [{ ownerUserId: actor.userId }, { assignedUserId: actor.userId }],
+      };
+    throw new ForbiddenException('مجوز مشاهده قرارداد وجود ندارد.');
   }
 
   async dashboard(actor: AuthenticatedActor) {
