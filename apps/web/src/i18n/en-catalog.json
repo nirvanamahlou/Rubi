@@ -17119,5 +17119,10 @@
   "تا تاریخ خرید و تأمین": "Purchasing end date",
   "ترتیب تاریخ": "Date order",
   "جدیدتر به قدیمی‌تر": "Newest first",
-  "قدیمی‌تر به جدیدتر": "Oldest first"
+  "قدیمی‌تر به جدیدتر": "Oldest first",
+  "یادداشت‌های مهم": "Important notes",
+  "یادداشت‌های مهم من": "My important notes",
+  "دریافت یادداشت‌های مهم انجام نشد.": "Unable to load important notes.",
+  "یادداشت‌های مهم دریافت نشدند": "Important notes could not be loaded",
+  "یادداشت مهمی ندارید": "You have no important notes"
 }
