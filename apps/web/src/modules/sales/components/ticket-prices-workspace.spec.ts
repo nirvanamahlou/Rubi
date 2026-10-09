@@ -31,7 +31,7 @@ import {
   clampTierSeatCount,
 } from './ticket-prices-workspace';
 describe('ticket price workspace', () => {
-  it('renders unified filters and the pair editor before the common list', () => {
+  it('renders shared filters and the pair editor before the separated lists', () => {
     state.values = null;
     state.index = 0;
     const html = renderToStaticMarkup(createElement(TicketPricesWorkspace));
@@ -225,6 +225,18 @@ describe('ticket price workspace', () => {
     state.index = 0;
     const html = renderToStaticMarkup(createElement(TicketPricesWorkspace));
     expect(html.match(/<article /g)).toHaveLength(3);
+    const roundTrips = html.match(
+      /<section[^>]*aria-labelledby="ticket-prices-roundtrip"[\s\S]*?<\/section>/,
+    )?.[0];
+    const oneWays = html.match(
+      /<section[^>]*aria-labelledby="ticket-prices-oneway"[\s\S]*?<\/section>/,
+    )?.[0];
+    expect(roundTrips).toContain('بلیت‌های رفت‌وبرگشت');
+    expect(roundTrips?.match(/<article /g)).toHaveLength(1);
+    expect(roundTrips).not.toContain('aria-label="یک‌طرفه ');
+    expect(oneWays).toContain('بلیت‌های یک‌طرفه');
+    expect(oneWays?.match(/<article /g)).toHaveLength(2);
+    expect(oneWays).not.toContain('aria-label="رفت‌وبرگشت ');
     expect(html.match(/کپی درصد برای این مقصد/g)).toHaveLength(4);
     expect(html).toContain('9,700,000 IRR');
     expect(html).toContain('24,000,000 IRR');
@@ -260,6 +272,24 @@ describe('ticket price workspace', () => {
     );
     expect(hiddenHtml.match(/>عدم نمایش</g)).toHaveLength(2);
     expect(hiddenHtml).not.toContain('>0 IRR<');
+    state.values[11] = 'ROUNDTRIP';
+    state.index = 0;
+    const pairsOnly = renderToStaticMarkup(
+      createElement(TicketPricesWorkspace),
+    );
+    expect(pairsOnly.match(/<article /g)).toHaveLength(1);
+    expect(pairsOnly).toContain('aria-labelledby="ticket-prices-roundtrip"');
+    expect(pairsOnly).not.toContain('aria-labelledby="ticket-prices-oneway"');
+    state.values[11] = 'ONEWAY';
+    state.index = 0;
+    const singlesOnly = renderToStaticMarkup(
+      createElement(TicketPricesWorkspace),
+    );
+    expect(singlesOnly.match(/<article /g)).toHaveLength(2);
+    expect(singlesOnly).not.toContain(
+      'aria-labelledby="ticket-prices-roundtrip"',
+    );
+    expect(singlesOnly).toContain('aria-labelledby="ticket-prices-oneway"');
     state.values = null;
   });
 });
