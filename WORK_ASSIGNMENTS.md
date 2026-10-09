@@ -6263,6 +6263,8 @@ Verification:31 Web navigation/Finance/localization tests and11 IAM tests pass; 
 
 ## PURCHASE-SUPPLIERS-ENTRY-1009 — PC-A — READY_FOR_REVIEW
 
+CI follow-up reserves only the affected breadcrumb expectation in navigation.spec.ts: section title now excludes suppliers. Full Web CI otherwise passed2733 tests; update the old expected title and re-run exact-head gates.
+
 Bounded shared IAM screen lock additionally reserved: procurement.suppliers at existing /purchases?section=suppliers. Existing route guard rejects unregistered section queries; additive Contracts registry producer and Web/API access consumers preserve deny-by-default managed profiles and require explicit screen selection. No actual grant or Procurement business change.
 
 Verification:16 Web hub/section/localization and11 IAM tests pass; scoped lint, shared build and Web typecheck pass. Production build and exact-head CI gate owner-authorized merge. Bounded source locks released with review candidate; no runtime deployment or data mutations.
