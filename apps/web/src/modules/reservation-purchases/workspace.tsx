@@ -254,6 +254,23 @@ function PurchaseHub() {
           </Button>
         }
       />
+      {permissions &&
+        canViewRoute(permissions, '/purchases?section=suppliers') && (
+          <Card
+            className="flex flex-wrap items-center justify-between gap-4 border-cyan-200 p-5 dark:border-cyan-900"
+            aria-label="تأمین‌کنندگان"
+          >
+            <div className="flex items-center gap-3">
+              <Building2 className="size-6 text-primary" />
+              <h2 className="text-lg font-bold">تأمین‌کنندگان</h2>
+            </div>
+            <Button asChild variant="outline">
+              <Link href="/purchases?section=suppliers">
+                مدیریت تأمین‌کنندگان
+              </Link>
+            </Button>
+          </Card>
+        )}
       {canRead && (
         <section aria-label="داشبورد خرید خدمات" className="space-y-3">
           <h2 className="text-lg font-bold">داشبورد خرید خدمات</h2>

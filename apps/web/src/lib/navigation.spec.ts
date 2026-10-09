@@ -278,7 +278,7 @@ describe('CRM navigation', () => {
       { href: '/master-data', title: 'اطلاعات پایه' },
       {
         href: pathname,
-        title: 'سازمان‌ها و تأمین‌کنندگان',
+        title: 'سازمان‌ها و همکاران',
       },
     ]);
   });
