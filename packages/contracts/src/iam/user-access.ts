@@ -380,6 +380,12 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     route: '/finance/requests',
   },
   {
+    id: 'finance.delivery',
+    group: 'finance',
+    title: 'تحویل مدارک',
+    route: '/finance/delivery',
+  },
+  {
     id: 'sales.pricing.management',
     group: 'sales',
     title: 'مدیریت قیمت‌ها',

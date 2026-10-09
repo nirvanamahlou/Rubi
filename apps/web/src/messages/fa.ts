@@ -132,6 +132,11 @@ export const navigationMessages = [
     description: 'رسیدگی به درخواست‌های دریافت و پرداخت واحدها',
   },
   {
+    title: 'تحویل مدارک',
+    href: '/finance/delivery',
+    description: 'مدیریت مجوز تحویل مدارک مشتری',
+  },
+  {
     title: 'خرید و تأمین',
     href: '/ticket-purchases',
     description: 'خرید هتل، پرواز، ترانسفر و بیمه قراردادهای رزرواسیون',
