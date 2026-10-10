@@ -13,6 +13,26 @@ const decoder = new TextDecoder();
 
 const maxFileBytes = 5 * 1024 * 1024;
 const maxExpandedBytes = 20 * 1024 * 1024;
+const hyperlinkRelationshipType =
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+const safeMailtoTarget =
+  /^mailto:[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+
+export function isAllowedOrganizationWorkbookRelationship(
+  type: string,
+  target: string,
+  targetMode: string,
+) {
+  if (targetMode.toLowerCase() === 'external')
+    return type === hyperlinkRelationshipType && safeMailtoTarget.test(target);
+  return !/:|\\/.test(target);
+}
+
+function relationshipAttribute(tag: string, name: string) {
+  return (
+    tag.match(new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i'))?.[2] ?? ''
+  );
+}
 
 export function normalizeOrganizationHeader(value: string) {
   return value
@@ -30,11 +50,21 @@ export function validateOrganizationWorkbookXml(xml: string) {
       throw new Error('نویسه کنترلی نامعتبر در فایل وجود دارد.');
   }
   if (
-    /<!DOCTYPE|<!ENTITY|<(?:[\w.-]+:)?(?:f|ddeLink|oleObject|externalReference)\b|macroEnabled|vbaProject|TargetMode\s*=\s*["']External["']/i.test(
+    /<!DOCTYPE|<!ENTITY|<(?:[\w.-]+:)?(?:f|ddeLink|oleObject|externalReference)\b|macroEnabled|vbaProject/i.test(
       xml,
     )
   )
     throw new Error('فرمول، ماکرو یا ارتباط خارجی در فایل مجاز نیست.');
+  for (const tag of xml.matchAll(/<(?:[\w.-]+:)?Relationship\b[^>]*>/gi)) {
+    if (
+      !isAllowedOrganizationWorkbookRelationship(
+        relationshipAttribute(tag[0], 'Type'),
+        relationshipAttribute(tag[0], 'Target'),
+        relationshipAttribute(tag[0], 'TargetMode'),
+      )
+    )
+      throw new Error('فرمول، ماکرو یا ارتباط خارجی در فایل مجاز نیست.');
+  }
 }
 
 function escapeXml(value: string) {
@@ -344,8 +374,11 @@ export async function parseOrganizationXlsx(
         throw new Error('محتوای فعال در اکسل مجاز نیست.');
       if (
         element.localName === 'Relationship' &&
-        (element.getAttribute('TargetMode')?.toLowerCase() === 'external' ||
-          /:|\\/.test(element.getAttribute('Target') ?? ''))
+        !isAllowedOrganizationWorkbookRelationship(
+          element.getAttribute('Type') ?? '',
+          element.getAttribute('Target') ?? '',
+          element.getAttribute('TargetMode') ?? '',
+        )
       )
         throw new Error('ارتباط خارجی در اکسل مجاز نیست.');
     }
