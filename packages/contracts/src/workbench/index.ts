@@ -136,6 +136,34 @@ export interface WorkbenchSalesPerformanceV1 {
   customers: number;
   amounts: { currencyCode: string; amount: string }[];
   partial: boolean;
+  monthly?: {
+    currentLabel: string;
+    previousLabel: string;
+    elapsedDay: number;
+    current: WorkbenchMonthlySalesPeriodV1;
+    previous: WorkbenchMonthlySalesPeriodV1;
+    routes: WorkbenchMonthlySalesRouteV1[];
+  };
+}
+
+export interface WorkbenchMonthlySalesPeriodV1 {
+  contracts: number;
+  people: number;
+  amounts: { currencyCode: string; amount: string }[];
+  throughElapsedDay: { currencyCode: string; amount: string }[];
+  daily: { day: number; amounts: { currencyCode: string; amount: string }[] }[];
+}
+
+export interface WorkbenchMonthlySalesRouteV1 {
+  originId: string;
+  destinationId: string;
+  label: string;
+  contracts: number;
+  people: number;
+  amounts: { currencyCode: string; amount: string }[];
+  previousContracts: number;
+  previousPeople: number;
+  previousAmounts: { currencyCode: string; amount: string }[];
 }
 
 export interface WorkbenchJobActivityV1 {

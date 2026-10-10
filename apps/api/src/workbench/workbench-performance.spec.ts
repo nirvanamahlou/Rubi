@@ -48,6 +48,12 @@ function contract(
     status,
     customerId,
     balances: [{ amount, currencyCode }],
+    passengerNames: ['مسافر اول', 'مسافر دوم'],
+    originId: 'tehran',
+    destinationId: 'kish',
+    originName: 'تهران',
+    destinationName: 'کیش',
+    createdAt: new Date().toISOString(),
   };
 }
 describe('self performance aggregation', () => {
@@ -120,7 +126,7 @@ describe('self performance aggregation', () => {
       ...actor,
       permissions: ['sales.contracts.read.all'],
     });
-    expect(result.sales).toEqual({
+    expect(result.sales).toMatchObject({
       status: 'ready',
       data: {
         contracts: 5,
@@ -131,6 +137,10 @@ describe('self performance aggregation', () => {
           { currencyCode: 'USD', amount: '2.5' },
         ],
         partial: false,
+        monthly: {
+          current: { contracts: 3, people: 6 },
+          routes: [{ contracts: 3, people: 6 }],
+        },
       },
     });
     expect(f.sales.list).toHaveBeenCalledWith(

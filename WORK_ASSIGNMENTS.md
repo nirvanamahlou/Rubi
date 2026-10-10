@@ -6388,3 +6388,11 @@ macros and all other external relationships remain blocked. Fourteen focused
 XLSX/import tests, scoped ESLint, Web typecheck and production build pass. No
 agency record was imported or changed; bounded source lock is released with the
 review commit.
+
+## WORKBENCH-PERSIAN-MONTH-SALES-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-performance-routes-1010` from current `origin/develop`. Reserve Workbench performance API/Web, additive Workbench response contract, focused tests and bounded status docs. Show the signed-in user's confirmed sales for the current and previous Persian calendar months, per currency and route, with passenger counts and an honest comparison chart. Consume only the existing public SalesService list projection; Sales remains PC-A owned. Workbench API is producer and Workbench Web is consumer of the additive optional contract fields, so existing consumers remain compatible. No Sales module edit, schema/migration, dependency/lockfile, operational data or permission change. User explicitly authorized push and merge to develop; tests and exact-head CI gate the merge.
+
+Delivered: 9 focused API tests pass; scoped API/Web ESLint, Contracts/API/Web typechecks, and API/Web production builds pass. Workbench fields and central contract lock release with the committed review candidate. No live sales record was changed.
+
+CI follow-up: the full Web suite exposed missing English display strings for the new monthly card. Reserve the bounded shared i18n overrides and generated offline API/legacy catalogues for this same work item; the three i18n coverage tests now pass. No unrelated translation was changed. These i18n locks release with the next review commit.
