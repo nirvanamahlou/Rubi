@@ -132,7 +132,7 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
         setError(
           reason instanceof Error
             ? reason.message
-            : 'دریافت ستاره‌دارها انجام نشد.',
+            : 'دریافت مدارک مهم انجام نشد.',
         );
     } finally {
       if (request === generation.current) setLoading(false);
@@ -159,9 +159,9 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
     <div className="space-y-4">
       <StarredNotes />
       {canRead ? (
-        <section className="space-y-4" aria-label="اسناد ستاره‌دار من">
+        <section className="space-y-4" aria-label="مدارک مهم من">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-bold">اسناد ستاره‌دار من</h2>
+            <h2 className="font-bold">مدارک مهم من</h2>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
@@ -185,14 +185,14 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
           ) : error ? (
             <Alert
               tone="error"
-              title="ستاره‌دارها دریافت نشدند"
+              title="مدارک مهم دریافت نشدند"
               description={error}
             />
           ) : !items.length ? (
             <Card>
               <EmptyState
                 icon={Star}
-                title="سند ستاره‌دار قابل‌دسترسی ندارید"
+                title="مدرک مهم قابل‌دسترسی ندارید"
                 description="در بخش اسناد و فایل‌ها، ستاره کنار فایل موردنظر را بزنید. فایل حذف‌شده یا خارج از دسترسی شما نمایش داده نمی‌شود."
               />
             </Card>
@@ -217,7 +217,7 @@ export function WorkbenchFavorites({ user }: { user: LoginResponse['user'] }) {
                       </p>
                     </div>
                     <Star
-                      aria-label="ستاره‌دار"
+                      aria-label="مدرک مهم"
                       className="size-4 fill-amber-400 text-amber-600"
                     />
                     <Button asChild variant="outline" size="sm">

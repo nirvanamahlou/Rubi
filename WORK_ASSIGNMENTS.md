@@ -6396,3 +6396,9 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-performance-routes-1010` from cur
 Delivered: 9 focused API tests pass; scoped API/Web ESLint, Contracts/API/Web typechecks, and API/Web production builds pass. Workbench fields and central contract lock release with the committed review candidate. No live sales record was changed.
 
 CI follow-up: the full Web suite exposed missing English display strings for the new monthly card. Reserve the bounded shared i18n overrides and generated offline API/legacy catalogues for this same work item; the three i18n coverage tests now pass. No unrelated translation was changed. These i18n locks release with the next review commit.
+
+## WORKBENCH-IMPORTANT-DOCUMENTS-LABEL-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-important-documents-1010` from `origin/develop`. Reserve the Workbench favorites tab/visible document labels, focused Web i18n overrides, tests and bounded status docs. Rename the section to «مدارک مهم» without changing document favorite IDs, note pinning, permissions, backend, schema/migration, dependencies or operational data. No active overlapping target lock found. User authorizes push and merge to develop.
+
+Validation: 20 focused Web tests, scoped ESLint, Web typecheck and Web production build pass. No migration or dependency lock was needed.
