@@ -80,6 +80,26 @@ export function OrganizationRegistrationEditor({
             <dd>{String(organization.attributes.nationalId || 'ثبت نشده')}</dd>
           </div>
           <div>
+            <dt className="text-sm text-muted-foreground">شماره ثبت</dt>
+            <dd>
+              {String(organization.attributes.registrationNumber || 'ثبت نشده')}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted-foreground">کد اقتصادی</dt>
+            <dd>
+              {String(organization.attributes.economicCode || 'ثبت نشده')}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm text-muted-foreground">مجوز گردشگری</dt>
+            <dd>
+              {String(
+                organization.attributes.tourismLicenseNumber || 'ثبت نشده',
+              )}
+            </dd>
+          </div>
+          <div>
             <dt className="text-sm text-muted-foreground">نوع شخصیت</dt>
             <dd>
               {organization.attributes.personType === 'LEGAL'

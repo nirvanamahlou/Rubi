@@ -514,6 +514,9 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'roleCodes',
     'personType',
     'nationalId',
+    'registrationNumber',
+    'economicCode',
+    'tourismLicenseNumber',
     'logoFileReference',
   ],
   suppliers: [
@@ -554,6 +557,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'preferredChannel',
     'phone',
     'email',
+    'nationalId',
     'hasWhatsapp',
     'isPrimary',
   ],
@@ -1238,12 +1242,30 @@ export class MasterDataService {
           ? row.emailEncryptionKeyVersion
           : null,
     });
+    const nationalId = this.contactCrypto.decrypt('nationalId', {
+      encrypted:
+        typeof row.nationalIdEncrypted === 'string'
+          ? row.nationalIdEncrypted
+          : null,
+      encryptionIv:
+        typeof row.nationalIdEncryptionIv === 'string'
+          ? row.nationalIdEncryptionIv
+          : null,
+      encryptionAuthTag:
+        typeof row.nationalIdEncryptionAuthTag === 'string'
+          ? row.nationalIdEncryptionAuthTag
+          : null,
+      encryptionKeyVersion:
+        typeof row.nationalIdEncryptionKeyVersion === 'number'
+          ? row.nationalIdEncryptionKeyVersion
+          : null,
+    });
     await this.repository.recordSensitiveContactRead({
       contactId: id,
       actorUserId: actor.userId,
       actorBranchId: branchOf(actor, requestedBranch),
     });
-    return { data: { id, phone, email } };
+    return { data: { id, phone, email, nationalId } };
   }
 
   async organizationSupplierSummary() {
@@ -1675,6 +1697,31 @@ export class MasterDataService {
       if (personType && !['NATURAL', 'LEGAL'].includes(personType))
         throw new BadRequestException('نوع شخصیت باید حقیقی یا حقوقی باشد.');
       data.personType = personType || null;
+    }
+    if (resource === 'organizations') {
+      for (const field of [
+        'registrationNumber',
+        'economicCode',
+        'tourismLicenseNumber',
+      ] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const normalized = String(data[field] ?? '')
+          .normalize('NFKC')
+          .replace(/[۰-۹٠-٩]/g, (digit) =>
+            String(digit.charCodeAt(0) - (digit >= '۰' ? 0x06f0 : 0x0660)),
+          )
+          .replace(/\s/g, '');
+        if (normalized.length > 80) {
+          if (field === 'registrationNumber')
+            throw new BadRequestException('شماره ثبت بیش از حد مجاز است.');
+          if (field === 'economicCode')
+            throw new BadRequestException('کد اقتصادی بیش از حد مجاز است.');
+          throw new BadRequestException(
+            'شماره مجوز گردشگری بیش از حد مجاز است.',
+          );
+        }
+        data[field] = normalized || null;
+      }
     }
     if (
       resource === 'organizations' &&
@@ -2633,6 +2680,7 @@ export class MasterDataService {
       }
       const hasPhone = Object.hasOwn(data, 'phone');
       const hasEmail = Object.hasOwn(data, 'email');
+      const hasNationalId = Object.hasOwn(data, 'nationalId');
       if (
         !partial &&
         !String(data.phone ?? '').trim() &&
@@ -2684,6 +2732,34 @@ export class MasterDataService {
             emailEncryptionKeyVersion: protectedEmail.encryptionKeyVersion,
             emailMasked: protectedEmail.masked,
             emailFingerprint: protectedEmail.fingerprint,
+          });
+        }
+      }
+      if (hasNationalId) {
+        const nationalId = String(data.nationalId ?? '').trim();
+        delete data.nationalId;
+        if (!nationalId && !partial) {
+          Object.assign(data, {
+            nationalIdEncrypted: null,
+            nationalIdEncryptionIv: null,
+            nationalIdEncryptionAuthTag: null,
+            nationalIdEncryptionKeyVersion: null,
+            nationalIdMasked: null,
+            nationalIdFingerprint: null,
+          });
+        } else if (nationalId) {
+          const protectedNationalId = this.contactCrypto.protect(
+            'nationalId',
+            nationalId,
+          );
+          Object.assign(data, {
+            nationalIdEncrypted: protectedNationalId.encrypted,
+            nationalIdEncryptionIv: protectedNationalId.encryptionIv,
+            nationalIdEncryptionAuthTag: protectedNationalId.encryptionAuthTag,
+            nationalIdEncryptionKeyVersion:
+              protectedNationalId.encryptionKeyVersion,
+            nationalIdMasked: protectedNationalId.masked,
+            nationalIdFingerprint: protectedNationalId.fingerprint,
           });
         }
       }

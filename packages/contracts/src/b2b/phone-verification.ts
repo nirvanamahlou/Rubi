@@ -34,6 +34,7 @@ export interface CreateVerifiedB2bContactRequestV1 extends B2bPhoneVerificationC
   fullName: string;
   jobTitle?: string;
   email?: string;
+  nationalId?: string;
 }
 
 export function normalizeIranianMobile(value: string): string | undefined {

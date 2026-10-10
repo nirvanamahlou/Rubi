@@ -1619,6 +1619,24 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         hint: 'از مدارک ثبتی شرکت وارد کنید. این مقدار خودکار تولید یا استعلام نمی‌شود. برای شخصیت حقیقی خالی بگذارید.',
       },
       {
+        key: 'registrationNumber',
+        label: 'شماره ثبت',
+        type: 'text',
+        placeholder: 'شماره ثبت شرکت',
+      },
+      {
+        key: 'economicCode',
+        label: 'کد اقتصادی',
+        type: 'text',
+        placeholder: 'کد اقتصادی شرکت',
+      },
+      {
+        key: 'tourismLicenseNumber',
+        label: 'شماره مجوز گردشگری',
+        type: 'text',
+        placeholder: 'شماره مجوز بند ب یا گردشگری',
+      },
+      {
         key: 'roleCodes',
         label: 'Roleهای سازمان',
         type: 'text',
@@ -1855,6 +1873,13 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         type: 'text',
         placeholder: '+98912...',
         hint: 'پس از ذخیره رمزنگاری می‌شود و در فهرست فقط ماسک نمایش داده می‌شود.',
+      },
+      {
+        key: 'nationalId',
+        label: 'کد ملی مخاطب',
+        type: 'text',
+        placeholder: '۱۰ رقم؛ برای جایگزینی مقدار جدید وارد کنید',
+        hint: 'پس از ذخیره رمزنگاری می‌شود. در ویرایش، خالی‌گذاشتن این فیلد مقدار قبلی را حفظ می‌کند.',
       },
       {
         key: 'email',

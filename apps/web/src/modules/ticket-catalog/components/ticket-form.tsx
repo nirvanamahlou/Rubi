@@ -1,5 +1,6 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
 import { useRef, useState, type FormEvent } from 'react';
 import {
@@ -795,7 +796,7 @@ export function TicketForm({
         throw new Error('تاریخ اولین بلیط را انتخاب کنید.');
       const roundTrip = definitionMode === 'round-trip' && allowRoundTrip;
       const groupId = roundTrip
-        ? (tripGroup.current ??= crypto.randomUUID())
+        ? (tripGroup.current ??= browserRandomUuid())
         : undefined;
       const baseDefinition: ProductInput = {
         ...input,

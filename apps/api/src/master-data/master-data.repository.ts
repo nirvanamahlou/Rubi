@@ -62,6 +62,11 @@ const protectedContactFields = new Set([
   'emailEncryptionAuthTag',
   'emailEncryptionKeyVersion',
   'emailFingerprint',
+  'nationalIdEncrypted',
+  'nationalIdEncryptionIv',
+  'nationalIdEncryptionAuthTag',
+  'nationalIdEncryptionKeyVersion',
+  'nationalIdFingerprint',
   'primaryPhoneEncrypted',
   'primaryPhoneEncryptionIv',
   'primaryPhoneEncryptionAuthTag',
@@ -275,7 +280,14 @@ const searchFields: Record<MasterDataResource, readonly string[]> = {
   'meal-services': ['name', 'englishName', 'code'],
   facilities: ['name', 'englishName', 'code', 'category'],
   'composite-hotels': ['name', 'englishName', 'code', 'usageCondition'],
-  organizations: ['legalName', 'code', 'nationalId'],
+  organizations: [
+    'legalName',
+    'code',
+    'nationalId',
+    'registrationNumber',
+    'economicCode',
+    'tourismLicenseNumber',
+  ],
   suppliers: ['name', 'code', 'englishName', 'externalProviderReference'],
   brokers: ['name', 'englishName', 'code'],
   'travel-services': ['name', 'englishName', 'code'],
@@ -627,6 +639,7 @@ export function toMasterDataRecord(
     attributes.countryCode = String(country?.code ?? '');
     attributes.countryName = String(country?.name ?? '');
     attributes.regionName = String(region?.name ?? '');
+    attributes.regionEnglishName = String(region?.englishName ?? '');
   }
   if (resource === 'airports') {
     attributes.terminalCount = count ? Number(count.terminals) : null;

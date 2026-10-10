@@ -89,10 +89,13 @@ export function OrganizationExcelDialog({
               downloadOrganizationXlsx('nora-organizations-template.xlsx', [
                 organizationHeaders,
                 ...syntheticOrganizations.map((row) => [
-                  row.code,
                   row.legalName,
-                  row.personType,
-                  row.roleCodes,
+                  row.chiefExecutiveName ?? '',
+                  row.tourismLicenseNumber ?? '',
+                  row.officePhone ?? '',
+                  row.email ?? '',
+                  row.chiefExecutiveMobile ?? '',
+                  row.addressLine ?? '',
                 ]),
               ]);
             }}
@@ -117,9 +120,11 @@ export function OrganizationExcelDialog({
           </label>
         </div>
         <p className="panel-note">
-          حداکثر ۲۰۰ ردیف و ۵ مگابایت. نوع شخصیت: LEGAL یا NATURAL؛ نقش: AGENCY
-          یا CORPORATE_CUSTOMER. برای سازمان جدید کد را خالی بگذارید؛ کد خودکار
-          تولید می‌شود. فرمول و ماکرو مجاز نیست.
+          حداکثر ۲۰۰ ردیف و ۵ مگابایت. عنوان ستون‌ها می‌تواند فارسی یا انگلیسی و
+          با فاصله‌های متفاوت باشد. ستون‌های قالب پیوست مستقیماً خوانده می‌شوند
+          و فیلدهای تکمیلیِ نسخه گسترده نیز پشتیبانی می‌شوند. هر ردیف یک آژانس
+          جدید می‌سازد و اطلاعات تماس و نشانیِ موجود را هم ثبت می‌کند؛ فرمول و
+          ماکرو مجاز نیست.
         </p>
         {error ? (
           <p className="form-error" role="alert">

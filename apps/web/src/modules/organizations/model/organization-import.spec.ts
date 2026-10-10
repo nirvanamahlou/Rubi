@@ -45,29 +45,75 @@ describe('organization import boundaries', () => {
     expect(update).not.toHaveBeenCalled();
   });
   it('stops a batch after an uncertain write and does not retry it', async () => {
-    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
-      data: [],
-      meta: { total: 0 },
-    } as unknown as Awaited<ReturnType<typeof masterDataApi.list>>);
+    vi.spyOn(masterDataApi, 'list').mockImplementation(async (resource) =>
+      resource === 'cities'
+        ? ({
+            data: [
+              {
+                id: 'city-1',
+                name: 'تهران',
+                attributes: {
+                  countryId: 'country-1',
+                  regionName: 'تهران',
+                },
+              } as unknown as MasterDataRecord,
+            ],
+            meta: { total: 1, page: 1, pageSize: 100 },
+          } as Awaited<ReturnType<typeof masterDataApi.list>>)
+        : ({
+            data: [],
+            meta: { total: 0, page: 1, pageSize: 100 },
+          } as Awaited<ReturnType<typeof masterDataApi.list>>),
+    );
     const create = vi
       .spyOn(masterDataApi, 'create')
+      .mockResolvedValueOnce({
+        data: { id: 'org-1', code: 'ORG-1' } as MasterDataRecord,
+      })
       .mockResolvedValueOnce({ data: {} as MasterDataRecord })
       .mockRejectedValueOnce(new Error('network unavailable'));
+    vi.spyOn(masterDataApi, 'createOrganizationAddress').mockResolvedValue({
+      data: {} as never,
+    });
     const results = await importOrganizations(
       validateOrganizationRows(syntheticOrganizations.slice(0, 3)),
       () => {},
     );
     expect(results.map((row) => row.result)).toEqual(['created', 'failed']);
-    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenCalledTimes(3);
   });
   it('uses the server-generated code for new organizations', async () => {
-    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
-      data: [],
-      meta: { total: 0, page: 1, pageSize: 100 },
-    });
-    const create = vi.spyOn(masterDataApi, 'create').mockResolvedValue({
-      data: { code: 'ORG_GENERATED' } as MasterDataRecord,
-    });
+    vi.spyOn(masterDataApi, 'list').mockImplementation(async (resource) =>
+      resource === 'cities'
+        ? ({
+            data: [
+              {
+                id: 'city-1',
+                name: 'تهران',
+                attributes: {
+                  countryId: 'country-1',
+                  regionName: 'تهران',
+                },
+              } as unknown as MasterDataRecord,
+            ],
+            meta: { total: 1, page: 1, pageSize: 100 },
+          } as Awaited<ReturnType<typeof masterDataApi.list>>)
+        : ({
+            data: [],
+            meta: { total: 0, page: 1, pageSize: 100 },
+          } as Awaited<ReturnType<typeof masterDataApi.list>>),
+    );
+    const create = vi
+      .spyOn(masterDataApi, 'create')
+      .mockImplementation(async (resource) => ({
+        data: {
+          id: resource === 'organizations' ? 'org-1' : 'contact-1',
+          code: resource === 'organizations' ? 'ORG_GENERATED' : 'CONTACT-1',
+        } as MasterDataRecord,
+      }));
+    const createAddress = vi
+      .spyOn(masterDataApi, 'createOrganizationAddress')
+      .mockResolvedValue({ data: {} as never });
     const results = await importOrganizations(
       validateOrganizationRows([syntheticOrganizations[0]!]),
       () => {},
@@ -76,9 +122,27 @@ describe('organization import boundaries', () => {
       values: {
         legalName: syntheticOrganizations[0]!.legalName,
         personType: 'LEGAL',
+        nationalId: syntheticOrganizations[0]!.nationalId,
+        registrationNumber: syntheticOrganizations[0]!.registrationNumber,
+        economicCode: syntheticOrganizations[0]!.economicCode || null,
+        tourismLicenseNumber: syntheticOrganizations[0]!.tourismLicenseNumber,
         roleCodes: 'AGENCY',
       },
     });
+    expect(create).toHaveBeenCalledWith(
+      'organization-contacts',
+      expect.objectContaining({
+        values: expect.objectContaining({
+          organizationId: 'org-1',
+          nationalId: syntheticOrganizations[0]!.chiefExecutiveNationalId,
+          phone: syntheticOrganizations[0]!.chiefExecutiveMobile,
+        }),
+      }),
+    );
+    expect(createAddress).toHaveBeenCalledWith(
+      'org-1',
+      expect.objectContaining({ cityId: 'city-1', countryId: 'country-1' }),
+    );
     expect(results[0]).toMatchObject({
       result: 'created',
       code: 'ORG_GENERATED',

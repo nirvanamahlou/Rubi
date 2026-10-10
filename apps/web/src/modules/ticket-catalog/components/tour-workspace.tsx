@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { eligibleTicketReturn } from '@nora/contracts';
 import type {
   BranchReference,
@@ -141,7 +142,7 @@ export function TourWorkspace({
   const keyFor = (kind: string, payload: unknown) => {
     const fingerprint = JSON.stringify([kind, branch, payload]);
     if (!attempts.current.has(fingerprint))
-      attempts.current.set(fingerprint, crypto.randomUUID());
+      attempts.current.set(fingerprint, browserRandomUuid());
     return attempts.current.get(fingerprint)!;
   };
   useEffect(() => {

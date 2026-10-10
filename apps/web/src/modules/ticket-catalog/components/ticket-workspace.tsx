@@ -4,6 +4,7 @@ import { flightCabinCode } from '../model/flight-cabins';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
 import { Power, Plus, Ticket, TicketCheck } from 'lucide-react';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import {
   Alert,
   Button,
@@ -391,7 +392,7 @@ function TicketCatalogWorkspace() {
           requesterName: capacityHold.requesterName.trim(),
         },
         branchId,
-        crypto.randomUUID(),
+        browserRandomUuid(),
       );
       await refreshPublishedOffers();
       setNotice(
@@ -621,7 +622,7 @@ function TicketCatalogWorkspace() {
     if (!current && pendingCreate.current?.signature !== signature)
       pendingCreate.current = {
         signature,
-        ids: inputs.map(() => 'ticket-' + crypto.randomUUID()),
+        ids: inputs.map(() => 'ticket-' + browserRandomUuid()),
       };
     const createdIds: string[] = [];
     if (current) {
@@ -740,7 +741,7 @@ function TicketCatalogWorkspace() {
             sourceOffer
               ? {
                   ...repeat.product,
-                  id: 'ticket-' + crypto.randomUUID(),
+                  id: 'ticket-' + browserRandomUuid(),
                   definition,
                   version: 1,
                   history: [
@@ -755,7 +756,7 @@ function TicketCatalogWorkspace() {
                 }
               : activateDraftCatalogProduct(
                   createProduct(
-                    'ticket-' + crypto.randomUUID(),
+                    'ticket-' + browserRandomUuid(),
                     definition,
                     resolve,
                     now,

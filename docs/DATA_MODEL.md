@@ -179,6 +179,17 @@ B2B owns `B2bOrganizationSignatory`: organization/contact composite restrictive 
 
 `MasterOrganization.nationalId` is an optional, unique varchar(11) company identifier. Master Data normalizes Persian/Arabic digits and accepts only 11 ASCII digits for LEGAL organizations; a database check enforces the same format/person-type rule. Legacy rows stay NULL. Omitted updates preserve the identifier; explicit blank/null clears it, with existing optimistic version and audit semantics. Personal national IDs stay outside this field. It is manually supplied identity data, without a registry verification claim. The public generic record exposes `attributes.nationalId`; legacy consumers may ignore it.
 
+`MasterOrganization.registrationNumber`, `economicCode` and
+`tourismLicenseNumber` are optional, normalized and independently unique agency
+identity attributes. Existing rows remain `NULL`. The organization editor and
+XLSX import may populate or later replace them through the existing audited
+Master Data mutation path. A chief executive's 10-digit national ID belongs to
+`MasterOrganizationContact`, never the organization: it is AES-GCM encrypted,
+fingerprinted for organization-scoped duplicate prevention and exposed only as a
+mask unless an authorized audited unmask command is used. Imported office/CEO
+contacts and addresses remain ordinary editable organization child records;
+country/city may both be absent and can be completed later.
+
 The agency branch selector reads existing `MasterOrganizationAddress` records for the selected organization. Selecting an address does not change IAM branch scope or the agency operational profile; existing public Master Data address CRUD persists additions/edits. IAM branch remains the internal organizational scope of the agreement and account manager.
 
 ## B2B-CONTRACT-FORMS-002 — payment reference
