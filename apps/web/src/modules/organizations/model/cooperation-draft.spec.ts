@@ -400,6 +400,132 @@ describe('cooperation wizard writes', () => {
       values: { roleCodes: 'SUPPLIER,AGENCY' },
     });
   });
+  it('updates the selected dossier, representative and primary address without creating duplicates', async () => {
+    const existing = {
+      id: 'identity',
+      version: 7,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const saved = { ...existing, version: 8 } as MasterDataRecord;
+    const contact = {
+      id: 'contact',
+      version: 3,
+      attributes: { organizationId: 'identity' },
+    } as unknown as MasterDataRecord;
+    const address = {
+      id: 'address',
+      organizationId: 'identity',
+      countryId: 'country',
+      countryName: 'ایران',
+      cityId: 'city',
+      cityName: 'تهران',
+      label: 'دفتر مرکزی',
+      postalCode: '1234567890',
+      addressLine: 'نشانی قبلی',
+      isPrimary: true,
+      displayOrder: 0,
+      isActive: true,
+      version: 4,
+      createdAt: '2026-10-01T00:00:00.000Z',
+      updatedAt: '2026-10-01T00:00:00.000Z',
+    };
+    const update = vi
+      .spyOn(masterDataApi, 'update')
+      .mockResolvedValue({ data: saved });
+    const saveContact = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: contact });
+    const updateAddress = vi
+      .spyOn(masterDataApi, 'updateOrganizationAddress')
+      .mockResolvedValue({ data: address });
+    const create = vi.spyOn(masterDataApi, 'create');
+    const createAddress = vi.spyOn(masterDataApi, 'createOrganizationAddress');
+
+    const result = await saveCooperation(
+      {
+        ...draft,
+        legalName: 'نام ویرایش‌شده',
+        registrationNumber: 'REG-2',
+        economicCode: 'ECO-2',
+        tourismLicenseNumber: 'LIC-2',
+        fullName: 'نماینده ویرایش‌شده',
+        jobTitle: 'مدیرعامل',
+        phone: '09121234567',
+        email: 'edited@example.com',
+        chiefExecutiveNationalId: '1234567890',
+        countryId: 'country',
+        cityId: 'city',
+        addressLine: 'نشانی جدید',
+      },
+      ['master_data.read', 'master_data.update'],
+      existing,
+      { contact, address },
+    );
+
+    expect(result).toBe(saved);
+    expect(update).toHaveBeenCalledWith(
+      'organizations',
+      'identity',
+      expect.objectContaining({
+        version: 7,
+        values: expect.objectContaining({
+          legalName: 'نام ویرایش‌شده',
+          registrationNumber: 'REG-2',
+          economicCode: 'ECO-2',
+          tourismLicenseNumber: 'LIC-2',
+          roleCodes: 'AGENCY',
+        }),
+      }),
+    );
+    expect(saveContact).toHaveBeenCalledWith(
+      'identity',
+      expect.objectContaining({
+        fullName: 'نماینده ویرایش‌شده',
+        phone: '09121234567',
+        email: 'edited@example.com',
+      }),
+      contact,
+    );
+    expect(updateAddress).toHaveBeenCalledWith(
+      'identity',
+      'address',
+      expect.objectContaining({
+        addressLine: 'نشانی جدید',
+        version: 4,
+      }),
+    );
+    expect(create).not.toHaveBeenCalled();
+    expect(createAddress).not.toHaveBeenCalled();
+  });
+  it('preserves protected representative fields when disclosure is unavailable', async () => {
+    const existing = {
+      id: 'identity',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const contact = {
+      id: 'contact',
+      version: 2,
+      attributes: { organizationId: 'identity' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'update').mockResolvedValue({ data: existing });
+    const saveContact = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: contact });
+
+    await saveCooperation(
+      { ...draft, fullName: 'نماینده', jobTitle: 'مدیر' },
+      ['master_data.read', 'master_data.update'],
+      existing,
+      { contact, preserveSensitiveContactFields: true },
+    );
+
+    expect(saveContact).toHaveBeenCalledWith(
+      'identity',
+      { fullName: 'نماینده', jobTitle: 'مدیر' },
+      contact,
+    );
+  });
   it('persists a typed address without inventing country or city identifiers', async () => {
     const existing = {
       id: 'identity',

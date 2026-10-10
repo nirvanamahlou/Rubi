@@ -1,3 +1,13 @@
+## 2026-10-10 — AGENCY-STEPWISE-EDIT-1010 — PC-B — READY_FOR_REVIEW
+
+Agency Edit now opens the same five-step registration wizard with the selected
+identity prefilled. The wizard updates the existing organization, first
+representative and primary address instead of creating duplicates; inaccessible
+protected contact values are preserved. Optional agreement creation remains an
+explicit choice. Focused Organizations tests (23) pass together with scoped
+ESLint and Web typecheck. No schema/migration, dependency, permission,
+operational-data or runtime-database mutation.
+
 ## 2026-10-10 — TICKET-LOAD-RESIZE-EDIT-1010 — PC-B — READY_FOR_REVIEW
 
 Full-load edit no longer requires the regenerated schedule to contain the original row count. One atomic command revises retained rows, logically archives removed rows and publishes added rows in the same load group; legacy loads gain a durable server-visible group marker on their first resized edit. Optimistic versions, branch scope, active-hold/tour guards, sales/pricing/purchase/finance/audit history and non-destructive deletion remain intact. Ticket Catalog API188/22 opt-in skips and Web201/one skip pass; focused tests, English coverage, typechecks, scoped lint and both production builds pass. No schema/migration/dependency/lockfile or operational-data mutation.

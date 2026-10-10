@@ -6,6 +6,7 @@ import type {
   BranchReference,
   IamPermissionCode,
   MasterDataRecord,
+  MasterOrganizationAddressV1,
 } from '@nora/contracts';
 import { normalizeIranianMobile } from '@nora/contracts';
 import { ArrowLeft, Check, FileText, Search } from 'lucide-react';
@@ -44,21 +45,50 @@ function freshDraft(role: CooperationDraft['role'], branchId = '') {
     registrationId: browserRandomUuid(),
   } satisfies CooperationDraft;
 }
+export function cooperationEditDraft(
+  record: MasterDataRecord,
+  role: CooperationDraft['role'],
+) {
+  return {
+    ...freshDraft(role),
+    legalName: record.name,
+    code: record.code,
+    personType: String(record.attributes.personType ?? 'LEGAL'),
+    nationalId: String(record.attributes.nationalId ?? ''),
+    registrationNumber: String(record.attributes.registrationNumber ?? ''),
+    economicCode: String(record.attributes.economicCode ?? ''),
+    tourismLicenseNumber: String(record.attributes.tourismLicenseNumber ?? ''),
+  } satisfies CooperationDraft;
+}
 export function CooperationWizard({
   role,
   permissions,
   onClose,
   onSaved,
+  editRecord,
+  editContacts = [],
 }: {
   role: CooperationDraft['role'];
   permissions: readonly IamPermissionCode[];
   onClose: () => void;
   onSaved: (record: MasterDataRecord) => void;
+  editRecord?: MasterDataRecord;
+  editContacts?: readonly MasterDataRecord[];
 }) {
-  const [draft, setDraft] = useState<CooperationDraft>(() => freshDraft(role));
+  const editing = Boolean(editRecord);
+  const [draft, setDraft] = useState<CooperationDraft>(() =>
+    editRecord ? cooperationEditDraft(editRecord, role) : freshDraft(role),
+  );
   const [step, setStep] = useState(1);
   const [mode, setMode] = useState<'new' | 'existing'>('existing');
-  const [existing, setExisting] = useState<MasterDataRecord>();
+  const [existing, setExisting] = useState<MasterDataRecord | undefined>(
+    editRecord,
+  );
+  const [editContact, setEditContact] = useState<MasterDataRecord>();
+  const [editAddress, setEditAddress] = useState<MasterOrganizationAddressV1>();
+  const [contactSensitiveAvailable, setContactSensitiveAvailable] =
+    useState(false);
+  const hydratedContact = useRef('');
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<readonly MasterDataRecord[]>([]);
   const [searching, setSearching] = useState(false);
@@ -99,6 +129,64 @@ export function CooperationWizard({
       active = false;
     };
   }, []);
+  useEffect(() => {
+    if (!editRecord) return;
+    let active = true;
+    void masterDataApi
+      .organizationAddresses(editRecord.id)
+      .then(({ data }) => {
+        if (!active) return;
+        const address =
+          data.find((row) => row.isActive && row.isPrimary) ??
+          data.find((row) => row.isActive) ??
+          data[0];
+        if (!address) return;
+        setEditAddress(address);
+        setDraft((current) => ({
+          ...current,
+          countryId: address.countryId ?? '',
+          cityId: address.cityId ?? '',
+          addressLine: address.addressLine,
+        }));
+      })
+      .catch(() => {
+        if (active) setError('دریافت نشانی فعلی آژانس ناموفق بود.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [editRecord]);
+  useEffect(() => {
+    if (!editRecord || !editContacts[0]) return;
+    const contact = editContacts[0];
+    if (hydratedContact.current === contact.id) return;
+    hydratedContact.current = contact.id;
+    let active = true;
+    setEditContact(contact);
+    setDraft((current) => ({
+      ...current,
+      fullName: contact.name,
+      jobTitle: String(contact.attributes.jobTitle ?? ''),
+    }));
+    void masterDataApi
+      .unmaskOrganizationContact(contact.id)
+      .then(({ data }) => {
+        if (!active) return;
+        setContactSensitiveAvailable(true);
+        setDraft((current) => ({
+          ...current,
+          phone: data.phone ?? '',
+          email: data.email ?? '',
+          chiefExecutiveNationalId: data.nationalId ?? '',
+        }));
+      })
+      .catch(() => {
+        if (active) setContactSensitiveAvailable(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [editContacts, editRecord]);
   useEffect(
     () => () => {
       phoneRequests.current.invalidate();
@@ -230,7 +318,7 @@ export function CooperationWizard({
   }, [query, mode]);
   function next() {
     const issue =
-      step === 1 && mode === 'existing' && !existing
+      !editing && step === 1 && mode === 'existing' && !existing
         ? 'ابتدا سازمان موجود را انتخاب کنید.'
         : step === 3
           ? undefined
@@ -244,7 +332,7 @@ export function CooperationWizard({
   }
   async function save() {
     if (busy || uploading || stopped) return;
-    const verificationIssue = cooperationIssue(draft, 3);
+    const verificationIssue = editing ? undefined : cooperationIssue(draft, 3);
     if (verificationIssue) {
       setStep(3);
       setError(verificationIssue);
@@ -253,7 +341,21 @@ export function CooperationWizard({
     setBusy(true);
     setError('');
     try {
-      onSaved(await saveCooperation(draft, permissions, existing));
+      onSaved(
+        await saveCooperation(
+          draft,
+          permissions,
+          existing,
+          editing
+            ? {
+                ...(editContact ? { contact: editContact } : {}),
+                ...(editAddress ? { address: editAddress } : {}),
+                preserveSensitiveContactFields:
+                  Boolean(editContact) && !contactSensitiveAvailable,
+              }
+            : undefined,
+        ),
+      );
     } catch (caught) {
       if (caught instanceof CooperationSaveError) {
         setPartial(caught.organization);
@@ -320,10 +422,15 @@ export function CooperationWizard({
         onInteractOutside={(event) => event.preventDefault()}
       >
         <div className="modal-title">
-          <DialogTitle>ایجاد همکاری B2B</DialogTitle>
+          <DialogTitle>
+            {editing ? 'ویرایش مرحله‌ای پرونده آژانس' : 'ایجاد همکاری B2B'}
+          </DialogTitle>
         </div>
         <div className="wizard">
-          <nav className="panel steps" aria-label="مراحل ایجاد همکاری">
+          <nav
+            className="panel steps"
+            aria-label={editing ? 'مراحل ویرایش آژانس' : 'مراحل ایجاد همکاری'}
+          >
             {steps.map((title, index) => (
               <div
                 key={title}
@@ -355,44 +462,46 @@ export function CooperationWizard({
             </h3>
             {step === 1 ? (
               <>
-                <div className="wizard-mode">
-                  <label>
-                    <input
-                      type="radio"
-                      name="identityMode"
-                      checked={mode === 'existing'}
-                      onChange={() => {
-                        phoneRequests.current.invalidate();
-                        setPhoneBusy(false);
-                        setMode('existing');
-                        setExisting(undefined);
-                        setPhoneChallenge(undefined);
-                        setPhoneCode('');
-                        setDraft(freshDraft(role, branches[0]?.id));
-                      }}
-                    />{' '}
-                    سازمان موجود
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      name="identityMode"
-                      checked={mode === 'new'}
-                      disabled={!permissions.includes('master_data.create')}
-                      onChange={() => {
-                        phoneRequests.current.invalidate();
-                        setPhoneBusy(false);
-                        setMode('new');
-                        setExisting(undefined);
-                        setPhoneChallenge(undefined);
-                        setPhoneCode('');
-                        setDraft(freshDraft(role, branches[0]?.id));
-                      }}
-                    />{' '}
-                    سازمان جدید
-                  </label>
-                </div>
-                {mode === 'existing' ? (
+                {!editing ? (
+                  <div className="wizard-mode">
+                    <label>
+                      <input
+                        type="radio"
+                        name="identityMode"
+                        checked={mode === 'existing'}
+                        onChange={() => {
+                          phoneRequests.current.invalidate();
+                          setPhoneBusy(false);
+                          setMode('existing');
+                          setExisting(undefined);
+                          setPhoneChallenge(undefined);
+                          setPhoneCode('');
+                          setDraft(freshDraft(role, branches[0]?.id));
+                        }}
+                      />{' '}
+                      سازمان موجود
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="identityMode"
+                        checked={mode === 'new'}
+                        disabled={!permissions.includes('master_data.create')}
+                        onChange={() => {
+                          phoneRequests.current.invalidate();
+                          setPhoneBusy(false);
+                          setMode('new');
+                          setExisting(undefined);
+                          setPhoneChallenge(undefined);
+                          setPhoneCode('');
+                          setDraft(freshDraft(role, branches[0]?.id));
+                        }}
+                      />{' '}
+                      سازمان جدید
+                    </label>
+                  </div>
+                ) : null}
+                {mode === 'existing' && !editing ? (
                   <div className="field full">
                     <label htmlFor="cooperation-search">جست‌وجوی سازمان</label>
                     <div className="search-field">
@@ -459,7 +568,7 @@ export function CooperationWizard({
                     'legalName',
                     'نام ثبتی سازمان',
                     160,
-                    mode === 'existing',
+                    mode === 'existing' && !editing,
                   )}
                   {field('code', 'کد سازمان', 32, true)}
                   <label className="field">
@@ -483,7 +592,7 @@ export function CooperationWizard({
                     <span>نوع شخصیت</span>
                     <NativeSearchSelect
                       className="input"
-                      disabled={mode === 'existing'}
+                      disabled={mode === 'existing' && !editing}
                       value={draft.personType}
                       onChange={(event) =>
                         setDraft((current) => ({
@@ -506,12 +615,11 @@ export function CooperationWizard({
                         'nationalId',
                         'شناسه ملی شرکت',
                         11,
-                        mode === 'existing',
+                        mode === 'existing' && !editing,
                       )}
                       <p className="panel-note">
                         ۱۱ رقم از مدارک ثبتی شرکت؛ شناسه ملی خودکار تولید یا
-                        استعلام نمی‌شود. شناسه سازمان موجود از «ویرایش اطلاعات»
-                        اصلاح می‌شود.
+                        استعلام نمی‌شود.
                       </p>
                     </div>
                   ) : null}
@@ -519,14 +627,19 @@ export function CooperationWizard({
                     'registrationNumber',
                     'شماره ثبت',
                     80,
-                    mode === 'existing',
+                    mode === 'existing' && !editing,
                   )}
-                  {field('economicCode', 'کد اقتصادی', 80, mode === 'existing')}
+                  {field(
+                    'economicCode',
+                    'کد اقتصادی',
+                    80,
+                    mode === 'existing' && !editing,
+                  )}
                   {field(
                     'tourismLicenseNumber',
-                    'شماره مجوز گردشگری',
+                    'شماره مجوز',
                     80,
-                    mode === 'existing',
+                    mode === 'existing' && !editing,
                   )}
                   {field(
                     'addressLine',
@@ -544,45 +657,70 @@ export function CooperationWizard({
                     'fullName',
                     'نام مدیرعامل یا نماینده (اختیاری)',
                     160,
-                    !permissions.includes('master_data.create'),
+                    !permissions.includes(
+                      editing ? 'master_data.update' : 'master_data.create',
+                    ),
                   )}
                   {field(
                     'chiefExecutiveNationalId',
                     'کد ملی مدیرعامل',
                     20,
-                    !permissions.includes('master_data.create'),
+                    !permissions.includes(
+                      editing ? 'master_data.update' : 'master_data.create',
+                    ) ||
+                      (editing &&
+                        Boolean(editContact) &&
+                        !contactSensitiveAvailable),
                   )}
                   {field(
                     'jobTitle',
                     'سمت',
                     120,
-                    !permissions.includes('master_data.create'),
+                    !permissions.includes(
+                      editing ? 'master_data.update' : 'master_data.create',
+                    ),
                   )}
                   {field(
                     'phone',
                     'تلفن',
                     32,
-                    !permissions.includes('master_data.create'),
+                    !permissions.includes(
+                      editing ? 'master_data.update' : 'master_data.create',
+                    ) ||
+                      (editing &&
+                        Boolean(editContact) &&
+                        !contactSensitiveAvailable),
                     'tel',
                   )}
                   {field(
                     'email',
                     'ایمیل',
                     200,
-                    !permissions.includes('master_data.create'),
+                    !permissions.includes(
+                      editing ? 'master_data.update' : 'master_data.create',
+                    ) ||
+                      (editing &&
+                        Boolean(editContact) &&
+                        !contactSensitiveAvailable),
                     'email',
                   )}
                 </div>
                 <div className="boundary-note">
-                  پس از ثبت سازمان، نمایندگان، امضاداران و مدیر حساب را در صفحه
-                  مشخصات و نقش‌ها تکمیل کنید. ثبت نماینده حساب ورود پرتال ایجاد
-                  نمی‌کند.
+                  {editing
+                    ? 'نماینده اصلی در همین مرحله به‌روزرسانی می‌شود. سایر نمایندگان، امضاداران و مدیر حساب از صفحه مشخصات و نقش‌ها قابل مدیریت‌اند.'
+                    : 'پس از ثبت سازمان، نمایندگان، امضاداران و مدیر حساب را در صفحه مشخصات و نقش‌ها تکمیل کنید. ثبت نماینده حساب ورود پرتال ایجاد نمی‌کند.'}
                 </div>
               </>
             ) : null}
             {step === 3 ? (
               <>
-                {!draft.phone.trim() ? (
+                {editing ? (
+                  <div className="boundary-note">
+                    شماره نماینده موجود در همین پرونده ویرایش می‌شود و رکورد
+                    تکراری ساخته نخواهد شد. اگر اطلاعات حساس به‌دلیل سطح دسترسی
+                    نمایش داده نشد، مقدار فعلی آن بدون تغییر حفظ می‌شود.
+                  </div>
+                ) : !draft.phone.trim() ? (
                   <div className="boundary-note">
                     شماره همراه اختیاری است. چون شماره‌ای وارد نشده، می‌توانید
                     بدون تأیید شماره ادامه دهید.
@@ -767,9 +905,11 @@ export function CooperationWizard({
                     [
                       'شماره همراه',
                       draft.phone
-                        ? draft.phoneVerificationGrant
-                          ? 'تأیید شده برای ثبت این مخاطب'
-                          : 'نیازمند تأیید'
+                        ? editing
+                          ? 'در پرونده موجود به‌روزرسانی می‌شود'
+                          : draft.phoneVerificationGrant
+                            ? 'تأیید شده برای ثبت این مخاطب'
+                            : 'نیازمند تأیید'
                         : 'ثبت نمی‌شود',
                     ],
                     ['نشانی', draft.addressLine || 'ثبت نمی‌شود'],
