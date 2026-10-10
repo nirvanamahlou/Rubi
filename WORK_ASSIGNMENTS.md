@@ -1,5 +1,7 @@
 ## CORRESPONDENCE-1010 — PC-A — READY_FOR_REVIEW
 
+Follow-up: user requested primary group order resources → correspondence → system. Moved correspondence between Documents/Reports and Company Settings; navigation-only change, scoped lint passed and3100 reused.
+
 Direct user-authorized standalone local letter composer at bottom of primary tree, three company variants, editable template/body and PNG/PDF downloads only. Reserve new correspondence Web module/route and additive navigation/messages/sidebar icon/test changes; no existing Documents module implementation, API, permissions, schema/dependencies or server persistence. Sole writer, no delegation; preview3100 reused.
 
 Delivered browser-local composer for نیایش سیر / جهان باستان / قسطی روو with editable template, validated variables, matching canvas preview/PNG and multipage raster PDF. Added last primary navigation group; system-management category adapter excludes this client-only tool from server module categories. Scoped lint, TypeScript and Web build57 routes passed; focused tests26/26 passed. Browser verified all company variants, two-page PNG links and PDF link; native PNG visually checked including word wrapping. Browser blob-download automation timed out, so saved-file PDF inspection is not claimed. Preview3100/API4217 and isolated synthetic PG restarted; no business-data writes, API sending, persistence, migration, dependencies or delegation.

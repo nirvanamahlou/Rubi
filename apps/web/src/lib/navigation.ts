@@ -116,16 +116,16 @@ export const navigationGroups = [
     hrefs: ['/documents', '/reports'],
   },
   {
-    id: 'system',
-    dotClass: 'bg-[#fb923c]',
-    title: 'تنظیمات شرکت',
-    hrefs: ['/system', '/master-data', '/integrations'],
-  },
-  {
     id: 'correspondence',
     dotClass: 'bg-[#818cf8]',
     title: 'مکاتبات',
     hrefs: ['/correspondence'],
+  },
+  {
+    id: 'system',
+    dotClass: 'bg-[#fb923c]',
+    title: 'تنظیمات شرکت',
+    hrefs: ['/system', '/master-data', '/integrations'],
   },
 ] as const satisfies readonly {
   id: string;
