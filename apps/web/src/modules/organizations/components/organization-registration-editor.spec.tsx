@@ -76,6 +76,8 @@ describe('agency registration edit entry', () => {
     );
     expect(markup).toContain('آژانس نمونه');
     expect(markup).toContain('12345678901');
+    expect(markup).toContain('شماره مجوز');
+    expect(markup).not.toContain('مجوز گردشگری');
     expect(markup).toContain('addresses:org-1');
     expect(markup).toContain('نماینده نمونه');
     expect(markup).toContain('agreement:org-1:AGENCY');

@@ -48,7 +48,6 @@ import {
 import {
   masterDataApi,
   MasterDataApiError,
-  type MasterDataLogoChange,
 } from '@/modules/master-data/api/client';
 import { MasterDataLiveForm } from '@/modules/master-data/components/master-data-live-form';
 import { getMasterDataDefinition } from '@/modules/master-data/model/catalog';
@@ -77,11 +76,7 @@ import { CooperationWizard } from './cooperation-wizard';
 import { OrganizationExcelDialog } from './organization-excel-dialog';
 import { OrganizationDeleteDialog } from './organization-delete-dialog';
 import { OrganizationLogo } from './organization-logo';
-import { OrganizationRegistrationEditor } from './organization-registration-editor';
-import {
-  saveOrganizationChanges,
-  type OrganizationDeletionTarget,
-} from '../model/record-mutations';
+import { type OrganizationDeletionTarget } from '../model/record-mutations';
 import { useOrganizationContactDisclosures } from './use-organization-contact-disclosures';
 
 type RequestState =
@@ -129,7 +124,6 @@ export function OrganizationsWorkspace() {
   const [deleteTarget, setDeleteTarget] =
     useState<OrganizationDeletionTarget>();
   const directoryHeading = useRef<HTMLHeadingElement>(null);
-  const [formMode, setFormMode] = useState<'create' | 'edit' | null>(null);
   const [notice, setNotice] = useState<string>();
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contactsError, setContactsError] = useState<string>();
@@ -311,7 +305,6 @@ export function OrganizationsWorkspace() {
         setRegistrationEditOpen(false);
         setSelected(undefined);
         setContactForm(undefined);
-        setFormMode(null);
         return;
       }
       if (openedOrganization.current === entry.organizationId) return;
@@ -341,27 +334,6 @@ export function OrganizationsWorkspace() {
       window.removeEventListener('popstate', restore);
     };
   }, [openProfile]);
-
-  async function persist(
-    values: Record<string, string>,
-    logoChange?: MasterDataLogoChange,
-  ) {
-    const result = await saveOrganizationChanges({
-      values,
-      permissions,
-      defaultRole: role,
-      ...(formMode === 'edit' && selected ? { record: selected } : {}),
-      ...(logoChange ? { logoChange } : {}),
-    });
-    setNotice(
-      result.warning ??
-        `سازمان با موفقیت ${formMode === 'edit' ? 'ویرایش' : 'ایجاد'} شد.`,
-    );
-    setFormMode(null);
-    if (profileOpen && selected) setSelected(result.data);
-    else setSelected(undefined);
-    await load();
-  }
 
   async function refreshAfterDeletion(
     target: OrganizationDeletionTarget,
@@ -881,24 +853,20 @@ export function OrganizationsWorkspace() {
         </div>
       </div>
       {profileOpen && selected && registrationEditOpen ? (
-        <OrganizationRegistrationEditor
-          key={selected.id}
-          organization={selected}
-          contacts={contacts}
-          contactsLoading={contactsLoading}
-          contactsError={contactsError}
-          contactPage={contactPage}
-          contactTotal={contactTotal}
+        <CooperationWizard
+          key={`edit-${selected.id}-${selected.version}`}
+          role={role}
           permissions={permissions}
+          editRecord={selected}
+          editContacts={contacts}
           onClose={() => setRegistrationEditOpen(false)}
-          onEditIdentity={() => setFormMode('edit')}
-          onAddContact={() => setContactForm({ mode: 'create' })}
-          onEditContact={(contact) =>
-            setContactForm({ mode: 'edit', record: contact })
-          }
-          onContactPageChange={(nextPage) =>
-            void openProfile(selected, nextPage)
-          }
+          onSaved={(record) => {
+            setRegistrationEditOpen(false);
+            setSelected(record);
+            setNotice('پرونده آژانس با موفقیت ویرایش شد.');
+            void load();
+            void openProfile(record);
+          }}
         />
       ) : null}
       {profileOpen && selected && !registrationEditOpen ? (
@@ -1221,23 +1189,6 @@ export function OrganizationsWorkspace() {
           onPersist={persistContact}
           open
           {...(contactForm.record ? { record: contactForm.record } : {})}
-        />
-      ) : null}
-
-      {formMode ? (
-        <MasterDataLiveForm
-          definition={getMasterDataDefinition('organizations')}
-          initialValues={formMode === 'create' ? { roleCodes: role } : {}}
-          mode={formMode}
-          onOpenChange={(open) => {
-            if (!open) {
-              setFormMode(null);
-              if (!profileOpen) setSelected(undefined);
-            }
-          }}
-          onPersist={persist}
-          open
-          {...(formMode === 'edit' && selected ? { record: selected } : {})}
         />
       ) : null}
     </div>

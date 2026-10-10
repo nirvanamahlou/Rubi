@@ -6389,6 +6389,42 @@ XLSX/import tests, scoped ESLint, Web typecheck and production build pass. No
 agency record was imported or changed; bounded source lock is released with the
 review commit.
 
+## AGENCY-LICENSE-LABEL-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-license-label-1010` from
+`origin/develop@b778283b`. User requests the agency dossier edit experience to
+show «شماره مجوز» instead of tourism-specific wording. Reserve only the agency
+registration summary, Organizations master-data edit-field label, focused UI
+regression and this status entry. Keep the persisted
+`tourismLicenseNumber` field, validation, import headers and API contracts
+unchanged. No schema/migration, dependency, permission, data or runtime record
+mutation.
+
+Delivered the requested «شماره مجوز» label in both the agency dossier summary
+and its identity edit form while retaining the existing field and persistence
+contract. The focused registration-editor regression (2 tests), related Web
+tests (11 total), scoped ESLint and Web typecheck pass. No record or database
+value changed; bounded source lock is released with the review commit.
+
+## AGENCY-STEPWISE-EDIT-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; continue branch `codex/pc-b-agency-license-label-1010` from
+its reviewed label commit. User requests the agency pencil/edit action to open
+the same step-by-step registration wizard, prefilled with the selected agency,
+and persist changes to that dossier rather than creating duplicate records.
+Reserve Organizations cooperation wizard/workspace, cooperation save model and
+focused Web tests. Existing organization identity, first representative and
+primary address may be updated; optional agreement creation remains explicit.
+No schema/migration, dependency, shared contract, permission, operational data
+or runtime mutation.
+
+Delivered the five-step edit entry with identity prefill, guarded representative
+disclosure and primary-address hydration. Save updates the selected organization,
+existing representative and address, preserving protected values when unmasking
+is unavailable; it does not create duplicate records. Twenty-three focused tests,
+scoped ESLint and Web typecheck pass. Bounded source locks release with the review
+commit.
+
 ## WORKBENCH-PERSIAN-MONTH-SALES-1010 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-performance-routes-1010` from current `origin/develop`. Reserve Workbench performance API/Web, additive Workbench response contract, focused tests and bounded status docs. Show the signed-in user's confirmed sales for the current and previous Persian calendar months, per currency and route, with passenger counts and an honest comparison chart. Consume only the existing public SalesService list projection; Sales remains PC-A owned. Workbench API is producer and Workbench Web is consumer of the additive optional contract fields, so existing consumers remain compatible. No Sales module edit, schema/migration, dependency/lockfile, operational data or permission change. User explicitly authorized push and merge to develop; tests and exact-head CI gate the merge.

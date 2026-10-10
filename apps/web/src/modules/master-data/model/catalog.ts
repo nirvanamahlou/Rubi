@@ -1632,9 +1632,9 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       {
         key: 'tourismLicenseNumber',
-        label: 'شماره مجوز گردشگری',
+        label: 'شماره مجوز',
         type: 'text',
-        placeholder: 'شماره مجوز بند ب یا گردشگری',
+        placeholder: 'شماره مجوز',
       },
       {
         key: 'roleCodes',
