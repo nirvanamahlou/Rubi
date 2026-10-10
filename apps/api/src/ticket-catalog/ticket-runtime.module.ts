@@ -160,12 +160,32 @@ class TicketOffersController {
   ) {
     return this.service.updateStatus(offerId, input, req.actor);
   }
+  @Patch('batch') reviseBatch(
+    @Body()
+    input: {
+      items: readonly {
+        id: string;
+        expectedVersion: number;
+        offer: TicketOfferCreateV1;
+      }[];
+    },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.reviseBatch(input, req.actor);
+  }
   @Patch(':offerId') revise(
     @Param('offerId') offerId: string,
     @Body() input: { expectedVersion: number; offer: TicketOfferCreateV1 },
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.revise(offerId, input, req.actor);
+  }
+  @Delete('batch') archiveBatch(
+    @Body()
+    input: { items: readonly { id: string; expectedVersion: number }[] },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.archiveBatch(input, req.actor);
   }
   @Delete(':offerId') archiveExpired(
     @Param('offerId') offerId: string,

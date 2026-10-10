@@ -47,16 +47,20 @@ describe('ticket workspace entry points', () => {
       new URL('./ticket-workspace.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).toContain('toursApi.archiveOffer(offer.id, offer.version)');
-    expect(source).toContain('ویرایش لود');
-    expect(source).toContain('حذف لود');
-    expect(source).toContain("setForm({ mode: 'edit', product })");
+    expect(source).toContain('toursApi.archiveOfferBatch(');
+    expect(source).toContain('toursApi.reviseOfferBatch(');
+    expect(source).toContain('publishedLoadGroup(');
+    expect(source).toContain('ویرایش کل لود');
+    expect(source).toContain('حذف کل لود');
+    expect(source).toContain(
+      "setForm({ mode: 'edit', product, products: grouped, offers })",
+    );
     expect(source).toContain('catalogOffer(current, publishedOffers)');
     expect(source).toContain('currentPublishedOffer.version');
     expect(source).toContain('initial={form.product?.definition}');
     expect(source).toContain("editing={form.mode === 'edit'}");
     expect(source).toContain('formStyles.scheduleDialog');
-    expect(source).toContain('سوابق قیمت، خرید، مالی و ممیزی حذف نمی‌شوند');
+    expect(source).toContain('سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند');
     expect(source).toContain('updatePublishedStatus');
   });
   it('matches the browser card to the authoritative published offer', () => {

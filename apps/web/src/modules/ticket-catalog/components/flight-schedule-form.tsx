@@ -64,6 +64,7 @@ function wallDateTime(value: string, zone: string) {
 export function flightScheduleDefaults(
   initial?: ProductInput,
   now = new Date(),
+  initials?: readonly ProductInput[],
 ) {
   const input = initial
     ? {
@@ -89,42 +90,133 @@ export function flightScheduleDefaults(
         arrival: '',
         arrivalDayOffset: 0,
       } satisfies ScheduleLeg,
+      returnTime: {
+        departure: '',
+        arrival: '',
+        arrivalDayOffset: 0,
+      } satisfies ScheduleLeg,
+      returnDetails: {
+        flightNumber: '',
+        aircraftId: '',
+        baggageId: '',
+        economyBaggageKg: null as string | null,
+        businessBaggageKg: null as string | null,
+      },
+      additionalCabins: [] as FlightCabinCapacity[],
     };
   }
-  const segment = input.segments[0]!;
-  const departure = wallDateTime(
-    segment.departureAt,
-    segment.departureZone || 'UTC',
+  const schedule = (initials?.length ? initials : [initial]).map((item) => ({
+    ...item,
+    segments: item.segments.map((segment) => ({ ...segment })),
+    fare: { ...item.fare },
+  }));
+  const batch = schedule.length > 1;
+  const outbound = batch
+    ? schedule.filter((item) => item.journeyRole !== 'return')
+    : schedule;
+  const returning = batch
+    ? schedule.filter((item) => item.journeyRole === 'return')
+    : [];
+  const primaryOutbound =
+    outbound.filter((item) => item.flightClassId === input.flightClassId)
+      .length > 0
+      ? outbound.filter((item) => item.flightClassId === input.flightClassId)
+      : outbound;
+  const primaryReturn = returning.filter(
+    (item) => item.flightClassId === input.flightClassId,
   );
-  const arrival = wallDateTime(
-    input.segments.at(-1)!.arrivalAt,
-    input.segments.at(-1)!.arrivalZone || 'UTC',
-  );
-  const arrivalDayOffset = [0, 1, 2].find(
-    (offset) => addScheduleDays(departure.date, offset) === arrival.date,
-  );
+  const leg = (item: ProductInput) => {
+    const first = item.segments[0]!;
+    const last = item.segments.at(-1)!;
+    const departure = wallDateTime(
+      first.departureAt,
+      first.departureZone || 'UTC',
+    );
+    const arrival = wallDateTime(last.arrivalAt, last.arrivalZone || 'UTC');
+    const arrivalDayOffset = [0, 1, 2].find(
+      (offset) => addScheduleDays(departure.date, offset) === arrival.date,
+    );
+    return {
+      date: departure.date,
+      time: {
+        departure: departure.time,
+        arrival: arrival.time,
+        arrivalDayOffset: arrivalDayOffset ?? 0,
+      } satisfies ScheduleLeg,
+    };
+  };
+  const outboundLegs = primaryOutbound
+    .map(leg)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const returnLegs = primaryReturn
+    .map(leg)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const weekdays = new Map<number, WeekdayStay>();
+  for (const outboundLeg of outboundLegs) {
+    const returningLeg = returnLegs.find(
+      (candidate) => candidate.date >= outboundLeg.date,
+    );
+    const stayDays = returningLeg
+      ? Math.max(
+          1,
+          Math.round(
+            (Date.parse(`${returningLeg.date}T00:00:00Z`) -
+              Date.parse(`${outboundLeg.date}T00:00:00Z`)) /
+              86_400_000,
+          ),
+        )
+      : 2;
+    const day = new Date(`${outboundLeg.date}T00:00:00Z`).getUTCDay();
+    if (!weekdays.has(day)) weekdays.set(day, { day, stayDays });
+  }
+  const returnInput = primaryReturn[0];
+  const returnSegment = returnInput?.segments[0];
+  const additionalCabins = [
+    ...new Map(
+      outbound
+        .filter((item) => item.flightClassId !== input.flightClassId)
+        .map((item) => [
+          item.flightClassId,
+          {
+            flightClassId: item.flightClassId,
+            totalCapacity: item.totalCapacity,
+          },
+        ]),
+    ).values(),
+  ];
   return {
     input,
-    mode: 'one-way' as const,
-    start: departure.date,
-    end: departure.date,
-    allowPastDate: Date.parse(segment.departureAt) <= now.getTime(),
-    weekdays: [
-      {
-        day: new Date(`${departure.date}T00:00:00Z`).getUTCDay(),
-        stayDays: 2,
-      },
-    ],
-    outboundTime: {
-      departure: departure.time,
-      arrival: arrival.time,
-      arrivalDayOffset: arrivalDayOffset ?? 0,
-    } satisfies ScheduleLeg,
+    mode: (returnInput ? 'round-trip' : 'one-way') as 'one-way' | 'round-trip',
+    start: outboundLegs[0]?.date ?? '',
+    end: outboundLegs.at(-1)?.date ?? '',
+    allowPastDate: outbound.some(
+      (item) => Date.parse(item.segments[0]!.departureAt) <= now.getTime(),
+    ),
+    weekdays: [...weekdays.values()],
+    outboundTime: outboundLegs[0]?.time ?? {
+      departure: '',
+      arrival: '',
+      arrivalDayOffset: 0,
+    },
+    returnTime: returnLegs[0]?.time ?? {
+      departure: '',
+      arrival: '',
+      arrivalDayOffset: 0,
+    },
+    returnDetails: {
+      flightNumber: returnSegment?.flightNumber ?? '',
+      aircraftId: returnSegment?.aircraftId ?? '',
+      baggageId: returnInput?.baggageId ?? '',
+      economyBaggageKg: returnInput?.economyBaggageKg ?? null,
+      businessBaggageKg: returnInput?.businessBaggageKg ?? null,
+    },
+    additionalCabins,
   };
 }
 
 export function FlightScheduleForm({
   initial,
+  initials,
   editing = false,
   references,
   onReference,
@@ -132,6 +224,7 @@ export function FlightScheduleForm({
   onCancel,
 }: {
   initial?: ProductInput | undefined;
+  initials?: readonly ProductInput[] | undefined;
   editing?: boolean;
   references: readonly Reference[];
   onReference: (reference: Reference) => void;
@@ -142,10 +235,10 @@ export function FlightScheduleForm({
   ) => void | Promise<void>;
   onCancel: () => void;
 }) {
-  const defaults = flightScheduleDefaults(initial);
+  const defaults = flightScheduleDefaults(initial, new Date(), initials);
   const [additionalCabins, setAdditionalCabins] = useState<
     FlightCabinCapacity[]
-  >([]);
+  >(defaults.additionalCabins);
   const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(
     defaults.mode,
   );
@@ -156,21 +249,13 @@ export function FlightScheduleForm({
     [end, setEnd] = useState(defaults.end);
   const [allowPastDate, setAllowPastDate] = useState(defaults.allowPastDate);
   const [weekdays, setWeekdays] = useState<WeekdayStay[]>(defaults.weekdays);
-  const [returnDetails, setReturnDetails] = useState({
-    flightNumber: '',
-    aircraftId: '',
-    baggageId: '',
-    economyBaggageKg: null as string | null,
-    businessBaggageKg: null as string | null,
-  });
+  const [returnDetails, setReturnDetails] = useState(defaults.returnDetails);
   const [outboundTime, setOutboundTime] = useState<ScheduleLeg>(
     defaults.outboundTime,
   );
-  const [returnTime, setReturnTime] = useState<ScheduleLeg>({
-    departure: '',
-    arrival: '',
-    arrivalDayOffset: 0,
-  });
+  const [returnTime, setReturnTime] = useState<ScheduleLeg>(
+    defaults.returnTime,
+  );
   const [problem, setProblem] = useState(''),
     [saving, setSaving] = useState(false);
   const submitting = useRef(false),
@@ -272,7 +357,7 @@ export function FlightScheduleForm({
         !maxEdited,
       )
         .map((definition) =>
-          editing
+          editing && (initials?.length ?? 0) <= 1
             ? {
                 ...definition,
                 journeyRole: input.journeyRole,

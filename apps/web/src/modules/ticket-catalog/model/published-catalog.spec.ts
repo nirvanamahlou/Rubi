@@ -8,6 +8,7 @@ import {
   arrivalWallTimeAfterMidnight,
   catalogProductsFromOffers,
   catalogOffer,
+  publishedLoadGroup,
   samePublishedFlight,
 } from './published-catalog';
 const offers = Array.from(
@@ -152,6 +153,35 @@ describe('authoritative ticket catalog', () => {
         destinationCountryId: 'country-b',
         destinationCityId: 'b',
       }),
+    );
+  });
+
+  it('groups every row created by one server load and keeps other loads separate', () => {
+    const grouped = offers.slice(0, 3).map((offer) => ({
+      ...offer,
+      loadGroupId: 'group-a',
+    }));
+    const other = { ...offers[3]!, loadGroupId: 'group-b' };
+    expect(publishedLoadGroup(grouped[0]!, [...grouped, other], [])).toEqual(
+      grouped,
+    );
+  });
+
+  it('recovers an older same-browser load only from its exact creation event', () => {
+    const history = [
+      {
+        version: 1,
+        action: 'create',
+        at: '2026-10-10T10:00:00.000Z',
+        actor: 'operator',
+        reason: 'تعریف برنامه هفتگی پرواز',
+      },
+    ];
+    const cached = local
+      .slice(0, 3)
+      .map((product) => ({ ...product, history }));
+    expect(publishedLoadGroup(offers[0]!, offers.slice(0, 4), cached)).toEqual(
+      offers.slice(0, 3),
     );
   });
 });

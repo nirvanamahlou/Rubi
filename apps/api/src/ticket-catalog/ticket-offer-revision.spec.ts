@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { DatabaseService } from '../database/database.service';
 import type { ProcurementPublicService } from '../procurement/procurement-public.service';
-import { TicketPublicService } from './ticket-public.service';
+import {
+  TicketPublicService,
+  ticketLoadGroupId,
+} from './ticket-public.service';
 
 const id = '10000000-0000-4000-8000-000000000001';
 const offer = {
@@ -40,7 +43,11 @@ function setup(patch = {}) {
     $queryRaw: vi.fn(),
     ticketPublishedOffer: {
       findFirst: vi.fn().mockResolvedValue(row),
-      findMany: vi.fn().mockResolvedValue([]),
+      findMany: vi
+        .fn()
+        .mockImplementation(async (query) =>
+          query?.where?.id?.in ? [row] : [],
+        ),
       update: vi.fn().mockResolvedValue({ ...row, version: 2 }),
     },
     ticketOfferAudit: { create: vi.fn() },
@@ -56,6 +63,16 @@ function setup(patch = {}) {
   return { tx, service };
 }
 describe('published ticket revision', () => {
+  it('projects only the explicit stable load key format as a group', () => {
+    expect(
+      ticketLoadGroupId(
+        'ticket-catalog:ticket-load:10000000-0000-4000-8000-000000000007:12',
+      ),
+    ).toBe('10000000-0000-4000-8000-000000000007');
+    expect(
+      ticketLoadGroupId('ticket-catalog:legacy-random-id'),
+    ).toBeUndefined();
+  });
   it('rejects moving a separate offer onto another existing flight identity', async () => {
     const { tx, service } = setup();
     tx.ticketPublishedOffer.findMany.mockResolvedValue([
@@ -152,6 +169,28 @@ describe('published ticket revision', () => {
       },
     });
   });
+  it('archives every requested load row in one transaction', async () => {
+    const secondId = '10000000-0000-4000-8000-000000000009';
+    const { tx, service } = setup({ status: 'ACTIVE' });
+    const first = await tx.ticketPublishedOffer.findFirst();
+    tx.ticketPublishedOffer.findMany.mockResolvedValue([
+      first,
+      { ...first, id: secondId, version: 4 },
+    ] as never);
+    await expect(
+      service.archiveBatch(
+        {
+          items: [
+            { id, expectedVersion: 1 },
+            { id: secondId, expectedVersion: 4 },
+          ],
+        },
+        actor,
+      ),
+    ).resolves.toEqual({ data: { ids: [id, secondId] } });
+    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledTimes(2);
+    expect(tx.ticketOfferAudit.create).toHaveBeenCalledTimes(2);
+  });
   it.each([
     'capacityAllocations',
     'capacityHolds',
@@ -233,6 +272,85 @@ describe('published ticket revision', () => {
         },
       }),
     );
+  });
+  it('revises every row of one load inside the same transaction', async () => {
+    const secondId = '10000000-0000-4000-8000-000000000009';
+    const rows = [
+      {
+        id,
+        version: 1,
+        branchId: 'branch',
+        ...offer,
+        departureAt: new Date(offer.departureAt),
+        arrivalAt: new Date(offer.arrivalAt),
+      },
+      {
+        id: secondId,
+        version: 3,
+        branchId: 'branch',
+        ...offer,
+        departureAt: new Date('2026-09-29T04:00:00.000Z'),
+        arrivalAt: new Date('2026-09-29T07:00:00.000Z'),
+      },
+    ].map((row) => ({
+      ...row,
+      status: 'ACTIVE',
+      capacityAllocations: [],
+      capacityHolds: [],
+      tourOutboundDepartures: [],
+      tourReturnDepartures: [],
+      audit: [],
+    }));
+    const tx = {
+      $queryRaw: vi.fn(),
+      ticketPublishedOffer: {
+        findFirst: vi.fn(async ({ where }) =>
+          rows.find((row) => row.id === where.id),
+        ),
+        findMany: vi.fn().mockResolvedValue([]),
+        update: vi.fn(async ({ where }) => ({
+          ...rows.find((row) => row.id === where.id)!,
+          version: rows.find((row) => row.id === where.id)!.version + 1,
+        })),
+      },
+      ticketOfferAudit: { create: vi.fn() },
+    };
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx),
+        },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+    await expect(
+      service.reviseBatch(
+        {
+          items: [
+            { id, expectedVersion: 1, offer },
+            {
+              id: secondId,
+              expectedVersion: 3,
+              offer: {
+                ...offer,
+                departureAt: '2026-09-29T04:00:00.000Z',
+                arrivalAt: '2026-09-29T07:00:00.000Z',
+              },
+            },
+          ],
+        },
+        actor,
+      ),
+    ).resolves.toEqual({
+      data: {
+        items: [
+          { id, version: 2 },
+          { id: secondId, version: 4 },
+        ],
+      },
+    });
+    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledTimes(2);
+    expect(tx.ticketOfferAudit.create).toHaveBeenCalledTimes(2);
   });
   it('rejects stale edits before changing data', async () => {
     const { tx, service } = setup({ version: 2 });
