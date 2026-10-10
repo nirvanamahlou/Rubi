@@ -50,6 +50,22 @@ describe('MasterDataContactCrypto', () => {
     ).toBe('name@example.com');
   });
 
+  it('normalizes Persian national-id digits, encrypts them and exposes only the suffix', () => {
+    const service = cryptoService();
+    const nationalId = service.protect('nationalId', '۰۰۱ ۳۵۴ ۷۸۹۶');
+
+    expect(nationalId.masked).toBe('••••••7896');
+    expect(
+      service.decrypt('nationalId', {
+        encrypted: nationalId.encrypted,
+        encryptionIv: nationalId.encryptionIv,
+        encryptionAuthTag: nationalId.encryptionAuthTag,
+        encryptionKeyVersion: nationalId.encryptionKeyVersion,
+      }),
+    ).toBe('0013547896');
+    expect(nationalId.encrypted).not.toContain('0013547896');
+  });
+
   it.each([
     ['۰۹۱۲ ۱۲۳ ۴۵۶۷', '09121234567'],
     ['٠٠٩٠ (٥٥٥) ١٢٣-٤٥٦٧', '00905551234567'],
@@ -97,5 +113,6 @@ describe('MasterDataContactCrypto', () => {
   it('rejects malformed contact input', () => {
     expect(() => normalizeMasterContact('phone', '123')).toThrow();
     expect(() => normalizeMasterContact('email', 'not-an-email')).toThrow();
+    expect(() => normalizeMasterContact('nationalId', '123')).toThrow();
   });
 });

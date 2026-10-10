@@ -34,11 +34,15 @@ export interface CooperationDraft {
   code: string;
   personType: string;
   nationalId: string;
+  registrationNumber: string;
+  economicCode: string;
+  tourismLicenseNumber: string;
   role: 'AGENCY' | 'CORPORATE_CUSTOMER';
   countryId: string;
   cityId: string;
   addressLine: string;
   fullName: string;
+  chiefExecutiveNationalId: string;
   jobTitle: string;
   phone: string;
   email: string;
@@ -54,11 +58,15 @@ export const blankCooperationDraft: CooperationDraft = {
   code: '',
   personType: 'LEGAL',
   nationalId: '',
+  registrationNumber: '',
+  economicCode: '',
+  tourismLicenseNumber: '',
   role: 'AGENCY',
   countryId: '',
   cityId: '',
   addressLine: '',
   fullName: '',
+  chiefExecutiveNationalId: '',
   jobTitle: '',
   phone: '',
   email: '',
@@ -100,6 +108,11 @@ export function cooperationIssue(
       draft.fullName.trim().length < 2
     )
       return 'نام نماینده را وارد کنید.';
+    if (
+      draft.chiefExecutiveNationalId &&
+      !/^[0-9۰-۹٠-٩\s]{10,20}$/.test(draft.chiefExecutiveNationalId)
+    )
+      return 'کد ملی مدیرعامل باید ۱۰ رقم باشد.';
     if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email))
       return 'ایمیل نماینده معتبر نیست.';
     if (draft.phone && !normalizeIranianMobile(draft.phone))
@@ -243,6 +256,9 @@ export async function saveCooperation(
             legalName: draft.legalName.trim(),
             personType: draft.personType,
             nationalId: draft.nationalId.trim() || null,
+            registrationNumber: draft.registrationNumber.trim() || null,
+            economicCode: draft.economicCode.trim() || null,
+            tourismLicenseNumber: draft.tourismLicenseNumber.trim() || null,
             roleCodes: draft.role,
           },
         })
@@ -260,6 +276,9 @@ export async function saveCooperation(
           fullName: draft.fullName.trim(),
           jobTitle: draft.jobTitle.trim(),
           ...(draft.email.trim() ? { email: draft.email.trim() } : {}),
+          ...(draft.chiefExecutiveNationalId.trim()
+            ? { nationalId: draft.chiefExecutiveNationalId.trim() }
+            : {}),
         });
       else
         await agencyClient.saveContact(organization.id, {
@@ -267,6 +286,7 @@ export async function saveCooperation(
           jobTitle: draft.jobTitle.trim(),
           phone: '',
           email: draft.email.trim(),
+          nationalId: draft.chiefExecutiveNationalId.trim(),
           preferredChannel: draft.email.trim() ? 'EMAIL' : 'OTHER',
         });
     }

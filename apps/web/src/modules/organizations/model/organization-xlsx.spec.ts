@@ -1,11 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   createOrganizationXlsx,
+  normalizeOrganizationHeader,
   unzipWorkbook,
   validateOrganizationWorkbookXml,
 } from './organization-xlsx';
 import { organizationHeaders } from './organization-import';
 describe('organization XLSX container', () => {
+  it('normalizes Persian, Arabic and English headers regardless of spacing', () => {
+    expect(normalizeOrganizationHeader('  نام‌ حقوقي آژانس  ')).toBe(
+      normalizeOrganizationHeader('نام حقوقی آژانس'),
+    );
+    expect(normalizeOrganizationHeader('Office_Phone')).toBe('officephone');
+  });
   it('creates a real workbook with Persian headers and text cells', async () => {
     const bytes = createOrganizationXlsx([
       organizationHeaders,

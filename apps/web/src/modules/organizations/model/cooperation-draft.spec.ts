@@ -45,6 +45,9 @@ describe('cooperation wizard writes', () => {
         legalName: draft.legalName,
         personType: 'LEGAL',
         nationalId: null,
+        registrationNumber: null,
+        economicCode: null,
+        tourismLicenseNumber: null,
         roleCodes: 'AGENCY',
       },
     });

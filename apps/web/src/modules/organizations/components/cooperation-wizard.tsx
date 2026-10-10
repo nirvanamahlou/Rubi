@@ -516,6 +516,19 @@ export function CooperationWizard({
                     </div>
                   ) : null}
                   {field(
+                    'registrationNumber',
+                    'شماره ثبت',
+                    80,
+                    mode === 'existing',
+                  )}
+                  {field('economicCode', 'کد اقتصادی', 80, mode === 'existing')}
+                  {field(
+                    'tourismLicenseNumber',
+                    'شماره مجوز گردشگری',
+                    80,
+                    mode === 'existing',
+                  )}
+                  {field(
                     'addressLine',
                     'نشانی',
                     500,
@@ -529,8 +542,14 @@ export function CooperationWizard({
                 <div className="form-grid">
                   {field(
                     'fullName',
-                    'نام نماینده (اختیاری)',
+                    'نام مدیرعامل یا نماینده (اختیاری)',
                     160,
+                    !permissions.includes('master_data.create'),
+                  )}
+                  {field(
+                    'chiefExecutiveNationalId',
+                    'کد ملی مدیرعامل',
+                    20,
                     !permissions.includes('master_data.create'),
                   )}
                   {field(

@@ -5144,6 +5144,22 @@ Purchasing & Supply exposes an access-aware supplier management card linking the
 
 Agency registration now opens on HTTP LAN clients that lack `crypto.randomUUID`; registration and agreement draft IDs use the shared LAN-safe UUID helper. The existing XLSX preview/import flow now mirrors the safe identity section of the registration form by accepting an optional 11-digit company national ID in addition to system code, legal name, person type and roles. New records retain server-generated codes, existing identities are never overwritten, and OTP/contract/document fields remain interactive rather than bulk-imported. A styled 200-row template with text-safe identifiers and validated person-type/role choices was generated and visually reviewed. 31 focused Web tests, scoped ESLint and Web typecheck pass. No organization or credential data was mutated during verification; no schema, migration or dependency change.
 
+## 2026-10-10 — AGENCY-FULL-XLSX-IMPORT-1010 — PC-B — READY_FOR_REVIEW
+
+The supplied single-sheet 200-row agency workbook is now the canonical compact
+template: legal name, manager, license, office phone, email, mobile and address.
+Persian/Arabic character variants, English aliases and header spacing or
+punctuation differences are normalized. The earlier expanded 11-column form is
+also accepted. Missing extended values do not block creation and remain editable
+later; supplied contacts and an address are saved as organization child records,
+with optional canonical province/city resolution. Registration number, economic
+code and tourism license are additive unique organization fields. Contact national
+ID is encrypted/masked with organization-scoped duplicate protection. Existing
+organizations are skipped without overwrite. Database validation/generation and
+94 database tests pass; 29 focused Web tests, 3 localization coverage tests and 40
+focused API tests pass. Full lint/build and exact-head CI still gate the
+owner-authorized develop merge; no operational workbook import has been executed.
+
 ## TICKET-PAST-DATE-1010 — PC-B — READY_FOR_REVIEW
 
 - Add an explicit «تاریخ گذشته» opt-in to Ticket Definition while preserving the default future-only publication guard and existing non-saleable handling for expired offers.

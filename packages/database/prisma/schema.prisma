@@ -1298,6 +1298,9 @@ model MasterOrganization {
   displayName                 String                       @db.VarChar(160)
   personType                  String?                      @db.VarChar(16)
   nationalId                  String?                      @unique @db.VarChar(11)
+  registrationNumber          String?                      @unique @db.VarChar(80)
+  economicCode                String?                      @unique @db.VarChar(80)
+  tourismLicenseNumber        String?                      @unique @db.VarChar(80)
   logoFileReference           String?                      @db.Uuid
   displayOrder                Int                          @default(0)
   isActive                    Boolean                      @default(true)
@@ -1710,43 +1713,50 @@ model MasterBrokerService {
 }
 
 model MasterOrganizationContact {
-  id                        String                           @id @default(uuid()) @db.Uuid
-  organizationId            String                           @db.Uuid
-  code                      String                           @unique @db.VarChar(32)
-  fullName                  String                           @db.VarChar(160)
-  jobTitle                  String?                          @db.VarChar(160)
-  preferredChannel          MasterOrganizationContactChannel @default(PHONE)
-  hasWhatsapp               Boolean                          @default(false)
-  isPrimary                 Boolean                          @default(false)
-  displayOrder              Int                              @default(0)
-  phoneEncrypted            String?                          @db.Text
-  phoneEncryptionIv         String?                          @db.VarChar(24)
-  phoneEncryptionAuthTag    String?                          @db.VarChar(24)
-  phoneEncryptionKeyVersion Int?
-  phoneMasked               String?                          @db.VarChar(80)
-  phoneFingerprint          String?                          @db.Char(64)
-  emailEncrypted            String?                          @db.Text
-  emailEncryptionIv         String?                          @db.VarChar(24)
-  emailEncryptionAuthTag    String?                          @db.VarChar(24)
-  emailEncryptionKeyVersion Int?
-  emailMasked               String?                          @db.VarChar(320)
-  emailFingerprint          String?                          @db.Char(64)
-  isActive                  Boolean                          @default(true)
-  version                   Int                              @default(1)
-  createdByUserId           String                           @db.Uuid
-  updatedByUserId           String                           @db.Uuid
-  deactivatedByUserId       String?                          @db.Uuid
-  deactivatedAt             DateTime?                        @db.Timestamptz(3)
-  createdAt                 DateTime                         @default(now()) @db.Timestamptz(3)
-  updatedAt                 DateTime                         @updatedAt @db.Timestamptz(3)
-  organization              MasterOrganization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  primaryForSuppliers       MasterSupplier[]                 @relation("SupplierPrimaryContact")
-  primaryForBrokers         MasterBroker[]                   @relation("BrokerPrimaryContact")
-  b2bSignatories            B2bOrganizationSignatory[]
+  id                             String                           @id @default(uuid()) @db.Uuid
+  organizationId                 String                           @db.Uuid
+  code                           String                           @unique @db.VarChar(32)
+  fullName                       String                           @db.VarChar(160)
+  jobTitle                       String?                          @db.VarChar(160)
+  preferredChannel               MasterOrganizationContactChannel @default(PHONE)
+  hasWhatsapp                    Boolean                          @default(false)
+  isPrimary                      Boolean                          @default(false)
+  displayOrder                   Int                              @default(0)
+  phoneEncrypted                 String?                          @db.Text
+  phoneEncryptionIv              String?                          @db.VarChar(24)
+  phoneEncryptionAuthTag         String?                          @db.VarChar(24)
+  phoneEncryptionKeyVersion      Int?
+  phoneMasked                    String?                          @db.VarChar(80)
+  phoneFingerprint               String?                          @db.Char(64)
+  emailEncrypted                 String?                          @db.Text
+  emailEncryptionIv              String?                          @db.VarChar(24)
+  emailEncryptionAuthTag         String?                          @db.VarChar(24)
+  emailEncryptionKeyVersion      Int?
+  emailMasked                    String?                          @db.VarChar(320)
+  emailFingerprint               String?                          @db.Char(64)
+  nationalIdEncrypted            String?                          @db.Text
+  nationalIdEncryptionIv         String?                          @db.VarChar(24)
+  nationalIdEncryptionAuthTag    String?                          @db.VarChar(24)
+  nationalIdEncryptionKeyVersion Int?
+  nationalIdMasked               String?                          @db.VarChar(16)
+  nationalIdFingerprint          String?                          @db.Char(64)
+  isActive                       Boolean                          @default(true)
+  version                        Int                              @default(1)
+  createdByUserId                String                           @db.Uuid
+  updatedByUserId                String                           @db.Uuid
+  deactivatedByUserId            String?                          @db.Uuid
+  deactivatedAt                  DateTime?                        @db.Timestamptz(3)
+  createdAt                      DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt                      DateTime                         @updatedAt @db.Timestamptz(3)
+  organization                   MasterOrganization               @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  primaryForSuppliers            MasterSupplier[]                 @relation("SupplierPrimaryContact")
+  primaryForBrokers              MasterBroker[]                   @relation("BrokerPrimaryContact")
+  b2bSignatories                 B2bOrganizationSignatory[]
 
   @@unique([id, organizationId])
   @@unique([organizationId, phoneFingerprint])
   @@unique([organizationId, emailFingerprint])
+  @@unique([organizationId, nationalIdFingerprint])
   @@index([organizationId, isActive, fullName])
   @@index([hasWhatsapp, isActive])
   @@map("master_organization_contacts")
