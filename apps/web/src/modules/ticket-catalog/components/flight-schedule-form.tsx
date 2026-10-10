@@ -8,6 +8,7 @@ import { emptyInput } from '../model/preview';
 import { supplyOptions } from '../model/preview';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import {
+  addScheduleDays,
   buildWeekdayTickets,
   chronologicalScheduleDates,
   defaultReturnMaxDays,
@@ -36,12 +37,102 @@ import {
   type FlightCabinCapacity,
 } from '../model/flight-cabins';
 
+function wallDateTime(value: string, zone: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return { date: '', time: '' };
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date);
+    const part = (type: string) =>
+      parts.find((item) => item.type === type)?.value ?? '';
+    return {
+      date: `${part('year')}-${part('month')}-${part('day')}`,
+      time: `${part('hour')}:${part('minute')}`,
+    };
+  } catch {
+    return { date: value.slice(0, 10), time: value.slice(11, 16) };
+  }
+}
+
+export function flightScheduleDefaults(
+  initial?: ProductInput,
+  now = new Date(),
+) {
+  const input = initial
+    ? {
+        ...initial,
+        segments: initial.segments.map((segment) => ({ ...segment })),
+        fare: { ...initial.fare },
+      }
+    : {
+        ...emptyInput(),
+        supplyType: 'company' as const,
+        companyOwned: true,
+      };
+  if (!initial) {
+    return {
+      input,
+      mode: null as 'one-way' | 'round-trip' | null,
+      start: '',
+      end: '',
+      allowPastDate: false,
+      weekdays: [] as WeekdayStay[],
+      outboundTime: {
+        departure: '',
+        arrival: '',
+        arrivalDayOffset: 0,
+      } satisfies ScheduleLeg,
+    };
+  }
+  const segment = input.segments[0]!;
+  const departure = wallDateTime(
+    segment.departureAt,
+    segment.departureZone || 'UTC',
+  );
+  const arrival = wallDateTime(
+    input.segments.at(-1)!.arrivalAt,
+    input.segments.at(-1)!.arrivalZone || 'UTC',
+  );
+  const arrivalDayOffset = [0, 1, 2].find(
+    (offset) => addScheduleDays(departure.date, offset) === arrival.date,
+  );
+  return {
+    input,
+    mode: 'one-way' as const,
+    start: departure.date,
+    end: departure.date,
+    allowPastDate: Date.parse(segment.departureAt) <= now.getTime(),
+    weekdays: [
+      {
+        day: new Date(`${departure.date}T00:00:00Z`).getUTCDay(),
+        stayDays: 2,
+      },
+    ],
+    outboundTime: {
+      departure: departure.time,
+      arrival: arrival.time,
+      arrivalDayOffset: arrivalDayOffset ?? 0,
+    } satisfies ScheduleLeg,
+  };
+}
+
 export function FlightScheduleForm({
+  initial,
+  editing = false,
   references,
   onReference,
   onSave,
   onCancel,
 }: {
+  initial?: ProductInput | undefined;
+  editing?: boolean;
   references: readonly Reference[];
   onReference: (reference: Reference) => void;
   onSave: (
@@ -51,21 +142,20 @@ export function FlightScheduleForm({
   ) => void | Promise<void>;
   onCancel: () => void;
 }) {
+  const defaults = flightScheduleDefaults(initial);
   const [additionalCabins, setAdditionalCabins] = useState<
     FlightCabinCapacity[]
   >([]);
-  const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(null);
+  const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(
+    defaults.mode,
+  );
   const [advanced, setAdvanced] = useState(false);
   const [maxEdited, setMaxEdited] = useState(false);
-  const [input, setInput] = useState<ProductInput>(() => ({
-    ...emptyInput(),
-    supplyType: 'company',
-    companyOwned: true,
-  }));
-  const [start, setStart] = useState(''),
-    [end, setEnd] = useState('');
-  const [allowPastDate, setAllowPastDate] = useState(false);
-  const [weekdays, setWeekdays] = useState<WeekdayStay[]>([]);
+  const [input, setInput] = useState<ProductInput>(defaults.input);
+  const [start, setStart] = useState(defaults.start),
+    [end, setEnd] = useState(defaults.end);
+  const [allowPastDate, setAllowPastDate] = useState(defaults.allowPastDate);
+  const [weekdays, setWeekdays] = useState<WeekdayStay[]>(defaults.weekdays);
   const [returnDetails, setReturnDetails] = useState({
     flightNumber: '',
     aircraftId: '',
@@ -73,11 +163,9 @@ export function FlightScheduleForm({
     economyBaggageKg: null as string | null,
     businessBaggageKg: null as string | null,
   });
-  const [outboundTime, setOutboundTime] = useState<ScheduleLeg>({
-    departure: '',
-    arrival: '',
-    arrivalDayOffset: 0,
-  });
+  const [outboundTime, setOutboundTime] = useState<ScheduleLeg>(
+    defaults.outboundTime,
+  );
   const [returnTime, setReturnTime] = useState<ScheduleLeg>({
     departure: '',
     arrival: '',
@@ -144,11 +232,18 @@ export function FlightScheduleForm({
       const outbound = {
         ...input,
         returnMinDays:
-          mode === 'round-trip' ? (input.returnMinDays ?? null) : null,
+          mode === 'round-trip' || editing
+            ? (input.returnMinDays ?? null)
+            : null,
         returnMaxDays:
-          mode === 'round-trip' ? (input.returnMaxDays ?? null) : null,
-        journeyRole:
-          mode === 'round-trip' ? ('outbound' as const) : ('one-way' as const),
+          mode === 'round-trip' || editing
+            ? (input.returnMaxDays ?? null)
+            : null,
+        journeyRole: editing
+          ? input.journeyRole
+          : mode === 'round-trip'
+            ? ('outbound' as const)
+            : ('one-way' as const),
       };
       const draft = createReturnTicketDraft(outbound);
       const returning: ProductInput = {
@@ -176,6 +271,15 @@ export function FlightScheduleForm({
         scheduleToUtc,
         !maxEdited,
       )
+        .map((definition) =>
+          editing
+            ? {
+                ...definition,
+                journeyRole: input.journeyRole,
+                tripGroupId: input.tripGroupId,
+              }
+            : definition,
+        )
         .flatMap((definition) =>
           expandFlightCabins(definition, additionalCabins, references),
         )
@@ -188,7 +292,11 @@ export function FlightScheduleForm({
             references,
           ),
         );
-      await onSave(definitions, 'تعریف برنامه هفتگی پرواز', allowPastDate);
+      await onSave(
+        definitions,
+        editing ? 'ویرایش لود پرواز' : 'تعریف برنامه هفتگی پرواز',
+        allowPastDate,
+      );
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'ثبت برنامه ناموفق بود.',
@@ -206,7 +314,7 @@ export function FlightScheduleForm({
           بازگشت به برنامه هفتگی پرواز
         </Button>
         <TicketForm
-          initial={emptyInput()}
+          initial={initial ?? emptyInput()}
           references={references}
           onReference={onReference}
           onSave={onSave}
@@ -731,7 +839,11 @@ export function FlightScheduleForm({
               loading={saving}
               disabled={saving || Boolean(previewError)}
             >
-              {saving ? 'در حال ثبت پروازها…' : 'ثبت برنامه و ساخت بلیت‌ها'}
+              {saving
+                ? 'در حال ذخیره…'
+                : editing
+                  ? 'ذخیره تغییرات لود'
+                  : 'ثبت برنامه و ساخت بلیت‌ها'}
             </Button>
             <Button
               type="button"

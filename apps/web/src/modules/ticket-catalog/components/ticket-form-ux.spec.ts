@@ -1,6 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 import { saveTicketFormOnCtrlS } from './ticket-form';
+import { flightScheduleDefaults } from './flight-schedule-form';
+import { emptyInput } from '../model/preview';
 
 describe('ticket form usability', () => {
   it('submits the active form with Ctrl+S', () => {
@@ -35,6 +37,60 @@ describe('ticket form usability', () => {
     expect(schedule).toContain('<th>تاریخ رفت</th>');
     expect(schedule).toContain('<th>تاریخ برگشت</th>');
     expect(schedule).toContain('onKeyDown={saveTicketFormOnCtrlS}');
+  });
+
+  it('hydrates the full weekly form from the selected server load', () => {
+    const input = emptyInput();
+    input.totalCapacity = 50;
+    input.flightClassId = 'economy';
+    input.journeyRole = 'outbound';
+    input.tripGroupId = 'pair-1';
+    input.segments = [
+      {
+        ...input.segments[0]!,
+        airlineId: 'carrier',
+        flightNumber: '4512',
+        originCityId: 'origin',
+        destinationCityId: 'destination',
+        departureZone: 'Asia/Tehran',
+        arrivalZone: 'Asia/Tehran',
+        departureAt: '2026-10-10T04:30:00.000Z',
+        arrivalAt: '2026-10-10T07:30:00.000Z',
+      },
+    ];
+
+    const defaults = flightScheduleDefaults(
+      input,
+      new Date('2026-10-11T00:00:00.000Z'),
+    );
+
+    expect(defaults).toEqual(
+      expect.objectContaining({
+        mode: 'one-way',
+        start: '2026-10-10',
+        end: '2026-10-10',
+        allowPastDate: true,
+        weekdays: [{ day: 6, stayDays: 2 }],
+        outboundTime: {
+          departure: '08:00',
+          arrival: '11:00',
+          arrivalDayOffset: 0,
+        },
+      }),
+    );
+    expect(defaults.input).toMatchObject({
+      journeyRole: 'outbound',
+      tripGroupId: 'pair-1',
+    });
+  });
+
+  it('retains paired-load identity when saving through the weekly edit form', () => {
+    const schedule = readFileSync(
+      new URL('./flight-schedule-form.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(schedule).toContain('journeyRole: input.journeyRole');
+    expect(schedule).toContain('tripGroupId: input.tripGroupId');
   });
 
   it('prevents application dialogs from closing on outside interaction', () => {

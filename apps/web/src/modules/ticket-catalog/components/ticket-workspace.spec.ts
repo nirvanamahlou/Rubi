@@ -37,7 +37,9 @@ describe('ticket workspace entry points', () => {
     expect(advanced).toContain(
       'onSave(cabinInputs(definition), reason, allowPastDate)',
     );
-    expect(weekly).toContain("'تعریف برنامه هفتگی پرواز', allowPastDate");
+    expect(weekly).toContain("'تعریف برنامه هفتگی پرواز'");
+    expect(weekly).toContain("'ویرایش لود پرواز'");
+    expect(weekly).toContain('allowPastDate');
   });
 
   it('exposes safe load edit and archive beside the authoritative view', () => {
@@ -51,6 +53,9 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain("setForm({ mode: 'edit', product })");
     expect(source).toContain('catalogOffer(current, publishedOffers)');
     expect(source).toContain('currentPublishedOffer.version');
+    expect(source).toContain('initial={form.product?.definition}');
+    expect(source).toContain("editing={form.mode === 'edit'}");
+    expect(source).toContain('formStyles.scheduleDialog');
     expect(source).toContain('سوابق قیمت، خرید، مالی و ممیزی حذف نمی‌شوند');
     expect(source).toContain('updatePublishedStatus');
   });

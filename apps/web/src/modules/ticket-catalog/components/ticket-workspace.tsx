@@ -1059,7 +1059,7 @@ function TicketCatalogWorkspace() {
       >
         <DialogContent
           dir="rtl"
-          className={`${formStyles.dialog} ${form?.mode === 'create' && !form.initial ? formStyles.scheduleDialog : 'max-w-4xl'} start-auto! left-1/2!`}
+          className={`${formStyles.dialog} ${(form?.mode === 'create' && !form.initial) || form?.mode === 'edit' ? formStyles.scheduleDialog : 'max-w-4xl'} start-auto! left-1/2!`}
         >
           <DialogTitle className="pe-10">
             {form?.mode === 'view'
@@ -1080,8 +1080,13 @@ function TicketCatalogWorkspace() {
                   product={form.product}
                   referenceLabel={referenceLabel}
                 />
-              ) : form.mode === 'create' && !form.initial ? (
+              ) : (form.mode === 'create' && !form.initial) ||
+                (form.mode === 'edit' &&
+                  form.product?.definition.transport === 'flight') ? (
                 <FlightScheduleForm
+                  key={form.product?.id ?? 'create-flight-schedule'}
+                  initial={form.product?.definition}
+                  editing={form.mode === 'edit'}
                   references={references}
                   onReference={rememberReference}
                   onSave={save}

@@ -17164,5 +17164,7 @@
   "لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "The load has changed; refresh the list.",
   "لود در شعبه مجاز شما پیدا نشد.": "The load was not found in an authorized branch.",
   "لود حذف شد؛ سوابق قیمت، خرید، مالی و ممیزی آن حفظ شده است.": "The load was deleted; its price, purchase, finance, and audit history was preserved.",
-  "ویرایش لود": "Edit load"
+  "ویرایش لود": "Edit load",
+  "ذخیره تغییرات لود": "Save load changes",
+  "ویرایش لود پرواز": "Edit flight load"
 }
