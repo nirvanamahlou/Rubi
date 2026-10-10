@@ -44,6 +44,7 @@ export function FlightScheduleForm({
   onSave: (
     inputs: readonly ProductInput[],
     reason: string,
+    allowPastDate?: boolean,
   ) => void | Promise<void>;
   onCancel: () => void;
 }) {
@@ -60,6 +61,7 @@ export function FlightScheduleForm({
   }));
   const [start, setStart] = useState(''),
     [end, setEnd] = useState('');
+  const [allowPastDate, setAllowPastDate] = useState(false);
   const [weekdays, setWeekdays] = useState<WeekdayStay[]>([]);
   const [returnDetails, setReturnDetails] = useState({
     flightNumber: '',
@@ -182,7 +184,7 @@ export function FlightScheduleForm({
             references,
           ),
         );
-      await onSave(definitions, 'تعریف برنامه هفتگی پرواز');
+      await onSave(definitions, 'تعریف برنامه هفتگی پرواز', allowPastDate);
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'ثبت برنامه ناموفق بود.',
@@ -317,6 +319,14 @@ export function FlightScheduleForm({
                   onChange={setEnd}
                 />
               </FormField>
+              <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={allowPastDate}
+                  onChange={(event) => setAllowPastDate(event.target.checked)}
+                />
+                تاریخ گذشته
+              </label>
               {picker(
                 'schedule-airline',
                 'ایرلاین',

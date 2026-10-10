@@ -5143,3 +5143,9 @@ Purchasing & Supply exposes an access-aware supplier management card linking the
 ## 2026-10-10 — AGENCY-REGISTRATION-XLSX-1010 — PC-B
 
 Agency registration now opens on HTTP LAN clients that lack `crypto.randomUUID`; registration and agreement draft IDs use the shared LAN-safe UUID helper. The existing XLSX preview/import flow now mirrors the safe identity section of the registration form by accepting an optional 11-digit company national ID in addition to system code, legal name, person type and roles. New records retain server-generated codes, existing identities are never overwritten, and OTP/contract/document fields remain interactive rather than bulk-imported. A styled 200-row template with text-safe identifiers and validated person-type/role choices was generated and visually reviewed. 31 focused Web tests, scoped ESLint and Web typecheck pass. No organization or credential data was mutated during verification; no schema, migration or dependency change.
+
+## TICKET-PAST-DATE-1010 — PC-B — READY_FOR_REVIEW
+
+- Add an explicit «تاریخ گذشته» opt-in to Ticket Definition while preserving the default future-only publication guard and existing non-saleable handling for expired offers.
+- Branch: `codex/pc-b-ticket-past-date-1010`; no API, schema, migration, dependency, permission, runtime or operational-data change.
+- Delivered in weekly and advanced forms with a submission-scoped flag; 21 focused tests and Web typecheck pass. Existing expired-offer and Sales future-only behavior is preserved.
