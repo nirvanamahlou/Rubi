@@ -177,10 +177,31 @@ export const toursApi = {
       method: 'PATCH',
       body: JSON.stringify({ expectedVersion, offer }),
     }),
+  reviseOfferBatch: (
+    items: readonly {
+      id: string;
+      expectedVersion: number;
+      offer: TicketOfferCreateV1;
+    }[],
+  ) =>
+    request<{ data: { items: { id: string; version: number }[] } }>(
+      '/offers/batch',
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ items }),
+      },
+    ),
   archiveOffer: (id: string, expectedVersion: number) =>
     request<{ data: { id: string } }>(`/offers/${id}`, {
       method: 'DELETE',
       body: JSON.stringify({ expectedVersion }),
+    }),
+  archiveOfferBatch: (
+    items: readonly { id: string; expectedVersion: number }[],
+  ) =>
+    request<{ data: { ids: string[] } }>('/offers/batch', {
+      method: 'DELETE',
+      body: JSON.stringify({ items }),
     }),
   updateOfferStatus: (
     id: string,

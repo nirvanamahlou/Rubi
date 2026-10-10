@@ -2418,5 +2418,11 @@
   "version برای ویرایش الزامی است.": "version is required for editing.",
   "لود به قرارداد، رزرو ظرفیت یا تور متصل است و قابل حذف نیست.": "The load is linked to a contract, capacity reservation, or tour and cannot be deleted.",
   "لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "The load has changed; refresh the list.",
+  "حداقل یک ردیف لود به قرارداد، رزرو ظرفیت یا تور متصل است و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row is linked to a contract, capacity hold, or tour and cannot be deleted; no rows were deleted.",
+  "فهرست شناسه و نسخه لود معتبر نیست.": "The load ID and version list is invalid.",
+  "فهرست ویرایش لود معتبر نیست.": "The load edit list is invalid.",
+  "ویرایش لود ردیف تکراری ایجاد می‌کند.": "Editing the load would create a duplicate row.",
+  "یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.": "One or more load rows were not found in an authorized branch.",
+  "یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "One of the load rows has changed; refresh the list.",
   "لود در شعبه مجاز شما پیدا نشد.": "The load was not found in an authorized branch."
 }

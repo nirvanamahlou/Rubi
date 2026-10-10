@@ -181,6 +181,37 @@ export function catalogOffer(
   return offers.find((offer) => product.id === 'offer:' + offer.id);
 }
 
+function localLoadGroupKey(offer: TicketOfferV1, local: readonly Product[]) {
+  const product = local.find(
+    (item) =>
+      item.id === offer.catalogProductId || item.id === `offer:${offer.id}`,
+  );
+  const created = product?.history.find((entry) => entry.action === 'create');
+  return created ? `${created.at}|${created.actor}` : undefined;
+}
+
+/** Exact server group for new loads; same-browser creation history recovers legacy batches safely. */
+export function publishedLoadGroup(
+  selected: TicketOfferV1,
+  offers: readonly TicketOfferV1[],
+  local: readonly Product[],
+) {
+  if (selected.loadGroupId)
+    return offers.filter(
+      (offer) =>
+        offer.branchId === selected.branchId &&
+        offer.loadGroupId === selected.loadGroupId,
+    );
+  const key = localLoadGroupKey(selected, local);
+  if (!key) return [selected];
+  const grouped = offers.filter(
+    (offer) =>
+      offer.branchId === selected.branchId &&
+      localLoadGroupKey(offer, local) === key,
+  );
+  return grouped.length ? grouped : [selected];
+}
+
 export function publishedOfferInput(offer: TicketOfferV1) {
   return {
     originAirportId: offer.originAirportId ?? null,
