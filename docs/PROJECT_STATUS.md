@@ -5139,3 +5139,8 @@ Document delivery is a standalone Finance menu item/page at /finance/delivery; r
 ## 2026-10-09 — PURCHASE-SUPPLIERS-ENTRY-1009 — PC-A
 
 Purchasing & Supply exposes an access-aware supplier management card linking the existing Procurement supplier screen, preserving forms, logos, references and history. Suppliers are unlisted in Master Data section navigation, not deleted from its catalog/API/database; organization/broker resources remain. Additive procurement.suppliers IAM screen makes the existing section URL valid without granting managed profiles automatic access.16 Web and11 IAM tests, scoped lint/shared build/Web typecheck pass; production build and exact-head CI gate explicitly authorized develop merge. No schema/migration/dependency/operational-data/runtime changes.
+## TICKET-PAST-DATE-1010 — PC-B — READY_FOR_REVIEW
+
+- Add an explicit «تاریخ گذشته» opt-in to Ticket Definition while preserving the default future-only publication guard and existing non-saleable handling for expired offers.
+- Branch: `codex/pc-b-ticket-past-date-1010`; no API, schema, migration, dependency, permission, runtime or operational-data change.
+- Delivered in weekly and advanced forms with a submission-scoped flag; 21 focused tests and Web typecheck pass. Existing expired-offer and Sales future-only behavior is preserved.

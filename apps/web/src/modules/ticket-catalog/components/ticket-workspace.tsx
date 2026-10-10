@@ -186,6 +186,19 @@ export function findPublishedOffer(
     );
   return matches[0];
 }
+
+export function requireFutureTicketDates(
+  inputs: readonly TicketOfferCreateV1[],
+  allowPastDate: boolean,
+  now = new Date(),
+) {
+  if (
+    !allowPastDate &&
+    inputs.some((input) => new Date(input.departureAt) <= now)
+  )
+    throw new Error('تاریخ بلیت جدید باید در آینده باشد.');
+}
+
 export function TicketWorkspace() {
   return (
     <>
@@ -397,6 +410,7 @@ function TicketCatalogWorkspace() {
   const publishFlights = async (
     inputs: readonly ProductInput[],
     productIds: readonly string[],
+    allowPastDate = false,
   ) => {
     const publishable = inputs
       .map((input, index) => ({
@@ -407,10 +421,10 @@ function TicketCatalogWorkspace() {
         Boolean(item.input),
       );
     if (!publishable.length) return;
-    if (
-      publishable.some((item) => new Date(item.input.departureAt) <= new Date())
-    )
-      throw new Error('تاریخ بلیت جدید باید در آینده باشد.');
+    requireFutureTicketDates(
+      publishable.map((item) => item.input),
+      allowPastDate,
+    );
     const base = getPublicApiBaseUrl();
     if (!base) throw new Error('نشانی سرور تنظیم نشده است.');
     const session = await refreshAuthenticatedSession(base);
@@ -592,7 +606,11 @@ function TicketCatalogWorkspace() {
       value,
     ]);
   }
-  async function save(inputs: readonly ProductInput[], editReason: string) {
+  async function save(
+    inputs: readonly ProductInput[],
+    editReason: string,
+    allowPastDate = false,
+  ) {
     if (!form || form.mode === 'view') throw new Error('فرم قابل ویرایش نیست.');
     const now = new Date().toISOString();
     const current = form.product;
@@ -640,7 +658,7 @@ function TicketCatalogWorkspace() {
     }
     if (!current) {
       try {
-        await publishFlights(inputs, createdIds);
+        await publishFlights(inputs, createdIds, allowPastDate);
       } catch (error) {
         await refreshPublishedOffers();
         throw error;
@@ -680,7 +698,7 @@ function TicketCatalogWorkspace() {
             matches[0].version,
             nextInput,
           );
-        else await publishFlights(inputs, [current.id]);
+        else await publishFlights(inputs, [current.id], allowPastDate);
         await refreshPublishedOffers();
       }
     }
