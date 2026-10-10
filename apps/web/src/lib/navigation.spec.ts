@@ -31,6 +31,7 @@ const expectedRoutes = [
   '/integrations',
   '/system',
   '/master-data',
+  '/correspondence',
 ];
 
 const expectedTitles = [
@@ -54,6 +55,7 @@ const expectedTitles = [
   'یکپارچه‌سازی‌ها',
   'مدیریت سیستم',
   'اطلاعات پایه',
+  'مکاتبات',
 ];
 
 describe('CRM navigation', () => {
@@ -110,13 +112,13 @@ describe('CRM navigation', () => {
   });
   it('contains the approved routes plus the separate finance inbox in order', () => {
     expect(navigationItems.map((item) => item.href)).toEqual(expectedRoutes);
-    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.href)).size).toBe(21);
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(20);
+    expect(navigationItems).toHaveLength(21);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
-    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(20);
+    expect(new Set(navigationItems.map((item) => item.title)).size).toBe(21);
   });
 
   it('resolves the Human Resources owner route', () => {

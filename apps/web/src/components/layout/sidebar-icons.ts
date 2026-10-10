@@ -45,6 +45,7 @@ export const sidebarIcons: Record<
   '/finance/requests': Inbox,
   '/human-resources': UserRoundCheck,
   '/documents': Archive,
+  '/correspondence': FileText,
   '/reports': ChartColumn,
   '/master-data': Database,
   '/integrations': Plug,

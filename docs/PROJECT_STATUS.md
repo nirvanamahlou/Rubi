@@ -1,3 +1,7 @@
+## 2026-10-10 — CORRESPONDENCE-1010 — PC-A
+
+Added standalone correspondence at the bottom of the primary tree. Three company choices (نیایش سیر، جهان باستان، قسطی روو), editable initial template and input text produce matching paginated preview, PNG links and raster PDF link. Draft state stays only in the current browser page; no archive, API sending or backend changes. Scoped lint/TypeScript, focused26/26 tests and Web build57 routes passed. Authenticated3100 browser verified company switching, two-page PNG and PDF links; native PNG visually checked after correcting word wrapping. Automation could not download blob links, so PDF file inspection is unverified. Existing3100/4217 synthetic preview restored without business writes, schema/dependency changes or delegation.
+
 ## 2026-10-08 — ACCOUNTING-LEDGER-LIST-1008 — PC-A
 
 Ledger list displays code/title/main-book/posting/status with immediate column filters. Persistent FilterX clear and ListChecks multi-select actions include real shortcuts/tooltips. Clear resets advanced/column/search filters; selection/page reset when filters change. Browser verified0/1-result filters and selected count on3100; tests9/9, scoped lint/typecheck and affected Web build56 routes passed. Existing authorized reads unchanged; Web-only, no data/backend/schema/dependency changes or delegation.
