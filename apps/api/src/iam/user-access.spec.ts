@@ -126,6 +126,7 @@ describe('independent managed user access', () => {
       USER_ACCESS_PROFILE_PERMISSION,
       screenPermission('sales.home'),
     ]);
+    expect(f.client.$queryRaw.mock.calls[0]?.[0]?.[0]).toContain('::text');
   });
   it('rejects escalation before writing any role or membership', async () => {
     const f = fixture();

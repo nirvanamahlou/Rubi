@@ -1305,7 +1305,7 @@ export class IamService implements IamStepUpPort {
     const profile = await this.managedAccess(dto, actor);
     await this.assertRolesAssignable(dto.roleIds, actor);
     await this.database.client.$transaction(async (transaction) => {
-      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
       const [target, administratorRole] = await Promise.all([
         transaction.user.findUnique({
           where: { id: userId },
@@ -1373,7 +1373,7 @@ export class IamService implements IamStepUpPort {
       throw new ConflictException('غیرفعال‌سازی حساب جاری مجاز نیست.');
     const user = await this.database.client.$transaction(
       async (transaction) => {
-        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
+        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
         if (status !== UserStatus.ACTIVE) {
           const targetIsAdministrator = await transaction.userRole.findFirst({
             where: { userId, role: { code: 'administrator' } },
