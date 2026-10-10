@@ -49,6 +49,10 @@ describe('ticket workspace entry points', () => {
     );
     expect(source).toContain('toursApi.archiveOfferBatch(');
     expect(source).toContain('toursApi.reviseOfferBatch(');
+    expect(source).toContain('toursApi.resizeOfferBatch(');
+    expect(source).not.toContain(
+      'طوری تنظیم کنید که همین تعداد ردیف ساخته شود',
+    );
     expect(source).toContain('publishedLoadGroups(');
     expect(source).toContain('ویرایش کل جدول');
     expect(source).toContain('حذف کل جدول');

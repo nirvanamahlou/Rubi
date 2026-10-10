@@ -191,6 +191,20 @@ export const toursApi = {
         body: JSON.stringify({ items }),
       },
     ),
+  resizeOfferBatch: (
+    current: readonly { id: string; expectedVersion: number }[],
+    offers: readonly TicketOfferCreateV1[],
+  ) =>
+    request<{
+      data: {
+        items: { id: string; version: number }[];
+        createdIds: string[];
+        archivedIds: string[];
+      };
+    }>('/offers/batch/resize', {
+      method: 'PATCH',
+      body: JSON.stringify({ current, offers }),
+    }),
   archiveOffer: (id: string, expectedVersion: number) =>
     request<{ data: { id: string } }>(`/offers/${id}`, {
       method: 'DELETE',

@@ -718,22 +718,27 @@ function TicketCatalogWorkspace() {
           left.destinationId.localeCompare(right.destinationId) ||
           left.cabinClassCode.localeCompare(right.cabinClassCode),
       );
-      if (nextOffers.length !== currentOffers.length)
-        throw new Error(
-          `این لود ${currentOffers.length.toLocaleString('fa-IR')} ردیف دارد؛ بازه، روزها و کلاس‌ها را طوری تنظیم کنید که همین تعداد ردیف ساخته شود.`,
+      if (nextOffers.length === currentOffers.length)
+        await toursApi.reviseOfferBatch(
+          currentOffers.map((offer, index) => ({
+            id: offer.id,
+            expectedVersion: offer.version,
+            offer: nextOffers[index]!,
+          })),
         );
-      await toursApi.reviseOfferBatch(
-        currentOffers.map((offer, index) => ({
-          id: offer.id,
-          expectedVersion: offer.version,
-          offer: nextOffers[index]!,
-        })),
-      );
+      else
+        await toursApi.resizeOfferBatch(
+          currentOffers.map(({ id, version }) => ({
+            id,
+            expectedVersion: version,
+          })),
+          nextOffers,
+        );
       await refreshPublishedOffers();
       setForm(null);
       setProblem('');
       setNotice(
-        `${currentOffers.length.toLocaleString('fa-IR')} ردیف لود باهم ویرایش شد.`,
+        `لود با ${nextOffers.length.toLocaleString('fa-IR')} ردیف ذخیره شد.`,
       );
       return;
     }
