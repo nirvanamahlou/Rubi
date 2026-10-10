@@ -17186,5 +17186,6 @@
   "حذف کل جدول لود (": "Delete entire load table (",
   "حذف کل جدول (": "Delete entire table (",
   "تمام ردیف‌های رفت و برگشت متعلق به لودهای نمایش‌داده‌شده در این بلوک، به‌صورت یکجا از مدیریت و فروش جدید خارج می‌شوند. فروش‌ها و سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند. عملیات اتمیک است؛ اگر رزرو ظرفیت فعال یا تور متصل وجود داشته باشد هیچ ردیفی حذف نمی‌شود.": "All outbound and return rows belonging to the loads shown in this block will be removed from management and new sales together. Sales and price, purchase, finance, and audit history remain. The operation is atomic; if there is an active capacity hold or linked tour, no row is removed.",
-  "حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row has an active capacity hold or linked tour and cannot be deleted; no rows were deleted."
+  "حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row has an active capacity hold or linked tour and cannot be deleted; no rows were deleted.",
+  "یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ ردیفی حذف نشد.": "One load row changed concurrently; no rows were deleted."
 }

@@ -798,58 +798,63 @@ export class TicketPublicService {
       items.map(({ id, expectedVersion }) => [id, expectedVersion]),
     );
     const ids = [...versions.keys()].sort();
-    return this.database.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
-      );
-      const rows = await tx.ticketPublishedOffer.findMany({
-        where: {
-          id: { in: ids },
-          branchId: { in: actor.branchIds },
-          audit: { none: { action: 'ticket.offer.archived' } },
-        },
-        include: {
-          capacityHolds: {
-            where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
+        );
+        const rows = await tx.ticketPublishedOffer.findMany({
+          where: {
+            id: { in: ids },
+            branchId: { in: actor.branchIds },
+            audit: { none: { action: 'ticket.offer.archived' } },
           },
-          tourOutboundDepartures: { select: { id: true } },
-          tourReturnDepartures: { select: { id: true } },
-        },
-      });
-      if (rows.length !== ids.length)
-        throw new ForbiddenException(
-          'یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.',
+          include: {
+            capacityHolds: {
+              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+            },
+            tourOutboundDepartures: { select: { id: true } },
+            tourReturnDepartures: { select: { id: true } },
+          },
+        });
+        if (rows.length !== ids.length)
+          throw new ForbiddenException(
+            'یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.',
+          );
+        if (rows.some((row) => row.version !== versions.get(row.id)))
+          throw new ConflictException(
+            'یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.',
+          );
+        const blocked = rows.find(
+          (row) =>
+            row.capacityHolds.length ||
+            row.tourOutboundDepartures.length ||
+            row.tourReturnDepartures.length,
         );
-      if (rows.some((row) => row.version !== versions.get(row.id)))
-        throw new ConflictException(
-          'یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.',
-        );
-      const blocked = rows.find(
-        (row) =>
-          row.capacityHolds.length ||
-          row.tourOutboundDepartures.length ||
-          row.tourReturnDepartures.length,
-      );
-      if (blocked)
-        throw new ConflictException(
-          'حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.',
-        );
-      for (const row of rows) {
-        await tx.ticketPublishedOffer.update({
-          where: { id: row.id },
+        if (blocked)
+          throw new ConflictException(
+            'حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.',
+          );
+        const archived = await tx.ticketPublishedOffer.updateMany({
+          where: { id: { in: ids } },
           data: { status: 'ARCHIVED', version: { increment: 1 } },
         });
-        await tx.ticketOfferAudit.create({
-          data: {
+        if (archived.count !== rows.length)
+          throw new ConflictException(
+            'یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ ردیفی حذف نشد.',
+          );
+        await tx.ticketOfferAudit.createMany({
+          data: rows.map((row) => ({
             offerId: row.id,
             actorUserId: actor.userId,
             action: 'ticket.offer.archived',
             version: row.version + 1,
-          },
+          })),
         });
-      }
-      return { data: { ids } };
-    });
+        return { data: { ids } };
+      },
+      { maxWait: 5_000, timeout: 30_000 },
+    );
   }
 
   async salePriceTargets(actor: AuthenticatedActor) {
@@ -1380,24 +1385,27 @@ export class TicketPublicService {
     )
       throw new ConflictException('ویرایش لود ردیف تکراری ایجاد می‌کند.');
     const ids = validated.map(({ id }) => id).sort();
-    return this.database.client.$transaction(async (tx) => {
-      await tx.$queryRaw(
-        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
-      );
-      const results = [] as { id: string; version: number }[];
-      for (const item of validated) {
-        const result = await this.reviseInTransaction(
-          tx,
-          item.id,
-          item.expectedVersion,
-          item.offer,
-          actor,
-          ids,
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
         );
-        results.push(result.data);
-      }
-      return { data: { items: results } };
-    });
+        const results = [] as { id: string; version: number }[];
+        for (const item of validated) {
+          const result = await this.reviseInTransaction(
+            tx,
+            item.id,
+            item.expectedVersion,
+            item.offer,
+            actor,
+            ids,
+          );
+          results.push(result.data);
+        }
+        return { data: { items: results } };
+      },
+      { maxWait: 5_000, timeout: 30_000 },
+    );
   }
 
   private async reviseInTransaction(

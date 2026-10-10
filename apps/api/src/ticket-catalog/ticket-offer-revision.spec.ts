@@ -49,8 +49,11 @@ function setup(patch = {}) {
           query?.where?.id?.in ? [row] : [],
         ),
       update: vi.fn().mockResolvedValue({ ...row, version: 2 }),
+      updateMany: vi.fn().mockImplementation(async (query) => ({
+        count: query?.where?.id?.in?.length ?? 1,
+      })),
     },
-    ticketOfferAudit: { create: vi.fn() },
+    ticketOfferAudit: { create: vi.fn(), createMany: vi.fn() },
   };
   const service = new TicketPublicService(
     {
@@ -156,17 +159,19 @@ describe('published ticket revision', () => {
     await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
       data: { id },
     });
-    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledWith({
-      where: { id },
+    expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: [id] } },
       data: { status: 'ARCHIVED', version: { increment: 1 } },
     });
-    expect(tx.ticketOfferAudit.create).toHaveBeenCalledWith({
-      data: {
-        offerId: id,
-        actorUserId: 'user',
-        action: 'ticket.offer.archived',
-        version: 2,
-      },
+    expect(tx.ticketOfferAudit.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          offerId: id,
+          actorUserId: 'user',
+          action: 'ticket.offer.archived',
+          version: 2,
+        },
+      ],
     });
   });
   it('archives every requested load row in one transaction', async () => {
@@ -188,8 +193,41 @@ describe('published ticket revision', () => {
         actor,
       ),
     ).resolves.toEqual({ data: { ids: [id, secondId] } });
-    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledTimes(2);
-    expect(tx.ticketOfferAudit.create).toHaveBeenCalledTimes(2);
+    expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledTimes(1);
+    expect(tx.ticketOfferAudit.createMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({ offerId: id, version: 2 }),
+        expect.objectContaining({ offerId: secondId, version: 5 }),
+      ]),
+    });
+  });
+  it('archives a large load with one offer write and one audit write', async () => {
+    const { tx, service } = setup({ status: 'ACTIVE' });
+    const first = await tx.ticketPublishedOffer.findFirst();
+    const rows = Array.from({ length: 1_000 }, (_, index) => ({
+      ...first,
+      id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+    }));
+    tx.ticketPublishedOffer.findMany.mockResolvedValue(rows as never);
+    await expect(
+      service.archiveBatch(
+        {
+          items: rows.map((row) => ({
+            id: row.id,
+            expectedVersion: row.version,
+          })),
+        },
+        actor,
+      ),
+    ).resolves.toEqual({ data: { ids: rows.map(({ id }) => id).sort() } });
+    expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledTimes(1);
+    expect(tx.ticketOfferAudit.createMany).toHaveBeenCalledTimes(1);
+    expect(tx.ticketOfferAudit.createMany).toHaveBeenCalledWith({
+      data: expect.arrayContaining([
+        expect.objectContaining({ offerId: rows[0]!.id, version: 2 }),
+        expect.objectContaining({ offerId: rows.at(-1)!.id, version: 2 }),
+      ]),
+    });
   });
   it.each(['capacityHolds', 'tourOutboundDepartures', 'tourReturnDepartures'])(
     'rejects archiving a load with linked %s',
@@ -198,7 +236,7 @@ describe('published ticket revision', () => {
       await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
         'قابل حذف نیست',
       );
-      expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+      expect(tx.ticketPublishedOffer.updateMany).not.toHaveBeenCalled();
     },
   );
   it('logically archives sold rows while retaining their allocation history', async () => {
@@ -209,8 +247,8 @@ describe('published ticket revision', () => {
     await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
       data: { id },
     });
-    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledWith({
-      where: { id },
+    expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: [id] } },
       data: { status: 'ARCHIVED', version: { increment: 1 } },
     });
   });
@@ -219,7 +257,7 @@ describe('published ticket revision', () => {
     await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
       'لود تغییر کرده است',
     );
-    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+    expect(tx.ticketPublishedOffer.updateMany).not.toHaveBeenCalled();
     await expect(
       service.archiveExpired(id, 2, {
         ...(actor as object),
