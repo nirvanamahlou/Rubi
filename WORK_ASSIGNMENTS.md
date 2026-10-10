@@ -6337,3 +6337,21 @@ Delivered against the user-supplied 7-column workbook while retaining the expand
 identity fields and contact/address creation are implemented. Bounded source and
 migration locks release with the review commit; full lint/build and exact-head CI
 gate the explicitly authorized merge.
+## AGENCY-XLSX-OPTIONAL-CONTACT-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-import-optional-fields` from
+`origin/develop@e1be00c0`. User supplied the filled seven-column agency workbook
+and requests direct import while keeping email and tourism-license number
+optional. Reserve the Organizations XLSX parser/import validation, import dialog
+copy, focused Web tests and bounded status docs. Accept the canonical template
+with blank optional values and compatible compact/expanded variants that omit
+either optional column; preserve all identity, duplicate, formula, size and
+write-safety checks. No schema/migration, API/shared contract, dependency,
+permission, operational import or runtime mutation.
+
+Delivered optional email and tourism-license values and compatible compact or
+expanded workbooks that omit either optional column. The supplied desktop
+workbook was inspected read-only and matches the canonical seven-column layout.
+Sixteen focused import/parser/localization tests, scoped lint, Contracts build
+and Web typecheck pass. Production build and exact-head CI remain review gates;
+no operational row was imported and no schema/migration/dependency changed.
