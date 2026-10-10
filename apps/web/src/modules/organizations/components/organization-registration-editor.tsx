@@ -92,7 +92,7 @@ export function OrganizationRegistrationEditor({
             </dd>
           </div>
           <div>
-            <dt className="text-sm text-muted-foreground">مجوز گردشگری</dt>
+            <dt className="text-sm text-muted-foreground">شماره مجوز</dt>
             <dd>
               {String(
                 organization.attributes.tourismLicenseNumber || 'ثبت نشده',
