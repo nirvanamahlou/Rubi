@@ -5234,3 +5234,8 @@ dependency, permission or operational-data change.
 Whole-table load deletion failed because the service attempted status `ARCHIVED`, while the deployed database constraint permits only `ACTIVE`, `PAUSED` and `EXPIRED`. The bounded fix uses the existing logical-archive convention (`PAUSED` plus version increment and `ticket.offer.archived` audit) in both complete deletion and edit-time row removal. No physical deletion, migration or operational-data mutation is part of verification.
 
 The exact 18-row database write path passed inside a forced-rollback transaction, leaving all rows unchanged. Focused23 and full Ticket Catalog API188 tests pass with22 intentional PostgreSQL opt-in skips; scoped lint and API typecheck pass.
+
+# 2026-10-10 — Daily assistant follow-ups in Workbench notes
+
+- The Notes tab now shows «یادداشت‌های هوش مصنوعی برای شما» above personal notes. It derives up to six dated suggestions from the signed-in user's existing Workbench calendar events, personal reminders and assigned Procurement follow-ups, refreshing at the Tehran day boundary or on demand. Completed/cancelled events and finished checklist reminders are excluded; every card links to its source.
+- Calendar and Procurement suggestions can be explicitly saved as ordinary personal notes. An exact source marker prevents the same saved suggestion from appearing again. This is a transparent rule-based assistant over existing authorized data; no generative model or background scheduler is connected. No API contract, schema/migration, dependency, permission or operational data change.
