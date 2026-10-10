@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { Alert, Button, FormField, Input } from '@/components/ui';
 import type { ProductInput, Reference, Segment } from '../model/catalog';
 import { emptyInput } from '../model/preview';
@@ -133,7 +134,7 @@ export function FlightScheduleForm({
     setProblem('');
     try {
       const dates = scheduleDates(start, end, weekdays, mode === 'round-trip');
-      if (!batchId.current) batchId.current = crypto.randomUUID();
+      if (!batchId.current) batchId.current = browserRandomUuid();
       const outbound = {
         ...input,
         returnMinDays:

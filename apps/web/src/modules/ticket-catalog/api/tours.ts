@@ -16,6 +16,7 @@ import type {
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
 async function request<T>(
   path: string,
@@ -70,7 +71,7 @@ export const toursApi = {
   ) =>
     request<{ data: TicketSalePriceTargetV1 }>(
       '/sale-price-targets',
-      post(input, branch, crypto.randomUUID()),
+      post(input, branch, browserRandomUuid()),
     ),
   removeSalePriceTarget: (id: string, expectedVersion: number) =>
     request<{ data: { id: string; isActive: boolean; version: number } }>(
