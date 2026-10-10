@@ -855,7 +855,7 @@ export class TicketPublicService {
           );
         const archived = await tx.ticketPublishedOffer.updateMany({
           where: { id: { in: ids } },
-          data: { status: 'ARCHIVED', version: { increment: 1 } },
+          data: { status: 'PAUSED', version: { increment: 1 } },
         });
         if (archived.count !== rows.length)
           throw new ConflictException(
@@ -1563,7 +1563,7 @@ export class TicketPublicService {
           const removedIds = removed.map(({ id }) => id);
           const archived = await tx.ticketPublishedOffer.updateMany({
             where: { id: { in: removedIds } },
-            data: { status: 'ARCHIVED', version: { increment: 1 } },
+            data: { status: 'PAUSED', version: { increment: 1 } },
           });
           if (archived.count !== removed.length)
             throw new ConflictException(

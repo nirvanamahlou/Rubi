@@ -167,7 +167,7 @@ describe('published ticket revision', () => {
     });
     expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledWith({
       where: { id: { in: [id] } },
-      data: { status: 'ARCHIVED', version: { increment: 1 } },
+      data: { status: 'PAUSED', version: { increment: 1 } },
     });
     expect(tx.ticketOfferAudit.createMany).toHaveBeenCalledWith({
       data: [
@@ -255,7 +255,7 @@ describe('published ticket revision', () => {
     });
     expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledWith({
       where: { id: { in: [id] } },
-      data: { status: 'ARCHIVED', version: { increment: 1 } },
+      data: { status: 'PAUSED', version: { increment: 1 } },
     });
   });
   it('rejects stale or unauthorized archive requests', async () => {
@@ -562,7 +562,7 @@ describe('published ticket revision', () => {
     });
     expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledWith({
       where: { id: { in: [secondId] } },
-      data: { status: 'ARCHIVED', version: { increment: 1 } },
+      data: { status: 'PAUSED', version: { increment: 1 } },
     });
   });
   it('rejects stale edits before changing data', async () => {
