@@ -1,0 +1,9 @@
+# SALES-CONTRACT-COLUMNS-NUMBERING-1003
+
+PC-A adds route, customer telephone (explicitly confirmed by the user), and original contract registration date to the Sales list. Last modification remains separate. Dates display in Asia/Tehran; phone and route direction remain readable within RTL. Existing horizontal scrolling accommodates the columns.
+
+Sales API produces optional additive `customerPhone`, `originName`, and `destinationName` summary fields consumed by Sales Web. Route names use Master Data's public detail service, including historical inactive cities. Phone prioritizes the encrypted buyer-contact snapshot already available under contract authorization. Legacy contracts use Customers' public service with the existing branch scope, sensitive-read permission and audit reason; unauthorized contact values stay masked. Lookup results are deduplicated per request with at most eight concurrent lookups. No cross-module table access.
+
+Migration `20261003170000_sales_six_digit_contract_numbers` creates a separate non-cycling PostgreSQL sequence from 120123 through 999999. It skips above any preexisting six-digit imported numbers. New Sales creation uses this sequence; existing SC-prefixed numbers and the old sequence remain unchanged. PostgreSQL sequences preserve concurrent uniqueness and may have gaps after rollbacks. Exhaustion fails rather than wrapping. Apply this additive migration before rolling out the API. No dependency or Prisma model changes.
+
+Validation: all 91 Sales API tests; 10 Sales workspace tests; actual PostgreSQL 18 full 114-migration deploy and regression covering first value, 24 concurrent allocations, preserved legacy numbers, imported numeric numbers and no-cycle exhaustion. API/Web typecheck, scoped API/Web/database lint and API/55-route Web production builds pass. Operational database and authenticated visual QA are not part of the disposable-database evidence.

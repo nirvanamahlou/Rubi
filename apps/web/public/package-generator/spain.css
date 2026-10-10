@@ -1,0 +1,19 @@
+.package-page[class*="spain-"] .data-region{background:#fff}
+.package-page[class*="spain-"] .data-table{border-collapse:collapse;table-layout:fixed;font-family:Arial,Tahoma,sans-serif}
+.package-page[class*="spain-"] .data-table td{border:1px solid #c9ddf3;border-radius:0;background:#fff;padding:0 3px;vertical-align:middle}
+.package-page[class*="spain-"] .data-table .hotel{padding:0 3px 0 0}
+.package-page[class*="spain-"] .hotel-wrap{display:flex;align-items:center;gap:7px;width:100%;height:100%;direction:ltr}
+.package-page[class*="spain-"] .hotel-thumb{display:block;flex-shrink:0;border-radius:8px;background-repeat:no-repeat}
+.package-page[class*="spain-"] .hotel-wrap .editable{flex:1;min-width:0;text-align:left;white-space:normal;line-height:1.15;overflow-wrap:anywhere}
+.package-page[class*="spain-"] .price .editable{display:block;white-space:normal;line-height:1.35;font-weight:700;direction:ltr}
+.package-page[class*="spain-"] .service .editable,.package-page[class*="spain-"] .stars .editable{font-weight:700}
+.package-page[class*="spain-"] .date-slot{border-radius:0 24px 24px 0;background:#06255c;color:#fff;font-size:22px;padding:3px;line-height:1.1;text-align:center}
+.package-page[class*="spain-"] .duration-slot{background:#fff;color:#08265e;font-size:24px;font-weight:700;line-height:1.15;text-align:center;white-space:pre-line}
+.package-page[class*="spain-"] .value-slot{font-family:Tahoma,Arial,sans-serif}
+.package-page[class*="spain-"] .value-slot b{font-family:Tahoma,Arial,sans-serif;font-size:21px;white-space:normal;text-align:center;direction:rtl}
+.package-page[class*="spain-"] .value-slot small{display:none}
+.package-page[class*="spain-"] .services-slot{font-family:Tahoma,Arial,sans-serif;font-size:17px;line-height:1.5;text-align:right;justify-content:center;padding:8px}
+.package-page[class*="spain-"] .notes-slot{position:absolute;z-index:1;display:flex;align-items:center;justify-content:center;background:#fff;color:#071d5d;font-family:Tahoma,Arial,sans-serif;font-weight:600;font-size:15px;line-height:1.55;white-space:pre-line;text-align:right;padding:8px}
+.package-page.spain-combined .data-table .hotel-wrap .editable{font-size:13px}
+.package-page.spain-combined .notes-slot{font-size:15px}
+.package-page[class*="spain-"] .template-art[data-layer="noteIcon"],.package-page[class*="spain-"] .template-art[data-layer="serviceIcon"]{z-index:3;pointer-events:none}

@@ -1,0 +1,70 @@
+.panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  grid-column: 1 / -1;
+  align-content: start;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.group {
+  container-type: inline-size;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--muted) 15%, transparent);
+}
+
+.heading {
+  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 3rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  padding-block: 0.5rem;
+}
+
+.row + .row {
+  border-top: 1px solid var(--border);
+}
+
+.name,
+.price {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.75rem;
+}
+
+.price {
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  grid-column: 1 / -1;
+}
+
+@container (min-width: 320px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) 3rem minmax(4rem, 1fr) auto;
+  }
+
+  .actions {
+    grid-column: auto;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .panel {
+    grid-column: 1 / -1;
+  }
+}

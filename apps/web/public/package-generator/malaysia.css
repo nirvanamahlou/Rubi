@@ -1,0 +1,41 @@
+.package-page[class*="malaysia-"] .data-region{background:#fff}
+.package-page[class*="malaysia-"] .data-table{border-collapse:collapse;border-spacing:0;font-family:Arial,Tahoma,sans-serif}
+.package-page[class*="malaysia-"] .data-table td{border:0;border-radius:0;background:#fff;padding:0 3px}
+.package-page[class*="malaysia-"] .data-table .hotel{font-weight:500}
+.package-page[class*="malaysia-"] .data-table .service{font-weight:500}
+.package-page[class*="malaysia-"] .date-slot{border-radius:28px;background:#06265d;font-size:20px;padding:0 9px}
+.package-page[class*="malaysia-"] .duration-slot{font-size:21px;white-space:normal;text-align:center;line-height:1.2}
+.package-page[class*="malaysia-"] .value-slot{font-family:Tahoma,Arial,sans-serif}
+.package-page[class*="malaysia-"] .value-slot b{font-size:21px}
+.package-page[class*="malaysia-"] .value-slot small{font-size:13px!important}
+.package-page[class*="malaysia-"] .adjustments-slot{position:absolute;z-index:1;background:#fff;color:#06245b;white-space:pre-wrap;text-align:right;display:flex;align-items:center;justify-content:center;font-family:Tahoma,Arial,sans-serif;font-size:15px;font-weight:700;line-height:1.65;padding:4px}
+.package-page.malaysia-singapore .data-table td{padding:0 2px}
+.package-page.malaysia-singapore .date-slot{font-size:27px}
+.package-page.malaysia-penang .duration-slot{font-size:21px}
+.package-page.malaysia-penang .adjustments-slot{font-size:13px}
+.package-page.malaysia-langkawi .duration-slot{font-size:18px}
+.package-page.malaysia-langkawi .value-slot b{font-size:18px}
+.package-page.malaysia-langkawi .value-slot small{font-size:11px!important}
+.package-page.malaysia-langkawi .adjustments-slot{font-size:14px;line-height:1.6}
+
+/* Keep imported values inside the printed rounded cards on Malaysia/Thailand posters. */
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) .data-region{overflow:hidden}
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) .date-slot{overflow:hidden}
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) .value-slot{border-radius:6px;overflow:hidden;padding:1px 2px}
+.package-page:is([class*="malaysia-"],[class*="thailand-"]) :is(.duration-slot,.services-slot,.adjustments-slot){overflow:hidden}
+.package-page[class*="thailand-"] .value-flightDays b{white-space:normal;overflow-wrap:anywhere;text-align:center}
+.package-page[class*="thailand-"] .value-slot{line-height:1.06}
+.package-page[class*="thailand-"] .value-slot b{font-size:16px}
+.package-page[class*="thailand-"] .value-slot small{font-size:9px!important}
+.package-page[class*="thailand-"] .value-flightDays b{font-size:12px;line-height:1.15}
+.package-page[class*="thailand-"] .services-slot{font-size:11px;line-height:1.3;padding:2px 5px}
+.package-page[class*="thailand-"] :is(.thai-rate-grid,.thai-increase-slot,.thai-flight-info-slot){position:absolute;z-index:1;background:#fff;color:#082967;overflow:hidden;text-align:center;font-family:Tahoma,Arial,sans-serif}
+.package-page[class*="thailand-"] .thai-rate-grid{display:grid;grid-template-columns:repeat(var(--rate-count),minmax(0,1fr));direction:rtl}
+.package-page[class*="thailand-"] .thai-rate-slot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.1;min-width:0;border-left:1px solid #e2e8f0}
+.package-page[class*="thailand-"] .thai-rate-slot:last-child{border-left:0}
+.package-page[class*="thailand-"] .thai-rate-slot span{font-size:10px;white-space:nowrap}
+.package-page[class*="thailand-"] .thai-rate-slot b{font-size:10px;white-space:nowrap}
+.package-page[class*="thailand-"] .thai-rate-slot small{font-size:8px}
+.package-page[class*="thailand-"] :is(.thai-increase-slot,.thai-flight-info-slot){display:flex;flex-direction:column;align-items:center;justify-content:center;white-space:pre-wrap;overflow-wrap:anywhere;font-size:10px;line-height:1.35;padding:2px 5px}
+
+.package-page.thailand-pattaya .services-slot{font-size:12px;line-height:1.25;padding:3px 4px}

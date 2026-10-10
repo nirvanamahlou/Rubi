@@ -1,0 +1,626 @@
+import type { SalesReservationRequestV1 } from '../sales';
+
+export const TRAVEL_RUNTIME_VERSION = 1 as const;
+
+/** One immutable seat block in a ticket fare revision, in sale order. */
+export interface TicketSalePriceTierV1 {
+  seatCount: number;
+  amount: string;
+}
+
+/** Catalog owns schedule, capacity and the public fare used for ticket-only sales. */
+export interface TicketStandaloneSalePriceV1 {
+  revision: number;
+  amount: string;
+  currencyCode: string;
+  /** Absent means the legacy flat per-seat amount applies to the whole capacity. */
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
+}
+
+/** A named destination for a ticket fare, suitable for a future partner API. */
+export interface TicketSalePriceTargetV1 {
+  id: string;
+  branchId: string;
+  name: string;
+  code: string;
+  version: number;
+  isActive: boolean;
+}
+
+export interface TicketSalePriceTargetCreateV1 {
+  version: 1;
+  branchId: string;
+  name: string;
+  /** Stable external key; the UI can leave it empty and the server assigns one. */
+  code?: string | null;
+}
+
+export interface TicketTargetedStandaloneSalePriceV1 extends TicketStandaloneSalePriceV1 {
+  salePriceTarget: TicketSalePriceTargetV1;
+}
+
+export interface TicketStandaloneSalePriceUpdateV1 {
+  expectedRevision: number;
+  amount: string;
+  currencyCode: string;
+  /** Omitted/null is the internal direct-sale default used by existing Sales flows. */
+  salePriceTargetId?: string | null;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
+}
+
+export interface TicketRoundTripSalePriceV1 {
+  /** Original pair base before direct-sale commission. */
+  baseAmount?: string;
+  /** Raw tier prices before the direct-sale commission. */
+  baseTiers?: readonly TicketSalePriceTierV1[] | undefined;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
+  returnOfferId: string;
+  revision: number;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TicketRoundTripSalePriceUpdateV1 {
+  expectedRevision: number;
+  amount: string;
+  currencyCode: string;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
+}
+
+/** Commission rules are versioned independently from the base fare. */
+export interface TicketSaleCommissionV1 {
+  /** 100 percent disables this destination; never publish its zero net amount. */
+  isHidden?: boolean;
+  returnOfferId: string | null;
+  salePriceTargetId: string | null;
+  revision: number;
+  percent: string;
+  amount: string;
+  currencyCode: string;
+  tiers?: readonly TicketSalePriceTierV1[] | undefined;
+}
+export interface TicketSaleCommissionUpdateV1 {
+  offerId: string;
+  returnOfferId?: string | null;
+  salePriceTargetId?: string | null;
+  percent: string;
+  expectedRevision: number;
+  expectedBaseRevision: number;
+  copyToAll?: boolean;
+}
+
+export {
+  eligibleTicketReturn,
+  ticketReturnBounds,
+  ticketCalendarDate,
+  validReturnWindow,
+} from './ticket-return-window';
+
+export interface TicketOfferV1 {
+  /** Actual airports chosen in ticket definition; absent on legacy offers. */
+  originAirportId?: string | null;
+  destinationAirportId?: string | null;
+  /** Null/absent means an older offer has not been classified. */
+  supplyType?: 'COMPANY' | 'FLOATING' | 'API' | null;
+  economyBaggageKg?: string | null;
+  businessBaggageKg?: string | null;
+  /** Active allocations and unexpired holds, in seats. */
+  allocatedCapacity?: number;
+  reservedCapacity?: number;
+  /** Inclusive stay length in Tehran calendar days; null preserves unrestricted legacy offers. */
+  returnMinDays?: number | null;
+  returnMaxDays?: number | null;
+  /** Original direct base, before any direct-sale commission. */
+  baseStandaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
+  /** Administrative bases, including pairs hidden from direct-sale publication. */
+  baseRoundTripSalePrices?: readonly TicketRoundTripSalePriceV1[];
+  saleCommissions?: readonly TicketSaleCommissionV1[];
+
+  /** Null/absent uses the built-in default manifest. */
+  manifestTemplateId?: string | null;
+  /** Stable source identity exposed by the managed catalog projection. */
+  catalogProductId?: string;
+  /** Stable identity shared by every dated/cabin row created by one load form submission. */
+  loadGroupId?: string;
+  id: string;
+  version: number;
+  branchId: string;
+  originId: string;
+  destinationId: string;
+  departureAt: string;
+  arrivalAt: string;
+  carrierName: string;
+  serviceNumber: string;
+  cabinClassCode: 'ECONOMY' | 'BUSINESS' | 'FIRST';
+  totalCapacity: number;
+  remainingCapacity: number;
+  status: 'ACTIVE' | 'PAUSED';
+  standaloneSalePrice?: TicketStandaloneSalePriceV1 | null;
+  /** Versioned partner/channel prices; direct-sale price remains above for compatibility. */
+  targetedStandaloneSalePrices?: readonly TicketTargetedStandaloneSalePriceV1[];
+  /** Latest combined per-passenger fares keyed by the reverse-leg offer. */
+  roundTripSalePrices?: readonly TicketRoundTripSalePriceV1[];
+}
+
+export type TicketOfferCreateV1 = Omit<
+  TicketOfferV1,
+  | 'id'
+  | 'catalogProductId'
+  | 'loadGroupId'
+  | 'version'
+  | 'branchId'
+  | 'remainingCapacity'
+  | 'allocatedCapacity'
+  | 'reservedCapacity'
+  | 'status'
+  | 'baseStandaloneSalePrice'
+  | 'baseRoundTripSalePrices'
+  | 'saleCommissions'
+  | 'standaloneSalePrice'
+  | 'targetedStandaloneSalePrices'
+  | 'roundTripSalePrices'
+>;
+export interface TicketOfferSearchV1 {
+  /** Restrict reverse-route results to this authorized outbound offer's return window. */
+  outboundOfferId?: string;
+  originId: string;
+  destinationId: string;
+  departureFrom: string;
+  departureTo?: string;
+  cabinClassCode?: TicketOfferV1['cabinClassCode'];
+  page?: number;
+}
+
+export interface TicketCatalogPurchaseCreateV1 {
+  version: 1;
+  catalogProductReference: string;
+  title: string;
+  serviceDate?: string | null;
+  supplierDisplaySnapshot: string | null;
+  /** Legacy unconfirmed catalog estimate; new requests omit it for Finance pricing. */
+  amount?: string | null;
+  currencyCode?: string | null;
+  /** Optional for legacy catalog records; persisted offers publish their capacity here. */
+  seatCount?: number | null;
+}
+
+export interface TicketCatalogPurchaseV1 extends TicketCatalogPurchaseCreateV1 {
+  id: string;
+  branchId: string;
+  serviceDate: string | null;
+  amount: string | null;
+  currencyCode: string | null;
+  seatCount: number | null;
+  /** Real runtime offer linkage; null for legacy local catalog definitions. */
+  offerId: string | null;
+  offerVersion: number | null;
+  requestVersion: number;
+  status: 'PENDING' | 'PAID' | 'CANCELLED';
+  createdByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReservationArrangementV1 {
+  version: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
+  updatedAt: string;
+  updatedByUserId: string;
+}
+
+export interface ReservationArrangementUpdateV1 {
+  expectedVersion: number;
+  roomCount: number;
+  singleRoomCount: number;
+  doubleRoomCount: number;
+  extraBedCount: number;
+  hotelGuestCustomerIds: readonly string[];
+  reason: string;
+}
+
+export interface ReservationTicketDocumentV1 {
+  customerId: string;
+  number: string;
+  source: 'AUTO' | 'MANUAL';
+  issuedAt: string;
+}
+export interface ReservationIntakeV1 {
+  ticketDocuments?: readonly ReservationTicketDocumentV1[];
+  contractEditVersion?: number;
+  purchaseVersion?: number;
+  hotelPurchases?: readonly ReservationHotelPurchaseV1[];
+  servicePurchases?: readonly ReservationServicePurchaseV1[];
+  id: string;
+  requestId: string;
+  contractId: string;
+  contractVersion: number;
+  branchId: string;
+  status: 'QUEUED';
+  receivedAt: string;
+  snapshot: SalesReservationRequestV1;
+  arrangement: ReservationArrangementV1 | null;
+}
+
+export interface ReservationManifestTicketTemplateV1 {
+  id: string;
+  name: string;
+  versionNumber: number;
+}
+
+export interface ReservationManifestTicketCardV1 {
+  /** Ticket Catalog inventory; absent for legacy/ground tickets. */
+  totalCapacity?: number;
+  allocatedCapacity?: number;
+  reservedCapacity?: number;
+  remainingCapacity?: number;
+  /** Absent in older v1 responses means FLIGHT. */
+  transportType?: 'FLIGHT' | 'BUS' | 'TRAIN';
+  /** False for a ground service that supplies a travel day without a departure time. */
+  departureTimeKnown?: boolean;
+  offerId: string;
+  direction: 'OUTBOUND' | 'RETURN';
+  carrierName: string;
+  serviceNumber: string;
+  originName: string;
+  destinationName: string;
+  departureAt: string;
+  arrivalAt: string;
+  contractCount: number;
+  passengerCount: number;
+  template: ReservationManifestTicketTemplateV1 | null;
+  unavailableReason: string | null;
+  originId?: string;
+  destinationId?: string;
+  originCountryId?: string;
+  originCountryName?: string;
+  destinationCountryId?: string;
+  destinationCountryName?: string;
+  originCityName?: string;
+  destinationCityName?: string;
+}
+
+export interface ReservationManifestRouteV1 {
+  originName: string;
+  destinationName: string;
+  originId?: string;
+  destinationId?: string;
+  originCountryId?: string;
+  originCountryName?: string;
+  destinationCountryId?: string;
+  destinationCountryName?: string;
+  originCityName?: string;
+  destinationCityName?: string;
+}
+
+export interface ReservationManifestTicketListV1 {
+  data: readonly ReservationManifestTicketCardV1[];
+}
+
+export interface ReservationManifestTicketExportInputV1 {
+  fromDate: string;
+  toDate: string;
+  includePreviouslyExported?: boolean;
+}
+
+export interface ReservationServicePurchaseV1 {
+  pricingCalculation?: ReservationServicePurchaseCalculationV1;
+  id: string;
+  batchId?: string | null;
+  coveredServiceClientKeys?: readonly string[];
+  version: number;
+  serviceClientKey: string;
+  serviceKind: string;
+  serviceTitle: string;
+  supplierOrganizationId: string;
+  supplierName: string;
+  amount: string;
+  currencyCode: string;
+  passengerPrices: readonly ReservationPassengerPurchasePriceV1[];
+  actorUserId: string;
+  createdAt: string;
+  finance: {
+    version: number;
+    status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'REJECTED';
+    bankId: string | null;
+    accountId: string | null;
+    accountTitle: string | null;
+    paymentMethodId: string | null;
+    paymentMethodName: string | null;
+    paidAmount: string;
+    remainingAmount: string;
+    exchangeRateToIrr: string | null;
+    rialEquivalent: string | null;
+    transferAt: string | null;
+    paymentReference: string | null;
+    reason: string;
+    updatedAt: string | null;
+    updatedByUserId: string | null;
+  };
+}
+
+export interface ReservationPassengerPurchasePriceV1 {
+  customerId: string;
+  passengerName: string;
+  nightlyAmount?: string;
+  nights?: number;
+  unitAmount?: string;
+  totalAmount: string;
+}
+
+export interface ReservationServicePurchaseInputV1 {
+  pricingCalculation?: {
+    baseAmount: string;
+    factor: string;
+    chargeablePassengerCount?: number;
+  };
+  version: 1;
+  expectedVersion: number;
+  serviceClientKey: string;
+  supplierOrganizationId: string;
+  amount: string;
+  currencyCode: string;
+  passengerPrices?: readonly {
+    customerId: string;
+    nightlyAmount: string;
+  }[];
+  coveredServiceClientKeys?: readonly string[];
+  transferUnitAmount?: string;
+}
+
+export interface ReservationPurchaseBatchInputV1 {
+  version: 1;
+  expectedVersion: number;
+  purchases: readonly Omit<
+    ReservationServicePurchaseInputV1,
+    'version' | 'expectedVersion'
+  >[];
+}
+
+export interface ReservationServicePurchaseCalculationV1 {
+  chargeablePassengerCount?: number;
+  baseAmount: string;
+  factor: string;
+  nights: number;
+  totalAmount: string;
+}
+
+/** Exact four-decimal money arithmetic; round once after all factors. */
+export function reservationServicePurchaseTotal(
+  baseAmount: string,
+  factor: string,
+  nights: number,
+): string {
+  const units = (value: string) => {
+    if (typeof value !== 'string' || !/^\d{1,18}(?:\.\d{1,4})?$/.test(value))
+      throw new Error(
+        'قیمت پایه و ضریب باید مثبت و حداکثر چهار رقم اعشار باشند.',
+      );
+    const [whole, fraction = ''] = value.split('.');
+    const result = BigInt(whole!) * 10000n + BigInt(fraction.padEnd(4, '0'));
+    if (result <= 0n) throw new Error('قیمت پایه و ضریب باید مثبت باشند.');
+    return result;
+  };
+  if (!Number.isSafeInteger(nights) || nights <= 0)
+    throw new Error('تعداد شب قرارداد معتبر نیست.');
+  const total =
+    (units(baseAmount) * units(factor) * BigInt(nights) + 5000n) / 10000n;
+  if (total <= 0n || total >= 10n ** 22n)
+    throw new Error('مبلغ کل خرید خارج از محدوده است.');
+  const fraction = (total % 10000n)
+    .toString()
+    .padStart(4, '0')
+    .replace(/0+$/, '');
+  return (total / 10000n).toString() + (fraction ? '.' + fraction : '');
+}
+
+export interface FinanceSupplierPaymentCommandV1 {
+  expectedVersion: number;
+  status: 'PAID' | 'REJECTED';
+  bankId?: string | null;
+  accountId?: string | null;
+  paymentMethodId?: string | null;
+  paidAmount?: string | null;
+  exchangeRateToIrr?: string | null;
+  transferAt?: string | null;
+  paymentReference?: string | null;
+  reason: string;
+}
+
+export interface SupplierPurchaseGateV1 {
+  complete: boolean;
+  requiredServiceCount: number;
+  missingServiceTitles: readonly string[];
+  unpaidServiceTitles: readonly string[];
+  purchases: readonly ReservationServicePurchaseV1[];
+}
+
+export interface ReservationHotelPurchaseV1 {
+  id: string;
+  version: number;
+  amount: string;
+  currencyCode: string;
+  actorUserId: string;
+  createdAt: string;
+}
+export interface ReservationHotelPurchaseInputV1 {
+  version: 1;
+  expectedVersion: number;
+  amount: string;
+  currencyCode: string;
+}
+
+export interface TravelBrandingV1 {
+  kind: 'OWN' | 'AGENCY';
+  referenceId: string;
+  name: string;
+  logoFileId: string | null;
+  companyCode?: string;
+}
+export type ReservationTableFlagKey =
+  'visaRequested' | 'visaConfirmed' | 'flightRequested' | 'flightConfirmed';
+export interface ReservationTableFlagV1 {
+  checked: boolean;
+  updatedAt: string;
+  updatedByUserId: string;
+  actorName?: string | null | undefined;
+}
+export interface ReservationTableSummaryV1 {
+  createdAt: string;
+  contractVersion: number;
+  correctedAt: string | null;
+  cancelledAt: string | null;
+  departureDate: string;
+  returnDate: string | null;
+  passengerCount: number;
+  adults: number;
+  children2To6: number;
+  children6To12: number;
+  infants: number;
+  saleRial: string | null;
+  saleForeign: string | null;
+  currencies: string;
+  discount: string | null;
+  commission: string | null;
+  debtRial: string | null;
+  debtForeign: string | null;
+}
+export interface TravelWorkflowStateV1 {
+  tableFlags?: Partial<Record<ReservationTableFlagKey, ReservationTableFlagV1>>;
+  version: number;
+  supplierStatus: 'NEW' | 'REQUESTED' | 'CONFIRMED' | 'CANCELLED';
+  supplierReference: string;
+  insuranceIssued: boolean;
+  insuranceReference: string;
+  voucherIssued: boolean;
+  insuranceWarningAcknowledged: boolean;
+  branding: TravelBrandingV1 | null;
+  roomOrder: string[];
+  ageOverrides: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  supplierFormSettings?: VoucherSettingsV1;
+  sentSupplierFormSettings?: VoucherSettingsV1;
+  sentSupplierFormVersion?: number;
+  appliedContractVersion?: number;
+  voucherSettings?: VoucherSettingsV1;
+  reservationNotes?: string[];
+  note: string;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}
+export interface TravelWorkflowCommandV1 {
+  expectedVersion: number;
+  action:
+    | 'TABLE_STATUS'
+    | 'BRANDING'
+    | 'REQUEST_SUPPLIER'
+    | 'CONFIRM_SUPPLIER'
+    | 'CANCEL'
+    | 'REOPEN'
+    | 'INSURANCE'
+    | 'ISSUE_VOUCHER'
+    | 'ARRANGEMENT'
+    | 'NOTE'
+    | 'VOUCHER_SETTINGS'
+    | 'SUPPLIER_FORM_SETTINGS';
+  note: string;
+  tableFlag?: ReservationTableFlagKey;
+  checked?: boolean;
+  applyToContractAndVoucher?: boolean;
+  expectedContractVersion?: number;
+  voucherSettings?: VoucherSettingsV1;
+  supplierReference?: string;
+  insuranceReference?: string;
+  acknowledgeMissingInsurance?: boolean;
+  roomOrder?: string[];
+  ageOverrides?: Record<string, 'ADULT' | 'CHILD' | 'INFANT'>;
+  branding?: { kind: 'OWN' | 'AGENCY'; referenceId?: string };
+}
+export interface TravelDeliveryAuthorizationV1 {
+  version: number;
+  approved: boolean;
+  reason: string;
+  updatedAt: string | null;
+  updatedByUserId: string | null;
+}
+
+export const voucherTextKeys = [
+  'country',
+  'city',
+  'hotel',
+  'stars',
+  'meal',
+  'roomType',
+  'checkIn',
+  'checkOut',
+  'website',
+  'stayNotes',
+  'broker',
+  'leaderLanguage',
+  'leaderName',
+  'leaderPhone',
+  'transferBoard',
+  'transferPhone',
+  'transferKind',
+  'excursionDescription',
+  'extraServices',
+  'remarks',
+  'arrivalAirline',
+  'arrivalFlight',
+  'arrivalDate',
+  'arrivalTime',
+  'departureAirline',
+  'departureFlight',
+  'departureDate',
+  'departureTime',
+] as const;
+export const voucherNumberKeys = [
+  'singleRooms',
+  'doubleRooms',
+  'extraBeds',
+  'customRooms',
+] as const;
+export const voucherFlagKeys = [
+  'withLetterhead',
+  'hotel',
+  'transfer',
+  'tourLeader',
+  'excursion',
+  'specialRoom',
+] as const;
+export interface VoucherSettingsV1 {
+  /** Registered supplier and leader used for this immutable output revision. */
+  brokerId?: string;
+  leaderId?: string;
+  text: Record<(typeof voucherTextKeys)[number], string> & {
+    contractPartyName?: string;
+  };
+  numbers: Record<(typeof voucherNumberKeys)[number], number>;
+  flags: Record<(typeof voucherFlagKeys)[number], boolean>;
+  passengers: {
+    id: string;
+    selected: boolean;
+    roomType: string;
+    age: 'ADL' | 'CHD' | 'INF';
+    /** Hotel-only split for a child. Ticket age remains CHD. */
+    hotelChildAgeBand?: 'CHD_2_TO_6' | 'CHD_6_TO_12' | '';
+    sex?: 'MALE' | 'FEMALE' | '';
+    birthDate?: string;
+    documentNumber?: string;
+  }[];
+}
+
+/** Compact, branch-scoped responsibility summary; no financial amounts or identity payloads. */
+export interface ReservationOperationSummaryV1 {
+  delivery: {
+    approved: boolean;
+    updatedAt: string | null;
+    actorName: string | null;
+  };
+  lastOperation: { occurredAt: string; actorName: string | null } | null;
+}
+
+export type { TicketPurchaseInboxItemV1 } from './ticket-purchase-inbox';

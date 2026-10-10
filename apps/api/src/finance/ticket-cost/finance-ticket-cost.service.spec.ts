@@ -1,0 +1,283 @@
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { Prisma } from '@nora/database';
+import type { AuthenticatedActor } from '@nora/contracts';
+import { describe, expect, it, vi } from 'vitest';
+import type { DatabaseService } from '../../database/database.service';
+import type { ProcurementPublicService } from '../../procurement/procurement-public.service';
+import { FinanceTicketCostService } from './finance-ticket-cost.service';
+
+const actor = {
+  userId: 'finance-user',
+  branchIds: ['branch-a'],
+  permissions: ['finance.payment.create', 'procurement.quote.manage'],
+} as unknown as AuthenticatedActor;
+
+describe('FinanceTicketCostService', () => {
+  it('releases only paid, offer-linked costs; never a catalog estimate', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'paid-cost',
+        requestId: 'request-1',
+        branchId: 'branch-a',
+        offerId: 'offer-1',
+        offerVersion: 1,
+        adultUnitCost: new Prisma.Decimal('150'),
+        childUnitCost: new Prisma.Decimal('90'),
+        invoiceAmount: new Prisma.Decimal('3000'),
+        currencyCode: 'EUR',
+        payments: [
+          { status: 'PAID', transferAt: new Date('2026-09-15T10:00:00.000Z') },
+        ],
+      },
+      {
+        id: 'unpaid-cost',
+        requestId: 'request-2',
+        branchId: 'branch-a',
+        offerId: 'offer-2',
+        offerVersion: 1,
+        adultUnitCost: new Prisma.Decimal('200'),
+        childUnitCost: new Prisma.Decimal('100'),
+        invoiceAmount: new Prisma.Decimal('4000'),
+        currencyCode: 'EUR',
+        payments: [],
+      },
+      {
+        id: 'legacy-cost',
+        requestId: 'request-3',
+        branchId: 'branch-a',
+        offerId: null,
+        offerVersion: null,
+        adultUnitCost: new Prisma.Decimal('100'),
+        childUnitCost: new Prisma.Decimal('50'),
+        invoiceAmount: new Prisma.Decimal('2000'),
+        currencyCode: 'EUR',
+        payments: [{ status: 'PAID', transferAt: new Date() }],
+      },
+    ]);
+    const database = {
+      client: { financeTicketPurchaseCostRevision: { findMany } },
+    } as unknown as DatabaseService;
+    const service = new FinanceTicketCostService(
+      database,
+      {} as ProcurementPublicService,
+    );
+    const costs = await service.paidCostsForOffers(
+      ['offer-1', 'offer-2'],
+      'branch-a',
+    );
+    expect(costs).toMatchObject([
+      { offerId: 'offer-1', adultUnitCost: '150', currencyCode: 'EUR' },
+    ]);
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          offerId: { in: ['offer-1', 'offer-2'] },
+          branchId: 'branch-a',
+        },
+      }),
+    );
+  });
+
+  it('rejects missing Finance permission before reading a request', async () => {
+    const procurement = { forFinance: vi.fn() };
+    const service = new FinanceTicketCostService(
+      {} as DatabaseService,
+      procurement as unknown as ProcurementPublicService,
+    );
+    await expect(
+      service.recordCost(
+        'request-1',
+        {
+          version: 1,
+          adultUnitCost: '150',
+          childUnitCost: '90',
+          invoiceAmount: '3000',
+          currencyCode: 'EUR',
+        },
+        { ...actor, permissions: [] } as never,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(procurement.forFinance).not.toHaveBeenCalled();
+  });
+
+  it('rejects fractional precision beyond currency scale and zero rates', async () => {
+    const procurement = {
+      forFinance: vi.fn().mockResolvedValue({
+        id: 'request-1',
+        branchId: 'branch-a',
+        offerId: 'offer-1',
+        offerVersion: 1,
+      }),
+    };
+    const service = new FinanceTicketCostService(
+      {} as DatabaseService,
+      procurement as unknown as ProcurementPublicService,
+    );
+    await expect(
+      service.recordCost(
+        'request-1',
+        {
+          version: 1,
+          adultUnitCost: '1.12345',
+          childUnitCost: '0',
+          invoiceAmount: '3000',
+          currencyCode: 'EUR',
+        },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.recordCost(
+        'request-1',
+        {
+          version: 1,
+          adultUnitCost: '0',
+          childUnitCost: '0',
+          invoiceAmount: '3000',
+          currencyCode: 'EUR',
+        },
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('completes legacy invoice pricing with seats and exact unit cost before payment', async () => {
+    const create = vi.fn().mockImplementation(({ data }) =>
+      Promise.resolve({
+        id: 'cost-1',
+        requestId: data.requestId,
+        version: data.version,
+        adultUnitCost: data.adultUnitCost,
+        childUnitCost: data.childUnitCost,
+        seatCount: data.seatCount,
+        unitCost: data.unitCost,
+        invoiceAmount: data.invoiceAmount,
+        currencyCode: data.currencyCode,
+      }),
+    );
+    const tx = {
+      $queryRaw: vi.fn(),
+      financeTicketPurchaseCostRevision: {
+        findFirst: vi.fn().mockResolvedValue(null),
+        create,
+      },
+    };
+    const database = {
+      client: {
+        $transaction: (work: (value: typeof tx) => unknown) => work(tx),
+      },
+    } as unknown as DatabaseService;
+    const procurement = {
+      forFinance: vi.fn().mockResolvedValue({
+        id: 'request-1',
+        branchId: 'branch-a',
+        offerId: 'offer-1',
+        offerVersion: 1,
+        seatCount: 6,
+      }),
+    };
+    const service = new FinanceTicketCostService(
+      database,
+      procurement as unknown as ProcurementPublicService,
+    );
+    const result = await service.recordCost(
+      'request-1',
+      {
+        version: 1,
+        seatCount: 3,
+        unitCost: '125.50',
+        currencyCode: 'EUR',
+      },
+      actor,
+    );
+    expect(result).toMatchObject({
+      seatCount: 3,
+      unitCost: '125.5',
+      invoiceAmount: '376.5',
+    });
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          seatCount: 3,
+          unitCost: expect.objectContaining({}),
+          invoiceAmount: expect.objectContaining({}),
+          reason: '',
+        }),
+      }),
+    );
+  });
+  it('preserves pricing after an installment has already been paid', async () => {
+    const create = vi.fn();
+    const tx = {
+      $queryRaw: vi.fn(),
+      financeTicketPurchaseCostRevision: {
+        findFirst: vi
+          .fn()
+          .mockResolvedValue({ version: 1, payments: [{ id: 'payment-1' }] }),
+        create,
+      },
+    };
+    const service = new FinanceTicketCostService(
+      {
+        client: { $transaction: (work: (tx: unknown) => unknown) => work(tx) },
+      } as unknown as DatabaseService,
+      {
+        forFinance: vi.fn().mockResolvedValue({ branchId: 'branch-a' }),
+      } as unknown as ProcurementPublicService,
+    );
+    await expect(
+      service.recordCost(
+        'request-1',
+        { version: 1, seatCount: 2, unitCost: '12.125', currencyCode: 'IRR' },
+        actor,
+      ),
+    ).rejects.toThrow(ConflictException);
+    expect(create).not.toHaveBeenCalled();
+  });
+});
+
+it('reads latest recorded ticket costs independently of payment, within the exact branch and offer set', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    {
+      id: 'new',
+      offerId: 'offer',
+      currencyCode: 'IRR',
+      adultUnitCost: new Prisma.Decimal('10.0001'),
+      childUnitCost: new Prisma.Decimal('5'),
+      unitCost: null,
+    },
+    {
+      id: 'old',
+      offerId: 'offer',
+      currencyCode: 'IRR',
+      adultUnitCost: new Prisma.Decimal('99'),
+      childUnitCost: new Prisma.Decimal('99'),
+      unitCost: null,
+    },
+  ]);
+  const service = new FinanceTicketCostService(
+    { client: { financeTicketPurchaseCostRevision: { findMany } } } as never,
+    {} as never,
+  );
+  expect(
+    await service.recordedCostsForOffers(['offer', 'offer'], 'branch'),
+  ).toEqual([
+    {
+      id: 'new',
+      offerId: 'offer',
+      currencyCode: 'IRR',
+      adultUnitCost: '10.0001',
+      childUnitCost: '5',
+      unitCost: null,
+    },
+  ]);
+  expect(findMany).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { offerId: { in: ['offer'] }, branchId: 'branch' },
+    }),
+  );
+});

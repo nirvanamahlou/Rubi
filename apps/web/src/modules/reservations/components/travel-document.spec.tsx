@@ -1,0 +1,187 @@
+import { defaultVoucherSettings } from '../model/voucher-settings';
+import { describe, expect, it } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
+import type {
+  ReservationIntakeV1,
+  TravelWorkflowStateV1,
+} from '@nora/contracts';
+import { TravelDocument } from './travel-document';
+import { ReservationSettingsForm } from './reservation-settings';
+const intake = {
+  snapshot: {
+    contractNumber: 'SYNTHETIC',
+    passengerIds: [],
+    serviceSelections: [],
+    hotelSelection: null,
+  },
+  workflow: {
+    version: 1,
+    supplierStatus: 'NEW',
+    voucherIssued: false,
+    roomOrder: [],
+    ageOverrides: {},
+    branding: {
+      kind: 'OWN',
+      referenceId: 'company',
+      name: 'Synthetic Company',
+      logoFileId: null,
+      companyCode: 'NIYAYESH_SEIR_SAHAR',
+    },
+  },
+} as unknown as ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
+const supplier = defaultVoucherSettings(intake, {});
+supplier.brokerId = 'broker';
+supplier.text.broker = 'BROKER';
+intake.workflow.supplierFormSettings = supplier;
+
+describe('travel output branding and readiness', () => {
+  it('places one supplier picker before the single reservation preview', () => {
+    const html = renderToStaticMarkup(
+      <ReservationSettingsForm
+        intake={intake}
+        refs={{}}
+        showDocument
+        onDirty={() => {}}
+        onSaved={() => {}}
+      />,
+    );
+    expect(html.match(/data-document-preview/g)).toHaveLength(1);
+    expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
+    expect(html.indexOf('role="combobox"')).toBeLessThan(
+      html.indexOf('data-document-preview'),
+    );
+    expect(html).not.toMatch(
+      /<label[^>]*>[^<]*<span[^>]*>[^<]*<\/span><div[^>]*[^]*?role="combobox"/,
+    );
+  });
+  it('uses the registered own-company code for its real bundled logo', () => {
+    const html = renderToStaticMarkup(<TravelDocument intake={intake} />);
+    expect(html).toContain('/brand/niyayesh.png');
+    expect(html).toContain('SYNTHETIC');
+  });
+  it('renders an issued hotel voucher with booking reference and stamp in the shared theme', () => {
+    const settings = defaultVoucherSettings(intake, {});
+    settings.text.broker = 'SYNTHETIC BROKER';
+    settings.brokerId = 'broker';
+    settings.leaderId = 'leader';
+    settings.flags.hotel = true;
+    const html = renderToStaticMarkup(
+      <TravelDocument
+        intake={{
+          ...intake,
+          workflow: {
+            ...intake.workflow,
+            voucherIssued: true,
+            supplierStatus: 'CONFIRMED',
+            supplierReference: 'SUPPLIER-TEST',
+            voucherSettings: settings,
+          },
+        }}
+        voucher
+      />,
+    );
+    expect(html).toContain('HOTEL VOUCHER');
+    expect(html).toContain('دانلود واچر');
+    expect(html).toMatch(/SUPPLIER<\/span><b[^>]*>0<\/b>/);
+    expect(html).not.toContain('SYNTHETIC BROKER');
+    expect(html).toContain('STAMP');
+    expect(html).toContain('ROOM QUANTITIES BY TYPE');
+    expect(html).not.toContain('subject to supplier confirmation');
+  });
+  it('does not render an unissued voucher', () => {
+    const html = renderToStaticMarkup(
+      <TravelDocument intake={intake} voucher />,
+    );
+    expect(html).not.toContain('SYNTHETIC');
+    expect(html).toContain('disabled');
+  });
+  it('does not substitute the own logo for an agency with unavailable logo', () => {
+    const html = renderToStaticMarkup(
+      <TravelDocument
+        intake={{
+          ...intake,
+          workflow: {
+            ...intake.workflow,
+            branding: {
+              kind: 'AGENCY',
+              referenceId: 'agency',
+              name: 'Synthetic Agency',
+              logoFileId: 'unavailable',
+            },
+          },
+        }}
+      />,
+    );
+    expect(html).not.toContain('/brand/niyayesh-seir-full.png');
+    expect(html).toContain('disabled');
+  });
+});
+
+it('applies an unsaved selected broker immediately without adding a manual supplier input', () => {
+  const settings = defaultVoucherSettings(intake, {});
+  settings.text.broker = 'SELECTED BROKER';
+  settings.brokerId = 'broker';
+  const html = renderToStaticMarkup(
+    <TravelDocument intake={intake} previewSettings={settings} dirty />,
+  );
+  expect(html).toContain('SELECTED BROKER');
+  expect(html).not.toContain('reservation-supplier-name');
+  expect(html.match(/data-reservation-form-page/g)).toHaveLength(1);
+  expect(html).toContain('Reservation@niyayehseir.com');
+});
+
+it('hides the reservation preview without a selected broker', () => {
+  const workflow = { ...intake.workflow };
+  delete workflow.supplierFormSettings;
+  const html = renderToStaticMarkup(
+    <TravelDocument intake={{ ...intake, workflow }} />,
+  );
+  expect(html).not.toContain('data-document-preview');
+  expect(html).toContain('disabled');
+});
+it('hides an issued voucher without a selected directory leader', () => {
+  const settings = defaultVoucherSettings(intake, {});
+  settings.brokerId = 'broker';
+  const html = renderToStaticMarkup(
+    <TravelDocument
+      intake={{
+        ...intake,
+        workflow: {
+          ...intake.workflow,
+          voucherIssued: true,
+          voucherSettings: settings,
+        },
+      }}
+      voucher
+    />,
+  );
+  expect(html).not.toContain('data-document-preview');
+});
+
+it.each([false, true])(
+  'uses the supplied transparent Jahan logo for reservation/voucher=%s even with an old uploaded logo',
+  (voucher) => {
+    const companyIntake = structuredClone(intake);
+    companyIntake.workflow.branding = {
+      kind: 'OWN',
+      companyCode: 'JAHAN_BASTAN',
+      referenceId: 'company',
+      name: 'نیایش سیر سحر',
+      logoFileId: 'old-logo',
+    };
+    companyIntake.workflow.voucherIssued = true;
+    const settings = defaultVoucherSettings(companyIntake, {});
+    settings.brokerId = 'broker';
+    settings.leaderId = 'leader';
+    settings.text.broker = 'BROKER';
+    companyIntake.workflow.voucherSettings = settings;
+    const html = renderToStaticMarkup(
+      <TravelDocument intake={companyIntake} voucher={voucher} />,
+    );
+    expect(html).toContain('/brand/jahan-bastan-transparent.png');
+    expect(html).toContain('jahanLogo');
+    expect(html).toContain('جهان باستان');
+    expect(html).not.toContain('نیایش');
+    expect(html).not.toContain('niyayehseir.com');
+  },
+);

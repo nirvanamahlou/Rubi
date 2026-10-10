@@ -1,0 +1,83 @@
+name: rubi
+
+services:
+  api:
+    image: rubi-app-local:latest
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    env_file:
+      - ../apps/api/.env
+    environment:
+      NODE_ENV: development
+      API_PORT: '4000'
+      API_PREFIX: api/v1
+      CORS_ORIGINS: http://localhost:3100,http://127.0.0.1:3100
+      DOCUMENTS_STORAGE_ROOT: /srv/nora/documents
+    command: ['node', 'infrastructure/scripts/start-api-container.mjs']
+    ports:
+      - '127.0.0.1:4192:4000'
+    volumes:
+      - '${RUBI_DOCUMENTS_STORAGE_PATH:-../.data/documents}:/srv/nora/documents'
+    networks:
+      - nora-internal
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:4000/api/v1/health')
+          .then(response => process.exit(response.ok ? 0 : 1))
+          .catch(() => process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  web:
+    image: rubi-app-local:latest
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:4192/api/v1
+    command:
+      - node
+      - apps/web/node_modules/next/dist/bin/next
+      - dev
+      - apps/web
+      - --hostname
+      - 0.0.0.0
+      - --port
+      - '3000'
+    ports:
+      - '127.0.0.1:3100:3000'
+    volumes:
+      - ../apps/web/public:/workspace/apps/web/public:ro
+    networks:
+      - nora-internal
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/login')
+          .then(response => process.exit(response.ok ? 0 : 1))
+          .catch(() => process.exit(1))
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+networks:
+  nora-internal:
+    name: nora-internal
+    external: true

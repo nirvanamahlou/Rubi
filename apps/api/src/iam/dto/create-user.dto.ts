@@ -1,0 +1,77 @@
+import { ApiProperty } from '@nestjs/swagger';
+import {
+  ArrayMaxSize,
+  ArrayUnique,
+  IsArray,
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+
+import { INITIAL_PASSWORD_MIN_LENGTH } from '../password-policy';
+
+export class CreateUserDto {
+  @ApiProperty({ example: 'ramtin' })
+  @IsString()
+  @Matches(/^[a-zA-Z0-9._-]+$/)
+  @MinLength(3)
+  @MaxLength(80)
+  username!: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(320)
+  email?: string;
+
+  @ApiProperty()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(160)
+  displayName!: string;
+
+  @ApiProperty({ format: 'password', minLength: INITIAL_PASSWORD_MIN_LENGTH })
+  @IsString()
+  @MinLength(INITIAL_PASSWORD_MIN_LENGTH)
+  @MaxLength(200)
+  password!: string;
+
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(20)
+  @IsUUID('4', { each: true })
+  roleIds!: string[];
+
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(50)
+  @IsUUID('4', { each: true })
+  branchIds!: string[];
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  accessTitle?: string;
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(1000)
+  @IsUUID('4', { each: true })
+  permissionIds?: string[];
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(1000)
+  @IsString({ each: true })
+  screenIds?: string[];
+}
