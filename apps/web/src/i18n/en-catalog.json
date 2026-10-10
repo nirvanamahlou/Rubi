@@ -4726,6 +4726,7 @@
   "تاریخ بلیط برگشت": "Return ticket date",
   "تاریخ بلیط رفت": "The date of the ticket is gone",
   "تاریخ بلیط، تاریخ حرکت است. ساعت‌ها به وقت محلی مبدأ و مقصد هستند.": "The ticket date is the departure date. Clocks are local time of origin and destination.",
+  "تاریخ گذشته": "Past date",
   "تاریخ پایان": "end date",
   "تاریخ پایان بازه": "End date of the period",
   "تاریخ پایان باید بعد از تاریخ شروع باشد": "The end date must be after the start date",

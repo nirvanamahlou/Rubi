@@ -1,14 +1,45 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import type { TicketOfferCreateV1 } from '@nora/contracts';
 import {
   findPublishedOffer,
   planCatalogPublication,
   flightOfferInput,
+  requireFutureTicketDates,
 } from './ticket-workspace';
 import { emptyInput } from '../model/preview';
 import type { Product, ProductInput, Reference } from '../model/catalog';
 
 describe('ticket workspace entry points', () => {
+  it('requires future dates by default and permits them only with the historical opt-in', () => {
+    const input = {
+      departureAt: '2026-10-01T08:00:00.000Z',
+    } as TicketOfferCreateV1;
+    const now = new Date('2026-10-10T00:00:00.000Z');
+
+    expect(() => requireFutureTicketDates([input], false, now)).toThrow(
+      'باید در آینده باشد',
+    );
+    expect(() => requireFutureTicketDates([input], true, now)).not.toThrow();
+  });
+
+  it('renders the historical-date opt-in in both ticket-definition paths', () => {
+    const advanced = readFileSync(
+      new URL('./ticket-form.tsx', import.meta.url),
+      'utf8',
+    );
+    const weekly = readFileSync(
+      new URL('./flight-schedule-form.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(advanced).toContain('تاریخ گذشته');
+    expect(weekly).toContain('تاریخ گذشته');
+    expect(advanced).toContain(
+      'onSave(cabinInputs(definition), reason, allowPastDate)',
+    );
+    expect(weekly).toContain("'تعریف برنامه هفتگی پرواز', allowPastDate");
+  });
+
   it('does not expose deletion for flight load or defined tickets', () => {
     const source = readFileSync(
       new URL('./ticket-workspace.tsx', import.meta.url),
@@ -126,7 +157,9 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain("from './tour-workspace'");
     expect(source).not.toContain('value="tours"');
     expect(source).toContain('managedOffers()');
-    expect(source).toContain('publishFlights(inputs, createdIds)');
+    expect(source).toContain(
+      'publishFlights(inputs, createdIds, allowPastDate)',
+    );
     expect(source).toContain('publishExistingFlights(');
     expect(source).toContain('`ticket-catalog:${product.id}`');
     expect(source).toContain('backfillStarted.current');

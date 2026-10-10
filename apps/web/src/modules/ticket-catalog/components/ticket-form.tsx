@@ -645,6 +645,7 @@ export function TicketForm({
   onSave: (
     inputs: readonly ProductInput[],
     reason: string,
+    allowPastDate?: boolean,
   ) => void | Promise<void>;
   onCancel: () => void;
   readOnly?: boolean;
@@ -663,6 +664,7 @@ export function TicketForm({
     createReturnTicketDraft(initial),
   );
   const [reason, setReason] = useState('');
+  const [allowPastDate, setAllowPastDate] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
@@ -843,8 +845,9 @@ export function TicketForm({
         await onSave(
           [...cabinInputs(definition), ...cabinInputs(returnDefinition)],
           reason,
+          allowPastDate,
         );
-      } else await onSave(cabinInputs(definition), reason);
+      } else await onSave(cabinInputs(definition), reason, allowPastDate);
       setError('');
     } catch (problem) {
       setError(
@@ -880,6 +883,14 @@ export function TicketForm({
                 }
               />
             </FormField>
+            <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={allowPastDate}
+                onChange={(event) => setAllowPastDate(event.target.checked)}
+              />
+              تاریخ گذشته
+            </label>
             <FormField label="نوع وسیله سفر" id="ticket-transport" required>
               <Select
                 value={input.transport}
