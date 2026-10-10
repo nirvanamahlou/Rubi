@@ -297,9 +297,7 @@ function cellColumn(reference: string) {
   );
 }
 
-export function hasRequiredOrganizationColumns(
-  normalized: readonly string[],
-) {
+export function hasRequiredOrganizationColumns(normalized: readonly string[]) {
   const compactRequiredKeys = [
     'legalName',
     'chiefExecutiveName',
