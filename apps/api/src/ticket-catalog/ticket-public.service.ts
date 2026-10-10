@@ -42,12 +42,22 @@ import {
 } from './ticket-sale-commissions';
 
 const uuid = Joi.string().guid();
-export function ticketLoadGroupId(createKey: string | null | undefined) {
+const loadGroupAuditPrefix = 'ticket.offer.load-group:';
+export function ticketLoadGroupId(
+  createKey: string | null | undefined,
+  auditAction?: string | null,
+) {
   const match =
     /^ticket-catalog:ticket-load:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):\d+$/i.exec(
       createKey ?? '',
     );
-  return match?.[1];
+  if (match?.[1]) return match[1];
+  const auditGroup = auditAction?.startsWith(loadGroupAuditPrefix)
+    ? auditAction.slice(loadGroupAuditPrefix.length)
+    : undefined;
+  return auditGroup && !uuid.validate(auditGroup).error
+    ? auditGroup
+    : undefined;
 }
 const capacityHoldSchema = Joi.object({
   quantity: Joi.number().integer().min(1).max(100000).required(),
@@ -549,6 +559,11 @@ export class TicketPublicService {
           include: { target: true },
           orderBy: { revision: 'desc' },
         },
+        audit: {
+          where: { action: { startsWith: loadGroupAuditPrefix } },
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       take: 501,
@@ -558,7 +573,10 @@ export class TicketPublicService {
       version: 1 as const,
       hasMore: rows.length > 500,
       data: rows.slice(0, 500).map((row) => {
-        const loadGroupId = ticketLoadGroupId(row.createKey);
+        const loadGroupId = ticketLoadGroupId(
+          row.createKey,
+          row.audit?.[0]?.action,
+        );
         return {
           ...this.offerView(row),
           ...(row.createKey?.startsWith('ticket-catalog:')
@@ -1408,6 +1426,242 @@ export class TicketPublicService {
     );
   }
 
+  async resizeBatch(
+    input: {
+      current: readonly { id: string; expectedVersion: number }[];
+      offers: readonly TicketOfferCreateV1[];
+    },
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    const current = input?.current;
+    const offers = input?.offers;
+    if (
+      !Array.isArray(current) ||
+      current.length < 1 ||
+      current.length > 2500 ||
+      !Array.isArray(offers) ||
+      offers.length < 1 ||
+      offers.length > 2500 ||
+      current.some(
+        (item) =>
+          uuid.validate(item?.id).error ||
+          !Number.isSafeInteger(item?.expectedVersion) ||
+          item.expectedVersion < 1,
+      ) ||
+      new Set(current.map(({ id }) => id)).size !== current.length
+    )
+      throw new BadRequestException('اطلاعات تغییر اندازه لود معتبر نیست.');
+    if (offers.length === current.length)
+      throw new BadRequestException(
+        'برای ویرایش بدون تغییر تعداد، از ویرایش عادی لود استفاده کنید.',
+      );
+    const validated = offers.map((offer) => validateTicketOffer(offer));
+    await Promise.all(
+      validated.flatMap((offer) => [
+        this.validateManifest(offer),
+        this.validateAirports(offer),
+      ]),
+    );
+    const identity = (offer: TicketOfferCreateV1) =>
+      [
+        offer.originId,
+        offer.destinationId,
+        new Date(offer.departureAt).toISOString(),
+        offer.cabinClassCode,
+        offer.carrierName.trim().replace(/\s+/g, ' ').toLowerCase(),
+        offer.serviceNumber.trim().replace(/\s+/g, ' ').toLowerCase(),
+        offer.supplyType ?? 'COMPANY',
+      ].join('|');
+    if (new Set(validated.map(identity)).size !== validated.length)
+      throw new ConflictException('ویرایش لود ردیف تکراری ایجاد می‌کند.');
+    const versions = new Map(
+      current.map(({ id, expectedVersion }) => [id, expectedVersion]),
+    );
+    const ids = current.map(({ id }) => id);
+    const lockedIds = [...ids].sort();
+    const transactionResult = await this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(lockedIds.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
+        );
+        const found = await tx.ticketPublishedOffer.findMany({
+          where: {
+            id: { in: lockedIds },
+            branchId: { in: actor.branchIds },
+            audit: { none: { action: 'ticket.offer.archived' } },
+          },
+          include: {
+            capacityHolds: {
+              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+            },
+            tourOutboundDepartures: { select: { id: true } },
+            tourReturnDepartures: { select: { id: true } },
+            audit: {
+              where: { action: { startsWith: loadGroupAuditPrefix } },
+              orderBy: { occurredAt: 'desc' },
+              take: 1,
+              select: { action: true },
+            },
+          },
+        });
+        if (found.length !== ids.length)
+          throw new ForbiddenException(
+            'یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.',
+          );
+        const byId = new Map(found.map((row) => [row.id, row]));
+        const rows = ids.map((id) => byId.get(id)!);
+        if (rows.some((row) => row.version !== versions.get(row.id)))
+          throw new ConflictException(
+            'یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.',
+          );
+        const branchIds = new Set(rows.map(({ branchId }) => branchId));
+        const groupIds = new Set(
+          rows
+            .map((row) =>
+              ticketLoadGroupId(row.createKey, row.audit?.[0]?.action),
+            )
+            .filter((value): value is string => Boolean(value)),
+        );
+        if (branchIds.size !== 1 || groupIds.size > 1)
+          throw new ConflictException(
+            'ردیف‌های انتخاب‌شده متعلق به یک لود واحد نیستند؛ فهرست را به‌روزرسانی کنید.',
+          );
+        const branchId = rows[0]!.branchId;
+        const legacyGroup = groupIds.size === 0;
+        const groupId = [...groupIds][0] ?? randomUUID();
+        for (const offer of validated)
+          await assertUniqueTicketIdentity(tx, offer, branchId, ids);
+
+        const removed = rows.slice(validated.length);
+        const blocked = removed.find(
+          (row) =>
+            row.capacityHolds.length ||
+            row.tourOutboundDepartures.length ||
+            row.tourReturnDepartures.length,
+        );
+        if (blocked)
+          throw new ConflictException(
+            'یکی از ردیف‌های حذف‌شونده رزرو ظرفیت فعال یا تور متصل دارد؛ هیچ تغییری ذخیره نشد.',
+          );
+        const retainedCount = Math.min(rows.length, validated.length);
+        const revised: { id: string; version: number }[] = [];
+        for (let index = 0; index < retainedCount; index++) {
+          const row = rows[index]!;
+          const result = await this.reviseInTransaction(
+            tx,
+            row.id,
+            row.version,
+            validated[index]!,
+            actor,
+            ids,
+          );
+          revised.push(result.data);
+        }
+
+        if (removed.length) {
+          const removedIds = removed.map(({ id }) => id);
+          const archived = await tx.ticketPublishedOffer.updateMany({
+            where: { id: { in: removedIds } },
+            data: { status: 'ARCHIVED', version: { increment: 1 } },
+          });
+          if (archived.count !== removed.length)
+            throw new ConflictException(
+              'یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ تغییری ذخیره نشد.',
+            );
+          await tx.ticketOfferAudit.createMany({
+            data: removed.map((row) => ({
+              offerId: row.id,
+              actorUserId: actor.userId,
+              action: 'ticket.offer.archived',
+              version: row.version + 1,
+            })),
+          });
+        }
+
+        const additions = validated.slice(rows.length);
+        const usedIndexes = rows
+          .map(({ createKey }) => Number(createKey.split(':').at(-1)))
+          .filter(Number.isSafeInteger);
+        const firstIndex =
+          (usedIndexes.length ? Math.max(...usedIndexes) : -1) + 1;
+        const createRows = additions.map((offer, offset) => {
+          const createKey = `ticket-catalog:ticket-load:${groupId}:${firstIndex + offset}`;
+          return {
+            ...offer,
+            branchId,
+            departureAt: new Date(offer.departureAt),
+            arrivalAt: new Date(offer.arrivalAt),
+            createdByUserId: actor.userId,
+            createKey,
+            fingerprint: createHash('sha256')
+              .update(JSON.stringify({ branchId, ...offer }))
+              .digest('hex'),
+          };
+        });
+        if (createRows.length)
+          await tx.ticketPublishedOffer.createMany({ data: createRows });
+        const created = createRows.length
+          ? await tx.ticketPublishedOffer.findMany({
+              where: {
+                createdByUserId: actor.userId,
+                createKey: { in: createRows.map(({ createKey }) => createKey) },
+              },
+            })
+          : [];
+        if (created.length !== createRows.length)
+          throw new ConflictException(
+            'ثبت ردیف‌های جدید لود کامل نشد؛ هیچ تغییری ذخیره نشد.',
+          );
+        if (created.length)
+          await tx.ticketOfferAudit.createMany({
+            data: created.flatMap((row) => [
+              {
+                offerId: row.id,
+                actorUserId: actor.userId,
+                action: 'ticket.offer.published',
+                version: row.version,
+              },
+              ...(legacyGroup
+                ? [
+                    {
+                      offerId: row.id,
+                      actorUserId: actor.userId,
+                      action: loadGroupAuditPrefix + groupId,
+                      version: row.version,
+                    },
+                  ]
+                : []),
+            ]),
+          });
+        if (legacyGroup && revised.length)
+          await tx.ticketOfferAudit.createMany({
+            data: revised.map((row) => ({
+              offerId: row.id,
+              actorUserId: actor.userId,
+              action: loadGroupAuditPrefix + groupId,
+              version: row.version,
+            })),
+          });
+        return {
+          data: {
+            items: [
+              ...revised,
+              ...created.map(({ id, version }) => ({ id, version })),
+            ],
+            createdIds: created.map(({ id }) => id),
+            archivedIds: removed.map(({ id }) => id),
+          },
+          created,
+        };
+      },
+      { maxWait: 5_000, timeout: 30_000 },
+    );
+    for (const row of transactionResult.created)
+      await this.purchases.ensureOfferPurchaseRequest(row);
+    return { data: transactionResult.data };
+  }
+
   private async reviseInTransaction(
     tx: Prisma.TransactionClient,
     id: string,
@@ -1430,6 +1684,7 @@ export class TicketPublicService {
         tourOutboundDepartures: { select: { id: true } },
         tourReturnDepartures: { select: { id: true } },
         audit: {
+          where: { action: { not: { startsWith: loadGroupAuditPrefix } } },
           orderBy: { occurredAt: 'desc' },
           take: 1,
           select: { action: true },

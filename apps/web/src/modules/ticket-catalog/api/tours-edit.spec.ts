@@ -133,6 +133,45 @@ describe('tour edit client', () => {
       }),
     );
   });
+  it('sends the current load and regenerated rows to the resize endpoint', async () => {
+    const offer = {
+      originId: 'origin',
+      destinationId: 'destination',
+      departureAt: '2099-01-01T08:00:00.000Z',
+      arrivalAt: '2099-01-01T10:00:00.000Z',
+      carrierName: 'Carrier',
+      serviceNumber: '100',
+      cabinClassCode: 'ECONOMY' as const,
+      totalCapacity: 20,
+    };
+    const current = [{ id: 'one', expectedVersion: 2 }];
+    const offers = [
+      offer,
+      { ...offer, departureAt: '2099-01-08T08:00:00.000Z' },
+    ];
+    const fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              items: [],
+              createdIds: ['two'],
+              archivedIds: [],
+            },
+          }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await toursApi.resizeOfferBatch(current, offers);
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.test/ticket-catalog/offers/batch/resize',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ current, offers }),
+      }),
+    );
+  });
   it('surfaces a stale-version conflict to keep the editor open', async () => {
     vi.stubGlobal(
       'fetch',

@@ -75,6 +75,12 @@ describe('published ticket revision', () => {
     expect(
       ticketLoadGroupId('ticket-catalog:legacy-random-id'),
     ).toBeUndefined();
+    expect(
+      ticketLoadGroupId(
+        'ticket-catalog:legacy-random-id',
+        'ticket.offer.load-group:10000000-0000-4000-8000-000000000007',
+      ),
+    ).toBe('10000000-0000-4000-8000-000000000007');
   });
   it('rejects moving a separate offer onto another existing flight identity', async () => {
     const { tx, service } = setup();
@@ -400,6 +406,164 @@ describe('published ticket revision', () => {
     });
     expect(tx.ticketPublishedOffer.update).toHaveBeenCalledTimes(2);
     expect(tx.ticketOfferAudit.create).toHaveBeenCalledTimes(2);
+  });
+  it('atomically adds generated rows while retaining the same load group', async () => {
+    const groupId = '10000000-0000-4000-8000-000000000007';
+    const createdId = '10000000-0000-4000-8000-000000000008';
+    const row = {
+      id,
+      version: 1,
+      branchId: 'branch',
+      ...offer,
+      departureAt: new Date(offer.departureAt),
+      arrivalAt: new Date(offer.arrivalAt),
+      originAirportId: null,
+      destinationAirportId: null,
+      supplyType: null,
+      economyBaggageKg: null,
+      businessBaggageKg: null,
+      returnMinDays: null,
+      returnMaxDays: null,
+      manifestTemplateId: null,
+      status: 'ACTIVE',
+      createKey: `ticket-catalog:ticket-load:${groupId}:0`,
+      createdByUserId: 'user',
+      capacityAllocations: [],
+      capacityHolds: [],
+      tourOutboundDepartures: [],
+      tourReturnDepartures: [],
+      audit: [],
+    };
+    const created = {
+      ...row,
+      id: createdId,
+      createKey: `ticket-catalog:ticket-load:${groupId}:1`,
+      departureAt: new Date('2026-09-29T04:00:00.000Z'),
+      arrivalAt: new Date('2026-09-29T07:00:00.000Z'),
+    };
+    const tx = {
+      $queryRaw: vi.fn(),
+      ticketPublishedOffer: {
+        findFirst: vi.fn().mockResolvedValue(row),
+        findMany: vi.fn(async ({ where }) => {
+          if (where?.createdByUserId) return [created];
+          if (where?.id?.in) return [row];
+          return [];
+        }),
+        update: vi.fn().mockResolvedValue({ ...row, version: 2 }),
+        updateMany: vi.fn(),
+        createMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      ticketOfferAudit: { create: vi.fn(), createMany: vi.fn() },
+    };
+    const ensureOfferPurchaseRequest = vi.fn();
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx),
+        },
+      } as unknown as DatabaseService,
+      { ensureOfferPurchaseRequest } as unknown as ProcurementPublicService,
+    );
+    const second = {
+      ...offer,
+      departureAt: '2026-09-29T04:00:00.000Z',
+      arrivalAt: '2026-09-29T07:00:00.000Z',
+    };
+
+    await expect(
+      service.resizeBatch(
+        {
+          current: [{ id, expectedVersion: 1 }],
+          offers: [offer, second],
+        },
+        actor,
+      ),
+    ).resolves.toEqual({
+      data: {
+        items: [
+          { id, version: 2 },
+          { id: createdId, version: 1 },
+        ],
+        createdIds: [createdId],
+        archivedIds: [],
+      },
+    });
+    expect(tx.ticketPublishedOffer.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ createKey: created.createKey })],
+    });
+    expect(ensureOfferPurchaseRequest).toHaveBeenCalledWith(created);
+  });
+  it('atomically archives generated rows removed from the edited load', async () => {
+    const secondId = '10000000-0000-4000-8000-000000000009';
+    const groupId = '10000000-0000-4000-8000-000000000007';
+    const rows = [id, secondId].map((rowId, index) => ({
+      id: rowId,
+      version: index + 1,
+      branchId: 'branch',
+      ...offer,
+      departureAt: new Date(`2026-09-${22 + index}T04:00:00.000Z`),
+      arrivalAt: new Date(`2026-09-${22 + index}T07:00:00.000Z`),
+      originAirportId: null,
+      destinationAirportId: null,
+      supplyType: null,
+      economyBaggageKg: null,
+      businessBaggageKg: null,
+      returnMinDays: null,
+      returnMaxDays: null,
+      manifestTemplateId: null,
+      status: 'ACTIVE',
+      createKey: `ticket-catalog:ticket-load:${groupId}:${index}`,
+      capacityAllocations: [],
+      capacityHolds: [],
+      tourOutboundDepartures: [],
+      tourReturnDepartures: [],
+      audit: [],
+    }));
+    const tx = {
+      $queryRaw: vi.fn(),
+      ticketPublishedOffer: {
+        findFirst: vi.fn(async ({ where }) =>
+          rows.find((row) => row.id === where.id),
+        ),
+        findMany: vi.fn(async ({ where }) => (where?.id?.in ? rows : [])),
+        update: vi.fn().mockResolvedValue({ ...rows[0]!, version: 2 }),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        createMany: vi.fn(),
+      },
+      ticketOfferAudit: { create: vi.fn(), createMany: vi.fn() },
+    };
+    const service = new TicketPublicService(
+      {
+        client: {
+          $transaction: async (fn: (value: typeof tx) => unknown) => fn(tx),
+        },
+      } as unknown as DatabaseService,
+      {} as ProcurementPublicService,
+    );
+
+    await expect(
+      service.resizeBatch(
+        {
+          current: [
+            { id, expectedVersion: 1 },
+            { id: secondId, expectedVersion: 2 },
+          ],
+          offers: [offer],
+        },
+        actor,
+      ),
+    ).resolves.toEqual({
+      data: {
+        items: [{ id, version: 2 }],
+        createdIds: [],
+        archivedIds: [secondId],
+      },
+    });
+    expect(tx.ticketPublishedOffer.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: [secondId] } },
+      data: { status: 'ARCHIVED', version: { increment: 1 } },
+    });
   });
   it('rejects stale edits before changing data', async () => {
     const { tx, service } = setup({ version: 2 });

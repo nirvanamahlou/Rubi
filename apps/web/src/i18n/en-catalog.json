@@ -17187,5 +17187,14 @@
   "حذف کل جدول (": "Delete entire table (",
   "تمام ردیف‌های رفت و برگشت متعلق به لودهای نمایش‌داده‌شده در این بلوک، به‌صورت یکجا از مدیریت و فروش جدید خارج می‌شوند. فروش‌ها و سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند. عملیات اتمیک است؛ اگر رزرو ظرفیت فعال یا تور متصل وجود داشته باشد هیچ ردیفی حذف نمی‌شود.": "All outbound and return rows belonging to the loads shown in this block will be removed from management and new sales together. Sales and price, purchase, finance, and audit history remain. The operation is atomic; if there is an active capacity hold or linked tour, no row is removed.",
   "حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row has an active capacity hold or linked tour and cannot be deleted; no rows were deleted.",
-  "یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ ردیفی حذف نشد.": "One load row changed concurrently; no rows were deleted."
+  "یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ ردیفی حذف نشد.": "One load row changed concurrently; no rows were deleted.",
+  "لود با": "Load saved with",
+  "ردیف ذخیره شد.": "rows.",
+  "اطلاعات تغییر اندازه لود معتبر نیست.": "The load resize details are invalid.",
+  "برای ویرایش بدون تغییر تعداد، از ویرایش عادی لود استفاده کنید.": "Use the standard load edit when the row count is unchanged.",
+  "این لود قدیمی شناسه گروه قابل اتکا ندارد و تغییر تعداد ردیف‌های آن امن نیست.": "This legacy load has no reliable group identifier, so its row count cannot be changed safely.",
+  "یکی از ردیف‌های حذف‌شونده رزرو ظرفیت فعال یا تور متصل دارد؛ هیچ تغییری ذخیره نشد.": "A row being removed has an active capacity hold or linked tour; no changes were saved.",
+  "یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ تغییری ذخیره نشد.": "A load row changed concurrently; no changes were saved.",
+  "ثبت ردیف‌های جدید لود کامل نشد؛ هیچ تغییری ذخیره نشد.": "The new load rows could not be fully created; no changes were saved.",
+  "ردیف‌های انتخاب‌شده متعلق به یک لود واحد نیستند؛ فهرست را به‌روزرسانی کنید.": "The selected rows do not belong to one load; refresh the list."
 }

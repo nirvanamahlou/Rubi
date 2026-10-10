@@ -173,6 +173,16 @@ class TicketOffersController {
   ) {
     return this.service.reviseBatch(input, req.actor);
   }
+  @Patch('batch/resize') resizeBatch(
+    @Body()
+    input: {
+      current: readonly { id: string; expectedVersion: number }[];
+      offers: readonly TicketOfferCreateV1[];
+    },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.resizeBatch(input, req.actor);
+  }
   @Patch(':offerId') revise(
     @Param('offerId') offerId: string,
     @Body() input: { expectedVersion: number; offer: TicketOfferCreateV1 },
