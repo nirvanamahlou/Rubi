@@ -48,7 +48,9 @@ describe('organization XLSX container', () => {
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
     const safeRelationship = `<Relationship Id="rId1" Type="${type}" Target="mailto:golpham@gmail.com" TargetMode="External"/>`;
 
-    expect(() => validateOrganizationWorkbookXml(safeRelationship)).not.toThrow();
+    expect(() =>
+      validateOrganizationWorkbookXml(safeRelationship),
+    ).not.toThrow();
     expect(
       isAllowedOrganizationWorkbookRelationship(
         type,
