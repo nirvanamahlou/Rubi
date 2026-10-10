@@ -1,3 +1,7 @@
+## 2026-10-10 — TICKET-LOAD-EDIT-DELETE-1010 — PC-B — READY_FOR_REVIEW
+
+Selected flight loads now expose View, Edit Load and Delete Load together. Edit opens the canonical ticket-definition form and reconstructs authoritative server fields from shared references so another computer can use it without the originating browser cache. Delete performs a permission-, branch- and version-guarded logical archive and refuses loads with active allocations, unexpired capacity holds or tour links; price, Procurement/Finance and audit history remain. Focused API17 and Web22 tests pass (the isolated PostgreSQL suite is skipped without its dedicated test database); localization coverage, Web/API typechecks, scoped lint and production builds pass. No schema, migration, dependency, operational write or physical history deletion.
+
 ## 2026-10-10 — TICKET-FORM-UX-1010 — PC-B — READY_FOR_REVIEW
 
 Ticket Catalog flight search now exposes all weekdays including Wednesday. Application dialogs no longer close from an outside click, while explicit close/Escape remain available. Ticket forms save with Ctrl+S, and generated dates appear in chronological columns for row, outbound/return day and date. Ticket Catalog UUID creation is compatible with HTTP LAN origins where `crypto.randomUUID` is absent. Focused tests, localization coverage, Web TypeScript and scoped lint pass; the updated local port 3000 runtime returns HTTP 200. No API/schema/migration/dependency or operational-data change.

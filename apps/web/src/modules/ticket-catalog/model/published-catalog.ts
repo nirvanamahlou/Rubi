@@ -2,6 +2,7 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import type { Product, Reference } from './catalog';
 import { emptyInput } from './preview';
 import type { TicketOfferCreateV1 } from '@nora/contracts';
+import { flightCabinCode } from './flight-cabins';
 
 /** Optional producer defaults/changed capacity are not new dated flights. */
 export function samePublishedFlight(
@@ -72,6 +73,8 @@ export function catalogProductsFromOffers(
   references: readonly Reference[],
 ): Product[] {
   const used = new Set<string>();
+  const normalized = (value: string) =>
+    value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   const flights = offers.map((offer) => {
     const cached = local.find(
       (product) =>
@@ -123,15 +126,33 @@ export function catalogProductsFromOffers(
           (r) => r.kind === 'city' && r.id === offer.destinationId,
         )?.name || '',
     };
-    if (
-      references.find(
-        (reference) =>
-          reference.kind === 'airline' && reference.id === first.airlineId,
-      )?.name !== offer.carrierName
-    )
-      first.airlineId = '';
+    const firstCarrier = offer.carrierName.split('/')[0]?.trim() ?? '';
+    const airline = references.find(
+      (reference) =>
+        reference.kind === 'airline' &&
+        reference.active &&
+        normalized(reference.name) === normalized(firstCarrier),
+    );
+    first.airlineId = airline?.id ?? '';
+    const flightClass = references.find(
+      (reference) =>
+        reference.kind === 'flightClass' &&
+        reference.active &&
+        flightCabinCode(reference) === offer.cabinClassCode,
+    );
+    definition.flightClassId = flightClass?.id ?? '';
     first.originCityId = offer.originId;
     last.destinationCityId = offer.destinationId;
+    first.originCountryId =
+      references.find(
+        (reference) =>
+          reference.kind === 'city' && reference.id === offer.originId,
+      )?.countryId ?? '';
+    last.destinationCountryId =
+      references.find(
+        (reference) =>
+          reference.kind === 'city' && reference.id === offer.destinationId,
+      )?.countryId ?? '';
     first.departureAt = offer.departureAt;
     last.arrivalAt = offer.arrivalAt;
     first.departureZone = 'Asia/Tehran';

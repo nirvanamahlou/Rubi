@@ -134,27 +134,49 @@ describe('published ticket revision', () => {
     });
     expect(tx.ticketOfferCapacityAllocation.create).not.toHaveBeenCalled();
   });
-  it.each(['2000-01-01T00:00:00Z', '2099-01-01T00:00:00Z'])(
-    'rejects deletion of a defined ticket departing %s before any database access',
-    async (departureAt) => {
-      const transaction = vi.fn().mockResolvedValue({ departureAt });
-      const service = new TicketPublicService(
-        { client: { $transaction: transaction } } as unknown as DatabaseService,
-        {} as ProcurementPublicService,
-      );
-      await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
-        'بلیت تعریف‌شده قابل حذف نیست',
-      );
-      expect(transaction).not.toHaveBeenCalled();
-      await expect(
-        service.archiveExpired(id, 1, {
-          ...(actor as object),
-          permissions: [],
-        } as never),
-      ).rejects.toThrow();
-      expect(transaction).not.toHaveBeenCalled();
-    },
-  );
+  it('logically archives an unlinked load and records the versioned audit', async () => {
+    const { tx, service } = setup({ status: 'ACTIVE' });
+    await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
+      data: { id },
+    });
+    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledWith({
+      where: { id },
+      data: { status: 'ARCHIVED', version: { increment: 1 } },
+    });
+    expect(tx.ticketOfferAudit.create).toHaveBeenCalledWith({
+      data: {
+        offerId: id,
+        actorUserId: 'user',
+        action: 'ticket.offer.archived',
+        version: 2,
+      },
+    });
+  });
+  it.each([
+    'capacityAllocations',
+    'capacityHolds',
+    'tourOutboundDepartures',
+    'tourReturnDepartures',
+  ])('rejects archiving a load with linked %s', async (key) => {
+    const { tx, service } = setup({ [key]: [{ id: 'linked' }] });
+    await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
+      'قابل حذف نیست',
+    );
+    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+  });
+  it('rejects stale or unauthorized archive requests', async () => {
+    const { tx, service } = setup({ version: 2 });
+    await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
+      'لود تغییر کرده است',
+    );
+    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+    await expect(
+      service.archiveExpired(id, 2, {
+        ...(actor as object),
+        permissions: [],
+      } as never),
+    ).rejects.toThrow();
+  });
   it('reactivates an automatically expired flight moved into the future', async () => {
     const { tx, service } = setup({
       status: 'PAUSED',

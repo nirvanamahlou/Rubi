@@ -40,14 +40,18 @@ describe('ticket workspace entry points', () => {
     expect(weekly).toContain("'تعریف برنامه هفتگی پرواز', allowPastDate");
   });
 
-  it('does not expose deletion for flight load or defined tickets', () => {
+  it('exposes safe load edit and archive beside the authoritative view', () => {
     const source = readFileSync(
       new URL('./ticket-workspace.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).not.toContain('archiveExpiredOffer');
-    expect(source).not.toContain('حذف بلیط');
-    expect(source).not.toContain('حذف بلیت');
+    expect(source).toContain('toursApi.archiveOffer(offer.id, offer.version)');
+    expect(source).toContain('ویرایش لود');
+    expect(source).toContain('حذف لود');
+    expect(source).toContain("setForm({ mode: 'edit', product })");
+    expect(source).toContain('catalogOffer(current, publishedOffers)');
+    expect(source).toContain('currentPublishedOffer.version');
+    expect(source).toContain('سوابق قیمت، خرید، مالی و ممیزی حذف نمی‌شوند');
     expect(source).toContain('updatePublishedStatus');
   });
   it('matches the browser card to the authoritative published offer', () => {
@@ -174,7 +178,7 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain('maxLength={3}');
     expect(source).not.toContain('بلیط‌های ثبت‌شده برای فروش و قرارداد');
     expect(source).toContain('renderActions={renderOfferActions}');
-    expect(source).toContain('setOfferForm({ offer, readOnly: false })');
+    expect(source).toContain('setOfferForm({ offer, readOnly: true })');
     expect(source).toContain('updateCapacityHold({');
   });
 

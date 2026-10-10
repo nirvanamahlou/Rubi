@@ -177,6 +177,11 @@ export const toursApi = {
       method: 'PATCH',
       body: JSON.stringify({ expectedVersion, offer }),
     }),
+  archiveOffer: (id: string, expectedVersion: number) =>
+    request<{ data: { id: string } }>(`/offers/${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ expectedVersion }),
+    }),
   updateOfferStatus: (
     id: string,
     expectedVersion: number,

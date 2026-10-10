@@ -112,6 +112,48 @@ describe('authoritative ticket catalog', () => {
     expect(products).toHaveLength(11);
     expect(products.at(-1)).toBe(ground);
   });
+  it('reconstructs editable server fields from shared references on a fresh device', () => {
+    const references = [
+      {
+        id: 'airline',
+        kind: 'airline',
+        name: 'Carrier',
+        active: true,
+      },
+      {
+        id: 'economy',
+        kind: 'flightClass',
+        name: 'Economy',
+        code: 'ECONOMY',
+        active: true,
+      },
+      {
+        id: 'a',
+        kind: 'city',
+        name: 'Origin',
+        countryId: 'country-a',
+        active: true,
+      },
+      {
+        id: 'b',
+        kind: 'city',
+        name: 'Destination',
+        countryId: 'country-b',
+        active: true,
+      },
+    ] as const;
+    const product = catalogProductsFromOffers([], [offers[0]!], references)[0]!;
+    expect(product.definition.flightClassId).toBe('economy');
+    expect(product.definition.segments[0]).toEqual(
+      expect.objectContaining({
+        airlineId: 'airline',
+        originCountryId: 'country-a',
+        originCityId: 'a',
+        destinationCountryId: 'country-b',
+        destinationCityId: 'b',
+      }),
+    );
+  });
 });
 
 it('matches backfill by dated flight rather than optional null fields or changed capacity', () => {
