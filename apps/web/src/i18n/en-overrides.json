@@ -547,5 +547,13 @@
   "منبع:": "Source:",
   "یادآور یادداشت شخصی": "Personal note reminder",
   "یادداشت من": "My note",
-  "یادداشت‌های هوش مصنوعی برای شما": "AI notes for you"
+  "یادداشت‌های هوش مصنوعی برای شما": "AI notes for you",
+  "۱۱ رقم از مدارک ثبتی شرکت؛ شناسه ملی خودکار تولید یا استعلام نمی‌شود.": "Enter the 11 digits from the company's registration documents; the national ID is neither generated nor looked up automatically.",
+  "پرونده آژانس با موفقیت ویرایش شد.": "The agency record was updated successfully.",
+  "در پرونده موجود به‌روزرسانی می‌شود": "Updated in the existing record",
+  "دریافت نشانی فعلی آژانس ناموفق بود.": "Could not retrieve the agency's current address.",
+  "شماره نماینده موجود در همین پرونده ویرایش می‌شود و رکورد تکراری ساخته نخواهد شد. اگر اطلاعات حساس به‌دلیل سطح دسترسی نمایش داده نشد، مقدار فعلی آن بدون تغییر حفظ می‌شود.": "The existing representative's number will be updated in this record without creating a duplicate. If sensitive information is hidden by your access level, its current value will remain unchanged.",
+  "مراحل ویرایش آژانس": "Agency editing steps",
+  "نماینده اصلی در همین مرحله به‌روزرسانی می‌شود. سایر نمایندگان، امضاداران و مدیر حساب از صفحه مشخصات و نقش‌ها قابل مدیریت‌اند.": "The primary representative is updated in this step. Manage other representatives, signatories and the account manager from the details and roles page.",
+  "ویرایش مرحله‌ای پرونده آژانس": "Step-by-step agency record editing"
 }
