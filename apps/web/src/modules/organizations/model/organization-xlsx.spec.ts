@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createOrganizationXlsx,
   hasRequiredOrganizationColumns,
+  isAllowedOrganizationWorkbookRelationship,
   normalizeOrganizationHeader,
   unzipWorkbook,
   validateOrganizationWorkbookXml,
@@ -41,6 +42,36 @@ describe('organization XLSX container', () => {
     '<Relationship TargetMode="External"/>',
   ])('rejects active workbook content %s', (xml) => {
     expect(() => validateOrganizationWorkbookXml(xml)).toThrow();
+  });
+  it('allows only strict mailto hyperlinks among external relationships', () => {
+    const type =
+      'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+    const safeRelationship = `<Relationship Id="rId1" Type="${type}" Target="mailto:golpham@gmail.com" TargetMode="External"/>`;
+
+    expect(() =>
+      validateOrganizationWorkbookXml(safeRelationship),
+    ).not.toThrow();
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        type,
+        'mailto:golpham@gmail.com',
+        'External',
+      ),
+    ).toBe(true);
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        type,
+        'https://example.com',
+        'External',
+      ),
+    ).toBe(false);
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        type,
+        'mailto:golpham@gmail.com?subject=unsafe',
+        'External',
+      ),
+    ).toBe(false);
   });
   it('rejects corrupted payloads and truncated archives', async () => {
     const bytes = createOrganizationXlsx([organizationHeaders]);

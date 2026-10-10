@@ -6368,3 +6368,23 @@ workbook was inspected read-only and matches the canonical seven-column layout.
 Sixteen focused import/parser/localization tests, scoped lint, Contracts build
 and Web typecheck pass. Production build and exact-head CI remain review gates;
 no operational row was imported and no schema/migration/dependency changed.
+
+## AGENCY-XLSX-MAILTO-HYPERLINK-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-mailto-hyperlink-import` from
+`origin/develop@81b92d0e`. The user-supplied workbook is rejected because Excel
+automatically stores its email cell as an external `mailto:` hyperlink. Reserve
+only the Organizations XLSX relationship validator, focused regression tests and
+this status entry. Permit a strict email-only `mailto:` hyperlink relationship
+that the importer does not execute; continue rejecting formulas, macros, remote
+URLs, external workbooks and every other external relationship. No schema,
+migration, API/shared contract, dependency, permission, data import or runtime
+record mutation.
+
+Implemented a strict exception for Excel-generated email hyperlinks only. The
+supplied `mailto:golpham@gmail.com` relationship now passes both pre-parse and
+DOM validation, while web/file links, query-bearing mailto targets, formulas,
+macros and all other external relationships remain blocked. Fourteen focused
+XLSX/import tests, scoped ESLint, Web typecheck and production build pass. No
+agency record was imported or changed; bounded source lock is released with the
+review commit.
