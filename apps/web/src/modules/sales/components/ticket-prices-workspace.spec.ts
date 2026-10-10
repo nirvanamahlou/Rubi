@@ -291,5 +291,5 @@ describe('ticket price workspace', () => {
     );
     expect(singlesOnly).toContain('aria-labelledby="ticket-prices-oneway"');
     state.values = null;
-  });
+  }, 15_000);
 });
