@@ -367,7 +367,8 @@ export async function parseOrganizationXlsx(
     ['code', organizationHeaders[0]],
     ['legalName', organizationHeaders[1]],
     ['personType', organizationHeaders[2]],
-    ['roleCodes', organizationHeaders[3]],
+    ['nationalId', organizationHeaders[3]],
+    ['roleCodes', organizationHeaders[4]],
   ]);
   for (const header of organizationHeaders)
     aliases.set(translateUiText(header, 'en'), header);
@@ -385,6 +386,7 @@ export async function parseOrganizationXlsx(
       code: row[normalized.indexOf(organizationHeaders[0])] ?? '',
       legalName: row[normalized.indexOf(organizationHeaders[1])] ?? '',
       personType: row[normalized.indexOf(organizationHeaders[2])] ?? '',
-      roleCodes: row[normalized.indexOf(organizationHeaders[3])] ?? '',
+      nationalId: row[normalized.indexOf(organizationHeaders[3])] ?? '',
+      roleCodes: row[normalized.indexOf(organizationHeaders[4])] ?? '',
     }));
 }

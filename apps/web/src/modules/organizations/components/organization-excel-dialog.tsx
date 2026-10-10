@@ -92,6 +92,7 @@ export function OrganizationExcelDialog({
                   row.code,
                   row.legalName,
                   row.personType,
+                  row.nationalId,
                   row.roleCodes,
                 ]),
               ]);
@@ -117,9 +118,10 @@ export function OrganizationExcelDialog({
           </label>
         </div>
         <p className="panel-note">
-          حداکثر ۲۰۰ ردیف و ۵ مگابایت. نوع شخصیت: LEGAL یا NATURAL؛ نقش: AGENCY
-          یا CORPORATE_CUSTOMER. برای سازمان جدید کد را خالی بگذارید؛ کد خودکار
-          تولید می‌شود. فرمول و ماکرو مجاز نیست.
+          حداکثر ۲۰۰ ردیف و ۵ مگابایت. نوع شخصیت: LEGAL یا NATURAL؛ شناسه ملی
+          برای شخصیت حقوقی ۱۱ رقم است؛ نقش: AGENCY یا CORPORATE_CUSTOMER. برای
+          سازمان جدید کد را خالی بگذارید؛ کد خودکار تولید می‌شود. فرمول و ماکرو
+          مجاز نیست.
         </p>
         {error ? (
           <p className="form-error" role="alert">

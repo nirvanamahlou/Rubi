@@ -76,6 +76,7 @@ describe('organization import boundaries', () => {
       values: {
         legalName: syntheticOrganizations[0]!.legalName,
         personType: 'LEGAL',
+        nationalId: syntheticOrganizations[0]!.nationalId,
         roleCodes: 'AGENCY',
       },
     });

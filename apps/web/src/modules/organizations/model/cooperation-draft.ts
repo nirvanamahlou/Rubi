@@ -22,6 +22,7 @@ import {
   organizationByName,
   validateOrganizationRows,
 } from './organization-import';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
 export interface CooperationDraft {
   registrationId: string;
@@ -82,6 +83,7 @@ export function cooperationIssue(
         code: draft.code,
         legalName: draft.legalName,
         personType: draft.personType,
+        nationalId: draft.nationalId,
         roleCodes: draft.role,
       },
     ])[0]?.issue;
@@ -347,7 +349,7 @@ export async function saveCooperation(
       await agencyClient.saveAgreementTerms(organization.id, {
         branchId: draft.branchId,
         role: draft.role,
-        requestId: draft.agreementRequestId ?? crypto.randomUUID(),
+        requestId: draft.agreementRequestId ?? browserRandomUuid(),
         terms: agreementTerms,
         ...(referenceGrants.length ? { referenceGrants } : {}),
       });

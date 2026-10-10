@@ -24,6 +24,7 @@ import {
   type CooperationDraft,
 } from '../model/cooperation-draft';
 import { PhoneVerificationRequestGate } from '../model/phone-verification-lifecycle';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
 const steps = [
   'هویت و نقش',
@@ -39,8 +40,8 @@ function freshDraft(role: CooperationDraft['role'], branchId = '') {
     role,
     branchId,
     agreementTerms: blankAgreementTerms(),
-    agreementRequestId: crypto.randomUUID(),
-    registrationId: crypto.randomUUID(),
+    agreementRequestId: browserRandomUuid(),
+    registrationId: browserRandomUuid(),
   } satisfies CooperationDraft;
 }
 export function CooperationWizard({
@@ -129,7 +130,7 @@ export function CooperationWizard({
     setPhoneCode('');
     setDraft((current) => ({
       ...update(current),
-      registrationId: crypto.randomUUID(),
+      registrationId: browserRandomUuid(),
       phoneVerificationGrant: undefined,
       phoneVerificationExpiresAt: undefined,
     }));
@@ -426,7 +427,7 @@ export function CooperationWizard({
                               setPhoneCode('');
                               setDraft((current) => ({
                                 ...current,
-                                registrationId: crypto.randomUUID(),
+                                registrationId: browserRandomUuid(),
                                 phoneVerificationGrant: undefined,
                                 phoneVerificationExpiresAt: undefined,
                                 legalName: record.name,

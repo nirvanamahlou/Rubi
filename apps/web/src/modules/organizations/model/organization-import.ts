@@ -5,6 +5,7 @@ export const organizationHeaders = [
   'کد سیستمی',
   'نام ثبتی',
   'نوع شخصیت',
+  'شناسه ملی',
   'نقش‌ها',
 ] as const;
 export const organizationImportLimit = 200;
@@ -12,6 +13,7 @@ export interface OrganizationImportRow {
   code: string;
   legalName: string;
   personType: string;
+  nationalId: string;
   roleCodes: string;
 }
 export interface OrganizationPreviewRow extends OrganizationImportRow {
@@ -34,6 +36,7 @@ export function validateOrganizationRows(
       code: source.code.trim().toUpperCase(),
       legalName: source.legalName.trim(),
       personType: source.personType.trim().toUpperCase(),
+      nationalId: source.nationalId.trim(),
       roleCodes: [
         ...new Set(
           source.roleCodes
@@ -54,6 +57,11 @@ export function validateOrganizationRows(
       issue = 'نام سازمان باید ۲ تا ۱۶۰ نویسه باشد.';
     else if (!['LEGAL', 'NATURAL'].includes(row.personType))
       issue = 'نوع شخصیت باید LEGAL یا NATURAL باشد.';
+    else if (
+      row.nationalId &&
+      (row.personType !== 'LEGAL' || !/^[0-9۰-۹٠-٩]{11}$/.test(row.nationalId))
+    )
+      issue = 'شناسه ملی باید ۱۱ رقم و فقط برای شخصیت حقوقی باشد.';
     else if (
       !row.roleCodes ||
       row.roleCodes
@@ -177,6 +185,7 @@ export async function importOrganizations(
           values: {
             legalName: row.legalName,
             personType: row.personType,
+            nationalId: row.nationalId || null,
             roleCodes: row.roleCodes,
           },
         });
@@ -207,48 +216,56 @@ export const syntheticOrganizations: readonly OrganizationImportRow[] = [
     code: '',
     legalName: 'آژانس آزمایشی افق سفر',
     personType: 'LEGAL',
+    nationalId: '14000000001',
     roleCodes: 'AGENCY',
   },
   {
     code: '',
     legalName: 'آژانس آزمایشی آبیراه',
     personType: 'LEGAL',
+    nationalId: '14000000002',
     roleCodes: 'AGENCY',
   },
   {
     code: '',
     legalName: 'آژانس آزمایشی آسمان',
     personType: 'LEGAL',
+    nationalId: '14000000003',
     roleCodes: 'AGENCY',
   },
   {
     code: '',
     legalName: 'آژانس آزمایشی نیلگون',
     personType: 'LEGAL',
+    nationalId: '14000000004',
     roleCodes: 'AGENCY',
   },
   {
     code: '',
     legalName: 'شرکت آزمایشی توسعه سفر',
     personType: 'LEGAL',
+    nationalId: '14000000005',
     roleCodes: 'CORPORATE_CUSTOMER',
   },
   {
     code: '',
     legalName: 'گروه آزمایشی سپهر',
     personType: 'LEGAL',
+    nationalId: '14000000006',
     roleCodes: 'CORPORATE_CUSTOMER',
   },
   {
     code: '',
     legalName: 'مؤسسه آزمایشی پارس',
     personType: 'LEGAL',
+    nationalId: '14000000007',
     roleCodes: 'CORPORATE_CUSTOMER',
   },
   {
     code: '',
     legalName: 'سازمان آزمایشی چندنقشی',
     personType: 'LEGAL',
+    nationalId: '14000000008',
     roleCodes: 'AGENCY,CORPORATE_CUSTOMER',
   },
 ];
