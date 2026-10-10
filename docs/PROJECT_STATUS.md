@@ -5207,3 +5207,9 @@ dependency, permission or operational-data change.
 - Fixed the generic 500 returned by whole-table archive on large loads: offer archival and versioned audit creation are now set-based operations inside the same locked transaction instead of two sequential writes per row.
 - Archive and full-load revision receive an explicit bounded 30-second transaction timeout for the documented maximum batch; permissions, optimistic versions, active holds/tours and all historical relations remain protected.
 - A 1,000-row regression verifies one offer write plus one audit write. Focused21, Ticket Catalog API186/22 opt-in skips, English coverage, scoped lint, API typecheck and production build pass. No schema, migration, dependency, lockfile, physical deletion or operational-data mutation.
+
+# 2026-10-10 — Workbench Persian-month sales performance
+
+- Added a self-scoped, read-only sales summary for the current and previous Persian calendar months. The Workbench API consumes the existing public Sales contract list projection and includes only confirmed/in-progress/completed contracts owned by the signed-in user in allowed branches.
+- Monthly sales amounts remain exact Decimal strings by currency. Contract and passenger totals, per-route comparisons, and a cumulative same-day trend appear in «عملکرد من» without changing the existing rolling activity range.
+- No schema, migration, dependency, lockfile, Sales module or permission change. The Workbench response contract gains an optional field for compatible rollout. Focused tests, lint, typechecks and production builds gate delivery.

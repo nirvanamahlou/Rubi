@@ -18,6 +18,7 @@ import { HrSelfPerformanceService } from '../hr/hr-self-performance.service';
 import { IamService } from '../iam/iam.service';
 import { SalesService } from '../sales/sales.service';
 import { CustomerService } from '../customers/customer.service';
+import { monthlySales } from './workbench-monthly-sales';
 
 const salesPermissions = [
   'sales.contracts.read.own',
@@ -137,6 +138,36 @@ export class WorkbenchPerformanceService {
           ),
         );
       }
+    const monthRows = new Map<string, SalesContractSummary>();
+    const monthlyFrom = new Date(Date.now() - 75 * 86_400_000).toISOString();
+    for (const branchId of [...new Set(actor.branchIds)]) {
+      let page = 1;
+      while (true) {
+        const response = await this.sales.list(
+          {
+            ownerUserId: actor.userId,
+            branchId,
+            createdFrom: monthlyFrom,
+            createdTo: new Date().toISOString(),
+            page,
+            pageSize: 1000,
+            sortBy: 'createdAt',
+            sortDirection: 'desc',
+          },
+          actor,
+        );
+        for (const row of response.data) {
+          if (row.ownerUserId === actor.userId && row.branchId === branchId)
+            monthRows.set(row.id, row);
+        }
+        if (
+          !response.meta ||
+          page * response.meta.pageSize >= response.meta.total
+        )
+          break;
+        page++;
+      }
+    }
     return {
       contracts: contracts.size,
       confirmedContracts: confirmed.length,
@@ -148,6 +179,7 @@ export class WorkbenchPerformanceService {
           amount: value.toFixed(),
         })),
       partial,
+      monthly: monthlySales([...monthRows.values()], new Date()),
     };
   }
 
