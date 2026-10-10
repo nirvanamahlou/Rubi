@@ -9,6 +9,7 @@ import {
   catalogProductsFromOffers,
   catalogOffer,
   publishedLoadGroup,
+  publishedLoadGroups,
   samePublishedFlight,
 } from './published-catalog';
 const offers = Array.from(
@@ -165,6 +166,25 @@ describe('authoritative ticket catalog', () => {
     expect(publishedLoadGroup(grouped[0]!, [...grouped, other], [])).toEqual(
       grouped,
     );
+  });
+
+  it('expands every visible table row to its complete load without duplicates', () => {
+    const firstLoad = offers.slice(0, 3).map((offer) => ({
+      ...offer,
+      loadGroupId: 'group-a',
+    }));
+    const secondLoad = offers.slice(3, 5).map((offer) => ({
+      ...offer,
+      loadGroupId: 'group-b',
+    }));
+    const all = [...firstLoad, ...secondLoad, offers[5]!];
+    expect(
+      publishedLoadGroups(
+        [firstLoad[1]!, firstLoad[2]!, secondLoad[0]!],
+        all,
+        [],
+      ),
+    ).toEqual([...firstLoad, ...secondLoad]);
   });
 
   it('recovers an older same-browser load only from its exact creation event', () => {

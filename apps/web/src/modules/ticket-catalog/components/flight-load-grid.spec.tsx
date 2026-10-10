@@ -21,6 +21,7 @@ describe('flight load search entry', () => {
         refreshing={false}
         onRefresh={() => {}}
         renderActions={() => <button>Manage selected flight</button>}
+        renderLoadActions={() => <button>Manage complete table</button>}
       />,
     );
     expect(html).toContain('تاریخ‌های معتبر');
@@ -33,6 +34,7 @@ describe('flight load search entry', () => {
     expect(html).toContain('load-origin');
     expect(html).not.toContain('<table');
     expect(html).not.toContain('Manage selected flight');
+    expect(html).not.toContain('Manage complete table');
     expect(html).not.toContain('مبدأ، مقصد یا تاریخ را انتخاب کنید');
     expect(html).not.toContain('بلیت‌های قدیمی با نوع تأمین ثبت‌نشده');
     expect(html).not.toContain('Hold فعال و منقضی‌نشده');
