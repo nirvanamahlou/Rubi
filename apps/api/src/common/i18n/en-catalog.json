@@ -2382,6 +2382,7 @@
   "یکی از اسناد هم‌زمان تغییر کرده است؛ فهرست را تازه کنید.": "One of the documents has changed at the same time; Refresh the list.",
   "یکی از ردیف‌های چک‌لیست معتبر نیست.": "One of the checklist rows is not valid.",
   "یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "One of the load rows has changed; refresh the list.",
+  "یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ ردیفی حذف نشد.": "One load row changed concurrently; no rows were deleted.",
   "یکی از منابع خرید در این لحظه پاسخ نداد.": "One of the purchasing sources did not respond at this time.",
   "یکی از منابع مالی در دسترس نیست؛ خروجی ناقص ساخته نمی‌شود.": "One of the financial sources is not available; Incomplete output is not generated.",
   "Branding شرکت فعال یافت نشد.": "Active company branding was not found.",

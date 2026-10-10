@@ -5198,3 +5198,8 @@ dependency, permission or operational-data change.
 - Logical archive now permits rows with historical/active sale allocations while preserving those relations and all pricing, purchase, finance and audit history; active capacity holds and linked tours remain protected.
 - Verified Ticket Catalog Web `200 passed / 1 optional skipped`, Ticket Catalog API `185 passed / 22 opt-in skipped`, English coverage, scoped lint, Web/API typechecks and both production builds. No schema, migration, dependency, lockfile or physical-delete change.
 - Stabilized one unrelated but consistently exposed Sales SSR test by assigning its three-render assertion a bounded 15-second timeout; both CI copies and the loaded Windows host measured just over the former five-second default. Production Sales code is unchanged.
+# 2026-10-10 — Large ticket-load batch timeout fix
+
+- Fixed the generic 500 returned by whole-table archive on large loads: offer archival and versioned audit creation are now set-based operations inside the same locked transaction instead of two sequential writes per row.
+- Archive and full-load revision receive an explicit bounded 30-second transaction timeout for the documented maximum batch; permissions, optimistic versions, active holds/tours and all historical relations remain protected.
+- A 1,000-row regression verifies one offer write plus one audit write. Focused21, Ticket Catalog API186/22 opt-in skips, English coverage, scoped lint, API typecheck and production build pass. No schema, migration, dependency, lockfile, physical deletion or operational-data mutation.
