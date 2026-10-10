@@ -5214,3 +5214,7 @@ dependency, permission or operational-data change.
 - Monthly sales amounts remain exact Decimal strings by currency. Contract and passenger totals, per-route comparisons, and a cumulative same-day trend appear in «عملکرد من» without changing the existing rolling activity range.
 - No schema, migration, dependency, lockfile, Sales module or permission change. The Workbench response contract gains an optional field for compatible rollout. Focused tests, lint, typechecks and production builds gate delivery.
 - CI's full suite identified missing English translations for the new card. Added the labels and synchronized the offline API/standalone display catalogs; the focused three-test translation coverage now passes. Exact-head CI remains the merge gate.
+# 2026-10-10 — Workbench important documents label
+
+- Renamed the Workbench `stars` tab and its document-favorites headings, loading/error and empty states to «مدارک مهم». Favorite document IDs, note pins, access checks and navigation remain unchanged.
+- Added English display translations for the new labels. Web-only copy change; no API, migration, dependency or operational data change.

@@ -16,7 +16,7 @@ export const workbenchTabs = [
   ['activity', 'فعالیت‌های من'],
   ['performance', 'عملکرد من'],
   ['notes', 'یادداشت‌ها'],
-  ['stars', 'یادداشت‌های مهم'],
+  ['stars', 'مدارک مهم'],
   ['calendar', 'تقویم من'],
   ['account', 'حساب و تنظیمات'],
 ] as const;
