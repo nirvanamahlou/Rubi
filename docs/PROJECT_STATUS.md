@@ -5181,6 +5181,17 @@ owner-authorized develop merge; no operational workbook import has been executed
 - Add an explicit «تاریخ گذشته» opt-in to Ticket Definition while preserving the default future-only publication guard and existing non-saleable handling for expired offers.
 - Branch: `codex/pc-b-ticket-past-date-1010`; no API, schema, migration, dependency, permission, runtime or operational-data change.
 - Delivered in weekly and advanced forms with a submission-scoped flag; 21 focused tests and Web typecheck pass. Existing expired-offer and Sales future-only behavior is preserved.
+## 2026-10-10 — AGENCY-XLSX-OPTIONAL-CONTACT-1010 — PC-B — READY_FOR_REVIEW
+
+Agency XLSX import accepts the supplied canonical seven-column workbook when
+email or tourism-license values are blank. Compatible compact and expanded
+variants may also omit those optional columns without weakening the required
+identity/contact/address headers, duplicate checks or active-content rejection.
+The import dialog now states the optional-field rule. Sixteen focused
+import/parser/localization tests, scoped lint, Contracts build and Web typecheck
+pass. No workbook rows were imported, and there is no API/schema/migration,
+dependency, permission or operational-data change.
+
 # 2026-10-10 — Whole load-table actions in the table header
 
 - Moved Edit/Delete from selected-flight details into the outbound/return load-table header and made the action set expand all represented rows to their complete stable load groups before one atomic request.

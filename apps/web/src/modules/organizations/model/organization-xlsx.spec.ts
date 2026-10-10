@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createOrganizationXlsx,
+  hasRequiredOrganizationColumns,
   normalizeOrganizationHeader,
   unzipWorkbook,
   validateOrganizationWorkbookXml,
@@ -22,6 +23,17 @@ describe('organization XLSX container', () => {
     expect(files.get('xl/workbook.xml')).toContain('Organizations');
     expect(files.get('xl/worksheets/sheet1.xml')).toContain('&lt;آزمون&gt;');
     expect(files.get('xl/worksheets/sheet1.xml')).toContain('inlineStr');
+  });
+  it('accepts compact columns without optional email and license columns', () => {
+    expect(
+      hasRequiredOrganizationColumns([
+        'legalName',
+        'chiefExecutiveName',
+        'officePhone',
+        'chiefExecutiveMobile',
+        'addressLine',
+      ]),
+    ).toBe(true);
   });
   it.each([
     '<!DOCTYPE x>',

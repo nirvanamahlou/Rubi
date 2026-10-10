@@ -9,6 +9,19 @@ import {
 } from './organization-import';
 afterEach(() => vi.restoreAllMocks());
 describe('organization import boundaries', () => {
+  it('accepts blank email and tourism license values', () => {
+    const [row] = validateOrganizationRows([
+      {
+        ...syntheticOrganizations[0]!,
+        email: '',
+        tourismLicenseNumber: '',
+      },
+    ]);
+    expect(row?.issue).toBeUndefined();
+    expect(row?.email).toBe('');
+    expect(row?.tourismLicenseNumber).toBe('');
+  });
+
   it('rejects case-insensitive duplicates, formulas and unrelated roles before writing', () => {
     const rows = validateOrganizationRows([
       syntheticOrganizations[0]!,

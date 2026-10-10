@@ -460,7 +460,7 @@
   "تهران، خیابان نمونه، پلاک ۶": "Tehran, Sample Street, No. 6",
   "تهران، خیابان نمونه، پلاک ۷": "Tehran, Sample Street, No. 7",
   "تهران، خیابان نمونه، پلاک ۸": "Tehran, Sample Street, No. 8",
-  "حداکثر ۲۰۰ ردیف و ۵ مگابایت. عنوان ستون‌ها می‌تواند فارسی یا انگلیسی و با فاصله‌های متفاوت باشد. ستون‌های قالب پیوست مستقیماً خوانده می‌شوند و فیلدهای تکمیلیِ نسخه گسترده نیز پشتیبانی می‌شوند. هر ردیف یک آژانس جدید می‌سازد و اطلاعات تماس و نشانیِ موجود را هم ثبت می‌کند؛ فرمول و ماکرو مجاز نیست.": "Up to 200 rows and 5 MB. Headers may be Persian or English with different spacing. The attached template is read directly, and extended fields are also supported. Each row creates an agency and saves any supplied contact and address details. Formulas and macros are not allowed.",
+  "حداکثر ۲۰۰ ردیف و ۵ مگابایت. عنوان ستون‌ها می‌تواند فارسی یا انگلیسی و با فاصله‌های متفاوت باشد. ستون‌های قالب پیوست مستقیماً خوانده می‌شوند و فیلدهای تکمیلیِ نسخه گسترده نیز پشتیبانی می‌شوند. هر ردیف یک آژانس جدید می‌سازد و اطلاعات تماس و نشانیِ موجود را هم ثبت می‌کند. ایمیل و شماره مجوز اختیاری هستند؛ فرمول و ماکرو مجاز نیست.": "Up to 200 rows and 5 MB. Headers may be Persian or English with different spacing. The attached template is read directly, and extended fields are also supported. Each row creates an agency and saves any supplied contact and address details. Email and the tourism license number are optional. Formulas and macros are not allowed.",
   "دفتر آژانس": "Agency office",
   "شماره تلفن": "Phone number",
   "شماره ثبت شرکت": "Company registration number",

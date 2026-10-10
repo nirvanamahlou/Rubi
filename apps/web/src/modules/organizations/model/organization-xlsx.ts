@@ -297,6 +297,32 @@ function cellColumn(reference: string) {
   );
 }
 
+export function hasRequiredOrganizationColumns(normalized: readonly string[]) {
+  const compactRequiredKeys = [
+    'legalName',
+    'chiefExecutiveName',
+    'officePhone',
+    'chiefExecutiveMobile',
+    'addressLine',
+  ];
+  const extendedRequiredKeys = [
+    'legalName',
+    'registrationNumber',
+    'nationalId',
+    'economicCode',
+    'chiefExecutiveName',
+    'chiefExecutiveNationalId',
+    'chiefExecutiveMobile',
+    'province',
+    'city',
+    'addressLine',
+  ];
+  return (
+    compactRequiredKeys.every((key) => normalized.includes(key)) ||
+    extendedRequiredKeys.every((key) => normalized.includes(key))
+  );
+}
+
 export async function parseOrganizationXlsx(
   file: File,
 ): Promise<OrganizationImportRow[]> {
@@ -487,32 +513,7 @@ export async function parseOrganizationXlsx(
     normalized.filter(Boolean).length
   )
     throw new Error('عنوان ستون تکراری است.');
-  const simpleKeys = [
-    'legalName',
-    'chiefExecutiveName',
-    'tourismLicenseNumber',
-    'officePhone',
-    'email',
-    'chiefExecutiveMobile',
-    'addressLine',
-  ];
-  const extendedKeys = [
-    'legalName',
-    'registrationNumber',
-    'nationalId',
-    'economicCode',
-    'tourismLicenseNumber',
-    'chiefExecutiveName',
-    'chiefExecutiveNationalId',
-    'chiefExecutiveMobile',
-    'province',
-    'city',
-    'addressLine',
-  ];
-  if (
-    !simpleKeys.every((key) => normalized.includes(key)) &&
-    !extendedKeys.every((key) => normalized.includes(key))
-  )
+  if (!hasRequiredOrganizationColumns(normalized))
     throw new Error('ستون‌های فایل با قالب سازمان‌ها مطابقت ندارند.');
   const value = (row: readonly string[], key: string) =>
     row[normalized.indexOf(key)] ?? '';
