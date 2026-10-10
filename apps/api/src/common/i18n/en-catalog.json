@@ -2415,5 +2415,8 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "لود به قرارداد، رزرو ظرفیت یا تور متصل است و قابل حذف نیست.": "The load is linked to a contract, capacity reservation, or tour and cannot be deleted.",
+  "لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "The load has changed; refresh the list.",
+  "لود در شعبه مجاز شما پیدا نشد.": "The load was not found in an authorized branch."
 }

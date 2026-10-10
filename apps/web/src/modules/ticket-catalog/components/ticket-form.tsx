@@ -2,7 +2,7 @@
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import {
   Alert,
   Button,
@@ -630,6 +630,18 @@ function RouteFields({
   );
 }
 
+export function saveTicketFormOnCtrlS(event: KeyboardEvent<HTMLFormElement>) {
+  if (
+    !event.ctrlKey ||
+    event.altKey ||
+    event.shiftKey ||
+    event.key.toLowerCase() !== 's'
+  )
+    return;
+  event.preventDefault();
+  event.currentTarget.requestSubmit();
+}
+
 export function TicketForm({
   initial,
   references,
@@ -860,7 +872,11 @@ export function TicketForm({
     }
   }
   return (
-    <form onSubmit={submit} className={`${styles.form} space-y-6`}>
+    <form
+      onSubmit={submit}
+      onKeyDown={saveTicketFormOnCtrlS}
+      className={`${styles.form} space-y-6`}
+    >
       {error ? <Alert tone="error" title={error} /> : null}
       <fieldset disabled={readOnly} className="space-y-6 disabled:opacity-80">
         <section className="space-y-4">

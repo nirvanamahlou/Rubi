@@ -3,11 +3,12 @@ import { flightCabinCode } from '../model/flight-cabins';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
-import { Power, Plus, Ticket, TicketCheck } from 'lucide-react';
+import { Power, Plus, Ticket, TicketCheck, Trash2 } from 'lucide-react';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import {
   Alert,
   Button,
+  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -290,6 +291,7 @@ function TicketCatalogWorkspace() {
   const [publishedNotice, setPublishedNotice] = useState('');
   const [publishedRefreshing, setPublishedRefreshing] = useState(false);
   const [statusSaving, setStatusSaving] = useState<string>();
+  const [deleteSaving, setDeleteSaving] = useState<string>();
   const [capacityHold, setCapacityHold] = useState<{
     offer: TicketOfferV1;
     quantity: number;
@@ -362,6 +364,38 @@ function TicketCatalogWorkspace() {
       throw error;
     } finally {
       setStatusSaving(undefined);
+    }
+  };
+  const editPublishedLoad = (offer: TicketOfferV1) => {
+    const product = displayedProducts.find(
+      (item) =>
+        item.id === `offer:${offer.id}` || item.id === offer.catalogProductId,
+    );
+    if (!product) {
+      setPublishedProblem(
+        'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
+      );
+      return;
+    }
+    setOfferForm(null);
+    setForm({ mode: 'edit', product });
+  };
+  const archivePublishedLoad = async (offer: TicketOfferV1) => {
+    setDeleteSaving(offer.id);
+    setPublishedProblem('');
+    setPublishedNotice('');
+    try {
+      await toursApi.archiveOffer(offer.id, offer.version);
+      await refreshPublishedOffers();
+      setPublishedNotice(
+        'لود حذف شد؛ سوابق قیمت، خرید، مالی و ممیزی آن حفظ شده است.',
+      );
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error ? error.message : 'حذف لود ناموفق بود.',
+      );
+    } finally {
+      setDeleteSaving(undefined);
     }
   };
   const submitCapacityHold = async () => {
@@ -615,6 +649,9 @@ function TicketCatalogWorkspace() {
     if (!form || form.mode === 'view') throw new Error('فرم قابل ویرایش نیست.');
     const now = new Date().toISOString();
     const current = form.product;
+    const currentPublishedOffer = current
+      ? catalogOffer(current, publishedOffers)
+      : undefined;
     if (current && inputs.length !== 1)
       throw new Error('ویرایش باید روی همان بلیط انجام شود.');
     let updated = products;
@@ -640,7 +677,9 @@ function TicketCatalogWorkspace() {
           allocations: [],
         },
       );
-      updated = replacePreview(updated, next, current.version);
+      updated = currentPublishedOffer
+        ? products
+        : replacePreview(updated, next, current.version);
     } else {
       for (const [index, input] of inputs.entries()) {
         const next = activateDraftCatalogProduct(
@@ -689,11 +728,17 @@ function TicketCatalogWorkspace() {
                 offer.totalCapacity === previous!.totalCapacity,
             )
           : [];
-        if (matches.length > 1)
+        if (matches.length > 1 && !currentPublishedOffer)
           throw new Error(
             'بیش از یک بلیط مشابه در فروش ثبت شده؛ ابتدا بلیط مرتبط را مشخص کنید.',
           );
-        if (matches[0])
+        if (currentPublishedOffer)
+          await toursApi.reviseOffer(
+            currentPublishedOffer.id,
+            currentPublishedOffer.version,
+            nextInput,
+          );
+        else if (matches[0])
           await toursApi.reviseOffer(
             matches[0].id,
             matches[0].version,
@@ -875,18 +920,32 @@ function TicketCatalogWorkspace() {
       >
         مشاهده
       </Button>
-      {new Date(offer.departureAt).getTime() > catalogNow ? (
-        <div className="flex flex-wrap gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => editPublishedLoad(offer)}
+      >
+        ویرایش لود
+      </Button>
+      <ConfirmDialog
+        title="حذف لود پرواز"
+        description="این لود از فهرست مدیریت و فروش جدید خارج می‌شود. سوابق قیمت، خرید، مالی و ممیزی حذف نمی‌شوند. لود متصل به قرارداد، رزرو ظرفیت یا تور قابل حذف نیست."
+        destructive
+        onConfirm={() => void archivePublishedLoad(offer)}
+        trigger={
           <Button
             size="sm"
-            variant="outline"
-            onClick={() => {
-              setOfferForm({ offer, readOnly: false });
-            }}
+            variant="destructive"
+            loading={deleteSaving === offer.id}
+            disabled={Boolean(deleteSaving)}
           >
-            ویرایش
+            <Trash2 className="size-4" aria-hidden />
+            حذف لود
           </Button>
-
+        }
+      />
+      {new Date(offer.departureAt).getTime() > catalogNow ? (
+        <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
             variant="outline"

@@ -177,12 +177,14 @@ export function FlightLoadGrid({
     field: keyof FlightLoadFilter,
     label: string,
     options: readonly [string, string][],
+    optionLimit?: number,
   ) => (
     <FormField label={label} id={'load-' + field}>
       <NativeSearchSelect
         id={'load-' + field}
         value={filter[field]}
         onChange={(event) => change(field, event.target.value)}
+        {...(optionLimit === undefined ? {} : { optionLimit })}
       >
         <option value="">همه</option>
         {options.map(([value, text]) => (
@@ -491,6 +493,7 @@ export function FlightLoadGrid({
           'weekday',
           'روز هفته',
           scheduleWeekdays.map((day) => [String(day.day), day.name]),
+          scheduleWeekdays.length + 1,
         )}
         {selectFilter('cabin', 'کلاس', Object.entries(cabinLabels))}
         <label>

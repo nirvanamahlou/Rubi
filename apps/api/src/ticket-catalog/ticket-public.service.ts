@@ -760,9 +760,53 @@ export class TicketPublicService {
       expectedVersion < 1
     )
       throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
-    throw new BadRequestException(
-      'بلیت تعریف‌شده قابل حذف نیست؛ برای توقف فروش آن را غیرفعال کنید.',
-    );
+    return this.database.client.$transaction(async (tx) => {
+      await tx.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
+      );
+      const row = await tx.ticketPublishedOffer.findFirst({
+        where: {
+          id,
+          branchId: { in: actor.branchIds },
+          audit: { none: { action: 'ticket.offer.archived' } },
+        },
+        include: {
+          capacityAllocations: { where: { status: 'ACTIVE' } },
+          capacityHolds: {
+            where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+          },
+          tourOutboundDepartures: { select: { id: true } },
+          tourReturnDepartures: { select: { id: true } },
+        },
+      });
+      if (!row) throw new ForbiddenException('لود در شعبه مجاز شما پیدا نشد.');
+      if (row.version !== expectedVersion)
+        throw new ConflictException(
+          'لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.',
+        );
+      if (
+        row.capacityAllocations.length ||
+        row.capacityHolds.length ||
+        row.tourOutboundDepartures.length ||
+        row.tourReturnDepartures.length
+      )
+        throw new ConflictException(
+          'لود به قرارداد، رزرو ظرفیت یا تور متصل است و قابل حذف نیست.',
+        );
+      await tx.ticketPublishedOffer.update({
+        where: { id },
+        data: { status: 'ARCHIVED', version: { increment: 1 } },
+      });
+      await tx.ticketOfferAudit.create({
+        data: {
+          offerId: id,
+          actorUserId: actor.userId,
+          action: 'ticket.offer.archived',
+          version: expectedVersion + 1,
+        },
+      });
+      return { data: { id } };
+    });
   }
 
   async salePriceTargets(actor: AuthenticatedActor) {

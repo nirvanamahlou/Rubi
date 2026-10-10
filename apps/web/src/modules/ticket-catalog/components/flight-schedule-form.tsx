@@ -9,8 +9,10 @@ import { supplyOptions } from '../model/preview';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import {
   buildWeekdayTickets,
+  chronologicalScheduleDates,
   defaultReturnMaxDays,
   scheduleDates,
+  scheduleWeekdayName,
   scheduleWeekdays,
   type ScheduleLeg,
   type WeekdayStay,
@@ -21,6 +23,7 @@ import { ManifestTemplatePicker } from './manifest-template-picker';
 import {
   buildAutomaticTicketTitle,
   createReturnTicketDraft,
+  saveTicketFormOnCtrlS,
   scheduleToUtc,
   TicketForm,
   withDisplaySnapshot,
@@ -127,6 +130,7 @@ export function FlightScheduleForm({
   const returnCount = new Set(
     preview.flatMap((p) => (p.returning ? [p.returning] : [])),
   ).size;
+  const orderedPreview = chronologicalScheduleDates(preview);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -269,6 +273,7 @@ export function FlightScheduleForm({
     <form
       className={styles.form}
       dir="rtl"
+      onKeyDown={saveTicketFormOnCtrlS}
       onSubmit={(event) => void submit(event)}
     >
       <div className={styles.mode} role="group" aria-label="نوع بلیت">
@@ -685,13 +690,35 @@ export function FlightScheduleForm({
                   ? ` و ${returnCount.toLocaleString('fa-IR')} بلیت برگشت`
                   : ''}
               </strong>
-              <div className={styles.previewRows}>
-                {preview.map((pair) => (
-                  <span key={pair.outbound} dir="ltr">
-                    {pair.outbound}
-                    {pair.returning ? ` → ${pair.returning}` : ''}
-                  </span>
-                ))}
+              <div className={styles.previewTableScroll}>
+                <table className={styles.previewTable}>
+                  <thead>
+                    <tr>
+                      <th>ردیف</th>
+                      <th>روز رفت</th>
+                      <th>تاریخ رفت</th>
+                      <th>روز برگشت</th>
+                      <th>تاریخ برگشت</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orderedPreview.map((pair, index) => (
+                      <tr
+                        key={`${pair.outbound}-${pair.returning ?? 'one-way'}`}
+                      >
+                        <td>{(index + 1).toLocaleString('fa-IR')}</td>
+                        <td>{scheduleWeekdayName(pair.outbound)}</td>
+                        <td dir="ltr">{pair.outbound}</td>
+                        <td>
+                          {pair.returning
+                            ? scheduleWeekdayName(pair.returning)
+                            : '—'}
+                        </td>
+                        <td dir="ltr">{pair.returning ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <p>
                 برگشت‌های هم‌تاریخ با مشخصات یکسان فقط یک‌بار ساخته می‌شوند.

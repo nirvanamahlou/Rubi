@@ -59,6 +59,26 @@ describe('tour edit client', () => {
       }),
     );
   });
+  it('archives an offer with its optimistic version', async () => {
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: { id: 'offer' } }), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await expect(toursApi.archiveOffer('offer', 7)).resolves.toEqual({
+      data: { id: 'offer' },
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.test/ticket-catalog/offers/offer',
+      expect.objectContaining({
+        method: 'DELETE',
+        credentials: 'include',
+        body: JSON.stringify({ expectedVersion: 7 }),
+      }),
+    );
+  });
   it('surfaces a stale-version conflict to keep the editor open', async () => {
     vi.stubGlobal(
       'fetch',
