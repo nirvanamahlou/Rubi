@@ -49,9 +49,9 @@ describe('ticket workspace entry points', () => {
     );
     expect(source).toContain('toursApi.archiveOfferBatch(');
     expect(source).toContain('toursApi.reviseOfferBatch(');
-    expect(source).toContain('publishedLoadGroup(');
-    expect(source).toContain('ویرایش کل لود');
-    expect(source).toContain('حذف کل لود');
+    expect(source).toContain('publishedLoadGroups(');
+    expect(source).toContain('ویرایش کل جدول');
+    expect(source).toContain('حذف کل جدول');
     expect(source).toContain(
       "setForm({ mode: 'edit', product, products: grouped, offers })",
     );
@@ -187,6 +187,7 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain('maxLength={3}');
     expect(source).not.toContain('بلیط‌های ثبت‌شده برای فروش و قرارداد');
     expect(source).toContain('renderActions={renderOfferActions}');
+    expect(source).toContain('renderLoadActions={renderLoadActions}');
     expect(source).toContain('setOfferForm({ offer, readOnly: true })');
     expect(source).toContain('updateCapacityHold({');
   });

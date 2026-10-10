@@ -2424,5 +2424,6 @@
   "ویرایش لود ردیف تکراری ایجاد می‌کند.": "Editing the load would create a duplicate row.",
   "یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.": "One or more load rows were not found in an authorized branch.",
   "یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "One of the load rows has changed; refresh the list.",
-  "لود در شعبه مجاز شما پیدا نشد.": "The load was not found in an authorized branch."
+  "لود در شعبه مجاز شما پیدا نشد.": "The load was not found in an authorized branch.",
+  "حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row has an active capacity hold or linked tour and cannot be deleted; no rows were deleted."
 }

@@ -17179,5 +17179,12 @@
   "ویرایش کل لود (": "Edit entire load (",
   "ویرایش لود ردیف تکراری ایجاد می‌کند.": "Editing the load would create a duplicate row.",
   "یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.": "One or more load rows were not found in an authorized branch.",
-  "یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "One of the load rows has changed; refresh the list."
+  "یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.": "One of the load rows has changed; refresh the list.",
+  "ردیفی برای ویرایش در این جدول وجود ندارد.": "There are no rows to edit in this table.",
+  "عملیات کل جدول لود": "Whole load table actions",
+  "ویرایش کل جدول (": "Edit entire table (",
+  "حذف کل جدول لود (": "Delete entire load table (",
+  "حذف کل جدول (": "Delete entire table (",
+  "تمام ردیف‌های رفت و برگشت متعلق به لودهای نمایش‌داده‌شده در این بلوک، به‌صورت یکجا از مدیریت و فروش جدید خارج می‌شوند. فروش‌ها و سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند. عملیات اتمیک است؛ اگر رزرو ظرفیت فعال یا تور متصل وجود داشته باشد هیچ ردیفی حذف نمی‌شود.": "All outbound and return rows belonging to the loads shown in this block will be removed from management and new sales together. Sales and price, purchase, finance, and audit history remain. The operation is atomic; if there is an active capacity hold or linked tour, no row is removed.",
+  "حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row has an active capacity hold or linked tour and cannot be deleted; no rows were deleted."
 }
