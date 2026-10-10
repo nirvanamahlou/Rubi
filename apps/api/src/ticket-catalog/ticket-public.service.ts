@@ -809,7 +809,6 @@ export class TicketPublicService {
           audit: { none: { action: 'ticket.offer.archived' } },
         },
         include: {
-          capacityAllocations: { where: { status: 'ACTIVE' } },
           capacityHolds: {
             where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
           },
@@ -827,14 +826,13 @@ export class TicketPublicService {
         );
       const blocked = rows.find(
         (row) =>
-          row.capacityAllocations.length ||
           row.capacityHolds.length ||
           row.tourOutboundDepartures.length ||
           row.tourReturnDepartures.length,
       );
       if (blocked)
         throw new ConflictException(
-          'حداقل یک ردیف لود به قرارداد، رزرو ظرفیت یا تور متصل است و قابل حذف نیست؛ هیچ ردیفی حذف نشد.',
+          'حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.',
         );
       for (const row of rows) {
         await tx.ticketPublishedOffer.update({

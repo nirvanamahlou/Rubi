@@ -1112,7 +1112,7 @@
   "حداقل ظرفیت باید با حداکثر ظرفیت و کوچک‌تر یا مساوی آن باشد.": "The minimum capacity must be equal to the maximum capacity and smaller or equal to it.",
   "حداقل نقش مشتری یا مسافر لازم است.": "At least the customer or traveler role is required.",
   "حداقل یک پوشش فعال الزامی است.": "At least one active coverage is required.",
-  "حداقل یک ردیف لود به قرارداد، رزرو ظرفیت یا تور متصل است و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row is linked to a contract, capacity hold, or tour and cannot be deleted; no rows were deleted.",
+  "حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.": "At least one load row has an active capacity hold or linked tour and cannot be deleted; no rows were deleted.",
   "حداقل یک شرکت فعال باید باقی بماند.": "At least one active company must remain.",
   "حداقل یک فیلد برای ویرایش لازم است.": "At least one field is required for editing.",
   "حداقل یک کانال معتبر لازم است.": "At least one valid channel is required.",

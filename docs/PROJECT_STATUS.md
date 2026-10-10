@@ -5191,3 +5191,10 @@ The import dialog now states the optional-field rule. Sixteen focused
 import/parser/localization tests, scoped lint, Contracts build and Web typecheck
 pass. No workbook rows were imported, and there is no API/schema/migration,
 dependency, permission or operational-data change.
+
+# 2026-10-10 — Whole load-table actions in the table header
+
+- Moved Edit/Delete from selected-flight details into the outbound/return load-table header and made the action set expand all represented rows to their complete stable load groups before one atomic request.
+- Logical archive now permits rows with historical/active sale allocations while preserving those relations and all pricing, purchase, finance and audit history; active capacity holds and linked tours remain protected.
+- Verified Ticket Catalog Web `200 passed / 1 optional skipped`, Ticket Catalog API `185 passed / 22 opt-in skipped`, English coverage, scoped lint, Web/API typechecks and both production builds. No schema, migration, dependency, lockfile or physical-delete change.
+- Stabilized one unrelated but consistently exposed Sales SSR test by assigning its three-render assertion a bounded 15-second timeout; both CI copies and the loaded Windows host measured just over the former five-second default. Production Sales code is unchanged.

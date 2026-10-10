@@ -52,6 +52,7 @@ export function FlightLoadGrid({
   refreshing,
   onRefresh,
   renderActions,
+  renderLoadActions,
 }: {
   offers: readonly TicketOfferV1[];
   references?: readonly Reference[];
@@ -59,6 +60,7 @@ export function FlightLoadGrid({
   refreshing: boolean;
   onRefresh: () => void;
   renderActions: (offer: TicketOfferV1) => ReactNode;
+  renderLoadActions: (offers: readonly TicketOfferV1[]) => ReactNode;
 }) {
   const [filter, setFilter] = useState(initial);
   const [originCountry, setOriginCountry] = useState('');
@@ -130,6 +132,10 @@ export function FlightLoadGrid({
     filter.carrier,
   );
   const outbounds = disjointFlightLoadLegs(outboundCandidates, returns);
+  const tableLoad = [...outbounds, ...returns].filter(
+    (offer, index, rows) =>
+      rows.findIndex(({ id }) => id === offer.id) === index,
+  );
   const originCities = [
     ...new Set(
       company
@@ -200,12 +206,19 @@ export function FlightLoadGrid({
       totals = flightLoadTotals(rows);
     return (
       <section className={styles.leg}>
-        <h3>
-          {back ? 'برگشت' : 'رفت'}
-          {outbound
-            ? ` — ${cityName(back ? outbound.destinationId : outbound.originId)} ← ${cityName(back ? outbound.originId : outbound.destinationId)}`
-            : ''}
-        </h3>
+        <div className={styles.legHeader}>
+          <h3>
+            {back ? 'برگشت' : 'رفت'}
+            {outbound
+              ? ` — ${cityName(back ? outbound.destinationId : outbound.originId)} ← ${cityName(back ? outbound.originId : outbound.destinationId)}`
+              : ''}
+          </h3>
+          {!back && tableLoad.length ? (
+            <div className={styles.loadActions} aria-label="عملیات کل جدول لود">
+              {renderLoadActions(tableLoad)}
+            </div>
+          ) : null}
+        </div>
         <div className={styles.scroller}>
           <table className={styles.table}>
             <thead>

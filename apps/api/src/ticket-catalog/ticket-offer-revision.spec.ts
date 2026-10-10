@@ -191,17 +191,28 @@ describe('published ticket revision', () => {
     expect(tx.ticketPublishedOffer.update).toHaveBeenCalledTimes(2);
     expect(tx.ticketOfferAudit.create).toHaveBeenCalledTimes(2);
   });
-  it.each([
-    'capacityAllocations',
-    'capacityHolds',
-    'tourOutboundDepartures',
-    'tourReturnDepartures',
-  ])('rejects archiving a load with linked %s', async (key) => {
-    const { tx, service } = setup({ [key]: [{ id: 'linked' }] });
-    await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
-      'قابل حذف نیست',
-    );
-    expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+  it.each(['capacityHolds', 'tourOutboundDepartures', 'tourReturnDepartures'])(
+    'rejects archiving a load with linked %s',
+    async (key) => {
+      const { tx, service } = setup({ [key]: [{ id: 'linked' }] });
+      await expect(service.archiveExpired(id, 1, actor)).rejects.toThrow(
+        'قابل حذف نیست',
+      );
+      expect(tx.ticketPublishedOffer.update).not.toHaveBeenCalled();
+    },
+  );
+  it('logically archives sold rows while retaining their allocation history', async () => {
+    const { tx, service } = setup({
+      status: 'ACTIVE',
+      capacityAllocations: [{ id: 'linked-sale' }],
+    });
+    await expect(service.archiveExpired(id, 1, actor)).resolves.toEqual({
+      data: { id },
+    });
+    expect(tx.ticketPublishedOffer.update).toHaveBeenCalledWith({
+      where: { id },
+      data: { status: 'ARCHIVED', version: { increment: 1 } },
+    });
   });
   it('rejects stale or unauthorized archive requests', async () => {
     const { tx, service } = setup({ version: 2 });

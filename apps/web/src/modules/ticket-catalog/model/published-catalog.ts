@@ -212,6 +212,20 @@ export function publishedLoadGroup(
   return grouped.length ? grouped : [selected];
 }
 
+/** Expands every visible row to its complete load and removes overlaps in server order. */
+export function publishedLoadGroups(
+  selected: readonly TicketOfferV1[],
+  offers: readonly TicketOfferV1[],
+  local: readonly Product[],
+) {
+  const ids = new Set(
+    selected.flatMap((offer) =>
+      publishedLoadGroup(offer, offers, local).map(({ id }) => id),
+    ),
+  );
+  return offers.filter(({ id }) => ids.has(id));
+}
+
 export function publishedOfferInput(offer: TicketOfferV1) {
   return {
     originAirportId: offer.originAirportId ?? null,
