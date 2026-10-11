@@ -1,9 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   Activity,
   ArrowUpLeft,
+  ArrowUp,
   BarChart3,
   BellRing,
   BookOpen,
@@ -19,7 +27,9 @@ import {
   Lightbulb,
   ListChecks,
   MapPin,
+  Mic,
   Newspaper,
+  Paperclip,
   RefreshCw,
   ShieldCheck,
   SlidersHorizontal,
@@ -217,6 +227,128 @@ function SourceDetails({
         <p className={styles.footnote}>{t(c.newsGate)}</p>
       </DialogContent>
     </Dialog>
+  );
+}
+export function AssistantComposer({
+  t,
+  denied,
+  state,
+  snapshot,
+  onRefresh,
+}: {
+  t: Translate;
+  denied: boolean;
+  state: AssistantLoadState;
+  snapshot: ExecutiveSnapshot | null;
+  onRefresh?: (() => void) | undefined;
+}) {
+  const inputId = useId();
+  const helpId = useId();
+  const input = useRef<HTMLTextAreaElement>(null);
+  const [draft, setDraft] = useState('');
+  const [notSubmitted, setNotSubmitted] = useState(false);
+  const submit = () => {
+    // Local draft only. Do not simulate a model response or transmit user content.
+    if (!denied && draft.trim()) setNotSubmitted(true);
+  };
+  return (
+    <section className={styles.composer} aria-labelledby={inputId + '-title'}>
+      <h1 id={inputId + '-title'}>{t(c.composerTitle)}</h1>
+      <form
+        className={styles.composerForm}
+        onSubmit={(event) => {
+          event.preventDefault();
+          submit();
+        }}
+      >
+        <textarea
+          id={inputId}
+          ref={input}
+          aria-label={t(c.composerTitle)}
+          aria-describedby={helpId}
+          placeholder={t(c.composerPlaceholder)}
+          className={styles.composerInput}
+          rows={2}
+          maxLength={4000}
+          value={draft}
+          disabled={denied}
+          onChange={(event) => {
+            setDraft(event.target.value);
+            setNotSubmitted(false);
+          }}
+          onKeyDown={(event) => {
+            if (
+              event.key === 'Enter' &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing
+            ) {
+              event.preventDefault();
+              submit();
+            }
+          }}
+        />
+        <div className={styles.composerTools}>
+          <button
+            type="button"
+            disabled
+            aria-label={t(c.attach)}
+            title={t(c.attachUnavailable)}
+          >
+            <Paperclip size={21} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            disabled
+            aria-label={t(c.voice)}
+            title={t(c.voiceUnavailable)}
+          >
+            <Mic size={21} aria-hidden="true" />
+          </button>
+          <button
+            type="submit"
+            className={styles.composerSend}
+            disabled={denied || !draft.trim()}
+            aria-label={t(c.send)}
+            title={t(c.chatGate)}
+          >
+            <ArrowUp size={24} aria-hidden="true" />
+          </button>
+        </div>
+      </form>
+      <div className={styles.composerPrompts}>
+        {[c.quickDaily, c.quickSales, c.quickReceivables].map((prompt) => (
+          <button
+            key={prompt[1]}
+            type="button"
+            disabled={denied}
+            onClick={() => {
+              setDraft(t(prompt));
+              setNotSubmitted(false);
+              input.current?.focus();
+            }}
+          >
+            {t(prompt)}
+          </button>
+        ))}
+      </div>
+      <div className={styles.composerFooter}>
+        <p id={helpId} className={styles.composerHint} role="status">
+          {t(notSubmitted ? c.messageNotSubmitted : c.chatGate)}
+        </p>
+        <div className={styles.composerUtilities}>
+          <SourceDetails t={t} snapshot={denied ? null : snapshot} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRefresh}
+            disabled={state === 'loading'}
+          >
+            <RefreshCw size={15} aria-hidden="true" />
+            {t(c.refresh)}
+          </Button>
+        </div>
+      </div>
+    </section>
   );
 }
 function PersonalFollowUps({
@@ -421,21 +553,6 @@ function ViewContent({
           </Panel>
         </div>
         <PersonalFollowUps t={t} snapshot={snapshot} english={english} />
-        <Panel title={t(c.chat)} icon={Sparkles}>
-          <div className={styles.promptChips}>
-            {[c.promptOne, c.promptTwo, c.promptThree].map((prompt) => (
-              <span key={prompt[1]}>{t(prompt)}</span>
-            ))}
-          </div>
-          <textarea
-            disabled
-            rows={2}
-            aria-label={t(c.chat)}
-            placeholder={t(c.chatHint)}
-            className={styles.chatInput}
-          />
-          <p className={styles.footnote}>{t(c.chatGate)}</p>
-        </Panel>
       </>
     );
   if (view === 'news')
@@ -560,41 +677,13 @@ export function ExecutivePanels({
   const denied = state === 'forbidden' || state === 'unauthenticated';
   return (
     <div className={styles.workspace} dir={english ? 'ltr' : 'rtl'}>
-      <header className={styles.hero}>
-        <div className={styles.heroContent}>
-          <div className={styles.eyebrow}>
-            <span>
-              <Sparkles size={14} aria-hidden="true" />
-              {t(c.executive)}
-            </span>
-            <span className={styles.readOnly}>
-              <ShieldCheck size={13} aria-hidden="true" />
-              {t(c.readOnly)}
-            </span>
-          </div>
-          <h1>{t(c.title)}</h1>
-          <p className={styles.heroLead}>{t(c.intro)}</p>
-          <p className={styles.heroSubtitle}>{t(c.subtitle)}</p>
-        </div>
-        <Sparkles
-          className={styles.heroMark}
-          size={128}
-          strokeWidth={0.7}
-          aria-hidden="true"
-        />
-        <div className={styles.heroActions}>
-          <SourceDetails t={t} snapshot={denied ? null : snapshot} />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={state === 'loading'}
-          >
-            <RefreshCw size={15} aria-hidden="true" />
-            {t(c.refresh)}
-          </Button>
-        </div>
-      </header>
+      <AssistantComposer
+        t={t}
+        denied={denied}
+        state={state}
+        snapshot={snapshot}
+        onRefresh={onRefresh}
+      />
       <nav className={styles.tabs} aria-label={t(c.title)}>
         {assistantViews.map((id) => {
           const TabIcon = viewIcons[id];

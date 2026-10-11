@@ -6846,3 +6846,15 @@ Additional test-only scope: apps/web/src/app/(crm)/users/role-access-presets.spe
 The shared assistant may be recommended as a visible screen; native operational
 permission recommendations still intersect actor grants and available options.
 This updates the obsolete screen-list expectation, not the role editor or IAM.
+
+## ASSISTANT-COMPOSER-1011 — PC-C — READY_FOR_REVIEW
+
+User requests replacing only the assistant hero with the supplied “What can I do
+for you?” message composer. Base: develop461a008c. Reserve Web assistant
+workspace/styles/spec, assistant translations, and additive own status entry.
+Keep all six views and source/refresh controls; remove duplicate advisor-only
+chat placeholder. Prompt chips populate a local draft, no storage/network/model
+submission; inactive microphone/attachment must not request access. Preserve
+all authentication and source-data permissions. Acceptance: matching composer,
+RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
+Web build, all final-head CI before authorized develop merge and local activation.

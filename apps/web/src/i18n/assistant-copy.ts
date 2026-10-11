@@ -1,6 +1,29 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
   title: ['دستیار هوشمند', 'Smart assistant'],
+  composerTitle: ['چه کاری برات انجام بدم؟', 'What can I do for you?'],
+  composerPlaceholder: [
+    'پیامت را برای نورا بنویس…',
+    'Write your message to Noura…',
+  ],
+  quickDaily: ['خلاصه امروز', 'Today’s summary'],
+  quickSales: ['تحلیل فروش', 'Sales analysis'],
+  quickReceivables: ['پیگیری مطالبات', 'Receivables follow-up'],
+  send: ['ارسال پیام', 'Send message'],
+  attach: ['پیوست فایل', 'Attach a file'],
+  voice: ['پیام صوتی', 'Voice message'],
+  attachUnavailable: [
+    'پیوست فایل هنوز فعال نیست.',
+    'File attachments are not available yet.',
+  ],
+  voiceUnavailable: [
+    'پیام صوتی هنوز فعال نیست.',
+    'Voice messages are not available yet.',
+  ],
+  messageNotSubmitted: [
+    'پیام ارسال نشد؛ گفت‌وگوی هوشمند هنوز فعال نیست. متن شما در همین صفحه باقی می‌ماند.',
+    'Message not sent: AI conversation is not active yet. Your draft stays on this page.',
+  ],
   executive: ['پنل مدیرعامل', 'Executive workspace'],
   intro: [
     'دید روشن‌تر، تصمیم آگاهانه‌تر',
