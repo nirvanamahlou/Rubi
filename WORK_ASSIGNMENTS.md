@@ -6841,3 +6841,8 @@ Web/Contracts lint and typecheck passed. Existing explicit-grant contract tests
 were updated to the new owner-authorized shared-shell policy while preserving
 unrelated module restrictions. CI, integration and local runtime evidence are
 recorded on PR786. Business sources still enforce existing permissions.
+
+Additional test-only scope: apps/web/src/app/(crm)/users/role-access-presets.spec.tsx.
+The shared assistant may be recommended as a visible screen; native operational
+permission recommendations still intersect actor grants and available options.
+This updates the obsolete screen-list expectation, not the role editor or IAM.
