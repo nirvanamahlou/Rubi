@@ -301,8 +301,9 @@ export function UserManagement() {
       <header className={styles.pageHeader}>
         <h1 className="text-2xl font-black">مدیریت کاربران</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          تعریف حساب، نقش و دسترسی مستقل هر کاربر؛ تیک هر بخش همهٔ زیربخش‌ها را
-          انتخاب می‌کند و می‌توانید هر مورد را جداگانه بردارید.
+          تعریف حساب، نقش و دسترسی مستقل هر کاربر؛ «نمایش زیربخش‌ها» بدون اعطای
+          دسترسی، انتخاب موردی را باز می‌کند. تیک عنوان ماژول همهٔ موارد قابل
+          واگذاری آن را انتخاب می‌کند.
         </p>
       </header>
       {message && (
@@ -529,47 +530,73 @@ export function UserManagement() {
                           );
                         }}
                       >
-                        <fieldset className={styles.childSection}>
-                          <legend className="text-sm font-bold">
-                            بخش‌های قابل مشاهده
-                          </legend>
-                          {screens.map((s) => (
-                            <Check
-                              key={s.id}
-                              label={s.title}
-                              checked={screenIds.includes(s.id)}
-                              disabled={
-                                !options.assignableScreenIds.includes(s.id)
-                              }
-                              onChange={(v) =>
-                                setScreenIds(change(screenIds, [s.id], v))
-                              }
-                            />
-                          ))}
-                        </fieldset>
-                        <fieldset className={styles.childSection}>
-                          <legend className="text-sm font-bold">
-                            مجوزهای عملیات
-                          </legend>
-                          {permissions.map((p) => (
-                            <Check
-                              key={p.id}
-                              label={p.name}
-                              checked={permissionIds.includes(p.id)}
-                              disabled={
-                                !options.canAssignAll &&
-                                !actor?.permissions.some(
-                                  (code) => code === p.code,
-                                )
-                              }
-                              onChange={(v) =>
-                                setPermissionIds(
-                                  change(permissionIds, [p.id], v),
-                                )
-                              }
-                            />
-                          ))}
-                        </fieldset>
+                        {(query) => {
+                          const normalized = query.trim().toLocaleLowerCase();
+                          const matchingScreens = screens.filter((screen) =>
+                            screen.title
+                              .toLocaleLowerCase()
+                              .includes(normalized),
+                          );
+                          const matchingPermissions = permissions.filter(
+                            (permission) =>
+                              (permission.name + ' ' + permission.code)
+                                .toLocaleLowerCase()
+                                .includes(normalized),
+                          );
+                          return (
+                            <>
+                              <fieldset className={styles.childSection}>
+                                <legend className="text-sm font-bold">
+                                  بخش‌های قابل مشاهده
+                                </legend>
+                                {matchingScreens.map((s) => (
+                                  <Check
+                                    key={s.id}
+                                    label={s.title}
+                                    checked={screenIds.includes(s.id)}
+                                    disabled={
+                                      !options.assignableScreenIds.includes(
+                                        s.id,
+                                      )
+                                    }
+                                    onChange={(v) =>
+                                      setScreenIds(change(screenIds, [s.id], v))
+                                    }
+                                  />
+                                ))}
+                              </fieldset>
+                              <fieldset className={styles.childSection}>
+                                <legend className="text-sm font-bold">
+                                  مجوزهای عملیات
+                                </legend>
+                                {matchingPermissions.map((p) => (
+                                  <Check
+                                    key={p.id}
+                                    label={p.name}
+                                    checked={permissionIds.includes(p.id)}
+                                    disabled={
+                                      !options.canAssignAll &&
+                                      !actor?.permissions.some(
+                                        (code) => code === p.code,
+                                      )
+                                    }
+                                    onChange={(v) =>
+                                      setPermissionIds(
+                                        change(permissionIds, [p.id], v),
+                                      )
+                                    }
+                                  />
+                                ))}
+                              </fieldset>
+                              {matchingScreens.length === 0 &&
+                                matchingPermissions.length === 0 && (
+                                  <p className="text-xs text-muted-foreground">
+                                    موردی با این جست‌وجو پیدا نشد.
+                                  </p>
+                                )}
+                            </>
+                          );
+                        }}
                       </AccessGroupCard>
                     );
                   })}

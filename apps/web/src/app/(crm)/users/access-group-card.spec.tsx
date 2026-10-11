@@ -15,11 +15,12 @@ const render = (count: number, total = 3) =>
     </AccessGroupCard>,
   );
 
-describe('checkbox-first access groups', () => {
-  it('shows a parent checkbox without a dropdown and hides unselected children', () => {
+describe('independent access group disclosure', () => {
+  it('offers a separate disclosure even before any access is selected', () => {
     const html = render(0);
     expect(html).toContain('type="checkbox"');
-    expect(html).not.toContain('<details');
+    expect(html).toContain('نمایش زیربخش‌ها');
+    expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('CHILD ACCESS');
   });
   it('reveals selected children and keeps them visible after removing a sibling', () => {
@@ -27,10 +28,27 @@ describe('checkbox-first access groups', () => {
     const partial = render(2);
     expect(partial).toContain('CHILD ACCESS');
     expect(partial).toContain('aria-checked="mixed"');
-    expect(partial).toContain('aria-controls=');
+    expect(partial).toContain('aria-expanded="true"');
   });
-  it('clearing the group hides its children and an unavailable group is disabled', () => {
+  it('keeps an unavailable group disabled without removing its disclosure', () => {
     expect(render(0)).not.toContain('CHILD ACCESS');
     expect(render(0, 0)).toContain('disabled=""');
+    expect(render(0, 0)).toContain('نمایش زیربخش‌ها');
+  });
+  it('offers scoped search when the expanded group has searchable choices', () => {
+    const html = renderToStaticMarkup(
+      <AccessGroupCard
+        id="hr"
+        title="منابع انسانی"
+        count={1}
+        total={4}
+        onChange={() => {}}
+      >
+        {() => <span>جزییات دسترسی</span>}
+      </AccessGroupCard>,
+    );
+    expect(html).toContain('type="search"');
+    expect(html).toContain('جست‌وجوی زیربخش‌ها و مجوزهای منابع انسانی');
+    expect(html).toContain('جزییات دسترسی');
   });
 });
