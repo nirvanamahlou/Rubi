@@ -5398,6 +5398,10 @@ The per-row «عملیات» column is moved beside «انتخاب» so it is vi
 
 Each server `loadGroupId` now renders as one full-width table containing all rows created by that load submission. Outbound and return rows stay together and are identified by a «مسیر» column instead of splitting one load into two tables.
 
+## 2026-10-11 — Silent legacy ticket backfill — PC-B
+
+Automatic page-load reconciliation of legacy browser tickets no longer surfaces its per-row publication conflicts as a repeated top-of-page alert. Explicit user-triggered publication/status errors remain visible, and Procurement validation is unchanged.
+
 ## 2026-10-11 — EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
 
 The final standalone main-menu entry opens a six-view executive assistant in

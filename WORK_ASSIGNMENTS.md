@@ -6677,6 +6677,12 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-load-group-table-1011` from merged P
 
 Delivered: each `loadGroupId` renders exactly one full-width multi-row table. Outbound and return rows remain together and use the new «مسیر» column; whole-load actions and totals operate on the complete group. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass. The rebuilt localhost/LAN service runs on port 3000.
 
+## TICKET-SILENT-LEGACY-BACKFILL-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-silent-backfill-1011` from current `origin/develop`. Owner requests removal of the repeated top-of-page «مرجع درخواست خرید پرواز تغییر کرده است» text emitted while the page silently reconnects legacy browser tickets. Reserve only Ticket Catalog legacy-backfill presentation, its focused regression and bounded status docs. Keep explicit user-triggered publication errors visible and do not change Procurement validation, APIs, schema, migrations, dependencies or operational data.
+
+Delivered: automatic legacy-ticket reconciliation passes `announceProblems=false`, so its repeated per-row conflicts no longer populate the top Ticket Catalog alert. Explicit user-triggered publication keeps the default visible-error behavior. Ten focused tests, scoped ESLint, Web typecheck and the 59-route production build pass. No API, Procurement rule, schema/migration, dependency or operational-data change.
+
 ## EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C, confirmed by the owner in this chat. Branch

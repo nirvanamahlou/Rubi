@@ -183,6 +183,10 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('publishExistingFlights(');
     expect(source).toContain('`ticket-catalog:${product.id}`');
     expect(source).toContain('backfillStarted.current');
+    expect(source).toContain('announceProblems = true');
+    expect(source).toMatch(
+      /publishExistingFlights\(\s*restoredProducts,\s*stored\.references,\s*false/,
+    );
     expect(source).toContain('repeatedDefinitions(');
     expect(source).toContain('publishRepeatedProducts(');
     expect(source).toContain('setRepeat(');
