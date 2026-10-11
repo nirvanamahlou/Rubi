@@ -6864,6 +6864,7 @@ Web build, all final-head CI before authorized develop merge and local activatio
 COMPUTER_ID=PC-B. Direct user authorization extends bounded Accounting chart empty-state work and local accounting export/import packaging. Branch codex/pc-b-accounting-empty-chart-transfer-1011. Reserve accounting-workspace.tsx, accounting-chart-editor.tsx, focused tests, additive en-overrides translations and task documentation; no schema/dependency/permission changes. Preserve concurrent books-error follow-up by distinguishing request failure from empty data. Transfer artifacts stay outside Git; source read-only; destination import requires explicit target branch, preview and backup. User authorizes push and develop merge after checks.
 
 Validation: nine focused chart tests, scoped lint and Web typecheck passed. PR789 exact implementation head passed all remote quality, test, production-build and PostgreSQL migration/seed gates. Source reservation released after the authorized merge; data package remains outside Git and receiving-machine import is not claimed.
+
 ## ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C — READY_FOR_REVIEW
 
 Base: develop9a41c1cc. Sole writer reserves Web assistant workspace and styles,
