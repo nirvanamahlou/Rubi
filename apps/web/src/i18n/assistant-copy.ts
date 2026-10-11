@@ -127,8 +127,8 @@ export const assistantCopy = {
     'Which decisions need follow-up?',
   ],
   noPersonalAccess: [
-    'دسترسی این پنل باید به‌صورت مشخص برای حساب مدیرعامل فعال شود.',
-    'This workspace requires an explicit access grant for the CEO account.',
+    'نشست معتبر و مجوز مشاهدهٔ اطلاعات منبع لازم است. دستیار مجوزهای ERP شما را تغییر نمی‌دهد.',
+    'An active session and source data access are required. The assistant preserves your ERP permissions.',
   ],
   returnLogin: ['ورود دوباره', 'Sign in again'],
   states: {
