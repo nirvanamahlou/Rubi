@@ -6604,3 +6604,22 @@ CI repair implemented. Four IAM tests pass through API Vitest, scoped API lint
 passes and full PR changed-file formatting passes. Bounded locks release with
 this review commit. Remote checks must pass on the final revision before merge;
 record their result and merge provenance in the PR handoff. No gate weakened.
+
+## GITHUB-IDENTITY-1011 — PC-C — READY_FOR_REVIEW
+
+User identifies their GitHub account as Amin-tech11 and asks to fix PRs authored
+under nirvanamahlou. Reserve only the GitHub identity paragraph in
+DEVELOPMENT_WORKFLOW and own additive status/assignment entries. Branch from
+origin/develop@5b7598bc; preserve all existing source, runtime and credentials.
+Diagnosis: the assistant explicitly selected the repository owner's connector
+instead of the user's connected account. Live account lookup verifies Amin-tech11
+(211146168), repository push permission and collaborator write access; local GCM
+already lists Amin-tech11. Repository ownership/remote and Git commit metadata
+are distinct from authenticated PR authorship. Acceptance: create this corrective
+PR through Amin-tech11, verify its returned author, wait for every final-head CI
+check, then merge to develop using the same account. No credential expansion,
+token logging, historical attribution rewrite or repository transfer.
+
+The bounded documentation repair passes changed-file formatting and diff checks.
+Locks release with the review commit; actual author verification and CI/merge
+provenance are recorded in the corrective PR handoff. No ERP code is affected.

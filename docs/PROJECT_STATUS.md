@@ -5327,3 +5327,15 @@ all final-revision checks pass; this policy is recorded in DEVELOPMENT_WORKFLOW.
 The corrected four IAM tests pass in API Vitest, scoped API lint and the full PR
 formatting gate pass locally. Remote CI confirmation and merge provenance are
 recorded in PR780 after its final-revision gates pass. No CI gate is bypassed.
+
+## 2026-10-11 — GITHUB-IDENTITY-1011 — PC-C
+
+The wrong PR author came from explicitly selecting nirvanamahlou's GitHub
+connector for the user's work. Amin-tech11 is connected and live-verified as
+account211146168 with Rubi push/write permission; local Git Credential Manager
+already lists Amin-tech11. The development workflow now requires this user's
+verified account for PR creation, CI follow-up and authorized merge, checks the
+returned PR author and forbids falling back to the owner's account. Repository
+ownership, existing commit metadata, credentials, ERP code/runtime and historical
+attribution stay unchanged. Acceptance requires an actual Amin-tech11 PR and
+final-head CI before develop merge; evidence is recorded in that PR handoff.
