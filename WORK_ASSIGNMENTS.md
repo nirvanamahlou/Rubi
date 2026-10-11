@@ -6858,3 +6858,7 @@ submission; inactive microphone/attachment must not request access. Preserve
 all authentication and source-data permissions. Acceptance: matching composer,
 RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
 Web build, all final-head CI before authorized develop merge and local activation.
+
+## ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B — IN_PROGRESS
+
+COMPUTER_ID=PC-B. Direct user authorization extends bounded Accounting chart empty-state work and local accounting export/import packaging. Branch codex/pc-b-accounting-empty-chart-transfer-1011. Reserve accounting-workspace.tsx, accounting-chart-editor.tsx, focused tests, additive en-overrides translations and task documentation; no schema/dependency/permission changes. Preserve concurrent books-error follow-up by distinguishing request failure from empty data. Transfer artifacts stay outside Git; source read-only; destination import requires explicit target branch, preview and backup. User authorizes push and develop merge after checks.

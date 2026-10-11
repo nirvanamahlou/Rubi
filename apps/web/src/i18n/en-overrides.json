@@ -1963,5 +1963,11 @@
   "دستیار هوشمند": "Smart assistant",
   "دستیار مدیرعامل": "Executive assistant",
   "دستیار هوشمند مدیرعامل": "Executive smart assistant",
-  "پیش‌بینی، تحلیل و پشتیبانی تصمیم‌های مدیرعامل": "Executive forecasts, insights and decision support"
+  "پیش‌بینی، تحلیل و پشتیبانی تصمیم‌های مدیرعامل": "Executive forecasts, insights and decision support",
+  "برای ثبت حساب‌ها، ابتدا دفتر کل ایجاد یا انتخاب کنید. ساختار زیر هنوز به دفتری متصل نیست.": "Create or select a ledger before saving accounts. This chart is not connected to a ledger yet.",
+  "ایجاد دفتر کل": "Create ledger",
+  "انتخاب دفتر کل": "Select ledger",
+  "نمایش فرم": "Form preview",
+  "در حال دریافت دفترهای حسابداری…": "Loading accounting ledgers…",
+  "دریافت اطلاعات حسابداری ناموفق بود. صفحه را تازه کنید.": "Could not load accounting information. Refresh the page."
 }
