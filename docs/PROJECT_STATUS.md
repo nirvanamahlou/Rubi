@@ -5090,3 +5090,6 @@ Added closable RTL accounting route tabs above content, deduplicated by route, w
 ## 2026-10-11 — ACCOUNTING-CHART-TREE-1011 — PC-A
 
 Implemented screenshot737 compact right-side real account tree and search results, with editor hidden until selection/new. Protected existing GENERAL11 with children prevented exact code reuse; user explicitly authorized new book. Created local REF737 (bba7b2bb-178e-47fa-938b-c22afba11737) with13 actual GROUP accounts matching image codes/titles via existing authenticated APIs, preserving old book. Asset/expense debit, liability/equity/income credit defaults;81/93 debit temporary. Verified API count13 and browser group selection/search91/92. Scoped lint/TypeScript passed. No Rahkaran mutations, backend/schema/dependency changes or delegation. Proof Accounting-Chart-737.png.
+## 2026-10-11 — ACCOUNTING-ALL-BOOK-SELECTOR-1011 — PC-A
+
+Removed shared book selection dropdown from all accounting sections at user request. Existing book scope and URL selection remain; display-only change, no data writes or delegation.

@@ -961,40 +961,6 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
             : 'flex flex-wrap items-end gap-3'
         }
       >
-        {![
-          'general-ledger/base-information/fiscal-years',
-          'general-ledger/base-information/ledgers',
-          'general-ledger/base-information/voucher-types',
-          'general-ledger/base-information/lists/fiscal-years',
-          'general-ledger/base-information/lists/ledgers',
-          'general-ledger/base-information/lists/voucher-types',
-        ].includes(section) && (
-          <div className="min-w-60 flex-1">
-            <FormField label="دفتر حسابداری" id="accounting-book">
-              <SearchCombobox
-                id="accounting-book"
-                value={bookId}
-                onValueChange={(id) => {
-                  setBookId(id);
-                  const params = new URLSearchParams(urlParams.toString());
-                  params.set('bookId', id);
-                  router.replace(`${pathname}?${params}`, { scroll: false });
-                  setDraft({
-                    active: true,
-                    permanent: true,
-                    allowsPosting: true,
-                  });
-                  setEditing(null);
-                  pending.current = null;
-                }}
-                options={books.map((b) => ({
-                  value: b.id,
-                  label: `${b.code} — ${b.title}`,
-                }))}
-              />
-            </FormField>
-          </div>
-        )}
         {!section.startsWith('general-ledger/base-information/lists/') &&
           section !== 'general-ledger/base-information/fiscal-years' && (
             <Button
