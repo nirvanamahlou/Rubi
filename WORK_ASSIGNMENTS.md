@@ -6858,3 +6858,14 @@ submission; inactive microphone/attachment must not request access. Preserve
 all authentication and source-data permissions. Acceptance: matching composer,
 RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
 Web build, all final-head CI before authorized develop merge and local activation.
+
+## ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C — READY_FOR_REVIEW
+
+Base: develop9a41c1cc. Sole writer reserves Web assistant workspace and styles,
+plus additive own status entry. User requests removing Sources/data-quality
+button, moving Refresh next to Management report, and a navy gradient composer.
+Preserve refresh callback/loading guard, six views, authorization and local-only
+draft behavior. No API, data, migration or dependency change. Acceptance: no
+Sources button, adjacent report/refresh controls, readable navy composer in both
+themes and RTL/LTR/mobile; focused existing tests, lint/typecheck/build, green
+final-head CI before authorized develop merge, then localhost activation.
