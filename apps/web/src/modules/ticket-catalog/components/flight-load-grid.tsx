@@ -192,24 +192,17 @@ export function FlightLoadGrid({
       </NativeSearchSelect>
     </FormField>
   );
-  const table = (
-    rows: readonly TicketOfferV1[],
-    back: boolean,
-    completeLoad: readonly TicketOfferV1[],
-    route: TicketOfferV1,
-  ) => {
-    const selected = back ? returning : outbound,
-      totals = flightLoadTotals(rows);
+  const table = (rows: readonly TicketOfferV1[], route: TicketOfferV1) => {
+    const totals = flightLoadTotals(rows);
     return (
       <section className={styles.leg}>
         <div className={styles.legHeader}>
           <h3>
-            {back ? 'برگشت' : 'رفت'}
-            {` — ${cityName(back ? route.destinationId : route.originId)} ← ${cityName(back ? route.originId : route.destinationId)}`}
+            لود — {cityName(route.destinationId)} ↔ {cityName(route.originId)}
           </h3>
-          {!back && completeLoad.length ? (
+          {rows.length ? (
             <div className={styles.loadActions} aria-label="عملیات کل جدول لود">
-              {renderLoadActions(completeLoad)}
+              {renderLoadActions(rows)}
             </div>
           ) : null}
         </div>
@@ -220,6 +213,7 @@ export function FlightLoadGrid({
                 {[
                   'انتخاب',
                   'عملیات',
+                  'مسیر',
                   'وب',
                   'تاریخ',
                   'ایرلاین',
@@ -241,64 +235,69 @@ export function FlightLoadGrid({
               </tr>
             </thead>
             <tbody>
-              {rows.map((offer) => (
-                <tr
-                  key={offer.id}
-                  className={`${selected?.id === offer.id ? styles.selected : ''} ${offer.status !== 'ACTIVE' ? styles.paused : ''}`}
-                  aria-selected={selected?.id === offer.id}
-                  onClick={() => selectLeg(offer.id, back)}
-                >
-                  <td>
-                    <input
-                      type="radio"
-                      name={back ? 'load-return' : 'load-outbound'}
-                      aria-label={`انتخاب ${back ? 'برگشت' : 'رفت'} ${offer.serviceNumber} ${ticketCalendarDate(offer.departureAt)}`}
-                      checked={selected?.id === offer.id}
-                      onChange={() => selectLeg(offer.id, back)}
-                    />
-                  </td>
-                  <td onClick={(event) => event.stopPropagation()}>
-                    {renderRowActions?.(offer)}
-                  </td>
-                  <td title="وضعیت انتشار وب برای این بلیت ثبت نشده است">—</td>
-                  <td dir="ltr">{ticketCalendarDate(offer.departureAt)}</td>
-                  <td>{offer.carrierName}</td>
-                  <td>{offer.serviceNumber}</td>
-                  <td dir="ltr">{time(offer.departureAt)}</td>
-                  <td>{cabinLabels[offer.cabinClassCode]}</td>
-                  <td>{offer.totalCapacity}</td>
-                  <td>{offer.remainingCapacity}</td>
-                  <td>{offer.reservedCapacity ?? '—'}</td>
-                  <td>{offer.allocatedCapacity ?? '—'}</td>
-                  <td>
-                    <input
-                      type="checkbox"
-                      aria-label="قیمت فروش یک‌طرفه دارد"
-                      checked={Boolean(offer.standaloneSalePrice)}
-                      readOnly
-                      disabled
-                    />
-                  </td>
-                  <td>{offer.returnMinDays ?? '—'}</td>
-                  <td>{offer.returnMaxDays ?? '—'}</td>
-                  <td>{weekday(offer.departureAt)}</td>
-                  <td>
-                    {back && outbound
-                      ? offer.cabinClassCode === outbound.cabinClassCode
-                        ? '✓'
-                        : '—'
-                      : '—'}
-                  </td>
-                </tr>
-              ))}
+              {rows.map((offer) => {
+                const back =
+                  offer.originId === route.destinationId &&
+                  offer.destinationId === route.originId;
+                const selected = back ? returning : outbound;
+                return (
+                  <tr
+                    key={offer.id}
+                    className={`${selected?.id === offer.id ? styles.selected : ''} ${offer.status !== 'ACTIVE' ? styles.paused : ''}`}
+                    aria-selected={selected?.id === offer.id}
+                    onClick={() => selectLeg(offer.id, back)}
+                  >
+                    <td>
+                      <input
+                        type="radio"
+                        name={back ? 'load-return' : 'load-outbound'}
+                        aria-label={`انتخاب ${back ? 'برگشت' : 'رفت'} ${offer.serviceNumber} ${ticketCalendarDate(offer.departureAt)}`}
+                        checked={selected?.id === offer.id}
+                        onChange={() => selectLeg(offer.id, back)}
+                      />
+                    </td>
+                    <td onClick={(event) => event.stopPropagation()}>
+                      {renderRowActions?.(offer)}
+                    </td>
+                    <td>{back ? 'برگشت' : 'رفت'}</td>
+                    <td title="وضعیت انتشار وب برای این بلیت ثبت نشده است">
+                      —
+                    </td>
+                    <td dir="ltr">{ticketCalendarDate(offer.departureAt)}</td>
+                    <td>{offer.carrierName}</td>
+                    <td>{offer.serviceNumber}</td>
+                    <td dir="ltr">{time(offer.departureAt)}</td>
+                    <td>{cabinLabels[offer.cabinClassCode]}</td>
+                    <td>{offer.totalCapacity}</td>
+                    <td>{offer.remainingCapacity}</td>
+                    <td>{offer.reservedCapacity ?? '—'}</td>
+                    <td>{offer.allocatedCapacity ?? '—'}</td>
+                    <td>
+                      <input
+                        type="checkbox"
+                        aria-label="قیمت فروش یک‌طرفه دارد"
+                        checked={Boolean(offer.standaloneSalePrice)}
+                        readOnly
+                        disabled
+                      />
+                    </td>
+                    <td>{offer.returnMinDays ?? '—'}</td>
+                    <td>{offer.returnMaxDays ?? '—'}</td>
+                    <td>{weekday(offer.departureAt)}</td>
+                    <td>
+                      {back && outbound
+                        ? offer.cabinClassCode === outbound.cabinClassCode
+                          ? '✓'
+                          : '—'
+                        : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {!rows.length && (
-            <p className={styles.empty}>
-              {back && !outbound
-                ? 'یک پرواز رفت را انتخاب کنید تا برگشت‌های مجاز نمایش داده شوند.'
-                : 'پروازی با این شرایط وجود ندارد.'}
-            </p>
+            <p className={styles.empty}>پروازی با این شرایط وجود ندارد.</p>
           )}
         </div>
         <div className={styles.totals}>
@@ -583,23 +582,12 @@ export function FlightLoadGrid({
         loadGroups.map((rows) => {
           const route = rows[0];
           if (!route) return null;
-          const forward = rows.filter(
-            (offer) =>
-              offer.originId === route.originId &&
-              offer.destinationId === route.destinationId,
-          );
-          const backward = rows.filter(
-            (offer) =>
-              offer.originId === route.destinationId &&
-              offer.destinationId === route.originId,
-          );
           return (
             <div
               className={styles.tables}
               key={route.loadGroupId ?? `offer:${route.id}`}
             >
-              {table(forward, false, rows, route)}
-              {table(backward, true, rows, route)}
+              {table(rows, route)}
             </div>
           );
         })}

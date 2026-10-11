@@ -5279,3 +5279,7 @@ The Ticket Catalog load grid now runs its inclusive valid-date search immediatel
 ## 2026-10-11 — Ticket row actions visibility follow-up — PC-B
 
 The per-row «عملیات» column is moved beside «انتخاب» so it is visible without horizontal scrolling. Selecting a row also exposes the same row-scoped edit/delete controls in its details panel. Enabling «تاریخ‌های معتبر» no longer writes into either date input; it ignores date bounds, limits results to current loads and renders each `loadGroupId` as a separate table block. API behavior and capacity totals are unchanged.
+
+## 2026-10-11 — One multi-row table per ticket load — PC-B
+
+Each server `loadGroupId` now renders as one full-width table containing all rows created by that load submission. Outbound and return rows stay together and are identified by a «مسیر» column instead of splitting one load into two tables.

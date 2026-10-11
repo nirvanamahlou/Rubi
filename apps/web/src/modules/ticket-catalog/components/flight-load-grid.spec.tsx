@@ -17,6 +17,9 @@ describe('flight load search entry', () => {
     expect(source).toContain('value={filter.to}');
     expect(source).not.toContain('setFilter(nextFilter)');
     expect(source).toContain('offer.loadGroupId ?? `offer:${offer.id}`');
+    expect(source).toContain('{table(rows, route)}');
+    expect(source).not.toContain('table(forward');
+    expect(source).not.toContain('table(backward');
   });
 
   it('does not expose flight rows or management actions before an explicit search', () => {
