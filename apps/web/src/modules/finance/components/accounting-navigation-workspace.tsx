@@ -476,7 +476,6 @@ function AccountingNavigationWorkspaceContent() {
     <main className="space-y-6">
       <PageHeader
         description="دفاتر، حساب‌ها، اسناد و گزارش‌های حسابداری"
-        eyebrow="Nora Accounting"
         title="حسابداری"
       />
       <div className="flex flex-col items-start gap-5 lg:flex-row">
