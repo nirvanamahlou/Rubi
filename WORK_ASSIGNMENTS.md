@@ -6918,3 +6918,18 @@ Base origin/develop@68987832; branch codex/pc-a-coa-reports-year-end-1011. User 
 
 ACCOUNTING-COA-REPORTS-YEAREND-1011 candidate: tree/search/root fixes and AccountingChartReport ready for coordinated integration; web lint/typecheck/build and15 targeted tests passed. No raw financial source data entered Git. Active central locks respected. Full objective remains IN_PROGRESS, with source and contract blockers documented in the task file. PC-B Finances will connect the report route after reviewing the commit. No merge/deploy/runtime mutation performed by this work item.
 
+## ACCOUNTING-CONSOLIDATED-PUBLISH-1011 — PC-A — IN_PROGRESS
+
+User authorizes pushing and merging all completed work from this chat into develop.
+Branch codex/pc-a-accounting-consolidated-1011 combines tax candidates bfba7d2e,
+2dde78b0,4c7fa22d and chart candidate786480fd (cherry-picked with existing empty-book
+handling preserved), rebased by merge onto develop7cdea1da. Raw evidence, source
+records, credentials and test fixtures remain outside Git. PC-B confirms structural
+222 accounts/26 detail types already reside in Rubi; no Rahkaran journals imported.
+Central workspace/parity/service/schema locks remain with PC-B's unfinished document
+work. This publication is a candidate implementation, not complete runtime parity.
+GitHub publication is waiting on account selection: current CLI/connector is
+nirvanamahlou, while recorded user instruction requires Amin-tech11. No substitute
+identity mutation until the human explicitly authorizes it or correct connection exists.
+
+Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint passed. Account selection remains pending.
