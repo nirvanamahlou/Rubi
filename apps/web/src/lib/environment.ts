@@ -7,7 +7,7 @@ export function getPublicApiBaseUrl(): string | null {
     ) {
       try {
         const localApiUrl = new URL(configuredValue);
-        if (isLocalHostname(localApiUrl.hostname)) {
+        if (isLocalRuntimeHostname(localApiUrl.hostname)) {
           localApiUrl.hostname = window.location.hostname;
           return localApiUrl.toString().replace(/\/$/, '');
         }

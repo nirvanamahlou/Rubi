@@ -6452,3 +6452,23 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-ai-notes-1010` from `origin/devel
 Validation: 8 focused Web tests, scoped ESLint, Web typecheck, Prettier and Web production build pass. Exact-head CI gates the authorized merge.
 
 CI integration follow-up: `develop` advanced with stepwise agency editing while this PR was in flight; its eight new Persian UI strings lacked English display translations and failed the combined Web i18n coverage gate. The already-reserved shared Web override catalogue now includes only those eight translations; Organizations source and behavior remain untouched. The final exact-head gate must rerun.
+
+## CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-chrome-local-login-1011` from
+`origin/develop@85dc15a4`. Chrome login reaches the local API successfully but
+loops back to Login when Web is opened with `localhost` while the configured API
+uses the LAN IPv4 host, because authentication cookies are host-scoped. Reserve
+only the Web local-runtime API hostname resolver, its focused tests and bounded
+status docs. Align loopback/private Web and API hosts while retaining configured
+ports and paths; remote API hosts remain unchanged. Update ignored local runtime
+CORS/dev-origin settings and restart the existing 3000/4000 listeners without
+changing user accounts, passwords, schema, migration, dependency or operational
+records.
+
+Delivered same-host resolution for loopback/private local runtimes and updated
+ignored local CORS/dev-origin settings. Twenty-four focused tests, scoped ESLint
+and Web typecheck pass. Live Demo authentication on localhost returns 200 with
+two cookies, Workbench accepts that session with 200, 127.0.0.1 CORS preflight
+returns 204 and LAN health returns 200. Bounded source locks release with the
+review commit.

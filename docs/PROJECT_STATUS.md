@@ -5240,3 +5240,14 @@ The exact 18-row database write path passed inside a forced-rollback transaction
 - The Notes tab now shows «یادداشت‌های هوش مصنوعی برای شما» above personal notes. It derives up to six dated suggestions from the signed-in user's existing Workbench calendar events, personal reminders and assigned Procurement follow-ups, refreshing at the Tehran day boundary or on demand. Completed/cancelled events and finished checklist reminders are excluded; every card links to its source.
 - Calendar and Procurement suggestions can be explicitly saved as ordinary personal notes. An exact source marker prevents the same saved suggestion from appearing again. This is a transparent rule-based assistant over existing authorized data; no generative model or background scheduler is connected. No API contract, schema/migration, dependency, permission or operational data change.
 - During integration, a concurrent Agency edit merged into `develop` with eight untranslated UI strings. Added the missing English display translations in the shared Web override catalogue so the combined i18n test can pass; Agency behavior was not changed.
+
+## 2026-10-11 — CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
+
+Chrome login on the local runtime now keeps Web and API on the same loopback or
+private-network hostname while preserving the configured API port/path. This
+prevents successful authentication from storing cookies for a different host
+and looping back to Login. Remote API hosts are unchanged. Local CORS and Next
+development origins include localhost, 127.0.0.1 and 192.168.8.89. Twenty-four
+focused tests, scoped ESLint and Web typecheck pass. Live localhost login,
+cookie-backed Workbench, 127.0.0.1 preflight and LAN health return 200/204. No
+account/password, schema/migration, dependency or business-data change.

@@ -24,6 +24,21 @@ describe('local API cookie hostname alignment', () => {
     ],
     [
       'localhost',
+      'http://192.168.8.89:4000/api/v1',
+      'http://localhost:4000/api/v1',
+    ],
+    [
+      '127.0.0.1',
+      'http://192.168.8.89:4000/api/v1',
+      'http://127.0.0.1:4000/api/v1',
+    ],
+    [
+      '192.168.8.196',
+      'http://192.168.8.89:4000/api/v1',
+      'http://192.168.8.196:4000/api/v1',
+    ],
+    [
+      'localhost',
       'https://api.example.test/api/v1',
       'https://api.example.test/api/v1',
     ],
