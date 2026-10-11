@@ -3,8 +3,21 @@ import { describe, expect, it } from 'vitest';
 
 import { catalogFavoriteIds, ReportingWorkspace } from './reporting-workspace';
 import { reportCatalog } from '../model/reporting';
+import { searchOptions } from '@/components/ui/search-combobox';
 
 describe('catalog report favorites', () => {
+  it('can expose every catalog department without the default five-option limit', () => {
+    const departments = [
+      ...new Set(reportCatalog.map((report) => report.category)),
+    ];
+    const options = ['all', ...departments].map((value) => ({
+      value,
+      label: value,
+    }));
+    expect(searchOptions(options, '', options.length)).toHaveLength(
+      departments.length + 1,
+    );
+  });
   it('keeps catalog bookmarks separate from configured and shared saved reports', () => {
     expect(
       catalogFavoriteIds([
@@ -59,5 +72,6 @@ describe('catalog report favorites', () => {
     expect(html).toContain('جستوجو و انتخاب دپارتمان...');
     expect(html).toContain('aria-label="وضعیت اتصال گزارش"');
     expect(html).toContain('role="combobox"');
+    expect(html).not.toContain('lucide-shield-check');
   });
 });

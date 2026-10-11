@@ -30,7 +30,6 @@ import {
   Users,
   WalletCards,
   Search,
-  ShieldCheck,
   Table2,
   WifiOff,
   X,
@@ -639,7 +638,7 @@ function ReportAvailabilitySelectOption({
       ? Check
       : availability === 'PENDING_CONNECTION'
         ? Clock3
-        : ShieldCheck;
+        : null;
   const label =
     availability === 'READY'
       ? 'قابل اجرای محدود'
@@ -648,11 +647,13 @@ function ReportAvailabilitySelectOption({
         : 'همه وضعیت‌های اتصال';
   return (
     <span className="flex w-full items-center gap-2 text-right" dir="rtl">
-      <Icon
-        aria-hidden="true"
-        className="size-4 shrink-0 text-foreground"
-        strokeWidth={1.75}
-      />
+      {Icon ? (
+        <Icon
+          aria-hidden="true"
+          className="size-4 shrink-0 text-foreground"
+          strokeWidth={1.75}
+        />
+      ) : null}
       <span className="min-w-0 flex-1 text-right">{label}</span>
     </span>
   );
@@ -2150,6 +2151,7 @@ export function ReportingWorkspace({
                     <SearchCombobox
                       label="دپارتمان گزارش"
                       placeholder="جستوجو و انتخاب دپارتمان..."
+                      optionLimit={categories.length + 1}
                       onValueChange={setCategory}
                       value={category}
                       options={['all', ...categories].map((item) => ({
@@ -2169,7 +2171,6 @@ export function ReportingWorkspace({
                         aria-label="وضعیت اتصال گزارش"
                         className="flex h-11 w-full items-center gap-2 whitespace-nowrap rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        <ShieldCheck className="size-4" />
                         <ConnectionSelect.Value />
                         <ConnectionSelect.Icon className="ms-auto">
                           <ChevronDown className="size-4" />

@@ -5242,5 +5242,7 @@ The exact 18-row database write path passed inside a forced-rollback transaction
 - During integration, a concurrent Agency edit merged into `develop` with eight untranslated UI strings. Added the missing English display translations in the shared Web override catalogue so the combined i18n test can pass; Agency behavior was not changed.
 ## 2026-10-11 — Reporting catalog filter labels — PC-C
 
+Follow-up: connection filter no longer has a default shield icon. Department dropdown exposes all catalog departments rather than the shared five-option default.
+
 Department search now identifies the department explicitly. Connection status is a plain RTL dropdown defaulting to all connection statuses, with limited execution and pending data source options. Focused Reporting regression suite: 19 tests pass. No database or shared-control changes.
 
