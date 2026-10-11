@@ -19,9 +19,11 @@ ingress/network allowlists and a retained access-controlled audit sink. Do not
 replace any existing ERP runtime merely to test this service.
 
 `GET /v1/executive/snapshot` accepts only `nora_access`. IAM is revalidated before
-each tool and before response release. Assign `ui.screen.assistant.executive`
-explicitly through ERP user management to the selected CEO account. No default
-grant or administrator bypass; no database seed/migration needed for assignment.
+each tool and before response release. All authenticated ERP users may open the
+shared assistant and request their own SELF snapshot (owner authorization,
+2026-10-11). No executive screen grant or bulk role mutation is required.
+Source ERP APIs still enforce their own permissions; a denied source fails closed.
+This does not enable corporate reporting, executive data or write permissions.
 
 Only personal calendar/notes/assigned procurement reads are allowed. No cache,
 model, DB, browsing, arbitrary query or mutation endpoints. Source status/time/

@@ -459,7 +459,10 @@ export function MasterDataGeographyWorkspace() {
   useEffect(() => {
     const fallback = visibleTabs[0];
     if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
-      setResource(fallback.resource);
+      const frame = window.requestAnimationFrame(() =>
+        setResource(fallback.resource),
+      );
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [resource, visibleTabs]);
   const definition = getMasterDataDefinition(resource);
@@ -471,10 +474,13 @@ export function MasterDataGeographyWorkspace() {
 
   useEffect(() => {
     if (resourceAllowed) return;
-    setFormMode(null);
-    setFormResource(null);
-    setSelected(undefined);
-    setTerminalParentOpen(false);
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setFormResource(null);
+      setSelected(undefined);
+      setTerminalParentOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [resourceAllowed]);
 
   const scopedFilters = useMemo(

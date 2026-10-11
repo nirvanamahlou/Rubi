@@ -383,7 +383,10 @@ export function MasterDataTransportationWorkspace() {
   useEffect(() => {
     const fallback = visibleTabs[0];
     if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
-      setResource(fallback.resource);
+      const frame = window.requestAnimationFrame(() =>
+        setResource(fallback.resource),
+      );
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [resource, visibleTabs]);
   const definition = getMasterDataDefinition(resource);
@@ -395,9 +398,12 @@ export function MasterDataTransportationWorkspace() {
 
   useEffect(() => {
     if (resourceAllowed) return;
-    setFormMode(null);
-    setSelected(undefined);
-    setProfileOpen(false);
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [resourceAllowed]);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =

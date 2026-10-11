@@ -7,7 +7,8 @@ import {
   snapshotSchema,
   type ExecutiveSnapshot,
 } from './model';
-import { ExecutivePanels } from './executive-workspace';
+import { ExecutivePanels, ExecutiveWorkspace } from './executive-workspace';
+import { AccessPermissionsProvider } from '@/modules/iam/access-context';
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/assistant',
@@ -44,6 +45,21 @@ const snapshot: ExecutiveSnapshot = {
   },
 };
 describe('executive reference coverage and evidence states', () => {
+  it('loads the shared workspace for an ordinary authenticated profile and denies a missing identity', () => {
+    const ordinary = renderToStaticMarkup(
+      <AccessPermissionsProvider value={[]}>
+        <ExecutiveWorkspace view="advisor" />
+      </AccessPermissionsProvider>,
+    );
+    expect(ordinary).toContain(assistantCopy.states.loading[0]);
+    expect(ordinary).not.toContain(assistantCopy.noPersonalAccess[0]);
+    const anonymous = renderToStaticMarkup(
+      <AccessPermissionsProvider value={null}>
+        <ExecutiveWorkspace view="advisor" />
+      </AccessPermissionsProvider>,
+    );
+    expect(anonymous).toContain(assistantCopy.noPersonalAccess[0]);
+  });
   it.each(assistantViews)(
     'renders %s and all four required metrics without invented values',
     (view) => {

@@ -243,7 +243,8 @@ export function MasterDataSuppliersWorkspace() {
   useEffect(() => {
     const fallback = visibleTabs[0];
     if (fallback && !visibleTabs.some((item) => item.id === tab)) {
-      setTab(fallback.id);
+      const frame = window.requestAnimationFrame(() => setTab(fallback.id));
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [tab, visibleTabs]);
   const copy = tabCopy[tab];
@@ -258,9 +259,12 @@ export function MasterDataSuppliersWorkspace() {
 
   useEffect(() => {
     if (resourceAllowed) return;
-    setFormMode(null);
-    setSelected(undefined);
-    setProfileOpen(false);
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [resourceAllowed]);
 
   const loadSummary = useCallback(async () => {

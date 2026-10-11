@@ -317,17 +317,21 @@ export function MasterDataFinanceWorkspace() {
 
   useEffect(() => {
     if (resourceAllowed) return;
-    setFormMode(null);
-    setSelected(undefined);
-    setSelectedCurrency(undefined);
-    setSelectedBank(undefined);
-    setCurrencyProfileOpen(false);
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setSelectedCurrency(undefined);
+      setSelectedBank(undefined);
+      setCurrencyProfileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [resourceAllowed]);
 
   useEffect(() => {
     const fallback = visibleTabs[0];
     if (fallback && !visibleTabs.some((item) => item.key === tab)) {
-      setTab(fallback.key);
+      const frame = window.requestAnimationFrame(() => setTab(fallback.key));
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [tab, visibleTabs]);
 

@@ -105,7 +105,8 @@ describe('role access recommendations', () => {
       'iam.users.manage',
     ];
     const result = recommendRoleAccess('مدیر', permissions, actor);
-    expect(result.screenIds).toEqual(['system.users']);
+    // The shared assistant is universally visible; operational grants stay intersected.
+    expect(result.screenIds).toEqual(['assistant.executive', 'system.users']);
     expect(result.permissionIds).toEqual(['iam.users.manage']);
     expect(recommendRoleAccess('مدیر', [], actor).permissionIds).toEqual([]);
   });

@@ -451,3 +451,15 @@ policy. Generated reference images define panel coverage, not factual metrics.
 Business forecasts and scenarios fail closed as unavailable until source,
 company scope, metric definitions and evaluation are approved. Details and
 acceptance: docs/tasks/EXECUTIVE-ASSISTANT-1011.md. No migration or role grant.
+
+## ASSISTANT-ALL-USERS-1011 — shared SELF access (2026-10-11)
+
+Supersedes only the executive-only entry gate in EXECUTIVE-ASSISTANT-1011.
+The owner explicitly requests temporary access for all departments and users,
+including Amin. The existing six-view shell is available to every authenticated
+ERP user; current tools return SELF data only. Revalidate the active IAM identity
+before each tool and response, forward only the access cookie, and preserve source
+API permission checks and fail-closed denial. No bulk executive grants, role
+changes, corporate scope, new persona, write tool or administrator bypass.
+Future corporate capabilities require separate source authorization. No expiry
+was requested; revisit shared availability before final product rollout.

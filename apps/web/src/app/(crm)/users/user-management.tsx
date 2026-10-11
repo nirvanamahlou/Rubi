@@ -106,9 +106,9 @@ function accessControlLabel(control: { id: string; title: string }) {
     const [namespace, key] = control.id
       .slice('field.system-settings.'.length)
       .split('.');
-    const module = settingsModules.find((item) => item.id === namespace);
-    const group = module?.groups.find((item) => item.id === key);
-    return `${module?.title ?? namespace} · ${group?.title ?? key} (ویرایش تنظیم)`;
+    const settingModule = settingsModules.find((item) => item.id === namespace);
+    const group = settingModule?.groups.find((item) => item.id === key);
+    return `${settingModule?.title ?? namespace} · ${group?.title ?? key} (ویرایش تنظیم)`;
   }
   if (control.id.startsWith('system.module.'))
     return `تنظیمات ${settingsModules.find((item) => item.id === control.id.slice('system.module.'.length))?.title ?? control.title}`;

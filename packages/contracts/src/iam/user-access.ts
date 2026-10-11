@@ -2238,9 +2238,8 @@ export function hasManagedAccess(permissions: readonly string[]) {
   return permissions.includes(USER_ACCESS_PROFILE_PERMISSION);
 }
 function hasGroupPermission(permissions: readonly string[], groupId: string) {
-  // Executive access is an explicit, revocable grant; administrator is not CEO.
-  if (groupId === 'assistant')
-    return permissions.includes(screenPermission('assistant.executive'));
+  // Shared assistant shell; source APIs still authorize each authenticated user.
+  if (groupId === 'assistant') return true;
   if (groupId === 'correspondence') return true;
   const group = USER_ACCESS_GROUPS.find((item) => item.id === groupId);
   return (
@@ -2266,8 +2265,7 @@ export function canViewScreen(
   permissions: readonly string[],
   id: string,
 ): boolean {
-  if (id === 'assistant.executive')
-    return permissions.includes(screenPermission(id));
+  if (id === 'assistant.executive') return true;
   const screen = USER_ACCESS_SCREENS.find((item) => item.id === id);
   if (screen && permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;

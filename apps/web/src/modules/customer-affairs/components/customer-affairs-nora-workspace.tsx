@@ -314,6 +314,7 @@ export function CustomerAffairsNoraWorkspace() {
     createdTo,
     page,
     revision,
+    visibleViews.length,
   ]);
   const reloadDetail = async () => {
     if (!id) return;

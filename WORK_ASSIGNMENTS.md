@@ -6825,3 +6825,51 @@ ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 completion: PR778 merged to develop at5
 Sole writer; reserve accounting-workspace.tsx home shortcut grid removal, scoped docs and Rubi Compose web deployment. User requests empty accounting landing content while existing sidebar/form navigation stays available. No data, API, migration or dependency changes; no delegation.
 
 ACCOUNTING-EMPTY-HOME-1011 result: shortcut card grids removed from accounting landing/group pages. Existing navigation and record forms preserved. Authenticated browser verified /finance on rubi Web3100 without shortcut cards; bounded ESLint/typecheck and CI validate candidate. Frontend-only immutable image deployed on existing rubi Compose; no database/API changes.
+
+## ASSISTANT-ALL-USERS-1011 — PC-C — READY_FOR_REVIEW
+
+User authorization: temporarily enable the assistant for all authenticated ERP
+users and departments, including Amin. Base: origin/develop. Reserve assistant
+service/tests/README, Web assistant workspace and IAM visibility tests,
+packages/contracts/src/iam/user-access.ts (assistant branches only), and additive
+own status/architecture/decision entries. No IAM role mutation, database access,
+corporate data grant, migration or dependency change. SELF sources retain their
+ERP authorization. Acceptance: universal authenticated visibility; anonymous
+rejection; isolation/revocation/source denial tests; lint/typecheck/build; all
+final-head CI checks before merge to develop; activate localhost3000 afterward.
+
+Scope also includes the assistant denial translation, workspace identity
+regression and packages/contracts/test/assistant-access.spec.ts. Verification:
+13 HTTP tests,31 focused Web tests and all143 contract tests passed; affected
+Web/Contracts lint and typecheck passed. Existing explicit-grant contract tests
+were updated to the new owner-authorized shared-shell policy while preserving
+unrelated module restrictions. CI, integration and local runtime evidence are
+recorded on PR786. Business sources still enforce existing permissions.
+
+Additional test-only scope: apps/web/src/app/(crm)/users/role-access-presets.spec.tsx.
+The shared assistant may be recommended as a visible screen; native operational
+permission recommendations still intersect actor grants and available options.
+This updates the obsolete screen-list expectation, not the role editor or IAM.
+
+## ASSISTANT-COMPOSER-1011 — PC-C — READY_FOR_REVIEW
+
+User requests replacing only the assistant hero with the supplied “What can I do
+for you?” message composer. Base: develop461a008c. Reserve Web assistant
+workspace/styles/spec, assistant translations, and additive own status entry.
+Keep all six views and source/refresh controls; remove duplicate advisor-only
+chat placeholder. Prompt chips populate a local draft, no storage/network/model
+submission; inactive microphone/attachment must not request access. Preserve
+all authentication and source-data permissions. Acceptance: matching composer,
+RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
+Web build, all final-head CI before authorized develop merge and local activation.
+
+## ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C — READY_FOR_REVIEW
+
+Base: develop9a41c1cc. Sole writer reserves Web assistant workspace and styles,
+plus additive own status entry. User requests removing Sources/data-quality
+button, moving Refresh next to Management report, and a navy gradient composer.
+Preserve refresh callback/loading guard, six views, authorization and local-only
+draft behavior. No API, data, migration or dependency change. Acceptance: no
+Sources button, adjacent report/refresh controls, readable navy composer in both
+themes and RTL/LTR/mobile; focused existing tests, lint/typecheck/build, green
+final-head CI before authorized develop merge, then localhost activation.

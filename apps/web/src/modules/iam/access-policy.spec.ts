@@ -11,7 +11,7 @@ import {
   USER_ACCESS_SCREENS,
 } from '@nora/contracts';
 describe('per-user screen visibility', () => {
-  it('shows administrative screens while preserving explicit executive access', () => {
+  it('shows administrative screens and the shared assistant shell', () => {
     const permissions = [
       USER_ACCESS_ADMIN_PERMISSION,
       USER_ACCESS_PROFILE_PERMISSION,
@@ -21,8 +21,8 @@ describe('per-user screen visibility', () => {
         (s) => canViewScreen(permissions, s.id),
       ),
     ).toBe(true);
-    expect(canViewScreen(permissions, 'assistant.executive')).toBe(false);
-    expect(canViewRoute(permissions, '/assistant')).toBe(false);
+    expect(canViewScreen(permissions, 'assistant.executive')).toBe(true);
+    expect(canViewRoute(permissions, '/assistant')).toBe(true);
     expect(
       canViewRoute(
         [...permissions, screenPermission('assistant.executive')],
@@ -39,6 +39,18 @@ describe('per-user screen visibility', () => {
       expect(canViewRoute(permissions, route)).toBe(true);
     }
     expect(canViewScreen(permissions, 'unknown.future.screen')).toBe(false);
+  });
+  it('shows the assistant for every authenticated permission profile without opening other modules', () => {
+    for (const permissions of [
+      [],
+      [USER_ACCESS_PROFILE_PERMISSION],
+      ['hr.read'],
+      ['sales.contracts.read.own'],
+    ]) {
+      expect(canViewRoute(permissions, '/assistant?view=advisor')).toBe(true);
+      expect(canViewScreen(permissions, 'assistant.executive')).toBe(true);
+      expect(canViewRoute(permissions, '/finance')).toBe(false);
+    }
   });
   it('limits legacy navigation to operational grants', () => {
     expect(canViewRoute(['iam.users.read'], '/system')).toBe(true);

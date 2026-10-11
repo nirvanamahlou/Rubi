@@ -5485,3 +5485,40 @@ PR778 merged into develop at57793ab3 with full quality, tests, production build 
 ## 2026-10-11 — Accounting empty landing — PC-A
 
 Removed duplicate shortcut grids from accounting landing/group content. Sidebar and open tabs remain the navigation surface. Authenticated /finance browser verification on shared rubi Web3100 shows no shortcut cards. No schema, API, data or dependency change.
+
+## 2026-10-11 — ASSISTANT-ALL-USERS-1011 — PC-C
+
+Owner-authorized shared assistant visibility for every authenticated ERP user,
+including Amin, regardless of department/screen profile. Current data remains
+SELF-only and every public source enforces its existing permissions. Anonymous,
+revoked-session and source-denied requests fail closed; no bulk role grants,
+corporate data permission, migration or dependency changes. Node HTTP tests:
+13 passed, including ordinary-user isolation and source-denial regressions.
+Web verification and final-head CI/merge/runtime evidence follow in the PR.
+
+Additional verification:31 focused Web tests and all143 contract tests passed;
+affected Web/Contracts lint and typecheck passed. The old explicit-only contract
+regression was aligned with the owner-authorized shell policy and retains checks
+that unrelated modules stay restricted. Independent assistant health returns200;
+anonymous snapshot returns401. Final build/CI/runtime handoff is on PR786.
+
+## 2026-10-11 — ASSISTANT-COMPOSER-1011 — PC-C
+
+The assistant hero is replaced with the reference message composer on all six
+views: request heading, textarea, cyan send control, inactive voice/attachment
+controls and three draft shortcuts. Source details/refresh remain available.
+Removed the duplicate advisor-only chat placeholder. Drafts stay in component
+memory; sending explicitly reports no message sent because model conversation
+is not enabled. No network transmission, browser storage, microphone permission,
+file upload, backend or authorization changes. Light/dark theme variables and
+RTL/LTR/mobile layout are preserved. Focused31 tests passed; remaining verification
+and final-head CI/local activation evidence follow in the PR.
+## 2026-10-11 — ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C
+
+Removed the Sources/data-quality button and its unused dialog. Refresh now sits
+next to Management report in the view toolbar, preserving its callback and
+loading guard. Composer uses a navy gradient and explicit light foreground/input
+colors in both ERP themes. Toolbar wraps on mobile. All six views, local-only
+drafts and existing source authorization remain unchanged. No API, migration,
+dependency or data changes.20 focused existing Web tests and scoped ESLint passed;
+production build, browser verification and final CI evidence follow in the PR.
