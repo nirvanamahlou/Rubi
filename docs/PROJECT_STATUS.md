@@ -5084,3 +5084,6 @@ Hidden book selector on all three base-information lists at user request, preser
 ## 2026-10-11 — ACCOUNTING-VOUCHER-LIST-1011 — PC-A
 
 Voucher list screenshot734 layout implemented with title/default columns, inline filtering, compact striped grid, top/bottom icon operations and50-row pagination. Default uses persisted attributes.isDefault; missing flag is false and not conflated with active. Existing authorized records preserved, no screenshot data seeding. Tests10/10, scoped lint/TypeScript and browser filter/clear checks passed. Voucher-List-734.png proof on3100; no backend/schema/dependency or data writes/delegation.
+## 2026-10-11 — ACCOUNTING-ROUTE-TABS-1011 — PC-A
+
+Added closable RTL accounting route tabs above content, deduplicated by route, with active highlight, adjacent fallback, home plus link and same-session restoration. Route access guards retained and book query preserved. Scoped lint/TypeScript/diff checks passed;3100 browser verified three tabs/switching/active closure/reload. Proof Accounting-Route-Tabs.png. This is navigation history tabs, not mounted-form caching; unsaved form state remains transient on route changes and user was informed. No backend/schema/dependency or data writes/delegation.

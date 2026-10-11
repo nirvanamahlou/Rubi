@@ -1,5 +1,6 @@
 'use client';
 import { AccountingWorkspace } from './accounting-workspace';
+import { AccountingRouteTabs } from './accounting-route-tabs';
 import { accountingParityDefinitions } from './accounting-parity-definitions';
 
 import {
@@ -184,6 +185,15 @@ const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
     ],
   },
 ];
+
+const accountingTabItems = accountingNavigationGroups.flatMap((group) =>
+  group.sections.flatMap((section) =>
+    section.items.map((item) => ({
+      href: item.href,
+      title: item.href.includes('/lists/') ? `فهرست ${item.title}` : item.title,
+    })),
+  ),
+);
 
 function findSelected(pathname: string) {
   for (const group of accountingNavigationGroups) {
@@ -475,6 +485,7 @@ function AccountingNavigationWorkspaceContent() {
           onToggle={() => setCollapsed((value) => !value)}
         />
         <section className="min-w-0 flex-1" aria-live="polite">
+          <AccountingRouteTabs items={accountingTabItems} />
           <Card className="min-h-[32rem] p-5 sm:p-7">
             <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
               <AccountingWorkspace key={pathname} pathname={pathname} />
