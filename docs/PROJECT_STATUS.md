@@ -5513,6 +5513,11 @@ is not enabled. No network transmission, browser storage, microphone permission,
 file upload, backend or authorization changes. Light/dark theme variables and
 RTL/LTR/mobile layout are preserved. Focused31 tests passed; remaining verification
 and final-head CI/local activation evidence follow in the PR.
+## 2026-10-11 — ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B
+
+The chart route now renders the existing tree and draft group/general/subsidiary forms when the authorized books response is empty. Setup links lead to ledger creation/selection. Save/new/delete persistence stays disabled without a book; submission has a second null-book guard. Request failures and loading do not masquerade as empty data. Selecting a real book remounts the editor to discard unbound draft state. No API, schema, permissions or dependency change.
+
+Validation: nine focused chart tests, scoped ESLint and Web typecheck pass. Production build and final-head CI gate the user-authorized develop merge. Local data-transfer artifacts are outside Git: one reference book, 222 accounts, 26 detail types and one approval configuration; 248 original source commands retained as a separate audit archive. No source database data changed. Destination import remains a separate explicit operation on its empty database.
 ## 2026-10-11 — ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C
 
 Removed the Sources/data-quality button and its unused dialog. Refresh now sits

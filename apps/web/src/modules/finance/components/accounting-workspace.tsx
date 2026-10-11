@@ -354,7 +354,20 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       label: `${r.code ? `${r.code} — ` : ''}${r.title}`,
     }));
   let content: ReactNode = null;
-  if (!books.length || section === 'general-ledger/base-information/ledgers')
+  if (booksQuery.isPending)
+    content = <p role="status">در حال دریافت دفترهای حسابداری…</p>;
+  else if (booksQuery.isError || snapshotQuery.isError)
+    content = (
+      <p role="alert">دریافت اطلاعات حسابداری ناموفق بود. صفحه را تازه کنید.</p>
+    );
+  else if (!books.length && section === 'general-ledger/accounts/chart')
+    content = (
+      <AccountingChartEditor key="no-book" book={null} run={run} busy={busy} />
+    );
+  else if (
+    !books.length ||
+    section === 'general-ledger/base-information/ledgers'
+  )
     content = (
       <AccountingLedgerEditor
         key={`${bookId || 'new-ledger'}:${urlParams.get('new') ?? ''}`}
@@ -447,7 +460,14 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       />
     );
   else if (snapshot && section === 'general-ledger/accounts/chart')
-    content = <AccountingChartEditor book={snapshot} run={run} busy={busy} />;
+    content = (
+      <AccountingChartEditor
+        key={bookId}
+        book={snapshot}
+        run={run}
+        busy={busy}
+      />
+    );
   else if (
     snapshot &&
     [
