@@ -2,17 +2,17 @@ name: rubi
 
 services:
   api:
-    image: rubi-app-local:latest
+    image: ${RUBI_APP_IMAGE:-rubi-app-local:latest}
     build:
       context: ..
       dockerfile: Dockerfile
     env_file:
-      - ../apps/api/.env
+      - ${RUBI_API_ENV_FILE:-../apps/api/.env}
     environment:
       NODE_ENV: development
       API_PORT: '4000'
       API_PREFIX: api/v1
-      CORS_ORIGINS: http://localhost:3100,http://127.0.0.1:3100
+      CORS_ORIGINS: ${RUBI_CORS_ORIGINS:-http://localhost:3100,http://127.0.0.1:3100,http://accounting-qa.localhost:3100}
       DOCUMENTS_STORAGE_ROOT: /srv/nora/documents
     command: ['node', 'infrastructure/scripts/start-api-container.mjs']
     ports:
@@ -37,13 +37,13 @@ services:
     restart: unless-stopped
 
   web:
-    image: rubi-app-local:latest
+    image: ${RUBI_APP_IMAGE:-rubi-app-local:latest}
     build:
       context: ..
       dockerfile: Dockerfile
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:4192/api/v1
+      NEXT_PUBLIC_API_BASE_URL: ${RUBI_PUBLIC_API_BASE_URL:-http://localhost:4192/api/v1}
     command:
       - node
       - apps/web/node_modules/next/dist/bin/next
