@@ -426,3 +426,19 @@ Reservations produces additive optional manual metadata and sale amounts inside 
 ## ADR-HOTEL-SHARED-PERIODS-1008 — Accepted
 
 The owner requests independently editable hotel rate periods and a selectable common stay for package creation. Keep original versioned rate periods and materialize selected complete nightly tariffs into a separate immutable shared pack, with restrictive source-batch FKs. Recheck source versions and create the shared snapshot atomically under Serializable isolation. Do not reinterpret room capacities as prices, mix brokers/room types/boards/currencies, silently fill missing nights or average rates without weighting nights. Package Pricing keeps its established batch references, exact-night calculator and publication controls. Repricing a source requires explicitly creating a new shared snapshot; previously published packages remain unchanged. No change to operational contract sale prices or historical data.
+
+## EXECUTIVE-ASSISTANT-1011 — independent executive assistant (2026-10-11)
+
+The owner explicitly requests an ERP-integrated assistant UI with a separately
+running backend. Keep the ERP modular monolith and domain ownership unchanged;
+add a bounded external read adapter, not a second owner of ERP tables. The Web
+same-origin proxy transports one access cookie to the configured service. IAM
+and fixed public Workbench APIs enforce user scope. The assistant requires an
+explicit executive screen grant; administrator alone is insufficient.
+
+This slice uses existing Node 24 without dependencies or DB/model credentials.
+No LLM or news provider is selected because the owner deferred data-processing
+policy. Generated reference images define panel coverage, not factual metrics.
+Business forecasts and scenarios fail closed as unavailable until source,
+company scope, metric definitions and evaluation are approved. Details and
+acceptance: docs/tasks/EXECUTIVE-ASSISTANT-1011.md. No migration or role grant.

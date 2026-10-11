@@ -460,3 +460,16 @@ Review2 adds protected-document code handoff, rendered persisted graph edges, sa
 - [ ] Ticket Management must publish a versioned base-fare/capacity resolver and recheck command.
 - [ ] Finance must expose only approved FX snapshots; Renderer/Worker must consume render intents and archive completed files through Documents.
 - [ ] After Ticket/FX/Renderer producers land, extend the adapter beyond hotel-only references, unlock the remaining mixed-package create/price/publish flow, and add end-to-end renderer tests and Excel/PDF exporters.
+
+## EXECUTIVE-ASSISTANT-1011 — CEO first slice
+
+- [x] Final direct sidebar entry, six executive views, Persian/English and current theme.
+- [x] Independent read-only service, same-origin transport, explicit executive grant.
+- [x] Bounded personal follow-ups via existing ERP APIs and explicit unavailable states.
+- [ ] Approved deployment and CEO account assignment; real ERP integration acceptance.
+- [ ] Company-scoped source contracts, metric definitions and reconciled actual reports.
+- [ ] Validated forecasts/scenarios and approved news sources.
+- [ ] Data-processing policy, model/RAG selection and evaluated conversational assistant.
+
+No operational runtime is replaced. Full scope, evidence and release gates are
+in docs/tasks/EXECUTIVE-ASSISTANT-1011.md; the panel shell is not production AI.

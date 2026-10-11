@@ -5283,3 +5283,20 @@ The per-row «عملیات» column is moved beside «انتخاب» so it is vi
 ## 2026-10-11 — One multi-row table per ticket load — PC-B
 
 Each server `loadGroupId` now renders as one full-width table containing all rows created by that load submission. Outbound and return rows stay together and are identified by a «مسیر» column instead of splitting one load into two tables.
+
+## 2026-10-11 — EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
+
+The final standalone main-menu entry opens a six-view executive assistant in
+ERP. The independent Node 24 read service and same-origin transport require an
+explicit executive grant and consume only authenticated personal Workbench
+calendar, notes and assigned procurement follow-ups. Generated references are
+mapped to explicit evidence gates; no fabricated business figures or active
+LLM/news/scenario computation. No account grants, DB/migration, dependency,
+operational runtime replacement or merge.
+
+Contracts143, Web57 and service12 tests pass, together with scoped lint,
+Contracts/Web typechecks and Web production build. Browser checks cover all
+views, one-click sidebar entry, source dialog, scenario input/reset, languages,
+themes and mobile. The full Web/proxy/service chain was verified against a
+synthetic ERP; actual ERP integration and production readiness remain pending.
+See docs/tasks/EXECUTIVE-ASSISTANT-1011.md and services/assistant/README.md.
