@@ -9,13 +9,23 @@ import {
   USER_ACCESS_SCREENS,
 } from '@nora/contracts';
 describe('per-user screen visibility', () => {
-  it('shows every catalogued screen to a system administrator, including screens without native operations', () => {
+  it('shows administrative screens while preserving explicit executive access', () => {
     const permissions = [
       USER_ACCESS_ADMIN_PERMISSION,
       USER_ACCESS_PROFILE_PERMISSION,
     ];
     expect(
-      USER_ACCESS_SCREENS.every((s) => canViewScreen(permissions, s.id)),
+      USER_ACCESS_SCREENS.filter((s) => s.id !== 'assistant.executive').every(
+        (s) => canViewScreen(permissions, s.id),
+      ),
+    ).toBe(true);
+    expect(canViewScreen(permissions, 'assistant.executive')).toBe(false);
+    expect(canViewRoute(permissions, '/assistant')).toBe(false);
+    expect(
+      canViewRoute(
+        [...permissions, screenPermission('assistant.executive')],
+        '/assistant',
+      ),
     ).toBe(true);
     for (const route of [
       '/workbench',

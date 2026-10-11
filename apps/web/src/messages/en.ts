@@ -24,6 +24,10 @@ export const englishNavigation: Record<
   NavigationHref,
   { description: string; title: string }
 > = {
+  '/assistant': {
+    title: 'Smart assistant',
+    description: 'Executive insights and decision support',
+  },
   '/workbench': { title: 'My workspace', description: 'My tasks and files' },
   '/dashboard': { title: 'Dashboard', description: 'Performance overview' },
   '/customers': {
@@ -87,6 +91,7 @@ export const englishNavigation: Record<
 };
 
 export const englishNavigationGroups: Record<string, string> = {
+  assistant: 'Smart assistant',
   work: 'Workspace',
   sales: 'Sales & customer relations',
   operations: 'Reservations',

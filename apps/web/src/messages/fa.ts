@@ -177,6 +177,11 @@ export const navigationMessages = [
     href: '/master-data',
     description: 'داده‌های مرجع سامانه',
   },
+  {
+    title: 'دستیار هوشمند',
+    href: '/assistant',
+    description: 'پیش‌بینی، تحلیل و پشتیبانی تصمیم‌های مدیرعامل',
+  },
 ] as const;
 
 export type NavigationHref = (typeof navigationMessages)[number]['href'];

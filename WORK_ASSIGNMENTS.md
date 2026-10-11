@@ -6526,3 +6526,81 @@ Delivered locally: the valid-date toggle now uses blank date bounds only in its 
 COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-load-group-table-1011` from merged PR #776. Owner clarifies that every form submission is one load and must render as exactly one multi-row table; five submissions must produce five tables, not separate outbound/return tables. Reserve only the Ticket Catalog load-table composition, focused regression and bounded status docs. Keep grouping on the server-issued `loadGroupId`, row actions, whole-load actions, filtering, capacity totals and API behavior unchanged. No API/schema/migration/dependency/operational-data change.
 
 Delivered: each `loadGroupId` renders exactly one full-width multi-row table. Outbound and return rows remain together and use the new «مسیر» column; whole-load actions and totals operate on the complete group. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass. The rebuilt localhost/LAN service runs on port 3000.
+
+## EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C, confirmed by the owner in this chat. Branch
+`codex/pc-c-executive-assistant-1011` from `origin/develop@b52480e2`.
+The owner requests the Smart Assistant entry at the end of ERP navigation,
+initially one executive workspace covering all six supplied reference images,
+with its backend running independently of the ERP. External-model data policy
+is explicitly deferred. Reserve new Web assistant module/route, a standalone
+read-only assistant service, focused tests, and bounded additive navigation,
+IAM permission/screen-contract, offline English translations and own docs.
+Additional bounded files: Web access-policy regression for explicit executive
+access, Web server-only env example, and a new independent-service CI workflow.
+Browser review reserves the bounded app-shell standalone navigation seam and
+system-management navigation-category exclusion: the assistant must appear as
+the last direct main-menu link, not inside Company settings.
+Producer/consumer: the independent service consumes only authenticated public
+ERP read APIs; Web consumes the versioned assistant envelope. No direct database
+access, broad service account, automatic role grants, production data, business
+writes, LLM/news-provider traffic, migration, dependency/lockfile changes, merge
+or runtime replacement. The separate active IAM access-catalog branch modifies
+user-management presentation only; its files remain untouched. Existing source
+reservations and all unrelated work are preserved. Requirements, acceptance and
+remaining source/forecast-policy gates are recorded in the task document.
+
+Verification: Contracts143, Web57, service12 passed; scoped lint, typechecks and
+Web production build passed. Browser-to-service smoke used synthetic ERP only.
+All six views, standalone final sidebar link, two languages, themes and mobile
+were verified. No actual ERP integration or production readiness claimed.
+Bounded source locks release with the review commit; no merge/runtime handoff
+is authorized. See the task document for deployment and data-source gates.
+
+## ASSISTANT-LOCALHOST-1011 — PC-C — READY_FOR_REVIEW
+
+Owner asks to diagnose and fix the missing assistant at localhost:3000. The
+listener runs develop-localhost@ff6a8c36 (Reporting follow-up branch), whereas
+the assistant exists only at e29daf76/PR779. Reserve this isolated integration
+branch, own startup script and status/task docs. Base e29daf76; copy only the two
+published Reporting source/test changes from ff6a8c36 so the local UI retains
+its current department/connection filters. Do not edit the running source tree,
+its modified next-env.d.ts, protected branches or any API/database/permission.
+After tests/build, replace only the verified Web listener with this combined
+runtime on port3000. Existing API4000 and operational data remain independent.
+Executive access stays explicit; requested account assignment requires a named
+account and authorized IAM path. No general administrator bypass.
+
+Owner explicitly authorizes temporary executive access for username Amin.
+Reserve a local-only IAM maintenance command/test: one isolated per-user role
+with only ui.screen.assistant.executive, retaining all existing roles/branches,
+dry-run default, atomic grant/revoke and truthful local-operator audit. Existing
+API4000 can read persisted permission grants; no API restart or session creation.
+
+Completed: the owner-selected active account received only the temporary
+executive screen role with an atomic audit. Existing roles and branches were
+verified unchanged. Combined Web includes current Reporting filters and English
+labels; 51 focused Web +4 IAM tests, lint/typecheck/build pass. Own runtime
+launcher refuses occupied ports. See docs/tasks/ASSISTANT-LOCALHOST-1011.md for
+runtime provenance, rollback, grant revocation and verification limitations.
+
+## ASSISTANT-CI-MERGE-1011 — PC-C — READY_FOR_REVIEW
+
+The owner now authorizes continuing every PR until all CI/CD checks pass, then
+merging to develop. Continue PR780, the integration successor of PR779, on the
+existing isolated branch. Reserve its IAM maintenance test runner import,
+assistant README formatting, own status/task entries, WORK_ASSIGNMENTS formatting
+and the bounded DEVELOPMENT_WORKFLOW merge policy paragraph. No gate suppression,
+dependency/migration or local runtime change. CI diagnosis: Vitest discovers a
+node:test suite without Vitest tests; changed-file formatting flags two files.
+Acceptance: all checks pass on the final PR revision before the approved merge.
+
+Full PR-diff formatting also flags the assistant PLANS entry, own English
+overrides and the two imported Reporting files; reserve formatting-only changes
+there so both push and pull-request bases satisfy the same formatting gate.
+
+CI repair implemented. Four IAM tests pass through API Vitest, scoped API lint
+passes and full PR changed-file formatting passes. Bounded locks release with
+this review commit. Remote checks must pass on the final revision before merge;
+record their result and merge provenance in the PR handoff. No gate weakened.

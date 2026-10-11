@@ -14,6 +14,12 @@ export const USER_JOB_TITLES = [
 ] as const;
 export const USER_ACCESS_GROUPS = [
   {
+    id: 'assistant',
+    title: 'دستیار هوشمند',
+    route: '/assistant',
+    prefixes: ['assistant'],
+  },
+  {
     id: 'workbench',
     title: 'میزکار من',
     route: '/workbench',
@@ -125,6 +131,12 @@ export interface UserAccessScreen {
   query?: Record<string, string>;
 }
 export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
+  {
+    id: 'assistant.executive',
+    group: 'assistant',
+    title: 'دستیار مدیرعامل',
+    route: '/assistant',
+  },
   {
     id: 'marketing.campaigns.tab.list',
     group: 'marketing',
@@ -2211,6 +2223,9 @@ export function hasManagedAccess(permissions: readonly string[]) {
   return permissions.includes(USER_ACCESS_PROFILE_PERMISSION);
 }
 function hasGroupPermission(permissions: readonly string[], groupId: string) {
+  // Executive access is an explicit, revocable grant; administrator is not CEO.
+  if (groupId === 'assistant')
+    return permissions.includes(screenPermission('assistant.executive'));
   const group = USER_ACCESS_GROUPS.find((item) => item.id === groupId);
   return (
     !!group &&
@@ -2232,6 +2247,8 @@ function hasGroupPermission(permissions: readonly string[], groupId: string) {
   );
 }
 export function canViewScreen(permissions: readonly string[], id: string) {
+  if (id === 'assistant.executive')
+    return permissions.includes(screenPermission(id));
   const screen = USER_ACCESS_SCREENS.find((item) => item.id === id);
   if (screen && permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
