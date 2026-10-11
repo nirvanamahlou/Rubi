@@ -8,14 +8,15 @@
   color: var(--foreground);
 }
 .composer {
+  --surface: #0d2445;
+  --foreground: #edf5ff;
+  --muted-foreground: #b0c5df;
+  --border: #365679;
   padding: 24px 26px 18px;
-  border: 1px solid color-mix(in srgb, var(--border) 75%, #14b8a6);
+  color: var(--foreground);
+  border: 1px solid #365679;
   border-radius: 22px;
-  background: linear-gradient(
-    120deg,
-    var(--surface),
-    color-mix(in srgb, var(--surface) 92%, #06b6d4)
-  );
+  background: linear-gradient(120deg, #07152e 0%, #102a50 55%, #173a65 100%);
 }
 .composer h1 {
   margin: 0 0 16px;
@@ -118,10 +119,6 @@
   cursor: not-allowed;
 }
 .composerFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
   margin-top: 16px;
 }
 .composerHint {
@@ -129,12 +126,7 @@
   font-size: 11px;
   line-height: 1.9;
 }
-.composerUtilities {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
+
 @media (max-width: 640px) {
   .composer {
     padding: 18px 14px;
@@ -153,14 +145,6 @@
   .composerTools {
     margin-inline-start: auto;
     padding-bottom: 6px;
-  }
-  .composerFooter {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .composerUtilities > button {
-    flex: 1;
   }
   .composerPrompts {
     gap: 8px;
@@ -237,10 +221,16 @@
   justify-content: space-between;
   gap: 14px;
 }
-.sectionHeading > div {
+.sectionHeading > div:not(.sectionActions) {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.sectionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
 }
 .sectionIcon {
   display: grid;
@@ -655,38 +645,6 @@
   border-radius: 10px;
   margin-top: 12px;
 }
-.sourceList {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 20px;
-}
-.sourceList > div {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  padding: 12px;
-  background: var(--muted);
-  border-radius: 9px;
-}
-.sourceList strong {
-  font-weight: 500;
-  color: var(--muted-foreground);
-}
-.sourceNote {
-  display: flex;
-  gap: 12px;
-  padding: 15px;
-  margin-top: 20px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  font-size: 12px;
-  line-height: 1.8;
-}
-.sourceNote svg {
-  color: #0d9488;
-  flex-shrink: 0;
-}
 .sliders {
   display: flex;
   flex-direction: column;
@@ -808,8 +766,11 @@
   .sectionHeading {
     align-items: flex-start;
   }
-  .sectionHeading > button {
-    display: none;
+  .sectionHeading {
+    flex-wrap: wrap;
+  }
+  .sectionActions {
+    width: 100%;
   }
   .tabs a {
     padding: 12px;

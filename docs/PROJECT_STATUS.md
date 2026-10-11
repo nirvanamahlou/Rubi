@@ -5509,3 +5509,12 @@ is not enabled. No network transmission, browser storage, microphone permission,
 file upload, backend or authorization changes. Light/dark theme variables and
 RTL/LTR/mobile layout are preserved. Focused31 tests passed; remaining verification
 and final-head CI/local activation evidence follow in the PR.
+## 2026-10-11 — ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C
+
+Removed the Sources/data-quality button and its unused dialog. Refresh now sits
+next to Management report in the view toolbar, preserving its callback and
+loading guard. Composer uses a navy gradient and explicit light foreground/input
+colors in both ERP themes. Toolbar wraps on mobile. All six views, local-only
+drafts and existing source authorization remain unchanged. No API, migration,
+dependency or data changes.20 focused existing Web tests and scoped ESLint passed;
+production build, browser verification and final CI evidence follow in the PR.
