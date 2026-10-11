@@ -52,6 +52,7 @@ export function FlightLoadGrid({
   refreshing,
   onRefresh,
   renderActions,
+  renderRowActions,
   renderLoadActions,
 }: {
   offers: readonly TicketOfferV1[];
@@ -60,6 +61,7 @@ export function FlightLoadGrid({
   refreshing: boolean;
   onRefresh: () => void;
   renderActions: (offer: TicketOfferV1) => ReactNode;
+  renderRowActions?: (offer: TicketOfferV1) => ReactNode;
   renderLoadActions: (offers: readonly TicketOfferV1[]) => ReactNode;
 }) {
   const [filter, setFilter] = useState(initial);
@@ -240,6 +242,7 @@ export function FlightLoadGrid({
                   'Max',
                   'روز هفته',
                   'کلاس همنام',
+                  'عملیات',
                 ].map((column) => (
                   <th key={column}>{column}</th>
                 ))}
@@ -290,6 +293,9 @@ export function FlightLoadGrid({
                         ? '✓'
                         : '—'
                       : '—'}
+                  </td>
+                  <td onClick={(event) => event.stopPropagation()}>
+                    {renderRowActions?.(offer)}
                   </td>
                 </tr>
               ))}
@@ -514,16 +520,22 @@ export function FlightLoadGrid({
             type="checkbox"
             checked={validDates}
             onChange={(event) => {
-              setValidDates(event.target.checked);
-              setFilter((c) => ({
-                ...c,
-                ...(event.target.checked
-                  ? validFlightLoadDates(countryOffers, c)
-                  : { from: '', to: '' }),
-              }));
-              setSearched(undefined);
+              const checked = event.target.checked;
+              const nextFilter = checked
+                ? { ...filter, ...validFlightLoadDates(countryOffers, filter) }
+                : { ...filter, from: '', to: '' };
+              setValidDates(checked);
+              setFilter(nextFilter);
               setOutboundId('');
               setReturnId('');
+              if (checked) {
+                setSearched(nextFilter);
+                setSearchedCurrent(true);
+                setSearchedCountry(country);
+                setSearchedOriginCountry(originCountry);
+              } else {
+                setSearched(undefined);
+              }
             }}
           />{' '}
           تاریخ‌های معتبر

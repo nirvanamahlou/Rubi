@@ -5271,3 +5271,7 @@ account/password, schema/migration, dependency or business-data change.
   local header action slot moves only their presentation. Standalone panels keep
   an in-panel fallback. Twenty-one focused tests, scoped ESLint and Web typecheck
   pass. No API, schema/migration, dependency, permission or data change.
+
+## 2026-10-11 — TICKET-LOAD-ROW-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+The Ticket Catalog load grid now runs its inclusive valid-date search immediately when «تاریخ‌های معتبر» is enabled. Every visible row has its own «ویرایش» and confirmed «حذف» actions using the existing optimistic single-offer API paths; the lower «مشاهده» action is removed. Existing capacity totals, whole-load operations, history, hold/tour guards and load scope are unchanged. Ticket Catalog Web 202 tests (one existing skip), scoped lint, typecheck and the 57-route production build pass. No API/schema/migration/dependency or operational-data mutation.

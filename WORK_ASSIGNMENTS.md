@@ -6508,3 +6508,9 @@ local header action slot; standalone panel reuse retains the original in-panel
 fallback. Twenty-one focused tests, scoped ESLint and Web typecheck pass. No
 API/schema/migration, dependency, permission or operational-data change. The
 bounded source locks release with the review commit.
+
+## TICKET-LOAD-ROW-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-row-actions-1011` from current `origin/develop`. Owner requests that enabling «تاریخ‌های معتبر» immediately show the valid load range, and that each load row expose only its own edit/delete actions instead of «مشاهده». Reserve Ticket Catalog Web flight-load grid/workspace, the existing single-offer archive/revise API client calls, focused tests and bounded status docs. Preserve the existing table capacity totals, whole-load actions, active-hold/tour protections, optimistic versions, sales/history and the existing company/legacy load scope. No API/schema/migration/dependency/operational-data change.
+
+Delivered: valid-date toggle now searches immediately using the computed inclusive current-to-latest range. Each row has an operation column with «ویرایش» opening the editable published-offer form and a confirmed «حذف» calling the single-offer archive route; the lower «مشاهده» action is removed. Ticket Catalog Web 202 tests (one existing skip), scoped ESLint, Web typecheck and 57-route production build pass. Capacity-total calculation remains unchanged. Push/merge and LAN runtime rollout require owner confirmation for this new slice.
