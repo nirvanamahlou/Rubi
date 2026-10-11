@@ -112,7 +112,14 @@ describe('role access recommendations', () => {
   });
   it('offers every catalogued section and native permission to a system administrator', () => {
     const result = recommendRoleAccess('مدیر', permissions, [], true);
-    expect(result.screenIds).toHaveLength(USER_ACCESS_SCREENS.length);
+    expect(result.screenIds).toEqual(
+      USER_ACCESS_SCREENS.filter((screen) => !screen.inheritFrom).map(
+        (screen) => screen.id,
+      ),
+    );
+    // Additive controls inherit existing access and are edited via explicit restrictions.
+    expect(result.screenIds).not.toContain('system.module.general');
+    expect(result.screenIds).not.toContain('correspondence.home');
     expect(result.permissionIds).toHaveLength(permissions.length);
   });
   it('does not give fallback grants to unknown roles and never mutates existing option arrays', () => {

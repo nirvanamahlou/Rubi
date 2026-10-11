@@ -74,4 +74,12 @@ export class CreateUserDto {
   @ArrayMaxSize(1000)
   @IsString({ each: true })
   screenIds?: string[];
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(1000)
+  @IsString({ each: true })
+  deniedControlIds?: string[];
 }

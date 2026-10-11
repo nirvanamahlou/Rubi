@@ -24,6 +24,7 @@ import {
 } from 'react';
 import { cooperationLabel } from '../model/presentation';
 import { Button } from '@/components/ui/button';
+import { useScreenAccess } from '@/modules/iam/access-context';
 import { OrganizationFinancePreview } from './organization-finance-preview';
 import {
   pushDossierHistory,
@@ -182,6 +183,21 @@ export function CorporateProfile({
   logo?: ReactNode;
   overview?: ReactNode;
 }) {
+  const screenAllowed = useScreenAccess();
+  const tabAllowed = useCallback(
+    (id: string) => screenAllowed(`organizations.profile.tab.${id}`),
+    [screenAllowed],
+  );
+  const visibleSections = useMemo(
+    () =>
+      sections
+        .map((section) => ({
+          ...section,
+          tabs: section.tabs.filter(([id]) => tabAllowed(id)),
+        }))
+        .filter((section) => section.tabs.length > 0),
+    [tabAllowed],
+  );
   const [screen, setScreen] = useState('home');
   const [tab, setTab] = useState('profile');
   const [creditTab, setCreditTab] = useState('policy');
@@ -211,7 +227,7 @@ export function CorporateProfile({
     heading.current?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [screen]);
-  const current = sections.find((section) => section.id === screen);
+  const current = visibleSections.find((section) => section.id === screen);
   const focusSection = useCallback((id: string) => {
     window.requestAnimationFrame(() => {
       const section = document.getElementById(`organization-section-${id}`);
@@ -226,8 +242,9 @@ export function CorporateProfile({
     (id: string, requestedTab?: string) => {
       const nextTab =
         requestedTab ??
-        sections.find((section) => section.id === id)?.tabs[0][0] ??
+        visibleSections.find((section) => section.id === id)?.tabs[0]?.[0] ??
         'profile';
+      if (id !== 'home' && !tabAllowed(nextTab)) return;
       pushDossierHistory({
         organizationId: organization.id,
         screen: id,
@@ -238,7 +255,7 @@ export function CorporateProfile({
       setTab(nextTab);
       setCreditTab('policy');
     },
-    [organization.id],
+    [organization.id, tabAllowed, visibleSections],
   );
   const title = current?.title ?? `نمای ۳۶۰ درجه ${entityLabel}`;
   const breadcrumbs = useMemo<readonly PageBreadcrumb[]>(
@@ -288,6 +305,8 @@ export function CorporateProfile({
                   ? 'temporary'
                   : 'credit'
                 : undefined;
+  if (screen !== 'home' && !tabAllowed(tab))
+    return <p role="status">دسترسی به این بخش پرونده محدود شده است.</p>;
   return (
     <div className="corporate-profile">
       <div className="page-head">
@@ -367,7 +386,7 @@ export function CorporateProfile({
             className="hub-grid"
             aria-label={`بخش‌های پرونده ${entityLabel}`}
           >
-            {sections.map(
+            {visibleSections.map(
               ({ id, title: label, icon: Icon, accent, tint, tabs }) => (
                 <article
                   className="hub-card"
@@ -422,6 +441,7 @@ export function CorporateProfile({
             }
           >
             {current?.tabs
+              .filter(([id]) => tabAllowed(id))
               .filter(([id]) => screen !== 'organization' || id === 'profile')
               .map(([id, label]) => (
                 <button

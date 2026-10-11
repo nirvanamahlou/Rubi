@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AuthGuard } from '../iam/auth.guard';
+import { PermissionGuard } from '../iam/permission.guard';
 import { IamModule } from '../iam/iam.module';
 import { DocumentsModule } from '../documents/documents.module';
 import { SettingsModule } from '../settings/settings.module';
@@ -17,6 +18,7 @@ import { ReportingExportService } from './reporting-export.service';
     ReportingRepository,
     ReportingExportService,
     AuthGuard,
+    PermissionGuard,
   ],
   exports: [ReportingService],
 })

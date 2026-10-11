@@ -1,5 +1,6 @@
 import { ACCOUNTING_PERMISSIONS } from '../accounting';
 export * from './user-access';
+export * from './user-access-controls';
 import { HR_PERMISSION_CODES } from '../hr';
 import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
 import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
@@ -155,7 +156,8 @@ export type IamPermissionCode =
   | (typeof IAM_PERMISSION_CODES)[number]
   | 'ui.profile'
   | 'ui.administrator'
-  | `ui.screen.${string}`;
+  | `ui.screen.${string}`
+  | `ui.deny.${string}`;
 
 export interface AuthenticatedActor {
   userId: string;
