@@ -559,5 +559,6 @@
   "حذف ردیف ناموفق بود.": "Could not delete the row.",
   "حذف همین ردیف لود": "Delete this load row",
   "ردیف انتخاب‌شده حذف شد؛ سوابق آن حفظ شده است.": "The selected row was removed while its history was preserved.",
-  "فقط همین رکورد از مدیریت و فروش جدید خارج می‌شود؛ سوابق فروش، قیمت، خرید، مالی و ممیزی باقی می‌مانند.": "Only this record will be removed from management and new sales; its sales, pricing, procurement, financial and audit history will remain."
+  "فقط همین رکورد از مدیریت و فروش جدید خارج می‌شود؛ سوابق فروش، قیمت، خرید، مالی و ممیزی باقی می‌مانند.": "Only this record will be removed from management and new sales; its sales, pricing, procurement, financial and audit history will remain.",
+  "لود —": "Load —"
 }
