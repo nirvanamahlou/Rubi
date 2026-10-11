@@ -240,7 +240,7 @@ export function AssistantComposer({
   denied: boolean;
   state: AssistantLoadState;
   snapshot: ExecutiveSnapshot | null;
-  onRefresh?: () => void;
+  onRefresh?: (() => void) | undefined;
 }) {
   const inputId = useId();
   const helpId = useId();
