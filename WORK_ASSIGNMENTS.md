@@ -6295,7 +6295,7 @@ Sole writer, no delegation. Reserve bounded chart detail-level/type selector, it
 
 Completed: dedicated three-level/type grid with explicit double-click and keyboard selection, source26 titles from existing book configuration, independent per-level persistence and legacy selection compatibility. Older level4-only imports retain access to5/6; new-level edits update allocation eligibility without changing other levels.13 focused tests, scoped lint/typecheck and57-route build passed.3100 browser verified source-equivalent type table, all26 titles, independent switches and save/reload; guarded readback confirms observed111001 level4 cash assignment only,221 other accounts unchanged. No source writes, numeric financial imports, backend/schema/dependency changes or delegation. Captures/backup/receipt/proof outside Git; no full per-account assignment audit claimed. Editing locks released with review candidate; no merge.
 
-## ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 — PC-A — IN_PROGRESS
+## ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 — PC-A — DONE
 
 User explicitly authorizes push, develop merge and deployment of the entire accounting/correspondence candidate to the existing rubi Compose project. Sole writer, no delegation. Reserve integration conflict resolution, affected Finance/navigation/contracts/schema merges, Compose runtime configuration and bounded status docs. Preserve other-PC changes and existing operational data; use backups before additive migrations/import. Resolve exact-head CI failures before merge. Existing accounting worktree remains source; a clean runtime checkout will serve merged develop. Future accounting changes target rubi Compose (3100/4192), not separate4217 preview. No destructive migration or dependency change planned.
 
@@ -6807,3 +6807,5 @@ as already integrated and keep release PR361 open. All eleven source ASTs were
 compared against the base and are unchanged. No tests/gates are excluded.
 Bounded formatting locks release with the review commit; final-head CI, merge
 and stale-PR closure provenance are recorded in the repair PR handoff.
+
+ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 completion: PR778 merged to develop at57793ab3 after all exact-head CI gates passed. Runtime checkout clean at that revision; rubi-api-1 and rubi-web-1 healthy on4192/3100. All reviewed migrations applied after fresh backup. Guarded service transfer verified222 accounts/26 detail types, preserving6 existing users and0 existing journals. Standard seven accounting permission seeds added only to existing system administrator role, no user-role changes. Preview4217 stopped. Sole-writer documentation receipt branch codex/pc-a-accounting-rubi-cutover-1011 reserves only this completion entry, PROJECT_STATUS and runtime handoff; source and migration locks released. Authenticated browser verification awaits existing Rubi user login; login page and health verified.

@@ -5468,3 +5468,8 @@ The user explicitly selected closing PR308/328/362 after current develop CI
 passes and keeping PR361 open. The eleven-file AST comparison passed; source
 structure is unchanged. Final check/merge/closure evidence is recorded in the
 repair PR, without a main release or reopening obsolete work branches.
+
+
+## 2026-10-11 — Accounting Rubi Compose cutover — PC-A
+
+PR778 merged into develop at57793ab3 with full quality, tests, production build and PostgreSQL migration/seed gates green. Shared rubi Compose now serves accounting and correspondence: Web3100, API4192, existing Rubi PostgreSQL55432; both application containers healthy. Fresh backup preceded reviewed migrations. Only observed REF737 structural reference data transferred through AccountingService:222 accounts and26 detail types, source attributes and hierarchy compared after transfer. Existing6 users preserved; no preview users, balances, journals, FX or synthetic QA book imported. Standard accounting permissions seeded on existing administrator role only. Standalone4217 retired. Future accounting changes use rubi Compose. Login page verified; authenticated UI requires existing Rubi credentials. Source-parity limitations remain documented separately.
