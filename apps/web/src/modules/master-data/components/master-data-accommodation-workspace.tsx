@@ -312,7 +312,8 @@ export function MasterDataAccommodationWorkspace() {
   useEffect(() => {
     const fallback = visibleTabs[0];
     if (fallback && !visibleTabs.some((item) => item.id === tab)) {
-      setTab(fallback.id);
+      const frame = window.requestAnimationFrame(() => setTab(fallback.id));
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [tab, visibleTabs]);
   const current = copy[tab];
@@ -322,9 +323,12 @@ export function MasterDataAccommodationWorkspace() {
 
   useEffect(() => {
     if (resourceAllowed) return;
-    setFormMode(null);
-    setSelected(undefined);
-    setProfileOpen(false);
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [resourceAllowed]);
   const visibleCities = useMemo(
     () =>

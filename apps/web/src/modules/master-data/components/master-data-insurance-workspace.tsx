@@ -720,7 +720,10 @@ export function MasterDataInsuranceWorkspace() {
   useEffect(() => {
     const fallback = visibleTabs[0];
     if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
-      setResource(fallback.resource);
+      const frame = window.requestAnimationFrame(() =>
+        setResource(fallback.resource),
+      );
+      return () => window.cancelAnimationFrame(frame);
     }
   }, [resource, visibleTabs]);
   const [expandedInsurerId, setExpandedInsurerId] = useState<string | null>(
@@ -737,10 +740,13 @@ export function MasterDataInsuranceWorkspace() {
 
   useEffect(() => {
     if (resourceAllowed) return;
-    setFormMode(null);
-    setSelected(undefined);
-    setProfileOpen(false);
-    setExpandedInsurerId(null);
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+      setExpandedInsurerId(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [resourceAllowed]);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
