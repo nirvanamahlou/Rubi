@@ -5477,4 +5477,3 @@ PR778 merged into develop at57793ab3 with full quality, tests, production build 
 ## 2026-10-11 — Accounting empty landing — PC-A
 
 Removed duplicate shortcut grids from accounting landing/group content. Sidebar and open tabs remain the navigation surface. Authenticated /finance browser verification on shared rubi Web3100 shows no shortcut cards. No schema, API, data or dependency change.
-
