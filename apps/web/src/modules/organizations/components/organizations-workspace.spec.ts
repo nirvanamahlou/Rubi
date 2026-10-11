@@ -108,4 +108,10 @@ describe('agency to Master Organization integration', () => {
     expect(dossierSummary).toContain('<OrganizationCrmKpis');
     expect(profile).toContain('<OrganizationFinancePreview');
   });
+
+  it('shows the stored license number in agency base information and roles', () => {
+    expect(profile).toContain("roles.includes('AGENCY')");
+    expect(profile).toContain('organization.attributes.tourismLicenseNumber');
+    expect(profile).toContain("'شماره مجوز'");
+  });
 });

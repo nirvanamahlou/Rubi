@@ -6472,3 +6472,20 @@ and Web typecheck pass. Live Demo authentication on localhost returns 200 with
 two cookies, Workbench accepts that session with 200, 127.0.0.1 CORS preflight
 returns 204 and LAN health returns 200. Bounded source locks release with the
 review commit.
+
+## AGENCY-PROFILE-LICENSE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; continue local review branch
+`codex/pc-b-chrome-local-login-1011` at `9796db2b`. User requests the agency
+«اطلاعات پایه و نقش‌ها» card to display the stored license number. Reserve only
+the Organizations corporate-profile identity summary, its focused regression and
+bounded status docs. Show `tourismLicenseNumber` only when the organization has
+the AGENCY role and use an explicit missing-value label. No API/schema/migration,
+dependency, permission, data or runtime-database mutation.
+
+Delivered the agency-only «شماره مجوز» row in «اطلاعات پایه و نقش‌ها», backed
+by the existing `tourismLicenseNumber` attribute. Missing values point users to
+«ویرایش اطلاعات». The focused Organizations regression (9 tests), scoped
+ESLint and Web typecheck pass. No API/schema/migration, dependency, permission
+or operational-data change. The bounded source locks release with the review
+commit.

@@ -496,6 +496,15 @@ export function CorporateProfile({
                       organization.attributes.nationalId ||
                         'ثبت نشده؛ از «ویرایش اطلاعات» وارد کنید',
                     ],
+                    ...(roles.includes('AGENCY')
+                      ? [
+                          [
+                            'شماره مجوز',
+                            organization.attributes.tourismLicenseNumber ||
+                              'ثبت نشده؛ از «ویرایش اطلاعات» وارد کنید',
+                          ],
+                        ]
+                      : []),
                     [
                       'نوع شخصیت',
                       organization.attributes.personType === 'LEGAL'

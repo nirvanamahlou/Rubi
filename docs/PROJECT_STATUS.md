@@ -5251,3 +5251,12 @@ development origins include localhost, 127.0.0.1 and 192.168.8.89. Twenty-four
 focused tests, scoped ESLint and Web typecheck pass. Live localhost login,
 cookie-backed Workbench, 127.0.0.1 preflight and LAN health return 200/204. No
 account/password, schema/migration, dependency or business-data change.
+
+## 2026-10-11 — Agency license in base information and roles
+
+- «اطلاعات پایه و نقش‌ها» now displays the stored «شماره مجوز» for organizations
+  with the Agency role. When it is empty, the card directs the user to complete
+  it through «ویرایش اطلاعات»; non-agency organizations do not receive the row.
+- This reuses the existing `tourismLicenseNumber` field. No API, schema,
+  migration, dependency, permission or operational-data change. The focused
+  Organizations regression (9 tests), scoped ESLint and Web typecheck pass.
