@@ -555,5 +555,9 @@
   "شماره نماینده موجود در همین پرونده ویرایش می‌شود و رکورد تکراری ساخته نخواهد شد. اگر اطلاعات حساس به‌دلیل سطح دسترسی نمایش داده نشد، مقدار فعلی آن بدون تغییر حفظ می‌شود.": "The existing representative's number will be updated in this record without creating a duplicate. If sensitive information is hidden by your access level, its current value will remain unchanged.",
   "مراحل ویرایش آژانس": "Agency editing steps",
   "نماینده اصلی در همین مرحله به‌روزرسانی می‌شود. سایر نمایندگان، امضاداران و مدیر حساب از صفحه مشخصات و نقش‌ها قابل مدیریت‌اند.": "The primary representative is updated in this step. Manage other representatives, signatories and the account manager from the details and roles page.",
-  "ویرایش مرحله‌ای پرونده آژانس": "Step-by-step agency record editing"
+  "ویرایش مرحله‌ای پرونده آژانس": "Step-by-step agency record editing",
+  "حذف ردیف ناموفق بود.": "Could not delete the row.",
+  "حذف همین ردیف لود": "Delete this load row",
+  "ردیف انتخاب‌شده حذف شد؛ سوابق آن حفظ شده است.": "The selected row was removed while its history was preserved.",
+  "فقط همین رکورد از مدیریت و فروش جدید خارج می‌شود؛ سوابق فروش، قیمت، خرید، مالی و ممیزی باقی می‌مانند.": "Only this record will be removed from management and new sales; its sales, pricing, procurement, financial and audit history will remain."
 }
