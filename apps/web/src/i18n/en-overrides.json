@@ -1956,5 +1956,12 @@
   "یادداشت ها": "Notes",
   "معین": "Subsidiary account",
   "دفتر کل": "General ledger",
-  "اختتامیه": "Closing"
+  "اختتامیه": "Closing",
+  "جستوجو و انتخاب دپارتمان...": "Search and select a department...",
+  "دپارتمان گزارش": "Report department",
+  "همه دپارتمان‌ها": "All departments",
+  "دستیار هوشمند": "Smart assistant",
+  "دستیار مدیرعامل": "Executive assistant",
+  "دستیار هوشمند مدیرعامل": "Executive smart assistant",
+  "پیش‌بینی، تحلیل و پشتیبانی تصمیم‌های مدیرعامل": "Executive forecasts, insights and decision support"
 }

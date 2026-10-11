@@ -192,7 +192,7 @@ const systemCategoryIdByNavigationGroup = {
 } as const satisfies Record<
   Exclude<
     (typeof navigationGroups)[number]['id'],
-    'finance' | 'correspondence'
+    'finance' | 'correspondence' | 'assistant'
   >,
   Exclude<SystemCategoryId, 'all'>
 >;
@@ -216,8 +216,11 @@ const systemCategoryGroups: readonly SystemCategoryGroup[] = navigationGroups
       group,
     ): group is Exclude<
       (typeof navigationGroups)[number],
-      { id: 'finance' | 'correspondence' }
-    > => group.id !== 'finance' && group.id !== 'correspondence',
+      { id: 'finance' | 'correspondence' | 'assistant' }
+    > =>
+      group.id !== 'finance' &&
+      group.id !== 'correspondence' &&
+      group.id !== 'assistant',
   )
   .map((group) => {
     const id = systemCategoryIdByNavigationGroup[group.id];

@@ -181,6 +181,9 @@ export const navigationMessages = [
     title: 'مکاتبات',
     href: '/correspondence',
     description: 'تولید نامه و دانلود عکس و PDF',
+    title: 'دستیار هوشمند',
+    href: '/assistant',
+    description: 'پیش‌بینی، تحلیل و پشتیبانی تصمیم‌های مدیرعامل',
   },
 ] as const;
 

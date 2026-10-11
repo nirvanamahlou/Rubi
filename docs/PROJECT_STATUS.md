@@ -5397,3 +5397,47 @@ The per-row «عملیات» column is moved beside «انتخاب» so it is vi
 ## 2026-10-11 — One multi-row table per ticket load — PC-B
 
 Each server `loadGroupId` now renders as one full-width table containing all rows created by that load submission. Outbound and return rows stay together and are identified by a «مسیر» column instead of splitting one load into two tables.
+
+## 2026-10-11 — EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
+
+The final standalone main-menu entry opens a six-view executive assistant in
+ERP. The independent Node 24 read service and same-origin transport require an
+explicit executive grant and consume only authenticated personal Workbench
+calendar, notes and assigned procurement follow-ups. Generated references are
+mapped to explicit evidence gates; no fabricated business figures or active
+LLM/news/scenario computation. No account grants, DB/migration, dependency,
+operational runtime replacement or merge.
+
+Contracts143, Web57 and service12 tests pass, together with scoped lint,
+Contracts/Web typechecks and Web production build. Browser checks cover all
+views, one-click sidebar entry, source dialog, scenario input/reset, languages,
+themes and mobile. The full Web/proxy/service chain was verified against a
+synthetic ERP; actual ERP integration and production readiness remain pending.
+See docs/tasks/EXECUTIVE-ASSISTANT-1011.md and services/assistant/README.md.
+
+## 2026-10-11 — ASSISTANT-LOCALHOST-1011 — PC-C — READY_FOR_REVIEW
+
+The absent assistant was traced to port3000 running the older Reporting-only
+ff6a8c36 checkout. The isolated assistant integration retains those Reporting
+filters and adds their missing English labels. A guarded local Web launcher
+serves the combined build while preserving the running API4000 and old checkout.
+The owner-authorized account received only an isolated temporary executive
+screen grant through an audited IAM maintenance transaction; existing roles and
+branch assignments were preserved. No password/session creation or migration.
+51 focused Web and 4 IAM tests, scoped lint/typecheck and Web build pass. See
+docs/tasks/ASSISTANT-LOCALHOST-1011.md for local restart/rollback, manual grant
+revocation and pending real authenticated browser verification.
+The actual port3000 now serves the combined build with clean startup; the
+original API4000 process is unchanged. Unauthenticated /assistant correctly
+redirects to login. The owner's authenticated UI remains to be checked on login.
+
+## 2026-10-11 — ASSISTANT-CI-MERGE-1011 — PC-C
+
+PR780 CI root causes: the IAM maintenance node:test file is discovered by the
+API's Vitest runner without registered tests; two changed Markdown files fail
+Prettier. Align the runner import and formatting, preserving the same assertions
+and all CI gates. The owner now authorizes merging Agent PRs to develop after
+all final-revision checks pass; this policy is recorded in DEVELOPMENT_WORKFLOW.
+The corrected four IAM tests pass in API Vitest, scoped API lint and the full PR
+formatting gate pass locally. Remote CI confirmation and merge provenance are
+recorded in PR780 after its final-revision gates pass. No CI gate is bypassed.

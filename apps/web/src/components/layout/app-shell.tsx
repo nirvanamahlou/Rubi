@@ -276,61 +276,65 @@ function Navigation({
     >
       {compact
         ? visibleGroups.flatMap(renderGroupEntries)
-        : visibleGroups.map((group) => (
-            <section
-              key={group.id}
-              aria-label={
-                english
-                  ? (englishNavigationGroups[group.id] ?? group.title)
-                  : group.title
-              }
-              className="min-w-0"
-            >
-              <h2>
-                <button
-                  type="button"
-                  aria-expanded={!isGroupClosed(group.id)}
-                  aria-controls={groupId + group.id}
-                  onClick={() => toggleGroup(group.id)}
-                  className={cn(
-                    'mb-1 flex w-full items-center gap-2 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
-                    mobile ? 'text-muted-foreground' : 'text-blue-200',
-                  )}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'size-2 shrink-0 rounded-full ring-1 ring-black/10',
-                      group.dotClass,
-                    )}
-                  />
-                  {english
+        : visibleGroups.map((group) =>
+            group.id === 'assistant' ? (
+              renderItem(group.items[0]!)
+            ) : (
+              <section
+                key={group.id}
+                aria-label={
+                  english
                     ? (englishNavigationGroups[group.id] ?? group.title)
-                    : group.title}
-                  {isGroupClosed(group.id) ? (
-                    <ChevronLeft
-                      aria-hidden="true"
-                      className="ms-auto size-3.5 shrink-0"
-                    />
-                  ) : (
-                    <ChevronDown
-                      aria-hidden="true"
-                      className="ms-auto size-3.5 shrink-0"
-                    />
-                  )}
-                </button>
-              </h2>
-              <div
-                id={groupId + group.id}
-                hidden={isGroupClosed(group.id)}
-                className={
-                  isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
+                    : group.title
                 }
+                className="min-w-0"
               >
-                {renderGroupEntries(group)}
-              </div>
-            </section>
-          ))}
+                <h2>
+                  <button
+                    type="button"
+                    aria-expanded={!isGroupClosed(group.id)}
+                    aria-controls={groupId + group.id}
+                    onClick={() => toggleGroup(group.id)}
+                    className={cn(
+                      'mb-1 flex w-full items-center gap-2 rounded-lg text-start outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 px-[9px] pb-[5px] pt-[9px] text-sm font-semibold leading-6',
+                      mobile ? 'text-muted-foreground' : 'text-blue-200',
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'size-2 shrink-0 rounded-full ring-1 ring-black/10',
+                        group.dotClass,
+                      )}
+                    />
+                    {english
+                      ? (englishNavigationGroups[group.id] ?? group.title)
+                      : group.title}
+                    {isGroupClosed(group.id) ? (
+                      <ChevronLeft
+                        aria-hidden="true"
+                        className="ms-auto size-3.5 shrink-0"
+                      />
+                    ) : (
+                      <ChevronDown
+                        aria-hidden="true"
+                        className="ms-auto size-3.5 shrink-0"
+                      />
+                    )}
+                  </button>
+                </h2>
+                <div
+                  id={groupId + group.id}
+                  hidden={isGroupClosed(group.id)}
+                  className={
+                    isGroupClosed(group.id) ? 'hidden' : 'grid gap-[3px]'
+                  }
+                >
+                  {renderGroupEntries(group)}
+                </div>
+              </section>
+            ),
+          )}
     </nav>
   );
 }
