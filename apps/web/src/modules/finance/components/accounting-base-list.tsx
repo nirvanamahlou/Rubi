@@ -242,9 +242,6 @@ function GroupEditor({
             </option>
           ))}
         </select>
-        <span className="text-xs text-muted-foreground">
-          از شرط‌های زیر برقرار باشد
-        </span>
         <select
           aria-label="افزودن شرط یا شاخه به این گروه"
           className={`${selectClass} border-primary/30 text-primary`}
@@ -1021,12 +1018,6 @@ export function AccountingBaseList({
             limit={nodeCount(draft) >= 32}
             onChange={setDraft}
           />
-          {kind === 'fiscal-years' && (
-            <p className="text-xs text-muted-foreground">
-              شرط‌های دوره مالی دفتر کل، تخصیص‌های ثبت‌شده در دفتر جاری را بررسی
-              می‌کنند.
-            </p>
-          )}
         </form>
       )}
       {message && (

@@ -5072,3 +5072,6 @@ Verification: all137 focused Sales component tests pass; Web typecheck passes. S
 ## ACCOUNTING-RAHKARAN-PARITY-1007 — PC-A — IN_PROGRESS
 
 The existing Finance accounting candidate is being extended in place from source revision `388b672b` using the latest read-only Rahkaran form/menu evidence. Scope is distinct verified Accounting leaf routes, their route-specific fields/tabs/grids/toolbars, supported-action/dependency status and focused Web/API/PostgreSQL regressions. Existing financial invariants and atomic command adapters remain authoritative; source-error pages, invalid aliases, external tax operations and blocked wizard transitions are not represented as working behavior. The additive Finance accounting migration/schema lock is now held for the lead-reviewed true-FK internal extension only; no schema edit begins before the grouped command/invariant/test proposal is frozen.
+## 2026-10-11 — ACCOUNTING-FILTER-COPY-1011 — PC-A
+
+Removed the fiscal allocation explanation and condition helper requested by user from accounting list UI. Controls and filtering unchanged; diff check passed. Text-only deletion, no business-data changes or delegation.
