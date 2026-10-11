@@ -5524,3 +5524,13 @@ period. Source writes/imports: none. Central workspace patch and private evidenc
 are handed to PC-B; schema/migrations and shared3100 runtime remain unchanged.
 This is a candidate, not full parity or deployment. Details and validation:
 `docs/tasks/ACCOUNTING-TAX-PARITY-1011.md`.
+
+## 2026-10-11 — ACCOUNTING-TAXPAYER-PARITY-1011 — PC-A
+
+Read-only crawl observed13 taxpayer-system routes,54 labeled form controls and65
+columns. Independent UI handles observed conditional forms and explicit unavailable
+states; seller-only scoped persistence has6 passing API tests and6 Web model tests.
+PC-B confirmed shared locks remain active; central integration is a proposal patch,
+not deployed. No source writes, real submissions, source records/secrets or schema
+changes. Full operation remains dependent on credential/provider, financial models,
+read APIs and source license. See docs/tasks/ACCOUNTING-TAXPAYER-PARITY-1011.md.

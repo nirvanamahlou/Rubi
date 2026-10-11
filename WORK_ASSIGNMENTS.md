@@ -6871,3 +6871,19 @@ passed; full web/API build, lint and typecheck passed before final small refinem
 final checks recorded in task doc. Central workspace integration, dedicated financial
 models, source-item/lookups, attachments and3100 deployment remain pending owner
 integration. No source writes, source-record import or schema/migration changes.
+
+## ACCOUNTING-TAXPAYER-PARITY-1011 — PC-A — IN_PROGRESS
+
+Branch codex/pc-a-taxpayer-system-parity-1011 preserves prior tax candidate commits
+bfba7d2e and2dde78b0. Read-only source crawl and new independent accounting-taxpayer-*
+Web catalog/model/components/tests reserved. No source data, credentials, network
+submission, central workspace/service/schema edits or shared runtime mutation.
+PC-B Finances retains shared-file locks; API/domain/secret-vault integration is
+being coordinated. All13 observed menu leaves must have an explicit evidence
+status; source license error must not be replaced by invented fields.
+
+PC-B confirmed independent accounting-taxpayer-* files and standalone contract do
+not conflict. Existing shared locks remain ACTIVE. Seller reference API implemented;
+central registration/dispatch/evidence edits supplied only in integration patch.
+No secret-bearing attributes, real sends or success simulation. Final verification
+and remaining dependencies are recorded in ACCOUNTING-TAXPAYER-PARITY-1011 task doc.
