@@ -5,10 +5,8 @@ import { Button, FormField, Input } from '@/components/ui';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
   companyFlightLegs,
-  disjointFlightLoadLegs,
   countryFlightLoadOffers,
   currentCompanyLoadOffers,
-  validFlightLoadDates,
   canSearchFlightLoad,
   changeFlightLoadFilter,
   isCompanyLoadOffer,
@@ -96,22 +94,14 @@ export function FlightLoadGrid({
   }, []);
   const cityCountry = (id: string) =>
     references.find((r) => r.kind === 'city' && r.id === id)?.countryId;
-  const countryOffers = countryFlightLoadOffers(
-    offers,
-    references,
-    country,
-    originCountry,
-  );
   const [searched, setSearched] = useState<FlightLoadFilter>();
   const [searchedCurrent, setSearchedCurrent] = useState(false);
-  const [validDates, setValidDates] = useState(true);
+  const [validDates, setValidDates] = useState(false);
   const [outboundId, setOutboundId] = useState(''),
     [returnId, setReturnId] = useState('');
   const [sameClass, setSameClass] = useState(false);
   const company = offers.filter(isCompanyLoadOffer);
-  const searchFilter = validDates
-    ? { ...filter, ...validFlightLoadDates(countryOffers, filter) }
-    : filter;
+  const searchFilter = validDates ? { ...filter, from: '', to: '' } : filter;
   const loadOffers = searchedCurrent
     ? currentCompanyLoadOffers(offers)
     : offers;
@@ -133,11 +123,17 @@ export function FlightLoadGrid({
     sameClass,
     filter.carrier,
   );
-  const outbounds = disjointFlightLoadLegs(outboundCandidates, returns);
-  const tableLoad = [...outbounds, ...returns].filter(
-    (offer, index, rows) =>
-      rows.findIndex(({ id }) => id === offer.id) === index,
-  );
+  const loadGroups = [
+    ...outboundCandidates
+      .reduce((groups, offer) => {
+        const key = offer.loadGroupId ?? `offer:${offer.id}`;
+        const rows = groups.get(key) ?? [];
+        rows.push(offer);
+        groups.set(key, rows);
+        return groups;
+      }, new Map<string, TicketOfferV1[]>())
+      .values(),
+  ];
   const originCities = [
     ...new Set(
       company
@@ -160,14 +156,7 @@ export function FlightLoadGrid({
   ];
   const change = (field: keyof FlightLoadFilter, value: string) => {
     setFilter((c) => {
-      const next = changeFlightLoadFilter(
-        validDates ? { ...c, ...validFlightLoadDates(countryOffers, c) } : c,
-        field,
-        value,
-      );
-      return validDates && (field === 'origin' || field === 'destination')
-        ? { ...next, ...validFlightLoadDates(countryOffers, next) }
-        : next;
+      return changeFlightLoadFilter(c, field, value);
     });
     if (field === 'from' || field === 'to') setValidDates(false);
     setSearched(undefined);
@@ -203,7 +192,12 @@ export function FlightLoadGrid({
       </NativeSearchSelect>
     </FormField>
   );
-  const table = (rows: readonly TicketOfferV1[], back: boolean) => {
+  const table = (
+    rows: readonly TicketOfferV1[],
+    back: boolean,
+    completeLoad: readonly TicketOfferV1[],
+    route: TicketOfferV1,
+  ) => {
     const selected = back ? returning : outbound,
       totals = flightLoadTotals(rows);
     return (
@@ -211,13 +205,11 @@ export function FlightLoadGrid({
         <div className={styles.legHeader}>
           <h3>
             {back ? 'برگشت' : 'رفت'}
-            {outbound
-              ? ` — ${cityName(back ? outbound.destinationId : outbound.originId)} ← ${cityName(back ? outbound.originId : outbound.destinationId)}`
-              : ''}
+            {` — ${cityName(back ? route.destinationId : route.originId)} ← ${cityName(back ? route.originId : route.destinationId)}`}
           </h3>
-          {!back && tableLoad.length ? (
+          {!back && completeLoad.length ? (
             <div className={styles.loadActions} aria-label="عملیات کل جدول لود">
-              {renderLoadActions(tableLoad)}
+              {renderLoadActions(completeLoad)}
             </div>
           ) : null}
         </div>
@@ -227,6 +219,7 @@ export function FlightLoadGrid({
               <tr>
                 {[
                   'انتخاب',
+                  'عملیات',
                   'وب',
                   'تاریخ',
                   'ایرلاین',
@@ -242,7 +235,6 @@ export function FlightLoadGrid({
                   'Max',
                   'روز هفته',
                   'کلاس همنام',
-                  'عملیات',
                 ].map((column) => (
                   <th key={column}>{column}</th>
                 ))}
@@ -264,6 +256,9 @@ export function FlightLoadGrid({
                       checked={selected?.id === offer.id}
                       onChange={() => selectLeg(offer.id, back)}
                     />
+                  </td>
+                  <td onClick={(event) => event.stopPropagation()}>
+                    {renderRowActions?.(offer)}
                   </td>
                   <td title="وضعیت انتشار وب برای این بلیت ثبت نشده است">—</td>
                   <td dir="ltr">{ticketCalendarDate(offer.departureAt)}</td>
@@ -293,9 +288,6 @@ export function FlightLoadGrid({
                         ? '✓'
                         : '—'
                       : '—'}
-                  </td>
-                  <td onClick={(event) => event.stopPropagation()}>
-                    {renderRowActions?.(offer)}
                   </td>
                 </tr>
               ))}
@@ -439,14 +431,14 @@ export function FlightLoadGrid({
         <FormField label="از تاریخ" id="load-from">
           <TicketDatePicker
             id="load-from"
-            value={searchFilter.from}
+            value={filter.from}
             onChange={(value) => change('from', value)}
           />
         </FormField>
         <FormField label="تا تاریخ" id="load-to">
           <TicketDatePicker
             id="load-to"
-            value={searchFilter.to}
+            value={filter.to}
             onChange={(value) => change('to', value)}
           />
         </FormField>
@@ -522,10 +514,9 @@ export function FlightLoadGrid({
             onChange={(event) => {
               const checked = event.target.checked;
               const nextFilter = checked
-                ? { ...filter, ...validFlightLoadDates(countryOffers, filter) }
-                : { ...filter, from: '', to: '' };
+                ? { ...filter, from: '', to: '' }
+                : filter;
               setValidDates(checked);
-              setFilter(nextFilter);
               setOutboundId('');
               setReturnId('');
               if (checked) {
@@ -541,10 +532,7 @@ export function FlightLoadGrid({
           تاریخ‌های معتبر
         </label>
         <Button
-          disabled={
-            !canSearchFlightLoad(searchFilter) ||
-            Boolean(validDates && (!searchFilter.from || !searchFilter.to))
-          }
+          disabled={!validDates && !canSearchFlightLoad(searchFilter)}
           onClick={() => {
             setSearched({ ...searchFilter });
             setSearchedCurrent(validDates);
@@ -591,12 +579,30 @@ export function FlightLoadGrid({
       {!company.length && (
         <p className={styles.help}>بلیتی برای نمایش در لود وجود ندارد.</p>
       )}
-      {searched && (
-        <div className={styles.tables}>
-          {table(outbounds, false)}
-          {table(returns, true)}
-        </div>
-      )}
+      {searched &&
+        loadGroups.map((rows) => {
+          const route = rows[0];
+          if (!route) return null;
+          const forward = rows.filter(
+            (offer) =>
+              offer.originId === route.originId &&
+              offer.destinationId === route.destinationId,
+          );
+          const backward = rows.filter(
+            (offer) =>
+              offer.originId === route.destinationId &&
+              offer.destinationId === route.originId,
+          );
+          return (
+            <div
+              className={styles.tables}
+              key={route.loadGroupId ?? `offer:${route.id}`}
+            >
+              {table(forward, false, rows, route)}
+              {table(backward, true, rows, route)}
+            </div>
+          );
+        })}
       {searched && (
         <div className={styles.details}>
           {detail(outbound, false)}

@@ -1086,6 +1086,7 @@ function TicketCatalogWorkspace() {
   const renderOfferActions = (offer: TicketOfferV1) => {
     return (
       <div className="flex flex-wrap gap-2">
+        {renderRowActions(offer)}
         {new Date(offer.departureAt).getTime() > catalogNow ? (
           <div className="flex flex-wrap gap-2">
             <Button
