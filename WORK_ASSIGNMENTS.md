@@ -6826,6 +6826,7 @@ Sole writer; reserve accounting-workspace.tsx home shortcut grid removal, scoped
 
 ACCOUNTING-EMPTY-HOME-1011 result: shortcut card grids removed from accounting landing/group pages. Existing navigation and record forms preserved. Authenticated browser verified /finance on rubi Web3100 without shortcut cards; bounded ESLint/typecheck and CI validate candidate. Frontend-only immutable image deployed on existing rubi Compose; no database/API changes.
 
+
 ## ASSISTANT-ALL-USERS-1011 — PC-C — READY_FOR_REVIEW
 
 User authorization: temporarily enable the assistant for all authenticated ERP
@@ -6909,4 +6910,11 @@ draft behavior. No API, data, migration or dependency change. Acceptance: no
 Sources button, adjacent report/refresh controls, readable navy composer in both
 themes and RTL/LTR/mobile; focused existing tests, lint/typecheck/build, green
 final-head CI before authorized develop merge, then localhost activation.
+
+
+## ACCOUNTING-COA-REPORTS-YEAREND-1011 — PC-A — IN_PROGRESS
+
+Base origin/develop@68987832; branch codex/pc-a-coa-reports-year-end-1011. User explicitly authorizes source-only crawling and exact COA/report/year-end implementation coordinated with PC-B Finances. Independent worktree; sole writer. Reserve accounting-chart-* and accounting-report-workspace.tsx, accounting-year-end-workspace.tsx, new isolated report/year-end components/models/tests and own task/status entries. Active document owner retains accounting.service.ts, accounting-workspace.tsx, accounting-parity-definitions.ts, contracts/accounting.ts and schema/migrations until explicit release. No shared runtime or test DB mutation, no dependency changes, no source financial actions, invented fields or transaction imports. UI assumptions: authenticated desktop/corporate ERP, existing Next.js stack and Rubi design system, best-effort WCAG AA owned by this work item; targets LCP2500ms/INP200ms/CLS0.1 p75 and additional route JS80KB gzip, Lighthouse accessibility90/performance80 are targets, not measured claims. No framework decision or new Site.
+
+ACCOUNTING-COA-REPORTS-YEAREND-1011 candidate: tree/search/root fixes and AccountingChartReport ready for coordinated integration; web lint/typecheck/build and15 targeted tests passed. No raw financial source data entered Git. Active central locks respected. Full objective remains IN_PROGRESS, with source and contract blockers documented in the task file. PC-B Finances will connect the report route after reviewing the commit. No merge/deploy/runtime mutation performed by this work item.
 

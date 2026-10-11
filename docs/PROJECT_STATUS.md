@@ -5486,6 +5486,7 @@ PR778 merged into develop at57793ab3 with full quality, tests, production build 
 
 Removed duplicate shortcut grids from accounting landing/group content. Sidebar and open tabs remain the navigation surface. Authenticated /finance browser verification on shared rubi Web3100 shows no shortcut cards. No schema, API, data or dependency change.
 
+
 ## 2026-10-11 — ASSISTANT-ALL-USERS-1011 — PC-C
 
 Owner-authorized shared assistant visibility for every authenticated ERP user,
@@ -5554,4 +5555,9 @@ colors in both ERP themes. Toolbar wraps on mobile. All six views, local-only
 drafts and existing source authorization remain unchanged. No API, migration,
 dependency or data changes.20 focused existing Web tests and scoped ESLint passed;
 production build, browser verification and final CI evidence follow in the PR.
+
+
+## 2026-10-11 — COA tree and chart-report candidate — PC-A
+
+Independent source crawl verified 222 accounts, 13 root groups and nine assigned-detail records. COA tree now uses persisted roots, source code/title sorting and code/title/level search. Added a read-only chart-report component and seven report-model tests. Web lint, typecheck, 15 targeted tests and production build passed. No API/schema/dependency change or source/runtime data mutation. Central report route integration is reserved to the active PC-B Finances chat. Full report/year-end parity remains incomplete: source fiscal selector exposes only2026, year-end prerequisites block later steps, counterpart output and CSV export return source errors, and closing-template roles need a separately owned additive migration. See docs/tasks/ACCOUNTING-COA-REPORTS-YEAREND-1011.md.
 

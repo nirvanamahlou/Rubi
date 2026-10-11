@@ -162,6 +162,12 @@ export function AccountingChartEditor({
         : old,
     );
   const open = (id: string) => {
+    if (!id) {
+      setSelectedId('');
+      setDraft(null);
+      setDetailLevel(null);
+      return;
+    }
     const account = accounts.find((item) => item.id === id);
     if (!account) return;
     setSelectedId(id);
@@ -327,11 +333,16 @@ export function AccountingChartEditor({
         </div>
       )}
       <AccountingButton
+        aria-label="جدید"
         permission="finance.account.manage"
         disabled={busy || !book}
         onClick={createChild}
       >
-        جدید
+        {selected?.level === 'GROUP'
+          ? 'حساب کل جدید'
+          : selected
+            ? 'حساب معین جدید'
+            : 'گروه حساب جدید'}
       </AccountingButton>
       <AccountingDeleteButtons
         busy={busy || !book}
