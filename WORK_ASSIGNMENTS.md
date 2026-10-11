@@ -6821,3 +6821,14 @@ ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 completion: PR778 merged to develop at5
 Sole writer; reserve accounting-workspace.tsx home shortcut grid removal, scoped docs and Rubi Compose web deployment. User requests empty accounting landing content while existing sidebar/form navigation stays available. No data, API, migration or dependency changes; no delegation.
 
 ACCOUNTING-EMPTY-HOME-1011 result: shortcut card grids removed from accounting landing/group pages. Existing navigation and record forms preserved. Authenticated browser verified /finance on rubi Web3100 without shortcut cards; bounded ESLint/typecheck and CI validate candidate. Frontend-only immutable image deployed on existing rubi Compose; no database/API changes.
+# ACCOUNTING-BOOKS-ERROR-1011 — PC-B — READY_FOR_REVIEW
+
+User-authorized bounded accounting UI repair from develop 68987832. Reserve
+accounting-workspace.tsx loading/error/empty-book handling and focused checks.
+Demo books request returns 403: finance.journal.read is absent. Preserve IAM,
+database and ports 3000/4000; no synthetic books or permission grants.
+
+Scoped lint, two detail-level tests and production build/typecheck passed.
+Browser on port 3000 now shows the permission error and zero ledger creation
+forms on the chart route. Detail levels cannot be verified in the live session
+while books access is forbidden; no authorization bypass was introduced.

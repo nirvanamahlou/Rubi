@@ -354,7 +354,20 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       label: `${r.code ? `${r.code} — ` : ''}${r.title}`,
     }));
   let content: ReactNode = null;
-  if (!books.length || section === 'general-ledger/base-information/ledgers')
+  if (booksQuery.isPending)
+    content = <p role="status">در حال دریافت دفترهای حسابداری…</p>;
+  else if (booksQuery.isError || snapshotQuery.isError) content = null;
+  else if (
+    !books.length &&
+    section !== 'general-ledger/base-information/ledgers'
+  )
+    content = (
+      <p role="status">
+        هیچ دفتر کل قابل‌دسترسی برای شعبه‌های شما تعریف نشده است. برای تعریف
+        دفتر، از اطلاعات پایه، معرفی دفتر کل را باز کنید.
+      </p>
+    );
+  else if (section === 'general-ledger/base-information/ledgers')
     content = (
       <AccountingLedgerEditor
         key={`${bookId || 'new-ledger'}:${urlParams.get('new') ?? ''}`}
@@ -1011,7 +1024,12 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
           role="alert"
           className="rounded-xl bg-destructive/10 p-4 text-destructive"
         >
-          {error}
+          {error ||
+            (booksQuery.error instanceof Error
+              ? booksQuery.error.message
+              : snapshotQuery.error instanceof Error
+                ? snapshotQuery.error.message
+                : 'دریافت اطلاعات حسابداری ناموفق بود؛ دوباره تلاش کنید.')}
         </div>
       ) : null}
       {notice ? (

@@ -5481,3 +5481,16 @@ PR778 merged into develop at57793ab3 with full quality, tests, production build 
 ## 2026-10-11 — Accounting empty landing — PC-A
 
 Removed duplicate shortcut grids from accounting landing/group content. Sidebar and open tabs remain the navigation surface. Authenticated /finance browser verification on shared rubi Web3100 shows no shortcut cards. No schema, API, data or dependency change.
+# 2026-10-11 — PC-B accounting books error handling
+
+Local Demo request to accounting/books returns 403 because finance.journal.read
+is absent, despite finance.read and HQ branch membership. Active UI company is
+Niayesh Seir Sahar; accounting books are scoped by actor branch IDs. The previous
+UI defaulted failed queries to an empty list, displayed the ledger creation form
+and rendered an empty alert. Bounded UI correction separates pending, failed and
+successful empty results; actual API errors are visible and chart routes no
+longer substitute ledger creation. No books, permissions or migrations changed.
+Focused detail-level tests (2), scoped lint and production build/typecheck passed.
+Browser verification on port 3000 shows the permission message and no ledger
+creation form. Live chart/detail-level verification remains blocked by 403;
+API remains on 4000. No database or IAM mutation was performed.
