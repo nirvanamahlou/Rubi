@@ -6197,3 +6197,6 @@ User-authorized sole-writer copy removal in accounting-base-list.tsx: removed al
 ## ACCOUNTING-LEDGER-LAYOUT-1011 — PC-A — READY_FOR_REVIEW
 
 Direct screenshot733 layout follow-up, sole writer of accounting-base-list.tsx. Ledger-only compact bordered grid with pale header, full-width preset, initially collapsed filter strip, tall table region and repeated icon toolbar with independent list popovers. Default50 rows, first/last page controls with shortcuts and record range. Existing column filters and scoped data preserved. Focused filter tests9/9, scoped lint, TypeScript and diff checks passed;3100 browser verified negative title filter, clear and bottom multi-selection. No data/backend/schema/dependency changes or delegation.
+## ACCOUNTING-LIST-BOOK-SELECTOR-1011 — PC-A — READY_FOR_REVIEW
+
+User-authorized sole-writer accounting-workspace.tsx display-only change: hide book selector on fiscal-year, ledger and voucher-type base list routes. Current book state/read authorization preserved. Scoped lint/diff check passed;3100 browser verified selector absent on all three routes. No data/backend changes or delegation.

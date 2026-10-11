@@ -5078,3 +5078,6 @@ Removed the fiscal allocation explanation and condition helper requested by user
 ## 2026-10-11 — ACCOUNTING-LEDGER-LAYOUT-1011 — PC-A
 
 Ledger list screenshot733 follow-up: compact grid/header and column filters, full-width preset, collapsed filter strip, tall grid, top/bottom icon operations,50-row default, first/last page shortcuts and record range. Other base-list layouts preserved. Tests9/9, scoped lint/TypeScript and diff check passed; browser verified actual filtering, clearing and bottom multi-selection on3100. Screenshot Ledger-List-733.png saved. No business writes, backend/schema/dependency changes or delegation.
+## 2026-10-11 — ACCOUNTING-LIST-BOOK-SELECTOR-1011 — PC-A
+
+Hidden book selector on all three base-information lists at user request, preserving current book scope and data reads. Scoped lint/diff check and browser absence checks on fiscal-year/ledger/voucher-type lists passed on3100. No business writes or delegation.
