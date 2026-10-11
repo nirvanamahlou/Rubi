@@ -6556,3 +6556,30 @@ All six views, standalone final sidebar link, two languages, themes and mobile
 were verified. No actual ERP integration or production readiness claimed.
 Bounded source locks release with the review commit; no merge/runtime handoff
 is authorized. See the task document for deployment and data-source gates.
+
+## ASSISTANT-LOCALHOST-1011 — PC-C — READY_FOR_REVIEW
+
+Owner asks to diagnose and fix the missing assistant at localhost:3000. The
+listener runs develop-localhost@ff6a8c36 (Reporting follow-up branch), whereas
+the assistant exists only at e29daf76/PR779. Reserve this isolated integration
+branch, own startup script and status/task docs. Base e29daf76; copy only the two
+published Reporting source/test changes from ff6a8c36 so the local UI retains
+its current department/connection filters. Do not edit the running source tree,
+its modified next-env.d.ts, protected branches or any API/database/permission.
+After tests/build, replace only the verified Web listener with this combined
+runtime on port3000. Existing API4000 and operational data remain independent.
+Executive access stays explicit; requested account assignment requires a named
+account and authorized IAM path. No general administrator bypass.
+
+Owner explicitly authorizes temporary executive access for username Amin.
+Reserve a local-only IAM maintenance command/test: one isolated per-user role
+with only ui.screen.assistant.executive, retaining all existing roles/branches,
+dry-run default, atomic grant/revoke and truthful local-operator audit. Existing
+API4000 can read persisted permission grants; no API restart or session creation.
+
+Completed: the owner-selected active account received only the temporary
+executive screen role with an atomic audit. Existing roles and branches were
+verified unchanged. Combined Web includes current Reporting filters and English
+labels; 51 focused Web +4 IAM tests, lint/typecheck/build pass. Own runtime
+launcher refuses occupied ports. See docs/tasks/ASSISTANT-LOCALHOST-1011.md for
+runtime provenance, rollback, grant revocation and verification limitations.

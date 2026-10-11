@@ -14,7 +14,6 @@ import {
   Download,
   FileDown,
   FileText,
-  Filter,
   Headset,
   History,
   Layers3,
@@ -31,7 +30,6 @@ import {
   Users,
   WalletCards,
   Search,
-  ShieldCheck,
   Table2,
   WifiOff,
   X,
@@ -43,6 +41,8 @@ import { ReportingOperationsView } from './reporting-operations-view';
 import { ReportSharingDialog } from './report-sharing-dialog';
 
 import { Button } from '@/components/ui/button';
+import * as ConnectionSelect from '@radix-ui/react-select';
+import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { CalendarSystem } from '@/components/ui/date-picker.utils';
 import {
@@ -638,7 +638,7 @@ function ReportAvailabilitySelectOption({
       ? Check
       : availability === 'PENDING_CONNECTION'
         ? Clock3
-        : ShieldCheck;
+        : null;
   const label =
     availability === 'READY'
       ? 'قابل اجرای محدود'
@@ -647,11 +647,13 @@ function ReportAvailabilitySelectOption({
         : 'همه وضعیت‌های اتصال';
   return (
     <span className="flex w-full items-center gap-2 text-right" dir="rtl">
-      <Icon
-        aria-hidden="true"
-        className="size-4 shrink-0 text-foreground"
-        strokeWidth={1.75}
-      />
+      {Icon ? (
+        <Icon
+          aria-hidden="true"
+          className="size-4 shrink-0 text-foreground"
+          strokeWidth={1.75}
+        />
+      ) : null}
       <span className="min-w-0 flex-1 text-right">{label}</span>
     </span>
   );
@@ -2146,54 +2148,60 @@ export function ReportingWorkspace({
                         value={query}
                       />
                     </label>
-                    <Select onValueChange={setCategory} value={category}>
-                      <SelectTrigger aria-label="دسته گزارش">
-                        <Filter className="size-4" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="text-right" dir="rtl">
-                        <SelectItem className="text-right" value="all">
-                          <ReportCategorySelectOption category="all" />
-                        </SelectItem>
-                        {categories.map((item) => (
-                          <SelectItem
-                            className="text-right"
-                            key={item}
-                            value={item}
-                          >
-                            <ReportCategorySelectOption category={item} />
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
+                    <SearchCombobox
+                      label="دپارتمان گزارش"
+                      placeholder="جستوجو و انتخاب دپارتمان..."
+                      optionLimit={categories.length + 1}
+                      onValueChange={setCategory}
+                      value={category}
+                      options={['all', ...categories].map((item) => ({
+                        value: item,
+                        label: <ReportCategorySelectOption category={item} />,
+                        searchText: item === 'all' ? 'همه دپارتمان‌ها' : item,
+                      }))}
+                    />
+                    <ConnectionSelect.Root
+                      dir="rtl"
                       onValueChange={(value) =>
                         setAvailability(value as ReportAvailability | 'all')
                       }
                       value={availability}
                     >
-                      <SelectTrigger
+                      <ConnectionSelect.Trigger
                         aria-label="وضعیت اتصال گزارش"
-                        className="whitespace-nowrap [&>span]:whitespace-nowrap"
+                        className="flex h-11 w-full items-center gap-2 whitespace-nowrap rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
-                        <ShieldCheck className="size-4" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent dir="rtl" className="text-right">
-                        <SelectItem className="text-right" value="all">
-                          <ReportAvailabilitySelectOption availability="all" />
-                        </SelectItem>
-                        <SelectItem className="text-right" value="READY">
-                          <ReportAvailabilitySelectOption availability="READY" />
-                        </SelectItem>
-                        <SelectItem
-                          className="text-right"
-                          value="PENDING_CONNECTION"
+                        <ConnectionSelect.Value />
+                        <ConnectionSelect.Icon className="ms-auto">
+                          <ChevronDown className="size-4" />
+                        </ConnectionSelect.Icon>
+                      </ConnectionSelect.Trigger>
+                      <ConnectionSelect.Portal>
+                        <ConnectionSelect.Content
+                          position="popper"
+                          sideOffset={4}
+                          className="z-50 min-w-[var(--radix-select-trigger-width)] rounded-xl border bg-surface p-1 text-sm text-foreground shadow-lg"
                         >
-                          <ReportAvailabilitySelectOption availability="PENDING_CONNECTION" />
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                          <ConnectionSelect.Viewport>
+                            {['all', 'READY', 'PENDING_CONNECTION'].map(
+                              (item) => (
+                                <ConnectionSelect.Item
+                                  key={item}
+                                  value={item}
+                                  className="cursor-pointer rounded-lg px-3 py-2 text-right outline-none data-[highlighted]:bg-muted"
+                                >
+                                  <ConnectionSelect.ItemText>
+                                    <ReportAvailabilitySelectOption
+                                      availability={item}
+                                    />
+                                  </ConnectionSelect.ItemText>
+                                </ConnectionSelect.Item>
+                              ),
+                            )}
+                          </ConnectionSelect.Viewport>
+                        </ConnectionSelect.Content>
+                      </ConnectionSelect.Portal>
+                    </ConnectionSelect.Root>
                   </div>
                   <div className="mt-3 text-xs text-muted-foreground">
                     <span aria-live="polite">
