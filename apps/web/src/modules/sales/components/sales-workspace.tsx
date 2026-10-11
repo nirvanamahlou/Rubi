@@ -275,7 +275,7 @@ export function SalesWorkspace() {
       {dashboard && !loading ? (
         <SalesDashboardMetrics dashboard={dashboard} />
       ) : null}
-      <div className="grid items-start gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid gap-4">
         <SalesReceivablesCard
           refreshVersion={dashboard}
           formatAmount={formatMoney}
@@ -288,7 +288,7 @@ export function SalesWorkspace() {
               </span>
               <h2 className="font-bold">پیگیری‌های فروش</h2>
             </div>
-            <dl className="grid gap-2 p-3 sm:p-4">
+            <dl className="grid gap-3 p-3 sm:grid-cols-3 sm:p-4">
               {[
                 {
                   label: 'منتظر تأیید مالی',

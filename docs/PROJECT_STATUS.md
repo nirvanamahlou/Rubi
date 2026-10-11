@@ -5244,3 +5244,5 @@ The exact 18-row database write path passed inside a forced-rollback transaction
 ## SALES-FOLLOWUPS-UI-1011
 
 PC-A redesigned the Sales follow-up card as compact, icon-led status rows with readable counts. Dashboard panels align to their own content height, avoiding an empty stretched follow-up panel. Existing data, labels, permissions and filters are preserved. No migration or dependency change. Local preview and a develop PR are requested.
+
+User follow-up: receivables now occupy a full-width row with five desktop filter columns; follow-ups occupy their own full-width row with three side-by-side status tiles. Mobile filters and tiles stack responsively.

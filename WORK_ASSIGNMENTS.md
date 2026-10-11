@@ -6458,3 +6458,5 @@ CI integration follow-up: `develop` advanced with stepwise agency editing while 
 COMPUTER_ID=PC-A; branch `codex/pc-a-sales-followups-ui-1011` from `origin/develop`. Reserve Sales workspace follow-up presentation and bounded status documentation. Replace the stretched empty panel with compact status rows, accessible icons and responsive intrinsic-height layout. No API, financial logic, schema, migration, dependency or shared translations change. User requests local preview and a PR to develop; no merge requested.
 
 Validation: scoped ESLint, Web typecheck and 13 Sales workspace tests pass. Production Web build and local runtime smoke verification are recorded with the delivery. No migration needed; bounded presentation lock releases with the review commit.
+
+SALES-FOLLOWUPS-UI-1011 follow-up reservation: user requests full-width stacked panels, three follow-up tiles in one desktop row and horizontally arranged receivable filters. Extend the same bounded lock to `sales-receivables-card.tsx`; no behavior/API change.
