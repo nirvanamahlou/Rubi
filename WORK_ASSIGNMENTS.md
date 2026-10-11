@@ -6809,3 +6809,9 @@ Bounded formatting locks release with the review commit; final-head CI, merge
 and stale-PR closure provenance are recorded in the repair PR handoff.
 
 ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 completion: PR778 merged to develop at57793ab3 after all exact-head CI gates passed. Runtime checkout clean at that revision; rubi-api-1 and rubi-web-1 healthy on4192/3100. All reviewed migrations applied after fresh backup. Guarded service transfer verified222 accounts/26 detail types, preserving6 existing users and0 existing journals. Standard seven accounting permission seeds added only to existing system administrator role, no user-role changes. Preview4217 stopped. Sole-writer documentation receipt branch codex/pc-a-accounting-rubi-cutover-1011 reserves only this completion entry, PROJECT_STATUS and runtime handoff; source and migration locks released. Authenticated browser verified after existing Rubi user login: chart hierarchy, subsidiary form and level-four detail-type panel.
+
+## ACCOUNTING-EMPTY-HOME-1011 — PC-A — READY_FOR_REVIEW
+
+Sole writer; reserve accounting-workspace.tsx home shortcut grid removal, scoped docs and Rubi Compose web deployment. User requests empty accounting landing content while existing sidebar/form navigation stays available. No data, API, migration or dependency changes; no delegation.
+
+ACCOUNTING-EMPTY-HOME-1011 result: shortcut card grids removed from accounting landing/group pages. Existing navigation and record forms preserved. Authenticated browser verified /finance on rubi Web3100 without shortcut cards; bounded ESLint/typecheck and CI validate candidate. Frontend-only immutable image deployed on existing rubi Compose; no database/API changes.
