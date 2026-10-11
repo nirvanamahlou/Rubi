@@ -4,6 +4,8 @@ import {
   accountToDraft,
   chartPayload,
   descriptionRows,
+  changeDetailType,
+  detailTypeIds,
 } from './accounting-chart-form';
 
 const account: AccountingAccountV1 = {
@@ -29,6 +31,36 @@ const account: AccountingAccountV1 = {
   },
 };
 describe('chart editor persistence', () => {
+  it('keeps choices independent across all three levels and persists the newly exposed level', () => {
+    const original = {
+      detailLevels: ['4'],
+      detail4TypeIds: ['cash'],
+      detail6TypeIds: ['company'],
+      detail5Required: false,
+    };
+    const edited = changeDetailType(original, 5, 'person', true);
+    const draft = accountToDraft({ ...account, attributes: edited });
+    const reopened = accountToDraft({ ...account, ...chartPayload(draft) });
+    expect(detailTypeIds(reopened.attributes, 4)).toEqual(['cash']);
+    expect(detailTypeIds(reopened.attributes, 5)).toEqual(['person']);
+    expect(detailTypeIds(reopened.attributes, 6)).toEqual(['company']);
+    expect(reopened.attributes.detailLevels).toEqual(['4', '5']);
+    expect(reopened.attributes.detail5Required).toBe(false);
+    expect(original.detailLevels).toEqual(['4']);
+  });
+  it('removes only the edited level choice and its nature control, including legacy choices', () => {
+    const original = {
+      detail4TypeId: 'cash',
+      detail4NatureTypeIds: ['cash'],
+      detail5TypeIds: ['cash'],
+    };
+    const edited = changeDetailType(original, 4, 'cash', false);
+    expect(detailTypeIds(edited, 4)).toEqual([]);
+    expect(edited.detail4TypeId).toBeUndefined();
+    expect(edited.detail4NatureTypeIds).toEqual([]);
+    expect(detailTypeIds(edited, 5)).toEqual(['cash']);
+    expect(original.detail4TypeId).toBe('cash');
+  });
   it('keeps existing description, warning policy, references and hidden-tab data on save', () => {
     const payload = chartPayload(accountToDraft(account), account.id);
     expect(payload.description).toBe('Preserve me');

@@ -25,6 +25,7 @@ import {
   accountingSaveDisposition,
 } from './accounting-operations';
 import { AccountingChartTree } from './accounting-chart-tree';
+import { AccountingChartDetailLevels } from './accounting-chart-detail-levels';
 import {
   accountNatureOptions,
   accountTypeOptions,
@@ -35,6 +36,7 @@ import {
   subsidiaryTabs,
   taxTypeOptions,
   type ChartDraft,
+  type ChartDetailLevel,
 } from '../accounting-chart-form';
 import { accountingApi } from '../api/accounting-api';
 
@@ -111,7 +113,7 @@ export function AccountingChartEditor({
   const [draft, setDraft] = useState<ChartDraft | null>(null);
   const [tab, setTab] = useState('main');
   const [subTab, setSubTab] = useState<string>(subsidiaryTabs[0]);
-  const [detailLevel, setDetailLevel] = useState(4);
+  const [detailLevel, setDetailLevel] = useState<ChartDetailLevel | null>(null);
   const selected = book.accounts.find((account) => account.id === selectedId);
   const parent = book.accounts.find(
     (account) => account.id === draft?.parentId,
@@ -146,11 +148,12 @@ export function AccountingChartEditor({
     setDraft(accountToDraft(account));
     setTab('main');
     setSubTab(subsidiaryTabs[0]);
-    setDetailLevel(4);
+    setDetailLevel(null);
   };
   const reset = (level: AccountingAccountV1['level'], parentId = '') => {
     const owner = book.accounts.find((account) => account.id === parentId);
     setSelectedId('');
+    setDetailLevel(null);
     setTab('main');
     setSubTab(subsidiaryTabs[0]);
     setDraft({
@@ -266,32 +269,7 @@ export function AccountingChartEditor({
       {label}
     </label>
   );
-  const types = book.configurations.filter(
-    (item) => item.kind === 'detail-types' && item.active,
-  );
-  const typeKey = `detail${detailLevel}TypeIds`;
-  const selectedTypeIds = Array.isArray(draft?.attributes[typeKey])
-    ? (draft!.attributes[typeKey] as string[])
-    : draft?.attributes[`detail${detailLevel}TypeId`]
-      ? [String(draft.attributes[`detail${detailLevel}TypeId`])]
-      : [];
-  const toggleType = (key: string, id: string, checked: boolean) => {
-    const values = Array.isArray(draft?.attributes[key])
-      ? (draft!.attributes[key] as string[])
-      : key === typeKey
-        ? selectedTypeIds
-        : [];
-    attr(
-      key,
-      checked
-        ? [...new Set([...values, id])]
-        : values.filter((value) => value !== id),
-    );
-  };
   const descriptions = draft ? descriptionRows(draft.attributes) : [];
-  const details = Array.isArray(draft?.attributes.detailLevels)
-    ? (draft!.attributes.detailLevels as string[])
-    : ['4', '5', '6'];
   return (
     <section dir="rtl" className="@container space-y-2">
       <AccountingButton
@@ -482,143 +460,18 @@ export function AccountingChartEditor({
                         </TabsTrigger>
                       ))}
                     </TabsList>
-                    <TabsContent
-                      value="سطوح تفصیلی"
-                      className="m-0 grid min-h-60 gap-3 border p-2 sm:grid-cols-[1fr_2fr]"
-                    >
-                      <fieldset className="min-w-0 border p-1">
-                        <legend className="px-1">سطوح تفصیلی</legend>
-                        <table className="w-full text-right">
-                          <thead className="bg-sky-50">
-                            <tr>
-                              <th className="w-8" />
-                              <th className="p-2">عنوان</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {details.map((level) => (
-                              <tr
-                                key={level}
-                                className={`border-t ${detailLevel === Number(level) ? 'bg-sky-100' : ''}`}
-                              >
-                                <td className="p-2">
-                                  <input
-                                    type="checkbox"
-                                    aria-label={`فعال بودن سطح ${level}`}
-                                    checked={
-                                      draft.attributes[
-                                        `detail${level}Required`
-                                      ] === true
-                                    }
-                                    onChange={(e) =>
-                                      attr(
-                                        `detail${level}Required`,
-                                        e.target.checked,
-                                      )
-                                    }
-                                  />
-                                </td>
-                                <td>
-                                  <button
-                                    type="button"
-                                    className="w-full p-2 text-right"
-                                    onClick={() =>
-                                      setDetailLevel(Number(level))
-                                    }
-                                  >
-                                    سطح{' '}
-                                    {
-                                      { '4': 'چهار', '5': 'پنج', '6': 'شش' }[
-                                        level
-                                      ]
-                                    }
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                        {details.length < 3 && (
-                          <div className="mt-2">
-                            <IconAction
-                              label="اضافه کردن سطح جدید"
-                              onClick={() =>
-                                attr('detailLevels', [
-                                  ...details,
-                                  String(4 + details.length),
-                                ])
-                              }
-                            >
-                              <Plus className="size-3" />
-                            </IconAction>
-                          </div>
-                        )}
-                      </fieldset>
-                      <fieldset className="min-w-0 border p-1">
-                        <legend className="px-1">انواع تفصیلی</legend>
-                        <table className="w-full text-right">
-                          <thead className="bg-sky-50">
-                            <tr>
-                              <th className="w-8" />
-                              {draft.attributes.natureControlScope ===
-                                'SELECTED_DETAIL' && <th>کنترل ماهیت</th>}
-                              <th className="p-2">عنوان</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {types.map((type) => (
-                              <tr key={type.id} className="border-t">
-                                <td className="p-2">
-                                  <input
-                                    type="checkbox"
-                                    aria-label={`انتخاب ${type.title}`}
-                                    checked={selectedTypeIds.includes(type.id)}
-                                    onChange={(e) =>
-                                      toggleType(
-                                        typeKey,
-                                        type.id,
-                                        e.target.checked,
-                                      )
-                                    }
-                                  />
-                                </td>
-                                {draft.attributes.natureControlScope ===
-                                  'SELECTED_DETAIL' && (
-                                  <td>
-                                    <input
-                                      type="checkbox"
-                                      aria-label={`کنترل ماهیت ${type.title}`}
-                                      disabled={
-                                        !selectedTypeIds.includes(type.id)
-                                      }
-                                      checked={
-                                        Array.isArray(
-                                          draft.attributes[
-                                            `detail${detailLevel}NatureTypeIds`
-                                          ],
-                                        ) &&
-                                        (
-                                          draft.attributes[
-                                            `detail${detailLevel}NatureTypeIds`
-                                          ] as string[]
-                                        ).includes(type.id)
-                                      }
-                                      onChange={(e) =>
-                                        toggleType(
-                                          `detail${detailLevel}NatureTypeIds`,
-                                          type.id,
-                                          e.target.checked,
-                                        )
-                                      }
-                                    />
-                                  </td>
-                                )}
-                                <td className="p-2">{type.title}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </fieldset>
+                    <TabsContent value="سطوح تفصیلی" className="m-0 border p-2">
+                      <AccountingChartDetailLevels
+                        attributes={draft.attributes}
+                        types={book.configurations}
+                        level={detailLevel}
+                        onSelect={setDetailLevel}
+                        onChange={(attributes) =>
+                          setDraft((old) =>
+                            old ? { ...old, attributes } : old,
+                          )
+                        }
+                      />
                     </TabsContent>
                     <TabsContent
                       value="طرف مقابل"

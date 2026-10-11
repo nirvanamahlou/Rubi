@@ -43,6 +43,61 @@ export type ChartDraft = {
   active: boolean;
   attributes: AccountingAttributes;
 };
+export const chartDetailLevels = [4, 5, 6] as const;
+export type ChartDetailLevel = (typeof chartDetailLevels)[number];
+export const chartDetailLevelTitles = {
+  4: 'سطح چهار',
+  5: 'سطح پنج',
+  6: 'سطح شش',
+} as const;
+
+export function detailTypeIds(
+  attributes: AccountingAttributes,
+  level: ChartDetailLevel,
+): string[] {
+  const ids = attributes[`detail${level}TypeIds`];
+  if (Array.isArray(ids)) return ids;
+  const legacy = attributes[`detail${level}TypeId`];
+  return legacy ? [String(legacy)] : [];
+}
+
+export function enableChartDetailLevel(
+  attributes: AccountingAttributes,
+  level: ChartDetailLevel,
+): AccountingAttributes {
+  // Older imports captured only enabled rows. Editing a newly visible level
+  // must also make it available to the existing detail-allocation API.
+  if (!Array.isArray(attributes.detailLevels)) return attributes;
+  return {
+    ...attributes,
+    detailLevels: [
+      ...new Set([...attributes.detailLevels, String(level)]),
+    ].sort(),
+  };
+}
+
+export function changeDetailType(
+  attributes: AccountingAttributes,
+  level: ChartDetailLevel,
+  id: string,
+  checked: boolean,
+): AccountingAttributes {
+  const selected = detailTypeIds(attributes, level);
+  const ids = checked
+    ? [...new Set([...selected, id])]
+    : selected.filter((value) => value !== id);
+  const next = {
+    ...(checked ? enableChartDetailLevel(attributes, level) : attributes),
+    [`detail${level}TypeIds`]: ids,
+  };
+  delete next[`detail${level}TypeId`];
+  const controlled = next[`detail${level}NatureTypeIds`];
+  if (Array.isArray(controlled))
+    next[`detail${level}NatureTypeIds`] = controlled.filter((value) =>
+      ids.includes(value),
+    );
+  return next;
+}
 export function accountToDraft(account: AccountingAccountV1): ChartDraft {
   return {
     code: account.code,
