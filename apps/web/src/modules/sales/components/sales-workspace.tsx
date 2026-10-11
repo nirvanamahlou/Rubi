@@ -2,6 +2,9 @@
 
 import {
   Banknote,
+  Clock3,
+  CalendarClock,
+  CircleCheck,
   CalendarCheck,
   FilePlus2,
   FileText,
@@ -272,28 +275,58 @@ export function SalesWorkspace() {
       {dashboard && !loading ? (
         <SalesDashboardMetrics dashboard={dashboard} />
       ) : null}
-      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+      <div className="grid items-start gap-4 lg:grid-cols-[1.4fr_1fr]">
         <SalesReceivablesCard
           refreshVersion={dashboard}
           formatAmount={formatMoney}
         />
         {dashboard && !loading ? (
-          <Card className="p-5">
-            <h2 className="font-bold">پیگیری‌های فروش</h2>
-            <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+          <Card className="overflow-hidden p-0">
+            <div className="flex items-center gap-3 border-b border-border/70 px-5 py-4">
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                <CheckCheck className="size-5" aria-hidden="true" />
+              </span>
+              <h2 className="font-bold">پیگیری‌های فروش</h2>
+            </div>
+            <dl className="grid gap-2 p-3 sm:p-4">
               {[
-                ['منتظر تأیید مالی', dashboard.pendingFinancePayments],
-                ['پیگیری رزرواسیون', dashboard.pendingReservationActions],
-                ['تسویه‌شده', dashboard.settledContracts],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-xl bg-muted/50 p-3">
-                  <p className="mb-2 text-xl font-black">
+                {
+                  label: 'منتظر تأیید مالی',
+                  value: dashboard.pendingFinancePayments,
+                  icon: Clock3,
+                  tone: 'bg-amber-500/10 text-amber-700 dark:text-amber-300',
+                },
+                {
+                  label: 'پیگیری رزرواسیون',
+                  value: dashboard.pendingReservationActions,
+                  icon: CalendarClock,
+                  tone: 'bg-primary/10 text-primary',
+                },
+                {
+                  label: 'تسویه‌شده',
+                  value: dashboard.settledContracts,
+                  icon: CircleCheck,
+                  tone: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
+                },
+              ].map(({ label, value, icon: Icon, tone }) => (
+                <div
+                  key={label}
+                  className="flex min-w-0 items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/20 px-3 py-3"
+                >
+                  <dt className="flex min-w-0 items-center gap-3 text-sm font-medium">
+                    <span
+                      className={`grid size-9 shrink-0 place-items-center rounded-lg ${tone}`}
+                    >
+                      <Icon className="size-4" aria-hidden="true" />
+                    </span>
+                    <span>{label}</span>
+                  </dt>
+                  <dd className="min-w-10 shrink-0 text-center text-2xl font-black tabular-nums text-foreground">
                     {Number(value).toLocaleString('fa-IR')}
-                  </p>
-                  <p className="text-muted-foreground">{label}</p>
+                  </dd>
                 </div>
               ))}
-            </div>
+            </dl>
           </Card>
         ) : (
           <Skeleton className="h-48" />

@@ -6452,3 +6452,9 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-ai-notes-1010` from `origin/devel
 Validation: 8 focused Web tests, scoped ESLint, Web typecheck, Prettier and Web production build pass. Exact-head CI gates the authorized merge.
 
 CI integration follow-up: `develop` advanced with stepwise agency editing while this PR was in flight; its eight new Persian UI strings lacked English display translations and failed the combined Web i18n coverage gate. The already-reserved shared Web override catalogue now includes only those eight translations; Organizations source and behavior remain untouched. The final exact-head gate must rerun.
+
+## SALES-FOLLOWUPS-UI-1011 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-sales-followups-ui-1011` from `origin/develop`. Reserve Sales workspace follow-up presentation and bounded status documentation. Replace the stretched empty panel with compact status rows, accessible icons and responsive intrinsic-height layout. No API, financial logic, schema, migration, dependency or shared translations change. User requests local preview and a PR to develop; no merge requested.
+
+Validation: scoped ESLint, Web typecheck and 13 Sales workspace tests pass. Production Web build and local runtime smoke verification are recorded with the delivery. No migration needed; bounded presentation lock releases with the review commit.

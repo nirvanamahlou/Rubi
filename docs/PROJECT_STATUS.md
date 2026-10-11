@@ -5240,3 +5240,7 @@ The exact 18-row database write path passed inside a forced-rollback transaction
 - The Notes tab now shows «یادداشت‌های هوش مصنوعی برای شما» above personal notes. It derives up to six dated suggestions from the signed-in user's existing Workbench calendar events, personal reminders and assigned Procurement follow-ups, refreshing at the Tehran day boundary or on demand. Completed/cancelled events and finished checklist reminders are excluded; every card links to its source.
 - Calendar and Procurement suggestions can be explicitly saved as ordinary personal notes. An exact source marker prevents the same saved suggestion from appearing again. This is a transparent rule-based assistant over existing authorized data; no generative model or background scheduler is connected. No API contract, schema/migration, dependency, permission or operational data change.
 - During integration, a concurrent Agency edit merged into `develop` with eight untranslated UI strings. Added the missing English display translations in the shared Web override catalogue so the combined i18n test can pass; Agency behavior was not changed.
+
+## SALES-FOLLOWUPS-UI-1011
+
+PC-A redesigned the Sales follow-up card as compact, icon-led status rows with readable counts. Dashboard panels align to their own content height, avoiding an empty stretched follow-up panel. Existing data, labels, permissions and filters are preserved. No migration or dependency change. Local preview and a develop PR are requested.
