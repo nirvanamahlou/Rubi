@@ -23,7 +23,11 @@ import type {
 } from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
-import { Public, RequirePermissions } from '../iam/iam.decorators';
+import {
+  Public,
+  RequireAccessControls,
+  RequirePermissions,
+} from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 // Runtime imports are required for Nest validation metadata.
@@ -444,6 +448,7 @@ export class CustomerAffairsController {
   }
 
   @Post('tickets/:id/satisfaction-invitations')
+  @RequireAccessControls('customer-affairs.view.satisfaction')
   @RequirePermissions('customer_affairs.satisfaction.record')
   satisfactionInvitation(
     @Param('id', ParseUUIDPipe) id: string,
@@ -453,6 +458,7 @@ export class CustomerAffairsController {
   }
 
   @Patch('corrective-actions/:id')
+  @RequireAccessControls('customer-affairs.view.satisfaction')
   @RequirePermissions('customer_affairs.corrective_action.manage')
   correctiveAction(
     @Param('id', ParseUUIDPipe) id: string,

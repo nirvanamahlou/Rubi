@@ -1,3 +1,7 @@
+## USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
+
+User explicitly authorizes repairing IAM screen/section/field controls, preserving every existing user's access, pushing and merging to develop after final-head checks. Base origin/develop@68987832; reused isolated Rubi-api-audit-0928 checkout on codex/pc-b-user-access-completeness-1011. IAM contracts/API/Web catalogue, additive restrictions, bounded consumer guards and preservation tests implemented. User subsequently required direct continuation without Worker Orchestrator; parallel implementation stopped and lead completed/reviewed source directly. New controls inherit actual legacy behavior; only explicit authorized saves alter restrictions. No account backfill, seed, migration, dependency, operational database or shared runtime changes. Canonical administrator and executive-only rules, branch/domain/sensitive-read checks preserved. Source locks release at candidate freeze; merge requires exact-head full CI. Coverage and precise UI/edit-only/API boundaries: docs/tasks/USER-ACCESS-COMPLETENESS-1011.md.
+
 ## CORRESPONDENCE-1010 — PC-A — READY_FOR_REVIEW
 
 Follow-up: user requested primary group order resources → correspondence → system. Moved correspondence between Documents/Reports and Company Settings; navigation-only change, scoped lint passed and3100 reused.

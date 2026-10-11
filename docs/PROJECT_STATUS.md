@@ -1,3 +1,7 @@
+## 2026-10-11 — USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
+
+Implemented additive section/resource restrictions and 421 edit-only controls: 357 master-data pairs, 17 customer fields and 47 persisted system-setting groups. Active UI consumers and bounded API writes enforce explicit restrictions. Missing document/tour detail tabs inherit their previously authorized parents. Access-editor saves preserve shared/inactive memberships, out-of-scope and unknown grants, omitted restrictions and unchanged branches; stale snapshots and unauthorized restriction removal are rejected. User required continuation without Worker Orchestrator; lead completed and reviewed directly. No migration, account backfill, seed, dependency, operational DB or shared3100 runtime change. Exact-head CI and authorized develop merge remain pending; final merge evidence belongs to the delivery PR. See docs/tasks/USER-ACCESS-COMPLETENESS-1011.md for boundary limitations and tests.
+
 ## 2026-10-10 — CORRESPONDENCE-1010 — PC-A
 
 Follow-up menu order updated at user request: Documents/Reports → Correspondence → Company Settings. Navigation-only change; scoped lint passed, existing3100 preview reused.

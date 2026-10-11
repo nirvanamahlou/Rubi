@@ -38,6 +38,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from '@/i18n/link';
 import { ReportingOperationsView } from './reporting-operations-view';
+import { useScreenAccess } from '@/modules/iam/access-context';
 import { ReportSharingDialog } from './report-sharing-dialog';
 
 import { Button } from '@/components/ui/button';
@@ -1660,7 +1661,7 @@ export function ReportingWorkspace({
   configurationOnly = false,
   initialFilterState,
   onConfigurationOpenChange,
-  view = 'catalog',
+  view: requestedView = 'catalog',
   savedFilter = 'all',
 }: {
   configurationOnly?: boolean;
@@ -1669,6 +1670,13 @@ export function ReportingWorkspace({
   view?: ReportingView;
   savedFilter?: SavedReportFilter;
 }) {
+  const screenAllowed = useScreenAccess();
+  const visibleWorkspaceViews = workspaceViews.filter(({ id }) =>
+    screenAllowed(`reports.view.${id}`),
+  );
+  const view = visibleWorkspaceViews.some(({ id }) => id === requestedView)
+    ? requestedView
+    : (visibleWorkspaceViews[0]?.id ?? 'catalog');
   const initialReport =
     reportCatalog.find(
       (report) => report.code === initialFilterState?.reportCode,
@@ -2085,6 +2093,8 @@ export function ReportingWorkspace({
     }
   }
 
+  if (!visibleWorkspaceViews.length)
+    return <p role="status">نمای مجازی برای مشاهده گزارش‌ها وجود ندارد.</p>;
   return (
     <main className="space-y-6" dir="rtl">
       {!configurationOnly ? (
@@ -2094,7 +2104,7 @@ export function ReportingWorkspace({
             aria-label="نماهای گزارش"
             className="flex gap-2 overflow-x-auto pb-1"
           >
-            {workspaceViews.map(({ icon: Icon, id, label }) => {
+            {visibleWorkspaceViews.map(({ icon: Icon, id, label }) => {
               const count = workspaceCountForView(id, workspaceCounts);
               return (
                 <Button

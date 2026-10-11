@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -189,6 +190,11 @@ function attribute(record: MasterDataRecord, key: string, fallback = '—') {
 }
 
 export function MasterDataSalesReferencesWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () => tabs.filter((item) => canUseResource(item.resource)),
+    [canUseResource],
+  );
   const [resource, setResource] = useState<SalesReferenceResource>(
     'acquaintance-methods',
   );
@@ -208,9 +214,26 @@ export function MasterDataSalesReferencesWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
+      setResource(fallback.resource);
+    }
+  }, [resource, visibleTabs]);
   const definition = getMasterDataDefinition(resource);
+  const resourceAllowed = visibleTabs.some(
+    (item) => item.resource === resource,
+  );
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    setFormMode(null);
+    setSelected(undefined);
+    setProfileOpen(false);
+  }, [resourceAllowed]);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
@@ -221,6 +244,11 @@ export function MasterDataSalesReferencesWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
@@ -244,7 +272,15 @@ export function MasterDataSalesReferencesWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, dateFilters, page, resource, search, status]);
+  }, [
+    columnFilters,
+    dateFilters,
+    page,
+    resource,
+    resourceAllowed,
+    search,
+    status,
+  ]);
 
   const loadSummary = useCallback(async () => {
     const requestId = ++summaryRequestRef.current;
@@ -330,6 +366,7 @@ export function MasterDataSalesReferencesWorkspace() {
   );
 
   function changeResource(next: SalesReferenceResource) {
+    if (!visibleTabs.some((item) => item.resource === next)) return;
     summaryRequestRef.current += 1;
     summaryResourceRef.current = next;
     setResource(next);
@@ -525,6 +562,12 @@ export function MasterDataSalesReferencesWorkspace() {
       </Card>
     );
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -561,7 +604,7 @@ export function MasterDataSalesReferencesWorkspace() {
           aria-label="زیرمجموعه‌های مراجع فروش"
           className="flex min-w-max gap-1"
         >
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button

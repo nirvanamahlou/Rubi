@@ -1,3 +1,10 @@
+import {
+  ADDITIVE_USER_ACCESS_SCREENS,
+  denyPermission,
+  hasAccessControl,
+  masterDataResourceParentScreen,
+} from './user-access-controls';
+
 /** IAM-owned screen catalog consumed by the central Web access controls. */
 export const USER_JOB_TITLES = [
   'مدیر',
@@ -98,6 +105,12 @@ export const USER_ACCESS_GROUPS = [
     prefixes: ['documents'],
   },
   {
+    id: 'correspondence',
+    title: 'مکاتبات',
+    route: '/correspondence',
+    prefixes: [],
+  },
+  {
     id: 'reports',
     title: 'گزارش‌ها',
     route: '/reports',
@@ -129,6 +142,7 @@ export interface UserAccessScreen {
   route: string;
   tab?: string;
   query?: Record<string, string>;
+  inheritFrom?: string | readonly string[] | 'authenticated';
 }
 export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
   {
@@ -2213,6 +2227,7 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     title: 'گزارش پرداخت و دریافت',
     route: '/finance/accounting/receipts-payments/reports',
   },
+  ...ADDITIVE_USER_ACCESS_SCREENS,
 ];
 export const USER_ACCESS_PROFILE_PERMISSION = 'ui.profile' as const;
 /** Derived by IAM from active administrator membership; never stored as a grant. */
@@ -2226,6 +2241,7 @@ function hasGroupPermission(permissions: readonly string[], groupId: string) {
   // Executive access is an explicit, revocable grant; administrator is not CEO.
   if (groupId === 'assistant')
     return permissions.includes(screenPermission('assistant.executive'));
+  if (groupId === 'correspondence') return true;
   const group = USER_ACCESS_GROUPS.find((item) => item.id === groupId);
   return (
     !!group &&
@@ -2246,12 +2262,35 @@ function hasGroupPermission(permissions: readonly string[], groupId: string) {
       ))
   );
 }
-export function canViewScreen(permissions: readonly string[], id: string) {
+export function canViewScreen(
+  permissions: readonly string[],
+  id: string,
+): boolean {
   if (id === 'assistant.executive')
     return permissions.includes(screenPermission(id));
   const screen = USER_ACCESS_SCREENS.find((item) => item.id === id);
   if (screen && permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
+  if (!hasAccessControl(permissions, id)) return false;
+  // New controls inherit the actual old route decision, not a newly required grant.
+  if (id.startsWith('system.module.'))
+    return USER_ACCESS_SCREENS.some(
+      (candidate) =>
+        candidate.group === 'system' &&
+        !candidate.inheritFrom &&
+        canViewScreen(permissions, candidate.id),
+    );
+  if (
+    id === 'finance.accounting.taxpayer-system' ||
+    id === 'finance.accounting.tax-accounting'
+  )
+    return canViewScreen(permissions, 'finance.home');
+  if (screen.inheritFrom === 'authenticated') return true;
+  if (screen.inheritFrom && typeof screen.inheritFrom !== 'string')
+    return screen.inheritFrom.some((parent) =>
+      canViewScreen(permissions, parent),
+    );
+  if (screen.inheritFrom) return canViewScreen(permissions, screen.inheritFrom);
   if (
     hasManagedAccess(permissions) &&
     !permissions.includes(screenPermission(id))
@@ -2268,6 +2307,18 @@ export function canViewScreen(permissions: readonly string[], id: string) {
   if (id.startsWith('sales.pricing') || id === 'sales.ticket-prices')
     return permissions.includes('package_pricing.read');
   return true;
+}
+export function canUseMasterDataResource(
+  permissions: readonly string[],
+  resource: string,
+) {
+  if (permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
+  const parent = masterDataResourceParentScreen(resource);
+  return (
+    !!parent &&
+    canViewScreen(permissions, parent) &&
+    !permissions.includes(denyPermission(`master-data.resource.${resource}`))
+  );
 }
 export function screenForTab(
   route: string,

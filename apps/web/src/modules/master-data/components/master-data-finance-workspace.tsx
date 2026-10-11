@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -271,6 +272,11 @@ function FinanceChart({ rates }: { rates: readonly CurrencyRateRow[] }) {
 }
 
 export function MasterDataFinanceWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () => tabs.filter((item) => canUseResource(item.resource)),
+    [canUseResource],
+  );
   const [tab, setTab] = useState<FinanceTab>('currencies');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [rates, setRates] = useState<readonly CurrencyRateRow[]>([]);
@@ -305,8 +311,25 @@ export function MasterDataFinanceWorkspace() {
   const [auditRateId, setAuditRateId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const resource = resourceFor(tab);
+  const resourceAllowed = visibleTabs.some((item) => item.key === tab);
   const definition = getMasterDataDefinition(resource);
   const copy = tabCopy[tab];
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    setFormMode(null);
+    setSelected(undefined);
+    setSelectedCurrency(undefined);
+    setSelectedBank(undefined);
+    setCurrencyProfileOpen(false);
+  }, [resourceAllowed]);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.key === tab)) {
+      setTab(fallback.key);
+    }
+  }, [tab, visibleTabs]);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
@@ -317,6 +340,12 @@ export function MasterDataFinanceWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setRates([]);
+      setRequestState('forbidden');
+      return;
+    }
     setRequestState('loading');
     try {
       if (isRateTab(tab)) {
@@ -404,6 +433,7 @@ export function MasterDataFinanceWorkspace() {
     dateRangeProps.toDate,
     page,
     resource,
+    resourceAllowed,
     search,
     status,
     tab,
@@ -502,6 +532,7 @@ export function MasterDataFinanceWorkspace() {
   }
 
   function changeTab(next: FinanceTab) {
+    if (!visibleTabs.some((item) => item.key === next)) return;
     setTab(next);
     setSearch('');
     resetColumnFilters();
@@ -807,6 +838,12 @@ export function MasterDataFinanceWorkspace() {
     },
   ];
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className={tab === 'currencies' ? 'space-y-3' : 'space-y-5'} dir="rtl">
       <PageHeader
@@ -855,7 +892,7 @@ export function MasterDataFinanceWorkspace() {
           aria-label="زیرمجموعه‌های مالی و پولی"
           className="flex min-w-max gap-1 rounded-xl bg-primary/5 p-1"
         >
-          {tabs.map((item) => {
+          {visibleTabs.map((item) => {
             const Icon = item.icon;
             return (
               <button

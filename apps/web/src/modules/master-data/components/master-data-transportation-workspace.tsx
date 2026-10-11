@@ -47,6 +47,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -354,6 +355,11 @@ export function hasValidTransportSummaryProgress(
 }
 
 export function MasterDataTransportationWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () => tabs.filter((item) => canUseResource(item.resource)),
+    [canUseResource],
+  );
   const [resource, setResource] = useState<TransportResource>('airlines');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [allRecords, setAllRecords] = useState<readonly MasterDataRecord[]>([]);
@@ -373,9 +379,26 @@ export function MasterDataTransportationWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
+      setResource(fallback.resource);
+    }
+  }, [resource, visibleTabs]);
   const definition = getMasterDataDefinition(resource);
+  const resourceAllowed = visibleTabs.some(
+    (item) => item.resource === resource,
+  );
   const pageDefinition = definition;
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    setFormMode(null);
+    setSelected(undefined);
+    setProfileOpen(false);
+  }, [resourceAllowed]);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
@@ -386,6 +409,11 @@ export function MasterDataTransportationWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
@@ -415,6 +443,7 @@ export function MasterDataTransportationWorkspace() {
     dateFilters,
     page,
     resource,
+    resourceAllowed,
     search,
     status,
     transportStatus,
@@ -473,6 +502,7 @@ export function MasterDataTransportationWorkspace() {
 
   function changeResource(next: TransportResource) {
     summaryRequestRef.current += 1;
+    if (!visibleTabs.some((item) => item.resource === next)) return;
     setResource(next);
     setAllRecords([]);
     setSummaryState('loading');
@@ -733,6 +763,12 @@ export function MasterDataTransportationWorkspace() {
       </Card>
     );
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -769,7 +805,7 @@ export function MasterDataTransportationWorkspace() {
           aria-label="زیرمجموعه‌های حمل‌ونقل"
           className="flex min-w-max gap-1"
         >
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const Icon = tab.icon;
             const isCurrent = resource === tab.resource;
             return (

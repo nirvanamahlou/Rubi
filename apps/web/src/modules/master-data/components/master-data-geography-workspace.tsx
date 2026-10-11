@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -366,6 +367,11 @@ const referenceQuery: MasterDataListQuery = {
 };
 
 export function MasterDataGeographyWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () => geographyTabs.filter((item) => canUseResource(item.resource)),
+    [canUseResource],
+  );
   const [resource, setResource] = useState<GeographyResource>('countries');
   const [actorNames, setActorNames] = useState<
     Readonly<Record<string, string>>
@@ -449,9 +455,27 @@ export function MasterDataGeographyWorkspace() {
   const [selected, setSelected] = useState<MasterDataRecord | undefined>();
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
+      setResource(fallback.resource);
+    }
+  }, [resource, visibleTabs]);
   const definition = getMasterDataDefinition(resource);
+  const resourceAllowed = visibleTabs.some(
+    (item) => item.resource === resource,
+  );
   const isLocationView = resource === 'regions' || resource === 'cities';
   const formDefinition = getMasterDataDefinition(formResource ?? resource);
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    setFormMode(null);
+    setFormResource(null);
+    setSelected(undefined);
+    setTerminalParentOpen(false);
+  }, [resourceAllowed]);
 
   const scopedFilters = useMemo(
     () => ({
@@ -478,6 +502,11 @@ export function MasterDataGeographyWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     setRequestState('loading');
     const baseQuery: MasterDataListQuery = {
       ...columnFilters,
@@ -596,6 +625,7 @@ export function MasterDataGeographyWorkspace() {
     page,
     regionId,
     resource,
+    resourceAllowed,
     scopedFilters,
     search,
     sortBy,
@@ -631,6 +661,7 @@ export function MasterDataGeographyWorkspace() {
   }, []);
 
   function changeResource(next: GeographyResource) {
+    if (!visibleTabs.some((item) => item.resource === next)) return;
     setResource(next);
     setFormResource(null);
     setSearch('');
@@ -1079,6 +1110,12 @@ export function MasterDataGeographyWorkspace() {
     );
   }
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className="min-w-0 max-w-full space-y-5" dir="rtl">
       <PageHeader
@@ -1136,7 +1173,7 @@ export function MasterDataGeographyWorkspace() {
           aria-label="زیرمجموعه‌های جغرافیا"
           className="flex min-w-max gap-1 rounded-xl bg-sky-500/5 p-1"
         >
-          {geographyTabs.map((item) => {
+          {visibleTabs.map((item) => {
             const Icon = item.icon;
             return (
               <button
