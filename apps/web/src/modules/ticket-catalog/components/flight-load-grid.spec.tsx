@@ -1,9 +1,20 @@
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import type { TicketOfferV1 } from '@nora/contracts';
 import { FlightLoadGrid } from './flight-load-grid';
 
 describe('flight load search entry', () => {
+  it('renders per-row actions and searches immediately when valid dates are enabled', () => {
+    const source = readFileSync(
+      new URL('./flight-load-grid.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('renderRowActions?.(offer)');
+    expect(source).toContain('setSearched(nextFilter)');
+    expect(source).toContain('setSearchedCurrent(true)');
+  });
+
   it('does not expose flight rows or management actions before an explicit search', () => {
     const flight = {
       id: 'flight',

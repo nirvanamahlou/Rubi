@@ -1036,16 +1036,56 @@ function TicketCatalogWorkspace() {
       </>
     );
   };
+  const editPublishedOffer = (offer: TicketOfferV1) => {
+    setOfferForm({ offer, readOnly: false });
+  };
+  const archivePublishedOffer = async (offer: TicketOfferV1) => {
+    setDeleteSaving(offer.id);
+    setPublishedProblem('');
+    setPublishedNotice('');
+    try {
+      await toursApi.archiveOffer(offer.id, offer.version);
+      await refreshPublishedOffers();
+      setPublishedNotice('ردیف انتخاب‌شده حذف شد؛ سوابق آن حفظ شده است.');
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error ? error.message : 'حذف ردیف ناموفق بود.',
+      );
+    } finally {
+      setDeleteSaving(undefined);
+    }
+  };
+  const renderRowActions = (offer: TicketOfferV1) => (
+    <div className="flex flex-wrap justify-center gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => editPublishedOffer(offer)}
+      >
+        ویرایش
+      </Button>
+      <ConfirmDialog
+        title="حذف همین ردیف لود"
+        description="فقط همین رکورد از مدیریت و فروش جدید خارج می‌شود؛ سوابق فروش، قیمت، خرید، مالی و ممیزی باقی می‌مانند."
+        destructive
+        onConfirm={() => void archivePublishedOffer(offer)}
+        trigger={
+          <Button
+            size="sm"
+            variant="destructive"
+            loading={deleteSaving === offer.id}
+            disabled={Boolean(deleteSaving)}
+          >
+            <Trash2 className="size-4" aria-hidden />
+            حذف
+          </Button>
+        }
+      />
+    </div>
+  );
   const renderOfferActions = (offer: TicketOfferV1) => {
     return (
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setOfferForm({ offer, readOnly: true })}
-        >
-          مشاهده
-        </Button>
         {new Date(offer.departureAt).getTime() > catalogNow ? (
           <div className="flex flex-wrap gap-2">
             <Button
@@ -1124,6 +1164,7 @@ function TicketCatalogWorkspace() {
         references={references}
         offers={publishedOffers}
         renderActions={renderOfferActions}
+        renderRowActions={renderRowActions}
         renderLoadActions={renderLoadActions}
         cityName={(id) => referenceLabel('city', id, id)}
         refreshing={publishedRefreshing}
