@@ -1,11 +1,14 @@
 'use client';
+import { AccountingWorkspace } from './accounting-workspace';
+import { AccountingRouteTabs } from './accounting-route-tabs';
+import { accountingParityDefinitions } from './accounting-parity-definitions';
 
 import {
   ArrowLeftRight,
   BookOpenText,
   Calculator,
   ChevronDown,
-  ChevronLeft,
+  ChevronUp,
   ChevronsLeft,
   ChevronsRight,
   ClipboardList,
@@ -23,12 +26,12 @@ import {
   useAccessPermissions,
 } from '@/modules/iam/access-context';
 import { hasManagedAccess } from '@nora/contracts';
-import { usePathname } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Suspense, useMemo, useState } from 'react';
 
 import { usePageBreadcrumbs } from '@/components/layout/page-breadcrumbs';
-import { Button } from '@/components/ui/button';
-import { Card, EmptyState, PageHeader } from '@/components/ui/surfaces';
+import { AccountingButton as Button } from './accounting-operations';
+import { Card, PageHeader } from '@/components/ui/surfaces';
 import { cn } from '@/lib/utils';
 
 interface AccountingNavigationItem {
@@ -41,39 +44,79 @@ interface AccountingNavigationGroup {
   id: string;
   title: string;
   icon: LucideIcon;
-  items: readonly AccountingNavigationItem[];
+  sections: readonly {
+    title: string;
+    items: readonly AccountingNavigationItem[];
+  }[];
 }
+
+const parityItems = (
+  prefix: string,
+  icon: LucideIcon,
+): AccountingNavigationItem[] =>
+  accountingParityDefinitions
+    .filter((definition) => definition.route.startsWith(prefix))
+    .map((definition) => ({
+      title: definition.sourcePath.endsWith(
+        'گزارش ها / اعلامیه بدهکار / بستانکار',
+      )
+        ? 'اعلامیه بدهکار / بستانکار'
+        : definition.sourcePath.endsWith('جمع آوری / ارسال صورتحساب')
+          ? 'جمع آوری / ارسال صورتحساب'
+          : (definition.sourcePath.split(' / ').at(-1) ?? definition.title),
+      href: `/finance/accounting/${definition.route}`,
+      icon,
+    }));
 
 const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
   {
     id: 'general-ledger',
     title: 'دفتر کل',
     icon: BookOpenText,
-    items: [
+    sections: [
       {
         title: 'اطلاعات پایه',
-        href: '/finance/accounting/general-ledger/base-information',
-        icon: FolderCog,
+        items: [...parityItems('general-ledger/base-information/', FolderCog)],
       },
       {
         title: 'حساب‌ها',
-        href: '/finance/accounting/general-ledger/accounts',
-        icon: Landmark,
+        items: parityItems('general-ledger/accounts/', Landmark),
       },
       {
         title: 'اسناد',
-        href: '/finance/accounting/general-ledger/documents',
-        icon: FileText,
+        items: [
+          {
+            title: 'سند حسابداری',
+            href: '/finance/accounting/general-ledger/documents/list',
+            icon: ClipboardList,
+          },
+          ...parityItems('general-ledger/documents/', FileText),
+          {
+            title: 'الگوهای تخصیص داخلی روبی',
+            href: '/finance/accounting/general-ledger/documents/allocation-templates',
+            icon: Calculator,
+          },
+          {
+            title: 'بسته انتقال حسابداری روبی',
+            href: '/finance/accounting/general-ledger/documents/transfer-batches',
+            icon: ArrowLeftRight,
+          },
+        ],
       },
       {
         title: 'عملیات پایان سال',
-        href: '/finance/accounting/general-ledger/year-end',
-        icon: FileClock,
+        items: parityItems('general-ledger/year-end/', FileClock),
       },
       {
         title: 'گزارش‌ها',
-        href: '/finance/accounting/general-ledger/reports',
-        icon: ClipboardList,
+        items: [
+          ...parityItems('general-ledger/reports/', ClipboardList),
+          {
+            title: 'فهرست گزارش‌های روبی',
+            href: '/finance/accounting/general-ledger/reports/catalog',
+            icon: ClipboardList,
+          },
+        ],
       },
     ],
   },
@@ -81,11 +124,20 @@ const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
     id: 'receipts-payments',
     title: 'دریافت و پرداخت',
     icon: ArrowLeftRight,
-    items: [
+    sections: [
       {
-        title: 'گزارش پرداخت و دریافت',
-        href: '/finance/accounting/receipts-payments/reports',
-        icon: ReceiptText,
+        title: 'اطلاعات پایه',
+        items: parityItems('receipts-payments/base-information/', ReceiptText),
+      },
+      {
+        title: 'گزارش‌ها',
+        items: [
+          {
+            title: 'گزارش پرداخت و دریافت روبی',
+            href: '/finance/accounting/receipts-payments/reports',
+            icon: ReceiptText,
+          },
+        ],
       },
     ],
   },
@@ -93,20 +145,70 @@ const accountingNavigationGroups: readonly AccountingNavigationGroup[] = [
     id: 'taxpayer-system',
     title: 'ارتباط با سامانه مودیان مالیاتی',
     icon: ScrollText,
-    items: [],
+    sections: [
+      {
+        title: 'فرم‌ها',
+        items: parityItems('taxpayer-system/', ScrollText).filter(
+          (item) =>
+            !item.href.includes('/lists/') &&
+            !item.href.includes('/operations/') &&
+            !item.href.includes('/reports/'),
+        ),
+      },
+      {
+        title: 'فهرست‌ها',
+        items: parityItems('taxpayer-system/lists/', ClipboardList),
+      },
+      {
+        title: 'عملیات',
+        items: parityItems('taxpayer-system/operations/', FileClock),
+      },
+      {
+        title: 'گزارش‌ها',
+        items: parityItems('taxpayer-system/reports/', ClipboardList),
+      },
+    ],
   },
   {
     id: 'tax-accounting',
     title: 'حسابداری مالیاتی',
     icon: Calculator,
-    items: [],
+    sections: [
+      {
+        title: 'اطلاعات پایه',
+        items: parityItems('tax-accounting/base-information/', FolderCog),
+      },
+      {
+        title: 'مالیات بر ارزش افزوده',
+        items: parityItems('tax-accounting/vat/', Calculator),
+      },
+    ],
   },
 ];
 
+const accountingTabItems = accountingNavigationGroups.flatMap((group) =>
+  group.sections.flatMap((section) =>
+    section.items.map((item) => ({
+      href: item.href,
+      title: item.href.includes('/lists/') ? `فهرست ${item.title}` : item.title,
+    })),
+  ),
+);
+
 function findSelected(pathname: string) {
   for (const group of accountingNavigationGroups) {
-    const child = group.items.find((item) => item.href === pathname);
-    if (child) return { groupTitle: group.title, title: child.title };
+    for (const section of group.sections) {
+      const child = section.items.find(
+        (item) =>
+          pathname === item.href || pathname.startsWith(item.href + '/'),
+      );
+      if (child)
+        return {
+          groupTitle: group.title,
+          sectionTitle: section.title,
+          title: child.title,
+        };
+    }
   }
   return null;
 }
@@ -119,18 +221,52 @@ function AccountingSecondaryNavigation({
   onToggle: () => void;
 }) {
   const pathname = usePathname();
+  const selectedBook = useSearchParams().get('bookId');
   const allowed = useRouteAccess();
   const permissions = useAccessPermissions();
   const [closedGroups, setClosedGroups] = useState<string[]>(() =>
-    accountingNavigationGroups.map((group) => group.id),
+    accountingNavigationGroups
+      .filter((group) =>
+        group.sections.every((section) =>
+          section.items.every(
+            (item) =>
+              pathname !== item.href && !pathname.startsWith(item.href + '/'),
+          ),
+        ),
+      )
+      .map((group) => group.id),
   );
+  const [closedSections, setClosedSections] = useState<string[]>(() =>
+    accountingNavigationGroups.flatMap((group) =>
+      group.sections
+        .filter((section) =>
+          section.items.every(
+            (item) =>
+              pathname !== item.href && !pathname.startsWith(item.href + '/'),
+          ),
+        )
+        .map((section) => `${group.id}:${section.title}`),
+    ),
+  );
+  const [closedLists, setClosedLists] = useState<string[]>([]);
   const toggleGroup = (id: string) =>
     setClosedGroups((current) =>
       current.includes(id)
         ? current.filter((item) => item !== id)
         : [...current, id],
     );
-
+  const toggleSection = (id: string) =>
+    setClosedSections((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id],
+    );
+  const toggleList = (id: string) =>
+    setClosedLists((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : [...current, id],
+    );
   return (
     <aside
       className={cn(
@@ -168,7 +304,9 @@ function AccountingSecondaryNavigation({
             (group) =>
               !permissions ||
               !hasManagedAccess(permissions) ||
-              group.items.some((item) => allowed(item.href)),
+              group.sections.some((section) =>
+                section.items.some((item) => allowed(item.href)),
+              ),
           )
           .map((group) => {
             const GroupIcon = group.icon;
@@ -190,33 +328,99 @@ function AccountingSecondaryNavigation({
                     <>
                       <span className="min-w-0 flex-1">{group.title}</span>
                       {groupClosed ? (
-                        <ChevronLeft className="size-4 shrink-0" />
-                      ) : (
                         <ChevronDown className="size-4 shrink-0" />
+                      ) : (
+                        <ChevronUp className="size-4 shrink-0" />
                       )}
                     </>
                   ) : null}
                 </button>
-                {!collapsed && !groupClosed && group.items.length > 0 ? (
-                  <div className="mt-1 space-y-1 border-s border-border ps-2">
-                    {group.items.map((item) => {
-                      const ItemIcon = item.icon;
-                      const active = pathname === item.href;
+                {!collapsed && !groupClosed ? (
+                  <div className="mt-1 space-y-3 border-s border-border ps-2">
+                    {group.sections.map((section) => {
+                      const sectionId = `${group.id}:${section.title}`;
+                      const sectionClosed = closedSections.includes(sectionId);
+                      const directItems = section.items.filter(
+                        (item) => !item.href.includes('/lists/'),
+                      );
+                      const listItems = section.items.filter((item) =>
+                        item.href.includes('/lists/'),
+                      );
+                      const listClosed = closedLists.includes(sectionId);
+                      const renderItem = (item: AccountingNavigationItem) => {
+                        const ItemIcon = item.icon;
+                        const active =
+                          pathname === item.href ||
+                          pathname.startsWith(item.href + '/');
+                        return (
+                          <Link
+                            aria-current={active ? 'page' : undefined}
+                            className={cn(
+                              'flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
+                              active
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            )}
+                            href={
+                              selectedBook
+                                ? `${item.href}?bookId=${selectedBook}`
+                                : item.href
+                            }
+                            key={item.href}
+                          >
+                            <ItemIcon className="size-4 shrink-0" />
+                            <span>{item.title}</span>
+                          </Link>
+                        );
+                      };
                       return (
-                        <Link
-                          aria-current={active ? 'page' : undefined}
-                          className={cn(
-                            'flex min-h-10 items-center gap-2 rounded-lg px-3 text-xs font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-ring',
-                            active
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                          )}
-                          href={item.href}
-                          key={item.href}
-                        >
-                          <ItemIcon className="size-4 shrink-0" />
-                          <span>{item.title}</span>
-                        </Link>
+                        <div className="space-y-1" key={section.title}>
+                          <button
+                            aria-expanded={!sectionClosed}
+                            className="flex min-h-9 w-full items-center gap-2 rounded-lg px-3 text-start text-[11px] font-black text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                            onClick={() => toggleSection(sectionId)}
+                            type="button"
+                          >
+                            <span className="min-w-0 flex-1">
+                              {section.title}
+                            </span>
+                            {sectionClosed ? (
+                              <ChevronDown className="size-3.5" />
+                            ) : (
+                              <ChevronUp className="size-3.5" />
+                            )}
+                          </button>
+                          {!sectionClosed ? (
+                            <div className="space-y-1 ps-1">
+                              {directItems.map(renderItem)}
+                              {listItems.length ? (
+                                <div className="space-y-1">
+                                  <button
+                                    aria-expanded={!listClosed}
+                                    className="flex min-h-9 w-full items-center gap-2 rounded-lg px-3 text-start text-xs font-bold text-muted-foreground outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                    onClick={() => toggleList(sectionId)}
+                                    type="button"
+                                  >
+                                    <ClipboardList className="size-4 text-primary" />
+                                    <span className="min-w-0 flex-1">
+                                      فهرست‌ها
+                                    </span>
+                                    {listClosed ? (
+                                      <ChevronDown className="size-3.5" />
+                                    ) : (
+                                      <ChevronUp className="size-3.5" />
+                                    )}
+                                  </button>
+                                  {!listClosed ? (
+                                    <div className="space-y-1 border-s border-border ps-2">
+                                      {listItems.map(renderItem)}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
                       );
                     })}
                   </div>
@@ -229,11 +433,12 @@ function AccountingSecondaryNavigation({
   );
 }
 
-export function AccountingNavigationWorkspace() {
+function AccountingNavigationWorkspaceContent() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const selected = findSelected(pathname);
   const selectedGroupTitle = selected?.groupTitle;
+  const selectedSectionTitle = selected?.sectionTitle;
   const selectedTitle = selected?.title;
   const breadcrumbs = useMemo(
     () =>
@@ -249,20 +454,28 @@ export function AccountingNavigationWorkspace() {
                   },
                 ]
               : []),
+            ...(selectedSectionTitle &&
+            selectedSectionTitle !== selectedGroupTitle
+              ? [
+                  {
+                    key: 'accounting-subgroup',
+                    title: selectedSectionTitle,
+                  },
+                ]
+              : []),
             {
               key: 'accounting-section',
               title: selectedTitle ?? 'بخش حسابداری',
             },
           ],
-    [pathname, selectedGroupTitle, selectedTitle],
+    [pathname, selectedGroupTitle, selectedSectionTitle, selectedTitle],
   );
   usePageBreadcrumbs(pathname, breadcrumbs);
 
   return (
     <main className="space-y-6">
       <PageHeader
-        description="ساختار بخش‌های حسابداری؛ محتوای هر بخش پس از اعلام جزئیات تکمیل می‌شود."
-        eyebrow="Nora Accounting"
+        description="دفاتر، حساب‌ها، اسناد و گزارش‌های حسابداری"
         title="حسابداری"
       />
       <div className="flex flex-col items-start gap-5 lg:flex-row">
@@ -271,21 +484,22 @@ export function AccountingNavigationWorkspace() {
           onToggle={() => setCollapsed((value) => !value)}
         />
         <section className="min-w-0 flex-1" aria-live="polite">
+          <AccountingRouteTabs items={accountingTabItems} />
           <Card className="min-h-[32rem] p-5 sm:p-7">
-            {selected ? (
-              <EmptyState
-                description="این بخش فقط ایجاد شده است و فرم‌ها، جدول‌ها و عملیات آن پس از اعلام جزئیات شما اضافه می‌شوند."
-                title={`${selected.groupTitle} / ${selected.title}`}
-              />
-            ) : (
-              <EmptyState
-                description="یکی از زیرگروه‌های منوی حسابداری را انتخاب کنید. محتوای بخش‌ها هنوز تعریف نشده است."
-                title="در انتظار تعریف جزئیات"
-              />
-            )}
+            <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
+              <AccountingWorkspace key={pathname} pathname={pathname} />
+            </Suspense>
           </Card>
         </section>
       </div>
     </main>
+  );
+}
+
+export function AccountingNavigationWorkspace() {
+  return (
+    <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
+      <AccountingNavigationWorkspaceContent />
+    </Suspense>
   );
 }

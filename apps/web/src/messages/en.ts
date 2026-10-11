@@ -80,6 +80,10 @@ export const englishNavigation: Record<
     title: 'Human resources',
     description: 'Employee operations',
   },
+  '/correspondence': {
+    title: 'Correspondence',
+    description: 'Letter composer and PNG/PDF exports',
+  },
   '/documents': { title: 'Documents & files', description: 'File archive' },
   '/reports': { title: 'Reports', description: 'Management reports' },
   '/integrations': {
@@ -99,6 +103,7 @@ export const englishNavigationGroups: Record<string, string> = {
   'ticket-purchases': 'Purchasing & supply',
   hr: 'Human resources',
   resources: 'Documents & reports',
+  correspondence: 'Correspondence',
   system: 'Company settings',
 };
 

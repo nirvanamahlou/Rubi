@@ -57,6 +57,7 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/organizations': Building2,
   '/human-resources': HeartHandshake,
   '/documents': FileStack,
+  '/correspondence': FileStack,
   '/reports': BarChart3,
   '/integrations': SlidersHorizontal,
   '/system': Settings,
@@ -117,6 +118,12 @@ export const navigationGroups = [
     dotClass: 'bg-[#22d3ee]',
     title: 'اسناد و گزارش‌ها',
     hrefs: ['/documents', '/reports'],
+  },
+  {
+    id: 'correspondence',
+    dotClass: 'bg-[#818cf8]',
+    title: 'مکاتبات',
+    hrefs: ['/correspondence'],
   },
   {
     id: 'system',

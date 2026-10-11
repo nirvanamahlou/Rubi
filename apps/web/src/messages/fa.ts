@@ -178,6 +178,11 @@ export const navigationMessages = [
     description: 'داده‌های مرجع سامانه',
   },
   {
+    title: 'مکاتبات',
+    href: '/correspondence',
+    description: 'تولید نامه و دانلود عکس و PDF',
+  },
+  {
     title: 'دستیار هوشمند',
     href: '/assistant',
     description: 'پیش‌بینی، تحلیل و پشتیبانی تصمیم‌های مدیرعامل',

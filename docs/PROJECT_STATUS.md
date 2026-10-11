@@ -1,3 +1,61 @@
+## 2026-10-10 — CORRESPONDENCE-1010 — PC-A
+
+Follow-up menu order updated at user request: Documents/Reports → Correspondence → Company Settings. Navigation-only change; scoped lint passed, existing3100 preview reused.
+
+Added standalone correspondence at the bottom of the primary tree. Three company choices (نیایش سیر، جهان باستان، قسطی روو), editable initial template and input text produce matching paginated preview, PNG links and raster PDF link. Draft state stays only in the current browser page; no archive, API sending or backend changes. Scoped lint/TypeScript, focused26/26 tests and Web build57 routes passed. Authenticated3100 browser verified company switching, two-page PNG and PDF links; native PNG visually checked after correcting word wrapping. Automation could not download blob links, so PDF file inspection is unverified. Existing3100/4217 synthetic preview restored without business writes, schema/dependency changes or delegation.
+
+## 2026-10-08 — ACCOUNTING-LEDGER-LIST-1008 — PC-A
+
+Ledger list displays code/title/main-book/posting/status with immediate column filters. Persistent FilterX clear and ListChecks multi-select actions include real shortcuts/tooltips. Clear resets advanced/column/search filters; selection/page reset when filters change. Browser verified0/1-result filters and selected count on3100; tests9/9, scoped lint/typecheck and affected Web build56 routes passed. Existing authorized reads unchanged; Web-only, no data/backend/schema/dependency changes or delegation.
+
+## 2026-10-08 — ACCOUNTING-FISCAL-FILTER-TREE-1008 — PC-A
+
+Fiscal-year list now offers per-branch add menus containing title/titleEn/description, related-period all/any branches and all/any/not-all/none logical groups. Recursive nesting replaces the former three-level restriction; existing32-node size guard retained. Related-branch conditions bind to the same actual current-book allocation. Shared list editor preserves other lists and current authorization. Tests9/9, scoped lint/typecheck and Web build56 routes passed; browser verified four-level construction and actual filtered result on3100. No API/schema/dependency or business-data writes; no Rahkaran interaction/delegation.
+
+## 2026-10-08 — ACCOUNTING-SHARED-OPERATIONS-1008 — PC-A
+
+All Accounting routes share nine icon operations with tooltip/Alt+Shift shortcuts. Editable forms bind real native saves and stay/new/close navigation; unavailable operations are disabled. Deletion is limited to unused scoped base records with version/replay/FK/JSON-reference safeguards and confirmation; journal cancellation stays recoverable and posted records protected. Current displayed-view XLSX/PDF exports retain exact text; server report exports remain. PG48/48 broad regression plus final focused3/3, Web19/19 and affected checks/builds passed; authenticated3100 verified fiscal-year save-new/save-close, ledger save-new, voucher selection/tooltip and exports. Local synthetic preview only, no source writes, migration, dependency changes or delegation. This supersedes prior unfinished shared-toolbar/export work for implemented forms; full87-route financial parity remains incomplete (37 functional/46 dependency/4 source-error).
+## 2026-10-08 — ACCOUNTING-FISCAL-YEAR-BUTTONS-1008 — PC-A
+
+Fiscal-year definition uses a top-left icon toolbar for existing save/save-new/save-close plus new/reload/close. Tooltip labels and real Alt+Shift shortcuts, permission-aware keyboard clicks, native form validity preserved; row edit icon supports focused Enter. Duplicate textual refresh suppressed on this definition only. Scoped lint/typecheck and Web build56 routes passed; authenticated3100 browser verified edit/new reset/close navigation/reload with no record saves. No backend/data mutations or delegation. Separate deletion/export request remains unfinished.
+
+## 2026-10-08 — ACCOUNTING-BASE-LIST-FILTERS-1008 — PC-A
+
+All three Accounting base-information lists (fiscal years, ledgers, voucher types) now share grouped filters with all/any/not-all/none modes, nested conditions, Persian text matching, current-book allocation predicates, pagination and scope-reset selection. Icon actions provide tooltips and real shortcuts for multi-selection, complete filtered-result counts, list navigation, reload and filter operations. Web-only; no API/schema/dependency/permission/data changes. Focused tests10/10, scoped lint/typecheck, Web production build56 routes and authenticated browser checks across all three lists passed. Final delete-condition icon contrast corrected and lint/visual rechecked. Current3100 preview retained; sole-writer execution without delegation. Full financial parity and the separate delete/export toolbar task remain unfinished.
+## 2026-10-08 — ACCOUNTING-REMOVE-FX-RATES-1008 — PC-A
+
+Removed approved FX-rate management menu/page/form/table from Accounting UI; prior URL no longer opens the editor. Historical FX snapshots and journal currency/approval checks remain intact. Same3100 preview; no backend, migration or data writes. Direct execution without delegation.
+
+## 2026-10-08 — ACCOUNTING-REMOVE-APPROVAL-POLICIES-1008 — PC-A
+
+Removed Rubi approval-policy menu, page registration and editing fields from Accounting UI. Former route resolves to the unknown-route view; server independent approval and stored policies preserved. Includes prior active accordion manual-collapse repair. Same3100 preview, browser verification and affected Web checks. No migration/data writes or delegation.
+
+## 2026-10-08 — ACCOUNTING-VOUCHER-TYPE-FIELD-1008 — PC-A
+
+Removed the visible book selector from the voucher-type definition form; underlying selected-book resolution remains unchanged. Local3100 UI verification; no backend/schema/data changes. Direct execution without delegation.
+
+## 2026-10-08 — ACCOUNTING-LEDGER-FORM-1008 — PC-A
+
+Unified screenshot-guided ledger definition form: main/notes tabs, code/title/titleEn/description, main/active/posting flags, fiscal-year allocation grid, existing guarded period edits/additions and icon save/new/reload with Alt+Shift+S/N/R. Optional book metadata persisted using additive migration on synthetic55437 only; older API consumers preserve omitted values. Same3100/4217 preview. Real PG45/45 passed with test timeout15s after initial resource contention; affected builds/lint/typechecks and authenticated browser notes round-trip/new-shortcut checks. No operational/source writes, dependency changes, delegation or merge. Full source parity and the separate all-accounting toolbar request are not claimed complete.
+
+## 2026-10-08 — ACCOUNTING-FISCAL-YEAR-FIELD-1008 — PC-A
+
+Removed the book selector only from the fiscal-year definition form at general-ledger/base-information/fiscal-years, retaining implicit selected-book resolution and all other route selectors. Authenticated synthetic3100 UI verified; no business data writes or backend changes. Toolbar work remains a separate unfinished task.
+
+## SIDEBAR-DISMISS-1008 — PC-A — READY_FOR_REVIEW
+
+Opened sidebar groups now close on an outside pointer click or Escape; inside clicks and independent header toggles remain functional. Verified on the authenticated synthetic3100 preview in desktop mode and restored the default viewport. Navigation regressions2/2, scoped lint, Web typecheck and production build56 routes pass. Branch codex/pc-a-sidebar-dismiss-1008 preserves the partial accounting candidate; this UI repair does not change its financial parity acceptance or dependencies. No API/schema/dependency/data changes or merge.
+
+## ACCOUNTING-PRD-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A for this Finance-owned work; branch codex/pc-a-accounting-prd-1007 from origin/develop@ead11783. Human owner requests implementing the reviewed Rahkaran-based PRD in Finance / Accounting. Reserve Finance accounting API/Web/tests, additive accounting contracts and IAM permission catalogue/seed entries, additive Prisma accounting models/migration and bounded DATA_MODEL/DECISIONS/status/task entries. Producer Finance accounting v1, consumer Finance Web; existing settlement/payment/source contracts remain compatible. No dependency/lockfile ownership or changes. Open PR inspection found no current accounting/schema overlap; latest bounded migration reservations release with delivered candidates. Additive migration and bounded central-doc reservations release with this review candidate. Existing dirty main checkout and all other worktrees remain untouched. No operational DB writes, Rahkaran writes, merge or deployment. Rehearse only isolated synthetic PostgreSQL. Official tax dispatch/returns require a configured approved external connector and schema; do not fabricate acknowledgements.
+
+
+Delivered Finance-owned internal ledger with real branch-scoped forms, immutable posted effects, independent approval/FX, year-end historical carry, allocation, exact reports/Excel, confirmed-source links and Documents attachments. Coverage and external-contract gates are explicit in docs/tasks/ACCOUNTING-PRD-1007.md. Local validation: 31 focused API/HTTP/migration tests plus 22 clean PostgreSQL integration tests; 21 Web money/i18n tests; API/Web lint and typechecks and affected production builds. All 130 migrations rehearse on the isolated accounting_clean database, retaining existing Finance tables. Browser creates, independently approves/posts journal1, verifies 100000 IRR balances and downloads the real XLSX. No production/source writes, operational migration, role grants, merge or deploy. Exact-head CI remains the merge gate.
+
+Rahkaran parity extension candidate adds distinct evidence-backed navigation/forms, hierarchy and grouping editors, typed automatic/revaluation/closing templates, guarded draft moves, prospective immutable journal events and four analytical reports. Menu-only, unverified and source-error routes remain explicit; external tax/statutory behavior and unobserved source algorithms are not claimed. Frozen contract v2 and the current source revision are recorded in docs/tasks/ACCOUNTING-PRD-1007.md. Real synthetic PostgreSQL integration passes 28 tests; 13 focused API tests, affected `@nora` lint/typechecks and contracts/database/API/Web production builds pass. A separate 130-baseline-migration rehearsal preserves the canonical content hash of a historical cancelled journal and applies the parity migration. Interactive browser QA remains unclaimed because the available UI input could not leave login; HTTP smoke confirms Web login 200, protected accounting redirect 307, API health 200 and unauthenticated accounting rejection 401. Lead review remains required.
+
+
 ## 2026-10-10 — AGENCY-STEPWISE-EDIT-1010 — PC-B — READY_FOR_REVIEW
 
 Agency Edit now opens the same five-step registration wizard with the selected
@@ -5057,6 +5115,62 @@ FLIGHT-ISSUED-SPEED-1007 verification: affected API/Web lint and typechecks, API
 Removed user-listed explanatory paragraphs and duplicate headings from contract dashboard and new-contract stages. Preserved form controls, customer confirmation, flight identity/times/capacity, hotel selection, prices, payments and existing business rules. No API, schema, dependency or operational data changes. Focused existing rendering tests updated; local checks and exact-head CI gate the user-authorized develop merge.
 
 Verification: all137 focused Sales component tests pass; Web typecheck passes. Scoped lint (unused icon removed) and production build/full exact-head CI complete before merge.
+## ACCOUNTING-RAHKARAN-PARITY-1007 — PC-A — IN_PROGRESS
+
+The existing Finance accounting candidate is being extended in place from source revision `388b672b` using the latest read-only Rahkaran form/menu evidence. Scope is distinct verified Accounting leaf routes, their route-specific fields/tabs/grids/toolbars, supported-action/dependency status and focused Web/API/PostgreSQL regressions. Existing financial invariants and atomic command adapters remain authoritative; source-error pages, invalid aliases, external tax operations and blocked wizard transitions are not represented as working behavior. The additive Finance accounting migration/schema lock is now held for the lead-reviewed true-FK internal extension only; no schema edit begins before the grouped command/invariant/test proposal is frozen.
+## 2026-10-11 — ACCOUNTING-FILTER-COPY-1011 — PC-A
+
+Removed the fiscal allocation explanation and condition helper requested by user from accounting list UI. Controls and filtering unchanged; diff check passed. Text-only deletion, no business-data changes or delegation.
+## 2026-10-11 — ACCOUNTING-LEDGER-LAYOUT-1011 — PC-A
+
+Ledger list screenshot733 follow-up: compact grid/header and column filters, full-width preset, collapsed filter strip, tall grid, top/bottom icon operations,50-row default, first/last page shortcuts and record range. Other base-list layouts preserved. Tests9/9, scoped lint/TypeScript and diff check passed; browser verified actual filtering, clearing and bottom multi-selection on3100. Screenshot Ledger-List-733.png saved. No business writes, backend/schema/dependency changes or delegation.
+## 2026-10-11 — ACCOUNTING-LIST-BOOK-SELECTOR-1011 — PC-A
+
+Hidden book selector on all three base-information lists at user request, preserving current book scope and data reads. Scoped lint/diff check and browser absence checks on fiscal-year/ledger/voucher-type lists passed on3100. No business writes or delegation.
+## 2026-10-11 — ACCOUNTING-VOUCHER-LIST-1011 — PC-A
+
+Voucher list screenshot734 layout implemented with title/default columns, inline filtering, compact striped grid, top/bottom icon operations and50-row pagination. Default uses persisted attributes.isDefault; missing flag is false and not conflated with active. Existing authorized records preserved, no screenshot data seeding. Tests10/10, scoped lint/TypeScript and browser filter/clear checks passed. Voucher-List-734.png proof on3100; no backend/schema/dependency or data writes/delegation.
+## 2026-10-11 — ACCOUNTING-ROUTE-TABS-1011 — PC-A
+
+Added closable RTL accounting route tabs above content, deduplicated by route, with active highlight, adjacent fallback, home plus link and same-session restoration. Route access guards retained and book query preserved. Scoped lint/TypeScript/diff checks passed;3100 browser verified three tabs/switching/active closure/reload. Proof Accounting-Route-Tabs.png. This is navigation history tabs, not mounted-form caching; unsaved form state remains transient on route changes and user was informed. No backend/schema/dependency or data writes/delegation.
+## 2026-10-11 — ACCOUNTING-CHART-TREE-1011 — PC-A
+
+Implemented screenshot737 compact right-side real account tree and search results, with editor hidden until selection/new. Protected existing GENERAL11 with children prevented exact code reuse; user explicitly authorized new book. Created local REF737 (bba7b2bb-178e-47fa-938b-c22afba11737) with13 actual GROUP accounts matching image codes/titles via existing authenticated APIs, preserving old book. Asset/expense debit, liability/equity/income credit defaults;81/93 debit temporary. Verified API count13 and browser group selection/search91/92. Scoped lint/TypeScript passed. No Rahkaran mutations, backend/schema/dependency changes or delegation. Proof Accounting-Chart-737.png.
+## 2026-10-11 — ACCOUNTING-ALL-BOOK-SELECTOR-1011 — PC-A
+
+Removed shared book selection dropdown from all accounting sections at user request. Existing book scope and URL selection remain; display-only change, no data writes or delegation.
+## 2026-10-11 — ACCOUNTING-CURRENT-ASSETS-1011 — PC-A
+
+Registered actual GENERAL children1110 موجودی نقد و بانک,1112 حسابها و اسناد دریافتنی تجاری,1113 سایر حسابها و اسناد دریافتنی,1119 پیش پرداخت ها,1120 جاری شرکا under GROUP11 in REF737 book bba7b2bb-178e-47fa-938b-c22afba11737. Existing API validations retained; debit/permanent defaults. API readback and expanded browser tree verified, proof Current-Assets-738.png. No code/schema changes, old-book changes, Rahkaran writes or delegation.
+
+## 2026-10-11 — ACCOUNTING-CURRENT-ASSETS-FORMS-1011 — PC-A
+
+Read Rahkaran's actual current-asset hierarchy and forms without saving source changes. Imported41 subsidiary accounts into the previously authorized local REF737 book and reconciled GROUP11/five GENERAL records with source form values (including the temporary personnel-deduction account). Source monetary values, balances, journals and rates were explicitly excluded. All47 records verified by API; resulting59-account book still has zero journals, fiscal periods and FX rates. Raw source evidence and import backup remain local outside Git.
+
+Replaced the generic chart editor with observed main fields, split code, subsidiary flags and four tabs: detail levels/types, counterpart, conditional tax attributes and default descriptions. Parent selection follows the tree; removed the invented operational-settings section. Forms preserve attributes and descriptions on save. ANY nature is additive in the Finance contract/API and one accounting-only CHECK extension migration; existing level/parent/used-account/version controls remain. Detail-type arrays are book-validated and nature scopes support account/detail-prefix checks. The turnover tab reads local accounting reports only; no source balances were copied.
+
+Passed Web form4, API form/validation13 and PostgreSQL49 tests, affected lint, typechecks, Contracts build and API/Web production builds. Browser3100 verified real tree, flags, save/shortcut and conditional tabs. Isolated database migration applied; no other database, dependencies, delegation or merge. Proof: outputs/Rubi-Current-Assets-Form.png. Common development JSX-localization key warnings predate this editor and remain. Current code/migration locks released for review.
+
+## 2026-10-11 — ACCOUNTING-REMAINING-CHART-1011 — PC-A
+
+Completed source-driven chart from non-current assets through opening/closing. Read175 actual Rahkaran forms (12 groups,31 general,132 subsidiary) and all528 subsidiary-tab views, with code identity checks and no source mutation. Full tree expansion verified no unresolved branches. Created163 structural accounts and corrected12 existing roots in isolated REF737 using guarded API commands; final222 accounts (13 groups,36 general,173 subsidiary). Readback verified all payload fields/attributes/parents. Existing47 current-asset records unchanged; journals0, periods0 and FX rates0. No invented source fields or monetary values. Evidence, backup and import artifacts stay local outside Git; other installations do not automatically receive these local reference records.
+
+The existing shared group/general/subsidiary forms render observed type/nature/flags/detail levels and empty counterpart/tax/description tabs. Source-used account disabled states are not treated as local posted usage. Adjusted container-based layout so the right-side tree stays next to the form at the current desktop width. Browser verified all222 rendered nodes and representative general/subsidiary, currency/detail-level, memorandum and closing forms plus tabs. Scoped lint, Web TypeScript and4 form-model tests pass; Web production build57 routes passed. Same3100/4217 preview, no backend/schema/dependency changes or merge. Screenshot Rubi-Complete-Chart-Of-Accounts.png.
+
+## 2026-10-11 — ACCOUNTING-ACCOUNTS-SECTIONS-1011 — PC-A
+
+Dedicated six Accounts editors and three lists now run on the isolated local preview. Real guarded persistence covers detail-type/detail configuration, group membership/detail allocation, source-path subsidiary mappings and conversion definitions; notes/attachments use existing audit/document boundaries. The 26 observed system detail types were registered only in the reference book. PostgreSQL52 and Web15 focused tests pass, along with scoped lint/typechecks and affected builds. Browser checks cover lists/shortcuts, group allocation, mapping drill-down and notes. Two additive migrations are applied only to the isolated accounting DB; old book and source data are untouched.
+
+Full source parity remains open: the source session expired during conditional owner-selector verification, some source entities have no connected Rubi provider, and conversion execution was not observed or implemented. The user has a pending login request. This candidate is not complete-parity signoff; details and handoff are in tasks/ACCOUNTING-ACCOUNTS-SECTIONS-1011.md. No delegation or merge.
+
+Candidate commits: d7539808 (Accounting persistence) and1060897f (Web setup editors/lists). Other PCs should fetch this branch and review the two new migrations and optional snapshot fields together before adopting either producer or consumer. Schema/contract editing locks released; source-dependent completion remains pending. No merge/deploy authorization is implied.
+
+## 2026-10-11 — ACCOUNTING-DETAIL-LEVEL-TYPES-1011 — PC-A
+
+Chart detail-level follow-up completed on3100. Authenticated read-only Rahkaran DOM inspection captured the26 checkbox titles under the opposing title column and verified level4/5/6 double-click behavior. The UI now always exposes all three levels, including older accounts whose imported detailLevels listed only4. Types appear only after selecting a level, in Persian sort order, with separate saved selections, associated labels, keyboard activation, a scrolling grid and selected-row highlight. Removed the non-source add-level control. Editing a newly exposed level preserves compatibility with the existing allocation API; legacy single-type references and nature-control subsets remain consistent.
+
+13 focused model/rendering tests pass; scoped lint, Web TypeScript and57-route production build pass. Browser verified double-click, Enter, switching levels, all26 titles and save/reload. Only the fully observed level4 cash type assignment for111001 was saved in isolated REF737, with backup/API readback: all original attributes and221 other accounts unchanged,222 accounts,0details and0periods. The level5/6 source checks are sampled rows, not a complete assignment audit. No bulk assignment backfill is claimed. No source writes, numeric financial imports, backend/schema/dependency changes, delegation or merge. Evidence and proof outputs/Rubi-Chart-Detail-Levels.png remain outside Git.
+
 
 ## FINANCE-INBOX-REDESIGN-1007 — PC-A
 
