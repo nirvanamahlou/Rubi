@@ -5093,3 +5093,6 @@ Implemented screenshot737 compact right-side real account tree and search result
 ## 2026-10-11 — ACCOUNTING-ALL-BOOK-SELECTOR-1011 — PC-A
 
 Removed shared book selection dropdown from all accounting sections at user request. Existing book scope and URL selection remain; display-only change, no data writes or delegation.
+## 2026-10-11 — ACCOUNTING-CURRENT-ASSETS-1011 — PC-A
+
+Registered actual GENERAL children1110 موجودی نقد و بانک,1112 حسابها و اسناد دریافتنی تجاری,1113 سایر حسابها و اسناد دریافتنی,1119 پیش پرداخت ها,1120 جاری شرکا under GROUP11 in REF737 book bba7b2bb-178e-47fa-938b-c22afba11737. Existing API validations retained; debit/permanent defaults. API readback and expanded browser tree verified, proof Current-Assets-738.png. No code/schema changes, old-book changes, Rahkaran writes or delegation.

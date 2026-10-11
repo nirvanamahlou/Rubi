@@ -6212,3 +6212,6 @@ User screenshot737 tree and actual13-group request; sole writer chart tree/new c
 ## ACCOUNTING-ALL-BOOK-SELECTOR-1011 — PC-A — READY_FOR_REVIEW
 
 User explicitly requested removal of book dropdown everywhere in Accounting. Sole-writer deleted shared accounting-workspace selector markup, preserving URL/current book state and authorized reads. No data changes, delegation or new selection behavior.
+## ACCOUNTING-CURRENT-ASSETS-1011 — PC-A — READY_FOR_REVIEW
+
+User screenshot738 actual child-account continuation: created5 GENERAL accounts1110/1112/1113/1119/1120 under existing GROUP11 in authorized local REF737 book through guarded API, debit/permanent defaults. Verified readback code/title/parent/level and browser expanded all five. Data-only local task; no source code changes, old book/Rahkaran writes or delegation.
