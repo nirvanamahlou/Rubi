@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type {
   AccountingSnapshotV1,
@@ -14,10 +15,21 @@ import Link from '@/components/access-link';
 export function AccountingAttachments({
   book,
   journal,
+  record,
 }: {
   book: AccountingSnapshotV1;
-  journal: AccountingJournalV1;
+  journal?: AccountingJournalV1;
+  record?: { id: string; entityType: string; title: string };
 }) {
+  const recordId = record?.id ?? journal!.id;
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const returnTo = record
+    ? `${pathname}?${searchParams.toString()}`
+    : `/finance/accounting/general-ledger/documents/list?bookId=${book.book.id}&journalId=${recordId}`;
+  const entityType = record?.entityType ?? 'AccountingJournal';
+  const recordTitle =
+    record?.title ?? `سند حسابداری ${journal?.number ?? recordId}`;
   const permissions = useAccessPermissions() ?? [];
   const canRead =
       permissions.includes('documents.list') &&
@@ -36,14 +48,14 @@ export function AccountingAttachments({
     enabled: canUpload,
   });
   const list = useQuery({
-    queryKey: ['accounting', 'attachments', book.book.id, journal.id],
+    queryKey: ['accounting', 'attachments', book.book.id, recordId],
     queryFn: () =>
       documentsApi.list({
         domain: 'FINANCE',
         branchId: book.book.branchId,
         sourceModule: 'FINANCE',
-        sourceEntityType: 'AccountingJournal',
-        sourceEntityId: journal.id,
+        sourceEntityType: entityType,
+        sourceEntityId: recordId,
         pageSize: 100,
       }),
     enabled: canRead,
@@ -57,7 +69,7 @@ export function AccountingAttachments({
     ) ?? [];
   const upload = async () => {
     setError('');
-    const type = types.find((t) => t.id === typeId),
+    const type = record ? types[0] : types.find((t) => t.id === typeId),
       opts = options.data?.data;
     if (!type || !opts || !file || !title.trim()) {
       setError('عنوان، نوع پیوست و فایل را انتخاب کنید.');
@@ -80,12 +92,9 @@ export function AccountingAttachments({
       body.set('ownerUserId', opts.currentUserId);
       body.set('confidentiality', type.defaultConfidentiality);
       body.set('sourceModule', 'FINANCE');
-      body.set('sourceEntityType', 'AccountingJournal');
-      body.set('sourceEntityId', journal.id);
-      body.set(
-        'sourceDisplayLabel',
-        `سند حسابداری ${journal.number ?? journal.id}`,
-      );
+      body.set('sourceEntityType', entityType);
+      body.set('sourceEntityId', recordId);
+      body.set('sourceDisplayLabel', recordTitle);
       await documentsApi.upload(body);
       setTitle('');
       setFile(null);
@@ -98,11 +107,7 @@ export function AccountingAttachments({
   };
   return (
     <section className="space-y-3 rounded-xl border p-4">
-      <h4 className="font-bold">پیوست‌های سند</h4>
-      <p className="text-sm text-muted-foreground">
-        فایل‌ها در آرشیو اسناد با مجوز مستقل نگهداری می‌شوند. دسترسی به محتوای
-        فایل تابع بررسی امنیتی آرشیو است.
-      </p>
+      <h4 className="font-bold">{record ? 'پیوست ها' : 'پیوست‌های سند'}</h4>
       {!canRead ? (
         <p>برای مشاهده پیوست‌ها به مجوز آرشیو مالی نیاز دارید.</p>
       ) : null}
@@ -112,22 +117,61 @@ export function AccountingAttachments({
           {list.error?.message ?? options.error?.message}
         </p>
       ) : null}
-      {list.data?.data.map((d) => (
-        <div key={d.id} className="flex flex-wrap justify-between gap-3">
-          <Link
-            className="text-primary"
-            href={`/documents?document=${d.id}&returnTo=${encodeURIComponent(`/finance/accounting/general-ledger/documents/list?bookId=${book.book.id}&journalId=${journal.id}`)}`}
-          >
-            {d.title} · {d.archiveCode}
-          </Link>
-          <span>
-            {d.currentVersion.scanStatus === 'CLEAN'
-              ? 'بررسی‌شده'
-              : 'منتظر بررسی آرشیو'}
-          </span>
+      {record ? (
+        <div className="overflow-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-muted">
+              <tr>
+                {['عنوان', 'فایل', 'کاربر پیوست‌کننده', 'تاریخ پیوست'].map(
+                  (label) => (
+                    <th key={label} className="p-2 text-start">
+                      {label}
+                    </th>
+                  ),
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {list.data?.data.map((d) => (
+                <tr key={d.id} className="border-b">
+                  <td className="p-2">{d.title}</td>
+                  <td className="p-2">
+                    <Link
+                      className="text-primary underline"
+                      href={`/documents?document=${d.id}&returnTo=${encodeURIComponent(returnTo)}`}
+                    >
+                      {d.currentVersion.originalFileName}
+                    </Link>
+                  </td>
+                  <td className="p-2">
+                    {d.currentVersion.createdBy.displayName}
+                  </td>
+                  <td className="p-2">
+                    {d.currentVersion.createdAt.slice(0, 10)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ))}
-      {canUpload && journal.status === 'DRAFT' ? (
+      ) : (
+        list.data?.data.map((d) => (
+          <div key={d.id} className="flex flex-wrap justify-between gap-3">
+            <Link
+              className="text-primary"
+              href={`/documents?document=${d.id}&returnTo=${encodeURIComponent(returnTo)}`}
+            >
+              {d.title} · {d.archiveCode}
+            </Link>
+            <span>
+              {d.currentVersion.scanStatus === 'CLEAN'
+                ? 'بررسی‌شده'
+                : 'منتظر بررسی آرشیو'}
+            </span>
+          </div>
+        ))
+      )}
+      {canUpload && (record || journal?.status === 'DRAFT') ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <FormField label="عنوان پیوست">
             <Input
@@ -136,14 +180,16 @@ export function AccountingAttachments({
               onChange={(e) => setTitle(e.target.value)}
             />
           </FormField>
-          <FormField label="نوع پیوست">
-            <SearchCombobox
-              label="نوع پیوست"
-              value={typeId}
-              onValueChange={setType}
-              options={types.map((t) => ({ value: t.id, label: t.name }))}
-            />
-          </FormField>
+          {!record ? (
+            <FormField label="نوع پیوست">
+              <SearchCombobox
+                label="نوع پیوست"
+                value={typeId}
+                onValueChange={setType}
+                options={types.map((t) => ({ value: t.id, label: t.name }))}
+              />
+            </FormField>
+          ) : null}
           <FormField label="فایل پیوست">
             <Input
               aria-label="فایل پیوست"

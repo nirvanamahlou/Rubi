@@ -136,7 +136,7 @@ function IconAction({
   );
 }
 
-function GroupEditor({
+export function GroupEditor({
   group,
   fields: availableFields,
   onChange,

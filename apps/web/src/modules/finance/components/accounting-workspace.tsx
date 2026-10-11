@@ -19,6 +19,14 @@ import { journalDisplayTotals } from '../accounting-money';
 import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
 import { AccountingAttachments } from './accounting-attachments';
+import { AccountingDetailEditor } from './accounting-detail-editor';
+import { AccountingDetailConversion } from './accounting-detail-conversion';
+import {
+  AccountingAccountsList,
+  type AccountsListKind,
+} from './accounting-accounts-list';
+import { AccountingAccountGroups } from './accounting-account-groups';
+import { AccountingSubsidiaryMapping } from './accounting-subsidiary-mapping';
 import { AccountingLedgerEditor } from './accounting-ledger-editor';
 import { AccountingBaseList } from './accounting-base-list';
 import { AccountingDefinitionToolbar } from './accounting-definition-toolbar';
@@ -32,10 +40,7 @@ import type { AccountingListKind } from '../accounting-list-filters';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
-import {
-  AccountingAutomationWorkspace,
-  AccountingMappingWorkspace,
-} from './accounting-automation-workspace';
+import { AccountingAutomationWorkspace } from './accounting-automation-workspace';
 import {
   accountingParityByRoute,
   accountingParityDefinitions,
@@ -47,7 +52,6 @@ import {
 import {
   AccountingChartEditor,
   AccountingAnalyticalReport,
-  AccountingGroupingEditor,
   AccountingMoveDrafts,
   AccountingTemplateEditor,
 } from './accounting-parity-editors';
@@ -392,9 +396,55 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         mode={section.endsWith('/numbering') ? 'numbering' : 'templates'}
       />
     );
+  else if (
+    snapshot &&
+    ['detail-types', 'details', 'detail-type-converters'].some(
+      (kind) => section === `general-ledger/accounts/lists/${kind}`,
+    )
+  )
+    content = (
+      <AccountingAccountsList
+        key={bookId + section}
+        book={snapshot}
+        kind={section.split('/').at(-1) as AccountsListKind}
+      />
+    );
+  else if (
+    snapshot &&
+    [
+      'general-ledger/accounts/detail-types',
+      'general-ledger/accounts/details',
+    ].includes(section)
+  )
+    content = (
+      <AccountingDetailEditor
+        key={bookId + section + (urlParams.get('id') ?? '')}
+        book={snapshot}
+        kind={section.endsWith('/details') ? 'details' : 'detail-types'}
+        run={run}
+        busy={busy}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'general-ledger/accounts/detail-type-converter'
+  )
+    content = (
+      <AccountingDetailConversion
+        key={bookId + (urlParams.get('id') ?? '')}
+        book={snapshot}
+        run={run}
+        busy={busy}
+      />
+    );
   else if (snapshot && section.endsWith('/mappings'))
     content = (
-      <AccountingMappingWorkspace book={snapshot} run={run} busy={busy} />
+      <AccountingSubsidiaryMapping
+        key={bookId}
+        book={snapshot}
+        run={run}
+        busy={busy}
+      />
     );
   else if (snapshot && section === 'general-ledger/accounts/chart')
     content = <AccountingChartEditor book={snapshot} run={run} busy={busy} />;
@@ -406,7 +456,8 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     ].includes(section)
   )
     content = (
-      <AccountingGroupingEditor
+      <AccountingAccountGroups
+        key={bookId + section}
         book={snapshot}
         run={run}
         busy={busy}

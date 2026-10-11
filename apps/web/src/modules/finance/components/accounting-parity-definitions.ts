@@ -13,6 +13,7 @@ export type AccountingParityImplementation =
   | 'account-groups'
   | 'detail-groups'
   | 'mapping'
+  | 'detail-conversion'
   | 'journal-edit'
   | 'journal-review'
   | 'journal-posting'
@@ -76,6 +77,7 @@ const implementationByRoute: Readonly<
   'general-ledger/accounts/account-groups': 'account-groups',
   'general-ledger/accounts/detail-groups': 'detail-groups',
   'general-ledger/accounts/mappings': 'mapping',
+  'general-ledger/accounts/detail-type-converter': 'detail-conversion',
   'general-ledger/documents/journals': 'journal-edit',
   'general-ledger/documents/revaluation': 'revaluation',
   'general-ledger/documents/revaluation-templates': 'template-list',
@@ -101,7 +103,7 @@ const implementationByRoute: Readonly<
   'general-ledger/base-information/lists/voucher-types': 'configuration-list',
   'general-ledger/accounts/lists/detail-types': 'configuration-list',
   'general-ledger/accounts/lists/details': 'configuration-list',
-  'general-ledger/accounts/lists/detail-type-converters': 'evidence-only',
+  'general-ledger/accounts/lists/detail-type-converters': 'configuration-list',
   'general-ledger/documents/lists/journals': 'journal-list',
   'general-ledger/documents/lists/gl-vouchers': 'evidence-only',
   'general-ledger/documents/lists/automatic-templates': 'template-list',
