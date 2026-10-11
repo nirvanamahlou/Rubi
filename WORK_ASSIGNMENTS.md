@@ -6623,3 +6623,37 @@ token logging, historical attribution rewrite or repository transfer.
 The bounded documentation repair passes changed-file formatting and diff checks.
 Locks release with the review commit; actual author verification and CI/merge
 provenance are recorded in the corrective PR handoff. No ERP code is affected.
+
+## AMIN-PR-CI-AUDIT-1011 — PC-C — READY_FOR_REVIEW
+
+The user authorizes CI diagnosis/repair of their unmerged Rubi PRs and develop
+integration after all checks pass. Audit finds open Amin-tech11 PR308/328/362
+target main although every head is already an ancestor of develop, with zero
+unique commits. PR361 is develop-to-main and cannot merge into itself. Their
+disposition is awaiting the user's clarification; no main release is authorized.
+Reserve formatting-only repair of the eleven paths flagged in PR361's current
+quality gate, plus own assignment/status/task entries. No behavior, dependency,
+migration, operational runtime or data change. Existing module work is preserved.
+Branch starts at develop@056828bf; source gates remain intact.
+
+- `apps/api/src/package-pricing/package-pricing.domain.spec.ts`
+- `apps/api/src/package-pricing/package-tour-pricing.controller.ts`
+- `apps/api/src/reporting/reporting-dashboard-calendar.ts`
+- `apps/api/src/reservations/hotel-rate-packs.service.spec.ts`
+- `apps/web/src/modules/dashboard/components/dashboard-scroll.spec.ts`
+- `apps/web/src/modules/dashboard/model/trend-axis.ts`
+- `apps/web/src/modules/master-data/api/tour-type-actors.spec.ts`
+- `apps/web/src/modules/pricing-management/components/tour-price-math.spec.ts`
+- `apps/web/src/modules/pricing-management/components/tour-price-math.ts`
+- `packages/database/test/master-data-migration.spec.ts`
+- `packages/database/test/master-data-partner-forms-migration.spec.ts`
+
+Acceptance: preserve source ASTs, pass the release-wide changed-file formatter
+comparison and all final-head CI checks, then merge the repair into develop.
+Resolve stale PR disposition only according to the pending user clarification.
+
+Clarification received: after current develop CI passes, close PR308/328/362
+as already integrated and keep release PR361 open. All eleven source ASTs were
+compared against the base and are unchanged. No tests/gates are excluded.
+Bounded formatting locks release with the review commit; final-head CI, merge
+and stale-PR closure provenance are recorded in the repair PR handoff.

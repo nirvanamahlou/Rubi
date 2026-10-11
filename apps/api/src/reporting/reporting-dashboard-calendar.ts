@@ -1,9 +1,5 @@
 export type DashboardCalendarRange =
-  | 'today'
-  | 'week'
-  | 'month'
-  | 'quarter'
-  | 'year';
+  'today' | 'week' | 'month' | 'quarter' | 'year';
 
 export type DashboardTrendRange = DashboardCalendarRange | 'custom';
 

@@ -18,9 +18,13 @@ describe('MASTER-002 migration', () => {
   });
 
   it('enforces financial and reference ranges with database checks', () => {
-    expect(sql).toContain('master_draft_exchange_rates_non_authoritative_check');
+    expect(sql).toContain(
+      'master_draft_exchange_rates_non_authoritative_check',
+    );
     expect(sql).toContain('master_draft_exchange_rates_positive_rate_check');
-    expect(sql).toContain('master_draft_exchange_rates_distinct_currencies_check');
+    expect(sql).toContain(
+      'master_draft_exchange_rates_distinct_currencies_check',
+    );
     expect(sql).toContain('master_currencies_decimal_digits_check');
     expect(sql).toContain('master_hotels_star_rating_check');
   });
