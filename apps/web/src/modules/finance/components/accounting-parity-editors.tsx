@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
   AccountingAccountGroupV1,
@@ -21,6 +21,7 @@ import { Input, Textarea, FormField } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import { accountingApi } from '../api/accounting-api';
+import { AccountingChartTree } from './accounting-chart-tree';
 import { submitPersistedEditor } from './accounting-persisted-editor';
 
 type Run = <T = unknown>(
@@ -43,7 +44,6 @@ export function AccountingChartEditor({
 }) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState('');
-  const [search, setSearch] = useState('');
   const [draft, setDraft] = useState<Record<string, string | boolean>>({});
   const selected = book.accounts.find((account) => account.id === selectedId);
   const reset = (level: 'GROUP' | 'GENERAL' | 'SUBSIDIARY') => {
@@ -81,35 +81,6 @@ export function AccountingChartEditor({
       ...account.attributes,
     });
   };
-  const visible = useMemo(() => {
-    const term = search.trim();
-    return term
-      ? book.accounts.filter((account) =>
-          `${account.code} ${account.title} ${account.level}`.includes(term),
-        )
-      : book.accounts;
-  }, [book.accounts, search]);
-  const tree = (parentId: string | null, depth = 0): ReactNode =>
-    visible
-      .filter((account) => account.parentId === parentId)
-      .map((account) => (
-        <li key={account.id}>
-          <button
-            className={`w-full rounded-lg px-3 py-2 text-start text-sm ${selectedId === account.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
-            onClick={() => open(account.id)}
-            style={{ paddingInlineStart: `${12 + depth * 16}px` }}
-            type="button"
-          >
-            {label(account)} ·{' '}
-            {account.level === 'GROUP'
-              ? 'گروه'
-              : account.level === 'GENERAL'
-                ? 'کل'
-                : 'معین'}
-          </button>
-          <ul>{tree(account.id, depth + 1)}</ul>
-        </li>
-      ));
   const attributes = Object.fromEntries(
     [
       'natureControl',
@@ -132,10 +103,6 @@ export function AccountingChartEditor({
     <section className="space-y-4">
       <div>
         <h2 className="text-xl font-black">تعریف ساختار حساب‌ها</h2>
-        <p className="text-sm text-muted-foreground">
-          ساختار درختی و انتخاب سطح از صفحه منبع مشاهده شده است. قواعد کنترلی
-          زیر، قابلیت‌های عملیاتی روبی هستند.
-        </p>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => reset('GROUP')}>گروه حساب جدید</Button>
@@ -177,189 +144,194 @@ export function AccountingChartEditor({
           حذف — پشتیبانی نمی‌شود
         </Button>
       </div>
-      <div className="grid gap-4 lg:grid-cols-[20rem_1fr]">
-        <aside className="space-y-3 rounded-xl border p-3">
-          <FormField id="coa-search" label="جست‌وجوی کد، عنوان یا نوع">
-            <Input
-              id="coa-search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </FormField>
-          <ul className="max-h-[34rem] overflow-auto">{tree(null)}</ul>
-        </aside>
-        <form
-          className="space-y-4 rounded-xl border p-4"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const after = accountingSaveDisposition(event);
-            void run<{ id: string; version: number }>(
-              'save-account',
-              {
-                ...draft,
-                ...(selected ? { id: selected.id } : {}),
-                attributes,
-              },
-              selected?.version,
-            ).then((saved) => {
-              if (!saved) return;
-              setSelectedId(saved.id);
-              if (after === 'new')
-                reset(
-                  String(draft.level ?? 'GROUP') as
-                    'GROUP' | 'GENERAL' | 'SUBSIDIARY',
-                );
-              if (after === 'close')
-                router.push('/finance/accounting/general-ledger/accounts');
-            });
-          }}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormField id="coa-code" label="کد">
-              <Input
-                id="coa-code"
-                value={String(draft.code ?? '')}
-                onChange={(e) =>
-                  setDraft((value) => ({ ...value, code: e.target.value }))
-                }
-              />
-            </FormField>
-            <FormField id="coa-title" label="عنوان">
-              <Input
-                id="coa-title"
-                value={String(draft.title ?? '')}
-                onChange={(e) =>
-                  setDraft((value) => ({ ...value, title: e.target.value }))
-                }
-              />
-            </FormField>
-            <FormField id="coa-title-en" label="عنوان به زبان دوم">
-              <Input
-                id="coa-title-en"
-                value={String(draft.titleEn ?? '')}
-                onChange={(e) =>
-                  setDraft((value) => ({ ...value, titleEn: e.target.value }))
-                }
-              />
-            </FormField>
-            <FormField id="coa-level" label="نوع">
-              <SearchCombobox
-                id="coa-level"
-                label="نوع"
-                value={String(draft.level ?? '')}
-                onValueChange={(level) =>
-                  setDraft((value) => ({ ...value, level }))
-                }
-                options={[
-                  { value: 'GROUP', label: 'گروه حساب' },
-                  { value: 'GENERAL', label: 'حساب کل' },
-                  { value: 'SUBSIDIARY', label: 'حساب معین' },
-                ]}
-              />
-            </FormField>
-            <FormField id="coa-parent" label="حساب والد">
-              <SearchCombobox
-                id="coa-parent"
-                label="حساب والد"
-                value={String(draft.parentId ?? '')}
-                onValueChange={(parentId) =>
-                  setDraft((value) => ({ ...value, parentId }))
-                }
-                options={book.accounts
-                  .filter((account) => account.level !== 'SUBSIDIARY')
-                  .map((account) => ({
-                    value: account.id,
-                    label: label(account),
-                  }))}
-              />
-            </FormField>
-            <FormField id="coa-nature" label="ماهیت">
-              <SearchCombobox
-                id="coa-nature"
-                label="ماهیت"
-                value={String(draft.nature ?? '')}
-                onValueChange={(nature) =>
-                  setDraft((value) => ({ ...value, nature }))
-                }
-                options={[
-                  { value: 'DEBIT', label: 'بدهکار' },
-                  { value: 'CREDIT', label: 'بستانکار' },
-                ]}
-              />
-            </FormField>
-          </div>
-          <details className="rounded-xl border p-4">
-            <summary className="cursor-pointer font-bold">
-              تنظیمات عملیاتی روبی
-            </summary>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {(
-                [
-                  'permanent',
-                  'active',
-                  'traceable',
-                  'multiCurrency',
-                  'revaluable',
-                  'zeroBalanceAtClose',
-                ] as const
-              ).map((key) => (
-                <label className="flex items-center gap-2 text-sm" key={key}>
-                  <input
-                    type="checkbox"
-                    checked={draft[key] === true}
-                    onChange={(e) =>
-                      setDraft((value) => ({
-                        ...value,
-                        [key]: e.target.checked,
-                      }))
-                    }
-                  />
-                  {
-                    {
-                      permanent: 'دائمی',
-                      active: 'فعال',
-                      traceable: 'دارای پیگیری',
-                      multiCurrency: 'ارزی',
-                      revaluable: 'تسعیرپذیر',
-                      zeroBalanceAtClose: 'مانده صفر در پایان دوره',
-                    }[key]
+      <div
+        dir="rtl"
+        className="grid min-h-[36rem] items-start gap-4 lg:grid-cols-[20rem_1fr]"
+      >
+        <AccountingChartTree
+          accounts={book.accounts}
+          selectedId={selectedId}
+          onSelect={open}
+        />
+        {selected || draft.level ? (
+          <form
+            className="space-y-4 rounded-xl border p-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const after = accountingSaveDisposition(event);
+              void run<{ id: string; version: number }>(
+                'save-account',
+                {
+                  ...draft,
+                  ...(selected ? { id: selected.id } : {}),
+                  attributes,
+                },
+                selected?.version,
+              ).then((saved) => {
+                if (!saved) return;
+                setSelectedId(saved.id);
+                if (after === 'new')
+                  reset(
+                    String(draft.level ?? 'GROUP') as
+                      'GROUP' | 'GENERAL' | 'SUBSIDIARY',
+                  );
+                if (after === 'close')
+                  router.push('/finance/accounting/general-ledger/accounts');
+              });
+            }}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <FormField id="coa-code" label="کد">
+                <Input
+                  id="coa-code"
+                  value={String(draft.code ?? '')}
+                  onChange={(e) =>
+                    setDraft((value) => ({ ...value, code: e.target.value }))
                   }
-                </label>
-              ))}
-              {[4, 5, 6].map((level) => (
-                <div className="rounded-lg border p-3" key={level}>
-                  <label className="flex items-center gap-2 text-sm">
+                />
+              </FormField>
+              <FormField id="coa-title" label="عنوان">
+                <Input
+                  id="coa-title"
+                  value={String(draft.title ?? '')}
+                  onChange={(e) =>
+                    setDraft((value) => ({ ...value, title: e.target.value }))
+                  }
+                />
+              </FormField>
+              <FormField id="coa-title-en" label="عنوان به زبان دوم">
+                <Input
+                  id="coa-title-en"
+                  value={String(draft.titleEn ?? '')}
+                  onChange={(e) =>
+                    setDraft((value) => ({ ...value, titleEn: e.target.value }))
+                  }
+                />
+              </FormField>
+              <FormField id="coa-level" label="نوع">
+                <SearchCombobox
+                  id="coa-level"
+                  label="نوع"
+                  value={String(draft.level ?? '')}
+                  onValueChange={(level) =>
+                    setDraft((value) => ({ ...value, level }))
+                  }
+                  options={[
+                    { value: 'GROUP', label: 'گروه حساب' },
+                    { value: 'GENERAL', label: 'حساب کل' },
+                    { value: 'SUBSIDIARY', label: 'حساب معین' },
+                  ]}
+                />
+              </FormField>
+              <FormField id="coa-parent" label="حساب والد">
+                <SearchCombobox
+                  id="coa-parent"
+                  label="حساب والد"
+                  value={String(draft.parentId ?? '')}
+                  onValueChange={(parentId) =>
+                    setDraft((value) => ({ ...value, parentId }))
+                  }
+                  options={book.accounts
+                    .filter((account) => account.level !== 'SUBSIDIARY')
+                    .map((account) => ({
+                      value: account.id,
+                      label: label(account),
+                    }))}
+                />
+              </FormField>
+              <FormField id="coa-nature" label="ماهیت">
+                <SearchCombobox
+                  id="coa-nature"
+                  label="ماهیت"
+                  value={String(draft.nature ?? '')}
+                  onValueChange={(nature) =>
+                    setDraft((value) => ({ ...value, nature }))
+                  }
+                  options={[
+                    { value: 'DEBIT', label: 'بدهکار' },
+                    { value: 'CREDIT', label: 'بستانکار' },
+                  ]}
+                />
+              </FormField>
+            </div>
+            <details className="rounded-xl border p-4">
+              <summary className="cursor-pointer font-bold">
+                تنظیمات عملیاتی روبی
+              </summary>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {(
+                  [
+                    'permanent',
+                    'active',
+                    'traceable',
+                    'multiCurrency',
+                    'revaluable',
+                    'zeroBalanceAtClose',
+                  ] as const
+                ).map((key) => (
+                  <label className="flex items-center gap-2 text-sm" key={key}>
                     <input
                       type="checkbox"
-                      checked={draft[`detail${level}Required`] === true}
+                      checked={draft[key] === true}
                       onChange={(e) =>
                         setDraft((value) => ({
                           ...value,
-                          [`detail${level}Required`]: e.target.checked,
+                          [key]: e.target.checked,
                         }))
                       }
                     />
-                    تفصیلی سطح {level} اجباری
-                  </label>
-                  <SearchCombobox
-                    label={`نوع تفصیلی سطح ${level}`}
-                    value={String(draft[`detail${level}TypeId`] ?? '')}
-                    onValueChange={(id) =>
-                      setDraft((value) => ({
-                        ...value,
-                        [`detail${level}TypeId`]: id,
-                      }))
+                    {
+                      {
+                        permanent: 'دائمی',
+                        active: 'فعال',
+                        traceable: 'دارای پیگیری',
+                        multiCurrency: 'ارزی',
+                        revaluable: 'تسعیرپذیر',
+                        zeroBalanceAtClose: 'مانده صفر در پایان دوره',
+                      }[key]
                     }
-                    options={book.configurations
-                      .filter((item) => item.kind === 'detail-types')
-                      .map((item) => ({ value: item.id, label: label(item) }))}
-                  />
-                </div>
-              ))}
-            </div>
-          </details>
-          <AccountingSaveButtons busy={busy} />
-        </form>
+                  </label>
+                ))}
+                {[4, 5, 6].map((level) => (
+                  <div className="rounded-lg border p-3" key={level}>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={draft[`detail${level}Required`] === true}
+                        onChange={(e) =>
+                          setDraft((value) => ({
+                            ...value,
+                            [`detail${level}Required`]: e.target.checked,
+                          }))
+                        }
+                      />
+                      تفصیلی سطح {level} اجباری
+                    </label>
+                    <SearchCombobox
+                      label={`نوع تفصیلی سطح ${level}`}
+                      value={String(draft[`detail${level}TypeId`] ?? '')}
+                      onValueChange={(id) =>
+                        setDraft((value) => ({
+                          ...value,
+                          [`detail${level}TypeId`]: id,
+                        }))
+                      }
+                      options={book.configurations
+                        .filter((item) => item.kind === 'detail-types')
+                        .map((item) => ({
+                          value: item.id,
+                          label: label(item),
+                        }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            </details>
+            <AccountingSaveButtons busy={busy} />
+          </form>
+        ) : (
+          <div className="min-h-[36rem]" />
+        )}
       </div>
     </section>
   );
