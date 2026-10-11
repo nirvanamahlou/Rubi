@@ -74,3 +74,9 @@ The isolated3120 page is a visual test harness with disabled persistence, not a 
   conditional references, branch boundary, permissions, stale version rejection).
 - Contracts lint/typecheck/build, full Web/API lint and typecheck, and Web/API builds passed. Final changed files passed focused lint; final Web/API builds and11 API tests passed after delete/export/notes changes. Workspace/parity integration patch passed git apply --check but is not applied.
 - No shared test database or source financial database was modified.
+
+Additional read-only list options verified: declaration state «ثبت موقت»،
+«تایید شده»، «قطعی شده»; declaration type عمومی/عوارض آلایندگی; party type
+شخص/شرکت; operation خرید/فروش/واردات/صادرات/قرارداد پیمانکار/قرارداد کارفرما;
+four observed tax-party classifications; aggregate history ورود به تجمیع/خروج از تجمیع.
+No state transition was executed. Choices are retained as metadata for domain integration.

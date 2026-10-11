@@ -1290,3 +1290,25 @@ export const accountingTaxForms: readonly AccountingTaxForm[] = [
     hasNotes: false,
   },
 ];
+
+/** Visible list-filter choices; status transition rules were not executed. */
+export const accountingTaxListOptions = {
+  declarationState: ['ثبت موقت', 'تایید شده', 'قطعی شده'],
+  declarationType: ['عمومی', 'عوارض آلایندگی'],
+  partyType: ['شخص', 'شرکت'],
+  operationType: [
+    'خرید',
+    'فروش',
+    'واردات',
+    'صادرات',
+    'قرارداد پیمانکار',
+    'قرارداد کارفرما',
+  ],
+  taxPartyType: [
+    'مودی مشمول ثبت نام در نظام مالیاتی',
+    'مشمولین حقیقی ماده 81 ق.م.م',
+    'اشخاصی که ملزم به ثبت نام در نظام مالیاتی نیستند',
+    'مصرف کننده نهایی',
+  ],
+  aggregateChangeType: ['ورود به تجمیع', 'خروج از تجمیع'],
+} as const;
