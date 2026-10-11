@@ -5324,3 +5324,6 @@ API's Vitest runner without registered tests; two changed Markdown files fail
 Prettier. Align the runner import and formatting, preserving the same assertions
 and all CI gates. The owner now authorizes merging Agent PRs to develop after
 all final-revision checks pass; this policy is recorded in DEVELOPMENT_WORKFLOW.
+The corrected four IAM tests pass in API Vitest, scoped API lint and the full PR
+formatting gate pass locally. Remote CI confirmation and merge provenance are
+recorded in PR780 after its final-revision gates pass. No CI gate is bypassed.

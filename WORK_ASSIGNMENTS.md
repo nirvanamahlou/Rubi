@@ -6585,7 +6585,7 @@ labels; 51 focused Web +4 IAM tests, lint/typecheck/build pass. Own runtime
 launcher refuses occupied ports. See docs/tasks/ASSISTANT-LOCALHOST-1011.md for
 runtime provenance, rollback, grant revocation and verification limitations.
 
-## ASSISTANT-CI-MERGE-1011 — PC-C — IN_PROGRESS
+## ASSISTANT-CI-MERGE-1011 — PC-C — READY_FOR_REVIEW
 
 The owner now authorizes continuing every PR until all CI/CD checks pass, then
 merging to develop. Continue PR780, the integration successor of PR779, on the
@@ -6599,3 +6599,8 @@ Acceptance: all checks pass on the final PR revision before the approved merge.
 Full PR-diff formatting also flags the assistant PLANS entry, own English
 overrides and the two imported Reporting files; reserve formatting-only changes
 there so both push and pull-request bases satisfy the same formatting gate.
+
+CI repair implemented. Four IAM tests pass through API Vitest, scoped API lint
+passes and full PR changed-file formatting passes. Bounded locks release with
+this review commit. Remote checks must pass on the final revision before merge;
+record their result and merge provenance in the PR handoff. No gate weakened.
