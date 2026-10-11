@@ -5509,3 +5509,18 @@ is not enabled. No network transmission, browser storage, microphone permission,
 file upload, backend or authorization changes. Light/dark theme variables and
 RTL/LTR/mobile layout are preserved. Focused31 tests passed; remaining verification
 and final-head CI/local activation evidence follow in the PR.
+
+## 2026-10-11 — ACCOUNTING-TAX-PARITY-1011 — PC-A
+
+Read-only Tax Accounting crawl produced10 sanitized form/list definitions and111
+labeled controls. Dedicated API/UI candidate persists three reference kinds
+(thresholds, tax periods, aggregation patterns), with scoped access, strict
+validation, exact decimals, versioning, idempotency and command history. Notes,
+reference deletion with dependency checks, reload and list Excel export are included.
+Financial declarations, identity/mapping directories, source-item reports and
+attachments remain explicit dependencies; no generic-config financial records or
+fake successful submission. Source quarterly report is blocked by missing tax
+period. Source writes/imports: none. Central workspace patch and private evidence
+are handed to PC-B; schema/migrations and shared3100 runtime remain unchanged.
+This is a candidate, not full parity or deployment. Details and validation:
+`docs/tasks/ACCOUNTING-TAX-PARITY-1011.md`.

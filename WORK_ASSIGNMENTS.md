@@ -6858,3 +6858,16 @@ submission; inactive microphone/attachment must not request access. Preserve
 all authentication and source-data permissions. Acceptance: matching composer,
 RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
 Web build, all final-head CI before authorized develop merge and local activation.
+
+## ACCOUNTING-TAX-PARITY-1011 — PC-A — IN_PROGRESS
+
+Base origin/develop@9a41c1cc; branch codex/pc-a-tax-accounting-parity-1011 in reused clean worktree. User explicitly requests the whole Tax Accounting menu/forms crawl and implementation, retaining the prohibition on entering or changing data in Rahkaran. Reserve new accounting-tax-* models/components/tests and a dedicated tax-accounting API service/controller if ownership coordination permits; raw evidence outside Git in work/tax-source. Active PC-B Finances retains accounting.service.ts, accounting-workspace.tsx, parity definitions, contracts and schema/migrations. No migration/deploy/shared runtime writes until coordinated release. Existing stack, RTL design and accessibility conventions retained. Final verification target is Rubi3100; isolated preview does not establish deployment.
+
+PC-B coordination granted dedicated FinanceModule service/controller registration,
+new accounting-tax.ts plus limited barrel export. Shared notes file is unchanged;
+a scoped tax notes editor avoids conflicting edits. Candidate provides3 persisted
+reference kinds and10 observed form/list layouts.11 API tests and4 UI model tests
+passed; full web/API build, lint and typecheck passed before final small refinements;
+final checks recorded in task doc. Central workspace integration, dedicated financial
+models, source-item/lookups, attachments and3100 deployment remain pending owner
+integration. No source writes, source-record import or schema/migration changes.
