@@ -505,24 +505,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         run={run}
       />
     );
-  } else if (home)
-    content = (
-      <Panel title={title}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {sections
-            .filter(([r]) => pathname === '/finance' || r.startsWith(section))
-            .map(([route, label]) => (
-              <Link
-                key={route}
-                href={`/finance/accounting/${route}?bookId=${bookId}`}
-                className="rounded-2xl border border-border bg-muted/30 p-5 font-bold transition hover:border-primary"
-              >
-                {label}
-              </Link>
-            ))}
-        </div>
-      </Panel>
-    );
+  } else if (home) content = null;
   else if (
     snapshot &&
     (section.includes('/documents/journals') ||
