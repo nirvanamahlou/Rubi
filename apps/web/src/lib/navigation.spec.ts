@@ -147,7 +147,7 @@ describe('CRM navigation', () => {
   });
 
   it('uses distinct Persian titles for all navigation items', () => {
-    expect(navigationItems).toHaveLength(22);
+    expect(navigationItems).toHaveLength(23);
     expect(navigationItems.map((item) => item.title)).toEqual(expectedTitles);
     expect(new Set(navigationItems.map((item) => item.title)).size).toBe(22);
   });
