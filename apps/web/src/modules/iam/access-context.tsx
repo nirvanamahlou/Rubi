@@ -15,8 +15,10 @@ import {
   hasManagedAccess,
   USER_ACCESS_SCREENS,
   canViewScreen,
+  canUseMasterDataResource,
   screenForTab,
   type AuthenticatedActor,
+  type MasterDataResource,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
@@ -45,6 +47,15 @@ export function useScreenAccess() {
     (id: string) =>
       permissions === undefined ||
       (permissions !== null && canViewScreen(permissions, id)),
+    [permissions],
+  );
+}
+export function useMasterDataResourceAccess() {
+  const permissions = useAccessPermissions();
+  return useCallback(
+    (resource: MasterDataResource) =>
+      Array.isArray(permissions) &&
+      canUseMasterDataResource(permissions, resource),
     [permissions],
   );
 }

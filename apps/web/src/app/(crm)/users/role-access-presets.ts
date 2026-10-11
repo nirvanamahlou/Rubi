@@ -259,6 +259,7 @@ export function recommendRoleAccess(
     : (profile?.groups ?? []);
   const screens = USER_ACCESS_SCREENS.filter(
     (screen) =>
+      !screen.inheritFrom &&
       groups.includes(screen.group) &&
       (canAssignAll || canViewScreen(actorPermissions, screen.id)),
   );

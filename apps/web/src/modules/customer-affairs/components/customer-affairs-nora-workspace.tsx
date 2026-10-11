@@ -29,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { Alert, ErrorState } from '@/components/ui/surfaces';
 import { useSuppressHrConnections } from '@/modules/hr/hr-connections-visibility';
+import { useScreenAccess } from '@/modules/iam/public/entry';
 import { customerAffairsHref } from './customer-affairs-navigation';
 import { loadCustomerAffairsOverview } from './customer-affairs-overview';
 import {
@@ -106,7 +107,6 @@ const hubs = [
     color: 'teal',
   },
 ] as const;
-const views: readonly string[] = [...sections, ...hubs].map((x) => x.view);
 const number = (n: number) => n.toLocaleString('fa-IR');
 const date = (v?: string | null) =>
   v
@@ -132,15 +132,25 @@ export function CustomerAffairsNoraWorkspace() {
   useSuppressHrConnections(true);
   const router = useRouter();
   const params = useSearchParams();
+  const screenAllowed = useScreenAccess();
+  const visibleSections = sections.filter((item) =>
+    screenAllowed(`customer-affairs.view.${item.view}`),
+  );
+  const visibleHubs = hubs.filter((item) =>
+    screenAllowed(`customer-affairs.view.${item.view}`),
+  );
+  const visibleViews = [
+    ...new Set([...visibleSections, ...visibleHubs].map((x) => x.view)),
+  ];
   const requested = params.get('view');
   const view = (
-    requested && views.includes(requested)
+    requested && visibleViews.includes(requested as View)
       ? requested
-      : params.get('tab') === 'tickets'
+      : params.get('tab') === 'tickets' && visibleViews.includes('tickets')
         ? 'tickets'
-        : params.get('tab') === 'leads'
+        : params.get('tab') === 'leads' && visibleViews.includes('leads')
           ? 'leads'
-          : 'overview'
+          : (visibleViews[0] ?? 'overview')
   ) as View;
   const family = ['leads', 'followups', 'handoffs'].includes(view)
     ? 'leads'
@@ -193,6 +203,7 @@ export function CustomerAffairsNoraWorkspace() {
   useEffect(() => {
     let current = true;
     async function load() {
+      if (!visibleViews.length) return;
       const result: Loaded = {
         leads: [],
         recentLeads: [],
@@ -303,6 +314,7 @@ export function CustomerAffairsNoraWorkspace() {
     createdTo,
     page,
     revision,
+    visibleViews.length,
   ]);
   const reloadDetail = async () => {
     if (!id) return;
@@ -332,6 +344,8 @@ export function CustomerAffairsNoraWorkspace() {
     <span className={s.badge}>{text || 'نامشخص'}</span>
   );
   const report = loaded.report;
+  if (!visibleViews.length)
+    return <p role="status">بخشی برای مشاهده در امور مشتریان مجاز نیست.</p>;
   return (
     <div className={s.workspace} dir="rtl">
       <header className={s.header}>
@@ -365,7 +379,7 @@ export function CustomerAffairsNoraWorkspace() {
         </div>
       </header>
       <nav className={s.tabs} aria-label="بخش‌های امور مشتریان">
-        {sections
+        {visibleSections
           .filter(({ view: section }) =>
             section === 'overview'
               ? true
@@ -414,7 +428,7 @@ export function CustomerAffairsNoraWorkspace() {
       <>
         {(family === 'leads' || family === 'tickets') && !id && (
           <nav className={s.subtabs} aria-label="نماهای پرونده">
-            {hubs
+            {visibleHubs
               .filter((x) =>
                 (family === 'leads'
                   ? ['leads', 'followups', 'handoffs']

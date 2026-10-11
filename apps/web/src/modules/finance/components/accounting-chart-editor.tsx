@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from '@/i18n/link';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Trash2 } from 'lucide-react';
 import type {
@@ -104,23 +105,42 @@ export function AccountingChartEditor({
   run,
   busy,
 }: {
-  book: AccountingSnapshotV1;
+  book: AccountingSnapshotV1 | null;
   run: Run;
   busy: boolean;
 }) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState('');
-  const [draft, setDraft] = useState<ChartDraft | null>(null);
+  const [draft, setDraft] = useState<ChartDraft | null>(
+    book
+      ? null
+      : {
+          code: '',
+          title: '',
+          titleEn: '',
+          description: '',
+          level: 'GROUP',
+          parentId: '',
+          nature: 'DEBIT',
+          active: true,
+          attributes: {
+            accountType: 'PERMANENT',
+            detailLevels: ['4', '5', '6'],
+          },
+        },
+  );
+  const accounts = book?.accounts ?? [];
+  const periods = book?.periods ?? [];
   const [tab, setTab] = useState('main');
   const [subTab, setSubTab] = useState<string>(subsidiaryTabs[0]);
   const [detailLevel, setDetailLevel] = useState<ChartDetailLevel | null>(null);
-  const selected = book.accounts.find((account) => account.id === selectedId);
-  const parent = book.accounts.find(
-    (account) => account.id === draft?.parentId,
-  );
+  const selected = accounts.find((account) => account.id === selectedId);
+  const parent = accounts.find((account) => account.id === draft?.parentId);
   const close = () =>
     router.push(
-      `/finance/accounting/general-ledger/accounts?bookId=${book.book.id}`,
+      book
+        ? `/finance/accounting/general-ledger/accounts?bookId=${book.book.id}`
+        : '/finance/accounting/general-ledger/accounts',
     );
   const set = (
     key: keyof Omit<ChartDraft, 'attributes'>,
@@ -142,7 +162,7 @@ export function AccountingChartEditor({
         : old,
     );
   const open = (id: string) => {
-    const account = book.accounts.find((item) => item.id === id);
+    const account = accounts.find((item) => item.id === id);
     if (!account) return;
     setSelectedId(id);
     setDraft(accountToDraft(account));
@@ -151,7 +171,7 @@ export function AccountingChartEditor({
     setDetailLevel(null);
   };
   const reset = (level: AccountingAccountV1['level'], parentId = '') => {
-    const owner = book.accounts.find((account) => account.id === parentId);
+    const owner = accounts.find((account) => account.id === parentId);
     setSelectedId('');
     setDetailLevel(null);
     setTab('main');
@@ -183,19 +203,18 @@ export function AccountingChartEditor({
         : selected?.level === 'SUBSIDIARY'
           ? reset('SUBSIDIARY', selected.parentId ?? '')
           : reset('GROUP');
-  const period =
-    book.periods.find((item) => item.status === 'OPEN') ?? book.periods[0];
+  const period = periods.find((item) => item.status === 'OPEN') ?? periods[0];
   const turnover = useQuery({
     queryKey: [
       'accounting',
       'chart-turnover',
-      book.book.id,
+      book?.book.id,
       selected?.id,
       period?.id,
       selected?.level,
     ],
     queryFn: () =>
-      accountingApi.report(book.book.id, {
+      accountingApi.report(book!.book.id, {
         periodId: period!.id,
         level: selected!.level,
       }),
@@ -272,15 +291,50 @@ export function AccountingChartEditor({
   const descriptions = draft ? descriptionRows(draft.attributes) : [];
   return (
     <section dir="rtl" className="@container space-y-2">
+      {!book && (
+        <div className="mb-3 space-y-2 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
+          <p role="status">
+            برای ثبت حساب‌ها، ابتدا دفتر کل ایجاد یا انتخاب کنید. ساختار زیر
+            هنوز به دفتری متصل نیست.
+          </p>
+          <Link
+            className="text-primary underline"
+            href="/finance/accounting/general-ledger/base-information/ledgers?new=1"
+          >
+            ایجاد دفتر کل
+          </Link>
+          {' · '}
+          <Link
+            className="text-primary underline"
+            href="/finance/accounting/general-ledger/base-information/lists/ledgers"
+          >
+            انتخاب دفتر کل
+          </Link>
+          <label className="block">
+            نمایش فرم
+            <select
+              className={control}
+              value={draft?.level ?? 'GROUP'}
+              onChange={(event) =>
+                reset(event.target.value as AccountingAccountV1['level'])
+              }
+            >
+              <option value="GROUP">گروه حساب</option>
+              <option value="GENERAL">حساب کل</option>
+              <option value="SUBSIDIARY">حساب معین</option>
+            </select>
+          </label>
+        </div>
+      )}
       <AccountingButton
         permission="finance.account.manage"
-        disabled={busy}
+        disabled={busy || !book}
         onClick={createChild}
       >
         جدید
       </AccountingButton>
       <AccountingDeleteButtons
-        busy={busy}
+        busy={busy || !book}
         selected={selected}
         entity="account"
         run={run}
@@ -289,7 +343,7 @@ export function AccountingChartEditor({
       />
       <div className="grid min-h-[40rem] items-start gap-3 @min-[42rem]:grid-cols-[18rem_minmax(0,1fr)] @min-[60rem]:grid-cols-[20rem_minmax(0,1fr)]">
         <AccountingChartTree
-          accounts={book.accounts}
+          accounts={accounts}
           selectedId={selectedId}
           onSelect={open}
         />
@@ -298,6 +352,7 @@ export function AccountingChartEditor({
             className="@container min-w-0 border border-slate-300 bg-white text-xs"
             onSubmit={(event) => {
               event.preventDefault();
+              if (!book) return;
               const after = accountingSaveDisposition(event);
               void run<{ id: string }>(
                 'save-account',
@@ -311,7 +366,7 @@ export function AccountingChartEditor({
               });
             }}
           >
-            <AccountingSaveButtons busy={busy} />
+            <AccountingSaveButtons busy={busy || !book} />
             <Tabs value={tab} onValueChange={setTab} dir="rtl">
               <TabsList className="w-full justify-start rounded-none border-b bg-slate-50 p-0">
                 <TabsTrigger value="main" className="rounded-none">
@@ -352,7 +407,7 @@ export function AccountingChartEditor({
                             value={draft.code.slice(parent?.code.length ?? 0)}
                             readOnly={
                               !!selected &&
-                              book.accounts.some(
+                              accounts.some(
                                 (item) => item.parentId === selected.id,
                               )
                             }
@@ -392,6 +447,44 @@ export function AccountingChartEditor({
                       {check('active', 'فعال')}
                       {draft.level === 'SUBSIDIARY' && (
                         <>
+                          {!book && (
+                            <div className="mb-3 space-y-2 rounded border border-sky-200 bg-sky-50 p-3 text-sm">
+                              <p role="status">
+                                برای ثبت حساب‌ها، ابتدا دفتر کل ایجاد یا انتخاب
+                                کنید. ساختار زیر هنوز به دفتری متصل نیست.
+                              </p>
+                              <Link
+                                className="text-primary underline"
+                                href="/finance/accounting/general-ledger/base-information/ledgers?new=1"
+                              >
+                                ایجاد دفتر کل
+                              </Link>
+                              {' · '}
+                              <Link
+                                className="text-primary underline"
+                                href="/finance/accounting/general-ledger/base-information/lists/ledgers"
+                              >
+                                انتخاب دفتر کل
+                              </Link>
+                              <label className="block">
+                                نمایش فرم
+                                <select
+                                  className={control}
+                                  value={draft?.level ?? 'GROUP'}
+                                  onChange={(event) =>
+                                    reset(
+                                      event.target
+                                        .value as AccountingAccountV1['level'],
+                                    )
+                                  }
+                                >
+                                  <option value="GROUP">گروه حساب</option>
+                                  <option value="GENERAL">حساب کل</option>
+                                  <option value="SUBSIDIARY">حساب معین</option>
+                                </select>
+                              </label>
+                            </div>
+                          )}
                           {check('multiCurrency', 'ویژگی ارزی')}
                           {check(
                             'revaluable',
@@ -463,7 +556,7 @@ export function AccountingChartEditor({
                     <TabsContent value="سطوح تفصیلی" className="m-0 border p-2">
                       <AccountingChartDetailLevels
                         attributes={draft.attributes}
-                        types={book.configurations}
+                        types={book?.configurations ?? []}
                         level={detailLevel}
                         onSelect={setDetailLevel}
                         onChange={(attributes) =>
@@ -480,7 +573,7 @@ export function AccountingChartEditor({
                       {choice(
                         'counterpartId',
                         'حساب طرف مقابل',
-                        book.accounts
+                        accounts
                           .filter(
                             (account) =>
                               account.level === 'SUBSIDIARY' &&

@@ -1,3 +1,7 @@
+## 2026-10-11 — USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
+
+Implemented additive section/resource restrictions and 421 edit-only controls: 357 master-data pairs, 17 customer fields and 47 persisted system-setting groups. Active UI consumers and bounded API writes enforce explicit restrictions. Missing document/tour detail tabs inherit their previously authorized parents. Access-editor saves preserve shared/inactive memberships, out-of-scope and unknown grants, omitted restrictions and unchanged branches; stale snapshots and unauthorized restriction removal are rejected. User required continuation without Worker Orchestrator; lead completed and reviewed directly. No migration, account backfill, seed, dependency, operational DB or shared3100 runtime change. Exact-head CI and authorized develop merge remain pending; final merge evidence belongs to the delivery PR. See docs/tasks/USER-ACCESS-COMPLETENESS-1011.md for boundary limitations and tests.
+
 ## 2026-10-10 — CORRESPONDENCE-1010 — PC-A
 
 Follow-up menu order updated at user request: Documents/Reports → Correspondence → Company Settings. Navigation-only change; scoped lint passed, existing3100 preview reused.
@@ -5510,6 +5514,7 @@ file upload, backend or authorization changes. Light/dark theme variables and
 RTL/LTR/mobile layout are preserved. Focused31 tests passed; remaining verification
 and final-head CI/local activation evidence follow in the PR.
 
+
 ## 2026-10-11 — ACCOUNTING-TAX-PARITY-1011 — PC-A
 
 Read-only Tax Accounting crawl produced10 sanitized form/list definitions and111
@@ -5534,3 +5539,19 @@ PC-B confirmed shared locks remain active; central integration is a proposal pat
 not deployed. No source writes, real submissions, source records/secrets or schema
 changes. Full operation remains dependent on credential/provider, financial models,
 read APIs and source license. See docs/tasks/ACCOUNTING-TAXPAYER-PARITY-1011.md.
+
+## 2026-10-11 — ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B
+
+The chart route now renders the existing tree and draft group/general/subsidiary forms when the authorized books response is empty. Setup links lead to ledger creation/selection. Save/new/delete persistence stays disabled without a book; submission has a second null-book guard. Request failures and loading do not masquerade as empty data. Selecting a real book remounts the editor to discard unbound draft state. No API, schema, permissions or dependency change.
+
+Validation: nine focused chart tests, scoped ESLint and Web typecheck pass. Production build and final-head CI gate the user-authorized develop merge. Local data-transfer artifacts are outside Git: one reference book, 222 accounts, 26 detail types and one approval configuration; 248 original source commands retained as a separate audit archive. No source database data changed. Destination import remains a separate explicit operation on its empty database.
+## 2026-10-11 — ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C
+
+Removed the Sources/data-quality button and its unused dialog. Refresh now sits
+next to Management report in the view toolbar, preserving its callback and
+loading guard. Composer uses a navy gradient and explicit light foreground/input
+colors in both ERP themes. Toolbar wraps on mobile. All six views, local-only
+drafts and existing source authorization remain unchanged. No API, migration,
+dependency or data changes.20 focused existing Web tests and scoped ESLint passed;
+production build, browser verification and final CI evidence follow in the PR.
+

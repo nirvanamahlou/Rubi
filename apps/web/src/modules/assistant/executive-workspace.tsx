@@ -41,13 +41,6 @@ import {
 } from 'lucide-react';
 import Link from '@/components/access-link';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/overlays';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { assistantCopy as c, type AssistantText } from '@/i18n/assistant-copy';
@@ -181,66 +174,12 @@ function Trend({
     </Panel>
   );
 }
-function SourceDetails({
-  t,
-  snapshot,
-}: {
-  t: Translate;
-  snapshot: ExecutiveSnapshot | null;
-}) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Database size={15} aria-hidden="true" />
-          {t(c.sources)}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-xl">
-        <DialogTitle>{t(c.sources)}</DialogTitle>
-        <DialogDescription>{t(c.notZero)}</DialogDescription>
-        <div className={styles.sourceList}>
-          {(['calendar', 'notes', 'procurement'] as const).map((id) => {
-            const source = snapshot?.sources.find((item) => item.id === id);
-            return (
-              <div key={id}>
-                <span>{t(c.sourceNames[id])}</span>
-                <strong>
-                  {t(
-                    source?.status === 'READY'
-                      ? c.connected
-                      : source
-                        ? c.unknown
-                        : c.pending,
-                  )}
-                </strong>
-              </div>
-            );
-          })}
-        </div>
-        <p className={styles.footnote}>{t(c.personalScope)}</p>
-        <div className={styles.sourceNote}>
-          <ShieldCheck size={20} aria-hidden="true" />
-          <p>{t(c.companyGate)}</p>
-        </div>
-        <p className={styles.footnote}>{t(c.modelGate)}</p>
-        <p className={styles.footnote}>{t(c.newsGate)}</p>
-      </DialogContent>
-    </Dialog>
-  );
-}
 export function AssistantComposer({
   t,
   denied,
-  state,
-  snapshot,
-  onRefresh,
 }: {
   t: Translate;
   denied: boolean;
-  state: AssistantLoadState;
-  snapshot: ExecutiveSnapshot | null;
-  onRefresh?: (() => void) | undefined;
 }) {
   const inputId = useId();
   const helpId = useId();
@@ -335,18 +274,6 @@ export function AssistantComposer({
         <p id={helpId} className={styles.composerHint} role="status">
           {t(notSubmitted ? c.messageNotSubmitted : c.chatGate)}
         </p>
-        <div className={styles.composerUtilities}>
-          <SourceDetails t={t} snapshot={denied ? null : snapshot} />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={state === 'loading'}
-          >
-            <RefreshCw size={15} aria-hidden="true" />
-            {t(c.refresh)}
-          </Button>
-        </div>
       </div>
     </section>
   );
@@ -677,13 +604,7 @@ export function ExecutivePanels({
   const denied = state === 'forbidden' || state === 'unauthenticated';
   return (
     <div className={styles.workspace} dir={english ? 'ltr' : 'rtl'}>
-      <AssistantComposer
-        t={t}
-        denied={denied}
-        state={state}
-        snapshot={snapshot}
-        onRefresh={onRefresh}
-      />
+      <AssistantComposer t={t} denied={denied} />
       <nav className={styles.tabs} aria-label={t(c.title)}>
         {assistantViews.map((id) => {
           const TabIcon = viewIcons[id];
@@ -749,15 +670,26 @@ export function ExecutivePanels({
                 <p>{t(screen.description)}</p>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled
-              title={t(c.reportUnavailable)}
-            >
-              <FileText size={15} aria-hidden="true" />
-              {t(c.report)}
-            </Button>
+            <div className={styles.sectionActions}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled
+                title={t(c.reportUnavailable)}
+              >
+                <FileText size={15} aria-hidden="true" />
+                {t(c.report)}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onRefresh}
+                disabled={state === 'loading'}
+              >
+                <RefreshCw size={15} aria-hidden="true" />
+                {t(c.refresh)}
+              </Button>
+            </div>
           </div>
           <div className={styles.metrics}>
             {screen.metrics.map((metric, index) => {

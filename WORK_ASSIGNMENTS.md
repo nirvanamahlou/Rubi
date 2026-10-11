@@ -1,3 +1,7 @@
+## USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
+
+User explicitly authorizes repairing IAM screen/section/field controls, preserving every existing user's access, pushing and merging to develop after final-head checks. Base origin/develop@68987832; reused isolated Rubi-api-audit-0928 checkout on codex/pc-b-user-access-completeness-1011. IAM contracts/API/Web catalogue, additive restrictions, bounded consumer guards and preservation tests implemented. User subsequently required direct continuation without Worker Orchestrator; parallel implementation stopped and lead completed/reviewed source directly. New controls inherit actual legacy behavior; only explicit authorized saves alter restrictions. No account backfill, seed, migration, dependency, operational database or shared runtime changes. Canonical administrator and executive-only rules, branch/domain/sensitive-read checks preserved. Source locks release at candidate freeze; merge requires exact-head full CI. Coverage and precise UI/edit-only/API boundaries: docs/tasks/USER-ACCESS-COMPLETENESS-1011.md.
+
 ## CORRESPONDENCE-1010 — PC-A — READY_FOR_REVIEW
 
 Follow-up: user requested primary group order resources → correspondence → system. Moved correspondence between Documents/Reports and Company Settings; navigation-only change, scoped lint passed and3100 reused.
@@ -6859,6 +6863,7 @@ all authentication and source-data permissions. Acceptance: matching composer,
 RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
 Web build, all final-head CI before authorized develop merge and local activation.
 
+
 ## ACCOUNTING-TAX-PARITY-1011 — PC-A — IN_PROGRESS
 
 Base origin/develop@9a41c1cc; branch codex/pc-a-tax-accounting-parity-1011 in reused clean worktree. User explicitly requests the whole Tax Accounting menu/forms crawl and implementation, retaining the prohibition on entering or changing data in Rahkaran. Reserve new accounting-tax-* models/components/tests and a dedicated tax-accounting API service/controller if ownership coordination permits; raw evidence outside Git in work/tax-source. Active PC-B Finances retains accounting.service.ts, accounting-workspace.tsx, parity definitions, contracts and schema/migrations. No migration/deploy/shared runtime writes until coordinated release. Existing stack, RTL design and accessibility conventions retained. Final verification target is Rubi3100; isolated preview does not establish deployment.
@@ -6887,3 +6892,21 @@ not conflict. Existing shared locks remain ACTIVE. Seller reference API implemen
 central registration/dispatch/evidence edits supplied only in integration patch.
 No secret-bearing attributes, real sends or success simulation. Final verification
 and remaining dependencies are recorded in ACCOUNTING-TAXPAYER-PARITY-1011 task doc.
+
+## ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B. Direct user authorization extends bounded Accounting chart empty-state work and local accounting export/import packaging. Branch codex/pc-b-accounting-empty-chart-transfer-1011. Reserve accounting-workspace.tsx, accounting-chart-editor.tsx, focused tests, additive en-overrides translations and task documentation; no schema/dependency/permission changes. Preserve concurrent books-error follow-up by distinguishing request failure from empty data. Transfer artifacts stay outside Git; source read-only; destination import requires explicit target branch, preview and backup. User authorizes push and develop merge after checks.
+
+Validation: nine focused chart tests, scoped lint and Web typecheck passed. PR789 exact implementation head passed all remote quality, test, production-build and PostgreSQL migration/seed gates. Source reservation released after the authorized merge; data package remains outside Git and receiving-machine import is not claimed.
+
+## ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C — READY_FOR_REVIEW
+
+Base: develop9a41c1cc. Sole writer reserves Web assistant workspace and styles,
+plus additive own status entry. User requests removing Sources/data-quality
+button, moving Refresh next to Management report, and a navy gradient composer.
+Preserve refresh callback/loading guard, six views, authorization and local-only
+draft behavior. No API, data, migration or dependency change. Acceptance: no
+Sources button, adjacent report/refresh controls, readable navy composer in both
+themes and RTL/LTR/mobile; focused existing tests, lint/typecheck/build, green
+final-head CI before authorized develop merge, then localhost activation.
+

@@ -1,4 +1,4 @@
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, ForbiddenException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SystemManagementService } from './system-management.service';
@@ -32,6 +32,55 @@ const setting = (scopeKey: string, value: string) => ({
 });
 
 describe('SystemManagementService', () => {
+  it('blocks a denied setting change but treats a canonical no-op as non-mutating', async () => {
+    const current = {
+      ...setting('GLOBAL', 'fa-IR'),
+      namespace: 'general',
+      key: 'locale',
+    };
+    const transaction = {
+      $queryRaw: vi.fn(),
+      systemSetting: {
+        findUnique: vi.fn().mockResolvedValue(current),
+        update: vi.fn(),
+        create: vi.fn(),
+      },
+      systemSettingVersion: { create: vi.fn() },
+    };
+    const database = {
+      client: { $transaction: vi.fn((run) => run(transaction)) },
+    };
+    const service = new SystemManagementService(database as never, {} as never);
+    const restricted = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.field.system-settings.general.locale',
+      ],
+    };
+    const input = {
+      namespace: 'general',
+      key: 'locale',
+      valueType: 'STRING' as const,
+      value: 'fa-IR',
+      scope: 'GLOBAL' as const,
+      status: 'ACTIVE' as const,
+      reason: 'verified no-op',
+      expectedVersion: 1,
+    };
+    await expect(
+      service.writeSetting(input, restricted as never, {}),
+    ).resolves.toMatchObject({ value: 'fa-IR' });
+    await expect(
+      service.writeSetting(
+        { ...input, value: 'en-US' },
+        restricted as never,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(transaction.systemSetting.update).not.toHaveBeenCalled();
+    expect(transaction.systemSettingVersion.create).not.toHaveBeenCalled();
+  });
   it('resolves USER before BRANCH, LEGAL_ENTITY, and GLOBAL', async () => {
     const rows = [
       setting('GLOBAL', 'global'),

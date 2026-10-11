@@ -44,6 +44,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -307,6 +308,11 @@ function statusBadge(record: MasterDataRecord) {
 }
 
 export function MasterDataTravelServicesWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () => tabs.filter((item) => canUseResource(item.resource)),
+    [canUseResource],
+  );
   const [resource, setResource] = useState<TravelResource>('leaders');
   const [tourActorNames, setTourActorNames] = useState<Record<string, string>>(
     {},
@@ -334,9 +340,32 @@ export function MasterDataTravelServicesWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
+      const frame = window.requestAnimationFrame(() =>
+        setResource(fallback.resource),
+      );
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, [resource, visibleTabs]);
   const definition = getMasterDataDefinition(resource);
+  const resourceAllowed = visibleTabs.some(
+    (item) => item.resource === resource,
+  );
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resourceAllowed]);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
@@ -347,6 +376,11 @@ export function MasterDataTravelServicesWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     setRequestState('loading');
     const query: MasterDataListQuery = {
       ...columnFilters,
@@ -391,6 +425,7 @@ export function MasterDataTravelServicesWorkspace() {
     page,
     referenceFilter,
     resource,
+    resourceAllowed,
     search,
     status,
   ]);
@@ -542,6 +577,7 @@ export function MasterDataTravelServicesWorkspace() {
   }, [countries, resource]);
 
   function changeResource(next: TravelResource) {
+    if (!visibleTabs.some((item) => item.resource === next)) return;
     setResource(next);
     setSearch('');
     resetColumnFilters();
@@ -813,6 +849,12 @@ export function MasterDataTravelServicesWorkspace() {
       table
     );
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -849,7 +891,7 @@ export function MasterDataTravelServicesWorkspace() {
           aria-label="زیرمجموعه‌های تور و خدمات سفر"
           className="flex min-w-max gap-1"
         >
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
