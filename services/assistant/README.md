@@ -38,11 +38,11 @@ Rate limits are process-local (8 concurrent requests, 60/IP/minute and
 The circuit is bounded by per-read 2.5s and whole-request 10s deadlines; no
 circuit-breaker state or production load/availability guarantee is claimed.
 
-| Tool | Fixed ERP GET route | Input and output scope |
-| --- | --- | --- |
-| calendar | `/workbench/calendar` | Session actor only; at most 1,000 personal events; completed/cancelled excluded. Ignores extra customer-affairs payload. |
-| notes | `/workbench/notes` | Session actor only; at most 500 notes; scheduled reminders only, completed checklists excluded; bodies omitted. |
-| procurement | `/workbench/procurement-follow-ups` | Session actor's assigned follow-ups; at most 100; no user/branch selector. |
+| Tool        | Fixed ERP GET route                 | Input and output scope                                                                                                   |
+| ----------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| calendar    | `/workbench/calendar`               | Session actor only; at most 1,000 personal events; completed/cancelled excluded. Ignores extra customer-affairs payload. |
+| notes       | `/workbench/notes`                  | Session actor only; at most 500 notes; scheduled reminders only, completed checklists excluded; bodies omitted.          |
+| procurement | `/workbench/procurement-follow-ups` | Session actor's assigned follow-ups; at most 100; no user/branch selector.                                               |
 
 All tools require an active ERP session and explicit executive permission in
 addition to the source API's authorization. No side effects. The 7-day horizon

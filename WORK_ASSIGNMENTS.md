@@ -6526,6 +6526,7 @@ Delivered locally: the valid-date toggle now uses blank date bounds only in its 
 COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-load-group-table-1011` from merged PR #776. Owner clarifies that every form submission is one load and must render as exactly one multi-row table; five submissions must produce five tables, not separate outbound/return tables. Reserve only the Ticket Catalog load-table composition, focused regression and bounded status docs. Keep grouping on the server-issued `loadGroupId`, row actions, whole-load actions, filtering, capacity totals and API behavior unchanged. No API/schema/migration/dependency/operational-data change.
 
 Delivered: each `loadGroupId` renders exactly one full-width multi-row table. Outbound and return rows remain together and use the new «مسیر» column; whole-load actions and totals operate on the complete group. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass. The rebuilt localhost/LAN service runs on port 3000.
+
 ## EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C, confirmed by the owner in this chat. Branch
@@ -6583,3 +6584,18 @@ verified unchanged. Combined Web includes current Reporting filters and English
 labels; 51 focused Web +4 IAM tests, lint/typecheck/build pass. Own runtime
 launcher refuses occupied ports. See docs/tasks/ASSISTANT-LOCALHOST-1011.md for
 runtime provenance, rollback, grant revocation and verification limitations.
+
+## ASSISTANT-CI-MERGE-1011 — PC-C — IN_PROGRESS
+
+The owner now authorizes continuing every PR until all CI/CD checks pass, then
+merging to develop. Continue PR780, the integration successor of PR779, on the
+existing isolated branch. Reserve its IAM maintenance test runner import,
+assistant README formatting, own status/task entries, WORK_ASSIGNMENTS formatting
+and the bounded DEVELOPMENT_WORKFLOW merge policy paragraph. No gate suppression,
+dependency/migration or local runtime change. CI diagnosis: Vitest discovers a
+node:test suite without Vitest tests; changed-file formatting flags two files.
+Acceptance: all checks pass on the final PR revision before the approved merge.
+
+Full PR-diff formatting also flags the assistant PLANS entry, own English
+overrides and the two imported Reporting files; reserve formatting-only changes
+there so both push and pull-request bases satisfy the same formatting gate.

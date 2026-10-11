@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test } from 'vitest';
 import { executiveAccess } from './local-executive-access.mjs';
 function fixture({
   user = { id: 'user-1', status: 'ACTIVE' },

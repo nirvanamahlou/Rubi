@@ -5316,3 +5316,11 @@ revocation and pending real authenticated browser verification.
 The actual port3000 now serves the combined build with clean startup; the
 original API4000 process is unchanged. Unauthenticated /assistant correctly
 redirects to login. The owner's authenticated UI remains to be checked on login.
+
+## 2026-10-11 — ASSISTANT-CI-MERGE-1011 — PC-C
+
+PR780 CI root causes: the IAM maintenance node:test file is discovered by the
+API's Vitest runner without registered tests; two changed Markdown files fail
+Prettier. Align the runner import and formatting, preserving the same assertions
+and all CI gates. The owner now authorizes merging Agent PRs to develop after
+all final-revision checks pass; this policy is recorded in DEVELOPMENT_WORKFLOW.

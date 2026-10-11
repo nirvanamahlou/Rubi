@@ -66,3 +66,13 @@ process, while API4000 retains its original PID. Startup is clean; requesting
 /assistant without authentication correctly redirects to login with next=/assistant
 and returns HTTP200. The browser displays that login page. No authenticated
 end-to-end result for the owner's real session is claimed.
+
+## CI follow-up
+
+PR780 CI found a test-runner mismatch: Vitest discovers the IAM .test.mjs file
+but node:test declarations do not register Vitest tests. Use the API's Vitest
+runner for the same four assertions; do not exclude the file or weaken the gate.
+The changed-file formatting gate also identified WORK_ASSIGNMENTS.md and the
+assistant README. Format both and recheck every changed supported file. The
+owner authorizes merge to develop only after all checks on the final revision
+pass. No local runtime or permission mutation is needed for this CI repair.
