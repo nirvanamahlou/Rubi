@@ -13,8 +13,8 @@ describe('flight load search entry', () => {
     expect(source).toContain('renderRowActions?.(offer)');
     expect(source).toContain('setSearched(nextFilter)');
     expect(source).toContain('setSearchedCurrent(true)');
-    expect(source).toContain("value={filter.from}");
-    expect(source).toContain("value={filter.to}");
+    expect(source).toContain('value={filter.from}');
+    expect(source).toContain('value={filter.to}');
     expect(source).not.toContain('setFilter(nextFilter)');
     expect(source).toContain('offer.loadGroupId ?? `offer:${offer.id}`');
   });

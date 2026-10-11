@@ -123,13 +123,17 @@ export function FlightLoadGrid({
     sameClass,
     filter.carrier,
   );
-  const loadGroups = [...outboundCandidates.reduce((groups, offer) => {
-    const key = offer.loadGroupId ?? `offer:${offer.id}`;
-    const rows = groups.get(key) ?? [];
-    rows.push(offer);
-    groups.set(key, rows);
-    return groups;
-  }, new Map<string, TicketOfferV1[]>()).values()];
+  const loadGroups = [
+    ...outboundCandidates
+      .reduce((groups, offer) => {
+        const key = offer.loadGroupId ?? `offer:${offer.id}`;
+        const rows = groups.get(key) ?? [];
+        rows.push(offer);
+        groups.set(key, rows);
+        return groups;
+      }, new Map<string, TicketOfferV1[]>())
+      .values(),
+  ];
   const originCities = [
     ...new Set(
       company
@@ -213,10 +217,10 @@ export function FlightLoadGrid({
           <table className={styles.table}>
             <thead>
               <tr>
-                 {[
-                   'انتخاب',
-                   'عملیات',
-                   'وب',
+                {[
+                  'انتخاب',
+                  'عملیات',
+                  'وب',
                   'تاریخ',
                   'ایرلاین',
                   'شماره',
@@ -230,7 +234,7 @@ export function FlightLoadGrid({
                   'Min',
                   'Max',
                   'روز هفته',
-                   'کلاس همنام',
+                  'کلاس همنام',
                 ].map((column) => (
                   <th key={column}>{column}</th>
                 ))}
@@ -252,11 +256,11 @@ export function FlightLoadGrid({
                       checked={selected?.id === offer.id}
                       onChange={() => selectLeg(offer.id, back)}
                     />
-                   </td>
-                   <td onClick={(event) => event.stopPropagation()}>
-                     {renderRowActions?.(offer)}
-                   </td>
-                   <td title="وضعیت انتشار وب برای این بلیت ثبت نشده است">—</td>
+                  </td>
+                  <td onClick={(event) => event.stopPropagation()}>
+                    {renderRowActions?.(offer)}
+                  </td>
+                  <td title="وضعیت انتشار وب برای این بلیت ثبت نشده است">—</td>
                   <td dir="ltr">{ticketCalendarDate(offer.departureAt)}</td>
                   <td>{offer.carrierName}</td>
                   <td>{offer.serviceNumber}</td>
@@ -285,7 +289,7 @@ export function FlightLoadGrid({
                         : '—'
                       : '—'}
                   </td>
-                 </tr>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -427,14 +431,14 @@ export function FlightLoadGrid({
         <FormField label="از تاریخ" id="load-from">
           <TicketDatePicker
             id="load-from"
-             value={filter.from}
+            value={filter.from}
             onChange={(value) => change('from', value)}
           />
         </FormField>
         <FormField label="تا تاریخ" id="load-to">
           <TicketDatePicker
             id="load-to"
-             value={filter.to}
+            value={filter.to}
             onChange={(value) => change('to', value)}
           />
         </FormField>
@@ -509,11 +513,11 @@ export function FlightLoadGrid({
             checked={validDates}
             onChange={(event) => {
               const checked = event.target.checked;
-               const nextFilter = checked
-                 ? { ...filter, from: '', to: '' }
-                 : filter;
-               setValidDates(checked);
-               setOutboundId('');
+              const nextFilter = checked
+                ? { ...filter, from: '', to: '' }
+                : filter;
+              setValidDates(checked);
+              setOutboundId('');
               setReturnId('');
               if (checked) {
                 setSearched(nextFilter);
@@ -528,9 +532,7 @@ export function FlightLoadGrid({
           تاریخ‌های معتبر
         </label>
         <Button
-          disabled={
-             !validDates && !canSearchFlightLoad(searchFilter)
-          }
+          disabled={!validDates && !canSearchFlightLoad(searchFilter)}
           onClick={() => {
             setSearched({ ...searchFilter });
             setSearchedCurrent(validDates);
@@ -577,30 +579,30 @@ export function FlightLoadGrid({
       {!company.length && (
         <p className={styles.help}>بلیتی برای نمایش در لود وجود ندارد.</p>
       )}
-       {searched &&
-         loadGroups.map((rows) => {
-           const route = rows[0];
-           if (!route) return null;
-           const forward = rows.filter(
-             (offer) =>
-               offer.originId === route.originId &&
-               offer.destinationId === route.destinationId,
-           );
-           const backward = rows.filter(
-             (offer) =>
-               offer.originId === route.destinationId &&
-               offer.destinationId === route.originId,
-           );
-           return (
-             <div
-               className={styles.tables}
-               key={route.loadGroupId ?? `offer:${route.id}`}
-             >
-               {table(forward, false, rows, route)}
-               {table(backward, true, rows, route)}
-             </div>
-           );
-         })}
+      {searched &&
+        loadGroups.map((rows) => {
+          const route = rows[0];
+          if (!route) return null;
+          const forward = rows.filter(
+            (offer) =>
+              offer.originId === route.originId &&
+              offer.destinationId === route.destinationId,
+          );
+          const backward = rows.filter(
+            (offer) =>
+              offer.originId === route.destinationId &&
+              offer.destinationId === route.originId,
+          );
+          return (
+            <div
+              className={styles.tables}
+              key={route.loadGroupId ?? `offer:${route.id}`}
+            >
+              {table(forward, false, rows, route)}
+              {table(backward, true, rows, route)}
+            </div>
+          );
+        })}
       {searched && (
         <div className={styles.details}>
           {detail(outbound, false)}
