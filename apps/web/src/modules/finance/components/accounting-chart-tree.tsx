@@ -119,7 +119,7 @@ export function AccountingChartTree({
           onChange={(event) => setTerm(event.target.value)}
         />
       )}
-      <div className="min-h-[26rem] overflow-auto border bg-surface p-2">
+      <div className="h-[26rem] overflow-auto border bg-surface p-2">
         <button
           type="button"
           aria-expanded={expanded.includes('root')}

@@ -163,6 +163,82 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
   afterAll(async () => {
     await db?.$disconnect();
   });
+  it('persists observed chart form tabs, neutral nature and scoped type references', async () => {
+    const parent = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: debitId },
+    });
+    const detailType = await command('save-configuration', {
+      kind: 'detail-types',
+      code: 'FORM-TYPE',
+      title: 'Synthetic form detail type',
+      attributes: { classificationNumberLength: '6' },
+    });
+    const payload = {
+      code: '119990',
+      title: 'Synthetic observed form',
+      titleEn: 'Second language',
+      description: 'Description survives reload',
+      level: 'SUBSIDIARY',
+      parentId: parent.parentId,
+      nature: 'ANY',
+      permanent: true,
+      active: true,
+      attributes: {
+        accountType: 'MEMORANDUM',
+        natureControl: 'BLOCK',
+        natureControlScope: 'SELECTED_DETAIL',
+        detail4TypeIds: [String(detailType.id)],
+        detail4NatureTypeIds: [String(detailType.id)],
+        detailLevels: ['4', '5', '6'],
+        counterpartId: creditId,
+        taxAccountKind: 'TAX',
+        taxType: 'مالیات تکلیفی',
+        defaultDescriptions: '[{"text":"شرح","textEn":"Description"}]',
+      },
+    };
+    const saved = await command<{ id: string; version: number }>(
+      'save-account',
+      payload,
+    );
+    const stored = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: saved.id },
+    });
+    expect(stored.nature).toBe('ANY');
+    expect(stored.attributes).toMatchObject({
+      ...payload.attributes,
+      description: payload.description,
+    });
+    await expect(
+      command(
+        'save-account',
+        {
+          ...payload,
+          id: saved.id,
+          attributes: { ...payload.attributes, counterpartId: randomUUID() },
+        },
+        saved.version,
+      ),
+    ).rejects.toMatchObject({ response: { code: 'ACCOUNTING_RULE_FAILED' } });
+    await expect(
+      command(
+        'save-account',
+        {
+          ...payload,
+          id: saved.id,
+          attributes: {
+            ...payload.attributes,
+            detail4TypeIds: [randomUUID()],
+            detail4NatureTypeIds: [],
+          },
+        },
+        saved.version,
+      ),
+    ).rejects.toMatchObject({ response: { code: 'ACCOUNTING_RULE_FAILED' } });
+    const unchanged = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: saved.id },
+    });
+    expect(unchanged.version).toBe(saved.version);
+  });
   const draft = () =>
     command<AccountingJournalV1>('journal-save', {
       periodId,

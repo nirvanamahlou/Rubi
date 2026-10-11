@@ -47,7 +47,7 @@ export interface AccountingPeriodV1 {
 export interface AccountingAccountV1 extends AccountingRecord {
   parentId: string | null;
   level: 'GROUP' | 'GENERAL' | 'SUBSIDIARY';
-  nature: 'DEBIT' | 'CREDIT';
+  nature: 'DEBIT' | 'CREDIT' | 'ANY';
   permanent: boolean;
 }
 export interface AccountingDetailV1 extends AccountingRecord {

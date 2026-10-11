@@ -18,6 +18,10 @@ import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
 import { allocationTargets, allocateAmount } from './accounting.allocation';
+import {
+  accountControlFilters,
+  validateAccountForm,
+} from './accounting.account-form';
 import { FinanceInboxService } from '../finance-inbox.service';
 
 type Tx = Prisma.TransactionClient;
@@ -89,7 +93,7 @@ const kinds = [
   'tax-returns',
 ];
 // Compare posting semantics, treating absent optional form fields as defaults.
-const accountRules = (value: unknown) => {
+const accountRules = (value: unknown, permanent = true) => {
   const attrs = v.attributes(value);
   return {
     ...Object.fromEntries(
@@ -104,10 +108,28 @@ const accountRules = (value: unknown) => {
       ].map((key) => [key, attrs[key] === true]),
     ),
     natureControl: attrs.natureControl || 'NONE',
+    natureControlScope:
+      attrs.natureControlScope ||
+      (attrs.natureControl && attrs.natureControl !== 'NONE'
+        ? 'ACCOUNT'
+        : 'NONE'),
+    accountType: attrs.accountType || (permanent ? 'PERMANENT' : 'TEMPORARY'),
     ...Object.fromEntries(
-      [4, 5, 6].map((n) => [
-        `detail${n}TypeId`,
-        attrs[`detail${n}TypeId`] || '',
+      [4, 5, 6].flatMap((n) => [
+        [
+          `detail${n}TypeIds`,
+          Array.isArray(attrs[`detail${n}TypeIds`])
+            ? [...(attrs[`detail${n}TypeIds`] as string[])].sort()
+            : attrs[`detail${n}TypeId`]
+              ? [attrs[`detail${n}TypeId`]]
+              : [],
+        ],
+        [
+          `detail${n}NatureTypeIds`,
+          Array.isArray(attrs[`detail${n}NatureTypeIds`])
+            ? [...(attrs[`detail${n}NatureTypeIds`] as string[])].sort()
+            : [],
+        ],
       ]),
     ),
   };
@@ -1564,7 +1586,7 @@ export class AccountingService {
       if (
         !/^\d{1,20}$/.test(code) ||
         !['GROUP', 'GENERAL', 'SUBSIDIARY'].includes(level) ||
-        !['DEBIT', 'CREDIT'].includes(nature)
+        !['DEBIT', 'CREDIT', 'ANY'].includes(nature)
       )
         v.invalid('کد، سطح یا ماهیت حساب معتبر نیست.');
       const parent = parentId
@@ -1594,8 +1616,14 @@ export class AccountingService {
             parentId !== existing.parentId ||
             nature !== existing.nature ||
             (p.permanent !== false) !== existing.permanent ||
-            JSON.stringify(canonical(accountRules(p.attributes))) !==
-              JSON.stringify(canonical(accountRules(existing.attributes))))
+            JSON.stringify(
+              canonical(accountRules(p.attributes, p.permanent !== false)),
+            ) !==
+              JSON.stringify(
+                canonical(
+                  accountRules(existing.attributes, existing.permanent),
+                ),
+              ))
         )
           v.rule('حساب استفاده‌شده قابل تغییر نیست.');
         if (
@@ -1607,6 +1635,35 @@ export class AccountingService {
           v.rule('ساختار حساب دارای فرزند قابل تغییر نیست.');
       }
       const accountAttrs = v.attributes(p.attributes);
+      validateAccountForm(accountAttrs, p.permanent !== false);
+      if (
+        accountAttrs.counterpartId &&
+        !(await tx.accountingAccount.findFirst({
+          where: {
+            id: v.uuid(accountAttrs.counterpartId)!,
+            bookId,
+            active: true,
+            level: 'SUBSIDIARY',
+          },
+        }))
+      )
+        v.rule('حساب طرف مقابل معتبر نیست.');
+      for (const n of [4, 5, 6]) {
+        const ids = accountAttrs[`detail${n}TypeIds`];
+        if (
+          Array.isArray(ids) &&
+          ids.length &&
+          (await tx.accountingConfiguration.count({
+            where: {
+              id: { in: [...new Set(ids)] },
+              bookId,
+              kind: 'detail-types',
+              active: true,
+            },
+          })) !== new Set(ids).size
+        )
+          v.rule('نوع تفصیلی مجاز حساب معتبر نیست.');
+      }
       if (
         accountAttrs.revaluable === true &&
         accountAttrs.multiCurrency !== true
@@ -2698,42 +2755,69 @@ export class AccountingService {
         v.date(v.attributes(row.attributes).trackingDate);
       }
       if (
-        !checkedNature.has(account.id) &&
+        account.nature !== 'ANY' &&
         ['WARN', 'BLOCK'].includes(String(accountAttrs.natureControl))
       ) {
-        checkedNature.add(account.id);
-        const sums = await tx.accountingJournalLine.aggregate({
-          where: {
-            accountId: account.id,
-            journal: {
-              bookId: book.id,
-              periodId: journal.periodId,
-              status: 'POSTED',
-              documentDate: { lte: journal.documentDate },
-            },
-          },
-          _sum: { debit: true, credit: true },
-        });
-        const projected = rows
-          .filter((r) => r.accountId === account.id)
-          .reduce(
-            (a, r) =>
-              a
-                .add(DecimalValue.parse(r.debit))
-                .subtract(DecimalValue.parse(r.credit)),
-            DecimalValue.parse(sums._sum.debit?.toString() ?? '0').subtract(
-              DecimalValue.parse(sums._sum.credit?.toString() ?? '0'),
-            ),
+        const detailTypes: Record<string, string> = {};
+        if (accountAttrs.natureControlScope === 'SELECTED_DETAIL') {
+          const ids = [row.detail4Id, row.detail5Id, row.detail6Id].filter(
+            (id): id is string => !!id,
           );
-        if (
-          !projected.isZero &&
-          (account.nature === 'DEBIT'
-            ? projected.isNegative
-            : !projected.isNegative)
-        ) {
-          const message = `مانده حساب ${account.code} خلاف ماهیت تعیین‌شده است.`;
-          if (accountAttrs.natureControl === 'BLOCK') v.rule(message);
-          warnings.push(message);
+          for (const detail of await tx.accountingDetail.findMany({
+            where: { bookId: book.id, id: { in: ids } },
+            select: { id: true, typeId: true },
+          }))
+            detailTypes[detail.id] = detail.typeId;
+        }
+        for (const dimensions of accountControlFilters(
+          accountAttrs,
+          row,
+          detailTypes,
+        )) {
+          const checkKey = `${account.id}:${JSON.stringify(dimensions)}`;
+          if (checkedNature.has(checkKey)) continue;
+          checkedNature.add(checkKey);
+          const sums = await tx.accountingJournalLine.aggregate({
+            where: {
+              accountId: account.id,
+              ...dimensions,
+              journal: {
+                bookId: book.id,
+                periodId: journal.periodId,
+                status: 'POSTED',
+                documentDate: { lte: journal.documentDate },
+              },
+            },
+            _sum: { debit: true, credit: true },
+          });
+          const projected = rows
+            .filter(
+              (r) =>
+                r.accountId === account.id &&
+                Object.entries(dimensions).every(
+                  ([key, value]) =>
+                    r[key as 'detail4Id' | 'detail5Id' | 'detail6Id'] === value,
+                ),
+            )
+            .reduce(
+              (a, r) =>
+                a
+                  .add(DecimalValue.parse(r.debit))
+                  .subtract(DecimalValue.parse(r.credit)),
+              DecimalValue.parse(sums._sum.debit?.toString() ?? '0').subtract(
+                DecimalValue.parse(sums._sum.credit?.toString() ?? '0'),
+              ),
+            );
+          if (
+            !projected.isZero &&
+            (account.nature === 'DEBIT'
+              ? projected.isNegative
+              : !projected.isNegative)
+          ) {
+            const message = `مانده حساب ${account.code} خلاف ماهیت تعیین‌شده است.`;
+            if (accountAttrs.natureControl === 'BLOCK') v.rule(message);
+            warnings.push(message);
+          }
         }
       }
       for (const n of [4, 5, 6] as const) {
@@ -2748,7 +2832,10 @@ export class AccountingService {
           if (
             !detail ||
             (attrs[`detail${n}TypeId`] &&
-              detail.typeId !== attrs[`detail${n}TypeId`])
+              detail.typeId !== attrs[`detail${n}TypeId`]) ||
+            (Array.isArray(attrs[`detail${n}TypeIds`]) &&
+              (attrs[`detail${n}TypeIds`] as string[]).length > 0 &&
+              !(attrs[`detail${n}TypeIds`] as string[]).includes(detail.typeId))
           )
             v.rule('تفصیلی با قواعد حساب سازگار نیست.');
         }
@@ -3452,6 +3539,7 @@ export class AccountingService {
             .filter((account) => {
               const balance = balances.get(account.id) ?? DecimalValue.zero();
               return (
+                account.nature !== 'ANY' &&
                 !balance.isZero &&
                 (account.nature === 'DEBIT'
                   ? balance.isNegative

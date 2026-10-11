@@ -5096,3 +5096,11 @@ Removed shared book selection dropdown from all accounting sections at user requ
 ## 2026-10-11 — ACCOUNTING-CURRENT-ASSETS-1011 — PC-A
 
 Registered actual GENERAL children1110 موجودی نقد و بانک,1112 حسابها و اسناد دریافتنی تجاری,1113 سایر حسابها و اسناد دریافتنی,1119 پیش پرداخت ها,1120 جاری شرکا under GROUP11 in REF737 book bba7b2bb-178e-47fa-938b-c22afba11737. Existing API validations retained; debit/permanent defaults. API readback and expanded browser tree verified, proof Current-Assets-738.png. No code/schema changes, old-book changes, Rahkaran writes or delegation.
+
+## 2026-10-11 — ACCOUNTING-CURRENT-ASSETS-FORMS-1011 — PC-A
+
+Read Rahkaran's actual current-asset hierarchy and forms without saving source changes. Imported41 subsidiary accounts into the previously authorized local REF737 book and reconciled GROUP11/five GENERAL records with source form values (including the temporary personnel-deduction account). Source monetary values, balances, journals and rates were explicitly excluded. All47 records verified by API; resulting59-account book still has zero journals, fiscal periods and FX rates. Raw source evidence and import backup remain local outside Git.
+
+Replaced the generic chart editor with observed main fields, split code, subsidiary flags and four tabs: detail levels/types, counterpart, conditional tax attributes and default descriptions. Parent selection follows the tree; removed the invented operational-settings section. Forms preserve attributes and descriptions on save. ANY nature is additive in the Finance contract/API and one accounting-only CHECK extension migration; existing level/parent/used-account/version controls remain. Detail-type arrays are book-validated and nature scopes support account/detail-prefix checks. The turnover tab reads local accounting reports only; no source balances were copied.
+
+Passed Web form4, API form/validation13 and PostgreSQL49 tests, affected lint, typechecks, Contracts build and API/Web production builds. Browser3100 verified real tree, flags, save/shortcut and conditional tabs. Isolated database migration applied; no other database, dependencies, delegation or merge. Proof: outputs/Rubi-Current-Assets-Form.png. Common development JSX-localization key warnings predate this editor and remain. Current code/migration locks released for review.
