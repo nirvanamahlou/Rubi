@@ -89,6 +89,8 @@ const sections = [
   },
 ] as const;
 
+const commercialHeaderActionTargetId = 'commercial-header-primary-action';
+
 export type OperationalView =
   | 'overview'
   | 'address'
@@ -175,6 +177,7 @@ export function CorporateProfile({
   operations: (
     view: OperationalView,
     onReviewCooperation: () => void,
+    headerActionTargetId: string,
   ) => ReactNode;
   logo?: ReactNode;
   overview?: ReactNode;
@@ -347,6 +350,10 @@ export function CorporateProfile({
           >
             <Trash2 aria-hidden="true" className="size-4" />
           </Button>
+          <div
+            className="org-context-actions"
+            id={commercialHeaderActionTargetId}
+          />
           <button className="btn primary" onClick={() => go('home')}>
             <LayoutDashboard size={18} />
             نمای ۳۶۰ درجه
@@ -537,14 +544,22 @@ export function CorporateProfile({
                 tabIndex={-1}
                 className="scroll-mt-28"
               >
-                {operations('profile', () => go('contracts', 'framework'))}
+                {operations(
+                  'profile',
+                  () => go('contracts', 'framework'),
+                  commercialHeaderActionTargetId,
+                )}
               </div>
               <div
                 id="organization-section-branches"
                 tabIndex={-1}
                 className="scroll-mt-28"
               >
-                {operations('address', () => go('contracts', 'framework'))}
+                {operations(
+                  'address',
+                  () => go('contracts', 'framework'),
+                  commercialHeaderActionTargetId,
+                )}
               </div>
               <div
                 id="organization-section-representatives"
@@ -579,7 +594,11 @@ export function CorporateProfile({
               description="مانده واقعی و اعتبار قابل استفاده پس از اتصال سرویس مالی نمایش داده می‌شود. نمونه‌های مالی را در بخش «مالی و تسویه» ببینید."
             />
           ) : operationalView ? (
-            operations(operationalView, () => go('contracts', 'framework'))
+            operations(
+              operationalView,
+              () => go('contracts', 'framework'),
+              commercialHeaderActionTargetId,
+            )
           ) : (
             <CorporateUnavailable
               title={current?.tabs.find(([id]) => id === tab)?.[1] ?? title}

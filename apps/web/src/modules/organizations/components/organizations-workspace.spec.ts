@@ -30,6 +30,18 @@ const agreementEditor = readFileSync(
   new URL('./agreement-terms-editor.tsx', import.meta.url),
   'utf8',
 );
+const agreementWorkflow = readFileSync(
+  new URL('./agreement-workflow-panel.tsx', import.meta.url),
+  'utf8',
+);
+const ratesPanel = readFileSync(
+  new URL('./agency-rates-panel.tsx', import.meta.url),
+  'utf8',
+);
+const headerAction = readFileSync(
+  new URL('./dossier-header-action.tsx', import.meta.url),
+  'utf8',
+);
 
 describe('agency to Master Organization integration', () => {
   it('uses the public Master Data client and the canonical AGENCY role', () => {
@@ -113,5 +125,20 @@ describe('agency to Master Organization integration', () => {
     expect(profile).toContain("roles.includes('AGENCY')");
     expect(profile).toContain('organization.attributes.tourismLicenseNumber');
     expect(profile).toContain("'شماره مجوز'");
+  });
+
+  it('places commercial create actions beside the 360-degree dossier action', () => {
+    expect(profile).toContain('commercialHeaderActionTargetId');
+    expect(profile).toContain('org-context-actions');
+    expect(source).toContain('headerActionTargetId={headerActionTargetId}');
+    expect(agreementWorkflow).toContain(
+      '<DossierHeaderAction targetId={headerActionTargetId}>',
+    );
+    expect(agreementWorkflow).toContain('قرارداد جدید');
+    expect(ratesPanel).toContain(
+      '<DossierHeaderAction targetId={headerActionTargetId}>',
+    );
+    expect(ratesPanel).toContain('ثبت {kindLabels[kind]}');
+    expect(headerAction).toContain('createPortal(children, target)');
   });
 });

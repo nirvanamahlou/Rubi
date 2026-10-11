@@ -6489,3 +6489,22 @@ by the existing `tourismLicenseNumber` attribute. Missing values point users to
 ESLint and Web typecheck pass. No API/schema/migration, dependency, permission
 or operational-data change. The bounded source locks release with the review
 commit.
+
+## AGENCY-COMMERCIAL-HEADER-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-commercial-header-actions-1011`
+from the current reviewed local agency profile branch. User requests the create
+actions in the agency «قرارداد و شرایط تجاری» subsections to appear beside the
+«نمای ۳۶۰ درجه» action. Reserve only the Organizations dossier header, agreement
+and agreed-rate panel presentation, a small local action-slot component, focused
+Web tests and bounded status docs. Preserve existing handlers, permission/loading
+guards, dialogs, exports, filters and row-level workflow actions. No API/schema/
+migration, dependency, permission or operational-data change.
+
+Delivered the primary create actions for framework contracts, agreed rates,
+discounts and commissions into the dossier banner beside «نمای ۳۶۰ درجه». The
+same handlers, disabled states and permission checks are rendered through a
+local header action slot; standalone panel reuse retains the original in-panel
+fallback. Twenty-one focused tests, scoped ESLint and Web typecheck pass. No
+API/schema/migration, dependency, permission or operational-data change. The
+bounded source locks release with the review commit.

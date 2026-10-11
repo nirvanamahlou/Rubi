@@ -5260,3 +5260,14 @@ account/password, schema/migration, dependency or business-data change.
 - This reuses the existing `tourismLicenseNumber` field. No API, schema,
   migration, dependency, permission or operational-data change. The focused
   Organizations regression (9 tests), scoped ESLint and Web typecheck pass.
+
+## 2026-10-11 — Agency commercial create actions in dossier header
+
+- The primary create actions for framework contracts, agreed rates, discounts
+  and commissions now appear in their own subsection beside «نمای ۳۶۰ درجه».
+  Export/filter controls and record-level review/version actions remain in their
+  operational context.
+- Existing dialogs, permission/loading guards and handlers are unchanged; a
+  local header action slot moves only their presentation. Standalone panels keep
+  an in-panel fallback. Twenty-one focused tests, scoped ESLint and Web typecheck
+  pass. No API, schema/migration, dependency, permission or data change.
