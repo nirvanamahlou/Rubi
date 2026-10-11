@@ -6822,7 +6822,7 @@ Sole writer; reserve accounting-workspace.tsx home shortcut grid removal, scoped
 
 ACCOUNTING-EMPTY-HOME-1011 result: shortcut card grids removed from accounting landing/group pages. Existing navigation and record forms preserved. Authenticated browser verified /finance on rubi Web3100 without shortcut cards; bounded ESLint/typecheck and CI validate candidate. Frontend-only immutable image deployed on existing rubi Compose; no database/API changes.
 
-## ASSISTANT-ALL-USERS-1011 — PC-C — ACTIVE
+## ASSISTANT-ALL-USERS-1011 — PC-C — READY_FOR_REVIEW
 
 User authorization: temporarily enable the assistant for all authenticated ERP
 users and departments, including Amin. Base: origin/develop. Reserve assistant
@@ -6833,3 +6833,11 @@ corporate data grant, migration or dependency change. SELF sources retain their
 ERP authorization. Acceptance: universal authenticated visibility; anonymous
 rejection; isolation/revocation/source denial tests; lint/typecheck/build; all
 final-head CI checks before merge to develop; activate localhost3000 afterward.
+
+Scope also includes the assistant denial translation, workspace identity
+regression and packages/contracts/test/assistant-access.spec.ts. Verification:
+13 HTTP tests,31 focused Web tests and all143 contract tests passed; affected
+Web/Contracts lint and typecheck passed. Existing explicit-grant contract tests
+were updated to the new owner-authorized shared-shell policy while preserving
+unrelated module restrictions. CI, integration and local runtime evidence are
+recorded on PR786. Business sources still enforce existing permissions.

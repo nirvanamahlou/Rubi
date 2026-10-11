@@ -5491,3 +5491,9 @@ revoked-session and source-denied requests fail closed; no bulk role grants,
 corporate data permission, migration or dependency changes. Node HTTP tests:
 13 passed, including ordinary-user isolation and source-denial regressions.
 Web verification and final-head CI/merge/runtime evidence follow in the PR.
+
+Additional verification:31 focused Web tests and all143 contract tests passed;
+affected Web/Contracts lint and typecheck passed. The old explicit-only contract
+regression was aligned with the owner-authorized shell policy and retains checks
+that unrelated modules stay restricted. Independent assistant health returns200;
+anonymous snapshot returns401. Final build/CI/runtime handoff is on PR786.
