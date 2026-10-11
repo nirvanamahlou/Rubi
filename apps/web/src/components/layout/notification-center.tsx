@@ -110,6 +110,7 @@ function formatNotificationTime(value: string) {
   return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
     dateStyle: 'short',
     timeStyle: 'short',
+    hourCycle: 'h23',
   }).format(new Date(value));
 }
 

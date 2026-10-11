@@ -28,7 +28,12 @@ import type {
 } from '@nora/contracts';
 
 import { validateSalesCurrencySelection } from './sales-currency-select';
-import { validatePassengerPackagePrices } from '@nora/contracts';
+import {
+  SALES_CHEQUE_FEE,
+  validatePassengerPackagePrices,
+  validateSalesChequePayments,
+} from '@nora/contracts';
+import { SalesChequeCalculator } from './sales-cheque-calculator';
 import { PassengerPackagePrices } from './passenger-package-prices';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -60,6 +65,7 @@ import type { SalesPeopleDraft } from '../model/sales-people-sheet';
 import { type FlightDateRange } from './flight-date-range';
 import {
   emptySalesForm,
+  salesInternationalTravel,
   salesFlightSelection,
   salesFlightsValid,
   patchContractFlight,
@@ -629,6 +635,39 @@ export function SalesContractForm() {
           : {}),
     });
   };
+  const finalStepError = (() => {
+    if (step !== 3) return '';
+    if (hotelCapacityError) return hotelCapacityError;
+    try {
+      const payload = salesPayload({
+        ...pricedState,
+        servicePricing: pricedState.servicePricing ?? {},
+      });
+      validateSalesCurrencySelection(payload, references.currencies);
+      validateSalesChequePayments(
+        payload.priceComponents,
+        payload.payments ?? [],
+        payload.paymentTerms,
+      );
+      validatePassengerPackagePrices(
+        payload.passengers,
+        payload.paymentTerms
+          ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
+          : payload.priceComponents,
+        true,
+      );
+      return payload.priceComponents.length > 0 ||
+        (payload.services.length > 0 &&
+          payload.services.every((service) => service.kind === 'TRANSFER') &&
+          !payload.payments?.length)
+        ? ''
+        : 'قیمت خدمات قرارداد را تکمیل کنید.';
+    } catch (reason) {
+      return reason instanceof Error
+        ? reason.message
+        : 'قیمت و پرداخت‌های قرارداد را بررسی کنید.';
+    }
+  })();
   const canContinue = (() => {
     if (step === 0)
       return Boolean(
@@ -681,29 +720,7 @@ export function SalesContractForm() {
             hotelGuestIds.includes(customerId),
         )
       );
-    if (step === 3) {
-      if (hotelCapacityError) return false;
-      try {
-        const payload = salesPayload({
-          ...pricedState,
-          servicePricing: pricedState.servicePricing ?? {},
-        });
-        validateSalesCurrencySelection(payload, references.currencies);
-        validatePassengerPackagePrices(
-          payload.passengers,
-          payload.priceComponents,
-          true,
-        );
-        return (
-          payload.priceComponents.length > 0 ||
-          (payload.services.length > 0 &&
-            payload.services.every((service) => service.kind === 'TRANSFER') &&
-            !payload.payments?.length)
-        );
-      } catch {
-        return false;
-      }
-    }
+    if (step === 3) return !finalStepError;
     return true;
   })();
   const submit = async (event: FormEvent) => {
@@ -717,10 +734,17 @@ export function SalesContractForm() {
       validateSalesCurrencySelection(payload, references.currencies);
       validatePassengerPackagePrices(
         payload.passengers,
-        payload.priceComponents,
+        payload.paymentTerms
+          ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
+          : payload.priceComponents,
         true,
       );
       const fingerprint = JSON.stringify(payload);
+      validateSalesChequePayments(
+        payload.priceComponents,
+        payload.payments ?? [],
+        payload.paymentTerms,
+      );
       if (submission.current.fingerprint !== fingerprint)
         submission.current = { fingerprint, key: crypto.randomUUID() };
       const response = await salesApi.create(payload, submission.current.key);
@@ -1106,6 +1130,7 @@ export function SalesContractForm() {
             className="mt-5 border-t border-border pt-4"
           >
             <FlightTripDates
+              international={salesInternationalTravel(state)}
               originId={
                 salesDirections(state, 'FLIGHT').includes('OUTBOUND')
                   ? state.originId
@@ -1220,6 +1245,7 @@ export function SalesContractForm() {
                     <section className="grid gap-3 min-w-0">
                       <h3 className="font-bold">بلیط رفت</h3>
                       <ContractFlightEditor
+                        international={salesInternationalTravel(state)}
                         airlines={references.airlines}
                         value={state.contractFlights?.OUTBOUND}
                         onChange={(value) =>
@@ -1291,6 +1317,7 @@ export function SalesContractForm() {
                   {flightDirections.includes('RETURN') ? (
                     <section className="grid gap-3 min-w-0">
                       <ContractFlightEditor
+                        international={salesInternationalTravel(state)}
                         airlines={references.airlines}
                         value={state.contractFlights?.RETURN}
                         onChange={(value) =>
@@ -1520,6 +1547,12 @@ export function SalesContractForm() {
                   ) : null}
                   <FormField label="ورود (چک‌این)" required>
                     <DatePicker
+                      key={
+                        salesInternationalTravel(state) ? 'foreign' : 'local'
+                      }
+                      {...(salesInternationalTravel(state)
+                        ? { defaultCalendarSystem: 'gregorian' as const }
+                        : {})}
                       value={state.hotel.checkIn}
                       onChange={(checkIn) =>
                         patchState({
@@ -1534,6 +1567,12 @@ export function SalesContractForm() {
                   </FormField>
                   <FormField label="خروج (چک‌اوت)" required>
                     <DatePicker
+                      key={
+                        salesInternationalTravel(state) ? 'foreign' : 'local'
+                      }
+                      {...(salesInternationalTravel(state)
+                        ? { defaultCalendarSystem: 'gregorian' as const }
+                        : {})}
                       value={state.hotel.checkOut}
                       onChange={(checkOut) =>
                         patchState({
@@ -1845,7 +1884,12 @@ export function SalesContractForm() {
                 onChange={(passengerPrices) => patchState({ passengerPrices })}
               />
               <InsuranceExtraSummary state={state} />
+              <SalesChequeCalculator
+                state={pricedState}
+                onChange={patchState}
+              />
               <SalesPaymentPlan
+                allowChecks={state.paymentTerms?.mode === 'CHECK'}
                 payments={state.payments}
                 currencies={references.currencies}
                 banks={references.banks}
@@ -1888,6 +1932,12 @@ export function SalesContractForm() {
               </p>
             ) : null}
             <h2 className="text-xl font-black">بازبینی و ثبت</h2>
+            <p className="font-bold">
+              نوع فروش:{' '}
+              {state.paymentTerms?.mode === 'CHECK'
+                ? 'چکی · سود ماهیانه ۵٪'
+                : 'نقدی'}
+            </p>
             <div className="grid gap-3 md:grid-cols-2">
               <Card className="p-4">
                 <p className="text-xs text-muted-foreground">مشتری</p>
@@ -1959,6 +2009,21 @@ export function SalesContractForm() {
           </div>
         ) : null}
       </Card>
+      {finalStepError ? (
+        <Alert
+          tone="warning"
+          title="نیازمند اصلاح قبل از ثبت"
+          description={finalStepError}
+        />
+      ) : null}
+      {error ? (
+        <p
+          role="alert"
+          className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          {error}
+        </p>
+      ) : null}
       <div className="sticky bottom-3 z-20 flex items-center justify-between rounded-xl border border-border bg-surface/95 p-3 shadow-sm backdrop-blur">
         <Button
           type="button"

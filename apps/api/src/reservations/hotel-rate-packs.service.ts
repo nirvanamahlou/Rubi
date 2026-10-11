@@ -7,7 +7,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type { AuthenticatedActor } from '@nora/contracts';
+import {
+  sharedHotelCandidates,
+  validHotelStay,
+  type HotelRatePeriodV1,
+  type HotelOccupancyRateV1,
+  type AuthenticatedActor,
+} from '@nora/contracts';
+import Joi from 'joi';
 import type { Prisma } from '@nora/database';
 import { DatabaseService } from '../database/database.service';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
@@ -139,72 +146,274 @@ export class HotelRatePacksService {
     rawKey: string | undefined,
     actor: AuthenticatedActor,
   ) {
+    return this.persist(raw, rawKey, actor);
+  }
+
+  private async persist(
+    raw: unknown,
+    rawKey: string | undefined,
+    actor: AuthenticatedActor,
+    shared?: { hash: string; periods: HotelRatePeriodV1[] },
+  ) {
     this.require(actor, true);
-    const input = validateRatePack(raw);
+    const input = validateRatePack(raw, !!shared);
     if (input.expectedVersion !== undefined)
       throw new BadRequestException('برای بستهٔ جدید نسخهٔ قبلی نفرستید.');
     if (!actor.branchIds.includes(input.branchId))
       throw new ForbiddenException();
     const key = requestKey(rawKey);
-    const hash = fingerprint({ action: 'create-pack', input });
+    const hash = shared?.hash ?? fingerprint({ action: 'create-pack', input });
     const prior = await this.replay(actor, key, hash);
     if (prior) return prior;
     const rows = await this.references(input);
     const id = randomUUID();
     try {
-      return await this.db.client.$transaction(async (tx) => {
-        await tx.reservationHotelRatePack.create({
-          data: {
-            id,
-            branchId: input.branchId,
-            tourDepartureId: input.tourDepartureId ?? null,
-            cityId: input.cityId,
-            checkIn: new Date(input.checkIn),
-            checkOut: new Date(input.checkOut),
-            currency: input.currency,
-            method: input.method,
-          },
-        });
-        const batch = await tx.reservationHotelRateBatch.create({
-          data: {
-            branchId: input.branchId,
-            actorId: actor.userId,
-            requestKey: key,
-            fingerprint: hash,
-            packId: id,
-            tourDepartureId: input.tourDepartureId ?? null,
-            cityId: input.cityId,
-            version: 1,
-            checkIn: new Date(input.checkIn),
-            checkOut: new Date(input.checkOut),
-            currency: input.currency,
-            method: input.method,
-            rows: { create: rows },
-          },
-        });
-        await tx.auditEvent.create({
-          data: {
-            actorUserId: actor.userId,
-            action: 'reservations.hotel_rate_pack.create',
-            entityType: 'ReservationHotelRatePack',
-            entityId: id,
-            outcome: 'SUCCESS',
-            metadata: {
+      return await this.db.client.$transaction(
+        async (tx) => {
+          if (shared) {
+            for (const period of shared.periods) {
+              const current = await tx.reservationHotelRatePack.findFirst({
+                where: {
+                  id: period.id,
+                  branchId: input.branchId,
+                  currentVersion: period.version,
+                },
+                select: { id: true },
+              });
+              if (!current)
+                throw new ConflictException(
+                  'نرخ‌های مبدأ تغییر کرده‌اند؛ بازه را تازه‌سازی کنید.',
+                );
+            }
+          }
+          await tx.reservationHotelRatePack.create({
+            data: {
+              id,
               branchId: input.branchId,
+              tourDepartureId: input.tourDepartureId ?? null,
+              cityId: input.cityId,
+              checkIn: new Date(input.checkIn),
+              checkOut: new Date(input.checkOut),
+              currency: input.currency,
+              method: input.method,
+              ...(shared
+                ? {
+                    sourcePeriods: {
+                      create: shared.periods.map((period) => ({
+                        sourceBatchId: period.batchId,
+                      })),
+                    },
+                  }
+                : {}),
+            },
+          });
+          const batch = await tx.reservationHotelRateBatch.create({
+            data: {
+              branchId: input.branchId,
+              actorId: actor.userId,
+              requestKey: key,
+              fingerprint: hash,
+              packId: id,
+              tourDepartureId: input.tourDepartureId ?? null,
               cityId: input.cityId,
               version: 1,
-              batchId: batch.id,
-              count: rows.length,
+              checkIn: new Date(input.checkIn),
+              checkOut: new Date(input.checkOut),
+              currency: input.currency,
+              method: input.method,
+              rows: { create: rows },
             },
-          },
-        });
-        return { id, version: 1, batchId: batch.id, idempotentReplay: false };
-      });
+          });
+          await tx.auditEvent.create({
+            data: {
+              actorUserId: actor.userId,
+              action: 'reservations.hotel_rate_pack.create',
+              entityType: 'ReservationHotelRatePack',
+              entityId: id,
+              outcome: 'SUCCESS',
+              metadata: {
+                branchId: input.branchId,
+                cityId: input.cityId,
+                version: 1,
+                batchId: batch.id,
+                count: rows.length,
+              },
+            },
+          });
+          return { id, version: 1, batchId: batch.id, idempotentReplay: false };
+        },
+        shared ? { isolationLevel: 'Serializable' } : undefined,
+      );
     } catch (error) {
       const saved = await this.replay(actor, key, hash);
       if (saved) return saved;
       throw error;
     }
+  }
+
+  async periods(
+    actor: AuthenticatedActor,
+    branchId: string,
+    cityId: string,
+  ): Promise<HotelRatePeriodV1[]> {
+    this.require(actor);
+    if (!actor.branchIds.includes(branchId)) throw new ForbiddenException();
+    if (Joi.string().uuid().required().validate(cityId).error)
+      throw new BadRequestException();
+    const packs = await this.db.client.reservationHotelRatePack.findMany({
+      where: {
+        branchId,
+        cityId,
+        tourDepartureId: null,
+        sourcePeriods: { none: {} },
+      },
+      include: {
+        versions: {
+          orderBy: { version: 'desc' },
+          take: 1,
+          include: { rows: { include: { roomRates: true } } },
+        },
+      },
+      orderBy: [{ checkIn: 'asc' }, { id: 'asc' }],
+      take: 501,
+    });
+    if (packs.length > 500)
+      throw new BadRequestException(
+        'تعداد دوره‌های این شهر بیش از حد مجاز است.',
+      );
+    return packs.map((pack) => {
+      const batch = pack.versions[0];
+      if (!batch || batch.version !== pack.currentVersion)
+        throw new ConflictException('نسخهٔ بسته ناقص است.');
+      return {
+        id: pack.id,
+        batchId: batch.id,
+        version: batch.version,
+        checkIn: dateOnly(batch.checkIn),
+        checkOut: dateOnly(batch.checkOut),
+        method: batch.method,
+        rows: batch.rows.map((row) => ({
+          hotelId: row.hotelId,
+          hotelName: row.hotelName,
+          brokerId: row.brokerId,
+          brokerName: row.brokerName,
+          currency: row.currency,
+          roomRates: row.roomRates.map((room) => ({
+            roomTypeId: room.roomTypeId,
+            roomTypeName: room.roomTypeName,
+            factor: room.factor.toString(),
+            maxAdults: room.maxAdults,
+            maxChildren: room.maxChildren,
+            maxChildren2To6: room.maxChildren2To6,
+            maxChildren6To12: room.maxChildren6To12,
+            maxInfants: room.maxInfants,
+            ...(Array.isArray(room.occupancyRates)
+              ? {
+                  occupancyRates:
+                    room.occupancyRates as unknown as HotelOccupancyRateV1[],
+                }
+              : {}),
+          })),
+        })),
+      };
+    });
+  }
+
+  async createShared(
+    raw: unknown,
+    rawKey: string | undefined,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, true);
+    const schema = Joi.object({
+      branchId: Joi.string().uuid().required(),
+      cityId: Joi.string().uuid().required(),
+      checkIn: Joi.string().required(),
+      checkOut: Joi.string().required(),
+      selections: Joi.array()
+        .min(1)
+        .max(50)
+        .unique('key')
+        .items(
+          Joi.object({
+            key: Joi.string().max(100).required(),
+            sourceBatchIds: Joi.array()
+              .min(1)
+              .max(500)
+              .unique()
+              .items(Joi.string().uuid())
+              .required(),
+          }).unknown(false),
+        )
+        .required(),
+    }).unknown(false);
+    const parsed = schema.validate(raw, { convert: false });
+    if (parsed.error)
+      throw new BadRequestException('بازه و هتل‌های منتخب را مشخص کنید.');
+    const input = parsed.value as {
+      branchId: string;
+      cityId: string;
+      checkIn: string;
+      checkOut: string;
+      selections: { key: string; sourceBatchIds: string[] }[];
+    };
+    if (!actor.branchIds.includes(input.branchId))
+      throw new ForbiddenException();
+    if (!validHotelStay(input.checkIn, input.checkOut))
+      throw new BadRequestException('بازهٔ اقامت معتبر نیست.');
+    const key = requestKey(rawKey);
+    const hash = fingerprint({ action: 'shared-period', input });
+    const prior = await this.replay(actor, key, hash);
+    if (prior) return prior;
+    const periods = await this.periods(actor, input.branchId, input.cityId);
+    const candidates = sharedHotelCandidates(
+      periods,
+      input.checkIn,
+      input.checkOut,
+    );
+    const selected = input.selections.map((selection) => {
+      const candidate = candidates.find((item) => item.key === selection.key);
+      if (
+        !candidate?.available ||
+        JSON.stringify(candidate.sourceBatchIds) !==
+          JSON.stringify([...selection.sourceBatchIds].sort())
+      )
+        throw new ConflictException(
+          'نرخ‌های مبدأ تغییر کرده‌اند؛ بازه را تازه‌سازی کنید.',
+        );
+      return candidate;
+    });
+    const ids = new Set(selected.flatMap((item) => item.sourceBatchIds));
+    return this.persist(
+      {
+        branchId: input.branchId,
+        cityId: input.cityId,
+        checkIn: input.checkIn,
+        checkOut: input.checkOut,
+        currency: selected[0]!.currency,
+        method: 'STAY',
+        rows: selected.map((row) => ({
+          hotelId: row.hotelId,
+          brokerId: row.brokerId,
+          base: '1',
+          currency: row.currency,
+          factors: {},
+          roomRates: row.roomRates.map((room) => ({
+            roomTypeId: room.roomTypeId,
+            factor: room.factor,
+            maxAdults: room.maxAdults,
+            maxChildren: room.maxChildren,
+            maxChildren2To6: room.maxChildren2To6,
+            maxChildren6To12: room.maxChildren6To12,
+            maxInfants: room.maxInfants,
+            occupancyRates: room.occupancyRates,
+          })),
+        })),
+      },
+      key,
+      actor,
+      { hash, periods: periods.filter((period) => ids.has(period.batchId)) },
+    );
   }
 
   async update(
@@ -227,12 +436,17 @@ export class HotelRatePacksService {
     const pack = await this.db.client.reservationHotelRatePack.findFirst({
       where: { id, branchId: { in: actor.branchIds } },
       include: {
+        sourcePeriods: true,
         versions: {
           where: { version: expectedVersion },
           include: { rows: { include: { roomRates: true } } },
         },
       },
     });
+    if (pack?.sourcePeriods?.length)
+      throw new BadRequestException(
+        'برای اصلاح بازهٔ مشترک، دوره‌های مبدأ را ویرایش و بازهٔ مشترک تازه ثبت کنید.',
+      );
     if (!pack) throw new NotFoundException('بستهٔ نرخ پیدا نشد.');
     if (pack.branchId !== input.branchId) throw new ForbiddenException();
     if (
@@ -343,7 +557,10 @@ export class HotelRatePacksService {
     const [packs, total] = await this.db.client.$transaction([
       this.db.client.reservationHotelRatePack.findMany({
         where,
-        include: { city: { select: { name: true } } },
+        include: {
+          city: { select: { name: true } },
+          sourcePeriods: { select: { sourceBatchId: true } },
+        },
         orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
         skip: (page - 1) * 50,
         take: 50,
@@ -367,6 +584,7 @@ export class HotelRatePacksService {
       data: packs.map((pack) => ({
         id: pack.id,
         tourDepartureId: pack.tourDepartureId,
+        sharedPeriod: !!pack.sourcePeriods?.length,
         branchId: pack.branchId,
         cityId: pack.cityId,
         cityName: pack.city.name,
@@ -389,6 +607,7 @@ export class HotelRatePacksService {
       where: { id, branchId: { in: actor.branchIds } },
       include: {
         city: { select: { name: true } },
+        sourcePeriods: { select: { sourceBatchId: true } },
         versions: {
           orderBy: { version: 'desc' },
           take: 1,
@@ -408,6 +627,7 @@ export class HotelRatePacksService {
     return {
       id: pack.id,
       branchId: pack.branchId,
+      sharedPeriod: !!pack.sourcePeriods?.length,
       tourDepartureId: batch.tourDepartureId,
       cityId: batch.cityId,
       cityName: pack.city.name,

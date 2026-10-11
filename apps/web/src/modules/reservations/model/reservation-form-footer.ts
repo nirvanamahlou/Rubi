@@ -7,7 +7,12 @@ const escape = (value: string) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 export const reservationContactEmail = 'Reservation@niyayehseir.com';
-export function reservationFormFooterHtml(id: string, origin = '') {
+export function reservationFormFooterHtml(
+  id: string,
+  origin = '',
+  companyCode?: string,
+  brandName = '',
+) {
   let url = '';
   if (/^[0-9a-f-]{36}$/i.test(id) && origin) {
     try {
@@ -19,5 +24,9 @@ export function reservationFormFooterHtml(id: string, origin = '') {
     }
   }
   const qr = url ? reservationFormQr(url) : null;
-  return `<div data-reservation-contact><strong>RESERVATIONS CONTACT</strong><span>Nystkt.ir · 021-72075000</span><a href="mailto:${reservationContactEmail}">${reservationContactEmail}</a></div>${qr ? `<a data-reservation-qr href="${escape(url)}" aria-label="مشاهده فرم رزواسیون">${qr}<small>SCAN TO VIEW FORM</small></a>` : ''}`;
+  const contact =
+    companyCode && companyCode !== 'NIYAYESH_SEIR_SAHAR'
+      ? `<div data-reservation-contact><strong>${escape(companyCode === 'JAHAN_BASTAN' ? 'جهان باستان' : brandName)}</strong></div>`
+      : `<div data-reservation-contact><strong>RESERVATIONS CONTACT</strong><span>Nystkt.ir · 021-72075000</span><a href="mailto:${reservationContactEmail}">${reservationContactEmail}</a></div>`;
+  return `${contact}${qr ? `<a data-reservation-qr href="${escape(url)}" aria-label="مشاهده فرم رزواسیون">${qr}<small>SCAN TO VIEW FORM</small></a>` : ''}`;
 }

@@ -24,6 +24,7 @@ const date = (value: string) =>
   new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hourCycle: 'h23',
     timeZone: 'Asia/Tehran',
   }).format(new Date(value));
 export function FinanceHistoryPanel({

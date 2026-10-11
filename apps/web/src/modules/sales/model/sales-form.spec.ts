@@ -3,6 +3,7 @@ import type { MasterDataRecord } from '@nora/contracts';
 
 import {
   emptySalesForm,
+  salesInternationalTravel,
   salesPayload,
   salesPassengerAgeLabel,
   salesAccommodationOptions,
@@ -631,3 +632,22 @@ it('carries the sales reservation note once in public service metadata', () => {
   );
   expect(payload.pricingNotes).toBeNull();
 });
+
+it.each([
+  ['', '', false],
+  ['IR', 'IR', false],
+  ['IR', 'TR', true],
+  ['TR', 'IR', true],
+  ['DE', 'TR', true],
+])(
+  'uses foreign-calendar default for endpoints %s / %s',
+  (origin, destination, expected) => {
+    expect(
+      salesInternationalTravel({
+        ...emptySalesForm,
+        originCountryCode: origin,
+        destinationCountryCode: destination,
+      }),
+    ).toBe(expected);
+  },
+);

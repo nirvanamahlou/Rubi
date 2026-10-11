@@ -15,7 +15,17 @@ const tariff = {
   board: 'BB',
   composition: '2 AD + 1 CHD',
 };
-const setup = () => {
+const manualTariff = {
+  ...tariff,
+  amount: '200.00',
+  saleAmount: '220.00',
+  manualPricing: {
+    baseAmount: '100',
+    coefficient: '2',
+    adjustment: { kind: 'PERCENT', value: '10' },
+  },
+};
+const setup = (selectedTariff = tariff) => {
   const branchId = randomUUID(),
     hotelId = randomUUID(),
     roomTypeId = randomUUID();
@@ -37,7 +47,7 @@ const setup = () => {
             factor: '1',
             maxAdults: 2,
             maxChildren: 1,
-            occupancyRates: [tariff],
+            occupancyRates: [selectedTariff],
           },
         ],
       },
@@ -59,40 +69,45 @@ const setup = () => {
   return { raw, actor, directory, roomTypeId };
 };
 describe('versioned occupancy persistence and consumer compatibility', () => {
-  it('persists exact tariffs in the existing audited atomic create and replays them without a second write', async () => {
-    const { raw, actor, directory } = setup();
-    const findUnique = vi.fn().mockResolvedValue(null),
-      batch = vi.fn().mockResolvedValue({ id: randomUUID() });
-    const tx = {
-      reservationHotelRatePack: { create: vi.fn() },
-      reservationHotelRateBatch: { create: batch },
-      auditEvent: { create: vi.fn() },
-    };
-    const transaction = vi.fn(async (f) => f(tx));
-    const service = new HotelRatePacksService(
-      {
-        client: {
-          reservationHotelRateBatch: { findUnique },
-          $transaction: transaction,
-        },
-      } as unknown as DatabaseService,
-      directory as unknown as MasterTravelDirectory,
-    );
-    const key = randomUUID(),
-      result = await service.create(raw, key, actor);
-    const data = batch.mock.calls[0]![0].data;
-    expect(data.rows.create[0].roomRates.create[0].occupancyRates).toEqual([
-      tariff,
-    ]);
-    findUnique.mockResolvedValue({
-      ...result,
-      packId: result.id,
-      fingerprint: data.fingerprint,
-      id: result.batchId,
-    });
-    expect((await service.create(raw, key, actor)).idempotentReplay).toBe(true);
-    expect(transaction).toHaveBeenCalledTimes(1);
-  });
+  it.each([tariff, manualTariff])(
+    'persists exact tariffs and manual metadata in audited atomic create and replay',
+    async (selectedTariff) => {
+      const { raw, actor, directory } = setup(selectedTariff);
+      const findUnique = vi.fn().mockResolvedValue(null),
+        batch = vi.fn().mockResolvedValue({ id: randomUUID() });
+      const tx = {
+        reservationHotelRatePack: { create: vi.fn() },
+        reservationHotelRateBatch: { create: batch },
+        auditEvent: { create: vi.fn() },
+      };
+      const transaction = vi.fn(async (f) => f(tx));
+      const service = new HotelRatePacksService(
+        {
+          client: {
+            reservationHotelRateBatch: { findUnique },
+            $transaction: transaction,
+          },
+        } as unknown as DatabaseService,
+        directory as unknown as MasterTravelDirectory,
+      );
+      const key = randomUUID(),
+        result = await service.create(raw, key, actor);
+      const data = batch.mock.calls[0]![0].data;
+      expect(data.rows.create[0].roomRates.create[0].occupancyRates).toEqual([
+        selectedTariff,
+      ]);
+      findUnique.mockResolvedValue({
+        ...result,
+        packId: result.id,
+        fingerprint: data.fingerprint,
+        id: result.batchId,
+      });
+      expect((await service.create(raw, key, actor)).idempotentReplay).toBe(
+        true,
+      );
+      expect(transaction).toHaveBeenCalledTimes(1);
+    },
+  );
   it('rejects an old editor dropping existing tariffs before any database write', async () => {
     const { raw, actor, directory, roomTypeId } = setup();
     const id = randomUUID();
@@ -155,69 +170,72 @@ describe('versioned occupancy persistence and consumer compatibility', () => {
     ).rejects.toThrow('قدیمی');
     expect(transaction).not.toHaveBeenCalled();
   });
-  it('projects full occupancy rates to Sales but excludes nominal factors from legacy tour pricing', async () => {
-    const room = {
-      roomTypeId: 'standard',
-      roomTypeName: 'Standard',
-      factor: 1,
-      maxAdults: 2,
-      maxChildren: 1,
-      maxChildren2To6: 1,
-      maxChildren6To12: 0,
-      maxInfants: 0,
-      occupancyRates: [tariff],
-    };
-    const fixture = {
-      id: 'batch',
-      branchId: 'branch',
-      version: 1,
-      pack: null,
-      checkIn: new Date(tariff.startsOn),
-      checkOut: new Date(tariff.endsOnExclusive),
-      currency: 'EUR',
-      method: 'STAY',
-      createdAt: new Date(),
-      rows: [
-        {
-          id: 'row',
-          batchId: 'batch',
-          hotelId: 'hotel',
-          hotelName: 'Synthetic',
-          brokerId: 'broker',
-          brokerName: 'Synthetic',
-          base: 1,
-          currency: 'EUR',
-          factors: { double: '1' },
-          roomRates: [room],
+  it.each([tariff, manualTariff])(
+    'projects full occupancy and manual metadata to Sales but excludes nominal factors from tour pricing',
+    async (selectedTariff) => {
+      const room = {
+        roomTypeId: 'standard',
+        roomTypeName: 'Standard',
+        factor: 1,
+        maxAdults: 2,
+        maxChildren: 1,
+        maxChildren2To6: 1,
+        maxChildren6To12: 0,
+        maxInfants: 0,
+        occupancyRates: [selectedTariff],
+      };
+      const fixture = {
+        id: 'batch',
+        branchId: 'branch',
+        version: 1,
+        pack: null,
+        checkIn: new Date(tariff.startsOn),
+        checkOut: new Date(tariff.endsOnExclusive),
+        currency: 'EUR',
+        method: 'STAY',
+        createdAt: new Date(),
+        rows: [
+          {
+            id: 'row',
+            batchId: 'batch',
+            hotelId: 'hotel',
+            hotelName: 'Synthetic',
+            brokerId: 'broker',
+            brokerName: 'Synthetic',
+            base: 1,
+            currency: 'EUR',
+            factors: { double: '1' },
+            roomRates: [room],
+          },
+        ],
+      };
+      const service = new HotelPurchaseRatesPublicService({
+        client: {
+          reservationHotelRateBatch: {
+            findMany: vi.fn().mockResolvedValue([fixture]),
+          },
         },
-      ],
-    };
-    const service = new HotelPurchaseRatesPublicService({
-      client: {
-        reservationHotelRateBatch: {
-          findMany: vi.fn().mockResolvedValue([fixture]),
-        },
-      },
-    } as unknown as DatabaseService);
-    expect(
-      (
-        await service.forTour(
-          'branch',
-          ['hotel'],
-          tariff.startsOn,
-          tariff.endsOnExclusive,
-        )
-      )[0]?.rows,
-    ).toEqual([]);
-    expect(
-      (
-        await service.availableRoomRates({
-          branchId: 'branch',
-          hotelId: 'hotel',
-          checkIn: tariff.startsOn,
-          checkOut: tariff.endsOnExclusive,
-        })
-      )[0]?.occupancyRates,
-    ).toEqual([tariff]);
-  });
+      } as unknown as DatabaseService);
+      expect(
+        (
+          await service.forTour(
+            'branch',
+            ['hotel'],
+            tariff.startsOn,
+            tariff.endsOnExclusive,
+          )
+        )[0]?.rows,
+      ).toEqual([]);
+      expect(
+        (
+          await service.availableRoomRates({
+            branchId: 'branch',
+            hotelId: 'hotel',
+            checkIn: tariff.startsOn,
+            checkOut: tariff.endsOnExclusive,
+          })
+        )[0]?.occupancyRates,
+      ).toEqual([selectedTariff]);
+    },
+  );
 });

@@ -255,6 +255,13 @@ export function toCustomerDetail(
 
 @Injectable()
 export class CustomerRepository {
+  salesPartyKinds(ids: readonly string[]) {
+    return this.database.client.customer.findMany({
+      where: { id: { in: [...ids] } },
+      select: { id: true, kind: true },
+    });
+  }
+
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}

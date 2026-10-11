@@ -22,7 +22,6 @@ Delivered recursive branch-local add menu with screenshot field/relation/logical
 
 Direct sole-writer UI standardization across Accounting: shared nine-icon toolbar, callback bindings preserving native forms/permissions, tooltip/shortcuts, displayed-view Excel/PDF exports and guarded unused base-record deletion. Finance Web/API service/focused tests and own docs reserved; no schema/dependency changes or delegation. Reuse branch3100/4217 synthetic preview.
 
-
 Delivered shared nine-operation icon toolbar on Accounting routes with Alt+Shift+A/S/N/W/D/H/R/E/P, permission-aware native callbacks and tooltips. Save/new/close dispositions supported by editable base, chart/group/template/mapping and journal editors; inapplicable/read-only operations disabled. Unused base-record deletion uses scoped permissions, version checks, book locks, replay protection, restrictive references and confirmation; journal deletion remains recoverable cancellation with posted-state guards. Displayed-view XLSX/PDF fallback preserves textual decimals; existing server report exports retained. PG48/48 broad regression and final deletion3/3 passed; focused Web19/19, scoped checks and affected builds validated. Final browser caught and repaired missing generic-definition bindings; verified voucher selection and shortcut tooltip. Synthetic local3100/4217 only, no Rahkaran writes or delegation. No schema/dependency changes. Full source parity remains37 functional/46 dependency/4 source-error routes; this unit completes the shared toolbar request within implemented editors, not blocked form functionality.
 
 ## ACCOUNTING-FISCAL-YEAR-BUTTONS-1008 — PC-A — READY_FOR_REVIEW
@@ -72,6 +71,32 @@ Delivered Finance-owned internal ledger with real branch-scoped forms, immutable
 Scope includes backward-compatible Finance history date filters/accounting row links and bounded English/generated catalogs. No other module data ownership is changed.
 
 Scope includes backward-compatible Finance history date filters/accounting row links and bounded English/generated catalogs. No other module data ownership is changed.
+
+## TICKET-LOAD-RESIZE-EDIT-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-ticket-load-resize-edit-1010 from origin/develop@f048e473. Owner reports full-load edit is blocked unless the generated row count remains identical and authorizes the corrective push/develop merge. Delivered one atomic load replacement that revises retained rows, logically archives removed rows and publishes added rows while preserving optimistic versions, branch permission, active-hold/tour protections, sales/pricing/purchase/finance/audit history and stable load grouping; legacy same-browser groups receive a durable server group marker on first resized edit. No schema/migration/dependency/lockfile, physical deletion or unrelated operational-data mutation. Ticket Catalog API188/22 opt-in skips and Web201/one skip pass; focused resize/API-client tests, English coverage, both typechecks, scoped lint and API/Web production builds pass. Exact-head CI gates merge; bounded locks release with the review candidate.
+
+## TICKET-LOAD-BATCH-TIMEOUT-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-ticket-load-batch-timeout-1010 from origin/develop@caebae7a. Owner reports the whole-table action returns the generic 500 message `An unexpected error occurred.` after PR763. Root cause is the supported large batch being archived with two awaited writes per row inside Prisma's default five-second interactive transaction. Delivered one set-based offer update plus one set-based audit insert, both in the same locked atomic transaction, and an explicit 30-second bound for archive and full-load revision. Preserve branch/version checks, active-hold/tour protection, logical archive, sales/pricing/purchase/finance/audit history and unrelated loads. No schema/migration/dependency/lockfile, operational-data mutation or physical deletion. A 1,000-row regression completes with two writes; focused21, Ticket Catalog API186/22 opt-in skips, localization, lint, typecheck and API build pass. Owner's continuing request authorizes push and develop merge after exact-head CI; bounded locks release with this candidate.
+
+## TICKET-LOAD-PANEL-ACTIONS-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-ticket-load-panel-actions-1010 from origin/develop@b6f1c7f3. Owner clarifies that Edit/Delete controls belong in the highlighted flight-load table header and must target the complete outbound/return load represented by the table block, not the selected detail row. Delivered header actions that expand every visible row to its complete stable load, deduplicate overlaps, and submit one atomic batch. Sold rows can now be logically archived while allocations, prices, purchases, finance and audit history remain; an active capacity hold or linked tour still fails closed. Preserve exact branch permissions, optimistic versions, unrelated loads and non-destructive history. No schema/migration/dependency/lockfile or physical deletion. Web Ticket Catalog200 passed/one optional skip; API Ticket Catalog185 passed/22 opt-in skips; focused tests, localization, scoped lint, Web/API typechecks and API/Web production builds pass (Web uses supported webpack path because Turbopack rejects the existing cross-worktree node_modules symlink). Both duplicate exact-head Full Test Suite jobs exposed the same pre-existing Sales rendering test at 5.26–5.43s against its 5s default; reserve only that inactive-owner test seam and give the already-heavy three-render assertion a bounded 15s timeout, without changing Sales production code or behavior. Owner authorizes push and develop merge after exact-head CI; bounded locks release with this review candidate.
+
+## TICKET-LOAD-BATCH-ACTIONS-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-ticket-load-batch-actions-1010 from origin/develop@445bb24b. Owner clarifies Edit/Delete Load must target the complete table/schedule created together, not a single generated offer, and reports current deletion fails. Delivered a stable additive `loadGroupId` management projection encoded in existing idempotency keys (no schema change), exact same-browser grouping for legacy generated loads, full-table labels/counts and atomic API batch archive/revision. Edit hydrates the complete date range, weekdays, return leg and cabin rows; row count must remain stable so prices/history are not silently detached. Delete is all-or-nothing and if one row has an allocation, live hold or tour, none are archived. Preserve branch/permission/version checks, audit/history, prices and HTTP-LAN UUID compatibility. Ticket Catalog Web199 passed/one optional skip; API185 passed/22 opt-in skips; localization, scoped lint, Contracts/API/Web typechecks and API/Web production builds pass. No destructive physical deletion, schema/migration, dependency/lockfile or unrelated operational data change. Continuation retains owner authorization for push and develop merge after exact-head checks; bounded locks release with this review candidate.
+
+## TICKET-LOAD-EDIT-FORM-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-ticket-load-edit-form-1010 from origin/develop@5a49a1ad. Owner requires Edit Load to open the exact full weekly flight-definition layout used by New Ticket, prefilled from the authoritative selected server load, while retaining single-load optimistic revision. Delivered the full schedule dialog for edit, including local date/time hydration, selected weekday, historical-date permission and the existing airline/route/cabin/fare controls. Existing outbound/return pairing identity is retained during a single-load edit. Ticket Catalog continues to use the HTTP-safe browserRandomUuid fallback, so an insecure LAN origin does not require crypto.randomUUID. Focused tests16, localization coverage, Web TypeScript, scoped ESLint and the57-route production build pass. Preserve safe logical archive, permissions, allocation/hold/tour guards and all unrelated records. No schema/migration/dependency/shared-contract/operational-data change. Owner authorizes push and develop merge after exact-head checks; bounded locks release with this review candidate.
+
+## TICKET-FORM-UX-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-ticket-form-ux-1010 from origin/develop@552ed951. Reserve Ticket Catalog flight search weekday filters, ticket-definition dialogs/forms, recurring-date preview tables and focused tests, the bounded shared NativeSearchSelect option-limit seam, HTTP-safe UUID helper and global DialogContent outside-interaction policy, plus own status entries. Delivered all seven weekday choices including Wednesday, outside-click protection for application dialogs, Ctrl+S for ticket forms, and a chronological five-column generated-date table. Ticket Catalog UUID creation now works on HTTP LAN origins without `crypto.randomUUID`, preferring native UUID and then Web Crypto bytes. Preserve Escape/close-button cancellation, validation, publication rules, permissions and persisted contracts. No schema/migration/dependency/API/operational-data change. Focused tests 27 plus UUID tests 2 pass; Web TypeScript and scoped ESLint pass. Webpack production compilation passed before its interrupted post-compile type phase; the separate full Web TypeScript gate passed. LAN runtime on port 3000 serves this worktree and returns HTTP 200. Bounded locks release with the review commit.
+
+Owner follow-up supersedes TICKET-NO-DELETE-1006 for an explicitly selected flight-load row and authorizes push/develop merge. Reserve Ticket Catalog Web/API archive/revision paths, focused tests and bounded decision/status docs. Add Edit Load and Delete Load beside View; edit opens the canonical catalog definition form reconstructed from the authoritative server offer. Delete is recoverable logical archive, not physical history deletion, and fails closed for active allocations, unexpired holds or tour links. Price, Procurement/Finance and audit history remain. No schema/migration/shared-contract/dependency/permission or operational-data change; prior Ticket Catalog locks released.
 
 ## MARKETING-LEADS-SECTION-1007 — PC-B — READY_FOR_REVIEW
 
@@ -6178,6 +6203,16 @@ COMPUTER_ID=PC-B; branch codex/pc-b-hr-recruitment-requisition-links-1007 from o
 - Persistence audit reopened at user request: reserve the existing B2B disposable PostgreSQL test setup timeout only, so its real create/read/update assertions can finish on a slower Windows Docker host. No production API or schema behavior changes. User now authorizes push and merge after verification.
 - Verification: disposable PostgreSQL suite passed 19/19 once with the longer setup window; Master Data identity, contact crypto, service and organization directory tests passed 56/56. A further combined organization/contact database assertion was not included because the local Docker daemon became unresponsive on repetition. No authenticated browser submission or live organization write was performed. Scoped lint passed; exact-head PR CI remains required before merge.
 
+## FLIGHT-ISSUED-SPEED-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-flight-issued-speed-1007 from origin/develop@b26dcc23. Reserve Ticket Catalog flight-load explanatory-copy removal, issued-ticket workspace/query lifecycle and focused tests; Reservations issued-ticket report query/projection/tests if measured redundant work is found. Prior issued report/load reservations released; no active overlapping lock. Preserve report date validation, branch permissions, real issuance provenance and exports. No schema/migration/dependency/shared contract/runtime changes. User explicitly authorizes push, PR and develop merge after checks/CI.
+
+## 2026-10-07 — FLIGHT-ISSUED-SPEED-1007 — PC-A
+
+Removed the requested static instructional paragraphs from charter flight load and issued-ticket export controls. Date-range validation, filter behavior and exports remain intact. Issuance report selects only needed document/intake/latest-state fields; unique public city references resolve in bounded batches of eight instead of serial round trips, preserving branch/date authorization, document/segment limits, stable row order and unavailable-city fallback. Web memoizes filtered rows and route counts, skips unchanged date requests and ignores aborted stale success responses. Ticket Catalog184 tests plus issued-report/document15 tests passed (one existing skip in each suite). Affected lint/typecheck and API/Web builds plus exact-head CI gate authorized develop merge. No schema/migration/dependency/operational data/runtime changes; no production timing or authenticated browser QA claimed.
+
+FLIGHT-ISSUED-SPEED-1007 verification: affected API/Web lint and typechecks, API build, Web56-route production build, targeted185 Web/16 API tests (one existing skip each), formatting and diff checks passed. Bounded source locks RELEASED with frozen candidate; exact-head CI gates the user-authorized develop merge. No migration or local runtime rollout.
+
 ## SALES-COPY-CLEANUP-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-copy-cleanup-1007 from origin/develop@7678ead9. Reserve Sales contracts dashboard and new-contract presentation components plus existing assertions and bounded status docs. Remove user-listed explanatory copy and duplicate headings, preserving fields, ticket facts, accessible labels, validation and save actions. No overlapping active Sales source lock. No schema/API/dependency/runtime/data changes. User explicitly authorizes develop merge after verification.
@@ -6191,27 +6226,35 @@ Scope also reserves one additive English Sales display translation for the short
 ## ACCOUNTING-RAHKARAN-PARITY-1007 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; continue on the existing `codex/pc-a-accounting-prd-1007` checkout at `388b672b`. Reserve the Finance-owned Accounting Web/API/tests and bounded accounting task/status documentation needed to replace the grouped 24-screen candidate with distinct verified Rahkaran leaf identities. Source evidence is read-only `work/rahkaran-recrawl/{forms,curated-forms,menu}.json`; dynamic values and credentials are excluded. Preserve the existing accounting transaction boundary, commands, branch/book scope, Decimal, maker/checker, closed-period, replay/version and immutable-posting rules. Source error pages, the invalid legal-report alias and blocked closing steps remain explicit evidence gaps. `Migration Owner = PC-A/ACCOUNTING-RAHKARAN-PARITY-1007` for one additive Finance-owned migration/schema extension covering only approved true-FK account/detail grouping, template, deleted-audit and document-move structures; exact schema/commands require the lead-frozen proposal before edits. No dependency/lockfile, shared runtime, operational database, Rahkaran write, connector, role grant, merge or deploy. Existing generated `apps/web/next-env.d.ts` dirt is outside scope.
+
 ## ACCOUNTING-FILTER-COPY-1011 — PC-A — READY_FOR_REVIEW
 
 User-authorized sole-writer copy removal in accounting-base-list.tsx: removed allocation explanation from fiscal-year list and trailing condition helper from shared group editor. Filter controls/semantics unchanged. Diff check passed; no tests needed for text-only deletion, no delegation or data changes.
+
 ## ACCOUNTING-LEDGER-LAYOUT-1011 — PC-A — READY_FOR_REVIEW
 
 Direct screenshot733 layout follow-up, sole writer of accounting-base-list.tsx. Ledger-only compact bordered grid with pale header, full-width preset, initially collapsed filter strip, tall table region and repeated icon toolbar with independent list popovers. Default50 rows, first/last page controls with shortcuts and record range. Existing column filters and scoped data preserved. Focused filter tests9/9, scoped lint, TypeScript and diff checks passed;3100 browser verified negative title filter, clear and bottom multi-selection. No data/backend/schema/dependency changes or delegation.
+
 ## ACCOUNTING-LIST-BOOK-SELECTOR-1011 — PC-A — READY_FOR_REVIEW
 
 User-authorized sole-writer accounting-workspace.tsx display-only change: hide book selector on fiscal-year, ledger and voucher-type base list routes. Current book state/read authorization preserved. Scoped lint/diff check passed;3100 browser verified selector absent on all three routes. No data/backend changes or delegation.
+
 ## ACCOUNTING-VOUCHER-LIST-1011 — PC-A — READY_FOR_REVIEW
 
 User screenshot734 follow-up; sole writer shared base-list UI/filter adapter/tests. Voucher list uses title/isDefault columns, inline filters, compact striped rows, repeated icon toolbar and50-row pagination. Default flag reads attributes.isDefault (true/string true); absent flag is false, never inferred from active status. No source/sample records copied into DB. Filter test10/10, lint/TypeScript and browser0→1 default-filter/clear checks passed on3100. No backend/schema/dependency/business-data changes or delegation.
+
 ## ACCOUNTING-ROUTE-TABS-1011 — PC-A — READY_FOR_REVIEW
 
 User screenshot735 route-tab request; sole writer accounting navigation wrapper/new route-tabs component. RTL closable tabs above content, route deduplication, current highlighting, adjacent fallback on active close, home plus action and sessionStorage restoration. Only known authorized accounting routes retained, titles derived from navigation, current book query retained. React external-store subscription used; scoped lint/TypeScript/diff checks passed.3100 browser verified three routes, switching, close-active fallback and reload restoration. Navigation tabs only: forms still remount and unsaved form drafts are not preserved, disclosed to user. No backend/schema/dependency/data changes or delegation.
+
 ## ACCOUNTING-CHART-TREE-1011 — PC-A — READY_FOR_REVIEW
 
 User screenshot737 tree and actual13-group request; sole writer chart tree/new component and chart editor layout. Right-side compact real account tree, collapse controls, search/results and blank detail area until selection/new. Existing groups outside reference codes remain accessible. Source code11 conflicted with protected parent GENERAL11; user explicitly chose new book instead of changing old hierarchy. Created local isolated book REF737 / bba7b2bb-178e-47fa-938b-c22afba11737 titled دفتر کل ساختار حساب and13 GROUP accounts11,12,21,22,31,51,61,62,63,81,91,92,93 through authenticated API commands. Old book preserved; no Rahkaran writes. Debit/credit defaults use conventional account category; performance/closing debit and temporary, adjustable before use. API readback count13/code/title/level verified; scoped lint/TypeScript passed; browser selected group11 and search انتظامی returned91/92. No schema/dependency changes or delegation.
+
 ## ACCOUNTING-ALL-BOOK-SELECTOR-1011 — PC-A — READY_FOR_REVIEW
 
 User explicitly requested removal of book dropdown everywhere in Accounting. Sole-writer deleted shared accounting-workspace selector markup, preserving URL/current book state and authorized reads. No data changes, delegation or new selection behavior.
+
 ## ACCOUNTING-CURRENT-ASSETS-1011 — PC-A — READY_FOR_REVIEW
 
 User screenshot738 actual child-account continuation: created5 GENERAL accounts1110/1112/1113/1119/1120 under existing GROUP11 in authorized local REF737 book through guarded API, debit/permanent defaults. Verified readback code/title/parent/level and browser expanded all five. Data-only local task; no source code changes, old book/Rahkaran writes or delegation.
@@ -6255,3 +6298,381 @@ Completed: dedicated three-level/type grid with explicit double-click and keyboa
 ## ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 — PC-A — IN_PROGRESS
 
 User explicitly authorizes push, develop merge and deployment of the entire accounting/correspondence candidate to the existing rubi Compose project. Sole writer, no delegation. Reserve integration conflict resolution, affected Finance/navigation/contracts/schema merges, Compose runtime configuration and bounded status docs. Preserve other-PC changes and existing operational data; use backups before additive migrations/import. Resolve exact-head CI failures before merge. Existing accounting worktree remains source; a clean runtime checkout will serve merged develop. Future accounting changes target rubi Compose (3100/4192), not separate4217 preview. No destructive migration or dependency change planned.
+
+## FINANCE-INBOX-REDESIGN-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; independent branch from latest origin/develop. Reserve Finance inbox live presentation, Finance request inbox wrapper only, followup saved-view display switch, local CSS and focused render/API/filter/delivery regressions, own docs. Remove branch/person/due filters and saved-view/global transaction-history UI; retain scoped per-request payments, manager settings and financial operations. Compact light cyan reference styling and labelled responsive filters; search uses existing backend query. No API/schema/dependency/IAM/runtime changes. Prior Finance workflow reservation released with merged candidate; no overlapping source lock. No new merge authorization is inferred from this request.
+
+FINANCE-INBOX-REDESIGN-1007 candidate: focused Finance12 tests and scoped ESLint pass. Rebuilt shared contracts after stale generated Marketing/purchase types blocked local typecheck; local translation tests hit host-load timeouts. Full clean CI typecheck/test/build is required. Source locks release with the committed review candidate; no runtime rollout or authenticated browser test claimed.
+
+FINANCE-INBOX-REDESIGN-1007 CI repair: reserve existing component-contract title assertion to match the new inbox header. Clean CI quality/build/PostgreSQL gates passed; full tests exposed only this stale display expectation. Local refreshed-contract typecheck passed.
+
+## SALES-CHEQUE-CALCULATOR-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-cheque-calculator-1007 from origin/develop@9951a2fd. Reserve Sales price/payment wizard, draft restoration, public payment-term contract/helper, API domain/repository/presenter and print projections/tests, additive English display entries and bounded docs. Producer Sales and consumer Sales Web ship optional version1 CASH/CHECK terms together; Finance continues consuming canonical price components/payments unchanged. 5% simple monthly fee on unpaid principal, minimum30% down payment,3/6/9/12 months, first monthly due defaults to travel date plus one Gregorian calendar month; exact decimal sums and monthly clamp preserve currencies separately. Sole Migration Owner/schema lock PC-A for one nullable SalesContract paymentTerms JSON field, no historical backfill; prior Marketing migration/source locks released and no active overlapping target lock. No dependency/version lockfile changes, operational writes or live runtime rollout. User explicitly authorizes push and develop merge after verification.
+
+Verification: Contracts112 tests, Sales API109 tests and Sales Web326 tests pass (one existing rendering timeout passed on isolated retry). Affected lint/typechecks, schema generation/format, API build and Web56-route production build pass. Source/schema/Migration locks RELEASED with frozen candidate; exact-head CI gates explicitly authorized develop merge. Additive migration has not been deployed locally; no historical/operational data or local runtime changed.
+
+## INTERNATIONAL-TRAVEL-DATES-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; codex/pc-a-international-travel-dates-1007 from origin/develop@9951a2fd. Reserve Sales route-calendar policy, contract travel date consumers/flight editors, Reservations form/voucher date projection and shared flight-ticket display date formatter with regressions; own docs. Explicit Gregorian output calendar and canonical saved voucher dates formatted consistently for preview/PDF. Foreign endpoint selects Gregorian default while users can switch calendar and saved ISO values stay unchanged. No schema/API/dependency/IAM/runtime/data changes; prior Sales presentation locks released. User explicitly authorizes develop merge after checks.
+
+INTERNATIONAL-TRAVEL-DATES-1007 candidate:69 focused route/date/output tests and scoped ESLint pass. Existing floating-flight editor regressions also passed in the initial63-test set. Full Web typecheck/build and clean final-commit CI are required before user-authorized merge. Bounded source locks release with candidate; no operational data/runtime changes or authenticated browser submit claimed.
+
+## JAHAN-DOCUMENT-BRANDING-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; reserve own-company JAHAN_BASTAN travel/contract document branding paths, exported template issuer copy, one transparent supplied-logo asset and focused branding/export tests plus bounded status docs. Preserve other company and agency brands. User authorizes develop merge. No overlapping active target lock; no schema/dependency/migration/operational changes.
+Scope additionally reserves Legal Entities display-brand mapping and shared flight-ticket presentation plus reservation contact-footer helper/consumers. Current released candidates have no overlapping lock. New Jahan logo is a sibling asset, preserving old assets and other company/custom-agency output behavior.
+Scope also reserves the existing Jahan Bastan English brand-name entry in the Web/API/offline catalogues so localization retains the company name instead of translating its literal meaning.
+
+Candidate reuses company/workflow snapshots and existing private export authorization. Added company-specific preview/PDF download regressions, transparent RGBA asset and color-preserving Jahan styles. Four synthetic A4 samples visually checked; initial focused78 tests and refreshed44 tests pass. Scoped lint/typecheck, final targeted checks and exact-head full quality/test/build/PostgreSQL CI gate authorized merge. Bounded source locks release with candidate. No schema, migration, operational data write or local rollout.
+
+SALES-CHEQUE-CALCULATOR-1007 final policy repair: re-reserve own Sales service/payment-mode guards, focused service regression tests and bounded display entries. Reject clearing persisted terms to bypass cheque policy and reject adding a cheque to a recorded cash sale; legacy null-term contracts stay supported. No new migration/dependency/runtime scope.
+
+Final policy repair verified: all112 Sales API tests, scoped lint and API typecheck pass; persisted sale type cannot be cleared and recorded cash sales reject new cheque payments. Legacy null-term cheque payments remain supported. Bounded correction locks RELEASED with frozen final candidate; exact-head CI gates merge.
+
+SALES-CHEQUE-CALCULATOR-1007 CI repair: reserve only own new labels in Web/API English display catalogues and own service-test formatting. Full production/migration gates passed; CI identified eight missing print/UI translation fragments and a non-idempotent first formatter pass on the new test. No business/schema/dependency changes.
+
+CI repair verified: English coverage3 tests and stable formatting checks pass. Eight new print/UI translation fragments are mapped consistently; the service regression test is formatter-idempotent. Correction display/test locks RELEASED with final candidate. Exact-head CI still gates merge.
+
+## HOTEL-MANUAL-COEFFICIENTS-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-manual-coefficients-1008 from origin/develop. User authorizes replacement manual hotel UI, composition coefficients, per-room bases, purchase/sale tables and selected-composition sale-only adjustments, plus develop merge. User confirms removal only of legacy manual table/factors, NOT Nora/imported rates. Reserve Reservations manual editor/model/tests, pack workspace and existing-pack browser/tests, API occupancy validation/persistence/tests, additive package-pricing occupancy metadata and pure Decimal-string calculation contract/tests; Sales consumer opts into sale quote while purchase/capacity consumers retain purchase default. Persist metadata inside existing immutable occupancy JSON, no schema/migration/dependency lock. Producer Reservations and consumers Sales/Reservations are PC-A; additive v1 fields optional for imported/legacy compatibility. Shared i18n catalogues/generator outputs reserved only for new visible strings. Preserve existing CAS, replay, scope, audit and imported/history data. Old manual coefficients are not converted into new prices; replacement requires explicit version save, not live DB deletion/deploy. No active overlapping source lock found. Owner explicitly confirms adjustments relative to PURCHASE, not current sale; selected sale rules replace prior markup rather than compound it. Bounded DECISIONS/DATA_MODEL/task/status entries reserved.
+
+Verification: Web/Sales/hotel-rate/English464 passed, one existing skip; API Reservations/Sales315 passed, seven opt-in skips; Contracts120 passed. Scoped lint/format, Web/API typechecks and production builds (56 Web routes) pass; stale local Database generated declarations were refreshed without connecting to a database. A shared synthetic fixture mutation was fixed and the concurrency-induced existing test timeout passed on rerun. Exact-head CI after latest develop integration gates authorized merge. No authenticated browser/runtime/operational DB or historical deletion. Bounded source/shared locks release with this candidate.
+
+## JSX-STATIC-CHILDREN-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-jsx-static-children-1008 from latest origin/develop. Reserve shared Web i18n JSX runtime/development adapter, focused regression tests and own status docs. Prior English runtime locks released; no active overlap. Preserve React static-child validation and development metadata through localization, without masking real dynamic-list key errors. No API/schema/dependency/data/runtime changes. User requests correction; merge authorization is not inferred for this new task.
+
+Reserve bounded hotfix rollout to the running _runtime-develop-1004 i18n adapter after checking both target files are tracked-clean; no listener, data, environment or other source change.
+
+JSX-STATIC-CHILDREN-1008: nine targeted tests pass and local login returns HTTP200 after bounded two-file hotfix. No other runtime files or data changed; candidate locks release at commit. Local clean-generated Contracts build refreshed unchanged types before final Web validation.
+
+JSX-STATIC-CHILDREN-1008 — READY_FOR_REVIEW:9 focused tests, scoped ESLint/formatting and refreshed Web typecheck pass. Local runtime adapter hotfix serves login HTTP200. Initial local build used stale generated Contracts declarations; regenerated unchanged output and repeated build. No merge performed; source locks released with review candidate.
+
+JSX-STATIC-CHILDREN-1008 follow-up: reserve bounded root workspace i18n runtime hotfix (both targets tracked-clean). Two simultaneous3100 listeners found: root next dev on IPv6 localhost, separate _runtime-develop-1004 next start on IPv4. Previous hotfix updated only the latter's source. Apply the validated two-file fix to root dev source; preserve existing next-env and all other edits, listeners and data. Include loading-screen static-sibling regression in the same PR.
+
+## FINANCE-INBOX-REQUESTS-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-finance-inbox-requests-1008` from latest `origin/develop@d81cf611`. Reserve the Finance inbox presentation in `finance-inbox-live-workspace.tsx`, its module CSS, the existing component-contract title assertion and bounded task/status documentation. Remove the «جریان کارتابل بر اساس واحد» source-summary chart from the Finance inbox. Redesign the request list and selected-request details as a readable full-width vertical flow; do not place the action/details form beside the request list. Preserve request selection, filters/pagination, payment/delivery/account actions, accessibility and responsive behavior. No API/schema/migration/dependency/IAM or operational runtime/data changes. Prior FINANCE-INBOX-REDESIGN-1007 source locks are released with its frozen candidate; no active overlap in these files.
+
+Verification: scoped ESLint and Prettier pass. Web typecheck was attempted but the worktree resolves shared @nora/contracts to stale generated output from the primary checkout, causing unrelated missing-export errors across Marketing, Reservations and Ticket Purchases; no source error was reported in the changed component. Tests and production build were not run. No schema, migration, API, dependency, permission or operational runtime/data changes. No develop merge authorization in this request.
+
+## PURCHASE-DASHBOARD-TRANSFERS-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; codex/pc-a-purchase-dashboard-transfers-1008 from origin/develop@d81cf611. Reserve Reservations-owned purchase hub filters/dashboard/transfer presentation, bounded purchase inbox SQL/service read projections/tests and existing hotel-transfer purchase editor/tests; own docs and additive English/offline catalogue entries. Prior purchase hub/query locks released; no active overlapping target lock. Producer Reservations adds optional summary and grouped covered service keys to existing purchase inbox response; consumer Web ships together and retains legacy response fallback. Group before pagination and aggregate before status filter within authorized branch/category/search/date scope. Preserve canonical covered-key purchases, independent brokers, financial payment lifecycle, CAS/idempotency and exact money. No Procurement-owned writes, schema/migration/dependency/data/runtime changes. User explicitly authorizes develop merge after checks.
+
+PURCHASE-DASHBOARD-TRANSFERS-1008 validation:32 Web,34 API focused tests and8 opt-in temporary PostgreSQL query tests pass. Grouped pair is counted once across pagination; newer separate broker revisions replace stale combined grouping. Dashboard uses total query independent of status/page; no false zero on missing legacy metadata. Existing atomic batch/idempotency/CAS and Finance lifecycle retained. Generated local Prisma/Contracts outputs refresh unchanged schema before final typechecks; no migration/data/runtime mutation. Source locks release with the review candidate; exact-head CI gates explicitly authorized develop merge.
+
+## HOTEL-TABLE-REDESIGN-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-table-redesign-1008 from origin/develop@7065f335. Owner explicitly rejects the prior crowded manual UI and authorizes complete table-first redesign and CI-gated develop merge. Reserve only Reservations hotel packs workspace/manual hotel panel/scoped CSS and regressions, own task/status records and bounded new-label i18n catalogues. Country/city/hotel sequential selector; one hotel-wide composition coefficient table; independent room bases; purchase derived exactly; inline individual sale edits and contextual bulk sale-only adjustments relative to purchase. Preserve public API/CAS/permission and imported-rate capability, no dependency/schema change planned. Both previous feature/rollout locks released; unrelated JSX/other modules are not modified. New Pack must visibly open the manual editor rather than reset a still-collapsed details element. Owner explicitly confirms old-rate cleanup in3210 AND3100, followed by separate approval to remove the single dependent package-pricing draft/adjustment per database after backup. Scoped custom-format backups verified; deletion completed transactionally, with all251 unrelated tables and9 contracts per environment retaining exact fingerprints. Original preview database, Master Data and all main runtime processes remain unchanged. Only the established Web3210 preview rolls out after verification; no credential changes or automatic data wipe. Local636 Sales/Reservations tests pass,3 existing skips; lint/typecheck/build pass. Bounded source locks release at candidate freeze; latest develop integration and exact-head full CI gate merge. Delivery: docs/tasks/HOTEL-TABLE-REDESIGN-1008.md.
+
+FINANCE-INBOX-REQUESTS-1008 follow-up: user explicitly authorizes develop merge and local update. Reserve own two missing English display labels; retain both append-only assignment sections during develop integration.
+
+## PACKAGE-PRICE-FIELDS-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-package-price-fields-1008 from origin/develop@7065f335. Owner explicitly requests removing pricing overview/instruction blocks and editable/removable default plus custom monetary fields, and develop merge after verification. Reserve Package Pricing Web/API/math/contracts/tests and bounded opt-in compact TourWorkspace presentation (other callers unchanged), English catalogues/derived sync and own docs. Producer Package Pricing API and consumer Web ship additive optional priceFields v1 together; omitted legacy payload preserves existing fields, null historical rows restore four defaults, explicit [] stays empty. Sole Migration Owner/schema lock PC-A/PACKAGE-PRICE-FIELDS-1008 for nullable priceFields JSON in draft/publication only; previous migration owners explicitly released. Decimal strings validated and exact per-currency arithmetic; immutable historical publications, maker/checker, branch scope, CAS and public module boundaries retained. Custom fields add a fixed amount per room package; default adult/child/business and commission meanings retained even when labels edited. No dependency/lockfile, operational migration/data or runtime changes. No active overlapping target reservation found. User authorizes push/PR/develop merge after checks.
+
+PACKAGE-PRICE-FIELDS-1008 verification: Contracts8/Web47/API30 focused tests, affected lint/typechecks, schema format/generation passed. Source/schema/Migration/shared-contract/catalogue locks RELEASED with frozen review candidate. Production builds and complete exact-head CI, including PostgreSQL migration/seed, gate the explicitly authorized develop merge; local temporary PostgreSQL probe timed out waiting for Docker. No operational migration/data/runtime changes.
+
+## TIME-24H-PICKER-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-24hour-time-picker-1008 from latest origin/develop. Reserve shared Web time picker/Input/DatePicker presentation and focused tests, ticket date-picker consumers, display-only DateTimeFormat options across Web/API exports and bounded docs. User explicitly authorizes project-wide 24-hour UI and develop merge. PC-B module touches limited to display formatter options/native-time replacement, preserving all workflow/data ownership; no active overlapping time control lock. Preserve UTC/timezones/canonical HH:mm values, validation, names/refs/events and dates. No schema/migration/dependency/API contract change.
+
+TIME-24H-PICKER-1008 scope also reserves two additive English display entries and HR/Customer Affairs PDF timestamp-only formatting; prior catalogue locks are released. Source locks RELEASED with review candidate; no operational runtime/data writes.
+
+TIME-24H-PICKER-1008 verification:15 initial time/date/localization assertions and49 HR/time/translation regressions passed (one host-load HR timeout passed with15000ms runner allowance). Web typecheck passed with temporary contracts-source alias; no source or dependency versions modified for that alias. Scoped Web/API lint and exact-head CI production builds gate merge. No migration.
+
+## PACKAGE-HOTEL-TABLE-GENERATOR-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-package-hotel-table-generator-1008 from origin/develop@ce960122. Owner requests compact hotel-selected SGL/DBL/child-with-bed pricing, cheapest valid room type, direct native generator template/export and develop merge. Owner confirms per-person prices and child from difference of room tariffs. Reserve Package Pricing UI/API/shared pure selection/calculation/contracts/tests, bounded SourcePackageGenerator and same-origin standalone app bridge; translated labels and own docs. Sole Migration Owner/schema lock PC-A for nullable selectedHotelRateIds JSON on draft/publication, after prior owner release. Optional v1 selectedHotelRateIds opts into new table; omitted legacy drafts/publications remain unchanged. Producer Package Pricing and Web/native generator consumers coordinated in this slice; generator receives sale-only in-memory data through origin/source-checked postMessage, no credentials/costs/storage. Cheapest comparisons require same currency/board; exact occupancy quotes cover every night, child incremental tariffs use same room type, missing/ambiguous prices stay unavailable. Preserve maker/checker, CAS, source/branch checks and immutable history. No dependencies, operational DB migration/data/runtime changes. No active overlapping source reservation found. User explicitly authorizes develop merge after tests/full CI.
+
+PACKAGE-HOTEL-TABLE-GENERATOR-1008 review candidate:24 Contracts/43 Web/33 API tests and scoped lint/typechecks/builds pass; schema formatted/generated. Bounded schema/shared/central locks release with this candidate; no operational migration. Exact-head CI gates human-authorized develop merge.
+
+## HOTEL-OCCUPANCY-LABEL-LTR-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-occupancy-label-ltr-1008 from origin/develop. Reserve only manual-hotel-panel.tsx and manual-tables.module.css plus own status records. Prior HOTEL-TABLE-REDESIGN source locks released at review freeze. User requests LTR/left-aligned English adult/child compositions and explicitly authorizes develop merge. Preserve Persian labels, counts, calculations, API and data; no schema, dependencies or runtime changes.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008: eight focused tests and scoped lint pass; source locks released at review freeze. Web typecheck/build and exact-head CI gate explicitly authorized develop merge.
+
+## PRICE-FIELD-PAIRS-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-price-field-pairs-1008 from develop c2764fbf. Reserve only TourPriceFields presentation and own status/assignment records. User requests two price-field editors per row and red trash icon instead of delete text. Preserve labels, amount/currency editing, commission modes, stable keys and delete callbacks. No schema/API/contracts/dependencies or operational runtime/data change. Prior package locks released; no overlapping active component reservation. Push review PR to develop after scoped lint, existing targeted regression, typecheck and build gates; no new merge authorization inferred.
+
+## HOTEL-SHARED-PERIODS-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-shared-periods-1008 from origin/develop. Reserve Reservations hotel-rate pack editor/browser/read contracts and tests, Package Pricing source selection/shared nightly calculation/API/Web/tests and bounded translated labels/docs. User requests compact exact-period editing, city/date coverage selection and shared-period package pricing across independently saved hotel periods, and explicitly authorizes develop merge. Existing hotel/package source locks released with frozen candidates; no active overlap. Producer Reservations and consumer Package Pricing ship optional v1 stay-period selection together with legacy payload compatibility. Preserve branch permissions, immutable revisions, CAS, maker/checker and Decimal-string calculations; require coverage for every checkout-exclusive night, consistent hotel/broker/room/currency/board, never average distinct hotels or unweighted date ranges. No dependency, operational data cleanup or runtime rollout. Schema/migration not reserved unless inspection proves necessary.
+
+HOTEL-SHARED-PERIODS-1008 schema reservation: sole Migration Owner PC-A for additive ReservationHotelRatePackSource join linking a derived shared pack to immutable source batches using real restrictive FKs. Prior migration owners explicitly released. Shared packs are immutable source snapshots, excluded from future source aggregation; original periods remain independently versioned/editable. Existing package batch FK and legacy calculations remain compatible. Reservation periods read/create endpoints and optional sharedPeriod projection ship with Web consumer; shared creation validates selected source batch IDs against current versions, permissions, full-night coverage and replay key before atomic materialization.
+
+HOTEL-SHARED-PERIODS-1008 verification:13 pure pricing/coverage,28 API permission/version/replay/persistence and16 existing Web editor/package regressions pass;7 new UI/package/English checks pass. Schema format and isolated Prisma generation succeed; Web/API typechecks and scoped lint plus exact-head CI builds/migration gate merge. Source/shared/schema/Migration/catalogue locks release with frozen review candidate. No operational migration, local runtime deployment or data deletion. Delivery in docs/tasks/HOTEL-SHARED-PERIODS-1008.md.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 follow-up reservation: same branch/PR749, user additionally requests automatic default selection of priced combinations and compact two-column room tables. Reserve same panel/CSS plus focused manual interaction test; preserve user deselection and unpriced-row exclusion, no purchase/sale arithmetic or persistence changes. User explicitly authorizes combined develop merge.
+
+HOTEL-OCCUPANCY-LABEL-LTR-1008 combined review freeze:18 focused tests and scoped lint pass. Follow-up source locks RELEASED; Web typecheck/build and exact-head CI gate authorized develop merge. No runtime rollout.
+
+## IMPORTANT-NOTES-1009 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-important-notes-1009` from `origin/develop@6b436312`. User authorizes the bounded Workbench presentation change and develop merge: rename Stars to Important notes and place it immediately after Notes. Reserve Workbench model/tab icon ordering, note section copy, additive English catalogue labels and own status entries. Existing older Workbench runtime/integration reservations do not cover this source presentation change; preserve their runtime. No API, schema, migration, dependency or data changes.
+
+Verification:18 existing Workbench tests, scoped ESLint, Web typecheck and offline catalogue consistency pass. Production build and exact-head CI gate the authorized develop merge; bounded source locks release with candidate.
+
+## RECEIVABLE-FILTERS-1009 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-receivable-filters-1009` from `origin/develop@4a30fa15`. Owner explicitly authorizes date-range/route/agency-or-person/date-basis filtering of Sales receivable card with polished UI and develop merge. Reserve Sales read endpoint/service/adapter and Web receivable card, focused tests, Customer-owned internal non-sensitive buyer-kind reference, additive Sales shared contract, English catalogue synchronization and own docs. Producer Sales, consumers Sales Web; additive endpoint preserves dashboard/list clients. Customer reference exposes only IDs/kinds for already-authorized contract buyers, no contacts. No schema/migration/dependency/runtime/operational writes. No active overlapping bounded source lock found; existing unrelated work retained.
+
+Verification:67 Sales/Customers API tests and23 Web/translation tests pass, scoped API/Web lint, both typechecks and API/Web production builds pass. Generated Prisma/dist were refreshed from unchanged schema locally; no database connection or write. Bounded source locks release with review candidate; full exact-head CI gates user-authorized develop merge. No authenticated runtime visual proof or local deployment claimed.
+
+## TICKET-PRICE-SECTIONS-1009 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-ticket-price-sections-1009 from origin/develop@d7ad461c. Reserve Sales ticket-prices workspace/rendering tests, module-local target CSS, bounded English labels and own status docs. Separate round-trip and one-way price rows into labelled sections with independent filtered counts; increase spacing and move sales targets below flight/base controls. Existing filter/export, pair editing, commission copy and price writes remain unchanged. Earlier pricing locks released; no active overlapping target owner or local edits. No API/schema/migration/dependency/runtime/data changes. User explicitly authorizes develop merge after checks.
+
+Verification:15 focused pricing/localization tests, scoped ESLint and Web typecheck pass. Production build and exact-head CI gate merge. Source locks release with frozen candidate; no authenticated browser or runtime rollout claimed.
+
+## FINANCE-DELIVERY-MENU-1009 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-finance-delivery-menu-1009 from origin/develop@e9555656. Reserve Finance request-page composition and new delivery page, navigation/messages/sidebar icons/tests, bounded IAM access-screen registry and own docs. Owner explicitly requests standalone delivery under Finance, removal from request inbox and develop merge. Existing public Finance delivery API and all approval/branch permissions unchanged. Additive IAM screen producer Contracts, consumers existing Web/API access tree; existing unmanaged finance access remains, managed users select the new screen explicitly. No grants, schema/migration/dependency/runtime/data changes. Earlier navigation/Finance source locks released; unrelated export/runtime work preserved.
+
+Verification:31 Web navigation/Finance/localization tests and11 IAM tests pass; scoped Web/Contracts lint, shared build and Web typecheck pass. Production build and exact-head CI gate merge. Bounded source locks release at frozen candidate; managed user profiles require explicit finance.delivery screen selection, with no automatic grant or runtime rollout.
+
+## PURCHASE-SUPPLIERS-ENTRY-1009 — PC-A — READY_FOR_REVIEW
+
+CI follow-up reserves only the affected breadcrumb expectation in navigation.spec.ts: section title now excludes suppliers. Full Web CI otherwise passed2733 tests; update the old expected title and re-run exact-head gates.
+
+Bounded shared IAM screen lock additionally reserved: procurement.suppliers at existing /purchases?section=suppliers. Existing route guard rejects unregistered section queries; additive Contracts registry producer and Web/API access consumers preserve deny-by-default managed profiles and require explicit screen selection. No actual grant or Procurement business change.
+
+Verification:16 Web hub/section/localization and11 IAM tests pass; scoped lint, shared build and Web typecheck pass. Production build and exact-head CI gate owner-authorized merge. Bounded source locks released with review candidate; no runtime deployment or data mutations.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-purchase-suppliers-entry-1009 from origin/develop@92b0ebc6. Owner requests supplier access from Purchasing & Supply and removal from Master Data navigation, with develop merge. Reserve only Reservations purchase hub supplier entry/test and bounded Master Data section presentation/test and labels/docs. Reuse existing Procurement supplier screen at /purchases?section=suppliers through access-aware link; PC-B retains supplier data/forms/API ownership. No changes to Procurement implementation, references, permissions, grants, tables or records. Prior supplier source locks released, unrelated owners preserved. No schema/migration/dependency/runtime mutation.
+
+## SALES-RESERVATIONS-FINANCE-QA-1009 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-reservations-finance-qa-1009 from origin/develop@f91a3801. User requests broad Sales/Reservations regression testing, reproducible bug fixes and Finance inbox redesign with click-to-open viewport-safe request forms, then develop merge. Reserve affected Sales/Reservations/Finance tests and scoped fixes after reproduction, Finance inbox workspace/module CSS and own docs/catalogues. No migration/dependency/API permission/business-rule bypass or real financial/contract mutations. Earlier bounded source locks released; preserve unrelated module/runtime owners. Automated suites first; browser/persistence evidence only when actually performed in a safe test environment, never claim exhaustive absence of defects.
+Verification: Web domain708 pass/4 skipped plus final-step regression; API433 pass/15 skipped and isolated PostgreSQL finance8 pass. Web lint/typecheck/build/localization pass. Bounded source locks released for review. No authenticated browser or persistent full-access QA environment completion claim; no operational rollout. Exact-head CI gates user-authorized develop merge.
+
+## USER-ACCESS-SAVE-FIX-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-user-access-save-fix` from `origin/develop@42d869d5`. User reports that saving per-user access in System Management fails. Reproduced as HTTP 500 on `PATCH /iam/users/:id/access` for an existing personal-access profile. Reserve only the IAM access update transaction, its focused regression tests, and this work-item entry. Preserve user credentials, current grants, branches, administrator protection and audit behavior. No schema/migration, dependency/lockfile, shared contract, seed, or unrelated runtime/data change. The user explicitly requests the repair and local rollout; prior IAM UI/access locks are released and no active overlapping target lock was found.
+
+Root cause was Prisma 7 rejecting the PostgreSQL advisory-lock result because `pg_advisory_xact_lock` returns `void`. Both IAM administrator-membership lock sites now cast that result to text, matching the established repository pattern. The focused IAM suite (10 tests), scoped ESLint, API typecheck and API build pass. Local API port 4000 was rebuilt/restarted and an authenticated no-op save for `sadaf` returned 200 while preserving all 493 effective grants and the central branch. No credentials or access choices were changed. Bounded source lock is released with the review candidate.
+
+## SALES-ACCESS-REFERENCE-DEPENDENCY-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-user-access-save-fix` follow-up requested by the user after access customization. All eight named local users retain the Sales new-contract screen, while six profiles lost `master_data.read`; the Sales contract form therefore emits eight expected 403 reference failures and a misleading partial-load alert. Reserve the bounded IAM managed-profile dependency rule, focused regression, this entry, and safe reconciliation of only those local profiles. When `sales.new-contract` is visible, retain the non-sensitive `master_data.read` dependency needed for countries, cities, hotels, room types, visa services, banks, currencies and airlines. Preserve every other selected screen, permission, branch and credential. No schema/migration, dependency/lockfile, shared contract or seed change.
+
+Implemented the managed-profile dependency and reconciled the eight requested local accounts by resaving their existing profiles; no unrelated screen, permission, branch or credential was changed. All eight accounts now retain `master_data.read`, and authenticated requests for countries, cities, hotels, room types, visa services, banks, currencies and airlines pass for every account. Focused IAM tests (11), scoped ESLint, API typecheck and API build pass; rebuilt API port 4000 is healthy. Bounded source lock is released with the review candidate.
+
+## WORKBENCH-MANAGED-VISIBILITY-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; same user-authorized follow-up branch. The eight managed profiles already contain `workbench.home` and their selected Workbench tabs, but route visibility rejects them because the Workbench group has no assignable native `workbench.*`/`messaging.*` permission in the catalog. Reserve only the shared IAM access-policy special case and focused Web regression plus this entry. For owner-scoped Workbench only, an explicitly selected managed screen establishes group visibility; exact per-screen checks remain mandatory. Finance and every other operational group continue to require native grants. No API, schema/migration, seed, dependency/lockfile or account mutation.
+
+Implemented and rebuilt the shared access policy. Focused Web IAM policy tests pass (10/10), scoped ESLint and Contracts/Web typechecks pass. The production-shaped built contract evaluated `/workbench` as visible for all eight requested accounts from their live effective permissions, and Web port 3000 returns 200. Unselected Workbench tabs remain denied, and the existing regression confirms Finance still cannot be opened from a screen tick without its native grant. Bounded shared-policy lock is released with the review candidate.
+
+## TICKET-LAN-UUID-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; same user-authorized local follow-up branch. Reproduce `crypto.randomUUID is not a function` while defining tickets from the HTTP LAN origin. Reserve a small shared Web UUID compatibility helper, Ticket Catalog creation/scheduling/publish/tour call sites, focused tests and this entry. Prefer native `randomUUID`, fall back to cryptographic `getRandomValues`, and use a clearly non-security time/random fallback only for request deduplication when neither API exists. Preserve ticket validation, idempotency semantics, persisted IDs and APIs. No schema/migration, dependency/lockfile, permission, seed or operational ticket mutation.
+
+Implemented the LAN-safe UUID helper across Ticket Catalog definition, round-trip grouping, schedule batches, temporary holds, published offers and tour requests. A focused test simulates an HTTP browser without `crypto.randomUUID`; 185 Ticket Catalog/Web tests pass with one intentional skip, plus scoped ESLint and Web typecheck. Local Web port 3000 is healthy and the protected ticket route redirects unauthenticated requests normally. No ticket record was created or changed. Bounded source lock is released with the review candidate.
+
+Runtime follow-up: other LAN clients still received a stale Turbopack bundle containing the old direct call. The old generated caches were moved recoverably outside the Web source tree, Web 3000 was restarted on `0.0.0.0`, and an authenticated request through `http://192.168.8.89:3000/ticket-management` now returns 200. The freshly served Ticket Catalog bundle contains the compatibility helper and zero old `ticket-* + crypto.randomUUID` call sites.
+
+## AGENCY-REGISTRATION-XLSX-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; same user-authorized local follow-up branch. User reports that the agency registration form does not work and requests agency import from a matching Excel template plus delivery of that template. Reserve Organizations registration wizard, its existing bounded XLSX import/template path, focused tests and own status/docs. Reproduce and fix the LAN-browser failure without weakening validation; preserve existing organization identities, role boundaries and no-overwrite import semantics. Extend the import only to fields that can be safely created without interactive OTP/contract/document steps. No schema/migration, dependency/lockfile, shared contract or unrelated operational data change.
+
+Root cause was the registration wizard's direct `crypto.randomUUID()` calls on non-secure LAN origins. The shared LAN-safe UUID helper now covers registration and agreement request identities. The agency XLSX path accepts and persists the optional 11-digit company national ID, keeps the server-generated code/no-overwrite rules, and its downloadable template now matches the safe identity fields of the form. A polished 200-row template was generated and visually verified. 31 focused Web tests, scoped ESLint, Web typecheck and production build pass. No organization was created or changed during verification. Web port 3000 was restarted on `0.0.0.0`; both loopback and LAN login routes return 200.
+
+## TICKET-PAST-DATE-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-past-date-1010` from `origin/develop@42d869d5`. Owner explicitly requests a «تاریخ گذشته» checkbox in Ticket Definition, allowing non-future dates only when selected, followed by push and develop merge for other systems. Reserve Ticket Catalog flight schedule/advanced form, publication guard, focused Web tests and bounded top status entries. Historical offers remain non-saleable through existing expiry/status and Sales future-date filters; default creation continues requiring a future date. No API/schema/migration/dependency/permission/runtime or operational-data change. No active overlapping target lock found.
+
+Delivered the opt-in in both weekly-flight and advanced ticket-definition paths. The flag is submission-scoped and bypasses only the existing Web future-date publication guard; expired-offer pausing and future-only Sales queries remain unchanged. Focused Ticket Catalog tests: 21 passed. Web typecheck passed. Scoped ESLint reached only the pre-existing `react-hooks/exhaustive-deps` suppression in `ticket-workspace.tsx`, but the isolated dependency installation did not expose that configured plugin; no new lint diagnostic was reported. Bounded locks release with the commit; owner-authorized push/develop merge follows.
+
+## AGENCY-FULL-XLSX-IMPORT-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-user-access-save-fix` updated from current `origin/develop@552ed951`. User explicitly requests the delivered Persian agency template to tolerate header whitespace/language variants, create a complete new agency, expose every imported registration field in the existing edit experience, then push and merge to develop. Reserve Master Data organization identity/form/repository, Organizations XLSX parser/import/editor/wizard, focused API/Web tests, Prisma organization/contact fields, one additive migration and bounded status/data-model docs. Sole Migration Owner/schema lock = PC-B/AGENCY-FULL-XLSX-IMPORT-1010; HOTEL-SHARED-PERIODS-1008 explicitly records schema/Migration lock release with its frozen candidate, and no later active owner was found. Registration number, economic code and tourism-license number belong to Master Organization; CEO national ID belongs to the organization contact and remains protected like existing contact PII. Address uses canonical country/city references resolved from flexible Persian/English names. Existing organizations are never overwritten by import; OTP, agreements, documents and approval workflows stay interactive. No dependency/lockfile, credential, unrelated data or automatic operational import.
+
+Delivered against the user-supplied 7-column workbook while retaining the expanded
+11-column format. Additive migration, encrypted contact national ID, editable
+identity fields and contact/address creation are implemented. Bounded source and
+migration locks release with the review commit; full lint/build and exact-head CI
+gate the explicitly authorized merge.
+
+## AGENCY-XLSX-OPTIONAL-CONTACT-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-import-optional-fields` from
+`origin/develop@e1be00c0`. User supplied the filled seven-column agency workbook
+and requests direct import while keeping email and tourism-license number
+optional. Reserve the Organizations XLSX parser/import validation, import dialog
+copy, focused Web tests and bounded status docs. Accept the canonical template
+with blank optional values and compatible compact/expanded variants that omit
+either optional column; preserve all identity, duplicate, formula, size and
+write-safety checks. No schema/migration, API/shared contract, dependency,
+permission, operational import or runtime mutation.
+
+Delivered optional email and tourism-license values and compatible compact or
+expanded workbooks that omit either optional column. The supplied desktop
+workbook was inspected read-only and matches the canonical seven-column layout.
+Sixteen focused import/parser/localization tests, scoped lint, Contracts build
+and Web typecheck pass. Production build and exact-head CI remain review gates;
+no operational row was imported and no schema/migration/dependency changed.
+
+## AGENCY-XLSX-MAILTO-HYPERLINK-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-mailto-hyperlink-import` from
+`origin/develop@81b92d0e`. The user-supplied workbook is rejected because Excel
+automatically stores its email cell as an external `mailto:` hyperlink. Reserve
+only the Organizations XLSX relationship validator, focused regression tests and
+this status entry. Permit a strict email-only `mailto:` hyperlink relationship
+that the importer does not execute; continue rejecting formulas, macros, remote
+URLs, external workbooks and every other external relationship. No schema,
+migration, API/shared contract, dependency, permission, data import or runtime
+record mutation.
+
+Implemented a strict exception for Excel-generated email hyperlinks only. The
+supplied `mailto:golpham@gmail.com` relationship now passes both pre-parse and
+DOM validation, while web/file links, query-bearing mailto targets, formulas,
+macros and all other external relationships remain blocked. Fourteen focused
+XLSX/import tests, scoped ESLint, Web typecheck and production build pass. No
+agency record was imported or changed; bounded source lock is released with the
+review commit.
+
+## AGENCY-LICENSE-LABEL-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-license-label-1010` from
+`origin/develop@b778283b`. User requests the agency dossier edit experience to
+show «شماره مجوز» instead of tourism-specific wording. Reserve only the agency
+registration summary, Organizations master-data edit-field label, focused UI
+regression and this status entry. Keep the persisted
+`tourismLicenseNumber` field, validation, import headers and API contracts
+unchanged. No schema/migration, dependency, permission, data or runtime record
+mutation.
+
+Delivered the requested «شماره مجوز» label in both the agency dossier summary
+and its identity edit form while retaining the existing field and persistence
+contract. The focused registration-editor regression (2 tests), related Web
+tests (11 total), scoped ESLint and Web typecheck pass. No record or database
+value changed; bounded source lock is released with the review commit.
+
+## AGENCY-STEPWISE-EDIT-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; continue branch `codex/pc-b-agency-license-label-1010` from
+its reviewed label commit. User requests the agency pencil/edit action to open
+the same step-by-step registration wizard, prefilled with the selected agency,
+and persist changes to that dossier rather than creating duplicate records.
+Reserve Organizations cooperation wizard/workspace, cooperation save model and
+focused Web tests. Existing organization identity, first representative and
+primary address may be updated; optional agreement creation remains explicit.
+No schema/migration, dependency, shared contract, permission, operational data
+or runtime mutation.
+
+Delivered the five-step edit entry with identity prefill, guarded representative
+disclosure and primary-address hydration. Save updates the selected organization,
+existing representative and address, preserving protected values when unmasking
+is unavailable; it does not create duplicate records. Twenty-three focused tests,
+scoped ESLint and Web typecheck pass. Bounded source locks release with the review
+commit.
+
+## WORKBENCH-PERSIAN-MONTH-SALES-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-performance-routes-1010` from current `origin/develop`. Reserve Workbench performance API/Web, additive Workbench response contract, focused tests and bounded status docs. Show the signed-in user's confirmed sales for the current and previous Persian calendar months, per currency and route, with passenger counts and an honest comparison chart. Consume only the existing public SalesService list projection; Sales remains PC-A owned. Workbench API is producer and Workbench Web is consumer of the additive optional contract fields, so existing consumers remain compatible. No Sales module edit, schema/migration, dependency/lockfile, operational data or permission change. User explicitly authorized push and merge to develop; tests and exact-head CI gate the merge.
+
+Delivered: 9 focused API tests pass; scoped API/Web ESLint, Contracts/API/Web typechecks, and API/Web production builds pass. Workbench fields and central contract lock release with the committed review candidate. No live sales record was changed.
+
+CI follow-up: the full Web suite exposed missing English display strings for the new monthly card. Reserve the bounded shared i18n overrides and generated offline API/legacy catalogues for this same work item; the three i18n coverage tests now pass. No unrelated translation was changed. These i18n locks release with the next review commit.
+
+## WORKBENCH-IMPORTANT-DOCUMENTS-LABEL-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-important-documents-1010` from `origin/develop`. Reserve the Workbench favorites tab/visible document labels, focused Web i18n overrides, tests and bounded status docs. Rename the section to «مدارک مهم» without changing document favorite IDs, note pinning, permissions, backend, schema/migration, dependencies or operational data. No active overlapping target lock found. User authorizes push and merge to develop.
+
+Validation: 20 focused Web tests, scoped ESLint, Web typecheck and Web production build pass. No migration or dependency lock was needed.
+
+## TICKET-LOAD-DELETE-STATUS-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-load-delete-runtime-1010` from current `origin/develop`. Owner reports that whole-table load deletion still returns an error. Reserve only the Ticket Catalog logical-archive command, resize removal path, focused API tests and bounded status docs. Runtime diagnosis against the 18-row table shows PostgreSQL rejects the application-only `ARCHIVED` value because the authoritative status constraint permits `ACTIVE`, `PAUSED` and `EXPIRED`. Align both archive paths with the established duplicate-cleanup convention: write `PAUSED`, increment the optimistic version and record `ticket.offer.archived`; all list/search/sale consumers continue hiding archived rows by audit action. Preserve atomic all-or-nothing deletion, active-hold/tour guards, sold-row history, pricing/purchase/finance references and unrelated loads. No schema/migration/dependency/lockfile, physical deletion or operational-data mutation during verification. Owner's continuing request authorizes push and develop merge after exact-head checks.
+
+Verification: the exact 18-row production-shaped write path succeeds inside a deliberately rolled-back PostgreSQL transaction and all 18 rows remain active afterward. Focused revision tests23, Ticket Catalog API188/22 opt-in skips, scoped ESLint and API typecheck pass. API production build and exact-head CI gate the authorized merge; bounded locks release with the review candidate.
+
+## WORKBENCH-DAILY-ASSISTANT-NOTES-1010 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-ai-notes-1010` from `origin/develop`. Reserve only the Workbench Notes UI, a pure daily follow-up projection/helper and focused tests, Web i18n overrides and bounded status docs. The Web consumer reads existing owner-scoped Workbench notes/calendar and assigned Procurement follow-up APIs; it does not query other modules' tables or change their contracts. Suggestions refresh for the Tehran calendar day and may be explicitly copied into an ordinary personal note. No LLM provider, background job, schema/migration, dependency/lockfile, permissions or operational record changes. User authorized push and merge to develop.
+
+Validation: 8 focused Web tests, scoped ESLint, Web typecheck, Prettier and Web production build pass. Exact-head CI gates the authorized merge.
+
+CI integration follow-up: `develop` advanced with stepwise agency editing while this PR was in flight; its eight new Persian UI strings lacked English display translations and failed the combined Web i18n coverage gate. The already-reserved shared Web override catalogue now includes only those eight translations; Organizations source and behavior remain untouched. The final exact-head gate must rerun.
+
+## CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-chrome-local-login-1011` from
+`origin/develop@85dc15a4`. Chrome login reaches the local API successfully but
+loops back to Login when Web is opened with `localhost` while the configured API
+uses the LAN IPv4 host, because authentication cookies are host-scoped. Reserve
+only the Web local-runtime API hostname resolver, its focused tests and bounded
+status docs. Align loopback/private Web and API hosts while retaining configured
+ports and paths; remote API hosts remain unchanged. Update ignored local runtime
+CORS/dev-origin settings and restart the existing 3000/4000 listeners without
+changing user accounts, passwords, schema, migration, dependency or operational
+records.
+
+Delivered same-host resolution for loopback/private local runtimes and updated
+ignored local CORS/dev-origin settings. Twenty-four focused tests, scoped ESLint
+and Web typecheck pass. Live Demo authentication on localhost returns 200 with
+two cookies, Workbench accepts that session with 200, 127.0.0.1 CORS preflight
+returns 204 and LAN health returns 200. Bounded source locks release with the
+review commit.
+
+## AGENCY-PROFILE-LICENSE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; continue local review branch
+`codex/pc-b-chrome-local-login-1011` at `9796db2b`. User requests the agency
+«اطلاعات پایه و نقش‌ها» card to display the stored license number. Reserve only
+the Organizations corporate-profile identity summary, its focused regression and
+bounded status docs. Show `tourismLicenseNumber` only when the organization has
+the AGENCY role and use an explicit missing-value label. No API/schema/migration,
+dependency, permission, data or runtime-database mutation.
+
+Delivered the agency-only «شماره مجوز» row in «اطلاعات پایه و نقش‌ها», backed
+by the existing `tourismLicenseNumber` attribute. Missing values point users to
+«ویرایش اطلاعات». The focused Organizations regression (9 tests), scoped
+ESLint and Web typecheck pass. No API/schema/migration, dependency, permission
+or operational-data change. The bounded source locks release with the review
+commit.
+
+## AGENCY-COMMERCIAL-HEADER-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-commercial-header-actions-1011`
+from the current reviewed local agency profile branch. User requests the create
+actions in the agency «قرارداد و شرایط تجاری» subsections to appear beside the
+«نمای ۳۶۰ درجه» action. Reserve only the Organizations dossier header, agreement
+and agreed-rate panel presentation, a small local action-slot component, focused
+Web tests and bounded status docs. Preserve existing handlers, permission/loading
+guards, dialogs, exports, filters and row-level workflow actions. No API/schema/
+migration, dependency, permission or operational-data change.
+
+Delivered the primary create actions for framework contracts, agreed rates,
+discounts and commissions into the dossier banner beside «نمای ۳۶۰ درجه». The
+same handlers, disabled states and permission checks are rendered through a
+local header action slot; standalone panel reuse retains the original in-panel
+fallback. Twenty-one focused tests, scoped ESLint and Web typecheck pass. No
+API/schema/migration, dependency, permission or operational-data change. The
+bounded source locks release with the review commit.
+
+## TICKET-LOAD-ROW-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-row-actions-1011` from current `origin/develop`. Owner requests that enabling «تاریخ‌های معتبر» immediately show the valid load range, and that each load row expose only its own edit/delete actions instead of «مشاهده». Reserve Ticket Catalog Web flight-load grid/workspace, the existing single-offer archive/revise API client calls, focused tests and bounded status docs. Preserve the existing table capacity totals, whole-load actions, active-hold/tour protections, optimistic versions, sales/history and the existing company/legacy load scope. No API/schema/migration/dependency/operational-data change.
+
+Delivered: valid-date toggle now searches immediately using the computed inclusive current-to-latest range. Each row has an operation column with «ویرایش» opening the editable published-offer form and a confirmed «حذف» calling the single-offer archive route; the lower «مشاهده» action is removed. Ticket Catalog Web 202 tests (one existing skip), scoped ESLint, Web typecheck and 57-route production build pass. Capacity-total calculation remains unchanged. Push/merge and LAN runtime rollout require owner confirmation for this new slice.
+
+## TICKET-LOAD-ROW-ACTIONS-VISIBLE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-row-actions-visible-1011` from merged PR #774. The owner reports that the new per-row controls are not visible in the local Chrome layout and clarifies that «تاریخ‌های معتبر» must leave both date fields untouched while immediately showing every current load as its own table block. Reserve only Ticket Catalog load-grid filtering/grouping, action placement, selected-offer action composition, focused regressions and bounded status docs. Keep the existing single-row API behavior, whole-load actions and capacity calculations unchanged. No API/schema/migration/dependency/operational-data change.
+
+Delivered locally: the valid-date toggle now uses blank date bounds only in its search snapshot and never mutates either date input. Current offers are grouped by server `loadGroupId` and every group receives its own outbound/return table block and whole-load actions. The row operation column is beside selection, and selecting a row repeats its scoped edit/delete actions in the detail panel. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass; localhost and LAN both serve the rebuilt process with HTTP 200.
+
+## TICKET-LOAD-GROUP-TABLE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-load-group-table-1011` from merged PR #776. Owner clarifies that every form submission is one load and must render as exactly one multi-row table; five submissions must produce five tables, not separate outbound/return tables. Reserve only the Ticket Catalog load-table composition, focused regression and bounded status docs. Keep grouping on the server-issued `loadGroupId`, row actions, whole-load actions, filtering, capacity totals and API behavior unchanged. No API/schema/migration/dependency/operational-data change.
+
+Delivered: each `loadGroupId` renders exactly one full-width multi-row table. Outbound and return rows remain together and use the new «مسیر» column; whole-load actions and totals operate on the complete group. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass. The rebuilt localhost/LAN service runs on port 3000.

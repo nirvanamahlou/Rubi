@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { cn } from '@/lib/utils';
+import { TimePicker } from './time-picker';
 import {
   calendarMonthDays,
   calendarMonthLabel,
@@ -597,14 +598,13 @@ export function DatePicker({
                   >
                     {t('ساعت', 'Time')}
                   </label>
-                  <input
+                  <TimePicker
                     className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-surface px-2 text-center text-sm outline-none focus:border-primary focus:ring-2 focus:ring-ring/30"
                     id={`${id}-time`}
                     onChange={(event) => {
                       const date = selectedDate || toIsoDate(new Date());
                       emit(`${date}T${event.target.value}`);
                     }}
-                    type="time"
                     value={/T(\d{2}:\d{2})/.exec(currentValue)?.[1] ?? '00:00'}
                   />
                   <button

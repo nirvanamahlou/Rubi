@@ -36,6 +36,7 @@ const faDate = (value: unknown) =>
     ? new Intl.DateTimeFormat('fa-IR', {
         dateStyle: 'medium',
         timeStyle: 'short',
+        hourCycle: 'h23',
         timeZone: 'Asia/Tehran',
       }).format(new Date(String(value)))
     : '—';

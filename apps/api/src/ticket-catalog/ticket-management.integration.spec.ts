@@ -208,7 +208,7 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
         ?.remainingCapacity,
     ).toBe(58);
     await expect(service.archiveExpired(id, 4, actor)).rejects.toThrow(
-      'بلیت تعریف‌شده قابل حذف نیست',
+      'قابل حذف نیست',
     );
     await expect(
       service.revise(
@@ -243,10 +243,10 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
       (await service.managed(actor)).data.find((o) => o.id === id)
         ?.standaloneSalePrice?.amount,
     ).toBe('9600000');
-    await expect(service.archiveExpired(id, 4, actor)).rejects.toThrow(
-      'بلیت تعریف‌شده قابل حذف نیست',
-    );
-    expect((await service.managed(actor)).data).toHaveLength(10);
+    await expect(service.archiveExpired(id, 4, actor)).resolves.toEqual({
+      data: { id },
+    });
+    expect((await service.managed(actor)).data).toHaveLength(9);
     expect(
       await client.ticketOfferStandaloneSalePrice.count({
         where: { offerId: id },
@@ -316,10 +316,10 @@ describe.skipIf(!url)('ticket management PostgreSQL lifecycle', () => {
     await api
       .delete(endpoint + '/' + id)
       .send({ expectedVersion: 4 })
-      .expect(400);
+      .expect(200);
     expect(
       (await api.get(endpoint + '/management').expect(200)).body.data,
-    ).toHaveLength(before.body.data.length + 1);
+    ).toHaveLength(before.body.data.length);
   }, 60000);
   it('keeps expired nonarchived capacity visible in management history without exposing it to default future listings', async () => {
     const published = await service.publish(

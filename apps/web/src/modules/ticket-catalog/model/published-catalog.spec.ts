@@ -8,6 +8,8 @@ import {
   arrivalWallTimeAfterMidnight,
   catalogProductsFromOffers,
   catalogOffer,
+  publishedLoadGroup,
+  publishedLoadGroups,
   samePublishedFlight,
 } from './published-catalog';
 const offers = Array.from(
@@ -111,6 +113,96 @@ describe('authoritative ticket catalog', () => {
     const products = catalogProductsFromOffers([...local, ground], offers, []);
     expect(products).toHaveLength(11);
     expect(products.at(-1)).toBe(ground);
+  });
+  it('reconstructs editable server fields from shared references on a fresh device', () => {
+    const references = [
+      {
+        id: 'airline',
+        kind: 'airline',
+        name: 'Carrier',
+        active: true,
+      },
+      {
+        id: 'economy',
+        kind: 'flightClass',
+        name: 'Economy',
+        code: 'ECONOMY',
+        active: true,
+      },
+      {
+        id: 'a',
+        kind: 'city',
+        name: 'Origin',
+        countryId: 'country-a',
+        active: true,
+      },
+      {
+        id: 'b',
+        kind: 'city',
+        name: 'Destination',
+        countryId: 'country-b',
+        active: true,
+      },
+    ] as const;
+    const product = catalogProductsFromOffers([], [offers[0]!], references)[0]!;
+    expect(product.definition.flightClassId).toBe('economy');
+    expect(product.definition.segments[0]).toEqual(
+      expect.objectContaining({
+        airlineId: 'airline',
+        originCountryId: 'country-a',
+        originCityId: 'a',
+        destinationCountryId: 'country-b',
+        destinationCityId: 'b',
+      }),
+    );
+  });
+
+  it('groups every row created by one server load and keeps other loads separate', () => {
+    const grouped = offers.slice(0, 3).map((offer) => ({
+      ...offer,
+      loadGroupId: 'group-a',
+    }));
+    const other = { ...offers[3]!, loadGroupId: 'group-b' };
+    expect(publishedLoadGroup(grouped[0]!, [...grouped, other], [])).toEqual(
+      grouped,
+    );
+  });
+
+  it('expands every visible table row to its complete load without duplicates', () => {
+    const firstLoad = offers.slice(0, 3).map((offer) => ({
+      ...offer,
+      loadGroupId: 'group-a',
+    }));
+    const secondLoad = offers.slice(3, 5).map((offer) => ({
+      ...offer,
+      loadGroupId: 'group-b',
+    }));
+    const all = [...firstLoad, ...secondLoad, offers[5]!];
+    expect(
+      publishedLoadGroups(
+        [firstLoad[1]!, firstLoad[2]!, secondLoad[0]!],
+        all,
+        [],
+      ),
+    ).toEqual([...firstLoad, ...secondLoad]);
+  });
+
+  it('recovers an older same-browser load only from its exact creation event', () => {
+    const history = [
+      {
+        version: 1,
+        action: 'create',
+        at: '2026-10-10T10:00:00.000Z',
+        actor: 'operator',
+        reason: 'تعریف برنامه هفتگی پرواز',
+      },
+    ];
+    const cached = local
+      .slice(0, 3)
+      .map((product) => ({ ...product, history }));
+    expect(publishedLoadGroup(offers[0]!, offers.slice(0, 4), cached)).toEqual(
+      offers.slice(0, 3),
+    );
   });
 });
 

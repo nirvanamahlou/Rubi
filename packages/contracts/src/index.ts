@@ -24,3 +24,5 @@ export * from './procurement';
 export * from './system-management';
 
 export * from './accounting';
+
+export * from './package-pricing/hotel-shared-period';

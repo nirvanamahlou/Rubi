@@ -3,6 +3,7 @@ import { translateUiText } from '@/i18n/translate';
 // ZIP/XML primitives adapted from the existing customer workbook codec; no customer data is imported.
 import {
   organizationHeaders,
+  organizationExtendedHeaders,
   organizationImportLimit,
   type OrganizationImportRow,
 } from './organization-import';
@@ -12,6 +13,35 @@ const decoder = new TextDecoder();
 
 const maxFileBytes = 5 * 1024 * 1024;
 const maxExpandedBytes = 20 * 1024 * 1024;
+const hyperlinkRelationshipType =
+  'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
+const safeMailtoTarget =
+  /^mailto:[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i;
+
+export function isAllowedOrganizationWorkbookRelationship(
+  type: string,
+  target: string,
+  targetMode: string,
+) {
+  if (targetMode.toLowerCase() === 'external')
+    return type === hyperlinkRelationshipType && safeMailtoTarget.test(target);
+  return !/:|\\/.test(target);
+}
+
+function relationshipAttribute(tag: string, name: string) {
+  return (
+    tag.match(new RegExp(`\\b${name}\\s*=\\s*(["'])(.*?)\\1`, 'i'))?.[2] ?? ''
+  );
+}
+
+export function normalizeOrganizationHeader(value: string) {
+  return value
+    .normalize('NFKC')
+    .replaceAll('ي', 'ی')
+    .replaceAll('ك', 'ک')
+    .replace(/[\s‌_.:/\\()-]+/g, '')
+    .toLowerCase();
+}
 
 export function validateOrganizationWorkbookXml(xml: string) {
   for (const character of xml) {
@@ -20,11 +50,21 @@ export function validateOrganizationWorkbookXml(xml: string) {
       throw new Error('نویسه کنترلی نامعتبر در فایل وجود دارد.');
   }
   if (
-    /<!DOCTYPE|<!ENTITY|<(?:[\w.-]+:)?(?:f|ddeLink|oleObject|externalReference)\b|macroEnabled|vbaProject|TargetMode\s*=\s*["']External["']/i.test(
+    /<!DOCTYPE|<!ENTITY|<(?:[\w.-]+:)?(?:f|ddeLink|oleObject|externalReference)\b|macroEnabled|vbaProject/i.test(
       xml,
     )
   )
     throw new Error('فرمول، ماکرو یا ارتباط خارجی در فایل مجاز نیست.');
+  for (const tag of xml.matchAll(/<(?:[\w.-]+:)?Relationship\b[^>]*>/gi)) {
+    if (
+      !isAllowedOrganizationWorkbookRelationship(
+        relationshipAttribute(tag[0], 'Type'),
+        relationshipAttribute(tag[0], 'Target'),
+        relationshipAttribute(tag[0], 'TargetMode'),
+      )
+    )
+      throw new Error('فرمول، ماکرو یا ارتباط خارجی در فایل مجاز نیست.');
+  }
 }
 
 function escapeXml(value: string) {
@@ -287,6 +327,32 @@ function cellColumn(reference: string) {
   );
 }
 
+export function hasRequiredOrganizationColumns(normalized: readonly string[]) {
+  const compactRequiredKeys = [
+    'legalName',
+    'chiefExecutiveName',
+    'officePhone',
+    'chiefExecutiveMobile',
+    'addressLine',
+  ];
+  const extendedRequiredKeys = [
+    'legalName',
+    'registrationNumber',
+    'nationalId',
+    'economicCode',
+    'chiefExecutiveName',
+    'chiefExecutiveNationalId',
+    'chiefExecutiveMobile',
+    'province',
+    'city',
+    'addressLine',
+  ];
+  return (
+    compactRequiredKeys.every((key) => normalized.includes(key)) ||
+    extendedRequiredKeys.every((key) => normalized.includes(key))
+  );
+}
+
 export async function parseOrganizationXlsx(
   file: File,
 ): Promise<OrganizationImportRow[]> {
@@ -308,8 +374,11 @@ export async function parseOrganizationXlsx(
         throw new Error('محتوای فعال در اکسل مجاز نیست.');
       if (
         element.localName === 'Relationship' &&
-        (element.getAttribute('TargetMode')?.toLowerCase() === 'external' ||
-          /:|\\/.test(element.getAttribute('Target') ?? ''))
+        !isAllowedOrganizationWorkbookRelationship(
+          element.getAttribute('Type') ?? '',
+          element.getAttribute('Target') ?? '',
+          element.getAttribute('TargetMode') ?? '',
+        )
       )
         throw new Error('ارتباط خارجی در اکسل مجاز نیست.');
     }
@@ -363,28 +432,142 @@ export async function parseOrganizationXlsx(
     return values;
   });
   const [headers = [], ...data] = rows;
-  const aliases = new Map<string, string>([
-    ['code', organizationHeaders[0]],
-    ['legalName', organizationHeaders[1]],
-    ['personType', organizationHeaders[2]],
-    ['roleCodes', organizationHeaders[3]],
-  ]);
-  for (const header of organizationHeaders)
-    aliases.set(translateUiText(header, 'en'), header);
-  const normalized = headers.map((header) => aliases.get(header) ?? header);
+  const columns = [
+    [
+      'legalName',
+      organizationHeaders[0],
+      'نام ثبتی',
+      'legal name',
+      'agency legal name',
+      'agency name',
+    ],
+    [
+      'registrationNumber',
+      organizationExtendedHeaders[1],
+      'registration number',
+      'registration no',
+    ],
+    [
+      'nationalId',
+      organizationExtendedHeaders[2],
+      'شناسه ملی شرکت',
+      'company national id',
+      'national id',
+    ],
+    [
+      'economicCode',
+      organizationExtendedHeaders[3],
+      'economic code',
+      'tax code',
+    ],
+    [
+      'tourismLicenseNumber',
+      organizationHeaders[2],
+      organizationExtendedHeaders[4],
+      'شماره مجوز بند ب',
+      'license number',
+      'tourism license number',
+      'travel license number',
+    ],
+    [
+      'chiefExecutiveName',
+      organizationHeaders[1],
+      organizationExtendedHeaders[5],
+      'نام مدیر عامل',
+      'manager',
+      'ceo name',
+      'chief executive name',
+    ],
+    [
+      'chiefExecutiveNationalId',
+      organizationExtendedHeaders[6],
+      'کد ملی مدیر عامل',
+      'ceo national id',
+      'chief executive national id',
+    ],
+    [
+      'chiefExecutiveMobile',
+      organizationHeaders[5],
+      organizationExtendedHeaders[7],
+      'شماره موبایل مدیر عامل',
+      'mobile',
+      'mobile number',
+      'ceo mobile',
+      'ceo phone',
+      'chief executive mobile',
+    ],
+    [
+      'officePhone',
+      organizationHeaders[3],
+      'شماره تلفن',
+      'phone',
+      'telephone',
+      'office phone',
+    ],
+    [
+      'email',
+      organizationHeaders[4],
+      'پست الکترونیک',
+      'email',
+      'email address',
+    ],
+    [
+      'province',
+      organizationExtendedHeaders[8],
+      'استان محل فعالیت',
+      'province',
+      'state',
+    ],
+    ['city', organizationExtendedHeaders[9], 'شهر محل فعالیت', 'city'],
+    [
+      'addressLine',
+      organizationHeaders[6],
+      organizationExtendedHeaders[10],
+      'نشانی کامل',
+      'آدرس کامل آژانس',
+      'full address',
+      'agency address',
+    ],
+    ['code', 'کد سیستمی', 'system code'],
+    ['personType', 'نوع شخصیت', 'person type'],
+    ['roleCodes', 'نقش‌ها', 'roles', 'role codes'],
+  ] as const;
+  const aliases = new Map<string, string>();
+  for (const [key, ...labels] of columns)
+    for (const label of labels)
+      aliases.set(normalizeOrganizationHeader(label), key);
+  const normalized = headers.map(
+    (header) =>
+      aliases.get(normalizeOrganizationHeader(header)) ??
+      normalizeOrganizationHeader(header),
+  );
   if (
     new Set(normalized.filter(Boolean)).size !==
     normalized.filter(Boolean).length
   )
     throw new Error('عنوان ستون تکراری است.');
-  if (organizationHeaders.some((header) => !normalized.includes(header)))
+  if (!hasRequiredOrganizationColumns(normalized))
     throw new Error('ستون‌های فایل با قالب سازمان‌ها مطابقت ندارند.');
+  const value = (row: readonly string[], key: string) =>
+    row[normalized.indexOf(key)] ?? '';
   return data
     .filter((row) => row.some(Boolean))
     .map((row) => ({
-      code: row[normalized.indexOf(organizationHeaders[0])] ?? '',
-      legalName: row[normalized.indexOf(organizationHeaders[1])] ?? '',
-      personType: row[normalized.indexOf(organizationHeaders[2])] ?? '',
-      roleCodes: row[normalized.indexOf(organizationHeaders[3])] ?? '',
+      code: value(row, 'code'),
+      legalName: value(row, 'legalName'),
+      personType: value(row, 'personType') || 'LEGAL',
+      nationalId: value(row, 'nationalId'),
+      registrationNumber: value(row, 'registrationNumber'),
+      economicCode: value(row, 'economicCode'),
+      tourismLicenseNumber: value(row, 'tourismLicenseNumber'),
+      chiefExecutiveName: value(row, 'chiefExecutiveName'),
+      chiefExecutiveNationalId: value(row, 'chiefExecutiveNationalId'),
+      chiefExecutiveMobile: value(row, 'chiefExecutiveMobile'),
+      officePhone: value(row, 'officePhone'),
+      email: value(row, 'email'),
+      province: value(row, 'province'),
+      city: value(row, 'city'),
+      addressLine: value(row, 'addressLine'),
+      roleCodes: value(row, 'roleCodes') || 'AGENCY',
     }));
 }

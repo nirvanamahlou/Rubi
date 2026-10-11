@@ -1,4 +1,6 @@
 import { passengerSaleTotals } from './passenger-sale-totals';
+import { salesChequeComponents } from '@nora/contracts';
+import type { SalesPaymentTerms } from '@nora/contracts';
 import {
   addInsuranceExtra,
   insuranceExtraRials,
@@ -166,6 +168,7 @@ export interface SalesFormState {
   priceComponents: SalesPriceComponentInput[];
   payments: SalesPaymentInput[];
   pricingNotes: string;
+  paymentTerms?: SalesPaymentTerms | null;
   reservationNote?: string;
   passengerPrices?: Record<string, SalesMoney[]>;
   passengerAccommodations?: Record<string, SalesAccommodationKind>;
@@ -345,6 +348,7 @@ export const emptySalesForm: SalesFormState = {
     },
   ],
   payments: [],
+  paymentTerms: { version: 1, mode: 'CASH', plans: [] },
   pricingNotes: '',
 };
 
@@ -429,6 +433,7 @@ export function salesHotelOccupancyQuote(
     return null;
   if (ages.some((age) => age === null || age >= 15)) return null;
   return quoteHotelOccupancy(room.occupancyRates, {
+    priceBasis: 'SALE',
     adults,
     childAges: ages as number[],
     rooms: state.hotel.roomCount,
@@ -673,6 +678,16 @@ function salesIranCountry(
 ): boolean {
   const value = `${countryCode ?? ''} ${countryId ?? ''}`.trim().toUpperCase();
   return /(^|\s)(IR|IRN|IRAN)(\s|$)/.test(value);
+}
+
+/** Use a Gregorian default once a selected endpoint is known to be outside Iran. */
+export function salesInternationalTravel(state: SalesFormState): boolean {
+  return (
+    [
+      [state.originCountryId, state.originCountryCode],
+      [state.destinationCountryId, state.destinationCountryCode],
+    ] as const
+  ).some(([id, code]) => Boolean(id || code) && !salesIranCountry(id, code));
 }
 
 /** A route is domestic only when both endpoints are inside Iran. */
@@ -1176,18 +1191,23 @@ export function salesPayload(
             inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
           }
         : null,
-    priceComponents:
+    ...(state.paymentTerms !== undefined
+      ? { paymentTerms: state.paymentTerms }
+      : {}),
+    priceComponents: salesChequeComponents(
       packagePrices?.components ??
-      servicePriceComponents(
-        services,
-        state.serviceKinds.includes('HOTEL')
-          ? {
-              checkInDate: state.hotel.checkIn,
-              checkOutDate: state.hotel.checkOut,
-            }
-          : null,
-      ) ??
-      state.priceComponents,
+        servicePriceComponents(
+          services,
+          state.serviceKinds.includes('HOTEL')
+            ? {
+                checkInDate: state.hotel.checkIn,
+                checkOutDate: state.hotel.checkOut,
+              }
+            : null,
+        ) ??
+        state.priceComponents,
+      state.paymentTerms,
+    ),
     payments: state.payments.map((payment) => ({
       ...payment,
       dueAt: utc(payment.dueAt),

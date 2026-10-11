@@ -53,6 +53,7 @@ export function activityDate(iso: string) {
   return new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'short',
     timeStyle: 'medium',
+    hourCycle: 'h23',
     timeZone: 'Asia/Tehran',
   }).format(new Date(iso));
 }

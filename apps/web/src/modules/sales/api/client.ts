@@ -10,6 +10,8 @@ import type {
   SalesContractListQuery,
   SalesContractPage,
   SalesDashboard,
+  SalesReceivables,
+  SalesReceivablesQuery,
   SalesPaymentCreateRequest,
 } from '@nora/contracts';
 
@@ -130,6 +132,10 @@ export const salesApi = {
       `/contracts/${encodeURIComponent(id)}/output`,
     ),
   dashboard: () => request<SalesDashboard>('/dashboard'),
+  receivables: (query: SalesReceivablesQuery = {}) =>
+    request<SalesReceivables>(
+      `/receivables?${new URLSearchParams(Object.entries(query).filter(([, value]) => value !== undefined && value !== '')).toString()}`,
+    ),
   availableHotelRoomRates: (input: {
     hotelId: string;
     checkIn: string;

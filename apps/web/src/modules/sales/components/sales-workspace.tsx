@@ -41,6 +41,7 @@ import { ContractPayments } from './contract-payments';
 import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
 import { ContractTableScroll } from './contract-table-scroll';
+import { SalesReceivablesCard } from './sales-receivables-card';
 
 export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
@@ -271,30 +272,12 @@ export function SalesWorkspace() {
       {dashboard && !loading ? (
         <SalesDashboardMetrics dashboard={dashboard} />
       ) : null}
-      {dashboard && !loading ? (
-        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
-          <Card className="border-primary/20 bg-primary/5 p-5">
-            <div className="flex items-center gap-2 font-bold">
-              <WalletCards className="size-5 text-primary" />
-              مانده قابل دریافت
-            </div>
-            <div className="mt-4 flex flex-wrap gap-3">
-              {dashboard.outstanding.length ? (
-                dashboard.outstanding.map((balance) => (
-                  <span
-                    key={balance.currencyCode}
-                    className="rounded-xl border border-primary/15 bg-surface px-4 py-2 text-lg font-black"
-                  >
-                    {formatMoney(balance.amount, balance.currencyCode)}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  مانده‌ای ثبت نشده است
-                </span>
-              )}
-            </div>
-          </Card>
+      <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <SalesReceivablesCard
+          refreshVersion={dashboard}
+          formatAmount={formatMoney}
+        />
+        {dashboard && !loading ? (
           <Card className="p-5">
             <h2 className="font-bold">پیگیری‌های فروش</h2>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
@@ -312,8 +295,10 @@ export function SalesWorkspace() {
               ))}
             </div>
           </Card>
-        </div>
-      ) : null}
+        ) : (
+          <Skeleton className="h-48" />
+        )}
+      </div>
       <section
         ref={contractsSearchPanel}
         aria-label="جست‌وجو و فهرست قراردادها"

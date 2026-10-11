@@ -144,4 +144,79 @@ describe('actual issued ticket reporting', () => {
       ),
     ).toContain('A1:A1');
   });
+  it('resolves unique cities in bounded parallel batches while preserving rows and lookup failures', async () => {
+    const documents = Array.from({ length: 5 }, (_, index) => ({
+      ...doc,
+      id: `doc-${index}`,
+      intake: {
+        snapshot: {
+          ...snapshot,
+          ticketSelections: [
+            {
+              ...snapshot.ticketSelections![0]!,
+              originId: `city-${index * 2}`,
+              destinationId: `city-${index * 2 + 1}`,
+            },
+          ],
+        },
+        workflowRevisions:
+          index === 1 ? [{ state: { supplierStatus: 'CANCELLED' } }] : [],
+      },
+    }));
+    // Repeat one document's route to ensure lookup work is per unique city.
+    documents.push({ ...documents[0]!, id: 'doc-repeat' });
+    const findMany = vi.fn().mockResolvedValue(documents);
+    const releases: Array<() => void> = [];
+    const cityReference = vi.fn(
+      (id: string) =>
+        new Promise((resolve, reject) => {
+          releases.push(() =>
+            id === 'city-3'
+              ? reject(new Error('unavailable'))
+              : resolve({ name: `Name ${id}` }),
+          );
+        }),
+    );
+    const service = new ReservationTicketDocumentsService(
+      { client: { reservationTicketDocument: { findMany } } } as never,
+      {} as never,
+      {} as never,
+      { cityReference } as never,
+    );
+    const pending = service.report(
+      { issuedFrom: '2026-10-01', issuedTo: '2026-10-05' },
+      actor,
+    );
+    await vi.waitFor(() => expect(cityReference).toHaveBeenCalledTimes(8));
+    releases.splice(0).forEach((release) => release());
+    await vi.waitFor(() => expect(cityReference).toHaveBeenCalledTimes(10));
+    releases.splice(0).forEach((release) => release());
+    const { data } = await pending;
+    expect(data.map((row) => row.id.split(':')[0])).toEqual(
+      documents.map((document) => document.id),
+    );
+    expect(data[0]).toMatchObject({
+      origin: 'Name city-0',
+      destination: 'Name city-1',
+      status: 'issued',
+    });
+    expect(data[1]).toMatchObject({
+      origin: 'Name city-2',
+      destination: 'نام شهر ثبت نشده',
+      status: 'voided',
+    });
+    expect(findMany.mock.calls[0]?.[0]).toMatchObject({
+      select: {
+        number: true,
+        issuedAt: true,
+        intake: {
+          select: {
+            snapshot: true,
+            workflowRevisions: { take: 1, select: { state: true } },
+          },
+        },
+      },
+      where: { intake: { branchId: { in: ['branch'] } } },
+    });
+  });
 });

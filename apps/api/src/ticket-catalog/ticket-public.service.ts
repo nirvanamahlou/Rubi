@@ -42,6 +42,23 @@ import {
 } from './ticket-sale-commissions';
 
 const uuid = Joi.string().guid();
+const loadGroupAuditPrefix = 'ticket.offer.load-group:';
+export function ticketLoadGroupId(
+  createKey: string | null | undefined,
+  auditAction?: string | null,
+) {
+  const match =
+    /^ticket-catalog:ticket-load:([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}):\d+$/i.exec(
+      createKey ?? '',
+    );
+  if (match?.[1]) return match[1];
+  const auditGroup = auditAction?.startsWith(loadGroupAuditPrefix)
+    ? auditAction.slice(loadGroupAuditPrefix.length)
+    : undefined;
+  return auditGroup && !uuid.validate(auditGroup).error
+    ? auditGroup
+    : undefined;
+}
 const capacityHoldSchema = Joi.object({
   quantity: Joi.number().integer().min(1).max(100000).required(),
   expiresAt: Joi.string().isoDate().required(),
@@ -542,6 +559,11 @@ export class TicketPublicService {
           include: { target: true },
           orderBy: { revision: 'desc' },
         },
+        audit: {
+          where: { action: { startsWith: loadGroupAuditPrefix } },
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: [{ departureAt: 'asc' }, { id: 'asc' }],
       take: 501,
@@ -550,12 +572,21 @@ export class TicketPublicService {
     return {
       version: 1 as const,
       hasMore: rows.length > 500,
-      data: rows.slice(0, 500).map((row) => ({
-        ...this.offerView(row),
-        ...(row.createKey?.startsWith('ticket-catalog:')
-          ? { catalogProductId: row.createKey.slice('ticket-catalog:'.length) }
-          : {}),
-      })),
+      data: rows.slice(0, 500).map((row) => {
+        const loadGroupId = ticketLoadGroupId(
+          row.createKey,
+          row.audit?.[0]?.action,
+        );
+        return {
+          ...this.offerView(row),
+          ...(row.createKey?.startsWith('ticket-catalog:')
+            ? {
+                catalogProductId: row.createKey.slice('ticket-catalog:'.length),
+              }
+            : {}),
+          ...(loadGroupId ? { loadGroupId } : {}),
+        };
+      }),
     };
   }
 
@@ -753,15 +784,94 @@ export class TicketPublicService {
     expectedVersion: number,
     actor: AuthenticatedActor,
   ) {
+    const result = await this.archiveBatch(
+      { items: [{ id, expectedVersion }] },
+      actor,
+    );
+    return { data: { id: result.data.ids[0]! } };
+  }
+
+  async archiveBatch(
+    input: {
+      items: readonly { id: string; expectedVersion: number }[];
+    },
+    actor: AuthenticatedActor,
+  ) {
     this.require(actor, 'ticket_catalog.manage');
+    const items = input?.items;
     if (
-      uuid.validate(id).error ||
-      !Number.isSafeInteger(expectedVersion) ||
-      expectedVersion < 1
+      !Array.isArray(items) ||
+      items.length < 1 ||
+      items.length > 2500 ||
+      items.some(
+        (item) =>
+          uuid.validate(item?.id).error ||
+          !Number.isSafeInteger(item?.expectedVersion) ||
+          item.expectedVersion < 1,
+      ) ||
+      new Set(items.map(({ id }) => id)).size !== items.length
     )
-      throw new BadRequestException('شناسه یا نسخه بلیط معتبر نیست.');
-    throw new BadRequestException(
-      'بلیت تعریف‌شده قابل حذف نیست؛ برای توقف فروش آن را غیرفعال کنید.',
+      throw new BadRequestException('فهرست شناسه و نسخه لود معتبر نیست.');
+    const versions = new Map(
+      items.map(({ id, expectedVersion }) => [id, expectedVersion]),
+    );
+    const ids = [...versions.keys()].sort();
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
+        );
+        const rows = await tx.ticketPublishedOffer.findMany({
+          where: {
+            id: { in: ids },
+            branchId: { in: actor.branchIds },
+            audit: { none: { action: 'ticket.offer.archived' } },
+          },
+          include: {
+            capacityHolds: {
+              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+            },
+            tourOutboundDepartures: { select: { id: true } },
+            tourReturnDepartures: { select: { id: true } },
+          },
+        });
+        if (rows.length !== ids.length)
+          throw new ForbiddenException(
+            'یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.',
+          );
+        if (rows.some((row) => row.version !== versions.get(row.id)))
+          throw new ConflictException(
+            'یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.',
+          );
+        const blocked = rows.find(
+          (row) =>
+            row.capacityHolds.length ||
+            row.tourOutboundDepartures.length ||
+            row.tourReturnDepartures.length,
+        );
+        if (blocked)
+          throw new ConflictException(
+            'حداقل یک ردیف لود رزرو ظرفیت فعال یا تور متصل دارد و قابل حذف نیست؛ هیچ ردیفی حذف نشد.',
+          );
+        const archived = await tx.ticketPublishedOffer.updateMany({
+          where: { id: { in: ids } },
+          data: { status: 'PAUSED', version: { increment: 1 } },
+        });
+        if (archived.count !== rows.length)
+          throw new ConflictException(
+            'یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ ردیفی حذف نشد.',
+          );
+        await tx.ticketOfferAudit.createMany({
+          data: rows.map((row) => ({
+            offerId: row.id,
+            actorUserId: actor.userId,
+            action: 'ticket.offer.archived',
+            version: row.version + 1,
+          })),
+        });
+        return { data: { ids } };
+      },
+      { maxWait: 5_000, timeout: 30_000 },
     );
   }
 
@@ -1231,149 +1341,475 @@ export class TicketPublicService {
       await tx.$queryRaw(
         Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" = ${id}::uuid FOR UPDATE`,
       );
-      const row = await tx.ticketPublishedOffer.findFirst({
-        where: {
-          id,
-          branchId: { in: actor.branchIds },
-          audit: { none: { action: 'ticket.offer.archived' } },
-        },
-        include: {
-          capacityAllocations: { where: { status: 'ACTIVE' } },
-          capacityHolds: {
-            where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
-          },
-          tourOutboundDepartures: { select: { id: true } },
-          tourReturnDepartures: { select: { id: true } },
-          audit: {
-            orderBy: { occurredAt: 'desc' },
-            take: 1,
-            select: { action: true },
-          },
-        },
-      });
-      if (!row) throw new ForbiddenException('بلیط در شعبه مجاز شما نیست.');
-      if (row.version !== input.expectedVersion)
-        throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
-      await assertUniqueTicketIdentity(
+      return this.reviseInTransaction(
         tx,
-        {
-          ...value,
-          supplyType:
-            value.supplyType === undefined
-              ? ((row.supplyType ?? null) as Exclude<
-                  TicketOfferCreateV1['supplyType'],
-                  undefined
-                >)
-              : value.supplyType,
-        },
-        row.branchId,
         id,
+        input.expectedVersion,
+        value,
+        actor,
+        [id],
       );
-      const linkedSale = row.capacityAllocations.length > 0;
-      const supplyType =
-        value.supplyType === undefined ? row.supplyType : value.supplyType;
-      const economyBaggageKg =
-        value.economyBaggageKg === undefined
-          ? row.economyBaggageKg
-          : value.economyBaggageKg;
-      const businessBaggageKg =
-        value.businessBaggageKg === undefined
-          ? row.businessBaggageKg
-          : value.businessBaggageKg;
-      const baggageValue = (
-        value: Prisma.Decimal | string | null | undefined,
-      ) => (value == null ? null : new Prisma.Decimal(value).toString());
-      const min =
-        value.returnMinDays === undefined
-          ? row.returnMinDays
-          : value.returnMinDays;
-      const max =
-        value.returnMaxDays === undefined
-          ? row.returnMaxDays
-          : value.returnMaxDays;
-      if (!validReturnWindow(min, max))
-        throw new BadRequestException('بازه روزهای برگشت معتبر نیست.');
-      const originAirportId =
-        value.originAirportId === undefined
-          ? row.originAirportId
-          : value.originAirportId;
-      const destinationAirportId =
-        value.destinationAirportId === undefined
-          ? row.destinationAirportId
-          : value.destinationAirportId;
-      const scheduleOnlyRevision =
-        (row.originAirportId == null ||
-          row.originAirportId === originAirportId) &&
-        (row.destinationAirportId == null ||
-          row.destinationAirportId === destinationAirportId) &&
-        (row.supplyType ?? null) === (supplyType ?? null) &&
-        baggageValue(row.economyBaggageKg) === baggageValue(economyBaggageKg) &&
-        baggageValue(row.businessBaggageKg) ===
-          baggageValue(businessBaggageKg) &&
-        (row.returnMinDays ?? null) === (min ?? null) &&
-        (row.returnMaxDays ?? null) === (max ?? null) &&
-        row.originId === value.originId &&
-        row.destinationId === value.destinationId &&
-        row.carrierName === value.carrierName &&
-        row.serviceNumber === value.serviceNumber &&
-        row.cabinClassCode === value.cabinClassCode &&
-        row.totalCapacity === value.totalCapacity;
-      const templateOnlyRevision =
-        scheduleOnlyRevision &&
-        value.manifestTemplateId !== undefined &&
-        (value.manifestTemplateId ?? null) !==
-          (row.manifestTemplateId ?? null) &&
-        row.departureAt.getTime() === new Date(value.departureAt).getTime() &&
-        row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime();
-      if (
-        !templateOnlyRevision &&
-        ((linkedSale && !scheduleOnlyRevision) ||
-          row.capacityHolds.length ||
-          row.tourOutboundDepartures.length ||
-          row.tourReturnDepartures.length)
-      )
-        throw new ConflictException(
-          'برای بلیط متصل به قرارداد فقط ساعت حرکت و رسیدن قابل ویرایش است؛ رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
-        );
-      const updated = await tx.ticketPublishedOffer.update({
-        where: { id },
-        data: {
-          ...value,
-          originAirportId,
-          destinationAirportId,
-          supplyType,
-          economyBaggageKg,
-          businessBaggageKg,
-          returnMinDays: min,
-          returnMaxDays: max,
-          manifestTemplateId:
-            value.manifestTemplateId === undefined
-              ? row.manifestTemplateId
-              : value.manifestTemplateId,
-          departureAt: new Date(value.departureAt),
-          arrivalAt: new Date(value.arrivalAt),
-          fingerprint: createHash('sha256')
-            .update(JSON.stringify({ branchId: row.branchId, ...value }))
-            .digest('hex'),
-          version: { increment: 1 },
-          ...(new Date(value.departureAt) > new Date() &&
-          (row.status === 'EXPIRED' ||
-            (row.status === 'PAUSED' &&
-              row.audit[0]?.action === 'ticket.offer.expired'))
-            ? { status: 'ACTIVE' }
-            : {}),
-        },
-      });
-      await tx.ticketOfferAudit.create({
-        data: {
-          offerId: id,
-          actorUserId: actor.userId,
-          action: 'ticket.offer.revised',
-          version: updated.version,
-        },
-      });
-      return { data: { id, version: updated.version } };
     });
+  }
+
+  async reviseBatch(
+    input: {
+      items: readonly {
+        id: string;
+        expectedVersion: number;
+        offer: TicketOfferCreateV1;
+      }[];
+    },
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    const items = input?.items;
+    if (
+      !Array.isArray(items) ||
+      items.length < 1 ||
+      items.length > 2500 ||
+      items.some(
+        (item) =>
+          uuid.validate(item?.id).error ||
+          !Number.isSafeInteger(item?.expectedVersion) ||
+          item.expectedVersion < 1,
+      ) ||
+      new Set(items.map(({ id }) => id)).size !== items.length
+    )
+      throw new BadRequestException('فهرست ویرایش لود معتبر نیست.');
+    const validated = items.map((item) => ({
+      ...item,
+      offer: validateTicketOffer(item.offer),
+    }));
+    await Promise.all(
+      validated.flatMap(({ offer }) => [
+        this.validateManifest(offer),
+        this.validateAirports(offer),
+      ]),
+    );
+    const identity = (offer: TicketOfferCreateV1) =>
+      [
+        offer.originId,
+        offer.destinationId,
+        new Date(offer.departureAt).toISOString(),
+        offer.cabinClassCode,
+        offer.carrierName.trim().replace(/\s+/g, ' ').toLowerCase(),
+        offer.serviceNumber.trim().replace(/\s+/g, ' ').toLowerCase(),
+        offer.supplyType ?? 'COMPANY',
+      ].join('|');
+    if (
+      new Set(validated.map(({ offer }) => identity(offer))).size !==
+      validated.length
+    )
+      throw new ConflictException('ویرایش لود ردیف تکراری ایجاد می‌کند.');
+    const ids = validated.map(({ id }) => id).sort();
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
+        );
+        const results = [] as { id: string; version: number }[];
+        for (const item of validated) {
+          const result = await this.reviseInTransaction(
+            tx,
+            item.id,
+            item.expectedVersion,
+            item.offer,
+            actor,
+            ids,
+          );
+          results.push(result.data);
+        }
+        return { data: { items: results } };
+      },
+      { maxWait: 5_000, timeout: 30_000 },
+    );
+  }
+
+  async resizeBatch(
+    input: {
+      current: readonly { id: string; expectedVersion: number }[];
+      offers: readonly TicketOfferCreateV1[];
+    },
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, 'ticket_catalog.manage');
+    const current = input?.current;
+    const offers = input?.offers;
+    if (
+      !Array.isArray(current) ||
+      current.length < 1 ||
+      current.length > 2500 ||
+      !Array.isArray(offers) ||
+      offers.length < 1 ||
+      offers.length > 2500 ||
+      current.some(
+        (item) =>
+          uuid.validate(item?.id).error ||
+          !Number.isSafeInteger(item?.expectedVersion) ||
+          item.expectedVersion < 1,
+      ) ||
+      new Set(current.map(({ id }) => id)).size !== current.length
+    )
+      throw new BadRequestException('اطلاعات تغییر اندازه لود معتبر نیست.');
+    if (offers.length === current.length)
+      throw new BadRequestException(
+        'برای ویرایش بدون تغییر تعداد، از ویرایش عادی لود استفاده کنید.',
+      );
+    const validated = offers.map((offer) => validateTicketOffer(offer));
+    await Promise.all(
+      validated.flatMap((offer) => [
+        this.validateManifest(offer),
+        this.validateAirports(offer),
+      ]),
+    );
+    const identity = (offer: TicketOfferCreateV1) =>
+      [
+        offer.originId,
+        offer.destinationId,
+        new Date(offer.departureAt).toISOString(),
+        offer.cabinClassCode,
+        offer.carrierName.trim().replace(/\s+/g, ' ').toLowerCase(),
+        offer.serviceNumber.trim().replace(/\s+/g, ' ').toLowerCase(),
+        offer.supplyType ?? 'COMPANY',
+      ].join('|');
+    if (new Set(validated.map(identity)).size !== validated.length)
+      throw new ConflictException('ویرایش لود ردیف تکراری ایجاد می‌کند.');
+    const versions = new Map(
+      current.map(({ id, expectedVersion }) => [id, expectedVersion]),
+    );
+    const ids = current.map(({ id }) => id);
+    const lockedIds = [...ids].sort();
+    const transactionResult = await this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(lockedIds.map((id) => Prisma.sql`${id}::uuid`))}) ORDER BY "id" FOR UPDATE`,
+        );
+        const found = await tx.ticketPublishedOffer.findMany({
+          where: {
+            id: { in: lockedIds },
+            branchId: { in: actor.branchIds },
+            audit: { none: { action: 'ticket.offer.archived' } },
+          },
+          include: {
+            capacityHolds: {
+              where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+            },
+            tourOutboundDepartures: { select: { id: true } },
+            tourReturnDepartures: { select: { id: true } },
+            audit: {
+              where: { action: { startsWith: loadGroupAuditPrefix } },
+              orderBy: { occurredAt: 'desc' },
+              take: 1,
+              select: { action: true },
+            },
+          },
+        });
+        if (found.length !== ids.length)
+          throw new ForbiddenException(
+            'یک یا چند ردیف لود در شعبه مجاز شما پیدا نشد.',
+          );
+        const byId = new Map(found.map((row) => [row.id, row]));
+        const rows = ids.map((id) => byId.get(id)!);
+        if (rows.some((row) => row.version !== versions.get(row.id)))
+          throw new ConflictException(
+            'یکی از ردیف‌های لود تغییر کرده است؛ فهرست را به‌روزرسانی کنید.',
+          );
+        const branchIds = new Set(rows.map(({ branchId }) => branchId));
+        const groupIds = new Set(
+          rows
+            .map((row) =>
+              ticketLoadGroupId(row.createKey, row.audit?.[0]?.action),
+            )
+            .filter((value): value is string => Boolean(value)),
+        );
+        if (branchIds.size !== 1 || groupIds.size > 1)
+          throw new ConflictException(
+            'ردیف‌های انتخاب‌شده متعلق به یک لود واحد نیستند؛ فهرست را به‌روزرسانی کنید.',
+          );
+        const branchId = rows[0]!.branchId;
+        const legacyGroup = groupIds.size === 0;
+        const groupId = [...groupIds][0] ?? randomUUID();
+        for (const offer of validated)
+          await assertUniqueTicketIdentity(tx, offer, branchId, ids);
+
+        const removed = rows.slice(validated.length);
+        const blocked = removed.find(
+          (row) =>
+            row.capacityHolds.length ||
+            row.tourOutboundDepartures.length ||
+            row.tourReturnDepartures.length,
+        );
+        if (blocked)
+          throw new ConflictException(
+            'یکی از ردیف‌های حذف‌شونده رزرو ظرفیت فعال یا تور متصل دارد؛ هیچ تغییری ذخیره نشد.',
+          );
+        const retainedCount = Math.min(rows.length, validated.length);
+        const revised: { id: string; version: number }[] = [];
+        for (let index = 0; index < retainedCount; index++) {
+          const row = rows[index]!;
+          const result = await this.reviseInTransaction(
+            tx,
+            row.id,
+            row.version,
+            validated[index]!,
+            actor,
+            ids,
+          );
+          revised.push(result.data);
+        }
+
+        if (removed.length) {
+          const removedIds = removed.map(({ id }) => id);
+          const archived = await tx.ticketPublishedOffer.updateMany({
+            where: { id: { in: removedIds } },
+            data: { status: 'PAUSED', version: { increment: 1 } },
+          });
+          if (archived.count !== removed.length)
+            throw new ConflictException(
+              'یکی از ردیف‌های لود هم‌زمان تغییر کرد؛ هیچ تغییری ذخیره نشد.',
+            );
+          await tx.ticketOfferAudit.createMany({
+            data: removed.map((row) => ({
+              offerId: row.id,
+              actorUserId: actor.userId,
+              action: 'ticket.offer.archived',
+              version: row.version + 1,
+            })),
+          });
+        }
+
+        const additions = validated.slice(rows.length);
+        const usedIndexes = rows
+          .map(({ createKey }) => Number(createKey.split(':').at(-1)))
+          .filter(Number.isSafeInteger);
+        const firstIndex =
+          (usedIndexes.length ? Math.max(...usedIndexes) : -1) + 1;
+        const createRows = additions.map((offer, offset) => {
+          const createKey = `ticket-catalog:ticket-load:${groupId}:${firstIndex + offset}`;
+          return {
+            ...offer,
+            branchId,
+            departureAt: new Date(offer.departureAt),
+            arrivalAt: new Date(offer.arrivalAt),
+            createdByUserId: actor.userId,
+            createKey,
+            fingerprint: createHash('sha256')
+              .update(JSON.stringify({ branchId, ...offer }))
+              .digest('hex'),
+          };
+        });
+        if (createRows.length)
+          await tx.ticketPublishedOffer.createMany({ data: createRows });
+        const created = createRows.length
+          ? await tx.ticketPublishedOffer.findMany({
+              where: {
+                createdByUserId: actor.userId,
+                createKey: { in: createRows.map(({ createKey }) => createKey) },
+              },
+            })
+          : [];
+        if (created.length !== createRows.length)
+          throw new ConflictException(
+            'ثبت ردیف‌های جدید لود کامل نشد؛ هیچ تغییری ذخیره نشد.',
+          );
+        if (created.length)
+          await tx.ticketOfferAudit.createMany({
+            data: created.flatMap((row) => [
+              {
+                offerId: row.id,
+                actorUserId: actor.userId,
+                action: 'ticket.offer.published',
+                version: row.version,
+              },
+              ...(legacyGroup
+                ? [
+                    {
+                      offerId: row.id,
+                      actorUserId: actor.userId,
+                      action: loadGroupAuditPrefix + groupId,
+                      version: row.version,
+                    },
+                  ]
+                : []),
+            ]),
+          });
+        if (legacyGroup && revised.length)
+          await tx.ticketOfferAudit.createMany({
+            data: revised.map((row) => ({
+              offerId: row.id,
+              actorUserId: actor.userId,
+              action: loadGroupAuditPrefix + groupId,
+              version: row.version,
+            })),
+          });
+        return {
+          data: {
+            items: [
+              ...revised,
+              ...created.map(({ id, version }) => ({ id, version })),
+            ],
+            createdIds: created.map(({ id }) => id),
+            archivedIds: removed.map(({ id }) => id),
+          },
+          created,
+        };
+      },
+      { maxWait: 5_000, timeout: 30_000 },
+    );
+    for (const row of transactionResult.created)
+      await this.purchases.ensureOfferPurchaseRequest(row);
+    return { data: transactionResult.data };
+  }
+
+  private async reviseInTransaction(
+    tx: Prisma.TransactionClient,
+    id: string,
+    expectedVersion: number,
+    value: TicketOfferCreateV1,
+    actor: AuthenticatedActor,
+    excludedIds: readonly string[],
+  ) {
+    const row = await tx.ticketPublishedOffer.findFirst({
+      where: {
+        id,
+        branchId: { in: actor.branchIds },
+        audit: { none: { action: 'ticket.offer.archived' } },
+      },
+      include: {
+        capacityAllocations: { where: { status: 'ACTIVE' } },
+        capacityHolds: {
+          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+        },
+        tourOutboundDepartures: { select: { id: true } },
+        tourReturnDepartures: { select: { id: true } },
+        audit: {
+          where: { action: { not: { startsWith: loadGroupAuditPrefix } } },
+          orderBy: { occurredAt: 'desc' },
+          take: 1,
+          select: { action: true },
+        },
+      },
+    });
+    if (!row) throw new ForbiddenException('بلیط در شعبه مجاز شما نیست.');
+    if (row.version !== expectedVersion)
+      throw new ConflictException('بلیط تغییر کرده؛ فهرست را تازه کنید.');
+    await assertUniqueTicketIdentity(
+      tx,
+      {
+        ...value,
+        supplyType:
+          value.supplyType === undefined
+            ? ((row.supplyType ?? null) as Exclude<
+                TicketOfferCreateV1['supplyType'],
+                undefined
+              >)
+            : value.supplyType,
+      },
+      row.branchId,
+      excludedIds,
+    );
+    const linkedSale = row.capacityAllocations.length > 0;
+    const supplyType =
+      value.supplyType === undefined ? row.supplyType : value.supplyType;
+    const economyBaggageKg =
+      value.economyBaggageKg === undefined
+        ? row.economyBaggageKg
+        : value.economyBaggageKg;
+    const businessBaggageKg =
+      value.businessBaggageKg === undefined
+        ? row.businessBaggageKg
+        : value.businessBaggageKg;
+    const baggageValue = (value: Prisma.Decimal | string | null | undefined) =>
+      value == null ? null : new Prisma.Decimal(value).toString();
+    const min =
+      value.returnMinDays === undefined
+        ? row.returnMinDays
+        : value.returnMinDays;
+    const max =
+      value.returnMaxDays === undefined
+        ? row.returnMaxDays
+        : value.returnMaxDays;
+    if (!validReturnWindow(min, max))
+      throw new BadRequestException('بازه روزهای برگشت معتبر نیست.');
+    const originAirportId =
+      value.originAirportId === undefined
+        ? row.originAirportId
+        : value.originAirportId;
+    const destinationAirportId =
+      value.destinationAirportId === undefined
+        ? row.destinationAirportId
+        : value.destinationAirportId;
+    const scheduleOnlyRevision =
+      (row.originAirportId == null ||
+        row.originAirportId === originAirportId) &&
+      (row.destinationAirportId == null ||
+        row.destinationAirportId === destinationAirportId) &&
+      (row.supplyType ?? null) === (supplyType ?? null) &&
+      baggageValue(row.economyBaggageKg) === baggageValue(economyBaggageKg) &&
+      baggageValue(row.businessBaggageKg) === baggageValue(businessBaggageKg) &&
+      (row.returnMinDays ?? null) === (min ?? null) &&
+      (row.returnMaxDays ?? null) === (max ?? null) &&
+      row.originId === value.originId &&
+      row.destinationId === value.destinationId &&
+      row.carrierName === value.carrierName &&
+      row.serviceNumber === value.serviceNumber &&
+      row.cabinClassCode === value.cabinClassCode &&
+      row.totalCapacity === value.totalCapacity;
+    const templateOnlyRevision =
+      scheduleOnlyRevision &&
+      value.manifestTemplateId !== undefined &&
+      (value.manifestTemplateId ?? null) !== (row.manifestTemplateId ?? null) &&
+      row.departureAt.getTime() === new Date(value.departureAt).getTime() &&
+      row.arrivalAt.getTime() === new Date(value.arrivalAt).getTime();
+    if (
+      !templateOnlyRevision &&
+      ((linkedSale && !scheduleOnlyRevision) ||
+        row.capacityHolds.length ||
+        row.tourOutboundDepartures.length ||
+        row.tourReturnDepartures.length)
+    )
+      throw new ConflictException(
+        'برای بلیط متصل به قرارداد فقط ساعت حرکت و رسیدن قابل ویرایش است؛ رزرو ظرفیت یا تور متصل باید ابتدا تعیین تکلیف شود.',
+      );
+    const updated = await tx.ticketPublishedOffer.update({
+      where: { id },
+      data: {
+        ...value,
+        originAirportId,
+        destinationAirportId,
+        supplyType,
+        economyBaggageKg,
+        businessBaggageKg,
+        returnMinDays: min,
+        returnMaxDays: max,
+        manifestTemplateId:
+          value.manifestTemplateId === undefined
+            ? row.manifestTemplateId
+            : value.manifestTemplateId,
+        departureAt: new Date(value.departureAt),
+        arrivalAt: new Date(value.arrivalAt),
+        fingerprint: createHash('sha256')
+          .update(JSON.stringify({ branchId: row.branchId, ...value }))
+          .digest('hex'),
+        version: { increment: 1 },
+        ...(new Date(value.departureAt) > new Date() &&
+        (row.status === 'EXPIRED' ||
+          (row.status === 'PAUSED' &&
+            row.audit[0]?.action === 'ticket.offer.expired'))
+          ? { status: 'ACTIVE' }
+          : {}),
+      },
+    });
+    await tx.ticketOfferAudit.create({
+      data: {
+        offerId: id,
+        actorUserId: actor.userId,
+        action: 'ticket.offer.revised',
+        version: updated.version,
+      },
+    });
+    return { data: { id, version: updated.version } };
   }
 
   /** Public module service; caller supplies the contract's authorized branch. This is revalidation, not a capacity hold. */

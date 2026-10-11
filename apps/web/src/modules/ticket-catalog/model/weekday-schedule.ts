@@ -22,6 +22,19 @@ export interface ScheduleDate {
   outbound: string;
   returning?: string;
 }
+
+export function chronologicalScheduleDates(dates: readonly ScheduleDate[]) {
+  return [...dates].sort(
+    (left, right) =>
+      left.outbound.localeCompare(right.outbound) ||
+      (left.returning ?? '').localeCompare(right.returning ?? ''),
+  );
+}
+
+export function scheduleWeekdayName(date: string) {
+  const day = new Date(`${date}T00:00:00Z`).getUTCDay();
+  return scheduleWeekdays.find((weekday) => weekday.day === day)?.name ?? '—';
+}
 const DAY = 86_400_000;
 function dateMillis(date: string) {
   const value = Date.parse(date + 'T00:00:00Z');

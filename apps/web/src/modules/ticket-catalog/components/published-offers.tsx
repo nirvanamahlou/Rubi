@@ -10,6 +10,7 @@ import { Alert, Card } from '@/components/ui/surfaces';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
 export function PublishedOffers() {
   const [open, setOpen] = useState(false);
@@ -53,7 +54,7 @@ export function PublishedOffers() {
       if (!branchId) throw new Error('شعبه مجاز یافت نشد.');
       const fingerprint = JSON.stringify({ input, branchId });
       if (attempt.current.fingerprint !== fingerprint)
-        attempt.current = { fingerprint, key: crypto.randomUUID() };
+        attempt.current = { fingerprint, key: browserRandomUuid() };
       const response = await fetch(`${base}/ticket-catalog/offers`, {
         method: 'POST',
         credentials: 'include',

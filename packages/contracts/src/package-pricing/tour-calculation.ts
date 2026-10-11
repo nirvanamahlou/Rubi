@@ -7,6 +7,7 @@ export interface TourRoomCurrencyAmount {
 }
 
 export interface TourRoomCalculationInput {
+  extraSaleFields?: readonly { amount: string; currencyCode: string }[];
   basePerNight: string;
   factor: string;
   nights: number;
@@ -131,6 +132,13 @@ export function calculateTourRoom(input: TourRoomCalculationInput) {
       units(money.amount, scale(money.currencyCode)) * BigInt(count);
     if (value) add(money.currencyCode, 'sale', value);
   }
+  for (const field of input.extraSaleFields ?? []) {
+    add(
+      field.currencyCode,
+      'sale',
+      units(field.amount, scale(field.currencyCode)),
+    );
+  }
   for (const cost of input.flightCosts ?? []) {
     const value =
       units(cost.adultUnitCost, scale(cost.currencyCode)) *
@@ -139,8 +147,7 @@ export function calculateTourRoom(input: TourRoomCalculationInput) {
         BigInt(input.children);
     if (value) add(cost.currencyCode, 'purchase', value);
   }
-  if (fixedCommission)
-    add(fixedCommission.currencyCode, 'sale', 0n);
+  if (fixedCommission) add(fixedCommission.currencyCode, 'sale', 0n);
   const currencyAmounts: TourRoomCurrencyAmount[] = [...buckets]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([currencyCode, bucket]) => {

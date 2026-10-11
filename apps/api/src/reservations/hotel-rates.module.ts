@@ -240,6 +240,26 @@ export class HotelRatesController {
     return this.packs.list(req.actor, branchId, Number(page));
   }
 
+  @Get('periods')
+  @Header('Cache-Control', 'private, no-store')
+  periods(
+    @Req() req: AuthenticatedRequest,
+    @Query('branchId') branchId: string,
+    @Query('cityId') cityId: string,
+  ) {
+    return this.packs.periods(req.actor, branchId, cityId);
+  }
+
+  @Post('shared-periods')
+  @Header('Cache-Control', 'private, no-store')
+  createSharedPeriod(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: unknown,
+    @Headers('idempotency-key') key?: string,
+  ) {
+    return this.packs.createShared(body, key, req.actor);
+  }
+
   @Get('packs/:id')
   @Header('Cache-Control', 'private, no-store')
   packDetail(

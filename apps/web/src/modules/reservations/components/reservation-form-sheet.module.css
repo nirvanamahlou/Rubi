@@ -64,6 +64,7 @@
   margin-top: 3px;
 }
 .logo,
+.jahanLogo,
 .agencyLogo {
   display: block;
   width: auto;
@@ -341,4 +342,13 @@
 .footer [data-reservation-footer] {
   flex-basis: 100%;
   flex-shrink: 0;
+}
+
+.jahanBrand {
+  background: white;
+  border-radius: 2mm;
+  padding: 1mm;
+}
+.jahanLogo {
+  max-height: 23mm;
 }

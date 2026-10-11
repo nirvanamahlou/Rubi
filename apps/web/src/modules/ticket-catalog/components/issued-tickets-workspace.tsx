@@ -71,8 +71,14 @@ export function IssuedTicketsWorkspace({
       setExporting(false);
     }
   }
-  const result = queryIssuedTickets(tickets, query);
-  const routeCounts = countIssuedTicketsByRoute(tickets);
+  const result = useMemo(
+    () => queryIssuedTickets(tickets, query),
+    [tickets, query],
+  );
+  const routeCounts = useMemo(
+    () => countIssuedTicketsByRoute(tickets),
+    [tickets],
+  );
   const filter = (patch: Partial<IssuedTicketQuery>) => {
     const next = { ...query, ...patch, page: 1 };
     setQuery(next);
@@ -329,10 +335,6 @@ export function IssuedTicketsWorkspace({
         >
           دانلود PDF
         </Button>
-        <span className="text-sm text-muted-foreground">
-          انتخاب بازه تاریخ صدور برای خروجی الزامی است؛ سایر فیلترها اختیاری
-          هستند.
-        </span>
       </div>
       {exportError ? (
         <Alert
@@ -420,14 +422,20 @@ export function ConnectedIssuedTicketsWorkspace() {
       .slice(0, 10),
     issuedTo: new Date(Date.now() + 12600000).toISOString().slice(0, 10),
   }));
-  const onDatesChange = useCallback((q: IssuedTicketQuery) => {
-    setLoading(true);
-    setRange(q);
-  }, []);
+  const onDatesChange = useCallback(
+    (q: IssuedTicketQuery) => {
+      if (range.issuedFrom === q.issuedFrom && range.issuedTo === q.issuedTo)
+        return;
+      setLoading(true);
+      setRange(q);
+    },
+    [range],
+  );
   useEffect(() => {
     const controller = new AbortController();
     void loadReservationIssuedTickets(controller.signal, range)
       .then((data) => {
+        if (controller.signal.aborted) return;
         setTickets(data);
         setError('');
       })

@@ -113,6 +113,7 @@ const date = (v?: string | null) =>
     ? new Date(v).toLocaleString('fa-IR', {
         dateStyle: 'short',
         timeStyle: 'short',
+        hourCycle: 'h23',
       })
     : 'تعیین نشده';
 const accent = (color: string) =>

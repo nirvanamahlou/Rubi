@@ -10,7 +10,7 @@ export async function assertUniqueTicketIdentity(
   tx: Prisma.TransactionClient,
   value: TicketOfferCreateV1,
   branchId: string,
-  exceptId?: string,
+  exceptId?: string | readonly string[],
 ) {
   // Both creation and revision use this transaction lock. A check outside a
   // transaction can let two different request keys publish duplicate stock.
@@ -24,7 +24,11 @@ export async function assertUniqueTicketIdentity(
       destinationId: value.destinationId,
       departureAt: new Date(value.departureAt),
       cabinClassCode: value.cabinClassCode,
-      ...(exceptId ? { id: { not: exceptId } } : {}),
+      ...(typeof exceptId === 'string'
+        ? { id: { not: exceptId } }
+        : exceptId
+          ? { id: { notIn: [...exceptId] } }
+          : {}),
       audit: { none: { action: 'ticket.offer.archived' } },
     },
     select: { carrierName: true, serviceNumber: true, supplyType: true },

@@ -115,6 +115,7 @@ export class B2bPhoneVerificationService {
           jobTitle: dto.jobTitle ?? '',
           phone: inspected.canonicalPhone,
           email: dto.email ?? '',
+          nationalId: dto.nationalId ?? '',
           preferredChannel: 'PHONE',
         },
         actor,

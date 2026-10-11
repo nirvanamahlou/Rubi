@@ -24,6 +24,8 @@ it('uses saved voucher settings, selected passengers and service flags without r
     meal: 'UALL',
     checkIn: '2026-10-01',
     checkOut: '2026-10-04',
+    arrivalDate: '2026-10-01',
+    departureDate: '2026-10-04',
     leaderName: 'HIDDEN GUIDE',
   });
   settings.numbers = {
@@ -53,6 +55,13 @@ it('uses saved voucher settings, selected passengers and service flags without r
   expect(output.meal).toBe('UALL');
   expect(output.rooms).toBe(3);
   expect(output.nights).toBe(3);
+  expect(output.checkIn).toBe('01 OCT 2026');
+  expect(output.checkOut).toBe('04 OCT 2026');
+  expect(output.flights.map((f) => f.date)).toEqual([
+    '01 OCT 2026',
+    '04 OCT 2026',
+  ]);
+  expect(settings.text.checkIn).toBe('2026-10-01');
   expect(output.children).toBe(1);
   expect(output.passengers[0]?.age).toBe('CHD (2-6)');
   settings.text.broker = 'Agency receiving the form';

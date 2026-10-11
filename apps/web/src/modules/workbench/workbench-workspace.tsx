@@ -76,10 +76,10 @@ const tabIcons = [
   ClipboardList,
   MessageSquare,
   FileText,
-  Star,
   Activity,
   ChartNoAxesCombined,
   StickyNote,
+  Star,
   CalendarDays,
   Settings2,
 ];

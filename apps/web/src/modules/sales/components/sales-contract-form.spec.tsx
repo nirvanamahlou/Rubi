@@ -68,6 +68,17 @@ vi.mock('react', async (original) => ({
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
 describe('compact sales contract form', () => {
+  it('explains invalid final-step data without hiding the form', () => {
+    fixture.step = 3;
+    let html: string;
+    try {
+      html = renderToStaticMarkup(<SalesContractForm />);
+    } finally {
+      fixture.step = 0;
+    }
+    expect(html).toContain('نیازمند اصلاح قبل از ثبت');
+    expect(html).toContain('disabled');
+  });
   it('shows passenger package prices without catalog/day-sale or service agreement fields', () => {
     fixture.step = 3;
     fixture.ticketDraft = {

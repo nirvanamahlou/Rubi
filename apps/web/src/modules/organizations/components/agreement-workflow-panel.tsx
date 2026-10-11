@@ -41,6 +41,7 @@ import {
   serviceLabels,
 } from '../model/agreement-terms';
 import { AgreementTermsEditor } from './agreement-terms-editor';
+import { DossierHeaderAction } from './dossier-header-action';
 import { temporaryCreditIssue } from '../model/temporary-credit';
 import { DossierDateFilters } from './dossier-date-filters';
 import {
@@ -370,11 +371,13 @@ export function AgreementWorkflowPanel({
   organizationName = organizationId,
   role,
   view = 'agreements',
+  headerActionTargetId,
 }: {
   organizationId: string;
   organizationName?: string;
   role: B2bCooperationRole;
   view?: 'agreements' | 'credit' | 'guarantees' | 'temporary';
+  headerActionTargetId?: string;
 }) {
   const {
     branches,
@@ -1214,6 +1217,18 @@ export function AgreementWorkflowPanel({
   }
   return (
     <div className="agreement-workflow">
+      {canManage && view === 'agreements' && headerActionTargetId ? (
+        <DossierHeaderAction targetId={headerActionTargetId}>
+          <button
+            className="btn primary"
+            disabled={loading || !branchId}
+            onClick={() => edit()}
+          >
+            <Plus size={16} />
+            قرارداد جدید
+          </button>
+        </DossierHeaderAction>
+      ) : null}
       <div className="agreement-row-title agreement-toolbar dossier-filter-grid">
         <div className="commercial-section-heading">
           <div className="commercial-section-actions">
@@ -1244,7 +1259,7 @@ export function AgreementWorkflowPanel({
                 </NativeSearchSelect>
               </label>
             ) : null}
-            {canManage && view === 'agreements' ? (
+            {canManage && view === 'agreements' && !headerActionTargetId ? (
               <button
                 className="btn primary"
                 disabled={loading || !branchId}

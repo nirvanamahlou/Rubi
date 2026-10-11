@@ -5,6 +5,7 @@ import { Check } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '@/lib/utils';
+import { TimePicker } from './time-picker';
 
 const controlClasses =
   'w-full rounded-xl border border-input bg-surface px-3 text-sm text-foreground shadow-xs outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50';
@@ -12,13 +13,17 @@ const controlClasses =
 export const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
->(({ className, ...props }, ref) => (
-  <input
-    className={cn(controlClasses, 'h-11', className)}
-    ref={ref}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) =>
+  props.type === 'time' ? (
+    <TimePicker {...props} className={className} ref={ref} />
+  ) : (
+    <input
+      className={cn(controlClasses, 'h-11', className)}
+      ref={ref}
+      {...props}
+    />
+  ),
+);
 Input.displayName = 'Input';
 
 export const Textarea = React.forwardRef<

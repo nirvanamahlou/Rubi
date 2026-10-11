@@ -641,6 +641,21 @@ export class CustomerService {
       });
     return { data: toCustomerDetail(row, false) };
   }
+
+  /** Internal Sales reference: caller supplies buyers from its authorized contracts. */
+  async salesPartyKinds(ids: readonly string[], actor: AuthenticatedActor) {
+    if (
+      !actor.permissions.some((permission) =>
+        [
+          'sales.contracts.read.all',
+          'sales.contracts.read.branch',
+          'sales.contracts.read.own',
+        ].includes(permission),
+      )
+    )
+      throw new ForbiddenException();
+    return this.repository.salesPartyKinds(ids);
+  }
   async create(
     input: CustomerMutationRequest,
     actor: AuthenticatedActor,

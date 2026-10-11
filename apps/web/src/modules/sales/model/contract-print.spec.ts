@@ -2,6 +2,44 @@ import { describe, expect, it } from 'vitest';
 import { contractPrintHtml, contractMoney } from './contract-print';
 import { printFixture, printReferences } from './contract-print.fixture';
 describe('Saved contract print output', () => {
+  it('shows the saved cheque policy and total including interest without changing passenger service prices', () => {
+    const output = structuredClone(printFixture);
+    output.contract.paymentTerms = {
+      version: 1,
+      mode: 'CHECK',
+      plans: [
+        {
+          currencyCode: 'IRR',
+          downPayment: '30000000',
+          months: 3,
+          firstDueDate: '2026-11-30',
+        },
+      ],
+    };
+    output.contract.priceComponents = [
+      {
+        type: 'BASE',
+        title: 'خدمات',
+        amount: '100000000',
+        currencyCode: 'IRR',
+      },
+    ];
+    output.contract.balances = [
+      {
+        currencyCode: 'IRR',
+        amount: '110500000',
+        confirmedPaid: '0',
+        pendingFinance: '0',
+        outstanding: '110500000',
+      },
+    ];
+    const html = contractPrintHtml(output, printReferences);
+    expect(html).toContain('110,500,000');
+    expect(html).toContain('30,000,000');
+    expect(html).toContain('10,500,000');
+    expect(html).toContain('فروش چکی');
+    expect(html).toContain('اولین سررسید');
+  });
   it('prints and escapes all four buyer fields independently from passenger names', () => {
     const output = structuredClone(printFixture);
     output.contract.customerNameSnapshot = 'Synthetic <Buyer>';
@@ -299,4 +337,17 @@ describe('Saved contract print output', () => {
     for (const p of output.contract.passengersDetail)
       expect(html).toContain(p.displayNameSnapshot);
   });
+});
+
+it('uses the Jahan Bastan issuer throughout the contract without Niyayesh contact data', () => {
+  const output = structuredClone(printFixture);
+  output.company.code = 'JAHAN_BASTAN';
+  output.company.persianName = 'شرکت نیایش سیر سحر';
+  output.company.latinName = 'JAHAN BASTAN';
+  const html = contractPrintHtml(output, printReferences);
+  expect(html).toContain('ارسال درخواست به آژانس جهان باستان');
+  expect(html).toContain('jahan-brand');
+  expect(html).not.toContain('نیایش');
+  expect(html).not.toContain('Nystkt.ir');
+  expect(html).not.toContain('niyayeshseir.com');
 });

@@ -6,6 +6,7 @@ import type {
   B2bAgreementTermsV1,
   IamPermissionCode,
   MasterDataRecord,
+  MasterOrganizationAddressV1,
 } from '@nora/contracts';
 import { blankAgreementTerms } from './agreement-terms';
 import {
@@ -22,6 +23,7 @@ import {
   organizationByName,
   validateOrganizationRows,
 } from './organization-import';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
 export interface CooperationDraft {
   registrationId: string;
@@ -33,11 +35,15 @@ export interface CooperationDraft {
   code: string;
   personType: string;
   nationalId: string;
+  registrationNumber: string;
+  economicCode: string;
+  tourismLicenseNumber: string;
   role: 'AGENCY' | 'CORPORATE_CUSTOMER';
   countryId: string;
   cityId: string;
   addressLine: string;
   fullName: string;
+  chiefExecutiveNationalId: string;
   jobTitle: string;
   phone: string;
   email: string;
@@ -53,11 +59,15 @@ export const blankCooperationDraft: CooperationDraft = {
   code: '',
   personType: 'LEGAL',
   nationalId: '',
+  registrationNumber: '',
+  economicCode: '',
+  tourismLicenseNumber: '',
   role: 'AGENCY',
   countryId: '',
   cityId: '',
   addressLine: '',
   fullName: '',
+  chiefExecutiveNationalId: '',
   jobTitle: '',
   phone: '',
   email: '',
@@ -82,6 +92,7 @@ export function cooperationIssue(
         code: draft.code,
         legalName: draft.legalName,
         personType: draft.personType,
+        nationalId: draft.nationalId,
         roleCodes: draft.role,
       },
     ])[0]?.issue;
@@ -98,6 +109,11 @@ export function cooperationIssue(
       draft.fullName.trim().length < 2
     )
       return 'نام نماینده را وارد کنید.';
+    if (
+      draft.chiefExecutiveNationalId &&
+      !/^[0-9۰-۹٠-٩\s]{10,20}$/.test(draft.chiefExecutiveNationalId)
+    )
+      return 'کد ملی مدیرعامل باید ۱۰ رقم باشد.';
     if (draft.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email))
       return 'ایمیل نماینده معتبر نیست.';
     if (draft.phone && !normalizeIranianMobile(draft.phone))
@@ -152,6 +168,11 @@ export class CooperationSaveError extends Error {
     super(message);
   }
 }
+export interface CooperationEditContext {
+  contact?: MasterDataRecord;
+  address?: MasterOrganizationAddressV1;
+  preserveSensitiveContactFields?: boolean;
+}
 export function normalizeOtpCode(value: string) {
   return value
     .replace(/[\u06f0-\u06f9]/g, (digit) =>
@@ -167,8 +188,10 @@ export async function saveCooperation(
   draft: CooperationDraft,
   permissions: readonly IamPermissionCode[],
   existing?: MasterDataRecord,
+  editContext?: CooperationEditContext,
 ) {
   for (const step of [1, 2, 3, 4]) {
+    if (step === 3 && editContext) continue;
     const issue = cooperationIssue(draft, step);
     if (issue) throw new Error(issue);
   }
@@ -183,8 +206,9 @@ export async function saveCooperation(
       throw new Error('مجوز لازم برای ذخیره این اطلاعات وجود ندارد.');
   };
   require('master_data.read');
-  if (!existing || draft.fullName) require('master_data.create');
-  if ((existing && needsRole) || draft.addressLine)
+  if (!existing || (draft.fullName && !editContext?.contact))
+    require('master_data.create');
+  if (editContext || (existing && needsRole) || draft.addressLine)
     require('master_data.update');
   if (draft.withAgreement)
     for (const permission of [
@@ -220,15 +244,29 @@ export async function saveCooperation(
   try {
     roles.add(draft.role);
     if (existing) {
-      organization = existing;
-      organization = needsRole
+      organization = editContext
         ? (
             await masterDataApi.update('organizations', existing.id, {
               version: existing.version,
-              values: { roleCodes: [...roles].join(',') },
+              values: {
+                legalName: draft.legalName.trim(),
+                personType: draft.personType,
+                nationalId: draft.nationalId.trim() || null,
+                registrationNumber: draft.registrationNumber.trim() || null,
+                economicCode: draft.economicCode.trim() || null,
+                tourismLicenseNumber: draft.tourismLicenseNumber.trim() || null,
+                roleCodes: [...roles].join(','),
+              },
             })
           ).data
-        : existing;
+        : needsRole
+          ? (
+              await masterDataApi.update('organizations', existing.id, {
+                version: existing.version,
+                values: { roleCodes: [...roles].join(',') },
+              })
+            ).data
+          : existing;
     } else {
       if (await organizationByName(draft.legalName.trim()))
         throw new Error(
@@ -241,13 +279,37 @@ export async function saveCooperation(
             legalName: draft.legalName.trim(),
             personType: draft.personType,
             nationalId: draft.nationalId.trim() || null,
+            registrationNumber: draft.registrationNumber.trim() || null,
+            economicCode: draft.economicCode.trim() || null,
+            tourismLicenseNumber: draft.tourismLicenseNumber.trim() || null,
             roleCodes: draft.role,
           },
         })
       ).data;
     }
     if (draft.fullName.trim()) {
-      if (draft.phone.trim())
+      if (editContext)
+        await agencyClient.saveContact(
+          organization.id,
+          {
+            fullName: draft.fullName.trim(),
+            jobTitle: draft.jobTitle.trim(),
+            ...(editContext.preserveSensitiveContactFields
+              ? {}
+              : {
+                  phone: draft.phone.trim(),
+                  email: draft.email.trim(),
+                  nationalId: draft.chiefExecutiveNationalId.trim(),
+                  preferredChannel: draft.phone.trim()
+                    ? 'PHONE'
+                    : draft.email.trim()
+                      ? 'EMAIL'
+                      : 'OTHER',
+                }),
+          },
+          editContext.contact,
+        );
+      else if (draft.phone.trim())
         await agencyClient.saveVerifiedContact({
           registrationId: draft.registrationId,
           branchId: draft.branchId,
@@ -258,6 +320,9 @@ export async function saveCooperation(
           fullName: draft.fullName.trim(),
           jobTitle: draft.jobTitle.trim(),
           ...(draft.email.trim() ? { email: draft.email.trim() } : {}),
+          ...(draft.chiefExecutiveNationalId.trim()
+            ? { nationalId: draft.chiefExecutiveNationalId.trim() }
+            : {}),
         });
       else
         await agencyClient.saveContact(organization.id, {
@@ -265,18 +330,40 @@ export async function saveCooperation(
           jobTitle: draft.jobTitle.trim(),
           phone: '',
           email: draft.email.trim(),
+          nationalId: draft.chiefExecutiveNationalId.trim(),
           preferredChannel: draft.email.trim() ? 'EMAIL' : 'OTHER',
         });
     }
-    if (draft.addressLine.trim())
-      await masterDataApi.createOrganizationAddress(organization.id, {
-        ...(draft.countryId && draft.cityId
+    if (draft.addressLine.trim()) {
+      const location =
+        draft.countryId && draft.cityId
           ? { countryId: draft.countryId, cityId: draft.cityId }
-          : {}),
-        addressLine: draft.addressLine.trim(),
-        label: 'نشانی همکاری',
-        isPrimary: false,
-      });
+          : editContext
+            ? { countryId: null, cityId: null }
+            : {};
+      if (editContext?.address)
+        await masterDataApi.updateOrganizationAddress(
+          organization.id,
+          editContext.address.id,
+          {
+            ...location,
+            addressLine: draft.addressLine.trim(),
+            label: editContext.address.label,
+            postalCode: editContext.address.postalCode,
+            isPrimary: editContext.address.isPrimary,
+            isActive: editContext.address.isActive,
+            displayOrder: editContext.address.displayOrder,
+            version: editContext.address.version,
+          },
+        );
+      else
+        await masterDataApi.createOrganizationAddress(organization.id, {
+          ...location,
+          addressLine: draft.addressLine.trim(),
+          label: 'نشانی همکاری',
+          isPrimary: Boolean(editContext),
+        });
+    }
     if (draft.withAgreement) {
       const savedOrganization = organization;
       if (!savedOrganization)
@@ -347,7 +434,7 @@ export async function saveCooperation(
       await agencyClient.saveAgreementTerms(organization.id, {
         branchId: draft.branchId,
         role: draft.role,
-        requestId: draft.agreementRequestId ?? crypto.randomUUID(),
+        requestId: draft.agreementRequestId ?? browserRandomUuid(),
         terms: agreementTerms,
         ...(referenceGrants.length ? { referenceGrants } : {}),
       });

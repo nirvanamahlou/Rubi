@@ -33,7 +33,7 @@ function optionsFrom(
 /** Retains a real select target and native FormData while presenting the shared search field. */
 export const NativeSearchSelect = React.forwardRef<
   HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement>
+  React.SelectHTMLAttributes<HTMLSelectElement> & { optionLimit?: number }
 >(
   (
     {
@@ -49,6 +49,7 @@ export const NativeSearchSelect = React.forwardRef<
       'aria-label': label,
       'aria-describedby': describedBy,
       'aria-invalid': invalid,
+      optionLimit,
       ...props
     },
     forwardedRef,
@@ -85,6 +86,7 @@ export const NativeSearchSelect = React.forwardRef<
           label={label}
           describedBy={describedBy}
           invalid={invalid === true || invalid === 'true'}
+          {...(optionLimit === undefined ? {} : { optionLimit })}
           placeholder="جست‌وجو و انتخاب…"
           onValueChange={(next) => {
             setInternal(next);

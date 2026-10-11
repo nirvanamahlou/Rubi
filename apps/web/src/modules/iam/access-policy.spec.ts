@@ -167,3 +167,14 @@ it('requires operational grants even when a managed screen was selected', () => 
   expect(canViewScreen(screensOnly, 'finance.home')).toBe(false);
   expect(canViewRoute([...screensOnly, 'finance.read'], '/finance')).toBe(true);
 });
+
+it('shows explicitly selected owner-scoped workbench screens without a nonexistent native grant', () => {
+  const permissions = [
+    USER_ACCESS_PROFILE_PERMISSION,
+    screenPermission('workbench.home'),
+    screenPermission('workbench.tab.notes'),
+  ];
+  expect(canViewScreen(permissions, 'workbench.home')).toBe(true);
+  expect(canViewRoute(permissions, '/workbench')).toBe(true);
+  expect(canViewScreen(permissions, 'workbench.tab.calendar')).toBe(false);
+});

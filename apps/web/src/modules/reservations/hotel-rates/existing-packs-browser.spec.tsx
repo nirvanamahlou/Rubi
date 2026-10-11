@@ -40,13 +40,14 @@ it('renders only searched hotels but keeps exact prices, age bands and room cont
   expect(html).toContain('قیمت واقعی ترکیبی');
   expect(html).toContain('استاندارد');
 });
-it('makes legacy bases editable only with write permission and does not mislabel compatibility base as an exact price', () => {
+it('retires legacy manual base editing and guards opening the replacement panel by write permission', () => {
   const readonly = renderToStaticMarkup(
     <SavedPackHotelPrices
       pack={savedPack()}
       search="دوم"
       disabled
       onChange={vi.fn()}
+      onEdit={vi.fn()}
     />,
   );
   const editable = renderToStaticMarkup(
@@ -55,11 +56,14 @@ it('makes legacy bases editable only with write permission and does not mislabel
       search="دوم"
       disabled={false}
       onChange={vi.fn()}
+      onEdit={vi.fn()}
     />,
   );
   expect(readonly).toContain('disabled=""');
   expect(editable).not.toContain('disabled=""');
-  expect(editable).toContain('قیمت پایهٔ هر نفر / هر شب');
+  expect(editable).toContain('باز کردن پنل ضرایب و قیمت پایه');
+  expect(editable).not.toContain('قیمت پایهٔ هر نفر / هر شب');
+  expect(editable).not.toContain('<input');
   const exact = renderToStaticMarkup(
     <SavedPackHotelPrices
       pack={savedPack()}
@@ -86,6 +90,34 @@ it('requires an explicit preview click instead of reading immediately on file se
   expect(html).toContain('ابتدا بستهٔ جدید');
   expect(html).toContain('disabled=""');
   expect(html).not.toContain('پیش‌نمایش ردیف');
+});
+
+it('shows saved manual purchase and sale without permitting inconsistent direct amount edits', () => {
+  const pack = structuredClone(savedPack());
+  const rate = pack.rows[0]!.roomRates[0]!.occupancyRates![0]!;
+  Object.assign(rate, {
+    amount: '200.00',
+    saleAmount: '220.00',
+    manualPricing: {
+      baseAmount: '100',
+      coefficient: '2',
+      adjustment: { kind: 'PERCENT', value: '10' },
+    },
+  });
+  const html = renderToStaticMarkup(
+    <SavedPackHotelPrices
+      pack={pack}
+      search="رویال"
+      disabled={false}
+      onChange={vi.fn()}
+      onEdit={vi.fn()}
+    />,
+  );
+  expect(html).toContain('قیمت‌های دستی ذخیره‌شده');
+  expect(html).toContain('200.00');
+  expect(html).toContain('220.00');
+  expect(html).toContain('باز کردن پنل ضرایب و قیمت پایه');
+  expect(html).not.toContain('<input');
 });
 
 it('keeps a genuine legacy base editable when exact and legacy rooms coexist in one hotel', () => {

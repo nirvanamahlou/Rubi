@@ -8,6 +8,6 @@ describe('issued passenger ticket exports', () => {
     expect(html).toContain('دانلود PDF');
     expect(html).toContain('صدور از تاریخ');
     expect(html).toContain('صدور تا تاریخ');
-    expect(html).toContain('انتخاب بازه تاریخ صدور');
+    expect(html).not.toContain('انتخاب بازه تاریخ صدور برای خروجی الزامی است');
   });
 });

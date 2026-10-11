@@ -76,9 +76,9 @@ describe('legal entity context UI model', () => {
     expect(legalEntityBrand('JAHAN_BASTAN')).toEqual({
       alt: 'لوگوی شرکت جهان باستان',
       label: 'CRM شرکت جهان باستان',
-      src: '/brand/jahan-bastan-horizontal.png',
-      width: 2048,
-      height: 768,
+      src: '/brand/jahan-bastan-transparent.png',
+      width: 1254,
+      height: 1254,
     });
   });
   it('keeps the Niyayesh brand for its company and the aggregate context', () => {

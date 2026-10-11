@@ -46,12 +46,12 @@ describe('accounting parity evidence controls', () => {
       accountingParityDefinitions.filter(
         (item) => item.support === 'supported',
       ),
-    ).toHaveLength(37);
+    ).toHaveLength(39);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'dependency',
       ),
-    ).toHaveLength(46);
+    ).toHaveLength(44);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'source-error',

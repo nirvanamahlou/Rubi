@@ -15,6 +15,7 @@ import {
 } from '@/components/ui';
 import { DatePicker } from '@/components/ui/date-picker';
 import { NoteEditor } from './note-editor';
+import { WorkbenchDailyAssistant } from './workbench-daily-assistant';
 import {
   filterNoteDrafts,
   noteTemplates,
@@ -132,6 +133,7 @@ export function WorkbenchNotes({
   }
   return (
     <div className="space-y-4">
+      <WorkbenchDailyAssistant onNoteCreated={() => void load()} />
       {error ? (
         <Alert
           tone="error"

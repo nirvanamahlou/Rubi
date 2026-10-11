@@ -75,4 +75,9 @@ export class CreateVerifiedB2bContactDto extends B2bPhoneVerificationBindingDto 
   @IsEmail()
   @MaxLength(200)
   email?: string;
+
+  @IsOptional()
+  @Transform(optionalTrim)
+  @Matches(/^[0-9۰-۹٠-٩\s]{10,20}$/)
+  nationalId?: string;
 }

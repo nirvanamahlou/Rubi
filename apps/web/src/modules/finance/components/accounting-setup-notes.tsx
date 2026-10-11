@@ -3,6 +3,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { AccountingSnapshotV1 } from '@nora/contracts';
 import { Input, Textarea } from '@/components/ui/form-controls';
+import { DatePicker } from '@/components/ui/date-picker';
 import { AccountingButton as Button } from './accounting-operations';
 import { AccountingAttachments } from './accounting-attachments';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
@@ -138,11 +139,11 @@ export function AccountingSetupNotes({
               </label>
               <label className="block space-y-1">
                 <span>تاریخ یادداشت</span>
-                <Input
+                <DatePicker
                   aria-label="تاریخ یادداشت"
-                  type="date"
+                  withinDialog
                   value={draft.date}
-                  onChange={(e) => setDraft({ ...draft, date: e.target.value })}
+                  onChange={(date) => setDraft({ ...draft, date })}
                 />
               </label>
               <label className="block space-y-1">

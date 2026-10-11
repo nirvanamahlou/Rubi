@@ -507,3 +507,37 @@ describe('reservation ticket PDF', () => {
     expect(invalid.status).toBe(400);
   });
 });
+
+it('downloads Jahan tickets with the new bundled logo instead of a stale uploaded company logo', async () => {
+  const companyIntake = structuredClone(intake);
+  companyIntake.workflow.branding = {
+    kind: 'OWN',
+    companyCode: 'JAHAN_BASTAN',
+    referenceId: 'company',
+    name: 'نیایش سیر سحر',
+    logoFileId: 'old-logo',
+  };
+  const fetcher = vi
+    .fn()
+    .mockResolvedValueOnce(Response.json({ data: companyIntake }))
+    .mockImplementation(() =>
+      Promise.resolve(
+        Response.json({
+          data: { name: 'City', attributes: { englishName: 'CITY' } },
+        }),
+      ),
+    );
+  vi.stubGlobal('fetch', fetcher);
+  const response = await GET(request('?passengerId=' + passengerId), {
+    params: Promise.resolve({ id }),
+  });
+  expect(response.status).toBe(200);
+  expect(brandAssetReader).toHaveBeenCalledWith('jahan-bastan-transparent.png');
+  expect(
+    fetcher.mock.calls.some(([url]) =>
+      String(url).includes('/documents/old-logo'),
+    ),
+  ).toBe(false);
+  expect(renderer.mock.calls[0]?.[0]).toContain('جهان باستان');
+  expect(renderer.mock.calls[0]?.[0]).not.toContain('نیایش');
+});

@@ -31,6 +31,20 @@ export class HotelPurchaseRatesPublicService {
       await this.database.client.reservationHotelRateBatch.findMany({
         where: {
           branchId,
+          // Shared snapshots belong to package selection, not the source-rate
+          // directory used by Sales to choose room tariffs.
+          ...(!cityId && !tourDepartureId
+            ? {
+                AND: [
+                  {
+                    OR: [
+                      { packId: null },
+                      { pack: { sourcePeriods: { none: {} } } },
+                    ],
+                  },
+                ],
+              }
+            : {}),
           ...(cityId
             ? { cityId }
             : tourDepartureId
@@ -54,7 +68,12 @@ export class HotelPurchaseRatesPublicService {
               }),
         },
         include: {
-          pack: { select: { currentVersion: true } },
+          pack: {
+            select: {
+              currentVersion: true,
+              sourcePeriods: { select: { sourceBatchId: true } },
+            },
+          },
           rows: {
             include: { roomRates: { orderBy: { roomTypeName: 'asc' } } },
             ...(cityId || tourDepartureId
@@ -73,6 +92,7 @@ export class HotelPurchaseRatesPublicService {
       .slice(0, 100)
       .map((batch) => ({
         id: batch.id,
+        sharedPeriod: !!batch.pack?.sourcePeriods?.length,
         version: 1,
         branchId: batch.branchId,
         tourDepartureId: batch.tourDepartureId,

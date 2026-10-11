@@ -1,23 +1,74 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import type { TicketOfferCreateV1 } from '@nora/contracts';
 import {
   findPublishedOffer,
   planCatalogPublication,
   flightOfferInput,
+  requireFutureTicketDates,
 } from './ticket-workspace';
 import { emptyInput } from '../model/preview';
 import type { Product, ProductInput, Reference } from '../model/catalog';
 
 describe('ticket workspace entry points', () => {
-  it('does not expose deletion for flight load or defined tickets', () => {
+  it('requires future dates by default and permits them only with the historical opt-in', () => {
+    const input = {
+      departureAt: '2026-10-01T08:00:00.000Z',
+    } as TicketOfferCreateV1;
+    const now = new Date('2026-10-10T00:00:00.000Z');
+
+    expect(() => requireFutureTicketDates([input], false, now)).toThrow(
+      'باید در آینده باشد',
+    );
+    expect(() => requireFutureTicketDates([input], true, now)).not.toThrow();
+  });
+
+  it('renders the historical-date opt-in in both ticket-definition paths', () => {
+    const advanced = readFileSync(
+      new URL('./ticket-form.tsx', import.meta.url),
+      'utf8',
+    );
+    const weekly = readFileSync(
+      new URL('./flight-schedule-form.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(advanced).toContain('تاریخ گذشته');
+    expect(weekly).toContain('تاریخ گذشته');
+    expect(advanced).toContain(
+      'onSave(cabinInputs(definition), reason, allowPastDate)',
+    );
+    expect(weekly).toContain("'تعریف برنامه هفتگی پرواز'");
+    expect(weekly).toContain("'ویرایش لود پرواز'");
+    expect(weekly).toContain('allowPastDate');
+  });
+
+  it('exposes safe load edit and archive beside the authoritative view', () => {
     const source = readFileSync(
       new URL('./ticket-workspace.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).not.toContain('archiveExpiredOffer');
-    expect(source).not.toContain('حذف بلیط');
-    expect(source).not.toContain('حذف بلیت');
+    expect(source).toContain('toursApi.archiveOfferBatch(');
+    expect(source).toContain('toursApi.archiveOffer(');
+    expect(source).toContain('toursApi.reviseOfferBatch(');
+    expect(source).toContain('toursApi.resizeOfferBatch(');
+    expect(source).not.toContain(
+      'طوری تنظیم کنید که همین تعداد ردیف ساخته شود',
+    );
+    expect(source).toContain('publishedLoadGroups(');
+    expect(source).toContain('ویرایش کل جدول');
+    expect(source).toContain('حذف کل جدول');
+    expect(source).toContain(
+      "setForm({ mode: 'edit', product, products: grouped, offers })",
+    );
+    expect(source).toContain('catalogOffer(current, publishedOffers)');
+    expect(source).toContain('currentPublishedOffer.version');
+    expect(source).toContain('initial={form.product?.definition}');
+    expect(source).toContain("editing={form.mode === 'edit'}");
+    expect(source).toContain('formStyles.scheduleDialog');
+    expect(source).toContain('سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند');
     expect(source).toContain('updatePublishedStatus');
+    expect(source).toContain('renderRowActions={renderRowActions}');
+    expect(source).not.toContain('>مشاهده</Button>');
   });
   it('matches the browser card to the authoritative published offer', () => {
     const definition = emptyInput();
@@ -126,7 +177,9 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain("from './tour-workspace'");
     expect(source).not.toContain('value="tours"');
     expect(source).toContain('managedOffers()');
-    expect(source).toContain('publishFlights(inputs, createdIds)');
+    expect(source).toContain(
+      'publishFlights(inputs, createdIds, allowPastDate)',
+    );
     expect(source).toContain('publishExistingFlights(');
     expect(source).toContain('`ticket-catalog:${product.id}`');
     expect(source).toContain('backfillStarted.current');
@@ -141,7 +194,8 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain('maxLength={3}');
     expect(source).not.toContain('بلیط‌های ثبت‌شده برای فروش و قرارداد');
     expect(source).toContain('renderActions={renderOfferActions}');
-    expect(source).toContain('setOfferForm({ offer, readOnly: false })');
+    expect(source).toContain('renderLoadActions={renderLoadActions}');
+    expect(source).not.toContain('setOfferForm({ offer, readOnly: true })');
     expect(source).toContain('updateCapacityHold({');
   });
 

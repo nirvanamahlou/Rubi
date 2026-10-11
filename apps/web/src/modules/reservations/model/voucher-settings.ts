@@ -2,6 +2,7 @@ import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  reservationFormDate,
   reservationPassengerAgeLabel,
   type ReservationFormIntake,
   type ReservationFormReferences,
@@ -192,8 +193,8 @@ export function voucherFormData(
     stars: v.text.stars || '-',
     meal: v.text.meal || '-',
     roomType: v.text.roomType || '-',
-    checkIn: v.text.checkIn || '-',
-    checkOut: v.text.checkOut || '-',
+    checkIn: voucherDate(v.text.checkIn),
+    checkOut: voucherDate(v.text.checkOut),
     rooms:
       v.numbers.singleRooms + v.numbers.doubleRooms + v.numbers.customRooms,
     double: v.numbers.doubleRooms,
@@ -233,7 +234,7 @@ export function voucherFormData(
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',
       airline: v.text[`${prefix}Airline`] || '-',
       number: v.text[`${prefix}Flight`] || '-',
-      date: v.text[`${prefix}Date`] || '-',
+      date: voucherDate(v.text[`${prefix}Date`]),
       time: v.text[`${prefix}Time`] || '-',
     })),
   };
@@ -257,4 +258,11 @@ export function supplierFormData(
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }
     : { ...reservationFormData(intake, refs), leader: 'Persian' };
+}
+
+/** Stored ISO dates must use the same Gregorian display in previews and PDFs. */
+function voucherDate(value?: string) {
+  return value && /^\d{4}-\d{2}-\d{2}(?:T|$)/.test(value)
+    ? reservationFormDate(value)
+    : value || '-';
 }

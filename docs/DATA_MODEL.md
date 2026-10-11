@@ -179,6 +179,17 @@ B2B owns `B2bOrganizationSignatory`: organization/contact composite restrictive 
 
 `MasterOrganization.nationalId` is an optional, unique varchar(11) company identifier. Master Data normalizes Persian/Arabic digits and accepts only 11 ASCII digits for LEGAL organizations; a database check enforces the same format/person-type rule. Legacy rows stay NULL. Omitted updates preserve the identifier; explicit blank/null clears it, with existing optimistic version and audit semantics. Personal national IDs stay outside this field. It is manually supplied identity data, without a registry verification claim. The public generic record exposes `attributes.nationalId`; legacy consumers may ignore it.
 
+`MasterOrganization.registrationNumber`, `economicCode` and
+`tourismLicenseNumber` are optional, normalized and independently unique agency
+identity attributes. Existing rows remain `NULL`. The organization editor and
+XLSX import may populate or later replace them through the existing audited
+Master Data mutation path. A chief executive's 10-digit national ID belongs to
+`MasterOrganizationContact`, never the organization: it is AES-GCM encrypted,
+fingerprinted for organization-scoped duplicate prevention and exposed only as a
+mask unless an authorized audited unmask command is used. Imported office/CEO
+contacts and addresses remain ordinary editable organization child records;
+country/city may both be absent and can be completed later.
+
 The agency branch selector reads existing `MasterOrganizationAddress` records for the selected organization. Selecting an address does not change IAM branch scope or the agency operational profile; existing public Master Data address CRUD persists additions/edits. IAM branch remains the internal organizational scope of the agreement and account manager.
 
 ## B2B-CONTRACT-FORMS-002 — payment reference
@@ -747,3 +758,26 @@ Documents attachments use the existing public archive boundary with sourceModule
 AccountingSubsidiaryMapping stores a source subsidiary plus an optional contiguous detail4/5/6 path and a target subsidiary in another authorized book. sourceKey is unique; every account/detail has a real FK, and source/target detail book identity is enforced with composite constraints. Complete-set writes serialize under the existing book lock and require the previous row/version set, preventing lost updates. These setup mappings do not rewrite posted journals or replace published transfer mappings.
 
 AccountingDetailTypeConversion stores definition-only user/system detail-type FKs in one book, a verified derived entity label, server business date, description, structured notes and optimistic version. Its initial state is REGISTERED. No business-entity conversion executor is introduced. AccountingAccountGroupDetail associates a group's selected subsidiary with a detail in the same book; group/account/detail membership is validated before persistence. Group notes use JSON with server-maintained authors/timestamps; setup-record attachments stay in Documents through its public API and existing permission boundary. Additive optional snapshot fields preserve old consumers. See tasks/ACCOUNTING-ACCOUNTS-SECTIONS-1011.md for source-verification limits.
+
+## SALES-CHEQUE-CALCULATOR-1007 — payment terms v1
+
+SalesContract.paymentTerms is an optional nullable JSON payment_terms column, added by 20261007160000_sales_cheque_terms without changing historical rows. Sales owns the optional version1 CASH/CHECK contract; Sales Web produces it and Sales API validates/presents it. CHECK plans are per currency, with explicit downPayment, months (3/6/9/12) and firstDueDate. Monthly interest is fixed5% simple on unpaid service principal, minimum down payment30%, first date defaults to departure plus one Gregorian calendar month with month-end clamp. Normal IRR payments round to rial and foreign payments to cents; higher-precision legacy amounts retain four-place arithmetic. The last cheque absorbs the split remainder. Interest is a separately validated canonical SURCHARGE, outside passenger agreed service prices, included in Finance balances/output totals. Payment amounts and cheque dates must match the plan server-side. New cheque contracts require terms; legacy contracts remain unchanged. Draft edits validate existing stored payments, since that endpoint does not replace payment rows. Planned payments retain existing scheduled/pending Finance status; this feature never confirms receipt. No cross-currency summing or exchange-rate inference. Additive migration needs deployment before the changed API; rollback refuses to discard populated payment terms.
+## HOTEL-MANUAL-COEFFICIENTS-1008 — manual room pricing
+
+Existing immutable `ReservationHotelRoomRate.occupancyRates` JSON optionally carries `manualPricing: { baseAmount, coefficient, adjustment: { kind, value } }` and `saleAmount` per exact guest tariff. `amount` remains purchase per room/night. One room has one base and the same hotel composition has the same coefficient across room types; sale adjustments may differ by selected room/composition. API recomputes both prices, validates age/date/currency/bounds and rejects tampering. No new table, migration or destructive backfill.
+
+Existing pack/room/hotel/broker/branch FKs, atomic versions, CAS, audit and idempotency remain authoritative. Imported rates omit these optional fields and retain their original monetary precision. Public Reservations projection passes metadata through to Sales, whose opt-in sale quote preserves purchase defaults for other consumers.
+
+## PACKAGE-PRICE-FIELDS-1008
+
+Package Pricing owns nullable priceFields JSON on PackagePricingTourDraft and PackagePricingTourPublishedVersion. A validated array of at most50 rows stores stable UI id, typed title, role, nonnegative Decimal string amount, three-letter currency and fixed/percent mode; no foreign module entity or PII is embedded. Legacy null maps to four existing price roles; explicit [] maps to no extra prices. API dual-writes canonical existing Decimal columns for compatibility, keeping deleted roles zero; custom rows contribute once per room package in their own currency. Publication copies fields and calculated currency buckets immutably. Apply additive migration before API and Web rollout. No operational migration/backfill performed by this task.
+
+## PACKAGE-HOTEL-TABLE-GENERATOR-1008
+
+Package Pricing owns nullable selectedHotelRateIds JSON on draft and immutable publication: absent/null retains historical room-total calculations; an explicit array enables selected rate-row per-person SGL/DBL/CWB pricing. IDs are validated against the authorized public Reservations purchase batch on save and publication; published room rows retain their real hotel-rate FK. Omitted legacy edits preserve stored selection. Nullable published roomTypeName/board/childAgeMin/childAgeMaxExclusive preserve the actual chosen cheapest occupancy context. Every night must quote; different currencies/boards never compare. Double divides by two; child subtracts matching two-adult tariff from the cheapest two-adult-plus-child tariff in the same room type. Apply additive migration20261008090000 before API/Web rollout; no historical backfill or operational apply.
+
+## 2026-10-08 — Hotel shared stay periods
+
+A shared hotel period is an immutable ReservationHotelRatePack/Batch snapshot of selected city hotels over a checkout-exclusive stay. ReservationHotelRatePackSource links each derived pack to its original immutable source batches with restrictive real foreign keys; source periods remain independently editable through normal version/CAS updates. Derived packs are excluded from subsequent source aggregation and from Sales room-rate lookup, and cannot be directly edited. Original manual coefficients and source history remain intact. No backfill or destructive migration.
+
+Reservations validates complete nightly occupancy coverage separately per hotel/broker/currency/room type/board and clips existing tariff segments to the shared stay. Gaps and conflicting prices are unavailable. Package Pricing receives the ordinary immutable batch FK plus optional sharedPeriod display metadata, preserving legacy consumers and maker/checker publication. It sums actual nightly amounts; no unweighted period or inter-hotel averaging. Apply migration 20261008130000_hotel_shared_period_sources before deploying the API.

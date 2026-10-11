@@ -53,6 +53,7 @@ export function issuedPrintHtml(
         timeZone: 'Asia/Tehran',
         dateStyle: 'short',
         timeStyle: 'short',
+        hourCycle: 'h23',
       }).format(new Date(value));
     if (key === 'direction') return value === 'OUTBOUND' ? 'رفت' : 'برگشت';
     if (key === 'status') return value === 'voided' ? 'ابطال شده' : 'صادرشده';

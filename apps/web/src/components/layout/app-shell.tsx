@@ -166,7 +166,8 @@ function Navigation({
       }
     }
     document.addEventListener('pointerdown', dismissOutside, true);
-    return () => document.removeEventListener('pointerdown', dismissOutside, true);
+    return () =>
+      document.removeEventListener('pointerdown', dismissOutside, true);
   }, [closedGroups.length]);
   function renderItem({
     href,

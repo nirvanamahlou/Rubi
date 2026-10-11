@@ -1,4 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import {
+  canViewRoute,
+  USER_ACCESS_PROFILE_PERMISSION,
+  screenPermission,
+} from '@nora/contracts';
 
 import {
   getNavigationBreadcrumbs,
@@ -22,6 +27,7 @@ const expectedRoutes = [
   '/purchases',
   '/finance',
   '/finance/requests',
+  '/finance/delivery',
   '/ticket-purchases',
   '/marketing',
   '/organizations',
@@ -46,6 +52,7 @@ const expectedTitles = [
   'تنخواه',
   'حسابداری',
   'کارتابل درخواست‌ها',
+  'تحویل مدارک',
   'خرید و تأمین',
   'مارکتینگ',
   'مشتریان B2B',
@@ -59,6 +66,23 @@ const expectedTitles = [
 ];
 
 describe('CRM navigation', () => {
+  it('protects the independent delivery screen with Finance and managed screen access', () => {
+    expect(canViewRoute([], '/finance/delivery')).toBe(false);
+    expect(canViewRoute(['finance.read'], '/finance/delivery')).toBe(true);
+    const requestsOnly = [
+      'finance.read',
+      USER_ACCESS_PROFILE_PERMISSION,
+      screenPermission('finance.requests'),
+    ];
+    expect(canViewRoute(requestsOnly, '/finance/requests')).toBe(true);
+    expect(canViewRoute(requestsOnly, '/finance/delivery')).toBe(false);
+    expect(
+      canViewRoute(
+        [...requestsOnly, screenPermission('finance.delivery')],
+        '/finance/delivery',
+      ),
+    ).toBe(true);
+  });
   it('groups every existing module exactly once without changing routes or labels', () => {
     const grouped = groupedNavigationItems.flatMap((group) => group.items);
     expect(grouped).toHaveLength(navigationItems.length);
@@ -87,7 +111,8 @@ describe('CRM navigation', () => {
       groupedNavigationItems
         .find((group) => group.id === 'finance')
         ?.items.map((item) => item.href),
-    ).toEqual(['/finance', '/finance/requests']);
+    ).toEqual(['/finance', '/finance/requests', '/finance/delivery']);
+    expect(getNavigationItem('/finance/delivery')?.title).toBe('تحویل مدارک');
     expect(
       groupedNavigationItems.find((group) => group.id === 'finance')?.title,
     ).toBe('مالی');
@@ -255,7 +280,7 @@ describe('CRM navigation', () => {
       { href: '/master-data', title: 'اطلاعات پایه' },
       {
         href: pathname,
-        title: 'سازمان‌ها و تأمین‌کنندگان',
+        title: 'سازمان‌ها و همکاران',
       },
     ]);
   });

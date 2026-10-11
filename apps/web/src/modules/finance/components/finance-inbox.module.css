@@ -1,0 +1,97 @@
+.workspace {
+  color: var(--foreground);
+}
+
+.requestDialog,
+.actionDialog {
+  width: min(72rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.actionDialog {
+  width: min(48rem, calc(100vw - 2rem));
+}
+
+.requestDialog :is(input, textarea, select),
+.actionDialog :is(input, textarea, select) {
+  min-width: 0;
+  max-width: 100%;
+}
+.hero {
+  background: linear-gradient(110deg, #e5f6fa, #f7fbff 65%, #ecf5ff);
+  border: 1px solid #d7eaf3;
+  color: #123653;
+  box-shadow: 0 8px 24px #173d6710;
+}
+.hero :global(.text-blue-200),
+.hero :global(.text-blue-100) {
+  color: #55778f;
+}
+.hero :global(.text-white) {
+  color: #123653;
+}
+.hero :global(.border-white\/10),
+.hero :global(.border-white\/20) {
+  border-color: #d5e6f1;
+}
+.filters {
+  border-color: #dce9f4;
+  box-shadow: 0 6px 22px #18457608;
+  background: linear-gradient(
+    180deg,
+    var(--surface),
+    color-mix(in srgb, var(--surface) 95%, #bfe9ff)
+  );
+}
+.filters label {
+  font-weight: 600;
+  line-height: 1.8;
+}
+.requestRow {
+  width: calc(100% - 24px);
+  margin: 8px 12px;
+  border-radius: 18px;
+  border-color: #d8e7f2;
+  background: color-mix(in srgb, var(--surface) 97%, #d6efff);
+  box-shadow: 0 3px 12px #1845760a;
+}
+.requestRow:hover {
+  background: color-mix(in srgb, var(--surface) 90%, #bce5ff);
+  box-shadow: 0 8px 20px #18457616;
+}
+.requestRow[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--surface) 78%, #a9dcff);
+  border-color: #64b6ef;
+  box-shadow: 0 8px 22px #2877b51f;
+}
+:global(.dark) .hero {
+  background: linear-gradient(110deg, #132d40, #152337);
+  border-color: #2e4963;
+  color: #e3f3ff;
+}
+:global(.dark) .hero :global(.text-white) {
+  color: #e3f3ff;
+}
+:global(.dark) .hero :global(.text-blue-200),
+:global(.dark) .hero :global(.text-blue-100) {
+  color: #bad3e7;
+}
+:global(.dark) .filters,
+:global(.dark) .requestRow {
+  border-color: #30485e;
+}
+
+.summary {
+  border: 1px solid #dce9f4;
+  border-radius: 16px;
+  background: var(--surface);
+}
+:global(.dark) .summary {
+  border-color: #30485e;
+}

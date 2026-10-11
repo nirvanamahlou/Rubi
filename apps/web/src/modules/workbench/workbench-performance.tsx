@@ -4,6 +4,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type {
   WorkbenchPerformanceResponseV1,
   WorkbenchHrPerformanceRecordV1,
+  WorkbenchMonthlySalesPeriodV1,
+  WorkbenchSalesPerformanceV1,
 } from '@nora/contracts';
 import {
   CalendarDays,
@@ -37,6 +39,7 @@ export function WorkbenchPerformance() {
   const [version, setVersion] = useState(0);
   const [data, setData] = useState<WorkbenchPerformanceResponseV1 | null>(null);
   const [error, setError] = useState('');
+  const [chartCurrency, setChartCurrency] = useState('');
   useEffect(() => {
     let active = true;
     void workbenchPersonalApi
@@ -307,8 +310,15 @@ export function WorkbenchPerformance() {
             />
           )}
           {sales && (
+            <MonthlySales
+              sales={sales.monthly}
+              currency={chartCurrency}
+              onCurrencyChange={setChartCurrency}
+            />
+          )}
+          {sales && (
             <Card className="space-y-4 p-6">
-              <h3 className="text-lg font-bold">مبلغ فروش من</h3>
+              <h3 className="text-lg font-bold">فروش در بازه انتخابی</h3>
               <div className="flex flex-wrap gap-3">
                 {sales.amounts.length ? (
                   sales.amounts.map((amount) => (
@@ -345,6 +355,258 @@ export function WorkbenchPerformance() {
         </>
       )}
     </section>
+  );
+}
+
+function money(amount: string) {
+  const [whole, fraction] = amount.split('.');
+  const grouped = whole!.replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
+  return `${grouped}${fraction ? `٫${fraction}` : ''}`.replace(
+    /\d/g,
+    (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!,
+  );
+}
+
+function dailySeries(period: WorkbenchMonthlySalesPeriodV1, currency: string) {
+  let cumulative = 0;
+  return period.daily.map((day) => {
+    cumulative += Number(
+      day.amounts.find((item) => item.currencyCode === currency)?.amount ?? 0,
+    );
+    return cumulative;
+  });
+}
+
+function MonthlySales({
+  sales,
+  currency,
+  onCurrencyChange,
+}: {
+  sales: WorkbenchSalesPerformanceV1['monthly'];
+  currency: string;
+  onCurrencyChange: (value: string) => void;
+}) {
+  if (!sales) return null;
+  const currencies = [
+    ...new Set([
+      ...sales.current.amounts.map((item) => item.currencyCode),
+      ...sales.previous.amounts.map((item) => item.currencyCode),
+    ]),
+  ].sort();
+  const selected = currencies.includes(currency)
+    ? currency
+    : (currencies[0] ?? '');
+  const currentAmount =
+    sales.current.amounts.find((item) => item.currencyCode === selected)
+      ?.amount ?? '0';
+  const previousAmount =
+    sales.previous.amounts.find((item) => item.currencyCode === selected)
+      ?.amount ?? '0';
+  const previousElapsed =
+    sales.previous.throughElapsedDay.find(
+      (item) => item.currencyCode === selected,
+    )?.amount ?? '0';
+  const currentElapsed =
+    sales.current.throughElapsedDay.find(
+      (item) => item.currencyCode === selected,
+    )?.amount ?? '0';
+  const currentSeries = dailySeries(sales.current, selected).slice(
+    0,
+    sales.elapsedDay,
+  );
+  const previousSeries = dailySeries(sales.previous, selected).slice(
+    0,
+    sales.elapsedDay,
+  );
+  const peak = Math.max(1, ...currentSeries, ...previousSeries);
+  const points = (values: number[]) =>
+    values
+      .map((value, index) => `${12 + index * 16},${116 - (value / peak) * 96}`)
+      .join(' ');
+  const previousNumber = Number(previousElapsed);
+  const change = previousNumber
+    ? ((Number(currentElapsed) - previousNumber) / previousNumber) * 100
+    : null;
+  return (
+    <Card className="space-y-5 p-5 sm:p-6" aria-label="فروش ماه شمسی من">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold">فروش ماه شمسی من</h3>
+          <p className="text-xs text-muted-foreground">
+            {sales.currentLabel} در مقایسه با {sales.previousLabel}؛ فقط
+            قراردادهای تأییدشده متعلق به شما
+          </p>
+        </div>
+        {currencies.length > 1 && (
+          <WorkbenchSelect
+            label="ارز نمودار فروش"
+            value={selected}
+            onValueChange={onCurrencyChange}
+            options={currencies.map((value) => ({ value, label: value }))}
+          />
+        )}
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric
+          label="رقم کل فروش ماه"
+          value={
+            sales.current.amounts.length
+              ? sales.current.amounts
+                  .map((item) => `${money(item.amount)} ${item.currencyCode}`)
+                  .join(' · ')
+              : '۰'
+          }
+          hint={sales.currentLabel}
+          icon={<Wallet />}
+          tone="border-blue-500/20 bg-blue-500/5"
+        />
+        <Metric
+          label="قراردادهای فروش ماه"
+          value={number(sales.current.contracts)}
+          hint={`ماه قبل: ${number(sales.previous.contracts)}`}
+          icon={<ChartNoAxesCombined />}
+          tone="border-amber-500/20 bg-amber-500/5"
+        />
+        <Metric
+          label="نفرات فروخته‌شده"
+          value={number(sales.current.people)}
+          hint={`ماه قبل: ${number(sales.previous.people)}`}
+          icon={<UsersRound />}
+          tone="border-emerald-500/20 bg-emerald-500/5"
+        />
+        <Metric
+          label="تغییر فروش تا روز مشابه"
+          value={
+            change === null
+              ? '—'
+              : `${change >= 0 ? '+' : ''}${change.toLocaleString('fa-IR', { maximumFractionDigits: 1 })}٪`
+          }
+          hint={
+            selected
+              ? `${selected} · تا روز ${number(sales.elapsedDay)} هر ماه`
+              : 'بدون فروش ثبت‌شده'
+          }
+          icon={<ChartNoAxesCombined />}
+          tone={
+            change !== null && change < 0
+              ? 'border-rose-500/20 bg-rose-500/5'
+              : 'border-violet-500/20 bg-violet-500/5'
+          }
+        />
+      </div>
+      {selected && (
+        <div className="rounded-2xl border border-border p-4">
+          <div className="flex flex-wrap justify-between gap-2 text-sm">
+            <strong>روند تجمعی فروش ({selected})</strong>
+            <span className="text-muted-foreground">
+              ماه جاری: {money(currentAmount)} · ماه قبل:{' '}
+              {money(previousAmount)}
+            </span>
+          </div>
+          <div className="mt-2 flex gap-4 text-xs">
+            <span className="text-primary">● {sales.currentLabel}</span>
+            <span className="text-muted-foreground">
+              ● {sales.previousLabel}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <svg
+              viewBox={`0 0 ${Math.max(520, sales.elapsedDay * 16 + 24)} 130`}
+              className="mt-3 h-40 min-w-[520px] w-full"
+              role="img"
+              aria-label={`روند تجمعی ${selected} در ${sales.currentLabel} و ${sales.previousLabel} تا روز ${sales.elapsedDay}`}
+            >
+              <line
+                x1="12"
+                y1="116"
+                x2={Math.max(508, sales.elapsedDay * 16 + 12)}
+                y2="116"
+                stroke="currentColor"
+                opacity=".2"
+              />
+              <polyline
+                points={points(previousSeries)}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray="5 4"
+                opacity=".5"
+              />
+              <polyline
+                points={points(currentSeries)}
+                fill="none"
+                stroke="#2563eb"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            مقایسه تا روز یکسان ماه انجام می‌شود؛ مجموع ماه قبل مربوط به کل آن
+            ماه است.
+          </p>
+        </div>
+      )}
+      <div className="overflow-x-auto rounded-2xl border border-border">
+        <table className="w-full min-w-[920px] text-right text-sm">
+          <caption className="p-4 text-right font-bold">
+            فروش به تفکیک مسیر
+          </caption>
+          <thead className="bg-muted/50">
+            <tr>
+              <th className="p-3">مسیر</th>
+              <th className="p-3">قرارداد جاری / قبل</th>
+              <th className="p-3">نفرات جاری / قبل</th>
+              <th className="p-3">مبلغ ماه جاری</th>
+              <th className="p-3">مبلغ ماه قبل</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sales.routes.length ? (
+              sales.routes.map((route) => (
+                <tr
+                  key={`${route.originId}:${route.destinationId}`}
+                  className="border-t border-border"
+                >
+                  <td className="p-3">{route.label}</td>
+                  <td className="p-3">
+                    {number(route.contracts)} /{' '}
+                    {number(route.previousContracts)}
+                  </td>
+                  <td className="p-3">
+                    {number(route.people)} / {number(route.previousPeople)}
+                  </td>
+                  <td className="p-3">
+                    {route.amounts
+                      .map(
+                        (item) => `${money(item.amount)} ${item.currencyCode}`,
+                      )
+                      .join(' · ') || '—'}
+                  </td>
+                  <td className="p-3">
+                    {route.previousAmounts
+                      .map(
+                        (item) => `${money(item.amount)} ${item.currencyCode}`,
+                      )
+                      .join(' · ') || '—'}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="p-5 text-center text-muted-foreground"
+                >
+                  فروش تأییدشده‌ای در این دو ماه ثبت نشده است.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   );
 }
 function Metric({

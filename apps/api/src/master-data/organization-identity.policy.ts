@@ -19,11 +19,24 @@ export function rethrowOrganizationIdentityError(error: unknown): never {
     typeof error === 'object' &&
     'code' in error &&
     error.code === 'P2002' &&
-    'meta' in error &&
-    JSON.stringify(error.meta).includes('nationalId')
-  )
+    'meta' in error
+  ) {
+    const target = JSON.stringify(error.meta);
+    if (target.includes('registrationNumber'))
+      throw new ConflictException(
+        'این شماره ثبت برای سازمان دیگری ثبت شده است؛ پرونده موجود را انتخاب کنید.',
+      );
+    if (target.includes('economicCode'))
+      throw new ConflictException(
+        'این کد اقتصادی برای سازمان دیگری ثبت شده است؛ پرونده موجود را انتخاب کنید.',
+      );
+    if (target.includes('tourismLicenseNumber'))
+      throw new ConflictException(
+        'این شماره مجوز گردشگری برای سازمان دیگری ثبت شده است؛ پرونده موجود را انتخاب کنید.',
+      );
     throw new ConflictException(
       'این شناسه ملی برای سازمان دیگری ثبت شده است؛ پرونده موجود را انتخاب کنید.',
     );
+  }
   throw error;
 }

@@ -4,6 +4,7 @@ import { netTicketPrice, type TicketPriceRow } from './ticket-price-rows';
 const dateTime = new Intl.DateTimeFormat('fa-IR', {
   dateStyle: 'medium',
   timeStyle: 'short',
+  hourCycle: 'h23',
   timeZone: 'Asia/Tehran',
 });
 

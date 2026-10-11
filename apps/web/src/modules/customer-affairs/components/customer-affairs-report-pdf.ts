@@ -90,7 +90,7 @@ export async function downloadAffairsReportPdf(
     context.fillStyle = '#687b93';
     draw(`بازه: ${dateRangeLabel}`, 1160, 160, 22);
     draw(
-      `زمان تهیه: ${new Date(report.generatedAt).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR')}`,
+      `زمان تهیه: ${new Date(report.generatedAt).toLocaleString(browserDisplayLanguage() === 'en' ? 'en-US' : 'fa-IR', { hourCycle: 'h23' })}`,
       1160,
       200,
       20,

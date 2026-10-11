@@ -295,6 +295,7 @@ export interface MasterOrganizationContactUnmasked {
   id: string;
   phone: string | null;
   email: string | null;
+  nationalId?: string | null;
 }
 
 export interface MasterOrganizationAddressV1 {

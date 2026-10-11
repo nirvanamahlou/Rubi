@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { eligibleTicketReturn } from '@nora/contracts';
 import type {
   BranchReference,
@@ -87,12 +88,14 @@ const shiftWeek = (value: string) => {
   return date.toISOString().slice(0, 10);
 };
 const timeLabel = (offer: TicketOfferV1) =>
-  `${offer.carrierName} · ${offer.serviceNumber} · ${new Date(offer.departureAt).toLocaleTimeString('fa-IR', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit' })} · ${offer.remainingCapacity} صندلی`;
+  `${offer.carrierName} · ${offer.serviceNumber} · ${new Date(offer.departureAt).toLocaleTimeString('fa-IR', { timeZone: 'Asia/Tehran', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })} · ${offer.remainingCapacity} صندلی`;
 
 export function TourWorkspace({
   mode = 'definition',
+  compact = false,
 }: {
   mode?: 'definition' | 'departures';
+  compact?: boolean;
 }) {
   const router = useRouter();
   const [packages, setPackages] = useState<TourPackageV1[]>([]);
@@ -139,7 +142,7 @@ export function TourWorkspace({
   const keyFor = (kind: string, payload: unknown) => {
     const fingerprint = JSON.stringify([kind, branch, payload]);
     if (!attempts.current.has(fingerprint))
-      attempts.current.set(fingerprint, crypto.randomUUID());
+      attempts.current.set(fingerprint, browserRandomUuid());
     return attempts.current.get(fingerprint)!;
   };
   useEffect(() => {
@@ -355,18 +358,20 @@ export function TourWorkspace({
   return (
     <div className="space-y-5" dir="rtl">
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-        <div>
-          <h2 className="text-lg font-bold">
-            {mode === 'definition'
-              ? 'مدیریت تورها'
-              : 'نوبت برگزاری تور و بلیط‌ها'}
-          </h2>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {mode === 'definition'
-              ? 'اینجا فقط مشخصات ثابت و خدمات تور ثبت می‌شود. تاریخ، بلیط و هتل هر نوبت در مدیریت قیمت پکیج تعیین می‌شوند.'
-              : 'تاریخ هر نوبت و بلیط‌های واقعی رفت‌وبرگشت را انتخاب کنید؛ سپس هتل‌های همان بازه را متصل کنید.'}
-          </p>
-        </div>
+        {!compact ? (
+          <div>
+            <h2 className="text-lg font-bold">
+              {mode === 'definition'
+                ? 'مدیریت تورها'
+                : 'نوبت برگزاری تور و بلیط‌ها'}
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {mode === 'definition'
+                ? 'اینجا فقط مشخصات ثابت و خدمات تور ثبت می‌شود. تاریخ، بلیط و هتل هر نوبت در مدیریت قیمت پکیج تعیین می‌شوند.'
+                : 'تاریخ هر نوبت و بلیط‌های واقعی رفت‌وبرگشت را انتخاب کنید؛ سپس هتل‌های همان بازه را متصل کنید.'}
+            </p>
+          </div>
+        ) : null}
         {mode === 'definition' ? (
           <Button
             size="sm"
@@ -400,23 +405,29 @@ export function TourWorkspace({
           {notice}
         </p>
       )}
-      <TourOverview
-        packages={packages}
-        departures={departures}
-        cities={references.cities}
-        loading={loading}
-        busy={busy || loading}
-        onEdit={showEditor}
-        onDelete={(item) =>
-          void run(async () => {
-            await toursApi.deletePackage(item.id, item.version, item.branchId);
-            setNotice('تور «' + item.name + '» حذف شد.');
-          })
-        }
-        onSelect={selectTour}
-        onRepeat={repeatTour}
-        definitionMode={mode === 'definition'}
-      />
+      {!compact ? (
+        <TourOverview
+          packages={packages}
+          departures={departures}
+          cities={references.cities}
+          loading={loading}
+          busy={busy || loading}
+          onEdit={showEditor}
+          onDelete={(item) =>
+            void run(async () => {
+              await toursApi.deletePackage(
+                item.id,
+                item.version,
+                item.branchId,
+              );
+              setNotice('تور «' + item.name + '» حذف شد.');
+            })
+          }
+          onSelect={selectTour}
+          onRepeat={repeatTour}
+          definitionMode={mode === 'definition'}
+        />
+      ) : null}
       {creating && (
         <div ref={editorRef} className="scroll-mt-6">
           <Card className="space-y-4 p-5">

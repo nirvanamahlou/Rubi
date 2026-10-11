@@ -1,3 +1,9 @@
+import type { ReservationIntakeV1 } from '@nora/contracts';
+import {
+  canViewRoute,
+  USER_ACCESS_PROFILE_PERMISSION,
+  screenPermission,
+} from '@nora/contracts';
 import { purchaseFilters } from './model';
 import { writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -49,6 +55,13 @@ beforeEach(() => {
       pageSize: 25,
       hasMore: false,
       canRecord: true,
+      summary: {
+        total: 99,
+        registered: 64,
+        unregistered: 33,
+        unknown: 2,
+        contracts: 40,
+      },
       services: [
         {
           id: 'intake',
@@ -110,10 +123,14 @@ beforeEach(() => {
     ],
   };
 });
-function render(language: 'fa' | 'en') {
+function render(language: 'fa' | 'en', suppliers = false) {
   return renderToStaticMarkup(
     <AccessPermissionsProvider
-      value={['reservations.read', 'reservations.hotel_purchase.write']}
+      value={[
+        'reservations.read',
+        'reservations.hotel_purchase.write',
+        ...(suppliers ? ['procurement.read.all' as const] : []),
+      ]}
     >
       <DisplayLocaleContext.Provider value={language}>
         <ReservationPurchaseWorkspace />
@@ -121,6 +138,25 @@ function render(language: 'fa' | 'en') {
     </AccessPermissionsProvider>,
   );
 }
+it('offers the existing supplier directory only to users with purchase access', () => {
+  const managed = [
+    'procurement.read.all',
+    USER_ACCESS_PROFILE_PERMISSION,
+    screenPermission('procurement.home'),
+  ];
+  expect(canViewRoute(managed, '/purchases?section=suppliers')).toBe(false);
+  expect(
+    canViewRoute(
+      [...managed, screenPermission('procurement.suppliers')],
+      '/purchases?section=suppliers',
+    ),
+  ).toBe(true);
+  expect(render('fa')).not.toContain('/purchases?section=suppliers');
+  state.index = 0;
+  const html = render('fa', true);
+  expect(html).toContain('href="/purchases?section=suppliers"');
+  expect(html).toContain('مدیریت تأمین‌کنندگان');
+});
 it('renders themed categories alongside both recorded and missing contract services', () => {
   const html = render('fa');
   expect(html.match(/aria-pressed=/g)).toHaveLength(5);
@@ -175,5 +211,51 @@ it('preserves the global service row ordering returned by the server', () => {
   const html = render('en');
   expect(html.indexOf('Example Policy')).toBeLessThan(
     html.indexOf('Example Hotel'),
+  );
+});
+
+it('shows global dashboard counts rather than counting one loaded page and defaults to unregistered', () => {
+  const html = render('en');
+  expect(html).toContain('value="UNREGISTERED" selected=""');
+  expect(html).toContain('Purchase dashboard');
+  expect(html).toContain('>99</strong>');
+  expect(html).toContain('>64</strong>');
+  expect(html).toContain('>33</strong>');
+});
+
+it('renders a combined transfer purchase once with its canonical amount', () => {
+  const records = state.records as {
+    data: ReservationIntakeV1[];
+    meta: { services: unknown[] };
+  };
+  records.data[0]!.snapshot.serviceSelections = [
+    { clientKey: 'out', kind: 'TRANSFER', titleSnapshot: 'Outbound' },
+    { clientKey: 'back', kind: 'TRANSFER', titleSnapshot: 'Return' },
+  ];
+  records.data[0]!.servicePurchases = [
+    {
+      id: 'common',
+      version: 1,
+      serviceClientKey: 'out',
+      coveredServiceClientKeys: ['out', 'back'],
+      amount: '125.50',
+      currencyCode: 'USD',
+      supplierName: 'Example supplier',
+    },
+  ] as unknown as NonNullable<ReservationIntakeV1['servicePurchases']>;
+  records.meta.services = [
+    {
+      id: 'intake',
+      clientKey: 'back',
+      coveredServiceClientKeys: ['back', 'out'],
+      status: 'REGISTERED',
+      sortAt: '2026-10-07',
+    },
+  ];
+  const html = render('en');
+  expect(html.match(/125.50/g)).toHaveLength(1);
+  expect(html).toContain('Round trip transfer');
+  expect(records.data[0]!.snapshot.serviceSelections[1]!.titleSnapshot).toBe(
+    'Return',
   );
 });

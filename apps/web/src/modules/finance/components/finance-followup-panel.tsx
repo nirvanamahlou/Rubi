@@ -14,7 +14,9 @@ type Policy = {
 export function FinanceFollowupPanel({
   query,
   onApply,
+  showSavedViews = true,
 }: {
+  showSavedViews?: boolean;
   query: FinanceInboxQueryV1;
   onApply: (query: FinanceInboxQueryV1) => void;
 }) {
@@ -30,9 +32,13 @@ export function FinanceFollowupPanel({
   const [message, setMessage] = useState('');
   const mutation = useRef(false);
   useEffect(() => {
+    if (!showSavedViews && !permissions?.includes('finance.account.manage'))
+      return;
     let active = true;
     void Promise.all([
-      apiRequest<View[]>('/finance/followup/views'),
+      showSavedViews
+        ? apiRequest<View[]>('/finance/followup/views')
+        : Promise.resolve([] as View[]),
       apiRequest<{ id: string; name: string }[]>('/finance/followup/branches'),
     ])
       .then(([saved, available]) => {
@@ -52,7 +58,7 @@ export function FinanceFollowupPanel({
     return () => {
       active = false;
     };
-  }, []);
+  }, [showSavedViews, permissions]);
   useEffect(() => {
     if (!branchId || !permissions?.includes('finance.account.manage')) return;
     let active = true;
@@ -91,104 +97,113 @@ export function FinanceFollowupPanel({
       setBusy(false);
     }
   }
+  if (!showSavedViews && !permissions?.includes('finance.account.manage'))
+    return null;
   return (
     <section
       className="space-y-3 rounded-xl border p-3"
       aria-label="نمای شخصی و پیگیری مالی"
     >
-      <div className="flex flex-wrap items-end gap-2">
-        <label>
-          نمای ذخیره‌شده
-          <select
-            className="block rounded border p-2"
-            value={selected}
-            disabled={busy}
-            onChange={(event) => {
-              setSelected(event.target.value);
-              const view = views.find((item) => item.id === event.target.value);
-              if (view) onApply(view.query);
-            }}
-          >
-            <option value="">انتخاب نمای شخصی</option>
-            {views.map((view) => (
-              <option key={view.id} value={view.id}>
-                {view.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          نام نمای جدید
-          <Input
-            value={title}
-            maxLength={80}
-            onChange={(event) => setTitle(event.target.value)}
-          />
-        </label>
-        <Button
-          disabled={busy || !title.trim()}
-          onClick={() =>
-            void run(async () => {
-              const filters = Object.fromEntries(
-                Object.entries(query).filter(
-                  ([key]) => !['page', 'pageSize'].includes(key),
-                ),
-              );
-              const saved = await apiRequest<View>('/finance/followup/views', {
-                method: 'POST',
-                body: JSON.stringify({
-                  title,
-                  query: JSON.parse(JSON.stringify(filters)),
-                }),
-              });
-              setViews((values) => [
-                ...values.filter((view) => view.id !== saved.id),
-                saved,
-              ]);
-              setSelected(saved.id);
-              setMessage('نمای شخصی ذخیره شد.');
-            })
-          }
-        >
-          ذخیره فیلترها
-        </Button>
-        <Button
-          variant="outline"
-          disabled={busy || !selected}
-          onClick={() =>
-            void run(async () => {
-              await apiRequest(`/finance/followup/views/${selected}/remove`, {
-                method: 'POST',
-              });
-              setViews((values) =>
-                values.filter((view) => view.id !== selected),
-              );
-              setSelected('');
-              setMessage('نمای شخصی حذف شد.');
-            })
-          }
-        >
-          حذف نمای انتخاب‌شده
-        </Button>
-        <label>
-          شعبه
-          <select
-            className="block rounded border p-2"
-            value={query.branchId ?? ''}
-            disabled={busy}
-            onChange={(event) =>
-              onApply({ ...query, branchId: event.target.value })
+      {showSavedViews ? (
+        <div className="flex flex-wrap items-end gap-2">
+          <label>
+            نمای ذخیره‌شده
+            <select
+              className="block rounded border p-2"
+              value={selected}
+              disabled={busy}
+              onChange={(event) => {
+                setSelected(event.target.value);
+                const view = views.find(
+                  (item) => item.id === event.target.value,
+                );
+                if (view) onApply(view.query);
+              }}
+            >
+              <option value="">انتخاب نمای شخصی</option>
+              {views.map((view) => (
+                <option key={view.id} value={view.id}>
+                  {view.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            نام نمای جدید
+            <Input
+              value={title}
+              maxLength={80}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          </label>
+          <Button
+            disabled={busy || !title.trim()}
+            onClick={() =>
+              void run(async () => {
+                const filters = Object.fromEntries(
+                  Object.entries(query).filter(
+                    ([key]) => !['page', 'pageSize'].includes(key),
+                  ),
+                );
+                const saved = await apiRequest<View>(
+                  '/finance/followup/views',
+                  {
+                    method: 'POST',
+                    body: JSON.stringify({
+                      title,
+                      query: JSON.parse(JSON.stringify(filters)),
+                    }),
+                  },
+                );
+                setViews((values) => [
+                  ...values.filter((view) => view.id !== saved.id),
+                  saved,
+                ]);
+                setSelected(saved.id);
+                setMessage('نمای شخصی ذخیره شد.');
+              })
             }
           >
-            <option value="">همه شعبه‌های مجاز</option>
-            {branches.map((branch) => (
-              <option key={branch.id} value={branch.id}>
-                {branch.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+            ذخیره فیلترها
+          </Button>
+          <Button
+            variant="outline"
+            disabled={busy || !selected}
+            onClick={() =>
+              void run(async () => {
+                await apiRequest(`/finance/followup/views/${selected}/remove`, {
+                  method: 'POST',
+                });
+                setViews((values) =>
+                  values.filter((view) => view.id !== selected),
+                );
+                setSelected('');
+                setMessage('نمای شخصی حذف شد.');
+              })
+            }
+          >
+            حذف نمای انتخاب‌شده
+          </Button>
+          <label>
+            شعبه
+            <select
+              className="block rounded border p-2"
+              value={query.branchId ?? ''}
+              disabled={busy}
+              onChange={(event) =>
+                onApply({ ...query, branchId: event.target.value })
+              }
+            >
+              <option value="">همه شعبه‌های مجاز</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
       {permissions?.includes('finance.account.manage') ? (
         <details>
           <summary>مدیر پیگیری هر شعبه</summary>

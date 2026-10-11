@@ -25,6 +25,7 @@ export interface MasterDataSectionDefinition {
 
 // Retained in the API/catalog for existing references, but not in section navigation.
 export const unlistedMasterDataResources = [
+  'suppliers',
   'cip-services',
   'lead-sources',
   'customer-types',
@@ -62,11 +63,10 @@ export const masterDataSections: readonly MasterDataSectionDefinition[] = [
   },
   {
     slug: 'organizations-suppliers',
-    title: 'سازمان‌ها و تأمین‌کنندگان',
-    description: 'سازمان‌ها، تأمین‌کنندگان، کارگزاران و همکاران',
+    title: 'سازمان‌ها و همکاران',
+    description: 'سازمان‌ها، کارگزاران و همکاران',
     resources: [
       'organizations',
-      'suppliers',
       'brokers',
       'travel-services',
       'organization-contacts',

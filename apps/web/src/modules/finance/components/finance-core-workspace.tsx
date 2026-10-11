@@ -45,9 +45,7 @@ import {
   PageHeader,
 } from '@/components/ui/surfaces';
 import { FinanceWorkspace } from './finance-workspace';
-import { FinanceHistoryPanel } from './finance-history-panel';
 import { FinanceInboxLiveWorkspace } from './finance-inbox-live-workspace';
-import { FinanceDeliveryPanel } from './finance-delivery-panel';
 import {
   accountTreePreview,
   financeInboxPreviewRequests,
@@ -976,23 +974,7 @@ export function FinanceRequestInboxWorkspace() {
   return (
     <main className="space-y-6">
       <PageHeader title="کارتابل درخواست‌ها" />
-      <div className="flex justify-end">
-        <Button asChild variant="outline">
-          <a href="#finance-document-delivery">رفتن به تحویل مدارک</a>
-        </Button>
-      </div>
       <FinanceInboxLiveWorkspace />
-      <section
-        id="finance-document-delivery"
-        className="scroll-mt-24"
-        tabIndex={-1}
-        aria-label="تحویل مدارک"
-      >
-        <FinanceDeliveryPanel />
-      </section>
-      <section id="finance-transaction-history">
-        <FinanceHistoryPanel />
-      </section>
     </main>
   );
 }

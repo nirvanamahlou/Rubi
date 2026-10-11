@@ -63,6 +63,10 @@ export const englishNavigation: Record<
     title: 'Payment requests',
     description: 'Payment and receipt requests',
   },
+  '/finance/delivery': {
+    title: 'Document delivery',
+    description: 'Customer document delivery authorization',
+  },
   '/marketing': { title: 'Marketing', description: 'Campaigns and audiences' },
   '/organizations': {
     title: 'B2B customers',

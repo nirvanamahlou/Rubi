@@ -59,6 +59,119 @@ describe('tour edit client', () => {
       }),
     );
   });
+  it('archives an offer with its optimistic version', async () => {
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: { id: 'offer' } }), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await expect(toursApi.archiveOffer('offer', 7)).resolves.toEqual({
+      data: { id: 'offer' },
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.test/ticket-catalog/offers/offer',
+      expect.objectContaining({
+        method: 'DELETE',
+        credentials: 'include',
+        body: JSON.stringify({ expectedVersion: 7 }),
+      }),
+    );
+  });
+  it('sends all load rows to the atomic batch archive endpoint', async () => {
+    const fetch = vi.fn(
+      async () =>
+        new Response(JSON.stringify({ data: { ids: ['one', 'two'] } }), {
+          status: 200,
+        }),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await toursApi.archiveOfferBatch([
+      { id: 'one', expectedVersion: 2 },
+      { id: 'two', expectedVersion: 5 },
+    ]);
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.test/ticket-catalog/offers/batch',
+      expect.objectContaining({
+        method: 'DELETE',
+        body: JSON.stringify({
+          items: [
+            { id: 'one', expectedVersion: 2 },
+            { id: 'two', expectedVersion: 5 },
+          ],
+        }),
+      }),
+    );
+  });
+  it('sends all edited load rows to the batch revision endpoint', async () => {
+    const offer = {
+      originId: 'origin',
+      destinationId: 'destination',
+      departureAt: '2099-01-01T08:00:00.000Z',
+      arrivalAt: '2099-01-01T10:00:00.000Z',
+      carrierName: 'Carrier',
+      serviceNumber: '100',
+      cabinClassCode: 'ECONOMY' as const,
+      totalCapacity: 20,
+    };
+    const items = [{ id: 'one', expectedVersion: 2, offer }];
+    const fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ data: { items: [{ id: 'one', version: 3 }] } }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await toursApi.reviseOfferBatch(items);
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.test/ticket-catalog/offers/batch',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ items }),
+      }),
+    );
+  });
+  it('sends the current load and regenerated rows to the resize endpoint', async () => {
+    const offer = {
+      originId: 'origin',
+      destinationId: 'destination',
+      departureAt: '2099-01-01T08:00:00.000Z',
+      arrivalAt: '2099-01-01T10:00:00.000Z',
+      carrierName: 'Carrier',
+      serviceNumber: '100',
+      cabinClassCode: 'ECONOMY' as const,
+      totalCapacity: 20,
+    };
+    const current = [{ id: 'one', expectedVersion: 2 }];
+    const offers = [
+      offer,
+      { ...offer, departureAt: '2099-01-08T08:00:00.000Z' },
+    ];
+    const fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              items: [],
+              createdIds: ['two'],
+              archivedIds: [],
+            },
+          }),
+          { status: 200 },
+        ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    await toursApi.resizeOfferBatch(current, offers);
+    expect(fetch).toHaveBeenCalledWith(
+      'http://api.test/ticket-catalog/offers/batch/resize',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ current, offers }),
+      }),
+    );
+  });
   it('surfaces a stale-version conflict to keep the editor open', async () => {
     vi.stubGlobal(
       'fetch',

@@ -2,6 +2,7 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import type { Product, Reference } from './catalog';
 import { emptyInput } from './preview';
 import type { TicketOfferCreateV1 } from '@nora/contracts';
+import { flightCabinCode } from './flight-cabins';
 
 /** Optional producer defaults/changed capacity are not new dated flights. */
 export function samePublishedFlight(
@@ -72,6 +73,8 @@ export function catalogProductsFromOffers(
   references: readonly Reference[],
 ): Product[] {
   const used = new Set<string>();
+  const normalized = (value: string) =>
+    value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
   const flights = offers.map((offer) => {
     const cached = local.find(
       (product) =>
@@ -123,15 +126,33 @@ export function catalogProductsFromOffers(
           (r) => r.kind === 'city' && r.id === offer.destinationId,
         )?.name || '',
     };
-    if (
-      references.find(
-        (reference) =>
-          reference.kind === 'airline' && reference.id === first.airlineId,
-      )?.name !== offer.carrierName
-    )
-      first.airlineId = '';
+    const firstCarrier = offer.carrierName.split('/')[0]?.trim() ?? '';
+    const airline = references.find(
+      (reference) =>
+        reference.kind === 'airline' &&
+        reference.active &&
+        normalized(reference.name) === normalized(firstCarrier),
+    );
+    first.airlineId = airline?.id ?? '';
+    const flightClass = references.find(
+      (reference) =>
+        reference.kind === 'flightClass' &&
+        reference.active &&
+        flightCabinCode(reference) === offer.cabinClassCode,
+    );
+    definition.flightClassId = flightClass?.id ?? '';
     first.originCityId = offer.originId;
     last.destinationCityId = offer.destinationId;
+    first.originCountryId =
+      references.find(
+        (reference) =>
+          reference.kind === 'city' && reference.id === offer.originId,
+      )?.countryId ?? '';
+    last.destinationCountryId =
+      references.find(
+        (reference) =>
+          reference.kind === 'city' && reference.id === offer.destinationId,
+      )?.countryId ?? '';
     first.departureAt = offer.departureAt;
     last.arrivalAt = offer.arrivalAt;
     first.departureZone = 'Asia/Tehran';
@@ -158,6 +179,51 @@ export function catalogOffer(
   offers: readonly TicketOfferV1[],
 ) {
   return offers.find((offer) => product.id === 'offer:' + offer.id);
+}
+
+function localLoadGroupKey(offer: TicketOfferV1, local: readonly Product[]) {
+  const product = local.find(
+    (item) =>
+      item.id === offer.catalogProductId || item.id === `offer:${offer.id}`,
+  );
+  const created = product?.history.find((entry) => entry.action === 'create');
+  return created ? `${created.at}|${created.actor}` : undefined;
+}
+
+/** Exact server group for new loads; same-browser creation history recovers legacy batches safely. */
+export function publishedLoadGroup(
+  selected: TicketOfferV1,
+  offers: readonly TicketOfferV1[],
+  local: readonly Product[],
+) {
+  if (selected.loadGroupId)
+    return offers.filter(
+      (offer) =>
+        offer.branchId === selected.branchId &&
+        offer.loadGroupId === selected.loadGroupId,
+    );
+  const key = localLoadGroupKey(selected, local);
+  if (!key) return [selected];
+  const grouped = offers.filter(
+    (offer) =>
+      offer.branchId === selected.branchId &&
+      localLoadGroupKey(offer, local) === key,
+  );
+  return grouped.length ? grouped : [selected];
+}
+
+/** Expands every visible row to its complete load and removes overlaps in server order. */
+export function publishedLoadGroups(
+  selected: readonly TicketOfferV1[],
+  offers: readonly TicketOfferV1[],
+  local: readonly Product[],
+) {
+  const ids = new Set(
+    selected.flatMap((offer) =>
+      publishedLoadGroup(offer, offers, local).map(({ id }) => id),
+    ),
+  );
+  return offers.filter(({ id }) => ids.has(id));
 }
 
 export function publishedOfferInput(offer: TicketOfferV1) {

@@ -1,15 +1,19 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { Alert, Button, FormField, Input } from '@/components/ui';
 import type { ProductInput, Reference, Segment } from '../model/catalog';
 import { emptyInput } from '../model/preview';
 import { supplyOptions } from '../model/preview';
 import { TicketBaggageFields } from './ticket-baggage-fields';
 import {
+  addScheduleDays,
   buildWeekdayTickets,
+  chronologicalScheduleDates,
   defaultReturnMaxDays,
   scheduleDates,
+  scheduleWeekdayName,
   scheduleWeekdays,
   type ScheduleLeg,
   type WeekdayStay,
@@ -20,6 +24,7 @@ import { ManifestTemplatePicker } from './manifest-template-picker';
 import {
   buildAutomaticTicketTitle,
   createReturnTicketDraft,
+  saveTicketFormOnCtrlS,
   scheduleToUtc,
   TicketForm,
   withDisplaySnapshot,
@@ -32,51 +37,225 @@ import {
   type FlightCabinCapacity,
 } from '../model/flight-cabins';
 
+function wallDateTime(value: string, zone: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return { date: '', time: '' };
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(date);
+    const part = (type: string) =>
+      parts.find((item) => item.type === type)?.value ?? '';
+    return {
+      date: `${part('year')}-${part('month')}-${part('day')}`,
+      time: `${part('hour')}:${part('minute')}`,
+    };
+  } catch {
+    return { date: value.slice(0, 10), time: value.slice(11, 16) };
+  }
+}
+
+export function flightScheduleDefaults(
+  initial?: ProductInput,
+  now = new Date(),
+  initials?: readonly ProductInput[],
+) {
+  const input = initial
+    ? {
+        ...initial,
+        segments: initial.segments.map((segment) => ({ ...segment })),
+        fare: { ...initial.fare },
+      }
+    : {
+        ...emptyInput(),
+        supplyType: 'company' as const,
+        companyOwned: true,
+      };
+  if (!initial) {
+    return {
+      input,
+      mode: null as 'one-way' | 'round-trip' | null,
+      start: '',
+      end: '',
+      allowPastDate: false,
+      weekdays: [] as WeekdayStay[],
+      outboundTime: {
+        departure: '',
+        arrival: '',
+        arrivalDayOffset: 0,
+      } satisfies ScheduleLeg,
+      returnTime: {
+        departure: '',
+        arrival: '',
+        arrivalDayOffset: 0,
+      } satisfies ScheduleLeg,
+      returnDetails: {
+        flightNumber: '',
+        aircraftId: '',
+        baggageId: '',
+        economyBaggageKg: null as string | null,
+        businessBaggageKg: null as string | null,
+      },
+      additionalCabins: [] as FlightCabinCapacity[],
+    };
+  }
+  const schedule = (initials?.length ? initials : [initial]).map((item) => ({
+    ...item,
+    segments: item.segments.map((segment) => ({ ...segment })),
+    fare: { ...item.fare },
+  }));
+  const batch = schedule.length > 1;
+  const outbound = batch
+    ? schedule.filter((item) => item.journeyRole !== 'return')
+    : schedule;
+  const returning = batch
+    ? schedule.filter((item) => item.journeyRole === 'return')
+    : [];
+  const primaryOutbound =
+    outbound.filter((item) => item.flightClassId === input.flightClassId)
+      .length > 0
+      ? outbound.filter((item) => item.flightClassId === input.flightClassId)
+      : outbound;
+  const primaryReturn = returning.filter(
+    (item) => item.flightClassId === input.flightClassId,
+  );
+  const leg = (item: ProductInput) => {
+    const first = item.segments[0]!;
+    const last = item.segments.at(-1)!;
+    const departure = wallDateTime(
+      first.departureAt,
+      first.departureZone || 'UTC',
+    );
+    const arrival = wallDateTime(last.arrivalAt, last.arrivalZone || 'UTC');
+    const arrivalDayOffset = [0, 1, 2].find(
+      (offset) => addScheduleDays(departure.date, offset) === arrival.date,
+    );
+    return {
+      date: departure.date,
+      time: {
+        departure: departure.time,
+        arrival: arrival.time,
+        arrivalDayOffset: arrivalDayOffset ?? 0,
+      } satisfies ScheduleLeg,
+    };
+  };
+  const outboundLegs = primaryOutbound
+    .map(leg)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const returnLegs = primaryReturn
+    .map(leg)
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const weekdays = new Map<number, WeekdayStay>();
+  for (const outboundLeg of outboundLegs) {
+    const returningLeg = returnLegs.find(
+      (candidate) => candidate.date >= outboundLeg.date,
+    );
+    const stayDays = returningLeg
+      ? Math.max(
+          1,
+          Math.round(
+            (Date.parse(`${returningLeg.date}T00:00:00Z`) -
+              Date.parse(`${outboundLeg.date}T00:00:00Z`)) /
+              86_400_000,
+          ),
+        )
+      : 2;
+    const day = new Date(`${outboundLeg.date}T00:00:00Z`).getUTCDay();
+    if (!weekdays.has(day)) weekdays.set(day, { day, stayDays });
+  }
+  const returnInput = primaryReturn[0];
+  const returnSegment = returnInput?.segments[0];
+  const additionalCabins = [
+    ...new Map(
+      outbound
+        .filter((item) => item.flightClassId !== input.flightClassId)
+        .map((item) => [
+          item.flightClassId,
+          {
+            flightClassId: item.flightClassId,
+            totalCapacity: item.totalCapacity,
+          },
+        ]),
+    ).values(),
+  ];
+  return {
+    input,
+    mode: (returnInput ? 'round-trip' : 'one-way') as 'one-way' | 'round-trip',
+    start: outboundLegs[0]?.date ?? '',
+    end: outboundLegs.at(-1)?.date ?? '',
+    allowPastDate: outbound.some(
+      (item) => Date.parse(item.segments[0]!.departureAt) <= now.getTime(),
+    ),
+    weekdays: [...weekdays.values()],
+    outboundTime: outboundLegs[0]?.time ?? {
+      departure: '',
+      arrival: '',
+      arrivalDayOffset: 0,
+    },
+    returnTime: returnLegs[0]?.time ?? {
+      departure: '',
+      arrival: '',
+      arrivalDayOffset: 0,
+    },
+    returnDetails: {
+      flightNumber: returnSegment?.flightNumber ?? '',
+      aircraftId: returnSegment?.aircraftId ?? '',
+      baggageId: returnInput?.baggageId ?? '',
+      economyBaggageKg: returnInput?.economyBaggageKg ?? null,
+      businessBaggageKg: returnInput?.businessBaggageKg ?? null,
+    },
+    additionalCabins,
+  };
+}
+
 export function FlightScheduleForm({
+  initial,
+  initials,
+  editing = false,
   references,
   onReference,
   onSave,
   onCancel,
 }: {
+  initial?: ProductInput | undefined;
+  initials?: readonly ProductInput[] | undefined;
+  editing?: boolean;
   references: readonly Reference[];
   onReference: (reference: Reference) => void;
   onSave: (
     inputs: readonly ProductInput[],
     reason: string,
+    allowPastDate?: boolean,
   ) => void | Promise<void>;
   onCancel: () => void;
 }) {
+  const defaults = flightScheduleDefaults(initial, new Date(), initials);
   const [additionalCabins, setAdditionalCabins] = useState<
     FlightCabinCapacity[]
-  >([]);
-  const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(null);
+  >(defaults.additionalCabins);
+  const [mode, setMode] = useState<'one-way' | 'round-trip' | null>(
+    defaults.mode,
+  );
   const [advanced, setAdvanced] = useState(false);
   const [maxEdited, setMaxEdited] = useState(false);
-  const [input, setInput] = useState<ProductInput>(() => ({
-    ...emptyInput(),
-    supplyType: 'company',
-    companyOwned: true,
-  }));
-  const [start, setStart] = useState(''),
-    [end, setEnd] = useState('');
-  const [weekdays, setWeekdays] = useState<WeekdayStay[]>([]);
-  const [returnDetails, setReturnDetails] = useState({
-    flightNumber: '',
-    aircraftId: '',
-    baggageId: '',
-    economyBaggageKg: null as string | null,
-    businessBaggageKg: null as string | null,
-  });
-  const [outboundTime, setOutboundTime] = useState<ScheduleLeg>({
-    departure: '',
-    arrival: '',
-    arrivalDayOffset: 0,
-  });
-  const [returnTime, setReturnTime] = useState<ScheduleLeg>({
-    departure: '',
-    arrival: '',
-    arrivalDayOffset: 0,
-  });
+  const [input, setInput] = useState<ProductInput>(defaults.input);
+  const [start, setStart] = useState(defaults.start),
+    [end, setEnd] = useState(defaults.end);
+  const [allowPastDate, setAllowPastDate] = useState(defaults.allowPastDate);
+  const [weekdays, setWeekdays] = useState<WeekdayStay[]>(defaults.weekdays);
+  const [returnDetails, setReturnDetails] = useState(defaults.returnDetails);
+  const [outboundTime, setOutboundTime] = useState<ScheduleLeg>(
+    defaults.outboundTime,
+  );
+  const [returnTime, setReturnTime] = useState<ScheduleLeg>(
+    defaults.returnTime,
+  );
   const [problem, setProblem] = useState(''),
     [saving, setSaving] = useState(false);
   const submitting = useRef(false),
@@ -124,6 +303,7 @@ export function FlightScheduleForm({
   const returnCount = new Set(
     preview.flatMap((p) => (p.returning ? [p.returning] : [])),
   ).size;
+  const orderedPreview = chronologicalScheduleDates(preview);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -133,15 +313,22 @@ export function FlightScheduleForm({
     setProblem('');
     try {
       const dates = scheduleDates(start, end, weekdays, mode === 'round-trip');
-      if (!batchId.current) batchId.current = crypto.randomUUID();
+      if (!batchId.current) batchId.current = browserRandomUuid();
       const outbound = {
         ...input,
         returnMinDays:
-          mode === 'round-trip' ? (input.returnMinDays ?? null) : null,
+          mode === 'round-trip' || editing
+            ? (input.returnMinDays ?? null)
+            : null,
         returnMaxDays:
-          mode === 'round-trip' ? (input.returnMaxDays ?? null) : null,
-        journeyRole:
-          mode === 'round-trip' ? ('outbound' as const) : ('one-way' as const),
+          mode === 'round-trip' || editing
+            ? (input.returnMaxDays ?? null)
+            : null,
+        journeyRole: editing
+          ? input.journeyRole
+          : mode === 'round-trip'
+            ? ('outbound' as const)
+            : ('one-way' as const),
       };
       const draft = createReturnTicketDraft(outbound);
       const returning: ProductInput = {
@@ -169,6 +356,15 @@ export function FlightScheduleForm({
         scheduleToUtc,
         !maxEdited,
       )
+        .map((definition) =>
+          editing && (initials?.length ?? 0) <= 1
+            ? {
+                ...definition,
+                journeyRole: input.journeyRole,
+                tripGroupId: input.tripGroupId,
+              }
+            : definition,
+        )
         .flatMap((definition) =>
           expandFlightCabins(definition, additionalCabins, references),
         )
@@ -181,7 +377,11 @@ export function FlightScheduleForm({
             references,
           ),
         );
-      await onSave(definitions, 'تعریف برنامه هفتگی پرواز');
+      await onSave(
+        definitions,
+        editing ? 'ویرایش لود پرواز' : 'تعریف برنامه هفتگی پرواز',
+        allowPastDate,
+      );
     } catch (error) {
       setProblem(
         error instanceof Error ? error.message : 'ثبت برنامه ناموفق بود.',
@@ -199,7 +399,7 @@ export function FlightScheduleForm({
           بازگشت به برنامه هفتگی پرواز
         </Button>
         <TicketForm
-          initial={emptyInput()}
+          initial={initial ?? emptyInput()}
           references={references}
           onReference={onReference}
           onSave={onSave}
@@ -266,6 +466,7 @@ export function FlightScheduleForm({
     <form
       className={styles.form}
       dir="rtl"
+      onKeyDown={saveTicketFormOnCtrlS}
       onSubmit={(event) => void submit(event)}
     >
       <div className={styles.mode} role="group" aria-label="نوع بلیت">
@@ -316,6 +517,14 @@ export function FlightScheduleForm({
                   onChange={setEnd}
                 />
               </FormField>
+              <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  checked={allowPastDate}
+                  onChange={(event) => setAllowPastDate(event.target.checked)}
+                />
+                تاریخ گذشته
+              </label>
               {picker(
                 'schedule-airline',
                 'ایرلاین',
@@ -674,13 +883,35 @@ export function FlightScheduleForm({
                   ? ` و ${returnCount.toLocaleString('fa-IR')} بلیت برگشت`
                   : ''}
               </strong>
-              <div className={styles.previewRows}>
-                {preview.map((pair) => (
-                  <span key={pair.outbound} dir="ltr">
-                    {pair.outbound}
-                    {pair.returning ? ` → ${pair.returning}` : ''}
-                  </span>
-                ))}
+              <div className={styles.previewTableScroll}>
+                <table className={styles.previewTable}>
+                  <thead>
+                    <tr>
+                      <th>ردیف</th>
+                      <th>روز رفت</th>
+                      <th>تاریخ رفت</th>
+                      <th>روز برگشت</th>
+                      <th>تاریخ برگشت</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {orderedPreview.map((pair, index) => (
+                      <tr
+                        key={`${pair.outbound}-${pair.returning ?? 'one-way'}`}
+                      >
+                        <td>{(index + 1).toLocaleString('fa-IR')}</td>
+                        <td>{scheduleWeekdayName(pair.outbound)}</td>
+                        <td dir="ltr">{pair.outbound}</td>
+                        <td>
+                          {pair.returning
+                            ? scheduleWeekdayName(pair.returning)
+                            : '—'}
+                        </td>
+                        <td dir="ltr">{pair.returning ?? '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               <p>
                 برگشت‌های هم‌تاریخ با مشخصات یکسان فقط یک‌بار ساخته می‌شوند.
@@ -693,7 +924,11 @@ export function FlightScheduleForm({
               loading={saving}
               disabled={saving || Boolean(previewError)}
             >
-              {saving ? 'در حال ثبت پروازها…' : 'ثبت برنامه و ساخت بلیت‌ها'}
+              {saving
+                ? 'در حال ذخیره…'
+                : editing
+                  ? 'ذخیره تغییرات لود'
+                  : 'ثبت برنامه و ساخت بلیت‌ها'}
             </Button>
             <Button
               type="button"

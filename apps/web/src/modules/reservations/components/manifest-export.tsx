@@ -32,6 +32,7 @@ function todayInTehran() {
 
 export function manifestDateTime(value: string, timeKnown = true) {
   return new Intl.DateTimeFormat('en-GB', {
+    hourCycle: 'h23',
     timeZone: 'Asia/Tehran',
     year: 'numeric',
     month: '2-digit',

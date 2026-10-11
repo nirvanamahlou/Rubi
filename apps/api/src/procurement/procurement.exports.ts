@@ -375,7 +375,7 @@ export class ProcurementExports implements OnModuleInit, OnModuleDestroy {
       headings: [],
       rows: [],
       notes: [
-        `زمان درخواست خروجی: ${new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Tehran' }).format(job.createdAt)} (تهران)`,
+        `زمان درخواست خروجی: ${new Intl.DateTimeFormat('fa-IR', { dateStyle: 'medium', timeStyle: 'short', hourCycle: 'h23', timeZone: 'Asia/Tehran' }).format(job.createdAt)} (تهران)`,
         'مبالغ هر ارز مستقل‌اند؛ پرداخت و مانده مالی در این گزارش محاسبه نمی‌شود.',
       ],
     };

@@ -157,3 +157,31 @@ it('hides an issued voucher without a selected directory leader', () => {
   );
   expect(html).not.toContain('data-document-preview');
 });
+
+it.each([false, true])(
+  'uses the supplied transparent Jahan logo for reservation/voucher=%s even with an old uploaded logo',
+  (voucher) => {
+    const companyIntake = structuredClone(intake);
+    companyIntake.workflow.branding = {
+      kind: 'OWN',
+      companyCode: 'JAHAN_BASTAN',
+      referenceId: 'company',
+      name: 'نیایش سیر سحر',
+      logoFileId: 'old-logo',
+    };
+    companyIntake.workflow.voucherIssued = true;
+    const settings = defaultVoucherSettings(companyIntake, {});
+    settings.brokerId = 'broker';
+    settings.leaderId = 'leader';
+    settings.text.broker = 'BROKER';
+    companyIntake.workflow.voucherSettings = settings;
+    const html = renderToStaticMarkup(
+      <TravelDocument intake={companyIntake} voucher={voucher} />,
+    );
+    expect(html).toContain('/brand/jahan-bastan-transparent.png');
+    expect(html).toContain('jahanLogo');
+    expect(html).toContain('جهان باستان');
+    expect(html).not.toContain('نیایش');
+    expect(html).not.toContain('niyayehseir.com');
+  },
+);

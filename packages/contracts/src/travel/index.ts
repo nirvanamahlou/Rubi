@@ -120,6 +120,8 @@ export interface TicketOfferV1 {
   manifestTemplateId?: string | null;
   /** Stable source identity exposed by the managed catalog projection. */
   catalogProductId?: string;
+  /** Stable identity shared by every dated/cabin row created by one load form submission. */
+  loadGroupId?: string;
   id: string;
   version: number;
   branchId: string;
@@ -144,6 +146,7 @@ export type TicketOfferCreateV1 = Omit<
   TicketOfferV1,
   | 'id'
   | 'catalogProductId'
+  | 'loadGroupId'
   | 'version'
   | 'branchId'
   | 'remainingCapacity'

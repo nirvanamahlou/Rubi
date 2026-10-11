@@ -920,6 +920,7 @@ function formatReportTimestamp(value: string | null): string {
   return new Intl.DateTimeFormat('fa-IR', {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hourCycle: 'h23',
     timeZone: 'Asia/Tehran',
   }).format(date);
 }

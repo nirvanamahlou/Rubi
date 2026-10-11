@@ -1,8 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { emptyInput } from './preview';
-import { buildWeekdayTickets, scheduleDates } from './weekday-schedule';
+import {
+  buildWeekdayTickets,
+  chronologicalScheduleDates,
+  scheduleDates,
+  scheduleWeekdayName,
+} from './weekday-schedule';
 
 describe('weekly flight schedule', () => {
+  it('sorts the preview chronologically and labels Wednesday', () => {
+    expect(
+      chronologicalScheduleDates([
+        { outbound: '2026-10-14', returning: '2026-10-21' },
+        { outbound: '2026-10-07', returning: '2026-10-10' },
+      ]),
+    ).toEqual([
+      { outbound: '2026-10-07', returning: '2026-10-10' },
+      { outbound: '2026-10-14', returning: '2026-10-21' },
+    ]);
+    expect(scheduleWeekdayName('2026-10-07')).toBe('چهارشنبه');
+  });
+
   it('creates every Saturday and Sunday in the inclusive October range, with two-day returns', () => {
     const pairs = scheduleDates(
       '2026-10-01',

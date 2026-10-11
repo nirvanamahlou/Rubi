@@ -18,7 +18,7 @@ const AES_KEY_BYTES = 32;
 const GCM_IV_BYTES = 12;
 const KEY_VERSION = 1;
 
-type ContactKind = 'phone' | 'email';
+type ContactKind = 'phone' | 'email' | 'nationalId';
 
 export type ProtectedMasterContact = {
   encrypted: string;
@@ -77,6 +77,16 @@ export function normalizeMasterContact(
       normalized,
       masked: `${visiblePrefix}${'•'.repeat(Math.max(4, normalized.length - visiblePrefix.length - 4))}${normalized.slice(-4)}`,
     };
+  }
+  if (kind === 'nationalId') {
+    const normalized = value
+      .replace(/[۰-۹٠-٩]/g, (digit) =>
+        String(digit.charCodeAt(0) - (digit >= '۰' ? 0x06f0 : 0x0660)),
+      )
+      .replace(/\s/g, '');
+    if (!/^\d{10}$/.test(normalized))
+      throw new BadRequestException('کد ملی مخاطب باید ۱۰ رقم باشد.');
+    return { normalized, masked: `${'•'.repeat(6)}${normalized.slice(-4)}` };
   }
   const normalized = value.toLowerCase();
   if (normalized.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized))

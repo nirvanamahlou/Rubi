@@ -319,6 +319,7 @@ export function HrNotificationCenter() {
                       {new Intl.DateTimeFormat('fa-IR', {
                         dateStyle: 'short',
                         timeStyle: 'short',
+                        hourCycle: 'h23',
                       }).format(new Date(notification.occurredAt))}
                     </time>
                   </span>

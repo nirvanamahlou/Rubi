@@ -149,12 +149,17 @@ export function ReservationFormSheet({
                 <h1>{voucher ? 'HOTEL VOUCHER' : 'RESERVATION FORM'}</h1>
                 <p>TRAVEL SERVICES / HOTEL / TRANSFER / TOUR LEADER</p>
               </div>
-              <div className={styles.brand}>
+              <div
+                className={`${styles.brand} ${intake.workflow.branding?.kind === 'OWN' && intake.workflow.branding.companyCode === 'JAHAN_BASTAN' ? styles.jahanBrand : ''}`}
+              >
                 {logo && settings?.flags.withLetterhead !== false && (
                   <Image
                     className={
                       intake.workflow.branding?.kind === 'OWN'
-                        ? styles.logo
+                        ? intake.workflow.branding.companyCode ===
+                          'JAHAN_BASTAN'
+                          ? styles.jahanLogo
+                          : styles.logo
                         : styles.agencyLogo
                     }
                     src={
@@ -421,7 +426,12 @@ export function ReservationFormSheet({
                 <div
                   data-reservation-footer
                   dangerouslySetInnerHTML={{
-                    __html: reservationFormFooterHtml(intake.id, origin),
+                    __html: reservationFormFooterHtml(
+                      intake.id,
+                      origin,
+                      intake.workflow.branding?.companyCode,
+                      data.brand,
+                    ),
                   }}
                 />
               )}

@@ -155,3 +155,25 @@ describe('flight ticket output template', () => {
     expect(html).toContain('<rect');
   });
 });
+
+it('uses Jahan Bastan branding on flight tickets without falling back to Niyayesh', () => {
+  const html = renderToStaticMarkup(
+    <FlightTicketSheet
+      data={{
+        passengerName: 'Synthetic Passenger',
+        branding: {
+          name: 'نیایش سیر سحر',
+          companyCode: 'JAHAN_BASTAN',
+          logo: '/brand/jahan-bastan-transparent.png',
+        },
+        offers: [demoOffer],
+        transferDirections: [],
+      }}
+      cityName={(id) => id}
+    />,
+  );
+  expect(html).toContain('/brand/jahan-bastan-transparent.png');
+  expect(html).toContain('جهان باستان');
+  expect(html).not.toContain('نیایش');
+  expect(html).not.toContain('niyayesh-seir');
+});

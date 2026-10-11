@@ -13,10 +13,10 @@ export const workbenchTabs = [
   ['requests', 'کارتابل درخواست‌ها'],
   ['messages', 'پیام‌ها'],
   ['files', 'فایل‌های من'],
-  ['stars', 'ستاره‌دارها'],
   ['activity', 'فعالیت‌های من'],
   ['performance', 'عملکرد من'],
   ['notes', 'یادداشت‌ها'],
+  ['stars', 'مدارک مهم'],
   ['calendar', 'تقویم من'],
   ['account', 'حساب و تنظیمات'],
 ] as const;
@@ -55,6 +55,7 @@ export function workbenchDate(value: string): string {
     : new Intl.DateTimeFormat('fa-IR', {
         dateStyle: 'medium',
         timeStyle: 'short',
+        hourCycle: 'h23',
         timeZone: 'Asia/Tehran',
       }).format(date);
 }

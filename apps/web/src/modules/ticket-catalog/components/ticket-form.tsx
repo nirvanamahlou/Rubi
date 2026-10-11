@@ -1,7 +1,8 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
-import { useRef, useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import {
   Alert,
   Button,
@@ -629,6 +630,18 @@ function RouteFields({
   );
 }
 
+export function saveTicketFormOnCtrlS(event: KeyboardEvent<HTMLFormElement>) {
+  if (
+    !event.ctrlKey ||
+    event.altKey ||
+    event.shiftKey ||
+    event.key.toLowerCase() !== 's'
+  )
+    return;
+  event.preventDefault();
+  event.currentTarget.requestSubmit();
+}
+
 export function TicketForm({
   initial,
   references,
@@ -645,6 +658,7 @@ export function TicketForm({
   onSave: (
     inputs: readonly ProductInput[],
     reason: string,
+    allowPastDate?: boolean,
   ) => void | Promise<void>;
   onCancel: () => void;
   readOnly?: boolean;
@@ -663,6 +677,7 @@ export function TicketForm({
     createReturnTicketDraft(initial),
   );
   const [reason, setReason] = useState('');
+  const [allowPastDate, setAllowPastDate] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const submitting = useRef(false);
@@ -793,7 +808,7 @@ export function TicketForm({
         throw new Error('تاریخ اولین بلیط را انتخاب کنید.');
       const roundTrip = definitionMode === 'round-trip' && allowRoundTrip;
       const groupId = roundTrip
-        ? (tripGroup.current ??= crypto.randomUUID())
+        ? (tripGroup.current ??= browserRandomUuid())
         : undefined;
       const baseDefinition: ProductInput = {
         ...input,
@@ -843,8 +858,9 @@ export function TicketForm({
         await onSave(
           [...cabinInputs(definition), ...cabinInputs(returnDefinition)],
           reason,
+          allowPastDate,
         );
-      } else await onSave(cabinInputs(definition), reason);
+      } else await onSave(cabinInputs(definition), reason, allowPastDate);
       setError('');
     } catch (problem) {
       setError(
@@ -856,7 +872,11 @@ export function TicketForm({
     }
   }
   return (
-    <form onSubmit={submit} className={`${styles.form} space-y-6`}>
+    <form
+      onSubmit={submit}
+      onKeyDown={saveTicketFormOnCtrlS}
+      className={`${styles.form} space-y-6`}
+    >
       {error ? <Alert tone="error" title={error} /> : null}
       <fieldset disabled={readOnly} className="space-y-6 disabled:opacity-80">
         <section className="space-y-4">
@@ -880,6 +900,14 @@ export function TicketForm({
                 }
               />
             </FormField>
+            <label className="flex min-h-11 items-center gap-2 rounded-xl border border-border px-3 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={allowPastDate}
+                onChange={(event) => setAllowPastDate(event.target.checked)}
+              />
+              تاریخ گذشته
+            </label>
             <FormField label="نوع وسیله سفر" id="ticket-transport" required>
               <Select
                 value={input.transport}

@@ -278,6 +278,14 @@ export interface HotelRoomRateV1 {
 }
 
 export interface HotelOccupancyRateV1 {
+  /** Manual room base and composition coefficient; absent for imported tariffs. */
+  manualPricing?: {
+    baseAmount: string;
+    coefficient: string;
+    adjustment: HotelSaleAdjustmentV1;
+  };
+  /** Derived sale/night; amount remains purchase/night. */
+  saleAmount?: string;
   adults: number;
   childAges: readonly { min: number; maxExclusive: number }[];
   startsOn: string;
@@ -287,6 +295,12 @@ export interface HotelOccupancyRateV1 {
   composition: string;
   board: string;
 }
+
+export interface HotelSaleAdjustmentV1 {
+  kind: 'AMOUNT' | 'PERCENT' | 'SET';
+  value: string;
+}
+export { calculateManualHotelPrices } from './manual-hotel-pricing';
 
 export interface PackageTourHotelPurchaseRowV1 {
   id: string;
@@ -305,6 +319,7 @@ export interface PackageTourHotelPurchaseRowV1 {
 }
 
 export interface PackageTourHotelPurchaseBatchV1 {
+  sharedPeriod?: boolean;
   tourDepartureId?: string | null;
   id: string;
   version: 1;
@@ -336,6 +351,8 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
+  selectedHotelRateIds?: readonly string[];
+  priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
   familyChildren?: number;
   version: 1;
@@ -364,6 +381,10 @@ export interface PackageTourDraftV1 extends PackageTourDraftSaveV1 {
 }
 
 export interface PackageTourPublishedRoomPriceV1 {
+  roomTypeName?: string;
+  board?: string;
+  childAgeMin?: number;
+  childAgeMaxExclusive?: number;
   currencyAmounts?: readonly TourRoomCurrencyAmount[];
   hotelRateId: string;
   roomCode: string;
@@ -377,6 +398,8 @@ export interface PackageTourPublishedRoomPriceV1 {
 }
 
 export interface PackageTourPublicationV1 {
+  selectedHotelRateIds?: readonly string[];
+  priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
   familyChildren?: number;
   version: 1;
@@ -451,3 +474,14 @@ export type {
   TourRoomCurrencyAmount,
   TourRoomCalculationInput,
 } from './tour-calculation';
+
+import type { PackageTourPriceFieldV1 } from './price-fields';
+export type { PackageTourPriceFieldV1 } from './price-fields';
+export {
+  tourPriceFields,
+  tourPriceFieldValues,
+  validateTourPriceFields,
+} from './price-fields';
+
+export { buildHotelPackageTable } from './hotel-package-table';
+export type { HotelPackageTablePrice } from './hotel-package-table';

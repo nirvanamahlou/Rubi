@@ -103,7 +103,10 @@ describe('finance workspace component contract', () => {
     );
     expect(liveInboxSource).toContain('aria-pressed={active}');
     expect(liveInboxSource).toContain('بررسی درخواست');
-    expect(liveInboxSource).toContain('scrollIntoView');
+    expect(liveInboxSource).not.toContain('scrollIntoView');
+    expect(liveInboxSource).toContain('فرم درخواست مالی');
+    expect(liveInboxSource).toContain('className={styles.requestDialog}');
+    expect(liveInboxSource).toContain('className={styles.actionDialog}');
     for (const action of ['payTicket', 'paySupplier', 'decideReceipt']) {
       expect(liveInboxSource).toContain(`financeInboxApi.${action}`);
     }
@@ -136,9 +139,11 @@ describe('finance workspace component contract', () => {
     expect(accountingNavigationSource).toContain('بازکردن منوی حسابداری');
     expect(accountingNavigationSource).toContain('جمع‌کردن منوی حسابداری');
     expect(accountingNavigationSource).toContain(
-      'accountingNavigationGroups.map((group) => group.id)',
+      'group.sections.map((section) =>',
     );
-    expect(accountingNavigationSource).toContain('group.items.length > 0');
+    expect(accountingNavigationSource).toContain(
+      'closedSections.includes(sectionId)',
+    );
     expect(accountingNavigationSource).not.toContain('if (group.href)');
     expect(accountingNavigationSource).toContain('<AccountingWorkspace');
     expect(accountingNavigationSource).not.toContain('در انتظار تعریف جزئیات');
@@ -178,12 +183,19 @@ describe('finance workspace component contract', () => {
     expect(coreSource).not.toContain('label="Version"');
     expect(coreSource).toContain('هیچ درخواست عملیاتی ثبت نمی‌شود');
     expect(coreSource).toContain('<FinanceInboxLiveWorkspace />');
-    expect(coreSource).toContain('<FinanceDeliveryPanel />');
+    expect(coreSource).not.toContain('<FinanceDeliveryPanel />');
+    expect(coreSource).not.toContain('#finance-document-delivery');
+    const deliveryPage = readFileSync(
+      join(process.cwd(), 'src/app/(crm)/finance/delivery/page.tsx'),
+      'utf8',
+    );
+    expect(deliveryPage).toContain('<FinanceDeliveryPanel />');
+    expect(deliveryPage).toContain('<PageHeader title="تحویل مدارک" />');
     expect(componentSource).not.toContain('<FinanceDeliveryPanel />');
     expect(coreSource).not.toContain('<InboxSpace />');
-    expect(liveInboxSource).toContain('امروز چه چیزی نیاز به تصمیم مالی دارد؟');
+    expect(liveInboxSource).toContain('کارتابل درخواست‌ها');
     expect(liveInboxSource).toContain('مرکز کنترل مالی');
-    expect(liveInboxSource).toContain('جریان کارتابل بر اساس واحد');
+    expect(liveInboxSource).not.toContain('جریان کارتابل بر اساس واحد');
     expect(liveInboxSource).toContain('اولویت‌های نزدیک');
     expect(liveInboxSource).toContain('حساب‌های قابل استفاده');
     expect(liveInboxSource).not.toContain('Live sources');

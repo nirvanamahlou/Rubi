@@ -28,7 +28,7 @@ const timeFormatter = new Intl.DateTimeFormat('fa-IR', {
   timeZone: HEADER_DATE_TIME_ZONE,
   hour: '2-digit',
   minute: '2-digit',
-  hour12: false,
+  hourCycle: 'h23',
 });
 const actionLabels: Record<string, string> = {
   CREATE: 'ایجاد درخواست',

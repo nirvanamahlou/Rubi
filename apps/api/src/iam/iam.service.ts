@@ -1305,7 +1305,7 @@ export class IamService implements IamStepUpPort {
     const profile = await this.managedAccess(dto, actor);
     await this.assertRolesAssignable(dto.roleIds, actor);
     await this.database.client.$transaction(async (transaction) => {
-      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
+      await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
       const [target, administratorRole] = await Promise.all([
         transaction.user.findUnique({
           where: { id: userId },
@@ -1373,7 +1373,7 @@ export class IamService implements IamStepUpPort {
       throw new ConflictException('غیرفعال‌سازی حساب جاری مجاز نیست.');
     const user = await this.database.client.$transaction(
       async (transaction) => {
-        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))`;
+        await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
         if (status !== UserStatus.ACTIVE) {
           const targetIsAdministrator = await transaction.userRole.findFirst({
             where: { userId, role: { code: 'administrator' } },
@@ -1594,11 +1594,20 @@ export class IamService implements IamStepUpPort {
       throw new BadRequestException(
         'نقش، مجوزها و بخش‌های قابل مشاهده را کامل انتخاب کنید.',
       );
+    const permissionIds = [...dto.permissionIds];
+    if (dto.screenIds.includes('sales.new-contract')) {
+      const masterDataRead = await this.database.client.permission.findUnique({
+        where: { code: 'master_data.read' },
+        select: { id: true },
+      });
+      if (masterDataRead && !permissionIds.includes(masterDataRead.id))
+        permissionIds.push(masterDataRead.id);
+    }
     const isAdministrator = await this.isSystemAdministrator(actor);
     if (!isAdministrator)
-      await this.assertPermissionsAssignable(dto.permissionIds, actor);
+      await this.assertPermissionsAssignable(permissionIds, actor);
     const permissions = await this.database.client.permission.findMany({
-      where: { id: { in: dto.permissionIds } },
+      where: { id: { in: permissionIds } },
       select: { code: true },
     });
     if (permissions.some((p) => p.code.startsWith('ui.')))
@@ -1619,7 +1628,7 @@ export class IamService implements IamStepUpPort {
     }
     return {
       title: dto.accessTitle,
-      permissionIds: dto.permissionIds,
+      permissionIds,
       screenIds: dto.screenIds,
     };
   }

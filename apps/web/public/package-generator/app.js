@@ -25,6 +25,7 @@ function message(t,error=false){
 function unavailable(v){return v===''||v==null||/^(n\/?a|#n\/a|—|-)$/i.test(String(v).trim());}
 function prettyFa(t){return String(t||'').replace(/([0-9۰-۹])(\p{L})/gu,'$1 $2').replace(/(\p{L})([0-9۰-۹])/gu,'$1 $2').replace(/[0-9]/g,c=>'۰۱۲۳۴۵۶۷۸۹'[c]);}
 function priceText(c){
+ if(c?.parts)return c.parts.map(part=>{const [whole,fraction]=part.amount.split('.');return whole.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(fraction?'.'+fraction:'')+' '+part.currencyCode;}).join(' + ');
  if(!c||unavailable(c.value))return '—';let currency=c.currency||$('unit').value,v=c.value;
  if(typeof v==='string'){const found=v.match(/€|\$|تومان|ریال|یورو|دلار/);if(found)currency=found[0].replace('یورو','€').replace('دلار','$');const clean=latin(v).replace(/€|\$|تومان|ریال|یورو|دلار/g,'').trim();if(/^\d{1,3}([.,/٬]\d{3})+$/.test(clean))v=Number(clean.replace(/[.,/٬]/g,''));else if(/^\d+(\.\d+)?$/.test(clean))v=Number(clean);}
  const a=typeof v==='number'?new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:c.decimals??2}).format(v):String(v).trim();const priced=currency?(['€','$'].includes(currency)?currency+' '+a:a+' '+currency):a;return priced+(c.suffix?' '+c.suffix:'');
@@ -215,7 +216,7 @@ async function importFile(file){
 }
 function commitEdit(el){
  if(el.dataset.group===undefined||!state.data)return;const g=state.data.groups[Number(el.dataset.group)],t=el.innerText.replace(/[\r\n]/g,' ').trim().slice(0,220);
- if(el.dataset.price){const c=g.prices[el.dataset.price],currency=t.match(/€|\$|تومان|ریال|یورو|دلار/)?.[0]||'',spain=profile().style.startsWith('spain-');if(spain)c.suffix=/نرخ\s*پرواز/.test(t)?'+ نرخ پرواز':'';const clean=latin(spain?t.replace(/\+?\s*نرخ\s*پرواز/g,''):t).replace(/€|\$|تومان|ریال|یورو|دلار/g,'').replace(/[,٬]/g,'').replace(/٫/g,'.').trim();c.value=/^-?\d+(\.\d+)?$/.test(clean)?Number(clean):clean;c.currency=currency.replace('یورو','€').replace('دلار','$');if(c.decimals===0&&/\.\d/.test(clean))c.decimals=2;}
+ if(el.dataset.price){const c=g.prices[el.dataset.price];if(c.parts){const tokens=latin(t).split('+').map(part=>part.trim().replace(/[,٬]/g,'').match(/^(0|[1-9]\d{0,23})(\.\d{1,2})?\s+([A-Z]{3})$/));if(tokens.every(Boolean)){c.parts=tokens.map(match=>({amount:match[1]+(match[2]||''),currencyCode:match[3]}));}return;}const currency=t.match(/€|\$|تومان|ریال|یورو|دلار/)?.[0]||'',spain=profile().style.startsWith('spain-');if(spain)c.suffix=/نرخ\s*پرواز/.test(t)?'+ نرخ پرواز':'';const clean=latin(spain?t.replace(/\+?\s*نرخ\s*پرواز/g,''):t).replace(/€|\$|تومان|ریال|یورو|دلار/g,'').replace(/[,٬]/g,'').replace(/٫/g,'.').trim();c.value=/^-?\d+(\.\d+)?$/.test(clean)?Number(clean):clean;c.currency=currency.replace('یورو','€').replace('دلار','$');if(c.decimals===0&&/\.\d/.test(clean))c.decimals=2;}
  else{const h=g.hotels[Number(el.dataset.hotel)];h[el.dataset.key]=t;if(el.dataset.key==='service'&&profile().style!=='spain-combined')h.stars='';}
 }
 $('pages').addEventListener('focusout',e=>{if(e.target.matches('[contenteditable]')){if(e.target.dataset.section&&window.PackageEditor?.commitInline(e.target))return;commitEdit(e.target);render();}});$('pages').addEventListener('keydown',e=>{if(e.target.matches('[contenteditable]')&&e.key==='Enter'&&!e.shiftKey){e.preventDefault();e.target.blur();}});$('pages').addEventListener('paste',e=>{if(e.target.matches('[contenteditable]')){e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));}});
@@ -242,3 +243,5 @@ async function exportPackage(type){
 }
 $('downloadUnit').addEventListener('change',()=>{if(state.busy)return;$('unit').value=$('downloadUnit').value;render();});$('downloadFixLayout').addEventListener('click',showLayoutIssue);
 $('png').addEventListener('click',()=>exportPackage('png'));$('pdf').addEventListener('click',()=>exportPackage('pdf'));syncTemplateOptions($('templateCountry').value,$('template').value);drawCards();render();
+
+window.PackagePricingBridge?.connect(applyData);

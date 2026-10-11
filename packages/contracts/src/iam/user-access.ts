@@ -380,6 +380,12 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     route: '/finance/requests',
   },
   {
+    id: 'finance.delivery',
+    group: 'finance',
+    title: 'تحویل مدارک',
+    route: '/finance/delivery',
+  },
+  {
     id: 'sales.pricing.management',
     group: 'sales',
     title: 'مدیریت قیمت‌ها',
@@ -507,6 +513,13 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     group: 'procurement',
     title: 'تنخواه',
     route: '/purchases',
+  },
+  {
+    id: 'procurement.suppliers',
+    group: 'procurement',
+    title: 'تأمین‌کنندگان',
+    route: '/purchases',
+    query: { section: 'suppliers' },
   },
   {
     id: 'finance.home',
@@ -2202,6 +2215,13 @@ function hasGroupPermission(permissions: readonly string[], groupId: string) {
   return (
     !!group &&
     (permissions.includes(USER_ACCESS_ADMIN_PERMISSION) ||
+      (groupId === 'workbench' &&
+        hasManagedAccess(permissions) &&
+        USER_ACCESS_SCREENS.some(
+          (screen) =>
+            screen.group === groupId &&
+            permissions.includes(screenPermission(screen.id)),
+        )) ||
       permissions.some(
         (code) =>
           !['legal-entity.read', 'legal-entity.switch'].includes(code) &&

@@ -25,6 +25,9 @@ function fixture() {
   const roles = new Map<string, string>();
   const client = {
     permission: {
+      findUnique: vi.fn(async ({ where }: { where: { code: string } }) =>
+        where.code === 'master_data.read' ? { id: 'master-read' } : null,
+      ),
       findMany: vi.fn(async ({ where }: { where: { id: { in: string[] } } }) =>
         where.id.in.map((id) => ({
           id,
@@ -126,6 +129,7 @@ describe('independent managed user access', () => {
       USER_ACCESS_PROFILE_PERMISSION,
       screenPermission('sales.home'),
     ]);
+    expect(f.client.$queryRaw.mock.calls[0]?.[0]?.[0]).toContain('::text');
   });
   it('rejects escalation before writing any role or membership', async () => {
     const f = fixture();
@@ -171,6 +175,21 @@ describe('independent managed user access', () => {
     expect(f.grants.get('personal-access-first')).toContain(
       screenPermission('system.users'),
     );
+  });
+  it('keeps the master-data read dependency when the sales contract form is visible', async () => {
+    const f = fixture();
+    f.client.user.findUnique
+      .mockResolvedValueOnce({
+        roles: [{ role: { code: 'administrator' } }],
+      } as never)
+      .mockResolvedValueOnce({ status: 'ACTIVE', roles: [] } as never);
+    await f.service.updateUserAccess(
+      'first',
+      { ...access, screenIds: ['sales.new-contract'] },
+      actor,
+      {},
+    );
+    expect(f.grants.get('personal-access-first')).toContain('master-read');
   });
   it('rejects unknown screen ids and incomplete profiles before mutation', async () => {
     const f = fixture();

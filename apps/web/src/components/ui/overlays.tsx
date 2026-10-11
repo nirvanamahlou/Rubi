@@ -19,27 +19,40 @@ export const DialogClose = DialogPrimitive.Close;
 export const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ children, className, ...props }, ref) => (
-  <DialogPrimitive.Portal>
-    <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" />
-    <DialogPrimitive.Content
-      className={cn(
-        'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-6 shadow-2xl outline-none',
-        className,
-      )}
-      ref={ref}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close
-        className="absolute end-4 top-4 rounded-lg p-2 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        aria-label={faMessages.common.close}
+>(
+  (
+    { children, className, onInteractOutside, onPointerDownOutside, ...props },
+    ref,
+  ) => (
+    <DialogPrimitive.Portal>
+      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm" />
+      <DialogPrimitive.Content
+        className={cn(
+          'fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-surface p-6 shadow-2xl outline-none',
+          className,
+        )}
+        ref={ref}
+        onPointerDownOutside={(event) => {
+          event.preventDefault();
+          onPointerDownOutside?.(event);
+        }}
+        onInteractOutside={(event) => {
+          event.preventDefault();
+          onInteractOutside?.(event);
+        }}
+        {...props}
       >
-        <X aria-hidden="true" className="size-4" />
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPrimitive.Portal>
-));
+        {children}
+        <DialogPrimitive.Close
+          className="absolute end-4 top-4 rounded-lg p-2 text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={faMessages.common.close}
+        >
+          <X aria-hidden="true" className="size-4" />
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPrimitive.Portal>
+  ),
+);
 DialogContent.displayName = 'DialogContent';
 
 export const DialogTitle = React.forwardRef<
