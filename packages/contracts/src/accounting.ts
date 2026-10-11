@@ -66,8 +66,10 @@ export interface AccountingAccountGroupV1 {
   titleEn: string | null;
   description: string | null;
   active: boolean;
+  notes?: unknown;
   version: number;
   members: { accountId: string }[];
+  detailAllocations?: { accountId: string; detailId: string }[];
 }
 export interface AccountingDetailGroupV1 {
   id: string;
@@ -77,6 +79,7 @@ export interface AccountingDetailGroupV1 {
   titleEn: string | null;
   description: string | null;
   active: boolean;
+  notes?: unknown;
   version: number;
   members: { detailId: string }[];
 }
@@ -171,6 +174,34 @@ export interface AccountingSnapshotV1 {
   accountGroups: AccountingAccountGroupV1[];
   detailGroups: AccountingDetailGroupV1[];
   templates: AccountingTemplateV1[];
+  subsidiaryMappings?: AccountingSubsidiaryMappingV1[];
+  detailConversions?: AccountingDetailTypeConversionV1[];
+}
+export interface AccountingSubsidiaryMappingV1 {
+  id: string;
+  bookId: string;
+  sourceAccountId: string;
+  sourceDetail4Id?: string | null;
+  sourceDetail5Id?: string | null;
+  sourceDetail6Id?: string | null;
+  sourceKey?: string;
+  targetAccountId: string;
+  detail4Id: string | null;
+  detail5Id: string | null;
+  detail6Id: string | null;
+  version: number;
+}
+export interface AccountingDetailTypeConversionV1 {
+  id: string;
+  bookId: string;
+  userTypeId: string;
+  systemTypeId: string;
+  entity: string;
+  date: string;
+  description: string | null;
+  state: 'REGISTERED' | 'CONVERTED';
+  notes?: unknown;
+  version: number;
 }
 export interface AccountingFxSnapshotV1 {
   id: string;

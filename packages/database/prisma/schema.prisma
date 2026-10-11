@@ -6871,56 +6871,60 @@ model MasterBrokerCity {
 }
 
 model AccountingBook {
-  fxSnapshots    AccountingFxSnapshot[]
-  id             String                        @id @default(uuid()) @db.Uuid
-  branchId       String                        @db.Uuid
-  branch         Branch                        @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  code           String                        @db.VarChar(20)
-  title          String                        @db.VarChar(160)
-  titleEn        String?                       @db.VarChar(160)
-  description    String?                       @db.VarChar(2000)
-  notes          String?                       @db.VarChar(2000)
-  baseCurrency   String                        @db.VarChar(3)
-  isMain         Boolean                       @default(false)
-  allowsPosting  Boolean                       @default(true)
-  active         Boolean                       @default(true)
-  version        Int                           @default(1)
-  nextNumber     Int                           @default(1)
-  createdAt      DateTime                      @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime                      @updatedAt @db.Timestamptz(3)
-  periods        AccountingPeriod[]
-  accounts       AccountingAccount[]
-  details        AccountingDetail[]
-  configurations AccountingConfiguration[]
-  journals       AccountingJournal[]
-  commands       AccountingCommand[]
-  accountGroups  AccountingAccountGroup[]
-  detailGroups   AccountingDetailGroup[]
-  templates      AccountingTemplate[]
-  stateEvents    AccountingJournalStateEvent[]
+  fxSnapshots        AccountingFxSnapshot[]
+  id                 String                           @id @default(uuid()) @db.Uuid
+  branchId           String                           @db.Uuid
+  branch             Branch                           @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  code               String                           @db.VarChar(20)
+  title              String                           @db.VarChar(160)
+  titleEn            String?                          @db.VarChar(160)
+  description        String?                          @db.VarChar(2000)
+  notes              String?                          @db.VarChar(2000)
+  baseCurrency       String                           @db.VarChar(3)
+  isMain             Boolean                          @default(false)
+  allowsPosting      Boolean                          @default(true)
+  active             Boolean                          @default(true)
+  version            Int                              @default(1)
+  nextNumber         Int                              @default(1)
+  createdAt          DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime                         @updatedAt @db.Timestamptz(3)
+  periods            AccountingPeriod[]
+  accounts           AccountingAccount[]
+  details            AccountingDetail[]
+  configurations     AccountingConfiguration[]
+  journals           AccountingJournal[]
+  commands           AccountingCommand[]
+  accountGroups      AccountingAccountGroup[]
+  detailGroups       AccountingDetailGroup[]
+  templates          AccountingTemplate[]
+  stateEvents        AccountingJournalStateEvent[]
+  subsidiaryMappings AccountingSubsidiaryMapping[]
+  detailConversions  AccountingDetailTypeConversion[]
 
   @@unique([branchId, code])
   @@map("accounting_books")
 }
 
 model AccountingConfiguration {
-  id          String               @id @default(uuid()) @db.Uuid
-  bookId      String               @db.Uuid
-  book        AccountingBook       @relation(fields: [bookId], references: [id], onDelete: Restrict)
-  kind        String               @db.VarChar(40)
-  code        String               @db.VarChar(40)
-  title       String               @db.VarChar(160)
-  titleEn     String?              @db.VarChar(160)
-  description String?              @db.VarChar(2000)
-  attributes  Json
-  active      Boolean              @default(true)
-  version     Int                  @default(1)
-  createdAt   DateTime             @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime             @updatedAt @db.Timestamptz(3)
-  periods     AccountingPeriod[]
-  details     AccountingDetail[]
-  journals    AccountingJournal[]
-  templates   AccountingTemplate[]
+  id                String                           @id @default(uuid()) @db.Uuid
+  bookId            String                           @db.Uuid
+  book              AccountingBook                   @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  kind              String                           @db.VarChar(40)
+  code              String                           @db.VarChar(40)
+  title             String                           @db.VarChar(160)
+  titleEn           String?                          @db.VarChar(160)
+  description       String?                          @db.VarChar(2000)
+  attributes        Json
+  active            Boolean                          @default(true)
+  version           Int                              @default(1)
+  createdAt         DateTime                         @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                         @updatedAt @db.Timestamptz(3)
+  periods           AccountingPeriod[]
+  details           AccountingDetail[]
+  journals          AccountingJournal[]
+  templates         AccountingTemplate[]
+  userConversions   AccountingDetailTypeConversion[] @relation("ConversionUserType")
+  systemConversions AccountingDetailTypeConversion[] @relation("ConversionSystemType")
 
   @@unique([bookId, kind, code])
   @@unique([id, bookId])
@@ -6948,6 +6952,7 @@ model AccountingPeriod {
 }
 
 model AccountingAccount {
+  groupDetailAllocations   AccountingAccountGroupDetail[]
   id                       String                         @id @default(uuid()) @db.Uuid
   bookId                   String                         @db.Uuid
   book                     AccountingBook                 @relation(fields: [bookId], references: [id], onDelete: Restrict)
@@ -6964,6 +6969,8 @@ model AccountingAccount {
   attributes               Json
   version                  Int                            @default(1)
   lines                    AccountingJournalLine[]
+  mappingSources           AccountingSubsidiaryMapping[]  @relation("MappingSource")
+  mappingTargets           AccountingSubsidiaryMapping[]  @relation("MappingTarget")
   groupMembers             AccountingAccountGroupMember[]
   templateLines            AccountingTemplateLine[]
   revaluationGainTemplates AccountingTemplate[]           @relation("AccountingTemplateGain")
@@ -6977,27 +6984,34 @@ model AccountingAccount {
 }
 
 model AccountingDetail {
-  id             String                        @id @default(uuid()) @db.Uuid
-  bookId         String                        @db.Uuid
-  book           AccountingBook                @relation(fields: [bookId], references: [id], onDelete: Restrict)
-  typeId         String                        @db.Uuid
-  type           AccountingConfiguration       @relation(fields: [typeId], references: [id], onDelete: Restrict)
-  parentId       String?                       @db.Uuid
-  parent         AccountingDetail?             @relation("AccountingDetailTree", fields: [parentId], references: [id], onDelete: Restrict)
-  children       AccountingDetail[]            @relation("AccountingDetailTree")
-  code           String                        @db.VarChar(20)
-  title          String                        @db.VarChar(160)
-  currency       String?                       @db.VarChar(3)
-  attributes     Json
-  active         Boolean                       @default(true)
-  version        Int                           @default(1)
-  lines4         AccountingJournalLine[]       @relation("Detail4")
-  lines5         AccountingJournalLine[]       @relation("Detail5")
-  lines6         AccountingJournalLine[]       @relation("Detail6")
-  groupMembers   AccountingDetailGroupMember[]
-  templateLines4 AccountingTemplateLine[]      @relation("AccountingTemplateDetail4")
-  templateLines5 AccountingTemplateLine[]      @relation("AccountingTemplateDetail5")
-  templateLines6 AccountingTemplateLine[]      @relation("AccountingTemplateDetail6")
+  sourceMappings4         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail4")
+  sourceMappings5         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail5")
+  sourceMappings6         AccountingSubsidiaryMapping[]  @relation("MappingSourceDetail6")
+  accountGroupAllocations AccountingAccountGroupDetail[]
+  id                      String                         @id @default(uuid()) @db.Uuid
+  bookId                  String                         @db.Uuid
+  book                    AccountingBook                 @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  typeId                  String                         @db.Uuid
+  type                    AccountingConfiguration        @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  parentId                String?                        @db.Uuid
+  parent                  AccountingDetail?              @relation("AccountingDetailTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children                AccountingDetail[]             @relation("AccountingDetailTree")
+  code                    String                         @db.VarChar(20)
+  title                   String                         @db.VarChar(160)
+  currency                String?                        @db.VarChar(3)
+  attributes              Json
+  active                  Boolean                        @default(true)
+  version                 Int                            @default(1)
+  lines4                  AccountingJournalLine[]        @relation("Detail4")
+  lines5                  AccountingJournalLine[]        @relation("Detail5")
+  lines6                  AccountingJournalLine[]        @relation("Detail6")
+  groupMembers            AccountingDetailGroupMember[]
+  mappings4               AccountingSubsidiaryMapping[]  @relation("MappingDetail4")
+  mappings5               AccountingSubsidiaryMapping[]  @relation("MappingDetail5")
+  mappings6               AccountingSubsidiaryMapping[]  @relation("MappingDetail6")
+  templateLines4          AccountingTemplateLine[]       @relation("AccountingTemplateDetail4")
+  templateLines5          AccountingTemplateLine[]       @relation("AccountingTemplateDetail5")
+  templateLines6          AccountingTemplateLine[]       @relation("AccountingTemplateDetail6")
 
   @@unique([bookId, code])
   @@unique([id, bookId])
@@ -7088,18 +7102,20 @@ model AccountingCommand {
 }
 
 model AccountingAccountGroup {
-  id          String                         @id @default(uuid()) @db.Uuid
-  bookId      String                         @db.Uuid
-  book        AccountingBook                 @relation(fields: [bookId], references: [id], onDelete: Restrict)
-  code        String                         @db.VarChar(40)
-  title       String                         @db.VarChar(160)
-  titleEn     String?                        @db.VarChar(160)
-  description String?                        @db.VarChar(2000)
-  active      Boolean                        @default(true)
-  version     Int                            @default(1)
-  createdAt   DateTime                       @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime                       @updatedAt @db.Timestamptz(3)
-  members     AccountingAccountGroupMember[]
+  detailAllocations AccountingAccountGroupDetail[]
+  id                String                         @id @default(uuid()) @db.Uuid
+  bookId            String                         @db.Uuid
+  book              AccountingBook                 @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  code              String                         @db.VarChar(40)
+  title             String                         @db.VarChar(160)
+  titleEn           String?                        @db.VarChar(160)
+  description       String?                        @db.VarChar(2000)
+  active            Boolean                        @default(true)
+  notes             Json                           @default("[]")
+  version           Int                            @default(1)
+  createdAt         DateTime                       @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime                       @updatedAt @db.Timestamptz(3)
+  members           AccountingAccountGroupMember[]
 
   @@unique([bookId, code])
   @@unique([id, bookId])
@@ -7128,6 +7144,7 @@ model AccountingDetailGroup {
   titleEn     String?                       @db.VarChar(160)
   description String?                       @db.VarChar(2000)
   active      Boolean                       @default(true)
+  notes       Json                          @default("[]")
   version     Int                           @default(1)
   createdAt   DateTime                      @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime                      @updatedAt @db.Timestamptz(3)
@@ -7253,4 +7270,63 @@ model AccountingFxSnapshot {
 
   @@index([bookId, currency, status])
   @@map("accounting_fx_snapshots")
+}
+
+model AccountingSubsidiaryMapping {
+  id              String            @id @default(uuid()) @db.Uuid
+  bookId          String            @db.Uuid
+  book            AccountingBook    @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  sourceAccountId String            @db.Uuid
+  sourceAccount   AccountingAccount @relation("MappingSource", fields: [sourceAccountId], references: [id], onDelete: Restrict)
+  targetAccountId String            @db.Uuid
+  targetAccount   AccountingAccount @relation("MappingTarget", fields: [targetAccountId], references: [id], onDelete: Restrict)
+  detail4Id       String?           @db.Uuid
+  detail4         AccountingDetail? @relation("MappingDetail4", fields: [detail4Id], references: [id], onDelete: Restrict)
+  detail5Id       String?           @db.Uuid
+  detail5         AccountingDetail? @relation("MappingDetail5", fields: [detail5Id], references: [id], onDelete: Restrict)
+  detail6Id       String?           @db.Uuid
+  detail6         AccountingDetail? @relation("MappingDetail6", fields: [detail6Id], references: [id], onDelete: Restrict)
+  sourceDetail4Id String?           @db.Uuid
+  sourceDetail4   AccountingDetail? @relation("MappingSourceDetail4", fields: [sourceDetail4Id], references: [id], onDelete: Restrict)
+  sourceDetail5Id String?           @db.Uuid
+  sourceDetail5   AccountingDetail? @relation("MappingSourceDetail5", fields: [sourceDetail5Id], references: [id], onDelete: Restrict)
+  sourceDetail6Id String?           @db.Uuid
+  sourceDetail6   AccountingDetail? @relation("MappingSourceDetail6", fields: [sourceDetail6Id], references: [id], onDelete: Restrict)
+  sourceKey       String            @unique @db.VarChar(160)
+  version         Int               @default(1)
+
+  @@index([bookId])
+  @@map("accounting_subsidiary_mappings")
+}
+
+model AccountingDetailTypeConversion {
+  id           String                  @id @default(uuid()) @db.Uuid
+  bookId       String                  @db.Uuid
+  book         AccountingBook          @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  userTypeId   String                  @db.Uuid
+  userType     AccountingConfiguration @relation("ConversionUserType", fields: [userTypeId], references: [id], onDelete: Restrict)
+  systemTypeId String                  @db.Uuid
+  systemType   AccountingConfiguration @relation("ConversionSystemType", fields: [systemTypeId], references: [id], onDelete: Restrict)
+  entity       String                  @db.VarChar(80)
+  date         String                  @db.VarChar(10)
+  description  String?                 @db.VarChar(2000)
+  state        String                  @default("REGISTERED") @db.VarChar(16)
+  notes        Json                    @default("[]")
+  version      Int                     @default(1)
+
+  @@unique([bookId, userTypeId])
+  @@map("accounting_detail_type_conversions")
+}
+
+model AccountingAccountGroupDetail {
+  bookId    String                 @db.Uuid
+  groupId   String                 @db.Uuid
+  accountId String                 @db.Uuid
+  detailId  String                 @db.Uuid
+  group     AccountingAccountGroup @relation(fields: [groupId, bookId], references: [id, bookId], onDelete: Cascade)
+  account   AccountingAccount      @relation(fields: [accountId, bookId], references: [id, bookId], onDelete: Restrict)
+  detail    AccountingDetail       @relation(fields: [detailId, bookId], references: [id, bookId], onDelete: Restrict)
+
+  @@id([groupId, accountId, detailId])
+  @@map("accounting_account_group_details")
 }

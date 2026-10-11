@@ -163,6 +163,347 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
   afterAll(async () => {
     await db?.$disconnect();
   });
+  it('persists observed detail setup, zero classification length and server-authored notes', async () => {
+    const noteId = randomUUID();
+    const type = await command<{ id: string; version: number }>(
+      'save-configuration',
+      {
+        kind: 'detail-types',
+        title: 'Synthetic user type',
+        attributes: {
+          classificationNumberLength: '0',
+          defaultFirstCode: '88000',
+          notes: JSON.stringify([
+            {
+              id: noteId,
+              title: 'Note',
+              date: '2026-10-11',
+              text: 'Observed note fields',
+              createdBy: 'forged',
+              createdAt: '1900-01-01',
+            },
+          ]),
+        },
+      },
+    );
+    const detail = await command<{ id: string; version: number }>(
+      'save-detail',
+      {
+        typeId: type.id,
+        title: 'Synthetic detail',
+        code: '',
+        currency: 'IRR',
+        titleEn: 'Second language',
+        description: 'Description',
+        attributes: { classificationNumber: '' },
+      },
+    );
+    const stored = await db.accountingDetail.findUniqueOrThrow({
+      where: { id: detail.id },
+    });
+    expect(stored.code).toBe('88000');
+    expect(stored.attributes).toMatchObject({
+      titleEn: 'Second language',
+      description: 'Description',
+    });
+    const config = await db.accountingConfiguration.findUniqueOrThrow({
+      where: { id: type.id },
+    });
+    const notes = JSON.parse(
+      String((config.attributes as Record<string, unknown>).notes),
+    );
+    expect(notes[0]).toMatchObject({
+      title: 'Note',
+      createdBy: 'Synthetic accountant',
+    });
+    expect(notes[0].createdAt).not.toBe('1900-01-01');
+    await expect(
+      command('save-detail', {
+        typeId: type.id,
+        title: 'Wrong classification',
+        code: '88002',
+        attributes: { classificationNumber: '1' },
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    const group = await command<{ id: string; version: number }>(
+      'save-detail-group',
+      {
+        code: 'NOTE-GROUP',
+        title: 'Synthetic group',
+        memberIds: [detail.id],
+        notes: [
+          { id: randomUUID(), title: 'Group note', text: 'Text', date: '' },
+        ],
+      },
+    );
+    expect(
+      (
+        await db.accountingDetailGroup.findUniqueOrThrow({
+          where: { id: group.id },
+        })
+      ).notes,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Group note',
+          createdBy: 'Synthetic accountant',
+        }),
+      ]),
+    );
+  });
+  it('registers conversion definitions with scoped type FKs, version checks and immutable system titles', async () => {
+    const user = await command<{ id: string }>('save-configuration', {
+      kind: 'detail-types',
+      title: 'Synthetic conversion user',
+      attributes: { classificationNumberLength: '0' },
+    });
+    const system = await command<{ id: string; version: number }>(
+      'save-configuration',
+      {
+        kind: 'detail-types',
+        title: 'شخص',
+        titleEn: 'Person',
+        attributes: { classificationNumberLength: '0', isSystem: true },
+      },
+    );
+    const conversion = await command<{
+      id: string;
+      version: number;
+      entity: string;
+      date: string;
+    }>('save-detail-type-conversion', {
+      userTypeId: user.id,
+      systemTypeId: system.id,
+      description: 'Definition only',
+      date: '1900-01-01',
+      state: 'CONVERTED',
+    });
+    expect(conversion.entity).toBe('شخص/شرکت');
+    expect(conversion.date).toBe(new Date().toISOString().slice(0, 10));
+    expect(
+      (
+        await db.accountingDetailTypeConversion.findUniqueOrThrow({
+          where: { id: conversion.id },
+        })
+      ).state,
+    ).toBe('REGISTERED');
+    await expect(
+      command(
+        'save-detail-type-conversion',
+        { id: conversion.id, userTypeId: user.id, systemTypeId: system.id },
+        0,
+      ),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      command('save-detail-type-conversion', {
+        userTypeId: system.id,
+        systemTypeId: user.id,
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    await expect(
+      command(
+        'save-configuration',
+        {
+          id: system.id,
+          kind: 'detail-types',
+          title: 'Changed',
+          attributes: { classificationNumberLength: '0', isSystem: true },
+        },
+        system.version,
+      ),
+    ).rejects.toMatchObject({ status: 422 });
+    await expect(
+      command(
+        'delete-base-record',
+        { id: system.id, entity: 'configuration' },
+        system.version,
+      ),
+    ).rejects.toMatchObject({ status: 422 });
+    expect((await service.snapshot(bookId, maker)).detailConversions).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: conversion.id })]),
+    );
+    await command(
+      'delete-detail-type-conversion',
+      { id: conversion.id },
+      conversion.version,
+    );
+  });
+  it('saves FK-backed subsidiary mappings atomically and rejects stale or out-of-scope rows', async () => {
+    const targetBook = await service.createBook(
+      {
+        id: randomUUID(),
+        branchId,
+        code: 'MAP-SECONDARY',
+        title: 'Synthetic secondary',
+        baseCurrency: 'IRR',
+        approvalPolicy: 'DUAL_CONTROL',
+      },
+      maker,
+    );
+    const targetCommand = async (
+      action: string,
+      payload: Record<string, unknown>,
+    ) =>
+      (await service.command(
+        targetBook.id,
+        action,
+        { key: randomUUID(), payload },
+        maker,
+      )) as { id: string };
+    const group = await targetCommand('save-account', {
+      code: '7',
+      title: 'Target group',
+      level: 'GROUP',
+      nature: 'DEBIT',
+    });
+    const general = await targetCommand('save-account', {
+      code: '71',
+      title: 'Target general',
+      level: 'GENERAL',
+      nature: 'DEBIT',
+      parentId: group.id,
+    });
+    const subsidiary = await targetCommand('save-account', {
+      code: '7101',
+      title: 'Target subsidiary',
+      level: 'SUBSIDIARY',
+      nature: 'DEBIT',
+      parentId: general.id,
+    });
+    const initial = await command<{ rows: { id: string; version: number }[] }>(
+      'save-subsidiary-mappings',
+      {
+        rows: [{ sourceAccountId: debitId, targetAccountId: subsidiary.id }],
+        versions: [],
+      },
+    );
+    expect(initial.rows).toHaveLength(1);
+    await expect(
+      command('save-subsidiary-mappings', { rows: [], versions: [] }),
+    ).rejects.toMatchObject({ status: 409 });
+    await expect(
+      command('save-subsidiary-mappings', {
+        rows: [{ sourceAccountId: debitId, targetAccountId: creditId }],
+        versions: initial.rows,
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    await expect(
+      command('save-subsidiary-mappings', {
+        rows: [
+          {
+            sourceAccountId: debitId,
+            targetAccountId: subsidiary.id,
+            detail4Id: randomUUID(),
+          },
+        ],
+        versions: initial.rows,
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    await expect(
+      command('save-subsidiary-mappings', {
+        rows: [{ sourceAccountId: subsidiary.id, targetAccountId: debitId }],
+        versions: initial.rows,
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    expect(
+      await db.accountingSubsidiaryMapping.count({ where: { bookId } }),
+    ).toBe(1);
+    await expect(
+      command(
+        'save-subsidiary-mappings',
+        { rows: [], versions: initial.rows },
+        undefined,
+        { ...maker, permissions: ['finance.read', 'finance.journal.read'] },
+      ),
+    ).rejects.toMatchObject({ status: 403 });
+    const localType = await command('save-configuration', {
+      kind: 'detail-types',
+      title: 'Synthetic mapping detail type',
+      attributes: { classificationNumberLength: '0' },
+    });
+    const sourceDetail = await command('save-detail', {
+      typeId: localType.id,
+      code: '99300',
+      title: 'Synthetic source path',
+    });
+    const pathRows = [
+      { sourceAccountId: debitId, targetAccountId: subsidiary.id },
+      {
+        sourceAccountId: debitId,
+        sourceDetail4Id: sourceDetail.id,
+        targetAccountId: subsidiary.id,
+      },
+      {
+        sourceAccountId: debitId,
+        sourceDetail4Id: sourceDetail.id,
+        sourceDetail5Id: sourceDetail.id,
+        targetAccountId: subsidiary.id,
+      },
+    ];
+    const pathResult = await command<{
+      rows: { id: string; version: number }[];
+    }>('save-subsidiary-mappings', { rows: pathRows, versions: initial.rows });
+    expect(pathResult.rows).toHaveLength(3);
+    await expect(
+      command('save-subsidiary-mappings', {
+        rows: [
+          {
+            sourceAccountId: debitId,
+            sourceDetail5Id: sourceDetail.id,
+            targetAccountId: subsidiary.id,
+          },
+        ],
+        versions: pathResult.rows,
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    await expect(
+      command('save-subsidiary-mappings', {
+        rows: [
+          pathRows[0],
+          { ...pathRows[0], sourceAccountId: debitId.toUpperCase() },
+        ],
+        versions: pathResult.rows,
+      }),
+    ).rejects.toMatchObject({ status: 422 });
+    const allocated = await command<{
+      id: string;
+      version: number;
+      detailAllocations: unknown[];
+    }>('save-account-group', {
+      code: 'PATH-GROUP',
+      title: 'Synthetic detail allocation',
+      memberIds: [debitId],
+      detailAllocations: [{ accountId: debitId, detailId: sourceDetail.id }],
+    });
+    expect(allocated.detailAllocations).toHaveLength(1);
+    expect(
+      (await service.snapshot(bookId, maker)).accountGroups.find(
+        (row) => row.id === allocated.id,
+      )?.detailAllocations,
+    ).toHaveLength(1);
+    await expect(
+      command(
+        'save-account-group',
+        {
+          id: allocated.id,
+          code: 'PATH-GROUP',
+          title: 'Synthetic detail allocation',
+          memberIds: [debitId],
+          detailAllocations: [
+            { accountId: creditId, detailId: sourceDetail.id },
+          ],
+        },
+        allocated.version,
+      ),
+    ).rejects.toMatchObject({ status: 422 });
+    await command('save-subsidiary-mappings', {
+      rows: [],
+      versions: pathResult.rows,
+    });
+    expect(
+      await db.accountingSubsidiaryMapping.count({ where: { bookId } }),
+    ).toBe(0);
+  });
   it('persists observed chart form tabs, neutral nature and scoped type references', async () => {
     const parent = await db.accountingAccount.findUniqueOrThrow({
       where: { id: debitId },

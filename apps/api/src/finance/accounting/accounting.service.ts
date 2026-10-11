@@ -17,6 +17,11 @@ import { DatabaseService } from '../../database/database.service';
 import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
+import {
+  executeAccountSetup,
+  validateGroupDetailAllocations,
+} from './accounting.accounts';
+import { setupNotes } from './accounting.setup-notes';
 import { allocationTargets, allocateAmount } from './accounting.allocation';
 import {
   accountControlFilters,
@@ -256,6 +261,8 @@ export class AccountingService {
           accountGroups,
           detailGroups,
           templates,
+          subsidiaryMappings,
+          detailConversions,
         ] = await Promise.all([
           tx.accountingPeriod.findMany({
             where: { bookId: id },
@@ -279,7 +286,10 @@ export class AccountingService {
           }),
           tx.accountingAccountGroup.findMany({
             where: { bookId: id },
-            include: { members: { orderBy: { accountId: 'asc' } } },
+            include: {
+              members: { orderBy: { accountId: 'asc' } },
+              detailAllocations: true,
+            },
             orderBy: [{ code: 'asc' }, { id: 'asc' }],
           }),
           tx.accountingDetailGroup.findMany({
@@ -292,6 +302,14 @@ export class AccountingService {
             include: { lines: { orderBy: { position: 'asc' } } },
             orderBy: [{ kind: 'asc' }, { code: 'asc' }, { id: 'asc' }],
           }),
+          tx.accountingSubsidiaryMapping.findMany({
+            where: { bookId: id },
+            orderBy: { sourceAccountId: 'asc' },
+          }),
+          tx.accountingDetailTypeConversion.findMany({
+            where: { bookId: id },
+            orderBy: { date: 'desc' },
+          }),
         ]);
         return {
           book,
@@ -303,6 +321,8 @@ export class AccountingService {
           accountGroups,
           detailGroups,
           templates: templates.map(templateDto),
+          subsidiaryMappings,
+          detailConversions,
         };
       },
       { isolationLevel: 'RepeatableRead' },
@@ -496,6 +516,25 @@ export class AccountingService {
     stateEvents: BufferedStateEvent[] = [],
   ): Promise<unknown> {
     const bookId = book.id;
+    const hasNotes =
+      p.notes !== undefined ||
+      (p.attributes &&
+        typeof p.attributes === 'object' &&
+        'notes' in p.attributes);
+    const actorName = hasNotes
+      ? ((await this.identity.displayNames([actor.userId], actor.branchIds))[0]
+          ?.displayName ?? actor.userId)
+      : actor.userId;
+    const setupResult = await executeAccountSetup(
+      tx,
+      bookId,
+      action,
+      p,
+      expected,
+      actor,
+      actorName,
+    );
+    if (setupResult !== undefined) return setupResult;
     if (action === 'delete-base-record') {
       const id = v.uuid(p.id)!.toLowerCase();
       const entity = v.text(p.entity, 30, true);
@@ -536,6 +575,12 @@ export class AccountingService {
           ].includes(row.kind))
       )
         v.rule('حذف این نوع رکورد عملیاتی پشتیبانی نمی‌شود.');
+      if (
+        entity === 'configuration' &&
+        'attributes' in row &&
+        v.attributes(row.attributes).isSystem === true
+      )
+        v.rule('نوع تفصیلی سیستم قابل حذف نیست.');
       // JSON references supplement the restrictive foreign keys; never orphan a
       // mapping, template or hierarchy setting that refers to the selected UUID.
       const [configurations, accounts, templates, journals] = await Promise.all(
@@ -1404,6 +1449,14 @@ export class AccountingService {
         if (existing.kind !== kind) v.invalid('نوع رکورد قابل تغییر نیست.');
       }
       const attributes = v.attributes(p.attributes);
+      if (kind === 'detail-types' && attributes.notes !== undefined)
+        attributes.notes = JSON.stringify(
+          setupNotes(
+            attributes.notes,
+            existing ? v.attributes(existing.attributes).notes : undefined,
+            actorName,
+          ),
+        );
       if (kind === 'approval-policies') {
         if (
           attributes.currency !== book.baseCurrency ||
@@ -1419,9 +1472,18 @@ export class AccountingService {
       if (kind === 'fiscal-years' && Object.keys(attributes).length)
         v.invalid('بازه سال مالی فقط در تخصیص سال به دفتر ثبت می‌شود.');
       if (kind === 'detail-types') {
+        if (
+          existing &&
+          v.attributes(existing.attributes).isSystem === true &&
+          (p.title !== existing.title ||
+            (v.text(p.titleEn, 160) || null) !== existing.titleEn ||
+            (v.text(p.description, 2000) || null) !== existing.description ||
+            attributes.isSystem !== true)
+        )
+          v.rule('عنوان و مشخصات پایه نوع تفصیلی سیستم قابل تغییر نیست.');
         const length = Number(attributes.classificationNumberLength);
-        if (!Number.isInteger(length) || length < 1 || length > 20)
-          v.invalid('طول شماره طبقه‌بندی باید بین ۱ و ۲۰ باشد.');
+        if (!Number.isInteger(length) || length < 0 || length > 20)
+          v.invalid('طول شماره طبقه‌بندی باید بین صفر و ۲۰ باشد.');
         const parentTypeId = v.uuid(attributes.parentTypeId, true);
         if (attributes.enforceParent === true && !parentTypeId)
           v.rule('نوع تفصیلی پدر لازم است.');
@@ -1440,8 +1502,10 @@ export class AccountingService {
         if (
           existing &&
           (await tx.accountingDetail.count({ where: { typeId: id } })) &&
-          JSON.stringify(canonical(attributes)) !==
-            JSON.stringify(canonical(existing.attributes))
+          JSON.stringify(canonical(without(attributes, ['notes']))) !==
+            JSON.stringify(
+              canonical(without(v.attributes(existing.attributes), ['notes'])),
+            )
         )
           v.rule('قواعد نوع تفصیلی استفاده‌شده قابل تغییر نیست.');
       }
@@ -1785,6 +1849,14 @@ export class AccountingService {
         )
           v.rule('تفصیلی استفاده‌شده قابل تغییر نیست.');
       }
+      if (detailAttrs.notes !== undefined)
+        detailAttrs.notes = JSON.stringify(
+          setupNotes(
+            detailAttrs.notes,
+            existing ? v.attributes(existing.attributes).notes : undefined,
+            actorName,
+          ),
+        );
       let detailCode = v.text(p.code, 20);
       if (!detailCode) {
         const first = v.text(typeAttrs.defaultFirstCode, 20, true);
@@ -1835,7 +1907,9 @@ export class AccountingService {
       const rawMembers = p.memberIds;
       if (!Array.isArray(rawMembers) || rawMembers.length > 500)
         v.invalid('فهرست اعضای گروه معتبر نیست.');
-      const memberIds = rawMembers.map((member) => v.uuid(member)!);
+      const memberIds = rawMembers.map((member) =>
+        v.uuid(member)!.toLowerCase(),
+      );
       if (new Set(memberIds).size !== memberIds.length)
         v.invalid('عضو تکراری در گروه مجاز نیست.');
       const existing = accountGroup
@@ -1852,6 +1926,11 @@ export class AccountingService {
       if (referenceCount !== memberIds.length)
         v.rule('همه اعضای گروه باید متعلق به همین دفتر باشند.');
       const common = {
+        notes: json(
+          p.notes === undefined
+            ? (existing?.notes ?? [])
+            : setupNotes(p.notes, existing?.notes, actorName),
+        ),
         bookId,
         code: v.text(p.code, 40, true),
         title: v.text(p.title, 160, true),
@@ -1860,6 +1939,35 @@ export class AccountingService {
         active: p.active !== false,
       };
       if (accountGroup) {
+        const detailAllocations =
+          p.detailAllocations === undefined
+            ? (
+                await tx.accountingAccountGroupDetail.findMany({
+                  where: { groupId: id },
+                })
+              ).filter((row) => memberIds.includes(row.accountId))
+            : await validateGroupDetailAllocations(
+                tx,
+                bookId,
+                p.detailAllocations,
+                memberIds,
+              );
+        const saveAllocations = async () => {
+          await tx.accountingAccountGroupDetail.deleteMany({
+            where: { groupId: id },
+          });
+          if (detailAllocations.length)
+            await tx.accountingAccountGroupDetail.createMany({
+              data: detailAllocations.map(
+                ({ bookId, accountId, detailId }) => ({
+                  bookId,
+                  accountId,
+                  detailId,
+                  groupId: id,
+                }),
+              ),
+            });
+        };
         if (existing) {
           await tx.accountingAccountGroupMember.deleteMany({
             where: { groupId: id },
@@ -1879,9 +1987,13 @@ export class AccountingService {
                 accountId,
               })),
             });
+          await saveAllocations();
           return tx.accountingAccountGroup.findUniqueOrThrow({
             where: { id },
-            include: { members: { orderBy: { accountId: 'asc' } } },
+            include: {
+              members: { orderBy: { accountId: 'asc' } },
+              detailAllocations: true,
+            },
           });
         }
         await tx.accountingAccountGroup.create({ data: { id, ...common } });
@@ -1893,9 +2005,13 @@ export class AccountingService {
               accountId,
             })),
           });
+        await saveAllocations();
         return tx.accountingAccountGroup.findUniqueOrThrow({
           where: { id },
-          include: { members: { orderBy: { accountId: 'asc' } } },
+          include: {
+            members: { orderBy: { accountId: 'asc' } },
+            detailAllocations: true,
+          },
         });
       }
       if (existing) {
