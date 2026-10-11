@@ -1079,7 +1079,7 @@ export function OrganizationsWorkspace() {
               onAddContact={() => setContactForm({ mode: 'create' })}
             />
           }
-          operations={(view, onReviewCooperation) =>
+          operations={(view, onReviewCooperation, headerActionTargetId) =>
             view === 'address' ? (
               <OrganizationAddressesPanel
                 key={selected.id}
@@ -1097,6 +1097,7 @@ export function OrganizationsWorkspace() {
                 organizationName={selected.name}
                 role={role}
                 view={view}
+                headerActionTargetId={headerActionTargetId}
               />
             ) : String(selected.attributes.roleCodes ?? '').includes(
                 'AGENCY',
@@ -1114,6 +1115,7 @@ export function OrganizationsWorkspace() {
                   key={selected.id + view}
                   organizationId={selected.id}
                   organizationName={selected.name}
+                  headerActionTargetId={headerActionTargetId}
                   kind={
                     view === 'rates'
                       ? 'FIXED_AMOUNT'

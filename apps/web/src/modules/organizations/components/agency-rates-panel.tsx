@@ -23,6 +23,7 @@ import { DossierDateFilters } from './dossier-date-filters';
 import { inDossierDateRange } from '../model/dossier-date-range';
 import { ratesReport } from '../model/commercial-export';
 import { CommercialExportActions } from './commercial-export-actions';
+import { DossierHeaderAction } from './dossier-header-action';
 
 const kindLabels: Record<B2bAgreedRateKind, string> = {
   FIXED_AMOUNT: 'نرخ توافقی',
@@ -33,10 +34,12 @@ export function AgencyRatesPanel({
   organizationId,
   organizationName = organizationId,
   kind,
+  headerActionTargetId,
 }: {
   organizationId: string;
   organizationName?: string;
   kind: B2bAgreedRateKind;
+  headerActionTargetId?: string;
 }) {
   const { branches, branchId, setBranchId, permissions, sessionError } =
     useDossierBranch();
@@ -119,14 +122,8 @@ export function AgencyRatesPanel({
     });
   return (
     <section className="panel">
-      <header className="panel-head commercial-section-heading">
-        <div>
-          <h2 className="panel-title">{kindLabels[kind]}</h2>
-          <p className="panel-note">
-            {visible.length.toLocaleString('fa-IR')} مورد ثبت‌شده
-          </p>
-        </div>
-        <div className="commercial-section-actions">
+      {headerActionTargetId ? (
+        <DossierHeaderAction targetId={headerActionTargetId}>
           <Button
             disabled={
               !branchId || loading || !permissions.includes('b2b.rate.manage')
@@ -136,6 +133,27 @@ export function AgencyRatesPanel({
             <Plus className="size-4" />
             ثبت {kindLabels[kind]}
           </Button>
+        </DossierHeaderAction>
+      ) : null}
+      <header className="panel-head commercial-section-heading">
+        <div>
+          <h2 className="panel-title">{kindLabels[kind]}</h2>
+          <p className="panel-note">
+            {visible.length.toLocaleString('fa-IR')} مورد ثبت‌شده
+          </p>
+        </div>
+        <div className="commercial-section-actions">
+          {!headerActionTargetId ? (
+            <Button
+              disabled={
+                !branchId || loading || !permissions.includes('b2b.rate.manage')
+              }
+              onClick={create}
+            >
+              <Plus className="size-4" />
+              ثبت {kindLabels[kind]}
+            </Button>
+          ) : null}
           <CommercialExportActions
             key={`${organizationId}:${branchId}:${kind}:${dateRange.from}:${dateRange.to}`}
             disabled={

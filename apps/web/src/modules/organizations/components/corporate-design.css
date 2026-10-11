@@ -654,6 +654,10 @@
     gap: 7px;
     flex-wrap: wrap;
   }
+  .org-context-actions {
+    display: flex;
+    gap: 7px;
+  }
   .boundary-note {
     border: 1px solid #cfe2fa;
     background: light-dark(#edf6ff, var(--surface));

@@ -6452,3 +6452,59 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-ai-notes-1010` from `origin/devel
 Validation: 8 focused Web tests, scoped ESLint, Web typecheck, Prettier and Web production build pass. Exact-head CI gates the authorized merge.
 
 CI integration follow-up: `develop` advanced with stepwise agency editing while this PR was in flight; its eight new Persian UI strings lacked English display translations and failed the combined Web i18n coverage gate. The already-reserved shared Web override catalogue now includes only those eight translations; Organizations source and behavior remain untouched. The final exact-head gate must rerun.
+
+## CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-chrome-local-login-1011` from
+`origin/develop@85dc15a4`. Chrome login reaches the local API successfully but
+loops back to Login when Web is opened with `localhost` while the configured API
+uses the LAN IPv4 host, because authentication cookies are host-scoped. Reserve
+only the Web local-runtime API hostname resolver, its focused tests and bounded
+status docs. Align loopback/private Web and API hosts while retaining configured
+ports and paths; remote API hosts remain unchanged. Update ignored local runtime
+CORS/dev-origin settings and restart the existing 3000/4000 listeners without
+changing user accounts, passwords, schema, migration, dependency or operational
+records.
+
+Delivered same-host resolution for loopback/private local runtimes and updated
+ignored local CORS/dev-origin settings. Twenty-four focused tests, scoped ESLint
+and Web typecheck pass. Live Demo authentication on localhost returns 200 with
+two cookies, Workbench accepts that session with 200, 127.0.0.1 CORS preflight
+returns 204 and LAN health returns 200. Bounded source locks release with the
+review commit.
+
+## AGENCY-PROFILE-LICENSE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; continue local review branch
+`codex/pc-b-chrome-local-login-1011` at `9796db2b`. User requests the agency
+«اطلاعات پایه و نقش‌ها» card to display the stored license number. Reserve only
+the Organizations corporate-profile identity summary, its focused regression and
+bounded status docs. Show `tourismLicenseNumber` only when the organization has
+the AGENCY role and use an explicit missing-value label. No API/schema/migration,
+dependency, permission, data or runtime-database mutation.
+
+Delivered the agency-only «شماره مجوز» row in «اطلاعات پایه و نقش‌ها», backed
+by the existing `tourismLicenseNumber` attribute. Missing values point users to
+«ویرایش اطلاعات». The focused Organizations regression (9 tests), scoped
+ESLint and Web typecheck pass. No API/schema/migration, dependency, permission
+or operational-data change. The bounded source locks release with the review
+commit.
+
+## AGENCY-COMMERCIAL-HEADER-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-commercial-header-actions-1011`
+from the current reviewed local agency profile branch. User requests the create
+actions in the agency «قرارداد و شرایط تجاری» subsections to appear beside the
+«نمای ۳۶۰ درجه» action. Reserve only the Organizations dossier header, agreement
+and agreed-rate panel presentation, a small local action-slot component, focused
+Web tests and bounded status docs. Preserve existing handlers, permission/loading
+guards, dialogs, exports, filters and row-level workflow actions. No API/schema/
+migration, dependency, permission or operational-data change.
+
+Delivered the primary create actions for framework contracts, agreed rates,
+discounts and commissions into the dossier banner beside «نمای ۳۶۰ درجه». The
+same handlers, disabled states and permission checks are rendered through a
+local header action slot; standalone panel reuse retains the original in-panel
+fallback. Twenty-one focused tests, scoped ESLint and Web typecheck pass. No
+API/schema/migration, dependency, permission or operational-data change. The
+bounded source locks release with the review commit.
