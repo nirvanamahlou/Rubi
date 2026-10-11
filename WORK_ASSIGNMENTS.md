@@ -6200,3 +6200,6 @@ Direct screenshot733 layout follow-up, sole writer of accounting-base-list.tsx. 
 ## ACCOUNTING-LIST-BOOK-SELECTOR-1011 — PC-A — READY_FOR_REVIEW
 
 User-authorized sole-writer accounting-workspace.tsx display-only change: hide book selector on fiscal-year, ledger and voucher-type base list routes. Current book state/read authorization preserved. Scoped lint/diff check passed;3100 browser verified selector absent on all three routes. No data/backend changes or delegation.
+## ACCOUNTING-VOUCHER-LIST-1011 — PC-A — READY_FOR_REVIEW
+
+User screenshot734 follow-up; sole writer shared base-list UI/filter adapter/tests. Voucher list uses title/isDefault columns, inline filters, compact striped rows, repeated icon toolbar and50-row pagination. Default flag reads attributes.isDefault (true/string true); absent flag is false, never inferred from active status. No source/sample records copied into DB. Filter test10/10, lint/TypeScript and browser0→1 default-filter/clear checks passed on3100. No backend/schema/dependency/business-data changes or delegation.

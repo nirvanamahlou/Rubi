@@ -5081,3 +5081,6 @@ Ledger list screenshot733 follow-up: compact grid/header and column filters, ful
 ## 2026-10-11 — ACCOUNTING-LIST-BOOK-SELECTOR-1011 — PC-A
 
 Hidden book selector on all three base-information lists at user request, preserving current book scope and data reads. Scoped lint/diff check and browser absence checks on fiscal-year/ledger/voucher-type lists passed on3100. No business writes or delegation.
+## 2026-10-11 — ACCOUNTING-VOUCHER-LIST-1011 — PC-A
+
+Voucher list screenshot734 layout implemented with title/default columns, inline filtering, compact striped grid, top/bottom icon operations and50-row pagination. Default uses persisted attributes.isDefault; missing flag is false and not conflated with active. Existing authorized records preserved, no screenshot data seeding. Tests10/10, scoped lint/TypeScript and browser filter/clear checks passed. Voucher-List-734.png proof on3100; no backend/schema/dependency or data writes/delegation.

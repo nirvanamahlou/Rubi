@@ -32,6 +32,33 @@ const rule = (field: string, value: string): FilterRule => ({
   relationMode: 'any',
 });
 describe('accounting list filter semantics', () => {
+  it('filters voucher default flags independently of active status', () => {
+    const voucherFields = listFields('voucher-types');
+    const condition = {
+      ...rule('isDefault', 'true'),
+      operator: 'equals' as const,
+    };
+    expect(
+      matchesFilter(
+        {
+          ...record,
+          values: { title: 'عمومی', active: 'false', isDefault: 'true' },
+        },
+        condition,
+        voucherFields,
+      ),
+    ).toBe(true);
+    expect(
+      matchesFilter(
+        {
+          ...record,
+          values: { title: 'عمومی', active: 'true', isDefault: 'false' },
+        },
+        condition,
+        voucherFields,
+      ),
+    ).toBe(false);
+  });
   it('keeps conditions in a related-period branch on the same allocation', () => {
     const branch: FilterGroup = {
       type: 'group',

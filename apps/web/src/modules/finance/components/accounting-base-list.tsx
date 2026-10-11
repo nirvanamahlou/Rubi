@@ -531,13 +531,14 @@ export function AccountingBaseList({
   ) => Promise<unknown>;
 }) {
   const router = useRouter();
+  const compactList = kind === 'ledgers' || kind === 'voucher-types';
   const [draft, setDraft] = useState<FilterGroup>(emptyFilter);
   const [applied, setApplied] = useState<FilterGroup>(emptyFilter);
   const [search, setSearch] = useState('');
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {},
   );
-  const [showFilters, setShowFilters] = useState(kind !== 'ledgers');
+  const [showFilters, setShowFilters] = useState(!compactList);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [listOpen, setListOpen] = useState(false);
@@ -545,7 +546,7 @@ export function AccountingBaseList({
   const [message, setMessage] = useState('');
   const [countRequested, setCountRequested] = useState(false);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(kind === 'ledgers' ? 50 : 25);
+  const [pageSize, setPageSize] = useState(compactList ? 50 : 25);
   const [reloading, setReloading] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const fields = listFields(kind);
@@ -563,21 +564,26 @@ export function AccountingBaseList({
           },
           { key: 'active', label: 'وضعیت', type: 'boolean' },
         ]
-      : fields
-          .filter((field) =>
-            ['code', 'title', 'titleEn', 'description', 'active'].includes(
-              field.key,
-            ),
-          )
-          .sort(
-            (a, b) =>
-              ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
-                a.key,
-              ) -
-              ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
-                b.key,
+      : kind === 'voucher-types'
+        ? [
+            { key: 'title', label: 'عنوان', type: 'text' },
+            { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' },
+          ]
+        : fields
+            .filter((field) =>
+              ['code', 'title', 'titleEn', 'description', 'active'].includes(
+                field.key,
               ),
-          );
+            )
+            .sort(
+              (a, b) =>
+                ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
+                  a.key,
+                ) -
+                ['code', 'title', 'titleEn', 'description', 'active'].indexOf(
+                  b.key,
+                ),
+            );
   const filtered = filterRecords(
     records,
     {
@@ -861,7 +867,7 @@ export function AccountingBaseList({
     <section
       dir="rtl"
       aria-label={definition.title}
-      className={`overflow-hidden border bg-surface ${kind === 'ledgers' ? 'flex min-h-[70vh] flex-col rounded-sm [&_table]:text-xs [&_th]:border-e [&_th]:px-1 [&_th]:py-1 [&_td]:border-e [&_td]:px-2 [&_td]:py-1 [&_thead]:bg-sky-100/60 [&_thead_input]:h-7 [&_thead_select]:h-7 [&_thead_div]:rounded-sm' : 'rounded-2xl shadow-sm'}`}
+      className={`overflow-hidden border bg-surface ${compactList ? 'flex min-h-[70vh] flex-col rounded-sm [&_table]:text-xs [&_th]:border-e [&_th]:px-1 [&_th]:py-1 [&_td]:border-e [&_td]:px-2 [&_td]:py-1 [&_thead]:bg-sky-100/60 [&_thead_input]:h-7 [&_thead_select]:h-7 [&_thead_div]:rounded-sm' : 'rounded-2xl shadow-sm'}`}
     >
       <Button
         permission="finance.account.manage"
@@ -907,14 +913,14 @@ export function AccountingBaseList({
         </Button>
       ))}
       <header
-        className={`flex flex-wrap items-center justify-between gap-3 border-b ${kind === 'ledgers' ? 'p-2' : 'p-4'}`}
+        className={`flex flex-wrap items-center justify-between gap-3 border-b ${compactList ? 'p-2' : 'p-4'}`}
       >
         <div>
           <h2 className="text-lg font-bold">{definition.title}</h2>
           <p
-            className={`mt-1 text-xs text-muted-foreground ${kind === 'ledgers' ? 'hidden' : ''}`}
+            className={`mt-1 text-xs text-muted-foreground ${compactList ? 'hidden' : ''}`}
           >
-            {kind === 'ledgers'
+            {compactList
               ? 'دفترهای قابل دسترس شما'
               : `دفتر جاری: ${snapshot.book.title}`}
           </p>
@@ -922,10 +928,10 @@ export function AccountingBaseList({
         {renderListToolbar()}
       </header>
       <div
-        className={`flex flex-wrap items-center gap-3 bg-muted/20 ${kind === 'ledgers' ? 'order-first border-b p-1' : 'p-4'}`}
+        className={`flex flex-wrap items-center gap-3 bg-muted/20 ${compactList ? 'order-first border-b p-1' : 'p-4'}`}
       >
         <div
-          className={`relative min-w-56 flex-1 ${kind === 'ledgers' ? 'hidden' : ''}`}
+          className={`relative min-w-56 flex-1 ${compactList ? 'hidden' : ''}`}
         >
           <Search
             className="absolute start-3 top-3 size-4 text-muted-foreground"
@@ -946,7 +952,7 @@ export function AccountingBaseList({
         </div>
         <select
           aria-label="نمای فهرست"
-          className={`${selectClass} ${kind === 'ledgers' ? 'h-8 w-full rounded-sm' : ''}`}
+          className={`${selectClass} ${compactList ? 'h-8 w-full rounded-sm' : ''}`}
           value={presetValue}
           onChange={(event) =>
             preset(event.target.value === 'all' ? null : event.target.value)
@@ -963,7 +969,7 @@ export function AccountingBaseList({
             فیلتر سفارشی
           </option>
         </select>
-        {kind !== 'ledgers' && (
+        {!compactList && (
           <IconAction
             label="تمرکز روی جست‌وجو"
             shortcut="Alt+Shift+Q"
@@ -973,7 +979,7 @@ export function AccountingBaseList({
           </IconAction>
         )}
       </div>
-      {kind === 'ledgers' && (
+      {compactList && (
         <button
           type="button"
           className="order-first border-b bg-muted/20 px-3 py-1 text-right text-xs"
@@ -1053,7 +1059,7 @@ export function AccountingBaseList({
         </p>
       )}
       <div
-        className={`flex flex-wrap items-center gap-2 text-sm ${kind === 'ledgers' ? 'px-2 py-1 text-xs' : 'p-4'}`}
+        className={`flex flex-wrap items-center gap-2 text-sm ${compactList ? 'px-2 py-1 text-xs' : 'p-4'}`}
       >
         <span className="rounded-lg bg-muted px-3 py-1.5">
           {filtered.length.toLocaleString('fa-IR')} نتیجه
@@ -1075,7 +1081,7 @@ export function AccountingBaseList({
           <span className="text-muted-foreground">جست‌وجو: {search}</span>
         )}
       </div>
-      <div className={`overflow-x-auto ${kind === 'ledgers' ? 'flex-1' : ''}`}>
+      <div className={`overflow-x-auto ${compactList ? 'flex-1' : ''}`}>
         <table className="w-full min-w-[640px] text-right text-sm">
           <caption className="sr-only">{definition.title}</caption>
           <thead className="border-y bg-muted/40">
@@ -1112,13 +1118,13 @@ export function AccountingBaseList({
                 <th
                   key={key}
                   scope="col"
-                  className="px-4 py-3 font-semibold text-muted-foreground"
+                  className={`px-4 py-3 font-semibold text-muted-foreground ${kind === 'voucher-types' ? (key === 'title' ? 'w-[72%]' : 'w-[28%]') : ''}`}
                 >
                   {label}
                 </th>
               ))}
             </tr>
-            {kind === 'ledgers' && (
+            {compactList && (
               <tr key="filters" className="bg-surface">
                 {selectionMode && <th key="selection-filter" />}
                 {columns.map((column) => (
@@ -1180,7 +1186,7 @@ export function AccountingBaseList({
                 aria-selected={
                   selectionMode ? selectedIds.includes(record.id) : undefined
                 }
-                className={`border-b transition-colors hover:bg-muted/25 ${selectedIds.includes(record.id) ? 'bg-primary/5' : ''}`}
+                className={`border-b transition-colors hover:bg-muted/25 ${kind === 'voucher-types' ? 'even:bg-muted/15' : ''} ${selectedIds.includes(record.id) ? 'bg-primary/5' : ''}`}
               >
                 {selectionMode && (
                   <td className="p-3">
@@ -1212,13 +1218,15 @@ export function AccountingBaseList({
                       </span>
                     </td>
                   ))}
-                <td className="px-4 py-4">
-                  <span
-                    className={`rounded-full px-2 py-1 text-xs ${record.values.active === 'true' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground'}`}
-                  >
-                    {record.values.active === 'true' ? 'فعال' : 'غیرفعال'}
-                  </span>
-                </td>
+                {kind !== 'voucher-types' && (
+                  <td className="px-4 py-4">
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs ${record.values.active === 'true' ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted text-muted-foreground'}`}
+                    >
+                      {record.values.active === 'true' ? 'فعال' : 'غیرفعال'}
+                    </span>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -1233,7 +1241,7 @@ export function AccountingBaseList({
           </div>
         )}
       </div>
-      {kind === 'ledgers' && (
+      {compactList && (
         <div className="flex justify-end border-y bg-muted/20 p-1">
           {renderListToolbar(true)}
         </div>
@@ -1258,7 +1266,7 @@ export function AccountingBaseList({
           </select>
         </label>
         <div className="flex items-center gap-2">
-          {kind === 'ledgers' && (
+          {compactList && (
             <>
               <span className="text-xs text-muted-foreground">
                 موارد {filtered.length ? (actualPage - 1) * pageSize + 1 : 0} تا{' '}
@@ -1295,7 +1303,7 @@ export function AccountingBaseList({
           >
             <ChevronLeft className="size-4" />
           </IconAction>
-          {kind === 'ledgers' && (
+          {compactList && (
             <IconAction
               label="صفحه آخر"
               shortcut="Alt+Shift+End"

@@ -117,7 +117,7 @@ export function listFields(kind: AccountingListKind): ListField[] {
           { key: 'isMain', label: 'دفتر کل اصلی', type: 'boolean' },
           { key: 'allowsPosting', label: 'امکان صدور سند', type: 'boolean' },
         ]
-      : common;
+      : [...common, { key: 'isDefault', label: 'پیش‌فرض', type: 'boolean' }];
 }
 
 export function listRecords(
@@ -137,6 +137,14 @@ export function listRecords(
       titleEn: row.titleEn ?? '',
       description: row.description ?? '',
       active: String(row.active),
+      ...('attributes' in row && kind === 'voucher-types'
+        ? {
+            isDefault: String(
+              row.attributes.isDefault === true ||
+                row.attributes.isDefault === 'true',
+            ),
+          }
+        : {}),
       ...('baseCurrency' in row
         ? {
             baseCurrency: row.baseCurrency,
