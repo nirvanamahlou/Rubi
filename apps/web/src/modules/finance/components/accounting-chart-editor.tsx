@@ -293,7 +293,7 @@ export function AccountingChartEditor({
     ? (draft!.attributes.detailLevels as string[])
     : ['4', '5', '6'];
   return (
-    <section dir="rtl" className="space-y-2">
+    <section dir="rtl" className="@container space-y-2">
       <AccountingButton
         permission="finance.account.manage"
         disabled={busy}
@@ -309,7 +309,7 @@ export function AccountingChartEditor({
         reset={() => reset(draft?.level ?? 'GROUP', draft?.parentId)}
         close={close}
       />
-      <div className="grid min-h-[40rem] items-start gap-3 xl:grid-cols-[20rem_minmax(0,1fr)]">
+      <div className="grid min-h-[40rem] items-start gap-3 @min-[42rem]:grid-cols-[18rem_minmax(0,1fr)] @min-[60rem]:grid-cols-[20rem_minmax(0,1fr)]">
         <AccountingChartTree
           accounts={book.accounts}
           selectedId={selectedId}
