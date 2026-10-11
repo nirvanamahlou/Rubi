@@ -6194,3 +6194,6 @@ COMPUTER_ID=PC-A; continue on the existing `codex/pc-a-accounting-prd-1007` chec
 ## ACCOUNTING-FILTER-COPY-1011 — PC-A — READY_FOR_REVIEW
 
 User-authorized sole-writer copy removal in accounting-base-list.tsx: removed allocation explanation from fiscal-year list and trailing condition helper from shared group editor. Filter controls/semantics unchanged. Diff check passed; no tests needed for text-only deletion, no delegation or data changes.
+## ACCOUNTING-LEDGER-LAYOUT-1011 — PC-A — READY_FOR_REVIEW
+
+Direct screenshot733 layout follow-up, sole writer of accounting-base-list.tsx. Ledger-only compact bordered grid with pale header, full-width preset, initially collapsed filter strip, tall table region and repeated icon toolbar with independent list popovers. Default50 rows, first/last page controls with shortcuts and record range. Existing column filters and scoped data preserved. Focused filter tests9/9, scoped lint, TypeScript and diff checks passed;3100 browser verified negative title filter, clear and bottom multi-selection. No data/backend/schema/dependency changes or delegation.

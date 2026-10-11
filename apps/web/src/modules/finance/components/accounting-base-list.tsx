@@ -21,6 +21,8 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronsRight,
+  ChevronsLeft,
   ExternalLink,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -535,14 +537,15 @@ export function AccountingBaseList({
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>(
     {},
   );
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(kind !== 'ledgers');
   const [selectionMode, setSelectionMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [listOpen, setListOpen] = useState(false);
+  const [bottomListOpen, setBottomListOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [countRequested, setCountRequested] = useState(false);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(kind === 'ledgers' ? 50 : 25);
   const [reloading, setReloading] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
   const fields = listFields(kind);
@@ -721,6 +724,8 @@ export function AccountingBaseList({
       KeyG: addGroup,
       KeyO: openDefinition,
       KeyQ: () => searchRef.current?.focus(),
+      Home: () => setPage(1),
+      End: () => setPage(pages),
       ArrowRight: () => {
         if (actualPage > 1) setPage(actualPage - 1);
       },
@@ -762,11 +767,101 @@ export function AccountingBaseList({
     setColumnFilters({});
     setMessage('فهرست انتخاب شد.');
   };
+  const renderListToolbar = (bottom = false) => (
+    <div
+      className="flex flex-wrap gap-1.5"
+      role="toolbar"
+      aria-label="عملیات فهرست"
+    >
+      <IconAction
+        label="انتخاب چند رکورد"
+        shortcut="Alt+Shift+M"
+        pressed={selectionMode}
+        disabled={locked}
+        onClick={toggleSelection}
+      >
+        <ListChecks className="size-4" />
+      </IconAction>
+      <IconAction
+        label="حذف فیلتر"
+        shortcut="Alt+Shift+C"
+        disabled={locked}
+        onClick={clear}
+      >
+        <FilterX className="size-4" />
+      </IconAction>
+      <IconAction
+        label="محاسبه تعداد رکوردها"
+        shortcut="Alt+Shift+K"
+        disabled={locked}
+        onClick={count}
+      >
+        <Calculator className="size-4" />
+      </IconAction>
+      <DropdownMenu
+        open={bottom ? bottomListOpen : listOpen}
+        onOpenChange={bottom ? setBottomListOpen : setListOpen}
+      >
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                aria-label="فهرست‌ها"
+                aria-keyshortcuts="Alt+Shift+L"
+                disabled={locked}
+              >
+                <List className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            فهرست‌ها <span dir="ltr">Alt+Shift+L</span>
+          </TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align="end">
+          {accountingLists.map((list) => (
+            <DropdownMenuItem key={list.kind} asChild>
+              <Link href={`${listRoute(list.kind)}?bookId=${snapshot.book.id}`}>
+                {list.kind === kind && <Check className="size-4" />}
+                {list.title}
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <IconAction
+        label="بارگذاری مجدد"
+        shortcut="Alt+Shift+R"
+        disabled={locked}
+        onClick={() => void reload()}
+      >
+        <RefreshCw className={`size-4 ${reloading ? 'animate-spin' : ''}`} />
+      </IconAction>
+      <IconAction
+        label="نمایش فیلترها"
+        shortcut="Alt+Shift+T"
+        pressed={showFilters}
+        onClick={() => setShowFilters(!showFilters)}
+      >
+        <Filter className="size-4" />
+      </IconAction>
+      <IconAction
+        label="بازکردن فرم تعریف"
+        shortcut="Alt+Shift+O"
+        onClick={openDefinition}
+      >
+        <ExternalLink className="size-4" />
+      </IconAction>
+    </div>
+  );
   return (
     <section
       dir="rtl"
       aria-label={definition.title}
-      className="overflow-hidden rounded-2xl border bg-surface shadow-sm"
+      className={`overflow-hidden border bg-surface ${kind === 'ledgers' ? 'flex min-h-[70vh] flex-col rounded-sm [&_table]:text-xs [&_th]:border-e [&_th]:px-1 [&_th]:py-1 [&_td]:border-e [&_td]:px-2 [&_td]:py-1 [&_thead]:bg-sky-100/60 [&_thead_input]:h-7 [&_thead_select]:h-7 [&_thead_div]:rounded-sm' : 'rounded-2xl shadow-sm'}`}
     >
       <Button
         permission="finance.account.manage"
@@ -811,107 +906,27 @@ export function AccountingBaseList({
           {after === 'close' ? 'حذف و بستن' : 'حذف و جدید'}
         </Button>
       ))}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
+      <header
+        className={`flex flex-wrap items-center justify-between gap-3 border-b ${kind === 'ledgers' ? 'p-2' : 'p-4'}`}
+      >
         <div>
           <h2 className="text-lg font-bold">{definition.title}</h2>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <p
+            className={`mt-1 text-xs text-muted-foreground ${kind === 'ledgers' ? 'hidden' : ''}`}
+          >
             {kind === 'ledgers'
               ? 'دفترهای قابل دسترس شما'
               : `دفتر جاری: ${snapshot.book.title}`}
           </p>
         </div>
-        <div
-          className="flex flex-wrap gap-1.5"
-          role="toolbar"
-          aria-label="عملیات فهرست"
-        >
-          <IconAction
-            label="انتخاب چند رکورد"
-            shortcut="Alt+Shift+M"
-            pressed={selectionMode}
-            disabled={locked}
-            onClick={toggleSelection}
-          >
-            <ListChecks className="size-4" />
-          </IconAction>
-          <IconAction
-            label="حذف فیلتر"
-            shortcut="Alt+Shift+C"
-            disabled={locked}
-            onClick={clear}
-          >
-            <FilterX className="size-4" />
-          </IconAction>
-          <IconAction
-            label="محاسبه تعداد رکوردها"
-            shortcut="Alt+Shift+K"
-            disabled={locked}
-            onClick={count}
-          >
-            <Calculator className="size-4" />
-          </IconAction>
-          <DropdownMenu open={listOpen} onOpenChange={setListOpen}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    aria-label="فهرست‌ها"
-                    aria-keyshortcuts="Alt+Shift+L"
-                    disabled={locked}
-                  >
-                    <List className="size-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                فهرست‌ها <span dir="ltr">Alt+Shift+L</span>
-              </TooltipContent>
-            </Tooltip>
-            <DropdownMenuContent align="end">
-              {accountingLists.map((list) => (
-                <DropdownMenuItem key={list.kind} asChild>
-                  <Link
-                    href={`${listRoute(list.kind)}?bookId=${snapshot.book.id}`}
-                  >
-                    {list.kind === kind && <Check className="size-4" />}
-                    {list.title}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <IconAction
-            label="بارگذاری مجدد"
-            shortcut="Alt+Shift+R"
-            disabled={locked}
-            onClick={() => void reload()}
-          >
-            <RefreshCw
-              className={`size-4 ${reloading ? 'animate-spin' : ''}`}
-            />
-          </IconAction>
-          <IconAction
-            label="نمایش فیلترها"
-            shortcut="Alt+Shift+T"
-            pressed={showFilters}
-            onClick={() => setShowFilters(!showFilters)}
-          >
-            <Filter className="size-4" />
-          </IconAction>
-          <IconAction
-            label="بازکردن فرم تعریف"
-            shortcut="Alt+Shift+O"
-            onClick={openDefinition}
-          >
-            <ExternalLink className="size-4" />
-          </IconAction>
-        </div>
+        {renderListToolbar()}
       </header>
-      <div className="flex flex-wrap items-center gap-3 bg-muted/20 p-4">
-        <div className="relative min-w-56 flex-1">
+      <div
+        className={`flex flex-wrap items-center gap-3 bg-muted/20 ${kind === 'ledgers' ? 'order-first border-b p-1' : 'p-4'}`}
+      >
+        <div
+          className={`relative min-w-56 flex-1 ${kind === 'ledgers' ? 'hidden' : ''}`}
+        >
           <Search
             className="absolute start-3 top-3 size-4 text-muted-foreground"
             aria-hidden="true"
@@ -931,7 +946,7 @@ export function AccountingBaseList({
         </div>
         <select
           aria-label="نمای فهرست"
-          className={selectClass}
+          className={`${selectClass} ${kind === 'ledgers' ? 'h-8 w-full rounded-sm' : ''}`}
           value={presetValue}
           onChange={(event) =>
             preset(event.target.value === 'all' ? null : event.target.value)
@@ -948,14 +963,26 @@ export function AccountingBaseList({
             فیلتر سفارشی
           </option>
         </select>
-        <IconAction
-          label="تمرکز روی جست‌وجو"
-          shortcut="Alt+Shift+Q"
-          onClick={() => searchRef.current?.focus()}
-        >
-          <Search className="size-4" />
-        </IconAction>
+        {kind !== 'ledgers' && (
+          <IconAction
+            label="تمرکز روی جست‌وجو"
+            shortcut="Alt+Shift+Q"
+            onClick={() => searchRef.current?.focus()}
+          >
+            <Search className="size-4" />
+          </IconAction>
+        )}
       </div>
+      {kind === 'ledgers' && (
+        <button
+          type="button"
+          className="order-first border-b bg-muted/20 px-3 py-1 text-right text-xs"
+          aria-expanded={showFilters}
+          onClick={() => setShowFilters(!showFilters)}
+        >
+          فیلتر {showFilters ? '⌄' : '‹'}
+        </button>
+      )}
       {showFilters && (
         <form
           aria-label="فیلتر پیشرفته"
@@ -1025,7 +1052,9 @@ export function AccountingBaseList({
           {message}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-2 p-4 text-sm">
+      <div
+        className={`flex flex-wrap items-center gap-2 text-sm ${kind === 'ledgers' ? 'px-2 py-1 text-xs' : 'p-4'}`}
+      >
         <span className="rounded-lg bg-muted px-3 py-1.5">
           {filtered.length.toLocaleString('fa-IR')} نتیجه
         </span>
@@ -1046,7 +1075,7 @@ export function AccountingBaseList({
           <span className="text-muted-foreground">جست‌وجو: {search}</span>
         )}
       </div>
-      <div className="overflow-x-auto">
+      <div className={`overflow-x-auto ${kind === 'ledgers' ? 'flex-1' : ''}`}>
         <table className="w-full min-w-[640px] text-right text-sm">
           <caption className="sr-only">{definition.title}</caption>
           <thead className="border-y bg-muted/40">
@@ -1204,6 +1233,11 @@ export function AccountingBaseList({
           </div>
         )}
       </div>
+      {kind === 'ledgers' && (
+        <div className="flex justify-end border-y bg-muted/20 p-1">
+          {renderListToolbar(true)}
+        </div>
+      )}
       <footer className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-4 text-sm">
         <label className="flex items-center gap-2 text-muted-foreground">
           تعداد در صفحه
@@ -1224,6 +1258,23 @@ export function AccountingBaseList({
           </select>
         </label>
         <div className="flex items-center gap-2">
+          {kind === 'ledgers' && (
+            <>
+              <span className="text-xs text-muted-foreground">
+                موارد {filtered.length ? (actualPage - 1) * pageSize + 1 : 0} تا{' '}
+                {Math.min(actualPage * pageSize, filtered.length)} از{' '}
+                {filtered.length}
+              </span>
+              <IconAction
+                label="صفحه اول"
+                shortcut="Alt+Shift+Home"
+                disabled={actualPage === 1}
+                onClick={() => setPage(1)}
+              >
+                <ChevronsRight className="size-4" />
+              </IconAction>
+            </>
+          )}
           <IconAction
             label="صفحه قبل"
             shortcut="Alt+Shift+ArrowRight"
@@ -1244,6 +1295,16 @@ export function AccountingBaseList({
           >
             <ChevronLeft className="size-4" />
           </IconAction>
+          {kind === 'ledgers' && (
+            <IconAction
+              label="صفحه آخر"
+              shortcut="Alt+Shift+End"
+              disabled={actualPage === pages}
+              onClick={() => setPage(pages)}
+            >
+              <ChevronsLeft className="size-4" />
+            </IconAction>
+          )}
         </div>
       </footer>
     </section>

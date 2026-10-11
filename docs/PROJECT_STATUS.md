@@ -5075,3 +5075,6 @@ The existing Finance accounting candidate is being extended in place from source
 ## 2026-10-11 — ACCOUNTING-FILTER-COPY-1011 — PC-A
 
 Removed the fiscal allocation explanation and condition helper requested by user from accounting list UI. Controls and filtering unchanged; diff check passed. Text-only deletion, no business-data changes or delegation.
+## 2026-10-11 — ACCOUNTING-LEDGER-LAYOUT-1011 — PC-A
+
+Ledger list screenshot733 follow-up: compact grid/header and column filters, full-width preset, collapsed filter strip, tall grid, top/bottom icon operations,50-row default, first/last page shortcuts and record range. Other base-list layouts preserved. Tests9/9, scoped lint/TypeScript and diff check passed; browser verified actual filtering, clearing and bottom multi-selection on3100. Screenshot Ledger-List-733.png saved. No business writes, backend/schema/dependency changes or delegation.
