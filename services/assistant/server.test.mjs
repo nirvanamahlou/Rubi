@@ -54,6 +54,11 @@ async function harness(t, options = {}) {
       );
       return;
     }
+    if (request.url === options.deniedPath) {
+      response.writeHead(403);
+      response.end('{}');
+      return;
+    }
     if (request.url === options.failPath) {
       response.writeHead(500);
       response.end('private-error-secret');
@@ -130,15 +135,30 @@ test('forwards only one access cookie and validates fixed configured origins', (
     'https://erp.example.test/api/v1',
   );
 });
-test('anonymous and administrator-only users do not reach business tools', async (t) => {
+test('anonymous users are denied while authenticated users need no executive grant', async (t) => {
   const h = await harness(t, {
     permissions: ['ui.administrator', 'finance.read', 'reporting.read'],
   });
   assert.equal((await h.get('')).status, 401);
   assert.equal(h.calls.length, 0);
-  assert.equal((await h.get()).status, 403);
-  assert.equal(h.calls.length, 1);
+  assert.equal((await h.get()).status, 200);
   assert.equal(h.calls[0].path, '/api/v1/iam/auth/access');
+});
+
+test('ordinary users with no grants receive only their own data and cannot bypass source denial', async (t) => {
+  const h = await harness(t, { permissions: [] });
+  const a = await (await h.get()).json();
+  const b = await (await h.get('nora_access=user-b')).json();
+  assert.equal(a.scope, 'SELF');
+  assert.equal(a.followUps[0].title, example.title);
+  assert.equal(b.followUps[0].title, 'User B private title');
+  const denied = await harness(t, {
+    permissions: [],
+    deniedPath: '/api/v1/workbench/calendar',
+  });
+  const response = await denied.get();
+  assert.equal(response.status, 403);
+  assert(!JSON.stringify(await response.json()).includes(example.title));
 });
 test('write, extra parameter and arbitrary endpoint requests are denied', async (t) => {
   const h = await harness(t);

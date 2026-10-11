@@ -168,10 +168,9 @@ export function createAssistantServer({
       !Array.isArray(actor.branchIds)
     )
       throw new ServiceError(502, 'INVALID_IDENTITY');
-    if (
-      !actor.permissions.includes(EXECUTIVE_PERMISSION) ||
-      (expectedUserId && actor.userId !== expectedUserId)
-    )
+    // Public authenticated SELF access does not confer any corporate data grant.
+    // Source APIs remain authoritative; the legacy executive grant is reserved.
+    if (expectedUserId && actor.userId !== expectedUserId)
       throw new ServiceError(403, 'FORBIDDEN');
     return actor;
   }

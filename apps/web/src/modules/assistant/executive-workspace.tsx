@@ -710,8 +710,7 @@ export function ExecutivePanels({
 export function ExecutiveWorkspace({ view }: { view: AssistantView }) {
   const { language } = useSystemPreferences();
   const permissions = useAccessPermissions();
-  const allowed =
-    permissions?.includes('ui.screen.assistant.executive') === true;
+  const allowed = Array.isArray(permissions);
   const [reload, setReload] = useState(0);
   const [result, setResult] = useState<{
     state: AssistantLoadState;
