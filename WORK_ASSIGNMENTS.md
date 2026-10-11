@@ -6452,3 +6452,7 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-ai-notes-1010` from `origin/devel
 Validation: 8 focused Web tests, scoped ESLint, Web typecheck, Prettier and Web production build pass. Exact-head CI gates the authorized merge.
 
 CI integration follow-up: `develop` advanced with stepwise agency editing while this PR was in flight; its eight new Persian UI strings lacked English display translations and failed the combined Web i18n coverage gate. The already-reserved shared Web override catalogue now includes only those eight translations; Organizations source and behavior remain untouched. The final exact-head gate must rerun.
+## REPORT-CATALOG-FILTERS-1011 — PC-C
+
+Branch: codex/pc-c-reports-catalog-filters-1011. Scope: Reporting catalog filters and focused regression tests only. Department keeps search with an explicit placeholder; connection status uses a non-searchable RTL select with all/READY/PENDING_CONNECTION. No migration, dependency or shared-control changes. Existing generated next-env change is excluded.
+

@@ -56,5 +56,8 @@ describe('catalog report favorites', () => {
     expect(html).toContain('افزودن به گزارش‌های مورد علاقه من');
     expect(html).not.toContain('RPT-001');
     expect(html).toContain('جست‌وجو در عنوان یا دسته گزارش');
+    expect(html).toContain('جستوجو و انتخاب دپارتمان...');
+    expect(html).toContain('aria-label="وضعیت اتصال گزارش"');
+    expect(html).toContain('role="combobox"');
   });
 });
