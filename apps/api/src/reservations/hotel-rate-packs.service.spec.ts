@@ -83,21 +83,17 @@ describe('versioned Reservations hotel rate packs', () => {
       } as unknown as DatabaseService,
       {
         cityReference: vi.fn(),
-        hotelRatePackReference: vi
-          .fn()
-          .mockResolvedValue({
-            hotelName: 'Antalya hotel',
-            brokerName: 'Broker',
-          }),
+        hotelRatePackReference: vi.fn().mockResolvedValue({
+          hotelName: 'Antalya hotel',
+          brokerName: 'Broker',
+        }),
       } as unknown as MasterTravelDirectory,
       {
-        pricingDeparture: vi
-          .fn()
-          .mockResolvedValue({
-            package: { destinationId: data.cityId },
-            startsOn: data.checkIn,
-            endsOn: data.checkOut,
-          }),
+        pricingDeparture: vi.fn().mockResolvedValue({
+          package: { destinationId: data.cityId },
+          startsOn: data.checkIn,
+          endsOn: data.checkOut,
+        }),
       } as unknown as TourPublicService,
     );
     await service.create(data, randomUUID(), actor(data.branchId));

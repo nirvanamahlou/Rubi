@@ -5339,3 +5339,18 @@ returned PR author and forbids falling back to the owner's account. Repository
 ownership, existing commit metadata, credentials, ERP code/runtime and historical
 attribution stay unchanged. Acceptance requires an actual Amin-tech11 PR and
 final-head CI before develop merge; evidence is recorded in that PR handoff.
+
+## 2026-10-11 — AMIN-PR-CI-AUDIT-1011 — PC-C
+
+All open Amin-tech11 PRs are main-targeted:308/328/362 have zero commits outside
+develop and their heads are confirmed ancestors;361 is develop-to-main. The
+user's request authorizes develop integration, not release to main. Disposition
+of the three integrated duplicates awaits clarification. Historic CI failures
+were formatting; eleven TypeScript files still fail the release-wide format gate.
+A bounded formatting-only repair is reserved from develop. No CI gate, business
+behavior, dependency, migration, local runtime or data change is permitted.
+See docs/tasks/AMIN-PR-CI-AUDIT-1011.md for evidence and acceptance.
+The user explicitly selected closing PR308/328/362 after current develop CI
+passes and keeping PR361 open. The eleven-file AST comparison passed; source
+structure is unchanged. Final check/merge/closure evidence is recorded in the
+repair PR, without a main release or reopening obsolete work branches.

@@ -12,10 +12,7 @@ export function trendAxisLabelIndexes(labelCount: number): number[] {
   ).filter((index) => index % visibleLabelStep === 0);
   const lastIndex = labelCount - 1;
   const lastPeriodicIndex = periodicIndexes.at(-1);
-  const minimumSafeDistance = Math.max(
-    2,
-    Math.ceil(visibleLabelStep / 2),
-  );
+  const minimumSafeDistance = Math.max(2, Math.ceil(visibleLabelStep / 2));
 
   if (lastPeriodicIndex === lastIndex) return periodicIndexes;
 

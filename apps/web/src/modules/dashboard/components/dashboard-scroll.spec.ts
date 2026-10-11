@@ -3,7 +3,10 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const dashboardWorkspaceSource = readFileSync(
-  resolve(process.cwd(), 'src/modules/dashboard/components/dashboard-workspace.tsx'),
+  resolve(
+    process.cwd(),
+    'src/modules/dashboard/components/dashboard-workspace.tsx',
+  ),
   'utf8',
 );
 
