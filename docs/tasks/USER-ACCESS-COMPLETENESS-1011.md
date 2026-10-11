@@ -66,3 +66,14 @@ personal access role. Active canonical administrators bypass restrictions. Unkno
 nonassignable grants, inactive and non-personal role memberships, and unchanged branches
 are server-owned and survive access-editor saves. Removing a restriction is an access
 grant and is accepted only for controls the actor can delegate.
+
+## Verification and delivery
+
+Local checks: 181 API tests across 19 relevant files; 40 access/preset/module-boundary
+tests; final 26 IAM/actual-controller guard tests; API and Web typechecks and scoped
+lint passed. First final-head CI passed production builds, quality and PostgreSQL
+migration/seed gates, but detected 48 untranslated labels. Added only those display
+translations to the shared override catalogue and regenerated offline API/editor
+catalogues with the repository script; nine translation/render tests passed.
+No coverage gate is disabled. Final revised-head CI and merge evidence are recorded
+in PR790. Shared3100 runtime and operational users were not modified.
