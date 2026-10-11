@@ -8,8 +8,10 @@ const decimal = (value: string, scale: number): bigint | null => {
   if (!/^\d+(?:\.\d+)?$/.test(value)) return null;
   const [whole = '0', fraction = ''] = value.split('.');
   if (fraction.length > scale) return null;
-  return BigInt(whole) * 10n ** BigInt(scale) +
-    BigInt((fraction.padEnd(scale, '0') || '0'));
+  return (
+    BigInt(whole) * 10n ** BigInt(scale) +
+    BigInt(fraction.padEnd(scale, '0') || '0')
+  );
 };
 
 const roundDiv = (numerator: bigint, denominator: bigint) =>
@@ -39,17 +41,21 @@ export function previewHotelRoomSale(
     adjustment.value || '0',
     adjustment.mode === 'fixed' && scale === 0 ? 0 : 2,
   );
-  if (base === null || multiplier === null || value === null ||
-      !Number.isSafeInteger(nights) || nights <= 0) return null;
+  if (
+    base === null ||
+    multiplier === null ||
+    value === null ||
+    !Number.isSafeInteger(nights) ||
+    nights <= 0
+  )
+    return null;
   const perNight = roundDiv(base * multiplier, 1000n);
   const purchase = perNight * BigInt(nights);
-  const delta = adjustment.mode === 'percent'
-    ? roundDiv(purchase * value, 10000n)
-    : value;
+  const delta =
+    adjustment.mode === 'percent' ? roundDiv(purchase * value, 10000n) : value;
   if (adjustment.direction === 'decrease' && delta > purchase) return null;
-  const sale = adjustment.direction === 'decrease'
-    ? purchase - delta
-    : purchase + delta;
+  const sale =
+    adjustment.direction === 'decrease' ? purchase - delta : purchase + delta;
   return {
     purchase: formatMinor(purchase, scale),
     sale: formatMinor(sale, scale),

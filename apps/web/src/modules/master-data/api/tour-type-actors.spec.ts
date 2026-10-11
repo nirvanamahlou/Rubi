@@ -8,19 +8,17 @@ afterEach(() => {
 describe('tour actor names via public IAM', () => {
   it('retains only id and display name from the authorized endpoint', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_BASE_URL', 'http://localhost:4000/api/v1');
-    const fetcher = vi
-      .fn()
-      .mockResolvedValue({
-        ok: true,
-        json: async () => [
-          {
-            id: 'test-user',
-            displayName: 'کاربر آزمون',
-            email: 'fixture@example.invalid',
-            roles: [],
-          },
-        ],
-      });
+    const fetcher = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        {
+          id: 'test-user',
+          displayName: 'کاربر آزمون',
+          email: 'fixture@example.invalid',
+          roles: [],
+        },
+      ],
+    });
     vi.stubGlobal('fetch', fetcher);
     expect(await loadTourTypeActorNames()).toEqual({
       'test-user': 'کاربر آزمون',

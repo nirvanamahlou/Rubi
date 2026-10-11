@@ -6754,3 +6754,56 @@ CI repair implemented. Four IAM tests pass through API Vitest, scoped API lint
 passes and full PR changed-file formatting passes. Bounded locks release with
 this review commit. Remote checks must pass on the final revision before merge;
 record their result and merge provenance in the PR handoff. No gate weakened.
+
+## GITHUB-IDENTITY-1011 — PC-C — READY_FOR_REVIEW
+
+User identifies their GitHub account as Amin-tech11 and asks to fix PRs authored
+under nirvanamahlou. Reserve only the GitHub identity paragraph in
+DEVELOPMENT_WORKFLOW and own additive status/assignment entries. Branch from
+origin/develop@5b7598bc; preserve all existing source, runtime and credentials.
+Diagnosis: the assistant explicitly selected the repository owner's connector
+instead of the user's connected account. Live account lookup verifies Amin-tech11
+(211146168), repository push permission and collaborator write access; local GCM
+already lists Amin-tech11. Repository ownership/remote and Git commit metadata
+are distinct from authenticated PR authorship. Acceptance: create this corrective
+PR through Amin-tech11, verify its returned author, wait for every final-head CI
+check, then merge to develop using the same account. No credential expansion,
+token logging, historical attribution rewrite or repository transfer.
+
+The bounded documentation repair passes changed-file formatting and diff checks.
+Locks release with the review commit; actual author verification and CI/merge
+provenance are recorded in the corrective PR handoff. No ERP code is affected.
+
+## AMIN-PR-CI-AUDIT-1011 — PC-C — READY_FOR_REVIEW
+
+The user authorizes CI diagnosis/repair of their unmerged Rubi PRs and develop
+integration after all checks pass. Audit finds open Amin-tech11 PR308/328/362
+target main although every head is already an ancestor of develop, with zero
+unique commits. PR361 is develop-to-main and cannot merge into itself. Their
+disposition is awaiting the user's clarification; no main release is authorized.
+Reserve formatting-only repair of the eleven paths flagged in PR361's current
+quality gate, plus own assignment/status/task entries. No behavior, dependency,
+migration, operational runtime or data change. Existing module work is preserved.
+Branch starts at develop@056828bf; source gates remain intact.
+
+- `apps/api/src/package-pricing/package-pricing.domain.spec.ts`
+- `apps/api/src/package-pricing/package-tour-pricing.controller.ts`
+- `apps/api/src/reporting/reporting-dashboard-calendar.ts`
+- `apps/api/src/reservations/hotel-rate-packs.service.spec.ts`
+- `apps/web/src/modules/dashboard/components/dashboard-scroll.spec.ts`
+- `apps/web/src/modules/dashboard/model/trend-axis.ts`
+- `apps/web/src/modules/master-data/api/tour-type-actors.spec.ts`
+- `apps/web/src/modules/pricing-management/components/tour-price-math.spec.ts`
+- `apps/web/src/modules/pricing-management/components/tour-price-math.ts`
+- `packages/database/test/master-data-migration.spec.ts`
+- `packages/database/test/master-data-partner-forms-migration.spec.ts`
+
+Acceptance: preserve source ASTs, pass the release-wide changed-file formatter
+comparison and all final-head CI checks, then merge the repair into develop.
+Resolve stale PR disposition only according to the pending user clarification.
+
+Clarification received: after current develop CI passes, close PR308/328/362
+as already integrated and keep release PR361 open. All eleven source ASTs were
+compared against the base and are unchanged. No tests/gates are excluded.
+Bounded formatting locks release with the review commit; final-head CI, merge
+and stale-PR closure provenance are recorded in the repair PR handoff.
