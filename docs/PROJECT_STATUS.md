@@ -5275,3 +5275,7 @@ account/password, schema/migration, dependency or business-data change.
 ## 2026-10-11 — TICKET-LOAD-ROW-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
 
 The Ticket Catalog load grid now runs its inclusive valid-date search immediately when «تاریخ‌های معتبر» is enabled. Every visible row has its own «ویرایش» and confirmed «حذف» actions using the existing optimistic single-offer API paths; the lower «مشاهده» action is removed. Existing capacity totals, whole-load operations, history, hold/tour guards and load scope are unchanged. Ticket Catalog Web 202 tests (one existing skip), scoped lint, typecheck and the 57-route production build pass. No API/schema/migration/dependency or operational-data mutation.
+
+## 2026-10-11 — Ticket row actions visibility follow-up — PC-B
+
+The per-row «عملیات» column is moved beside «انتخاب» so it is visible without horizontal scrolling. Selecting a row also exposes the same row-scoped edit/delete controls in its details panel. Enabling «تاریخ‌های معتبر» no longer writes into either date input; it ignores date bounds, limits results to current loads and renders each `loadGroupId` as a separate table block. API behavior and capacity totals are unchanged.

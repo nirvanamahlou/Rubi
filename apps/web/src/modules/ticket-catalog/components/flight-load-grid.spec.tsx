@@ -5,7 +5,7 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import { FlightLoadGrid } from './flight-load-grid';
 
 describe('flight load search entry', () => {
-  it('renders per-row actions and searches immediately when valid dates are enabled', () => {
+  it('keeps date inputs unchanged and separates loads when valid dates are enabled', () => {
     const source = readFileSync(
       new URL('./flight-load-grid.tsx', import.meta.url),
       'utf8',
@@ -13,6 +13,10 @@ describe('flight load search entry', () => {
     expect(source).toContain('renderRowActions?.(offer)');
     expect(source).toContain('setSearched(nextFilter)');
     expect(source).toContain('setSearchedCurrent(true)');
+    expect(source).toContain("value={filter.from}");
+    expect(source).toContain("value={filter.to}");
+    expect(source).not.toContain('setFilter(nextFilter)');
+    expect(source).toContain('offer.loadGroupId ?? `offer:${offer.id}`');
   });
 
   it('does not expose flight rows or management actions before an explicit search', () => {
@@ -37,7 +41,8 @@ describe('flight load search entry', () => {
     );
     expect(html).toContain('تاریخ‌های معتبر');
     expect(html).toContain('لود پرواز چارتر');
-    expect(html).toMatch(/type="checkbox" checked=""/);
+    expect(html).toContain('type="checkbox"');
+    expect(html).not.toMatch(/type="checkbox" checked=""/);
     expect(html).toContain('جست‌وجو');
     expect(html).toContain('load-country');
     expect(html).toContain('شهر');
