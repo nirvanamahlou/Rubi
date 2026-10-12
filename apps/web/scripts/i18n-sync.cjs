@@ -4,9 +4,14 @@ const path = require('node:path');
 const { inventory } = require('./i18n-inventory.cjs');
 const root = path.resolve(__dirname, '../../..');
 const overrides = require('../src/i18n/en-overrides.json');
-const catalogue = { ...require('../src/i18n/en-catalog.json'), ...overrides };
-const api = { ...overrides },
-  legacy = { ...overrides };
+const accountingDocuments = require('../src/i18n/en-accounting-documents.json');
+const catalogue = {
+  ...require('../src/i18n/en-catalog.json'),
+  ...accountingDocuments,
+  ...overrides,
+};
+const api = { ...accountingDocuments, ...overrides },
+  legacy = { ...accountingDocuments, ...overrides };
 for (const row of inventory()) {
   if (!catalogue[row.text])
     throw new Error(`Missing English translation: ${row.text}`);

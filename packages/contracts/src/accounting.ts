@@ -10,6 +10,54 @@ export const ACCOUNTING_PERMISSIONS = [
 ] as const;
 
 export type AccountingAttributes = Record<string, string | boolean | string[]>;
+export interface AccountingStatementRowV1 {
+  id: string;
+  journalId: string;
+  number: number | null;
+  position: number;
+  reference: string | null;
+  documentDate: string;
+  description: string;
+  descriptionEn: string;
+  currency: string;
+  currencyName: string;
+  debit: string;
+  credit: string;
+  foreignDebit: string;
+  foreignCredit: string;
+}
+export interface AccountingStatementBasisV1 {
+  checksum: string;
+  journalId: string;
+  journalVersion: number;
+  periodId: string;
+  recipientId: string;
+  recipientCode: string;
+  recipientTitle: string;
+  level: number;
+  currencyMode: boolean;
+  type: 'DEBIT' | 'CREDIT' | 'BOTH';
+  balance: string;
+  rows: AccountingStatementRowV1[];
+}
+export interface AccountingStatementV1 {
+  id: string;
+  bookId: string;
+  journalId: string;
+  periodId: string;
+  number: number;
+  recipientNumber: number;
+  documentDate: string;
+  description: string;
+  status: 'CREATED' | 'SENT' | 'CANCELLED';
+  makerId: string;
+  lastModifierId: string | null;
+  makerName?: string | null;
+  lastModifierName?: string | null;
+  version: number;
+  snapshot: AccountingStatementBasisV1;
+  notes: unknown[];
+}
 export interface AccountingRecord {
   id: string;
   bookId: string;
@@ -91,6 +139,8 @@ export interface AccountingTemplateLineV1 {
   detail5Id: string | null;
   detail6Id: string | null;
   side: 'DEBIT' | 'CREDIT';
+  role?: 'SOURCE' | 'TARGET' | 'OFFSET' | 'BASIS' | null;
+  parentPosition?: number | null;
   percentage: string;
   include: boolean;
 }
@@ -104,6 +154,7 @@ export interface AccountingTemplateV1 {
   description: string | null;
   descriptionEn: string | null;
   active: boolean;
+  attributes?: AccountingAttributes;
   version: number;
   voucherTypeId: string | null;
   gainAccountId: string | null;
@@ -129,6 +180,7 @@ export interface AccountingJournalStateEventV1 {
   occurredAt: string;
 }
 export interface AccountingLineV1 {
+  id?: string;
   accountId: string | null;
   detail4Id: string | null;
   detail5Id: string | null;
@@ -143,7 +195,12 @@ export interface AccountingLineV1 {
   attributes: AccountingAttributes;
 }
 export type AccountingJournalStatus =
-  'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'POSTED' | 'CANCELLED';
+  | 'MEMORANDUM'
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'APPROVED'
+  | 'POSTED'
+  | 'CANCELLED';
 export interface AccountingJournalV1 {
   id: string;
   bookId: string;
@@ -156,6 +213,10 @@ export interface AccountingJournalV1 {
   number: number | null;
   makerId: string;
   makerName?: string | null;
+  approverName?: string | null;
+  lastModifierName?: string | null;
+  deletedAt?: string | null;
+  deletedByName?: string | null;
   approverId: string | null;
   sourceKey: string | null;
   reversalOfId: string | null;

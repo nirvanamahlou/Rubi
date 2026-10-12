@@ -1,6 +1,6 @@
 'use client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil } from 'lucide-react';
+import { Pencil, FolderOpen, FileText } from 'lucide-react';
 import { useId, useRef, useState, type ReactNode } from 'react';
 import Link from '@/i18n/link';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -18,7 +18,11 @@ import { useAccessPermissions } from '@/modules/iam/access-context';
 import { journalDisplayTotals } from '../accounting-money';
 import { accountingApi } from '../api/accounting-api';
 import { AccountingReportWorkspace } from './accounting-report-workspace';
-import { AccountingAttachments } from './accounting-attachments';
+import {
+  AccountingSetupNotes,
+  parseSetupNotes,
+  type SetupNote,
+} from './accounting-setup-notes';
 import { AccountingDetailEditor } from './accounting-detail-editor';
 import { AccountingDetailConversion } from './accounting-detail-conversion';
 import {
@@ -41,6 +45,20 @@ import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
 import { AccountingAutomationWorkspace } from './accounting-automation-workspace';
+import { AccountingDocumentNumbering } from './accounting-document-numbering';
+import { AccountingDocumentPosting } from './accounting-document-posting';
+import { AccountingDocumentGeneral } from './accounting-document-general';
+import { AccountingDocumentAutomatic } from './accounting-document-automatic';
+import { AccountingDocumentRevaluation } from './accounting-document-revaluation';
+import { AccountingDocumentGeneralList } from './accounting-document-general-list';
+import { AccountingDocumentTransfer } from './accounting-document-transfer';
+import { AccountingDocumentTemplate } from './accounting-document-template';
+import { AccountingDocumentReorder } from './accounting-document-reorder';
+import { AccountingDocumentList } from './accounting-document-list';
+import { DocumentIconAction } from './accounting-document-filter';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
+import { AccountingJournalLines } from './accounting-journal-lines';
+import { AccountingDocumentImportDialog } from './accounting-document-import-dialog';
 import {
   accountingParityByRoute,
   accountingParityDefinitions,
@@ -52,7 +70,6 @@ import {
 import {
   AccountingChartEditor,
   AccountingAnalyticalReport,
-  AccountingMoveDrafts,
   AccountingTemplateEditor,
 } from './accounting-parity-editors';
 
@@ -61,21 +78,10 @@ type Field = {
   label: string;
   kind?: 'date' | 'datetime' | 'check' | 'area' | 'select';
   options?: { value: string; label: string }[];
+  required?: boolean;
+  disabled?: boolean;
 };
 type Draft = Record<string, string | boolean>;
-const blankLine = (): AccountingLineV1 => ({
-  accountId: null,
-  detail4Id: null,
-  detail5Id: null,
-  detail6Id: null,
-  description: '',
-  debit: '0',
-  credit: '0',
-  currency: null,
-  foreignAmount: null,
-  rate: null,
-  attributes: {},
-});
 const writableJournalLines = (lines: AccountingLineV1[]) =>
   lines.map((line) => ({
     ...line,
@@ -92,6 +98,7 @@ const writableJournalLines = (lines: AccountingLineV1[]) =>
     },
   }));
 const statuses: Record<string, string> = {
+  MEMORANDUM: 'ثبت یادداشت',
   DRAFT: 'پیش‌نویس',
   PENDING_APPROVAL: 'منتظر تأیید',
   APPROVED: 'تأییدشده',
@@ -131,13 +138,14 @@ function FieldControl({
           id={id}
           type="checkbox"
           checked={value === true}
-          disabled={disabled ?? false}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
           className="size-5 accent-primary"
         />
       ) : field.kind === 'date' || field.kind === 'datetime' ? (
         <DatePicker
           id={id}
+          required={field.required ?? false}
           includeTime={field.kind === 'datetime'}
           value={String(value || '')}
           disabled={disabled ?? false}
@@ -146,6 +154,7 @@ function FieldControl({
       ) : field.kind === 'select' ? (
         <SearchCombobox
           id={id}
+          aria-required={field.required}
           label={field.label}
           value={String(value || '')}
           disabled={disabled ?? false}
@@ -162,6 +171,7 @@ function FieldControl({
       ) : (
         <Input
           id={id}
+          required={field.required}
           value={String(value || '')}
           disabled={disabled ?? false}
           onChange={(e) => onChange(e.target.value)}
@@ -188,7 +198,7 @@ function Fields({
           key={f.key}
           field={f}
           value={draft[f.key] ?? ''}
-          disabled={disabled ?? false}
+          disabled={(disabled ?? false) || f.disabled === true}
           onChange={(value) => set(f.key, value)}
         />
       ))}
@@ -311,7 +321,9 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         ...(version !== undefined ? { expectedVersion: version } : {}),
       });
       pending.current = null;
-      setNotice('عملیات ثبت شد.');
+      setNotice(
+        action.endsWith('-preview') ? 'پیش‌نمایش آماده شد.' : 'عملیات ثبت شد.',
+      );
       await refresh();
       return result;
     } catch (e) {
@@ -383,17 +395,113 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     content = (
       <AccountingSourceWorkspace book={snapshot} run={run} busy={busy} />
     );
+  else if (snapshot && section === 'general-ledger/documents/numbering')
+    content = (
+      <AccountingDocumentNumbering book={snapshot} run={run} busy={busy} />
+    );
   else if (
     snapshot &&
-    (section.endsWith('/allocation-templates') ||
-      section.endsWith('/numbering'))
+    section === 'general-ledger/documents/subledger-transfer'
   )
+    content = (
+      <AccountingDocumentTransfer
+        book={snapshot}
+        run={run}
+        busy={busy}
+        canCreate={can('finance.journal.create')}
+        canExport={can('finance.export')}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/documents/revaluation')
+    content = (
+      <AccountingDocumentRevaluation
+        book={snapshot}
+        run={run}
+        busy={busy}
+        canCreate={can('finance.journal.create')}
+        canExport={can('finance.export')}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/documents/automatic-runs')
+    content = (
+      <AccountingDocumentAutomatic
+        book={snapshot}
+        run={run}
+        busy={busy}
+        canCreate={can('finance.journal.create')}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/documents/lists/gl-vouchers')
+    content = (
+      <AccountingDocumentGeneralList
+        book={snapshot}
+        run={run}
+        busy={busy}
+        canPost={can('finance.journal.post')}
+        canExport={can('finance.export')}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/documents/issue-gl-voucher')
+    content = (
+      <AccountingDocumentGeneral
+        book={snapshot}
+        run={run}
+        busy={busy}
+        canPost={can('finance.journal.post')}
+      />
+    );
+  else if (snapshot && section === 'general-ledger/documents/posting')
+    content = (
+      <AccountingDocumentPosting
+        book={snapshot}
+        run={run}
+        busy={busy}
+        canPost={can('finance.journal.post')}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'general-ledger/documents/opening-deployment'
+  )
+    content = (
+      <JournalWorkspace
+        key={bookId + section}
+        book={snapshot}
+        mode="edit"
+        setupOpening
+        busy={busy}
+        run={run}
+        can={can}
+      />
+    );
+  else if (
+    snapshot &&
+    [
+      'general-ledger/documents/automatic-templates',
+      'general-ledger/documents/revaluation-templates',
+      'general-ledger/documents/lists/automatic-templates',
+      'general-ledger/documents/lists/revaluation-templates',
+    ].includes(section)
+  )
+    content = (
+      <AccountingDocumentTemplate
+        key={bookId + section + (urlParams.get('id') ?? '')}
+        book={snapshot}
+        run={run}
+        busy={busy}
+        kind={
+          section.includes('automatic-templates') ? 'AUTOMATIC' : 'REVALUATION'
+        }
+        listOnly={section.includes('/lists/')}
+      />
+    );
+  else if (snapshot && section.endsWith('/allocation-templates'))
     content = (
       <AccountingAutomationWorkspace
         book={snapshot}
         run={run}
         busy={busy}
-        mode={section.endsWith('/numbering') ? 'numbering' : 'templates'}
+        mode="templates"
       />
     );
   else if (
@@ -486,7 +594,9 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     snapshot &&
     accountingParityByRoute.get(section)?.implementation === 'move-drafts'
   ) {
-    content = <AccountingMoveDrafts book={snapshot} run={run} busy={busy} />;
+    content = (
+      <AccountingDocumentReorder book={snapshot} run={run} busy={busy} />
+    );
   } else if (
     snapshot &&
     ['fiscal-years', 'ledgers', 'voucher-types'].some(
@@ -506,6 +616,32 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       />
     );
   } else if (home) content = null;
+  else if (
+    snapshot &&
+    (section.endsWith('/documents/list') ||
+      section === 'general-ledger/documents/lists/journals' ||
+      section === 'general-ledger/documents/lists/revaluations' ||
+      section.endsWith('/documents/review') ||
+      section.endsWith('/documents/deleted'))
+  )
+    content = (
+      <AccountingDocumentList
+        key={bookId + section}
+        book={snapshot}
+        mode={
+          section.endsWith('/review')
+            ? 'review'
+            : section.endsWith('/lists/revaluations')
+              ? 'revaluation'
+              : section.endsWith('/deleted')
+                ? 'deleted'
+                : 'list'
+        }
+        busy={busy}
+        run={run}
+        can={can}
+      />
+    );
   else if (
     snapshot &&
     (section.includes('/documents/journals') ||
@@ -1033,36 +1169,111 @@ type Run = <T = unknown>(
   version?: number,
 ) => Promise<T | undefined>;
 type JournalMode = 'edit' | 'list' | 'review' | 'posting' | 'deleted';
-function JournalWorkspace({
+function JournalWorkspace(
+  props: Omit<Parameters<typeof JournalEditorWorkspace>[0], 'initialJournal'>,
+) {
+  const linkedId = useSearchParams().get('journalId') ?? '';
+  const linked = useQuery({
+    queryKey: ['accounting', 'linked-journal', props.book.book.id, linkedId],
+    queryFn: () => accountingApi.journals(props.book.book.id, { id: linkedId }),
+    enabled: props.mode === 'edit' && Boolean(linkedId),
+  });
+  if (props.mode === 'edit' && linkedId) {
+    if (linked.isPending)
+      return (
+        <Panel title="سند حسابداری">
+          <p role="status">در حال خواندن سند…</p>
+        </Panel>
+      );
+    if (linked.error)
+      return (
+        <Panel title="سند حسابداری">
+          <p role="alert">{linked.error.message}</p>
+        </Panel>
+      );
+    const record = linked.data?.items[0];
+    if (!record)
+      return (
+        <Panel title="سند حسابداری">
+          <p role="alert">سند در این دفتر در دسترس نیست.</p>
+        </Panel>
+      );
+    return (
+      <JournalEditorWorkspace
+        key={`${record.id}:${record.version}`}
+        {...props}
+        initialJournal={record}
+      />
+    );
+  }
+  return <JournalEditorWorkspace {...props} />;
+}
+const journalHeader = (journal: AccountingJournalV1): Draft => ({
+  periodId: journal.periodId ?? '',
+  typeId: journal.typeId ?? '',
+  documentDate: journal.documentDate ?? '',
+  description: journal.description,
+  reference: journal.reference ?? '',
+  auxiliaryNumber: String(journal.attributes.auxiliaryNumber ?? ''),
+  descriptionEn: String(journal.attributes.descriptionEn ?? ''),
+});
+function JournalEditorWorkspace({
   book,
   mode,
   busy,
   run,
   can,
+  initialJournal,
+  setupOpening = false,
 }: {
   book: AccountingSnapshotV1;
   mode: JournalMode;
   busy: boolean;
   run: Run;
   can: (p: string) => boolean;
+  initialJournal?: AccountingJournalV1;
+  setupOpening?: boolean;
 }) {
   const router = useRouter();
   const fresh = () => {
     setJournal(null);
-    setHead({});
-    setLines([blankLine(), blankLine()]);
+    setHead(defaultHead());
+    setLines([]);
+    setNotes([]);
+    setTab('main');
   };
   const closeEditor = () =>
     router.push(
       `/finance/accounting/general-ledger/documents/list?bookId=${book.book.id}`,
     );
-  const [journal, setJournal] = useState<AccountingJournalV1 | null>(null),
-    [head, setHead] = useState<Draft>({}),
+  const defaultHead = (): Draft => {
+    const today = new Date();
+    return {
+      documentDate: `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
+      typeId:
+        book.configurations.find(
+          (item) =>
+            item.kind === 'voucher-types' &&
+            item.active &&
+            item.title === (setupOpening ? 'افتتاحیه استقرار' : 'عمومی'),
+        )?.id ?? '',
+    };
+  };
+  const [journal, setJournal] = useState<AccountingJournalV1 | null>(
+      initialJournal ?? null,
+    ),
+    [head, setHead] = useState<Draft>(() =>
+      initialJournal ? journalHeader(initialJournal) : defaultHead(),
+    ),
     [reverseHead, setReverseHead] = useState<Draft>({}),
-    [lines, setLines] = useState<AccountingLineV1[]>([
-      blankLine(),
-      blankLine(),
-    ]);
+    [lines, setLines] = useState<AccountingLineV1[]>(
+      initialJournal?.lines ?? [],
+    );
+  const [notes, setNotes] = useState<SetupNote[]>(
+    parseSetupNotes(initialJournal?.attributes.notes),
+  );
+  const [openVisible, setOpenVisible] = useState(false);
+  const [tab, setTab] = useState<'main' | 'notes'>('main');
   const linkedId = useSearchParams().get('journalId') ?? '';
   const fixedStatus =
     mode === 'review'
@@ -1106,19 +1317,13 @@ function JournalWorkspace({
   const load = () => journalQuery.refetch();
   const open = (j: AccountingJournalV1) => {
     setJournal(j);
-    setHead({
-      periodId: j.periodId ?? '',
-      typeId: j.typeId ?? '',
-      documentDate: j.documentDate ?? '',
-      description: j.description,
-      reference: j.reference ?? '',
-      auxiliaryNumber: String(j.attributes.auxiliaryNumber ?? ''),
-      descriptionEn: String(j.attributes.descriptionEn ?? ''),
-    });
+    setHead(journalHeader(j));
     setLines(j.lines);
+    setNotes(parseSetupNotes(j.attributes.notes));
+    setOpenVisible(false);
   };
-  const displayTotals = journalDisplayTotals(lines);
-  const readonly = journal !== null && journal.status !== 'DRAFT';
+  const readonly =
+    journal !== null && !['DRAFT', 'MEMORANDUM'].includes(journal.status);
   const action = async (name: string) => {
     if (!journal) return;
     let current = journal;
@@ -1128,7 +1333,15 @@ function JournalWorkspace({
         'journal-save',
         {
           ...header,
+          periodId:
+            book.periods.find(
+              (period) =>
+                period.status === 'OPEN' &&
+                String(header.documentDate ?? '') >= period.startDate &&
+                String(header.documentDate ?? '') <= period.endDate,
+            )?.id ?? header.periodId,
           attributes: { auxiliaryNumber, descriptionEn },
+          notes,
           lines: writableJournalLines(lines),
           id: journal.id,
         },
@@ -1148,13 +1361,26 @@ function JournalWorkspace({
       await load();
     }
   };
-  const save = async (after: 'stay' | 'new' | 'close' = 'stay') => {
+  const save = async (
+    after: 'stay' | 'new' | 'close' = 'stay',
+    memorandum = false,
+  ) => {
+    if (busy || readonly || !can('finance.journal.create')) return;
     const { auxiliaryNumber, descriptionEn, ...header } = head;
     const result = await run<AccountingJournalV1>(
-      'journal-save',
+      memorandum ? 'journal-memorandum-save' : 'journal-document-save',
       {
         ...header,
+        ...(setupOpening ? { sourcePage: 'setup-opening' } : {}),
+        periodId:
+          book.periods.find(
+            (period) =>
+              period.status === 'OPEN' &&
+              String(header.documentDate ?? '') >= period.startDate &&
+              String(header.documentDate ?? '') <= period.endDate,
+          )?.id ?? header.periodId,
         attributes: { auxiliaryNumber, descriptionEn },
+        notes,
         lines: writableJournalLines(lines),
         ...(journal ? { id: journal.id } : {}),
       },
@@ -1170,23 +1396,6 @@ function JournalWorkspace({
       }
     }
   };
-  const selection = (
-    label: string,
-    value: string | null,
-    options: { id: string; title: string; code?: string }[],
-    onChange: (value: string) => void,
-  ) => (
-    <SearchCombobox
-      label={label}
-      value={value ?? ''}
-      disabled={readonly}
-      onValueChange={onChange}
-      options={options.map((o) => ({
-        value: o.id,
-        label: `${o.code ?? ''} ${o.title}`,
-      }))}
-    />
-  );
   return (
     <Panel
       title={
@@ -1205,6 +1414,38 @@ function JournalWorkspace({
         <p role="alert" className="text-destructive">
           {failure}
         </p>
+      ) : null}
+      {mode === 'edit' ? (
+        <>
+          <AccountingDocumentImportDialog
+            book={book}
+            busy={busy}
+            run={run}
+            canCreate={can('finance.journal.create')}
+            onOpen={open}
+            typeId={String(head.typeId ?? '')}
+          />
+          <DocumentIconAction
+            label="باز کردن"
+            shortcut="Ctrl+L"
+            disabled={busy}
+            onClick={() => setOpenVisible(true)}
+          >
+            <FolderOpen className="size-4" />
+          </DocumentIconAction>
+          <Dialog open={openVisible} onOpenChange={setOpenVisible}>
+            <DialogContent className="max-h-[85vh] max-w-6xl overflow-auto">
+              <DialogTitle>باز کردن سند حسابداری</DialogTitle>
+              <AccountingDocumentList
+                book={book}
+                busy={busy}
+                run={run}
+                can={can}
+                onOpen={open}
+              />
+            </DialogContent>
+          </Dialog>
+        </>
       ) : null}
       {(['close', 'new'] as const).map((after) => (
         <Button
@@ -1240,115 +1481,115 @@ function JournalWorkspace({
           {after === 'close' ? 'حذف و بستن' : 'حذف و جدید'}
         </Button>
       ))}
-      <div className="flex flex-wrap gap-3">
-        <Input
-          aria-label="جست‌وجوی اسناد"
-          placeholder="شرح یا شماره عطف"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          className="max-w-sm"
-        />
-        {fixedStatus ? (
-          <p className="rounded-xl border bg-muted/30 px-4 py-2 text-sm">
-            وضعیت فهرست: {statuses[fixedStatus]}
-          </p>
-        ) : (
-          <SearchCombobox
-            label="وضعیت سند"
-            value={status}
-            onValueChange={(value) => {
-              setStatus(value);
-              setPage(1);
-            }}
-            options={Object.entries(statuses).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-          />
-        )}
-        {mode === 'edit' || mode === 'list' ? (
-          <Button
-            permission="finance.journal.create"
-            variant="outline"
-            onClick={fresh}
-          >
-            سند جدید
-          </Button>
-        ) : null}
-      </div>
-      <p className="text-xs text-muted-foreground">
-        شماره روزانه در روبی هنوز قرارداد مستقل ندارد و با خط تیره نمایش داده
-        می‌شود. پیوست‌ها پس از بازکردن سند از مخزن اسناد خوانده می‌شوند.
-      </p>
-      <Table
-        headers={[
-          'شماره سند',
-          'تاریخ',
-          'وضعیت',
-          'نوع سند',
-          'شرح',
-          'شماره عطف',
-          'شماره فرعی',
-          'شماره روزانه',
-          'مبلغ سند',
-          'صادرکننده',
-          'پیوست',
-          'عملیات',
-        ]}
-      >
-        {items.map((j) => (
-          <tr key={j.id}>
-            <td className={cell}>{j.number ?? '—'}</td>
-            <td className={cell}>{j.documentDate ?? '—'}</td>
-            <td className={cell}>{statuses[j.status]}</td>
-            <td className={cell}>
-              {book.configurations.find((item) => item.id === j.typeId)
-                ?.title ?? '—'}
-            </td>
-            <td className={cell}>{j.description || 'بدون شرح'}</td>
-            <td className={cell}>{j.reference ?? '—'}</td>
-            <td className={cell}>
-              {String(j.attributes.auxiliaryNumber ?? '—')}
-            </td>
-            <td className={cell}>—</td>
-            <td className={cell} dir="ltr">
-              {journalDisplayTotals(j.lines).valid
-                ? journalDisplayTotals(j.lines).debit
-                : '—'}{' '}
-              {book.book.baseCurrency}
-            </td>
-            <td className={cell}>{j.makerName || 'نام در دسترس نیست'}</td>
-            <td className={cell}>پس از مشاهده</td>
-            <td className={cell}>
-              <Button size="sm" variant="outline" onClick={() => open(j)}>
-                مشاهده
+      {mode !== 'edit' ? (
+        <>
+          <div className="flex flex-wrap gap-3">
+            <Input
+              aria-label="جست‌وجوی اسناد"
+              placeholder="شرح یا شماره عطف"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="max-w-sm"
+            />
+            {fixedStatus ? (
+              <p className="rounded-xl border bg-muted/30 px-4 py-2 text-sm">
+                وضعیت فهرست: {statuses[fixedStatus]}
+              </p>
+            ) : (
+              <SearchCombobox
+                label="وضعیت سند"
+                value={status}
+                onValueChange={(value) => {
+                  setStatus(value);
+                  setPage(1);
+                }}
+                options={Object.entries(statuses).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+              />
+            )}
+            {mode === 'list' ? (
+              <Button
+                permission="finance.journal.create"
+                variant="outline"
+                onClick={fresh}
+              >
+                سند جدید
               </Button>
-            </td>
-          </tr>
-        ))}
-      </Table>
-      <div className="flex items-center gap-3">
-        <Button
-          variant="outline"
-          disabled={page === 1}
-          onClick={() => setPage((p) => p - 1)}
-        >
-          قبلی
-        </Button>
-        <span>
-          صفحه {page} · {total} سند
-        </span>
-        <Button
-          variant="outline"
-          disabled={page * 30 >= total}
-          onClick={() => setPage((p) => p + 1)}
-        >
-          بعدی
-        </Button>
-      </div>
+            ) : null}
+          </div>
+          <Table
+            headers={[
+              'شماره سند',
+              'تاریخ',
+              'وضعیت',
+              'نوع سند',
+              'شرح',
+              'شماره عطف',
+              'شماره فرعی',
+              'شماره روزانه',
+              'مبلغ سند',
+              'صادرکننده',
+              'پیوست',
+              'عملیات',
+            ]}
+          >
+            {items.map((j) => (
+              <tr key={j.id}>
+                <td className={cell}>{j.number ?? '—'}</td>
+                <td className={cell}>{j.documentDate ?? '—'}</td>
+                <td className={cell}>{statuses[j.status]}</td>
+                <td className={cell}>
+                  {book.configurations.find((item) => item.id === j.typeId)
+                    ?.title ?? '—'}
+                </td>
+                <td className={cell}>{j.description || 'بدون شرح'}</td>
+                <td className={cell}>{j.reference ?? '—'}</td>
+                <td className={cell}>
+                  {String(j.attributes.auxiliaryNumber ?? '—')}
+                </td>
+                <td className={cell}>—</td>
+                <td className={cell} dir="ltr">
+                  {journalDisplayTotals(j.lines).valid
+                    ? journalDisplayTotals(j.lines).debit
+                    : '—'}{' '}
+                  {book.book.baseCurrency}
+                </td>
+                <td className={cell}>{j.makerName || 'نام در دسترس نیست'}</td>
+                <td className={cell}>پس از مشاهده</td>
+                <td className={cell}>
+                  <Button size="sm" variant="outline" onClick={() => open(j)}>
+                    مشاهده
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </Table>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              قبلی
+            </Button>
+            <span>
+              صفحه {page} · {total} سند
+            </span>
+            <Button
+              variant="outline"
+              disabled={page * 30 >= total}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              بعدی
+            </Button>
+          </div>
+        </>
+      ) : null}
       {mode === 'deleted' && journal ? (
         <section className="space-y-3 rounded-xl border p-4">
           <h3 className="font-bold">سابقه لغو و بازیابی</h3>
@@ -1370,11 +1611,64 @@ function JournalWorkspace({
       {mode === 'edit' || journal ? (
         <form
           className="space-y-5 rounded-2xl border border-border p-4"
+          onKeyDown={(event) => {
+            if (
+              event.defaultPrevented ||
+              !event.ctrlKey ||
+              event.altKey ||
+              event.metaKey ||
+              busy
+            )
+              return;
+            const key = event.key.toLowerCase();
+            if (
+              !event.shiftKey &&
+              key === 'b' &&
+              can('finance.journal.create')
+            ) {
+              event.preventDefault();
+              fresh();
+              return;
+            }
+            if (event.shiftKey && key === 'b' && !readonly) {
+              event.preventDefault();
+              void save('new');
+              return;
+            }
+            if (event.shiftKey && key === 'f4' && !readonly) {
+              event.preventDefault();
+              void save('close');
+              return;
+            }
+            if (!event.shiftKey && key === 's' && !readonly) {
+              event.preventDefault();
+              void save();
+              return;
+            }
+            if (
+              event.ctrlKey &&
+              event.shiftKey &&
+              event.key.toLowerCase() === 's' &&
+              !busy &&
+              !readonly
+            ) {
+              event.preventDefault();
+              void save('stay', true);
+            }
+          }}
           onSubmit={(e) => {
             e.preventDefault();
             void save(accountingSaveDisposition(e));
           }}
         >
+          <DocumentIconAction
+            label="ذخیره یادداشت"
+            shortcut="Ctrl+Shift+S"
+            disabled={busy || readonly}
+            onClick={() => void save('stay', true)}
+          >
+            <FileText className="size-4" />
+          </DocumentIconAction>
           <div className="flex justify-between">
             <h3 className="font-bold">
               {journal
@@ -1383,238 +1677,181 @@ function JournalWorkspace({
             </h3>
             {journal?.reversalOfId ? <span>سند برگشتی</span> : null}
           </div>
-          <Fields
-            fields={[
-              {
-                key: 'periodId',
-                label: 'دوره مالی',
-                kind: 'select',
-                options: book.periods.map((p) => ({
-                  value: p.id,
-                  label: `${book.configurations.find((c) => c.id === p.fiscalYearId)?.title ?? ''} ${p.startDate} — ${p.endDate}`,
-                })),
-              },
-              {
-                key: 'typeId',
-                label: 'نوع سند',
-                kind: 'select',
-                options: book.configurations
-                  .filter((c) => c.kind === 'voucher-types')
-                  .map((c) => ({ value: c.id, label: c.title })),
-              },
-              { key: 'documentDate', label: 'تاریخ سند', kind: 'date' },
-              { key: 'reference', label: 'شماره عطف' },
-              { key: 'auxiliaryNumber', label: 'شماره فرعی' },
-              { key: 'description', label: 'شرح سند', kind: 'area' },
-              { key: 'descriptionEn', label: 'شرح به زبان دوم' },
-            ]}
-            draft={head}
-            disabled={readonly}
-            set={(key, value) => setHead((h) => ({ ...h, [key]: value }))}
-          />
-          <div className="space-y-4">
-            {lines.map((row, index) => {
-              const update = (data: Partial<AccountingLineV1>) =>
-                setLines((rows) =>
-                  rows.map((r, i) => (i === index ? { ...r, ...data } : r)),
-                );
-              return (
-                <div
-                  key={index}
-                  className="space-y-3 rounded-xl border border-border bg-muted/20 p-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold">ردیف {index + 1}</span>
-                    {!readonly ? (
-                      <Button
-                        variant="ghost"
-                        type="button"
-                        onClick={() =>
-                          setLines((rows) => rows.filter((_, i) => i !== index))
-                        }
-                        aria-label={`حذف ردیف ${index + 1}`}
-                      >
-                        حذف ردیف
-                      </Button>
-                    ) : null}
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <FormField label="حساب معین">
-                      {selection(
-                        'حساب معین',
-                        row.accountId,
-                        book.accounts.filter(
-                          (a) => a.level === 'SUBSIDIARY' && a.active,
-                        ),
-                        (accountId) => update({ accountId: accountId || null }),
-                      )}
-                    </FormField>
-                    {([4, 5, 6] as const).map((n) => (
-                      <FormField label={`تفصیلی ${n}`} key={n}>
-                        {selection(
-                          `تفصیلی ${n}`,
-                          row[`detail${n}Id`],
-                          book.details.filter((d) => d.active),
-                          (value) =>
-                            update({ [`detail${n}Id`]: value || null }),
-                        )}
-                      </FormField>
-                    ))}
-                    <FormField label="بدهکار">
-                      <Input
-                        aria-label={`بدهکار ردیف ${index + 1}`}
-                        disabled={readonly}
-                        dir="ltr"
-                        inputMode="decimal"
-                        value={row.debit}
-                        onChange={(e) => update({ debit: e.target.value })}
-                      />
-                    </FormField>
-                    <FormField label="بستانکار">
-                      <Input
-                        aria-label={`بستانکار ردیف ${index + 1}`}
-                        disabled={readonly}
-                        dir="ltr"
-                        inputMode="decimal"
-                        value={row.credit}
-                        onChange={(e) => update({ credit: e.target.value })}
-                      />
-                    </FormField>
-                    <FormField label="شرح ردیف">
-                      <Input
-                        aria-label={`شرح ردیف ${index + 1}`}
-                        disabled={readonly}
-                        value={row.description}
-                        onChange={(e) =>
-                          update({ description: e.target.value })
-                        }
-                      />
-                    </FormField>
-                  </div>
-                  <details>
-                    <summary className="cursor-pointer text-sm font-semibold">
-                      ارز و پیگیری
-                    </summary>
-                    <div className="grid gap-3 pt-3 sm:grid-cols-3">
-                      <FormField label="نرخ مصوب">
-                        <SearchCombobox
-                          disabled={readonly}
-                          label="نرخ مصوب"
-                          value={row.fxSnapshotId ?? ''}
-                          options={book.fxRates
-                            .filter((r) => r.status === 'APPROVED')
-                            .map((r) => ({
-                              value: r.id,
-                              label: `${r.currency} — ${r.rate} · ${r.source}`,
-                            }))}
-                          onValueChange={(id) => {
-                            const fx = book.fxRates.find((r) => r.id === id);
-                            update({
-                              fxSnapshotId: id || null,
-                              rate: fx?.rate ?? null,
-                              currency: fx?.currency ?? null,
-                            });
-                          }}
-                        />
-                      </FormField>
-                      {(['currency', 'foreignAmount', 'rate'] as const).map(
-                        (key) => (
-                          <FormField
-                            key={key}
-                            label={
-                              key === 'currency'
-                                ? 'کد ارز'
-                                : key === 'rate'
-                                  ? 'نرخ ارز'
-                                  : 'مبلغ ارزی'
-                            }
-                          >
-                            <Input
-                              disabled={readonly}
-                              dir="ltr"
-                              aria-label={`${key} ${index + 1}`}
-                              value={row[key] ?? ''}
-                              onChange={(e) =>
-                                update({ [key]: e.target.value || null })
-                              }
-                            />
-                          </FormField>
-                        ),
-                      )}
-                      <FormField label="شماره پیگیری">
-                        <Input
-                          aria-label="شماره پیگیری"
-                          disabled={readonly}
-                          value={String(row.attributes.trackingNumber ?? '')}
-                          onChange={(e) =>
-                            update({
-                              attributes: {
-                                ...row.attributes,
-                                trackingNumber: e.target.value,
-                              },
-                            })
-                          }
-                        />
-                      </FormField>
-                      <FormField label="تاریخ پیگیری">
-                        <DatePicker
-                          aria-label="تاریخ پیگیری"
-                          disabled={readonly}
-                          value={String(row.attributes.trackingDate ?? '')}
-                          onChange={(value) =>
-                            update({
-                              attributes: {
-                                ...row.attributes,
-                                trackingDate: value,
-                              },
-                            })
-                          }
-                        />
-                      </FormField>
-                      <FormField label="شرح ردیف به زبان دوم">
-                        <Input
-                          aria-label="شرح ردیف به زبان دوم"
-                          disabled={readonly}
-                          value={String(row.attributes.descriptionEn ?? '')}
-                          onChange={(event) =>
-                            update({
-                              attributes: {
-                                ...row.attributes,
-                                descriptionEn: event.target.value,
-                              },
-                            })
-                          }
-                        />
-                      </FormField>
-                    </div>
-                  </details>
-                </div>
-              );
-            })}
+          <div
+            role="tablist"
+            aria-label="بخش‌های سند"
+            className="flex gap-2 border-b"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'main'}
+              onClick={() => setTab('main')}
+              className="px-4 py-2"
+            >
+              اطلاعات اصلی
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'notes'}
+              onClick={() => setTab('notes')}
+              className="px-4 py-2"
+            >
+              یادداشت
+            </button>
           </div>
-          <div role="status" className="rounded-xl border p-3 text-sm">
-            {displayTotals.valid ? (
-              <>
-                جمع بدهکار: {displayTotals.debit} · جمع بستانکار:{' '}
-                {displayTotals.credit} · اختلاف: {displayTotals.difference}
-              </>
-            ) : (
-              <>مبالغ ردیف‌ها را بررسی کنید.</>
-            )}
-          </div>
-          {Array.isArray(journal?.attributes.warnings) ? (
-            <div role="status" className="rounded-xl border p-3">
-              {journal.attributes.warnings.map((w) => (
-                <p key={w}>{w}</p>
-              ))}
+          <div hidden={tab !== 'main'} className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-4">
+              <FormField label="شماره سند">
+                <Input
+                  aria-label="شماره سند"
+                  readOnly
+                  value={journal?.number ?? ''}
+                />
+              </FormField>
+              <FormField label="شماره روزانه">
+                <Input
+                  aria-label="شماره روزانه"
+                  readOnly
+                  value={String(journal?.attributes.dailyNumber ?? '')}
+                />
+              </FormField>
+              <FormField label="شماره عطف">
+                <Input
+                  aria-label="شماره عطف"
+                  readOnly
+                  value={journal?.reference ?? ''}
+                />
+              </FormField>
+              <FormField label="صادر کننده">
+                <Input
+                  aria-label="صادر کننده"
+                  readOnly
+                  value={journal?.makerName ?? ''}
+                />
+              </FormField>
             </div>
-          ) : null}
+            <Fields
+              fields={[
+                {
+                  key: 'typeId',
+                  label: 'نوع سند',
+                  required: true,
+                  kind: 'select',
+                  disabled: setupOpening,
+                  options: book.configurations
+                    .filter((c) => c.kind === 'voucher-types')
+                    .map((c) => ({ value: c.id, label: c.title })),
+                },
+                {
+                  key: 'documentDate',
+                  label: 'تاریخ سند',
+                  kind: 'date',
+                  required: true,
+                },
+                { key: 'auxiliaryNumber', label: 'شماره فرعی' },
+                { key: 'description', label: 'شرح', kind: 'area' },
+                { key: 'descriptionEn', label: 'شرح به زبان دوم' },
+              ]}
+              draft={head}
+              disabled={readonly}
+              set={(key, value) => setHead((h) => ({ ...h, [key]: value }))}
+            />
+            <AccountingJournalLines
+              key={`${journal?.id ?? 'new'}:${journal?.version ?? 0}`}
+              book={book}
+              rows={lines}
+              onChange={setLines}
+              readonly={readonly}
+              journalId={
+                journal &&
+                JSON.stringify(lines) === JSON.stringify(journal.lines)
+                  ? journal.id
+                  : undefined
+              }
+              canWriteStatement={can('finance.journal.create') && !busy}
+              canExport={can('finance.export')}
+              onAddDefaultDescription={
+                can('finance.account.manage') && !busy
+                  ? (row) => {
+                      const account = book.accounts.find(
+                        (account) => account.id === row.accountId,
+                      );
+                      if (account)
+                        void run(
+                          'add-line-default-description',
+                          {
+                            accountId: account.id,
+                            description: row.description,
+                            descriptionEn: String(
+                              row.attributes.descriptionEn ?? '',
+                            ),
+                          },
+                          account.version,
+                        );
+                    }
+                  : undefined
+              }
+              periodId={
+                book.periods.find(
+                  (period) =>
+                    String(head.documentDate ?? '') >= period.startDate &&
+                    String(head.documentDate ?? '') <= period.endDate,
+                )?.id
+              }
+            />
+            {Array.isArray(journal?.attributes.warnings) ? (
+              <div role="status" className="rounded-xl border p-3">
+                {journal.attributes.warnings.map((w) => (
+                  <p key={w}>{w}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div hidden={tab !== 'notes'} className="space-y-4">
+            <AccountingSetupNotes
+              requireDate={false}
+              notes={notes}
+              onChange={setNotes}
+              book={book}
+              {...(journal
+                ? {
+                    record: {
+                      id: journal.id,
+                      entityType: 'AccountingJournal',
+                      title: journal.description || 'سند حسابداری',
+                    },
+                  }
+                : {})}
+            />
+            <Button
+              type="button"
+              permission="finance.journal.create"
+              disabled={busy || !journal}
+              onClick={() => {
+                if (journal)
+                  void run<AccountingJournalV1>(
+                    'journal-notes-save',
+                    { id: journal.id, notes },
+                    journal.version,
+                  ).then((result) => {
+                    if (result) {
+                      open(result);
+                      void load();
+                    }
+                  });
+              }}
+            >
+              ذخیره یادداشت‌های فرم
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {journal &&
             ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'].includes(
               journal.status,
             ) &&
-            (mode === 'edit' || mode === 'list') ? (
+            mode === 'list' ? (
               <Button
                 permission="finance.journal.create"
                 type="button"
@@ -1640,21 +1877,13 @@ function JournalWorkspace({
             ) : null}
             {!readonly && (mode === 'edit' || mode === 'list') ? (
               <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setLines((rows) => [...rows, blankLine()])}
-                >
-                  افزودن ردیف
-                </Button>
                 <AccountingSaveButtons
                   busy={busy}
                   permission="finance.journal.create"
                 />
               </>
             ) : null}
-            {journal?.status === 'DRAFT' &&
-            (mode === 'edit' || mode === 'list') ? (
+            {journal?.status === 'DRAFT' && mode === 'list' ? (
               <Button
                 type="button"
                 permission="finance.journal.create"
@@ -1700,14 +1929,7 @@ function JournalWorkspace({
               </Button>
             ) : null}
           </div>
-          {journal ? (
-            <AccountingAttachments
-              key={journal.id}
-              book={book}
-              journal={journal}
-            />
-          ) : null}
-          {journal?.status === 'POSTED' ? (
+          {journal?.status === 'POSTED' && mode !== 'edit' ? (
             <section className="space-y-3 rounded-xl border p-4">
               <h4 className="font-bold">برگشت سند قطعی</h4>
               <Fields

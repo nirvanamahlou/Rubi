@@ -86,6 +86,13 @@ export async function exportAccountingView(
   format: 'xlsx' | 'pdf',
 ) {
   const rows = accountingViewRows(root);
+  return exportAccountingRows(rows, format);
+}
+
+export async function exportAccountingRows(
+  rows: string[][],
+  format: 'xlsx' | 'pdf',
+) {
   if (!rows.length)
     throw new Error('اطلاعاتی برای خروجی در این صفحه نمایش داده نشده است.');
   const title = rows[0]?.[0] || 'حسابداری';
