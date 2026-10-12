@@ -14,6 +14,7 @@ import {
 } from './sales.adapters';
 import { SalesController } from './sales.controller';
 import { SalesAssistantController } from './sales-assistant.controller';
+import { SalesAssistantConfirmationService } from './sales-assistant-confirmation.service';
 import { SalesRepository } from './sales.repository';
 import { SalesService } from './sales.service';
 import { SalesOutputService } from './sales-output.service';
@@ -36,6 +37,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   providers: [
     AuthGuard,
     SalesRepository,
+    SalesAssistantConfirmationService,
     SalesBuyerContactCrypto,
     SalesService,
     SalesProfitService,
@@ -48,6 +50,6 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
       useExisting: SalesTicketsPublicAdapter,
     },
   ],
-  exports: [SalesService],
+  exports: [SalesService, SalesAssistantConfirmationService],
 })
 export class SalesModule {}
