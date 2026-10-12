@@ -48,6 +48,78 @@ const daily = {
 };
 
 describe('assistant evidence contract', () => {
+  it('accepts only real-source partial sales and rejects demo/false count/label claims', () => {
+    const current = {
+      startUtc: '2026-10-04T20:30:00.000Z',
+      endUtc: '2026-10-11T20:30:00.000Z',
+      contractCount: 1,
+      passengerCount: 2,
+      routes: [
+        {
+          originId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          destinationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+          originName: 'Synthetic origin',
+          destinationName: 'Synthetic destination',
+          contractCount: 1,
+          passengerCount: 2,
+        },
+      ],
+    };
+    const report = {
+      version: 1,
+      source: 'sales.assistant.weekly.v1',
+      scope: 'ALL_AUTHORIZED_SALES',
+      timeBasis: 'CREATED_AT',
+      timeZone: 'Asia/Tehran',
+      observedAt: '2026-10-12T08:00:00Z',
+      sourceUpdatedAt: null,
+      routeNamesComplete: true,
+      current,
+      previous: {
+        startUtc: '2026-09-27T20:30:00.000Z',
+        endUtc: current.startUtc,
+        contractCount: 0,
+        passengerCount: 0,
+        routes: [],
+      },
+      coverage: {
+        rowLimit: 5000,
+        routeBasis: 'PRIMARY_CONTRACT_ROUTE',
+        truncated: false,
+      },
+      unavailable: [
+        'NET_SALES_REFUND_SOURCE_PENDING',
+        'CONTACT_COHORT_SOURCE_PENDING',
+        'MULTI_ROUTE_PROJECTION_PENDING',
+      ],
+    };
+    const envelope = {
+      version: 1,
+      action: 'sales-analysis',
+      status: 'PARTIAL',
+      scope: 'ALL_AUTHORIZED_SALES',
+      report,
+    };
+    expect(assistantActionSchema.safeParse(envelope).success).toBe(true);
+    expect(
+      assistantActionSchema.safeParse({
+        ...envelope,
+        report: { ...report, source: 'reporting.travel.facts.v1' },
+      }).success,
+    ).toBe(false);
+    expect(
+      assistantActionSchema.safeParse({
+        ...envelope,
+        report: { ...report, current: { ...current, contractCount: 2 } },
+      }).success,
+    ).toBe(false);
+    expect(
+      assistantActionSchema.safeParse({
+        ...envelope,
+        report: { ...report, routeNamesComplete: false },
+      }).success,
+    ).toBe(false);
+  });
   it('accepts reconciled counts and rejects fabricated totals, rules and unsafe links', () => {
     expect(assistantActionSchema.safeParse(daily).success).toBe(true);
     expect(

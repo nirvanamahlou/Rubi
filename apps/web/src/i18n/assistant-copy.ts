@@ -26,9 +26,57 @@ export const assistantCopy = {
   dueSoonCount: ['موعد نزدیک — اولویت متوسط', 'Due soon — medium priority'],
   assignedCount: ['تخصیص‌یافته — اولویت عادی', 'Assigned — normal priority'],
   salesDefinitionGate: [
-    'تحلیل فروش هنوز فعال نیست؛ تعریف شاخص، دوره و دامنه مجاز باید تأیید و منبع گزارش اعتبارسنجی شود.',
-    'Sales analysis is not active: approve the metric, period and access scope, then validate the report source.',
+    'منبع خواندنی فروش در دسترس نیست یا پاسخ آن معتبر نیست؛ عددی نمایش داده نمی‌شود.',
+    'The read-only sales source is unavailable or invalid. No figures are displayed.',
   ],
+  weeklySales: [
+    'فروش هفتگی — شمارش قراردادهای معتبر',
+    'Weekly sales — eligible contract counts',
+  ],
+  salesCoverage: [
+    'بر اساس تاریخ ایجاد، هفت روز کامل گذشته و هفت روز قبل؛ فقط محدوده مجاز فروش کل مجموعه. مسیرها در این نسخه، مسیر اصلی قرارداد هستند.',
+    'Creation-date basis, last seven complete days versus the preceding seven days. Authorized all-sales scope only; routes currently mean each contract’s primary route.',
+  ],
+  salesMissing: [
+    'مبلغ خالص فروش تا اتصال استرداد تأییدشده مالی محاسبه نمی‌شود. نرخ تبدیل تماس به مشتری و پوشش مسیرهای چندگانه هنوز منبع معتبر ندارند.',
+    'Net sales awaits confirmed Finance refunds. Contact-cohort conversion and multiple-route coverage still need approved sources.',
+  ],
+  currentPeriod: ['هفت روز گذشته', 'Last seven days'],
+  previousPeriod: ['هفت روز قبل از آن', 'Preceding seven days'],
+  contractsCount: ['تعداد قرارداد', 'Contracts'],
+  passengersCount: ['تعداد مسافر', 'Passengers'],
+  primaryRoute: ['مسیر اصلی', 'Primary route'],
+  missingCityNames: [
+    'نام بعضی شهرها از مرجع اطلاعات پایه دریافت نشده است.',
+    'Some city names could not be retrieved from reference data.',
+  ],
+  sourceFailure: {
+    SOURCE_NOT_CONNECTED: [
+      'API خواندنی فروش در نسخهٔ جاری ERP منتشر نشده است.',
+      'The read-only sales API is not published in the running ERP version.',
+    ],
+    SOURCE_NOT_READY: [
+      'منبع فروش هنوز آمادهٔ ارائهٔ گزارش نیست.',
+      'The sales source is not ready to report.',
+    ],
+    SOURCE_CAP_EXCEEDED: [
+      'حجم منبع از حد امن گزارش بیشتر است؛ جمع ناقص نمایش داده نمی‌شود.',
+      'The source exceeds the safe report limit; incomplete totals are not displayed.',
+    ],
+    SOURCE_TOO_LARGE: [
+      'پاسخ منبع از حد مجاز بزرگ‌تر است.',
+      'The source response exceeds the size limit.',
+    ],
+    INVALID_SOURCE: [
+      'ساختار یا شمارنده‌های منبع معتبر نیستند.',
+      'The source structure or counts are invalid.',
+    ],
+    SOURCE_TIMEOUT: ['مهلت پاسخ منبع پایان یافت.', 'The source timed out.'],
+    SOURCE_UNAVAILABLE: [
+      'ارتباط با منبع فروش برقرار نشد.',
+      'The sales source could not be reached.',
+    ],
+  },
   receivablesSourceGate: [
     'پیگیری مطالبات هنوز فعال نیست؛ منبع تأییدشده مالی و قرارداد سررسید و مانده باید آماده شوند.',
     'Receivables follow-up is not active: the approved Finance source and due-date/balance contract are required.',

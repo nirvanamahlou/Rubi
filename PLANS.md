@@ -486,3 +486,14 @@ in docs/tasks/EXECUTIVE-ASSISTANT-1011.md; the panel shell is not production AI.
 
 Full ordered acceptance: docs/tasks/ASSISTANT-MVP-FOUNDATION-1012.md. This is a
 partial P0 foundation, not completed Enterprise MVP or Production certification.
+
+## ASSISTANT-PHASE1-REPORTS-1012
+
+- [x] Owner advances to Phase1 and confirms business definitions.
+- [x] Sales-owned bounded read source and independent validated weekly adapter.
+- [x] Real contract/passenger counts, Tehran windows and source-failure reasons.
+- [ ] Publish the ERP read endpoint in the approved runtime; business reconciliation.
+- [ ] Refund-aware separate-currency net sales, multiple routes and call cohort.
+- [ ] Finance-approved receivables and combined daily corporate summary.
+
+This first connection is partial Phase1; see docs/tasks/ASSISTANT-PHASE1-REPORTS-1012.md.

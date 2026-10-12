@@ -2,9 +2,9 @@
 export const ACTIONS = Object.freeze({
   'daily-summary': Object.freeze({ kind: 'PERSONAL', sideEffects: false }),
   'sales-analysis': Object.freeze({
-    kind: 'BUSINESS_GATE',
+    kind: 'SALES_READ',
     sideEffects: false,
-    reason: 'SALES_DEFINITION_REQUIRED',
+    reason: 'SALES_SOURCE_UNAVAILABLE',
   }),
   'receivables-follow-up': Object.freeze({
     kind: 'BUSINESS_GATE',

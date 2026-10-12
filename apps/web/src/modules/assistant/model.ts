@@ -139,7 +139,18 @@ const blockedSchema = z.discriminatedUnion('action', [
     action: z.literal('sales-analysis'),
     status: z.literal('BLOCKED'),
     scope: z.literal('NONE'),
-    reason: z.literal('SALES_DEFINITION_REQUIRED'),
+    reason: z.literal('SALES_SOURCE_UNAVAILABLE'),
+    failure: z
+      .enum([
+        'SOURCE_NOT_CONNECTED',
+        'SOURCE_NOT_READY',
+        'SOURCE_CAP_EXCEEDED',
+        'SOURCE_TOO_LARGE',
+        'INVALID_SOURCE',
+        'SOURCE_TIMEOUT',
+        'SOURCE_UNAVAILABLE',
+      ])
+      .optional(),
     observedAt: z.iso.datetime(),
   }),
   z.object({
@@ -151,7 +162,82 @@ const blockedSchema = z.discriminatedUnion('action', [
     observedAt: z.iso.datetime(),
   }),
 ]);
-export const assistantActionSchema = z.union([dailySchema, blockedSchema]);
+const salesPeriod = z
+  .object({
+    startUtc: z.iso.datetime(),
+    endUtc: z.iso.datetime(),
+    contractCount: z.number().int().min(0).max(5000),
+    passengerCount: z.number().int().nonnegative(),
+    routes: z
+      .array(
+        z.object({
+          originId: z.uuid(),
+          destinationId: z.uuid(),
+          originName: z.string().trim().min(1).max(200).nullable(),
+          destinationName: z.string().trim().min(1).max(200).nullable(),
+          contractCount: z.number().int().positive(),
+          passengerCount: z.number().int().nonnegative(),
+        }),
+      )
+      .max(5000),
+  })
+  .refine(
+    (period) =>
+      period.routes.reduce((total, row) => total + row.contractCount, 0) ===
+        period.contractCount &&
+      period.routes.reduce((total, row) => total + row.passengerCount, 0) ===
+        period.passengerCount &&
+      new Set(
+        period.routes.map((row) => `${row.originId}:${row.destinationId}`),
+      ).size === period.routes.length &&
+      (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 >=
+        6.95 &&
+      (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 <=
+        7.05,
+  );
+const salesSchema = z.object({
+  version: z.literal(1),
+  action: z.literal('sales-analysis'),
+  status: z.literal('PARTIAL'),
+  scope: z.literal('ALL_AUTHORIZED_SALES'),
+  report: z
+    .object({
+      version: z.literal(1),
+      source: z.literal('sales.assistant.weekly.v1'),
+      scope: z.literal('ALL_AUTHORIZED_SALES'),
+      timeBasis: z.literal('CREATED_AT'),
+      timeZone: z.literal('Asia/Tehran'),
+      observedAt: z.iso.datetime(),
+      sourceUpdatedAt: z.iso.datetime().nullable(),
+      routeNamesComplete: z.boolean(),
+      current: salesPeriod,
+      previous: salesPeriod,
+      coverage: z.object({
+        rowLimit: z.literal(5000),
+        routeBasis: z.literal('PRIMARY_CONTRACT_ROUTE'),
+        truncated: z.literal(false),
+      }),
+      unavailable: z.tuple([
+        z.literal('NET_SALES_REFUND_SOURCE_PENDING'),
+        z.literal('CONTACT_COHORT_SOURCE_PENDING'),
+        z.literal('MULTI_ROUTE_PROJECTION_PENDING'),
+      ]),
+    })
+    .refine(
+      (report) =>
+        report.previous.endUtc === report.current.startUtc &&
+        report.current.contractCount + report.previous.contractCount <= 5000 &&
+        report.routeNamesComplete ===
+          [...report.current.routes, ...report.previous.routes].every(
+            (row) => row.originName !== null && row.destinationName !== null,
+          ),
+    ),
+});
+export const assistantActionSchema = z.union([
+  dailySchema,
+  blockedSchema,
+  salesSchema,
+]);
 export type AssistantActionResult = z.infer<typeof assistantActionSchema>;
 
 export async function loadAssistantAction(
