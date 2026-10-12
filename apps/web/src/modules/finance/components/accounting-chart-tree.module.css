@@ -1,0 +1,130 @@
+.tree {
+  min-width: 0;
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  background: var(--surface);
+  font-size: 0.75rem;
+  box-shadow: 0 12px 32px rgb(15 45 66 / 0.06);
+}
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-block-end: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+.count {
+  margin-inline-start: auto;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.searchToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--muted);
+}
+.canvas {
+  height: 26rem;
+  overflow: auto;
+  padding: 0.5rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--muted) 45%, var(--surface));
+}
+.row,
+.root {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  min-height: 2.6rem;
+  padding: 0.2rem;
+  margin-block: 0.2rem;
+  border: 1px solid transparent;
+  border-radius: 0.8rem;
+}
+.row:hover {
+  background: var(--surface);
+}
+.row[data-selected='true'] {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  box-shadow: inset -3px 0 var(--primary);
+}
+.toggle {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  color: var(--muted-foreground);
+}
+.toggle:hover:not(:disabled) {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.toggle:disabled {
+  visibility: hidden;
+}
+.account {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.25rem;
+  text-align: start;
+  color: var(--foreground);
+}
+.account > svg {
+  color: var(--primary);
+}
+.code {
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+.title {
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.branch {
+  margin-inline-start: 1.1rem;
+  padding-inline-start: 0.55rem;
+  border-inline-start: 2px solid var(--border);
+}
+.root {
+  border-bottom-color: var(--border);
+  border-radius: 0;
+  padding-block-end: 0.65rem;
+  margin-block-end: 0.5rem;
+}
+.rootTitle {
+  padding: 0.35rem;
+  font-weight: 700;
+}
+.rootTitle[aria-pressed='true'] {
+  color: var(--primary);
+}
+.results {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+.tree button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

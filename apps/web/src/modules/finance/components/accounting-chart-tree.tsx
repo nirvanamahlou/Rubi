@@ -1,8 +1,16 @@
 'use client';
 import { useState, type ReactNode } from 'react';
-import { BookCopy, Minus, Plus, Search } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronLeft,
+  Folder,
+  FileText,
+  Search,
+  Network,
+} from 'lucide-react';
 import type { AccountingAccountV1 } from '@nora/contracts';
 import { normalizeFilterText } from '../accounting-list-filters';
+import styles from './accounting-chart-tree.module.css';
 
 export function AccountingChartTree({
   accounts,
@@ -50,36 +58,40 @@ export function AccountingChartTree({
     const opened = expanded.includes(account.id);
     return (
       <li key={account.id}>
-        <div className="flex items-center gap-1 py-0.5">
+        <div className={styles.row} data-selected={selectedId === account.id}>
           <button
             type="button"
             disabled={!children.length}
             aria-label={`${opened ? 'بستن' : 'بازکردن'} شاخه ${account.title}`}
             aria-expanded={children.length ? opened : undefined}
             onClick={() => toggle(account.id)}
-            className="size-4 shrink-0 border disabled:opacity-20"
+            className={styles.toggle}
           >
             {opened ? (
-              <Minus className="size-3" />
+              <ChevronDown className="size-4" />
             ) : (
-              <Plus className="size-3" />
+              <ChevronLeft className="size-4" />
             )}
           </button>
-          <BookCopy
-            className="size-4 shrink-0 text-blue-600"
-            aria-hidden="true"
-          />
           <button
             type="button"
             onClick={() => onSelect(account.id)}
             aria-pressed={selectedId === account.id}
-            className={`min-w-0 text-right hover:text-primary ${selectedId === account.id ? 'bg-sky-100 text-primary' : ''}`}
+            className={styles.account}
           >
-            {account.code}-{account.title}
+            {children.length ? (
+              <Folder className="size-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <FileText className="size-4 shrink-0" aria-hidden="true" />
+            )}
+            <span className={styles.code} dir="ltr">
+              {account.code}
+            </span>
+            <span className={styles.title}>{account.title}</span>
           </button>
         </div>
         {opened && (
-          <ul className="ms-3 border-s border-dotted ps-2">
+          <ul className={styles.branch}>
             {children.map((child) =>
               renderAccount(child, [...ancestors, account.id]),
             )}
@@ -89,7 +101,14 @@ export function AccountingChartTree({
     );
   };
   return (
-    <aside dir="rtl" className="space-y-2 border bg-muted/10 p-2 text-xs">
+    <aside dir="rtl" className={styles.tree} aria-label="ساختار حساب">
+      <div className={styles.heading}>
+        <Network className="size-5" aria-hidden="true" />
+        <strong>ساختار حساب</strong>
+        <span className={styles.count}>
+          {accounts.length.toLocaleString('fa-IR')}
+        </span>
+      </div>
       <label className="flex items-center justify-between gap-2">
         مرتب سازی
         <select
@@ -106,14 +125,14 @@ export function AccountingChartTree({
         type="button"
         aria-expanded={searchOpen}
         onClick={() => setSearchOpen(!searchOpen)}
-        className="flex w-full items-center justify-between border bg-muted/40 px-2 py-1"
+        className={styles.searchToggle}
       >
         <span>جستجو</span>
         <Search className="size-3" />
       </button>
       {searchOpen && (
         <form
-          className="space-y-2 border p-2"
+          className="space-y-3 rounded-xl border border-border bg-muted/20 p-3"
           onSubmit={(event) => {
             event.preventDefault();
             setApplied({ ...filters });
@@ -149,13 +168,13 @@ export function AccountingChartTree({
               <option value="SUBSIDIARY">حساب معین</option>
             </select>
           </label>
-          <button type="submit" className="border bg-sky-50 px-3 py-1">
+          <button type="submit" className={styles.searchToggle}>
             جستجو
           </button>
         </form>
       )}
-      <div className="h-[26rem] overflow-auto border bg-surface p-2">
-        <div className="mb-1 flex items-center gap-1">
+      <div className={styles.canvas}>
+        <div className={styles.root}>
           <button
             type="button"
             aria-label={
@@ -165,18 +184,19 @@ export function AccountingChartTree({
             }
             aria-expanded={expanded.includes('root')}
             onClick={() => toggle('root')}
-            className="mb-1 flex items-center gap-1 border bg-sky-50 px-1"
+            className={styles.toggle}
           >
             {expanded.includes('root') ? (
-              <Minus className="size-3" />
+              <ChevronDown className="size-4" />
             ) : (
-              <Plus className="size-3" />
+              <ChevronLeft className="size-4" />
             )}
           </button>
           <button
             type="button"
             onClick={() => onSelect('')}
             aria-pressed={!selectedId}
+            className={styles.rootTitle}
           >
             ساختار حساب
           </button>
@@ -187,10 +207,10 @@ export function AccountingChartTree({
           </ul>
         )}
       </div>
-      <div className="border bg-surface p-1">
-        <p className="border-b bg-sky-50 p-1">نتایج جستجو</p>
+      <div className={styles.results}>
+        <p className="border-b border-border p-3 font-bold">نتایج جستجو</p>
         <table className="w-full text-right">
-          <thead className="bg-sky-50">
+          <thead className="bg-muted/40">
             <tr>
               <th className="p-1">کد</th>
               <th className="p-1">عنوان</th>
