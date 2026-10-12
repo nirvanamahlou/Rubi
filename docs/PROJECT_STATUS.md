@@ -1,11 +1,14 @@
-## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — IN_PROGRESS
+## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 Accounting forms, lists and filters are being restyled as inline project-native
 surfaces inspired by Organizations and Master Data. Existing fields, validation,
 routes, handlers, permissions and payloads remain unchanged; no new popup form is
 introduced. Shared operations, list filters and tables receive scoped Accounting-only
 presentation markers and preservation tests. No API/schema/migration/dependency or
-operational-data change. See docs/tasks/ACCOUNTING-INLINE-FORMS-1012.md.
+operational-data change. Scoped ESLint, full Web TypeScript, 11 focused tests and the
+production Web build (62 routes) pass on the reconciled develop head. User authorizes
+push, exact-head CI-gated merge and activation on local Web3000. See
+docs/tasks/ACCOUNTING-INLINE-FORMS-1012.md.
 
 ## 2026-10-12 — ACCOUNTING-COMPLETION-INTEGRATION-1012 — PC-B
 

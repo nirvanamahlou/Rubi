@@ -3,7 +3,7 @@
 - **Computer:** PC-A (execution for PC-B Accounting owner)
 - **Branch:** `codex/pc-a-accounting-inline-forms-1012`
 - **Base:** `origin/develop@2de87ce4`, reconciled with `origin/develop@0f111706`
-- **Status:** IN_PROGRESS
+- **Status:** READY_FOR_CI
 
 ## هدف و محدوده
 
@@ -25,4 +25,10 @@ API، schema، migration، dependency و داده عملیاتی خارج از �
 
 ## انتشار و کنترل کیفیت
 
-نتیجه تست‌ها، build، PR، merge و اجرای محلی پس از تکمیل در همین سند ثبت می‌شود.
+- scoped ESLint فایل‌های TypeScript تغییرکرده: موفق.
+- Web TypeScript کامل: موفق.
+- تست‌های متمرکز بازطراحی، ناوبری، درخت و سطح تفصیلی: `11/11` موفق.
+- production Web build: موفق، `62` route.
+- شاخه با آخرین `origin/develop@f9146227` بدون conflict هماهنگ شد.
+- کاربر push، exact-head CI-gated merge و اجرای نسخه مرج‌شده روی Web3000 را مجاز
+  کرده است؛ رسید PR، merge و runtime پس از انجام افزوده می‌شود.

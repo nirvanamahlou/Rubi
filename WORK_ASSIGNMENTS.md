@@ -1,4 +1,4 @@
-## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — IN_PROGRESS
+## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;
 Accounting ownership remains PC-B. Branch codex/pc-a-accounting-inline-forms-1012
@@ -9,6 +9,9 @@ Inspiration is read-only Organizations/Master Data design; do not modify those m
 All existing fields, validation, handlers, routes, permissions, payloads and inline
 editing remain intact. No new form dialogs, API/schema/migration/dependency or data
 changes. The running worktree and unrelated main-checkout files remain untouched.
+Implementation is frozen after scoped ESLint, Web TypeScript, 11 focused tests and
+the production Web build (62 routes) passed on the reconciled develop head. User
+authorizes push, exact-head CI-gated merge and activation on local Web3000.
 
 ## ACCOUNTING-EMPTY-SELLER-1012 — PC-B — READY_FOR_CI
 
