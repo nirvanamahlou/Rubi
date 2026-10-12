@@ -5670,3 +5670,7 @@ final checks, CI and runtime publication/handoff evidence follow in the PR.
 ## PC-B acceptance follow-up — 2026-10-12
 
 PR803 merged at04acd08a and passed all merged-tree CI checks; rubi Web3100/API4192 now run that tree against the existing database. Authenticated threshold form works. The seller screen exposed empty-body serialization when no profile exists; ACCOUNTING-EMPTY-SELLER-1012 restores the existing nullable JSON contract without creating a record or changing permissions. Regression reproduced before correction; both missing and populated responses are covered. Full statutory return logic and official taxpayer dispatch remain incomplete.
+
+## 2026-10-12 — PACKAGE-TEMPLATE-GALLERY-1012 — PC-B
+
+Added six supplied, distinct editable posters under the Package Generator package tab: Iran (Kish, Qeshm, Mashhad), Vietnam (standard and luxury), China. Original image bytes remain intact; direct-click text/price editing and photo replacement stay inside bounded template regions, with per-design in-memory edits, reset and font controls. Real PNG/PDF exports preserve original portrait/landscape dimensions. Printed sample values are presentation content, not published Rubi package prices. No Excel parser, permissions, API, schema, shared contract, dependency, persistence or Documents changes. Browser acceptance covered all six designs, mobile layout, image replacement, literal malicious text, switching back to the existing editor and all twelve PNG/PDF exports. Web pricing tests52, lint and typecheck passed; production build evidence in task/PR.

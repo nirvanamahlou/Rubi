@@ -7107,3 +7107,7 @@ approved producer contracts exist. No Finance/CRM owner tables read. Existing
 SELF access and snapshot preserved. Acceptance: pure source-backed projection,
 permission/empty/cap/window/cancel/duplicate tests, strict source validation,
 API/Web/service checks and exact-head CI before authorized develop merge.
+
+## PACKAGE-TEMPLATE-GALLERY-1012 — PC-B — READY_FOR_REVIEW
+
+Branch codex/pc-b-package-template-gallery-1012 from origin/develop@2de87ce4. Reserve only standalone Package Generator template assets/catalogue/editor and bounded app/index integration, focused Web tests, own task/status entries. Six supplied distinct templates: Vietnam, luxury Vietnam, China, Kish, Qeshm and Mashhad; duplicate Mashhad deduplicated. Existing Package Pricing field task source locks explicitly released; no overlapping static editor writer found. No shared contract, API, schema, migration, dependency, lockfile, IAM or operational-data changes.
