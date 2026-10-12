@@ -21,6 +21,7 @@ export function CorrespondenceWorkspace() {
       new Date(),
     ),
     number: '',
+    attachment: '',
     signer: '',
     text: '',
     template: initialTemplate,
@@ -119,7 +120,14 @@ export function CorrespondenceWorkspace() {
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             {(
-              ['recipient', 'subject', 'date', 'number', 'signer'] as const
+              [
+                'recipient',
+                'subject',
+                'date',
+                'number',
+                'attachment',
+                'signer',
+              ] as const
             ).map((key) => (
               <label
                 key={key}
@@ -131,12 +139,13 @@ export function CorrespondenceWorkspace() {
                     subject: 'موضوع',
                     date: 'تاریخ',
                     number: 'شماره نامه',
+                    attachment: 'پیوست',
                     signer: 'نام و سمت امضاکننده',
                   }[key]
                 }
                 <input
                   className={inputClass}
-                  value={letter[key]}
+                  value={letter[key] ?? ''}
                   required={key === 'recipient' || key === 'subject'}
                   maxLength={
                     key === 'subject' || key === 'recipient' ? 160 : 80
@@ -167,7 +176,7 @@ export function CorrespondenceWorkspace() {
             <p className="mt-3 text-xs leading-6 text-muted-foreground">
               متغیرهای قالب:{' '}
               {
-                '{{متن}}، {{امضا}}، {{شرکت}}، {{گیرنده}}، {{موضوع}}، {{تاریخ}} و {{شماره}}'
+                '{{متن}}، {{امضا}}، {{شرکت}}، {{گیرنده}}، {{موضوع}}، {{تاریخ}}، {{شماره}} و {{پیوست}}'
               }
             </p>
             <textarea

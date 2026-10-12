@@ -7060,6 +7060,12 @@ PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea
 
 Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
 
+## CORRESPONDENCE-LETTERHEADS-1012 — PC-A — READY_FOR_REVIEW
+
+CI follow-up: bounded Web English catalogue reservation for the two new letterhead validation/loading errors only; no API or offline-editor catalogue change. Released with repaired candidate.
+
+Sole writer; no delegation. Reserve apps/web/src/modules/correspondence, apps/web/public/correspondence/letterheads and bounded work/status docs. User-supplied three letterhead images used unchanged as company backgrounds; overlay metadata/body for PNG/PDF and preview. No API/schema/dependency changes. Reuse Rubi Compose3100. Preserve other edits. Source locks RELEASED at candidate freeze. Four composition tests, scoped lint and Web typecheck passed; actual production renderer visually checked for all three companies and multipage output. PR801 requires exact-head CI before authorized develop merge and Web-only rollout; API and database remain unchanged.
+
 ## HOTEL-TEMPLATE-IMPORT-1012 — PC-A — READY_FOR_REVIEW
 
 Follow-up candidate verification: real PostgreSQL preview/create/profile/edit/reopen/duplicate-skip integration passes; all147 migrations apply to isolated synthetic55439. API527, parser32, Web22 and Contracts143 tests pass; scoped lint, API/Web typechecks and API build pass. Source/schema/shared catalogue locks RELEASED with candidate freeze. Exact-head CI gates the explicitly authorized develop merge; no operational data or shared runtime rollout.
