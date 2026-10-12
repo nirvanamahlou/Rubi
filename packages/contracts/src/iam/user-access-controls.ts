@@ -3,6 +3,7 @@ import {
   MASTER_DATA_RESOURCES,
   type MasterDataResource,
 } from '../master-data';
+import { MANUAL_ACCESS_VERSION, allowAccessControl } from './manual-access';
 
 export const USER_ACCESS_DENY_PREFIX = 'ui.deny.' as const;
 
@@ -183,6 +184,14 @@ export function hasAccessControl(
   permissions: readonly string[],
   controlId: string,
 ): boolean {
+  if (permissions.includes(MANUAL_ACCESS_VERSION))
+    return (
+      !permissions.includes(denyPermission(controlId)) &&
+      permissions.includes(allowAccessControl(controlId)) &&
+      (controlId.startsWith('field.') ||
+        controlId.startsWith('master-data.resource.') ||
+        permissions.includes(`ui.screen.${controlId}`))
+    );
   return (
     permissions.includes('ui.administrator') ||
     !permissions.includes(denyPermission(controlId))
@@ -273,6 +282,13 @@ const queryViews = (
 
 export const ADDITIVE_USER_ACCESS_SCREENS: readonly AdditiveUserAccessScreen[] =
   [
+    {
+      id: 'ticket-purchases.home',
+      group: 'procurement',
+      title: 'خرید و تأمین خدمات سفر',
+      route: '/ticket-purchases',
+      inheritFrom: ['reservations.home', 'procurement.home'],
+    },
     {
       id: 'correspondence.home',
       group: 'correspondence',

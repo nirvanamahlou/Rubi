@@ -11,6 +11,7 @@ import {
   Post,
   Req,
   UseGuards,
+  Optional,
 } from '@nestjs/common';
 import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
@@ -24,13 +25,36 @@ import { RequirePermissions } from './iam.decorators';
 import { IamService } from './iam.service';
 import { PermissionGuard } from './permission.guard';
 import type { AuthenticatedRequest } from './iam.types';
+import { ManualUserAccessService } from './manual-user-access.service';
+// ValidationPipe needs the runtime class metadata.
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
+import { ManualUserAccessDto } from './dto/manual-user-access.dto';
 
 @ApiTags('IAM / Users')
 @ApiCookieAuth('nora_access')
 @UseGuards(AuthGuard, PermissionGuard)
 @Controller('iam/users')
 export class UsersController {
-  constructor(@Inject(IamService) private readonly iam: IamService) {}
+  constructor(
+    @Inject(IamService) private readonly iam: IamService,
+    @Optional()
+    @Inject(ManualUserAccessService)
+    private readonly manual?: ManualUserAccessService,
+  ) {}
+  @Get(':id/manual-access')
+  @RequirePermissions('iam.users.read')
+  manualAccess(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.manual!.read(id);
+  }
+  @Patch(':id/manual-access')
+  @RequirePermissions('iam.users.manage')
+  saveManualAccess(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: ManualUserAccessDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.manual!.save(id, dto, req.actor);
+  }
   @Get() @RequirePermissions('iam.users.read') list() {
     return this.iam.listUsers();
   }

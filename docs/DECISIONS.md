@@ -1,3 +1,7 @@
+## MANUAL-USER-ACCESS-V3-1012 — authoritative individual grants
+
+The user's2026-10-12 instruction supersedes additive shared-role behavior for manually converted users. Their exclusive versioned snapshot is the sole effective grant source; existing shared memberships remain for history but cannot restore an unchecked grant. Titles are labels. New catalog controls default off. Conversion snapshots the current effective legacy scope and requires before/after equality, serializable concurrency and matching active runtime capabilities. Agency identity edits use verified organization/contract ownership and immutable names. No passenger login role is introduced. Details: docs/tasks/MANUAL-USER-ACCESS-V3-1012.md.
+
 ## HOTEL-OCCUPANCY-IMPORT-PREVIEW-1006 — owner occupancy policy (2026-10-06)
 
 Source monetary precision is retained up to12decimal places as Decimal strings; source Excel IEEE754 serialization noise is normalized within machine precision only. Exact BigInt sums round once to the existing4-place Sales financial boundary (half-up), never each nightly source price. The157 reversed date ranges found in the original data are explicitly rejected/reported by import, not guessed/swapped; corrected occupancy output retains source dates and prices.

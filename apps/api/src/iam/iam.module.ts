@@ -13,6 +13,8 @@ import { MfaTotpService } from './mfa-totp';
 import { PermissionGuard } from './permission.guard';
 import { RolesController } from './roles.controller';
 import { UsersController } from './users.controller';
+import { ManualUserAccessService } from './manual-user-access.service';
+import { ManualAccessVersionController } from './manual-access-version.controller';
 
 @Module({
   imports: [
@@ -26,12 +28,14 @@ import { UsersController } from './users.controller';
     }),
   ],
   controllers: [
+    ManualAccessVersionController,
     AuthController,
     UsersController,
     RolesController,
     AuditController,
   ],
   providers: [
+    ManualUserAccessService,
     IamProcurementDirectory,
     IamFinanceDirectory,
     IamService,
