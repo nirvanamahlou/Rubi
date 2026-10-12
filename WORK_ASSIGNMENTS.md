@@ -949,6 +949,15 @@ Six middleware tests and27 assistant Web tests passed; scoped ESLint, full Web
 typecheck and production build59 routes passed. Candidate source lock releases;
 final CI and actual JSON401 local smoke follow in the PR. Other IAM work untouched.
 
+Integration extension after PC-A manual-access v3 merged: reserve own read-runtime
+identity controller/module/test and independent assistant identity-base wiring.
+Use current native IAM as the report-runtime authority, not an older Core actor
+union that could resurrect revoked shared grants. Personal-source preflight calls
+native IAM screen policy over fixed source IDs. No IAM policy/source file is edited;
+the existing exported policy and AuthGuard are reused. Test manual source denial
+and real authenticated transport; update read4301/assistant4300 with the same IAM
+revision after final CI, preserving Core4000 and operational records.
+
 ## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — READY_FOR_REVIEW
 
 Base origin/develop@04acd08a; branch codex/pc-c-assistant-phase1-completion-1012.
