@@ -6933,3 +6933,5 @@ nirvanamahlou, while recorded user instruction requires Amin-tech11. No substitu
 identity mutation until the human explicitly authorizes it or correct connection exists.
 
 Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint passed. Account selection remains pending.
+
+2026-10-12 human explicitly authorizes nirvanamahlou for this publication, overriding the recorded Amin-tech11 restriction for this task. Publish/PR/CI/merge use authenticated nirvanamahlou id100076016.
