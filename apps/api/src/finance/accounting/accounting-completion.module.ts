@@ -8,7 +8,7 @@ import { AccountingTaxpayerService } from './accounting-taxpayer.service';
 import { AccountingCompletionController } from './accounting-completion.controller';
 import { AccountingCompletionService } from './accounting-completion.service';
 
-// Opt-in integration unit: the shared FinanceModule is deliberately unchanged.
+// Mounted by FinanceModule; controllers retain their own authentication and scope checks.
 // Existing AccountingTaxController stays registered in FinanceModule exactly once.
 @Module({
   imports: [DatabaseModule, IamModule],

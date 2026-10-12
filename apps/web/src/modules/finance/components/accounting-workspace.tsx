@@ -44,6 +44,8 @@ import type { AccountingListKind } from '../accounting-list-filters';
 import { AccountingAdvancedWorkspace } from './accounting-advanced-workspace';
 import { AccountingSourceWorkspace } from './accounting-source-workspace';
 import { AccountingYearEndWorkspace } from './accounting-year-end-workspace';
+import { AccountingCompletionWorkspace } from './accounting-completion-workspace';
+import { accountingCompletionRoute } from '../accounting-completion-routes';
 import { AccountingAutomationWorkspace } from './accounting-automation-workspace';
 import { AccountingDocumentNumbering } from './accounting-document-numbering';
 import { AccountingDocumentPosting } from './accounting-document-posting';
@@ -400,6 +402,14 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
           else router.replace(`${pathname}?${params}`, { scroll: false });
           await refresh();
         }}
+      />
+    );
+  else if (snapshot && accountingCompletionRoute(section))
+    content = (
+      <AccountingCompletionWorkspace
+        key={bookId + section}
+        book={snapshot}
+        route={section}
       />
     );
   else if (snapshot && section === 'receipts-payments/reports')
