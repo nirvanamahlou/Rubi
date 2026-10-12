@@ -435,9 +435,21 @@ const salesFixture = () => ({
   ],
 });
 test('sales source is fixed, requires native all-read and strips extraneous ERP data', async (t) => {
+  const source = salesFixture();
+  source.current.contractCount = 1;
+  source.current.passengerCount = 2;
+  source.current.routes.push({
+    originId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    destinationId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    originName: 'Synthetic origin',
+    destinationName: 'Synthetic destination',
+    contractCount: 1,
+    passengerCount: 2,
+    privateNote: 'route-secret',
+  });
   const h = await harness(t, {
     permissions: ['sales.contracts.read.all'],
-    salesReport: { ...salesFixture(), privateNote: 'must-not-leak' },
+    salesReport: { ...source, privateNote: 'must-not-leak' },
   });
   const response = await h.get(
     'nora_access=user-a',
@@ -446,7 +458,9 @@ test('sales source is fixed, requires native all-read and strips extraneous ERP 
   const text = await response.text();
   const body = JSON.parse(text);
   assert.equal(body.status, 'PARTIAL');
-  assert.equal(body.report.current.contractCount, 0);
+  assert.equal(body.report.current.contractCount, 1);
+  assert.equal(body.report.current.routes[0].originName, 'Synthetic origin');
+  assert.ok(!text.includes('route-secret'));
   assert.ok(!text.includes('must-not-leak'));
   assert.ok(
     h.calls.every((call) =>
