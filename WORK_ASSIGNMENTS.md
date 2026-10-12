@@ -6954,6 +6954,12 @@ Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint pa
 
 PR791 CI follow-up reserves additive translations for140 observed chart/tax labels and generated API/legacy catalogues. Three English coverage/synchronization tests passed; operational forms and domain fields stay unchanged.
 
+## FINANCE-INBOX-UI-1012 — PC-A — READY_FOR_REVIEW
+
+Reserve Finance inbox workspace presentation/CSS and own status entries on codex/pc-a-finance-inbox-ui-1012 from origin/develop. User authorizes redesign, removing redundant explanatory copy, organizing search controls, push and develop merge. Preserve all handlers, query state, financial actions and permissions. No API/schema/dependency/data changes.
+
+Validation: scoped ESLint, existing render regression and Web typecheck passed. Production compilation passed; final Next build and CI gate publication. Presentation locks released with candidate; financial logic unchanged.
+
 ## 2026-10-12 publication result — ACCOUNTING-DOCUMENTS-PARITY-1011
 
 PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
