@@ -205,6 +205,7 @@ export function AccountingLedgerEditor({
         </p>
       )}
       <form
+        data-accounting-inline-form
         ref={formRef}
         id="accounting-ledger-form"
         onInvalidCapture={() => setTab('main')}

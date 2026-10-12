@@ -570,6 +570,7 @@ function AccountingNavigationWorkspaceContent() {
         >
           <AccountingRouteTabs items={accountingTabItems} />
           <div
+            data-accounting-inline-surface
             className={cn(
               'min-h-[32rem] rounded-b-[1.75rem] border border-border/80 bg-surface/95 p-5 shadow-[0_24px_70px_rgba(15,45,66,0.1)] backdrop-blur sm:p-7',
               styles.formSurface,

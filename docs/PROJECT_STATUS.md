@@ -1,3 +1,15 @@
+## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
+
+Accounting forms, lists and filters are being restyled as inline project-native
+surfaces inspired by Organizations and Master Data. Existing fields, validation,
+routes, handlers, permissions and payloads remain unchanged; no new popup form is
+introduced. Shared operations, list filters and tables receive scoped Accounting-only
+presentation markers and preservation tests. No API/schema/migration/dependency or
+operational-data change. Scoped ESLint, full Web TypeScript, 11 focused tests and the
+production Web build (62 routes) pass on the reconciled develop head. User authorizes
+push, exact-head CI-gated merge and activation on local Web3000. See
+docs/tasks/ACCOUNTING-INLINE-FORMS-1012.md.
+
 ## 2026-10-12 — ACCOUNTING-COMPLETION-INTEGRATION-1012 — PC-B
 
 User explicitly authorizes shared integration, superseding the earlier independent-only hold. FinanceModule now mounts the prepared seller/report/diagnostic API module. The authorized-book workspace dispatches all32 prepared screens; three missing catalogue destinations become reachable. Existing closing/opening and inactive settings handlers, provider blockers and book/branch permissions remain. Seller New preserves bookId; tax/seller commands use the existing HTTP-compatible UUID helper. No migration, dependency, grant or business-data mutation. Exact-head CI and authenticated local acceptance are publication gates. Details: docs/tasks/ACCOUNTING-COMPLETION-INTEGRATION-1012.md.

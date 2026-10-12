@@ -1,3 +1,18 @@
+## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
+
+COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;
+Accounting ownership remains PC-B. Branch codex/pc-a-accounting-inline-forms-1012
+from origin/develop@2de87ce4. Prior accounting integration and seller fix are merged.
+Reserve accounting Web form/list/filter presentation, shared accounting operation
+toolbar, scoped CSS and preservation tests, plus own assignment/status/task entries.
+Inspiration is read-only Organizations/Master Data design; do not modify those modules.
+All existing fields, validation, handlers, routes, permissions, payloads and inline
+editing remain intact. No new form dialogs, API/schema/migration/dependency or data
+changes. The running worktree and unrelated main-checkout files remain untouched.
+Implementation is frozen after scoped ESLint, Web TypeScript, 11 focused tests and
+the production Web build (62 routes) passed on the reconciled develop head. User
+authorizes push, exact-head CI-gated merge and activation on local Web3000.
+
 ## ACCOUNTING-EMPTY-SELLER-1012 — PC-B — READY_FOR_CI
 
 Browser acceptance after PR803 found that a missing seller produces an empty HTTP body instead of the contracted JSON null. Reserve accounting-taxpayer.controller.ts and accounting-completion.controller.spec.ts plus own status entries. Branch codex/pc-b-accounting-empty-seller-1012 from develop@04acd08a. Preserve existing nullable API contract and all guards; no schema, dependency, permission or business-data changes. Existing user authorization covers correction, push, CI-gated merge and local refresh. Git fetch recovered. Local regression reproduced before correction; nine API tests, API TypeScript and scoped lint passed.

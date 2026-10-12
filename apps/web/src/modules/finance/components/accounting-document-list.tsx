@@ -797,7 +797,11 @@ export function AccountingDocumentList({
     </div>
   );
   return (
-    <section className="space-y-2" data-document-shortcut-scope>
+    <section
+      className="space-y-3"
+      data-document-shortcut-scope
+      data-accounting-list
+    >
       <h2 className="font-bold">
         {mode === 'review'
           ? 'بررسی'
@@ -840,7 +844,8 @@ export function AccountingDocumentList({
           </label>
         </div>
       ) : null}
-      <div hidden={!showFilters}>
+      {toolbar()}
+      <div hidden={!showFilters} data-accounting-filter-panel>
         <AccountingDocumentFilter
           book={book}
           domain={mode === 'revaluation' ? 'revaluation' : 'journal'}
@@ -854,7 +859,6 @@ export function AccountingDocumentList({
           busy={loading}
         />
       </div>
-      {toolbar()}
       <Dialog open={deleting} onOpenChange={setDeleting}>
         <DialogContent data-document-shortcut-scope>
           <DialogTitle>حذف اسناد انتخاب‌شده</DialogTitle>
