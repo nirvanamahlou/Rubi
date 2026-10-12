@@ -105,16 +105,6 @@ export const accountingNavigationGroups: readonly AccountingNavigationGroup[] =
                   item.href.replace('/finance/accounting/', ''),
                 ),
             ),
-            {
-              title: 'الگوهای تخصیص داخلی روبی',
-              href: '/finance/accounting/general-ledger/documents/allocation-templates',
-              icon: Calculator,
-            },
-            {
-              title: 'بسته انتقال حسابداری روبی',
-              href: '/finance/accounting/general-ledger/documents/transfer-batches',
-              icon: ArrowLeftRight,
-            },
           ],
         },
         {
@@ -123,14 +113,7 @@ export const accountingNavigationGroups: readonly AccountingNavigationGroup[] =
         },
         {
           title: 'گزارش‌ها',
-          items: [
-            ...parityItems('general-ledger/reports/', ClipboardList),
-            {
-              title: 'فهرست گزارش‌های روبی',
-              href: '/finance/accounting/general-ledger/reports/catalog',
-              icon: ClipboardList,
-            },
-          ],
+          items: [...parityItems('general-ledger/reports/', ClipboardList)],
         },
       ],
     },
@@ -145,16 +128,6 @@ export const accountingNavigationGroups: readonly AccountingNavigationGroup[] =
             'receipts-payments/base-information/',
             ReceiptText,
           ),
-        },
-        {
-          title: 'گزارش‌ها',
-          items: [
-            {
-              title: 'گزارش پرداخت و دریافت روبی',
-              href: '/finance/accounting/receipts-payments/reports',
-              icon: ReceiptText,
-            },
-          ],
         },
       ],
     },
@@ -226,7 +199,11 @@ const accountingTabItems = Array.from(
   ).values(),
 );
 
-function findSelected(pathname: string) {
+export function findSelectedAccountingSection(pathname: string) {
+  const definition = accountingParityDefinitions.find(
+    (item) => pathname === `/finance/accounting/${item.route}`,
+  );
+  const matches = [];
   for (const group of accountingNavigationGroups) {
     for (const section of group.sections) {
       const child = section.items.find(
@@ -234,14 +211,48 @@ function findSelected(pathname: string) {
           pathname === item.href || pathname.startsWith(item.href + '/'),
       );
       if (child)
-        return {
+        matches.push({
           groupTitle: group.title,
           sectionTitle: section.title,
-          title: child.title,
-        };
+          title: definition?.title ?? child.title,
+          href: child.href,
+        });
     }
   }
-  return null;
+  const match = matches.sort((a, b) => b.href.length - a.href.length)[0];
+  if (match) return match;
+  if (definition) {
+    const group = accountingNavigationGroups.find((item) =>
+      definition.route.startsWith(`${item.id}/`),
+    );
+    return {
+      groupTitle: group?.title,
+      sectionTitle: definition.sourcePath.split(' / ').at(-2),
+      title: definition.title,
+    };
+  }
+  const group = accountingNavigationGroups.find(
+    (item) => pathname === `/finance/accounting/${item.id}`,
+  );
+  for (const parent of accountingNavigationGroups) {
+    const section = parent.sections.find((candidate) =>
+      candidate.items.some((item) => item.href.startsWith(`${pathname}/`)),
+    );
+    if (
+      !group &&
+      section &&
+      pathname !== '/finance' &&
+      pathname !== '/finance/accounting'
+    )
+      return {
+        groupTitle: parent.title,
+        sectionTitle: section.title,
+        title: section.title,
+      };
+  }
+  return group
+    ? { groupTitle: group.title, sectionTitle: undefined, title: group.title }
+    : null;
 }
 
 function AccountingSecondaryNavigation({
@@ -310,7 +321,7 @@ function AccountingSecondaryNavigation({
         {!collapsed ? (
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.24em] text-cyan-300">
-              RUBI LEDGER
+              ACCOUNTING
             </p>
             <p className="mt-1 truncate text-sm font-black text-white">
               راهبری حسابداری
@@ -474,7 +485,7 @@ function AccountingSecondaryNavigation({
 function AccountingNavigationWorkspaceContent() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const selected = findSelected(pathname);
+  const selected = findSelectedAccountingSection(pathname);
   const selectedGroupTitle = selected?.groupTitle;
   const selectedSectionTitle = selected?.sectionTitle;
   const selectedTitle = selected?.title;
@@ -525,10 +536,10 @@ function AccountingNavigationWorkspaceContent() {
             <div>
               <div className="flex items-center gap-2 text-[10px] font-black tracking-[0.2em] text-cyan-200">
                 <Sparkles className="size-3.5" aria-hidden="true" />
-                RUBI FINANCE OS
+                {selectedGroupTitle ?? 'حسابداری'}
               </div>
               <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">
-                فضای کار حسابداری
+                {selectedTitle ?? 'فضای کار حسابداری'}
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
                 دفاتر، حساب‌ها، اسناد و گزارش‌ها در یک محیط متمرکز و مدرن

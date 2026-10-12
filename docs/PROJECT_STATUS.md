@@ -4,9 +4,27 @@ User explicitly requests independent files only while PC-A owns the shared accou
 
 Publication receipt: implementation commit a2de09e4, pushed to origin/codex/pc-b-accounting-yearend-tax-audit-1012. Draft PR800: https://github.com/nirvanamahlou/Rubi/pull/800 (authenticated author nirvanamahlou). Independent source reservation is frozen/released for review; shared integration remains held by the explicit user instruction. Final API/Web TypeScript and both production builds passed. Disposable rubi-completion-test-1012 container is stopped; its synthetic evidence database is retained. No merge or deployment.
 
+
+2026-10-12 publication follow-up: the user explicitly authorizes push, merge to develop and local startup. PR799 is already merged at eab0ad6c; its ownership and UI changes are preserved. Reserve only this task documentation for conflict resolution and deployment evidence. The earlier independent-files-only instruction is retained: shared UI/API activation is not part of this publication. Exact-head CI must pass before merging PR800. Prepare the rubi Compose runtime on PC-B (Web3100/API4192) using the existing local Rubi database and document storage, without replacing another computer's runtime or altering the dirty primary checkout. No new migration is introduced.
+
+## 2026-10-12 — ACCOUNTING-TREE-CLEANUP / OWNERSHIP-PC-B — IN_PROGRESS
+
+User assigns final full-stack Accounting ownership to PC-B; other Finance/Treasury
+stays with PC-A. MODULE_OWNERSHIP is updated. In-flight PC-A branch delivers restyled
+account hierarchy, route-aware hero and removal of four Rubi-only navigation/routes
+and branded settings panels. Required ledger branch/currency fields remain in the
+main form. Existing operational data/settings remain intact; no schema/API changes.
+Tree and navigation regression tests plus chart/empty-chart tests pass12/12.
+PR799 publishes this handoff. Initial CI quality, full production build and PostgreSQL
+gates pass;2882 Web tests pass and one old menu contract still expected the removed
+Rubi receipt/payment report. That assertion now checks the requested absence instead.
+Final exact-head CI remains the merge gate. Local English-coverage retries timed out
+under concurrent builds; the CI suite's coverage tests pass. No gate is disabled.
+
 ## 2026-10-12 — AGENCY-IMPORT-BLANKS-1012 — PC-B
 
 Isolated Organizations import fix accepts name-only agency workbooks and omitted optional columns, counts only populated rows toward the 200-record limit, and accepts inert HTTP(S)/telephone/email hyperlink metadata without following links. Formulas, macros, external data/workbooks, unsafe protocols, populated invalid values and duplicate/no-overwrite checks remain blocked. A partial province/city is retained as editable address text without fabricated references. Organizations suite240, private workbook-container read, scoped ESLint, TypeScript and final Webpack production build59 routes pass. No operational agency imported; supplied workbook remains unchanged. Main checkout has concurrent work and was not switched or deployed. Details: docs/tasks/AGENCY-IMPORT-BLANKS-1012.md.
+
 ## 2026-10-12 — ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
 
 Accounting now uses a distinct Rubi Finance OS visual language: navy/cyan workspace

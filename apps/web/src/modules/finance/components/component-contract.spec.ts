@@ -130,13 +130,18 @@ describe('finance workspace component contract', () => {
       'عملیات پایان سال',
       'گزارش‌ها',
       'دریافت و پرداخت',
-      'گزارش پرداخت و دریافت',
       'ارتباط با سامانه مودیان مالیاتی',
       'حسابداری مالیاتی',
     ]) {
       expect(accountingNavigationSource).toContain(label);
     }
     expect(accountingNavigationSource).toContain('بازکردن منوی حسابداری');
+    expect(accountingNavigationSource).not.toContain(
+      'گزارش پرداخت و دریافت روبی',
+    );
+    expect(accountingNavigationSource).not.toContain(
+      'الگوهای تخصیص داخلی روبی',
+    );
     expect(accountingNavigationSource).toContain('جمع‌کردن منوی حسابداری');
     expect(accountingNavigationSource).toContain(
       'group.sections.map((section) =>',
