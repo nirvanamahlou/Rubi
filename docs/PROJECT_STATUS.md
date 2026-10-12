@@ -1,3 +1,12 @@
+## 2026-10-12 — ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
+
+User explicitly requests independent files only while PC-A owns the shared accounting workspace. Prepared an opt-in API module and exact-route Web adapter for existing tax/taxpayer/chart components, a scoped posted-line report with exact full-filter totals and pagination, and read-only year-end diagnostics. No shared accounting source, schema/migration, manifest/lockfile or operational runtime/database change. Fresh source inspection reached closing-template and two wizard introductions; subsequent browser failure prevents claiming a complete fresh crawl. Inherited structural evidence reconciles 56 routes, with 32 prepared adapters (two diagnostic-only). Full parity and live tax dispatch remain incomplete. API25/Web21/English3/isolated-PG4 checks pass; full API/Web TypeScript, scoped lint and affected production builds pass. Integration, authenticated browser acceptance, remaining domain commands and provider contracts remain required. See docs/tasks/ACCOUNTING-YEAREND-TAX-AUDIT-1012.md and .json.
+
+Publication receipt: implementation commit a2de09e4, pushed to origin/codex/pc-b-accounting-yearend-tax-audit-1012. Draft PR800: https://github.com/nirvanamahlou/Rubi/pull/800 (authenticated author nirvanamahlou). Independent source reservation is frozen/released for review; shared integration remains held by the explicit user instruction. Final API/Web TypeScript and both production builds passed. Disposable rubi-completion-test-1012 container is stopped; its synthetic evidence database is retained. No merge or deployment.
+
+
+2026-10-12 publication follow-up: the user explicitly authorizes push, merge to develop and local startup. PR799 is already merged at eab0ad6c; its ownership and UI changes are preserved. Reserve only this task documentation for conflict resolution and deployment evidence. The earlier independent-files-only instruction is retained: shared UI/API activation is not part of this publication. Exact-head CI must pass before merging PR800. Prepare the rubi Compose runtime on PC-B (Web3100/API4192) using the existing local Rubi database and document storage, without replacing another computer's runtime or altering the dirty primary checkout. No new migration is introduced.
+
 ## 2026-10-12 — ACCOUNTING-TREE-CLEANUP / OWNERSHIP-PC-B — IN_PROGRESS
 
 User assigns final full-stack Accounting ownership to PC-B; other Finance/Treasury
