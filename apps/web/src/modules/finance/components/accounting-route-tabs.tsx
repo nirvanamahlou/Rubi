@@ -89,13 +89,13 @@ export function AccountingRouteTabs({
   return (
     <nav
       aria-label="تب‌های باز حسابداری"
-      className="flex items-center gap-1 overflow-x-auto border-b border-primary/20 bg-primary/10 p-1"
+      className="flex min-h-14 items-center gap-2 overflow-x-auto rounded-t-[1.75rem] border border-b-0 border-border/80 bg-gradient-to-l from-slate-950 via-slate-900 to-cyan-950 p-2.5 shadow-[0_10px_30px_rgba(15,45,66,0.12)]"
       dir="rtl"
     >
       {tabs.map((tab) => (
         <div
           key={tab.path}
-          className={`flex shrink-0 items-center gap-1 rounded-t-md border px-2 ${pathname === tab.path ? 'border-primary/30 border-t-2 border-t-primary bg-surface text-primary' : 'border-transparent bg-primary/10 text-muted-foreground'}`}
+          className={`flex shrink-0 items-center gap-1 rounded-xl border px-2 transition ${pathname === tab.path ? 'border-cyan-200/30 bg-white text-cyan-800 shadow-sm dark:bg-slate-800 dark:text-cyan-200' : 'border-white/8 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'}`}
         >
           <Link
             href={tab.href}
@@ -111,7 +111,7 @@ export function AccountingRouteTabs({
             onClick={() => close(tab)}
             aria-label={`بستن تب ${tab.title}`}
             title={`بستن تب ${tab.title}`}
-            className="rounded p-1 hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+            className="rounded-lg p-1 hover:bg-cyan-300/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-300"
           >
             <X className="size-3.5" aria-hidden="true" />
           </button>
@@ -121,7 +121,7 @@ export function AccountingRouteTabs({
         href="/finance"
         aria-label="بازکردن بخش دیگر حسابداری"
         title="بازکردن بخش دیگر حسابداری"
-        className="shrink-0 rounded p-2 hover:bg-primary/20"
+        className="shrink-0 rounded-xl border border-dashed border-white/15 p-2 text-cyan-200 hover:bg-white/10"
       >
         <Plus className="size-4" aria-hidden="true" />
       </Link>
