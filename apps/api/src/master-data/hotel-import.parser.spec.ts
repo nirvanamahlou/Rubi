@@ -1,4 +1,6 @@
 import { strToU8, zipSync } from 'fflate';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -6,6 +8,51 @@ import {
   HOTEL_IMPORT_MIME,
   parseHotelImportWorkbook,
 } from './hotel-import.parser';
+
+describe('downloadable hotel workbook', () => {
+  it('reads the three supplied hotel names and physical rows without importing formatted blanks', () => {
+    const buffer = readFileSync(
+      resolve(
+        process.cwd(),
+        '../web/public/templates/hotel-master-template.xlsx',
+      ),
+    );
+    const parsed = parseHotelImportWorkbook({
+      buffer,
+      fileName: 'hotel-master-template.xlsx',
+      mimeType: HOTEL_IMPORT_MIME,
+      expectedCityName: 'کوش‌آداسی',
+    });
+    expect(parsed.issues).toEqual([]);
+    expect(
+      parsed.rows.map(({ rowNumber, code, englishName, isActive }) => ({
+        rowNumber,
+        code,
+        englishName,
+        isActive,
+      })),
+    ).toEqual([
+      {
+        rowNumber: 5,
+        code: 'HTL-KUS-001',
+        englishName: 'Charisma De Luxe Hotel',
+        isActive: true,
+      },
+      {
+        rowNumber: 6,
+        code: 'HTL-KUS-002',
+        englishName: 'Ramada Resort Kusadasi',
+        isActive: true,
+      },
+      {
+        rowNumber: 7,
+        code: 'HTL-KUS-003',
+        englishName: 'Signature Blue Resort',
+        isActive: false,
+      },
+    ]);
+  });
+});
 
 function xml(value: string) {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
