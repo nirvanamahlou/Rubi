@@ -22,16 +22,14 @@ describe('assistant transport boundary', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
   it('forwards only the access cookie to one fixed read endpoint', async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(
-        Response.json(
-          { version: 1 },
-          {
-            headers: { 'x-request-id': '01010101-0202-0303-0404-050505050505' },
-          },
-        ),
-      );
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
+        { version: 1 },
+        {
+          headers: { 'x-request-id': '01010101-0202-0303-0404-050505050505' },
+        },
+      ),
+    );
     const response = await proxyExecutiveSnapshot(
       request(),
       'http://127.0.0.1:4300',
