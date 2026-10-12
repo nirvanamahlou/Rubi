@@ -102,10 +102,10 @@ export async function letterDownloads(
       name: `letter-${index + 1}.png`,
     }));
   const pages: PdfPage[] = await Promise.all(
-    images.map(async (blob) => ({
+    images.map(async (blob, index) => ({
       image: new Uint8Array(await blob.arrayBuffer()),
-      width: 595,
-      height: 842,
+      width: canvases[index]!.width,
+      height: canvases[index]!.height,
       lines: [],
     })),
   );
