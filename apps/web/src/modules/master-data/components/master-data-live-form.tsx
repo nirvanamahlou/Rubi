@@ -1,4 +1,5 @@
 'use client';
+import { hotelMultilineFields } from '../model/hotel-profile-fields';
 import { MasterDataBrokerForm } from './master-data-broker-form';
 
 import {
@@ -574,6 +575,18 @@ function GenericMasterDataLiveForm({
                     placeholder={field.placeholder}
                     readOnly={readonly}
                     required={Boolean(field.required)}
+                    value={values[field.key] ?? ''}
+                  />
+                ) : definition.key === 'hotels' &&
+                  hotelMultilineFields.has(field.key) ? (
+                  <textarea
+                    className="min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    aria-describedby={describedBy}
+                    aria-invalid={Boolean(error)}
+                    disabled={readonly || saving}
+                    id={controlId}
+                    onChange={(event) => updateValue(event.target.value)}
+                    readOnly={readonly}
                     value={values[field.key] ?? ''}
                   />
                 ) : field.type === 'number' ? (

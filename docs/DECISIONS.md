@@ -475,3 +475,6 @@ This explicitly supersedes the former deferred-provider policy for the current
 iteration: no provider is selected or called. Financial catalog metadata does not
 prove readiness; receivables producer is PENDING_CONNECTION. See the foundation
 task for fixed APIs, source discovery and complete staged acceptance tracking.
+# HOTEL-TEMPLATE-IMPORT-1012 — editable hotel source metadata
+
+The user's 2026-10-12 follow-up requires supplied workbook data to remain available in each hotel's editable profile. Store hotel service level and internal note as nullable Master Data profile fields; expose the existing description and hotelRules fields. Preserve workbook destination, refund text, image-source addresses and featured flag as nullable descriptive source fields. This resolves the earlier import behavior that discarded these values: storing source text does not authorize a Procurement cancellation policy, Sales popularity computation, Documents binary ingestion or remote URL fetch. Public Master Data scalar attributes carry these additive optional fields; older clients preserve them when omitted. Existing geography FKs remain authoritative and no data is backfilled or fabricated.
