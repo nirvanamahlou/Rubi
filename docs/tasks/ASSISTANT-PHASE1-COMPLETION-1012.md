@@ -45,7 +45,11 @@ Before constructing any database pool, force default_transaction_read_only=on
 and statement_timeout2500ms; verify the session setting. Accept only GET/HEAD and
 bind loopback4301. Native JWT issuer/audience, session, role and branch checks stay.
 The optional server-configured report base applies only to three allowlisted
-report paths; IAM and personal reads keep the normal ERP base. The normal ERP API
+ report paths; personal data reads keep the normal ERP base. Identity can use the
+ current native IAM authority on that report runtime through ERP_AUTH_API_BASE_URL
+ (default: configured report base). Fixed personal-source preflight and release
+ checks use native manual screen policy, preserving new revocations even while
+ Core is older. No IAM policy file or grant is changed. The normal ERP API
 can serve all sources after those endpoints are published in its approved runtime.
 
 ```powershell
