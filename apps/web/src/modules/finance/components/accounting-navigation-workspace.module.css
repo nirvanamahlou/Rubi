@@ -1,0 +1,116 @@
+.workspace {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 92% 2%, rgb(34 211 238 / 0.1), transparent 24rem),
+    radial-gradient(
+      circle at 4% 94%,
+      rgb(16 185 129 / 0.08),
+      transparent 26rem
+    ),
+    linear-gradient(rgb(14 116 144 / 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(14 116 144 / 0.035) 1px, transparent 1px),
+    color-mix(in srgb, var(--background) 93%, #ecfeff);
+  background-size:
+    auto,
+    auto,
+    32px 32px,
+    32px 32px,
+    auto;
+}
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgb(103 232 249 / 0.18);
+  border-radius: 1.75rem;
+  background: linear-gradient(
+    118deg,
+    rgb(7 28 43 / 0.98),
+    rgb(10 53 69 / 0.96) 56%,
+    rgb(10 74 72 / 0.92)
+  );
+  box-shadow: 0 26px 72px rgb(4 30 43 / 0.22);
+}
+
+.heroGlow {
+  position: absolute;
+  inset: -8rem -4rem auto auto;
+  width: 28rem;
+  height: 20rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgb(103 232 249 / 0.22), transparent 66%);
+  transform: rotate(-12deg);
+}
+
+.contentColumn {
+  overflow: hidden;
+  border-radius: 1.75rem;
+}
+
+.formSurface :global(input:not([type='checkbox']):not([type='radio'])),
+.formSurface :global(select),
+.formSurface :global(textarea),
+.formSurface :global(button[role='combobox']) {
+  border-radius: 0.8rem;
+  border-color: color-mix(in srgb, var(--input) 80%, #22d3ee);
+  background-color: color-mix(in srgb, var(--surface) 96%, #ecfeff);
+  box-shadow: inset 0 1px 2px rgb(15 45 66 / 0.035);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.formSurface :global(input:not([type='checkbox']):not([type='radio']):focus),
+.formSurface :global(select:focus),
+.formSurface :global(textarea:focus),
+.formSurface :global(button[role='combobox']:focus) {
+  border-color: #22b8cf;
+  box-shadow: 0 0 0 3px rgb(34 211 238 / 0.12);
+}
+
+.formSurface :global(table) {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.formSurface :global(th) {
+  background: color-mix(in srgb, var(--muted) 90%, #cffafe);
+  color: color-mix(in srgb, var(--foreground) 80%, #0e7490);
+}
+
+.formSurface :global(tbody tr) {
+  transition: background-color 120ms ease;
+}
+
+.formSurface :global(tbody tr:hover) {
+  background: color-mix(in srgb, var(--muted) 72%, #ecfeff);
+}
+
+:global(.dark) .workspace {
+  background:
+    radial-gradient(
+      circle at 92% 2%,
+      rgb(34 211 238 / 0.08),
+      transparent 24rem
+    ),
+    radial-gradient(
+      circle at 4% 94%,
+      rgb(16 185 129 / 0.06),
+      transparent 26rem
+    ),
+    #0b1117;
+}
+
+:global(.dark)
+  .formSurface
+  :global(input:not([type='checkbox']):not([type='radio'])),
+:global(.dark) .formSurface :global(select),
+:global(.dark) .formSurface :global(textarea),
+:global(.dark) .formSurface :global(button[role='combobox']) {
+  background-color: #141f27;
+  border-color: #365363;
+}

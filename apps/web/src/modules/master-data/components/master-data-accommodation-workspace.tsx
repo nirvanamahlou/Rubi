@@ -1,4 +1,5 @@
 'use client';
+import { HotelProfileInformation } from './hotel-profile-information';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
   MasterDataDateRangeFilter,
@@ -1143,6 +1144,18 @@ export function MasterDataAccommodationWorkspace() {
           record={selected}
           title={selected.name}
         />
+        <Button
+          permission="master_data.update"
+          variant="outline"
+          onClick={() => {
+            setProfileOpen(false);
+            setFormMode('edit');
+          }}
+        >
+          <FilePenLine aria-hidden="true" className="size-4" />
+          ویرایش اطلاعات هتل
+        </Button>
+        <HotelProfileInformation record={selected} />
         <MasterDataDetailSection title="خلاصه هتل">
           <MasterDataDetailItem label="درجه" value={stars || '—'} />
           <MasterDataDetailItem
@@ -1227,6 +1240,10 @@ export function MasterDataAccommodationWorkspace() {
               <Detail
                 label="نوع‌های اتاق"
                 value={attribute(selected, 'roomTypeNames')}
+              />
+              <Detail
+                label="امکانات هتل"
+                value={attribute(selected, 'facilityNames')}
               />
             </dl>
           </Card>

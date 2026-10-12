@@ -3,6 +3,7 @@ import { isMasterTransportFormResource } from '@nora/contracts';
 
 import { getMasterDataDefinition, type MasterDataResourceKey } from './catalog';
 import { getMasterDataFormFields } from './form-fields';
+import { hotelProfileTextLimits } from './hotel-profile-fields';
 
 const draftValuesSchema = z.record(
   z.string(),
@@ -20,7 +21,11 @@ export function validateMasterDataDraft(
   resource: MasterDataResourceKey,
   input: unknown,
 ): MasterDataValidationResult {
-  const parsed = draftValuesSchema.safeParse(input);
+  const parsed = (
+    resource === 'hotels'
+      ? z.record(z.string(), z.string().trim().max(2000))
+      : draftValuesSchema
+  ).safeParse(input);
   if (!parsed.success) {
     return {
       success: false,
@@ -36,6 +41,17 @@ export function validateMasterDataDraft(
     Object.entries(parsed.data).map(([key, value]) => [key, value.trim()]),
   );
   const errors: Record<string, string> = {};
+  if (resource === 'hotels') {
+    for (const [key, value] of Object.entries(values)) {
+      const limit = hotelProfileTextLimits[key] ?? 500;
+      if (value.length > limit) errors[key] = `Maximum ${limit} characters.`;
+    }
+    if (
+      values.sourceFeatured &&
+      !['true', 'false'].includes(values.sourceFeatured)
+    )
+      errors.sourceFeatured = 'مقادیر فرم معتبر نیستند.';
+  }
   if (isMasterTransportFormResource(resource)) {
     if (
       values.transportStatus &&

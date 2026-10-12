@@ -291,29 +291,9 @@ export function AccountingLedgerEditor({
             </div>
           </div>
         </div>
-        <div
-          id="ledger-notes-panel"
-          role="tabpanel"
-          aria-labelledby="ledger-notes-tab"
-          hidden={tab !== 'notes'}
-          className="p-4"
-        >
-          <FormField label="یادداشت" id="ledger-notes">
-            <Textarea
-              id="ledger-notes"
-              value={draft.notes}
-              maxLength={2000}
-              disabled={locked}
-              onChange={(e) => set('notes', e.target.value)}
-            />
-          </FormField>
-        </div>
         {creating && (
-          <details className="m-2 rounded border p-3">
-            <summary className="cursor-pointer text-sm">
-              تنظیمات دفتر در روبی
-            </summary>
-            <div className="grid gap-3 pt-3 md:grid-cols-2">
+          <div hidden={tab !== 'main'}>
+            <div className="m-2 grid gap-3 p-4 md:grid-cols-2">
               <FormField label="شعبه" id="ledger-branch">
                 <SearchCombobox
                   id="ledger-branch"
@@ -338,8 +318,25 @@ export function AccountingLedgerEditor({
                 />
               </FormField>
             </div>
-          </details>
+          </div>
         )}
+        <div
+          id="ledger-notes-panel"
+          role="tabpanel"
+          aria-labelledby="ledger-notes-tab"
+          hidden={tab !== 'notes'}
+          className="p-4"
+        >
+          <FormField label="یادداشت" id="ledger-notes">
+            <Textarea
+              id="ledger-notes"
+              value={draft.notes}
+              maxLength={2000}
+              disabled={locked}
+              onChange={(e) => set('notes', e.target.value)}
+            />
+          </FormField>
+        </div>
       </form>
       <fieldset className="m-2 border p-2">
         <legend className="px-2 text-sm">تخصیص سال مالی</legend>

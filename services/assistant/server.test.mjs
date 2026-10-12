@@ -316,3 +316,115 @@ test('follow-up rules exclude completed, unscheduled notes and distant events', 
     '/purchases?section=requests&request=a%2Fb',
   );
 });
+
+test('daily summary reconciles counts and priorities to bounded SELF evidence', async (t) => {
+  const h = await harness(t, {
+    rows: [
+      ...Array.from({ length: 31 }, (_, i) => ({ ...example, id: String(i) })),
+      { ...example, id: '0' },
+    ],
+  });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(body.action, 'daily-summary');
+  assert.equal(body.scope, 'SELF');
+  assert.equal(body.status, 'READY');
+  assert.equal(body.counts.visible, 30);
+  assert.equal(body.counts.overdue, 30);
+  assert.equal(body.snapshot.truncated, true);
+  assert.equal(body.recommendations.length, 30);
+  assert.equal(
+    new Set(body.recommendations.map((item) => item.followUpId)).size,
+    30,
+  );
+  assert.ok(
+    body.recommendations.every(
+      (item) => item.priority === 'HIGH' && item.ruleId === 'OVERDUE_V1',
+    ),
+  );
+  assert.equal(h.audit[0].event, 'assistant.action.read');
+  assert.equal(h.audit[0].action, 'daily-summary');
+  assert.ok(!JSON.stringify(h.audit).includes(example.title));
+});
+
+test('daily summary preserves partial-source semantics without inventing evidence', async (t) => {
+  const h = await harness(t, { failPath: '/api/v1/workbench/calendar' });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(body.status, 'PARTIAL');
+  assert.equal(body.snapshot.sources[0].status, 'UNAVAILABLE');
+  assert.deepEqual(body.counts, {
+    visible: 0,
+    overdue: 0,
+    dueSoon: 0,
+    assigned: 0,
+  });
+  assert.deepEqual(body.recommendations, []);
+});
+
+test('business gates require active identity and never call corporate sources', async (t) => {
+  const h = await harness(t, { permissions: [] });
+  assert.equal(
+    (await h.get('', '/v1/assistant/actions/sales-analysis')).status,
+    401,
+  );
+  for (const [action, reason] of [
+    ['sales-analysis', 'SALES_DEFINITION_REQUIRED'],
+    ['receivables-follow-up', 'RECEIVABLES_SOURCE_PENDING'],
+  ]) {
+    const body = await (
+      await h.get('nora_access=user-a', `/v1/assistant/actions/${action}`)
+    ).json();
+    assert.equal(body.status, 'BLOCKED');
+    assert.equal(body.scope, 'NONE');
+    assert.equal(body.reason, reason);
+  }
+  assert.ok(
+    h.calls.every(
+      (call) =>
+        call.path === '/api/v1/iam/auth/access' && call.method === 'GET',
+    ),
+  );
+});
+
+test('fixed actions reject scope selectors, write attempts and unregistered tools', async (t) => {
+  const h = await harness(t);
+  for (const path of [
+    '/v1/assistant/actions/sql',
+    '/v1/assistant/actions/daily-summary?userId=other',
+    '/v1/assistant/actions/toString',
+  ])
+    assert.equal((await h.get('nora_access=user-a', path)).status, 404);
+  assert.equal(
+    (
+      await h.get(
+        'nora_access=user-a',
+        '/v1/assistant/actions/daily-summary',
+        'POST',
+      )
+    ).status,
+    405,
+  );
+  assert.equal(h.calls.length, 0);
+});
+
+test('daily actions isolate users and revalidate before releasing results', async (t) => {
+  const h = await harness(t);
+  const a = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  const b = await (
+    await h.get('nora_access=user-b', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(a.snapshot.followUps[0].title, example.title);
+  assert.equal(b.snapshot.followUps[0].title, 'User B private title');
+  const revoked = await harness(t, { revokeAt: 5 });
+  const response = await revoked.get(
+    'nora_access=user-a',
+    '/v1/assistant/actions/daily-summary',
+  );
+  assert.equal(response.status, 401);
+  assert.ok(!(await response.text()).includes(example.title));
+});

@@ -1,3 +1,37 @@
+## 2026-10-12 — ACCOUNTING-TREE-CLEANUP / OWNERSHIP-PC-B — IN_PROGRESS
+
+User assigns final full-stack Accounting ownership to PC-B; other Finance/Treasury
+stays with PC-A. MODULE_OWNERSHIP is updated. In-flight PC-A branch delivers restyled
+account hierarchy, route-aware hero and removal of four Rubi-only navigation/routes
+and branded settings panels. Required ledger branch/currency fields remain in the
+main form. Existing operational data/settings remain intact; no schema/API changes.
+Tree and navigation regression tests plus chart/empty-chart tests pass12/12.
+PR799 publishes this handoff. Initial CI quality, full production build and PostgreSQL
+gates pass;2882 Web tests pass and one old menu contract still expected the removed
+Rubi receipt/payment report. That assertion now checks the requested absence instead.
+Final exact-head CI remains the merge gate. Local English-coverage retries timed out
+under concurrent builds; the CI suite's coverage tests pass. No gate is disabled.
+
+## 2026-10-12 — AGENCY-IMPORT-BLANKS-1012 — PC-B
+
+Isolated Organizations import fix accepts name-only agency workbooks and omitted optional columns, counts only populated rows toward the 200-record limit, and accepts inert HTTP(S)/telephone/email hyperlink metadata without following links. Formulas, macros, external data/workbooks, unsafe protocols, populated invalid values and duplicate/no-overwrite checks remain blocked. A partial province/city is retained as editable address text without fabricated references. Organizations suite240, private workbook-container read, scoped ESLint, TypeScript and final Webpack production build59 routes pass. No operational agency imported; supplied workbook remains unchanged. Main checkout has concurrent work and was not switched or deployed. Details: docs/tasks/AGENCY-IMPORT-BLANKS-1012.md.
+
+## 2026-10-12 — ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
+
+Accounting now uses a distinct Rubi Finance OS visual language: navy/cyan workspace
+hero, modern dark secondary navigation, pill route tabs and scoped contemporary
+form/table surfaces. Existing forms, routes, commands, permissions and `bookId` context
+are preserved. Accounting Journal, General Ledger Document, Automatic Journal Template,
+Revaluation Template and Revaluation now occur exactly once in navigation and only below
+Documents → `فهرست`; editor routes remain available from their list actions and tab
+catalogue. Focused test1/1, scoped ESLint, full Web TypeScript and production build59
+routes pass. Isolated3112 preview reached the expected secure Login, but authenticated
+visual/data QA is deferred to the merged local runtime because no preview credential or
+session was available; authentication was not bypassed. Web/docs only, with no API,
+schema, migration, dependency, permission or operational-data change. User authorizes
+exact-head CI-gated develop merge and local Rubi runtime refresh. See
+docs/tasks/ACCOUNTING-UI-REDESIGN-1012.md.
+
 ## 2026-10-11 — USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
 
 Implemented additive section/resource restrictions and 421 edit-only controls: 357 master-data pairs, 17 customer fields and 47 persisted system-setting groups. Active UI consumers and bounded API writes enforce explicit restrictions. Missing document/tour detail tabs inherit their previously authorized parents. Access-editor saves preserve shared/inactive memberships, out-of-scope and unknown grants, omitted restrictions and unchanged branches; stale snapshots and unauthorized restriction removal are rejected. User required continuation without Worker Orchestrator; lead completed and reviewed directly. No migration, account backfill, seed, dependency, operational DB or shared3100 runtime change. Exact-head CI and authorized develop merge remain pending; final merge evidence belongs to the delivery PR. See docs/tasks/USER-ACCESS-COMPLETENESS-1011.md for boundary limitations and tests.
@@ -5582,6 +5616,17 @@ Finance request inbox now has a full-width labeled search panel, responsive alig
 ## 2026-10-11 — COA tree and chart-report candidate — PC-A
 
 Independent source crawl verified 222 accounts, 13 root groups and nine assigned-detail records. COA tree now uses persisted roots, source code/title sorting and code/title/level search. Added a read-only chart-report component and seven report-model tests. Web lint, typecheck, 15 targeted tests and production build passed. No API/schema/dependency change or source/runtime data mutation. Central report route integration is reserved to the active PC-B Finances chat. Full report/year-end parity remains incomplete: source fiscal selector exposes only2026, year-end prerequisites block later steps, counterpart output and CSV export return source errors, and closing-template roles need a separately owned additive migration. See docs/tasks/ACCOUNTING-COA-REPORTS-YEAREND-1011.md.
+## 2026-10-12 — ASSISTANT-MVP-FOUNDATION-1012 — PC-C
+
+Implemented a fixed read capability dispatcher and real shortcut-to-service
+transport. Daily summary returns bounded personal evidence, reconciled counts,
+coverage and deterministic priority/rule references. Sales definition and Finance
+receivables producer remain explicit BLOCKED outcomes; no corporate numbers are
+invented. Owner confirms no model data transfer for v1. Existing SELF snapshot and
+source permissions remain compatible.18 native HTTP tests and25 Web tests pass;
+final lint/build/CI/browser/runtime evidence follows in the PR. Remaining stage
+acceptance and financial owner inputs are tracked in the foundation task.
+
 
 ## 2026-10-12 publication result — ACCOUNTING-DOCUMENTS-PARITY-1011
 
@@ -5592,3 +5637,9 @@ Repository central/schema/contracts/catalog locks for this publication are RELEA
 ## 2026-10-12 — CORRESPONDENCE-LETTERHEADS-1012 — PC-A
 
 Three user-supplied company letterheads are unchanged PNG assets. Company selection chooses the corresponding background; date/number/attachment occupy calibrated value areas and body/recipient/subject remain inside the blank region. Shared canvas renderer drives preview, PNG and PDF;22 body lines/page preserve header/footer on each page. Browser verified all three brands and a3-page letter; PDF Blob link produced. Existing4 composition tests, scoped lint and Web typecheck passed. No API/schema/data changes; Rubi3100 deployment follows exact-head CI. Publication actor nirvanamahlou follows human authorization in this chat.
+## 2026-10-12 — HOTEL-TEMPLATE-IMPORT-1012 — PC-A — READY_FOR_REVIEW
+
+Added the exact user-supplied hotel XLSX download to Master Data accommodation import. Existing parser compatibility is verified against the actual asset; service regression verifies all three hotel creation commands and audit with a mocked database. Fixed final import request identity on LAN HTTP using the existing browser UUID helper. Persian/English download rendering and parent refresh after commit are tested. API tests33, Web import tests3, UUID test1, English coverage3, scoped lint, API/Web typechecks and Web production build59 pages pass. Production HTTP smoke verifies identical download bytes. No schema/migration/dependency/API-production/operational-data/shared-runtime changes. Isolated branch `codex/pc-a-hotel-template-import-1012`; user confirmed PC-A and GitHub actor `nirvanamahlou`. See [task](tasks/HOTEL-TEMPLATE-IMPORT-1012.md).
+## 2026-10-12 — HOTEL-TEMPLATE-IMPORT-1012 profile follow-up — PC-A
+
+User authorizes push/develop merge. Imported service level/notes and descriptive refund/image/featured/destination data now persist in seven nullable MasterHotel columns; description/rules and all imported details appear in the profile and editable form. Missing optional information can be completed later; name-only rows derive city/status/code from selected scope/defaults. Shared field-control catalogue updated additively. Existing audit, version guards, duplicate behavior and authoritative Procurement/Sales/Documents ownership remain intact. API Master Data527 tests, Web22 tests and typechecks pass;147 migrations applied to isolated PostgreSQL18. Final builds/integration/CI evidence is recorded in PR796. Migration required before API/Web rollout; no operational data/runtime change.

@@ -455,10 +455,24 @@ export function parseHotelImportWorkbook(input: {
 
   rows.forEach(({ values: cells, rowNumber }) => {
     const englishName = normalize(cells[1] ?? '');
-    const city = normalize(cells[3] ?? '');
+    const city = normalize(cells[3] ?? '') || expectedCity;
     const suppliedCode = normalize(cells[0] ?? '').toUpperCase();
     const code = suppliedCode || generateHotelCode(englishName, city);
-    const status = normalize(cells[15] ?? '');
+    const status = normalize(cells[15] ?? '') || 'منتشرشده';
+    for (const [index, limit] of [
+      [1, 160],
+      [2, 160],
+      [4, 1000],
+      [6, 160],
+    ] as const) {
+      if ((cells[index]?.length ?? 0) > limit)
+        issues.push({
+          rowNumber,
+          column: HOTEL_IMPORT_HEADERS[index],
+          code: 'VALUE_TOO_LONG',
+          message: `${HOTEL_IMPORT_HEADERS[index]}: maximum ${limit} characters.`,
+        });
+    }
     if (suppliedCode && !codePattern.test(suppliedCode))
       issues.push({
         rowNumber,
@@ -512,14 +526,16 @@ export function parseHotelImportWorkbook(input: {
         rowNumber,
         column: 'قوانین استرداد',
         code: 'PROCUREMENT_OWNED',
-        message: 'قوانین استرداد وارد Master Data نمی‌شود.',
+        message:
+          'متن استرداد در پروفایل ذخیره می‌شود؛ شرایط قرارداد خرید را تغییر نمی‌دهد.',
       });
     if (optional(cells[13]) || optional(cells[14]))
       warnings.push({
         rowNumber,
         column: 'تصاویر',
         code: 'AWAITING_DOCUMENTS',
-        message: 'تصاویر تا اتصال Documents وارد نمی‌شوند.',
+        message:
+          'آدرس تصاویر در پروفایل ذخیره می‌شود؛ فایل تصویر دریافت نمی‌شود.',
       });
     if (boolValue(cells[16]))
       warnings.push({
@@ -527,7 +543,7 @@ export function parseHotelImportWorkbook(input: {
         column: 'پرفروش',
         code: 'SALES_OWNED',
         message:
-          'پرفروش متعلق به Marketing/Sales است و وارد Master Data نمی‌شود.',
+          'نشان پرفروش فایل در پروفایل ذخیره می‌شود؛ آمار فروش را تغییر نمی‌دهد.',
       });
     result.push({
       rowNumber,

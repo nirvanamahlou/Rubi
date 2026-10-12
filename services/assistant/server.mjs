@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
+import { actionFromPath, blockedAction, dailySummary } from './actions.mjs';
 
 export const EXECUTIVE_PERMISSION = 'ui.screen.assistant.executive';
 const TOOLS = Object.freeze([
@@ -185,6 +186,7 @@ export function createAssistantServer({
         if (!response.writableEnded) deadline.abort();
       });
       let actorId;
+      let action;
       let counted = false;
       let outcome = 'FAILED';
       const toolOutcomes = [];
@@ -205,7 +207,8 @@ export function createAssistantServer({
           send(200, { status: 'ok' });
           return;
         }
-        if (request.url !== '/v1/executive/snapshot')
+        action = actionFromPath(request.url);
+        if (request.url !== '/v1/executive/snapshot' && !action)
           throw new ServiceError(404, 'NOT_FOUND');
         if (
           inFlight >= 8 ||
@@ -220,6 +223,13 @@ export function createAssistantServer({
         actorId = actor.userId;
         if (!withinLimit(`user:${actorId}`, 12))
           throw new ServiceError(429, 'RATE_LIMITED');
+        if (action && action !== 'daily-summary') {
+          await authenticate(cookie, deadline.signal, actorId);
+          outcome = 'BLOCKED';
+          // No business source or model is called while its acceptance gate is open.
+          send(200, blockedAction(action, now().toISOString()));
+          return;
+        }
         const observedAt = now();
         const followUps = [];
         const sources = [];
@@ -269,7 +279,7 @@ export function createAssistantServer({
         outcome = sources.every((item) => item.status === 'READY')
           ? 'SUCCESS'
           : 'PARTIAL';
-        send(200, {
+        const snapshot = {
           version: 1,
           generatedAt: now().toISOString(),
           scope: 'SELF',
@@ -284,7 +294,11 @@ export function createAssistantServer({
             llm: false,
             writes: false,
           },
-        });
+        };
+        send(
+          200,
+          action === 'daily-summary' ? dailySummary(snapshot) : snapshot,
+        );
       } catch (error) {
         const status = error instanceof ServiceError ? error.status : 503;
         outcome = status === 401 || status === 403 ? 'DENIED' : 'FAILED';
@@ -300,7 +314,10 @@ export function createAssistantServer({
         // No cookie, raw URL, title, prompt, body or financial data in audit.
         try {
           audit({
-            event: 'assistant.executive.read',
+            event: action
+              ? 'assistant.action.read'
+              : 'assistant.executive.read',
+            ...(action ? { action } : {}),
             correlationId,
             ...(actorId ? { actorId } : {}),
             at: now().toISOString(),

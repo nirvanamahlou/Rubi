@@ -473,3 +473,16 @@ Review2 adds protected-document code handoff, rendered persisted graph edges, sa
 
 No operational runtime is replaced. Full scope, evidence and release gates are
 in docs/tasks/EXECUTIVE-ASSISTANT-1011.md; the panel shell is not production AI.
+
+## ASSISTANT-MVP-FOUNDATION-1012 — Enterprise staged implementation
+
+- [x] Owner confirms no model data transfer in first delivery.
+- [x] Three fixed read actions with explicit readiness/source gates.
+- [x] Personal daily evidence/counts/priority rules and live Web action transport.
+- [ ] Approve sales definition, comparison periods and company/branch scope.
+- [ ] Reconcile sales public projection and publish Finance receivables source.
+- [ ] Corporate summary/rules and actual sales/receivables output.
+- [ ] Pilot/hardening sign-off; LLM/RAG/event recommendations and advanced stages.
+
+Full ordered acceptance: docs/tasks/ASSISTANT-MVP-FOUNDATION-1012.md. This is a
+partial P0 foundation, not completed Enterprise MVP or Production certification.

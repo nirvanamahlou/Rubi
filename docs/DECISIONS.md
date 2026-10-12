@@ -463,3 +463,18 @@ API permission checks and fail-closed denial. No bulk executive grants, role
 changes, corporate scope, new persona, write tool or administrator bypass.
 Future corporate capabilities require separate source authorization. No expiry
 was requested; revisit shared availability before final product rollout.
+## ASSISTANT-MVP-FOUNDATION-1012 — no-model first delivery (2026-10-12)
+
+The owner approves implementing the staged plan and confirms that the first
+version must send no data to a model. Implement read-only fixed capabilities and
+deterministic source-backed output first. A capability dispatcher is not an LLM
+or general conversation. Shared SELF entry remains authenticated and existing
+source permissions remain authoritative. Corporate source contracts/definitions,
+RAG documents, model processing and Production pilot are independent gates.
+This explicitly supersedes the former deferred-provider policy for the current
+iteration: no provider is selected or called. Financial catalog metadata does not
+prove readiness; receivables producer is PENDING_CONNECTION. See the foundation
+task for fixed APIs, source discovery and complete staged acceptance tracking.
+# HOTEL-TEMPLATE-IMPORT-1012 — editable hotel source metadata
+
+The user's 2026-10-12 follow-up requires supplied workbook data to remain available in each hotel's editable profile. Store hotel service level and internal note as nullable Master Data profile fields; expose the existing description and hotelRules fields. Preserve workbook destination, refund text, image-source addresses and featured flag as nullable descriptive source fields. This resolves the earlier import behavior that discarded these values: storing source text does not authorize a Procurement cancellation policy, Sales popularity computation, Documents binary ingestion or remote URL fetch. Public Master Data scalar attributes carry these additive optional fields; older clients preserve them when omitted. Existing geography FKs remain authoritative and no data is backfilled or fabricated.

@@ -50,6 +50,18 @@ export interface OrganizationPreviewRow extends OrganizationImportRow {
   message?: string;
 }
 
+function importAddressLine(row: OrganizationImportRow) {
+  if ((!row.province && !row.city) || (row.province && row.city))
+    return row.addressLine;
+  return [
+    row.province ? `استان: ${row.province}` : '',
+    row.city ? `شهر: ${row.city}` : '',
+    row.addressLine,
+  ]
+    .filter(Boolean)
+    .join('، ');
+}
+
 export function validateOrganizationRows(
   rows: readonly OrganizationImportRow[],
 ): OrganizationPreviewRow[] {
@@ -129,11 +141,9 @@ export function validateOrganizationRows(
       issue = 'شماره تلفن معتبر نیست.';
     else if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email))
       issue = 'ایمیل معتبر نیست.';
-    else if (Boolean(row.province) !== Boolean(row.city))
-      issue = 'استان و شهر باید با هم تکمیل شوند.';
     else if (
-      row.addressLine &&
-      (row.addressLine.length < 5 || row.addressLine.length > 500)
+      (row.addressLine && row.addressLine.length < 5) ||
+      (importAddressLine(row)?.length ?? 0) > 500
     )
       issue = 'نشانی کامل آژانس باید بین ۵ تا ۵۰۰ نویسه باشد.';
     else if (
@@ -301,10 +311,13 @@ export async function importOrganizations(
               isPrimary: 'false',
             },
           });
-        if (row.addressLine)
+        // Keep a partially supplied location as editable address text, without
+        // inventing a city/country foreign key or dropping the supplied value.
+        const addressLine = importAddressLine(row);
+        if (addressLine)
           await masterDataApi.createOrganizationAddress(created.data.id, {
             ...(city ? { countryId: city.countryId, cityId: city.id } : {}),
-            addressLine: row.addressLine,
+            addressLine,
             label: 'نشانی دفتر مرکزی',
             isPrimary: true,
           });

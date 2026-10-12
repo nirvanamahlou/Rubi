@@ -1,4 +1,13 @@
 # Executive assistant — first independent slice
+## Current policy update — 2026-10-12
+
+The original acceptance record below describes the first executive-only slice.
+ASSISTANT-ALL-USERS-1011 supersedes its executive entry-grant requirements: all
+active ERP users may access SELF data, while source authorization is mandatory.
+ASSISTANT-MVP-FOUNDATION-1012 adds deterministic fixed actions and confirms the
+no-model processing policy for v1. Corporate data readiness and financial metric
+acceptance remain open; the six panels are not a completed AI/forecast system.
+See ASSISTANT-MVP-FOUNDATION-1012.md for current contracts and phase tracking.
 
 Owner: PC-C. User-confirmed 2026-10-11. Base: develop@b52480e2.
 
