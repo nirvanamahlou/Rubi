@@ -42,13 +42,11 @@ describe('MasterDataService accommodation', () => {
       serviceLevel: 'لوکس',
       description: 'original',
     });
-    const update = vi
-      .fn()
-      .mockImplementation(async (_resource, _id, data) => ({
-        ...hotel,
-        ...data,
-        version: 2,
-      }));
+    const update = vi.fn().mockImplementation(async (_resource, _id, data) => ({
+      ...hotel,
+      ...data,
+      version: 2,
+    }));
     const repository = {
       find: vi.fn().mockResolvedValue(hotel),
       update,

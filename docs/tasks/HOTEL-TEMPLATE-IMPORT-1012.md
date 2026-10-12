@@ -12,6 +12,8 @@ Validation: API Master Data527 tests and Web profile/import/catalog/validation/E
 
 ## Initial delivery history
 
+Both final local production builds passed (API and Web59 pages). PR796 CI also passed production build and PostgreSQL migration/seed on a68f5b26, but its format gate required a second Prettier pass on the accommodation service test; corrected before the final-head rerun. Functional source is unchanged by that formatting repair.
+
 Final local validation: PostgreSQL integration passed with real preview/commit creating all three hotels, public profile reads, completing a missing note, persisting edits across reread and duplicate SKIP retaining those edits. All147 migrations succeeded; the first integration run hit60s while the host was building concurrently, and rerun passed in10.56s under a bounded180s integration allowance. Final parser32 tests passed. Shared Contracts143 tests passed. API production build passed; Web compilation passed with final build steps pending. The synthetic database is separate from operational data.
 
 - Owner: PC-A, explicitly confirmed by the user; bounded Master Data work requested directly. Permanent module ownership remains PC-B.
