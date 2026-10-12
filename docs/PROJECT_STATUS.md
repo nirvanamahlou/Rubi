@@ -5667,3 +5667,6 @@ Net money/refunds, CRM conversion, multiple routes and Finance receivables remai
 unavailable. No migration/dependency/role changes or operational API restart.
 20 service tests,25 Web tests and4 API projection tests passed;
 final checks, CI and runtime publication/handoff evidence follow in the PR.
+## PC-B acceptance follow-up — 2026-10-12
+
+PR803 merged at04acd08a and passed all merged-tree CI checks; rubi Web3100/API4192 now run that tree against the existing database. Authenticated threshold form works. The seller screen exposed empty-body serialization when no profile exists; ACCOUNTING-EMPTY-SELLER-1012 restores the existing nullable JSON contract without creating a record or changing permissions. Regression reproduced before correction; both missing and populated responses are covered. Full statutory return logic and official taxpayer dispatch remain incomplete.
