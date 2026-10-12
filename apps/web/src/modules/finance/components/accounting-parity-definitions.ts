@@ -105,6 +105,7 @@ const implementationByRoute: Readonly<
   'general-ledger/accounts/lists/details': 'configuration-list',
   'general-ledger/accounts/lists/detail-type-converters': 'configuration-list',
   'general-ledger/documents/lists/journals': 'journal-list',
+  'general-ledger/documents/lists/revaluations': 'evidence-only',
   'general-ledger/documents/lists/gl-vouchers': 'evidence-only',
   'general-ledger/documents/lists/automatic-templates': 'template-list',
   'general-ledger/documents/lists/revaluation-templates': 'template-list',
@@ -178,7 +179,14 @@ const menuOnlyCaptures: readonly AccountingParityCapture[] = [
     'سند کل',
     'مالی / دفتر کل / اسناد / فهرست ها',
     'Financial.GL.VoucherManagement.Lists.GLVoucherList',
-    'موجودیت و قرارداد تجمیع سند کل در روبی تعریف نشده و فهرست سند حسابداری جایگزین آن نیست',
+    'فهرست مستقل، فیلتر، خروجی، گروه‌بندی و ویرایش تاریخ سند کل متصل‌اند؛ حذف و عملیات جانبی هنوز کامل نیستند',
+  ),
+  menuOnly(
+    'general-ledger/documents/lists/revaluations',
+    'تسعیر ارز',
+    'مالی / دفتر کل / اسناد / فهرست ها',
+    'Financial.GL.VoucherManagement.Lists.ConversionVoucherList',
+    'فهرست شش‌ستونه و بازکردن سند متصل‌اند؛ تکمیل همه عملیات جانبی هنوز در حال انجام است',
   ),
   menuOnly(
     'general-ledger/documents/issue-gl-voucher',

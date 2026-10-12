@@ -7,13 +7,16 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
-import type { Prisma } from '@nora/database';
+import { Prisma } from '@nora/database';
 import type {
+  AccountingAttributes,
   AccountingCommandV1,
   AuthenticatedActor,
   IamPermissionCode,
 } from '@nora/contracts';
 import { DatabaseService } from '../../database/database.service';
+import { MasterDataService } from '../../master-data/master-data.service';
+import { accountingCurrencies } from './accounting.currency-directory';
 import { IamFinanceDirectory } from '../../iam/iam-finance-directory';
 import { DecimalValue } from '../finance.money';
 import * as v from './accounting.validation';
@@ -28,6 +31,26 @@ import {
   validateAccountForm,
 } from './accounting.account-form';
 import { FinanceInboxService } from '../finance-inbox.service';
+import {
+  reorderJournals,
+  numberJournalPreview,
+  compareDocumentOrder,
+  validateTemplateAssignments,
+} from './accounting.documents';
+import { documentSqlFilter } from './accounting.document-sql-filters';
+import {
+  documentFigures,
+  documentFigureStatuses,
+} from './accounting.document-figures';
+import {
+  documentPostingPreview,
+  documentPostingInterval,
+} from './accounting.document-posting';
+import { automaticDocumentPreview } from './accounting.document-automatic';
+import { generalDocumentPreview } from './accounting.document-general';
+import { sourceRevaluationPreview } from './accounting.document-revaluation';
+import { documentTransferPreview } from './accounting.document-transfer';
+import { documentStatementBasis } from './accounting.document-statement';
 
 type Tx = Prisma.TransactionClient;
 type BufferedStateEvent = {
@@ -45,11 +68,26 @@ type BufferedStateEvent = {
 type AccountingTemplateWithLines = Prisma.AccountingTemplateGetPayload<{
   include: { lines: true };
 }>;
+const templateSourceAssignments = (
+  attributes: unknown,
+): Record<string, number> => {
+  const value = v.attributes(attributes).sourceAssignments;
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return v.object(parsed) as Record<string, number>;
+  } catch {
+    v.rule('تخصیص حساب‌های الگو معتبر نیست.');
+  }
+};
 const templateDto = (template: AccountingTemplateWithLines) => ({
   ...template,
   lines: template.lines.map((line) => ({
     ...line,
     percentage: v.decimal(line.percentage.toFixed(8))!,
+    parentPosition:
+      templateSourceAssignments(template.attributes)[String(line.position)] ??
+      null,
   })),
 });
 const journalInclude = { lines: { orderBy: { position: 'asc' as const } } };
@@ -148,6 +186,9 @@ export class AccountingService {
     @Optional()
     @Inject(FinanceInboxService)
     private readonly finance?: FinanceInboxService,
+    @Optional()
+    @Inject(MasterDataService)
+    private readonly master?: MasterDataService,
   ) {}
   private require(
     actor: AuthenticatedActor,
@@ -335,12 +376,35 @@ export class AccountingService {
   ) {
     this.require(actor);
     await this.book(this.database.client, bookId, actor);
-    const page = Math.max(1, Number(query.page) || 1),
-      pageSize = 30;
+    const exporting = query.export === 'true';
+    if (query.sourceKind && query.sourceKind !== 'revaluation')
+      v.invalid('نوع فهرست معتبر نیست.');
+    if (exporting) this.require(actor, 'finance.export');
+    const page = exporting ? 1 : Math.max(1, Number(query.page) || 1),
+      pageSize = exporting
+        ? 10000
+        : query.pageSize === undefined
+          ? 30
+          : Number(query.pageSize);
+    if (!exporting && ![30, 50].includes(pageSize))
+      v.invalid('اندازه صفحه معتبر نیست.');
     if (!Number.isSafeInteger(page) || page > 100000)
       v.invalid('شماره صفحه معتبر نیست.');
     const where: Prisma.AccountingJournalWhereInput = {
       bookId,
+      ...(query.sourceKind === 'revaluation'
+        ? {
+            sourceKey: { startsWith: 'REVALUE:' },
+            AND: [
+              {
+                attributes: {
+                  path: ['revaluationCurrency'],
+                  not: Prisma.AnyNull,
+                },
+              },
+            ],
+          }
+        : {}),
       ...(query.id ? { id: v.uuid(query.id)! } : {}),
       ...(query.periodId ? { periodId: v.uuid(query.periodId)! } : {}),
       ...(query.status
@@ -365,40 +429,235 @@ export class AccountingService {
           }
         : {}),
     };
+    const currencies =
+      query.sourceKind === 'revaluation' ||
+      query.sort === 'revaluationCurrency' ||
+      query.group === 'revaluationCurrency' ||
+      query.filter?.includes('revaluationCurrency')
+        ? await accountingCurrencies(this.master)
+        : [];
+    const currencyName = currencies.length
+      ? Prisma.sql`CASE j.attributes->>'revaluationCurrency' ${Prisma.join(
+          currencies.map(
+            (currency) =>
+              Prisma.sql`WHEN ${currency.code} THEN ${currency.name}`,
+          ),
+          ' ',
+        )} ELSE NULL END`
+      : Prisma.sql`NULL`;
+    const expression = (value: string | Prisma.Sql) =>
+      typeof value === 'string' ? Prisma.raw(value) : value;
+    const actorSortFields = ['makerId', 'approverId', 'lastModifierId'];
+    let actorSortNames: { id: string; displayName: string }[] = [];
+    if (
+      [query.sort, query.group].some(
+        (field) => field && actorSortFields.includes(field),
+      )
+    ) {
+      const ids = await this.database.client.$queryRaw<
+        { id: string }[]
+      >(Prisma.sql`
+        SELECT id FROM (
+          SELECT "makerId"::text AS id FROM accounting_journals WHERE "bookId"=${bookId}::uuid
+          UNION SELECT "approverId"::text FROM accounting_journals WHERE "bookId"=${bookId}::uuid
+          UNION SELECT attributes->>'lastModifierId' FROM accounting_journals WHERE "bookId"=${bookId}::uuid
+        ) actors WHERE id ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+        ORDER BY id LIMIT 2001`);
+      if (ids.length > 2000)
+        v.rule('مرتب‌سازی نام کاربران از محدوده پشتیبانی خارج است.');
+      actorSortNames = await this.identity.displayNames(
+        ids.map((row) => row.id),
+        actor.branchIds,
+      );
+    }
+    const actorName = (field: string) =>
+      actorSortNames.length
+        ? Prisma.sql`CASE ${Prisma.raw(field)} ${Prisma.join(
+            actorSortNames.map(
+              (user) => Prisma.sql`WHEN ${user.id} THEN ${user.displayName}`,
+            ),
+            ' ',
+          )} ELSE NULL END`
+        : Prisma.sql`NULL`;
     const pageResult = await this.database.client.$transaction(
-      async (tx) => ({
-        items: await tx.accountingJournal.findMany({
-          where,
+      async (tx) => {
+        const sortColumns: Record<string, string | Prisma.Sql> = {
+          number: 'j.number',
+          documentDate: 'j."documentDate"',
+          reference: 'j.reference',
+          description: 'j.description',
+          status: 'j.status',
+          isCurrency:
+            'EXISTS (SELECT 1 FROM accounting_journal_lines l JOIN accounting_accounts a ON a.id=l."accountId" AND a."bookId"=j."bookId" WHERE l."journalId"=j.id AND a.attributes->>\'multiCurrency\'=\'true\')',
+          typeId:
+            '(SELECT c.title FROM accounting_configurations c WHERE c.id=j."typeId" AND c."bookId"=j."bookId")',
+          amount:
+            'COALESCE((SELECT SUM(l.debit) FROM accounting_journal_lines l WHERE l."journalId"=j.id),0)',
+          makerId: actorName('j."makerId"::text'),
+          approverId: actorName('j."approverId"::text'),
+          lastModifierId: actorName("j.attributes->>'lastModifierId'"),
+          deletedAt:
+            '(SELECT MAX(e."occurredAt") FROM accounting_journal_state_events e WHERE e."journalId"=j.id AND e."toStatus"=\'CANCELLED\')',
+          referenceNumber: "j.attributes->>'referenceNumber'",
+          auxiliaryNumber: "j.attributes->>'auxiliaryNumber'",
+          revaluationCurrency: currencyName,
+          revaluationRate:
+            '(SELECT r.rate FROM accounting_fx_snapshots r WHERE r.id::text=j.attributes->>\'revaluationRateId\' AND r."bookId"=j."bookId")',
+          dailyNumber:
+            "CASE WHEN j.attributes->>'dailyNumber' ~ '^[0-9]{1,9}$' THEN (j.attributes->>'dailyNumber')::integer END",
+        };
+        if (query.sort && !Object.hasOwn(sortColumns, query.sort))
+          v.invalid('ستون مرتب‌سازی معتبر نیست.');
+        if (query.direction && !['asc', 'desc'].includes(query.direction))
+          v.invalid('جهت مرتب‌سازی معتبر نیست.');
+        const groupColumns: Record<string, string | Prisma.Sql> = sortColumns;
+        if (query.group && !Object.hasOwn(groupColumns, query.group))
+          v.invalid('ستون گروه‌بندی معتبر نیست.');
+        let filteredIds: string[] | undefined;
+        let filteredTotal: number | undefined;
+        if (query.filter || query.sort || query.group) {
+          const scopes: Prisma.Sql[] = [Prisma.sql`j."bookId"=${bookId}::uuid`];
+          if (query.sourceKind === 'revaluation')
+            scopes.push(
+              Prisma.sql`j."sourceKey" LIKE 'REVALUE:%' AND j.attributes->>'revaluationCurrency' IS NOT NULL`,
+            );
+          if (query.filter)
+            scopes.push(
+              documentSqlFilter(
+                this.parseDocumentFilter(query.filter),
+                'journal',
+                currencyName,
+              ),
+            );
+          if (query.id)
+            scopes.push(Prisma.sql`j.id=${v.uuid(query.id)!}::uuid`);
+          if (query.periodId)
+            scopes.push(
+              Prisma.sql`j."periodId"=${v.uuid(query.periodId)!}::uuid`,
+            );
+          if (query.status) scopes.push(Prisma.sql`j.status=${query.status}`);
+          else if (query.excludeCancelled === 'true')
+            scopes.push(Prisma.sql`j.status<>'CANCELLED'`);
+          if (query.from)
+            scopes.push(Prisma.sql`j."documentDate">=${v.date(query.from)!}`);
+          if (query.to)
+            scopes.push(Prisma.sql`j."documentDate"<=${v.date(query.to)!}`);
+          if (query.search) {
+            const term = v.text(query.search, 160);
+            scopes.push(
+              Prisma.sql`(STRPOS(j.description,${term})>0 OR STRPOS(j.reference,${term})>0)`,
+            );
+          }
+          const clauses = Prisma.join(
+            scopes.map((scope) => Prisma.sql`(${scope})`),
+            ' AND ',
+          );
+          const rowOrder = query.sort
+            ? Prisma.sql`${expression(sortColumns[query.sort]!)} ${Prisma.raw(query.direction === 'asc' ? 'ASC' : 'DESC')} NULLS LAST, j.id ASC`
+            : Prisma.raw('j."documentDate" DESC, j."createdAt" DESC, j.id ASC');
+          const order = query.group
+            ? Prisma.sql`${expression(groupColumns[query.group]!)} ASC NULLS LAST, ${rowOrder}`
+            : rowOrder;
+          const ids = await tx.$queryRaw<{ id: string }[]>(
+            Prisma.sql`SELECT j.id FROM accounting_journals j WHERE ${clauses} ORDER BY ${order} LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
+          );
+          const counts = await tx.$queryRaw<{ total: bigint }[]>(
+            Prisma.sql`SELECT COUNT(*) AS total FROM accounting_journals j WHERE ${clauses}`,
+          );
+          filteredIds = ids.map((row) => row.id);
+          filteredTotal = Number(counts[0]?.total ?? 0);
+        }
+        const items = await tx.accountingJournal.findMany({
+          where: filteredIds ? { ...where, id: { in: filteredIds } } : where,
           include: journalInclude,
           orderBy: [
             { documentDate: 'desc' },
             { createdAt: 'desc' },
             { id: 'asc' },
           ],
-          skip: (page - 1) * pageSize,
-          take: pageSize,
-        }),
-        total: await tx.accountingJournal.count({ where }),
-        page,
-        pageSize,
-      }),
+          ...(filteredIds
+            ? {}
+            : { skip: (page - 1) * pageSize, take: pageSize }),
+        });
+        if (filteredIds) {
+          const positions = new Map(
+            filteredIds.map((id, index) => [id, index]),
+          );
+          items.sort((a, b) => positions.get(a.id)! - positions.get(b.id)!);
+        }
+        const deletionEvents =
+          query.status === 'CANCELLED'
+            ? await tx.accountingJournalStateEvent.findMany({
+                where: {
+                  bookId,
+                  journalId: { in: items.map((item) => item.id) },
+                  toStatus: 'CANCELLED',
+                },
+                orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+              })
+            : [];
+        return {
+          items,
+          deletionEvents,
+          total: filteredTotal ?? (await tx.accountingJournal.count({ where })),
+          page,
+          pageSize,
+        };
+      },
       { isolationLevel: 'RepeatableRead' },
     );
+    if (exporting && pageResult.total > 10000)
+      v.rule('خروجی بیش از ۱۰۰۰۰ سند است؛ محدوده فیلتر را کوچک‌تر کنید.');
     const names = new Map(
       (
         await this.identity.displayNames(
-          pageResult.items.map((item) => item.makerId),
+          [
+            ...pageResult.items.flatMap((item) =>
+              [
+                item.makerId,
+                item.approverId,
+                String(v.attributes(item.attributes).lastModifierId ?? ''),
+              ].filter((id): id is string => Boolean(id)),
+            ),
+            ...pageResult.deletionEvents.map((event) => event.actorId),
+          ],
           actor.branchIds,
         )
       ).map((user) => [user.id, user.displayName]),
     );
     return {
-      ...pageResult,
+      total: pageResult.total,
+      page: pageResult.page,
+      pageSize: pageResult.pageSize,
       items: pageResult.items.map((item) => ({
         ...item,
         makerName: names.get(item.makerId) ?? null,
+        approverName: item.approverId
+          ? (names.get(item.approverId) ?? null)
+          : null,
+        lastModifierName:
+          names.get(
+            String(v.attributes(item.attributes).lastModifierId ?? ''),
+          ) ?? null,
+        deletedAt:
+          pageResult.deletionEvents.find((event) => event.journalId === item.id)
+            ?.occurredAt ?? null,
+        deletedByName:
+          names.get(
+            pageResult.deletionEvents.find(
+              (event) => event.journalId === item.id,
+            )?.actorId ?? '',
+          ) ?? null,
       })),
     };
+  }
+  private parseDocumentFilter(value: string): unknown {
+    if (value.length > 24000) v.invalid('فیلتر بیش از حد بزرگ است.');
+    try {
+      return JSON.parse(value);
+    } catch {
+      v.invalid('فیلتر معتبر نیست.');
+    }
   }
   async command(
     bookId: string,
@@ -409,9 +668,25 @@ export class AccountingService {
     const permission: IamPermissionCode =
       action === 'export-batch'
         ? 'finance.export'
-        : action === 'approve' || action === 'approve-fx'
+        : [
+              'approve',
+              'approve-fx',
+              'review-document',
+              'unreview-document',
+              'review-documents',
+              'unreview-documents',
+              'review-all-preview',
+              'review-all-documents',
+            ].includes(action)
           ? 'finance.journal.approve'
-          : action === 'post'
+          : [
+                'post',
+                'document-posting-preview',
+                'post-documents',
+                'general-document-preview',
+                'general-document-issue',
+                'general-document-date',
+              ].includes(action)
             ? 'finance.journal.post'
             : action === 'reverse'
               ? 'finance.journal.reverse'
@@ -426,10 +701,19 @@ export class AccountingService {
                       'source-journal',
                       'allocation-run',
                       'allocation-preview',
+                      'automatic-preview',
+                      'automatic-run',
+                      'document-revaluation-preview',
+                      'document-revaluation-run',
+                      'document-transfer-preview',
+                      'document-transfer-run',
+                      'document-import-run',
                       'revaluation-preview',
                       'revaluation-run',
                       'number-drafts',
+                      'number-journal-preview',
                       'move-drafts',
+                      'reorder-journals',
                     ].includes(action) ||
                     action.startsWith('journal') ||
                     ['submit', 'return', 'cancel', 'restore'].includes(action)
@@ -516,6 +800,620 @@ export class AccountingService {
     stateEvents: BufferedStateEvent[] = [],
   ): Promise<unknown> {
     const bookId = book.id;
+    if (action === 'journal-statement-preview') {
+      const currencies =
+        p.currencyMode === true ? await accountingCurrencies(this.master) : [];
+      const basis = await documentStatementBasis(tx, book, p, currencies);
+      const maker = (
+        await this.identity.displayNames([actor.userId], actor.branchIds)
+      )[0];
+      return { ...basis, makerName: maker?.displayName ?? '' };
+    }
+    if (
+      action === 'journal-statement-save' ||
+      action === 'journal-statement-cancel'
+    ) {
+      const id = v.uuid(p.id, true);
+      const existing = id
+        ? await tx.accountingStatement.findFirst({ where: { id, bookId } })
+        : null;
+      if (id && !existing) throw new NotFoundException();
+      if (existing) this.version(existing.version, expected);
+      if (action === 'journal-statement-cancel' && !existing)
+        v.rule('اعلامیه ذخیره‌شده را انتخاب کنید.');
+      const names = await this.identity.displayNames(
+        [actor.userId],
+        actor.branchIds,
+      );
+      const actorName = names[0]?.displayName ?? '';
+      const statementStatus =
+        action === 'journal-statement-cancel'
+          ? 'CANCELLED'
+          : v.text(p.status, 16, true);
+      if (!['CREATED', 'SENT', 'CANCELLED'].includes(statementStatus))
+        v.invalid('وضعیت اعلامیه معتبر نیست.');
+      const periodId = existing?.periodId ?? v.uuid(p.periodId)!;
+      if (existing && p.periodId !== undefined && p.periodId !== periodId)
+        v.rule('دوره مالی اعلامیه ذخیره‌شده قابل تغییر نیست.');
+      const documentDate =
+        action === 'journal-statement-cancel'
+          ? existing!.documentDate
+          : v.date(p.documentDate)!;
+      const period = await tx.accountingPeriod.findFirst({
+        where: { id: periodId, bookId },
+      });
+      if (
+        !period ||
+        documentDate < period.startDate ||
+        documentDate > period.endDate
+      )
+        v.rule('تاریخ اعلامیه باید در دوره مالی انتخاب‌شده باشد.');
+      const description =
+        action === 'journal-statement-cancel'
+          ? existing!.description
+          : v.text(p.description, 2000);
+      const notes = json(
+        action === 'journal-statement-cancel'
+          ? existing!.notes
+          : setupNotes(p.notes, existing?.notes, actorName),
+      );
+      let record;
+      if (existing) {
+        record = await tx.accountingStatement.update({
+          where: { id: existing.id },
+          data: {
+            documentDate,
+            description,
+            status: statementStatus,
+            notes,
+            lastModifierId: actor.userId,
+            version: { increment: 1 },
+          },
+        });
+      } else {
+        const currencies =
+          p.currencyMode === true
+            ? await accountingCurrencies(this.master)
+            : [];
+        const basis = await documentStatementBasis(tx, book, p, currencies);
+        if (basis.checksum !== p.checksum)
+          throw new ConflictException(
+            'اقلام اعلامیه تغییر کرده‌اند؛ پیش‌نمایش را دوباره باز کنید.',
+          );
+        const sequence = await tx.accountingStatement.aggregate({
+          where: { bookId, periodId },
+          _max: { number: true },
+        });
+        const recipientSequence = await tx.accountingStatement.aggregate({
+          where: { bookId, periodId, recipientId: basis.recipientId },
+          _max: { recipientNumber: true },
+        });
+        record = await tx.accountingStatement.create({
+          data: {
+            bookId,
+            journalId: basis.journalId,
+            periodId,
+            recipientId: basis.recipientId,
+            level: basis.level,
+            currencyMode: basis.currencyMode,
+            number: (sequence._max.number ?? 0) + 1,
+            recipientNumber: (recipientSequence._max.recipientNumber ?? 0) + 1,
+            documentDate,
+            description,
+            type: basis.type,
+            status: statementStatus,
+            makerId: actor.userId,
+            snapshot: json(basis),
+            notes,
+          },
+        });
+      }
+      const users = await this.identity.displayNames(
+        [
+          record.makerId,
+          ...(record.lastModifierId ? [record.lastModifierId] : []),
+        ],
+        actor.branchIds,
+      );
+      return {
+        ...record,
+        makerName:
+          users.find((user) => user.id === record.makerId)?.displayName ?? null,
+        lastModifierName:
+          users.find((user) => user.id === record.lastModifierId)
+            ?.displayName ?? null,
+      };
+    }
+    if (action === 'document-import-run') {
+      if (!['TEMP', 'MEMORANDUM'].includes(String(p.saveMode)))
+        v.invalid('وضعیت ورود سند معتبر نیست.');
+      if (
+        !Array.isArray(p.documents) ||
+        !p.documents.length ||
+        p.documents.length > 100
+      )
+        v.invalid('حداکثر ۱۰۰ سند معتبر قابل ورود است.');
+      const documents = p.documents.map((item) => v.object(item));
+      const totalLines = documents.reduce(
+        (total, document) =>
+          total + (Array.isArray(document.lines) ? document.lines.length : 0),
+        0,
+      );
+      if (totalLines > 5000) v.rule('حداکثر ۵۰۰۰ قلم در هر دریافت مجاز است.');
+      const typeId = v.uuid(p.typeId)!;
+      const created: unknown[] = [];
+      for (const document of documents) {
+        created.push(
+          await this.execute(
+            tx,
+            book,
+            p.saveMode === 'MEMORANDUM'
+              ? 'journal-memorandum-save'
+              : 'journal-document-save',
+            {
+              periodId: document.periodId,
+              typeId,
+              documentDate: document.documentDate,
+              description: document.description,
+              lines: document.lines,
+              attributes: {
+                auxiliaryNumber: v.text(document.auxiliaryNumber, 100),
+                descriptionEn: v.text(document.descriptionEn, 2000),
+              },
+            },
+            undefined,
+            actor,
+            false,
+            stateEvents,
+          ),
+        );
+      }
+      return { items: created, total: created.length };
+    }
+    if (
+      ['unreview-document', 'return', 'cancel', 'reverse'].includes(action) &&
+      p.id
+    ) {
+      if (
+        await tx.accountingJournalTransfer.findFirst({
+          where: { sourceBookId: bookId, sourceJournalId: v.uuid(p.id)! },
+        })
+      )
+        v.rule(
+          'سند ارسال‌شده به دفتر فرعی تا تعیین تکلیف سند مقصد قابل لغو یا برگشت نیست.',
+        );
+    }
+    if (
+      action === 'document-transfer-preview' ||
+      action === 'document-transfer-run'
+    ) {
+      const first = await documentTransferPreview(tx, book, p, actor);
+      if (action === 'document-transfer-preview') return first;
+      if (!first.documents.length) v.rule('سند قابل ارسال وجود ندارد.');
+      const basis =
+        p.basisChecksum !== undefined
+          ? await documentTransferPreview(
+              tx,
+              book,
+              { ...p, ids: undefined },
+              actor,
+            )
+          : first;
+      // Main books only send to subsidiary books: acquiring destination locks cannot form a reverse-transfer cycle.
+      for (const id of [
+        ...new Set(basis.documents.map((doc) => doc.targetBookId)),
+      ].sort()) {
+        await this.book(tx, id, actor);
+        await tx.$queryRaw`SELECT id FROM accounting_books WHERE id=${id}::uuid FOR UPDATE`;
+      }
+      if (p.basisChecksum !== undefined) {
+        const reviewed = await documentTransferPreview(
+          tx,
+          book,
+          { ...p, ids: undefined },
+          actor,
+        );
+        if (p.basisChecksum !== reviewed.checksum)
+          throw new ConflictException(
+            'فهرست بررسی‌شده تغییر کرده است؛ فیلتر را دوباره اجرا کنید.',
+          );
+      }
+      const preview = await documentTransferPreview(tx, book, p, actor);
+      if (p.checksum !== preview.checksum)
+        throw new ConflictException(
+          'سند، نگاشت یا دفتر مقصد تغییر کرده است؛ فهرست را دوباره بخوانید.',
+        );
+      const items = [];
+      for (const [index, doc] of preview.documents.entries()) {
+        const destination = await this.book(tx, doc.targetBookId, actor);
+        const events: BufferedStateEvent[] = [];
+        const sourceKey = `TRANSFER:${bookId}:${preview.checksum}:${index}`;
+        const created = (await this.execute(
+          tx,
+          destination,
+          'journal-document-save',
+          {
+            periodId: doc.periodId,
+            typeId: doc.typeId,
+            documentDate: doc.documentDate,
+            description: doc.description,
+            lines: doc.lines,
+            sourceKey,
+            attributes: { transferSourceBookId: bookId },
+          },
+          undefined,
+          actor,
+          true,
+          events,
+        )) as { id: string };
+        const commandId = randomUUID();
+        await tx.accountingCommand.create({
+          data: {
+            id: commandId,
+            bookId: destination.id,
+            actorId: actor.userId,
+            key: `TRANSFER:${preview.checksum}:${index}`,
+            hash: createHash('sha256')
+              .update(JSON.stringify(doc))
+              .digest('hex'),
+            action: 'document-transfer-receive',
+            result: json(created),
+          },
+        });
+        if (events.length)
+          await tx.accountingJournalStateEvent.createMany({
+            data: events.map((event, sequence) => ({
+              ...event,
+              bookId: destination.id,
+              commandId,
+              actorId: actor.userId,
+              sequence: sequence + 1,
+            })),
+          });
+        await tx.accountingJournalTransfer.createMany({
+          data: doc.sourceIds.map((sourceJournalId) => ({
+            sourceBookId: bookId,
+            sourceJournalId,
+            targetBookId: destination.id,
+            targetJournalId: created.id,
+          })),
+        });
+        items.push({ bookId: destination.id, journal: created });
+      }
+      return { items, total: items.length };
+    }
+    if (action === 'document-posting-preview' || action === 'post-documents') {
+      if (!actor.permissions.includes('finance.journal.post'))
+        throw new ForbiddenException();
+      const preview = await documentPostingPreview(tx, book, p);
+      const warnings = [...preview.warnings];
+      for (const journal of preview.rows)
+        warnings.push(...(await this.validatePosting(tx, book, journal)));
+      const uniqueWarnings = [...new Set(warnings)];
+      const checksum = createHash('sha256')
+        .update(
+          JSON.stringify({
+            basis: preview.checksum,
+            warnings: uniqueWarnings,
+          }),
+        )
+        .digest('hex');
+      if (action === 'document-posting-preview')
+        return { ...preview, warnings: uniqueWarnings, checksum };
+      if (p.checksum !== checksum)
+        throw new ConflictException(
+          'اسناد یا مانده‌های پیش‌نمایش تغییر کرده‌اند؛ دوباره پیش‌نمایش بگیرید.',
+        );
+      if (!preview.rows.length)
+        v.rule('سند بررسی‌شده‌ای برای قطعی‌کردن وجود ندارد.');
+      if (uniqueWarnings.length && p.acknowledgeWarnings !== true)
+        v.rule('اخطارهای پیش‌نمایش باید پیش از قطعی‌کردن تأیید شوند.');
+      const items: unknown[] = [];
+      for (const journal of preview.rows) {
+        const actualWarnings = await this.validatePosting(tx, book, journal);
+        if (actualWarnings.some((warning) => !uniqueWarnings.includes(warning)))
+          v.rule(
+            'اخطار جدید در مانده حساب‌ها ایجاد شده است؛ دوباره پیش‌نمایش بگیرید.',
+          );
+        items.push(
+          await this.execute(
+            tx,
+            book,
+            'post',
+            { id: journal.id },
+            journal.version,
+            actor,
+            true,
+            stateEvents,
+          ),
+        );
+      }
+      return { items, fromDate: preview.fromDate, toDate: preview.toDate };
+    }
+    if (action === 'general-document-date') {
+      if (!actor.permissions.includes('finance.journal.post'))
+        throw new ForbiddenException();
+      const document = await tx.accountingGeneralDocument.findFirst({
+        where: { id: v.uuid(p.id)!, bookId },
+        include: { period: true, members: { include: { journal: true } } },
+      });
+      if (!document) throw new NotFoundException();
+      this.version(document.version, expected);
+      const documentDate = v.date(p.documentDate)!;
+      if (
+        document.period.status !== 'OPEN' ||
+        documentDate < document.period.startDate ||
+        documentDate > document.period.endDate
+      )
+        v.rule('تاریخ سند کل باید در دوره مالی باز باشد.');
+      if (
+        document.members.some(
+          (member) => member.journal.documentDate! > documentDate,
+        )
+      )
+        v.rule('تاریخ سند کل نباید قبل از بزرگترین تاریخ اسناد آن باشد.');
+      const next = await tx.accountingGeneralDocument.findFirst({
+        where: {
+          bookId,
+          periodId: document.periodId,
+          number: { gt: document.number },
+        },
+        orderBy: { number: 'asc' },
+      });
+      if (next && documentDate > next.documentDate)
+        v.rule('تاریخ سند کل نباید بعد از سند کل بعدی باشد.');
+      if (
+        documentDate !== document.documentDate &&
+        (await tx.accountingJournal.findFirst({
+          where: {
+            bookId,
+            periodId: document.periodId,
+            documentDate: {
+              gte:
+                documentDate < document.documentDate
+                  ? documentDate
+                  : document.documentDate,
+              lte:
+                documentDate > document.documentDate
+                  ? documentDate
+                  : document.documentDate,
+              not: document.documentDate,
+            },
+            status: { not: 'CANCELLED' },
+          },
+        }))
+      )
+        v.rule('بین تاریخ قبلی و تاریخ جدید سند حسابداری وجود دارد.');
+      return tx.accountingGeneralDocument.update({
+        where: { id: document.id },
+        data: { documentDate, version: { increment: 1 } },
+        include: { lines: true, members: true },
+      });
+    }
+    if (
+      action === 'general-document-preview' ||
+      action === 'general-document-issue'
+    ) {
+      if (!actor.permissions.includes('finance.journal.post'))
+        throw new ForbiddenException();
+      const preview = await generalDocumentPreview(tx, bookId, p);
+      if (action === 'general-document-preview') {
+        const [names, branches] = await Promise.all([
+          this.identity.displayNames(
+            preview.items.map((row) => row.makerId),
+            [book.branchId],
+          ),
+          this.identity.branches([book.branchId]),
+        ]);
+        return {
+          ...preview,
+          branchName: branches[0]?.name ?? '',
+          branchCode: branches[0]?.code ?? '',
+          items: preview.items.map((row) => ({
+            ...row,
+            makerName:
+              names.find((name) => name.id === row.makerId)?.displayName ?? '',
+          })),
+        };
+      }
+      if (!preview.documents.length)
+        v.rule('سند قطعی که برای آن سند کل صادر نشده باشد وجود ندارد.');
+      if (v.text(p.checksum, 64, true) !== preview.checksum)
+        throw new ConflictException(
+          'مبنای سند کل تغییر کرده است؛ پیش‌نمایش را دوباره بخوانید.',
+        );
+      const documents = [];
+      for (const [position, group] of preview.documents.entries()) {
+        const header = await tx.accountingGeneralDocument.create({
+          data: {
+            bookId,
+            periodId: preview.periodId,
+            number: preview.nextNumber + position,
+            documentDate: group.documentDate,
+            method: preview.method,
+            makerId: actor.userId,
+          },
+        });
+        await tx.accountingGeneralDocumentMember.createMany({
+          data: group.journalIds.map((journalId) => ({
+            bookId,
+            documentId: header.id,
+            journalId,
+          })),
+        });
+        await tx.accountingGeneralDocumentLine.createMany({
+          data: group.lines.map((line) => ({
+            bookId,
+            documentId: header.id,
+            accountId: line.accountId,
+            debit: line.debit,
+            credit: line.credit,
+          })),
+        });
+        documents.push(
+          await tx.accountingGeneralDocument.findUniqueOrThrow({
+            where: { id: header.id },
+            include: { lines: true, members: true },
+          }),
+        );
+      }
+      return { documents };
+    }
+    if (action === 'review-all-preview' || action === 'review-all-documents') {
+      const periodId = v.uuid(p.periodId)!;
+      const period = await tx.accountingPeriod.findFirst({
+        where: { id: periodId, bookId, status: 'OPEN' },
+      });
+      if (!period) v.rule('دوره مالی باز همین دفتر لازم است.');
+      if (typeof p.undo !== 'boolean') v.invalid('عملیات بررسی معتبر نیست.');
+      const undo = p.undo === true;
+      const filter = documentSqlFilter(
+        p.filter ?? { type: 'group', mode: 'all', children: [] },
+      );
+      const statuses = undo
+        ? Prisma.sql`j.status='APPROVED'`
+        : Prisma.sql`j.status IN ('DRAFT','PENDING_APPROVAL')`;
+      const items = await tx.$queryRaw<
+        { id: string; expectedVersion: number }[]
+      >(
+        Prisma.sql`SELECT j.id,j.version AS "expectedVersion" FROM accounting_journals j WHERE j."bookId"=${bookId}::uuid AND j."periodId"=${periodId}::uuid AND ${statuses} AND (${filter}) ORDER BY j."documentDate",j.number,j.id LIMIT 501`,
+      );
+      if (items.length > 500) v.rule('فیلتر را به حداکثر ۵۰۰ سند محدود کنید.');
+      const checksum = createHash('sha256')
+        .update(
+          JSON.stringify({
+            bookId,
+            periodId,
+            periodVersion: period.version,
+            undo,
+            filter: p.filter,
+            items,
+          }),
+        )
+        .digest('hex');
+      if (action === 'review-all-preview')
+        return { items, total: items.length, checksum };
+      if (p.checksum !== checksum)
+        throw new ConflictException(
+          'فهرست یا نسخه اسناد تغییر کرده است؛ دوباره بررسی کنید.',
+        );
+      if (!items.length) v.rule('سندی برای عملیات انتخاب نشده است.');
+      return this.execute(
+        tx,
+        book,
+        undo ? 'unreview-documents' : 'review-documents',
+        { items, reason: p.reason },
+        undefined,
+        actor,
+        false,
+        stateEvents,
+      );
+    }
+    if (action === 'review-documents' || action === 'unreview-documents') {
+      if (!actor.permissions.includes('finance.journal.approve'))
+        throw new ForbiddenException();
+      if (!Array.isArray(p.items) || !p.items.length || p.items.length > 500)
+        v.invalid('بین یک تا ۵۰۰ سند انتخاب کنید.');
+      const items = p.items.map((raw) => {
+        const item = v.object(raw);
+        const expectedVersion = Number(item.expectedVersion);
+        if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 1)
+          v.invalid('نسخه معتبر همه اسناد لازم است.');
+        return { id: v.uuid(item.id)!, expectedVersion };
+      });
+      if (new Set(items.map((item) => item.id)).size !== items.length)
+        v.invalid('انتخاب تکراری سند مجاز نیست.');
+      const reason = v.text(p.reason, 2000);
+      const result: unknown[] = [];
+      for (const item of items)
+        result.push(
+          await this.execute(
+            tx,
+            book,
+            action === 'review-documents'
+              ? 'review-document'
+              : 'unreview-document',
+            { id: item.id, reason },
+            item.expectedVersion,
+            actor,
+            false,
+            stateEvents,
+          ),
+        );
+      return { items: result, total: result.length };
+    }
+    if (action === 'review-document' || action === 'unreview-document') {
+      const id = v.uuid(p.id)!;
+      const reason = v.text(p.reason, 2000);
+      const journal = await tx.accountingJournal.findFirst({
+        where: { id, bookId },
+      });
+      if (!journal) throw new NotFoundException();
+      this.version(journal.version, expected);
+      if (!actor.permissions.includes('finance.journal.approve'))
+        throw new ForbiddenException();
+      if (action === 'unreview-document') {
+        if (journal.status !== 'APPROVED')
+          v.rule('فقط سند بررسی‌شده قابل لغو بررسی است.');
+        const accountIds = new Set(
+          (
+            await tx.accountingJournalLine.findMany({
+              where: { journalId: id, journal: { bookId } },
+              select: { accountId: true },
+            })
+          ).map((line) => line.accountId),
+        );
+        if (
+          accountIds.has(null) ||
+          (await tx.accountingAccount.count({
+            where: {
+              bookId,
+              active: true,
+              level: 'SUBSIDIARY',
+              id: {
+                in: [...accountIds].filter((value): value is string => !!value),
+              },
+            },
+          })) !== accountIds.size
+        )
+          v.rule('سند دارای حساب معین غیرفعال قابل لغو بررسی نیست.');
+        return this.execute(
+          tx,
+          book,
+          'return',
+          { id, reason },
+          journal.version,
+          actor,
+          false,
+          stateEvents,
+        );
+      }
+      let version = journal.version;
+      if (journal.status === 'DRAFT') {
+        const submitted = (await this.execute(
+          tx,
+          book,
+          'submit',
+          { id, reason },
+          version,
+          actor,
+          false,
+          stateEvents,
+        )) as { version: number };
+        version = submitted.version;
+      } else if (journal.status !== 'PENDING_APPROVAL')
+        v.rule('وضعیت سند برای بررسی معتبر نیست.');
+      return this.execute(
+        tx,
+        book,
+        'approve',
+        { id, reason },
+        version,
+        actor,
+        false,
+        stateEvents,
+      );
+    }
     const hasNotes =
       p.notes !== undefined ||
       (p.attributes &&
@@ -1173,6 +2071,8 @@ export class AccountingService {
         ),
       };
     }
+    if (action === 'number-journal-preview')
+      return numberJournalPreview(tx, bookId, p);
     if (action === 'number-drafts') {
       const periodId = v.uuid(p.periodId)!;
       if (
@@ -1194,6 +2094,7 @@ export class AccountingService {
         take: 501,
       });
       if (journals.length > 500) v.rule('در هر اجرا حداکثر ۵۰۰ سند مجاز است.');
+      journals.sort(compareDocumentOrder);
       const ids = journals.map((j) => j.id);
       if (
         await tx.accountingJournal.count({
@@ -2060,6 +2961,15 @@ export class AccountingService {
       });
       if (existing) this.version(existing.version, expected);
       const kind = v.text(p.kind, 16, true);
+      const sourceForm = p.sourceForm === 'rahkaran-documents-v1';
+      if (sourceForm && kind === 'CLOSING') v.invalid('فرم الگو معتبر نیست.');
+      if (
+        existing &&
+        sourceForm !==
+          (v.attributes(existing.attributes).sourceForm ===
+            'rahkaran-documents-v1')
+      )
+        v.rule('فرم این الگو با قالب ذخیره‌شده یکسان نیست.');
       if (!['AUTOMATIC', 'REVALUATION', 'CLOSING'].includes(kind))
         v.invalid('نوع الگوی حسابداری معتبر نیست.');
       if (existing && existing.kind !== kind)
@@ -2080,6 +2990,11 @@ export class AccountingService {
       const gainAccountId = v.uuid(p.gainAccountId, true);
       const lossAccountId = v.uuid(p.lossAccountId, true);
       const retainedAccountId = v.uuid(p.retainedAccountId, true);
+      if (
+        sourceForm &&
+        (voucherTypeId || gainAccountId || lossAccountId || retainedAccountId)
+      )
+        v.invalid('فرم مرجع این فیلدها را ندارد.');
       const accountIds = [
         gainAccountId,
         lossAccountId,
@@ -2094,6 +3009,7 @@ export class AccountingService {
         v.rule('حساب‌های الگو باید فعال و متعلق به همین دفتر باشند.');
       if (
         (kind === 'REVALUATION' &&
+          !sourceForm &&
           (!voucherTypeId ||
             !gainAccountId ||
             !lossAccountId ||
@@ -2119,28 +3035,48 @@ export class AccountingService {
         side: string;
         percentage: string;
         include: boolean;
+        role: string | null;
       }[];
+      const templateAccountAttributes = new Map<string, AccountingAttributes>();
       for (const [position, raw] of p.lines.entries()) {
         const line = v.object(raw),
           accountId = v.uuid(line.accountId)!,
           detail4Id = v.uuid(line.detail4Id, true),
           detail5Id = v.uuid(line.detail5Id, true),
           detail6Id = v.uuid(line.detail6Id, true),
-          side = v.text(line.side, 8, true),
-          percentage = v.decimalAtScale(line.percentage, 8);
+          role = sourceForm ? v.text(line.role, 8, true) : null,
+          side = sourceForm ? 'DEBIT' : v.text(line.side, 8, true),
+          percentage =
+            sourceForm && role !== 'TARGET'
+              ? '100'
+              : v.decimalAtScale(line.percentage, 8);
         if (!['DEBIT', 'CREDIT'].includes(side))
           v.invalid('ماهیت ردیف الگو معتبر نیست.');
+        if (
+          sourceForm &&
+          !(
+            kind === 'AUTOMATIC' ? ['SOURCE', 'TARGET'] : ['OFFSET', 'BASIS']
+          ).includes(role!)
+        )
+          v.invalid('نقش ردیف الگو معتبر نیست.');
         if (
           DecimalValue.parse(percentage).isZero ||
           DecimalValue.parse(percentage).compare(DecimalValue.parse('100')) > 0
         )
           v.invalid('درصد ردیف الگو باید بیشتر از صفر و حداکثر صد باشد.');
-        if (
-          !(await tx.accountingAccount.findFirst({
-            where: { id: accountId, bookId, active: true },
-          }))
-        )
-          v.rule('حساب ردیف الگو معتبر نیست.');
+        const templateAccount = await tx.accountingAccount.findFirst({
+          where: {
+            id: accountId,
+            bookId,
+            active: true,
+            ...(sourceForm ? { level: 'SUBSIDIARY' } : {}),
+          },
+        });
+        if (!templateAccount) v.rule('حساب ردیف الگو معتبر نیست.');
+        templateAccountAttributes.set(
+          accountId,
+          v.attributes(templateAccount.attributes),
+        );
         const detailIds = [detail4Id, detail5Id, detail6Id].filter(
           (value): value is string => Boolean(value),
         );
@@ -2151,6 +3087,30 @@ export class AccountingService {
           })) !== new Set(detailIds).size
         )
           v.rule('تفصیلی ردیف الگو معتبر نیست.');
+        if (sourceForm) {
+          const attrs = v.attributes(templateAccount.attributes);
+          for (const [level, detailId] of [
+            [4, detail4Id],
+            [5, detail5Id],
+            [6, detail6Id],
+          ] as const) {
+            if (!detailId) continue;
+            const allowed = Array.isArray(attrs[`detail${level}TypeIds`])
+              ? (attrs[`detail${level}TypeIds`] as string[])
+              : [String(attrs[`detail${level}TypeId`] ?? '')].filter(Boolean);
+            if (
+              !(await tx.accountingDetail.findFirst({
+                where: {
+                  id: detailId,
+                  bookId,
+                  active: true,
+                  typeId: { in: allowed },
+                },
+              }))
+            )
+              v.rule('نوع تفصیلی با سطح حساب ردیف الگو سازگار نیست.');
+          }
+        }
         lines.push({
           bookId,
           position,
@@ -2161,7 +3121,43 @@ export class AccountingService {
           side,
           percentage,
           include: line.include !== false,
+          role,
         });
+      }
+      const sourceAssignments = sourceForm
+        ? validateTemplateAssignments(p.lines, kind)
+        : {};
+      if (sourceForm) {
+        for (const [childPosition, rootPosition] of Object.entries(
+          sourceAssignments,
+        )) {
+          const child = lines[Number(childPosition)]!;
+          const root = lines[rootPosition]!;
+          const rootAttrs = templateAccountAttributes.get(root.accountId)!;
+          const childAttrs = templateAccountAttributes.get(child.accountId)!;
+          if (
+            kind === 'AUTOMATIC' &&
+            rootAttrs.multiCurrency === true &&
+            childAttrs.multiCurrency !== true
+          )
+            v.rule('مبدا مقصد ارزی باید حساب معین ارزی باشد.');
+          if (kind === 'REVALUATION') {
+            const hasLevel = (attrs: AccountingAttributes, level: number) =>
+              Boolean(attrs[`detail${level}TypeId`]) ||
+              (Array.isArray(attrs[`detail${level}TypeIds`]) &&
+                (attrs[`detail${level}TypeIds`] as string[]).length > 0);
+            for (const level of [4, 5, 6] as const) {
+              if (
+                hasLevel(rootAttrs, level) &&
+                !root[`detail${level}Id`] &&
+                !hasLevel(childAttrs, level)
+              )
+                v.rule(
+                  'سطح تفصیلی خالی حساب تسعیر باید در حساب تسعیرپذیر وجود داشته باشد.',
+                );
+            }
+          }
+        }
       }
       const data = {
         bookId,
@@ -2176,6 +3172,31 @@ export class AccountingService {
         gainAccountId,
         lossAccountId,
         retainedAccountId,
+        ...(sourceForm
+          ? {
+              attributes: json({
+                ...v.attributes(existing?.attributes ?? {}),
+                sourceForm: 'rahkaran-documents-v1',
+                sourceAssignments: JSON.stringify(sourceAssignments),
+                ...(p.notes !== undefined
+                  ? {
+                      notes: JSON.stringify(
+                        setupNotes(
+                          p.notes,
+                          v.attributes(existing?.attributes ?? {}).notes,
+                          (
+                            await this.identity.displayNames(
+                              [actor.userId],
+                              actor.branchIds,
+                            )
+                          )[0]?.displayName ?? actor.userId,
+                        ),
+                      ),
+                    }
+                  : {}),
+              }),
+            }
+          : {}),
       };
       if (existing) {
         await tx.accountingTemplateLine.deleteMany({
@@ -2211,11 +3232,195 @@ export class AccountingService {
         }),
       );
     }
-    if (action === 'automatic-run')
-      v.rule(
-        'اجرای الگوی سند اتوماتیک تا تعریف قرارداد محاسبه پشتیبانی نمی‌شود.',
+    if (
+      action === 'document-revaluation-preview' ||
+      action === 'document-revaluation-run'
+    ) {
+      const preview = await sourceRevaluationPreview(
+        tx,
+        book,
+        p,
+        await accountingCurrencies(this.master),
       );
-    if (action === 'journal-save') {
+      if (action === 'document-revaluation-preview') return preview;
+      if (p.checksum !== preview.checksum)
+        throw new ConflictException(
+          'مانده، الگو یا نرخ تغییر کرده است؛ دوباره پیش‌نمایش بگیرید.',
+        );
+      if (!preview.lines.length)
+        v.rule('اختلافی برای صدور سند تسعیر وجود ندارد.');
+      const sourceKey = `REVALUE:${preview.periodId}:${preview.asOf}:SOURCE:${preview.checksum}`;
+      if (
+        await tx.accountingJournal.findFirst({
+          where: {
+            bookId,
+            periodId: preview.periodId,
+            sourceKey: {
+              startsWith: `REVALUE:${preview.periodId}:${preview.asOf}:`,
+            },
+            status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'] },
+          },
+        })
+      )
+        v.rule('سند تسعیر تعیین‌تکلیف‌نشده در این تاریخ وجود دارد.');
+      return this.execute(
+        tx,
+        book,
+        'journal-document-save',
+        {
+          periodId: preview.periodId,
+          typeId: preview.typeId,
+          documentDate: preview.asOf,
+          description: preview.description,
+          sourceKey,
+          lines: preview.lines,
+          ...(p.notes !== undefined ? { notes: p.notes } : {}),
+          attributes: {
+            ...preview.attributes,
+            revaluationAsOf: preview.asOf,
+            revaluationSourceChecksum: preview.checksum,
+          },
+        },
+        undefined,
+        actor,
+        true,
+        stateEvents,
+      );
+    }
+    if (action === 'add-line-default-description') {
+      const account = await tx.accountingAccount.findFirst({
+        where: {
+          id: v.uuid(p.accountId)!,
+          bookId,
+          active: true,
+          level: 'SUBSIDIARY',
+        },
+      });
+      if (!account) throw new NotFoundException();
+      this.version(account.version, expected);
+      const text = v.text(p.description, 2000, true),
+        textEn = v.text(p.descriptionEn, 2000);
+      const attrs = v.attributes(account.attributes);
+      let rows: { text: string; textEn: string }[] = [];
+      try {
+        rows = JSON.parse(String(attrs.defaultDescriptions ?? '[]'));
+      } catch {
+        v.rule('شرح‌های پیش‌فرض معین معتبر نیستند.');
+      }
+      if (!Array.isArray(rows) || rows.length >= 100)
+        v.rule('ظرفیت شرح‌های پیش‌فرض کافی نیست.');
+      if (rows.some((row) => row.text === text && row.textEn === textEn))
+        v.rule('این شرح پیش‌فرض قبلاً ثبت شده است.');
+      const attributes = {
+        ...attrs,
+        defaultDescriptions: JSON.stringify([...rows, { text, textEn }]),
+      };
+      validateAccountForm(attributes, account.permanent);
+      return tx.accountingAccount.update({
+        where: { id: account.id },
+        data: { attributes: json(attributes), version: { increment: 1 } },
+      });
+    }
+    if (action === 'automatic-preview' || action === 'automatic-run') {
+      if (!actor.permissions.includes('finance.journal.create'))
+        throw new ForbiddenException();
+      const preview = await automaticDocumentPreview(
+        tx,
+        book,
+        p,
+        await accountingCurrencies(this.master),
+      );
+      if (action === 'automatic-preview') return preview;
+      if (p.checksum !== preview.checksum)
+        throw new ConflictException(
+          'مانده یا الگو از زمان پیش‌نمایش تغییر کرده است؛ دوباره پیش‌نمایش بگیرید.',
+        );
+      const created = await this.execute(
+        tx,
+        book,
+        'journal-document-save',
+        {
+          periodId: preview.periodId,
+          typeId: preview.typeId,
+          documentDate: preview.documentDate,
+          description: preview.description,
+          lines: preview.lines,
+          attributes: {
+            ...preview.attributes,
+            automaticTemplateId: preview.templateId,
+            automaticTemplateVersion: String(preview.templateVersion),
+            automaticAsOf: preview.asOf,
+            automaticBasisChecksum: preview.checksum,
+          },
+        },
+        undefined,
+        actor,
+        true,
+        stateEvents,
+      );
+      return created;
+    }
+    if (action === 'journal-notes-save') {
+      const id = v.uuid(p.id)!;
+      const journal = await tx.accountingJournal.findFirst({
+        where: { id, bookId },
+      });
+      if (!journal) throw new NotFoundException();
+      this.version(journal.version, expected);
+      const actorName =
+        (await this.identity.displayNames([actor.userId], actor.branchIds))[0]
+          ?.displayName ?? actor.userId;
+      const attributes = v.attributes(journal.attributes);
+      attributes.lastModifierId = actor.userId;
+      attributes.notes = JSON.stringify(
+        setupNotes(p.notes, attributes.notes, actorName),
+      );
+      v.attributes(attributes);
+      return tx.accountingJournal.update({
+        where: { id },
+        data: { attributes: json(attributes), version: { increment: 1 } },
+        include: journalInclude,
+      });
+    }
+    if (action === 'journal-delete-documents') {
+      if (!Array.isArray(p.items) || !p.items.length || p.items.length > 500)
+        v.invalid('بین ۱ تا ۵۰۰ سند انتخاب کنید.');
+      const ids = new Set<string>();
+      const deleted = [];
+      for (const raw of p.items) {
+        const item = v.object(raw),
+          id = v.uuid(item.id)!;
+        if (
+          ids.has(id) ||
+          !Number.isSafeInteger(item.expectedVersion) ||
+          Number(item.expectedVersion) < 1
+        )
+          v.invalid('انتخاب سند یا نسخه معتبر نیست.');
+        ids.add(id);
+        deleted.push(
+          await this.execute(
+            tx,
+            book,
+            'cancel',
+            { id },
+            Number(item.expectedVersion),
+            actor,
+            false,
+            stateEvents,
+          ),
+        );
+      }
+      return { items: deleted, total: deleted.length };
+    }
+    if (
+      [
+        'journal-save',
+        'journal-document-save',
+        'journal-memorandum-save',
+      ].includes(action)
+    ) {
+      const documentSave = action !== 'journal-save';
+      const memorandum = action === 'journal-memorandum-save';
       const id = v.uuid(p.id, true) ?? randomUUID();
       const existing = await tx.accountingJournal.findFirst({
         where: { id, bookId },
@@ -2223,8 +3428,15 @@ export class AccountingService {
       });
       if (existing) {
         this.version(existing.version, expected);
-        if (existing.status !== 'DRAFT')
+        if (!['DRAFT', 'MEMORANDUM'].includes(existing.status))
           v.rule('فقط پیش‌نویس قابل ویرایش است.');
+        if (
+          !internal &&
+          v.attributes(existing.attributes).revaluationSourceChecksum
+        )
+          v.rule('سند تسعیر ارز قابل ویرایش نیست.');
+        if (existing.status === 'MEMORANDUM' && !documentSave)
+          v.rule('سند یادداشت باید از فرم صدور سند ثبت موقت یا یادداشت شود.');
       }
       const rows = v.lines(p.lines, internal);
       if (existing) {
@@ -2272,6 +3484,29 @@ export class AccountingService {
       const periodId = v.uuid(p.periodId, true),
         typeId = v.uuid(p.typeId, true),
         documentDate = v.date(p.documentDate, true);
+      const setupOpening =
+        p.sourcePage === 'setup-opening' ||
+        (existing &&
+          v.attributes(existing.attributes).sourcePage === 'setup-opening');
+      if (p.sourcePage !== undefined && p.sourcePage !== 'setup-opening')
+        v.invalid('صفحه صدور سند معتبر نیست.');
+      if (setupOpening) {
+        const setupTypes = await tx.accountingConfiguration.findMany({
+          where: {
+            bookId,
+            kind: 'voucher-types',
+            active: true,
+            title: 'افتتاحیه استقرار',
+          },
+          select: { id: true },
+        });
+        if (setupTypes.length !== 1 || typeId !== setupTypes[0]?.id)
+          v.rule(
+            'نوع سند افتتاحیه استقرار باید از نوع فعال همین دفتر باشد و قابل تغییر نیست.',
+          );
+        if (existing && existing.typeId !== typeId)
+          v.rule('نوع سند موجود در فرم افتتاحیه استقرار قابل تبدیل نیست.');
+      }
       const period = periodId
         ? await tx.accountingPeriod.findFirst({
             where: { id: periodId, bookId, status: 'OPEN' },
@@ -2291,7 +3526,112 @@ export class AccountingService {
         }))
       )
         v.rule('نوع سند معتبر انتخاب کنید.');
+      if (periodId && documentDate) {
+        const lastGeneral = await tx.accountingGeneralDocument.findFirst({
+          where: { bookId, periodId },
+          orderBy: { documentDate: 'desc' },
+          select: { documentDate: true },
+        });
+        if (lastGeneral && documentDate <= lastGeneral.documentDate)
+          v.rule('ثبت سند تا تاریخ آخرین سند کل مجاز نیست.');
+      }
+      if (documentSave) {
+        if (!period || !documentDate || !typeId)
+          v.rule('تاریخ داخل دوره باز و نوع سند فعال لازم است.');
+        const lastPosted = await tx.accountingJournal.findFirst({
+          where: { bookId, periodId, status: 'POSTED' },
+          orderBy: { documentDate: 'desc' },
+          select: { documentDate: true },
+        });
+        if (
+          lastPosted?.documentDate &&
+          (documentDate < lastPosted.documentDate ||
+            (!existing && documentDate === lastPosted.documentDate))
+        )
+          v.rule('تاریخ سند نمی‌تواند قبل از آخرین سند قطعی دوره باشد.');
+        if (
+          await tx.accountingJournal.findFirst({
+            where: {
+              bookId,
+              periodId,
+              status: { not: 'CANCELLED' },
+              OR: [
+                { sourceKey: { startsWith: 'CLOSE:' } },
+                {
+                  attributes: {
+                    path: ['operation'],
+                    equals: 'year-end-closing',
+                  },
+                },
+              ],
+            },
+            select: { id: true },
+          })
+        )
+          v.rule('پس از صدور سند پایان دوره امکان ثبت سند وجود ندارد.');
+        if (!memorandum) {
+          if (rows.length < 2 || !v.totals(rows).balanced)
+            v.rule(
+              'ثبت موقت به اقلام بدهکار و بستانکار کامل و تراز نیاز دارد.',
+            );
+          for (const row of rows) {
+            if (
+              !row.accountId ||
+              !row.description.trim() ||
+              (row.debit === '0') === (row.credit === '0')
+            )
+              v.rule('هر قلم به حساب معین، شرح و یک سمت مبلغ مثبت نیاز دارد.');
+          }
+        }
+      }
       await this.references(tx, bookId, rows);
+      if (documentSave && !memorandum) {
+        const currencyAccounts = new Set(
+          (
+            await tx.accountingAccount.findMany({
+              where: {
+                bookId,
+                id: {
+                  in: rows
+                    .map((row) => row.accountId)
+                    .filter((id): id is string => !!id),
+                },
+              },
+              select: { id: true, attributes: true },
+            })
+          )
+            .filter(
+              (account) =>
+                v.attributes(account.attributes).multiCurrency === true,
+            )
+            .map((account) => account.id),
+        );
+        for (const row of rows) {
+          if (
+            row.accountId &&
+            currencyAccounts.has(row.accountId) &&
+            !row.currency &&
+            !(
+              internal &&
+              String(p.sourceKey).startsWith('REVALUE:') &&
+              row.attributes.valuationCurrency
+            )
+          ) {
+            row.currency = book.baseCurrency;
+            row.rate = '1';
+            row.foreignAmount = row.debit !== '0' ? row.debit : row.credit;
+          }
+          if (
+            row.currency === book.baseCurrency &&
+            (row.rate !== '1' ||
+              row.foreignAmount !==
+                (row.debit !== '0' ? row.debit : row.credit))
+          )
+            v.rule(
+              'قلم با ارز عملیاتی باید نرخ یک و مبلغ ارز برابر مبلغ قلم داشته باشد.',
+            );
+        }
+      }
       const moved = Boolean(
         existing &&
         (existing.periodId !== periodId ||
@@ -2302,7 +3642,13 @@ export class AccountingService {
           v.rule('جابه‌جایی سند به دوره باز و تاریخ داخل همان دوره نیاز دارد.');
         const existingAttributes = v.attributes(existing.attributes);
         if (
-          existing.number !== null ||
+          (existing.number !== null &&
+            !(
+              documentSave &&
+              existing.periodId === periodId &&
+              v.attributes(existing.attributes).sourceForm ===
+                'rahkaran-documents-v1'
+            )) ||
           existing.sourceKey ||
           existing.reversalOfId ||
           existingAttributes.operation !== undefined ||
@@ -2316,13 +3662,85 @@ export class AccountingService {
         )
           throw new ForbiddenException();
       }
-      const submittedAttributes = v.journalAttributes(p.attributes, internal);
+      const submittedInput = { ...v.attributes(p.attributes) };
+      if (existing && !internal) {
+        const storedAttributes = v.attributes(existing.attributes);
+        for (const key of Object.keys(submittedInput)) {
+          if (journalWritableAttributes.includes(key)) continue;
+          if (
+            storedAttributes[key] === undefined ||
+            JSON.stringify(storedAttributes[key]) !==
+              JSON.stringify(submittedInput[key])
+          )
+            v.invalid('ویژگی سیستمی سند حسابداری قابل تغییر نیست.');
+          delete submittedInput[key];
+        }
+      }
+      const submittedAttributes = v.journalAttributes(submittedInput, internal);
+      if (documentSave)
+        submittedAttributes.sourceForm = 'rahkaran-documents-v1';
+      if (setupOpening) submittedAttributes.sourcePage = 'setup-opening';
+      submittedAttributes.lastModifierId = actor.userId;
+      if (p.notes !== undefined) {
+        const actorName =
+          (await this.identity.displayNames([actor.userId], actor.branchIds))[0]
+            ?.displayName ?? actor.userId;
+        submittedAttributes.notes = JSON.stringify(
+          setupNotes(
+            p.notes,
+            existing ? v.attributes(existing.attributes).notes : undefined,
+            actorName,
+          ),
+        );
+      }
+      if (!existing || (moved && documentSave)) {
+        const sameDay = await tx.accountingJournal.findMany({
+          where: { bookId, documentDate },
+          select: { attributes: true },
+        });
+        const highestDailyNumber = sameDay.reduce((highest, row) => {
+          const value = Number(v.attributes(row.attributes).dailyNumber);
+          return Number.isSafeInteger(value) && value > highest
+            ? value
+            : highest;
+        }, sameDay.length);
+        submittedAttributes.dailyNumber = String(highestDailyNumber + 1);
+      }
+      let documentNumber = existing?.number ?? null;
+      if (documentSave && documentNumber === null) {
+        const serial = await tx.accountingJournal.aggregate({
+          where: { bookId, periodId },
+          _max: { number: true },
+        });
+        documentNumber = (serial._max.number ?? 0) + 1;
+        if (documentNumber >= 2000000000) v.rule('ظرفیت شماره سند کافی نیست.');
+        if (book.nextNumber <= documentNumber)
+          await tx.accountingBook.update({
+            where: { id: bookId },
+            data: { nextNumber: documentNumber + 1 },
+          });
+      }
+      const generatedReference =
+        !existing && (!internal || documentSave) && !p.reference
+          ? String(
+              (await tx.accountingJournal.count({ where: { bookId } })) + 1,
+            )
+          : null;
       const data = {
+        ...(internal && !existing && p.sourceKey
+          ? { sourceKey: v.text(p.sourceKey, 200, true) }
+          : {}),
+        ...(documentSave
+          ? {
+              status: memorandum ? 'MEMORANDUM' : 'DRAFT',
+              number: documentNumber,
+            }
+          : {}),
         periodId,
         typeId,
         documentDate,
         description: v.text(p.description, 2000),
-        reference: v.text(p.reference, 160) || null,
+        reference: v.text(p.reference, 160) || generatedReference,
         attributes: json(
           existing && !internal
             ? {
@@ -2354,6 +3772,20 @@ export class AccountingService {
           },
           include: journalInclude,
         });
+        if (documentSave && !memorandum)
+          await this.validatePosting(tx, book, updated);
+        if (documentSave && existing.status !== updated.status)
+          stateEvents.push({
+            journalId: id,
+            eventType: 'STATUS',
+            fromStatus: existing.status,
+            toStatus: updated.status,
+            journalVersion: updated.version,
+            oldPeriodId: existing.periodId,
+            newPeriodId: updated.periodId,
+            oldDocumentDate: existing.documentDate,
+            newDocumentDate: updated.documentDate,
+          });
         if (moved)
           stateEvents.push({
             journalId: id,
@@ -2385,6 +3817,8 @@ export class AccountingService {
         },
         include: journalInclude,
       });
+      if (documentSave && !memorandum)
+        await this.validatePosting(tx, book, created);
       stateEvents.push({
         journalId: created.id,
         eventType: 'CREATE',
@@ -2395,6 +3829,9 @@ export class AccountingService {
         newDocumentDate: created.documentDate,
       });
       return created;
+    }
+    if (action === 'reorder-journals') {
+      return reorderJournals(tx, bookId, p);
     }
     if (action === 'move-drafts') {
       if (!Array.isArray(p.items) || !p.items.length || p.items.length > 100)
@@ -2510,10 +3947,15 @@ export class AccountingService {
           }))
         )
           v.rule('دوره سند برای بازیابی باید باز باشد.');
+        const deletion = await tx.accountingJournalStateEvent.findFirst({
+          where: { journalId: id, bookId, toStatus: 'CANCELLED' },
+          orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+        });
         const restored = await tx.accountingJournal.update({
           where: { id },
           data: {
-            status: 'DRAFT',
+            status:
+              deletion?.fromStatus === 'MEMORANDUM' ? 'MEMORANDUM' : 'DRAFT',
             approverId: null,
             attributes: json(resetApprovalAttributes(journal.attributes)),
             version: { increment: 1 },
@@ -2535,6 +3977,8 @@ export class AccountingService {
         return restored;
       }
       if (action === 'return' || action === 'cancel') {
+        if (action === 'return' && journal.status === 'MEMORANDUM')
+          v.rule('سند یادداشت باید ابتدا ثبت موقت شود.');
         if (journal.status === 'POSTED' || journal.status === 'CANCELLED')
           v.rule('سند قطعی یا لغوشده قابل تغییر نیست.');
         if (
@@ -2803,17 +4247,39 @@ export class AccountingService {
     }>,
   ) {
     if (journal.sourceKey?.startsWith('REVALUE:')) {
-      const attrs = v.attributes(journal.attributes),
-        basis = await this.revaluationBasis(
+      const attrs = v.attributes(journal.attributes);
+      if (attrs.revaluationSourceChecksum) {
+        const preview = await sourceRevaluationPreview(
+          tx,
+          book,
+          {
+            templateId: attrs.revaluationTemplateId,
+            asOf: attrs.revaluationAsOf,
+            currency: attrs.revaluationCurrency,
+            rateId: attrs.revaluationRateId,
+            description: journal.description,
+            descriptionEn: attrs.descriptionEn,
+            auxiliaryNumber: attrs.auxiliaryNumber,
+          },
+          await accountingCurrencies(this.master),
+          journal.id,
+        );
+        if (preview.checksum !== attrs.revaluationSourceChecksum)
+          v.rule(
+            'مانده، الگو یا نرخ مبنای تسعیر تغییر کرده است؛ سند را لغو و دوباره محاسبه کنید.',
+          );
+      } else {
+        const basis = await this.revaluationBasis(
           tx,
           book,
           journal.periodId!,
           String(attrs.asOf),
         );
-      if (basis.checksum !== attrs.basisChecksum)
-        v.rule(
-          'مانده‌های مبنای تسعیر تغییر کرده‌اند؛ سند را لغو و پیش‌نمایش جدید تهیه کنید.',
-        );
+        if (basis.checksum !== attrs.basisChecksum)
+          v.rule(
+            'مانده‌های مبنای تسعیر تغییر کرده‌اند؛ سند را لغو و پیش‌نمایش جدید تهیه کنید.',
+          );
+      }
     }
     if (!book.active || !book.allowsPosting)
       v.rule('دفتر اجازه ثبت سند ندارد.');
@@ -2841,7 +4307,12 @@ export class AccountingService {
       }))
     )
       v.rule('نوع سند فعال انتخاب کنید.');
-    if (journal.description.trim().length < 3 || journal.lines.length < 2)
+    const sourceDocument =
+      v.attributes(journal.attributes).sourceForm === 'rahkaran-documents-v1';
+    if (
+      (!sourceDocument && journal.description.trim().length < 3) ||
+      journal.lines.length < 2
+    )
       v.rule('شرح و حداقل دو ردیف کامل لازم است.');
     const rows = journal.lines.map((row) => ({
       ...row,
@@ -2853,6 +4324,8 @@ export class AccountingService {
     const warnings: string[] = [];
     const checkedNature = new Set<string>();
     for (const row of rows) {
+      if (sourceDocument && !row.description.trim())
+        v.rule('شرح همه اقلام سند برای ثبت موقت لازم است.');
       const account = row.accountId
         ? await tx.accountingAccount.findFirst({
             where: {
@@ -3503,6 +4976,209 @@ export class AccountingService {
     actor: AuthenticatedActor,
   ) {
     this.require(actor);
+    if (kind === 'document-statements') {
+      await this.book(this.database.client, bookId, actor);
+      const journalId = v.uuid(query.journalId)!;
+      const rows = await this.database.client.accountingStatement.findMany({
+        where: {
+          bookId,
+          journalId,
+          ...(query.id ? { id: v.uuid(query.id)! } : {}),
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+        take: 101,
+      });
+      if (rows.length > 100)
+        v.rule(
+          'بیش از صد اعلامیه برای این سند موجود است؛ شناسه اعلامیه را مشخص کنید.',
+        );
+      const names = await this.identity.displayNames(
+        rows.flatMap((row) => [
+          row.makerId,
+          ...(row.lastModifierId ? [row.lastModifierId] : []),
+        ]),
+        actor.branchIds,
+      );
+      return {
+        items: rows.map((row) => ({
+          ...row,
+          makerName:
+            names.find((user) => user.id === row.makerId)?.displayName ?? null,
+          lastModifierName:
+            names.find((user) => user.id === row.lastModifierId)?.displayName ??
+            null,
+        })),
+      };
+    }
+    if (kind === 'general-document-list') {
+      const exporting = query.export === 'true';
+      if (exporting) this.require(actor, 'finance.export');
+      return this.database.client.$transaction(
+        async (tx) => {
+          await this.book(tx, bookId, actor);
+          const page = exporting ? 1 : Number(query.page ?? 1),
+            pageSize = exporting ? 10000 : Number(query.pageSize ?? 50);
+          if (
+            !Number.isSafeInteger(page) ||
+            page < 1 ||
+            page > 200000 ||
+            !Number.isSafeInteger(pageSize) ||
+            pageSize < 1 ||
+            pageSize > (exporting ? 10000 : 100)
+          )
+            v.invalid('صفحه فهرست معتبر نیست.');
+          let filter: unknown = { type: 'group', mode: 'all', children: [] };
+          if (query.filter) {
+            if (query.filter.length > 20000)
+              v.invalid('فیلتر بیش از حد بزرگ است.');
+            try {
+              filter = JSON.parse(query.filter);
+            } catch {
+              v.invalid('فیلتر معتبر نیست.');
+            }
+          }
+          const predicates = [
+            Prisma.sql`j."bookId"=${bookId}::uuid`,
+            documentSqlFilter(filter, 'general'),
+          ];
+          if (query.periodId)
+            predicates.push(
+              Prisma.sql`j."periodId"=${v.uuid(query.periodId)}::uuid`,
+            );
+          const where = Prisma.join(
+            predicates.map((part) => Prisma.sql`(${part})`),
+            ' AND ',
+          );
+          const orders: Record<string, string> = {
+            number: 'j.number',
+            documentDate: 'j."documentDate"',
+            amount: 'amount',
+            makerId: 'j."makerId"',
+          };
+          const order = orders[query.sort ?? 'number'];
+          if (!Object.hasOwn(orders, query.sort ?? 'number') || !order)
+            v.invalid('ستون مرتب‌سازی معتبر نیست.');
+          const groupBy = query.groupBy || null;
+          if (groupBy && !Object.hasOwn(orders, groupBy))
+            v.invalid('ستون گروه‌بندی معتبر نیست.');
+          const groupingOrder = groupBy
+            ? Prisma.sql`${Prisma.raw(orders[groupBy]!)} ASC,`
+            : Prisma.empty;
+          const direction = query.direction === 'desc' ? 'DESC' : 'ASC';
+          const [count, rows] = await Promise.all([
+            tx.$queryRaw<{ total: bigint }[]>(
+              Prisma.sql`SELECT COUNT(*) AS total FROM accounting_general_documents j WHERE ${where}`,
+            ),
+            tx.$queryRaw<
+              {
+                id: string;
+                number: number;
+                documentDate: string;
+                makerId: string;
+                version: number;
+                amount: Prisma.Decimal;
+              }[]
+            >(
+              Prisma.sql`SELECT j.id,j.number,j."documentDate",j."makerId",j.version,(SELECT COALESCE(SUM(a.debit),0) FROM accounting_general_document_lines a WHERE a."documentId"=j.id) AS amount FROM accounting_general_documents j WHERE ${where} ORDER BY ${groupingOrder} ${Prisma.raw(order)} ${Prisma.raw(direction)},j.id LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`,
+            ),
+          ]);
+          if (exporting && Number(count[0]?.total ?? 0) > 10000)
+            v.rule('برای خروجی، فیلتر را به حداکثر ۱۰۰۰۰ سند کل محدود کنید.');
+          const names = await this.identity.displayNames(
+            [...new Set(rows.map((row) => row.makerId))],
+            actor.branchIds,
+          );
+          const groups = groupBy
+            ? await tx.$queryRaw<
+                { key: string; count: bigint; amount: Prisma.Decimal }[]
+              >(Prisma.sql`
+            WITH grouped_source AS (SELECT j.number,j."documentDate",j."makerId",
+              (SELECT COALESCE(SUM(a.debit),0) FROM accounting_general_document_lines a WHERE a."documentId"=j.id) AS amount
+              FROM accounting_general_documents j WHERE ${where})
+            SELECT ${Prisma.raw(groupBy === 'amount' || groupBy === 'number' ? groupBy : `"${groupBy}"`)}::text AS key,COUNT(*) AS count,SUM(amount) AS amount
+              FROM grouped_source GROUP BY ${Prisma.raw(groupBy === 'amount' || groupBy === 'number' ? groupBy : `"${groupBy}"`)}
+              ORDER BY ${Prisma.raw(groupBy === 'amount' || groupBy === 'number' ? groupBy : `"${groupBy}"`)} LIMIT 1001`)
+            : [];
+          if (groups.length > 1000)
+            v.rule('فیلتر گروه‌بندی را به حداکثر ۱۰۰۰ گروه محدود کنید.');
+          return {
+            page,
+            pageSize,
+            total: Number(count[0]?.total ?? 0),
+            groupBy,
+            groups: groups.map((group) => ({
+              key:
+                groupBy === 'amount'
+                  ? DecimalValue.parse(group.key).toString()
+                  : group.key,
+              count: Number(group.count),
+              amount: group.amount.toString(),
+            })),
+            rows: rows.map((row) => ({
+              ...row,
+              amount: row.amount.toString(),
+              makerName:
+                names.find((name) => name.id === row.makerId)?.displayName ??
+                row.makerId,
+            })),
+          };
+        },
+        { isolationLevel: 'RepeatableRead' },
+      );
+    }
+    if (kind === 'document-revaluation-currencies') {
+      const book = await this.book(this.database.client, bookId, actor);
+      const [currencies, values] = await Promise.all([
+        accountingCurrencies(this.master),
+        this.database.client.$queryRaw<{ value: string }[]>(Prisma.sql`
+        SELECT DISTINCT l.currency AS value FROM accounting_journal_lines l
+        JOIN accounting_journals j ON j.id=l."journalId"
+        WHERE j."bookId"=${bookId}::uuid AND ${documentFigureStatuses}
+          AND l.currency<>${book.baseCurrency}
+        ORDER BY l.currency`),
+      ]);
+      const eligible = new Set(values.map((row) => row.value));
+      return currencies
+        .filter((currency) => eligible.has(currency.code))
+        .map((currency) => ({ value: currency.code, label: currency.name }));
+    }
+    if (kind === 'document-filter-options') {
+      const book = await this.book(this.database.client, bookId, actor);
+      const [users, branches] = await Promise.all([
+        this.identity.candidates(book.branchId),
+        this.identity.branches([book.branchId]),
+      ]);
+      return {
+        actors: users.map((user) => ({
+          value: user.id,
+          label: user.displayName,
+        })),
+        branches: branches.map((branch) => ({
+          value: branch.id,
+          label: branch.name,
+          code: branch.code,
+        })),
+      };
+    }
+    if (kind === 'document-posting-context') {
+      this.require(actor, 'finance.journal.post');
+      return this.database.client.$transaction(
+        async (tx) => {
+          const book = await this.book(tx, bookId, actor);
+          const interval = await documentPostingInterval(tx, book, query);
+          return { fromDate: interval.fromDate, toDate: interval.toDate };
+        },
+        { isolationLevel: 'RepeatableRead' },
+      );
+    }
+    if (kind === 'document-turnover' || kind === 'document-fx-balance')
+      return this.database.client.$transaction(
+        async (tx) => {
+          const book = await this.book(tx, bookId, actor);
+          return documentFigures(tx, book, kind, query);
+        },
+        { isolationLevel: 'RepeatableRead' },
+      );
     if (
       ![
         'dormant',

@@ -1,12 +1,25 @@
 import { randomUUID } from 'node:crypto';
-import { beforeAll, afterAll, describe, it, expect, vi } from 'vitest';
+import {
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  describe,
+  it,
+  expect,
+  vi,
+} from 'vitest';
 import { createDatabaseClient, type DatabaseClient } from '@nora/database';
 import {
   ACCOUNTING_PERMISSIONS,
   type AuthenticatedActor,
   type AccountingJournalV1,
+  type AccountingStatementBasisV1,
+  type AccountingStatementV1,
 } from '@nora/contracts';
 import { AccountingService } from '../src/finance/accounting/accounting.service';
+import { MasterDataService } from '../src/master-data/master-data.service';
+import { MasterDataRepository } from '../src/master-data/master-data.repository';
 
 const url = process.env.ACCOUNTING_TEST_DATABASE_URL;
 describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
@@ -31,6 +44,39 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     ],
   };
   const checker: AuthenticatedActor = { ...maker, userId: checkerId };
+  const documentFixtureTests = new Set([
+    'issues statements from selected saved articles with immutable snapshots and version guards',
+    'imports journal batches atomically with regular validation and command replay',
+    'filters document lines before pagination and guards source numbering preview versions',
+    'separates memorandum saving from complete temporary documents and audits the transition',
+    'reviews a temporary document atomically while preserving independent checker and version guards',
+    'reviews selected documents as one transaction and audits the supplied explanation',
+    'generates automatic temporary transfers from real source balances and rejects stale bases',
+    'posts the complete reviewed interval atomically and rejects stale previews',
+    'calculates document turnover from complete temporary records and excludes memorandum and legacy drafts',
+  ]);
+  let priorDocumentIds: string[] = [];
+  beforeEach(async (context) => {
+    if (!documentFixtureTests.has(context.task.name)) return;
+    priorDocumentIds = (
+      await db.accountingJournal.findMany({
+        where: { bookId },
+        select: { id: true },
+      })
+    ).map((row) => row.id);
+  });
+  afterEach(async (context) => {
+    if (!documentFixtureTests.has(context.task.name)) return;
+    const fixtures = await db.accountingJournal.findMany({
+      where: {
+        bookId,
+        id: { notIn: priorDocumentIds },
+        status: { notIn: ['POSTED', 'CANCELLED'] },
+      },
+    });
+    for (const row of fixtures)
+      await command('cancel', { id: row.id }, row.version, checker);
+  });
   const command = async <T = Record<string, unknown>>(
     action: string,
     payload: Record<string, unknown>,
@@ -87,6 +133,8 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         displayNames: async (ids: string[]) =>
           ids.map((id) => ({ id, displayName: 'Synthetic accountant' })),
       } as never,
+      undefined,
+      new MasterDataService(new MasterDataRepository({ client: db } as never)),
     );
     bookId = (
       await service.createBook(
@@ -580,17 +628,2073 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     });
     expect(unchanged.version).toBe(saved.version);
   });
-  const draft = () =>
+  const draft = (description = 'Synthetic transfer') =>
     command<AccountingJournalV1>('journal-save', {
       periodId,
       typeId,
       documentDate: '2026-05-01',
-      description: 'Synthetic transfer',
+      description,
       lines: [
         { accountId: debitId, debit: '100', credit: '0' },
         { accountId: creditId, debit: '0', credit: '100' },
       ],
     });
+  it('persists observed document template roles with scoped FKs and optional-date notes', async () => {
+    const note = {
+      id: randomUUID(),
+      title: 'Synthetic note',
+      text: 'Synthetic content',
+      date: '',
+      createdBy: 'forged',
+    };
+    const source = { accountId: debitId, role: 'SOURCE', parentPosition: 1 };
+    const target = { accountId: creditId, role: 'TARGET', percentage: '100' };
+    const payload = {
+      kind: 'AUTOMATIC',
+      sourceForm: 'rahkaran-documents-v1',
+      code: randomUUID(),
+      title: 'Synthetic source template',
+      description: 'Default',
+      descriptionEn: 'Default EN',
+      lines: [source, target],
+      notes: [note],
+    };
+    const saved = await command<{
+      id: string;
+      version: number;
+      attributes: Record<string, string>;
+      lines: { role: string; accountId: string; percentage: string }[];
+    }>('save-template', payload);
+    expect(saved.lines.map((line) => line.role)).toEqual(['SOURCE', 'TARGET']);
+    expect(saved.lines[0]!.percentage).toBe('100');
+    expect(JSON.parse(saved.attributes.notes!).at(0)).toMatchObject({
+      date: '',
+      createdBy: 'Synthetic accountant',
+    });
+    await expect(
+      command(
+        'save-template',
+        {
+          ...payload,
+          id: saved.id,
+          lines: [source, { ...target, role: 'BASIS' }],
+        },
+        saved.version,
+      ),
+    ).rejects.toThrow();
+    expect(
+      (
+        await db.accountingTemplate.findUniqueOrThrow({
+          where: { id: saved.id },
+          include: { lines: true },
+        })
+      ).lines,
+    ).toHaveLength(2);
+    await expect(
+      command(
+        'save-template',
+        {
+          ...payload,
+          id: saved.id,
+          lines: [source, { ...target, accountId: randomUUID() }],
+        },
+        saved.version,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      command(
+        'save-template',
+        { ...payload, id: saved.id, voucherTypeId: typeId },
+        saved.version,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      command('save-template', { ...payload, id: saved.id }, saved.version + 1),
+    ).rejects.toThrow();
+    const fx = await command<{ id: string; lines: { role: string }[] }>(
+      'save-template',
+      {
+        kind: 'REVALUATION',
+        sourceForm: 'rahkaran-documents-v1',
+        code: randomUUID(),
+        title: 'Synthetic FX pattern',
+        lines: [
+          { accountId: debitId, role: 'OFFSET' },
+          { accountId: creditId, role: 'BASIS', parentPosition: 0 },
+        ],
+      },
+    );
+    expect(fx.lines.map((line) => line.role)).toEqual(['OFFSET', 'BASIS']);
+    await expect(
+      command('save-template', {
+        kind: 'REVALUATION',
+        code: randomUUID(),
+        title: 'Incomplete legacy',
+        lines: [],
+      }),
+    ).rejects.toThrow();
+  });
+  it('issues statements from selected saved articles with immutable snapshots and version guards', async () => {
+    const parent = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: debitId },
+    });
+    const detailType = await command<{ id: string }>('save-configuration', {
+      kind: 'detail-types',
+      code: 'STATEMENT-TYPE',
+      title: 'Synthetic statement type',
+      attributes: { classificationNumberLength: '6' },
+    });
+    const firstRecipient = await command<{ id: string }>('save-detail', {
+      typeId: detailType.id,
+      title: 'Synthetic statement A',
+      code: '987901',
+      currency: 'IRR',
+      attributes: { classificationNumber: '' },
+    });
+    const secondRecipient = await command<{ id: string }>('save-detail', {
+      typeId: detailType.id,
+      title: 'Synthetic statement B',
+      code: '987902',
+      currency: 'IRR',
+      attributes: { classificationNumber: '' },
+    });
+    const account = await command<{ id: string }>('save-account', {
+      code: '11998701',
+      title: 'Synthetic statement account',
+      level: 'SUBSIDIARY',
+      nature: 'ANY',
+      parentId: parent.parentId,
+      attributes: { detail4TypeIds: [detailType.id], detailLevels: ['4'] },
+    });
+    const payload = {
+      periodId,
+      typeId,
+      documentDate: '2026-05-02',
+      description: 'Synthetic statement basis',
+      lines: [
+        {
+          accountId: account.id,
+          detail4Id: firstRecipient.id,
+          debit: '60',
+          credit: '0',
+          description: 'Synthetic A',
+        },
+        {
+          accountId: account.id,
+          detail4Id: firstRecipient.id,
+          debit: '0',
+          credit: '100',
+          description: 'Synthetic B',
+        },
+        {
+          accountId: account.id,
+          detail4Id: firstRecipient.id,
+          debit: '40',
+          credit: '0',
+          description: 'Synthetic C',
+        },
+      ],
+    };
+    const journal = await command<AccountingJournalV1>(
+      'journal-document-save',
+      payload,
+    );
+    const selection = {
+      journalId: journal.id,
+      lineIds: [journal.lines[2]!.id, journal.lines[0]!.id],
+      level: 4,
+      currencyMode: false,
+    };
+    const basis = await command<AccountingStatementBasisV1>(
+      'journal-statement-preview',
+      selection,
+    );
+    expect(basis.rows.map((row) => row.position)).toEqual([1, 3]);
+    expect(basis.balance).toBe('100');
+    expect(basis.type).toBe('DEBIT');
+    const mixed = await command<AccountingStatementBasisV1>(
+      'journal-statement-preview',
+      { ...selection, lineIds: journal.lines.map((line) => line.id) },
+    );
+    expect(mixed.type).toBe('BOTH');
+    expect(mixed.balance).toBe('0');
+    const baseCurrency = await db.masterCurrency.upsert({
+      where: { code: 'IRR' },
+      update: {},
+      create: {
+        code: 'IRR',
+        name: 'Synthetic statement currency',
+        decimalDigits: 0,
+        createdByUserId: makerId,
+        updatedByUserId: makerId,
+      },
+    });
+    const currencyBasis = await command<AccountingStatementBasisV1>(
+      'journal-statement-preview',
+      { ...selection, currencyMode: true },
+    );
+    expect(
+      currencyBasis.rows.every(
+        (row) =>
+          row.currency === 'IRR' &&
+          row.currencyName === baseCurrency.name &&
+          row.foreignDebit === row.debit,
+      ),
+    ).toBe(true);
+    expect(currencyBasis.balance).toBe('100');
+    await expect(
+      command('journal-statement-preview', { ...selection, level: 5 }),
+    ).rejects.toThrow();
+    await expect(
+      command('journal-statement-preview', {
+        ...selection,
+        lineIds: [randomUUID()],
+      }),
+    ).rejects.toThrow();
+    const write = {
+      ...selection,
+      checksum: basis.checksum,
+      periodId,
+      documentDate: '2026-05-03',
+      description: 'Synthetic statement',
+      status: 'CREATED',
+      notes: [],
+    };
+    await expect(
+      command('journal-statement-save', { ...write, checksum: 'stale' }),
+    ).rejects.toThrow();
+    const key = randomUUID();
+    const saved = await command<AccountingStatementV1>(
+      'journal-statement-save',
+      write,
+      undefined,
+      maker,
+      key,
+    );
+    expect(
+      await command('journal-statement-save', write, undefined, maker, key),
+    ).toEqual(saved);
+    expect(saved.snapshot.rows.map((row) => row.position)).toEqual([1, 3]);
+    const repeated = await command<AccountingStatementV1>(
+      'journal-statement-save',
+      write,
+    );
+    expect(repeated.number).toBe(saved.number + 1);
+    expect(repeated.recipientNumber).toBe(saved.recipientNumber + 1);
+    await expect(
+      command(
+        'journal-statement-save',
+        {
+          id: saved.id,
+          documentDate: saved.documentDate,
+          status: 'SENT',
+          description: saved.description,
+          notes: [],
+        },
+        saved.version + 1,
+      ),
+    ).rejects.toThrow();
+    const updated = await command<AccountingStatementV1>(
+      'journal-statement-save',
+      {
+        id: saved.id,
+        documentDate: saved.documentDate,
+        status: 'SENT',
+        description: 'Changed',
+        notes: [],
+      },
+      saved.version,
+    );
+    expect(updated.status).toBe('SENT');
+    expect(updated.snapshot).toEqual(saved.snapshot);
+    await expect(
+      db.accountingStatement.update({
+        where: { id: saved.id },
+        data: { snapshot: { forged: true } },
+      }),
+    ).rejects.toThrow();
+    const cancelled = await command<AccountingStatementV1>(
+      'journal-statement-cancel',
+      { id: saved.id },
+      updated.version,
+    );
+    expect(cancelled.status).toBe('CANCELLED');
+    const changed = await command<AccountingJournalV1>(
+      'journal-document-save',
+      {
+        ...payload,
+        id: journal.id,
+        lines: payload.lines.map((line, index) =>
+          index === 1 ? { ...line, detail4Id: secondRecipient.id } : line,
+        ),
+      },
+      journal.version,
+    );
+    await expect(command('journal-statement-save', write)).rejects.toThrow();
+    await expect(
+      command('journal-statement-preview', {
+        ...selection,
+        lineIds: changed.lines.map((line) => line.id),
+      }),
+    ).rejects.toThrow();
+    const list = await service.analyticalReport(
+      bookId,
+      'document-statements',
+      { journalId: journal.id },
+      maker,
+    );
+    expect((list as { items: unknown[] }).items).toHaveLength(2);
+    await expect(
+      service.analyticalReport(
+        bookId,
+        'document-statements',
+        { journalId: journal.id },
+        { ...maker, branchIds: [] },
+      ),
+    ).rejects.toThrow();
+  });
+  it('sorts exact document amounts before paging and uses public identity names', async () => {
+    const marker = randomUUID();
+    const created: AccountingJournalV1[] = [];
+    const save = async (amount: string) => {
+      const result = await command<AccountingJournalV1>('journal-save', {
+        periodId,
+        typeId,
+        documentDate: '2026-05-02',
+        description: marker,
+        lines: [
+          { accountId: debitId, debit: amount, credit: '0' },
+          { accountId: creditId, debit: '0', credit: amount },
+        ],
+      });
+      created.push(result);
+      return result;
+    };
+    try {
+      const high = await save('9007199254740994');
+      const low = await save('9007199254740993');
+      for (let index = 0; index < 29; index++) await save('1');
+      const filter = JSON.stringify({
+        type: 'rule',
+        field: 'description',
+        operator: 'equals',
+        value: marker,
+      });
+      const descending = await service.journals(
+        bookId,
+        { filter, sort: 'amount', direction: 'desc', pageSize: '30' },
+        maker,
+      );
+      expect(descending.total).toBe(31);
+      expect(descending.items[0]?.id).toBe(high.id);
+      const ascending = await service.journals(
+        bookId,
+        { filter, sort: 'amount', direction: 'asc', pageSize: '30' },
+        maker,
+      );
+      expect(ascending.items.at(-1)?.id).toBe(low.id);
+      const last = await service.journals(
+        bookId,
+        { filter, sort: 'amount', direction: 'asc', pageSize: '30', page: '2' },
+        maker,
+      );
+      expect(last.items[0]?.id).toBe(high.id);
+      for (const sort of [
+        'isCurrency',
+        'typeId',
+        'makerId',
+        'lastModifierId',
+        'approverId',
+      ]) {
+        const result = await service.journals(
+          bookId,
+          { filter, sort, direction: 'asc' },
+          maker,
+        );
+        expect(result.total).toBe(31);
+        const grouped = await service.journals(
+          bookId,
+          { filter, group: sort, direction: 'asc' },
+          maker,
+        );
+        expect(grouped.total).toBe(31);
+      }
+    } finally {
+      for (const record of created)
+        await command('cancel', { id: record.id }, record.version);
+    }
+  });
+  it('filters document lines before pagination and guards source numbering preview versions', async () => {
+    const marker = randomUUID();
+    const create = () =>
+      command<AccountingJournalV1>('journal-save', {
+        periodId,
+        typeId,
+        documentDate: '2026-05-03',
+        description: marker,
+        lines: [
+          { accountId: debitId, debit: '123.45', credit: '0' },
+          { accountId: creditId, debit: '0', credit: '123.45' },
+        ],
+      });
+    const first = await create(),
+      second = await create();
+    const condition = {
+      type: 'rule',
+      field: 'description',
+      operator: 'equals',
+      value: marker,
+    };
+    const filtered = await service.journals(
+      bookId,
+      {
+        pageSize: '50',
+        filter: JSON.stringify({
+          type: 'group',
+          mode: 'all',
+          children: [
+            condition,
+            {
+              type: 'lines',
+              mode: 'any',
+              condition: {
+                type: 'group',
+                mode: 'all',
+                children: [
+                  {
+                    type: 'rule',
+                    field: 'debit',
+                    operator: 'equals',
+                    value: '123.45',
+                  },
+                  {
+                    type: 'rule',
+                    field: 'accountId',
+                    operator: 'equals',
+                    value: debitId,
+                  },
+                ],
+              },
+            },
+          ],
+        }),
+      },
+      maker,
+    );
+    expect(filtered.total).toBe(2);
+    expect(filtered.pageSize).toBe(50);
+    await expect(
+      service.journals(
+        bookId,
+        { export: 'true' },
+        {
+          ...maker,
+          permissions: maker.permissions.filter(
+            (permission) => permission !== 'finance.export',
+          ),
+        },
+      ),
+    ).rejects.toThrow();
+    const exported = await service.journals(
+      bookId,
+      {
+        export: 'true',
+        filter: JSON.stringify(condition),
+        group: 'documentDate',
+      },
+      { ...maker, permissions: [...maker.permissions, 'finance.export'] },
+    );
+    expect(exported.total).toBe(2);
+    expect(exported.items.map((row) => row.id).sort()).toEqual(
+      [first.id, second.id].sort(),
+    );
+    await expect(
+      service.journals(
+        bookId,
+        { group: 'j.id; DROP TABLE accounting_journals' },
+        maker,
+      ),
+    ).rejects.toThrow();
+    const emptyDescription = await service.journals(
+      bookId,
+      {
+        filter: JSON.stringify({
+          type: 'group',
+          mode: 'all',
+          children: [
+            condition,
+            { type: 'rule', field: 'description', operator: 'empty' },
+          ],
+        }),
+      },
+      maker,
+    );
+    expect(emptyDescription.total).toBe(0);
+    const sourceFilter = async (node: unknown) =>
+      service.journals(
+        bookId,
+        {
+          filter: JSON.stringify({
+            type: 'group',
+            mode: 'all',
+            children: [condition, node],
+          }),
+        },
+        maker,
+      );
+    expect(
+      (
+        await sourceFilter({
+          type: 'rule',
+          field: 'referenceNumber',
+          operator: 'empty',
+        })
+      ).total,
+    ).toBe(2);
+    expect(
+      (
+        await sourceFilter({
+          type: 'rule',
+          field: 'referenceNumber',
+          operator: 'not-equals',
+          value: 'absent',
+        })
+      ).total,
+    ).toBe(2);
+    expect(
+      (
+        await sourceFilter({
+          type: 'rule',
+          field: 'dailyNumber',
+          operator: 'between',
+          value: String(first.attributes.dailyNumber),
+          end: String(second.attributes.dailyNumber),
+        })
+      ).total,
+    ).toBe(2);
+    expect(
+      (
+        await sourceFilter({
+          type: 'rule',
+          field: 'branchId',
+          operator: 'equals',
+          value: branchId,
+        })
+      ).total,
+    ).toBe(2);
+    expect(
+      (
+        await sourceFilter({
+          type: 'lines',
+          mode: 'any',
+          condition: {
+            type: 'rule',
+            field: 'position',
+            operator: 'equals',
+            value: '1',
+          },
+        })
+      ).total,
+    ).toBe(2);
+    expect(
+      (
+        await sourceFilter({
+          type: 'lines',
+          mode: 'all',
+          condition: {
+            type: 'rule',
+            field: 'debit',
+            operator: 'equals',
+            value: '123.45',
+          },
+        })
+      ).total,
+    ).toBe(0);
+    const before = await db.accountingJournal.findUniqueOrThrow({
+      where: { id: first.id },
+    });
+    await expect(
+      command('number-journal-preview', {
+        periodId,
+        filter: condition,
+        items: [
+          { id: first.id, expectedVersion: first.version + 1 },
+          { id: second.id, expectedVersion: second.version },
+        ],
+      }),
+    ).rejects.toThrow();
+    expect(
+      (
+        await db.accountingJournal.findUniqueOrThrow({
+          where: { id: first.id },
+        })
+      ).version,
+    ).toBe(before.version);
+    const key = randomUUID();
+    const payload = {
+      filter: condition,
+      periodId,
+      items: [
+        { id: first.id, expectedVersion: first.version },
+        { id: second.id, expectedVersion: second.version },
+      ],
+    };
+    const numbered = await command<{
+      rows: { id: string; newNumber: number }[];
+    }>('number-journal-preview', payload, undefined, maker, key);
+    expect(numbered.rows.map((row) => row.id)).toEqual([first.id, second.id]);
+    expect(numbered.rows[1]!.newNumber).toBe(numbered.rows[0]!.newNumber + 1);
+    expect(
+      await command('number-journal-preview', payload, undefined, maker, key),
+    ).toEqual(numbered);
+    expect(
+      (
+        await db.accountingJournal.findUniqueOrThrow({
+          where: { id: first.id },
+        })
+      ).version,
+    ).toBe(first.version + 1);
+    await expect(
+      service.journals(
+        bookId,
+        { filter: JSON.stringify(condition) },
+        { ...maker, branchIds: [] },
+      ),
+    ).rejects.toThrow();
+  });
+  it('separates memorandum saving from complete temporary documents and audits the transition', async () => {
+    const payload = {
+      periodId,
+      typeId,
+      documentDate: '2026-01-04',
+      description: '',
+      lines: [{ accountId: null, debit: '0', credit: '0' }],
+    };
+    const memo = await command<AccountingJournalV1>(
+      'journal-memorandum-save',
+      payload,
+    );
+    expect(memo.status).toBe('MEMORANDUM');
+    expect(memo.lines[0]?.accountId).toBeNull();
+    await expect(
+      command('submit', { id: memo.id }, memo.version),
+    ).rejects.toThrow();
+    await expect(
+      command('review-document', { id: memo.id }, memo.version, checker),
+    ).rejects.toThrow();
+    await expect(
+      command(
+        'journal-document-save',
+        { ...payload, id: memo.id },
+        memo.version,
+      ),
+    ).rejects.toThrow();
+    expect(
+      (await db.accountingJournal.findUniqueOrThrow({ where: { id: memo.id } }))
+        .version,
+    ).toBe(memo.version);
+    const complete = {
+      ...payload,
+      id: memo.id,
+      lines: [
+        {
+          accountId: debitId,
+          debit: '20',
+          credit: '0',
+          description: 'Synthetic debit',
+        },
+        {
+          accountId: creditId,
+          debit: '0',
+          credit: '20',
+          description: 'Synthetic credit',
+        },
+      ],
+    };
+    const temporary = await command<AccountingJournalV1>(
+      'journal-document-save',
+      complete,
+      memo.version,
+    );
+    expect(temporary.status).toBe('DRAFT');
+    expect(temporary.description).toBe('');
+    expect(temporary.version).toBe(memo.version + 1);
+    expect(
+      await db.accountingJournalStateEvent.count({
+        where: {
+          journalId: memo.id,
+          fromStatus: 'MEMORANDUM',
+          toStatus: 'DRAFT',
+        },
+      }),
+    ).toBe(1);
+    await expect(
+      command(
+        'journal-document-save',
+        {
+          ...complete,
+          lines: complete.lines.map((line) => ({ ...line, description: '' })),
+        },
+        temporary.version,
+      ),
+    ).rejects.toThrow();
+    const second = await command<AccountingJournalV1>(
+      'journal-memorandum-save',
+      payload,
+    );
+    const cancelled = await command<AccountingJournalV1>(
+      'cancel',
+      { id: second.id },
+      second.version,
+    );
+    const restored = await command<AccountingJournalV1>(
+      'restore',
+      { id: second.id },
+      cancelled.version,
+    );
+    expect(restored.status).toBe('MEMORANDUM');
+  });
+  it('reviews a temporary document atomically while preserving independent checker and version guards', async () => {
+    const row = await draft();
+    await expect(
+      command('review-document', { id: row.id }, row.version),
+    ).rejects.toThrow();
+    expect(
+      (await db.accountingJournal.findUniqueOrThrow({ where: { id: row.id } }))
+        .status,
+    ).toBe('DRAFT');
+    const reviewed = await command<AccountingJournalV1>(
+      'review-document',
+      { id: row.id },
+      row.version,
+      checker,
+    );
+    expect(reviewed.status).toBe('APPROVED');
+    expect(reviewed.approverId).toBe(checkerId);
+    expect(reviewed.lines).toEqual(row.lines);
+    expect(reviewed.version).toBe(row.version + 2);
+    const events = await db.accountingJournalStateEvent.findMany({
+      where: { journalId: row.id, eventType: 'STATUS' },
+      orderBy: { journalVersion: 'asc' },
+    });
+    expect(events.map((event) => event.toStatus)).toEqual([
+      'PENDING_APPROVAL',
+      'APPROVED',
+    ]);
+    await expect(
+      command('unreview-document', { id: row.id }, row.version, checker),
+    ).rejects.toThrow();
+    const unreviewed = await command<AccountingJournalV1>(
+      'unreview-document',
+      { id: row.id },
+      reviewed.version,
+      checker,
+    );
+    expect(unreviewed.status).toBe('DRAFT');
+    expect(unreviewed.lines).toEqual(row.lines);
+  });
+  it('transfers mapped main-ledger journals atomically with destination audit and duplicate protection', async () => {
+    const createBook = async (isMain: boolean) =>
+      service.createBook(
+        {
+          id: randomUUID(),
+          branchId,
+          code: randomUUID().slice(0, 8),
+          title: 'Synthetic transfer book',
+          baseCurrency: 'IRR',
+          approvalPolicy: 'DUAL_CONTROL',
+          isMain,
+          allowsPosting: true,
+        },
+        maker,
+      );
+    const source = await createBook(true),
+      target = await createBook(false);
+    const scoped = <T = Record<string, unknown>>(
+      id: string,
+      action: string,
+      payload: Record<string, unknown>,
+      expectedVersion?: number,
+      actor = maker,
+      key = randomUUID(),
+    ) =>
+      service
+        .command(
+          id,
+          action,
+          {
+            key,
+            payload,
+            ...(expectedVersion === undefined ? {} : { expectedVersion }),
+          },
+          actor,
+        )
+        .then((result) => JSON.parse(JSON.stringify(result)) as T);
+    const setup = async (id: string) => {
+      const year = await scoped<{ id: string }>(id, 'save-configuration', {
+        kind: 'fiscal-years',
+        code: '1998',
+        title: 'Synthetic year',
+      });
+      const period = await scoped<{ id: string }>(id, 'save-period', {
+        fiscalYearId: year.id,
+        startDate: '1998-01-01',
+        endDate: '1998-12-31',
+      });
+      const type = await scoped<{ id: string }>(id, 'save-configuration', {
+        kind: 'voucher-types',
+        code: '1',
+        title: 'Synthetic manual',
+      });
+      const group = await scoped<{ id: string }>(id, 'save-account', {
+        code: '1',
+        title: 'Synthetic group',
+        level: 'GROUP',
+        nature: 'ANY',
+      });
+      const general = await scoped<{ id: string }>(id, 'save-account', {
+        code: '11',
+        title: 'Synthetic general',
+        level: 'GENERAL',
+        nature: 'ANY',
+        parentId: group.id,
+      });
+      const debit = await scoped<{ id: string }>(id, 'save-account', {
+        code: '1101',
+        title: 'Synthetic debit',
+        level: 'SUBSIDIARY',
+        nature: 'ANY',
+        parentId: general.id,
+      });
+      const credit = await scoped<{ id: string }>(id, 'save-account', {
+        code: '1102',
+        title: 'Synthetic credit',
+        level: 'SUBSIDIARY',
+        nature: 'ANY',
+        parentId: general.id,
+      });
+      return { period, type, debit, credit };
+    };
+    const a = await setup(source.id),
+      b = await setup(target.id);
+    await scoped(source.id, 'save-subsidiary-mappings', {
+      versions: [],
+      rows: [
+        { sourceAccountId: a.debit.id, targetAccountId: b.debit.id },
+        { sourceAccountId: a.credit.id, targetAccountId: b.credit.id },
+      ],
+    });
+    let journal = await scoped<AccountingJournalV1>(
+      source.id,
+      'journal-document-save',
+      {
+        periodId: a.period.id,
+        typeId: a.type.id,
+        documentDate: '1998-01-05',
+        description: 'Synthetic transfer origin',
+        lines: [
+          {
+            accountId: a.debit.id,
+            description: 'Synthetic debit',
+            debit: '100',
+            credit: '0',
+          },
+          {
+            accountId: a.credit.id,
+            description: 'Synthetic credit',
+            debit: '0',
+            credit: '100',
+          },
+        ],
+      },
+    );
+    journal = await scoped<AccountingJournalV1>(
+      source.id,
+      'review-document',
+      { id: journal.id },
+      journal.version,
+      checker,
+    );
+    const input = {
+      periodId: a.period.id,
+      filterMode: 'date',
+      fromDate: '1998-01-01',
+      toDate: '1998-01-31',
+      dateMode: 'source',
+      aggregate: false,
+      ids: [journal.id],
+    };
+    const preview = await scoped<{
+      checksum: string;
+      documents: { targetBookId: string }[];
+    }>(source.id, 'document-transfer-preview', input);
+    expect(preview.documents[0]?.targetBookId).toBe(target.id);
+    const basis = await scoped<{ checksum: string }>(
+      source.id,
+      'document-transfer-preview',
+      { ...input, ids: undefined },
+    );
+    await expect(
+      scoped(source.id, 'document-transfer-run', {
+        ...input,
+        checksum: preview.checksum,
+        basisChecksum: 'stale-reviewed-list',
+      }),
+    ).rejects.toThrow('فهرست بررسی‌شده تغییر کرده است');
+    expect(
+      await db.accountingJournalTransfer.count({
+        where: { sourceJournalId: journal.id },
+      }),
+    ).toBe(0);
+    const key = randomUUID();
+    const result = await scoped<{
+      items: { bookId: string; journal: AccountingJournalV1 }[];
+    }>(
+      source.id,
+      'document-transfer-run',
+      { ...input, checksum: preview.checksum, basisChecksum: basis.checksum },
+      undefined,
+      maker,
+      key,
+    );
+    expect(result.items[0]?.bookId).toBe(target.id);
+    expect(result.items[0]?.journal.status).toBe('DRAFT');
+    expect(result.items[0]?.journal.lines[0]?.accountId).toBe(b.debit.id);
+    const received = result.items[0]!.journal;
+    expect(
+      await db.accountingJournalStateEvent.count({
+        where: {
+          bookId: target.id,
+          journalId: received.id,
+          eventType: 'CREATE',
+        },
+      }),
+    ).toBe(1);
+    expect(
+      (
+        await scoped<{ items: { journal: { id: string } }[] }>(
+          source.id,
+          'document-transfer-run',
+          {
+            ...input,
+            checksum: preview.checksum,
+            basisChecksum: basis.checksum,
+          },
+          undefined,
+          maker,
+          key,
+        )
+      ).items[0]?.journal.id,
+    ).toBe(received.id);
+    await expect(
+      scoped(source.id, 'document-transfer-run', {
+        ...input,
+        checksum: preview.checksum,
+      }),
+    ).rejects.toThrow();
+    await expect(
+      scoped(
+        source.id,
+        'unreview-document',
+        { id: journal.id },
+        journal.version,
+        checker,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      db.accountingJournalTransfer.deleteMany({
+        where: { sourceJournalId: journal.id },
+      }),
+    ).rejects.toThrow();
+  }, 60000);
+  it('adds current line descriptions to its scoped subsidiary without lost updates', async () => {
+    const account = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: debitId },
+    });
+    const payload = {
+      accountId: debitId,
+      description: 'Synthetic default description',
+      descriptionEn: 'Synthetic second language',
+    };
+    const saved = await command<{
+      version: number;
+      attributes: { defaultDescriptions: string };
+    }>('add-line-default-description', payload, account.version);
+    expect(JSON.parse(saved.attributes.defaultDescriptions)).toContainEqual({
+      text: payload.description,
+      textEn: payload.descriptionEn,
+    });
+    await expect(
+      command(
+        'add-line-default-description',
+        { ...payload, description: 'Different' },
+        account.version,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      command('add-line-default-description', payload, saved.version),
+    ).rejects.toThrow();
+    expect(
+      (await db.accountingAccount.findUniqueOrThrow({ where: { id: debitId } }))
+        .version,
+    ).toBe(saved.version);
+  });
+  it('reviews selected documents as one transaction and audits the supplied explanation', async () => {
+    const description = `Synthetic review all ${randomUUID()}`;
+    const first = await draft(description),
+      second = await draft(description);
+    const items = [first, second].map((row) => ({
+      id: row.id,
+      expectedVersion: row.version,
+    }));
+    await expect(
+      command(
+        'review-documents',
+        {
+          items: [
+            items[0],
+            { ...items[1], expectedVersion: second.version + 1 },
+          ],
+          reason: 'Synthetic review',
+        },
+        undefined,
+        checker,
+      ),
+    ).rejects.toThrow();
+    expect(
+      (
+        await db.accountingJournal.findMany({
+          where: { id: { in: [first.id, second.id] } },
+        })
+      ).map((row) => row.status),
+    ).toEqual(['DRAFT', 'DRAFT']);
+    expect(
+      await db.accountingJournalStateEvent.count({
+        where: {
+          journalId: { in: [first.id, second.id] },
+          eventType: 'STATUS',
+        },
+      }),
+    ).toBe(0);
+    const result = await command<{ total: number }>(
+      'review-documents',
+      { items, reason: 'Synthetic review' },
+      undefined,
+      checker,
+    );
+    expect(result.total).toBe(2);
+    const events = await db.accountingJournalStateEvent.findMany({
+      where: { journalId: { in: [first.id, second.id] }, eventType: 'STATUS' },
+    });
+    expect(events).toHaveLength(4);
+    expect(events.every((event) => event.reason === 'Synthetic review')).toBe(
+      true,
+    );
+    const allPayload = {
+      periodId,
+      undo: true,
+      filter: {
+        type: 'rule',
+        field: 'description',
+        operator: 'equals',
+        value: description,
+      },
+    };
+    const basis = await command<{ checksum: string; total: number }>(
+      'review-all-preview',
+      allPayload,
+      undefined,
+      checker,
+    );
+    expect(basis.total).toBe(2);
+    const firstReviewed = await db.accountingJournal.findUniqueOrThrow({
+      where: { id: first.id },
+    });
+    await command(
+      'unreview-document',
+      { id: first.id },
+      firstReviewed.version,
+      checker,
+    );
+    await expect(
+      command(
+        'review-all-documents',
+        { ...allPayload, checksum: basis.checksum },
+        undefined,
+        checker,
+      ),
+    ).rejects.toThrow();
+    const fresh = await command<{ checksum: string; total: number }>(
+      'review-all-preview',
+      allPayload,
+      undefined,
+      checker,
+    );
+    expect(fresh.total).toBe(1);
+    expect(
+      (
+        await command<{ total: number }>(
+          'review-all-documents',
+          {
+            ...allPayload,
+            checksum: fresh.checksum,
+            reason: 'Synthetic undo all',
+          },
+          undefined,
+          checker,
+        )
+      ).total,
+    ).toBe(1);
+  });
+  it('generates automatic temporary transfers from real source balances and rejects stale bases', async () => {
+    await db.masterCurrency.upsert({
+      where: { code: 'IRR' },
+      update: {},
+      create: {
+        code: 'IRR',
+        name: 'Synthetic currency',
+        decimalDigits: 0,
+        createdByUserId: makerId,
+        updatedByUserId: makerId,
+      },
+    });
+    const parent = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: debitId },
+    });
+    const createAccount = (code: string) =>
+      command<{ id: string }>('save-account', {
+        code,
+        title: 'Synthetic automatic transfer',
+        level: 'SUBSIDIARY',
+        nature: 'ANY',
+        parentId: parent.parentId,
+      });
+    const source = await createAccount('11998802');
+    const target = await createAccount('11998803');
+    const origin = {
+      periodId,
+      typeId,
+      documentDate: '2026-01-07',
+      description: '',
+      lines: [
+        {
+          accountId: source.id,
+          description: 'Synthetic source',
+          debit: '100',
+          credit: '0',
+        },
+        {
+          accountId: creditId,
+          description: 'Synthetic offset',
+          debit: '0',
+          credit: '100',
+        },
+      ],
+    };
+    await command('journal-document-save', origin);
+    const template = await command<{ id: string }>('save-template', {
+      kind: 'AUTOMATIC',
+      sourceForm: 'rahkaran-documents-v1',
+      code: randomUUID(),
+      title: 'Synthetic automatic template',
+      active: true,
+      lines: [
+        { accountId: target.id, role: 'TARGET', percentage: '25' },
+        { accountId: source.id, role: 'SOURCE', parentPosition: 0 },
+      ],
+    });
+    const input = {
+      templateId: template.id,
+      asOf: '2026-01-07',
+      documentDate: '2026-01-07',
+      typeId,
+      description: 'Synthetic transfer',
+      trackingNumber: 'Synthetic tracking',
+    };
+    type Preview = {
+      checksum: string;
+      lines: { accountId: string; debit: string; credit: string }[];
+    };
+    const first = await command<Preview>('automatic-preview', input);
+    expect(
+      first.lines.map((line) => [line.accountId, line.debit, line.credit]),
+    ).toEqual([
+      [source.id, '0', '25'],
+      [target.id, '25', '0'],
+    ]);
+    await command('journal-document-save', origin);
+    await expect(
+      command('automatic-run', { ...input, checksum: first.checksum }),
+    ).rejects.toThrow('پیش‌نمایش');
+    const ready = await command<Preview>('automatic-preview', input);
+    const key = randomUUID();
+    const payload = { ...input, checksum: ready.checksum };
+    const generated = await command<AccountingJournalV1>(
+      'automatic-run',
+      payload,
+      undefined,
+      maker,
+      key,
+    );
+    expect(generated.status).toBe('DRAFT');
+    expect(generated.lines.map((line) => [line.debit, line.credit])).toEqual([
+      ['0', '50'],
+      ['50', '0'],
+    ]);
+    expect(
+      generated.lines.every(
+        (line) => line.attributes.trackingNumber === 'Synthetic tracking',
+      ),
+    ).toBe(true);
+    expect(
+      await command('automatic-run', payload, undefined, maker, key),
+    ).toEqual(generated);
+    const edited = await command<AccountingJournalV1>(
+      'journal-document-save',
+      {
+        ...generated,
+        lines: generated.lines.map((line) => ({
+          ...line,
+          attributes: { trackingNumber: 'Synthetic tracking' },
+          description: 'Edited transfer',
+        })),
+        attributes: {},
+      },
+      generated.version,
+    );
+    expect(edited.lines[0]?.description).toBe('Edited transfer');
+    expect(edited.attributes.automaticTemplateId).toBe(template.id);
+  }, 60000);
+  it('generates source revaluation from currency balances and protects its immutable basis', async () => {
+    await db.masterCurrency.upsert({
+      where: { code: 'USD' },
+      update: { isActive: true },
+      create: {
+        code: 'USD',
+        name: 'Synthetic dollar',
+        englishName: 'Synthetic dollar',
+        decimalDigits: 2,
+        createdByUserId: makerId,
+        updatedByUserId: makerId,
+      },
+    });
+    await db.masterCurrency.upsert({
+      where: { code: 'IRR' },
+      update: {},
+      create: {
+        code: 'IRR',
+        name: 'Synthetic currency',
+        decimalDigits: 0,
+        createdByUserId: makerId,
+        updatedByUserId: makerId,
+      },
+    });
+    const year = await command<{ id: string }>('save-configuration', {
+      kind: 'fiscal-years',
+      code: '1999',
+      title: 'Synthetic revaluation year',
+    });
+    const period = await command<{ id: string }>('save-period', {
+      fiscalYearId: year.id,
+      startDate: '1999-01-01',
+      endDate: '1999-12-31',
+    });
+    const base = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: debitId },
+    });
+    const account = await command<{ id: string }>('save-account', {
+      code: '11998804',
+      title: 'Synthetic FX basis',
+      parentId: base.parentId,
+      level: 'SUBSIDIARY',
+      nature: 'ANY',
+      attributes: { multiCurrency: true, revaluable: true },
+    });
+    await command('save-configuration', {
+      kind: 'voucher-types',
+      code: randomUUID(),
+      title: 'تسعیر ارز',
+      active: true,
+    });
+    const makeRate = async (rate: string) => {
+      const draft = await command<{ id: string; version: number }>('save-fx', {
+        currency: 'USD',
+        rate,
+        source: 'Synthetic rate',
+        validFrom: new Date(Date.now() - 60000).toISOString(),
+        validTo: new Date(Date.now() + 86400000).toISOString(),
+      });
+      return command<{ id: string }>(
+        'approve-fx',
+        { id: draft.id },
+        draft.version,
+        checker,
+      );
+    };
+    const originalRate = await makeRate('100');
+    const input = {
+      periodId: period.id,
+      typeId,
+      documentDate: '1999-01-05',
+      description: 'Synthetic FX origin',
+      lines: [
+        {
+          accountId: account.id,
+          description: 'Synthetic basis',
+          debit: '1000',
+          credit: '0',
+          currency: 'USD',
+          foreignAmount: '10',
+          rate: '100',
+          fxSnapshotId: originalRate.id,
+        },
+        {
+          accountId: creditId,
+          description: 'Synthetic offset',
+          debit: '0',
+          credit: '1000',
+        },
+      ],
+    };
+    await command('journal-document-save', input);
+    expect(
+      await service.analyticalReport(
+        bookId,
+        'document-revaluation-currencies',
+        {},
+        maker,
+      ),
+    ).toEqual([{ value: 'USD', label: 'Synthetic dollar' }]);
+    const template = await command<{ id: string }>('save-template', {
+      kind: 'REVALUATION',
+      sourceForm: 'rahkaran-documents-v1',
+      code: randomUUID(),
+      title: 'Synthetic source revaluation',
+      active: true,
+      lines: [
+        { accountId: creditId, role: 'OFFSET' },
+        { accountId: account.id, role: 'BASIS', parentPosition: 0 },
+      ],
+    });
+    const nextRate = await makeRate('110');
+    const payload = {
+      templateId: template.id,
+      currency: 'USD',
+      rateId: nextRate.id,
+      asOf: '1999-01-06',
+      description: 'Synthetic valuation',
+      notes: [
+        {
+          id: randomUUID(),
+          title: 'Synthetic note',
+          date: '1999-01-06',
+          text: 'Synthetic valuation note',
+        },
+      ],
+    };
+    const preview = await command<{
+      checksum: string;
+      lines: { debit: string; credit: string }[];
+    }>('document-revaluation-preview', payload);
+    const defaultDescription = await command<{
+      description: string;
+      attributes: { descriptionEn: string };
+    }>('document-revaluation-preview', { ...payload, description: '' });
+    expect(defaultDescription.description).toBe(
+      'ثبت بابت سند تسعیر ارز Synthetic dollar',
+    );
+    expect(defaultDescription.attributes.descriptionEn).toBe(
+      'Conversion Voucher for Synthetic dollar',
+    );
+    expect(preview.lines.map((line) => [line.debit, line.credit])).toEqual([
+      ['100', '0'],
+      ['0', '100'],
+    ]);
+    const key = randomUUID();
+    const created = await command<AccountingJournalV1>(
+      'document-revaluation-run',
+      { ...payload, checksum: preview.checksum },
+      undefined,
+      maker,
+      key,
+    );
+    expect(created.status).toBe('DRAFT');
+    expect(created.lines[0]?.currency).toBeNull();
+    expect(created.lines[0]?.attributes.valuationCurrency).toBe('USD');
+    const revaluations = await service.journals(
+      bookId,
+      {
+        sourceKind: 'revaluation',
+        periodId: period.id,
+        excludeCancelled: 'true',
+        filter: JSON.stringify({
+          type: 'rule',
+          field: 'revaluationRate',
+          operator: 'equals',
+          value: '110',
+        }),
+      },
+      maker,
+    );
+    expect(revaluations.total).toBe(1);
+    expect(revaluations.items[0]?.id).toBe(created.id);
+    const named = await service.journals(
+      bookId,
+      {
+        sourceKind: 'revaluation',
+        periodId: period.id,
+        filter: JSON.stringify({
+          type: 'rule',
+          field: 'revaluationCurrency',
+          operator: 'equals',
+          value: 'Synthetic dollar',
+        }),
+      },
+      maker,
+    );
+    expect(named.items.map((row) => row.id)).toEqual([created.id]);
+    for (const group of [
+      'auxiliaryNumber',
+      'documentDate',
+      'number',
+      'reference',
+      'revaluationCurrency',
+      'revaluationRate',
+    ]) {
+      const grouped = await service.journals(
+        bookId,
+        {
+          sourceKind: 'revaluation',
+          periodId: period.id,
+          group,
+          filter: JSON.stringify({
+            type: 'group',
+            mode: 'all',
+            children: [
+              {
+                type: 'rule',
+                field: 'periodId',
+                operator: 'equals',
+                value: period.id,
+              },
+              {
+                type: 'group',
+                domain: 'journal',
+                mode: 'all',
+                children: [
+                  {
+                    type: 'rule',
+                    field: 'number',
+                    operator: 'equals',
+                    value: String(created.number),
+                  },
+                  {
+                    type: 'lines',
+                    mode: 'any',
+                    condition: {
+                      type: 'group',
+                      mode: 'all',
+                      children: [
+                        {
+                          type: 'rule',
+                          field: 'accountId',
+                          operator: 'equals',
+                          value: account.id,
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        },
+        maker,
+      );
+      expect(grouped.items.map((row) => row.id)).toEqual([created.id]);
+    }
+    expect(
+      (
+        await service.journals(
+          bookId,
+          { sourceKind: 'revaluation', id: created.id },
+          maker,
+        )
+      ).items[0]?.id,
+    ).toBe(created.id);
+    expect(JSON.parse(String(created.attributes.notes))[0]).toMatchObject({
+      title: 'Synthetic note',
+      text: 'Synthetic valuation note',
+      createdBy: 'Synthetic accountant',
+    });
+    await expect(
+      command('journal-document-save', { ...created }, created.version),
+    ).rejects.toThrow();
+    expect(
+      (
+        await command<AccountingJournalV1>(
+          'document-revaluation-run',
+          { ...payload, checksum: preview.checksum },
+          undefined,
+          maker,
+          key,
+        )
+      ).id,
+    ).toBe(created.id);
+    await command('journal-document-save', {
+      ...input,
+      lines: input.lines.map((line) => ({
+        ...line,
+        debit: line.debit === '0' ? '0' : '200',
+        credit: line.credit === '0' ? '0' : '200',
+        ...(line.currency ? { foreignAmount: '2' } : {}),
+      })),
+    });
+    await expect(
+      command('submit', { id: created.id }, created.version),
+    ).rejects.toThrow();
+    await command('cancel', { id: created.id }, created.version, checker);
+  });
+  it('imports journal batches atomically with regular validation and command replay', async () => {
+    const document = {
+      periodId,
+      documentDate: '2026-01-07',
+      description: 'Synthetic imported journal',
+      auxiliaryNumber: '0041',
+      descriptionEn: 'Synthetic import',
+      lines: [
+        {
+          accountId: debitId,
+          description: 'Synthetic debit',
+          debit: '12',
+          credit: '0',
+        },
+        {
+          accountId: creditId,
+          description: 'Synthetic credit',
+          debit: '0',
+          credit: '12',
+        },
+      ],
+    };
+    const before = await db.accountingJournal.count({ where: { bookId } });
+    await expect(
+      command('document-import-run', {
+        typeId,
+        saveMode: 'TEMP',
+        documents: [
+          document,
+          {
+            ...document,
+            lines: [{ ...document.lines[0], accountId: randomUUID() }],
+          },
+        ],
+      }),
+    ).rejects.toThrow();
+    expect(await db.accountingJournal.count({ where: { bookId } })).toBe(
+      before,
+    );
+    const key = randomUUID(),
+      payload = { typeId, saveMode: 'TEMP', documents: [document, document] };
+    const result = await command<{
+      items: AccountingJournalV1[];
+      total: number;
+    }>('document-import-run', payload, undefined, maker, key);
+    expect(result.total).toBe(2);
+    expect(result.items.every((item) => item.status === 'DRAFT')).toBe(true);
+    expect(result.items[0]?.attributes.auxiliaryNumber).toBe('0041');
+    expect(result.items[1]!.number).toBe(result.items[0]!.number! + 1);
+    expect(
+      (
+        await command<{ items: AccountingJournalV1[] }>(
+          'document-import-run',
+          payload,
+          undefined,
+          maker,
+          key,
+        )
+      ).items[0]?.id,
+    ).toBe(result.items[0]?.id);
+    const memo = await command<{ items: AccountingJournalV1[] }>(
+      'document-import-run',
+      {
+        typeId,
+        saveMode: 'MEMORANDUM',
+        documents: [{ ...document, lines: [] }],
+      },
+    );
+    expect(memo.items[0]?.status).toBe('MEMORANDUM');
+    const selected = result.items.map((item) => ({
+      id: item.id,
+      expectedVersion: item.version,
+    }));
+    await expect(
+      command('journal-delete-documents', {
+        items: [selected[0], { ...selected[1], expectedVersion: 999999 }],
+      }),
+    ).rejects.toThrow();
+    expect(
+      (
+        await db.accountingJournal.findUniqueOrThrow({
+          where: { id: result.items[0]!.id },
+        })
+      ).status,
+    ).toBe('DRAFT');
+    const deleteKey = randomUUID();
+    const deleted = await command<{ total: number }>(
+      'journal-delete-documents',
+      { items: selected },
+      undefined,
+      maker,
+      deleteKey,
+    );
+    expect(deleted.total).toBe(2);
+    expect(
+      await db.accountingJournal.count({
+        where: {
+          id: { in: selected.map((item) => item.id) },
+          status: 'CANCELLED',
+        },
+      }),
+    ).toBe(2);
+    expect(
+      await command(
+        'journal-delete-documents',
+        { items: selected },
+        undefined,
+        maker,
+        deleteKey,
+      ),
+    ).toEqual(deleted);
+    await expect(
+      command('document-import-run', { ...payload, saveMode: 'APPROVED' }),
+    ).rejects.toThrow();
+  });
+  it('registers general documents from posted journals without posting financial effects twice', async () => {
+    const year = await command<{ id: string }>('save-configuration', {
+      kind: 'fiscal-years',
+      code: '2000',
+      title: 'Synthetic general document year',
+    });
+    const period = await command<{ id: string }>('save-period', {
+      fiscalYearId: year.id,
+      startDate: '2000-01-01',
+      endDate: '2000-12-31',
+    });
+    const journalPayload = {
+      periodId: period.id,
+      typeId,
+      documentDate: '2000-01-03',
+      description: 'Synthetic general document basis',
+      lines: [
+        { accountId: debitId, debit: '25', credit: '0' },
+        { accountId: creditId, debit: '0', credit: '25' },
+      ],
+    };
+    let source = await command<AccountingJournalV1>(
+      'journal-save',
+      journalPayload,
+    );
+    source = await command<AccountingJournalV1>(
+      'submit',
+      { id: source.id },
+      source.version,
+    );
+    source = await command<AccountingJournalV1>(
+      'approve',
+      { id: source.id },
+      source.version,
+      checker,
+    );
+    source = await command<AccountingJournalV1>(
+      'post',
+      { id: source.id },
+      source.version,
+    );
+    const input = {
+      periodId: period.id,
+      filter: 'date',
+      fromDate: '2000-01-01',
+      toDate: '2000-01-31',
+      method: 'DAILY',
+      separateYearEnd: false,
+    };
+    const preview = await command<{
+      checksum: string;
+      documents: {
+        amount: string;
+        lines: { accountId: string; debit: string; credit: string }[];
+      }[];
+    }>('general-document-preview', input);
+    expect(preview.documents).toHaveLength(1);
+    expect(preview.documents[0]?.amount).toBe('25');
+    const effectsBefore = await db.accountingJournalLine.count({
+      where: { journal: { bookId } },
+    });
+    const key = randomUUID();
+    const result = await command<{
+      documents: { id: string; number: number }[];
+    }>(
+      'general-document-issue',
+      { ...input, checksum: preview.checksum },
+      undefined,
+      maker,
+      key,
+    );
+    expect(result.documents[0]?.number).toBe(1);
+    const listed = (await service.analyticalReport(
+      bookId,
+      'general-document-list',
+      {
+        periodId: period.id,
+        filter: JSON.stringify({
+          type: 'group',
+          mode: 'all',
+          children: [
+            { type: 'rule', field: 'amount', operator: 'equals', value: '25' },
+          ],
+        }),
+      },
+      maker,
+    )) as { total: number; rows: { amount: string; makerName: string }[] };
+    expect(listed.total).toBe(1);
+    expect(listed.rows[0]?.amount).toBe('25');
+    expect(listed.rows[0]?.makerName).toBe('Synthetic accountant');
+    const exported = (await service.analyticalReport(
+      bookId,
+      'general-document-list',
+      { export: 'true', periodId: period.id, page: '999' },
+      { ...maker, permissions: [...maker.permissions, 'finance.export'] },
+    )) as { total: number; page: number; rows: { amount: string }[] };
+    expect(exported.page).toBe(1);
+    expect(exported.rows).toHaveLength(exported.total);
+    expect(exported.rows[0]?.amount).toBe('25');
+    for (const groupBy of ['number', 'documentDate', 'amount', 'makerId']) {
+      const grouped = (await service.analyticalReport(
+        bookId,
+        'general-document-list',
+        { periodId: period.id, groupBy, pageSize: '1' },
+        maker,
+      )) as { groups: { key: string; count: number; amount: string }[] };
+      expect(grouped.groups).toHaveLength(1);
+      expect(grouped.groups[0]?.count).toBe(1);
+      expect(grouped.groups[0]?.amount).toBe('25');
+      if (groupBy === 'amount') expect(grouped.groups[0]?.key).toBe('25');
+    }
+    await expect(
+      service.analyticalReport(
+        bookId,
+        'general-document-list',
+        { groupBy: '__proto__' },
+        maker,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      service.analyticalReport(
+        bookId,
+        'general-document-list',
+        { export: 'true' },
+        { ...maker, permissions: ['finance.read'] },
+      ),
+    ).rejects.toThrow();
+    const absent = (await service.analyticalReport(
+      bookId,
+      'general-document-list',
+      {
+        periodId: period.id,
+        filter: JSON.stringify({
+          type: 'group',
+          mode: 'none',
+          children: [
+            { type: 'rule', field: 'number', operator: 'equals', value: '1' },
+          ],
+        }),
+      },
+      maker,
+    )) as { total: number };
+    expect(absent.total).toBe(0);
+    expect(
+      await db.accountingJournalLine.count({ where: { journal: { bookId } } }),
+    ).toBe(effectsBefore);
+    expect(
+      await command(
+        'general-document-issue',
+        { ...input, checksum: preview.checksum },
+        undefined,
+        maker,
+        key,
+      ),
+    ).toEqual(result);
+    expect(
+      await db.accountingGeneralDocumentMember.count({ where: { bookId } }),
+    ).toBe(1);
+    await expect(
+      db.accountingGeneralDocumentMember.delete({
+        where: { journalId: source.id },
+      }),
+    ).rejects.toThrow('immutable');
+    await expect(command('journal-save', journalPayload)).rejects.toThrow(
+      'آخرین سند کل',
+    );
+    await expect(
+      command('general-document-issue', {
+        ...input,
+        checksum: preview.checksum,
+      }),
+    ).rejects.toThrow();
+    expect(
+      await db.accountingGeneralDocument.count({ where: { bookId } }),
+    ).toBe(1);
+    const id = result.documents[0]!.id;
+    await expect(
+      command('general-document-date', { id, documentDate: '2000-01-02' }, 1),
+    ).rejects.toThrow('بزرگترین تاریخ');
+    const moved = await command<{ version: number }>(
+      'general-document-date',
+      { id, documentDate: '2000-01-04' },
+      1,
+    );
+    expect(moved.version).toBe(2);
+    await expect(
+      command('general-document-date', { id, documentDate: '2000-01-04' }, 1),
+    ).rejects.toThrow();
+    const intervening = await command<AccountingJournalV1>('journal-save', {
+      ...journalPayload,
+      documentDate: '2000-01-05',
+    });
+    await expect(
+      command(
+        'general-document-date',
+        { id, documentDate: '2000-01-06' },
+        moved.version,
+      ),
+    ).rejects.toThrow('بین تاریخ');
+    expect(
+      (await db.accountingGeneralDocument.findUniqueOrThrow({ where: { id } }))
+        .version,
+    ).toBe(moved.version);
+    await command('cancel', { id: intervening.id }, intervening.version);
+  }, 60000);
+  it('posts the complete reviewed interval atomically and rejects stale previews', async () => {
+    const year = await command<{ id: string }>('save-configuration', {
+      kind: 'fiscal-years',
+      code: '2001',
+      title: 'Synthetic posting year',
+    });
+    const period = await command<{ id: string }>('save-period', {
+      fiscalYearId: year.id,
+      startDate: '2001-01-01',
+      endDate: '2001-12-31',
+    });
+    const header = {
+      periodId: period.id,
+      typeId,
+      documentDate: '2001-01-05',
+      description: '',
+      lines: [
+        {
+          accountId: debitId,
+          description: 'Synthetic debit',
+          debit: '100',
+          credit: '0',
+        },
+        {
+          accountId: creditId,
+          description: 'Synthetic credit',
+          debit: '0',
+          credit: '100',
+        },
+      ],
+    };
+    const first = await command<AccountingJournalV1>(
+      'journal-document-save',
+      header,
+    );
+    await expect(
+      command('document-posting-preview', { toDate: '2001-01-05' }),
+    ).rejects.toThrow('بررسی');
+    const second = await command<AccountingJournalV1>(
+      'journal-document-save',
+      header,
+    );
+    for (const row of [first, second])
+      await command('review-document', { id: row.id }, row.version, checker);
+    type PostingPreview = {
+      checksum: string;
+      fromDate: string;
+      rows: { id: string; version: number }[];
+    };
+    const preview = await command<PostingPreview>('document-posting-preview', {
+      toDate: '2001-01-05',
+    });
+    expect(preview.fromDate).toBe('2001-01-01');
+    expect(preview.rows).toHaveLength(2);
+    const reviewedSecond = await db.accountingJournal.findUniqueOrThrow({
+      where: { id: second.id },
+    });
+    const approvedAttributes = reviewedSecond.attributes as Record<
+      string,
+      string
+    >;
+    await db.accountingJournal.update({
+      where: { id: second.id },
+      data: {
+        version: { increment: 1 },
+        attributes: { ...approvedAttributes, approvalPolicyVersion: 'stale' },
+      },
+    });
+    await expect(
+      command('post-documents', {
+        toDate: '2001-01-05',
+        checksum: preview.checksum,
+      }),
+    ).rejects.toThrow('پیش‌نمایش');
+    const changed = await command<PostingPreview>('document-posting-preview', {
+      toDate: '2001-01-05',
+    });
+    await expect(
+      command('post-documents', {
+        toDate: '2001-01-05',
+        checksum: changed.checksum,
+      }),
+    ).rejects.toThrow('قاعده تأیید');
+    const unchanged = await db.accountingJournal.findMany({
+      where: { id: { in: [first.id, second.id] } },
+    });
+    expect(unchanged.every((row) => row.status === 'APPROVED')).toBe(true);
+    expect(
+      await db.accountingJournalStateEvent.count({
+        where: { journalId: { in: [first.id, second.id] }, toStatus: 'POSTED' },
+      }),
+    ).toBe(0);
+    await db.accountingJournal.update({
+      where: { id: second.id },
+      data: { version: { increment: 1 }, attributes: approvedAttributes },
+    });
+    const ready = await command<PostingPreview>('document-posting-preview', {
+      toDate: '2001-01-05',
+    });
+    const key = randomUUID();
+    const payload = { toDate: '2001-01-05', checksum: ready.checksum };
+    const result = await command<{ items: AccountingJournalV1[] }>(
+      'post-documents',
+      payload,
+      undefined,
+      maker,
+      key,
+    );
+    expect(result.items.map((row) => row.status)).toEqual(['POSTED', 'POSTED']);
+    expect(
+      await command('post-documents', payload, undefined, maker, key),
+    ).toEqual(result);
+    await expect(command('journal-document-save', header)).rejects.toThrow(
+      'قطعی',
+    );
+    for (const row of result.items)
+      await expect(
+        command('return', { id: row.id }, row.version, checker),
+      ).rejects.toThrow();
+  }, 60000);
+  it('calculates document turnover from complete temporary records and excludes memorandum and legacy drafts', async () => {
+    const parent = await db.accountingAccount.findUniqueOrThrow({
+      where: { id: debitId },
+    });
+    const account = await command<{ id: string }>('save-account', {
+      code: '11998801',
+      title: 'Synthetic figures',
+      level: 'SUBSIDIARY',
+      nature: 'ANY',
+      parentId: parent.parentId,
+      attributes: { multiCurrency: true },
+    });
+    const header = {
+      periodId,
+      typeId,
+      documentDate: '2026-01-05',
+      description: '',
+      lines: [
+        {
+          accountId: account.id,
+          debit: '30',
+          credit: '0',
+          description: 'Synthetic debit',
+        },
+        {
+          accountId: creditId,
+          debit: '0',
+          credit: '30',
+          description: 'Synthetic credit',
+        },
+      ],
+    };
+    await command('journal-document-save', header);
+    await command('journal-memorandum-save', {
+      ...header,
+      lines: [{ accountId: account.id, debit: '900', credit: '0' }],
+    });
+    await command('journal-save', {
+      ...header,
+      description: 'Incomplete legacy fixture',
+      lines: [{ accountId: account.id, debit: '800', credit: '0' }],
+    });
+    const result = (await service.analyticalReport(
+      bookId,
+      'document-turnover',
+      {
+        accountId: account.id,
+        periodId,
+        level: '3',
+      },
+      maker,
+    )) as {
+      total: number;
+      rows: { debit: string; balance: string }[];
+      totals: { balance: string };
+    };
+    expect(result.total).toBe(1);
+    expect(result.rows[0]?.debit).toBe('30');
+    expect(result.rows[0]?.balance).toBe('30');
+    expect(result.totals.balance).toBe('30');
+    const fx = (await service.analyticalReport(
+      bookId,
+      'document-fx-balance',
+      {
+        accountId: account.id,
+        level: '3',
+      },
+      maker,
+    )) as {
+      rows: {
+        currency: string;
+        debit: string;
+        credit: string;
+        balance: string;
+      }[];
+    };
+    expect(fx.rows).toHaveLength(1);
+    expect(fx.rows[0]).toMatchObject({
+      currency: 'IRR',
+      debit: '30',
+      credit: '0',
+      balance: '30',
+    });
+    await expect(
+      service.analyticalReport(
+        bookId,
+        'document-turnover',
+        { accountId: account.id, periodId: randomUUID(), level: '3' },
+        maker,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      service.analyticalReport(
+        bookId,
+        'document-turnover',
+        { accountId: account.id, periodId, level: '4;DROP' },
+        maker,
+      ),
+    ).rejects.toThrow();
+  });
   it('deletes only unused base records with version, scope, permission and replay guards', async () => {
     const record = await command<{ id: string; version: number }>(
       'save-configuration',
@@ -3211,6 +5315,20 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       ],
     });
     await expect(command('submit', { id: j.id }, j.version)).rejects.toThrow();
+    await expect(
+      command(
+        'journal-save',
+        {
+          ...j,
+          attributes: { ...j.attributes, lastModifierId: checkerId },
+        },
+        j.version,
+      ),
+    ).rejects.toThrow('ویژگی سیستمی');
+    expect(
+      (await db.accountingJournal.findUniqueOrThrow({ where: { id: j.id } }))
+        .version,
+    ).toBe(j.version);
     j = await command<AccountingJournalV1>(
       'journal-save',
       {

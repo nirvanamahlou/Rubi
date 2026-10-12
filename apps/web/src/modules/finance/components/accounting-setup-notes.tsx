@@ -31,11 +31,13 @@ export function AccountingSetupNotes({
   onChange,
   book,
   record,
+  requireDate = true,
 }: {
   notes: SetupNote[];
   onChange: (notes: SetupNote[]) => void;
   book: AccountingSnapshotV1;
   record?: { id: string; entityType: string; title: string } | undefined;
+  requireDate?: boolean;
 }) {
   const [draft, setDraft] = useState<SetupNote | null>(null);
   return (
@@ -165,7 +167,9 @@ export function AccountingSetupNotes({
                 <Button
                   type="button"
                   disabled={
-                    !draft.title.trim() || !draft.date || !draft.text.trim()
+                    !draft.title.trim() ||
+                    (requireDate && !draft.date) ||
+                    !draft.text.trim()
                   }
                   onClick={() => {
                     onChange(

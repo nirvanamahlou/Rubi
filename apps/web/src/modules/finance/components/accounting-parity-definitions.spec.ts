@@ -37,11 +37,13 @@ describe('accounting parity evidence controls', () => {
       implementation: 'evidence-only',
       support: 'dependency',
     });
-    expect(definition?.blockers.join(' ')).toContain('قرارداد تجمیع سند کل');
+    expect(definition?.blockers.join(' ')).toContain(
+      'عملیات جانبی هنوز کامل نیستند',
+    );
   });
 
   it('publishes the exact support totals used by the executable matrix', () => {
-    expect(accountingParityDefinitions).toHaveLength(87);
+    expect(accountingParityDefinitions).toHaveLength(88);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'supported',
@@ -51,7 +53,7 @@ describe('accounting parity evidence controls', () => {
       accountingParityDefinitions.filter(
         (item) => item.support === 'dependency',
       ),
-    ).toHaveLength(44);
+    ).toHaveLength(45);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'source-error',

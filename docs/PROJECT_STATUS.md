@@ -5485,6 +5485,24 @@ PR778 merged into develop at57793ab3 with full quality, tests, production build 
 ## 2026-10-11 — Accounting empty landing — PC-A
 
 Removed duplicate shortcut grids from accounting landing/group content. Sidebar and open tabs remain the navigation surface. Authenticated /finance browser verification on shared rubi Web3100 shows no shortcut cards. No schema, API, data or dependency change.
+## 2026-10-12 — ACCOUNTING-DOCUMENTS-PARITY-1011 — PC-A — publication preparation
+
+Observed Documents forms now include journal/memorandum editing, selected-row operations,
+nested server filters and exports, review/posting/numbering/reordering, GL aggregation,
+automatic base-currency issuance, revaluation, mapped subsidiary-ledger transfer and
+ordinary/FX statements with saved article snapshots, notes, serials and version guards.
+Six additive migrations passed isolated PostgreSQL tests;67/67 financial regression tests,
+41 API unit tests and17 focused Web/i18n tests passed. Local authenticated GUI verified
+statement selected articles,8/11 columns, saving, saved-record opening, notes and the save
+shortcut. Final builds/lint and exact-head CI precede publication. Main3100 is unchanged
+at this preparation stage. No source writes or source transaction amounts were imported.
+
+The human explicitly authorized GitHub actor nirvanamahlou for this publication on
+2026-10-12. The versioned structural data package contains222accounts and26detail types
+with guarded normal public-API loading. Existing live Rubi has1book,222accounts and0journals;
+a verified database backup remains outside Git. Synthetic fixtures stay in isolated QA
+and executable tests. Full Rahkaran parity is incomplete; outstanding producer/configuration
+dependencies are documented in ACCOUNTING-DOCUMENTS-PARITY-1011.md. Sole writer; locks ACTIVE.
 
 
 ## 2026-10-11 — ASSISTANT-ALL-USERS-1011 — PC-C
