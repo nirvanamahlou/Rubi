@@ -9,6 +9,30 @@ export const assistantCopy = {
   quickDaily: ['خلاصه امروز', 'Today’s summary'],
   quickSales: ['تحلیل فروش', 'Sales analysis'],
   quickReceivables: ['پیگیری مطالبات', 'Receivables follow-up'],
+  fixedActions: [
+    'سه درخواست آماده با ابزارهای خواندنی اجرا می‌شوند؛ گفت‌وگوی آزاد و ارسال داده به مدل غیرفعال است.',
+    'The three fixed requests use read-only tools. Free conversation and model data transfer are disabled.',
+  ],
+  dailyTitle: [
+    'خلاصه پیگیری‌های شخصی دریافت‌شده',
+    'Summary of retrieved personal follow-ups',
+  ],
+  dailyCoverage: [
+    'شامل موارد عقب‌افتاده و موعدهای هفت روز آینده؛ حداکثر ۳۰ مورد. این خلاصه شامل فروش و مطالبات سازمانی نیست.',
+    'Includes overdue items and the next seven days, up to 30 items. Corporate sales and receivables are not included.',
+  ],
+  visibleCount: ['موارد نمایش‌داده‌شده', 'Visible items'],
+  overdueCount: ['عقب‌افتاده — اولویت بالا', 'Overdue — high priority'],
+  dueSoonCount: ['موعد نزدیک — اولویت متوسط', 'Due soon — medium priority'],
+  assignedCount: ['تخصیص‌یافته — اولویت عادی', 'Assigned — normal priority'],
+  salesDefinitionGate: [
+    'تحلیل فروش هنوز فعال نیست؛ تعریف شاخص، دوره و دامنه مجاز باید تأیید و منبع گزارش اعتبارسنجی شود.',
+    'Sales analysis is not active: approve the metric, period and access scope, then validate the report source.',
+  ],
+  receivablesSourceGate: [
+    'پیگیری مطالبات هنوز فعال نیست؛ منبع تأییدشده مالی و قرارداد سررسید و مانده باید آماده شوند.',
+    'Receivables follow-up is not active: the approved Finance source and due-date/balance contract are required.',
+  ],
   send: ['ارسال پیام', 'Send message'],
   attach: ['پیوست فایل', 'Attach a file'],
   voice: ['پیام صوتی', 'Voice message'],

@@ -46,7 +46,7 @@ circuit-breaker state or production load/availability guarantee is claimed.
 | notes       | `/workbench/notes`                  | Session actor only; at most 500 notes; scheduled reminders only, completed checklists excluded; bodies omitted.          |
 | procurement | `/workbench/procurement-follow-ups` | Session actor's assigned follow-ups; at most 100; no user/branch selector.                                               |
 
-All tools require an active ERP session and explicit executive permission in
+All tools require an active ERP session in
 addition to the source API's authorization. No side effects. The 7-day horizon
 includes overdue entries; a cap is disclosed as incomplete coverage. Source
 timestamps describe observation time, not guaranteed event freshness. Output is
@@ -61,3 +61,15 @@ node --check services/assistant/server.mjs
 ```
 
 All six reference panels and follow-up gates: `docs/tasks/EXECUTIVE-ASSISTANT-1011.md`.
+
+## Deterministic MVP actions — 2026-10-12
+
+GET /v1/assistant/actions/daily-summary executes the existing SELF reads and
+returns coverage, reconciled visible counts and rule-linked recommendations.
+GET /v1/assistant/actions/sales-analysis and receivables-follow-up authenticate
+and return explicit BLOCKED gates; neither accesses corporate data nor a model.
+Only these three action names are accepted. No scope selectors, prompt or write
+request is accepted. Web quick buttons call /api/assistant/actions/[action].
+No model provider is configured under the owner-approved v1 policy.
+Full contracts, readiness evidence, staged roadmap and rollout limitations:
+../../docs/tasks/ASSISTANT-MVP-FOUNDATION-1012.md.

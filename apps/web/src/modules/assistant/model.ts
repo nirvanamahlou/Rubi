@@ -62,6 +62,118 @@ export const snapshotSchema = z.object({
   }),
 });
 export type ExecutiveSnapshot = z.infer<typeof snapshotSchema>;
+export const assistantActions = [
+  'daily-summary',
+  'sales-analysis',
+  'receivables-follow-up',
+] as const;
+export type AssistantAction = (typeof assistantActions)[number];
+const dailySchema = z
+  .object({
+    version: z.literal(1),
+    action: z.literal('daily-summary'),
+    status: z.enum(['READY', 'PARTIAL']),
+    scope: z.literal('SELF'),
+    coverage: z.object({
+      horizonDays: z.literal(7),
+      limit: z.literal(30),
+      includesOverdue: z.literal(true),
+    }),
+    counts: z.object({
+      visible: z.number().int().min(0).max(30),
+      overdue: z.number().int().min(0).max(30),
+      dueSoon: z.number().int().min(0).max(30),
+      assigned: z.number().int().min(0).max(30),
+    }),
+    recommendations: z
+      .array(
+        z.object({
+          followUpId: z.string().max(120),
+          ruleId: z.enum(['OVERDUE_V1', 'DUE_SOON_V1', 'ASSIGNED_V1']),
+          priority: z.enum(['HIGH', 'MEDIUM', 'LOW']),
+        }),
+      )
+      .max(30),
+    snapshot: snapshotSchema,
+  })
+  .refine(
+    (value) => {
+      const items = value.snapshot.followUps;
+      return (
+        new Set(items.map((item) => item.id)).size === items.length &&
+        items.every((item) =>
+          value.snapshot.sources.some(
+            (source) => source.id === item.source && source.status === 'READY',
+          ),
+        ) &&
+        value.counts.visible === items.length &&
+        value.counts.overdue ===
+          items.filter((item) => item.reason === 'OVERDUE').length &&
+        value.counts.dueSoon ===
+          items.filter((item) => item.reason === 'DUE_SOON').length &&
+        value.counts.assigned ===
+          items.filter((item) => item.reason === 'ASSIGNED').length &&
+        value.recommendations.length === items.length &&
+        value.recommendations.every((recommendation, index) => {
+          const item = items[index]!;
+          return (
+            recommendation.followUpId === item.id &&
+            recommendation.ruleId === `${item.reason}_V1` &&
+            recommendation.priority ===
+              (item.reason === 'OVERDUE'
+                ? 'HIGH'
+                : item.reason === 'DUE_SOON'
+                  ? 'MEDIUM'
+                  : 'LOW')
+          );
+        }) &&
+        (value.status === 'READY') ===
+          value.snapshot.sources.every((source) => source.status === 'READY')
+      );
+    },
+    { message: 'Summary must reconcile with bounded source evidence' },
+  );
+const blockedSchema = z.discriminatedUnion('action', [
+  z.object({
+    version: z.literal(1),
+    action: z.literal('sales-analysis'),
+    status: z.literal('BLOCKED'),
+    scope: z.literal('NONE'),
+    reason: z.literal('SALES_DEFINITION_REQUIRED'),
+    observedAt: z.iso.datetime(),
+  }),
+  z.object({
+    version: z.literal(1),
+    action: z.literal('receivables-follow-up'),
+    status: z.literal('BLOCKED'),
+    scope: z.literal('NONE'),
+    reason: z.literal('RECEIVABLES_SOURCE_PENDING'),
+    observedAt: z.iso.datetime(),
+  }),
+]);
+export const assistantActionSchema = z.union([dailySchema, blockedSchema]);
+export type AssistantActionResult = z.infer<typeof assistantActionSchema>;
+
+export async function loadAssistantAction(
+  action: AssistantAction,
+  signal: AbortSignal,
+): Promise<AssistantActionResult> {
+  const response = await fetch(`/api/assistant/actions/${action}`, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    signal,
+  });
+  if (!response.ok)
+    throw new Error(
+      [401, 403, 429].includes(response.status)
+        ? `HTTP_${response.status}`
+        : 'UNAVAILABLE',
+    );
+  const parsed = assistantActionSchema.safeParse(await response.json());
+  if (!parsed.success || parsed.data.action !== action)
+    throw new Error('INVALID_RESPONSE');
+  return parsed.data;
+}
 export type AssistantLoadState =
   | 'loading'
   | 'ready'

@@ -126,6 +126,39 @@
   font-size: 11px;
   line-height: 1.9;
 }
+.actionResult {
+  margin-top: 20px;
+}
+.actionResult h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.actionCounts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0;
+}
+.actionCounts > div {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.actionCounts dt {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.actionCounts dd {
+  margin: 6px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .actionCounts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
 @media (max-width: 640px) {
   .composer {
