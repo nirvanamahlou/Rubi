@@ -62,6 +62,8 @@ describe('manual access migration and enforcement', () => {
       ),
     ).toBe(false);
     for (const codes of [
+      ['ui.administrator', 'ui.profile'],
+      ['ui.administrator', 'ui.profile', 'reservations.read'],
       ['reservations.read'],
       ['procurement.quote.manage'],
       ['ui.profile', 'reservations.read', 'ui.screen.reservations.home'],

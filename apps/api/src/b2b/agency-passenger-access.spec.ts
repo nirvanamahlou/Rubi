@@ -33,11 +33,9 @@ describe('agency passenger access', () => {
       nationalId: null,
       price: 999,
     };
-    const update = vi
-      .fn()
-      .mockResolvedValue({
-        data: { ...data, version: 4, passportNumber: 'TEST123' },
-      });
+    const update = vi.fn().mockResolvedValue({
+      data: { ...data, version: 4, passportNumber: 'TEST123' },
+    });
     const service = new AgencyPassengerAccessService(
       {
         client: {
@@ -52,11 +50,9 @@ describe('agency passenger access', () => {
         },
       } as unknown as DatabaseService,
       {
-        member: vi
-          .fn()
-          .mockResolvedValue({
-            row: { organizationId: 'own', branchId: 'branch' },
-          }),
+        member: vi.fn().mockResolvedValue({
+          row: { organizationId: 'own', branchId: 'branch' },
+        }),
       } as unknown as B2bOrganizationUserService,
       {
         detail: vi.fn().mockResolvedValue({ data }),

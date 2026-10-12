@@ -2,7 +2,7 @@
 
 User explicitly authorizes shared integration, superseding the earlier independent-only hold. FinanceModule now mounts the prepared seller/report/diagnostic API module. The authorized-book workspace dispatches all32 prepared screens; three missing catalogue destinations become reachable. Existing closing/opening and inactive settings handlers, provider blockers and book/branch permissions remain. Seller New preserves bookId; tax/seller commands use the existing HTTP-compatible UUID helper. No migration, dependency, grant or business-data mutation. Exact-head CI and authenticated local acceptance are publication gates. Details: docs/tasks/ACCOUNTING-COMPLETION-INTEGRATION-1012.md.
 
-## 2026-10-12 — MANUAL-USER-ACCESS-V3-1012 — PC-A — REVIEW IN PROGRESS
+## 2026-10-12 — MANUAL-USER-ACCESS-V3-1012 — PC-A — READY_FOR_REVIEW — PR806
 
 Manual per-user authoritative grants, legacy mapping preview, positive field checks and agency-owned passenger identity editing are implemented in an isolated branch. Full API suite2364 passed; isolated PostgreSQL4 passed; same-session HTTP proof200/403/409/200 and browser save verified. Existing nora preview identifies15 accounts. No live conversion, merge or deployment has run; all shared-DB API runtimes must be upgraded together before apply. See docs/tasks/MANUAL-USER-ACCESS-V3-1012.md and the Persian decision report.
 
