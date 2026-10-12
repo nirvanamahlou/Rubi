@@ -928,6 +928,23 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 
 # Work Assignments
 
+## ASSISTANT-HTTP-AUTH-1012 — PC-C — READY_FOR_REVIEW
+
+Base develop0f111706, clean inactive checkout; branch codex/pc-c-assistant-http-auth-1012.
+Real local smoke found missing-cookie assistant API requests redirected to HTML
+login, masking session loss as service failure. Reserve only the missing-cookie
+/api/assistant/ response branch in apps/web/src/proxy.ts and focused proxy tests,
+own status/task entries. Return no-store JSON401; preserve UI login redirects,
+stale-cookie forwarding and native backend authentication/source authorization.
+No IAM grant, database, dependency, Core restart or overlap with PC-A manual-access
+source files. Acceptance: four assistant routes give JSON401 without redirect,
+stale cookies remain checked by backend, affected tests/typecheck/build and final
+CI before authorized develop merge; Web-only runtime refresh afterward.
+
+Six middleware tests and27 assistant Web tests passed; scoped ESLint, full Web
+typecheck and production build59 routes passed. Candidate source lock releases;
+final CI and actual JSON401 local smoke follow in the PR. Other IAM work untouched.
+
 ## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — READY_FOR_REVIEW
 
 Base origin/develop@04acd08a; branch codex/pc-c-assistant-phase1-completion-1012.

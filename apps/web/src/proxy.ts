@@ -16,6 +16,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
   if (!hasAccessCookie) {
+    if (request.nextUrl.pathname.startsWith('/api/assistant/'))
+      return NextResponse.json(
+        { error: { code: 'UNAUTHENTICATED' } },
+        { status: 401, headers: { 'Cache-Control': 'private, no-store' } },
+      );
     const login = new URL('/login', request.url);
     login.searchParams.set(
       'next',

@@ -868,6 +868,13 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 
 # وضعیت پروژه
 
+## ASSISTANT-HTTP-AUTH-1012 — PC-C
+
+Live smoke discovered anonymous assistant API requests returned a307 to HTML login.
+Bounded Web middleware fix returns private/no-store JSON401 for these fetches;
+page redirects and backend cookie/session/permission checks stay unchanged.
+Tests/build/CI and Web-only local rollout are required; no Core or data change.
+
 ## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — IN_PROGRESS
 
 Exact discounted contractual amounts, independent operational balance source,
