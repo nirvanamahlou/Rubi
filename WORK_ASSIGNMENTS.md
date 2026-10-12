@@ -1,3 +1,11 @@
+## AGENCY-IMPORT-BLANKS-1012 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; isolated branch codex/pc-b-agency-import-blanks-1012 from origin/develop@08a7c20c. User requests agency XLSX upload with empty optional fields. Reserve Organizations workbook reader/validation/dialog and focused tests, bounded own status entries only. Read the supplied workbook without importing operational records. Accept missing optional columns and ignore blank formatted rows; inert phone/web/email hyperlinks must never be fetched or executed. Preserve required organization identity, populated-value validation, duplicate/no-overwrite semantics, formulas/macros/external-data rejection and size bounds. No schema, migration, dependency, shared API contract or operational data mutation. Main checkout and its concurrent hotel work remain untouched.
+
+Delivered name-only/optional-column import, inert hyperlink handling and partial location preservation. Organizations suite240 passed; private-file container test passed separately; scoped lint/typecheck passed. Source locks release with candidate. No merge or shared runtime replacement; website values in email cells still require correction or an explicit user-authorized discard policy.
+
+CI follow-up: reserve only the two new province/city prefix entries in Web en-overrides.json. Full test gate found missing English catalogue entries, not a workbook parsing regression. Existing hotel changes are merged and this isolated target is clean. Other checks passed. No runtime or database changes; bounded translation lock releases with fix commit.
+
 ## ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-ui-redesign-1012` from
