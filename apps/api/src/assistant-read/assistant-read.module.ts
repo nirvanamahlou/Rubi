@@ -12,6 +12,7 @@ import { SalesRepository } from '../sales/sales.repository';
 import { SalesAssistantController } from '../sales/sales-assistant.controller';
 import { SalesAssistantConfirmationService } from '../sales/sales-assistant-confirmation.service';
 import { CustomerAffairsAssistantController } from '../customer-affairs/customer-affairs-assistant.controller';
+import { AssistantReadAccessController } from './assistant-read-access.controller';
 
 @Controller('health')
 class AssistantReadHealthController {
@@ -34,6 +35,7 @@ class AssistantReadHealthController {
     }),
   ],
   controllers: [
+    AssistantReadAccessController,
     AssistantReadHealthController,
     SalesAssistantController,
     CustomerAffairsAssistantController,
