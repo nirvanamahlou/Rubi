@@ -1,3 +1,7 @@
+## 2026-10-11 — USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
+
+Implemented additive section/resource restrictions and 421 edit-only controls: 357 master-data pairs, 17 customer fields and 47 persisted system-setting groups. Active UI consumers and bounded API writes enforce explicit restrictions. Missing document/tour detail tabs inherit their previously authorized parents. Access-editor saves preserve shared/inactive memberships, out-of-scope and unknown grants, omitted restrictions and unchanged branches; stale snapshots and unauthorized restriction removal are rejected. User required continuation without Worker Orchestrator; lead completed and reviewed directly. No migration, account backfill, seed, dependency, operational DB or shared3100 runtime change. Exact-head CI and authorized develop merge remain pending; final merge evidence belongs to the delivery PR. See docs/tasks/USER-ACCESS-COMPLETENESS-1011.md for boundary limitations and tests.
+
 ## 2026-10-10 — CORRESPONDENCE-1010 — PC-A
 
 Follow-up menu order updated at user request: Documents/Reports → Correspondence → Company Settings. Navigation-only change; scoped lint passed, existing3100 preview reused.
@@ -5398,6 +5402,10 @@ The per-row «عملیات» column is moved beside «انتخاب» so it is vi
 
 Each server `loadGroupId` now renders as one full-width table containing all rows created by that load submission. Outbound and return rows stay together and are identified by a «مسیر» column instead of splitting one load into two tables.
 
+## 2026-10-11 — Silent legacy ticket backfill — PC-B
+
+Automatic page-load reconciliation of legacy browser tickets no longer surfaces its per-row publication conflicts as a repeated top-of-page alert. Explicit user-triggered publication/status errors remain visible, and Procurement validation is unchanged.
+
 ## 2026-10-11 — EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
 
 The final standalone main-menu entry opens a six-view executive assistant in
@@ -5495,3 +5503,78 @@ with guarded normal public-API loading. Existing live Rubi has1book,222accounts 
 a verified database backup remains outside Git. Synthetic fixtures stay in isolated QA
 and executable tests. Full Rahkaran parity is incomplete; outstanding producer/configuration
 dependencies are documented in ACCOUNTING-DOCUMENTS-PARITY-1011.md. Sole writer; locks ACTIVE.
+
+
+## 2026-10-11 — ASSISTANT-ALL-USERS-1011 — PC-C
+
+Owner-authorized shared assistant visibility for every authenticated ERP user,
+including Amin, regardless of department/screen profile. Current data remains
+SELF-only and every public source enforces its existing permissions. Anonymous,
+revoked-session and source-denied requests fail closed; no bulk role grants,
+corporate data permission, migration or dependency changes. Node HTTP tests:
+13 passed, including ordinary-user isolation and source-denial regressions.
+Web verification and final-head CI/merge/runtime evidence follow in the PR.
+
+Additional verification:31 focused Web tests and all143 contract tests passed;
+affected Web/Contracts lint and typecheck passed. The old explicit-only contract
+regression was aligned with the owner-authorized shell policy and retains checks
+that unrelated modules stay restricted. Independent assistant health returns200;
+anonymous snapshot returns401. Final build/CI/runtime handoff is on PR786.
+
+## 2026-10-11 — ASSISTANT-COMPOSER-1011 — PC-C
+
+The assistant hero is replaced with the reference message composer on all six
+views: request heading, textarea, cyan send control, inactive voice/attachment
+controls and three draft shortcuts. Source details/refresh remain available.
+Removed the duplicate advisor-only chat placeholder. Drafts stay in component
+memory; sending explicitly reports no message sent because model conversation
+is not enabled. No network transmission, browser storage, microphone permission,
+file upload, backend or authorization changes. Light/dark theme variables and
+RTL/LTR/mobile layout are preserved. Focused31 tests passed; remaining verification
+and final-head CI/local activation evidence follow in the PR.
+
+
+## 2026-10-11 — ACCOUNTING-TAX-PARITY-1011 — PC-A
+
+Read-only Tax Accounting crawl produced10 sanitized form/list definitions and111
+labeled controls. Dedicated API/UI candidate persists three reference kinds
+(thresholds, tax periods, aggregation patterns), with scoped access, strict
+validation, exact decimals, versioning, idempotency and command history. Notes,
+reference deletion with dependency checks, reload and list Excel export are included.
+Financial declarations, identity/mapping directories, source-item reports and
+attachments remain explicit dependencies; no generic-config financial records or
+fake successful submission. Source quarterly report is blocked by missing tax
+period. Source writes/imports: none. Central workspace patch and private evidence
+are handed to PC-B; schema/migrations and shared3100 runtime remain unchanged.
+This is a candidate, not full parity or deployment. Details and validation:
+`docs/tasks/ACCOUNTING-TAX-PARITY-1011.md`.
+
+## 2026-10-11 — ACCOUNTING-TAXPAYER-PARITY-1011 — PC-A
+
+Read-only crawl observed13 taxpayer-system routes,54 labeled form controls and65
+columns. Independent UI handles observed conditional forms and explicit unavailable
+states; seller-only scoped persistence has6 passing API tests and6 Web model tests.
+PC-B confirmed shared locks remain active; central integration is a proposal patch,
+not deployed. No source writes, real submissions, source records/secrets or schema
+changes. Full operation remains dependent on credential/provider, financial models,
+read APIs and source license. See docs/tasks/ACCOUNTING-TAXPAYER-PARITY-1011.md.
+
+## 2026-10-11 — ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B
+
+The chart route now renders the existing tree and draft group/general/subsidiary forms when the authorized books response is empty. Setup links lead to ledger creation/selection. Save/new/delete persistence stays disabled without a book; submission has a second null-book guard. Request failures and loading do not masquerade as empty data. Selecting a real book remounts the editor to discard unbound draft state. No API, schema, permissions or dependency change.
+
+Validation: nine focused chart tests, scoped ESLint and Web typecheck pass. Production build and final-head CI gate the user-authorized develop merge. Local data-transfer artifacts are outside Git: one reference book, 222 accounts, 26 detail types and one approval configuration; 248 original source commands retained as a separate audit archive. No source database data changed. Destination import remains a separate explicit operation on its empty database.
+## 2026-10-11 — ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C
+
+Removed the Sources/data-quality button and its unused dialog. Refresh now sits
+next to Management report in the view toolbar, preserving its callback and
+loading guard. Composer uses a navy gradient and explicit light foreground/input
+colors in both ERP themes. Toolbar wraps on mobile. All six views, local-only
+drafts and existing source authorization remain unchanged. No API, migration,
+dependency or data changes.20 focused existing Web tests and scoped ESLint passed;
+production build, browser verification and final CI evidence follow in the PR.
+
+
+## 2026-10-11 — COA tree and chart-report candidate — PC-A
+
+Independent source crawl verified 222 accounts, 13 root groups and nine assigned-detail records. COA tree now uses persisted roots, source code/title sorting and code/title/level search. Added a read-only chart-report component and seven report-model tests. Web lint, typecheck, 15 targeted tests and production build passed. No API/schema/dependency change or source/runtime data mutation. Central report route integration is reserved to the active PC-B Finances chat. Full report/year-end parity remains incomplete: source fiscal selector exposes only2026, year-end prerequisites block later steps, counterpart output and CSV export return source errors, and closing-template roles need a separately owned additive migration. See docs/tasks/ACCOUNTING-COA-REPORTS-YEAREND-1011.md.

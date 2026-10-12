@@ -27,6 +27,11 @@ import type {
   SystemSettingWriteV1,
   SystemUserSessionsRevokeInputV1,
 } from '@nora/contracts';
+import {
+  accessValuesEqual,
+  hasAccessControl,
+  systemSettingControlId,
+} from '@nora/contracts';
 import { Prisma, SystemBackupStatus, SystemRecordStatus } from '@nora/database';
 import type {
   SystemScope as DbSystemScope,
@@ -186,6 +191,12 @@ export class SystemManagementService {
     metadata: AuditMetadata,
   ): Promise<SystemSettingV1> {
     const value = validateSetting(input);
+    if (
+      !hasAccessControl(actor.permissions, `system.module.${value.namespace}`)
+    )
+      throw new ForbiddenException(
+        'ویرایش تنظیمات این بخش برای کاربر محدود شده است.',
+      );
     return this.database.client.$transaction(async (tx) => {
       await tx.$queryRaw(
         Prisma.sql`SELECT 1 FROM pg_advisory_xact_lock(hashtextextended(${`system-setting:${value.namespace}:${value.key}:${value.scopeKey}`}, 0))`,
@@ -208,6 +219,22 @@ export class SystemManagementService {
         throw new ConflictException('تنظیم توسط کاربر دیگری تغییر کرده است.');
       if (current && value.expectedVersion === undefined)
         throw new ConflictException('نسخه مورد انتظار برای ویرایش الزامی است.');
+      const controlId = systemSettingControlId(value.namespace, value.key);
+      if (!hasAccessControl(actor.permissions, controlId)) {
+        const latest = current?.versions[0];
+        const unchanged =
+          !!current &&
+          current.valueType === value.valueType &&
+          current.status === value.status &&
+          accessValuesEqual(latest?.value, value.value);
+        if (!unchanged)
+          throw new ForbiddenException({
+            code: 'SYSTEM_SETTING_RESTRICTED',
+            controlId,
+            message: 'ویرایش این تنظیم برای کاربر محدود شده است.',
+          });
+        return this.presentSetting(current, latest);
+      }
       const nextVersion = (current?.activeVersion ?? 0) + 1;
       const setting = current
         ? await tx.systemSetting.update({

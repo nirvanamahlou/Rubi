@@ -32,6 +32,67 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('enforces additive resource and field restrictions before mutation while leaving reads shared', async () => {
+    const repository = {
+      list: vi.fn().mockResolvedValue({ rows: [row], total: 1 }),
+      create: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const resourceDenied = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.master-data.resource.countries',
+      ],
+    } as AuthenticatedActor;
+    await expect(
+      service.create('countries', { name: 'ایران' }, resourceDenied),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.list('countries', {
+        search: '',
+        status: 'all',
+        sortBy: 'name',
+        sortDirection: 'asc',
+        page: 1,
+        pageSize: 25,
+      }),
+    ).resolves.toMatchObject({ meta: { total: 1 } });
+    const fieldDenied = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.field.master-data.countries.name',
+      ],
+    } as AuthenticatedActor;
+    await expect(
+      service.create('countries', { name: null }, fieldDenied),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('permits a canonically unchanged denied update and rejects an actual change', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue(row),
+      fieldExists: vi.fn().mockResolvedValue(false),
+      update: vi.fn().mockResolvedValue({ ...row, version: 2 }),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const restricted = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.field.master-data.countries.name',
+      ],
+    } as AuthenticatedActor;
+    await expect(
+      service.update('countries', row.id, { name: row.name }, 1, restricted),
+    ).resolves.toBeDefined();
+    await expect(
+      service.update('countries', row.id, { name: 'نام تازه' }, 1, restricted),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.update).toHaveBeenCalledTimes(1);
+  });
   it('does not disclose a voucher leader contact from another broker', async () => {
     const repository = {
       find: vi

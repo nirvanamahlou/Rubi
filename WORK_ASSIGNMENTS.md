@@ -1,3 +1,7 @@
+## USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
+
+User explicitly authorizes repairing IAM screen/section/field controls, preserving every existing user's access, pushing and merging to develop after final-head checks. Base origin/develop@68987832; reused isolated Rubi-api-audit-0928 checkout on codex/pc-b-user-access-completeness-1011. IAM contracts/API/Web catalogue, additive restrictions, bounded consumer guards and preservation tests implemented. User subsequently required direct continuation without Worker Orchestrator; parallel implementation stopped and lead completed/reviewed source directly. New controls inherit actual legacy behavior; only explicit authorized saves alter restrictions. No account backfill, seed, migration, dependency, operational database or shared runtime changes. Canonical administrator and executive-only rules, branch/domain/sensitive-read checks preserved. Source locks release at candidate freeze; merge requires exact-head full CI. Coverage and precise UI/edit-only/API boundaries: docs/tasks/USER-ACCESS-COMPLETENESS-1011.md.
+
 ## CORRESPONDENCE-1010 — PC-A — READY_FOR_REVIEW
 
 Follow-up: user requested primary group order resources → correspondence → system. Moved correspondence between Documents/Reports and Company Settings; navigation-only change, scoped lint passed and3100 reused.
@@ -6677,6 +6681,12 @@ COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-load-group-table-1011` from merged P
 
 Delivered: each `loadGroupId` renders exactly one full-width multi-row table. Outbound and return rows remain together and use the new «مسیر» column; whole-load actions and totals operate on the complete group. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass. The rebuilt localhost/LAN service runs on port 3000.
 
+## TICKET-SILENT-LEGACY-BACKFILL-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-silent-backfill-1011` from current `origin/develop`. Owner requests removal of the repeated top-of-page «مرجع درخواست خرید پرواز تغییر کرده است» text emitted while the page silently reconnects legacy browser tickets. Reserve only Ticket Catalog legacy-backfill presentation, its focused regression and bounded status docs. Keep explicit user-triggered publication errors visible and do not change Procurement validation, APIs, schema, migrations, dependencies or operational data.
+
+Delivered: automatic legacy-ticket reconciliation passes `announceProblems=false`, so its repeated per-row conflicts no longer populate the top Ticket Catalog alert. Explicit user-triggered publication keeps the default visible-error behavior. Ten focused tests, scoped ESLint, Web typecheck and the 59-route production build pass. No API, Procurement rule, schema/migration, dependency or operational-data change.
+
 ## EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C, confirmed by the owner in this chat. Branch
@@ -6834,3 +6844,111 @@ The same PC-A exclusive scope reserves AccountingStatement and 20261011213000_ac
 
 2026-10-12 publication extension (same sole writer): reserve apps/api/scripts/accounting-reference-data.mjs, data/accounting and bounded PROJECT_STATUS update. Human explicitly authorized publishing this work with GitHub actor nirvanamahlou. Structural reference seed contains222accounts/26detail types; public API preview refuses collisions/divergence and uses existing authorized IAM branch. Preserve all live Rubi accounting data and archive synthetic QA data separately. No credentials/source operational amounts in Git. Central/schema locks remain ACTIVE until exact-head CI and develop merge.
 Publication gate scope also reserves apps/web/src/i18n/en-accounting-documents.json, translate.ts, scripts/i18n-sync.cjs and regenerated API/legacy catalogs for Documents labels only. Other worktrees may add their own overrides; preserve them when integrating latest develop and regenerate combined catalogs.
+## ASSISTANT-ALL-USERS-1011 — PC-C — READY_FOR_REVIEW
+
+User authorization: temporarily enable the assistant for all authenticated ERP
+users and departments, including Amin. Base: origin/develop. Reserve assistant
+service/tests/README, Web assistant workspace and IAM visibility tests,
+packages/contracts/src/iam/user-access.ts (assistant branches only), and additive
+own status/architecture/decision entries. No IAM role mutation, database access,
+corporate data grant, migration or dependency change. SELF sources retain their
+ERP authorization. Acceptance: universal authenticated visibility; anonymous
+rejection; isolation/revocation/source denial tests; lint/typecheck/build; all
+final-head CI checks before merge to develop; activate localhost3000 afterward.
+
+Scope also includes the assistant denial translation, workspace identity
+regression and packages/contracts/test/assistant-access.spec.ts. Verification:
+13 HTTP tests,31 focused Web tests and all143 contract tests passed; affected
+Web/Contracts lint and typecheck passed. Existing explicit-grant contract tests
+were updated to the new owner-authorized shared-shell policy while preserving
+unrelated module restrictions. CI, integration and local runtime evidence are
+recorded on PR786. Business sources still enforce existing permissions.
+
+Additional test-only scope: apps/web/src/app/(crm)/users/role-access-presets.spec.tsx.
+The shared assistant may be recommended as a visible screen; native operational
+permission recommendations still intersect actor grants and available options.
+This updates the obsolete screen-list expectation, not the role editor or IAM.
+
+## ASSISTANT-COMPOSER-1011 — PC-C — READY_FOR_REVIEW
+
+User requests replacing only the assistant hero with the supplied “What can I do
+for you?” message composer. Base: develop461a008c. Reserve Web assistant
+workspace/styles/spec, assistant translations, and additive own status entry.
+Keep all six views and source/refresh controls; remove duplicate advisor-only
+chat placeholder. Prompt chips populate a local draft, no storage/network/model
+submission; inactive microphone/attachment must not request access. Preserve
+all authentication and source-data permissions. Acceptance: matching composer,
+RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
+Web build, all final-head CI before authorized develop merge and local activation.
+
+## ACCOUNTING-TAX-PARITY-1011 — PC-A — IN_PROGRESS
+
+Base origin/develop@9a41c1cc; branch codex/pc-a-tax-accounting-parity-1011 in reused clean worktree. User explicitly requests the whole Tax Accounting menu/forms crawl and implementation, retaining the prohibition on entering or changing data in Rahkaran. Reserve new accounting-tax-* models/components/tests and a dedicated tax-accounting API service/controller if ownership coordination permits; raw evidence outside Git in work/tax-source. Active PC-B Finances retains accounting.service.ts, accounting-workspace.tsx, parity definitions, contracts and schema/migrations. No migration/deploy/shared runtime writes until coordinated release. Existing stack, RTL design and accessibility conventions retained. Final verification target is Rubi3100; isolated preview does not establish deployment.
+
+PC-B coordination granted dedicated FinanceModule service/controller registration,
+new accounting-tax.ts plus limited barrel export. Shared notes file is unchanged;
+a scoped tax notes editor avoids conflicting edits. Candidate provides3 persisted
+reference kinds and10 observed form/list layouts.11 API tests and4 UI model tests
+passed; full web/API build, lint and typecheck passed before final small refinements;
+final checks recorded in task doc. Central workspace integration, dedicated financial
+models, source-item/lookups, attachments and3100 deployment remain pending owner
+integration. No source writes, source-record import or schema/migration changes.
+
+## ACCOUNTING-TAXPAYER-PARITY-1011 — PC-A — IN_PROGRESS
+
+Branch codex/pc-a-taxpayer-system-parity-1011 preserves prior tax candidate commits
+bfba7d2e and2dde78b0. Read-only source crawl and new independent accounting-taxpayer-*
+Web catalog/model/components/tests reserved. No source data, credentials, network
+submission, central workspace/service/schema edits or shared runtime mutation.
+PC-B Finances retains shared-file locks; API/domain/secret-vault integration is
+being coordinated. All13 observed menu leaves must have an explicit evidence
+status; source license error must not be replaced by invented fields.
+
+PC-B confirmed independent accounting-taxpayer-* files and standalone contract do
+not conflict. Existing shared locks remain ACTIVE. Seller reference API implemented;
+central registration/dispatch/evidence edits supplied only in integration patch.
+No secret-bearing attributes, real sends or success simulation. Final verification
+and remaining dependencies are recorded in ACCOUNTING-TAXPAYER-PARITY-1011 task doc.
+
+## ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B. Direct user authorization extends bounded Accounting chart empty-state work and local accounting export/import packaging. Branch codex/pc-b-accounting-empty-chart-transfer-1011. Reserve accounting-workspace.tsx, accounting-chart-editor.tsx, focused tests, additive en-overrides translations and task documentation; no schema/dependency/permission changes. Preserve concurrent books-error follow-up by distinguishing request failure from empty data. Transfer artifacts stay outside Git; source read-only; destination import requires explicit target branch, preview and backup. User authorizes push and develop merge after checks.
+
+Validation: nine focused chart tests, scoped lint and Web typecheck passed. PR789 exact implementation head passed all remote quality, test, production-build and PostgreSQL migration/seed gates. Source reservation released after the authorized merge; data package remains outside Git and receiving-machine import is not claimed.
+
+## ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C — READY_FOR_REVIEW
+
+Base: develop9a41c1cc. Sole writer reserves Web assistant workspace and styles,
+plus additive own status entry. User requests removing Sources/data-quality
+button, moving Refresh next to Management report, and a navy gradient composer.
+Preserve refresh callback/loading guard, six views, authorization and local-only
+draft behavior. No API, data, migration or dependency change. Acceptance: no
+Sources button, adjacent report/refresh controls, readable navy composer in both
+themes and RTL/LTR/mobile; focused existing tests, lint/typecheck/build, green
+final-head CI before authorized develop merge, then localhost activation.
+
+## ACCOUNTING-COA-REPORTS-YEAREND-1011 — PC-A — IN_PROGRESS
+
+Base origin/develop@68987832; branch codex/pc-a-coa-reports-year-end-1011. User explicitly authorizes source-only crawling and exact COA/report/year-end implementation coordinated with PC-B Finances. Independent worktree; sole writer. Reserve accounting-chart-* and accounting-report-workspace.tsx, accounting-year-end-workspace.tsx, new isolated report/year-end components/models/tests and own task/status entries. Active document owner retains accounting.service.ts, accounting-workspace.tsx, accounting-parity-definitions.ts, contracts/accounting.ts and schema/migrations until explicit release. No shared runtime or test DB mutation, no dependency changes, no source financial actions, invented fields or transaction imports. UI assumptions: authenticated desktop/corporate ERP, existing Next.js stack and Rubi design system, best-effort WCAG AA owned by this work item; targets LCP2500ms/INP200ms/CLS0.1 p75 and additional route JS80KB gzip, Lighthouse accessibility90/performance80 are targets, not measured claims. No framework decision or new Site.
+
+ACCOUNTING-COA-REPORTS-YEAREND-1011 candidate: tree/search/root fixes and AccountingChartReport ready for coordinated integration; web lint/typecheck/build and15 targeted tests passed. No raw financial source data entered Git. Active central locks respected. Full objective remains IN_PROGRESS, with source and contract blockers documented in the task file. PC-B Finances will connect the report route after reviewing the commit. No merge/deploy/runtime mutation performed by this work item.
+
+## ACCOUNTING-CONSOLIDATED-PUBLISH-1011 — PC-A — IN_PROGRESS
+
+User authorizes pushing and merging all completed work from this chat into develop.
+Branch codex/pc-a-accounting-consolidated-1011 combines tax candidates bfba7d2e,
+2dde78b0,4c7fa22d and chart candidate786480fd (cherry-picked with existing empty-book
+handling preserved), rebased by merge onto develop7cdea1da. Raw evidence, source
+records, credentials and test fixtures remain outside Git. PC-B confirms structural
+222 accounts/26 detail types already reside in Rubi; no Rahkaran journals imported.
+Central workspace/parity/service/schema locks remain with PC-B's unfinished document
+work. This publication is a candidate implementation, not complete runtime parity.
+GitHub publication is waiting on account selection: current CLI/connector is
+nirvanamahlou, while recorded user instruction requires Amin-tech11. No substitute
+identity mutation until the human explicitly authorizes it or correct connection exists.
+
+Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint passed. Account selection remains pending.
+
+2026-10-12 human explicitly authorizes nirvanamahlou for this publication, overriding the recorded Amin-tech11 restriction for this task. Publish/PR/CI/merge use authenticated nirvanamahlou id100076016.
+
+PR791 CI follow-up reserves additive translations for140 observed chart/tax labels and generated API/legacy catalogues. Three English coverage/synchronization tests passed; operational forms and domain fields stay unchanged.

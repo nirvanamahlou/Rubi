@@ -538,13 +538,15 @@ function TicketCatalogWorkspace() {
   const publishExistingFlights = async (
     items: readonly Product[],
     itemReferences: readonly Reference[],
+    announceProblems = true,
   ) => {
     const { publishable, problems } = planCatalogPublication(
       items,
       itemReferences,
     );
     if (!publishable.length) {
-      if (problems.length) setPublishedProblem(problems.join('؛ '));
+      if (announceProblems && problems.length)
+        setPublishedProblem(problems.join('؛ '));
       return;
     }
     const base = getPublicApiBaseUrl();
@@ -577,7 +579,8 @@ function TicketCatalogWorkspace() {
           `${publishable[index]!.product.definition.title}: ${result.reason instanceof Error ? result.reason.message : 'ثبت ناموفق بود.'}`,
         );
     });
-    if (problems.length) setPublishedProblem(problems.join('؛ '));
+    if (announceProblems && problems.length)
+      setPublishedProblem(problems.join('؛ '));
   };
 
   useEffect(() => {
@@ -615,6 +618,7 @@ function TicketCatalogWorkspace() {
           void publishExistingFlights(
             restoredProducts,
             stored.references,
+            false,
           ).catch((error) =>
             setPublishedProblem(
               error instanceof Error

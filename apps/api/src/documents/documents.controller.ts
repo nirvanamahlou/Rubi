@@ -25,7 +25,10 @@ import type {
 } from '@nora/contracts';
 
 import { AuthGuard } from '../iam/auth.guard';
-import { RequirePermissions } from '../iam/iam.decorators';
+import {
+  RequireAccessControls,
+  RequirePermissions,
+} from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 // Runtime imports are required for Nest validation metadata.
@@ -273,6 +276,7 @@ export class DocumentsController {
   }
 
   @Get(':id/audit')
+  @RequireAccessControls('documents.detail.tab.activity')
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
   @RequirePermissions('documents.audit.read')
@@ -295,6 +299,7 @@ export class DocumentsController {
   }
 
   @Post(':id/access-grants')
+  @RequireAccessControls('documents.detail.tab.access')
   @HttpCode(201)
   @RequirePermissions('documents.metadata.read', 'documents.file.read')
   createAccessGrant(
@@ -346,6 +351,7 @@ export class DocumentsController {
   }
 
   @Get(':id/preview')
+  @RequireAccessControls('documents.detail.tab.preview')
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
   @Header('X-Content-Type-Options', 'nosniff')

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   canViewRoute,
   canViewScreen,
+  canUseMasterDataResource,
+  denyPermission,
   screenForTab,
   screenPermission,
   USER_ACCESS_PROFILE_PERMISSION,
@@ -9,7 +11,7 @@ import {
   USER_ACCESS_SCREENS,
 } from '@nora/contracts';
 describe('per-user screen visibility', () => {
-  it('shows administrative screens while preserving explicit executive access', () => {
+  it('shows administrative screens and the shared assistant shell', () => {
     const permissions = [
       USER_ACCESS_ADMIN_PERMISSION,
       USER_ACCESS_PROFILE_PERMISSION,
@@ -19,8 +21,8 @@ describe('per-user screen visibility', () => {
         (s) => canViewScreen(permissions, s.id),
       ),
     ).toBe(true);
-    expect(canViewScreen(permissions, 'assistant.executive')).toBe(false);
-    expect(canViewRoute(permissions, '/assistant')).toBe(false);
+    expect(canViewScreen(permissions, 'assistant.executive')).toBe(true);
+    expect(canViewRoute(permissions, '/assistant')).toBe(true);
     expect(
       canViewRoute(
         [...permissions, screenPermission('assistant.executive')],
@@ -37,6 +39,18 @@ describe('per-user screen visibility', () => {
       expect(canViewRoute(permissions, route)).toBe(true);
     }
     expect(canViewScreen(permissions, 'unknown.future.screen')).toBe(false);
+  });
+  it('shows the assistant for every authenticated permission profile without opening other modules', () => {
+    for (const permissions of [
+      [],
+      [USER_ACCESS_PROFILE_PERMISSION],
+      ['hr.read'],
+      ['sales.contracts.read.own'],
+    ]) {
+      expect(canViewRoute(permissions, '/assistant?view=advisor')).toBe(true);
+      expect(canViewScreen(permissions, 'assistant.executive')).toBe(true);
+      expect(canViewRoute(permissions, '/finance')).toBe(false);
+    }
   });
   it('limits legacy navigation to operational grants', () => {
     expect(canViewRoute(['iam.users.read'], '/system')).toBe(true);
@@ -108,6 +122,107 @@ describe('per-user screen visibility', () => {
     expect(new Set(USER_ACCESS_SCREENS.map((s) => s.id)).size).toBe(
       USER_ACCESS_SCREENS.length,
     );
+  });
+});
+
+describe('additive user-access restrictions', () => {
+  it('repairs only the eight parent-authorized document and tour tabs', () => {
+    const documents = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'documents.read',
+      screenPermission('documents.home'),
+    ];
+    for (const tab of ['preview', 'information', 'access', 'activity'])
+      expect(canViewScreen(documents, `documents.detail.tab.${tab}`)).toBe(
+        true,
+      );
+    expect(
+      canViewScreen(
+        [USER_ACCESS_PROFILE_PERMISSION, 'documents.read'],
+        'documents.detail.tab.preview',
+      ),
+    ).toBe(false);
+
+    const toursOnly = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'ticket_catalog.tours.read',
+      screenPermission('ticket-catalog.tab.tours'),
+    ];
+    expect(canViewRoute(toursOnly, '/sales/tours')).toBe(true);
+    for (const tab of ['intro', 'transport', 'itinerary', 'image'])
+      expect(canViewScreen(toursOnly, `sales.tours.tab.${tab}`)).toBe(true);
+    expect(canViewScreen(toursOnly, 'sales.home')).toBe(false);
+  });
+
+  it('lets an explicit deny override inheritance without affecting administrator bypass', () => {
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'documents.read',
+      screenPermission('documents.home'),
+      denyPermission('documents.detail.tab.access'),
+    ];
+    expect(canViewScreen(permissions, 'documents.detail.tab.access')).toBe(
+      false,
+    );
+    expect(canViewScreen(permissions, 'documents.detail.tab.preview')).toBe(
+      true,
+    );
+    expect(
+      canViewScreen(
+        [...permissions, USER_ACCESS_ADMIN_PERMISSION],
+        'documents.detail.tab.access',
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps historical master-data positives while dedicated consumers inherit the section', () => {
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'master_data.read',
+      screenPermission('master-data.geography'),
+    ];
+    expect(canViewScreen(permissions, 'master-data.resource.countries')).toBe(
+      false,
+    );
+    expect(canUseMasterDataResource(permissions, 'countries')).toBe(true);
+    expect(
+      canUseMasterDataResource(
+        [...permissions, denyPermission('master-data.resource.countries')],
+        'countries',
+      ),
+    ).toBe(false);
+  });
+
+  it('uses the existing accounting and system baselines for new deep routes', () => {
+    const accounting = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'finance.read',
+      screenPermission('finance.accounting.general-ledger.accounts'),
+    ];
+    expect(
+      canViewRoute(accounting, '/finance/accounting/taxpayer-system'),
+    ).toBe(false);
+    expect(
+      canViewRoute(
+        [...accounting, screenPermission('finance.home')],
+        '/finance/accounting/taxpayer-system',
+      ),
+    ).toBe(true);
+    expect(canViewScreen(accounting, 'finance.home')).toBe(false);
+
+    const usersOnly = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      screenPermission('system.users'),
+    ];
+    expect(canViewRoute(usersOnly, '/system?module=general')).toBe(true);
+  });
+
+  it('keeps correspondence authenticated-only and supports an explicit route deny', () => {
+    expect(canViewRoute([], '/correspondence')).toBe(true);
+    expect(
+      canViewRoute([denyPermission('correspondence.home')], '/correspondence'),
+    ).toBe(false);
   });
 });
 

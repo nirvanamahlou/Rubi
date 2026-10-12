@@ -105,13 +105,21 @@ describe('role access recommendations', () => {
       'iam.users.manage',
     ];
     const result = recommendRoleAccess('مدیر', permissions, actor);
-    expect(result.screenIds).toEqual(['system.users']);
+    // The shared assistant is universally visible; operational grants stay intersected.
+    expect(result.screenIds).toEqual(['assistant.executive', 'system.users']);
     expect(result.permissionIds).toEqual(['iam.users.manage']);
     expect(recommendRoleAccess('مدیر', [], actor).permissionIds).toEqual([]);
   });
   it('offers every catalogued section and native permission to a system administrator', () => {
     const result = recommendRoleAccess('مدیر', permissions, [], true);
-    expect(result.screenIds).toHaveLength(USER_ACCESS_SCREENS.length);
+    expect(result.screenIds).toEqual(
+      USER_ACCESS_SCREENS.filter((screen) => !screen.inheritFrom).map(
+        (screen) => screen.id,
+      ),
+    );
+    // Additive controls inherit existing access and are edited via explicit restrictions.
+    expect(result.screenIds).not.toContain('system.module.general');
+    expect(result.screenIds).not.toContain('correspondence.home');
     expect(result.permissionIds).toHaveLength(permissions.length);
   });
   it('does not give fallback grants to unknown roles and never mutates existing option arrays', () => {

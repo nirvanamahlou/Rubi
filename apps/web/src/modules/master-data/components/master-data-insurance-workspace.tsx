@@ -40,6 +40,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -688,6 +689,11 @@ function MasterDataInsurerPlans({
 }
 
 export function MasterDataInsuranceWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () => tabs.filter((item) => canUseResource(item.resource)),
+    [canUseResource],
+  );
   const [resource, setResource] = useState<InsuranceResource>('insurers');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [requestState, setRequestState] = useState<RequestState>('loading');
@@ -710,14 +716,38 @@ export function MasterDataInsuranceWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.resource === resource)) {
+      const frame = window.requestAnimationFrame(() =>
+        setResource(fallback.resource),
+      );
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, [resource, visibleTabs]);
   const [expandedInsurerId, setExpandedInsurerId] = useState<string | null>(
     null,
   );
   const relationRequestRef = useRef(0);
   const relationResourceRef = useRef<InsuranceResource>('insurers');
   const definition = getMasterDataDefinition(resource);
+  const resourceAllowed = visibleTabs.some(
+    (item) => item.resource === resource,
+  );
   const currentTab = tabs.find((tab) => tab.resource === resource) ?? tabs[0];
   const CurrentIcon = currentTab.icon;
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+      setExpandedInsurerId(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resourceAllowed]);
 
   const { columnFilters, columnFilterControls, resetColumnFilters } =
     useMasterDataColumnFilters(resource, () => setPage(1));
@@ -728,6 +758,11 @@ export function MasterDataInsuranceWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     setRequestState('loading');
     try {
       const response = await masterDataApi.list(resource, {
@@ -766,6 +801,7 @@ export function MasterDataInsuranceWorkspace() {
     page,
     referenceFilter,
     resource,
+    resourceAllowed,
     search,
     status,
   ]);
@@ -874,6 +910,7 @@ export function MasterDataInsuranceWorkspace() {
         : 'ارز';
 
   function changeResource(next: InsuranceResource) {
+    if (!visibleTabs.some((item) => item.resource === next)) return;
     relationRequestRef.current += 1;
     relationResourceRef.current = next;
     setRelationRecords([]);
@@ -1256,6 +1293,12 @@ export function MasterDataInsuranceWorkspace() {
       table
     );
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -1289,7 +1332,7 @@ export function MasterDataInsuranceWorkspace() {
       {notice ? <Alert description={notice} title="نتیجه عملیات" /> : null}
       <Card className="overflow-x-auto p-2">
         <nav aria-label="زیرمجموعه‌های بیمه" className="flex min-w-max gap-1">
-          {tabs.map((tab) => {
+          {visibleTabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button

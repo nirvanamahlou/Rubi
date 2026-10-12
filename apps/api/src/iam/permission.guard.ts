@@ -1,9 +1,9 @@
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import type { IamPermissionCode } from '@nora/contracts';
+import { hasAccessControl, type IamPermissionCode } from '@nora/contracts';
 
-import { PERMISSIONS_KEY } from './iam.constants';
+import { ACCESS_CONTROLS_KEY, PERMISSIONS_KEY } from './iam.constants';
 import { IamService } from './iam.service';
 import type { AuthenticatedRequest } from './iam.types';
 
@@ -21,6 +21,19 @@ export class PermissionGuard implements CanActivate {
       ]) ?? [];
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     this.iam.assertPermissions(request.actor, required);
+    const requiredControls =
+      this.reflector.getAllAndOverride<string[]>(ACCESS_CONTROLS_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) ?? [];
+    const deniedControl = requiredControls.find(
+      (controlId) => !hasAccessControl(request.actor.permissions, controlId),
+    );
+    if (deniedControl)
+      throw new ForbiddenException({
+        error: 'ACCESS_CONTROL_RESTRICTED',
+        controlId: deniedControl,
+      });
     return true;
   }
 }

@@ -17,7 +17,10 @@ import {
 import { ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 
 import { AuthGuard } from '../iam/auth.guard';
-import { RequirePermissions } from '../iam/iam.decorators';
+import {
+  RequireAccessControls,
+  RequirePermissions,
+} from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { PermissionGuard } from '../iam/permission.guard';
 import { B2bSignatoryService } from './b2b-signatory.service';
@@ -67,6 +70,7 @@ export class B2bController {
     return this.signatories.list(organizationId, branchId, request.actor);
   }
   @Post(':organizationId/signatories')
+  @RequireAccessControls('organizations.profile.tab.signatories')
   @RequirePermissions('b2b.agency.manage')
   createSignatory(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -76,6 +80,7 @@ export class B2bController {
     return this.signatories.save(organizationId, dto, request.actor);
   }
   @Put(':organizationId/signatories/:id')
+  @RequireAccessControls('organizations.profile.tab.signatories')
   @RequirePermissions('b2b.agency.manage')
   updateSignatory(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -86,6 +91,7 @@ export class B2bController {
     return this.signatories.save(organizationId, dto, request.actor, id);
   }
   @Delete(':organizationId/signatories/:id')
+  @RequireAccessControls('organizations.profile.tab.signatories')
   @RequirePermissions('b2b.agency.manage')
   deleteSignatory(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -117,6 +123,7 @@ export class B2bController {
   }
 
   @Put(':organizationId/agreed-rates/:rateId')
+  @RequireAccessControls('organizations.profile.tab.rates')
   @RequirePermissions('b2b.rate.manage')
   updateRate(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -128,6 +135,7 @@ export class B2bController {
   }
 
   @Delete(':organizationId/agreed-rates/:rateId')
+  @RequireAccessControls('organizations.profile.tab.rates')
   @RequirePermissions('b2b.rate.manage')
   deleteRate(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -177,6 +185,7 @@ export class B2bController {
   }
 
   @Post(':organizationId/agreements/drafts')
+  @RequireAccessControls('organizations.profile.tab.framework')
   @RequirePermissions('b2b.agreement.manage')
   createDraft(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -187,6 +196,7 @@ export class B2bController {
   }
 
   @Put(':organizationId/agreements/:agreementId')
+  @RequireAccessControls('organizations.profile.tab.framework')
   @RequirePermissions('b2b.agreement.manage')
   saveDraft(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -198,6 +208,7 @@ export class B2bController {
   }
 
   @Post(':organizationId/agreements/:agreementId/submit')
+  @RequireAccessControls('organizations.profile.tab.framework')
   @RequirePermissions('b2b.agreement.manage')
   submitDraft(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -215,6 +226,7 @@ export class B2bController {
   }
 
   @Post(':organizationId/agreements/:agreementId/review')
+  @RequireAccessControls('organizations.profile.tab.framework')
   @RequirePermissions('b2b.agreement.approve')
   reviewDraft(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -252,6 +264,7 @@ export class B2bController {
   }
 
   @Put(':organizationId/profile')
+  @RequireAccessControls('organizations.profile.tab.profile')
   @RequirePermissions('b2b.agency.manage')
   profile(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -262,6 +275,7 @@ export class B2bController {
   }
 
   @Post(':organizationId/agreements')
+  @RequireAccessControls('organizations.profile.tab.framework')
   @RequirePermissions('b2b.agreement.manage')
   agreement(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -272,6 +286,7 @@ export class B2bController {
   }
 
   @Put(':organizationId/credit-policy')
+  @RequireAccessControls('organizations.profile.tab.credit')
   @RequirePermissions('b2b.credit.manage')
   creditPolicy(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
@@ -282,6 +297,7 @@ export class B2bController {
   }
 
   @Post(':organizationId/agreed-rates')
+  @RequireAccessControls('organizations.profile.tab.rates')
   @RequirePermissions('b2b.rate.manage')
   agreedRate(
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
