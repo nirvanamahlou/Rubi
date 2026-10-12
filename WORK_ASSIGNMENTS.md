@@ -6953,3 +6953,7 @@ Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint pa
 2026-10-12 human explicitly authorizes nirvanamahlou for this publication, overriding the recorded Amin-tech11 restriction for this task. Publish/PR/CI/merge use authenticated nirvanamahlou id100076016.
 
 PR791 CI follow-up reserves additive translations for140 observed chart/tax labels and generated API/legacy catalogues. Three English coverage/synchronization tests passed; operational forms and domain fields stay unchanged.
+
+## FINANCE-INBOX-UI-1012 — PC-A — IN_PROGRESS
+
+Reserve Finance inbox workspace presentation/CSS and own status entries on codex/pc-a-finance-inbox-ui-1012 from origin/develop. User authorizes redesign, removing redundant explanatory copy, organizing search controls, push and develop merge. Preserve all handlers, query state, financial actions and permissions. No API/schema/dependency/data changes.

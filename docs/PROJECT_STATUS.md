@@ -5575,6 +5575,10 @@ dependency or data changes.20 focused existing Web tests and scoped ESLint passe
 production build, browser verification and final CI evidence follow in the PR.
 
 
+## 2026-10-12 — FINANCE-INBOX-UI-1012 — PC-A
+
+Finance request inbox now has a full-width labeled search panel, responsive aligned filter grid and calmer rounded containers. Removed redundant header instructions and generated-at copy. All existing query state, callbacks, financial actions and permission checks are unchanged. No API, schema, dependency or operational data change. User authorizes push and develop merge after verification.
+
 ## 2026-10-11 — COA tree and chart-report candidate — PC-A
 
 Independent source crawl verified 222 accounts, 13 root groups and nine assigned-detail records. COA tree now uses persisted roots, source code/title sorting and code/title/level search. Added a read-only chart-report component and seven report-model tests. Web lint, typecheck, 15 targeted tests and production build passed. No API/schema/dependency change or source/runtime data mutation. Central report route integration is reserved to the active PC-B Finances chat. Full report/year-end parity remains incomplete: source fiscal selector exposes only2026, year-end prerequisites block later steps, counterpart output and CSV export return source errors, and closing-template roles need a separately owned additive migration. See docs/tasks/ACCOUNTING-COA-REPORTS-YEAREND-1011.md.

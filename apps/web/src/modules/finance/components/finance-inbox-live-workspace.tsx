@@ -701,18 +701,10 @@ export function FinanceInboxLiveWorkspace() {
                 <BarChart3 className="size-3.5" />
                 مرکز کنترل مالی
               </Badge>
-              <span className="text-xs text-blue-200">
-                داده‌های عملیاتی ·{' '}
-                {data ? faDate(data.generatedAt) : 'در حال دریافت'}
-              </span>
             </div>
             <h2 className="mt-4 text-2xl font-black sm:text-3xl">
               کارتابل درخواست‌ها
             </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-blue-100">
-              دریافت‌ها را به حساب مقصد متصل کنید، پرداخت‌های کارگزار را از حساب
-              مبدأ ثبت کنید و موارد سررسیددار را پیش از تأخیر ببندید.
-            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -915,12 +907,9 @@ export function FinanceInboxLiveWorkspace() {
           <ListFilter className="size-4 text-primary" />
           <div>
             <h3 className="text-sm font-black">فیلتر و جست‌وجوی کارتابل</h3>
-            <p className="text-xs text-muted-foreground">
-              تمام کارت‌ها و اولویت‌ها با فیلترهای زیر همگام می‌شوند.
-            </p>
           </div>
         </div>
-        <div className="grid items-end gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className={styles.filterGrid}>
           <label className="grid gap-1 text-xs text-muted-foreground">
             مرتب‌سازی بر اساس
             <Select
@@ -963,15 +952,24 @@ export function FinanceInboxLiveWorkspace() {
               مبلغ درخواست‌ها در هر ارز جداگانه مرتب می‌شود.
             </p>
           ) : null}
-          <div className="relative sm:col-span-2">
-            <Search className="absolute end-3 top-3 size-4 text-muted-foreground" />
-            <Input
-              className="pe-10"
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="جست‌وجوی قرارداد، طرف‌حساب، شرح یا شماره درخواست"
-              aria-label="جست‌وجوی درخواست‌های مالی"
-              value={search}
-            />
+          <div className={styles.searchField}>
+            <label
+              htmlFor="finance-inbox-search"
+              className="text-xs font-semibold text-muted-foreground"
+            >
+              جست‌وجوی درخواست
+            </label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute end-3 top-3 size-4 text-muted-foreground" />
+              <Input
+                id="finance-inbox-search"
+                className="pe-10"
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="جست‌وجوی قرارداد، طرف‌حساب، شرح یا شماره درخواست"
+                aria-label="جست‌وجوی درخواست‌های مالی"
+                value={search}
+              />
+            </div>
           </div>
           <label className="grid gap-1 text-xs text-muted-foreground">
             فیلتر واحد ارسال‌کننده
