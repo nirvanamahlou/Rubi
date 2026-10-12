@@ -4335,5 +4335,8 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "تاریخ نامه معتبر نیست.": "The letter date is invalid.",
+  "شناسه درخواست نامه معتبر نیست.": "The letter request identifier is invalid.",
+  "شرکت نامه معتبر نیست.": "The letter company is invalid."
 }

@@ -30,7 +30,7 @@ export async function renderLetterPages(
     );
   }
   const pages: HTMLCanvasElement[] = [];
-  for (let offset = 0; offset < lines.length; offset += 22) {
+  for (let offset = 0; offset < lines.length; offset += 21) {
     const canvas = document.createElement('canvas');
     canvas.width = 1240;
     canvas.height = 1754;
@@ -39,6 +39,28 @@ export async function renderLetterPages(
     context.fillStyle = '#fff';
     context.fillRect(0, 0, 1240, 1754);
     context.drawImage(background, 0, 0, 1240, 1754);
+    // Move the original logo pixels, preserving brand artwork and the footer.
+    const [x, y, width, height] = company.logo;
+    const logoWidth = width * canvas.width;
+    const logoHeight = height * canvas.height;
+    context.fillStyle = '#fff';
+    context.fillRect(
+      x * canvas.width - 3,
+      y * canvas.height - 3,
+      logoWidth + 6,
+      logoHeight + 6,
+    );
+    context.drawImage(
+      background,
+      x * background.width,
+      y * background.height,
+      width * background.width,
+      height * background.height,
+      (canvas.width - logoWidth) / 2,
+      y * canvas.height,
+      logoWidth,
+      logoHeight,
+    );
     context.direction = 'rtl';
     context.textAlign = 'right';
     context.font = '24px Vazirmatn, sans-serif';
@@ -62,14 +84,18 @@ export async function renderLetterPages(
     context.font = 'bold 28px Vazirmatn, sans-serif';
     context.fillStyle = '#172033';
     // Bound metadata to the letter width; the body wraps onto additional pages.
-    const header = [`گیرنده: ${letter.recipient}`, `موضوع: ${letter.subject}`];
+    const header = [
+      `گیرنده: ${[letter.recipientTitle, letter.recipient].filter(Boolean).join(' ')}`,
+      `فرستنده: ${letter.sender || letter.signer}`,
+      `موضوع: ${letter.subject}`,
+    ];
     header.forEach((text, index) =>
       context.fillText(text, 1140, 370 + index * 55, 1000),
     );
     context.font = '28px Vazirmatn, sans-serif';
     lines
-      .slice(offset, offset + 22)
-      .forEach((text, index) => context.fillText(text, 1140, 490 + index * 46));
+      .slice(offset, offset + 21)
+      .forEach((text, index) => context.fillText(text, 1140, 540 + index * 46));
     context.fillStyle = '#64748b';
     context.font = '22px Vazirmatn, sans-serif';
     context.fillText(`صفحه ${pages.length + 1}`, 650, 1525);
