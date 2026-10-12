@@ -16,6 +16,82 @@ const actor = (
   permissions,
 });
 describe('agency passenger access', () => {
+  it('updates an owned passenger through bounded customer authority and returns no commercial data', async () => {
+    const data = {
+      id: 'passenger',
+      version: 3,
+      kind: 'person',
+      roles: ['passenger'],
+      ownerBranchId: 'branch',
+      organizationId: null,
+      firstName: 'Synthetic',
+      lastName: 'Passenger',
+      passportFirstName: 'Synthetic',
+      passportLastName: 'Passenger',
+      displayName: 'Synthetic Passenger',
+      gender: 'M',
+      nationalId: null,
+      price: 999,
+    };
+    const update = vi
+      .fn()
+      .mockResolvedValue({
+        data: { ...data, version: 4, passportNumber: 'TEST123' },
+      });
+    const service = new AgencyPassengerAccessService(
+      {
+        client: {
+          customer: { findMany: vi.fn().mockResolvedValue([{ id: 'buyer' }]) },
+          salesContract: {
+            findMany: vi
+              .fn()
+              .mockResolvedValue([
+                { passengers: [{ customerId: 'passenger' }] },
+              ]),
+          },
+        },
+      } as unknown as DatabaseService,
+      {
+        member: vi
+          .fn()
+          .mockResolvedValue({
+            row: { organizationId: 'own', branchId: 'branch' },
+          }),
+      } as unknown as B2bOrganizationUserService,
+      {
+        detail: vi.fn().mockResolvedValue({ data }),
+        update,
+      } as unknown as CustomerService,
+    );
+    const result = await service.update(
+      actor(['b2b.portal.passengers.read', 'b2b.portal.passengers.update']),
+      'contract',
+      'passenger',
+      { version: 3, passportNumber: 'TEST123' },
+    );
+    expect(update.mock.calls[0]![1]).toMatchObject({
+      firstName: data.firstName,
+      lastName: data.lastName,
+      displayName: data.displayName,
+      passportFirstName: data.passportFirstName,
+      passportLastName: data.passportLastName,
+      version: 3,
+      passportNumber: 'TEST123',
+    });
+    const scoped = update.mock.calls[0]![2] as AuthenticatedActor;
+    expect(scoped.branchIds).toEqual(['branch']);
+    expect(scoped.permissions).toContain(
+      'ui.allow.field.customers.passportNumber',
+    );
+    expect(scoped.permissions).not.toContain(
+      'ui.allow.field.customers.firstName',
+    );
+    expect(result.data).toMatchObject({
+      version: 4,
+      passportNumber: 'TEST123',
+    });
+    expect(result.data).not.toHaveProperty('price');
+  });
   it.each([
     'firstName',
     'lastName',

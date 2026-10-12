@@ -2412,6 +2412,8 @@
   "واردات": "Imports",
   "وجه نقد": "Cash",
   "ورود به تجمیع": "Add to aggregation",
+  "این صفحه فقط پیش‌نیازها را بررسی می‌کند؛ صدور سند فعال نیست.": "This page only checks prerequisites; journal issuance is not available.",
+  "گزارش ها": "Reports",
   "— جدید؛ نیازمند تصمیم دستی": "— New; manual decision required",
   "انتخاب دسترسی دستی لازم است.": "Manual access selection is required.",
   "انتخاب همه موارد قابل واگذاری": "Select all assignable items",

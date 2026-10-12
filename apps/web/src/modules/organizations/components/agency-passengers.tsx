@@ -105,7 +105,9 @@ export function AgencyPassengers() {
                 type="button"
                 variant="outline"
                 key={p.customerId}
+                disabled={busy}
                 onClick={() => {
+                  setError('');
                   setDetail(undefined);
                   setSelected({ contractId: c.id, passengerId: p.customerId });
                 }}
