@@ -2,6 +2,8 @@ import type { IamPermissionCode } from '@nora/contracts';
 import {
   LEGAL_ENTITY_AUTHENTICATED_BASELINE_PERMISSION_CODES,
   USER_ACCESS_ADMIN_PERMISSION,
+  MANUAL_ACCESS_ROLE_PREFIX,
+  MANUAL_ACCESS_VERSION,
 } from '@nora/contracts';
 
 export interface PermissionBearingRole {
@@ -16,6 +18,27 @@ export interface PermissionBearingRole {
 export function authenticatedPermissionCodes(
   roles: readonly PermissionBearingRole[],
 ): IamPermissionCode[] {
+  const snapshots = roles.filter(({ role }) =>
+    role.code?.startsWith(MANUAL_ACCESS_ROLE_PREFIX),
+  );
+  // Do not resurrect shared grants when a snapshot is disabled or malformed.
+  if (snapshots.length) {
+    if (
+      snapshots.length !== 1 ||
+      !snapshots[0]!.role.isActive ||
+      !snapshots[0]!.role.permissions.some(
+        ({ permission }) => permission.code === MANUAL_ACCESS_VERSION,
+      )
+    )
+      return [];
+    return [
+      ...new Set(
+        snapshots[0]!.role.permissions.map(
+          ({ permission }) => permission.code as IamPermissionCode,
+        ),
+      ),
+    ].filter((code) => code !== USER_ACCESS_ADMIN_PERMISSION);
+  }
   const administrator = roles.some(
     ({ role }) => role.isActive && role.code === 'administrator',
   );
@@ -34,7 +57,12 @@ export function authenticatedPermissionCodes(
             ({ permission }) => permission.code as IamPermissionCode,
           ),
         )
-        .filter((code) => code !== USER_ACCESS_ADMIN_PERMISSION),
+        .filter(
+          (code) =>
+            code !== USER_ACCESS_ADMIN_PERMISSION &&
+            code !== MANUAL_ACCESS_VERSION &&
+            !code.startsWith('ui.allow.'),
+        ),
       ...(administrator ? [USER_ACCESS_ADMIN_PERMISSION] : []),
     ]),
   ];

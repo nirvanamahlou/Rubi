@@ -4,6 +4,7 @@ import {
   initialTemplate,
   companies,
   wrapLetterParagraph,
+  letterTemplates,
   type Letter,
 } from './letter';
 const letter: Letter = {
@@ -17,6 +18,25 @@ const letter: Letter = {
   template: initialTemplate,
 };
 describe('letter composition', () => {
+  it('places the supplied recipient title and sender in every administrative template without inventing titles', () => {
+    for (const template of letterTemplates) {
+      const result = composeLetter({
+        ...letter,
+        recipient: 'اکبر',
+        recipientTitle: 'دکتر',
+        sender: 'واحد فروش',
+        template: template.body,
+      });
+      expect(result).toContain('با سلام خدمت دکتر اکبر');
+      expect(result).toContain('واحد فروش');
+    }
+    expect(composeLetter({ ...letter, recipient: 'اکبر' })).toContain(
+      'با سلام خدمت اکبر',
+    );
+    expect(composeLetter({ ...letter, recipient: 'اکبر' })).not.toContain(
+      'دکتر',
+    );
+  });
   it('wraps at word boundaries so Persian words remain intact', () => {
     const text = 'هماهنگی لازم جهت برگزاری جلسه';
     const lines = wrapLetterParagraph(text, (value) => value.length, 16);

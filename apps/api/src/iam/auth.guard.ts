@@ -6,6 +6,7 @@ import type { Request } from 'express';
 import { ACCESS_COOKIE, IS_PUBLIC_KEY } from './iam.constants';
 import { IamService } from './iam.service';
 import type { AuthenticatedRequest } from './iam.types';
+import { assertManualApiAccess } from './manual-api-access';
 
 function readCookie(request: Request, name: string): string | undefined {
   const header = request.headers.cookie;
@@ -34,6 +35,11 @@ export class AuthGuard implements CanActivate {
     const token = readCookie(request, ACCESS_COOKIE);
     if (!token) throw new UnauthorizedException('دسترسی معتبر نیست.');
     request.actor = await this.iam.authenticate(decodeURIComponent(token));
+    assertManualApiAccess(
+      request.actor,
+      request.originalUrl ?? request.url ?? '',
+      request.method,
+    );
     return true;
   }
 }

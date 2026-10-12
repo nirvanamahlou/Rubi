@@ -7,6 +7,8 @@ import {
   ParseUUIDPipe,
   Post,
   Put,
+  Patch,
+  Optional,
   Headers,
   Req,
   UseGuards,
@@ -17,6 +19,7 @@ import { RequirePermissions } from '../iam/iam.decorators';
 import { requestMetadata } from '../iam/auth.controller';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { B2bOrganizationUserService } from './b2b-organization-user.service';
+import { AgencyPassengerAccessService } from './agency-passenger-access.service';
 // Runtime DTO metadata is required by ValidationPipe.
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import {
@@ -66,7 +69,28 @@ export class B2bPortalController {
   constructor(
     @Inject(B2bOrganizationUserService)
     private readonly service: B2bOrganizationUserService,
+    @Optional()
+    @Inject(AgencyPassengerAccessService)
+    private readonly passengers?: AgencyPassengerAccessService,
   ) {}
+  @Get('passengers') passengersList(@Req() req: AuthenticatedRequest) {
+    return this.passengers!.list(req.actor);
+  }
+  @Get('contracts/:contractId/passengers/:passengerId') passenger(
+    @Param('contractId', new ParseUUIDPipe()) contractId: string,
+    @Param('passengerId', new ParseUUIDPipe()) passengerId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.passengers!.detail(req.actor, contractId, passengerId);
+  }
+  @Patch('contracts/:contractId/passengers/:passengerId') updatePassenger(
+    @Param('contractId', new ParseUUIDPipe()) contractId: string,
+    @Param('passengerId', new ParseUUIDPipe()) passengerId: string,
+    @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.passengers!.update(req.actor, contractId, passengerId, body);
+  }
   @Get('me') me(@Req() req: AuthenticatedRequest) {
     return this.service.identity(req.actor);
   }
