@@ -1,0 +1,17 @@
+.package-gallery-mode .controls > :is(.editor-nav,.editor-group:not([data-editor-group="0"])){display:none!important}
+.package-gallery-mode .editor-group[data-editor-group="0"] :is(#dropzone,#fileinfo,#sheet,#status),.package-gallery-mode .editor-group[data-editor-group="0"] label:has(#sheet){display:none!important}
+.package-gallery-mode #packageGalleryControls{display:block;padding:16px;border:1px solid #c9d9ed;border-radius:12px;background:#fff}
+#packageGalleryControls :is(label,input,select,textarea,button){font-size:15px}
+#packageGalleryControls p{font-size:13px;line-height:1.8}
+#packageGalleryControls textarea{direction:rtl}
+.gallery-page{position:relative;overflow:hidden;direction:rtl;background:#fff}
+.gallery-background{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none}
+.gallery-text,.gallery-photo,.gallery-hit{position:absolute;box-sizing:border-box}
+.gallery-text{z-index:2;white-space:pre-wrap;overflow:hidden;overflow-wrap:anywhere;line-height:1.15;padding:2px 3px;font-weight:700;display:grid;align-content:center}
+.gallery-photo{z-index:2;object-fit:cover}
+.gallery-hit{z-index:3;margin:0;padding:0;border:0;background:transparent!important;cursor:pointer}
+.gallery-hit:hover,.gallery-hit:focus-visible{outline:3px solid #f8ae30;outline-offset:-3px;background:#f8ae301f!important}
+.gallery-inline{z-index:5;outline:3px solid #f8ae30;cursor:text;font-family:'Vazirmatn Variable',Tahoma,sans-serif}
+.gallery-export-stage{position:absolute;left:0;top:0;z-index:-10;direction:ltr}
+.exporting .gallery-text{outline:none!important}
+@media(max-width:680px){#packageGalleryControls .two{grid-template-columns:1fr 1fr}.package-gallery-mode .preview-area{padding:10px}}

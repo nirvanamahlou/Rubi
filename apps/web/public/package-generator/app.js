@@ -6,7 +6,10 @@ const TEMPLATE_COUNTRIES={
  turkey:['combined','kus','antalya','bodrum','nss','istanbul-3','istanbul-4'],
  malaysia:['malaysia-kuala','malaysia-penang','malaysia-singapore','malaysia-langkawi'],
  spain:['spain-barcelona','spain-madrid','spain-combined'],
- thailand:['thailand-phuket','thailand-bangkok-phuket','thailand-pattaya']
+ thailand:['thailand-phuket','thailand-bangkok-phuket','thailand-pattaya'],
+ vietnam:['package-vietnam','package-vietnam-luxury'],
+ china:['package-china'],
+ iran:['package-kish','package-qeshm','package-mashhad']
 };
 function countryForTemplate(templateId){return Object.entries(TEMPLATE_COUNTRIES).find(([,templateIds])=>templateIds.includes(templateId))?.[0];}
 function syncTemplateOptions(country,preferredTemplate){
@@ -149,6 +152,7 @@ function fitText(page){
 }
 function unmarkedPrices(){return state.data?.groups.some(g=>Object.values(g.prices).some(c=>!unavailable(c.value)&&!c.currency&&!/€|\$|تومان|ریال|یورو|دلار/.test(String(c.value))))||false;}
 function updateDownloadNotice(){
+ if(profile().gallery)return;
  const notice=$('downloadNotice');if(!notice)return;
  const currencyNeeded=unmarkedPrices()&&!$('unit').value,pending=!!window.PackageEditor?.pending,reasons=[];
  if(!state.data)reasons.push(state.lastError?'فایل منبع وارد نشده است؛ پیام خطا را در همین بخش بررسی کن.':'برای دانلود، ابتدا فایل اکسل یا Word را انتخاب کن.');
@@ -171,6 +175,7 @@ function showLayoutIssue(){
  if(target){target.scrollIntoView({block:'center',behavior:'smooth'});if(target.dataset.section&&[...$('textSection').options].some(o=>o.value===target.dataset.section)){$('textSection').value=target.dataset.section;$('textSection').dispatchEvent(new Event('change'));}}
 }
 function updateWarnings(){
+ if(profile().gallery){window.PackageGallery?.render();return;}
  const warnings=[...(state.data?.warnings||[])],unknown=unmarkedPrices();
 
  const missing=state.data?profile().cardSlots.filter(s=>unavailable(state.cards[s.key]?.value)).map(s=>window.PackageCards?.title(s)??s.label):[];if(missing.length)warnings.push('این مبالغ در شیت منبع نبودند و با «—» نمایش داده می‌شوند: '+missing.join('، '));if(state.layoutError)warnings.push('بخشی از متن در فضای قالب جا نمی‌شود؛ اندازهٔ متن یا تعداد گزینه‌ها را کاهش بده.');
@@ -188,6 +193,7 @@ function drawCards(){return ScrollPosition.keep(()=>drawCardsContents());}
 }
 function render(){return ScrollPosition.keep(()=>renderContents());}
  function renderContents(){
+ if(profile().gallery){window.PackageGallery?.render();return;}window.PackageGallery?.leave();
  $('combinedFields').hidden=profile().style!=='combined';const host=$('pages');host.replaceChildren();host.classList.toggle('show-layers',!!$('showLayers')?.checked);state.layoutError=false;const p=profile(),scale=Math.min(1,Math.max(280,host.clientWidth-4)/p.width);
  if(state.reference||(!state.data&&!window.PackageEditor)){const img=document.createElement('img');img.src=p.image;img.className='reference-image';img.alt='مرجع '+p.label;img.style.maxWidth=p.width+'px';host.append(img);if(!state.data)$('summary').textContent='نمایش مرجع؛ برای جایگزینی قیمت‌ها اکسل یا Word را وارد کن.';updateWarnings();return;}
  if(!state.data){const page=makePage([],1,1),wrap=document.createElement('div'),zoom=document.createElement('div');wrap.className='page-wrap';wrap.style.width=p.width*scale+'px';wrap.style.height=p.height*scale+'px';zoom.className='page-scale';zoom.style.transform=`scale(${scale})`;zoom.append(page);wrap.append(zoom);host.append(wrap);fitText(page);$('summary').textContent='پیش‌نمایش قالب؛ برای ساخت خروجی، اکسل یا Word را وارد کن.';window.PackageEditor?.sync();updateWarnings();return;}
@@ -205,7 +211,7 @@ function render(){return ScrollPosition.keep(()=>renderContents());}
  chunks.forEach((ids,n)=>{const page=makePage(ids,n+1,chunks.length),wrap=document.createElement('div'),zoom=document.createElement('div');wrap.className='page-wrap';wrap.style.width=p.width*scale+'px';wrap.style.height=p.height*scale+25+'px';zoom.className='page-scale';zoom.style.transform=`scale(${scale})`;zoom.append(page);wrap.append(zoom);const caption=document.createElement('div');caption.className='page-counter';caption.style.cssText=`position:absolute;top:${p.height*scale}px;width:100%`;caption.textContent=`${fa(n+1)} / ${fa(chunks.length)}`;wrap.append(caption);host.append(wrap);if(!fitText(page))state.layoutError=true;});
  $('summary').textContent=`${fa(state.data.groups.length)} گزینه • ${fa(chunks.length)} صفحه • منبع: ${state.data.sheetName}`;window.PackageEditor?.sync();updateWarnings();
 }
-function selectTemplate(value){$('template').value=value;const alignScope=document.getElementById('packageAlignAll');if(alignScope)alignScope.checked=false;if(state.data)window.PackageCards?.includeSource(state.data.cards);else $('title').value=profile().title;$('fontSize').value=profile().font;$('tableColor').value=profile().color;drawCards();render();}
+function selectTemplate(value){$('template').value=value;if(profile().gallery){state.reference=false;window.PackageGallery?.activate();return;}const alignScope=document.getElementById('packageAlignAll');if(alignScope)alignScope.checked=false;if(state.data)window.PackageCards?.includeSource(state.data.cards);else $('title').value=profile().title;$('fontSize').value=profile().font;$('tableColor').value=profile().color;drawCards();render();}
 function applyData(d){state.data=d;state.cards=window.PackageCards?.dataForImport(d.cards)||structuredClone(d.cards);state.reference=false;$('reference').textContent='نمایش مرجع';if(d.template&&!state.templatePinned)syncTemplateCountry(d.template);window.PackageCards?.includeSource(d.cards);$('title').value=d.title||profile().title;$('date').value=d.date;$('duration').value=d.duration;$('stays').value=d.stays||'';$('infantValue').value=d.cards.infant?.value??'';$('infantUnit').value=d.cards.infant?.unit??'';$('notes').value=d.notes;$('adjustments').value=d.adjustments||'';$('services').value=d.services||'';$('unit').value=d.template?.startsWith('malaysia-')||d.template?.startsWith('thailand-')?'$':d.template?.startsWith('spain-')?'€':'';$('fontSize').value=profile().font;$('tableColor').value=profile().color;drawCards();render();message(`${fa(d.groups.length)} گزینه و ${fa(Object.values(d.cards).filter(c=>!unavailable(c.value)).length)} کادرِ پایین صفحه از «${d.sheetName}» وارد شد؛ متن‌ها و نرخ‌ها قابل ویرایش‌اند.`);}
 async function importFile(file){
  if(!file||state.busy)return;if(!/\.(xlsx|docx)$/i.test(file.name)){message('فایل XLSX یا DOCX انتخاب کن.',true);return;}state.lastError='';const id=++state.importId;window.PackageCards?.rememberCustom();state.data=null;state.reference=false;state.cards={};updateWarnings();message('در حال خواندن فایل…');
@@ -230,6 +236,7 @@ for(const t of ['dragover','dragenter'])$('dropzone').addEventListener(t,e=>{e.p
 for(const key of ['title','date','duration','stays','infantLabel','infantValue','infantUnit','unit','perPage','notes','adjustments','services','fontSize','tableColor'])$(key).addEventListener('input',render);$('showLayers').addEventListener('change',render);$('resetStyle').addEventListener('click',()=>selectTemplate($('template').value));$('reference').addEventListener('click',()=>{state.reference=!state.reference;$('reference').textContent=state.reference?'بازگشت به پکیج':'نمایش مرجع';render();});let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,150);});
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);}
 async function exportPackage(type){
+ if(profile().gallery){document.activeElement?.blur();return window.PackageGallery.exportFile(type);}
  document.activeElement?.blur();state.reference=false;$('reference').textContent='نمایش مرجع';render();if($(type).disabled)return;state.busy=true;updateWarnings();
  const controls=[...document.querySelectorAll('.controls input,.controls textarea,.controls select,.controls button,#reference,#downloadUnit,#downloadFixLayout')],disabledBefore=controls.map(c=>c.disabled);controls.forEach(c=>c.disabled=true);
  const p=profile(),pages=[...document.querySelectorAll('.package-page')],name=($('title').value+' '+$('date').value).replace(/[<>:"/\\|?*\x00-\x1f]/g,'-').trim().slice(0,100)||'package',pdf=type==='pdf'?new jspdf.jsPDF({unit:'pt',format:[p.width*.75,p.height*.75],orientation:'portrait',compress:true}):null,images=[];
