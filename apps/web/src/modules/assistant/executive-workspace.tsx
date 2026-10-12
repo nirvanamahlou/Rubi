@@ -343,12 +343,20 @@ export function AssistantComposer({
       {!denied && actionResult?.status === 'BLOCKED' && (
         <p role="status" className={styles.composerHint}>
           {t(
-            actionResult.reason === 'SALES_DEFINITION_REQUIRED'
+            actionResult.reason === 'SALES_SOURCE_UNAVAILABLE'
               ? c.salesDefinitionGate
               : c.receivablesSourceGate,
           )}
         </p>
       )}
+      {!denied &&
+        actionResult?.status === 'BLOCKED' &&
+        actionResult.action === 'sales-analysis' &&
+        actionResult.failure && (
+          <p role="status" className={styles.composerHint}>
+            {t(c.sourceFailure[actionResult.failure])}
+          </p>
+        )}
       {!denied && actionResult?.action === 'daily-summary' && (
         <div className={styles.actionResult}>
           <h2>{t(c.dailyTitle)}</h2>
@@ -391,6 +399,80 @@ export function AssistantComposer({
           />
         </div>
       )}
+      {!denied &&
+        actionResult?.action === 'sales-analysis' &&
+        actionResult.status === 'PARTIAL' && (
+          <div className={styles.actionResult}>
+            <h2>{t(c.weeklySales)}</h2>
+            <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+            <p className={styles.composerHint}>
+              {t(c.asOf)}:{' '}
+              <time dateTime={actionResult.report.observedAt}>
+                {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                  timeZone: 'Asia/Tehran',
+                }).format(new Date(actionResult.report.observedAt))}
+              </time>
+            </p>
+            <p className={styles.composerHint}>{t(c.salesMissing)}</p>
+            {!actionResult.report.routeNamesComplete && (
+              <p className={styles.composerHint}>{t(c.missingCityNames)}</p>
+            )}
+            {[
+              [c.currentPeriod, actionResult.report.current],
+              [c.previousPeriod, actionResult.report.previous],
+            ].map(([label, period]) => {
+              const value = period as typeof actionResult.report.current;
+              return (
+                <div key={(label as AssistantText)[1]}>
+                  <h3>{t(label as AssistantText)}</h3>
+                  <p className={styles.composerHint}>
+                    {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                      timeZone: 'Asia/Tehran',
+                    }).format(new Date(value.startUtc))}{' '}
+                    —{' '}
+                    {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                      timeZone: 'Asia/Tehran',
+                    }).format(new Date(new Date(value.endUtc).getTime() - 1))}
+                  </p>
+                  <dl className={styles.actionCounts}>
+                    <div>
+                      <dt>{t(c.contractsCount)}</dt>
+                      <dd>
+                        {new Intl.NumberFormat(
+                          english ? 'en-GB' : 'fa-IR',
+                        ).format(value.contractCount)}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{t(c.passengersCount)}</dt>
+                      <dd>
+                        {new Intl.NumberFormat(
+                          english ? 'en-GB' : 'fa-IR',
+                        ).format(value.passengerCount)}
+                      </dd>
+                    </div>
+                  </dl>
+                  {value.routes.map((route) => (
+                    <p
+                      className={styles.composerHint}
+                      key={`${route.originId}:${route.destinationId}`}
+                    >
+                      {t(c.primaryRoute)}:{' '}
+                      <bdi>
+                        {route.originName ?? t(c.unknown)} →{' '}
+                        {route.destinationName ?? t(c.unknown)}
+                      </bdi>{' '}
+                      — {t(c.contractsCount)}: {route.contractCount} —{' '}
+                      {t(c.passengersCount)}: {route.passengerCount}
+                    </p>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
     </section>
   );
 }

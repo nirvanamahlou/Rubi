@@ -48,7 +48,10 @@ async function harness(t, options = {}) {
         JSON.stringify({
           userId,
           sessionId: 'synthetic-session',
-          permissions: options.permissions ?? [EXECUTIVE_PERMISSION],
+          permissions:
+            options.revokeSalesAt && authCount >= options.revokeSalesAt
+              ? []
+              : (options.permissions ?? [EXECUTIVE_PERMISSION]),
           branchIds: ['branch-a'],
         }),
       );
@@ -90,6 +93,10 @@ async function harness(t, options = {}) {
           sources: { internal: 'must-not-leak' },
         }),
       );
+      return;
+    }
+    if (request.url === '/api/v1/sales/assistant/weekly') {
+      response.end(JSON.stringify(options.salesReport ?? {}));
       return;
     }
     response.end(
@@ -370,8 +377,12 @@ test('business gates require active identity and never call corporate sources', 
     (await h.get('', '/v1/assistant/actions/sales-analysis')).status,
     401,
   );
+  assert.equal(
+    (await h.get('nora_access=user-a', '/v1/assistant/actions/sales-analysis'))
+      .status,
+    403,
+  );
   for (const [action, reason] of [
-    ['sales-analysis', 'SALES_DEFINITION_REQUIRED'],
     ['receivables-follow-up', 'RECEIVABLES_SOURCE_PENDING'],
   ]) {
     const body = await (
@@ -386,6 +397,94 @@ test('business gates require active identity and never call corporate sources', 
       (call) =>
         call.path === '/api/v1/iam/auth/access' && call.method === 'GET',
     ),
+  );
+});
+
+const salesFixture = () => ({
+  routeNamesComplete: true,
+  version: 1,
+  source: 'sales.assistant.weekly.v1',
+  scope: 'ALL_AUTHORIZED_SALES',
+  timeBasis: 'CREATED_AT',
+  timeZone: 'Asia/Tehran',
+  observedAt: '2026-10-11T08:00:00.000Z',
+  sourceUpdatedAt: null,
+  current: {
+    startUtc: '2026-10-03T20:30:00.000Z',
+    endUtc: '2026-10-10T20:30:00.000Z',
+    contractCount: 0,
+    passengerCount: 0,
+    routes: [],
+  },
+  previous: {
+    startUtc: '2026-09-26T20:30:00.000Z',
+    endUtc: '2026-10-03T20:30:00.000Z',
+    contractCount: 0,
+    passengerCount: 0,
+    routes: [],
+  },
+  coverage: {
+    rowLimit: 5000,
+    routeBasis: 'PRIMARY_CONTRACT_ROUTE',
+    truncated: false,
+  },
+  unavailable: [
+    'NET_SALES_REFUND_SOURCE_PENDING',
+    'CONTACT_COHORT_SOURCE_PENDING',
+    'MULTI_ROUTE_PROJECTION_PENDING',
+  ],
+});
+test('sales source is fixed, requires native all-read and strips extraneous ERP data', async (t) => {
+  const h = await harness(t, {
+    permissions: ['sales.contracts.read.all'],
+    salesReport: { ...salesFixture(), privateNote: 'must-not-leak' },
+  });
+  const response = await h.get(
+    'nora_access=user-a',
+    '/v1/assistant/actions/sales-analysis',
+  );
+  const text = await response.text();
+  const body = JSON.parse(text);
+  assert.equal(body.status, 'PARTIAL');
+  assert.equal(body.report.current.contractCount, 0);
+  assert.ok(!text.includes('must-not-leak'));
+  assert.ok(
+    h.calls.every((call) =>
+      ['/api/v1/iam/auth/access', '/api/v1/sales/assistant/weekly'].includes(
+        call.path,
+      ),
+    ),
+  );
+  assert.ok(h.calls.every((call) => call.method === 'GET'));
+});
+test('sales rejects unreconciled totals and permission revocation before release', async (t) => {
+  const source = salesFixture();
+  source.current.contractCount = 2;
+  const invalid = await harness(t, {
+    permissions: ['sales.contracts.read.all'],
+    salesReport: source,
+  });
+  const body = await (
+    await invalid.get(
+      'nora_access=user-a',
+      '/v1/assistant/actions/sales-analysis',
+    )
+  ).json();
+  assert.equal(body.status, 'BLOCKED');
+  assert.equal(body.reason, 'SALES_SOURCE_UNAVAILABLE');
+  const revoked = await harness(t, {
+    permissions: ['sales.contracts.read.all'],
+    revokeSalesAt: 3,
+    salesReport: salesFixture(),
+  });
+  assert.equal(
+    (
+      await revoked.get(
+        'nora_access=user-a',
+        '/v1/assistant/actions/sales-analysis',
+      )
+    ).status,
+    403,
   );
 });
 

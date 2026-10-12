@@ -13,6 +13,7 @@ import {
   SalesCustomersPublicAdapter,
 } from './sales.adapters';
 import { SalesController } from './sales.controller';
+import { SalesAssistantController } from './sales-assistant.controller';
 import { SalesRepository } from './sales.repository';
 import { SalesService } from './sales.service';
 import { SalesOutputService } from './sales-output.service';
@@ -31,7 +32,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
     TicketRuntimeModule,
     ReservationsRuntimeModule,
   ],
-  controllers: [SalesController],
+  controllers: [SalesController, SalesAssistantController],
   providers: [
     AuthGuard,
     SalesRepository,

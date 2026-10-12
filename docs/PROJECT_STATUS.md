@@ -5639,3 +5639,14 @@ Added the exact user-supplied hotel XLSX download to Master Data accommodation i
 ## 2026-10-12 — HOTEL-TEMPLATE-IMPORT-1012 profile follow-up — PC-A
 
 User authorizes push/develop merge. Imported service level/notes and descriptive refund/image/featured/destination data now persist in seven nullable MasterHotel columns; description/rules and all imported details appear in the profile and editable form. Missing optional information can be completed later; name-only rows derive city/status/code from selected scope/defaults. Shared field-control catalogue updated additively. Existing audit, version guards, duplicate behavior and authoritative Procurement/Sales/Documents ownership remain intact. API Master Data527 tests, Web22 tests and typechecks pass;147 migrations applied to isolated PostgreSQL18. Final builds/integration/CI evidence is recorded in PR796. Migration required before API/Web rollout; no operational data/runtime change.
+## 2026-10-12 — ASSISTANT-PHASE1-REPORTS-1012 — PC-C
+
+First real Sales-owned weekly projection added under native all-read authorization;
+creation-date eligible contract/passenger counts and primary-route aggregates only.
+Assistant validates/strips source output and rechecks permission before release;
+UI shows windows, source time, counts, missing metric reasons and safe source error
+causes. Approved definitions are recorded; demo Reporting facts are excluded.
+Net money/refunds, CRM conversion, multiple routes and Finance receivables remain
+unavailable. No migration/dependency/role changes or operational API restart.
+20 service tests,25 Web tests and4 API projection tests passed;
+final checks, CI and runtime publication/handoff evidence follow in the PR.

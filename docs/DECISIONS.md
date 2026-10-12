@@ -478,3 +478,15 @@ task for fixed APIs, source discovery and complete staged acceptance tracking.
 # HOTEL-TEMPLATE-IMPORT-1012 — editable hotel source metadata
 
 The user's 2026-10-12 follow-up requires supplied workbook data to remain available in each hotel's editable profile. Store hotel service level and internal note as nullable Master Data profile fields; expose the existing description and hotelRules fields. Preserve workbook destination, refund text, image-source addresses and featured flag as nullable descriptive source fields. This resolves the earlier import behavior that discarded these values: storing source text does not authorize a Procurement cancellation policy, Sales popularity computation, Documents binary ingestion or remote URL fetch. Public Master Data scalar attributes carry these additive optional fields; older clients preserve them when omitted. Existing geography FKs remain authoritative and no data is backfilled or fabricated.
+## ASSISTANT-PHASE1-REPORTS-1012 — accepted definitions, real source (2026-10-12)
+
+Owner confirms creation-date valid contracts, discount inclusion/refund exclusion,
+separate currencies, two seven-completed-day Tehran windows, route contract counts
+with passengers separate, contacted-lead conversion and Finance-owned receivables.
+Owner explicitly advances from Phase0, deferring final source/business acceptance
+and access/retention refinements. Existing authorization remains mandatory.
+READY demo Reporting metadata cannot substitute for a real Sales public projection.
+Add a bounded native-permission Sales-owned read API; independent assistant has no
+DB access and exposes only reconciled aggregates with explicit unavailable metrics.
+No money/net/refund or CRM cohort is inferred. See Phase1 task for source readiness,
+full accepted definitions, partial coverage and separate ERP runtime publication.

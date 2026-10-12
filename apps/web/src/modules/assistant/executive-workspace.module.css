@@ -122,6 +122,7 @@
   margin-top: 16px;
 }
 .composerHint {
+  overflow-wrap: anywhere;
   color: var(--muted-foreground);
   font-size: 11px;
   line-height: 1.9;

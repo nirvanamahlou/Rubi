@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { actionFromPath, blockedAction, dailySummary } from './actions.mjs';
+import { validSalesSource, projectSalesSource } from './sales-source.mjs';
 
 export const EXECUTIVE_PERMISSION = 'ui.screen.assistant.executive';
 const TOOLS = Object.freeze([
@@ -152,11 +153,27 @@ export function createAssistantServer({
           response.status,
           response.status === 401 ? 'UNAUTHENTICATED' : 'FORBIDDEN',
         );
+      if (response.status === 404)
+        throw new ServiceError(502, 'SOURCE_NOT_CONNECTED');
+      if (response.status === 409) {
+        const body = await boundedJson(response);
+        throw new ServiceError(
+          502,
+          body?.message === 'SALES_SOURCE_CAP_EXCEEDED'
+            ? 'SOURCE_CAP_EXCEEDED'
+            : 'SOURCE_NOT_READY',
+        );
+      }
       if (!response.ok) throw new ServiceError(502, 'SOURCE_UNAVAILABLE');
       return await boundedJson(response);
     } catch (error) {
       if (error instanceof ServiceError) throw error;
-      throw new ServiceError(502, 'SOURCE_UNAVAILABLE');
+      throw new ServiceError(
+        502,
+        error?.name === 'TimeoutError' || signal.aborted
+          ? 'SOURCE_TIMEOUT'
+          : 'SOURCE_UNAVAILABLE',
+      );
     }
   }
   async function authenticate(cookie, signal, expectedUserId) {
@@ -223,7 +240,72 @@ export function createAssistantServer({
         actorId = actor.userId;
         if (!withinLimit(`user:${actorId}`, 12))
           throw new ServiceError(429, 'RATE_LIMITED');
-        if (action && action !== 'daily-summary') {
+        if (action === 'sales-analysis') {
+          if (!actor.permissions.includes('sales.contracts.read.all'))
+            throw new ServiceError(403, 'FORBIDDEN');
+          const beforeSales = await authenticate(
+            cookie,
+            deadline.signal,
+            actorId,
+          );
+          if (!beforeSales.permissions.includes('sales.contracts.read.all'))
+            throw new ServiceError(403, 'FORBIDDEN');
+          let report;
+          let failure = 'SOURCE_UNAVAILABLE';
+          try {
+            report = await read(
+              '/sales/assistant/weekly',
+              cookie,
+              deadline.signal,
+            );
+            if (!validSalesSource(report))
+              throw new ServiceError(502, 'INVALID_SOURCE');
+            report = projectSalesSource(report);
+            toolOutcomes.push({ tool: 'sales.weekly', outcome: 'SUCCESS' });
+          } catch (error) {
+            if (
+              error instanceof ServiceError &&
+              [401, 403].includes(error.status)
+            )
+              throw error;
+            if (
+              error instanceof ServiceError &&
+              [
+                'SOURCE_NOT_CONNECTED',
+                'SOURCE_NOT_READY',
+                'SOURCE_CAP_EXCEEDED',
+                'SOURCE_TOO_LARGE',
+                'INVALID_SOURCE',
+                'SOURCE_TIMEOUT',
+                'SOURCE_UNAVAILABLE',
+              ].includes(error.message)
+            )
+              failure = error.message;
+            toolOutcomes.push({ tool: 'sales.weekly', outcome: 'FAILED' });
+          }
+          const afterSales = await authenticate(
+            cookie,
+            deadline.signal,
+            actorId,
+          );
+          if (!afterSales.permissions.includes('sales.contracts.read.all'))
+            throw new ServiceError(403, 'FORBIDDEN');
+          outcome = report && validSalesSource(report) ? 'PARTIAL' : 'BLOCKED';
+          send(
+            200,
+            outcome === 'PARTIAL'
+              ? {
+                  version: 1,
+                  action,
+                  status: 'PARTIAL',
+                  scope: 'ALL_AUTHORIZED_SALES',
+                  report,
+                }
+              : { ...blockedAction(action, now().toISOString()), failure },
+          );
+          return;
+        }
+        if (action === 'receivables-follow-up') {
           await authenticate(cookie, deadline.signal, actorId);
           outcome = 'BLOCKED';
           // No business source or model is called while its acceptance gate is open.

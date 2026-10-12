@@ -7053,3 +7053,21 @@ Additional bounded central reservation: one new Web-only label in `apps/web/src/
 Delivered exact XLSX asset/download, LAN-compatible final import request IDs, real-workbook parser/service regressions and localized UI/commit tests. No production API changes needed: existing parser accepts all three supplied rows. User confirmed GitHub actor `nirvanamahlou`. Bounded source locks release with the review candidate; see `docs/tasks/HOTEL-TEMPLATE-IMPORT-1012.md` for validation and handoff.
 
 COMPUTER_ID=PC-A confirmed by user. Branch `codex/pc-a-hotel-template-import-1012` from `origin/develop@08a7c20c` in isolated worktree. Direct request authorizes bounded Master Data hotel import/template work; permanent PC-B ownership remains unchanged. Reserve hotel-import-panel.tsx, matching public XLSX asset, focused Web import tests, API hotel-import parser/service regression tests and own status/task entries. Previous HOTEL-EXCEL-TEMPLATE-1001 candidate is already present in develop; no overlapping active source writer found. Preserve the supplied workbook byte-for-byte and existing preview, duplicate, permissions, atomic commit and audit behavior. No API contract, schema, migration, dependency, operational data, merge or runtime deployment changes.
+
+## ASSISTANT-PHASE1-REPORTS-1012 — PC-C — READY_FOR_REVIEW
+
+Base developeab0ad6c. User approves Phase1 with confirmed metric definitions.
+Reserve new Sales-owned weekly read projection/controller/tests and additive
+SalesModule registration; assistant fixed adapter/server/test/contracts/UI/copy,
+and own task/status/decision entries. Producer Sales consumes only its own
+SalesContract aggregate; consumer independent assistant uses authenticated HTTP.
+Contract v1 /sales/assistant/weekly: no input/scope selectors, native
+sales.contracts.read.all required, counts by canonical origin/destination route
+and passengers over two completed Tehran seven-day windows, CREATED_AT basis,
+non-cancelled confirmed contracts only. No PII, amount inference, public demo
+report facts, new permission, database/migration/dependency changes. Financial
+net sales/refunds and call-cohort conversion stay explicitly unavailable until
+approved producer contracts exist. No Finance/CRM owner tables read. Existing
+SELF access and snapshot preserved. Acceptance: pure source-backed projection,
+permission/empty/cap/window/cancel/duplicate tests, strict source validation,
+API/Web/service checks and exact-head CI before authorized develop merge.
