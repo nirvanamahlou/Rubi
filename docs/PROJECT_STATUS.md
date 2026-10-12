@@ -5723,3 +5723,7 @@ Three correspondence cards/routes: Incoming uses unchanged Documents upload form
   checks remain blocking. No schema, API, dependency or operational data was
   changed.
 - Focused Organizations tests pass 32/32; scoped ESLint and Web typecheck pass.
+
+## 2026-10-12 — LATEST-LOCALHOST-1012 — PC-C
+
+User requests latest develop on localhost3000. Clean inactive worktree updated to a98ee1ad; no protected branch or unrelated files changed. Rebuilt Contracts/Database/Config before API/Web to remove stale generated-artifact mismatches. API and Web production builds pass (62 pages). Reproduced upstream Full test suite failure: one new Organizations import warning had no English translation. Added only that Web catalogue entry; original completeness gate and both scoped feature suites pass18/18. No migration, dependency or permission changes. Operational database is57 migrations behind and three historical checksums differ; backup and isolated rehearsal precede any database upgrade. Existing API remains available while the Web cutover is prepared.

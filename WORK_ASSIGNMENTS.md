@@ -7222,3 +7222,9 @@ as non-blocking warnings, so the supplied 39-row workbook is no longer blocked
 by its 28 website values. Formula-like values remain blocking. The two focused
 Organizations suites pass 32/32; scoped ESLint and Web typecheck pass after the
 Contracts build. Source lock releases with this candidate.
+
+## LATEST-LOCALHOST-1012 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; user authorizes fetching the latest develop and serving localhost3000. Branch codex/pc-c-latest-localhost-1012 from origin/develop@a98ee1ad; reuse the clean, inactive pc-c-github-identity-1011 worktree. Reserve only this work/status entry and local ignored runtime evidence. No feature, dependency, schema, role or operational data edits. Build before replacing the verified PC-C3000/4000/4300/4301 listeners; preserve unrelated runtimes and existing data. Read-only migration compatibility checks precede API replacement. No main update or release. Exact source revision and HTTP/build verification must be recorded; upstream CI failure is investigated separately without weakening gates.
+
+LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry in apps/web/src/i18n/en-catalog.json for the missing Organizations import warning. Upstream candidate source locks are released. Reproduce the existing English completeness failure; preserve the test and all guards. Also prepare a verified ignored local database backup and isolated migration rehearsal before any request to alter the operational database. No operational migration approval has been inferred from a pull/start request.
