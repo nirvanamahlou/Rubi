@@ -5592,4 +5592,3 @@ Repository central/schema/contracts/catalog locks for this publication are RELEA
 ## 2026-10-12 — CORRESPONDENCE-LETTERHEADS-1012 — PC-A
 
 Three user-supplied company letterheads are unchanged PNG assets. Company selection chooses the corresponding background; date/number/attachment occupy calibrated value areas and body/recipient/subject remain inside the blank region. Shared canvas renderer drives preview, PNG and PDF;22 body lines/page preserve header/footer on each page. Browser verified all three brands and a3-page letter; PDF Blob link produced. Existing4 composition tests, scoped lint and Web typecheck passed. No API/schema/data changes; Rubi3100 deployment follows exact-head CI. Publication actor nirvanamahlou follows human authorization in this chat.
-
