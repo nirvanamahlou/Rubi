@@ -43,7 +43,7 @@ describe('organization XLSX container', () => {
   ])('rejects active workbook content %s', (xml) => {
     expect(() => validateOrganizationWorkbookXml(xml)).toThrow();
   });
-  it('allows only strict mailto hyperlinks among external relationships', () => {
+  it('allows inert email, telephone and web hyperlinks, never external data', () => {
     const type =
       'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink';
     const safeRelationship = `<Relationship Id="rId1" Type="${type}" Target="mailto:golpham@gmail.com" TargetMode="External"/>`;
@@ -64,11 +64,54 @@ describe('organization XLSX container', () => {
         'https://example.com',
         'External',
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isAllowedOrganizationWorkbookRelationship(
         type,
         'mailto:golpham@gmail.com?subject=unsafe',
+        'External',
+      ),
+    ).toBe(false);
+  });
+  it('requires only the identity column', () => {
+    expect(hasRequiredOrganizationColumns(['legalName'])).toBe(true);
+    expect(hasRequiredOrganizationColumns(['email'])).toBe(false);
+  });
+  it.each([
+    'tel:02191018686',
+    'tel:+989121234567',
+    'https://example.com/path',
+    'http://example.com/',
+  ])('ignores ordinary hyperlink metadata: %s', (target) => {
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+        target,
+        'External',
+      ),
+    ).toBe(true);
+  });
+  it.each([
+    'file:///C:/private.xlsx',
+    'javascript:alert(1)',
+    'https://user:pass@example.com/',
+    'tel:123;ext=42',
+    'https://',
+    '//example.com',
+  ])('rejects unsafe links: %s', (target) => {
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+        target,
+        'External',
+      ),
+    ).toBe(false);
+  });
+  it('continues blocking external workbook references', () => {
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        'http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLink',
+        'https://example.com/book.xlsx',
         'External',
       ),
     ).toBe(false);

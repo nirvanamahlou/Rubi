@@ -7,7 +7,7 @@ change. The existing PC-A tree-cleanup branch is an in-flight execution/handoff 
 new accounting work belongs to PC-B and still requires independent file/central locks.
 Reserve MODULE_OWNERSHIP and the ownership note in MODULE_BOUNDARIES for this transfer.
 
-## ACCOUNTING-TREE-CLEANUP-1012 — PC-B owner / PC-A execution — IN_PROGRESS
+## ACCOUNTING-TREE-CLEANUP-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-tree-cleanup-1012` from
 `origin/develop@de1c81d4`. Follow-up requested by the accounting redesign owner:
@@ -17,6 +17,18 @@ Reserve Finance Web tree/navigation/workspace/ledger/history components and focu
 work record and PROJECT_STATUS. Existing records, APIs, schemas, permissions and
 dependencies remain untouched. Root agent is sole writer. Previous redesign merged
 through PR797; stale icon-toolbar reservation is already integrated in develop.
+PR799 includes the requested UI cleanup and ownership handoff. Reserve the existing
+Finance component-contract test to replace its obsolete required Rubi-only report
+assertion with absence assertions. Source locks release with candidate freeze;
+exact-head successful CI is required before authorized develop merge.
+
+## AGENCY-IMPORT-BLANKS-1012 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; isolated branch codex/pc-b-agency-import-blanks-1012 from origin/develop@08a7c20c. User requests agency XLSX upload with empty optional fields. Reserve Organizations workbook reader/validation/dialog and focused tests, bounded own status entries only. Read the supplied workbook without importing operational records. Accept missing optional columns and ignore blank formatted rows; inert phone/web/email hyperlinks must never be fetched or executed. Preserve required organization identity, populated-value validation, duplicate/no-overwrite semantics, formulas/macros/external-data rejection and size bounds. No schema, migration, dependency, shared API contract or operational data mutation. Main checkout and its concurrent hotel work remain untouched.
+
+Delivered name-only/optional-column import, inert hyperlink handling and partial location preservation. Organizations suite240 passed; private-file container test passed separately; scoped lint/typecheck passed. Source locks release with candidate. No merge or shared runtime replacement; website values in email cells still require correction or an explicit user-authorized discard policy.
+
+CI follow-up: reserve only the two new province/city prefix entries in Web en-overrides.json. Full test gate found missing English catalogue entries, not a workbook parsing regression. Existing hotel changes are merged and this isolated target is clean. Other checks passed. No runtime or database changes; bounded translation lock releases with fix commit.
 
 ## ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
 

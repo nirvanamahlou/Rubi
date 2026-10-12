@@ -6,7 +6,15 @@ account hierarchy, route-aware hero and removal of four Rubi-only navigation/rou
 and branded settings panels. Required ledger branch/currency fields remain in the
 main form. Existing operational data/settings remain intact; no schema/API changes.
 Tree and navigation regression tests plus chart/empty-chart tests pass12/12.
-Remaining lint/typecheck/English coverage/build and publication are pending.
+PR799 publishes this handoff. Initial CI quality, full production build and PostgreSQL
+gates pass;2882 Web tests pass and one old menu contract still expected the removed
+Rubi receipt/payment report. That assertion now checks the requested absence instead.
+Final exact-head CI remains the merge gate. Local English-coverage retries timed out
+under concurrent builds; the CI suite's coverage tests pass. No gate is disabled.
+
+## 2026-10-12 — AGENCY-IMPORT-BLANKS-1012 — PC-B
+
+Isolated Organizations import fix accepts name-only agency workbooks and omitted optional columns, counts only populated rows toward the 200-record limit, and accepts inert HTTP(S)/telephone/email hyperlink metadata without following links. Formulas, macros, external data/workbooks, unsafe protocols, populated invalid values and duplicate/no-overwrite checks remain blocked. A partial province/city is retained as editable address text without fabricated references. Organizations suite240, private workbook-container read, scoped ESLint, TypeScript and final Webpack production build59 routes pass. No operational agency imported; supplied workbook remains unchanged. Main checkout has concurrent work and was not switched or deployed. Details: docs/tasks/AGENCY-IMPORT-BLANKS-1012.md.
 
 ## 2026-10-12 — ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
 
