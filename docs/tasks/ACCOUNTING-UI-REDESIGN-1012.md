@@ -1,5 +1,16 @@
 # ACCOUNTING-UI-REDESIGN-1012 — بازطراحی رابط حسابداری
 
+## Publication follow-up — 2026-10-12
+
+The user explicitly waived the account requirement for this task and authorized
+publication through the existing nirvanamahlou connection, followed by develop merge
+and local activation. PR797 targets develop. The first CI run passed quality,
+migration and production-build jobs; English coverage identified six new labels.
+Reserve six additive entries in the shared Web English catalogue for this correction.
+On this PC the existing application uses Web3000/API4000 and the current local Nora
+database; the documented admin-user Compose checkout belongs to another device and
+is absent here. Local activation will preserve this device's existing configuration.
+
 - **Computer:** PC-A
 - **Branch:** `codex/pc-a-accounting-ui-redesign-1012`
 - **Base:** `origin/develop@08a7c20c`
