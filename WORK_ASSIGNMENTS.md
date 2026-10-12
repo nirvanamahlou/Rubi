@@ -6844,6 +6844,7 @@ The same PC-A exclusive scope reserves AccountingStatement and 20261011213000_ac
 
 2026-10-12 publication extension (same sole writer): reserve apps/api/scripts/accounting-reference-data.mjs, data/accounting and bounded PROJECT_STATUS update. Human explicitly authorized publishing this work with GitHub actor nirvanamahlou. Structural reference seed contains222accounts/26detail types; public API preview refuses collisions/divergence and uses existing authorized IAM branch. Preserve all live Rubi accounting data and archive synthetic QA data separately. No credentials/source operational amounts in Git. Central/schema locks remain ACTIVE until exact-head CI and develop merge.
 Publication gate scope also reserves apps/web/src/i18n/en-accounting-documents.json, translate.ts, scripts/i18n-sync.cjs and regenerated API/legacy catalogs for Documents labels only. Other worktrees may add their own overrides; preserve them when integrating latest develop and regenerate combined catalogs.
+
 ## ASSISTANT-ALL-USERS-1011 — PC-C — READY_FOR_REVIEW
 
 User authorization: temporarily enable the assistant for all authenticated ERP
