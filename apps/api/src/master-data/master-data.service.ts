@@ -479,6 +479,13 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'address',
     'description',
     'hotelRules',
+    'serviceLevel',
+    'internalNote',
+    'sourceDestination',
+    'sourceRefundRules',
+    'sourceMainImage',
+    'sourceGalleryImages',
+    'sourceFeatured',
     'website',
     'checkInTime',
     'checkOutTime',
@@ -2846,6 +2853,33 @@ export class MasterDataService {
       data.displayOrder = displayOrder;
     }
     if (resource === 'hotels') {
+      for (const [field, limit] of [
+        ['serviceLevel', 160],
+        ['sourceDestination', 160],
+        ['internalNote', 2000],
+        ['sourceRefundRules', 2000],
+        ['sourceMainImage', 2000],
+        ['sourceGalleryImages', 2000],
+        ['description', 2000],
+        ['hotelRules', 2000],
+        ['address', 1000],
+      ] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
+        if (value.length > limit)
+          throw new BadRequestException(
+            `${field}: maximum ${limit} characters.`,
+          );
+        data[field] = value || null;
+      }
+      if (Object.hasOwn(data, 'sourceFeatured')) {
+        const value = String(data.sourceFeatured ?? '').trim();
+        if (!['', 'true', 'false'].includes(value))
+          throw new BadRequestException(
+            'sourceFeatured must be true or false.',
+          );
+        data.sourceFeatured = value === '' ? null : value === 'true';
+      }
       if (data.isSaleableReference === '') delete data.isSaleableReference;
       else if (data.isSaleableReference !== undefined)
         data.isSaleableReference =

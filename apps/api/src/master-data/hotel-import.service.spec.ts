@@ -222,6 +222,20 @@ describe('HotelImportService commit persistence', () => {
         expect(tx.masterHotel.create).toHaveBeenCalledTimes(
           expectedHotels.length,
         );
+        if (supplied)
+          expect(tx.masterHotel.create).toHaveBeenNthCalledWith(1, {
+            data: expect.objectContaining({
+              address: 'Akyar Mevkii',
+              starRating: 5,
+              serviceLevel: 'لوکس',
+              description: 'هتل ساحلی پنج ستاره',
+              hotelRules: 'ورود ۱۴:۰۰ | خروج ۱۲:۰۰',
+              sourceDestination: 'کوش‌آداسی',
+              sourceRefundRules: 'تا ۷۲ ساعت طبق قرارداد',
+              sourceFeatured: true,
+              internalNote: null,
+            }),
+          });
         for (const hotel of expectedHotels)
           expect(tx.masterHotel.create).toHaveBeenCalledWith({
             data: expect.objectContaining({

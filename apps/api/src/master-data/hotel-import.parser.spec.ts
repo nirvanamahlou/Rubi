@@ -71,6 +71,7 @@ function cell(reference: string, value: string) {
 function fixture(options?: {
   entries?: Readonly<Record<string, string>>;
   city?: string;
+  nameOnly?: boolean;
   formula?: boolean;
   macro?: boolean;
   badHeader?: boolean;
@@ -104,6 +105,8 @@ function fixture(options?: {
     source
       .map((value, index) => {
         const reference = `${column(index)}${number}`;
+        if (options?.nameOnly && number === 2 && index !== 1)
+          return cell(reference, '');
         return options?.formula && number === 2 && index === 15
           ? `<c r="${reference}"><f>1+1</f><v>2</v></c>`
           : cell(reference, value);
@@ -279,6 +282,21 @@ function externalRejection(buffer: ReturnType<typeof fixture>) {
 }
 
 describe('parseHotelImportWorkbook', () => {
+  it('creates a stable identity for a name-only row using the selected city', () => {
+    const parsed = parse(fixture({ nameOnly: true }));
+    expect(parsed.issues).toEqual([]);
+    expect(parsed.rows[0]).toMatchObject({
+      englishName: 'Test Hotel',
+      city: 'بدروم',
+      isActive: true,
+      description: null,
+      internalNote: null,
+    });
+    expect(parsed.rows[0]?.code).toMatch(/^HOTEL_[A-F0-9]{12}$/);
+    expect(parse(fixture({ nameOnly: true })).rows[0]?.code).toBe(
+      parsed.rows[0]?.code,
+    );
+  });
   it('reads status after self-closing empty cells in the exact v1 format', () => {
     const result = parse();
     expect(result.issues).toEqual([]);

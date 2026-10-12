@@ -6986,6 +6986,12 @@ Repository central/schema/contracts/catalog locks for this publication are RELEA
 
 ## HOTEL-TEMPLATE-IMPORT-1012 — PC-A — READY_FOR_REVIEW
 
+Follow-up candidate verification: real PostgreSQL preview/create/profile/edit/reopen/duplicate-skip integration passes; all147 migrations apply to isolated synthetic55439. API527, parser32, Web22 and Contracts143 tests pass; scoped lint, API/Web typechecks and API build pass. Source/schema/shared catalogue locks RELEASED with candidate freeze. Exact-head CI gates the explicitly authorized develop merge; no operational data or shared runtime rollout.
+
+Additive shared-contract reservation: `packages/contracts/src/master-data/editable-fields.ts` hotel field catalogue, producer Master Data API and consumers Web/IAM field controls. Existing permissions stay unchanged; new fields inherit existing update permission and support explicit deny controls. No root exports or cross-module commands change.
+
+2026-10-12 follow-up IN_PROGRESS: user explicitly authorizes imported hotel records with complete editable profile data, push and develop merge. Continue same bounded work/PR796. Reserve Master Data import/parser/service/repository tests, hotel catalogue/form/profile and own docs. Sole additive Migration/schema Owner PC-A/HOTEL-TEMPLATE-IMPORT-1012 for nullable hotel profile/source columns; prior ACCOUNTING-DOCUMENTS-PARITY-1011 lock explicitly released at PR792 and no later schema-changing active PR found. Reserve bounded Master Data generic scalar attributes producer/consumer additions and i18n catalogues; no root contract/dependency change. Preserve ownership of authoritative Procurement cancellation policy, Sales popularity and Documents binaries; imported values are editable descriptive source metadata only. No operational import or runtime migration authorized by this follow-up; local database tests use isolated synthetic data.
+
 Additional bounded central reservation: one new Web-only label in `apps/web/src/i18n/en-catalog.json` for the template download; no API/legacy catalogue changes required.
 
 Delivered exact XLSX asset/download, LAN-compatible final import request IDs, real-workbook parser/service regressions and localized UI/commit tests. No production API changes needed: existing parser accepts all three supplied rows. User confirmed GitHub actor `nirvanamahlou`. Bounded source locks release with the review candidate; see `docs/tasks/HOTEL-TEMPLATE-IMPORT-1012.md` for validation and handoff.

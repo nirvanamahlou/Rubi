@@ -1,5 +1,19 @@
 # HOTEL-TEMPLATE-IMPORT-1012
 
+## Final scope after the user's profile follow-up (supersedes initial delivery below)
+
+User explicitly authorizes push and develop merge for PR796. Imported hotels now persist all supported profile information: existing description/hotelRules plus seven nullable columns serviceLevel, internalNote, sourceDestination, sourceRefundRules, sourceMainImage, sourceGalleryImages and sourceFeatured. Source refund/image/featured values are descriptive metadata, not authoritative Procurement policy, Documents files or Sales statistics. URLs render as escaped text and are never fetched.
+
+The profile shows these values and facility names and offers direct editing. The edit form hydrates existing values, permits completing missing data, supports multiline text up to each database bound, and clears explicit optional blanks while preserving omitted fields. Shared Master Data editable-field controls extend additively; permission/version/audit behavior remains enforced. Import also accepts a name-only row: a missing code gets a stable generated identity, blank city uses the selected canonical city, blank status defaults to published. Nonempty city mismatches remain invalid.
+
+Migration `20261012140000_hotel_import_profile_fields` is additive and does not backfill or rewrite existing records. Apply it before API/Web rollout. Generic scalar attributes carry the new fields; no new endpoint, dependency or root contract export. No operational import, migration or shared runtime deployment was performed. Metadata discarded by earlier imports can be completed manually or restored through an explicit UPDATE reimport.
+
+Validation: API Master Data527 tests and Web profile/import/catalog/validation/English22 tests passed before the final focused regression; API/Web typechecks and scoped lint passed. All147 migrations applied to isolated PostgreSQL18 `hotel_profile_test` on localhost55439. Final integration/build/CI evidence is recorded with delivery. Merge requires all checks on the exact latest head; main release is outside scope. Prior migration/source reservations release with the frozen review candidate.
+
+## Initial delivery history
+
+Final local validation: PostgreSQL integration passed with real preview/commit creating all three hotels, public profile reads, completing a missing note, persisting edits across reread and duplicate SKIP retaining those edits. All147 migrations succeeded; the first integration run hit60s while the host was building concurrently, and rerun passed in10.56s under a bounded180s integration allowance. Final parser32 tests passed. Shared Contracts143 tests passed. API production build passed; Web compilation passed with final build steps pending. The synthetic database is separate from operational data.
+
 - Owner: PC-A, explicitly confirmed by the user; bounded Master Data work requested directly. Permanent module ownership remains PC-B.
 - Branch: `codex/pc-a-hotel-template-import-1012`, base `origin/develop@08a7c20c`.
 - GitHub actor: user explicitly confirmed `nirvanamahlou` for this task.

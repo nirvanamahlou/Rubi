@@ -2151,6 +2151,13 @@ model MasterHotel {
   address              String?                      @db.VarChar(1000)
   description          String?                      @db.VarChar(2000)
   hotelRules           String?                      @db.VarChar(2000)
+  serviceLevel         String?                      @db.VarChar(160)
+  internalNote         String?                      @db.VarChar(2000)
+  sourceDestination    String?                      @db.VarChar(160)
+  sourceRefundRules    String?                      @db.VarChar(2000)
+  sourceMainImage      String?                      @db.VarChar(2000)
+  sourceGalleryImages  String?                      @db.VarChar(2000)
+  sourceFeatured       Boolean?
   website              String?                      @db.VarChar(320)
   checkInTime          String?                      @db.Char(5)
   checkOutTime         String?                      @db.Char(5)
