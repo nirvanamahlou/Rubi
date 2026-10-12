@@ -6965,3 +6965,7 @@ Validation: scoped ESLint, existing render regression and Web typecheck passed. 
 PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
 
 Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
+
+## CORRESPONDENCE-LETTERHEADS-1012 — PC-A — IN_PROGRESS
+
+Sole writer; no delegation. Reserve apps/web/src/modules/correspondence, apps/web/public/correspondence/letterheads and bounded work/status docs. User-supplied three letterhead images used unchanged as company backgrounds; overlay metadata/body for PNG/PDF and preview. No API/schema/dependency changes. Reuse Rubi Compose3100. Preserve other edits.
