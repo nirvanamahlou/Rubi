@@ -1,3 +1,5 @@
+import { hotelProfileFields } from './hotel-profile-fields';
+
 export const masterDataResourceKeys = [
   'countries',
   'regions',
@@ -1393,6 +1395,7 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
         placeholder: '',
         hint: 'امکانات را همین‌جا انتخاب یا به‌صورت دستی ایجاد کنید؛ کاتالوگ جدا نمایش داده نمی‌شود.',
       },
+      ...hotelProfileFields,
       {
         key: 'logoFileReference',
         label: 'لوگوی هتل',

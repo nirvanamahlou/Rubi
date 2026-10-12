@@ -5,6 +5,29 @@ COMPUTER_ID=PC-B; isolated branch codex/pc-b-agency-import-blanks-1012 from orig
 Delivered name-only/optional-column import, inert hyperlink handling and partial location preservation. Organizations suite240 passed; private-file container test passed separately; scoped lint/typecheck passed. Source locks release with candidate. No merge or shared runtime replacement; website values in email cells still require correction or an explicit user-authorized discard policy.
 
 CI follow-up: reserve only the two new province/city prefix entries in Web en-overrides.json. Full test gate found missing English catalogue entries, not a workbook parsing regression. Existing hotel changes are merged and this isolated target is clean. Other checks passed. No runtime or database changes; bounded translation lock releases with fix commit.
+## ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-ui-redesign-1012` from
+`origin/develop@08a7c20c`. The owner directly requests a complete visual redesign of
+Accounting that is visibly distinct from Rahkaran while preserving the existing forms,
+routes, permissions, commands and functional coverage. In Documents, Accounting
+Journal, General Ledger Document, Automatic Journal Template, Revaluation Template and
+Revaluation must exist only below the `فهرست` navigation subgroup. Reserve Finance Web
+accounting navigation/shell styling, focused navigation/presentation tests, this work
+record and `docs/tasks/ACCOUNTING-UI-REDESIGN-1012.md`. No API, shared contract, schema,
+migration, dependency/lockfile, permission, operational data or external-system change.
+The stale `ACCOUNTING-ICON-TOOLBAR-1008` branch is already an ancestor of develop; its
+implemented behavior is preserved and this unit does not revive any unmerged delta.
+User authorizes push, PR, exact-head CI repair, merge to develop and local Rubi runtime
+refresh. Root agent is the sole writer; no delegation. Delivered a Rubi-native dark
+navy/cyan accounting shell, responsive navigation, modern route tabs and scoped
+form/table surface treatment while preserving all functional components. The five
+requested document destinations occur exactly once and only below `فهرست`; hidden
+editor routes remain tab-addressable from their lists. Focused navigation test1/1,
+scoped ESLint, full Web TypeScript and production build59 routes pass. Isolated3112
+preview correctly reached authenticated login; authenticated visual/data QA is deferred
+to the merged local runtime because no preview session/credential was available. Source
+locks release at candidate freeze; exact-head CI remains the merge gate.
 
 ## USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
 
@@ -6991,3 +7014,17 @@ Validation: scoped ESLint, existing render regression and Web typecheck passed. 
 PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
 
 Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
+
+## HOTEL-TEMPLATE-IMPORT-1012 — PC-A — READY_FOR_REVIEW
+
+Follow-up candidate verification: real PostgreSQL preview/create/profile/edit/reopen/duplicate-skip integration passes; all147 migrations apply to isolated synthetic55439. API527, parser32, Web22 and Contracts143 tests pass; scoped lint, API/Web typechecks and API build pass. Source/schema/shared catalogue locks RELEASED with candidate freeze. Exact-head CI gates the explicitly authorized develop merge; no operational data or shared runtime rollout.
+
+Additive shared-contract reservation: `packages/contracts/src/master-data/editable-fields.ts` hotel field catalogue, producer Master Data API and consumers Web/IAM field controls. Existing permissions stay unchanged; new fields inherit existing update permission and support explicit deny controls. No root exports or cross-module commands change.
+
+2026-10-12 follow-up IN_PROGRESS: user explicitly authorizes imported hotel records with complete editable profile data, push and develop merge. Continue same bounded work/PR796. Reserve Master Data import/parser/service/repository tests, hotel catalogue/form/profile and own docs. Sole additive Migration/schema Owner PC-A/HOTEL-TEMPLATE-IMPORT-1012 for nullable hotel profile/source columns; prior ACCOUNTING-DOCUMENTS-PARITY-1011 lock explicitly released at PR792 and no later schema-changing active PR found. Reserve bounded Master Data generic scalar attributes producer/consumer additions and i18n catalogues; no root contract/dependency change. Preserve ownership of authoritative Procurement cancellation policy, Sales popularity and Documents binaries; imported values are editable descriptive source metadata only. No operational import or runtime migration authorized by this follow-up; local database tests use isolated synthetic data.
+
+Additional bounded central reservation: one new Web-only label in `apps/web/src/i18n/en-catalog.json` for the template download; no API/legacy catalogue changes required.
+
+Delivered exact XLSX asset/download, LAN-compatible final import request IDs, real-workbook parser/service regressions and localized UI/commit tests. No production API changes needed: existing parser accepts all three supplied rows. User confirmed GitHub actor `nirvanamahlou`. Bounded source locks release with the review candidate; see `docs/tasks/HOTEL-TEMPLATE-IMPORT-1012.md` for validation and handoff.
+
+COMPUTER_ID=PC-A confirmed by user. Branch `codex/pc-a-hotel-template-import-1012` from `origin/develop@08a7c20c` in isolated worktree. Direct request authorizes bounded Master Data hotel import/template work; permanent PC-B ownership remains unchanged. Reserve hotel-import-panel.tsx, matching public XLSX asset, focused Web import tests, API hotel-import parser/service regression tests and own status/task entries. Previous HOTEL-EXCEL-TEMPLATE-1001 candidate is already present in develop; no overlapping active source writer found. Preserve the supplied workbook byte-for-byte and existing preview, duplicate, permissions, atomic commit and audit behavior. No API contract, schema, migration, dependency, operational data, merge or runtime deployment changes.

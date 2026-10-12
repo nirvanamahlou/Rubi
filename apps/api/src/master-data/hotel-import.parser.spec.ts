@@ -1,4 +1,6 @@
 import { strToU8, zipSync } from 'fflate';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -6,6 +8,51 @@ import {
   HOTEL_IMPORT_MIME,
   parseHotelImportWorkbook,
 } from './hotel-import.parser';
+
+describe('downloadable hotel workbook', () => {
+  it('reads the three supplied hotel names and physical rows without importing formatted blanks', () => {
+    const buffer = readFileSync(
+      resolve(
+        process.cwd(),
+        '../web/public/templates/hotel-master-template.xlsx',
+      ),
+    );
+    const parsed = parseHotelImportWorkbook({
+      buffer,
+      fileName: 'hotel-master-template.xlsx',
+      mimeType: HOTEL_IMPORT_MIME,
+      expectedCityName: 'کوش‌آداسی',
+    });
+    expect(parsed.issues).toEqual([]);
+    expect(
+      parsed.rows.map(({ rowNumber, code, englishName, isActive }) => ({
+        rowNumber,
+        code,
+        englishName,
+        isActive,
+      })),
+    ).toEqual([
+      {
+        rowNumber: 5,
+        code: 'HTL-KUS-001',
+        englishName: 'Charisma De Luxe Hotel',
+        isActive: true,
+      },
+      {
+        rowNumber: 6,
+        code: 'HTL-KUS-002',
+        englishName: 'Ramada Resort Kusadasi',
+        isActive: true,
+      },
+      {
+        rowNumber: 7,
+        code: 'HTL-KUS-003',
+        englishName: 'Signature Blue Resort',
+        isActive: false,
+      },
+    ]);
+  });
+});
 
 function xml(value: string) {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;');
@@ -24,6 +71,7 @@ function cell(reference: string, value: string) {
 function fixture(options?: {
   entries?: Readonly<Record<string, string>>;
   city?: string;
+  nameOnly?: boolean;
   formula?: boolean;
   macro?: boolean;
   badHeader?: boolean;
@@ -57,6 +105,8 @@ function fixture(options?: {
     source
       .map((value, index) => {
         const reference = `${column(index)}${number}`;
+        if (options?.nameOnly && number === 2 && index !== 1)
+          return cell(reference, '');
         return options?.formula && number === 2 && index === 15
           ? `<c r="${reference}"><f>1+1</f><v>2</v></c>`
           : cell(reference, value);
@@ -232,6 +282,21 @@ function externalRejection(buffer: ReturnType<typeof fixture>) {
 }
 
 describe('parseHotelImportWorkbook', () => {
+  it('creates a stable identity for a name-only row using the selected city', () => {
+    const parsed = parse(fixture({ nameOnly: true }));
+    expect(parsed.issues).toEqual([]);
+    expect(parsed.rows[0]).toMatchObject({
+      englishName: 'Test Hotel',
+      city: 'بدروم',
+      isActive: true,
+      description: null,
+      internalNote: null,
+    });
+    expect(parsed.rows[0]?.code).toMatch(/^HOTEL_[A-F0-9]{12}$/);
+    expect(parse(fixture({ nameOnly: true })).rows[0]?.code).toBe(
+      parsed.rows[0]?.code,
+    );
+  });
   it('reads status after self-closing empty cells in the exact v1 format', () => {
     const result = parse();
     expect(result.issues).toEqual([]);

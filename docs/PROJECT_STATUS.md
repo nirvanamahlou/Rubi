@@ -1,6 +1,21 @@
 ## 2026-10-12 — AGENCY-IMPORT-BLANKS-1012 — PC-B
 
 Isolated Organizations import fix accepts name-only agency workbooks and omitted optional columns, counts only populated rows toward the 200-record limit, and accepts inert HTTP(S)/telephone/email hyperlink metadata without following links. Formulas, macros, external data/workbooks, unsafe protocols, populated invalid values and duplicate/no-overwrite checks remain blocked. A partial province/city is retained as editable address text without fabricated references. Organizations suite240, private workbook-container read, scoped ESLint, TypeScript and final Webpack production build59 routes pass. No operational agency imported; supplied workbook remains unchanged. Main checkout has concurrent work and was not switched or deployed. Details: docs/tasks/AGENCY-IMPORT-BLANKS-1012.md.
+## 2026-10-12 — ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
+
+Accounting now uses a distinct Rubi Finance OS visual language: navy/cyan workspace
+hero, modern dark secondary navigation, pill route tabs and scoped contemporary
+form/table surfaces. Existing forms, routes, commands, permissions and `bookId` context
+are preserved. Accounting Journal, General Ledger Document, Automatic Journal Template,
+Revaluation Template and Revaluation now occur exactly once in navigation and only below
+Documents → `فهرست`; editor routes remain available from their list actions and tab
+catalogue. Focused test1/1, scoped ESLint, full Web TypeScript and production build59
+routes pass. Isolated3112 preview reached the expected secure Login, but authenticated
+visual/data QA is deferred to the merged local runtime because no preview credential or
+session was available; authentication was not bypassed. Web/docs only, with no API,
+schema, migration, dependency, permission or operational-data change. User authorizes
+exact-head CI-gated develop merge and local Rubi runtime refresh. See
+docs/tasks/ACCOUNTING-UI-REDESIGN-1012.md.
 
 ## 2026-10-11 — USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
 
@@ -5603,3 +5618,9 @@ acceptance and financial owner inputs are tracked in the foundation task.
 PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
 
 Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
+## 2026-10-12 — HOTEL-TEMPLATE-IMPORT-1012 — PC-A — READY_FOR_REVIEW
+
+Added the exact user-supplied hotel XLSX download to Master Data accommodation import. Existing parser compatibility is verified against the actual asset; service regression verifies all three hotel creation commands and audit with a mocked database. Fixed final import request identity on LAN HTTP using the existing browser UUID helper. Persian/English download rendering and parent refresh after commit are tested. API tests33, Web import tests3, UUID test1, English coverage3, scoped lint, API/Web typechecks and Web production build59 pages pass. Production HTTP smoke verifies identical download bytes. No schema/migration/dependency/API-production/operational-data/shared-runtime changes. Isolated branch `codex/pc-a-hotel-template-import-1012`; user confirmed PC-A and GitHub actor `nirvanamahlou`. See [task](tasks/HOTEL-TEMPLATE-IMPORT-1012.md).
+## 2026-10-12 — HOTEL-TEMPLATE-IMPORT-1012 profile follow-up — PC-A
+
+User authorizes push/develop merge. Imported service level/notes and descriptive refund/image/featured/destination data now persist in seven nullable MasterHotel columns; description/rules and all imported details appear in the profile and editable form. Missing optional information can be completed later; name-only rows derive city/status/code from selected scope/defaults. Shared field-control catalogue updated additively. Existing audit, version guards, duplicate behavior and authoritative Procurement/Sales/Documents ownership remain intact. API Master Data527 tests, Web22 tests and typechecks pass;147 migrations applied to isolated PostgreSQL18. Final builds/integration/CI evidence is recorded in PR796. Migration required before API/Web rollout; no operational data/runtime change.

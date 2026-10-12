@@ -36,6 +36,67 @@ function row(id: string, extra: Record<string, unknown> = {}) {
 }
 
 describe('MasterDataService accommodation', () => {
+  it('edits imported optional fields, exposes them in profiles and clears explicit blanks', async () => {
+    const hotel = row(ids.chain, {
+      cityId: ids.city,
+      serviceLevel: 'لوکس',
+      description: 'original',
+    });
+    const update = vi.fn().mockImplementation(async (_resource, _id, data) => ({
+      ...hotel,
+      ...data,
+      version: 2,
+    }));
+    const repository = {
+      find: vi.fn().mockResolvedValue(hotel),
+      update,
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const response = await service.update(
+      'hotels',
+      ids.chain,
+      {
+        description: 'updated',
+        hotelRules: 'check-in 14:00',
+        internalNote: 'new note',
+        sourceRefundRules: 'reference policy',
+        sourceMainImage: 'https://example.test/main.jpg',
+        sourceGalleryImages:
+          'https://example.test/one.jpg|https://example.test/two.jpg',
+        sourceFeatured: 'false',
+        serviceLevel: '',
+      },
+      1,
+      actor,
+    );
+    expect(response.data.attributes).toMatchObject({
+      description: 'updated',
+      internalNote: 'new note',
+      sourceFeatured: false,
+      serviceLevel: null,
+      sourceRefundRules: 'reference policy',
+    });
+    expect(update.mock.calls[0]?.[2]).not.toHaveProperty('sourceDestination');
+    await expect(
+      service.update(
+        'hotels',
+        ids.chain,
+        { internalNote: 'a'.repeat(2001) },
+        1,
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.update(
+        'hotels',
+        ids.chain,
+        { sourceFeatured: 'unknown' },
+        1,
+        actor,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(update).toHaveBeenCalledTimes(1);
+  });
   it('persists hotel catalogs as normalized relations', async () => {
     const create = vi
       .fn()
