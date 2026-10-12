@@ -30,7 +30,7 @@ export function AccountingCompletionReadiness({
     <section className="space-y-4" dir="rtl">
       <h2 className="text-lg font-black">کنترل پیش‌نیازها</h2>
       <p role="status">
-        اتصال این بخش هنوز آماده نیست؛ صدور و ارسال فعال نشده است.
+        این صفحه فقط پیش‌نیازها را بررسی می‌کند؛ صدور سند فعال نیست.
       </p>
       <SearchCombobox
         label="دوره مالی"

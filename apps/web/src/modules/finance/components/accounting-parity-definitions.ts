@@ -1,3 +1,5 @@
+import { accountingTaxForms } from '@nora/contracts';
+import { taxpayerPages } from '../accounting-taxpayer-catalog';
 import { accountingParitySource1 } from './accounting-parity-source-1';
 import { accountingParitySource2 } from './accounting-parity-source-2';
 import { accountingParitySource3 } from './accounting-parity-source-3';
@@ -27,6 +29,10 @@ export type AccountingParityImplementation =
   | 'trial-balance'
   | 'turnover-report'
   | 'analytical-report'
+  | 'chart-report'
+  | 'journal-line-report'
+  | 'tax-reference'
+  | 'taxpayer-seller'
   | 'tax-settings'
   | 'configuration-list'
   | 'journal-list'
@@ -98,6 +104,15 @@ const implementationByRoute: Readonly<
   'general-ledger/reports/nature-conflict-range': 'analytical-report',
   'general-ledger/reports/comparative': 'analytical-report',
   'taxpayer-system/settings': 'tax-settings',
+  'taxpayer-system/seller-information': 'taxpayer-seller',
+  'general-ledger/reports/chart-structure': 'chart-report',
+  'general-ledger/reports/journal-lines': 'journal-line-report',
+  'tax-accounting/base-information/quarterly-thresholds': 'tax-reference',
+  'tax-accounting/base-information/lists/quarterly-thresholds': 'tax-reference',
+  'tax-accounting/vat/tax-periods': 'tax-reference',
+  'tax-accounting/vat/lists/tax-periods': 'tax-reference',
+  'tax-accounting/vat/aggregation-methods': 'tax-reference',
+  'tax-accounting/vat/lists/aggregation-methods': 'tax-reference',
   'general-ledger/base-information/lists/fiscal-years': 'configuration-list',
   'general-ledger/base-information/lists/ledgers': 'configuration-list',
   'general-ledger/base-information/lists/voucher-types': 'configuration-list',
@@ -308,6 +323,43 @@ for (const capture of [
   ...accountingParitySource4,
   ...menuOnlyCaptures,
   ...explicitGaps,
+  ...accountingTaxForms
+    .filter((form) => form.key === 'parties' || form.key === 'history')
+    .map((form): AccountingParityCapture => ({
+      route: form.route,
+      title: form.title,
+      sourcePath: [
+        'مالی',
+        'حسابداری مالیاتی',
+        'مالیات بر ارزش افزوده',
+        'فهرست ها',
+        form.title,
+      ].join(' / '),
+      sourcePage: form.listSourcePage,
+      evidenceStatus: 'observed-layout',
+      fields: [],
+      columns: form.listColumns,
+      actions: [],
+      stage: form.title,
+    })),
+  ...taxpayerPages
+    .filter((page) => page.route === 'taxpayer-system/reports/uncollected-days')
+    .map((page): AccountingParityCapture => ({
+      route: page.route,
+      title: page.title,
+      sourcePath: [
+        'مالی',
+        'ارتباط با سامانه مودیان مالیاتی',
+        'گزارش ها',
+        page.title,
+      ].join(' / '),
+      sourcePage: page.sourcePage,
+      evidenceStatus: 'observed-layout',
+      fields: [],
+      columns: page.columns,
+      actions: page.actions,
+      stage: page.title,
+    })),
 ]) {
   const current = definitions.get(capture.route);
   const evidenceStatus =

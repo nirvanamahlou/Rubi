@@ -2172,5 +2172,7 @@
   "نوع(شخص/شرکت)": "Type (person / company)",
   "واردات": "Imports",
   "وجه نقد": "Cash",
-  "ورود به تجمیع": "Add to aggregation"
+  "ورود به تجمیع": "Add to aggregation",
+  "این صفحه فقط پیش‌نیازها را بررسی می‌کند؛ صدور سند فعال نیست.": "This page only checks prerequisites; journal issuance is not available.",
+  "گزارش ها": "Reports"
 }

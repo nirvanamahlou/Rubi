@@ -18,6 +18,7 @@ import {
   type TaxpayerValues,
 } from '../accounting-taxpayer-model';
 import type { TaxpayerPage } from '../accounting-taxpayer-catalog';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 
 const dependencies: Record<string, string> = {
   settings:
@@ -131,7 +132,7 @@ function TaxpayerScreen({
     setBusy(true);
     setMessage('');
     try {
-      requestKey.current ??= crypto.randomUUID();
+      requestKey.current ??= browserRandomUuid();
       const saved = await accountingTaxpayerApi.saveSeller(bookId, {
         key: requestKey.current,
         version: seller?.version ?? 0,
@@ -201,7 +202,9 @@ function TaxpayerScreen({
               onClick={() =>
                 router.push(
                   '/finance/accounting/taxpayer-system/' +
-                    listForms[suffix.split('/').at(-1)!],
+                    listForms[suffix.split('/').at(-1)!] +
+                    '?' +
+                    new URLSearchParams({ bookId }),
                 )
               }
             >

@@ -7,7 +7,7 @@ import { AccountingChartReport } from './accounting-chart-report';
 import { AccountingCompletionReport } from './accounting-completion-report';
 import { AccountingCompletionReadiness } from './accounting-completion-readiness';
 
-/** Owner must mount this before the legacy dependency fallback, after book authorization. */
+/** Dispatches prepared screens only after the workspace has loaded an authorized book. */
 export function AccountingCompletionWorkspace({
   book,
   route,

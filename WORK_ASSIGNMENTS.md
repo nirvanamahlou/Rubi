@@ -1,3 +1,7 @@
+## ACCOUNTING-COMPLETION-INTEGRATION-1012 — PC-B — READY_FOR_CI
+
+User explicitly authorizes PC-B to connect the prepared accounting components on 2026-10-12, superseding the earlier independent-files-only hold. Base origin/develop@61167e61; branch codex/pc-b-accounting-completion-integration-1012 in the clean prior accounting worktree. PR799 and PR800 are merged and their source reservations released. Reserve finance.module.ts, AccountingCompletionModule, accounting-workspace.tsx, accounting-navigation-workspace.tsx, accounting-parity-definitions.ts, completion adapters, tax/taxpayer integration fixes and focused tests, plus this work entry and PROJECT_STATUS/task evidence. Reserve two new English overrides for the diagnostic-only notice and inherited reports label; no existing translation keys are changed. Root is sole writer. Preserve current authorization/book isolation, existing closing/opening commands and all provider/dependency gates. No schema, migration, dependency, IAM grant, source-system or operational business-data mutation. Existing session authorization covers push, exact-head CI-gated develop merge and refresh of PC-B rubi Compose Web3100/API4192 using the existing database/storage.
+
 ## ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
 
 COMPUTER_ID=PC-B confirmed by the user on 2026-10-12. Base origin/develop@4fe291b5;

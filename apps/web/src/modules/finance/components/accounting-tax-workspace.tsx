@@ -8,6 +8,7 @@ import type {
   AccountingTaxValues,
 } from '@nora/contracts';
 import { useRouter } from 'next/navigation';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { Input } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
 import { AccountingButton as Button } from './accounting-operations';
@@ -92,7 +93,7 @@ function TaxWorkspace({
         form.key,
         record.id,
         record.version,
-        crypto.randomUUID(),
+        browserRandomUuid(),
       );
       await client.invalidateQueries({ queryKey });
       reset();
@@ -149,7 +150,7 @@ function TaxWorkspace({
     setError('');
     setMessage('');
     try {
-      requestKey.current ??= crypto.randomUUID();
+      requestKey.current ??= browserRandomUuid();
       const writable = Object.fromEntries(
         form.fields
           .filter((field) => !field.readOnly)
