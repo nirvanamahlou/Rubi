@@ -193,6 +193,31 @@ export const agencyClient = {
   portalIdentity() {
     return b2bRequest<{ data: B2bPortalIdentity }>('/portal/me');
   },
+  portalPassengers() {
+    return b2bRequest<{
+      data: Array<{
+        id: string;
+        contractNumber: string;
+        passengers: Array<{ customerId: string; displayNameSnapshot: string }>;
+      }>;
+      canEdit: boolean;
+    }>('/portal/passengers');
+  },
+  portalPassenger(contractId: string, passengerId: string) {
+    return b2bRequest<{ data: Record<string, string | number | null> }>(
+      `/portal/contracts/${encodeURIComponent(contractId)}/passengers/${encodeURIComponent(passengerId)}`,
+    );
+  },
+  updatePortalPassenger(
+    contractId: string,
+    passengerId: string,
+    data: Record<string, string | number | null>,
+  ) {
+    return b2bRequest<{ data: Record<string, string | number | null> }>(
+      `/portal/contracts/${encodeURIComponent(contractId)}/passengers/${encodeURIComponent(passengerId)}`,
+      { method: 'PATCH', body: JSON.stringify(data) },
+    );
+  },
   portalSection(section: string) {
     return b2bRequest<{ data: B2bPortalSection }>(
       `/portal/sections/${encodeURIComponent(section)}`,

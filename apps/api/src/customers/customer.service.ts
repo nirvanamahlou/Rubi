@@ -22,7 +22,7 @@ import type {
   DuplicateCandidate,
   DuplicateReviewRequest,
 } from '@nora/contracts';
-import { changedDeniedFields } from '@nora/contracts';
+import { changedDeniedFields, hasAccessControl } from '@nora/contracts';
 import { CustomerKind, type Prisma } from '@nora/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
@@ -754,7 +754,7 @@ export class CustomerService {
     const deniedSuppliedFields = Object.keys(input).filter(
       (field) =>
         field !== 'version' &&
-        actor.permissions.includes(`ui.deny.field.customers.${field}`),
+        !hasAccessControl(actor.permissions, `field.customers.${field}`),
     );
     if (deniedSuppliedFields.length) {
       const existing = await this.repository.find(id, actor.branchIds);

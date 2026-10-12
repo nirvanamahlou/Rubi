@@ -1348,10 +1348,12 @@ export class MasterDataService {
     if (!version)
       throw new BadRequestException('version برای ویرایش الزامی است.');
     this.assertResourceControl(resource, actor);
-    const hasDeniedSuppliedField = Object.keys(values).some((field) =>
-      actor.permissions.includes(
-        `ui.deny.field.master-data.${resource}.${field}`,
-      ),
+    const hasDeniedSuppliedField = Object.keys(values).some(
+      (field) =>
+        !hasAccessControl(
+          actor.permissions,
+          `field.master-data.${resource}.${field}`,
+        ),
     );
     const existing =
       hasDeniedSuppliedField ||
