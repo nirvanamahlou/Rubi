@@ -1,0 +1,61 @@
+# ACCOUNTING-UI-REDESIGN-1012 — بازطراحی رابط حسابداری
+
+## Publication follow-up — 2026-10-12
+
+The user explicitly waived the account requirement for this task and authorized
+publication through the existing nirvanamahlou connection, followed by develop merge
+and local activation. PR797 targets develop. The first CI run passed quality,
+migration and production-build jobs; English coverage identified six new labels.
+Reserve six additive entries in the shared Web English catalogue for this correction.
+On this PC the existing application uses Web3000/API4000 and the current local Nora
+database; the documented admin-user Compose checkout belongs to another device and
+is absent here. Local activation will preserve this device's existing configuration.
+
+- **Computer:** PC-A
+- **Branch:** `codex/pc-a-accounting-ui-redesign-1012`
+- **Base:** `origin/develop@08a7c20c`
+- **Status:** READY_FOR_CI
+
+## هدف
+
+بازطراحی کامل پوسته بصری حسابداری با هویت مستقل روبی و فاصله روشن از ظاهر راهکاران،
+بدون تغییر ساختار داده، فرم‌ها، مسیرها، مجوزها، فرمان‌ها یا امکانات موجود.
+
+در بخش «اسناد»، پنج مقصد زیر باید فقط در زیرگروه «فهرست» دیده شوند:
+
+1. سند حسابداری
+2. سند کل
+3. الگوی سند اتوماتیک
+4. الگوی تسعیر ارز
+5. تسعیر ارز
+
+## محدوده و قواعد سازگاری
+
+- پوسته، هدر، ناوبری داخلی، تب‌های مسیر و سطح ارائه فرم‌های حسابداری Web.
+- حفظ URLهای canonical و query مربوط به `bookId`.
+- حفظ همه کامپوننت‌های فرم و عملیات مالی بدون بازنویسی منطق کسب‌وکار.
+- تست قراردادی برای یکتایی پنج مقصد و قرارگیری انحصاری آن‌ها زیر «فهرست».
+- بدون API، Contract مشترک، Prisma، Migration، Dependency/Lockfile، Permission یا
+  تغییر داده عملیاتی.
+
+## انتشار
+
+پس از lint، typecheck، تست هدفمند، build و QA مرورگر، شاخه push و PR آن به
+`develop` ایجاد می‌شود. Merge فقط روی head دقیق و پس از موفقیت بررسی‌ها انجام می‌شود؛
+سپس runtime محلی Rubi طبق سند `ACCOUNTING-RUBI-RUNTIME-1011` به revision ادغام‌شده
+به‌روز خواهد شد.
+
+## نتیجه و کنترل کیفیت
+
+- پوسته روشن/تیره حسابداری با هدر Rubi Finance OS، ناوبری سرمه‌ای/فیروزه‌ای، تب‌های
+  کپسولی و پرداخت بصری scoped برای ورودی‌ها و جدول‌ها بازطراحی شد.
+- فرم‌ها، routeها، query مربوط به `bookId`، permissionها و commandها تغییر نکردند.
+- چهار route ویرایشی که از منو حذف شدند در کاتالوگ تب‌ها باقی ماندند تا عملیات «بازکردن»
+  و «جدید» از داخل فهرست‌ها بدون افت قابلیت ادامه یابد.
+- تست قراردادی ناوبری: `1/1` موفق.
+- ESLint هدفمند: موفق.
+- TypeScript کامل Web: موفق.
+- Build تولیدی Web: موفق، `59` route.
+- Preview ایزوله Web روی `3112` تا Login امن بررسی شد. چون session/credential احرازشده
+  برای preview موجود نبود، دورزدن احراز هویت انجام نشد و QA احرازشده به runtime محلی
+  ادغام‌شده واگذار شد.
