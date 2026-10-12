@@ -229,6 +229,7 @@ export function AccountingDetailEditor({
         </AccountingButton>
       </div>
       <form
+        data-accounting-inline-form
         className="space-y-4 rounded-lg border bg-muted/15 p-4"
         onSubmit={(event) => {
           event.preventDefault();

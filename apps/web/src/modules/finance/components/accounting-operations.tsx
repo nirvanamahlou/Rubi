@@ -300,6 +300,7 @@ export function AccountingOperations({
   return (
     <Registry.Provider value={registry}>
       <div
+        data-accounting-primary-toolbar
         role="toolbar"
         aria-label="عملیات مشترک حسابداری"
         className="flex flex-wrap justify-end gap-2 rounded-xl border bg-surface p-3"
