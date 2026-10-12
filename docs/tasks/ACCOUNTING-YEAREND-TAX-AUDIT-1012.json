@@ -1,0 +1,5313 @@
+{
+  "task": "ACCOUNTING-YEAREND-TAX-AUDIT-1012",
+  "status": "INDEPENDENT_CANDIDATE_NOT_INTEGRATED",
+  "source": "https://zakeri.rahkaran.ir/",
+  "sourceVersion": "20/0 release 7",
+  "warning": "Only three year-end layouts/introduction states were freshly observed on October 12. Remaining evidence is inherited, not a completed fresh crawl. Legacy support labels are not a runtime acceptance claim.",
+  "sections": [
+    {
+      "prefix": "general-ledger/year-end/",
+      "routes": 6
+    },
+    {
+      "prefix": "general-ledger/reports/",
+      "routes": 19
+    },
+    {
+      "prefix": "taxpayer-system/",
+      "routes": 13
+    },
+    {
+      "prefix": "tax-accounting/",
+      "routes": 18
+    }
+  ],
+  "routes": [
+    {
+      "route": "general-ledger/reports/account-browser",
+      "title": "مرور حساب ها",
+      "sourcePages": [
+        "Financial/Analysis/ReviewPages/Review.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع حساب",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "حساب های بامانده",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "نوع تفصیلی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "از سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا سند",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "فیلتر مجدد",
+        "مرور تفصیلی ها",
+        "بر اساس سطح تفصیلی",
+        "بر اساس نوع تفصیلی",
+        "نمایش ستون شماره طبقه بندی",
+        "راهنما (Ctrl+H)",
+        "گزارش",
+        "فیلتر اسناد",
+        "گروه",
+        "کل",
+        "معین",
+        "سطح چهار",
+        "سطح پنج",
+        "سطح شش",
+        "ارز",
+        "پیگیری",
+        "حساب تفصیلی",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "بروز رسانی",
+        "چاپ",
+        "مشاهده گردش",
+        "آنالیز",
+        "اطلاعات ارزی",
+        "صدور اعلامیه",
+        "بدهکار",
+        "بستانکار",
+        "بدهکار/بستانکار",
+        "تعداد رکوردها"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "turnover-report",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/aging",
+      "title": "تجزیه سنی",
+      "sourcePages": [
+        "Financial/Reports/AgingOfReceivablesPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نمایش حساب های با ماهیت مهم نیست",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "ازماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع گزارش",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "درصد مانده از ابتدا",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "شناسه",
+        "کد",
+        "عنوان",
+        "عنوان 1",
+        "عنوان به زبان دوم",
+        "از تاریخ",
+        "تا تاریخ",
+        "درصد",
+        "نام ماه",
+        "عنوان دوره",
+        "کد معین",
+        "عنوان معین",
+        "عنوان سطح4",
+        "عنوان سطح5",
+        "عنوان سطح6",
+        "بدهکار",
+        "بستانکار تطبیق نشده",
+        "هزینه مطالبات مشکوک الوصول",
+        "کاربر جاری",
+        "دفتر کل",
+        "شناسه معین",
+        "شناسه شعبه",
+        "کد سطح 4",
+        "کد سطح 5",
+        "کد سطح6",
+        "کد سطح7",
+        "کد سطح 8",
+        "کد سطح 9",
+        "تاریخ شروع",
+        "تاریخ پایان",
+        "ارز"
+      ],
+      "actions": [
+        "گزارش",
+        "چاپ گزارش",
+        "راهنما (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "حذف",
+        "بارگذاری مجدد",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر",
+        "انتخاب یک رکوردی",
+        "ستونها",
+        "شناسه",
+        "کد",
+        "عنوان",
+        "عنوان 1",
+        "عنوان به زبان دوم",
+        "دریافت از Excel",
+        "چاپ",
+        "مدیریت فرم های چاپی ...",
+        "افزودن (Insert)",
+        "حذف (Delete)",
+        "جستجو (Ctrl+F)",
+        "عنوان دوره",
+        "کد معین",
+        "عنوان معین",
+        "عنوان سطح4",
+        "عنوان سطح5",
+        "عنوان سطح6",
+        "عنوان سطح7",
+        "عنوان سطح8",
+        "عنوان سطح9",
+        "بدهکار",
+        "بستانکار تطبیق نشده",
+        "درصد",
+        "هزینه مطالبات مشکوک الوصول",
+        "کاربر جاری",
+        "دفتر کل",
+        "شناسه معین",
+        "شناسه شعبه",
+        "کد سطح 4",
+        "کد سطح 5",
+        "کد سطح6",
+        "کد سطح7",
+        "کد سطح 8",
+        "کد سطح 9",
+        "تاریخ شروع",
+        "تاریخ پایان",
+        "ارز",
+        "نمایش جزییات اقلام بستانکار تطبیق نشده"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/analysis",
+      "title": "آنالیز",
+      "sourcePages": [
+        "Financial/Analysis/AnalysePages/Analyse.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع تفصیلی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "نوع حساب",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع آنالیز",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ارز",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "معین",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "حساب تفصیلی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "اقلام تطبیق نشده",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "اقلام تطبیق شده",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "همه اقلام",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "تفصیلی سطح 4",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "تفصیلی سطح 5",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "تفصیلی سطح6",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "سطح تفصیلی",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "بدهکار کل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "بدهکار تطبیق نشده کل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "بدهکار تطبیق شده کل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "بستانکار کل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "بستانکار تطبیق نشده کل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "بستانکار تطبیق شده کل",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "شناسه",
+        "تطبیق شده",
+        "شعبه",
+        "شماره عطف",
+        "تاریخ سند",
+        "شرح",
+        "بدهکار کل",
+        "بستانکار کل",
+        "بدهکار تطبیق نشده",
+        "بستانکار تطبیق نشده",
+        "بدهکار تطبیق شده",
+        "بستانکار تطبیق شده",
+        "شماره پیگیری",
+        "تاریخ پیگیری",
+        "شماره ردیف",
+        "شماره سند",
+        "عنوان ارز",
+        "مبلغ ارز",
+        "مقادیر بدهکار قابل تطبیق",
+        "مقادیر بستانکار قابل تطبیق"
+      ],
+      "actions": [
+        "اجرا",
+        "تطبیق",
+        "تسهیم اقلام تطبیقی",
+        "ریز تطبیق",
+        "اتوماتیک",
+        "تساوی مبلغ، شماره پیگیری و تاریخ پیگیری",
+        "تساوی مبلغ و شماره پیگیری",
+        "تساوی مبلغ و تاریخ پیگیری",
+        "تساوی مبلغ",
+        "تساوی شماره پیگیری",
+        "تساوی نوع ارز و مبلغ ارز",
+        "مشاهده سند",
+        "چاپ",
+        "حذف",
+        "راهنما (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بارگذاری مجدد( Ctrl+R)",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر( Ctrl+F)",
+        "انتخاب یک رکوردی( Ctrl+M)",
+        "ستونها",
+        "شناسه",
+        "تطبیق شده",
+        "شعبه",
+        "شماره عطف",
+        "تاریخ سند",
+        "شرح",
+        "بدهکار کل",
+        "بستانکار کل",
+        "بدهکار تطبیق نشده",
+        "بستانکار تطبیق نشده",
+        "بدهکار تطبیق شده",
+        "بستانکار تطبیق شده",
+        "شماره پیگیری",
+        "تاریخ پیگیری",
+        "شماره ردیف",
+        "شماره سند",
+        "عنوان ارز",
+        "مبلغ ارز",
+        "محاسبه تعداد رکوردها و صفحات فهرست( Ctrl+K)",
+        "مدیریت فرم های چاپی ...",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "بارگذاری مجدد",
+        "عدم نمایش فیلتر",
+        "انتخاب یک رکوردی"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/chart-structure",
+      "title": "گزارش ساختار حساب ها",
+      "sourcePages": [
+        "Financial/Reports/COAPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "گروه حساب",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "عنوان به زبان دوم",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "شرح",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "حساب کل",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "عنوان به زبان دوم",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "نوع",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "ماهیت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "شرح",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "معین",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "عنوان به زبان دوم",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی مالیاتی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "نوع",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "ارز پایه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "انواع حساب مالیاتی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "ماهیت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تعداد سطوح",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "حساب طرف مقابل",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "شرح",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "نگاشت به حساب",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "گزارش ساختاری",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "ساختار حساب ها",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "انواع تفصیلی تخصیص داده شده به سطوح",
+          "type": "radio",
+          "disabled": false
+        },
+        {
+          "label": "حساب های معین طرف مقابل",
+          "type": "radio",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "گزارش",
+        "راهنما (Ctrl+H)"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "chart",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/comparative",
+      "title": "گزارش مقایسه ای",
+      "sourcePages": [
+        "Financial/Reports/ComparitivePages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ماهیت حساب ها",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ارز",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "مانده / گردش دوره",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مغایرت دو دوره",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نسبت تغییر",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نرخ رشد",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نمایش تجمیعی ستون ها",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "نمایش فقط حساب های بدون تفصیلی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "چاپ حساب ها در صفحات مجزا",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "ازماه",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": true
+        }
+      ],
+      "columns": [
+        "عنوان",
+        "از تاریخ",
+        "تا تاریخ"
+      ],
+      "actions": [
+        "گزارش",
+        "راهنما (Ctrl+H)",
+        "فیلتر اولیه",
+        "فیلتر ثانویه",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اضافه",
+        "بالا",
+        "پایین",
+        "افزودن (Insert)",
+        "حذف (Delete)",
+        "جستجو (Ctrl+F)"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "analytical-report",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/comprehensive",
+      "title": "گزارش جامع",
+      "sourcePages": [
+        "Financial/Reports/ComprehensivePages/ComprehensiveView.view"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع مانده",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر بر اساس",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "مبنای ارز",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "دارای گردش در تمام اولویت های انتخابی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "نمایش مبالغ ریالی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نمایش مبالغ ارزی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "بررسی کننده",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع مانده ارزی",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "از مانده بدهکار",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا مانده بدهکار",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از مانده بستانکار",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا مانده بستانکار",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ساختار گزارش",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نمایش کد حساب تفصیل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "خروجی چاپ",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "چاپ حساب ها در صفحات مجزا",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "افتتاحیه در ستون مجزا",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "احتساب گردش از سال گذشته",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نمایش نوع اسناد پایان سال انتخاب شده",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع تفصیلی",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "عنوان",
+        "اولویت",
+        "شناسه",
+        "کد",
+        "عنوان 1",
+        "عنوان به زبان دوم"
+      ],
+      "actions": [
+        "اجرای گزارش",
+        "سطح تفصیلی",
+        "نوع تفصیلی",
+        "تراز",
+        "دفاتر",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "اضافه",
+        "حذف",
+        "بالا",
+        "پایین",
+        "حساب معین",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "بارگذاری مجدد",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر",
+        "انتخاب یک رکوردی",
+        "ستونها",
+        "شناسه",
+        "کد",
+        "عنوان",
+        "عنوان 1",
+        "عنوان به زبان دوم",
+        "دریافت از Excel",
+        "چاپ",
+        "مدیریت فرم های چاپی ..."
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/debit-credit-notices",
+      "title": "فهرست اعلامیه بدهکار- بستانکار",
+      "sourcePages": [
+        "List.aspx?ComponentName=SystemGroup.Financial.Analysis&EntityName=DebitCreditStatement"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [
+        "شناسه",
+        "عنوان تفصیلی",
+        "شماره",
+        "شماره براساس گیرنده",
+        "تاریخ",
+        "نوع",
+        "وضعیت",
+        "شرح",
+        "بدهکار کل",
+        "بستانکار کل"
+      ],
+      "actions": [
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "پاک کردن",
+        "ویرایش",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "جدید (Ctrl+B)",
+        "حذف (Ctrl+D)",
+        "ویرایش (Ctrl+L)",
+        "چاپ",
+        "بارگذاری مجدد( Ctrl+R)",
+        "دریافت اطلاع از تغییرات",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر( Ctrl+F)",
+        "انتخاب چند رکوردی( Ctrl+M)",
+        "ستونها",
+        "شناسه",
+        "عنوان تفصیلی",
+        "شماره",
+        "شماره براساس گیرنده",
+        "تاریخ",
+        "نوع",
+        "وضعیت",
+        "شرح",
+        "بدهکار کل",
+        "بستانکار کل",
+        "محاسبه تعداد رکوردها و صفحات فهرست( Ctrl+K)",
+        "مدیریت فرم های چاپی ...",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "حذف",
+        "سایر عملیات",
+        "بارگذاری مجدد",
+        "عدم نمایش فیلتر",
+        "انتخاب چند رکوردی"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/dormant-accounts",
+      "title": "گزارش حساب های راکد",
+      "sourcePages": [
+        "Financial/Reports/StagnantAccountsPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "سطح",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع تفصیلی",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "شخص",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "شرکت",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "شعبه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مرکز هزینه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "پروژه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "منبع تامین اعتبار",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "دوره مالی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "کد",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه خدمت",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "حساب بانکی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "صندوق",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "تنخواه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "تسهیلات مالی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "سفارشات",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "قرارداد خرید",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مرکز نگهداری",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "انبار",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "کالا",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "قرارداد فروش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه حساب مشتری",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه حساب محصول",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "بخش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "کانال فروش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مرکز فروش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "ماهیت تسویه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از مانده",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا مانده",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "گزارش",
+        "راهنما (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "analytical-report",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/electronic-trade-books",
+      "title": "دفاتر تجاری الکترونیکی",
+      "sourcePages": [
+        "Financial/Reports/ElectronicBookPages/ElectonicBookPage.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "نوع فایل خروجی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "همراه با کد حساب معین",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "همراه با عنوان حساب معین",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "همراه با شرح سند حسابداری",
+          "type": "checkbox",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "ارسال به فایل"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/journal-browser",
+      "title": "مرور اسناد",
+      "sourcePages": [
+        "Financial/Reports/VoucherDetailPages/VoucherDetails.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل حساب های بودجه ای هزینه ای",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل حساب های بودجه ای سرمایه ای",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری اعلامیه بدهکار/بستانکار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "عمومی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "بستن حساب ها",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "افتتاحیه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "اختتامیه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل ماهیت ابتدای دوره",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل ماهیت انتهای دوره",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تسعیر ارز",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "دریافت و پرداخت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "انبار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "خرید",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "دارایی ثابت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "پورسانت فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند برگشت از فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری اعلامیه فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری فروش خرده فروشی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری برگشت از فروش خرده فروشی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری برگشت امانی ظرف",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری تحویل امانی ظرف",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "جبران خدمات",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "بهای تمام شده",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "موقت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "یادداشت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "در حال بررسی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "بررسی شده",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "قطعی شده",
+          "type": "checkbox",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "شناسه",
+        "کلید سطر",
+        "نام کاربر",
+        "شناسه کاربر",
+        "تعداد اسناد صادر شده",
+        "تعداد ردیف های اسناد صادر شده",
+        "تعداد اسناد تغییر یافته",
+        "تعداد ردیف های اسناد تغییر یافته",
+        "تعداد اسناد بررسی شده"
+      ],
+      "actions": [
+        "فیلتر مجدد",
+        "مشاهده اسناد",
+        "صادر شده",
+        "تغییر یافته",
+        "بررسی شده",
+        "چاپ",
+        "راهنما (Ctrl+H)",
+        "کاربر",
+        "نوع سند",
+        "وضعیت",
+        "روزانه",
+        "ماهیانه",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر( Ctrl+F)",
+        "ستونها",
+        "شناسه",
+        "کلید سطر",
+        "نام کاربر",
+        "شناسه کاربر",
+        "تعداد اسناد صادر شده",
+        "تعداد ردیف های اسناد صادر شده",
+        "تعداد اسناد تغییر یافته",
+        "تعداد ردیف های اسناد تغییر یافته",
+        "تعداد اسناد بررسی شده",
+        "محاسبه تعداد رکوردها و صفحات فهرست( Ctrl+K)",
+        "دریافت از Excel",
+        "مدیریت فرم های چاپی ...",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "عدم نمایش فیلتر"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/journal-lines",
+      "title": "اقلام سند",
+      "sourcePages": [
+        "Financial/Reports/JournalVoucherDetailPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "مبلغ به ارز عملیاتی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مبلغ به ارز",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "از سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "وضعیت سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع حساب",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "خلاصه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "شرح سند",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "مشاهده گزارش",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اجرای گزارش",
+        "بازگشت به گزارش پدر",
+        "صفحه اول",
+        "صفحه قبلی",
+        "صفحه بعد",
+        "صفحه آخر",
+        "ارسال",
+        "XML",
+        "CSV",
+        "PDF",
+        "MHTML",
+        "IMAGE",
+        "WORD",
+        "EXCEL",
+        "داده ها به Excel",
+        "چاپ",
+        "پیش نمایش چاپ",
+        "Cancel"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "journal-lines",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/ledgers",
+      "title": "گزارش دفاتر",
+      "sourcePages": [
+        "Financial/Reports/BookPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "احتساب آنالیز",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ازماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "از سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع گزارش",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "مبنای ارز",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "مبالغ ریالی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مبالغ ارزی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نمایش فقط حساب های بدون تفصیلی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "چاپ حساب ها در صفحات مجزا",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "احتساب مانده از ابتدای دوره",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "احتساب گردش از سال گذشته",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "معین های فعال",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "معین های دارای ویژگی پیگیری",
+          "type": "checkbox",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "عنوان"
+      ],
+      "actions": [
+        "چاپ",
+        "مرور تفصیلی ها",
+        "سطح تفصیلی",
+        "نوع تفصیلی",
+        "راهنما (Ctrl+H)",
+        "فیلتر اولیه",
+        "فیلتر ثانویه",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اضافه",
+        "بالا",
+        "پایین",
+        "افزودن (Insert)",
+        "حذف (Delete)",
+        "جستجو (Ctrl+F)"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/legal-ledgers",
+      "title": "گزارش دفاتر قانونی",
+      "sourcePages": [
+        "Financial/Reports/JournalPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "نوع گزارش",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "از سند کل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا سند کل",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "حساب کل",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "مشاهده گزارش",
+        "راهنما (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اجرای گزارش",
+        "بازگشت به گزارش پدر",
+        "صفحه اول",
+        "صفحه قبلی",
+        "صفحه بعد",
+        "صفحه آخر",
+        "ارسال",
+        "XML",
+        "CSV",
+        "PDF",
+        "MHTML",
+        "IMAGE",
+        "WORD",
+        "EXCEL",
+        "داده ها به Excel",
+        "چاپ",
+        "پیش نمایش چاپ",
+        "Cancel"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/legal-reports",
+      "title": "گزارش‌های قانونی",
+      "sourcePages": [],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [
+        "منوی منبع صفحه مستقلی را اثبات نکرد و alias مشاهده‌شده متعلق به دفاتر تجاری الکترونیکی بود"
+      ],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/main-subledger-comparison",
+      "title": "خطا",
+      "sourcePages": [
+        "Financial/Reports/ComparisionReportBetweenLedgersPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "source-error",
+      "fields": [],
+      "columns": [],
+      "actions": [
+        "مشاهده اطلاعات بیشتر"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "source-error",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/matrix",
+      "title": "گزارش ماتریسی",
+      "sourcePages": [
+        "Financial/Reports/MatrixPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل حساب های بودجه ای هزینه ای",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل حساب های بودجه ای سرمایه ای",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری اعلامیه بدهکار/بستانکار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "عمومی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "بستن حساب ها",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "افتتاحیه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "اختتامیه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل ماهیت ابتدای دوره",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تعدیل ماهیت انتهای دوره",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تسعیر ارز",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "دریافت و پرداخت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "انبار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "خرید",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "دارایی ثابت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "پورسانت فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند برگشت از فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری اعلامیه فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری فروش خرده فروشی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری برگشت از فروش خرده فروشی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری برگشت امانی ظرف",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سند حسابداری تحویل امانی ظرف",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "جبران خدمات",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "بهای تمام شده",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "از سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "سطر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع تفصیلی",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "شخص",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "شرکت",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "شعبه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مرکز هزینه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "پروژه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "منبع تامین اعتبار",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "دوره مالی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "کد",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه خدمت",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "حساب بانکی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "صندوق",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "تنخواه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "تسهیلات مالی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "سفارشات",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "قرارداد خرید",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مرکز نگهداری",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "انبار",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "کالا",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "قرارداد فروش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه حساب مشتری",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "طبقه حساب محصول",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "بخش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "کانال فروش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "مرکز فروش",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "ماهیت تسویه",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "سطوح تفصیلی",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "گروه‌بندی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ستون",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع تفصیلی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "شخص",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "شرکت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "شعبه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "مرکز هزینه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "پروژه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "منبع تامین اعتبار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "دوره مالی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "کد",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "طبقه خدمت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "حساب بانکی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "صندوق",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تنخواه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تسهیلات مالی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سفارشات",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "قرارداد خرید",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "مرکز نگهداری",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "انبار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "طبقه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "کالا",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "قرارداد فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "طبقه حساب مشتری",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "طبقه حساب محصول",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "بخش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "کانال فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "مرکز فروش",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "ماهیت تسویه",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "سطوح تفصیلی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "گروه‌بندی",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "شناسه",
+        "کد",
+        "عنوان",
+        "عنوان 1",
+        "عنوان به زبان دوم"
+      ],
+      "actions": [
+        "گزارش",
+        "راهنما (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "جدید",
+        "حذف",
+        "بارگذاری مجدد",
+        "ارسال به Excel",
+        "انتخاب یک رکوردی",
+        "ستونها",
+        "شناسه",
+        "کد",
+        "عنوان",
+        "عنوان 1",
+        "عنوان به زبان دوم",
+        "دریافت از Excel",
+        "چاپ",
+        "مدیریت فرم های چاپی ..."
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/nature-conflict-period",
+      "title": "گزارش خلاف ماهیت برای یک دوره مالی",
+      "sourcePages": [
+        "Financial/Reports/AdjustmentPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع ماهیت",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "بدهکار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "بستانکار",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "نوع حساب",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "دائم",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "موقت",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "انتظامی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "نمایش حساب های طرف مقابل",
+          "type": "checkbox",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "مشاهده گزارش",
+        "راهنما (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اجرای گزارش",
+        "بازگشت به گزارش پدر",
+        "صفحه اول",
+        "صفحه قبلی",
+        "صفحه بعد",
+        "صفحه آخر",
+        "ارسال",
+        "XML",
+        "CSV",
+        "PDF",
+        "MHTML",
+        "IMAGE",
+        "WORD",
+        "EXCEL",
+        "داده ها به Excel",
+        "چاپ",
+        "پیش نمایش چاپ",
+        "Cancel"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "analytical-report",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/nature-conflict-range",
+      "title": "حساب های خلاف ماهیت طی دوره",
+      "sourcePages": [
+        "Financial/Reports/PeriodicOppositNatureAccountPages/PeriodicOppositNatureSLs.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ارز",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "روزانه",
+          "type": "checkbox",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "شناسه",
+        "کد",
+        "عنوان",
+        "عنوان 1",
+        "عنوان به زبان دوم",
+        "شناسه معین",
+        "کد سطح4",
+        "کد سطح 5",
+        "کد سطح6",
+        "شناسه شعبه",
+        "کد معین",
+        "عنوان معین",
+        "سطح 4",
+        "سطح 5",
+        "سطح 6",
+        "ماهیت حساب",
+        "مانده حساب",
+        "شناسه ارز",
+        "شناسه سند"
+      ],
+      "actions": [
+        "اجرا",
+        "چاپ",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "حذف",
+        "بارگذاری مجدد",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر",
+        "انتخاب یک رکوردی",
+        "ستونها",
+        "شناسه",
+        "کد",
+        "عنوان",
+        "عنوان 1",
+        "عنوان به زبان دوم",
+        "دریافت از Excel",
+        "مدیریت فرم های چاپی ...",
+        "شناسه معین",
+        "کد سطح4",
+        "کد سطح 5",
+        "کد سطح6",
+        "کد سطح7",
+        "کد سطح 8",
+        "کد سطح 9",
+        "کد سطح10",
+        "کد سطح11",
+        "کد سطح12",
+        "کد سطح13",
+        "کد سطح14",
+        "کد سطح15",
+        "کد سطح16",
+        "کد سطح17",
+        "کد سطح18",
+        "کد سطح19",
+        "کد سطح20",
+        "شناسه شعبه",
+        "کد معین",
+        "عنوان معین",
+        "سطح 4",
+        "سطح 5",
+        "سطح 6",
+        "سطح 7",
+        "سطح 8",
+        "سطح 9",
+        "سطح 10",
+        "سطح 11",
+        "سطح 12",
+        "سطح 13",
+        "سطح 14",
+        "سطح 15",
+        "سطح 16",
+        "سطح 17",
+        "سطح 18",
+        "سطح 19",
+        "سطح 20",
+        "تاریخ",
+        "Labels_EndDate",
+        "ماهیت حساب",
+        "مانده حساب",
+        "شناسه ارز",
+        "عنوان ارز مبنا",
+        "شناسه سند",
+        "نمایش جزییات اقلام خلاف ماهیت شده"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "analytical-report",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/reports/trial-balance",
+      "title": "گزارش تراز",
+      "sourcePages": [
+        "Financial/Reports/BalancePages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا دوره مالی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ساختار گزارش",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع مانده",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "فیلتر",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ازماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا ماه",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "از سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "تا سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "نوع سند",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "ویژگی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "مبنای ارز",
+          "type": "text",
+          "disabled": true
+        },
+        {
+          "label": "نمایش مبالغ ریالی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نمایش مبالغ ارزی",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "نمایش فقط حساب های بدون تفصیلی",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "چاپ حساب ها در صفحات مجزا",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "احتساب گردش از سال گذشته",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "افتتاحیه در ستون مجزا",
+          "type": "checkbox",
+          "disabled": true
+        },
+        {
+          "label": "معین های فعال",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "معین های دارای ویژگی پیگیری",
+          "type": "checkbox",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "عنوان"
+      ],
+      "actions": [
+        "چاپ",
+        "مرور تفصیلی ها",
+        "سطح تفصیلی",
+        "نوع تفصیلی",
+        "راهنما (Ctrl+H)",
+        "فیلتر اولیه",
+        "فیلتر ثانویه",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اضافه",
+        "بالا",
+        "پایین",
+        "افزودن (Insert)",
+        "حذف (Delete)",
+        "جستجو (Ctrl+F)"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "trial-balance",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/year-end/closing",
+      "title": "خطای پیش‌شرط",
+      "sourcePages": [
+        "Financial/VoucherManagement/ClosingPages/ClosingVoucherWizard.aspx"
+      ],
+      "evidenceDate": "2026-10-12",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [],
+      "actions": [
+        "شرح راهبر",
+        "انتخاب الگوی بستن حساب",
+        "تعریف نرخ ارز",
+        "پیش نمایش سند",
+        "پایان عملیات",
+        "ادامه"
+      ],
+      "blockers": [
+        "در دوره مالی جاری سند قطعی وجود ندارد"
+      ],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "year-end-closing",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/year-end/closing-templates",
+      "title": "الگوی بستن حساب",
+      "sourcePages": [
+        "Financial/VoucherManagement/ClosingPages/Edit.aspx?ActionContext=1201"
+      ],
+      "evidenceDate": "2026-10-12",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "کد",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "فعال",
+          "type": "checkbox",
+          "disabled": false
+        },
+        {
+          "label": "عنوان",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "عنوان به زبان دوم",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "شرح پیش فرض",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "شرح پیش فرض به زبان دوم",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "سطح تفصیلی",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [
+        "کد حساب معین",
+        "سطح 4",
+        "سطح 5",
+        "سطح 6",
+        "درصد",
+        "شمول/عدم شمول",
+        "انتخاب سطوح",
+        "شناسه",
+        "کد",
+        "عنوان",
+        "نوع تفصیلی",
+        "تفصیلی پدر",
+        "کد تفصیلی پدر",
+        "عنوان تفصیل پدر",
+        "شماره طبقه بندی",
+        "نوع تفصیلی 1",
+        "وضعیت"
+      ],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "سایر عملیات (Ctrl+K)",
+        "دریافت از Excel",
+        "راهنما (Ctrl+H)",
+        "اطلاعات اصلی",
+        "یادداشت",
+        "انتخاب",
+        "افزودن (Insert)",
+        "حذف (Delete)",
+        "جستجو (Ctrl+F)",
+        "انتخاب دسته ای معین",
+        "انتخاب معین با سطوح مشخص",
+        "انتخاب بر اساس کد تفصیلی",
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "حذف",
+        "بارگذاری مجدد",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر",
+        "انتخاب یک رکوردی",
+        "ستونها",
+        "شناسه",
+        "کد",
+        "عنوان",
+        "نوع تفصیلی",
+        "تفصیلی پدر",
+        "کد تفصیلی پدر",
+        "عنوان تفصیل پدر",
+        "شماره طبقه بندی",
+        "نوع تفصیلی 1",
+        "وضعیت",
+        "مدیریت فرم های چاپی ..."
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "template-list",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/year-end/final",
+      "title": "اختتامیه",
+      "sourcePages": [
+        "Financial/VoucherManagement/EndingOpeningVoucher/EndingOpeningVoucherWizard.aspx?PageType=Ending"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "تاریخ سند",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "شماره فرعی",
+          "type": "text",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "ذخیره"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "readiness",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/year-end/lists/closing-templates",
+      "title": "الگوی بستن حساب",
+      "sourcePages": [
+        "menu-search:Financial.GL.YearClosingOperations.Lists.ClosingVoucherPatternList"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "template-list",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/year-end/nature-adjustment",
+      "title": "تعدیل ماهیت",
+      "sourcePages": [
+        "Financial/VoucherManagement/AdjustmentVoucherPages/AdjustmentVoucherWizard.aspx"
+      ],
+      "evidenceDate": "2026-10-12",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [],
+      "actions": [
+        "شرح راهبر",
+        "مشخصات سند",
+        "حساب های بدون طرف مقابل",
+        "پیش نمایش سند",
+        "پایان عملیات صدور سند تعدیل ماهیت",
+        "ادامه"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "readiness",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "general-ledger/year-end/opening",
+      "title": "افتتاحیه",
+      "sourcePages": [
+        "Financial/VoucherManagement/EndingOpeningVoucher/EndingOpeningVoucherWizard.aspx?PageType=Opening"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "تاریخ سند",
+          "type": "date",
+          "disabled": false
+        },
+        {
+          "label": "شماره فرعی",
+          "type": "text",
+          "disabled": false
+        },
+        {
+          "label": "صدور سند معکوس تعدیل ماهیت",
+          "type": "checkbox",
+          "disabled": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "ذخیره"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "year-end-opening",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/base-information/lists/quarterly-thresholds",
+      "title": "حد نصاب تجمیع گزارش فصلی",
+      "sourcePages": [
+        "menu-search:Financial.TaxAccounting.VATBasicInfo.Lists.TaxInformationList"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/base-information/quarterly-thresholds",
+      "title": "حد نصاب تجمیع گزارش فصلی",
+      "sourcePages": [
+        "Financial/VAT/TaxInformationPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "عنوان",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "مبلغ حد نصاب معاملات کوچک",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "موثر از تاریخ",
+          "type": "date",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "درصد تجمیع معاملات کوچک",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "مبلغ حد نصاب تجمیع معاملات",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        }
+      ],
+      "columns": [
+        "عنوان",
+        "موثر از تاریخ",
+        "مبلغ حد نصاب معاملات کوچک"
+      ],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [],
+      "referenceWriteAdapter": true
+    },
+    {
+      "route": "tax-accounting/vat/aggregation-methods",
+      "title": "روش تجمیع اطلاعات خرید و فروش فصلی",
+      "sourcePages": [
+        "Financial/VAT/SeasonalReportMergePatternPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "شماره",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "عنوان",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع مودی مشمول ثبت نام در نظام مالیاتی حقیقی",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "بر اساس طرف مقابل",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "بر اساس حد نصاب معاملات کوچک",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع مودی مشمول ثبت نام در نظام مالیاتی حقوقی براساس طرف مقابل",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع براساس نوع طرف معامله مشمولین ماده 81 ق.م.م",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع کلیه طرف مقابل ها",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع براساس نوع طرف معامله اشخاصی که ملزم به ثبت نام در نظام مالیاتی نیستند",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع کلیه طرف مقابل ها",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع مودی مشمول ثبت نام در نظام مالیاتی حقیقی",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "بر اساس طرف مقابل",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "بر اساس حد نصاب معاملات کوچک",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع مودی مشمول ثبت نام در نظام مالیاتی حقوقی براساس طرف مقابل",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع براساس نوع طرف معامله مشمولین ماده 81 ق.م.م",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع براساس نوع طرف معامله اشخاصی که ملزم به ثبت نام در نظام مالیاتی نیستند",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع تمام قلم هایی که نوع طرف معامله مالیاتی آن ها مصرف کننده نهائی است",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        }
+      ],
+      "columns": [
+        "شماره",
+        "عنوان",
+        "وضعیت"
+      ],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "راهنما (Ctrl+H)",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [],
+      "referenceWriteAdapter": true
+    },
+    {
+      "route": "tax-accounting/vat/general-return",
+      "title": "اظهارنامه عمومی",
+      "sourcePages": [
+        "Financial/VAT/GeneralVATStatementPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "شماره اظهارنامه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "تاریخ اظهارنامه",
+          "type": "date",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "دوره مالیاتی",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تاریخ شروع",
+          "type": "date",
+          "disabled": true,
+          "readOnly": false
+        },
+        {
+          "label": "آخرین تغییر دهنده",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "تاریخ پایان",
+          "type": "date",
+          "disabled": true,
+          "readOnly": false
+        },
+        {
+          "label": "شماره اقتصادی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "شماره فرعی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "شماره شعبه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "نام بنگاه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "شماره ثبت",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "اداره کل",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "کد پستی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "تلفن",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "نمابر",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "جزییات آدرس",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "درخواست استرداد اضافه پرداختی وجود دارد",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "جمع اقلام فروش",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "جمع اقلام مالیات برارزش افزوده پرداختنی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "جمع اقلام عوارض پرداختنی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی فروش",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی مالیات بر ارزش افزوده پرداختنی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی عوارض پرداختنی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "جمع اقلام خرید",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "جمع اقلام پیش پرداخت مالیات برارزش افزوده",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "جمع اقلام پیش پرداخت عوارض",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی خرید",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی پیش پرداخت مالیات بر ارزش افزوده",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی پیش پرداخت عوارض",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ اولیه مالیات پرداختی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ اولیه عوارض پرداختی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی مالیات پرداختی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی عوارض پرداختی",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ اولیه مالیات",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ اولیه عوارض",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی مالیات",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "مبلغ نهایی عوارض",
+          "type": "decimal",
+          "disabled": false,
+          "readOnly": true
+        }
+      ],
+      "columns": [
+        "شماره اظهارنامه",
+        "تاریخ",
+        "نوع اظهارنامه",
+        "وضعیت",
+        "نام دوره مالیاتی",
+        "صادر کننده",
+        "آخرین تغییر دهنده",
+        "تایید کننده",
+        "قطعی کننده"
+      ],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "چاپ اظهارنامه",
+        "صدور اظهارنامه عمومی",
+        "دریافت اطلاع از تغییرات",
+        "راهنما (Ctrl+H)",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [
+        {
+          "title": "فروش و صادرات کالاو خدمات",
+          "columns": [
+            "نوع",
+            "جمع اقلام فروش",
+            "مبلغ نهایی فروش",
+            "جمع اقلام مالیات بر ارزش افزوده پرداختنی",
+            "مبلغ نهایی مالیات بر ارزش افزوده پرداختنی",
+            "جمع اقلام عوارض پرداختنی",
+            "مبلغ نهایی عوارض پرداختنی"
+          ]
+        },
+        {
+          "title": "خرید و واردات کالا و خدمات",
+          "columns": [
+            "نوع",
+            "جمع اقلام خرید",
+            "مبلغ نهایی خرید",
+            "جمع اقلام پیش پرداخت مالیات بر ارزش افزوده",
+            "مبلغ نهایی پیش پرداخت مالیات بر ارزش افزوده",
+            "جمع اقلام پیش پرداخت عوارض",
+            "مبلغ نهایی پیش پرداخت عوارض"
+          ]
+        },
+        {
+          "title": "مالیات و عوارض پرداختی قابل کسر یا استرداد",
+          "columns": [
+            "نوع",
+            "مبلغ اولیه مالیات پرداختی",
+            "مبلغ نهایی مالیات پرداختی",
+            "مبلغ اولیه عوارض پرداختی",
+            "مبلغ نهایی عوارض پرداختی"
+          ]
+        },
+        {
+          "title": "مانده مالیات و عوارض",
+          "columns": [
+            "نوع",
+            "مبلغ اولیه مالیات",
+            "مبلغ نهایی مالیات",
+            "مبلغ اولیه عوارض",
+            "مبلغ نهایی عوارض"
+          ]
+        }
+      ],
+      "referenceWriteAdapter": false
+    },
+    {
+      "route": "tax-accounting/vat/lists/aggregate-history",
+      "title": "تاریخچه تغییر اقلام تجمیعی",
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [
+        "دوره مالیاتی",
+        "نام طرف معامله",
+        "نام خانوادگی-نام شرکت طرف معامله",
+        "کد اقتصادی فروشنده-خریدار",
+        "کد ملی/شناسه ملی فروشنده-خریدار",
+        "مبلغ معامله",
+        "نوع تجمیع",
+        "توضیحات",
+        "تاریخ آخرین تغییر",
+        "کاربر تغییر دهنده"
+      ],
+      "tables": [],
+      "referenceWriteAdapter": false,
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/lists/aggregation-methods",
+      "title": "روش تجمیع اطلاعات گزارش خرید و فروش فصلی",
+      "sourcePages": [
+        "menu-search:Financial.TaxAccounting.VAT.Lists.MergePatternList"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/lists/general-returns",
+      "title": "اظهارنامه عمومی",
+      "sourcePages": [
+        "menu-search:Financial.TaxAccounting.VAT.Lists.GeneralVATStatementList"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/lists/pollution-returns",
+      "title": "اظهارنامه آلایندگی",
+      "sourcePages": [
+        "menu-search:Financial.TaxAccounting.VAT.Lists.ContaminationTollVATStatementList"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/lists/tax-parties",
+      "title": "طرف معاملات مالیاتی",
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [
+        "شماره",
+        "نام شخص/شرکت",
+        "کد ملی/ شناسه ملی",
+        "کد اقتصادی",
+        "نوع(شخص/شرکت)",
+        "نوع عملیات",
+        "نوع طرف معامله مالیاتی"
+      ],
+      "tables": [],
+      "referenceWriteAdapter": false,
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/lists/tax-periods",
+      "title": "دوره مالیاتی",
+      "sourcePages": [
+        "menu-search:Financial.TaxAccounting.VAT.Lists.TaxYearList"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/lists/taxpayer-identities",
+      "title": "اطلاعات هویتی مودی",
+      "sourcePages": [
+        "menu-search:Financial.TaxAccounting.VAT.Lists.VATBaseInformationList"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/pollution-return",
+      "title": "اظهارنامه عوارض آلایندگی",
+      "sourcePages": [
+        "Financial/VAT/ContaminationTollVATStatementPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "شماره اظهارنامه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "تاریخ اظهارنامه",
+          "type": "date",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "دوره مالیاتی",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تاریخ شروع",
+          "type": "date",
+          "disabled": true,
+          "readOnly": false
+        },
+        {
+          "label": "آخرین تغییر دهنده",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "تاریخ پایان",
+          "type": "date",
+          "disabled": true,
+          "readOnly": false
+        },
+        {
+          "label": "شماره اقتصادی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "شماره فرعی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "شماره شعبه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "نام بنگاه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "شماره ثبت",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "اداره کل",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "کد پستی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "تلفن",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "نمابر",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        },
+        {
+          "label": "جزییات آدرس",
+          "type": "text",
+          "disabled": false,
+          "readOnly": true
+        }
+      ],
+      "columns": [
+        "شماره اظهارنامه",
+        "تاریخ",
+        "نوع اظهارنامه",
+        "وضعیت",
+        "نام دوره مالیاتی",
+        "صادر کننده",
+        "آخرین تغییر دهنده",
+        "تایید کننده",
+        "قطعی کننده"
+      ],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "چاپ اظهارنامه",
+        "صدور اظهارنامه آلایندگی",
+        "دریافت اطلاع از تغییرات",
+        "راهنما (Ctrl+H)",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [
+        {
+          "title": "اقلام اظهارنامه عوارض آلایندگی",
+          "columns": [
+            "نوع",
+            "جمع مبالغ فروش",
+            "مبلغ نهایی فروش",
+            "درصد",
+            "مبلغ عوارض"
+          ]
+        }
+      ],
+      "referenceWriteAdapter": false
+    },
+    {
+      "route": "tax-accounting/vat/quarterly-mappings",
+      "title": "نگاشت اطلاعات فصلی",
+      "sourcePages": [
+        "Financial/VAT/MappingPages/InformationMapping.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [],
+      "actions": [
+        "ذخیره",
+        "راهنما (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "افزودن (Insert)",
+        "حذف (Delete)",
+        "جستجو (Ctrl+F)"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [
+        {
+          "title": "نگاشت مناطق جغرافیایی",
+          "columns": [
+            "منطقه جغرافیایی راهکاران",
+            "منطقه جغرافیایی اداره مالیات"
+          ]
+        },
+        {
+          "title": "نگاشت ارز",
+          "columns": [
+            "ارز راهکاران",
+            "ارز اداره مالیات"
+          ]
+        }
+      ],
+      "referenceWriteAdapter": false
+    },
+    {
+      "route": "tax-accounting/vat/quarterly-sales-report",
+      "title": "خطا",
+      "sourcePages": [
+        "Financial/VAT/SeasonalReportPages/SeasonalReport.aspx"
+      ],
+      "evidenceDate": "2026-10-07",
+      "evidence": "source-error",
+      "fields": [],
+      "columns": [],
+      "actions": [
+        "مشاهده اطلاعات بیشتر"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "source-error",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/reporting-engine-update",
+      "title": "به‌روزرسانی موتور گزارش‌گیری",
+      "sourcePages": [],
+      "evidenceDate": "2026-10-07",
+      "evidence": "menu-only",
+      "fields": [],
+      "columns": [],
+      "actions": [],
+      "blockers": [
+        "برای این برگ منو capture معتبر فرم موجود نیست"
+      ],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "tax-accounting/vat/return-lines",
+      "title": "گزارش ریز اقلام اظهارنامه",
+      "sourcePages": [
+        "Financial/VAT/ReportPages/DeclarationItemsDetail.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از دوره مالیاتی",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تا دوره مالیاتی",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع مالیات و عوارض",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "اظهارنامه",
+          "type": "select",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "جزئیات اقلام",
+          "type": "multi",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تجمیع مبلغ قابل استرداد و غیر قابل استرداد",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "اقلام خرید",
+          "type": "multi",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "اقلام فروش",
+          "type": "multi",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "نمایش مغایرت",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "گزارش",
+        "راهنما (Ctrl+H) (Ctrl+H)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "اجرای گزارش",
+        "بازگشت به گزارش پدر",
+        "صفحه اول",
+        "صفحه قبلی",
+        "صفحه بعد",
+        "صفحه آخر",
+        "ارسال",
+        "XML",
+        "CSV",
+        "PDF",
+        "MHTML",
+        "IMAGE",
+        "WORD",
+        "EXCEL",
+        "داده ها به Excel",
+        "چاپ",
+        "پیش نمایش چاپ",
+        "Cancel"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [],
+      "referenceWriteAdapter": false
+    },
+    {
+      "route": "tax-accounting/vat/tax-periods",
+      "title": "دوره مالیاتی",
+      "sourcePages": [
+        "Financial/VAT/TaxYearPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "عنوان",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "نحوه ارائه اطلاعات",
+          "type": "select",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "نحوه تجمیع اطلاعات",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تاریخ شروع",
+          "type": "date",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تاریخ پایان",
+          "type": "date",
+          "disabled": false,
+          "readOnly": false
+        }
+      ],
+      "columns": [
+        "عنوان",
+        "تاریخ شروع",
+        "تاریخ پایان",
+        "نحوه ارائه اطلاعات"
+      ],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "راهنما (Ctrl+H)",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [],
+      "referenceWriteAdapter": true
+    },
+    {
+      "route": "tax-accounting/vat/taxpayer-identity",
+      "title": "اطلاعات هویتی مودی",
+      "sourcePages": [
+        "Financial/VAT/VATBaseInformationPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "کد",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "کد اقتصادی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "وضعیت عضویت",
+          "type": "select",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "کد پستی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "پیش شماره",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "منطقه جغرافیایی اداره مالیات",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "شماره فرعی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "فعال",
+          "type": "check",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "شرکت",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "شماره ثبت",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "نام کاربری",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "آدرس",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "شماره تلفن",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "اداره کل",
+          "type": "lookup",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "نام و نام خانوادگی مودی اصلی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "نام شرکت",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "کدملی",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "آدرس شرکت",
+          "type": "lookup",
+          "disabled": true,
+          "readOnly": false
+        },
+        {
+          "label": "نمابر",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "شماره همراه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "شماره شعبه",
+          "type": "text",
+          "disabled": false,
+          "readOnly": false
+        },
+        {
+          "label": "تابعیت",
+          "type": "select",
+          "disabled": false,
+          "readOnly": false
+        }
+      ],
+      "columns": [
+        "کد",
+        "نام بنگاه",
+        "شماره اقتصادی بنگاه",
+        "اداره کل مالیات بر ارزش افزوده",
+        "وضعیت"
+      ],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "راهنما (Ctrl+H)",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "tax",
+      "integratedInThisCandidate": false,
+      "tables": [],
+      "referenceWriteAdapter": false
+    },
+    {
+      "route": "taxpayer-system/cancellation-invoice",
+      "title": "صدور صورتحساب ابطال",
+      "sourcePages": [
+        "General/TaxPayerManagement/TaxPayerCancellationBillPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "شماره مالیاتی ابطال",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "تاریخ ابطال",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "شماره مالیاتی مرجع",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "موضوع مرجع",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "تاریخ مرجع",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "شناسه موجودیت",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "محدود کردن جستجو",
+        "برداشتن محدودیت جستجو",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/lists/batch-schedules",
+      "title": "زمانبندی عملیات دسته جمعی",
+      "sourcePages": [
+        "List.aspx?ComponentName=SystemGroup.General.TaxPayerManagement&EntityName=TaxPayerBillBatchJobScheduling"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [
+        "عنوان",
+        "وضعیت",
+        "تاریخ اجرا",
+        "فاصله اجرا (روز)",
+        "عملیات دسته جمعی",
+        "زمان آخرین اجرا",
+        "موضوع صورتحساب",
+        "نوع صورتحساب",
+        "الگوی صورتحساب"
+      ],
+      "actions": [
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "پاک کردن",
+        "ویرایش",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "جدید (Ctrl+B)",
+        "حذف (Ctrl+D)",
+        "ویرایش (Ctrl+L)",
+        "بارگذاری مجدد( Ctrl+R)",
+        "دریافت اطلاع از تغییرات",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر( Ctrl+F)",
+        "انتخاب چند رکوردی( Ctrl+M)",
+        "ستونها",
+        "شناسه",
+        "عنوان",
+        "وضعیت",
+        "تاریخ اجرا",
+        "فاصله اجرا (روز)",
+        "عملیات دسته جمعی",
+        "زمان آخرین اجرا",
+        "موضوع صورتحساب",
+        "نوع صورتحساب",
+        "الگوی صورتحساب",
+        "محاسبه تعداد رکوردها و صفحات فهرست( Ctrl+K)",
+        "مدیریت فرم های چاپی ...",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "حذف",
+        "بارگذاری مجدد",
+        "عدم نمایش فیلتر",
+        "انتخاب چند رکوردی",
+        "تغییر وضعیت",
+        "چاپ"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/lists/cancellations",
+      "title": "فهرست صورتحساب‌های ابطال",
+      "sourcePages": [
+        "List.aspx?ComponentName=SystemGroup.General.TaxPayerManagement&EntityName=TaxPayerCancellationBill"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [
+        "شماره مالیاتی ابطال",
+        "تاریخ ابطال",
+        "وضعیت",
+        "شماره مالیاتی مرجع",
+        "تاریخ مرجع",
+        "موضوع مرجع",
+        "شناسه موجودیت",
+        "متن خطا"
+      ],
+      "actions": [
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "پاک کردن",
+        "ویرایش",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "جدید (Ctrl+B)",
+        "حذف (Ctrl+D)",
+        "ویرایش (Ctrl+L)",
+        "تایید همه / آماده سازی ارسال همه",
+        "ارسال همه",
+        "استعلام مجدد صورتحساب های خطادار",
+        "بارگذاری مجدد( Ctrl+R)",
+        "دریافت اطلاع از تغییرات",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر( Ctrl+F)",
+        "انتخاب چند رکوردی( Ctrl+M)",
+        "ستونها",
+        "شناسه",
+        "شماره مالیاتی ابطال",
+        "تاریخ ابطال",
+        "وضعیت",
+        "شماره مالیاتی مرجع",
+        "تاریخ مرجع",
+        "موضوع مرجع",
+        "شناسه موجودیت",
+        "متن خطا",
+        "محاسبه تعداد رکوردها و صفحات فهرست( Ctrl+K)",
+        "مدیریت فرم های چاپی ...",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "حذف",
+        "سایر عملیات",
+        "عملیات دسته جمعی",
+        "بارگذاری مجدد",
+        "عدم نمایش فیلتر",
+        "انتخاب چند رکوردی",
+        "چاپ"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/lists/invoices",
+      "title": "لیست صورتحساب ها",
+      "sourcePages": [
+        "List.aspx?ComponentName=SystemGroup.General.TaxPayerManagement&EntityName=TaxPayerBill"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [
+        "شناسه یکتای صورتحساب",
+        "شناسه مرجع صورتحساب",
+        "شماره سریال صورت حساب",
+        "موضوع صورتحساب",
+        "دلیل ایجاد صورتحساب",
+        "شناسه لاگ",
+        "وضعیت",
+        "نوع موجودیت",
+        "وضعیت در کارپوشه مودیان",
+        "دارای مبلغ منفی",
+        "تاریخ موجودیت",
+        "متن خطا",
+        "شماره",
+        "نوع صورت حساب",
+        "الگوی صورت حساب",
+        "کد اقتصادی فروشنده",
+        "کد شعبه خریدار",
+        "نوع شخص خریدار",
+        "کد مشتری",
+        "عنوان مشتری",
+        "کد/شناسه ملی/کدفراگیر/شناسه مشارکت مدنی",
+        "شماره اقتصادی",
+        "شماره پروانه گمركی فروشنده",
+        "كد گمرک محل اظهار",
+        "مجموع مبلغ قبل از كسر تخفیف",
+        "مجموع تخفیفات",
+        "مجموع مبلغ پس از كسر تخفیف",
+        "مجموع مالیات بر ارزش افزوده",
+        "مجموع سایر مالیات، عوارض و وجوه قانونی",
+        "مجموع صورتحساب",
+        "روش تسویه",
+        "مجموع مبلغ پرداختی نقدی",
+        "مبلغ پرداختی نقدی (مجموع مبلغ نقدی اقلام از پرداخت )",
+        "مجموع سهم نقدی مالیات بر ارزش افزوده از پرداخت",
+        "مجموع سهم نقدی سایر مالیات و عوارض از پرداخت",
+        "مجموع مبلغ نسیه کل",
+        "مجموع مبلغ نسیه اقلام",
+        "مجموع مبلغ نسیه مالیات بر ارزش افزوده",
+        "مجموع مبلغ نسیه سایر مالیات و عوارض",
+        "ورژن نرم افزار ارسال صورتحساب"
+      ],
+      "actions": [
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "پاک کردن",
+        "ویرایش",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "حذف (Ctrl+D)",
+        "ویرایش (Ctrl+L)",
+        "تایید همه / آماده سازی ارسال همه",
+        "تایید / آماده سازی ارسال",
+        "ارسال همه",
+        "ارسال",
+        "ارسال مجدد همه",
+        "ارسال مجدد",
+        "برگشت از تایید همه",
+        "بازگشت از تایید",
+        "حذف همه",
+        "استعلام همه",
+        "استعلام",
+        "تنظیمات لحظه جمع آوری صورتحساب",
+        "اطلاعات پرداخت صورتحساب",
+        "تایید صورتحساب در کارپوشه مودیان",
+        "رد صورتحساب در کارپوشه مودیان",
+        "بازگرداندن وضعیت صورتحساب در کارپوشه مودیان به حالت پیش فرض",
+        "تایید صورتحساب ها در کارپوشه به صورت دسته جمعی",
+        "رد صورتحساب ها در کارپوشه به صورت دسته جمعی",
+        "بازگرداندن وضعیت صورتحساب ها در کارپوشه به حالت پیش فرض به صورت دسته جمعی",
+        "تغییر تاریخ صورتحساب",
+        "بارگذاری مجدد( Ctrl+R)",
+        "دریافت اطلاع از تغییرات",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر( Ctrl+F)",
+        "انتخاب چند رکوردی( Ctrl+M)",
+        "ستونها",
+        "شناسه",
+        "شناسه یکتای صورتحساب",
+        "شناسه مرجع صورتحساب",
+        "شماره سریال صورت حساب",
+        "موضوع صورتحساب",
+        "دلیل ایجاد صورتحساب",
+        "شناسه لاگ",
+        "وضعیت",
+        "نوع موجودیت",
+        "وضعیت در کارپوشه مودیان",
+        "دلیل رد صورتحساب",
+        "دارای مبلغ منفی",
+        "شناسه موجودیت",
+        "تاریخ موجودیت",
+        "متن خطا",
+        "شماره",
+        "نوع صورت حساب",
+        "الگوی صورت حساب",
+        "کد اقتصادی فروشنده",
+        "کد شعبه خریدار",
+        "نوع شخص خریدار",
+        "کد مشتری",
+        "عنوان مشتری",
+        "کد/شناسه ملی/کدفراگیر/شناسه مشارکت مدنی",
+        "شماره اقتصادی",
+        "شماره پروانه گمركی فروشنده",
+        "كد گمرک محل اظهار",
+        "مجموع مبلغ قبل از كسر تخفیف",
+        "مجموع تخفیفات",
+        "مجموع مبلغ پس از كسر تخفیف",
+        "مجموع مالیات بر ارزش افزوده",
+        "مجموع سایر مالیات، عوارض و وجوه قانونی",
+        "مجموع صورتحساب",
+        "روش تسویه",
+        "مجموع مبلغ پرداختی نقدی",
+        "مبلغ پرداختی نقدی (مجموع مبلغ نقدی اقلام از پرداخت )",
+        "مجموع سهم نقدی مالیات بر ارزش افزوده از پرداخت",
+        "مجموع سهم نقدی سایر مالیات و عوارض از پرداخت",
+        "مجموع مبلغ نسیه کل",
+        "مجموع مبلغ نسیه اقلام",
+        "مجموع مبلغ نسیه مالیات بر ارزش افزوده",
+        "مجموع مبلغ نسیه سایر مالیات و عوارض",
+        "ورژن نرم افزار ارسال صورتحساب",
+        "محاسبه تعداد رکوردها و صفحات فهرست( Ctrl+K)",
+        "مدیریت فرم های چاپی ...",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "حذف",
+        "سایر عملیات",
+        "عملیات دسته جمعی",
+        "بارگذاری مجدد",
+        "عدم نمایش فیلتر",
+        "انتخاب چند رکوردی",
+        "چاپ"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/lists/settings",
+      "title": "لیست تنظیمات سامانه مالیاتی",
+      "sourcePages": [
+        "List.aspx?ComponentName=SystemGroup.General.TaxPayerManagement&EntityName=TaxPaymentProfile"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [],
+      "columns": [
+        "عنوان",
+        "نوع ارسال صورت حساب"
+      ],
+      "actions": [
+        "اجرای فیلتر",
+        "نمایش بدون فیلتر",
+        "حذف همه شرطها",
+        "پاک کردن",
+        "ویرایش",
+        "بارگذاری",
+        "حذف از لیست",
+        "ذخیره فیلتر",
+        "جدید (Ctrl+B)",
+        "حذف (Ctrl+D)",
+        "ویرایش (Ctrl+L)",
+        "بارگذاری مجدد( Ctrl+R)",
+        "دریافت اطلاع از تغییرات",
+        "ارسال به Excel",
+        "عدم نمایش فیلتر( Ctrl+F)",
+        "انتخاب چند رکوردی( Ctrl+M)",
+        "ستونها",
+        "شناسه",
+        "عنوان",
+        "نوع ارسال صورت حساب",
+        "محاسبه تعداد رکوردها و صفحات فهرست( Ctrl+K)",
+        "مدیریت فرم های چاپی ...",
+        "برای مرتب سازی اینجا کلیک کنید",
+        "بزرگتر از",
+        "کوچکتر از",
+        "بزرگتر یا مساوی",
+        "کوچکتر یا مساوی",
+        "جدید",
+        "حذف",
+        "بارگذاری مجدد",
+        "عدم نمایش فیلتر",
+        "انتخاب چند رکوردی",
+        "چاپ"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/middleware-information",
+      "title": "اطلاعات میدلور",
+      "sourcePages": [
+        "General/TaxPayerManagement/MiddlewareInformationPages/Info.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "آخرین تاریخ و زمان دریافت اطلاعات",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "ورژن میدلور",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "نام کامپیوتر",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "مسیر میدلور",
+          "type": "textarea",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "آدرس های IP",
+          "type": "textarea",
+          "disabled": false,
+          "sensitive": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "تغییر وضعیت (Ctrl+J)",
+        "اطلاعات اصلی",
+        "تاریخچه تغییر وضعیت",
+        "مکالمات",
+        "یادداشت",
+        "فرآیندهای مرتبط"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/operations/batch-schedules",
+      "title": "زمانبندی عملیات دسته جمعی",
+      "sourcePages": [],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "عنوان",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "عملیات دسته جمعی",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "زمان اجرا",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "زمان اجرا",
+          "type": "time",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "فاصله اجرا (روز)",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "موضوع صورتحساب",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "نوع صورتحساب",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "الگوی صورتحساب",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        }
+      ],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/reconciliation",
+      "title": "مغایرت گیری صورتحسابهای راهکاران و کارپوشه",
+      "sourcePages": [
+        "General/TaxPayerManagement/ConflictPages/TaxPayerBillConflictReport.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "عدم وجود صورتحساب در راهکاران",
+          "type": "checkbox",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "عدم وجود صورتحساب در کارپوشه",
+          "type": "checkbox",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "وضعیت صورتحساب",
+          "type": "checkbox",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "مغایرت مبلغی",
+          "type": "checkbox",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "وضعیت صورتحساب در کارپوشه",
+          "type": "checkbox",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "عملیات رد صورتحساب برای صورتحساب های \"رد موقت\"",
+          "type": "checkbox",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "صدور ابطال سیستمی برای توالی صورتحساب ها",
+          "type": "checkbox",
+          "disabled": false,
+          "sensitive": false
+        }
+      ],
+      "columns": [
+        "شماره مالیاتی صورتحساب",
+        "موضوع صورتحساب",
+        "وضعیت صورتحساب",
+        "مجموع صورتحساب",
+        "مالیات بر ارزش افزوده",
+        "تاریخ صدور صورتحساب"
+      ],
+      "actions": [
+        "ورود اطلاعات",
+        "عدم وجود صورتحساب در راهکاران",
+        "عدم وجود صورتحساب در کارپوشه",
+        "وضعیت صورتحساب",
+        "مغایرت مبلغی",
+        "وضعیت صورتحساب در کارپوشه",
+        "عملیات رد صورتحساب برای صورتحساب های \"رد موقت\"",
+        "صدور ابطال سیستمی برای توالی صورتحساب ها",
+        "شروع مغایرت گیری",
+        "شماره مالیاتی صورتحساب",
+        "موضوع صورتحساب",
+        "مجموع صورتحساب",
+        "مالیات بر ارزش افزوده",
+        "تاریخ صدور صورتحساب",
+        "جستجو (Ctrl+F)",
+        "ارسال به Excel",
+        "تعداد ردیف: 0"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/reports/bill-payment-information",
+      "title": "گزارش اطلاعات پرداخت صورتحسابهای مودیان",
+      "sourcePages": [
+        "menu-search:Financial.TaxPayer.TaxPayerReports.TaxPayerBillPaymentInformationReport"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "نوع سیستم",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "شناسه یکتای صورتحساب",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "شناسه موجودیت",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "نوع پرداخت",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        }
+      ],
+      "columns": [],
+      "actions": [],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/reports/uncollected-days",
+      "title": "گزارش روزهای جمع آوری نشده (روزانه - ماهانه)",
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "نوع سیستم",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "روزانه",
+          "type": "radio",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "ماهانه",
+          "type": "radio",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "از تاریخ",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "تا تاریخ",
+          "type": "date",
+          "disabled": false,
+          "sensitive": false
+        }
+      ],
+      "columns": [],
+      "blockers": [],
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/seller-information",
+      "title": "اطلاعات فروشنده",
+      "sourcePages": [
+        "General/TaxPayerManagement/TaxPayerSellerInformationPages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "عنوان فروشنده",
+          "type": "text",
+          "disabled": true,
+          "sensitive": false
+        },
+        {
+          "label": "نوع فروشنده",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "شناسه ملی",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "کد اقتصادی",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "شناسه مشارکت مدنی",
+          "type": "text",
+          "disabled": true,
+          "sensitive": false
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "ذخیره (Ctrl+S)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "dependency",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/send-invoices",
+      "title": "جمع آوری / ارسال صورتحساب",
+      "sourcePages": [
+        "General/TaxPayerManagement/TaxPayerBillPages/TaxPayerBillList.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "source-blocker",
+      "fields": [],
+      "columns": [],
+      "actions": [
+        "مشاهده اطلاعات بیشتر"
+      ],
+      "blockers": [
+        "خطای لایسنس مودیان"
+      ],
+      "legacyDeclaredSupport": "source-error",
+      "legacyImplementation": "evidence-only",
+      "preparedAdapter": "taxpayer",
+      "integratedInThisCandidate": false
+    },
+    {
+      "route": "taxpayer-system/settings",
+      "title": "تنظیمات سامانه مالیاتی",
+      "sourcePages": [
+        "General/TaxPayerManagement/TaxPaymentProfilePages/Edit.aspx"
+      ],
+      "evidenceDate": "2026-10-11",
+      "evidence": "observed-layout",
+      "fields": [
+        {
+          "label": "نوع ارسال صورت حساب",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "عنوان",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "شناسه حافظه مالیاتی",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "کلید خصوصی مودی",
+          "type": "textarea",
+          "disabled": false,
+          "sensitive": true
+        },
+        {
+          "label": "گواهی امضا",
+          "type": "textarea",
+          "disabled": false,
+          "sensitive": true
+        },
+        {
+          "label": "نام معتمد",
+          "type": "select",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "رمز سرویس معتمد",
+          "type": "password",
+          "disabled": false,
+          "sensitive": true
+        },
+        {
+          "label": "آدرس سرویس معتمد",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "نام کاربر سرویس معتمد",
+          "type": "text",
+          "disabled": false,
+          "sensitive": false
+        },
+        {
+          "label": "کلید سرویس معتمد",
+          "type": "text",
+          "disabled": false,
+          "sensitive": true
+        }
+      ],
+      "columns": [],
+      "actions": [
+        "جدید (Ctrl+B)",
+        "باز کردن (Ctrl+L)",
+        "پاک کردن",
+        "ویرایش",
+        "ذخیره (Ctrl+S)",
+        "ذخیره و جدید (Ctrl+Shift+B)",
+        "ذخیره و بستن (Ctrl+Shift+F4)",
+        "حذف و بستن",
+        "حذف و جدید",
+        "بارگذاری مجدد (Ctrl+R)",
+        "چاپ",
+        "فرم های چاپی را اضافه یا کم نمایید",
+        "دریافت اطلاع از تغییرات",
+        "اطلاعات اصلی",
+        "یادداشت"
+      ],
+      "blockers": [],
+      "legacyDeclaredSupport": "supported",
+      "legacyImplementation": "tax-settings",
+      "preparedAdapter": null,
+      "integratedInThisCandidate": false
+    }
+  ]
+}

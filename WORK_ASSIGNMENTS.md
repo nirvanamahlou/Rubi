@@ -1,3 +1,19 @@
+## ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
+
+COMPUTER_ID=PC-B confirmed by the user on 2026-10-12. Base origin/develop@4fe291b5;
+branch codex/pc-b-accounting-yearend-tax-audit-1012, isolated worktree.
+User requests a read-only Rahkaran crawl and completion of year-end, reports,
+taxpayer and tax accounting. User subsequently explicitly requires independent
+files only while PC-A ACCOUNTING-TREE-CLEANUP-1012 owns accounting-workspace.tsx.
+Reserve NEW accounting-completion-* API/Web/model/tests, scripts/accounting-completion-audit.ts and task evidence files;
+existing accounting source, shared workspace/navigation, contracts barrels,
+Prisma/schema/migrations, manifests/lockfiles and PC-A edits remain untouched.
+Bounded own status/assignment entries are coordination only. Integration is prepared
+as documented owner steps, not applied. No source business writes, record/credential
+imports or operational runtime/database changes. Existing Finance authorization,
+book/branch boundaries, Decimal amounts, immutable postings and external-provider
+gates remain mandatory. Full operational parity cannot be claimed before source
+blockers, shared integration and actual provider contracts are resolved.
 ## AGENCY-IMPORT-BLANKS-1012 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; isolated branch codex/pc-b-agency-import-blanks-1012 from origin/develop@08a7c20c. User requests agency XLSX upload with empty optional fields. Reserve Organizations workbook reader/validation/dialog and focused tests, bounded own status entries only. Read the supplied workbook without importing operational records. Accept missing optional columns and ignore blank formatted rows; inert phone/web/email hyperlinks must never be fetched or executed. Preserve required organization identity, populated-value validation, duplicate/no-overwrite semantics, formulas/macros/external-data rejection and size bounds. No schema, migration, dependency, shared API contract or operational data mutation. Main checkout and its concurrent hotel work remain untouched.
