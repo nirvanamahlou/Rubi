@@ -15,7 +15,40 @@ export async function proxyExecutiveSnapshot(
   configuredUrl: string | undefined,
   fetcher: typeof fetch = fetch,
 ): Promise<Response> {
-  const headers = {
+  return proxyRead(request, configuredUrl, '/v1/executive/snapshot', fetcher);
+}
+
+const actionNames = [
+  'daily-summary',
+  'sales-analysis',
+  'receivables-follow-up',
+];
+export async function proxyAssistantAction(
+  request: Request,
+  configuredUrl: string | undefined,
+  action: string,
+  fetcher: typeof fetch = fetch,
+): Promise<Response> {
+  if (!actionNames.includes(action))
+    return Response.json(
+      { error: { code: 'NOT_FOUND' } },
+      { status: 404, headers: { 'cache-control': 'private, no-store' } },
+    );
+  return proxyRead(
+    request,
+    configuredUrl,
+    `/v1/assistant/actions/${action}`,
+    fetcher,
+  );
+}
+
+async function proxyRead(
+  request: Request,
+  configuredUrl: string | undefined,
+  path: string,
+  fetcher: typeof fetch,
+): Promise<Response> {
+  const headers: Record<string, string> = {
     'cache-control': 'private, no-store',
     'x-content-type-options': 'nosniff',
   };
@@ -23,6 +56,7 @@ export async function proxyExecutiveSnapshot(
     Response.json({ error: { code } }, { status, headers });
   const cookie = tokenCookie(request.headers.get('cookie'));
   if (!cookie) return error(401, 'UNAUTHENTICATED');
+  if (request.method !== 'GET') return error(405, 'READ_ONLY');
   if (new URL(request.url).search) return error(400, 'INVALID_REQUEST');
   if (!configuredUrl) return error(503, 'NOT_CONFIGURED');
   try {
@@ -40,7 +74,7 @@ export async function proxyExecutiveSnapshot(
         ))
     )
       return error(503, 'NOT_CONFIGURED');
-    target.pathname = '/v1/executive/snapshot';
+    target.pathname = path;
     const response = await fetcher(target, {
       method: 'GET',
       headers: { accept: 'application/json', cookie },
@@ -48,6 +82,12 @@ export async function proxyExecutiveSnapshot(
       redirect: 'error',
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(12000)]),
     });
+    const correlation = response.headers.get('x-request-id');
+    if (
+      correlation &&
+      /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(correlation)
+    )
+      headers['x-request-id'] = correlation;
     if (!response.ok)
       return error(
         [401, 403, 429].includes(response.status) ? response.status : 503,

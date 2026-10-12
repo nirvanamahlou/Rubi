@@ -47,6 +47,9 @@ import { assistantCopy as c, type AssistantText } from '@/i18n/assistant-copy';
 import {
   assistantViews,
   loadExecutiveSnapshot,
+  loadAssistantAction,
+  type AssistantAction,
+  type AssistantActionResult,
   type AssistantLoadState,
   type AssistantView,
   type ExecutiveSnapshot,
@@ -177,18 +180,71 @@ function Trend({
 export function AssistantComposer({
   t,
   denied,
+  english = false,
 }: {
   t: Translate;
   denied: boolean;
+  english?: boolean;
 }) {
   const inputId = useId();
   const helpId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
   const [notSubmitted, setNotSubmitted] = useState(false);
+  const [actionResult, setActionResult] =
+    useState<AssistantActionResult | null>(null);
+  const [actionState, setActionState] = useState<AssistantLoadState | null>(
+    null,
+  );
+  const pending = useRef<AbortController | null>(null);
+  useEffect(() => () => pending.current?.abort(), []);
+  const prompts: readonly [AssistantText, AssistantAction][] = [
+    [c.quickDaily, 'daily-summary'],
+    [c.quickSales, 'sales-analysis'],
+    [c.quickReceivables, 'receivables-follow-up'],
+  ];
+  const run = async (action: AssistantAction) => {
+    if (denied) return;
+    pending.current?.abort();
+    const controller = new AbortController();
+    pending.current = controller;
+    setActionResult(null);
+    setNotSubmitted(false);
+    setActionState('loading');
+    try {
+      const result = await loadAssistantAction(action, controller.signal);
+      if (!controller.signal.aborted) {
+        setActionResult(result);
+        setActionState(null);
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        const message = error instanceof Error ? error.message : '';
+        setActionState(
+          message === 'HTTP_401'
+            ? 'unauthenticated'
+            : message === 'HTTP_403'
+              ? 'forbidden'
+              : message === 'HTTP_429'
+                ? 'rate-limited'
+                : 'unavailable',
+        );
+      }
+    }
+  };
   const submit = () => {
-    // Local draft only. Do not simulate a model response or transmit user content.
-    if (!denied && draft.trim()) setNotSubmitted(true);
+    if (denied || !draft.trim()) return;
+    const match = prompts.find(([label]) =>
+      label.some((text) => text === draft.trim()),
+    );
+    // User text is never transmitted; dispatch only an exact fixed capability.
+    if (match) void run(match[1]);
+    else {
+      pending.current?.abort();
+      setActionResult(null);
+      setActionState(null);
+      setNotSubmitted(true);
+    }
   };
   return (
     <section className={styles.composer} aria-labelledby={inputId + '-title'}>
@@ -212,6 +268,9 @@ export function AssistantComposer({
           value={draft}
           disabled={denied}
           onChange={(event) => {
+            pending.current?.abort();
+            setActionResult(null);
+            setActionState(null);
             setDraft(event.target.value);
             setNotSubmitted(false);
           }}
@@ -248,14 +307,14 @@ export function AssistantComposer({
             className={styles.composerSend}
             disabled={denied || !draft.trim()}
             aria-label={t(c.send)}
-            title={t(c.chatGate)}
+            title={t(c.fixedActions)}
           >
             <ArrowUp size={24} aria-hidden="true" />
           </button>
         </div>
       </form>
       <div className={styles.composerPrompts}>
-        {[c.quickDaily, c.quickSales, c.quickReceivables].map((prompt) => (
+        {prompts.map(([prompt, action]) => (
           <button
             key={prompt[1]}
             type="button"
@@ -264,6 +323,7 @@ export function AssistantComposer({
               setDraft(t(prompt));
               setNotSubmitted(false);
               input.current?.focus();
+              void run(action);
             }}
           >
             {t(prompt)}
@@ -272,9 +332,65 @@ export function AssistantComposer({
       </div>
       <div className={styles.composerFooter}>
         <p id={helpId} className={styles.composerHint} role="status">
-          {t(notSubmitted ? c.messageNotSubmitted : c.chatGate)}
+          {t(notSubmitted ? c.messageNotSubmitted : c.fixedActions)}
         </p>
       </div>
+      {!denied && actionState && (
+        <p role="status" className={styles.composerHint}>
+          {t(c.states[actionState])}
+        </p>
+      )}
+      {!denied && actionResult?.status === 'BLOCKED' && (
+        <p role="status" className={styles.composerHint}>
+          {t(
+            actionResult.reason === 'SALES_DEFINITION_REQUIRED'
+              ? c.salesDefinitionGate
+              : c.receivablesSourceGate,
+          )}
+        </p>
+      )}
+      {!denied && actionResult?.action === 'daily-summary' && (
+        <div className={styles.actionResult}>
+          <h2>{t(c.dailyTitle)}</h2>
+          <p className={styles.composerHint}>
+            <time dateTime={actionResult.snapshot.generatedAt}>
+              {t(c.asOf)}:{' '}
+              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+                timeZone: 'Asia/Tehran',
+              }).format(new Date(actionResult.snapshot.generatedAt))}
+            </time>
+          </p>
+          <p className={styles.composerHint}>{t(c.dailyCoverage)}</p>
+          {actionResult.snapshot.sources.some(
+            (source) => source.status === 'READY',
+          ) && (
+            <dl className={styles.actionCounts}>
+              {[
+                [c.visibleCount, actionResult.counts.visible],
+                [c.overdueCount, actionResult.counts.overdue],
+                [c.dueSoonCount, actionResult.counts.dueSoon],
+                [c.assignedCount, actionResult.counts.assigned],
+              ].map(([label, count]) => (
+                <div key={(label as AssistantText)[1]}>
+                  <dt>{t(label as AssistantText)}</dt>
+                  <dd>
+                    {new Intl.NumberFormat(english ? 'en-GB' : 'fa-IR').format(
+                      count as number,
+                    )}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          <PersonalFollowUps
+            t={t}
+            snapshot={actionResult.snapshot}
+            english={english}
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -604,7 +720,12 @@ export function ExecutivePanels({
   const denied = state === 'forbidden' || state === 'unauthenticated';
   return (
     <div className={styles.workspace} dir={english ? 'ltr' : 'rtl'}>
-      <AssistantComposer t={t} denied={denied} />
+      <AssistantComposer
+        key={denied ? 'denied' : 'active'}
+        t={t}
+        denied={denied}
+        english={english}
+      />
       <nav className={styles.tabs} aria-label={t(c.title)}>
         {assistantViews.map((id) => {
           const TabIcon = viewIcons[id];

@@ -6953,3 +6953,21 @@ Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint pa
 2026-10-12 human explicitly authorizes nirvanamahlou for this publication, overriding the recorded Amin-tech11 restriction for this task. Publish/PR/CI/merge use authenticated nirvanamahlou id100076016.
 
 PR791 CI follow-up reserves additive translations for140 observed chart/tax labels and generated API/legacy catalogues. Three English coverage/synchronization tests passed; operational forms and domain fields stay unchanged.
+
+## ASSISTANT-MVP-FOUNDATION-1012 — PC-C — READY_FOR_REVIEW
+
+Base: develop8deea508. User authorizes implementing the staged Enterprise plan.
+Reserve services/assistant server/tests/new action-contract module, Web assistant
+workspace/model/proxy/tests/copy/styles and one new fixed-action GET route,
+assistant README/task documentation, additive own status/plan/decision entries.
+No Reporting/Finance producer, IAM, schema, migration or dependency edits.
+First deliverable: deterministic personal daily summary and recommendation
+priority over existing bounded SELF reads; typed fixed-action dispatch for three
+MVP shortcuts; explicit business gates for unapproved sales metric and missing
+receivables producer. No LLM or user text transmission. Corporate definitions,
+processing policy and producer acceptance remain external gates, requested from
+owner. Acceptance: counts reconcile with visible evidence, no fabricated totals,
+source failure/denial and revocation fail closed, strict fixed-route allowlist,
+validated response and real UI shortcut execution, safe trace/audit, focused
+service/transport/schema/UI tests, lint/typecheck/build and full final CI before
+owner-authorized develop merge. No production rollout/pilot claimed.
