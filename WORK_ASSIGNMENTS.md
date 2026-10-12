@@ -6826,7 +6826,6 @@ Sole writer; reserve accounting-workspace.tsx home shortcut grid removal, scoped
 
 ACCOUNTING-EMPTY-HOME-1011 result: shortcut card grids removed from accounting landing/group pages. Existing navigation and record forms preserved. Authenticated browser verified /finance on rubi Web3100 without shortcut cards; bounded ESLint/typecheck and CI validate candidate. Frontend-only immutable image deployed on existing rubi Compose; no database/API changes.
 
-
 ## ASSISTANT-ALL-USERS-1011 — PC-C — READY_FOR_REVIEW
 
 User authorization: temporarily enable the assistant for all authenticated ERP
@@ -6863,7 +6862,6 @@ submission; inactive microphone/attachment must not request access. Preserve
 all authentication and source-data permissions. Acceptance: matching composer,
 RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
 Web build, all final-head CI before authorized develop merge and local activation.
-
 
 ## ACCOUNTING-TAX-PARITY-1011 — PC-A — IN_PROGRESS
 
@@ -6910,7 +6908,6 @@ draft behavior. No API, data, migration or dependency change. Acceptance: no
 Sources button, adjacent report/refresh controls, readable navy composer in both
 themes and RTL/LTR/mobile; focused existing tests, lint/typecheck/build, green
 final-head CI before authorized develop merge, then localhost activation.
-
 
 ## ACCOUNTING-COA-REPORTS-YEAREND-1011 — PC-A — IN_PROGRESS
 
