@@ -11,6 +11,7 @@ import {
   canUseMasterDataResource,
   hasAccessControl,
   IAM_PERMISSION_CODES,
+  MANUAL_ACCESS_ROLE_PREFIX,
 } from '@nora/contracts';
 import {
   createHash,
@@ -62,6 +63,10 @@ import type { RequestMetadata } from './iam.types';
 import type { IamStepUpPort } from './iam-step-up.port';
 import { MfaTotpService } from './mfa-totp';
 import { changeIamPassword, lockIamUser } from './password-change';
+import {
+  persistManualSnapshot,
+  manualUserInclude,
+} from './manual-user-access.service';
 
 interface AccessClaims {
   sub: string;
@@ -671,7 +676,10 @@ export class IamService implements IamStepUpPort {
       this.database.client.role.findMany({
         where: {
           isActive: true,
-          NOT: { code: { startsWith: 'personal-access-' } },
+          NOT: [
+            { code: { startsWith: 'personal-access-' } },
+            { code: { startsWith: MANUAL_ACCESS_ROLE_PREFIX } },
+          ],
         },
         include: { permissions: { include: { permission: true } } },
         orderBy: { name: 'asc' },
@@ -1086,6 +1094,11 @@ export class IamService implements IamStepUpPort {
     actor: AuthenticatedActor,
     metadata: RequestMetadata,
   ) {
+    if (
+      dto.code.startsWith(MANUAL_ACCESS_ROLE_PREFIX) ||
+      dto.code.startsWith('personal-access-')
+    )
+      throw new BadRequestException('پیشوند نقش اختصاصی رزرو شده است.');
     await this.assertPermissionsAssignable(dto.permissionIds, actor);
     const role = await this.database.client.role.create({
       data: {
@@ -1240,6 +1253,8 @@ export class IamService implements IamStepUpPort {
     metadata: RequestMetadata,
   ) {
     const profile = await this.managedAccess(dto, actor);
+    if (dto.manualAccessV3 && !profile?.managed)
+      throw new BadRequestException('انتخاب دسترسی دستی لازم است.');
     if (dto.roleIds) await this.assertRolesAssignable(dto.roleIds, actor);
     const passwordErrors = initialPasswordPolicyErrors(dto.password);
     if (passwordErrors.length || dto.password.length > 200)
@@ -1267,20 +1282,25 @@ export class IamService implements IamStepUpPort {
     const create = async (
       transaction: Pick<
         DatabaseService['client'],
-        'user' | 'permission' | 'role' | 'rolePermission'
+        'user' | 'permission' | 'role' | 'rolePermission' | 'userRole'
       >,
     ) => {
-      const assignedRoleIds = profile
-        ? [
-            await this.personalAccessRole(
-              transaction,
-              managedUserId,
-              { ...profile, deniedControlIds: profile.deniedControlIds ?? [] },
-              actor,
-            ),
-          ]
-        : dto.roleIds;
-      return transaction.user.create({
+      const assignedRoleIds = dto.manualAccessV3
+        ? []
+        : profile
+          ? [
+              await this.personalAccessRole(
+                transaction,
+                managedUserId,
+                {
+                  ...profile,
+                  deniedControlIds: profile.deniedControlIds ?? [],
+                },
+                actor,
+              ),
+            ]
+          : dto.roleIds;
+      const created = await transaction.user.create({
         data: {
           ...(profile ? { id: managedUserId } : {}),
           username,
@@ -1303,9 +1323,23 @@ export class IamService implements IamStepUpPort {
           status: true,
         },
       });
+      if (dto.manualAccessV3 && profile) {
+        await persistManualSnapshot(transaction, created.id, profile.title, {
+          permissionCodes: profile.permissionCodes,
+          screenIds: profile.screenIds,
+          allowedControlIds: USER_ACCESS_DENY_CONTROLS.filter(
+            (control) =>
+              !(profile.deniedControlIds ?? []).includes(control.id) &&
+              (control.kind === 'field' ||
+                control.id.startsWith('master-data.resource.') ||
+                profile.screenIds.includes(control.id)),
+          ).map((control) => control.id),
+        });
+      }
+      return created;
     };
     const user = profile
-      ? await this.database.client.$transaction(create)
+      ? await this.database.client.$transaction(create, { timeout: 60000 })
       : await create(this.database.client);
     await this.audit(
       actor.userId,
@@ -1362,6 +1396,15 @@ export class IamService implements IamStepUpPort {
         }),
       ]);
       if (!target) throw new NotFoundException('کاربر پیدا نشد.');
+      if (
+        (profile || dto.roleIds) &&
+        target.roles.some(({ role }) =>
+          role.code?.startsWith(MANUAL_ACCESS_ROLE_PREFIX),
+        )
+      )
+        throw new ConflictException(
+          'این حساب از دسترسی دستی استفاده می‌کند؛ فرم جدید دسترسی را باز کنید.',
+        );
       if (
         dto.accessRevision &&
         dto.accessRevision !== this.accessRevision(target)
@@ -1537,6 +1580,34 @@ export class IamService implements IamStepUpPort {
       async (transaction) => {
         await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
         if (status !== UserStatus.ACTIVE) {
+          const manualTarget = await transaction.userRole.findFirst({
+            where: {
+              userId,
+              role: { code: { startsWith: MANUAL_ACCESS_ROLE_PREFIX } },
+            },
+            select: { userId: true },
+          });
+          if (manualTarget) {
+            const users = await transaction.user.findMany({
+              where: { status: UserStatus.ACTIVE },
+              include: manualUserInclude,
+            });
+            const managers = users.filter((entry) => {
+              const codes = authenticatedPermissionCodes(entry.roles);
+              return (
+                codes.includes('iam.users.manage') &&
+                codes.includes('iam.users.read') &&
+                canViewScreen(codes, 'system.users')
+              );
+            });
+            if (
+              managers.some((entry) => entry.id === userId) &&
+              managers.length <= 1
+            )
+              throw new ConflictException(
+                'غیرفعال‌سازی آخرین مدیر دسترسی مجاز نیست.',
+              );
+          }
           const targetIsAdministrator = await transaction.userRole.findFirst({
             where: { userId, role: { code: 'administrator' } },
             select: { userId: true },
@@ -1802,6 +1873,7 @@ export class IamService implements IamStepUpPort {
       screenIds?: string[];
       deniedControlIds?: string[];
       roleIds?: string[];
+      manualAccessV3?: boolean;
     },
     actor: AuthenticatedActor,
     deferRestrictionDelegation = false,
@@ -1858,7 +1930,7 @@ export class IamService implements IamStepUpPort {
         'نقش، مجوزها و بخش‌های قابل مشاهده را کامل انتخاب کنید.',
       );
     const permissionIds = [...dto.permissionIds];
-    if (dto.screenIds.includes('sales.new-contract')) {
+    if (!dto.manualAccessV3 && dto.screenIds.includes('sales.new-contract')) {
       const masterDataRead = await this.database.client.permission.findUnique({
         where: { code: 'master_data.read' },
         select: { id: true },
@@ -1892,6 +1964,17 @@ export class IamService implements IamStepUpPort {
         );
     }
     const deniedControlIds = dto.deniedControlIds;
+    if (dto.manualAccessV3 && !isAdministrator) {
+      for (const control of USER_ACCESS_DENY_CONTROLS) {
+        if (
+          !(deniedControlIds ?? []).includes(control.id) &&
+          !this.canDelegateControl(actor, control.id, control.group)
+        )
+          throw new ForbiddenException(
+            'تغییر محدودیت خارج از دسترسی خودتان مجاز نیست.',
+          );
+      }
+    }
     for (const id of deniedControlIds ?? []) {
       const control = USER_ACCESS_DENY_CONTROLS.find((item) => item.id === id);
       if (!control || !isUserAccessControlId(id))
@@ -1899,6 +1982,7 @@ export class IamService implements IamStepUpPort {
       if (
         !isAdministrator &&
         !deferRestrictionDelegation &&
+        !dto.manualAccessV3 &&
         !this.canDelegateControl(actor, id, control.group)
       )
         throw new ForbiddenException(
@@ -2077,7 +2161,13 @@ export class IamService implements IamStepUpPort {
     });
     if (roles.length !== new Set(roleIds).size)
       throw new BadRequestException('یک یا چند نقش معتبر یا فعال نیست.');
-    if (roles.some((role) => role.code?.startsWith('personal-access-')))
+    if (
+      roles.some(
+        (role) =>
+          role.code?.startsWith('personal-access-') ||
+          role.code?.startsWith(MANUAL_ACCESS_ROLE_PREFIX),
+      )
+    )
       throw new BadRequestException(
         'نقش اختصاصی یک کاربر به کاربر دیگر واگذار نمی‌شود.',
       );

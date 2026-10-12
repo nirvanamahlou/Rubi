@@ -3,7 +3,9 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  USER_ACCESS_GROUPS,
+  MANUAL_ACCESS_SECTIONS,
+  manualSectionForPermission,
+  manualSectionForScreen,
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
   USER_JOB_TITLES,
@@ -17,6 +19,7 @@ import { Input } from '@/components/ui/form-controls';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
+import { ManualAccessEditor } from './manual-access-editor';
 import styles from './user-management.module.css';
 import { recommendRoleAccess } from './role-access-presets';
 import { RoleAccessProposal } from './role-access-proposal';
@@ -186,7 +189,9 @@ export function UserManagement() {
     [title, setTitle] = useState<string>(USER_JOB_TITLES[1]),
     [permissionIds, setPermissionIds] = useState<string[]>([]),
     [screenIds, setScreenIds] = useState<string[]>([]),
-    [deniedControlIds, setDeniedControlIds] = useState<string[]>([]),
+    [deniedControlIds, setDeniedControlIds] = useState<string[]>(
+      USER_ACCESS_DENY_CONTROLS.map((c) => c.id),
+    ),
     [branchIds, setBranchIds] = useState<string[]>([]),
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
@@ -296,8 +301,8 @@ export function UserManagement() {
       ).filter((id) => options.assignableScreenIds.includes(id)),
     );
     setDeniedControlIds(
-      USER_ACCESS_DENY_CONTROLS.filter((control) =>
-        codes.includes(denyPermission(control.id)),
+      USER_ACCESS_DENY_CONTROLS.filter(
+        (control) => !user || codes.includes(denyPermission(control.id)),
       ).map((control) => control.id),
     );
     setBranchIds(user?.branches.map((b) => b.branch.id) ?? []);
@@ -326,13 +331,6 @@ export function UserManagement() {
     saving.current = true;
     setBusy(true);
     setMessage('');
-    const managed = selected?.roles
-      .filter((item) => item.role.isActive)
-      .some((item) =>
-        item.role.permissions.some(
-          ({ permission }) => permission.code === 'ui.profile',
-        ),
-      );
     const originalBranchIds =
       selected?.branches.map((item) => item.branch.id).sort() ?? [];
     const branchesChanged =
@@ -340,8 +338,6 @@ export function UserManagement() {
       JSON.stringify(originalBranchIds);
     const access = selected
       ? {
-          ...(managed ? { accessTitle: title, permissionIds, screenIds } : {}),
-          deniedControlIds,
           accessRevision: selected.accessRevision,
           ...(branchesChanged ? { branchIds } : {}),
         }
@@ -364,6 +360,7 @@ export function UserManagement() {
               ? access
               : {
                   ...access,
+                  manualAccessV3: true,
                   displayName: fields.get('displayName'),
                   username: fields.get('username'),
                   ...(fields.get('email')
@@ -529,25 +526,28 @@ export function UserManagement() {
                     </label>
                   </div>
                 )}
-                <label className="grid gap-2">
-                  نقش کاربر
-                  <NativeSearchSelect
-                    disabled={editingLegacy}
-                    value={title}
-                    onChange={(e) => {
-                      setTitle(e.target.value);
-                      setProposalOpen(true);
-                    }}
-                    className={styles.roleSelect}
-                  >
-                    {USER_JOB_TITLES.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </NativeSearchSelect>
-                </label>
+                {!selected && (
+                  <label className="grid gap-2">
+                    عنوان شغلی
+                    <NativeSearchSelect
+                      disabled={editingLegacy}
+                      value={title}
+                      onChange={(e) => {
+                        setTitle(e.target.value);
+                        setProposalOpen(true);
+                      }}
+                      className={styles.roleSelect}
+                    >
+                      {USER_JOB_TITLES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </NativeSearchSelect>
+                  </label>
+                )}
                 {canManage &&
+                  !selected &&
                   !editingLegacy &&
                   (proposalOpen ? (
                     <RoleAccessProposal
@@ -578,181 +578,204 @@ export function UserManagement() {
                     />
                   ))}
                 </fieldset>
-                <div className={styles.accessHeading}>
-                  <strong>دسترسی به بخش‌های سامانه</strong>
-                  <span>
-                    تیک بخش را بزنید، سپس دسترسی زیربخش‌ها را تنظیم کنید.
-                  </span>
-                </div>
-                <Input
-                  aria-label="جست‌وجوی محدودیت‌های دسترسی"
-                  onChange={(event) =>
-                    setAccessControlSearch(event.target.value)
-                  }
-                  placeholder="جست‌وجوی بخش یا فیلد…"
-                  value={accessControlSearch}
-                />
-                <div
-                  ref={accessGrid}
-                  tabIndex={-1}
-                  aria-label="سفارشی‌سازی دسترسی‌ها"
-                  className={styles.accessGrid}
-                >
-                  {USER_ACCESS_GROUPS.map((group) => {
-                    const screens = USER_ACCESS_SCREENS.filter(
-                      (s) => s.group === group.id && !s.inheritFrom,
-                    );
-                    const controls = USER_ACCESS_DENY_CONTROLS.filter(
-                      (control) =>
-                        control.group === group.id &&
-                        accessControlLabel(control)
-                          .toLocaleLowerCase('fa')
-                          .includes(
-                            accessControlSearch.trim().toLocaleLowerCase('fa'),
-                          ),
-                    );
-                    const permissions = options.permissions.filter((p) =>
-                      group.prefixes.some(
-                        (prefix) =>
-                          p.code.startsWith(prefix + '.') ||
-                          p.code.startsWith(prefix + '-'),
-                      ),
-                    );
-                    const allowedScreens = screens.filter((s) =>
-                      options.assignableScreenIds.includes(s.id),
-                    );
-                    const allowedPermissions = permissions.filter(
-                      (p) =>
-                        options.canAssignAll ||
-                        actor?.permissions.some((code) => code === p.code),
-                    );
-                    const total =
-                      allowedScreens.length + allowedPermissions.length;
-                    const count =
-                      allowedScreens.filter((s) => screenIds.includes(s.id))
-                        .length +
-                      allowedPermissions.filter((p) =>
-                        permissionIds.includes(p.id),
-                      ).length;
-                    return (
-                      <AccessGroupCard
-                        key={group.id}
-                        id={group.id}
-                        title={group.title}
-                        count={count}
-                        total={total}
-                        onChange={(v) => {
-                          if (editingLegacy) return;
-                          setScreenIds(
-                            change(
-                              screenIds,
-                              allowedScreens.map((s) => s.id),
-                              v,
-                            ),
-                          );
-                          setPermissionIds(
-                            change(
-                              permissionIds,
-                              allowedPermissions.map((p) => p.id),
-                              v,
-                            ),
-                          );
-                        }}
-                      >
-                        <fieldset
-                          className={styles.childSection}
-                          disabled={editingLegacy}
-                        >
-                          <legend className="text-sm font-bold">
-                            بخش‌های قابل مشاهده
-                          </legend>
-                          {screens.map((s) => (
-                            <Check
-                              key={s.id}
-                              label={`${s.title}${inheritedCodes.includes(screenPermission(s.id)) ? ' — ارث‌رسیده از نقش' : ''}`}
-                              checked={screenIds.includes(s.id)}
-                              disabled={
-                                editingLegacy ||
-                                inheritedCodes.includes(
-                                  screenPermission(s.id),
-                                ) ||
-                                !options.assignableScreenIds.includes(s.id)
-                              }
-                              onChange={(v) =>
-                                setScreenIds(change(screenIds, [s.id], v))
-                              }
-                            />
-                          ))}
-                        </fieldset>
-                        {controls.length ? (
-                          <fieldset className={styles.childSection}>
-                            <legend className="text-sm font-bold">
-                              محدودیت‌های صریح (پیش‌فرض: ارث‌بری)
-                            </legend>
-                            {controls.map((control) => {
-                              const denied = deniedControlIds.includes(
-                                control.id,
+                {!selected && (
+                  <>
+                    <div className={styles.accessHeading}>
+                      <strong>دسترسی به بخش‌های سامانه</strong>
+                      <span>
+                        تیک بخش را بزنید، سپس دسترسی زیربخش‌ها را تنظیم کنید.
+                      </span>
+                    </div>
+                    <Input
+                      aria-label="جست‌وجوی محدودیت‌های دسترسی"
+                      onChange={(event) =>
+                        setAccessControlSearch(event.target.value)
+                      }
+                      placeholder="جست‌وجوی بخش یا فیلد…"
+                      value={accessControlSearch}
+                    />
+                    <div
+                      ref={accessGrid}
+                      tabIndex={-1}
+                      aria-label="سفارشی‌سازی دسترسی‌ها"
+                      className={styles.accessGrid}
+                    >
+                      {MANUAL_ACCESS_SECTIONS.map(([id, title]) => {
+                        const group = { id, title };
+                        const screens = USER_ACCESS_SCREENS.filter(
+                          (s) => manualSectionForScreen(s) === group.id,
+                        );
+                        const controls = USER_ACCESS_DENY_CONTROLS.filter(
+                          (control) =>
+                            control.group === group.id &&
+                            (control.kind === 'field' ||
+                              control.id.startsWith('master-data.resource.')) &&
+                            accessControlLabel(control)
+                              .toLocaleLowerCase('fa')
+                              .includes(
+                                accessControlSearch
+                                  .trim()
+                                  .toLocaleLowerCase('fa'),
+                              ),
+                        );
+                        const permissions = options.permissions.filter(
+                          (p) =>
+                            manualSectionForPermission(p.code) === group.id,
+                        );
+                        const allowedScreens = screens.filter((s) =>
+                          options.assignableScreenIds.includes(s.id),
+                        );
+                        const total = allowedScreens.length;
+                        const count = allowedScreens.filter((s) =>
+                          screenIds.includes(s.id),
+                        ).length;
+                        return (
+                          <AccessGroupCard
+                            key={group.id}
+                            id={group.id}
+                            title={group.title}
+                            count={count}
+                            total={total}
+                            onChange={(v) => {
+                              if (editingLegacy) return;
+                              setScreenIds(
+                                change(
+                                  screenIds,
+                                  allowedScreens.map((s) => s.id),
+                                  v,
+                                ),
                               );
-                              return (
-                                <Check
-                                  key={control.id}
-                                  label={`${accessControlLabel(control)} — ${inheritedCodes.includes(denyPermission(control.id)) ? 'محدودیت ارث‌رسیده از نقش' : denied ? 'محدود' : 'ارث‌بری'}`}
-                                  checked={!denied}
-                                  disabled={
-                                    inheritedCodes.includes(
-                                      denyPermission(control.id),
-                                    ) ||
-                                    !options.assignableControlIds.includes(
-                                      control.id,
-                                    )
-                                  }
-                                  onChange={(inherits) =>
-                                    setDeniedControlIds(
-                                      change(
-                                        deniedControlIds,
-                                        [control.id],
-                                        !inherits,
+                              setDeniedControlIds(
+                                change(
+                                  deniedControlIds,
+                                  allowedScreens
+                                    .map((s) => s.id)
+                                    .filter((id) =>
+                                      USER_ACCESS_DENY_CONTROLS.some(
+                                        (c) => c.id === id,
                                       ),
+                                    ),
+                                  !v,
+                                ),
+                              );
+                            }}
+                          >
+                            <fieldset
+                              className={styles.childSection}
+                              disabled={editingLegacy}
+                            >
+                              <legend className="text-sm font-bold">
+                                بخش‌های قابل مشاهده
+                              </legend>
+                              {screens.map((s) => (
+                                <Check
+                                  key={s.id}
+                                  label={`${s.title}${inheritedCodes.includes(screenPermission(s.id)) ? ' — ارث‌رسیده از نقش' : ''}`}
+                                  checked={screenIds.includes(s.id)}
+                                  disabled={
+                                    editingLegacy ||
+                                    inheritedCodes.includes(
+                                      screenPermission(s.id),
+                                    ) ||
+                                    !options.assignableScreenIds.includes(s.id)
+                                  }
+                                  onChange={(v) => {
+                                    setScreenIds(change(screenIds, [s.id], v));
+                                    if (
+                                      USER_ACCESS_DENY_CONTROLS.some(
+                                        (c) => c.id === s.id,
+                                      )
+                                    )
+                                      setDeniedControlIds(
+                                        change(deniedControlIds, [s.id], !v),
+                                      );
+                                  }}
+                                />
+                              ))}
+                            </fieldset>
+                            {controls.length ? (
+                              <fieldset className={styles.childSection}>
+                                <legend className="text-sm font-bold">
+                                  ویرایش فیلدها و دسترسی کاتالوگ (پیش‌فرض:
+                                  غیرفعال)
+                                </legend>
+                                {controls.map((control) => {
+                                  const denied = deniedControlIds.includes(
+                                    control.id,
+                                  );
+                                  return (
+                                    <Check
+                                      key={control.id}
+                                      label={accessControlLabel(control)}
+                                      checked={!denied}
+                                      disabled={
+                                        inheritedCodes.includes(
+                                          denyPermission(control.id),
+                                        ) ||
+                                        !options.assignableControlIds.includes(
+                                          control.id,
+                                        )
+                                      }
+                                      onChange={(inherits) =>
+                                        setDeniedControlIds(
+                                          change(
+                                            deniedControlIds,
+                                            [control.id],
+                                            !inherits,
+                                          ),
+                                        )
+                                      }
+                                    />
+                                  );
+                                })}
+                              </fieldset>
+                            ) : null}
+                            <fieldset
+                              className={styles.childSection}
+                              disabled={editingLegacy}
+                            >
+                              <legend className="text-sm font-bold">
+                                مجوزهای عملیات
+                              </legend>
+                              {permissions.map((p) => (
+                                <Check
+                                  key={p.id}
+                                  label={`${p.name}${inheritedCodes.includes(p.code) ? ' — ارث‌رسیده از نقش' : ''}`}
+                                  checked={permissionIds.includes(p.id)}
+                                  disabled={
+                                    editingLegacy ||
+                                    inheritedCodes.includes(p.code) ||
+                                    (!options.canAssignAll &&
+                                      !actor?.permissions.some(
+                                        (code) => code === p.code,
+                                      ))
+                                  }
+                                  onChange={(v) =>
+                                    setPermissionIds(
+                                      change(permissionIds, [p.id], v),
                                     )
                                   }
                                 />
-                              );
-                            })}
-                          </fieldset>
-                        ) : null}
-                        <fieldset
-                          className={styles.childSection}
-                          disabled={editingLegacy}
-                        >
-                          <legend className="text-sm font-bold">
-                            مجوزهای عملیات
-                          </legend>
-                          {permissions.map((p) => (
-                            <Check
-                              key={p.id}
-                              label={`${p.name}${inheritedCodes.includes(p.code) ? ' — ارث‌رسیده از نقش' : ''}`}
-                              checked={permissionIds.includes(p.id)}
-                              disabled={
-                                editingLegacy ||
-                                inheritedCodes.includes(p.code) ||
-                                (!options.canAssignAll &&
-                                  !actor?.permissions.some(
-                                    (code) => code === p.code,
-                                  ))
-                              }
-                              onChange={(v) =>
-                                setPermissionIds(
-                                  change(permissionIds, [p.id], v),
-                                )
-                              }
-                            />
-                          ))}
-                        </fieldset>
-                      </AccessGroupCard>
-                    );
-                  })}
-                </div>
-                {proposalOpen && !editingLegacy && (
+                              ))}
+                            </fieldset>
+                          </AccessGroupCard>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {selected && (
+                  <ManualAccessEditor
+                    key={selected.id}
+                    userId={selected.id}
+                    canManage={canManage}
+                    options={options}
+                    controlLabel={accessControlLabel}
+                    request={request}
+                    onSaved={load}
+                  />
+                )}
+                {proposalOpen && !selected && !editingLegacy && (
                   <p className="text-sm text-muted-foreground">
                     ذخیره، تیک‌های فعلی شما را ثبت می‌کند؛ برای استفاده از
                     پیشنهاد نقش، ابتدا «تأیید و اعمال پیشنهاد» را بزنید.
@@ -764,7 +787,11 @@ export function UserManagement() {
                     disabled={busy}
                     className={styles.saveButton}
                   >
-                    {busy ? 'در حال ذخیره…' : 'ذخیره کاربر و دسترسی‌ها'}
+                    {busy
+                      ? 'در حال ذخیره…'
+                      : selected
+                        ? 'ذخیره شعبه‌های کاربر'
+                        : 'ساخت کاربر با تیک‌های انتخاب‌شده'}
                   </Button>
                 )}
               </fieldset>

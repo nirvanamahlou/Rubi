@@ -32,6 +32,25 @@ const row = {
 };
 
 describe('MasterDataService', () => {
+  it('checks unchecked manual fields on updates without requiring legacy deny tokens', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue(row),
+      update: vi.fn(),
+    } as unknown as MasterDataRepository;
+    const service = new MasterDataService(repository);
+    const scoped: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.manual.v3',
+        'ui.allow.master-data.resource.countries',
+      ],
+    };
+    await expect(
+      service.update('countries', row.id, { name: 'changed' }, 1, scoped),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.update).not.toHaveBeenCalled();
+  });
   it('enforces additive resource and field restrictions before mutation while leaving reads shared', async () => {
     const repository = {
       list: vi.fn().mockResolvedValue({ rows: [row], total: 1 }),

@@ -17,8 +17,17 @@ describe('per-user screen visibility', () => {
       USER_ACCESS_PROFILE_PERMISSION,
     ];
     expect(
-      USER_ACCESS_SCREENS.filter((s) => s.id !== 'assistant.executive').every(
-        (s) => canViewScreen(permissions, s.id),
+      USER_ACCESS_SCREENS.filter(
+        (s) => !['assistant.executive', 'ticket-purchases.home'].includes(s.id),
+      ).every((s) => canViewScreen(permissions, s.id)),
+    ).toBe(true);
+    // The new purchasing checkbox mirrors the existing route's native grant requirement.
+    expect(canViewRoute(permissions, '/ticket-purchases')).toBe(false);
+    expect(canViewScreen(permissions, 'ticket-purchases.home')).toBe(false);
+    expect(
+      canViewScreen(
+        [...permissions, 'reservations.read'],
+        'ticket-purchases.home',
       ),
     ).toBe(true);
     expect(canViewScreen(permissions, 'assistant.executive')).toBe(true);
