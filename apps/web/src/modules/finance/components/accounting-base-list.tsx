@@ -867,6 +867,7 @@ export function AccountingBaseList({
     <section
       dir="rtl"
       aria-label={definition.title}
+      data-accounting-list
       className={`overflow-hidden border bg-surface ${compactList ? 'flex min-h-[70vh] flex-col rounded-sm [&_table]:text-xs [&_th]:border-e [&_th]:px-1 [&_th]:py-1 [&_td]:border-e [&_td]:px-2 [&_td]:py-1 [&_thead]:bg-sky-100/60 [&_thead_input]:h-7 [&_thead_select]:h-7 [&_thead_div]:rounded-sm' : 'rounded-2xl shadow-sm'}`}
     >
       <Button
@@ -928,6 +929,7 @@ export function AccountingBaseList({
         {renderListToolbar()}
       </header>
       <div
+        data-accounting-filter-bar
         className={`flex flex-wrap items-center gap-3 bg-muted/20 ${compactList ? 'order-first border-b p-1' : 'p-4'}`}
       >
         <div
@@ -991,6 +993,7 @@ export function AccountingBaseList({
       )}
       {showFilters && (
         <form
+          data-accounting-filter-panel
           aria-label="فیلتر پیشرفته"
           className="space-y-3 border-y bg-muted/20 p-4"
           onSubmit={(event) => {

@@ -54,10 +54,11 @@
 .formSurface :global(select),
 .formSurface :global(textarea),
 .formSurface :global(button[role='combobox']) {
-  border-radius: 0.8rem;
-  border-color: color-mix(in srgb, var(--input) 80%, #22d3ee);
-  background-color: color-mix(in srgb, var(--surface) 96%, #ecfeff);
-  box-shadow: inset 0 1px 2px rgb(15 45 66 / 0.035);
+  min-height: 2.65rem;
+  border-radius: 0.7rem;
+  border-color: color-mix(in srgb, var(--input) 88%, #0891b2);
+  background-color: var(--surface);
+  box-shadow: 0 1px 2px rgb(15 45 66 / 0.04);
   transition:
     border-color 150ms ease,
     box-shadow 150ms ease,
@@ -68,17 +69,141 @@
 .formSurface :global(select:focus),
 .formSurface :global(textarea:focus),
 .formSurface :global(button[role='combobox']:focus) {
-  border-color: #22b8cf;
-  box-shadow: 0 0 0 3px rgb(34 211 238 / 0.12);
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgb(8 145 178 / 0.13);
+}
+
+.formSurface :global(form),
+.formSurface :global([data-accounting-inline-form]),
+.formSurface :global(form[id^='accounting-']) {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, #0891b2);
+  border-radius: 1.2rem;
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgb(15 45 66 / 0.07);
+}
+
+.formSurface :global([data-accounting-inline-form] > [role='tablist']),
+.formSurface :global(section > [role='tablist']) {
+  min-height: 3rem;
+  padding-inline: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 58%, var(--surface));
+}
+
+.formSurface :global([role='tab']) {
+  min-height: 2.75rem;
+  padding-inline: 0.9rem;
+  border-bottom: 2px solid transparent;
+  color: var(--muted-foreground);
+  font-weight: 650;
+}
+
+.formSurface :global([role='tab'][aria-selected='true']) {
+  border-bottom-color: var(--primary);
+  color: var(--primary);
+}
+
+.formSurface :global(fieldset) {
+  min-width: 0;
+  border-color: color-mix(in srgb, var(--border) 85%, #0891b2);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 97%, #ecfeff);
+}
+
+.formSurface :global(legend) {
+  color: color-mix(in srgb, var(--foreground) 76%, #0e7490);
+  font-weight: 750;
+}
+
+.formSurface :global(label) {
+  color: color-mix(in srgb, var(--foreground) 82%, #334155);
+}
+
+.formSurface :global(input[type='checkbox']),
+.formSurface :global(input[type='radio']) {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #0891b2;
+}
+
+.formSurface :global([data-accounting-primary-toolbar]) {
+  position: sticky;
+  z-index: 8;
+  top: 0.5rem;
+  justify-content: flex-start;
+  gap: 0.45rem;
+  padding: 0.65rem;
+  border-color: color-mix(in srgb, var(--border) 82%, #0891b2);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 93%, #ecfeff);
+  box-shadow: 0 8px 22px rgb(15 45 66 / 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.formSurface :global([data-accounting-primary-toolbar] button) {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.65rem;
+}
+
+.formSurface :global([data-accounting-list]) {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgb(15 45 66 / 0.06);
+}
+
+.formSurface :global([data-accounting-list] > h2),
+.formSurface :global([data-accounting-list] > header) {
+  margin: 0;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--muted) 62%, var(--surface)),
+    color-mix(in srgb, var(--surface) 94%, #cffafe)
+  );
+}
+
+.formSurface :global([data-accounting-filter-bar]) {
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 40%, var(--surface));
+}
+
+.formSurface :global([data-accounting-filter-panel]) {
+  margin: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, #0891b2);
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 94%, #ecfeff);
+  box-shadow: 0 7px 22px rgb(15 45 66 / 0.055);
+}
+
+.formSurface :global([data-accounting-filter-card]) {
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+}
+
+.formSurface :global([data-accounting-filter-card] > summary) {
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 64%, var(--surface));
+  color: color-mix(in srgb, var(--foreground) 82%, #0e7490);
 }
 
 .formSurface :global(table) {
   overflow: hidden;
   border-radius: 1rem;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 .formSurface :global(th) {
-  background: color-mix(in srgb, var(--muted) 90%, #cffafe);
+  background: color-mix(in srgb, var(--muted) 82%, #cffafe);
   color: color-mix(in srgb, var(--foreground) 80%, #0e7490);
 }
 
@@ -88,6 +213,21 @@
 
 .formSurface :global(tbody tr:hover) {
   background: color-mix(in srgb, var(--muted) 72%, #ecfeff);
+}
+
+.formSurface :global(td),
+.formSurface :global(th) {
+  border-color: color-mix(in srgb, var(--border) 92%, #94a3b8);
+}
+
+@media (max-width: 639px) {
+  .formSurface :global([data-accounting-primary-toolbar]) {
+    position: static;
+  }
+
+  .formSurface :global([data-accounting-filter-panel]) {
+    margin-inline: 0.25rem;
+  }
 }
 
 :global(.dark) .workspace {

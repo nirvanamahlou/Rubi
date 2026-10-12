@@ -732,7 +732,12 @@ export function AccountingDocumentFilter({
     onApply(filter);
   };
   return (
-    <details className="rounded-lg border" data-document-shortcut-scope open>
+    <details
+      className="rounded-lg border"
+      data-document-shortcut-scope
+      data-accounting-filter-card
+      open
+    >
       <summary className="cursor-pointer bg-muted/30 px-3 py-2 text-sm font-bold">
         فیلتر
       </summary>

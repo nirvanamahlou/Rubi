@@ -360,6 +360,7 @@ export function AccountingChartEditor({
         />
         {draft && (
           <form
+            data-accounting-inline-form
             className="@container min-w-0 border border-slate-300 bg-white text-xs"
             onSubmit={(event) => {
               event.preventDefault();
