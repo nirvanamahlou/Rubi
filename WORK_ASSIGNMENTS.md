@@ -1,4 +1,10 @@
-## ACCOUNTING-COMPLETION-INTEGRATION-1012 — PC-B — READY_FOR_CI
+## ACCOUNTING-EMPTY-SELLER-1012 — PC-B — READY_FOR_CI
+
+Browser acceptance after PR803 found that a missing seller produces an empty HTTP body instead of the contracted JSON null. Reserve accounting-taxpayer.controller.ts and accounting-completion.controller.spec.ts plus own status entries. Branch codex/pc-b-accounting-empty-seller-1012 from develop@04acd08a. Preserve existing nullable API contract and all guards; no schema, dependency, permission or business-data changes. Existing user authorization covers correction, push, CI-gated merge and local refresh. Git fetch recovered. Local regression reproduced before correction; nine API tests, API TypeScript and scoped lint passed.
+
+## ACCOUNTING-COMPLETION-INTEGRATION-1012 — PC-B — MERGED
+
+PR803 merged at04acd08a after all checks passed; all merged-tree checks passed too. Deployed this exact tree to rubi Web3100/API4192. Authenticated threshold form renders; acceptance found the missing-seller response defect tracked above. All32 screens passed rendering tests; complete statutory returns/provider workflows remain outside this integration.
 
 User explicitly authorizes PC-B to connect the prepared accounting components on 2026-10-12, superseding the earlier independent-files-only hold. Base origin/develop@61167e61; branch codex/pc-b-accounting-completion-integration-1012 in the clean prior accounting worktree. PR799 and PR800 are merged and their source reservations released. Reserve finance.module.ts, AccountingCompletionModule, accounting-workspace.tsx, accounting-navigation-workspace.tsx, accounting-parity-definitions.ts, completion adapters, tax/taxpayer integration fixes and focused tests, plus this work entry and PROJECT_STATUS/task evidence. Reserve two new English overrides for the diagnostic-only notice and inherited reports label; no existing translation keys are changed. Root is sole writer. Preserve current authorization/book isolation, existing closing/opening commands and all provider/dependency gates. No schema, migration, dependency, IAM grant, source-system or operational business-data mutation. Existing session authorization covers push, exact-head CI-gated develop merge and refresh of PC-B rubi Compose Web3100/API4192 using the existing database/storage.
 

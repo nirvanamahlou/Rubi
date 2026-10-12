@@ -24,8 +24,13 @@ export class AccountingTaxpayerController {
   ) {}
   @Get('seller')
   @Header('Cache-Control', 'private, no-store')
-  seller(@Param('bookId') id: string, @Req() request: AuthenticatedRequest) {
-    return this.service.seller(id, request.actor);
+  @Header('Content-Type', 'application/json')
+  async seller(
+    @Param('bookId') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    // Nest sends a bare null as an empty body; the client expects valid JSON.
+    return JSON.stringify(await this.service.seller(id, request.actor));
   }
   @Post('seller')
   @RequirePermissions('finance.read', 'finance.account.manage')

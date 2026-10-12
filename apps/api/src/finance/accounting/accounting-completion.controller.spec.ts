@@ -58,6 +58,7 @@ describe('registered completion module HTTP boundary', () => {
     executionAvailable: false,
   }));
   const saveSeller = vi.fn();
+  const readSeller = vi.fn(async (): Promise<unknown> => null);
   beforeAll(async () => {
     // Discover the module through the real parent registration; omitting it must make HTTP tests fail.
     const imports = (
@@ -75,7 +76,7 @@ describe('registered completion module HTTP boundary', () => {
       .overrideProvider(AccountingCompletionService)
       .useValue({ journalLines, yearEndReadiness })
       .overrideProvider(AccountingTaxpayerService)
-      .useValue({ seller: async () => null, saveSeller })
+      .useValue({ seller: readSeller, saveSeller })
       .compile();
     app = module.createNestApplication();
     await app.init();
@@ -122,15 +123,31 @@ describe('registered completion module HTTP boundary', () => {
       .expect(200);
     expect(readiness.body.executionAvailable).toBe(false);
     expect(readiness.headers['cache-control']).toBe('private, no-store');
-    await request(app.getHttpServer())
+    const seller = await request(app.getHttpServer())
       .get('/finance/accounting/books/book/taxpayer/seller')
       .set('Cookie', `${ACCESS_COOKIE}=reader`)
       .expect(200);
+    expect(seller.headers['content-type']).toContain('application/json');
+    expect(JSON.parse(seller.text)).toBeNull();
+    expect(seller.headers['cache-control']).toBe('private, no-store');
     await request(app.getHttpServer())
       .post('/finance/accounting/books/book/taxpayer/seller')
       .set('Cookie', `${ACCESS_COOKIE}=reader`)
       .send({})
       .expect(403);
     expect(saveSeller).not.toHaveBeenCalled();
+  });
+  it('preserves the populated seller JSON object and authorized scope', async () => {
+    const profile = { version: 1, values: {} };
+    readSeller.mockResolvedValueOnce(profile);
+    const response = await request(app.getHttpServer())
+      .get('/finance/accounting/books/book/taxpayer/seller')
+      .set('Cookie', `${ACCESS_COOKIE}=reader`)
+      .expect(200);
+    expect(response.body).toEqual(profile);
+    expect(readSeller).toHaveBeenLastCalledWith(
+      'book',
+      expect.objectContaining({ branchIds: ['synthetic'] }),
+    );
   });
 });
