@@ -1,3 +1,19 @@
+## 2026-10-12 — ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
+
+Accounting now uses a distinct Rubi Finance OS visual language: navy/cyan workspace
+hero, modern dark secondary navigation, pill route tabs and scoped contemporary
+form/table surfaces. Existing forms, routes, commands, permissions and `bookId` context
+are preserved. Accounting Journal, General Ledger Document, Automatic Journal Template,
+Revaluation Template and Revaluation now occur exactly once in navigation and only below
+Documents → `فهرست`; editor routes remain available from their list actions and tab
+catalogue. Focused test1/1, scoped ESLint, full Web TypeScript and production build59
+routes pass. Isolated3112 preview reached the expected secure Login, but authenticated
+visual/data QA is deferred to the merged local runtime because no preview credential or
+session was available; authentication was not bypassed. Web/docs only, with no API,
+schema, migration, dependency, permission or operational-data change. User authorizes
+exact-head CI-gated develop merge and local Rubi runtime refresh. See
+docs/tasks/ACCOUNTING-UI-REDESIGN-1012.md.
+
 ## 2026-10-11 — USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
 
 Implemented additive section/resource restrictions and 421 edit-only controls: 357 master-data pairs, 17 customer fields and 47 persisted system-setting groups. Active UI consumers and bounded API writes enforce explicit restrictions. Missing document/tour detail tabs inherit their previously authorized parents. Access-editor saves preserve shared/inactive memberships, out-of-scope and unknown grants, omitted restrictions and unchanged branches; stale snapshots and unauthorized restriction removal are rejected. User required continuation without Worker Orchestrator; lead completed and reviewed directly. No migration, account backfill, seed, dependency, operational DB or shared3100 runtime change. Exact-head CI and authorized develop merge remain pending; final merge evidence belongs to the delivery PR. See docs/tasks/USER-ACCESS-COMPLETENESS-1011.md for boundary limitations and tests.

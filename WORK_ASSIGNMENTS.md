@@ -1,3 +1,27 @@
+## ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-ui-redesign-1012` from
+`origin/develop@08a7c20c`. The owner directly requests a complete visual redesign of
+Accounting that is visibly distinct from Rahkaran while preserving the existing forms,
+routes, permissions, commands and functional coverage. In Documents, Accounting
+Journal, General Ledger Document, Automatic Journal Template, Revaluation Template and
+Revaluation must exist only below the `فهرست` navigation subgroup. Reserve Finance Web
+accounting navigation/shell styling, focused navigation/presentation tests, this work
+record and `docs/tasks/ACCOUNTING-UI-REDESIGN-1012.md`. No API, shared contract, schema,
+migration, dependency/lockfile, permission, operational data or external-system change.
+The stale `ACCOUNTING-ICON-TOOLBAR-1008` branch is already an ancestor of develop; its
+implemented behavior is preserved and this unit does not revive any unmerged delta.
+User authorizes push, PR, exact-head CI repair, merge to develop and local Rubi runtime
+refresh. Root agent is the sole writer; no delegation. Delivered a Rubi-native dark
+navy/cyan accounting shell, responsive navigation, modern route tabs and scoped
+form/table surface treatment while preserving all functional components. The five
+requested document destinations occur exactly once and only below `فهرست`; hidden
+editor routes remain tab-addressable from their lists. Focused navigation test1/1,
+scoped ESLint, full Web TypeScript and production build59 routes pass. Isolated3112
+preview correctly reached authenticated login; authenticated visual/data QA is deferred
+to the merged local runtime because no preview session/credential was available. Source
+locks release at candidate freeze; exact-head CI remains the merge gate.
+
 ## USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
 
 User explicitly authorizes repairing IAM screen/section/field controls, preserving every existing user's access, pushing and merging to develop after final-head checks. Base origin/develop@68987832; reused isolated Rubi-api-audit-0928 checkout on codex/pc-b-user-access-completeness-1011. IAM contracts/API/Web catalogue, additive restrictions, bounded consumer guards and preservation tests implemented. User subsequently required direct continuation without Worker Orchestrator; parallel implementation stopped and lead completed/reviewed source directly. New controls inherit actual legacy behavior; only explicit authorized saves alter restrictions. No account backfill, seed, migration, dependency, operational database or shared runtime changes. Canonical administrator and executive-only rules, branch/domain/sensitive-read checks preserved. Source locks release at candidate freeze; merge requires exact-head full CI. Coverage and precise UI/edit-only/API boundaries: docs/tasks/USER-ACCESS-COMPLETENESS-1011.md.
