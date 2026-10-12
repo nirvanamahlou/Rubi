@@ -1,5 +1,18 @@
 # برنامه اجرای Nora
 
+## ASSISTANT-PHASE1-COMPLETION-1012
+
+- [x] Human permits separate contractual balances; Finance receivables deferred.
+- [x] Exact discounted contract amounts and authorized balance source.
+- [x] Logged-CALL conversion through accepted handoff and Sales public reader.
+- [x] Corporate sections in SELF daily summary; no model transfer.
+- [x] Real isolated PostgreSQL/HTTP/Web acceptance,61 targeted tests and builds.
+- [ ] Local read publication after final CI; preserve shared Core.
+- [ ] Final checks/CI, develop merge and post-merge CI.
+- [ ] Approved commercial adjustment/net-sales source and business reconciliation.
+
+Scope/limits: docs/tasks/ASSISTANT-PHASE1-COMPLETION-1012.md.
+
 ## DASHBOARD-REPORTING-LATEST-009 — runtime مشترک
 
 - [x] ترکیب آخرین Dashboard و Reports، اتصال route نهایی Dashboard و اعتبارسنجی

@@ -3,6 +3,14 @@ import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { actionFromPath, blockedAction, dailySummary } from './actions.mjs';
 import { validSalesSource, projectSalesSource } from './sales-source.mjs';
+import {
+  validBalanceSource,
+  projectBalanceSource,
+} from './balances-source.mjs';
+import {
+  validConversionSource,
+  projectConversionSource,
+} from './conversion-source.mjs';
 
 export const EXECUTIVE_PERMISSION = 'ui.screen.assistant.executive';
 const TOOLS = Object.freeze([
@@ -122,12 +130,14 @@ export function personalFollowUps(tool, rows, now) {
 }
 export function createAssistantServer({
   erpBaseUrl,
+  erpReportsBaseUrl = erpBaseUrl,
   fetcher = fetch,
   audit = (event) => process.stdout.write(JSON.stringify(event) + '\n'),
   timeoutMs = 2500,
   now = () => new Date(),
 }) {
   const base = configuredErpOrigin(erpBaseUrl);
+  const reportBase = configuredErpOrigin(erpReportsBaseUrl);
   const windows = new Map();
   let inFlight = 0;
   function withinLimit(key, limit) {
@@ -141,7 +151,12 @@ export function createAssistantServer({
   }
   async function read(path, cookie, signal) {
     try {
-      const response = await fetcher(base + path, {
+      const isReport = [
+        '/sales/assistant/weekly',
+        '/sales/assistant/contract-balances',
+        '/customer-affairs/assistant/call-conversion',
+      ].includes(path);
+      const response = await fetcher((isReport ? reportBase : base) + path, {
         method: 'GET',
         headers: { accept: 'application/json', cookie },
         redirect: 'error',
@@ -240,28 +255,37 @@ export function createAssistantServer({
         actorId = actor.userId;
         if (!withinLimit(`user:${actorId}`, 12))
           throw new ServiceError(429, 'RATE_LIMITED');
-        if (action === 'sales-analysis') {
-          if (!actor.permissions.includes('sales.contracts.read.all'))
-            throw new ServiceError(403, 'FORBIDDEN');
+        if (action === 'sales-analysis' || action === 'receivables-follow-up') {
+          const balances = action === 'receivables-follow-up';
+          const allowed = (principal) =>
+            principal.permissions.includes('sales.contracts.read.all') &&
+            (!balances ||
+              principal.permissions.includes('sales.payments.read'));
+          const validate = balances ? validBalanceSource : validSalesSource;
+          const project = balances ? projectBalanceSource : projectSalesSource;
+          const tool = balances ? 'sales.contract-balances' : 'sales.weekly';
+          if (!allowed(actor)) throw new ServiceError(403, 'FORBIDDEN');
           const beforeSales = await authenticate(
             cookie,
             deadline.signal,
             actorId,
           );
-          if (!beforeSales.permissions.includes('sales.contracts.read.all'))
-            throw new ServiceError(403, 'FORBIDDEN');
+          if (!allowed(beforeSales)) throw new ServiceError(403, 'FORBIDDEN');
           let report;
+          let conversion;
           let failure = 'SOURCE_UNAVAILABLE';
           try {
             report = await read(
-              '/sales/assistant/weekly',
+              balances
+                ? '/sales/assistant/contract-balances'
+                : '/sales/assistant/weekly',
               cookie,
               deadline.signal,
             );
-            if (!validSalesSource(report))
+            if (!validate(report))
               throw new ServiceError(502, 'INVALID_SOURCE');
-            report = projectSalesSource(report);
-            toolOutcomes.push({ tool: 'sales.weekly', outcome: 'SUCCESS' });
+            report = project(report);
+            toolOutcomes.push({ tool, outcome: 'SUCCESS' });
           } catch (error) {
             if (
               error instanceof ServiceError &&
@@ -281,16 +305,62 @@ export function createAssistantServer({
               ].includes(error.message)
             )
               failure = error.message;
-            toolOutcomes.push({ tool: 'sales.weekly', outcome: 'FAILED' });
+            toolOutcomes.push({ tool, outcome: 'FAILED' });
           }
           const afterSales = await authenticate(
             cookie,
             deadline.signal,
             actorId,
           );
-          if (!afterSales.permissions.includes('sales.contracts.read.all'))
-            throw new ServiceError(403, 'FORBIDDEN');
-          outcome = report && validSalesSource(report) ? 'PARTIAL' : 'BLOCKED';
+          if (!allowed(afterSales)) throw new ServiceError(403, 'FORBIDDEN');
+          if (!balances && report) {
+            conversion = { status: 'DENIED' };
+            if (afterSales.permissions.includes('customer_affairs.lead.read')) {
+              try {
+                const value = await read(
+                  '/customer-affairs/assistant/call-conversion',
+                  cookie,
+                  deadline.signal,
+                );
+                if (
+                  !validConversionSource(value) ||
+                  value.current.startUtc !== report.current.startUtc ||
+                  value.current.endUtc !== report.current.endUtc
+                )
+                  throw new ServiceError(502, 'INVALID_SOURCE');
+                conversion = {
+                  status: 'READY',
+                  report: projectConversionSource(value),
+                };
+                toolOutcomes.push({
+                  tool: 'customer-affairs.call-conversion',
+                  outcome: 'SUCCESS',
+                });
+              } catch (error) {
+                if (
+                  error instanceof ServiceError &&
+                  [401, 403].includes(error.status)
+                )
+                  throw error;
+                conversion = { status: 'UNAVAILABLE' };
+                toolOutcomes.push({
+                  tool: 'customer-affairs.call-conversion',
+                  outcome: 'FAILED',
+                });
+              }
+              const finalActor = await authenticate(
+                cookie,
+                deadline.signal,
+                actorId,
+              );
+              if (
+                !allowed(finalActor) ||
+                !finalActor.permissions.includes('customer_affairs.lead.read')
+              )
+                throw new ServiceError(403, 'FORBIDDEN');
+            }
+          }
+          outcome = report && validate(report) ? 'PARTIAL' : 'BLOCKED';
           send(
             200,
             outcome === 'PARTIAL'
@@ -300,16 +370,10 @@ export function createAssistantServer({
                   status: 'PARTIAL',
                   scope: 'ALL_AUTHORIZED_SALES',
                   report,
+                  ...(!balances ? { conversion } : {}),
                 }
               : { ...blockedAction(action, now().toISOString()), failure },
           );
-          return;
-        }
-        if (action === 'receivables-follow-up') {
-          await authenticate(cookie, deadline.signal, actorId);
-          outcome = 'BLOCKED';
-          // No business source or model is called while its acceptance gate is open.
-          send(200, blockedAction(action, now().toISOString()));
           return;
         }
         const observedAt = now();
@@ -350,7 +414,81 @@ export function createAssistantServer({
             toolOutcomes.push({ tool: tool.id, outcome: 'FAILED' });
           }
         }
-        await authenticate(cookie, deadline.signal, actorId);
+        const finalPersonalActor = await authenticate(
+          cookie,
+          deadline.signal,
+          actorId,
+        );
+        let corporate;
+        if (action === 'daily-summary') {
+          corporate = {
+            sales: { status: 'DENIED' },
+            balances: { status: 'DENIED' },
+          };
+          const definitions = [
+            {
+              key: 'sales',
+              path: '/sales/assistant/weekly',
+              permission: ['sales.contracts.read.all'],
+              valid: validSalesSource,
+              project: projectSalesSource,
+            },
+            {
+              key: 'balances',
+              path: '/sales/assistant/contract-balances',
+              permission: ['sales.contracts.read.all', 'sales.payments.read'],
+              valid: validBalanceSource,
+              project: projectBalanceSource,
+            },
+          ];
+          await Promise.all(
+            definitions.map(async (definition) => {
+              if (
+                !definition.permission.every((permission) =>
+                  finalPersonalActor.permissions.includes(permission),
+                )
+              )
+                return;
+              try {
+                const value = await read(
+                  definition.path,
+                  cookie,
+                  deadline.signal,
+                );
+                if (!definition.valid(value))
+                  throw new ServiceError(502, 'INVALID_SOURCE');
+                corporate[definition.key] = {
+                  status: 'READY',
+                  report: definition.project(value),
+                };
+                toolOutcomes.push({ tool: definition.key, outcome: 'SUCCESS' });
+              } catch (error) {
+                if (
+                  error instanceof ServiceError &&
+                  [401, 403].includes(error.status)
+                )
+                  throw error;
+                corporate[definition.key] = { status: 'UNAVAILABLE' };
+                toolOutcomes.push({ tool: definition.key, outcome: 'FAILED' });
+              }
+            }),
+          );
+          const releaseActor = await authenticate(
+            cookie,
+            deadline.signal,
+            actorId,
+          );
+          if (
+            definitions.some(
+              (definition) =>
+                corporate[definition.key].status === 'READY' &&
+                !definition.permission.every((permission) =>
+                  releaseActor.permissions.includes(permission),
+                ),
+            )
+          )
+            throw new ServiceError(403, 'FORBIDDEN');
+        }
         const unique = [
           ...new Map(followUps.map((item) => [item.id, item])).values(),
         ].sort(
@@ -379,7 +517,9 @@ export function createAssistantServer({
         };
         send(
           200,
-          action === 'daily-summary' ? dailySummary(snapshot) : snapshot,
+          action === 'daily-summary'
+            ? { ...dailySummary(snapshot), corporate }
+            : snapshot,
         );
       } catch (error) {
         const status = error instanceof ServiceError ? error.status : 503;
@@ -420,6 +560,8 @@ if (
 ) {
   const service = createAssistantServer({
     erpBaseUrl: process.env.ERP_API_BASE_URL,
+    erpReportsBaseUrl:
+      process.env.ERP_REPORTS_API_BASE_URL ?? process.env.ERP_API_BASE_URL,
   });
   const port = Number(process.env.ASSISTANT_PORT ?? 4300);
   if (!Number.isInteger(port) || port < 1 || port > 65535)

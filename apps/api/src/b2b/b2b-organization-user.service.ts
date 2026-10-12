@@ -6,12 +6,14 @@ import {
 } from '@nestjs/common';
 import {
   B2B_DOSSIER_SECTIONS,
+  MANUAL_ACCESS_VERSION,
   type AuthenticatedActor,
   type B2bOrganizationUser,
   type B2bDossierSection,
   type B2bPortalSection,
 } from '@nora/contracts';
 import { IamService } from '../iam/iam.service';
+import { authenticatedPermissionCodes } from '../iam/authenticated-permissions';
 import { passwordPolicyErrors } from '../iam/password-policy';
 import type { RequestMetadata } from '../iam/iam.types';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
@@ -81,13 +83,18 @@ export class B2bOrganizationUserService {
     const identities = new Map(directory.map((u) => [u.id, u]));
     return rows.map((row) => {
       const user = identities.get(row.userId);
+      const codes = user ? authenticatedPermissionCodes(user.roles) : [];
       return {
         id: row.id,
         userId: row.userId,
         organizationId: row.organizationId,
         branchId: row.branchId,
         roleName: row.roleName,
-        sections: row.sections as B2bDossierSection[],
+        sections: codes.includes(MANUAL_ACCESS_VERSION)
+          ? B2B_DOSSIER_SECTIONS.filter((s) =>
+              codes.some((p) => p === `b2b.portal.section.${s.id}`),
+            ).map((s) => s.id)
+          : (row.sections as B2bDossierSection[]),
         isActive: row.isActive,
         reason: '',
         version: row.version,
@@ -160,6 +167,29 @@ export class B2bOrganizationUserService {
     await this.manageScope(org, input.branchId, actor, true);
     this.validate(input);
     if (!input.version) throw new BadRequestException('نسخه کاربر لازم است.');
+    const current = (await this.repository.list(org, input.branchId)).find(
+      (u) => u.id === id,
+    );
+    if (current) {
+      const identity = (await this.iam.listUsers()).find(
+        (u) => u.id === current.userId,
+      );
+      if (
+        identity &&
+        authenticatedPermissionCodes(identity.roles).includes(
+          MANUAL_ACCESS_VERSION,
+        )
+      ) {
+        const [effective] = await this.records([current]);
+        if (
+          JSON.stringify([...input.sections].sort()) !==
+          JSON.stringify([...effective!.sections].sort())
+        )
+          throw new BadRequestException(
+            'تیک‌های این کاربر را از مدیریت کاربران و دسترسی دستی تغییر دهید.',
+          );
+      }
+    }
     const row = await this.repository.save(org, input, actor.userId, id);
     return { data: { id: row.id, version: row.version } };
   }
@@ -178,7 +208,19 @@ export class B2bOrganizationUserService {
         displayName: record!.displayName,
         organizationName: org.displayName || org.legalName,
         roleName: row.roleName,
-        sections: row.sections,
+        canViewPassengers: actor.permissions.includes(
+          'b2b.portal.passengers.read',
+        ),
+        canEditPassengers: actor.permissions.includes(
+          'b2b.portal.passengers.update',
+        ),
+        sections: actor.permissions.includes(MANUAL_ACCESS_VERSION)
+          ? B2B_DOSSIER_SECTIONS.filter((section) =>
+              actor.permissions.some(
+                (p) => p === `b2b.portal.section.${section.id}`,
+              ),
+            ).map((s) => s.id)
+          : row.sections,
       },
     };
   }
@@ -188,7 +230,12 @@ export class B2bOrganizationUserService {
   ): Promise<{ data: B2bPortalSection }> {
     const { row, org } = await this.member(actor);
     const definition = B2B_DOSSIER_SECTIONS.find((s) => s.id === section);
-    if (!definition || !row.sections.includes(section))
+    if (
+      !definition ||
+      (actor.permissions.includes(MANUAL_ACCESS_VERSION)
+        ? !actor.permissions.some((p) => p === `b2b.portal.section.${section}`)
+        : !row.sections.includes(section))
+    )
       throw new ForbiddenException('اجازه مشاهده این بخش را ندارید.');
     const result: B2bPortalSection = { title: definition.label, rows: [] };
     if (section === 'organization') {

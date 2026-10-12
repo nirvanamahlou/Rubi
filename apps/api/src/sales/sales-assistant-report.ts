@@ -1,3 +1,5 @@
+import type { SalesPriceComponentInput } from '@nora/contracts';
+import { calculateSalesBalances, sumSalesDecimals } from './sales.domain';
 export const SALES_ASSISTANT_STATUSES = [
   'CONFIRMED',
   'SENT_TO_RESERVATIONS',
@@ -79,6 +81,7 @@ export interface AssistantContractFact {
   originId: string;
   destinationId: string;
   _count: { passengers: number };
+  priceComponents?: readonly SalesPriceComponentInput[];
 }
 
 export function buildSalesAssistantReport(
@@ -132,6 +135,29 @@ export function buildSalesAssistantReport(
         (total, fact) => total + fact._count.passengers,
         0,
       ),
+      ...(facts.every((fact) => fact.priceComponents !== undefined)
+        ? {
+            contractAmountsBeforeRefunds: [
+              ...new Set(
+                selected.flatMap((fact) =>
+                  fact.priceComponents!.map((row) => row.currencyCode),
+                ),
+              ),
+            ]
+              .sort()
+              .map((currencyCode) => ({
+                currencyCode,
+                amount: sumSalesDecimals(
+                  selected
+                    .flatMap((fact) =>
+                      calculateSalesBalances(fact.priceComponents!, []),
+                    )
+                    .filter((row) => row.currencyCode === currencyCode)
+                    .map((row) => row.amount),
+                ),
+              })),
+          }
+        : {}),
       routes: [...routes.values()].sort(
         (a, b) =>
           b.contractCount - a.contractCount ||

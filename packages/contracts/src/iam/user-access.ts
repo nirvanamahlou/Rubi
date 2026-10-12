@@ -4,6 +4,7 @@ import {
   hasAccessControl,
   masterDataResourceParentScreen,
 } from './user-access-controls';
+import { MANUAL_ACCESS_VERSION } from './manual-access';
 
 /** IAM-owned screen catalog consumed by the central Web access controls. */
 export const USER_JOB_TITLES = [
@@ -2238,6 +2239,11 @@ export function hasManagedAccess(permissions: readonly string[]) {
   return permissions.includes(USER_ACCESS_PROFILE_PERMISSION);
 }
 function hasGroupPermission(permissions: readonly string[], groupId: string) {
+  if (permissions.includes(MANUAL_ACCESS_VERSION))
+    return USER_ACCESS_SCREENS.some(
+      (screen) =>
+        screen.group === groupId && canViewScreen(permissions, screen.id),
+    );
   // Shared assistant shell; source APIs still authorize each authenticated user.
   if (groupId === 'assistant') return true;
   if (groupId === 'correspondence') return true;
@@ -2265,7 +2271,32 @@ export function canViewScreen(
   permissions: readonly string[],
   id: string,
 ): boolean {
+  if (permissions.includes(MANUAL_ACCESS_VERSION))
+    return (
+      USER_ACCESS_SCREENS.some((screen) => screen.id === id) &&
+      permissions.includes(screenPermission(id)) &&
+      !permissions.includes(denyPermission(id))
+    );
   if (id === 'assistant.executive') return true;
+  if (id === 'ticket-purchases.home') {
+    const visible = (group: string) =>
+      USER_ACCESS_SCREENS.some(
+        (s) =>
+          s.id !== id && s.group === group && canViewScreen(permissions, s.id),
+      );
+    return (
+      (permissions.includes('reservations.read') && visible('reservations')) ||
+      (permissions.some((p) =>
+        [
+          'procurement.read.own',
+          'procurement.read.unit',
+          'procurement.read.all',
+          'procurement.quote.manage',
+        ].includes(p),
+      ) &&
+        visible('procurement'))
+    );
+  }
   const screen = USER_ACCESS_SCREENS.find((item) => item.id === id);
   if (screen && permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
@@ -2310,6 +2341,14 @@ export function canUseMasterDataResource(
   permissions: readonly string[],
   resource: string,
 ) {
+  if (permissions.includes(MANUAL_ACCESS_VERSION)) {
+    const parent = masterDataResourceParentScreen(resource);
+    return (
+      !!parent &&
+      canViewScreen(permissions, parent) &&
+      hasAccessControl(permissions, `master-data.resource.${resource}`)
+    );
+  }
   if (permissions.includes(USER_ACCESS_ADMIN_PERMISSION)) return true;
   const parent = masterDataResourceParentScreen(resource);
   return (
@@ -2350,7 +2389,20 @@ export function canViewRoute(
   if (
     href.split(/[?#]/)[0] === '/ticket-purchases' ||
     href.startsWith('/ticket-purchases/')
-  )
+  ) {
+    if (permissions.includes(MANUAL_ACCESS_VERSION))
+      return (
+        canViewScreen(permissions, 'ticket-purchases.home') &&
+        permissions.some((p) =>
+          [
+            'reservations.read',
+            'procurement.read.own',
+            'procurement.read.unit',
+            'procurement.read.all',
+            'procurement.quote.manage',
+          ].includes(p),
+        )
+      );
     return (
       (permissions.includes('reservations.read') &&
         canViewRoute(permissions, '/reservations')) ||
@@ -2364,6 +2416,7 @@ export function canViewRoute(
       ) &&
         canViewRoute(permissions, '/purchases'))
     );
+  }
   if (!href.startsWith('/')) return true;
   const [pathname, search = ''] = href.split('?');
   const query: Record<string, string> = {};

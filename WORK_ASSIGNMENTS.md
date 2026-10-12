@@ -8,6 +8,10 @@ PR803 merged at04acd08a after all checks passed; all merged-tree checks passed t
 
 User explicitly authorizes PC-B to connect the prepared accounting components on 2026-10-12, superseding the earlier independent-files-only hold. Base origin/develop@61167e61; branch codex/pc-b-accounting-completion-integration-1012 in the clean prior accounting worktree. PR799 and PR800 are merged and their source reservations released. Reserve finance.module.ts, AccountingCompletionModule, accounting-workspace.tsx, accounting-navigation-workspace.tsx, accounting-parity-definitions.ts, completion adapters, tax/taxpayer integration fixes and focused tests, plus this work entry and PROJECT_STATUS/task evidence. Reserve two new English overrides for the diagnostic-only notice and inherited reports label; no existing translation keys are changed. Root is sole writer. Preserve current authorization/book isolation, existing closing/opening commands and all provider/dependency gates. No schema, migration, dependency, IAM grant, source-system or operational business-data mutation. Existing session authorization covers push, exact-head CI-gated develop merge and refresh of PC-B rubi Compose Web3100/API4192 using the existing database/storage.
 
+## MANUAL-USER-ACCESS-V3-1012 — PC-A — READY_FOR_REVIEW — PR806
+
+COMPUTER_ID=PC-A for this IAM-owned task; isolated branch codex/pc-a-manual-user-access-v3-1012 from origin/develop@61167e61. User explicitly authorizes implementing the reviewed manual-access document, authoritative allow/revoke enforcement, and mapping existing live users to equivalent previous access; genuinely new permissions must remain ungranted and be reported for manual decision. Reserve IAM contracts/API/Web, additive scoped domain authorization consumers/tests, a transactional preview/apply migration command and bounded own task/status/decision documentation. Producer IAM manual access v3, consumers AuthGuard/domain APIs and Web access editor; legacy accounts remain compatible until an explicit verified conversion. Personal snapshots must preserve effective permissions, branch scope, inactive/shared memberships and unknown grants without mutating shared roles. All changed live grants require a preview, durable before snapshot, concurrency check and after-equivalence verification. No dependency/lockfile or schema migration reserved. Accounting and unrelated active owners remain untouched. Root is sole writer; no delegation. Original dirty checkout is untouched. Local target and identity will be verified before operational writes. This authorization includes requested IAM user mapping, not unrelated data changes or destructive migrations.
+
 ## ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
 
 COMPUTER_ID=PC-B confirmed by the user on 2026-10-12. Base origin/develop@4fe291b5;
@@ -927,6 +931,50 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 - اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
 
 # Work Assignments
+
+## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — READY_FOR_REVIEW
+
+Base origin/develop@04acd08a; branch codex/pc-c-assistant-phase1-completion-1012.
+Human explicitly requests continuation of all remaining Phase1 work. Sole writer
+reserves Sales assistant projection/controller/tests only, independent assistant
+source adapters/actions/server/tests, Web assistant model/workspace/tests/copy,
+and bounded own task/status/plan entries. Public read contracts are owned by Sales
+and consumed over authenticated HTTP; no private cross-domain query. Preserve
+concurrent Accounting owner files and shared runtime. No schema, dependency, IAM
+grant or operational data change. Add explicitly named contractual amounts and
+balances, not Finance-approved receivables or refund-adjusted net sales. Investigate
+Finance and lead conversion sources; unapproved or missing accounting producers
+remain explicit gates. Existing user authorization covers push and exact-head
+green-CI merge to develop; shared Core deployment needs compatibility assessment.
+Acceptance: Decimal/currency reconciliation, discount/cancellation/partial payment,
+bounded source completeness, authorization/revocation, transport and UI validation,
+affected builds/tests and all final/post-merge CI.
+
+Bounded extension: new Customer Affairs assistant call-cohort read controller/test
+and additive module registration; one SalesService public confirmation lookup.
+Customer Affairs owns CALL timeline and accepted handoff references; Sales owns
+confirmation/lifecycle. Logged CALL is explicit evidence, not proof of an answered
+call. Cohorts remain actor-authorized branches; no all-company CRM grant is invented.
+Accounting stays untouched. Human confirms contractual balances may be shown
+separately while Finance-approved receivables remain pending.
+
+Runtime extension: new apps/api/src/assistant-read, SalesRepository bounded public
+lookup and SalesModule reader export. Compose only native IAM and owned read
+controllers; force PostgreSQL session read-only before pool creation and verify it.
+Reject write HTTP methods; start no business module/dispatcher. AI service keeps
+HTTP-only access, optionally using a server-configured report base for three exact
+paths. Core runtime/migrations/data remain unchanged. Dedicated synthetic test
+database exercises the real PostgreSQL/HTTP/Web transport chain.
+
+Reserve one additive step in .github/workflows/ci.yml PostgreSQL job to run the
+new isolated assistant integration suite. Existing gates and workflow permissions
+are unchanged; no dependency/lockfile or shared schema change.
+
+Candidate evidence:23 native HTTP tests,27 Web tests,10 API tests and1 actual
+disposable-PostgreSQL end-to-end test pass, including foreign-branch isolation,
+native JWT revocation and SQL write refusal. Scoped lint/API-Web typechecks and
+production builds pass. Source locks release at candidate freeze; exact-head CI
+and post-merge results follow in the PR. Shared Core/data remain preserved.
 
 ## DASHBOARD-REPORTING-FINAL-VISUAL-INTEGRATION-0928 — PC-C — LOCAL_COMPLETE
 
@@ -7111,3 +7159,9 @@ API/Web/service checks and exact-head CI before authorized develop merge.
 ## PACKAGE-TEMPLATE-GALLERY-1012 — PC-B — READY_FOR_REVIEW
 
 Branch codex/pc-b-package-template-gallery-1012 from origin/develop@2de87ce4. Reserve only standalone Package Generator template assets/catalogue/editor and bounded app/index integration, focused Web tests, own task/status entries. Six supplied distinct templates: Vietnam, luxury Vietnam, China, Kish, Qeshm and Mashhad; duplicate Mashhad deduplicated. Existing Package Pricing field task source locks explicitly released; no overlapping static editor writer found. No shared contract, API, schema, migration, dependency, lockfile, IAM or operational-data changes.
+
+## CORRESPONDENCE-WORKFLOWS-1012 — PC-A — READY_FOR_REVIEW
+
+Base origin/develop@2de87ce4; sole writer, no delegation. Reserve correspondence Web module/routes, additive SystemManagement-owned correspondence numbering service/controller/module registration, bounded Web/API English catalogue entries and own docs. No schema/migration/dependency change. Existing System numbering tables remain producer-owned; per-company yearly atomic sequence with actor-scoped idempotency and audit. Authenticated correspondence screen control applies. Incoming letters consume unchanged Documents upload dialog/API with original permissions and archive storage; internal remains empty. User requests three cards, automatic numbering without input, centered logos, editable administrative templates and recipient/sender. Reuse Rubi3100; human-authorized nirvanamahlou publication/develop merge after exact-head CI. No raw operational data in Git.
+
+CORRESPONDENCE-WORKFLOWS-1012 candidate: three real routes/cards; incoming consumes the original Documents dialog/upload API and reports archive code; internal blank; outgoing has five editable original administrative templates, explicit recipient/title/sender and centered original logo pixels. Atomic System-owned numbering at POST /api/v1/correspondence/v1/numbers uses company ID, ISO date and UUID replay key; authenticated actor and correspondence.home denial enforced. Per-company/year sequence, date-bearing number and transactional audit; no schema migration. Five numbering unit tests, three HTTP authorization tests, real PostgreSQL concurrency/replay/brand test, five letter tests and three English coverage tests pass; scoped lint and API/Web typechecks pass. Source/catalog/module-registration locks RELEASED with candidate. Full CI gates develop merge and Rubi deployment.

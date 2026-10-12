@@ -2,6 +2,10 @@
 
 User explicitly authorizes shared integration, superseding the earlier independent-only hold. FinanceModule now mounts the prepared seller/report/diagnostic API module. The authorized-book workspace dispatches all32 prepared screens; three missing catalogue destinations become reachable. Existing closing/opening and inactive settings handlers, provider blockers and book/branch permissions remain. Seller New preserves bookId; tax/seller commands use the existing HTTP-compatible UUID helper. No migration, dependency, grant or business-data mutation. Exact-head CI and authenticated local acceptance are publication gates. Details: docs/tasks/ACCOUNTING-COMPLETION-INTEGRATION-1012.md.
 
+## 2026-10-12 — MANUAL-USER-ACCESS-V3-1012 — PC-A — READY_FOR_REVIEW — PR806
+
+Manual per-user authoritative grants, legacy mapping preview, positive field checks and agency-owned passenger identity editing are implemented in an isolated branch. Full API suite2364 passed; isolated PostgreSQL4 passed; same-session HTTP proof200/403/409/200 and browser save verified. Existing nora preview identifies15 accounts. No live conversion, merge or deployment has run; all shared-DB API runtimes must be upgraded together before apply. See docs/tasks/MANUAL-USER-ACCESS-V3-1012.md and the Persian decision report.
+
 ## 2026-10-12 — ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
 
 User explicitly requests independent files only while PC-A owns the shared accounting workspace. Prepared an opt-in API module and exact-route Web adapter for existing tax/taxpayer/chart components, a scoped posted-line report with exact full-filter totals and pagination, and read-only year-end diagnostics. No shared accounting source, schema/migration, manifest/lockfile or operational runtime/database change. Fresh source inspection reached closing-template and two wizard introductions; subsequent browser failure prevents claiming a complete fresh crawl. Inherited structural evidence reconciles 56 routes, with 32 prepared adapters (two diagnostic-only). Full parity and live tax dispatch remain incomplete. API25/Web21/English3/isolated-PG4 checks pass; full API/Web TypeScript, scoped lint and affected production builds pass. Integration, authenticated browser acceptance, remaining domain commands and provider contracts remain required. See docs/tasks/ACCOUNTING-YEAREND-TAX-AUDIT-1012.md and .json.
@@ -867,6 +871,16 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 پنل عملیات قرارداد در رزواسیون اکنون زیر بخش جدول قرار دارد و دکمه‌ها در دسکتاپ به‌صورت چهارستونه نمایش داده می‌شوند. صفحه‌بندی از فهرست حذف شد؛ تمام قراردادهای بازه در یک جدول اسکرول‌پذیر با ارتفاع نزدیک هفت ردیف قابل انتخاب‌اند. اگر کاربر بازهٔ تاریخ تعیین نکند، فهرست از تاریخ قرارداد فقط سه ماه تقویمی اخیر را نمایش می‌دهد؛ با انتخاب هر بازهٔ تاریخ، همان بازه بدون محدودیت پیش‌فرض اجرا می‌شود. ۲۱ تست هدفمند، lint، typecheck و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی و Runtime مشترک تغییری نکردند.
 
 # وضعیت پروژه
+
+## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — IN_PROGRESS
+
+Exact discounted contractual amounts, independent operational balance source,
+logged-CALL/accepted-confirmed-contract conversion and corporate daily sections
+implemented. Finance receivables are deferred per human confirmation. ERP-owned
+read runtime uses native IAM and verified PostgreSQL session read-only without
+replacing Core or starting dispatchers/migrations. Actual isolated PostgreSQL
+transport acceptance and final checks/CI are in progress; net sales, full attribution
+and business/Production acceptance are not claimed. See task documentation.
 
 ## 2026-09-21 — LOGIN-BRAND-CLEANUP-RESTORE-0921 — PC-B — READY_FOR_REVIEW
 
@@ -5674,3 +5688,7 @@ PR803 merged at04acd08a and passed all merged-tree CI checks; rubi Web3100/API41
 ## 2026-10-12 — PACKAGE-TEMPLATE-GALLERY-1012 — PC-B
 
 Added six supplied, distinct editable posters under the Package Generator package tab: Iran (Kish, Qeshm, Mashhad), Vietnam (standard and luxury), China. Original image bytes remain intact; direct-click text/price editing and photo replacement stay inside bounded template regions, with per-design in-memory edits, reset and font controls. Real PNG/PDF exports preserve original portrait/landscape dimensions. Printed sample values are presentation content, not published Rubi package prices. No Excel parser, permissions, API, schema, shared contract, dependency, persistence or Documents changes. Browser acceptance covered all six designs, mobile layout, image replacement, literal malicious text, switching back to the existing editor and all twelve PNG/PDF exports. Web pricing tests52, lint and typecheck passed; production build evidence in task/PR.
+
+### 2026-10-12 — CORRESPONDENCE-WORKFLOWS-1012
+
+Three correspondence cards/routes: Incoming uses unchanged Documents upload form/API/private archive; Outgoing hosts the letter generator; Internal remains empty. Outgoing renders centered original logo artwork, explicit recipient/title/sender, five editable administrative templates and automatically allocated company/year sequence with letter date. SystemManagement owns numbering with existing tables; no schema change. HTTP guards, invalid inputs, replay and actual PostgreSQL concurrent issuance verified. Formal layout and original Persian template wording informed by University of Wisconsin Writing Center (https://writing.wisc.edu/handbook/professionalwriting/businessletter/) and Texas A&M Writing Center (https://writingcenter.tamu.edu/guides/resources/business-letters.html); no external text generation or API sending. Templates are editable in the current letter, not shared persisted business configuration. Exact-head CI and develop publication precede Rubi3100 installation.

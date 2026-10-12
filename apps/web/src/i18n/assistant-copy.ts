@@ -1,5 +1,50 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  sourceUpdated: ['آخرین به‌روزرسانی دادهٔ منبع', 'Latest source data update'],
+  noSourceUpdate: [
+    'زمان به‌روزرسانی منبع موجود نیست',
+    'Source update time is unavailable',
+  ],
+  callConversion: [
+    'تبدیل سرنخ دارای تماس ثبت‌شده به قرارداد تأییدشده',
+    'Logged-call lead to confirmed contract conversion',
+  ],
+  callCoverage: [
+    'هر سرنخ در هر دوره یک بار شمرده می‌شود. فقط تماس CALL ثبت‌شده و ارتباط پذیرفته‌شده با قرارداد معتبر ملاک است؛ پاسخ‌داده‌شدن تماس یا انتساب کامل تمام فروش‌ها تأیید نشده است. محدوده فقط شعب مجاز شماست و نتیجه تا زمان درخواست محاسبه می‌شود.',
+    'Each lead is counted once per period. Evidence is a logged CALL and accepted handoff to a valid contract; answered calls and complete sales attribution are not verified. Scope is your authorized branches and conversion is evaluated as of the request.',
+  ],
+  contactedLeads: ['سرنخ دارای تماس ثبت‌شده', 'Leads with a logged call'],
+  convertedLeads: [
+    'سرنخ با قرارداد تأییدشده',
+    'Leads with a confirmed contract',
+  ],
+  noConversionEvidence: [
+    'منبع تبدیل در دسترس نیست یا مجوز مشاهده ندارید.',
+    'Conversion source is unavailable or access is denied.',
+  ],
+  contractBalances: [
+    'ماندهٔ قراردادی عملیاتی',
+    'Operational contract balances',
+  ],
+  balanceLimitations: [
+    'این گزارش مطالبات حسابداری نیست. استرداد، سررسید اقساط و مطالبات تأییدشدهٔ مالی در این منبع موجود نیستند؛ ماندهٔ قراردادی به معنی مبلغ سررسیدگذشته نیست.',
+    'This is not accounting receivables. Refund adjustments, installment due dates and Finance-approved receivables are unavailable; contractual outstanding does not mean overdue.',
+  ],
+  contractAmount: [
+    'مبلغ قرارداد پس از تخفیف، پیش از استرداد',
+    'Contract amount after discounts, before refunds',
+  ],
+  confirmedReceipts: ['دریافت تأییدشدهٔ مالی', 'Finance-confirmed receipts'],
+  pendingReceipts: [
+    'دریافت در انتظار تأیید مالی',
+    'Receipts pending Finance confirmation',
+  ],
+  outstandingBalance: ['ماندهٔ قراردادی', 'Contractual outstanding'],
+  reviewContract: ['بررسی در قراردادها', 'Review in Sales contracts'],
+  partialBalanceList: [
+    'فهرست به ۳۰ قرارداد محدود است؛ جمع مبالغ شامل تمام قراردادهای گزارش است.',
+    'The list is limited to 30 contracts; totals cover all contracts in this report.',
+  ],
   title: ['دستیار هوشمند', 'Smart assistant'],
   composerTitle: ['چه کاری برات انجام بدم؟', 'What can I do for you?'],
   composerPlaceholder: [
@@ -38,8 +83,8 @@ export const assistantCopy = {
     'Creation-date basis, last seven complete days versus the preceding seven days. Authorized all-sales scope only; routes currently mean each contract’s primary route.',
   ],
   salesMissing: [
-    'مبلغ خالص فروش تا اتصال استرداد تأییدشده مالی محاسبه نمی‌شود. نرخ تبدیل تماس به مشتری و پوشش مسیرهای چندگانه هنوز منبع معتبر ندارند.',
-    'Net sales awaits confirmed Finance refunds. Contact-cohort conversion and multiple-route coverage still need approved sources.',
+    'مبلغ خالص فروش پس از استرداد و پوشش کامل قطعات سفر هنوز آماده نیستند. تبدیل لید دارای تماس ثبت‌شده، جداگانه با محدوده و محدودیت‌های خودش ارائه می‌شود.',
+    'Refund-adjusted net sales and complete trip-segment coverage remain unavailable. Logged-call lead conversion is shown separately with its own scope and limitations.',
   ],
   currentPeriod: ['هفت روز گذشته', 'Last seven days'],
   previousPeriod: ['هفت روز قبل از آن', 'Preceding seven days'],
@@ -244,8 +289,8 @@ export const assistantCopy = {
       'The assistant service could not be reached. Try again.',
     ],
     forbidden: [
-      'دسترسی به پنل مدیرعامل مجاز نیست.',
-      'Access to the executive workspace is not permitted.',
+      'مجوز مشاهدهٔ اطلاعات درخواستی را ندارید.',
+      'You do not have permission to read the requested information.',
     ],
     unauthenticated: [
       'نشست معتبر نیست؛ دوباره وارد شوید.',
