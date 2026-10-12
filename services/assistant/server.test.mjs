@@ -99,6 +99,14 @@ async function harness(t, options = {}) {
       response.end(JSON.stringify(options.salesReport ?? {}));
       return;
     }
+    if (request.url === '/api/v1/sales/assistant/contract-balances') {
+      response.end(JSON.stringify(options.balancesReport ?? {}));
+      return;
+    }
+    if (request.url === '/api/v1/customer-affairs/assistant/call-conversion') {
+      response.end(JSON.stringify(options.conversionReport ?? {}));
+      return;
+    }
     response.end(
       JSON.stringify(
         request.url.endsWith('/notes') ? { data: [] } : { items: [] },
@@ -382,16 +390,15 @@ test('business gates require active identity and never call corporate sources', 
       .status,
     403,
   );
-  for (const [action, reason] of [
-    ['receivables-follow-up', 'RECEIVABLES_SOURCE_PENDING'],
-  ]) {
-    const body = await (
-      await h.get('nora_access=user-a', `/v1/assistant/actions/${action}`)
-    ).json();
-    assert.equal(body.status, 'BLOCKED');
-    assert.equal(body.scope, 'NONE');
-    assert.equal(body.reason, reason);
-  }
+  assert.equal(
+    (
+      await h.get(
+        'nora_access=user-a',
+        '/v1/assistant/actions/receivables-follow-up',
+      )
+    ).status,
+    403,
+  );
   assert.ok(
     h.calls.every(
       (call) =>
@@ -433,6 +440,226 @@ const salesFixture = () => ({
     'CONTACT_COHORT_SOURCE_PENDING',
     'MULTI_ROUTE_PROJECTION_PENDING',
   ],
+});
+
+const balanceFixture = () => ({
+  version: 1,
+  source: 'sales.assistant.contract-balances.v1',
+  scope: 'ALL_AUTHORIZED_SALES',
+  observedAt: clock().toISOString(),
+  sourceUpdatedAt: null,
+  contractCount: 1,
+  totals: [
+    {
+      currencyCode: 'USD',
+      amount: '90.0001',
+      confirmedPaid: '20',
+      pendingFinance: '5',
+      outstanding: '70.0001',
+    },
+  ],
+  items: [
+    {
+      contractId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      contractNumber: 'SYNTHETIC-1',
+      href: '/sales',
+      balances: [
+        {
+          currencyCode: 'USD',
+          amount: '90.0001',
+          confirmedPaid: '20',
+          pendingFinance: '5',
+          outstanding: '70.0001',
+          privateKey: 'never-leak',
+        },
+      ],
+      customerName: 'never-leak',
+    },
+  ],
+  coverage: {
+    rowLimit: 5000,
+    itemLimit: 30,
+    itemsTruncated: false,
+    basis: 'CURRENT_CONFIRMED_CONTRACTS',
+    refundsIncluded: false,
+  },
+  unavailable: [
+    'ACCOUNTING_RECEIVABLES_SOURCE_PENDING',
+    'DUE_SCHEDULE_SOURCE_PENDING',
+    'REFUND_ADJUSTMENT_SOURCE_PENDING',
+  ],
+});
+test('contractual balances use fixed source, retain Decimal values, and never claim accounting receivables', async (t) => {
+  const h = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'sales.payments.read'],
+    balancesReport: balanceFixture(),
+  });
+  const response = await h.get(
+    'nora_access=user-a',
+    '/v1/assistant/actions/receivables-follow-up',
+  );
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.status, 'PARTIAL');
+  assert.equal(body.report.totals[0].outstanding, '70.0001');
+  assert.ok(
+    body.report.unavailable.includes('ACCOUNTING_RECEIVABLES_SOURCE_PENDING'),
+  );
+  assert.ok(!JSON.stringify(body).includes('never-leak'));
+  assert.ok(
+    h.calls.every((call) =>
+      [
+        '/api/v1/iam/auth/access',
+        '/api/v1/sales/assistant/contract-balances',
+      ].includes(call.path),
+    ),
+  );
+  const denied = await harness(t, {
+    permissions: ['sales.contracts.read.all'],
+  });
+  assert.equal(
+    (
+      await denied.get(
+        'nora_access=user-a',
+        '/v1/assistant/actions/receivables-follow-up',
+      )
+    ).status,
+    403,
+  );
+  const invalid = balanceFixture();
+  invalid.totals[0].outstanding = '0';
+  const bad = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'sales.payments.read'],
+    balancesReport: invalid,
+  });
+  assert.equal(
+    (
+      await (
+        await bad.get(
+          'nora_access=user-a',
+          '/v1/assistant/actions/receivables-follow-up',
+        )
+      ).json()
+    ).failure,
+    'INVALID_SOURCE',
+  );
+  const revoked = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'sales.payments.read'],
+    balancesReport: balanceFixture(),
+    revokeSalesAt: 3,
+  });
+  assert.equal(
+    (
+      await revoked.get(
+        'nora_access=user-a',
+        '/v1/assistant/actions/receivables-follow-up',
+      )
+    ).status,
+    403,
+  );
+});
+test('daily summary combines authorized business evidence; denied sections never fetch corporate data', async (t) => {
+  const h = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'sales.payments.read'],
+    balancesReport: balanceFixture(),
+    salesReport: salesFixture(),
+  });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(body.corporate.sales.status, 'READY');
+  assert.equal(body.corporate.balances.status, 'READY');
+  assert.ok(!JSON.stringify(body).includes('never-leak'));
+  const denied = await harness(t, { permissions: [] });
+  const ordinary = await (
+    await denied.get(
+      'nora_access=user-a',
+      '/v1/assistant/actions/daily-summary',
+    )
+  ).json();
+  assert.deepEqual(ordinary.corporate, {
+    sales: { status: 'DENIED' },
+    balances: { status: 'DENIED' },
+  });
+  assert.ok(!denied.calls.some((call) => call.path.includes('/sales/')));
+  const revoked = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'sales.payments.read'],
+    balancesReport: balanceFixture(),
+    salesReport: salesFixture(),
+    revokeSalesAt: 6,
+  });
+  assert.equal(
+    (
+      await revoked.get(
+        'nora_access=user-a',
+        '/v1/assistant/actions/daily-summary',
+      )
+    ).status,
+    403,
+  );
+});
+test('logged-call conversion remains branch-scoped and validates the ratio and source window', async (t) => {
+  const sales = salesFixture();
+  const report = {
+    version: 1,
+    source: 'customer-affairs.assistant.call-conversion.v1',
+    scope: 'AUTHORIZED_BRANCHES',
+    branchCount: 1,
+    timeZone: 'Asia/Tehran',
+    observedAt: clock().toISOString(),
+    sourceUpdatedAt: null,
+    basis:
+      'UNIQUE_LEADS_WITH_LOGGED_CALL_TO_ACCEPTED_CONFIRMED_CONTRACT_AS_OF_REQUEST',
+    coverage: {
+      rowLimitPerPeriod: 5000,
+      answeredCallVerified: false,
+      attributionComplete: false,
+    },
+    current: {
+      startUtc: sales.current.startUtc,
+      endUtc: sales.current.endUtc,
+      contactedLeads: 3,
+      convertedLeads: 1,
+      conversionBasisPoints: 3333,
+    },
+    previous: {
+      startUtc: sales.previous.startUtc,
+      endUtc: sales.previous.endUtc,
+      contactedLeads: 0,
+      convertedLeads: 0,
+      conversionBasisPoints: null,
+    },
+    privateLead: 'never-leak',
+  };
+  const h = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'customer_affairs.lead.read'],
+    salesReport: sales,
+    conversionReport: report,
+  });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/sales-analysis')
+  ).json();
+  assert.equal(body.conversion.status, 'READY');
+  assert.equal(body.conversion.report.current.conversionBasisPoints, 3333);
+  assert.equal(body.conversion.report.scope, 'AUTHORIZED_BRANCHES');
+  assert.ok(!JSON.stringify(body).includes('never-leak'));
+  report.current.conversionBasisPoints = 10000;
+  const bad = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'customer_affairs.lead.read'],
+    salesReport: sales,
+    conversionReport: report,
+  });
+  assert.equal(
+    (
+      await (
+        await bad.get(
+          'nora_access=user-a',
+          '/v1/assistant/actions/sales-analysis',
+        )
+      ).json()
+    ).conversion.status,
+    'UNAVAILABLE',
+  );
 });
 test('sales source is fixed, requires native all-read and strips extraneous ERP data', async (t) => {
   const source = salesFixture();

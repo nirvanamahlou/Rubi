@@ -1,5 +1,18 @@
 # Independent executive assistant service
 
+Phase1 continuation supports real weekly discounted contractual amounts,
+separate operational balances and authorized logged-CALL conversion. Daily
+summary adds corporate sections only with native permissions. Accounting
+receivables/due schedules/refund-adjusted net sales remain explicit source gates.
+See docs/tasks/ASSISTANT-PHASE1-COMPLETION-1012.md for meanings and limits.
+
+When publishing reports separately from the old shared Core, launch the ERP-owned
+read-only Nest entrypoint `apps/api/dist/assistant-read/main.js` with the private
+ERP environment. It binds loopback4301, rejects writes and verifies PostgreSQL
+read-only sessions; no dispatchers/migrations start. Set server-only
+`ERP_REPORTS_API_BASE_URL=http://127.0.0.1:4301/api/v1` for the independent service.
+IAM/SELF reads retain ERP_API_BASE_URL. No database credentials enter this service.
+
 Node 24, no package installation. This is a bounded read-only service, not an
 enabled LLM or forecasting system.
 

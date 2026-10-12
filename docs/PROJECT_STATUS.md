@@ -868,6 +868,16 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 
 # وضعیت پروژه
 
+## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — IN_PROGRESS
+
+Exact discounted contractual amounts, independent operational balance source,
+logged-CALL/accepted-confirmed-contract conversion and corporate daily sections
+implemented. Finance receivables are deferred per human confirmation. ERP-owned
+read runtime uses native IAM and verified PostgreSQL session read-only without
+replacing Core or starting dispatchers/migrations. Actual isolated PostgreSQL
+transport acceptance and final checks/CI are in progress; net sales, full attribution
+and business/Production acceptance are not claimed. See task documentation.
+
 ## 2026-09-21 — LOGIN-BRAND-CLEANUP-RESTORE-0921 — PC-B — READY_FOR_REVIEW
 
 ابر و نوشتهٔ `NOORA` که پس از ادغام‌های بعدی ناخواسته به صفحهٔ ورود برگشته بود، مطابق نسخهٔ تأییدشدهٔ PR #327 دوباره حذف می‌شود. تصویر هوانوردی ثابت باقی می‌ماند و Web/API محلی برای رفع خطای اتصال روی پورت‌های استاندارد پروژه اجرا خواهند شد.

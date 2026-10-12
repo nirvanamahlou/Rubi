@@ -208,6 +208,13 @@ jobs:
           pnpm --filter @nora/database build
           pnpm --filter @nora/api exec vitest run src/marketing/marketing-records.postgres.spec.ts
 
+      - name: Prove assistant read-only PostgreSQL and HTTP boundaries
+        env:
+          NORA_RUN_ASSISTANT_POSTGRES_TESTS: '1'
+        run: |
+          pnpm --filter @nora/config build
+          pnpm --filter @nora/api exec vitest run src/assistant-read/assistant-read.postgres.spec.ts
+
   build:
     name: Full production build
     runs-on: ubuntu-latest

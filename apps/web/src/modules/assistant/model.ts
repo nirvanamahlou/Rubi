@@ -159,11 +159,35 @@ const blockedSchema = z.discriminatedUnion('action', [
     status: z.literal('BLOCKED'),
     scope: z.literal('NONE'),
     reason: z.literal('RECEIVABLES_SOURCE_PENDING'),
+    failure: z
+      .enum([
+        'SOURCE_NOT_CONNECTED',
+        'SOURCE_NOT_READY',
+        'SOURCE_CAP_EXCEEDED',
+        'SOURCE_TOO_LARGE',
+        'INVALID_SOURCE',
+        'SOURCE_TIMEOUT',
+        'SOURCE_UNAVAILABLE',
+      ])
+      .optional(),
     observedAt: z.iso.datetime(),
   }),
 ]);
 const salesPeriod = z
   .object({
+    contractAmountsBeforeRefunds: z
+      .array(
+        z.object({
+          currencyCode: z.string().regex(/^[A-Z]{3}$/),
+          amount: z.string().regex(/^-?\d{1,24}(?:\.\d{1,4})?$/),
+        }),
+      )
+      .max(100)
+      .refine(
+        (rows) =>
+          new Set(rows.map((row) => row.currencyCode)).size === rows.length,
+      )
+      .optional(),
     startUtc: z.iso.datetime(),
     endUtc: z.iso.datetime(),
     contractCount: z.number().int().min(0).max(5000),
@@ -195,7 +219,54 @@ const salesPeriod = z
       (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 <=
         7.05,
   );
+const conversionPeriod = z
+  .object({
+    startUtc: z.iso.datetime(),
+    endUtc: z.iso.datetime(),
+    contactedLeads: z.number().int().min(0).max(5000),
+    convertedLeads: z.number().int().min(0).max(5000),
+    conversionBasisPoints: z.number().int().min(0).max(10000).nullable(),
+  })
+  .refine(
+    (period) =>
+      period.convertedLeads <= period.contactedLeads &&
+      period.conversionBasisPoints ===
+        (period.contactedLeads
+          ? Math.round((period.convertedLeads * 10000) / period.contactedLeads)
+          : null) &&
+      Math.abs(
+        (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 -
+          7,
+      ) <= 0.05,
+  );
+const conversionReport = z
+  .object({
+    version: z.literal(1),
+    source: z.literal('customer-affairs.assistant.call-conversion.v1'),
+    scope: z.literal('AUTHORIZED_BRANCHES'),
+    branchCount: z.number().int().nonnegative(),
+    timeZone: z.literal('Asia/Tehran'),
+    observedAt: z.iso.datetime(),
+    sourceUpdatedAt: z.iso.datetime().nullable(),
+    current: conversionPeriod,
+    previous: conversionPeriod,
+    basis: z.literal(
+      'UNIQUE_LEADS_WITH_LOGGED_CALL_TO_ACCEPTED_CONFIRMED_CONTRACT_AS_OF_REQUEST',
+    ),
+    coverage: z.object({
+      rowLimitPerPeriod: z.literal(5000),
+      answeredCallVerified: z.literal(false),
+      attributionComplete: z.literal(false),
+    }),
+  })
+  .refine((report) => report.previous.endUtc === report.current.startUtc);
+const conversionSchema = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('READY'), report: conversionReport }),
+  z.object({ status: z.literal('DENIED') }),
+  z.object({ status: z.literal('UNAVAILABLE') }),
+]);
 const salesSchema = z.object({
+  conversion: conversionSchema.optional(),
   version: z.literal(1),
   action: z.literal('sales-analysis'),
   status: z.literal('PARTIAL'),
@@ -233,10 +304,107 @@ const salesSchema = z.object({
           ),
     ),
 });
+const exactAmount = z.string().regex(/^-?\d{1,24}(?:\.\d{1,4})?$/);
+const amountUnits = (value: string) => {
+  const [whole, fraction = ''] = value.replace(/^-/, '').split('.');
+  return (
+    (value.startsWith('-') ? -1n : 1n) * BigInt(whole + fraction.padEnd(4, '0'))
+  );
+};
+const contractBalance = z
+  .object({
+    currencyCode: z.string().regex(/^[A-Z]{3}$/),
+    amount: exactAmount,
+    confirmedPaid: exactAmount,
+    pendingFinance: exactAmount,
+    outstanding: exactAmount,
+  })
+  .refine(
+    (row) =>
+      amountUnits(row.confirmedPaid) >= 0n &&
+      amountUnits(row.pendingFinance) >= 0n &&
+      amountUnits(row.amount) - amountUnits(row.confirmedPaid) ===
+        amountUnits(row.outstanding),
+  );
+const balances = z
+  .array(contractBalance)
+  .max(100)
+  .refine(
+    (rows) => new Set(rows.map((row) => row.currencyCode)).size === rows.length,
+  );
+const balanceSchema = z.object({
+  version: z.literal(1),
+  action: z.literal('receivables-follow-up'),
+  status: z.literal('PARTIAL'),
+  scope: z.literal('ALL_AUTHORIZED_SALES'),
+  report: z
+    .object({
+      version: z.literal(1),
+      source: z.literal('sales.assistant.contract-balances.v1'),
+      scope: z.literal('ALL_AUTHORIZED_SALES'),
+      observedAt: z.iso.datetime(),
+      sourceUpdatedAt: z.iso.datetime().nullable(),
+      contractCount: z.number().int().min(0).max(5000),
+      totals: balances,
+      items: z
+        .array(
+          z.object({
+            contractId: z.uuid(),
+            contractNumber: z.string().min(1).max(40),
+            href: z.literal('/sales'),
+            balances: balances.refine((rows) =>
+              rows.some((row) => amountUnits(row.outstanding) > 0n),
+            ),
+          }),
+        )
+        .max(30),
+      coverage: z.object({
+        rowLimit: z.literal(5000),
+        itemLimit: z.literal(30),
+        itemsTruncated: z.boolean(),
+        basis: z.literal('CURRENT_CONFIRMED_CONTRACTS'),
+        refundsIncluded: z.literal(false),
+      }),
+      unavailable: z.tuple([
+        z.literal('ACCOUNTING_RECEIVABLES_SOURCE_PENDING'),
+        z.literal('DUE_SCHEDULE_SOURCE_PENDING'),
+        z.literal('REFUND_ADJUSTMENT_SOURCE_PENDING'),
+      ]),
+    })
+    .refine(
+      (report) =>
+        report.items.length <= report.contractCount &&
+        new Set(report.items.map((row) => row.contractId)).size ===
+          report.items.length &&
+        (!report.coverage.itemsTruncated || report.items.length === 30),
+    ),
+});
 export const assistantActionSchema = z.union([
-  dailySchema,
+  dailySchema.safeExtend({
+    corporate: z
+      .object({
+        sales: z.discriminatedUnion('status', [
+          z.object({
+            status: z.literal('READY'),
+            report: salesSchema.shape.report,
+          }),
+          z.object({ status: z.literal('DENIED') }),
+          z.object({ status: z.literal('UNAVAILABLE') }),
+        ]),
+        balances: z.discriminatedUnion('status', [
+          z.object({
+            status: z.literal('READY'),
+            report: balanceSchema.shape.report,
+          }),
+          z.object({ status: z.literal('DENIED') }),
+          z.object({ status: z.literal('UNAVAILABLE') }),
+        ]),
+      })
+      .optional(),
+  }),
   blockedSchema,
   salesSchema,
+  balanceSchema,
 ]);
 export type AssistantActionResult = z.infer<typeof assistantActionSchema>;
 

@@ -922,6 +922,50 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 
 # Work Assignments
 
+## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — READY_FOR_REVIEW
+
+Base origin/develop@04acd08a; branch codex/pc-c-assistant-phase1-completion-1012.
+Human explicitly requests continuation of all remaining Phase1 work. Sole writer
+reserves Sales assistant projection/controller/tests only, independent assistant
+source adapters/actions/server/tests, Web assistant model/workspace/tests/copy,
+and bounded own task/status/plan entries. Public read contracts are owned by Sales
+and consumed over authenticated HTTP; no private cross-domain query. Preserve
+concurrent Accounting owner files and shared runtime. No schema, dependency, IAM
+grant or operational data change. Add explicitly named contractual amounts and
+balances, not Finance-approved receivables or refund-adjusted net sales. Investigate
+Finance and lead conversion sources; unapproved or missing accounting producers
+remain explicit gates. Existing user authorization covers push and exact-head
+green-CI merge to develop; shared Core deployment needs compatibility assessment.
+Acceptance: Decimal/currency reconciliation, discount/cancellation/partial payment,
+bounded source completeness, authorization/revocation, transport and UI validation,
+affected builds/tests and all final/post-merge CI.
+
+Bounded extension: new Customer Affairs assistant call-cohort read controller/test
+and additive module registration; one SalesService public confirmation lookup.
+Customer Affairs owns CALL timeline and accepted handoff references; Sales owns
+confirmation/lifecycle. Logged CALL is explicit evidence, not proof of an answered
+call. Cohorts remain actor-authorized branches; no all-company CRM grant is invented.
+Accounting stays untouched. Human confirms contractual balances may be shown
+separately while Finance-approved receivables remain pending.
+
+Runtime extension: new apps/api/src/assistant-read, SalesRepository bounded public
+lookup and SalesModule reader export. Compose only native IAM and owned read
+controllers; force PostgreSQL session read-only before pool creation and verify it.
+Reject write HTTP methods; start no business module/dispatcher. AI service keeps
+HTTP-only access, optionally using a server-configured report base for three exact
+paths. Core runtime/migrations/data remain unchanged. Dedicated synthetic test
+database exercises the real PostgreSQL/HTTP/Web transport chain.
+
+Reserve one additive step in .github/workflows/ci.yml PostgreSQL job to run the
+new isolated assistant integration suite. Existing gates and workflow permissions
+are unchanged; no dependency/lockfile or shared schema change.
+
+Candidate evidence:23 native HTTP tests,27 Web tests,10 API tests and1 actual
+disposable-PostgreSQL end-to-end test pass, including foreign-branch isolation,
+native JWT revocation and SQL write refusal. Scoped lint/API-Web typechecks and
+production builds pass. Source locks release at candidate freeze; exact-head CI
+and post-merge results follow in the PR. Shared Core/data remain preserved.
+
 ## DASHBOARD-REPORTING-FINAL-VISUAL-INTEGRATION-0928 — PC-C — LOCAL_COMPLETE
 
 - درخواست مالک: همهٔ طراحی‌ها و محاسبات نهایی نمودارها و KPIهای داشبورد در شاخهٔ اجرایی مشترک Dashboard/Reports و روی localhost:3000 حاضر باشند.
