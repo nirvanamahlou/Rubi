@@ -6953,3 +6953,9 @@ Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint pa
 2026-10-12 human explicitly authorizes nirvanamahlou for this publication, overriding the recorded Amin-tech11 restriction for this task. Publish/PR/CI/merge use authenticated nirvanamahlou id100076016.
 
 PR791 CI follow-up reserves additive translations for140 observed chart/tax labels and generated API/legacy catalogues. Three English coverage/synchronization tests passed; operational forms and domain fields stay unchanged.
+
+## 2026-10-12 publication result — ACCOUNTING-DOCUMENTS-PARITY-1011
+
+PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
+
+Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
