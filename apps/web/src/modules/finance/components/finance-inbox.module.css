@@ -2,6 +2,51 @@
   color: var(--foreground);
 }
 
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: 1rem;
+}
+.filterGrid > * {
+  min-width: 0;
+}
+.searchField {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: grid;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--surface) 94%, #38bdf8);
+}
+.filters {
+  border-radius: 1.25rem;
+}
+.hero {
+  border-radius: 1.5rem;
+}
+.requestRow {
+  transition:
+    background 160ms,
+    border-color 160ms,
+    box-shadow 160ms;
+}
+@media (max-width: 900px) {
+  .filterGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 540px) {
+  .filterGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .searchField {
+    padding: 0.75rem;
+  }
+}
+
 .requestDialog,
 .actionDialog {
   width: min(72rem, calc(100vw - 2rem));

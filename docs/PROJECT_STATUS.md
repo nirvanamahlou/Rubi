@@ -5575,6 +5575,10 @@ dependency or data changes.20 focused existing Web tests and scoped ESLint passe
 production build, browser verification and final CI evidence follow in the PR.
 
 
+## 2026-10-12 — FINANCE-INBOX-UI-1012 — PC-A
+
+Finance request inbox now has a full-width labeled search panel, responsive aligned filter grid and calmer rounded containers. Removed redundant header instructions and generated-at copy. All existing query state, callbacks, financial actions and permission checks are unchanged. No API, schema, dependency or operational data change. User authorizes push and develop merge after verification.
+
 ## 2026-10-11 — COA tree and chart-report candidate — PC-A
 
 Independent source crawl verified 222 accounts, 13 root groups and nine assigned-detail records. COA tree now uses persisted roots, source code/title sorting and code/title/level search. Added a read-only chart-report component and seven report-model tests. Web lint, typecheck, 15 targeted tests and production build passed. No API/schema/dependency change or source/runtime data mutation. Central report route integration is reserved to the active PC-B Finances chat. Full report/year-end parity remains incomplete: source fiscal selector exposes only2026, year-end prerequisites block later steps, counterpart output and CSV export return source errors, and closing-template roles need a separately owned additive migration. See docs/tasks/ACCOUNTING-COA-REPORTS-YEAREND-1011.md.
@@ -5588,3 +5592,10 @@ invented. Owner confirms no model data transfer for v1. Existing SELF snapshot a
 source permissions remain compatible.18 native HTTP tests and25 Web tests pass;
 final lint/build/CI/browser/runtime evidence follows in the PR. Remaining stage
 acceptance and financial owner inputs are tracked in the foundation task.
+
+
+## 2026-10-12 publication result — ACCOUNTING-DOCUMENTS-PARITY-1011
+
+PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
+
+Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.

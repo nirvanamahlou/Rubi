@@ -6971,3 +6971,15 @@ source failure/denial and revocation fail closed, strict fixed-route allowlist,
 validated response and real UI shortcut execution, safe trace/audit, focused
 service/transport/schema/UI tests, lint/typecheck/build and full final CI before
 owner-authorized develop merge. No production rollout/pilot claimed.
+
+## FINANCE-INBOX-UI-1012 — PC-A — READY_FOR_REVIEW
+
+Reserve Finance inbox workspace presentation/CSS and own status entries on codex/pc-a-finance-inbox-ui-1012 from origin/develop. User authorizes redesign, removing redundant explanatory copy, organizing search controls, push and develop merge. Preserve all handlers, query state, financial actions and permissions. No API/schema/dependency/data changes.
+
+Validation: scoped ESLint, existing render regression and Web typecheck passed. Production compilation passed; final Next build and CI gate publication. Presentation locks released with candidate; financial logic unchanged.
+
+## 2026-10-12 publication result — ACCOUNTING-DOCUMENTS-PARITY-1011
+
+PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
+
+Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
