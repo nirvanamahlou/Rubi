@@ -141,3 +141,5 @@ Verified candidate results:
 - Generated audit covers 56 distinct routes (6 year-end, 19 reports, 13 taxpayer, 18 tax); 32 have a prepared independent adapter, including two diagnostic-only routes.
 - Browser interaction and authenticated Rubi visual QA remain unverified after the recorded browser failure. Full source parity, shared integration and external tax dispatch remain open.
 - Initial English coverage found nine untranslated new labels; reused existing semantically matching translated labels without editing the shared catalogue, then all three coverage tests passed.
+
+Publication receipt: implementation commit a2de09e4, pushed to origin/codex/pc-b-accounting-yearend-tax-audit-1012. Draft PR800: https://github.com/nirvanamahlou/Rubi/pull/800 (authenticated author nirvanamahlou). Independent source reservation is frozen/released for review; shared integration remains held by the explicit user instruction. Final API/Web TypeScript and both production builds passed. Disposable rubi-completion-test-1012 container is stopped; its synthetic evidence database is retained. No merge or deployment.

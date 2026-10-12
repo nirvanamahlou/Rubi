@@ -14,6 +14,8 @@ imports or operational runtime/database changes. Existing Finance authorization,
 book/branch boundaries, Decimal amounts, immutable postings and external-provider
 gates remain mandatory. Full operational parity cannot be claimed before source
 blockers, shared integration and actual provider contracts are resolved.
+Publication receipt: implementation commit a2de09e4, pushed to origin/codex/pc-b-accounting-yearend-tax-audit-1012. Draft PR800: https://github.com/nirvanamahlou/Rubi/pull/800 (authenticated author nirvanamahlou). Independent source reservation is frozen/released for review; shared integration remains held by the explicit user instruction. Final API/Web TypeScript and both production builds passed. Disposable rubi-completion-test-1012 container is stopped; its synthetic evidence database is retained. No merge or deployment.
+
 ## AGENCY-IMPORT-BLANKS-1012 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; isolated branch codex/pc-b-agency-import-blanks-1012 from origin/develop@08a7c20c. User requests agency XLSX upload with empty optional fields. Reserve Organizations workbook reader/validation/dialog and focused tests, bounded own status entries only. Read the supplied workbook without importing operational records. Accept missing optional columns and ignore blank formatted rows; inert phone/web/email hyperlinks must never be fetched or executed. Preserve required organization identity, populated-value validation, duplicate/no-overwrite semantics, formulas/macros/external-data rejection and size bounds. No schema, migration, dependency, shared API contract or operational data mutation. Main checkout and its concurrent hotel work remain untouched.
