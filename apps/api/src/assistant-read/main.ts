@@ -22,7 +22,10 @@ export async function startAssistantRead() {
   const port = Number(process.env.ERP_ASSISTANT_READ_PORT ?? 4301);
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw new Error('READ_PORT_INVALID');
-  const app = await NestFactory.create(AssistantReadModule, { logger: false });
+  const app = await NestFactory.create(AssistantReadModule, {
+    logger: false,
+    abortOnError: false,
+  });
   app.use(requestIdMiddleware);
   app.use((request: Request, response: Response, next: NextFunction) => {
     if (!['GET', 'HEAD'].includes(request.method)) {

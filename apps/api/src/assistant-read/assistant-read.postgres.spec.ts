@@ -19,6 +19,7 @@ const enabled = process.env.NORA_RUN_ASSISTANT_POSTGRES_TESTS === '1';
 const databaseName = `nora_assistant_test_${randomUUID().replaceAll('-', '')}`;
 const originalUrl = process.env.DATABASE_URL;
 const originalSecret = process.env.IAM_ACCESS_TOKEN_SECRET;
+const originalMasterKey = process.env.MASTER_DATA_IMPORT_TOKEN_KEY_BASE64;
 let client: DatabaseClient;
 let app: INestApplication;
 let created = false;
@@ -330,6 +331,10 @@ describe.skipIf(!enabled)(
       process.env.DATABASE_URL = url.toString();
       process.env.IAM_ACCESS_TOKEN_SECRET =
         'synthetic-assistant-integration-secret-at-least-32-characters';
+      process.env.MASTER_DATA_IMPORT_TOKEN_KEY_BASE64 = Buffer.alloc(
+        32,
+        3,
+      ).toString('base64');
       process.env.ERP_ASSISTANT_READ_PORT = '44319';
       app = await startAssistantRead();
       cookie = `nora_access=${await app.get(JwtService).signAsync({ sub: user.id, sid: session.id, type: 'access' }, { issuer: 'nora-api', audience: 'nora-web', expiresIn: '1h' })}`;
@@ -380,6 +385,9 @@ describe.skipIf(!enabled)(
       if (originalSecret === undefined)
         delete process.env.IAM_ACCESS_TOKEN_SECRET;
       else process.env.IAM_ACCESS_TOKEN_SECRET = originalSecret;
+      if (originalMasterKey === undefined)
+        delete process.env.MASTER_DATA_IMPORT_TOKEN_KEY_BASE64;
+      else process.env.MASTER_DATA_IMPORT_TOKEN_KEY_BASE64 = originalMasterKey;
       if (created && /^nora_assistant_test_[a-f0-9]{32}$/.test(databaseName))
         await sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE)`);
     }, 60000);
