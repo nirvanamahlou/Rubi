@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { CustomerAffairsAssistantController } from './customer-affairs-assistant.controller';
 
 import { CustomersModule } from '../customers/customers.module';
 import { CustomerContactCrypto } from '../customers/customer-contact.crypto';
@@ -42,6 +43,7 @@ import { CustomerAffairsMarketingIntakeService } from './customer-affairs-market
     SettingsModule,
   ],
   controllers: [
+    CustomerAffairsAssistantController,
     CustomerAffairsController,
     CustomerAffairsPublicController,
     CustomerAffairsSiteController,

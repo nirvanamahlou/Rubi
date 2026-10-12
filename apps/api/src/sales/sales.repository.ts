@@ -73,6 +73,24 @@ export class SalesRepository {
     });
   }
 
+  assistantConfirmedContracts(
+    ids: readonly string[],
+    branchIds: readonly string[],
+    now: Date,
+  ) {
+    return this.database.client.salesContract.findMany({
+      where: {
+        id: { in: [...ids] },
+        branchId: { in: [...branchIds] },
+        confirmedAt: { not: null, lte: now },
+        status: {
+          in: ['CONFIRMED', 'SENT_TO_RESERVATIONS', 'IN_PROGRESS', 'COMPLETED'],
+        },
+      },
+      select: { id: true, confirmedAt: true, updatedAt: true },
+    });
+  }
+
   findUserDisplayNames(userIds: readonly string[]) {
     if (!userIds.length) return Promise.resolve([]);
     return this.database.client.user.findMany({

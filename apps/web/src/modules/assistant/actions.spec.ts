@@ -48,6 +48,85 @@ const daily = {
 };
 
 describe('assistant evidence contract', () => {
+  it('keeps contractual balances separate, preserves precision and rejects unsafe links or inconsistent money', () => {
+    const balance = {
+      currencyCode: 'USD',
+      amount: '9007199254740993.0001',
+      confirmedPaid: '20',
+      pendingFinance: '5',
+      outstanding: '9007199254740973.0001',
+    };
+    const report = {
+      version: 1,
+      source: 'sales.assistant.contract-balances.v1',
+      scope: 'ALL_AUTHORIZED_SALES',
+      observedAt: '2026-10-12T08:00:00Z',
+      sourceUpdatedAt: null,
+      contractCount: 1,
+      totals: [balance],
+      items: [
+        {
+          contractId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          contractNumber: 'SYNTHETIC',
+          href: '/sales',
+          balances: [balance],
+        },
+      ],
+      coverage: {
+        rowLimit: 5000,
+        itemLimit: 30,
+        itemsTruncated: false,
+        basis: 'CURRENT_CONFIRMED_CONTRACTS',
+        refundsIncluded: false,
+      },
+      unavailable: [
+        'ACCOUNTING_RECEIVABLES_SOURCE_PENDING',
+        'DUE_SCHEDULE_SOURCE_PENDING',
+        'REFUND_ADJUSTMENT_SOURCE_PENDING',
+      ],
+    };
+    const envelope = {
+      version: 1,
+      action: 'receivables-follow-up',
+      status: 'PARTIAL',
+      scope: 'ALL_AUTHORIZED_SALES',
+      report,
+    };
+    expect(assistantActionSchema.safeParse(envelope).success).toBe(true);
+    expect(
+      assistantActionSchema.safeParse({
+        ...envelope,
+        report: { ...report, totals: [{ ...balance, outstanding: '0' }] },
+      }).success,
+    ).toBe(false);
+    expect(
+      assistantActionSchema.safeParse({
+        ...envelope,
+        report: {
+          ...report,
+          items: [{ ...report.items[0], href: 'https://evil.invalid' }],
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      assistantActionSchema.safeParse({
+        ...envelope,
+        report: {
+          ...report,
+          coverage: { ...report.coverage, refundsIncluded: true },
+        },
+      }).success,
+    ).toBe(false);
+    expect(
+      assistantActionSchema.safeParse({
+        ...daily,
+        corporate: {
+          sales: { status: 'DENIED' },
+          balances: { status: 'READY', report },
+        },
+      }).success,
+    ).toBe(true);
+  });
   it('accepts only real-source partial sales and rejects demo/false count/label claims', () => {
     const current = {
       startUtc: '2026-10-04T20:30:00.000Z',

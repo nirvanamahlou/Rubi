@@ -36,6 +36,22 @@ export function validSalesSource(value) {
     return false;
   for (const period of [value.current, value.previous]) {
     if (
+      period?.contractAmountsBeforeRefunds !== undefined &&
+      (!Array.isArray(period.contractAmountsBeforeRefunds) ||
+        period.contractAmountsBeforeRefunds.length > 100 ||
+        new Set(
+          period.contractAmountsBeforeRefunds.map((row) => row?.currencyCode),
+        ).size !== period.contractAmountsBeforeRefunds.length ||
+        !period.contractAmountsBeforeRefunds.every(
+          (row) =>
+            row &&
+            /^[A-Z]{3}$/.test(row.currencyCode) &&
+            typeof row.amount === 'string' &&
+            /^-?\d{1,24}(?:\.\d{1,4})?$/.test(row.amount),
+        ))
+    )
+      return false;
+    if (
       !period ||
       !iso(period.startUtc) ||
       !iso(period.endUtc) ||
@@ -101,6 +117,13 @@ export function projectSalesSource(value) {
     endUtc: input.endUtc,
     contractCount: input.contractCount,
     passengerCount: input.passengerCount,
+    ...(input.contractAmountsBeforeRefunds !== undefined
+      ? {
+          contractAmountsBeforeRefunds: input.contractAmountsBeforeRefunds.map(
+            (row) => ({ currencyCode: row.currencyCode, amount: row.amount }),
+          ),
+        }
+      : {}),
     routes: input.routes.map((row) => ({
       originId: row.originId,
       destinationId: row.destinationId,

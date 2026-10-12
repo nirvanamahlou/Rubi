@@ -57,6 +57,34 @@ import {
 import styles from './executive-workspace.module.css';
 
 type Translate = (text: AssistantText) => string;
+function SourceUpdated({
+  value,
+  english,
+  t,
+}: {
+  value: string | null;
+  english: boolean;
+  t: Translate;
+}) {
+  return (
+    <p className={styles.composerHint}>
+      {value ? (
+        <>
+          {t(c.sourceUpdated)}:{' '}
+          <time dateTime={value}>
+            {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+              dateStyle: 'short',
+              timeStyle: 'short',
+              timeZone: 'Asia/Tehran',
+            }).format(new Date(value))}
+          </time>
+        </>
+      ) : (
+        t(c.noSourceUpdate)
+      )}
+    </p>
+  );
+}
 const viewIcons: Record<AssistantView, LucideIcon> = {
   overview: Activity,
   sales: TrendingUp,
@@ -351,7 +379,8 @@ export function AssistantComposer({
       )}
       {!denied &&
         actionResult?.status === 'BLOCKED' &&
-        actionResult.action === 'sales-analysis' &&
+        (actionResult.action === 'sales-analysis' ||
+          actionResult.action === 'receivables-follow-up') &&
         actionResult.failure && (
           <p role="status" className={styles.composerHint}>
             {t(c.sourceFailure[actionResult.failure])}
@@ -397,8 +426,134 @@ export function AssistantComposer({
             snapshot={actionResult.snapshot}
             english={english}
           />
+          {actionResult.corporate && (
+            <section>
+              <h3>{t(c.weeklySales)}</h3>
+              <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+              {actionResult.corporate.sales.status === 'READY' ? (
+                <>
+                  <p className={styles.composerHint}>
+                    {t(c.currentPeriod)}:{' '}
+                    {actionResult.corporate.sales.report.current.contractCount}{' '}
+                    / {t(c.previousPeriod)}:{' '}
+                    {actionResult.corporate.sales.report.previous.contractCount}
+                  </p>
+                  <SourceUpdated
+                    value={actionResult.corporate.sales.report.sourceUpdatedAt}
+                    english={english}
+                    t={t}
+                  />
+                  {actionResult.corporate.sales.report.current.contractAmountsBeforeRefunds?.map(
+                    (amount) => (
+                      <p
+                        className={styles.composerHint}
+                        key={amount.currencyCode}
+                      >
+                        {t(c.contractAmount)}:{' '}
+                        <bdi>
+                          {amount.amount} {amount.currencyCode}
+                        </bdi>
+                      </p>
+                    ),
+                  )}
+                </>
+              ) : (
+                <p className={styles.composerHint}>
+                  {t(
+                    actionResult.corporate.sales.status === 'DENIED'
+                      ? c.states.forbidden
+                      : c.salesDefinitionGate,
+                  )}
+                </p>
+              )}
+              <h3>{t(c.contractBalances)}</h3>
+              <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
+              {actionResult.corporate.balances.status === 'READY' && (
+                <SourceUpdated
+                  value={actionResult.corporate.balances.report.sourceUpdatedAt}
+                  english={english}
+                  t={t}
+                />
+              )}
+              {actionResult.corporate.balances.status === 'READY' ? (
+                actionResult.corporate.balances.report.totals.map((balance) => (
+                  <p className={styles.composerHint} key={balance.currencyCode}>
+                    {t(c.outstandingBalance)}:{' '}
+                    <bdi>
+                      {balance.outstanding} {balance.currencyCode}
+                    </bdi>
+                  </p>
+                ))
+              ) : (
+                <p className={styles.composerHint}>
+                  {t(
+                    actionResult.corporate.balances.status === 'DENIED'
+                      ? c.states.forbidden
+                      : c.receivablesSourceGate,
+                  )}
+                </p>
+              )}
+            </section>
+          )}
         </div>
       )}
+      {!denied &&
+        actionResult?.action === 'receivables-follow-up' &&
+        actionResult.status === 'PARTIAL' && (
+          <div className={styles.actionResult}>
+            <h2>{t(c.contractBalances)}</h2>
+            <SourceUpdated
+              value={actionResult.report.sourceUpdatedAt}
+              english={english}
+              t={t}
+            />
+            <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
+            <p className={styles.composerHint}>
+              {t(c.asOf)}:{' '}
+              <time dateTime={actionResult.report.observedAt}>
+                {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                  dateStyle: 'short',
+                  timeStyle: 'short',
+                  timeZone: 'Asia/Tehran',
+                }).format(new Date(actionResult.report.observedAt))}
+              </time>
+            </p>
+            {actionResult.report.totals.map((balance) => (
+              <dl className={styles.actionCounts} key={balance.currencyCode}>
+                {[
+                  [c.contractAmount, balance.amount],
+                  [c.confirmedReceipts, balance.confirmedPaid],
+                  [c.pendingReceipts, balance.pendingFinance],
+                  [c.outstandingBalance, balance.outstanding],
+                ].map(([label, amount]) => (
+                  <div key={(label as AssistantText)[1]}>
+                    <dt>{t(label as AssistantText)}</dt>
+                    <dd>
+                      <bdi>
+                        {amount as string} {balance.currencyCode}
+                      </bdi>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            ))}
+            {actionResult.report.coverage.itemsTruncated && (
+              <p className={styles.composerHint}>{t(c.partialBalanceList)}</p>
+            )}
+            {actionResult.report.items.map((item) => (
+              <p className={styles.composerHint} key={item.contractId}>
+                <bdi>{item.contractNumber}</bdi>:{' '}
+                {item.balances.map((balance) => (
+                  <bdi key={balance.currencyCode}>
+                    {' '}
+                    {balance.outstanding} {balance.currencyCode}{' '}
+                  </bdi>
+                ))}{' '}
+                <Link href={item.href}>{t(c.reviewContract)}</Link>
+              </p>
+            ))}
+          </div>
+        )}
       {!denied &&
         actionResult?.action === 'sales-analysis' &&
         actionResult.status === 'PARTIAL' && (
@@ -416,6 +571,39 @@ export function AssistantComposer({
               </time>
             </p>
             <p className={styles.composerHint}>{t(c.salesMissing)}</p>
+            <SourceUpdated
+              value={actionResult.report.sourceUpdatedAt}
+              english={english}
+              t={t}
+            />
+            {actionResult.conversion?.status === 'READY' ? (
+              <section>
+                <h3>{t(c.callConversion)}</h3>
+                <p className={styles.composerHint}>{t(c.callCoverage)}</p>
+                <SourceUpdated
+                  value={actionResult.conversion.report.sourceUpdatedAt}
+                  english={english}
+                  t={t}
+                />
+                {[
+                  actionResult.conversion.report.current,
+                  actionResult.conversion.report.previous,
+                ].map((period, index) => (
+                  <p className={styles.composerHint} key={period.startUtc}>
+                    {t(index === 0 ? c.currentPeriod : c.previousPeriod)}:{' '}
+                    {t(c.contactedLeads)} {period.contactedLeads} /{' '}
+                    {t(c.convertedLeads)} {period.convertedLeads} —{' '}
+                    <bdi>
+                      {period.conversionBasisPoints === null
+                        ? '—'
+                        : `${period.conversionBasisPoints / 100}%`}
+                    </bdi>
+                  </p>
+                ))}
+              </section>
+            ) : (
+              <p className={styles.composerHint}>{t(c.noConversionEvidence)}</p>
+            )}
             {!actionResult.report.routeNamesComplete && (
               <p className={styles.composerHint}>{t(c.missingCityNames)}</p>
             )}
@@ -454,6 +642,17 @@ export function AssistantComposer({
                       </dd>
                     </div>
                   </dl>
+                  {value.contractAmountsBeforeRefunds?.map((amount) => (
+                    <p
+                      className={styles.composerHint}
+                      key={amount.currencyCode}
+                    >
+                      {t(c.contractAmount)}:{' '}
+                      <bdi>
+                        {amount.amount} {amount.currencyCode}
+                      </bdi>
+                    </p>
+                  ))}
                   {value.routes.map((route) => (
                     <p
                       className={styles.composerHint}
