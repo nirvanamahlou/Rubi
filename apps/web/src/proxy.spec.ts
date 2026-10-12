@@ -2,6 +2,33 @@ import { NextRequest } from 'next/server';
 import { describe, expect, it } from 'vitest';
 import { config, proxy } from './proxy';
 describe('Reauthentication and local build verification', () => {
+  it('returns uncached JSON401 for assistant fetches instead of HTML login redirects', async () => {
+    for (const path of [
+      '/api/assistant/executive',
+      '/api/assistant/actions/daily-summary',
+      '/api/assistant/actions/sales-analysis',
+      '/api/assistant/actions/receivables-follow-up',
+    ]) {
+      const response = proxy(new NextRequest(`http://localhost:3000${path}`));
+      expect(response.status).toBe(401);
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(await response.json()).toEqual({
+        error: { code: 'UNAUTHENTICATED' },
+      });
+      const stale = proxy(
+        new NextRequest(`http://localhost:3000${path}`, {
+          headers: { cookie: 'nora_access=stale' },
+        }),
+      );
+      expect(stale.headers.get('x-middleware-next')).toBe('1');
+    }
+    expect(
+      proxy(new NextRequest('http://localhost:3000/assistant')).headers.get(
+        'location',
+      ),
+    ).toContain('/login');
+  });
   it('keeps decorative dashboard header artwork publicly reachable', () => {
     expect(config.matcher[0]).toContain('images/dashboard-headers/');
   });

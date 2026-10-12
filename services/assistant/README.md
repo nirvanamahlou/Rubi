@@ -11,7 +11,12 @@ read-only Nest entrypoint `apps/api/dist/assistant-read/main.js` with the privat
 ERP environment. It binds loopback4301, rejects writes and verifies PostgreSQL
 read-only sessions; no dispatchers/migrations start. Set server-only
 `ERP_REPORTS_API_BASE_URL=http://127.0.0.1:4301/api/v1` for the independent service.
-IAM/SELF reads retain ERP_API_BASE_URL. No database credentials enter this service.
+SELF data reads retain ERP_API_BASE_URL. Identity uses ERP_AUTH_API_BASE_URL when
+set, otherwise the configured report base, then ERP_API_BASE_URL. The read runtime
+publishes native IAM GET /iam/auth/access and checks the native manual screen policy
+for fixed personal-source IDs before reading and again before release. This keeps
+current revocations authoritative when Core is an older runtime. No database
+credentials enter the independent service.
 
 Node 24, no package installation. This is a bounded read-only service, not an
 enabled LLM or forecasting system.

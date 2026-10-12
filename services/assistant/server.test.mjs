@@ -37,6 +37,15 @@ async function harness(t, options = {}) {
     response.setHeader('content-type', 'application/json');
     if (request.url === '/api/v1/iam/auth/access') {
       authCount++;
+      if (
+        options.deniedSource &&
+        options.deniedSource === request.headers['x-assistant-source'] &&
+        (!options.sourceDenyAt || authCount >= options.sourceDenyAt)
+      ) {
+        response.writeHead(403);
+        response.end('{}');
+        return;
+      }
       if (options.revokeAt && authCount >= options.revokeAt) {
         response.writeHead(401);
         response.end('{}');
@@ -214,7 +223,7 @@ test('HTTP integration returns source-backed personal reads and minimal audit', 
   );
   assert.equal(
     h.calls.filter((call) => call.path.endsWith('/auth/access')).length,
-    5,
+    8,
   );
   const auditText = JSON.stringify(h.audit);
   assert(!auditText.includes('private-secret'));
@@ -767,4 +776,12 @@ test('daily actions isolate users and revalidate before releasing results', asyn
   );
   assert.equal(response.status, 401);
   assert.ok(!(await response.text()).includes(example.title));
+});
+test('personal sources are preflighted and rechecked at release by the current IAM authority', async (t) => {
+  for (const sourceDenyAt of [1, 5]) {
+    const h = await harness(t, { deniedSource: 'calendar', sourceDenyAt });
+    const response = await h.get('nora_access=user-a');
+    assert.equal(response.status, 403);
+    assert.ok(!(await response.text()).includes(example.title));
+  }
 });

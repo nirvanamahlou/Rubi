@@ -872,6 +872,20 @@ Schema/Migration، Permission، دادهٔ عملیاتی و Dependency/Lockfile
 
 # وضعیت پروژه
 
+## ASSISTANT-HTTP-AUTH-1012 — PC-C
+
+Live smoke discovered anonymous assistant API requests returned a307 to HTML login.
+Bounded Web middleware fix returns private/no-store JSON401 for these fetches;
+page redirects and backend cookie/session/permission checks stay unchanged.
+Tests/build/CI and Web-only local rollout are required; no Core or data change.
+
+After native manual-access v3 landed in develop, the ERP read runtime also exposes
+its current native IAM actor and fixed personal-source preflight. Independent
+assistant identity is pinned to that authority; screen revocation is rechecked at
+release and corporate native grants still gate every source. Owner IAM policy and
+files are reused unchanged. Actual PostgreSQL/HTTP/Web tests pass with the new
+authority. Rollout updates read4301/assistant4300/Web3000 together, preserving Core.
+
 ## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — IN_PROGRESS
 
 Exact discounted contractual amounts, independent operational balance source,

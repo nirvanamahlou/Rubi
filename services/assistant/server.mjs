@@ -131,6 +131,7 @@ export function personalFollowUps(tool, rows, now) {
 export function createAssistantServer({
   erpBaseUrl,
   erpReportsBaseUrl = erpBaseUrl,
+  erpAuthBaseUrl = erpBaseUrl,
   fetcher = fetch,
   audit = (event) => process.stdout.write(JSON.stringify(event) + '\n'),
   timeoutMs = 2500,
@@ -138,6 +139,7 @@ export function createAssistantServer({
 }) {
   const base = configuredErpOrigin(erpBaseUrl);
   const reportBase = configuredErpOrigin(erpReportsBaseUrl);
+  const authBase = configuredErpOrigin(erpAuthBaseUrl);
   const windows = new Map();
   let inFlight = 0;
   function withinLimit(key, limit) {
@@ -149,20 +151,31 @@ export function createAssistantServer({
     windows.set(key, window);
     return ++window.count <= limit;
   }
-  async function read(path, cookie, signal) {
+  async function read(path, cookie, signal, source) {
     try {
       const isReport = [
         '/sales/assistant/weekly',
         '/sales/assistant/contract-balances',
         '/customer-affairs/assistant/call-conversion',
       ].includes(path);
-      const response = await fetcher((isReport ? reportBase : base) + path, {
-        method: 'GET',
-        headers: { accept: 'application/json', cookie },
-        redirect: 'error',
-        cache: 'no-store',
-        signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
-      });
+      const response = await fetcher(
+        (path === '/iam/auth/access'
+          ? authBase
+          : isReport
+            ? reportBase
+            : base) + path,
+        {
+          method: 'GET',
+          headers: {
+            accept: 'application/json',
+            cookie,
+            ...(source ? { 'x-assistant-source': source } : {}),
+          },
+          redirect: 'error',
+          cache: 'no-store',
+          signal: AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]),
+        },
+      );
       if ([401, 403].includes(response.status))
         throw new ServiceError(
           response.status,
@@ -191,8 +204,8 @@ export function createAssistantServer({
       );
     }
   }
-  async function authenticate(cookie, signal, expectedUserId) {
-    const actor = await read('/iam/auth/access', cookie, signal);
+  async function authenticate(cookie, signal, expectedUserId, source) {
+    const actor = await read('/iam/auth/access', cookie, signal, source);
     if (
       !actor ||
       typeof actor.userId !== 'string' ||
@@ -380,7 +393,7 @@ export function createAssistantServer({
         const followUps = [];
         const sources = [];
         for (const tool of TOOLS) {
-          await authenticate(cookie, deadline.signal, actorId);
+          await authenticate(cookie, deadline.signal, actorId, tool.id);
           try {
             const body = await read(tool.path, cookie, deadline.signal);
             if (
@@ -419,6 +432,10 @@ export function createAssistantServer({
           deadline.signal,
           actorId,
         );
+        for (const source of sources.filter(
+          (source) => source.status === 'READY',
+        ))
+          await authenticate(cookie, deadline.signal, actorId, source.id);
         let corporate;
         if (action === 'daily-summary') {
           corporate = {
@@ -478,6 +495,10 @@ export function createAssistantServer({
             deadline.signal,
             actorId,
           );
+          for (const source of sources.filter(
+            (source) => source.status === 'READY',
+          ))
+            await authenticate(cookie, deadline.signal, actorId, source.id);
           if (
             definitions.some(
               (definition) =>
@@ -560,6 +581,10 @@ if (
 ) {
   const service = createAssistantServer({
     erpBaseUrl: process.env.ERP_API_BASE_URL,
+    erpAuthBaseUrl:
+      process.env.ERP_AUTH_API_BASE_URL ??
+      process.env.ERP_REPORTS_API_BASE_URL ??
+      process.env.ERP_API_BASE_URL,
     erpReportsBaseUrl:
       process.env.ERP_REPORTS_API_BASE_URL ?? process.env.ERP_API_BASE_URL,
   });

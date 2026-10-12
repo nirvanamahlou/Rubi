@@ -372,6 +372,7 @@ describe.skipIf(!enabled)(
       assistant = createAssistantServer({
         erpBaseUrl,
         erpReportsBaseUrl: origin,
+        erpAuthBaseUrl: origin,
         audit: () => undefined,
       }) as Server;
       assistantOrigin = await listen(assistant);
