@@ -66,10 +66,18 @@ All six reference panels and follow-up gates: `docs/tasks/EXECUTIVE-ASSISTANT-10
 
 GET /v1/assistant/actions/daily-summary executes the existing SELF reads and
 returns coverage, reconciled visible counts and rule-linked recommendations.
-GET /v1/assistant/actions/sales-analysis and receivables-follow-up authenticate
+GET /v1/assistant/actions/receivables-follow-up authenticates
 and return explicit BLOCKED gates; neither accesses corporate data nor a model.
 Only these three action names are accepted. No scope selectors, prompt or write
 request is accepted. Web quick buttons call /api/assistant/actions/[action].
 No model provider is configured under the owner-approved v1 policy.
 Full contracts, readiness evidence, staged roadmap and rollout limitations:
 ../../docs/tasks/ASSISTANT-MVP-FOUNDATION-1012.md.
+
+Phase1 sales-analysis now reads only /sales/assistant/weekly, requiring existing
+sales.contracts.read.all before/after the read. Approved creation-date Tehran
+weekly counts/primary routes are PARTIAL while net/refund, conversion and full
+route projections remain unavailable. Missing ERP publication and invalid/capped
+sources produce explicit safe blocked causes, never synthetic/zero totals.
+Only whitelisted source fields are returned; no demo reports or financial rows.
+ERP publication and full acceptance: ../../docs/tasks/ASSISTANT-PHASE1-REPORTS-1012.md.
