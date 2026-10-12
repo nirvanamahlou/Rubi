@@ -24,5 +24,7 @@ export * from './procurement';
 export * from './system-management';
 
 export * from './accounting';
+export * from './accounting-tax';
 
 export * from './package-pricing/hotel-shared-period';
+export type { AccountingTaxpayerSeller } from './accounting-taxpayer';

@@ -1,4 +1,6 @@
 import { AccountingController } from './accounting/accounting.controller';
+import { AccountingTaxController } from './accounting/accounting-tax.controller';
+import { AccountingTaxService } from './accounting/accounting-tax.service';
 import { AccountingService } from './accounting/accounting.service';
 import { Module } from '@nestjs/common';
 
@@ -34,6 +36,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     FinanceTicketCostModule,
   ],
   controllers: [
+    AccountingTaxController,
     AccountingController,
     FinanceInboxController,
     FinancePayrollController,
@@ -41,6 +44,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     FinanceRequestsController,
   ],
   providers: [
+    AccountingTaxService,
     AccountingService,
     AuthGuard,
     PermissionGuard,

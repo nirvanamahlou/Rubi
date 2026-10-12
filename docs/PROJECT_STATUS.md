@@ -5486,6 +5486,7 @@ PR778 merged into develop at57793ab3 with full quality, tests, production build 
 
 Removed duplicate shortcut grids from accounting landing/group content. Sidebar and open tabs remain the navigation surface. Authenticated /finance browser verification on shared rubi Web3100 shows no shortcut cards. No schema, API, data or dependency change.
 
+
 ## 2026-10-11 — ASSISTANT-ALL-USERS-1011 — PC-C
 
 Owner-authorized shared assistant visibility for every authenticated ERP user,
@@ -5513,6 +5514,33 @@ is not enabled. No network transmission, browser storage, microphone permission,
 file upload, backend or authorization changes. Light/dark theme variables and
 RTL/LTR/mobile layout are preserved. Focused31 tests passed; remaining verification
 and final-head CI/local activation evidence follow in the PR.
+
+
+## 2026-10-11 — ACCOUNTING-TAX-PARITY-1011 — PC-A
+
+Read-only Tax Accounting crawl produced10 sanitized form/list definitions and111
+labeled controls. Dedicated API/UI candidate persists three reference kinds
+(thresholds, tax periods, aggregation patterns), with scoped access, strict
+validation, exact decimals, versioning, idempotency and command history. Notes,
+reference deletion with dependency checks, reload and list Excel export are included.
+Financial declarations, identity/mapping directories, source-item reports and
+attachments remain explicit dependencies; no generic-config financial records or
+fake successful submission. Source quarterly report is blocked by missing tax
+period. Source writes/imports: none. Central workspace patch and private evidence
+are handed to PC-B; schema/migrations and shared3100 runtime remain unchanged.
+This is a candidate, not full parity or deployment. Details and validation:
+`docs/tasks/ACCOUNTING-TAX-PARITY-1011.md`.
+
+## 2026-10-11 — ACCOUNTING-TAXPAYER-PARITY-1011 — PC-A
+
+Read-only crawl observed13 taxpayer-system routes,54 labeled form controls and65
+columns. Independent UI handles observed conditional forms and explicit unavailable
+states; seller-only scoped persistence has6 passing API tests and6 Web model tests.
+PC-B confirmed shared locks remain active; central integration is a proposal patch,
+not deployed. No source writes, real submissions, source records/secrets or schema
+changes. Full operation remains dependent on credential/provider, financial models,
+read APIs and source license. See docs/tasks/ACCOUNTING-TAXPAYER-PARITY-1011.md.
+
 ## 2026-10-11 — ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B
 
 The chart route now renders the existing tree and draft group/general/subsidiary forms when the authorized books response is empty. Setup links lead to ledger creation/selection. Save/new/delete persistence stays disabled without a book; submission has a second null-book guard. Request failures and loading do not masquerade as empty data. Selecting a real book remounts the editor to discard unbound draft state. No API, schema, permissions or dependency change.
@@ -5527,3 +5555,8 @@ colors in both ERP themes. Toolbar wraps on mobile. All six views, local-only
 drafts and existing source authorization remain unchanged. No API, migration,
 dependency or data changes.20 focused existing Web tests and scoped ESLint passed;
 production build, browser verification and final CI evidence follow in the PR.
+
+
+## 2026-10-11 — COA tree and chart-report candidate — PC-A
+
+Independent source crawl verified 222 accounts, 13 root groups and nine assigned-detail records. COA tree now uses persisted roots, source code/title sorting and code/title/level search. Added a read-only chart-report component and seven report-model tests. Web lint, typecheck, 15 targeted tests and production build passed. No API/schema/dependency change or source/runtime data mutation. Central report route integration is reserved to the active PC-B Finances chat. Full report/year-end parity remains incomplete: source fiscal selector exposes only2026, year-end prerequisites block later steps, counterpart output and CSV export return source errors, and closing-template roles need a separately owned additive migration. See docs/tasks/ACCOUNTING-COA-REPORTS-YEAREND-1011.md.
