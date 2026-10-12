@@ -1,7 +1,25 @@
 export const companies = [
-  { id: 'niayesh', title: 'نیایش سیر', color: '#163b75' },
-  { id: 'jahan', title: 'جهان باستان', color: '#76512a' },
-  { id: 'ghesti', title: 'قسطی روو', color: '#176b5a' },
+  {
+    id: 'niayesh',
+    title: 'نیایش سیر',
+    letterhead: '/correspondence/letterheads/niayesh-seir.png',
+    metadataRight: 273,
+    metadataY: [0.063, 0.094, 0.126],
+  },
+  {
+    id: 'jahan',
+    title: 'جهان باستان',
+    letterhead: '/correspondence/letterheads/jahan-bastan.png',
+    metadataRight: 300,
+    metadataY: [0.057, 0.096, 0.135],
+  },
+  {
+    id: 'ghesti',
+    title: 'قسطی روو',
+    letterhead: '/correspondence/letterheads/ghesti-roo.png',
+    metadataRight: 290,
+    metadataY: [0.057, 0.086, 0.116],
+  },
 ] as const;
 export const initialTemplate =
   'با سلام و احترام\n\n{{متن}}\n\nبا سپاس و احترام\n{{امضا}}\n{{شرکت}}';
@@ -11,6 +29,7 @@ export type Letter = {
   subject: string;
   date: string;
   number: string;
+  attachment?: string;
   signer: string;
   text: string;
   template: string;
@@ -49,6 +68,7 @@ export function composeLetter(letter: Letter): string {
     موضوع: letter.subject,
     تاریخ: letter.date,
     شماره: letter.number,
+    پیوست: letter.attachment || 'ندارد',
   };
   if (!letter.template.includes('{{متن}}'))
     throw new Error('قالب باید متغیر {{متن}} را داشته باشد.');

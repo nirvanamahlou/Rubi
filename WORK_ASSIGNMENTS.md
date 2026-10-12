@@ -1,3 +1,23 @@
+## ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
+
+COMPUTER_ID=PC-B confirmed by the user on 2026-10-12. Base origin/develop@4fe291b5;
+branch codex/pc-b-accounting-yearend-tax-audit-1012, isolated worktree.
+User requests a read-only Rahkaran crawl and completion of year-end, reports,
+taxpayer and tax accounting. User subsequently explicitly requires independent
+files only while PC-A ACCOUNTING-TREE-CLEANUP-1012 owns accounting-workspace.tsx.
+Reserve NEW accounting-completion-* API/Web/model/tests, scripts/accounting-completion-audit.ts and task evidence files;
+existing accounting source, shared workspace/navigation, contracts barrels,
+Prisma/schema/migrations, manifests/lockfiles and PC-A edits remain untouched.
+Bounded own status/assignment entries are coordination only. Integration is prepared
+as documented owner steps, not applied. No source business writes, record/credential
+imports or operational runtime/database changes. Existing Finance authorization,
+book/branch boundaries, Decimal amounts, immutable postings and external-provider
+gates remain mandatory. Full operational parity cannot be claimed before source
+blockers, shared integration and actual provider contracts are resolved.
+Publication receipt: implementation commit a2de09e4, pushed to origin/codex/pc-b-accounting-yearend-tax-audit-1012. Draft PR800: https://github.com/nirvanamahlou/Rubi/pull/800 (authenticated author nirvanamahlou). Independent source reservation is frozen/released for review; shared integration remains held by the explicit user instruction. Final API/Web TypeScript and both production builds passed. Disposable rubi-completion-test-1012 container is stopped; its synthetic evidence database is retained. No merge or deployment.
+
+2026-10-12 publication follow-up: the user explicitly authorizes push, merge to develop and local startup. PR799 is already merged at eab0ad6c; its ownership and UI changes are preserved. Reserve only this task documentation for conflict resolution and deployment evidence. The earlier independent-files-only instruction is retained: shared UI/API activation is not part of this publication. Exact-head CI must pass before merging PR800. Prepare the rubi Compose runtime on PC-B (Web3100/API4192) using the existing local Rubi database and document storage, without replacing another computer's runtime or altering the dirty primary checkout. No new migration is introduced.
+
 ## ACCOUNTING-OWNERSHIP-PC-B-1012 — PC-B — OWNER_ASSIGNED
 
 User explicitly transfers final Accounting ownership to PC-B on2026-10-12.
@@ -7039,6 +7059,12 @@ Validation: scoped ESLint, existing render regression and Web typecheck passed. 
 PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
 
 Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
+
+## CORRESPONDENCE-LETTERHEADS-1012 — PC-A — READY_FOR_REVIEW
+
+CI follow-up: bounded Web English catalogue reservation for the two new letterhead validation/loading errors only; no API or offline-editor catalogue change. Released with repaired candidate.
+
+Sole writer; no delegation. Reserve apps/web/src/modules/correspondence, apps/web/public/correspondence/letterheads and bounded work/status docs. User-supplied three letterhead images used unchanged as company backgrounds; overlay metadata/body for PNG/PDF and preview. No API/schema/dependency changes. Reuse Rubi Compose3100. Preserve other edits. Source locks RELEASED at candidate freeze. Four composition tests, scoped lint and Web typecheck passed; actual production renderer visually checked for all three companies and multipage output. PR801 requires exact-head CI before authorized develop merge and Web-only rollout; API and database remain unchanged.
 
 ## HOTEL-TEMPLATE-IMPORT-1012 — PC-A — READY_FOR_REVIEW
 
