@@ -106,11 +106,7 @@ const statuses: Record<string, string> = {
   CANCELLED: 'لغوشده',
 };
 const internalSections: readonly (readonly [string, string])[] = [
-  ['general-ledger/documents/allocation-templates', 'الگوهای تخصیص داخلی'],
   ['general-ledger/documents/list', 'فهرست اسناد'],
-  ['general-ledger/documents/transfer-batches', 'بسته انتقال حسابداری'],
-  ['general-ledger/reports/catalog', 'فهرست گزارش‌ها'],
-  ['receipts-payments/reports', 'گزارش پرداخت و دریافت'],
 ] as const;
 const sections: readonly (readonly [string, string])[] = [
   ...accountingParityDefinitions.map(
@@ -366,7 +362,9 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
       label: `${r.code ? `${r.code} — ` : ''}${r.title}`,
     }));
   let content: ReactNode = null;
-  if (booksQuery.isPending)
+  if (!home && !sections.some(([route]) => route === section))
+    content = <AccountingUnknownRoute route={section} />;
+  else if (booksQuery.isPending)
     content = <p role="status">در حال دریافت دفترهای حسابداری…</p>;
   else if (booksQuery.isError || snapshotQuery.isError)
     content = (
@@ -940,8 +938,16 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
             definition.route.replace('/lists/', '/') === section,
         )?.route ?? 'general-ledger/accounts';
       const save = (after: 'stay' | 'new' | 'close' = 'stay') => {
-        const attrs: AccountingAttributes = {};
-        for (const f of attrFields) attrs[f.key] = draft[f.key] ?? '';
+        // Hidden legacy settings must survive ordinary edits unchanged.
+        const attrs: AccountingAttributes = {
+          ...(editing
+            ? rows.find((row) => row.id === editing.id)?.attributes
+            : {}),
+        };
+        for (const f of attrFields) {
+          const value = draft[f.key];
+          if (value !== undefined) attrs[f.key] = value;
+        }
         return run(
           chart
             ? 'save-account'
@@ -1058,16 +1064,6 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
                   />
                 </div>
               </details>
-              {attrFields.length ? (
-                <details className="rounded-xl border p-4">
-                  <summary className="cursor-pointer font-bold">
-                    تنظیمات عملیاتی روبی
-                  </summary>
-                  <div className="pt-4">
-                    <Fields fields={attrFields} draft={draft} set={set} />
-                  </div>
-                </details>
-              ) : null}
             </form>
           ) : (
             <p className="text-sm text-muted-foreground">

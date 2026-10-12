@@ -1,3 +1,13 @@
+## 2026-10-12 — ACCOUNTING-TREE-CLEANUP / OWNERSHIP-PC-B — IN_PROGRESS
+
+User assigns final full-stack Accounting ownership to PC-B; other Finance/Treasury
+stays with PC-A. MODULE_OWNERSHIP is updated. In-flight PC-A branch delivers restyled
+account hierarchy, route-aware hero and removal of four Rubi-only navigation/routes
+and branded settings panels. Required ledger branch/currency fields remain in the
+main form. Existing operational data/settings remain intact; no schema/API changes.
+Tree and navigation regression tests plus chart/empty-chart tests pass12/12.
+Remaining lint/typecheck/English coverage/build and publication are pending.
+
 ## 2026-10-12 — ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
 
 Accounting now uses a distinct Rubi Finance OS visual language: navy/cyan workspace

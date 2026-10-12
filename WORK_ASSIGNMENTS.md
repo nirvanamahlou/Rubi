@@ -1,3 +1,23 @@
+## ACCOUNTING-OWNERSHIP-PC-B-1012 — PC-B — OWNER_ASSIGNED
+
+User explicitly transfers final Accounting ownership to PC-B on2026-10-12.
+Scope: Accounting Database/Backend/Frontend/Test; other Finance/Treasury remains PC-A.
+Canonical ownership: docs/MODULE_OWNERSHIP.md. No data/API or operating-system identity
+change. The existing PC-A tree-cleanup branch is an in-flight execution/handoff only;
+new accounting work belongs to PC-B and still requires independent file/central locks.
+Reserve MODULE_OWNERSHIP and the ownership note in MODULE_BOUNDARIES for this transfer.
+
+## ACCOUNTING-TREE-CLEANUP-1012 — PC-B owner / PC-A execution — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-tree-cleanup-1012` from
+`origin/develop@de1c81d4`. Follow-up requested by the accounting redesign owner:
+restyle the account tree without changing its hierarchy or behavior, show the current
+route title in the hero, and remove Rubi-only additions from the accounting UI.
+Reserve Finance Web tree/navigation/workspace/ledger/history components and focused tests plus this
+work record and PROJECT_STATUS. Existing records, APIs, schemas, permissions and
+dependencies remain untouched. Root agent is sole writer. Previous redesign merged
+through PR797; stale icon-toolbar reservation is already integrated in develop.
+
 ## ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-ui-redesign-1012` from
