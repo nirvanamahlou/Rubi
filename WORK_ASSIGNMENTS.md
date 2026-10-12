@@ -7161,3 +7161,23 @@ API/Web/service checks and exact-head CI before authorized develop merge.
 Base origin/develop@2de87ce4; sole writer, no delegation. Reserve correspondence Web module/routes, additive SystemManagement-owned correspondence numbering service/controller/module registration, bounded Web/API English catalogue entries and own docs. No schema/migration/dependency change. Existing System numbering tables remain producer-owned; per-company yearly atomic sequence with actor-scoped idempotency and audit. Authenticated correspondence screen control applies. Incoming letters consume unchanged Documents upload dialog/API with original permissions and archive storage; internal remains empty. User requests three cards, automatic numbering without input, centered logos, editable administrative templates and recipient/sender. Reuse Rubi3100; human-authorized nirvanamahlou publication/develop merge after exact-head CI. No raw operational data in Git.
 
 CORRESPONDENCE-WORKFLOWS-1012 candidate: three real routes/cards; incoming consumes the original Documents dialog/upload API and reports archive code; internal blank; outgoing has five editable original administrative templates, explicit recipient/title/sender and centered original logo pixels. Atomic System-owned numbering at POST /api/v1/correspondence/v1/numbers uses company ID, ISO date and UUID replay key; authenticated actor and correspondence.home denial enforced. Per-company/year sequence, date-bearing number and transactional audit; no schema migration. Five numbering unit tests, three HTTP authorization tests, real PostgreSQL concurrency/replay/brand test, five letter tests and three English coverage tests pass; scoped lint and API/Web typechecks pass. Source/catalog/module-registration locks RELEASED with candidate. Full CI gates develop merge and Rubi deployment.
+
+## AGENCY-IMPORT-REGISTER-ENABLE-1012 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-import-register-enable-1012` from
+`origin/develop@f9146227`. The user reports that the supplied agency workbook is
+read successfully but the create button remains disabled. Reserve only the
+Organizations XLSX validation/preview, focused tests and bounded status/work
+documentation. The supplied workbook has 39 populated agencies; 28 optional
+email cells contain website addresses rather than emails. Treat a non-email
+value in the optional email column as an omitted email with a visible warning,
+while retaining formula/control-character rejection and all required identity,
+duplicate and safety validation. No API/schema/migration/dependency/permission
+or operational-data change. Merge and runtime deployment remain separately
+gated by review and user authorization.
+
+Candidate result: optional non-email values are cleared before create and shown
+as non-blocking warnings, so the supplied 39-row workbook is no longer blocked
+by its 28 website values. Formula-like values remain blocking. The two focused
+Organizations suites pass 32/32; scoped ESLint and Web typecheck pass after the
+Contracts build. Source lock releases with this candidate.

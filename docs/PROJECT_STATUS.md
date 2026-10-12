@@ -5688,3 +5688,12 @@ PR803 merged at04acd08a and passed all merged-tree CI checks; rubi Web3100/API41
 ### 2026-10-12 — CORRESPONDENCE-WORKFLOWS-1012
 
 Three correspondence cards/routes: Incoming uses unchanged Documents upload form/API/private archive; Outgoing hosts the letter generator; Internal remains empty. Outgoing renders centered original logo artwork, explicit recipient/title/sender, five editable administrative templates and automatically allocated company/year sequence with letter date. SystemManagement owns numbering with existing tables; no schema change. HTTP guards, invalid inputs, replay and actual PostgreSQL concurrent issuance verified. Formal layout and original Persian template wording informed by University of Wisconsin Writing Center (https://writing.wisc.edu/handbook/professionalwriting/businessletter/) and Texas A&M Writing Center (https://writingcenter.tamu.edu/guides/resources/business-letters.html); no external text generation or API sending. Templates are editable in the current letter, not shared persisted business configuration. Exact-head CI and develop publication precede Rubi3100 installation.
+## 2026-10-12 — Agency XLSX registration gate
+
+- PC-B fixed the Organizations XLSX preview gate so optional website-like
+  values entered in the email column are omitted with a visible warning rather
+  than disabling the create action for the whole workbook.
+- Required identity, duplicate, formula/control-character and workbook safety
+  checks remain blocking. No schema, API, dependency or operational data was
+  changed.
+- Focused Organizations tests pass 32/32; scoped ESLint and Web typecheck pass.

@@ -169,6 +169,7 @@ export function OrganizationExcelDialog({
                       <td>
                         {result?.message ??
                           row.issue ??
+                          row.warning ??
                           (row.existing
                             ? 'موجود؛ بدون تغییر'
                             : started

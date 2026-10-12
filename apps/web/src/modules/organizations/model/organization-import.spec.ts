@@ -75,17 +75,18 @@ describe('organization import boundaries', () => {
     expect(address).not.toHaveBeenCalled();
   });
 
-  it('still rejects a missing name and populated invalid email', () => {
+  it('still rejects a missing name and safely omits a non-email optional value', () => {
     expect(
       validateOrganizationRows([
         { ...syntheticOrganizations[0]!, legalName: '' },
       ])[0]?.issue,
     ).toBeTruthy();
-    expect(
-      validateOrganizationRows([
-        { ...syntheticOrganizations[0]!, email: 'https://example.com' },
-      ])[0]?.issue,
-    ).toContain('ایمیل');
+    const [row] = validateOrganizationRows([
+      { ...syntheticOrganizations[0]!, email: 'https://example.com' },
+    ]);
+    expect(row?.issue).toBeUndefined();
+    expect(row?.email).toBe('');
+    expect(row?.warning).toContain('نادیده گرفته شد');
   });
   it('accepts blank email and tourism license values', () => {
     const [row] = validateOrganizationRows([
@@ -98,6 +99,14 @@ describe('organization import boundaries', () => {
     expect(row?.issue).toBeUndefined();
     expect(row?.email).toBe('');
     expect(row?.tourismLicenseNumber).toBe('');
+  });
+
+  it('never turns a formula-like optional email into an allowed blank', () => {
+    const [row] = validateOrganizationRows([
+      { ...syntheticOrganizations[0]!, email: '=HYPERLINK("x")' },
+    ]);
+    expect(row?.issue).toContain('فرمول');
+    expect(row?.warning).toBeUndefined();
   });
 
   it('rejects case-insensitive duplicates, formulas and unrelated roles before writing', () => {
