@@ -6932,3 +6932,5 @@ identity mutation until the human explicitly authorizes it or correct connection
 Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint passed. Account selection remains pending.
 
 2026-10-12 human explicitly authorizes nirvanamahlou for this publication, overriding the recorded Amin-tech11 restriction for this task. Publish/PR/CI/merge use authenticated nirvanamahlou id100076016.
+
+PR791 CI follow-up reserves additive translations for140 observed chart/tax labels and generated API/legacy catalogues. Three English coverage/synchronization tests passed; operational forms and domain fields stay unchanged.
