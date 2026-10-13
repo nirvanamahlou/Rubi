@@ -122,6 +122,17 @@ function normalize(value: string) {
     .trim();
 }
 
+// Comparison only: retain original display text and bind persistence to the
+// explicitly selected city ID, never to a fuzzy or first matching city.
+function cityComparisonKey(value: string) {
+  return normalize(value)
+    .toLocaleLowerCase('en-US')
+    .replace(/ı/g, 'i')
+    .replace(/\u0307/g, '')
+    .replace(/آ/g, 'ا')
+    .replace(/(?:\s|\u200c|\u200d|\u200e|\u200f|\ufeff)+/gu, '');
+}
+
 function decodeXml(value: string) {
   return value
     .replace(/&lt;/g, '<')
@@ -455,7 +466,7 @@ export function parseHotelImportWorkbook(input: {
 
   rows.forEach(({ values: cells, rowNumber }) => {
     const englishName = normalize(cells[1] ?? '');
-    const city = normalize(cells[3] ?? '') || expectedCity;
+    const city = normalize(cells[3] ?? '');
     const suppliedCode = normalize(cells[0] ?? '').toUpperCase();
     const code = suppliedCode || generateHotelCode(englishName, city);
     const status = normalize(cells[15] ?? '') || 'منتشرشده';
@@ -487,7 +498,14 @@ export function parseHotelImportWorkbook(input: {
         code: 'REQUIRED',
         message: 'نام هتل الزامی است.',
       });
-    if (!city || city !== expectedCity)
+    if (!city)
+      issues.push({
+        rowNumber,
+        column: 'شهر',
+        code: 'REQUIRED',
+        message: 'شهر الزامی است.',
+      });
+    else if (cityComparisonKey(city) !== cityComparisonKey(expectedCity))
       issues.push({
         rowNumber,
         column: 'شهر',

@@ -79,6 +79,7 @@ async function proxyRead(
   path: string,
   fetcher: typeof fetch,
   filtered = false,
+  message?: string,
 ): Promise<Response> {
   const headers: Record<string, string> = {
     'cache-control': 'private, no-store',
@@ -88,7 +89,8 @@ async function proxyRead(
     Response.json({ error: { code } }, { status, headers });
   const cookie = tokenCookie(request.headers.get('cookie'));
   if (!cookie) return error(401, 'UNAUTHENTICATED');
-  if (request.method !== 'GET') return error(405, 'READ_ONLY');
+  if (request.method !== (message === undefined ? 'GET' : 'POST'))
+    return error(405, 'READ_ONLY');
   const query = new URL(request.url).searchParams;
   if (filtered) {
     const allowed = [
@@ -125,8 +127,15 @@ async function proxyRead(
     target.pathname = path;
     if (filtered) target.search = query.toString();
     const response = await fetcher(target, {
-      method: 'GET',
-      headers: { accept: 'application/json', cookie },
+      method: message === undefined ? 'GET' : 'POST',
+      headers: {
+        accept: 'application/json',
+        cookie,
+        ...(message === undefined
+          ? {}
+          : { 'content-type': 'application/json' }),
+      },
+      ...(message === undefined ? {} : { body: message }),
       cache: 'no-store',
       redirect: 'error',
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(12000)]),
@@ -179,5 +188,68 @@ async function proxyRead(
     });
   } catch {
     return error(503, 'UNAVAILABLE');
+  }
+}
+
+/** Same-origin, bounded message transport; provider activation remains a server policy gate. */
+export async function proxyAssistantConversation(
+  request: Request,
+  configuredUrl: string | undefined,
+  fetcher: typeof fetch = fetch,
+) {
+  const reject = (status: number) =>
+    Response.json(
+      { error: { code: 'INVALID_MESSAGE' } },
+      { status, headers: { 'cache-control': 'private, no-store' } },
+    );
+  if (request.method !== 'POST') return reject(405);
+  if (request.headers.get('origin') !== new URL(request.url).origin)
+    return reject(403);
+  if (
+    request.headers.get('content-type')?.split(';')[0]?.trim() !==
+      'application/json' ||
+    !request.body
+  )
+    return reject(415);
+  if (!tokenCookie(request.headers.get('cookie'))) return reject(401);
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(2000)]);
+  const abort = () => {
+    void reader.cancel().catch(() => undefined);
+  };
+  signal.addEventListener('abort', abort, { once: true });
+  try {
+    while (!signal.aborted) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 65536) {
+        await reader.cancel();
+        return reject(413);
+      }
+      chunks.push(value);
+    }
+    if (signal.aborted) return reject(408);
+    const buffer = new Uint8Array(size);
+    let offset = 0;
+    for (const chunk of chunks) {
+      buffer.set(chunk, offset);
+      offset += chunk.length;
+    }
+    return await proxyRead(
+      request,
+      configuredUrl,
+      '/v2/assistant/conversation',
+      fetcher,
+      false,
+      new TextDecoder('utf-8', { fatal: true }).decode(buffer),
+    );
+  } catch {
+    return reject(400);
+  } finally {
+    signal.removeEventListener('abort', abort);
+    reader.releaseLock();
   }
 }

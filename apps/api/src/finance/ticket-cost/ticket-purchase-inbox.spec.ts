@@ -83,7 +83,8 @@ function fixture() {
 describe('Travel purchase cost handoff', () => {
   it('preserves a total that cannot be evenly divided and protects total-cost replay', async () => {
     const f = fixture();
-    const { unitCost: _unit, ...base } = input;
+    const { version, operationId, expectedCostVersion, currencyCode } = input;
+    const base = { version, operationId, expectedCostVersion, currencyCode };
     const command = { ...base, seatCount: 3, totalCost: '100' };
     const result = await f.service.recordCost('request', command, actor);
     expect(result.invoiceAmount).toBe('100');

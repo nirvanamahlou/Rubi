@@ -7319,7 +7319,7 @@ and post-merge verification gate local publication.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
 
-## ASSISTANT-TOOLS-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-TOOLS-1013 — PC-C — DONE
 
 Base origin/develop@598fc90c; branch codex/pc-c-assistant-tool-registry-1013.
 User approves the continuation plan. Reserve services/assistant, its dedicated
@@ -7348,6 +7348,14 @@ control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
 
+## HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B — READY_FOR_REVIEW
+
+2026-10-13 follow-up: user explicitly authorizes develop merge and localhost3100 update. Reserve only two additive English translations in Web/API catalogues for this task, documentation conflict reconciliation and safe app-container replacement preserving the existing database and document mounts. Latest-head CI must pass before merge; no migration/dependency change.
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-hotel-import-city-normalize-1013` from origin/develop. Reserve Hotel import parser/service regressions, panel guidance and own docs. Normalize city comparison for Unicode/Persian spelling, whitespace/joiners and case; keep selected city FK/country scope and all file/token/transaction security unchanged. Only hotel name and row city required; optional fields keep validation when populated. No migration/dependency/runtime change; no merge authorization in this request.
+
+Implemented comparison-only normalization for spaces/joiners, Latin case, Arabic/Persian letter variants and آ/ا. Missing row city is explicitly rejected rather than silently populated. The supplied downloadable template commits against selected city «کوش اداسی» despite its «کوش‌آداسی» cells. Focused API tests pass 44/44, focused Web tests 16/16, scoped lint, Prettier, API/Web typechecks and builds pass. No live database write or localhost runtime rollout was performed. Source locks released for review.
+
 ## AGENCY-IMPORT-PARTIAL-1013 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-organization-import-partial-1013` from `origin/develop@ebcb016f`. The Organizations XLSX preview currently disables the whole import when one row has an invalid optional phone. Reserve only `apps/web/src/modules/organizations/model/organization-import.ts`, its focused test, `components/organization-excel-dialog.tsx`, and bounded task status documentation. Import valid rows while leaving invalid rows unmodified and visibly reported. Preserve strict validation, no-overwrite checks, uncertain-write stop, and original row/progress alignment. No API/schema/migration/dependency/permission or operational data change. No other active owner holds these target files.
@@ -7360,7 +7368,7 @@ CI follow-up: reserve four additive Web-only English translations in `apps/web/s
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
 
-## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-FILTERS-1013 — PC-C — DONE
 
 User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
 requires its green merge. Branch codex/pc-c-assistant-report-filters-1013.
@@ -7377,8 +7385,21 @@ Bounded filter-options extension: reserve assistant-read.module.ts only to regis
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
 
-## FLIGHT-TOTAL-CONTRACT-COST-1013 — PC-A — IN_PROGRESS
+## FLIGHT-TOTAL-CONTRACT-COST-1013 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-total-contract-cost-1013 from origin/develop@390f9ff2. Owner authorizes total flight purchase entry and per-sold-seat contract costs/profit, with develop merge. Reserve Finance ticket-cost command/controller/public reader/tests, Ticket Purchase Web form/tests, Sales profit calculation/tests and own docs. Shared lock: additive optional totalCost on FinanceTicketCostCommandV1 and bounded English catalog entries. Finance remains producer; Purchasing UI sends either unitCost or totalCost with seats, Sales consumes public recorded cost projection. Existing callers retain unit pricing; invoice remains exact, proportional contract cost rounds once at four decimals. Preserve permissions, branch scope, CAS, replay, paid-price lock and per-currency profit. No schema/migration/dependency/runtime or operational data changes. Existing released ticket purchase work remains intact.
 
 FLIGHT-TOTAL-CONTRACT-COST-1013 scope clarification: reserve Reservations action-panel/workspace consumer and tests for the existing Sales profit view, visible with finance.read. Bounded derived API/standalone English catalogue regeneration includes four existing base labels required by the offline synchronization gate; no new unrelated business behavior. DATA_MODEL own additive allocation paragraph reserved; no migration or dependency lock required.
+
+## ASSISTANT-ORCHESTRATOR-1013 — PC-C — READY_FOR_REVIEW
+
+User-approved step3 preparation, stacked on filters PR822. Scope services/assistant action composition, message contract, bounded injected-provider orchestrator and tests; optional gated BFF/chat state, own docs. Real model connection remains absent and off; no DB changes.
+
+ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route, separate session-only conversation UI and tests; existing fixed controls remain available.
+
+PC-C handoff: tools #819 and filters #822 merged with green exact-head and postmerge CI. Orchestrator #825 preparation has56 native tests and35 Web tests, scoped lint/typecheck and local production build passing; live conversation remains disabled. Release follows final-head and postmerge CI; rollout evidence is stored privately in tmp/orchestrator-runtime.
+
+ASSISTANT-ORCHESTRATOR-1013 CI fix: conversation labels use the existing assistant-copy.ts bilingual source; translation coverage remains enforced.
+
+
+FLIGHT-TOTAL-CONTRACT-COST-1013 validation: focused Finance/Sales and Web purchase/action tests pass; full production build, full test suite and PostgreSQL migration/seed CI passed at39772df4. Corrected one unused test variable and merged current develop preserving both document/catalog additions. Final-head full quality/build/tests gate PR827 merge. No migration or local deployment; bounded source locks release with candidate.

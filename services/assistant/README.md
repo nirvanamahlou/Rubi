@@ -65,7 +65,8 @@ Run node services/assistant/server.mjs with server-side environment:
 Web uses ASSISTANT_SERVICE_URL=http://127.0.0.1:4300. The ERP-owned read entrypoint
 apps/api/dist/assistant-read/main.js retains native IAM and read-only database
 sessions. Database credentials never enter the independent assistant. Keep the
-existing Core and read entrypoint running during this service-only rollout.
+existing Core running. Deploy the versioned read API, assistant and Web builds
+together; preserve their previous revisions for rollback.
 Only nora_access is forwarded. Same-site cookie deployment remains required;
 no relaxed CORS/cookie policy or synthesized service-account grant.
 
@@ -83,12 +84,22 @@ The dedicated workflow discovers all tests. Existing HTTP tests retain real
 loopback transport, isolation, revocation, source coverage and money validation.
 The main CI also exercises the isolated PostgreSQL-to-Web contract integration.
 
-No migration or dependency change is required. Roll back by restoring the prior
-assistant process revision; Web/Core/read API contracts are unchanged. Deployment
-follows green final-head and merged-tree CI; business data acceptance is separate.
+No migration or dependency change is required. Roll back the read API, assistant
+and Web processes together to their previous tested revisions. Core and database
+are unchanged; v1 remains compatible. Deployment follows green final-head and
+merged-tree CI; business data acceptance is separate.
 
-Next unit: simulated conversation/orchestrator. Company ownership, approved Finance
+Simulated orchestration is prepared below. Company ownership, approved Finance
 sources, real model processing/cost policy and production pilot remain gates.
 See ../../docs/tasks/ASSISTANT-TOOLS-1013.md.
 
 Versioned filter contract and rollout: ../../docs/tasks/ASSISTANT-FILTERS-1013.md.
+
+## Gated conversation preparation
+
+POST /v2/assistant/conversation has bounded JSON and native IAM, but the runtime
+ships without a provider and returns503 CONVERSATION_DISABLED. Synthetic tests
+inject a planner; prepared-actions.mjs shares existing read compositions with
+orchestrator.mjs. No real message or ERP data goes to a model. The separate Web
+conversation component is not mounted pending policy approval. See
+../../docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md for activation and pilot gates.

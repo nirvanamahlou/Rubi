@@ -28,7 +28,7 @@ function cell(reference: string, value: string) {
     : `<c r="${reference}"/>`;
 }
 
-function workbook() {
+function workbook(requiredOnly = false) {
   const values = [
     'HTL-BODRUM-IMPORT-001',
     'Bodrum Marina Hotel',
@@ -49,6 +49,10 @@ function workbook() {
     'TRUE',
     '',
   ];
+  if (requiredOnly)
+    values.forEach((_, index) => {
+      if (index !== 1 && index !== 3) values[index] = '';
+    });
   const row = (number: number, source: readonly string[]) =>
     source
       .map((value, index) =>
@@ -69,10 +73,11 @@ function workbook() {
 }
 
 describe('HotelImportService commit persistence', () => {
-  it.each(['legacy', 'downloadable template'])(
+  it.each(['legacy', 'downloadable template', 'required fields only'])(
     'persists every valid parsed row from %s and writes audit records',
     async (source) => {
       const supplied = source === 'downloadable template';
+      const requiredOnly = source === 'required fields only';
       const buffer = supplied
         ? readFileSync(
             resolve(
@@ -80,7 +85,7 @@ describe('HotelImportService commit persistence', () => {
               '../web/public/templates/hotel-master-template.xlsx',
             ),
           )
-        : workbook();
+        : workbook(requiredOnly);
       const expectedHotels = supplied
         ? [
             {
@@ -101,7 +106,9 @@ describe('HotelImportService commit persistence', () => {
           ]
         : [
             {
-              code: 'HTL-BODRUM-IMPORT-001',
+              code: requiredOnly
+                ? expect.stringMatching(/^HOTEL_[A-F0-9]{12}$/)
+                : 'HTL-BODRUM-IMPORT-001',
               name: 'Bodrum Marina Hotel',
               isActive: true,
             },
@@ -118,7 +125,7 @@ describe('HotelImportService commit persistence', () => {
         originalFileName: 'HOTEL_IMPORT_V1.xlsx',
         fileHash: createHash('sha256').update(buffer).digest('hex'),
         cityId: '55555555-5555-4555-8555-555555555555',
-        city: { name: supplied ? 'کوش‌آداسی' : 'بدروم' },
+        city: { name: supplied ? 'کوش اداسی' : 'بدروم' },
         rowCount: expectedHotels.length,
         validCount: expectedHotels.length,
         invalidCount: 0,

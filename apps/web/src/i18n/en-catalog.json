@@ -17227,5 +17227,7 @@
   "مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.": "The email column value was not an email address and was ignored.",
   "مبلغ کل خرید پرواز": "Total flight purchase cost",
   "مبنای قیمت خرید": "Purchase pricing basis",
-  "مجوز ثبت قیمت خرید ندارید": "You do not have permission to record purchase prices"
+  "مجوز ثبت قیمت خرید ندارید": "You do not have permission to record purchase prices",
+  "در ردیف‌های اکسل فقط «نام هتل» و «شهر» الزامی است؛ سایر فیلدها اختیاری‌اند. شهر بدون حساسیت به فاصله و بزرگی حروف تطبیق داده می‌شود.": "Only hotel name and city are required in Excel rows; other fields are optional. City matching ignores spacing and letter case.",
+  "شهر الزامی است.": "City is required."
 }

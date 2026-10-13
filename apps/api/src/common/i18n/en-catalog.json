@@ -3541,6 +3541,7 @@
   "شناسه یکتای درخواست الزامی است.": "A unique request ID is required.",
   "شناسه، نسخه یا وضعیت بلیت معتبر نیست.": "The ticket ID, version or status is not valid.",
   "شهر": "city",
+  "شهر الزامی است.": "City is required.",
   "شهر انتخاب‌شده متعلق به کشور انتخاب‌شده نیست.": "The selected city does not belong to the selected country.",
   "شهر انتخاب‌شده معتبر نیست.": "The selected city is not valid.",
   "شهر تور غیرفعال است.": "Tour City is inactive.",
