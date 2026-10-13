@@ -30,6 +30,19 @@ export function HotelPurchaseSavings({
   return (
     <section className="w-full space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm">
       <strong>سودآوری رزرواسیون هتل</strong>
+      {value?.reason === 'CURRENT_REFERENCE' && (
+        <p className="text-xs text-muted-foreground">
+          نرخ مرجع فعلی؛ نرخ زمان خرید ذخیره نشده است.
+        </p>
+      )}
+      {value?.status !== 'AVAILABLE' && value?.actualAmount != null && (
+        <p>
+          <span>خرید واقعی رزرواسیون</span>:{' '}
+          <bdi>
+            {formatSalesMoney(value.actualAmount)} {value.currencyCode}
+          </bdi>
+        </p>
+      )}
       {value?.status === 'AVAILABLE' ? (
         <>
           <p>
