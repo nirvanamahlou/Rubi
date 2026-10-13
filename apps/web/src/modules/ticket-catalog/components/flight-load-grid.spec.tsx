@@ -5,21 +5,17 @@ import type { TicketOfferV1 } from '@nora/contracts';
 import { FlightLoadGrid } from './flight-load-grid';
 
 describe('flight load search entry', () => {
-  it('keeps date inputs unchanged and separates loads when valid dates are enabled', () => {
+  it('renders the restored outbound and return tables without delete columns', () => {
     const source = readFileSync(
       new URL('./flight-load-grid.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).toContain('renderRowActions?.(offer)');
-    expect(source).toContain('setSearched(nextFilter)');
-    expect(source).toContain('setSearchedCurrent(true)');
-    expect(source).toContain('value={filter.from}');
-    expect(source).toContain('value={filter.to}');
-    expect(source).not.toContain('setFilter(nextFilter)');
-    expect(source).toContain('offer.loadGroupId ?? `offer:${offer.id}`');
-    expect(source).toContain('{table(rows, route)}');
-    expect(source).not.toContain('table(forward');
-    expect(source).not.toContain('table(backward');
+    expect(source).toContain('{table(outbounds, false)}');
+    expect(source).toContain('{table(returns, true)}');
+    expect(source).toContain("back ? 'برگشت' : 'رفت'");
+    expect(source).not.toContain('renderRowActions');
+    expect(source).not.toContain('renderLoadActions');
+    expect(source).not.toContain("'عملیات'");
   });
 
   it('does not expose flight rows or management actions before an explicit search', () => {
@@ -39,13 +35,12 @@ describe('flight load search entry', () => {
         refreshing={false}
         onRefresh={() => {}}
         renderActions={() => <button>Manage selected flight</button>}
-        renderLoadActions={() => <button>Manage complete table</button>}
       />,
     );
     expect(html).toContain('تاریخ‌های معتبر');
     expect(html).toContain('لود پرواز چارتر');
     expect(html).toContain('type="checkbox"');
-    expect(html).not.toMatch(/type="checkbox" checked=""/);
+    expect(html).toMatch(/type="checkbox" checked=""/);
     expect(html).toContain('جست‌وجو');
     expect(html).toContain('load-country');
     expect(html).toContain('شهر');
@@ -53,7 +48,6 @@ describe('flight load search entry', () => {
     expect(html).toContain('load-origin');
     expect(html).not.toContain('<table');
     expect(html).not.toContain('Manage selected flight');
-    expect(html).not.toContain('Manage complete table');
     expect(html).not.toContain('مبدأ، مقصد یا تاریخ را انتخاب کنید');
     expect(html).not.toContain('بلیت‌های قدیمی با نوع تأمین ثبت‌نشده');
     expect(html).not.toContain('Hold فعال و منقضی‌نشده');
