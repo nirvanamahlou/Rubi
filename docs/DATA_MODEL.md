@@ -798,3 +798,8 @@ AccountingStatement is Finance-owned correspondence generated from selected save
 ## Hotel editable import profile — HOTEL-TEMPLATE-IMPORT-1012
 
 MasterHotel adds nullable serviceLevel/sourceDestination (varchar160), internalNote/sourceRefundRules/sourceMainImage/sourceGalleryImages (varchar2000) and sourceFeatured (boolean). Existing description/hotelRules become visible/editable in the profile. Gallery source addresses remain pipe-delimited descriptive text matching the workbook; no document binary or external fetch is implied. Canonical country/city, meal, room and facility references retain their FKs. Refund and featured source values do not replace Procurement/Sales authority. Existing records remain NULL and old clients preserve omitted fields. Migration20261012140000_hotel_import_profile_fields is additive.
+
+
+## HOTEL-RATE-HUB-1013 — Hotel rate pack archive
+
+ReservationHotelRatePack.archivedAt is a nullable UTC timestamptz lifecycle marker. Archive requires Reservations purchase-write permission, an authorized branch and the expected current version, and writes an actor audit in the same transaction. It never deletes or rewrites rate batches, rate rows, published price snapshots or historical foreign keys. Default directories, source periods, legacy selectable rates and the public new-pricing projection exclude archived packs before pagination. Explicit branch-scoped history listing and detail reads remain available; updates and new shared-period sources reject archived packs. Migration 20261013130000_hotel_rate_pack_archive is additive; operational migration is a deployment prerequisite.

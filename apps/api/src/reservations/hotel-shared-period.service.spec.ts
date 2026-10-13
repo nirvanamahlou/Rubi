@@ -221,6 +221,7 @@ describe('shared hotel period persistence', () => {
     expect(
       f.client.reservationHotelRatePack.findMany.mock.calls[0]![0].where,
     ).toEqual({
+      archivedAt: null,
       branchId: f.input.branchId,
       cityId: f.input.cityId,
       tourDepartureId: null,

@@ -59,6 +59,7 @@ type GridRow = {
   inCityList: boolean;
 };
 export type PackSummary = {
+  archivedAt?: string | null;
   sharedPeriod?: boolean;
   tourLabel?: string;
   tourDepartureId?: string | null;
@@ -221,7 +222,9 @@ export function HotelRatePackTable({
   );
 }
 
-export function HotelRatePacksWorkspace() {
+export function HotelRatePacksWorkspace({
+  initialMode = 'manual',
+}: { initialMode?: 'manual' | 'excel' | 'existing' } = {}) {
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
@@ -249,7 +252,9 @@ export function HotelRatePacksWorkspace() {
     id: string;
     version: number;
   } | null>(null);
-  const [inputMode, setInputMode] = useState<'manual' | 'excel'>('manual');
+  const [inputMode, setInputMode] = useState<'manual' | 'excel'>(
+    initialMode === 'excel' ? 'excel' : 'manual',
+  );
   const [draftGeneration, setDraftGeneration] = useState(0);
   const [editorMode, setEditorMode] = useState<'list' | 'new' | 'edit'>('list');
   const editorRef = useRef<HTMLDivElement>(null);
@@ -278,6 +283,7 @@ export function HotelRatePacksWorkspace() {
         if (active) {
           setSession(value);
           if (
+            initialMode !== 'existing' &&
             value?.user.permissions.includes(
               'reservations.hotel_purchase.write',
             )
@@ -293,7 +299,7 @@ export function HotelRatePacksWorkspace() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [initialMode]);
 
   useEffect(() => {
     if (!session) return;
@@ -1057,7 +1063,10 @@ export function HotelRatePacksWorkspace() {
           مجوز ثبت نرخ خرید ندارید؛ مشاهدهٔ بسته‌ها در دسترس است.
         </p>
       )}
-      <details className={styles.savedPackages}>
+      <details
+        className={styles.savedPackages}
+        open={initialMode === 'existing' || undefined}
+      >
         <summary>بسته‌های ثبت‌شده و ویرایش نرخ</summary>
         <ExistingPacksBrowser
           key={branch}

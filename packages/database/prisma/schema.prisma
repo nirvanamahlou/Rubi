@@ -5184,6 +5184,7 @@ model FinanceCustomerDocumentDeliveryRevision {
 }
 
 model ReservationHotelRatePack {
+  archivedAt      DateTime?                        @db.Timestamptz(3)
   sourcePeriods   ReservationHotelRatePackSource[]
   tourDepartureId String?                          @db.Uuid
   tourDeparture   TourDeparture?                   @relation(fields: [tourDepartureId], references: [id], onDelete: Restrict)
