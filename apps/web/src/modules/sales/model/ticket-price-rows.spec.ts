@@ -269,3 +269,68 @@ it('keeps hidden pairs in the management rows and marks their destinations in Ex
   expect(exported[1]?.slice(-2)).toEqual(['100', 'عدم نمایش']);
   expect(exported[2]?.slice(-2)).toEqual(['100.0000', 'عدم نمایش']);
 });
+
+describe('unpriced defined load pairs', () => {
+  const going: TicketOfferV1 = {
+    ...outbound,
+    loadGroupId: 'load',
+    arrivalAt: '2027-01-01T23:00:00Z',
+    cabinClassCode: 'ECONOMY',
+    returnMinDays: 6,
+    returnMaxDays: 8,
+    roundTripSalePrices: [],
+  };
+  const back: TicketOfferV1 = {
+    ...returning,
+    loadGroupId: 'load',
+    cabinClassCode: 'ECONOMY',
+    arrivalAt: '2027-01-08T12:00:00Z',
+    roundTripSalePrices: [],
+  };
+  it('offers a combined unpriced row before its first save', () => {
+    const rows = ticketPriceRows([going, back]);
+    expect(rows.find((row) => row.id === 'out:back')).toMatchObject({
+      offer: going,
+      returning: back,
+      returnOfferId: 'back',
+    });
+    expect(rows.find((row) => row.id === 'out:back')?.base).toBeUndefined();
+    expect(
+      filterTicketRows(
+        rows,
+        { ...filters, tripType: 'ROUNDTRIP' },
+        (o) => o.id,
+      ),
+    ).toHaveLength(1);
+    expect(
+      filterTicketRows(rows, { ...filters, tripType: 'ONEWAY' }, (o) => o.id),
+    ).toHaveLength(2);
+  });
+  it('never pairs another load, branch, cabin or outside the return window', () => {
+    for (const change of [
+      { loadGroupId: 'other' },
+      { branchId: 'other' },
+      { cabinClassCode: 'BUSINESS' as const },
+      { departureAt: '2027-02-08T10:00:00Z' },
+    ]) {
+      expect(
+        ticketPriceRows([going, { ...back, ...change }]).filter(
+          (row) => row.returnOfferId,
+        ),
+      ).toHaveLength(0);
+    }
+    expect(
+      ticketPriceRows([{ ...going, loadGroupId: undefined }, back]).filter(
+        (row) => row.returnOfferId,
+      ),
+    ).toHaveLength(0);
+  });
+  it('retains saved manual pairs without duplicating the automatic pair', () => {
+    const rows = ticketPriceRows([
+      { ...going, roundTripSalePrices: outbound.roundTripSalePrices },
+      back,
+    ]);
+    expect(rows.filter((row) => row.id === 'out:back')).toHaveLength(1);
+    expect(rows.find((row) => row.id === 'out:back')?.base?.amount).toBe('260');
+  });
+});

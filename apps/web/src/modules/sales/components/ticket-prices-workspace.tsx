@@ -584,6 +584,8 @@ export function TicketPricesWorkspace() {
     }
   }
   function editPair(row: TicketPriceRow) {
+    const editor = document.getElementById('round-trip-price-editor');
+    if (editor instanceof HTMLDetailsElement) editor.open = true;
     setOutboundId(row.offer.id);
     setReturnId(row.returnOfferId ?? '');
     setPairDraft({
@@ -623,7 +625,7 @@ export function TicketPricesWorkspace() {
     }
   }
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-3" dir="rtl">
       <PageHeader
         eyebrow="فروش"
         title="قیمت گذاری پرواز"
@@ -678,7 +680,7 @@ export function TicketPricesWorkspace() {
           },
           {
             title: 'جفت‌های قیمت‌گذاری‌شده',
-            count: rows.filter((row) => row.returnOfferId).length,
+            count: rows.filter((row) => row.returnOfferId && row.base).length,
             Icon: ArrowLeftRight,
             style: 'from-violet-500/20 via-violet-50 dark:via-violet-950/30',
             hint: 'قیمت واحد رفت و برگشت',
@@ -686,27 +688,29 @@ export function TicketPricesWorkspace() {
         ].map(({ title, count, Icon, style, hint }) => (
           <Card
             key={title}
-            className={'bg-gradient-to-br to-surface p-5 shadow-sm ' + style}
+            className={
+              'bg-gradient-to-br to-surface px-3 py-2 shadow-sm ' + style
+            }
           >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">
                   {title}
                 </p>
-                <strong className="mt-2 block text-3xl font-black">
+                <strong className="mt-1 block text-xl font-black">
                   {count.toLocaleString('fa-IR')}
                 </strong>
-                <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
               </div>
               <Icon className="size-6 text-primary" />
             </div>
           </Card>
         ))}
       </section>
-      <Card className="p-5">
+      <Card className="p-3">
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-48 flex-1">
-            <h2 className="text-lg font-black">افزودن و حذف مقصد فروش</h2>
+            <h2 className="text-sm font-black">افزودن و حذف مقصد فروش</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               قیمت پایه را برای هر بلیت ثبت کنید؛ درصد هر مقصد جلوی همان بلیت
               قرار می‌گیرد.
@@ -774,116 +778,120 @@ export function TicketPricesWorkspace() {
             ))}
         </div>
       </Card>
-      <Card id="round-trip-price-editor" className="scroll-mt-24 p-5">
-        <h2 className="mb-4 text-lg font-black">ثبت قیمت رفت‌وبرگشت</h2>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_8rem_auto] lg:items-end">
-          <div className="sm:col-span-2 lg:col-span-3 grid gap-5 md:grid-cols-2">
-            <FormField label="بلیط رفت">
-              <Select
-                value={outboundId}
-                onValueChange={(id) => {
-                  setOutboundId(id);
-                  setReturnId('');
+      <Card className="p-3">
+        <details id="round-trip-price-editor" className="scroll-mt-24">
+          <summary className="cursor-pointer text-sm font-bold">
+            ثبت قیمت رفت‌وبرگشت
+          </summary>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_10rem_6rem_auto] lg:items-end">
+            <div className="contents">
+              <FormField label="بلیط رفت">
+                <Select
+                  value={outboundId}
+                  onValueChange={(id) => {
+                    setOutboundId(id);
+                    setReturnId('');
+                    setPairDraft({
+                      amount: '',
+                      currencyCode: currencies[0] ?? 'IRR',
+                    });
+                  }}
+                >
+                  <SelectTrigger className="w-full min-w-0">
+                    <SelectValue placeholder="انتخاب رفت" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {offers.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {label(o)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField label="بلیط برگشت">
+                <Select
+                  value={returnId}
+                  onValueChange={(id) => {
+                    setReturnId(id);
+                    const p = (
+                      outbound?.baseRoundTripSalePrices ??
+                      outbound?.roundTripSalePrices
+                    )?.find((p) => p.returnOfferId === id);
+                    setPairDraft({
+                      amount: p?.baseAmount ?? p?.amount ?? '',
+                      tiers: (p?.baseTiers ?? p?.tiers)?.map((tier) => ({
+                        ...tier,
+                      })),
+                      currencyCode: p?.currencyCode ?? currencies[0] ?? 'IRR',
+                    });
+                  }}
+                  disabled={!outbound}
+                >
+                  <SelectTrigger className="w-full min-w-0">
+                    <SelectValue placeholder="انتخاب برگشت" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {returnOptions.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        {label(o)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+            </div>
+            <FormField label="قیمت کل رفت‌وبرگشت">
+              <MoneyInput
+                value={pairDraft.amount}
+                onValueChange={(amount) =>
                   setPairDraft({
-                    amount: '',
-                    currencyCode: currencies[0] ?? 'IRR',
-                  });
-                }}
-              >
-                <SelectTrigger className="w-full min-w-0">
-                  <SelectValue placeholder="انتخاب رفت" />
-                </SelectTrigger>
-                <SelectContent>
-                  {offers.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {label(o)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    ...pairDraft,
+                    amount,
+                    ...(pairDraft.tiers?.length
+                      ? {
+                          tiers: pairDraft.tiers.map((tier, index) =>
+                            index === 0 ? { ...tier, amount } : tier,
+                          ),
+                        }
+                      : {}),
+                  })
+                }
+              />
             </FormField>
-            <FormField label="بلیط برگشت">
-              <Select
-                value={returnId}
-                onValueChange={(id) => {
-                  setReturnId(id);
-                  const p = (
-                    outbound?.baseRoundTripSalePrices ??
-                    outbound?.roundTripSalePrices
-                  )?.find((p) => p.returnOfferId === id);
-                  setPairDraft({
-                    amount: p?.baseAmount ?? p?.amount ?? '',
-                    tiers: (p?.baseTiers ?? p?.tiers)?.map((tier) => ({
-                      ...tier,
-                    })),
-                    currencyCode: p?.currencyCode ?? currencies[0] ?? 'IRR',
-                  });
-                }}
-                disabled={!outbound}
-              >
-                <SelectTrigger className="w-full min-w-0">
-                  <SelectValue placeholder="انتخاب برگشت" />
-                </SelectTrigger>
-                <SelectContent>
-                  {returnOptions.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>
-                      {label(o)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <FormField label="ارز">
+              <CurrencySelect
+                value={pairDraft.currencyCode}
+                values={currencies}
+                onChange={(currencyCode) =>
+                  setPairDraft({ ...pairDraft, currencyCode })
+                }
+              />
             </FormField>
+            {outbound && returnId ? (
+              <TierEditor
+                draft={pairDraft}
+                capacity={Math.min(
+                  outbound.totalCapacity,
+                  offers.find((o) => o.id === returnId)?.totalCapacity ?? 0,
+                )}
+                onSave={() => void savePair()}
+                saving={busy || !!saving}
+                onChange={setPairDraft}
+              />
+            ) : null}
+            <Button
+              onClick={() => void savePair()}
+              disabled={busy || !!saving}
+              loading={saving === 'pair'}
+            >
+              {currentPair ? 'ثبت نسخه جدید' : 'ثبت قیمت جفت'}
+            </Button>
           </div>
-          <FormField label="قیمت کل رفت‌وبرگشت">
-            <MoneyInput
-              value={pairDraft.amount}
-              onValueChange={(amount) =>
-                setPairDraft({
-                  ...pairDraft,
-                  amount,
-                  ...(pairDraft.tiers?.length
-                    ? {
-                        tiers: pairDraft.tiers.map((tier, index) =>
-                          index === 0 ? { ...tier, amount } : tier,
-                        ),
-                      }
-                    : {}),
-                })
-              }
-            />
-          </FormField>
-          <FormField label="ارز">
-            <CurrencySelect
-              value={pairDraft.currencyCode}
-              values={currencies}
-              onChange={(currencyCode) =>
-                setPairDraft({ ...pairDraft, currencyCode })
-              }
-            />
-          </FormField>
-          {outbound && returnId ? (
-            <TierEditor
-              draft={pairDraft}
-              capacity={Math.min(
-                outbound.totalCapacity,
-                offers.find((o) => o.id === returnId)?.totalCapacity ?? 0,
-              )}
-              onSave={() => void savePair()}
-              saving={busy || !!saving}
-              onChange={setPairDraft}
-            />
-          ) : null}
-          <Button
-            onClick={() => void savePair()}
-            disabled={busy || !!saving}
-            loading={saving === 'pair'}
-          >
-            {currentPair ? 'ثبت نسخه جدید' : 'ثبت قیمت جفت'}
-          </Button>
-        </div>
+        </details>
       </Card>
       <Card className="overflow-hidden border-sky-200/80 shadow-sm">
-        <div className="space-y-4 border-b bg-sky-50/50 p-5 dark:bg-sky-950/20">
+        <div className="space-y-2 border-b bg-sky-50/50 p-3 dark:bg-sky-950/20">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-black">فهرست قیمت‌گذاری بلیت‌ها</h2>
             <Badge>{filtered.length.toLocaleString('fa-IR')} بلیت / جفت</Badge>
@@ -928,16 +936,28 @@ export function TicketPricesWorkspace() {
               </Select>
             </FormField>
             <FormField label="نوع بلیت">
-              <Select value={tripType} onValueChange={setTripType}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">همه بلیت‌ها</SelectItem>
-                  <SelectItem value="ONEWAY">یک‌طرفه</SelectItem>
-                  <SelectItem value="ROUNDTRIP">رفت‌وبرگشت</SelectItem>
-                </SelectContent>
-              </Select>
+              <div
+                className="flex rounded-lg border bg-surface p-1"
+                role="group"
+                aria-label="نوع بلیت"
+              >
+                {[
+                  ['ALL', 'همه بلیت‌ها'],
+                  ['ONEWAY', 'یک‌طرفه'],
+                  ['ROUNDTRIP', 'رفت‌وبرگشت'],
+                ].map(([value, title]) => (
+                  <Button
+                    key={value}
+                    size="sm"
+                    className="min-h-8 flex-1 px-2 text-xs"
+                    variant={tripType === value ? 'primary' : 'ghost'}
+                    aria-pressed={tripType === value}
+                    onClick={() => setTripType(value!)}
+                  >
+                    {title}
+                  </Button>
+                ))}
+              </div>
             </FormField>
             <FormField label="مسیر، ایرلاین یا شماره پرواز">
               <div className="relative">
@@ -986,7 +1006,7 @@ export function TicketPricesWorkspace() {
             description="فیلترها را تغییر دهید یا بلیت تازه منتشر کنید."
           />
         ) : (
-          <div className="space-y-8 p-4 sm:p-6">
+          <div className="space-y-3 p-3">
             {[
               {
                 id: 'roundtrip',
@@ -1006,12 +1026,12 @@ export function TicketPricesWorkspace() {
                 <section
                   key={section.id}
                   aria-labelledby={'ticket-prices-' + section.id}
-                  className="space-y-5"
+                  className="grid gap-3 xl:grid-cols-2"
                 >
-                  <div className="flex items-center justify-between gap-3 border-b pb-4">
+                  <div className="flex items-center justify-between gap-3 border-b pb-2 xl:col-span-2">
                     <h3
                       id={'ticket-prices-' + section.id}
-                      className="text-lg font-bold"
+                      className="text-sm font-bold"
                     >
                       {section.title}
                     </h3>
@@ -1040,9 +1060,9 @@ export function TicketPricesWorkspace() {
                           (row.returnOfferId ? 'رفت‌وبرگشت ' : 'یک‌طرفه ') +
                           label(row.offer)
                         }
-                        className="min-w-0 rounded-2xl border border-sky-100 bg-surface p-4 shadow-sm sm:p-6 dark:border-sky-400/20"
+                        className="min-w-0 rounded-xl border border-sky-100 bg-surface p-3 shadow-sm dark:border-sky-400/20"
                       >
-                        <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+                        <div className="grid min-w-0 items-start gap-2 sm:grid-cols-[minmax(0,1fr)_13rem]">
                           <div className="min-w-0">
                             <div className="mb-2 flex flex-wrap items-center gap-2">
                               <Badge>
@@ -1053,7 +1073,7 @@ export function TicketPricesWorkspace() {
                                 {cities[row.offer.destinationId] ?? 'مقصد'}
                               </strong>
                             </div>
-                            <div className="grid gap-3">
+                            <div className="grid gap-1">
                               <FlightSummary
                                 offer={row.offer}
                                 direction={row.returnOfferId ? 'رفت' : 'پرواز'}
@@ -1066,7 +1086,7 @@ export function TicketPricesWorkspace() {
                               ) : null}
                             </div>
                           </div>
-                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] items-end gap-3 rounded-xl border bg-muted/15 p-4 [&_label]:text-xs">
+                          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] items-end gap-1 rounded-lg border bg-muted/15 p-2 [&_label]:text-xs">
                             <FormField
                               label={
                                 row.returnOfferId
@@ -1277,7 +1297,7 @@ export function TicketPricesWorkspace() {
                             </p>
                           )}
                         </div>
-                        <div className="mt-5 max-w-xl rounded-xl border border-sky-100 p-3">
+                        <div className="mt-2 border-t border-sky-100 pt-2">
                           <TierEditor
                             draft={draft}
                             capacity={
