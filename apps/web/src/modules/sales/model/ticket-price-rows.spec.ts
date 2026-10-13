@@ -320,7 +320,7 @@ describe('unpriced defined load pairs', () => {
       ).toHaveLength(0);
     }
     expect(
-      ticketPriceRows([{ ...going, loadGroupId: undefined }, back]).filter(
+      ticketPriceRows([{ ...going, loadGroupId: '' }, back]).filter(
         (row) => row.returnOfferId,
       ),
     ).toHaveLength(0);
