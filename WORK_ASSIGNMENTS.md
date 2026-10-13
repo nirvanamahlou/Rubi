@@ -1,3 +1,15 @@
+## ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-accounting-form-tabs-1013 from
+origin/develop@4122f5da. Reserve the shared Web tab-access fallback, its focused
+regression, Accounting browser acceptance and bounded status entries. Catalogued
+screen tabs remain permission-filtered; uncatalogued tabs are ordinary in-form UI
+and must remain visible. Restore the hidden Accounting main/turnover and nested
+form tabs without changing APIs, IAM grants, schema, dependencies or operational
+data. User explicitly authorizes push, merge to develop and local Web3000/API4000
+refresh after checks. Preserve the dirty primary checkout and existing database.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;

@@ -12,7 +12,6 @@ import Link from '@/i18n/link';
 import {
   canViewRoute,
   accessGroupForRoute,
-  hasManagedAccess,
   USER_ACCESS_SCREENS,
   canViewScreen,
   canUseMasterDataResource,
@@ -62,7 +61,6 @@ export function useMasterDataResourceAccess() {
 export function useTabAccess() {
   const pathname = usePathname();
   const query = useSearchParams();
-  const permissions = useAccessPermissions();
   const allowed = useScreenAccess();
   return (value: string) => {
     const screen = screenForTab(
@@ -70,14 +68,14 @@ export function useTabAccess() {
       value,
       Object.fromEntries(query?.entries() ?? []),
     );
-    return screen
-      ? allowed(screen.id)
-      : !(
-          permissions &&
-          hasManagedAccess(permissions) &&
-          accessGroupForRoute(pathname ?? '/')
-        );
+    return tabAccessDecision(screen?.id, allowed);
   };
+}
+export function tabAccessDecision(
+  screenId: string | undefined,
+  canView: (id: string) => boolean,
+) {
+  return screenId ? canView(screenId) : true;
 }
 export function AccessProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<readonly string[] | null>(

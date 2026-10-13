@@ -1,3 +1,13 @@
+## 2026-10-13 — ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+Authenticated browser acceptance reproduced the Accounting form regression: the
+account tree loads all 222 records, but the shared Tabs wrapper treats uncatalogued
+form-local values such as `main` as forbidden screens and removes their trigger and
+content. The bounded fix permits only uncatalogued local tabs while continuing to
+apply the existing permission decision to every catalogued screen tab. No data,
+API, schema, dependency or IAM-grant change.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 Accounting forms, lists and filters are being restyled as inline project-native
