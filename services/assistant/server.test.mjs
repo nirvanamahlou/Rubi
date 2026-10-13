@@ -17,8 +17,18 @@ const example = {
   status: 'OPEN',
 };
 async function listen(server) {
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  return `http://127.0.0.1:${server.address().port}`;
+  // Windows may allocate an ephemeral port on Fetch's forbidden-port list.
+  const forbidden = new Set([
+    1719, 1720, 1723, 2049, 3659, 4045, 5060, 5061, 6000, 6566, 6665, 6666,
+    6667, 6668, 6669, 6697, 10080,
+  ]);
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const port = server.address().port;
+    if (port >= 1024 && !forbidden.has(port)) return `http://127.0.0.1:${port}`;
+    await new Promise((resolve) => server.close(resolve));
+  }
+  throw new Error('Could not allocate a Fetch-compatible test port');
 }
 function close(server) {
   server.closeAllConnections();
@@ -28,6 +38,7 @@ async function harness(t, options = {}) {
   const calls = [],
     audit = [];
   let authCount = 0;
+  let corporateRead = false;
   const upstream = createServer((request, response) => {
     calls.push({
       path: request.url,
@@ -58,7 +69,8 @@ async function harness(t, options = {}) {
           userId,
           sessionId: 'synthetic-session',
           permissions:
-            options.revokeSalesAt && authCount >= options.revokeSalesAt
+            (options.revokeSalesAt && authCount >= options.revokeSalesAt) ||
+            (options.revokeSalesAfterRead && corporateRead)
               ? []
               : (options.permissions ?? [EXECUTIVE_PERMISSION]),
           branchIds: ['branch-a'],
@@ -105,6 +117,7 @@ async function harness(t, options = {}) {
       return;
     }
     if (request.url === '/api/v1/sales/assistant/weekly') {
+      corporateRead = true;
       response.end(JSON.stringify(options.salesReport ?? {}));
       return;
     }
@@ -223,7 +236,7 @@ test('HTTP integration returns source-backed personal reads and minimal audit', 
   );
   assert.equal(
     h.calls.filter((call) => call.path.endsWith('/auth/access')).length,
-    8,
+    11,
   );
   const auditText = JSON.stringify(h.audit);
   assert(!auditText.includes('private-secret'));
@@ -595,7 +608,7 @@ test('daily summary combines authorized business evidence; denied sections never
     permissions: ['sales.contracts.read.all', 'sales.payments.read'],
     balancesReport: balanceFixture(),
     salesReport: salesFixture(),
-    revokeSalesAt: 6,
+    revokeSalesAfterRead: true,
   });
   assert.equal(
     (

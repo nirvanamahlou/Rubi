@@ -7315,6 +7315,20 @@ and post-merge verification gate local publication.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
 
+## ASSISTANT-TOOLS-1013 — PC-C — IN_PROGRESS
+
+Base origin/develop@598fc90c; branch codex/pc-c-assistant-tool-registry-1013.
+User approves the continuation plan. Reserve services/assistant, its dedicated
+.github/workflows/assistant.yml and own bounded task/status/plan entries.
+Extract the six fixed read tools, authorization, executor, ERP client and audit
+without changing public v1 responses, source permissions or request limits.
+Prior assistant candidates are merged and their source locks explicitly released.
+No dependency/schema/migration, model traffic, source-owner or Web behavior change.
+Acceptance: existing HTTP regressions plus registry/executor/revocation/bounds/
+audit tests; all new tests discovered by CI; exact-head green CI before develop
+merge and post-merge verification before replacing only assistant4300.
+Later filtered reports and simulated chat are separate work units after this gate.
+
 ## FINANCE-INBOX-SINGLE-TITLE-1013 — PC-B — DONE
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-finance-inbox-single-title-1013` from
