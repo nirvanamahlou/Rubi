@@ -7368,6 +7368,10 @@ CI follow-up: reserve four additive Web-only English translations in `apps/web/s
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
 
+## HOTEL-RATE-HUB-1013 — PC-A — READY_FOR_REVIEW
+
+Branch codex/pc-a-hotel-rate-hub-1013 from origin/develop@016f3e2a. User requests four hotel-rate entry cards: Excel import, new pack, existing packs/edit, and archive. User explicitly chooses archival with preserved history and authorizes develop merge. Reserve Reservations hotel-rate Web navigation and archive service/controller tests plus own docs. Archive requires persisted lifecycle state, write/branch authorization and audit; all new-rate consumers must exclude archived packs while existing immutable references remain readable. Schema/migration and shared consumer scope must be checked and reserved before implementation; no operational archive, migration or runtime rollout authorized. Implementation complete in PR826; user-approved develop merge follows final checks.
+
 ## ASSISTANT-FILTERS-1013 — PC-C — DONE
 
 User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
@@ -7384,6 +7388,10 @@ prior assistant candidates released; do not edit active Sales workspace files.
 Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
+
+HOTEL-RATE-HUB-1013 scope: PC-A sole additive schema/Migration owner for archivedAt on Reservations hotel rate packs. Earlier hotel import schema lock released with merged candidate; no later overlapping schema owner found. Reserve Reservations owned pack service/controller/public rate projection and legacy list guards, Web hub/archive panel, focused tests, additive migration, and bounded English labels. Public rate projection producer excludes archived packs; existing Sales/Package consumers retain unchanged contract and historical snapshots. No operational migration or data modification.
+
+HOTEL-RATE-HUB-1013 implementation: four-card hub and direct editor/import/browser modes, searchable archival confirmation/history, additive UTC archivedAt plus audit and concurrency guards, and active-only public/source/legacy queries. Bounded English labels include API error catalogue; no dependency change. PR826 candidate 666f9fcc passed full quality, test, production build, PostgreSQL migration/seed and read-boundary CI. Local focused tests and initial typecheck passed; local builds were stopped to relieve memory pressure. Schema and source locks are released for this candidate. Latest-develop compatibility CI remains the merge gate. No operational migration/archive or runtime rollout performed.
 
 ## ASSISTANT-ORCHESTRATOR-1013 — PC-C — READY_FOR_REVIEW
 

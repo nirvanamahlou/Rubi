@@ -4407,5 +4407,7 @@
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
   "version برای ویرایش الزامی است.": "version is required for editing.",
-  "شهر الزامی است.": "City is required."
+  "شهر الزامی است.": "City is required.",
+  "بسته کنار گذاشته شده است.": "This pack has been archived.",
+  "نسخهٔ بسته تغییر کرده است؛ تازه‌سازی کنید.": "The pack version has changed; refresh and try again."
 }
