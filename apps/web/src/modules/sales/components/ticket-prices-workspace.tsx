@@ -590,6 +590,7 @@ export function TicketPricesWorkspace() {
     setReturnId(row.returnOfferId ?? '');
     setPairDraft({
       amount: row.base?.amount ?? '',
+      tiers: row.base?.tiers?.map((tier) => ({ ...tier })),
       currencyCode: row.base?.currencyCode ?? 'IRR',
     });
     window.requestAnimationFrame(() =>
@@ -708,75 +709,81 @@ export function TicketPricesWorkspace() {
         ))}
       </section>
       <Card className="p-3">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="min-w-48 flex-1">
-            <h2 className="text-sm font-black">افزودن و حذف مقصد فروش</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              قیمت پایه را برای هر بلیت ثبت کنید؛ درصد هر مقصد جلوی همان بلیت
-              قرار می‌گیرد.
-            </p>
-          </div>
-          {branches.length > 1 ? (
-            <FormField label="شعبه مقصد فروش">
-              <Select value={targetBranch} onValueChange={setTargetBranch}>
-                <SelectTrigger>
-                  <SelectValue placeholder="انتخاب شعبه" />
-                </SelectTrigger>
-                <SelectContent>
-                  {branches.map((branch, i) => (
-                    <SelectItem key={branch} value={branch}>
-                      شعبه {i + 1}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <details>
+          <summary className="cursor-pointer text-sm font-bold">
+            افزودن و حذف مقصد فروش
+          </summary>
+          <div className="mt-2 flex flex-wrap items-end gap-3">
+            <div className="min-w-48 flex-1">
+              <p className="mt-1 text-sm text-muted-foreground">
+                قیمت پایه را برای هر بلیت ثبت کنید؛ درصد هر مقصد جلوی همان بلیت
+                قرار می‌گیرد.
+              </p>
+            </div>
+            {branches.length > 1 ? (
+              <FormField label="شعبه مقصد فروش">
+                <Select value={targetBranch} onValueChange={setTargetBranch}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="انتخاب شعبه" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {branches.map((branch, i) => (
+                      <SelectItem key={branch} value={branch}>
+                        شعبه {i + 1}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+            ) : null}
+            <FormField label="نام مقصد فروش">
+              <Input
+                value={newTargetName}
+                onChange={(e) => setNewTargetName(e.target.value)}
+                placeholder="مثلاً علی‌بابا"
+              />
             </FormField>
-          ) : null}
-          <FormField label="نام مقصد فروش">
-            <Input
-              value={newTargetName}
-              onChange={(e) => setNewTargetName(e.target.value)}
-              placeholder="مثلاً علی‌بابا"
-            />
-          </FormField>
-          <Button
-            variant="outline"
-            onClick={() => void addTarget()}
-            disabled={
-              busy || !!saving || (branches.length > 1 && !targetBranch)
-            }
-            loading={saving === 'target'}
+            <Button
+              variant="outline"
+              onClick={() => void addTarget()}
+              disabled={
+                busy || !!saving || (branches.length > 1 && !targetBranch)
+              }
+              loading={saving === 'target'}
+            >
+              افزودن مقصد
+            </Button>
+          </div>
+          <div
+            className="mt-3 flex flex-wrap gap-2"
+            aria-label="مقصدهای فروش فعال"
           >
-            افزودن مقصد
-          </Button>
-        </div>
-        <div
-          className="mt-3 flex flex-wrap gap-2"
-          aria-label="مقصدهای فروش فعال"
-        >
-          <span className="rounded-lg border px-3 py-1.5 text-xs">مجموعه</span>
-          {targets
-            .filter((target) => target.isActive)
-            .map((target) => (
-              <span
-                key={target.id}
-                className="flex items-center gap-2 rounded-lg border px-2 py-1 text-xs"
-              >
-                {target.name}
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="min-h-7 px-1"
-                  title={'حذف مقصد ' + target.name}
-                  onClick={() => void removeTarget(target)}
-                  disabled={!!saving}
+            <span className="rounded-lg border px-3 py-1.5 text-xs">
+              مجموعه
+            </span>
+            {targets
+              .filter((target) => target.isActive)
+              .map((target) => (
+                <span
+                  key={target.id}
+                  className="flex items-center gap-2 rounded-lg border px-2 py-1 text-xs"
                 >
-                  <Trash2 className="size-3.5" />
-                  <span>حذف</span>
-                </Button>
-              </span>
-            ))}
-        </div>
+                  {target.name}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="min-h-7 px-1"
+                    title={'حذف مقصد ' + target.name}
+                    onClick={() => void removeTarget(target)}
+                    disabled={!!saving}
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>حذف</span>
+                  </Button>
+                </span>
+              ))}
+          </div>
+        </details>
       </Card>
       <Card className="p-3">
         <details id="round-trip-price-editor" className="scroll-mt-24">
