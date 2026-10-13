@@ -70,15 +70,18 @@ export function formatHeaderDate(
   },
 ): string {
   const formatter = options
-    ? new Intl.DateTimeFormat(options.locale, {
-        timeZone: options.timezone,
-        calendar: options.calendar === 'gregorian' ? 'gregory' : 'persian',
-        numberingSystem: options.numberingSystem,
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
+    ? new Intl.DateTimeFormat(
+        options.calendar === 'persian' ? 'fa-IR' : options.locale,
+        {
+          timeZone: options.timezone,
+          calendar: options.calendar === 'gregorian' ? 'gregory' : 'persian',
+          numberingSystem: options.numberingSystem,
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        },
+      )
     : fullDateFormatter;
   const date = new Date(`${day}T12:00:00Z`);
   if (options?.locale === 'en-US') return formatter.format(date);

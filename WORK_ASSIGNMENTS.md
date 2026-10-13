@@ -7249,3 +7249,6 @@ ASSISTANT-PHASE2-1013 candidate implemented within reserved scope. Service27/27,
 Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
 with review candidate; build, exact-head CI, authorized develop merge, post-merge
 CI and PC-C3000/4300 rollout remain release gates. No database work is required.
+## PERSIAN-CALENDAR-MONTHS-1013 — PC-A — IN_PROGRESS
+
+User authorizes continuing this branch and develop merge. Reserve shared date-picker locale and header Persian presentation plus focused checks. Base origin/develop@21d65e26. No schema/dependency/runtime changes.

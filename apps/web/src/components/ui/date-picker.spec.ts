@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   calendarMonthDays,
+  calendarMonthName,
   calendarParts,
   calculateCalendarPopoverPosition,
   formatCalendarValue,
@@ -14,6 +15,14 @@ import {
 } from './date-picker.utils';
 
 describe('shared blue date picker calendar utilities', () => {
+  it('uses Persian month names even with an English interface', () => {
+    const date = new Date(2026, 9, 13, 12);
+    expect(calendarMonthName(date, 'persian', true)).toBe('\u0645\u0647\u0631');
+    expect(formatCalendarValue('2026-10-13', 'persian', false, true)).toContain(
+      '\u0645\u0647\u0631',
+    );
+    expect(calendarMonthName(date, 'gregorian', true)).toBe('October');
+  });
   it('maps the same stored Gregorian day to Persian calendar parts', () => {
     const date = new Date(2026, 2, 21, 12);
     expect(calendarParts(date, 'persian')).toEqual({
