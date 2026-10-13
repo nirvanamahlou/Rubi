@@ -7259,6 +7259,10 @@ COMPUTER_ID=PC-C; user authorizes fetching the latest develop and serving localh
 
 LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry in apps/web/src/i18n/en-catalog.json for the missing Organizations import warning. Upstream candidate source locks are released. Reproduce the existing English completeness failure; preserve the test and all guards. Also prepare a verified ignored local database backup and isolated migration rehearsal before any request to alter the operational database. No operational migration approval has been inferred from a pull/start request.
 
+## TICKET-TWO-TABLE-RESTORE-1013 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-two-table-restore-1013` from current `origin/develop`. Owner requests that only «تعریف و ظرفیت پرواز» return to the pre-delete two-table presentation from commit `97ae3a19`: separate outbound/return tables and no row-level or whole-load delete controls. Reserve Ticket Catalog Web load grid/workspace, focused tests and bounded status docs. Preserve current API/data, LAN UUID compatibility, past-date opt-in, silent legacy reconciliation and all unrelated newer project changes. No API/schema/migration/dependency/permission or operational-data change. Push/PR only; per repository policy the author will not merge the PR. Implementation complete; nine focused tests, Web TypeScript, Web lint and the production Web build (62 routes) pass.
+
 ## HOTEL-RATES-COMPACT-1013 — PC-A — READY_FOR_REVIEW
 
 Branch `codex/pc-a-hotel-rates-compact-1013` from `origin/develop@4122f5da`. Reserve only Reservations hotel-rate Web editor layout (`packs-workspace`, destination fields, rate/room CSS) and focused presentation tests, plus bounded own status entries. Compact destination/hotel selectors, collapse prior periods while editing, and fit room-rate grids more densely without changing calculations, handlers, validation, API, schema, permissions, dependencies, or operational data. User explicitly authorizes PR and merge to develop after conflict and CI review. No localhost:3100 update is requested.
@@ -7324,6 +7328,21 @@ Acceptance: existing HTTP regressions plus registry/executor/revocation/bounds/
 audit tests; all new tests discovered by CI; exact-head green CI before develop
 merge and post-merge verification before replacing only assistant4300.
 Later filtered reports and simulated chat are separate work units after this gate.
+
+## FINANCE-INBOX-SINGLE-TITLE-1013 — PC-B — DONE
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-finance-inbox-single-title-1013` from
+`origin/develop@598fc90c`. User requests removing the duplicated inner
+«کارتابل درخواست‌ها» heading while preserving the page header, finance control
+badge, actions and metrics. Reserve only the Finance inbox live workspace,
+its focused component-contract assertion and bounded status/work entries. No
+API/schema/migration/dependency/permission or operational-data change. User
+explicitly authorizes push, develop merge and local Web rollout after checks.
+
+Result: the duplicate inner heading was removed while the page-level heading,
+control badge, actions and metrics remain unchanged. Focused Finance contract
+tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
+Contracts package. Source locks are released; no API or database rollout needed.
 
 ## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
 

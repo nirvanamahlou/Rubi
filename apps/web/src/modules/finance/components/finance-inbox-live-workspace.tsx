@@ -702,9 +702,6 @@ export function FinanceInboxLiveWorkspace() {
                 مرکز کنترل مالی
               </Badge>
             </div>
-            <h2 className="mt-4 text-2xl font-black sm:text-3xl">
-              کارتابل درخواست‌ها
-            </h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
