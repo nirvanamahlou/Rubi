@@ -5793,3 +5793,9 @@ This additive optional field already matches the Web verifier. No permission,
 source, database or dependency change. Full CI gates publication and local rollout.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
+## FINANCE-INBOX-SINGLE-TITLE-1013 — حذف عنوان تکراری کارتابل
+
+عنوان «کارتابل درخواست‌ها» فقط در سربرگ اصلی صفحه نمایش داده می‌شود و نمونهٔ
+تکراری داخل کارت کنترل مالی حذف شد. نشان مرکز کنترل مالی، دکمه‌ها و شاخص‌های
+کارت بدون تغییر باقی ماندند. این تغییر فقط رابط Web است و API، مجوزها، داده و
+ساختار دیتابیس را تغییر نمی‌دهد.

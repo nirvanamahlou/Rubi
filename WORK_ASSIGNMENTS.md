@@ -7310,3 +7310,18 @@ reservation released with review candidate. Web build is unchanged; final full C
 and post-merge verification gate local publication.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
+
+## FINANCE-INBOX-SINGLE-TITLE-1013 — PC-B — DONE
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-finance-inbox-single-title-1013` from
+`origin/develop@598fc90c`. User requests removing the duplicated inner
+«کارتابل درخواست‌ها» heading while preserving the page header, finance control
+badge, actions and metrics. Reserve only the Finance inbox live workspace,
+its focused component-contract assertion and bounded status/work entries. No
+API/schema/migration/dependency/permission or operational-data change. User
+explicitly authorizes push, develop merge and local Web rollout after checks.
+
+Result: the duplicate inner heading was removed while the page-level heading,
+control badge, actions and metrics remain unchanged. Focused Finance contract
+tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
+Contracts package. Source locks are released; no API or database rollout needed.
