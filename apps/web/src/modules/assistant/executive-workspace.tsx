@@ -1,5 +1,5 @@
 'use client';
-import { AssistantReportFilterControls } from './report-filters';
+
 import { explainPersonal } from './recommendation-policy';
 
 import {
@@ -52,7 +52,6 @@ import {
   loadAssistantAction,
   type AssistantAction,
   type AssistantActionResult,
-  type AssistantReportFilters,
   type AssistantLoadState,
   type AssistantView,
   type ExecutiveSnapshot,
@@ -221,7 +220,7 @@ export function AssistantComposer({
   const helpId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
-  const [filters, setFilters] = useState<AssistantReportFilters | undefined>();
+
   const [filterError, setFilterError] = useState(false);
   const [notSubmitted, setNotSubmitted] = useState(false);
   const [actionResult, setActionResult] =
@@ -246,11 +245,7 @@ export function AssistantComposer({
     setActionState('loading');
     setFilterError(false);
     try {
-      const result = await loadAssistantAction(
-        action,
-        controller.signal,
-        filters,
-      );
+      const result = await loadAssistantAction(action, controller.signal);
       if (!controller.signal.aborted) {
         setActionResult(result);
         setActionState(null);
@@ -356,18 +351,6 @@ export function AssistantComposer({
           </button>
         </div>
       </form>
-      <AssistantReportFilterControls
-        value={filters}
-        disabled={denied}
-        t={t}
-        onChange={(next) => {
-          pending.current?.abort();
-          setActionResult(null);
-          setActionState(null);
-          setFilterError(false);
-          setFilters(next);
-        }}
-      />
       {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
       <div className={styles.composerPrompts}>
         {prompts.map(([prompt, action]) => (

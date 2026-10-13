@@ -29,7 +29,7 @@ live workspace while that policy gate is closed. It uses React memory only, boun
 12-message history, escaped text, explicit clear, abort-on-unmount, and keyed identity/
 session remount. Activation must wire the actual authenticated session key and the
 existing evidence renderer; no localStorage/sessionStorage/database persistence.
-Fixed actions and filter controls remain operational independently of conversation.
+Fixed actions remain operational independently of conversation; manual composer filters were removed by the subsequent text-only input decision.
 
 ## Validation and limitations
 
@@ -61,3 +61,9 @@ and Web build to roll back; no database rollback is needed.
 These are explicit uncompleted business/production gates, not technical-test claims.
 
 Local acceptance:56 native tests and35 Web tests pass, including final conversation-release source reauthorization; TypeScript, lint and Web production build pass. Standard Turbopack is validated by CI; local shared dependency junctions require webpack.
+
+## Text-only input decision — 2026-10-13
+
+The user supersedes manual composer filter controls: the eventual live planner must infer dates/routes/authorized branches from user text, ask a clarification when ambiguous, and show the applied scope alongside evidence. Registry validation, 90-day bound, owner-side authorization and exact report computation remain authoritative. The manual selector UI is removed independently of provider activation. No provider has yet been selected and sending message/history (which can contain sensitive data) still requires the processing decision. Runtime remains default-off pending that decision.
+
+Provider decision: the owner considered Gemini free for testing, then explicitly chose to defer real chat until a service with suitable organizational data-processing terms is selected. No API key exists; creation and connection are deferred. Do not activate Gemini free or send user messages as part of this UI delivery.
