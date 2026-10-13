@@ -72,7 +72,7 @@ export function SalesReceivablesCard({
         ) : null}
       </div>
       <form
-        className="mt-4 grid gap-3 rounded-2xl border border-border/70 bg-surface/80 p-3 sm:grid-cols-2"
+        className="mt-4 grid gap-3 rounded-2xl border border-border/70 bg-surface/80 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
         onSubmit={(event) => {
           event.preventDefault();
           if (!invalid) setQuery({ ...draft });
@@ -177,11 +177,14 @@ export function SalesReceivablesCard({
           </FormField>
         ) : null}
         {invalid ? (
-          <p role="alert" className="text-xs text-red-600 sm:col-span-2">
+          <p
+            role="alert"
+            className="text-xs text-red-600 sm:col-span-2 lg:col-span-3 xl:col-span-5"
+          >
             تاریخ شروع باید قبل از تاریخ پایان باشد.
           </p>
         ) : null}
-        <div className="flex items-center gap-2 border-t border-border/60 pt-3 sm:col-span-2">
+        <div className="flex items-center gap-2 border-t border-border/60 pt-3 sm:col-span-2 lg:col-span-3 xl:col-span-5">
           <Button type="submit" size="sm" disabled={invalid || busy}>
             <Filter className="size-4" />
             اعمال فیلتر

@@ -1,3 +1,7 @@
+## 2026-10-13 — MERGE-SALES-UI-773-1013 — PC-A
+
+Owner authorizes develop merge of PR773 Sales follow-up/dashboard UI. Reconcile latest develop with the reviewed presentation changes, preserving all current features and both status histories. Documentation-only conflicts resolved; new-head full CI gates merge. No runtime rollout, schema, dependency or data changes.
+
 ## 2026-10-13 — ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
 
 ## PURCHASE-METRICS-CENTER-1013
@@ -5460,6 +5464,12 @@ The exact 18-row database write path passed inside a forced-rollback transaction
 - The Notes tab now shows «یادداشت‌های هوش مصنوعی برای شما» above personal notes. It derives up to six dated suggestions from the signed-in user's existing Workbench calendar events, personal reminders and assigned Procurement follow-ups, refreshing at the Tehran day boundary or on demand. Completed/cancelled events and finished checklist reminders are excluded; every card links to its source.
 - Calendar and Procurement suggestions can be explicitly saved as ordinary personal notes. An exact source marker prevents the same saved suggestion from appearing again. This is a transparent rule-based assistant over existing authorized data; no generative model or background scheduler is connected. No API contract, schema/migration, dependency, permission or operational data change.
 - During integration, a concurrent Agency edit merged into `develop` with eight untranslated UI strings. Added the missing English display translations in the shared Web override catalogue so the combined i18n test can pass; Agency behavior was not changed.
+
+## SALES-FOLLOWUPS-UI-1011
+
+PC-A redesigned the Sales follow-up card as compact, icon-led status rows with readable counts. Dashboard panels align to their own content height, avoiding an empty stretched follow-up panel. Existing data, labels, permissions and filters are preserved. No migration or dependency change. Local preview and a develop PR are requested.
+
+User follow-up: receivables now occupy a full-width row with five desktop filter columns; follow-ups occupy their own full-width row with three side-by-side status tiles. Mobile filters and tiles stack responsively.
 
 ## 2026-10-11 — CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
 
