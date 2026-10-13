@@ -101,13 +101,13 @@ export const assistantCopy = {
     'Summary of retrieved personal follow-ups',
   ],
   dailyCoverage: [
-    'شامل موارد عقب‌افتاده و موعدهای هفت روز آینده؛ حداکثر ۳۰ مورد. این خلاصه شامل فروش و مطالبات سازمانی نیست.',
-    'Includes overdue items and the next seven days, up to 30 items. Corporate sales and receivables are not included.',
+    'این شمارنده‌ها فقط پیگیری‌های شخصی دریافت‌شده، شامل موارد عقب‌افتاده و موعدهای هفت روز آینده تا سقف ۳۰ مورد هستند. گزارش‌های سازمانی جداگانه و طبق مجوز نمایش داده می‌شوند.',
+    'These counts cover retrieved personal follow-ups only, including overdue items and the next seven days, up to 30 items. Corporate reports appear separately according to access.',
   ],
   visibleCount: ['موارد نمایش‌داده‌شده', 'Visible items'],
-  overdueCount: ['عقب‌افتاده — اولویت بالا', 'Overdue — high priority'],
-  dueSoonCount: ['موعد نزدیک — اولویت متوسط', 'Due soon — medium priority'],
-  assignedCount: ['تخصیص‌یافته — اولویت عادی', 'Assigned — normal priority'],
+  overdueCount: ['عقب‌افتاده', 'Overdue'],
+  dueSoonCount: ['موعد نزدیک', 'Due soon'],
+  assignedCount: ['تخصیص‌یافته بدون موعد', 'Assigned without a deadline'],
   salesDefinitionGate: [
     'منبع خواندنی فروش در دسترس نیست یا پاسخ آن معتبر نیست؛ عددی نمایش داده نمی‌شود.',
     'The read-only sales source is unavailable or invalid. No figures are displayed.',
