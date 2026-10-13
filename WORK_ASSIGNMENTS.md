@@ -7249,3 +7249,21 @@ ASSISTANT-PHASE2-1013 candidate implemented within reserved scope. Service27/27,
 Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
 with review candidate; build, exact-head CI, authorized develop merge, post-merge
 CI and PC-C3000/4300 rollout remain release gates. No database work is required.
+
+## PHASE2-INTEGRATION-CI-1013 — PC-C — IN_PROGRESS
+
+Base develop21d65e26 after PR812. Standing human instruction requires fixing and
+following post-merge CI. The merged PC-B ACCOUNTING-FORM-TABS-1013 changes the
+uncatalogued tab fallback intentionally; its old rendered IAM regression still
+asserts the superseded hidden behavior. Reproduced exactly (1 failed/8 passed).
+Reserve only apps/web/src/modules/iam/access-ui.spec.tsx and this status entry.
+Do not modify the producer access policy or the merged PC-B source files. Preserve
+and explicitly assert catalogued denied tabs/content remain hidden in the same
+render as an allowed ordinary local form tab. No IAM grant/API/schema/dependency
+or runtime behavior change. The producer is already merged; no active local edits
+or unmerged source replacement are involved. Full CI precedes develop merge.
+
+PHASE2-INTEGRATION-CI-1013 candidate: all57 IAM/assistant/translation tests,
+scoped ESLint and Web typecheck passed. Existing integrated production build passed
+before this test-only edit. Production source is unchanged. Source reservation
+released with review candidate; exact-head and post-merge CI still gate rollout.
