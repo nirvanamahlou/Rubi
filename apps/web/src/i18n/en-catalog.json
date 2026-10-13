@@ -17224,5 +17224,7 @@
   "نامه در اسناد و فایل‌ها ثبت شد. کد آرشیو:": "The letter was saved in Documents and Files. Archive code:",
   "نامه‌های خروجی": "Outgoing letters",
   "نامه‌های ورودی": "Incoming letters",
-  "مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.": "The email column value was not an email address and was ignored."
+  "مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.": "The email column value was not an email address and was ignored.",
+  "در ردیف‌های اکسل فقط «نام هتل» و «شهر» الزامی است؛ سایر فیلدها اختیاری‌اند. شهر بدون حساسیت به فاصله و بزرگی حروف تطبیق داده می‌شود.": "Only hotel name and city are required in Excel rows; other fields are optional. City matching ignores spacing and letter case.",
+  "شهر الزامی است.": "City is required."
 }

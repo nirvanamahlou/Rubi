@@ -112,7 +112,7 @@ beforeEach(() => {
     roomRates: [],
   };
 });
-it('applies selected sale adjustment once against purchase across rooms and reprices each base independently', () => {
+it('applies repeated adjustments to current sale and preserves purchase', () => {
   input('قیمت پایه Land', '100');
   input('قیمت پایه Sea', '200');
   click('انتخاب همهٔ ترکیب‌های قیمت‌دار');
@@ -120,9 +120,9 @@ it('applies selected sale adjustment once against purchase across rooms and repr
   click('اعمال روی ترکیب‌های منتخب');
   expect(prices()).toEqual([[['200.00', '220.00']], [['400.00', '440.00']]]);
   click('اعمال روی ترکیب‌های منتخب');
-  expect(prices()).toEqual([[['200.00', '220.00']], [['400.00', '440.00']]]);
+  expect(prices()).toEqual([[['200.00', '242.00']], [['400.00', '484.00']]]);
   input('قیمت پایه Land', '200');
-  expect(prices()).toEqual([[['400.00', '440.00']], [['400.00', '440.00']]]);
+  expect(prices()).toEqual([[['400.00', '242.00']], [['400.00', '484.00']]]);
   click('لغو انتخاب‌ها');
   const checkbox = nodes(render()).find(
     (n) => n.type === 'input' && n.props.type === 'checkbox',
@@ -134,7 +134,7 @@ it('applies selected sale adjustment once against purchase across rooms and repr
   choose('افزایش یا کاهش', 'decrease');
   input('مقدار تغییر قیمت فروش', '5');
   click('اعمال روی ترکیب‌های منتخب');
-  expect(prices()).toEqual([[['400.00', '395.00']], [['400.00', '440.00']]]);
+  expect(prices()).toEqual([[['400.00', '237.00']], [['400.00', '484.00']]]);
 });
 it('rejects negative group sale atomically and does not change any purchase or prior sale', () => {
   input('قیمت پایه Land', '100');

@@ -12,7 +12,6 @@ import {
   UsersRound,
   RefreshCw,
   WalletCards,
-  Search,
   ArrowLeft,
   CheckCheck,
   FileSpreadsheet,
@@ -30,7 +29,6 @@ import type {
 } from '@nora/contracts';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import {
   Badge,
   Card,
@@ -39,7 +37,6 @@ import {
   Skeleton,
 } from '@/components/ui/surfaces';
 import { salesApi } from '../api/client';
-import { SalesThemedSelect } from './sales-themed-select';
 import { ContractPayments } from './contract-payments';
 import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
@@ -72,7 +69,9 @@ export function ContractListContactRouteDate({
 }
 
 export function hasContractDateFilter(query: SalesContractListQuery): boolean {
-  return Boolean(query.createdFrom || query.createdTo);
+  return Boolean(
+    query.createdFrom || query.createdTo || query.travelFrom || query.travelTo,
+  );
 }
 
 export function ContractListAmounts({
@@ -149,9 +148,6 @@ export function SalesWorkspace() {
   );
   const [contracts, setContracts] = useState<SalesContractPage['data']>([]);
   const [query, setQuery] = useState<SalesContractListQuery>({});
-  const [search, setSearch] = useState('');
-  const [createdFrom, setCreatedFrom] = useState('');
-  const [createdTo, setCreatedTo] = useState('');
   const [total, setTotal] = useState(0);
   const requestVersion = useRef(0);
   const [loading, setLoading] = useState(true);
@@ -160,12 +156,15 @@ export function SalesWorkspace() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
   const [exportNotice, setExportNotice] = useState('');
-  const dateRangeInvalid = Boolean(
-    createdFrom && createdTo && createdFrom > createdTo,
-  );
   const dateFilterApplied = hasContractDateFilter(query);
   const filtersApplied = Boolean(
-    query.search || query.settlementStatus || dateFilterApplied,
+    query.search ||
+    query.settlementStatus ||
+    query.originId ||
+    query.destinationId ||
+    query.agencyCustomerId ||
+    (query.customerType && query.customerType !== 'ALL') ||
+    dateFilterApplied,
   );
   async function downloadExcel() {
     setExporting(true);
@@ -277,6 +276,9 @@ export function SalesWorkspace() {
       ) : null}
       <div className="grid gap-4">
         <SalesReceivablesCard
+          key={JSON.stringify(query)}
+          listQuery={query}
+          onApply={setQuery}
           refreshVersion={dashboard}
           formatAmount={formatMoney}
         />
@@ -375,100 +377,6 @@ export function SalesWorkspace() {
             {exportNotice}
           </p>
         ) : null}
-        <form
-          className="grid gap-2 rounded-2xl border border-border/70 bg-muted/25 p-2 sm:grid-cols-[minmax(16rem,1fr)_11rem_11rem_14rem_auto_auto] sm:items-end"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (dateRangeInvalid) return;
-            setQuery((current) => {
-              const next: SalesContractListQuery = {
-                ...current,
-                search: search.trim(),
-                page: 1,
-              };
-              if (createdFrom) next.createdFrom = createdFrom;
-              else delete next.createdFrom;
-              if (createdTo) next.createdTo = createdTo;
-              else delete next.createdTo;
-              return next;
-            });
-          }}
-        >
-          <div className="flex min-w-48 items-center gap-2 rounded-xl border border-border bg-surface px-3 shadow-sm focus-within:ring-2 focus-within:ring-primary/30">
-            <Search className="size-4 shrink-0 text-muted-foreground" />
-            <input
-              aria-label="جست‌وجوی قرارداد"
-              placeholder="شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت…"
-              maxLength={160}
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              className="h-11 w-full bg-transparent text-sm outline-none"
-            />
-          </div>
-          <SalesThemedSelect
-            label="وضعیت تسویه"
-            value={query.settlementStatus ?? ''}
-            onValueChange={(value) =>
-              setQuery((current) => {
-                const next = { ...current, page: 1 };
-                if (value)
-                  next.settlementStatus = value as NonNullable<
-                    SalesContractListQuery['settlementStatus']
-                  >;
-                else delete next.settlementStatus;
-                return next;
-              })
-            }
-            options={[
-              { value: '', label: 'همه وضعیت‌های تسویه' },
-              { value: 'UNPAID', label: 'تسویه نشده' },
-              { value: 'PARTIALLY_SETTLED', label: 'تسویه ناقص' },
-              { value: 'SETTLED', label: 'تسویه شده' },
-              { value: 'OVERPAID', label: 'بستانکار' },
-            ]}
-          />
-          <DatePicker
-            aria-label="از تاریخ ثبت قرارداد"
-            value={createdFrom}
-            onChange={setCreatedFrom}
-            placeholder="از تاریخ ثبت"
-          />
-          <DatePicker
-            aria-label="تا تاریخ ثبت قرارداد"
-            value={createdTo}
-            onChange={setCreatedTo}
-            placeholder="تا تاریخ ثبت"
-          />
-          <Button
-            type="submit"
-            variant="outline"
-            disabled={loading || dateRangeInvalid}
-          >
-            جست‌وجو
-          </Button>
-          {filtersApplied ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setSearch('');
-                setCreatedFrom('');
-                setCreatedTo('');
-                setQuery({});
-              }}
-            >
-              پاک کردن فیلترها
-            </Button>
-          ) : null}
-          {dateRangeInvalid ? (
-            <p
-              role="alert"
-              className="sm:col-span-full text-xs text-destructive"
-            >
-              تاریخ پایان نباید قبل از تاریخ شروع باشد.
-            </p>
-          ) : null}
-        </form>
         <p className="mt-3 text-xs text-muted-foreground">
           {dateFilterApplied
             ? 'همهٔ قراردادهای بازهٔ تاریخ ثبت انتخاب‌شده نمایش داده می‌شوند.'
@@ -492,9 +400,6 @@ export function SalesWorkspace() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setSearch('');
-                  setCreatedFrom('');
-                  setCreatedTo('');
                   setQuery({});
                 }}
               >
@@ -717,9 +622,6 @@ export function SalesWorkspace() {
           onClose={() => setPaymentContractId(null)}
           onSaved={() => void load()}
           onSearchContracts={(reference) => {
-            setSearch(reference);
-            setCreatedFrom('');
-            setCreatedTo('');
             setQuery(paymentReferenceSearchQuery(reference));
             setPaymentContractId(null);
             contractsSearchPanel.current?.scrollIntoView({

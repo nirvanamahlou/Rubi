@@ -13,7 +13,7 @@ export function createToolExecutor({
     { cookie, signal, actorId, observedAt, record = () => {} },
   ) {
     const tool = getTool(id);
-    validateToolInput(input);
+    input = validateToolInput(input, id, now()) ?? input;
     let outcome = 'FAILED';
     try {
       if (typeof actorId !== 'string' || !actorId)
@@ -26,8 +26,11 @@ export function createToolExecutor({
         tool.identitySource,
       );
       requireToolAccess(actor, id);
-      const body = await client.readTool(id, cookie, signal);
-      if (!tool.validate(body)) throw new ServiceError(502, 'INVALID_SOURCE');
+      if (input.branchId && !actor.branchIds.includes(input.branchId))
+        throw new ServiceError(403, 'FORBIDDEN');
+      const body = await client.readTool(id, cookie, signal, input);
+      if (!tool.validate(body) || (tool.matches && !tool.matches(body, input)))
+        throw new ServiceError(502, 'INVALID_SOURCE');
       const result = tool.project(body, observedAt ?? now());
       const releaseActor = await authenticate(
         cookie,

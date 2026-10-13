@@ -10,6 +10,10 @@ dependency change, live database write, merge or localhost rollout in this task.
 API/Web typechecks and builds pass. Generated contracts/client outputs were
 refreshed without accessing an operational database. Source locks released for review.
 
+## SALES-UNIFIED-FILTERS-1013 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A. Reserve Sales Web filters, API list/receivables/export/repository, Sales optional query contracts and focused tests. Sales API producer and Web consumer coordinate additive backward-compatible filter fields. No migration/dependency. User requests unified contract/receivables filters; merge not requested. Delivered one Apply/Reset form, combined search/settlement/date/route/customer criteria and matching Excel export. Customer filtering runs before pagination through the public Customers adapter; authorized scope and payment-reference permission remain enforced. Web 22 and API 7 focused tests pass; scoped lint and API typecheck pass. Production builds gate local3100/API4000 refresh; no operational records changed.
+
 ## 2026-10-13 — MERGE-SALES-UI-773-1013 — PC-A
 
 Owner authorizes develop merge of PR773 Sales follow-up/dashboard UI. Reconcile latest develop with the reviewed presentation changes, preserving all current features and both status histories. Documentation-only conflicts resolved; new-head full CI gates merge. No runtime rollout, schema, dependency or data changes.
@@ -5823,3 +5827,12 @@ localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
 تکراری داخل کارت کنترل مالی حذف شد. نشان مرکز کنترل مالی، دکمه‌ها و شاخص‌های
 کارت بدون تغییر باقی ماندند. این تغییر فقط رابط Web است و API، مجوزها، داده و
 ساختار دیتابیس را تغییر نمی‌دهد.
+
+## HOTEL-REPEAT-ADJUSTMENT-1013
+
+Bulk hotel sale adjustments now apply to current sale on every click and store the resulting explicit sale price. Purchase stays independent; invalid negative changes remain atomic. Ten interaction regressions pass. No migration.
+
+
+## PC-C — ASSISTANT-FILTERS-1013
+
+Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.

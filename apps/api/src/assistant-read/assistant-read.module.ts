@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { DatabaseModule } from '../database/database.module';
 import { AuthGuard } from '../iam/auth.guard';
 import { IamService } from '../iam/iam.service';
+import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { MfaTotpService } from '../iam/mfa-totp';
 import { MasterDataRepository } from '../master-data/master-data.repository';
 import { MasterDataService } from '../master-data/master-data.service';
@@ -43,6 +44,7 @@ class AssistantReadHealthController {
   providers: [
     AuthGuard,
     IamService,
+    IamFinanceDirectory,
     MfaTotpService,
     MasterDataRepository,
     MasterDataService,
