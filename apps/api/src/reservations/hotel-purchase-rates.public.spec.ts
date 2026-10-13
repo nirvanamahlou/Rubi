@@ -177,3 +177,70 @@ it('finds independent city rates for a departure without restricting to its id',
     },
   ]);
 });
+
+it('exposes all rated rooms and recorded capacity alternatives without changing the chosen pricing source', async () => {
+  const service = new HotelPurchaseRatesPublicService({} as never);
+  const rate = (adults: number, min: number) => ({
+    adults,
+    childAges: [{ min, maxExclusive: 12 }],
+    startsOn: '2026-10-01',
+    endsOnExclusive: '2026-10-08',
+    amount: '100',
+  });
+  const selected = {
+    roomTypeId: 'suite',
+    roomTypeName: 'Suite',
+    occupancyRates: [rate(2, 6)],
+  };
+  const forTour = vi.spyOn(service, 'forTour').mockResolvedValue([
+    { rows: [{ hotelId: 'hotel', roomRates: [selected] }] },
+    {
+      rows: [
+        {
+          hotelId: 'hotel',
+          roomRates: [
+            {
+              ...selected,
+              occupancyRates: [
+                rate(3, 2),
+                {
+                  ...rate(8, 0),
+                  startsOn: '2027-01-01',
+                  endsOnExclusive: '2027-01-08',
+                },
+              ],
+            },
+            {
+              roomTypeId: 'double',
+              roomTypeName: 'Double',
+              maxAdults: 2,
+              maxChildren: 0,
+            },
+          ],
+        },
+      ],
+    },
+  ] as never);
+  const rooms = await service.availableRoomRates({
+    branchId: 'branch',
+    hotelId: 'hotel',
+    checkIn: '2026-10-02',
+    checkOut: '2026-10-05',
+  });
+  expect(rooms.map((r) => r.roomTypeId)).toEqual(['suite', 'double']);
+  expect(rooms[0]!.occupancyRates).toEqual(selected.occupancyRates);
+  expect(rooms[0]!.capacityCombinations).toEqual([
+    { adults: 2, childAges: [{ min: 6, maxExclusive: 12 }] },
+    { adults: 3, childAges: [{ min: 2, maxExclusive: 12 }] },
+  ]);
+  expect(forTour).toHaveBeenCalledWith(
+    'branch',
+    ['hotel'],
+    '2026-10-02',
+    '2026-10-05',
+    undefined,
+    undefined,
+    true,
+    true,
+  );
+});

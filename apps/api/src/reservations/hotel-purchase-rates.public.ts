@@ -1,3 +1,4 @@
+import { hotelRoomCapacityCombinations } from '@nora/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   HotelRoomRateV1,
@@ -159,13 +160,45 @@ export class HotelPurchaseRatesPublicService {
       undefined,
       undefined,
       true,
+      true,
     );
     const result = new Map<string, HotelRoomRateV1>();
     for (const batch of batches)
       for (const row of batch.rows)
         if (row.hotelId === input.hotelId)
-          for (const room of row.roomRates)
-            if (!result.has(room.roomTypeId)) result.set(room.roomTypeId, room);
+          for (const room of row.roomRates) {
+            const existing = result.get(room.roomTypeId);
+            const combinations = hotelRoomCapacityCombinations(
+              room.occupancyRates
+                ? {
+                    ...room,
+                    occupancyRates: room.occupancyRates.filter(
+                      (rate) =>
+                        rate.startsOn < input.checkOut &&
+                        rate.endsOnExclusive > input.checkIn,
+                    ),
+                  }
+                : room,
+            );
+            const distinct = new Map(
+              [...(existing?.capacityCombinations ?? []), ...combinations].map(
+                (row) => {
+                  const value = {
+                    adults: row.adults,
+                    childAges: [...row.childAges].sort(
+                      (a, b) =>
+                        a.min - b.min || a.maxExclusive - b.maxExclusive,
+                    ),
+                  };
+                  return [JSON.stringify(value), value] as const;
+                },
+              ),
+            );
+            result.set(room.roomTypeId, {
+              ...(existing ?? room),
+              capacityCombinations: [...distinct.values()],
+            });
+          }
     return [...result.values()];
   }
   async roomAvailability(input: {
