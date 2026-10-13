@@ -7,7 +7,11 @@ import {
   snapshotSchema,
   type ExecutiveSnapshot,
 } from './model';
-import { ExecutivePanels, ExecutiveWorkspace } from './executive-workspace';
+import {
+  ExecutivePanels,
+  ExecutiveWorkspace,
+  PersonalFollowUps,
+} from './executive-workspace';
 import { AccessPermissionsProvider } from '@/modules/iam/access-context';
 
 vi.mock('next/navigation', () => ({
@@ -114,4 +118,31 @@ describe('executive reference coverage and evidence states', () => {
       ).toBe(false);
     }
   });
+});
+
+it('shows five evidence-backed recommendations first and keeps the rest in a closed native disclosure', () => {
+  const evidence: ExecutiveSnapshot = {
+    ...snapshot,
+    followUps: Array.from({ length: 7 }, (_, index) => ({
+      ...snapshot.followUps[0]!,
+      id: `calendar:${index}`,
+      title: `Synthetic ${index}`,
+      sourcePriority: 'URGENT',
+    })),
+  };
+  const html = renderToStaticMarkup(
+    <PersonalFollowUps
+      t={(text) => text[0]}
+      snapshot={evidence}
+      english={false}
+    />,
+  );
+  const [visible, disclosure] = html.split('<details>');
+  expect((visible!.match(/<article/g) ?? []).length).toBe(5);
+  expect((disclosure!.match(/<article/g) ?? []).length).toBe(2);
+  expect(html).not.toContain('<details open');
+  expect(html).toContain(assistantCopy.allRecommendations[0]);
+  expect(html).toContain('PERSONAL_DUE_V2');
+  expect(html).toContain(assistantCopy.recordedPriority[0]);
+  expect(html).toContain(assistantCopy.asOf[0]);
 });

@@ -1,5 +1,43 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  recommendationTitle: ['پیشنهادهای قابل پیگیری', 'Actionable recommendations'],
+  allRecommendations: ['مشاهدهٔ همهٔ پیشنهادها', 'View all recommendations'],
+  ruleLabel: ['قاعده', 'Rule'],
+  recordedPriority: ['اولویت ثبت‌شده در منبع', 'Priority recorded by source'],
+  balanceRecommendationsDeferred: [
+    'پیشنهاد پیگیری مانده‌ها پس از ورود داده و تعیین قاعده فعال می‌شود.',
+    'Balance follow-up recommendations await data and an approved rule.',
+  ],
+  priorities: {
+    HIGH: ['فوری', 'Urgent'],
+    MEDIUM: ['مهم', 'Important'],
+    LOW: ['عادی', 'Ordinary'],
+  },
+  sourcePriorities: {
+    URGENT: ['فوری', 'Urgent'],
+    HIGH: ['بالا', 'High'],
+    NORMAL: ['عادی', 'Normal'],
+    LOW: ['کم', 'Low'],
+  },
+  ruleReasons: {
+    OVERDUE: [
+      'موعد این کار در روزهای گذشته بوده است.',
+      'This item was due on a previous day.',
+    ],
+    TODAY: ['موعد این کار امروز است.', 'This item is due today.'],
+    NEXT_THREE_DAYS: [
+      'موعد این کار در یک تا سه روز آینده است.',
+      'This item is due in the next one to three days.',
+    ],
+    THIS_WEEK: [
+      'موعد این کار در چهار تا هفت روز آینده است.',
+      'This item is due in four to seven days.',
+    ],
+    ASSIGNED: [
+      'این پیگیری به شما تخصیص یافته و موعد ثبت‌شده ندارد.',
+      'This follow-up is assigned to you without a recorded due date.',
+    ],
+  },
   sourceUpdated: ['آخرین به‌روزرسانی دادهٔ منبع', 'Latest source data update'],
   noSourceUpdate: [
     'زمان به‌روزرسانی منبع موجود نیست',
