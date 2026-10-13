@@ -32,7 +32,7 @@ all 91 destinations: four correctly positioned cards, identical existing fields,
 buttons, content and visibility after excluding the newly requested KPI row,
 without JavaScript errors or external requests. Light/dark views at 390,768,1600
 pixels fit the document width. Complete Web typecheck passes after rebuilding
-the existing ignored contract declarations. Full lint/build and final-head CI
+the existing ignored contract declarations. Full Web lint and production build pass. Final-head CI
 are publication gates; runtime receipts and private backup stay outside Git.
 
 Activation preserves the current Compose database, document storage and all
