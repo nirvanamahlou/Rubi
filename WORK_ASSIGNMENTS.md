@@ -7241,7 +7241,7 @@ COMPUTER_ID=PC-C; user authorizes fetching the latest develop and serving localh
 
 LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry in apps/web/src/i18n/en-catalog.json for the missing Organizations import warning. Upstream candidate source locks are released. Reproduce the existing English completeness failure; preserve the test and all guards. Also prepare a verified ignored local database backup and isolated migration rehearsal before any request to alter the operational database. No operational migration approval has been inferred from a pull/start request.
 
-## HOTEL-RATES-COMPACT-1013 — PC-A — IN_PROGRESS
+## HOTEL-RATES-COMPACT-1013 — PC-A — READY_FOR_REVIEW
 
 Branch `codex/pc-a-hotel-rates-compact-1013` from `origin/develop@4122f5da`. Reserve only Reservations hotel-rate Web editor layout (`packs-workspace`, destination fields, rate/room CSS) and focused presentation tests, plus bounded own status entries. Compact destination/hotel selectors, collapse prior periods while editing, and fit room-rate grids more densely without changing calculations, handlers, validation, API, schema, permissions, dependencies, or operational data. User explicitly authorizes PR and merge to develop after conflict and CI review. No localhost:3100 update is requested.
 
@@ -7253,3 +7253,5 @@ ASSISTANT-PHASE2-1013 candidate implemented within reserved scope. Service27/27,
 Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
 with review candidate; build, exact-head CI, authorized develop merge, post-merge
 CI and PC-C3000/4300 rollout remain release gates. No database work is required.
+
+HOTEL-RATES-COMPACT-1013 candidate: full-width horizontal destination/hotel selectors, collapsed prior periods during entry, compact stay fields and room/coefficients tables. Source locks released at candidate freeze; focused hotel suites, Web lint/types/build and exact-head CI gate explicit develop merge. No API, schema, pricing arithmetic or operational runtime changes.

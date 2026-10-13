@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 import type * as ReactModule from 'react';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { HotelRatePacksWorkspace } from './packs-workspace';
+import styles from './rates.module.css';
 import { ManualHotelPanel, ManualHotelSelector } from './manual-hotel-panel';
 
 const hooks = vi.hoisted(() => ({
@@ -112,7 +113,14 @@ it('starts with the manual editor visible above the collapsed saved-pack browser
   const editor = tree.findIndex(
     (n) => n.props['aria-label'] === 'ویرایش دستی بستهٔ نرخ',
   );
-  const details = tree.findIndex((n) => n.type === 'details');
+  const details = tree.findIndex(
+    (n) => n.type === 'details' && n.props.className === styles.savedPackages,
+  );
+  const periods = tree.find(
+    (n) =>
+      n.type === 'details' && n.props.className === styles.periodDisclosure,
+  );
+  expect(periods?.props.open).toBe(false);
   expect(editor).toBeLessThan(details);
   expect(tree[details]!.props.open).not.toBe(true);
   expect(tree.some((n) => n.type === ManualHotelSelector)).toBe(true);
