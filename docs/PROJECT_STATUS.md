@@ -5830,3 +5830,6 @@ Bulk hotel sale adjustments now apply to current sale on every click and store t
 ## PC-C — ASSISTANT-FILTERS-1013
 
 Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.
+## 2026-10-13 — ACCOUNTING-BLUE-THEME-1013 — PC-A execution / PC-B owner
+
+Accounting-only stylesheet applies the approved blue/pastel visual theme while retaining all existing content, routes, fields, commands and permission behavior. No mockup fixtures, additional cards/dashboard, API/schema/migration/dependency or business-data changes. Existing focused tests14/14, full Web lint and full Web TypeScript pass; production build62 routes and browser content/field/control comparison across all91 Accounting destinations pass. Light/dark390/768/1600 layouts pass without page overflow; source lock released for the frozen candidate. The user authorizes final-head CI-gated develop merge and local Rubi3100 activation. See docs/tasks/ACCOUNTING-BLUE-THEME-1013.md.

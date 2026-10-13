@@ -7376,3 +7376,9 @@ prior assistant candidates released; do not edit active Sales workspace files.
 Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
+
+## ACCOUNTING-BLUE-THEME-1013 — PC-B owner / PC-A execution — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-accounting-blue-theme-1013 from origin/develop@390f9ff2. User explicitly requests applying the approved blue mockup theme to the actual Accounting UI, preserving all content, fields, structures, filters, operations and behavior, then push, CI-gated develop merge and local Rubi Web3100 activation. Reserve only accounting-navigation-workspace.module.css and bounded own task/status entries. PC-B Finances confirms no overlapping source lock or active deployment in that chat; existing assignment reservations were checked. No source component/route, API, contract, IAM, schema, migration, dependency, operational-data or Rahkaran change. Mockup fixtures, synthetic cards/dashboard and preview adapters must not enter the application. Root is sole writer; no delegation. Source lock releases with the frozen candidate; activation must preserve the existing Rubi API4192/database/storage and unrelated modules.
+
+Validation: existing focused Accounting tests14/14, full Web lint/typecheck and production build62 routes pass. Browser comparison preserves all91 destinations' content/fields/buttons/visibility/disabled states; light/dark390/768/1600 layouts pass with no JS errors or external requests. Accounting source lock released with the frozen candidate; exact-head CI remains the merge gate.
