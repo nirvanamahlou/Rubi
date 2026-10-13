@@ -5828,6 +5828,12 @@ localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
 کارت بدون تغییر باقی ماندند. این تغییر فقط رابط Web است و API، مجوزها، داده و
 ساختار دیتابیس را تغییر نمی‌دهد.
 
+## 2026-10-13 — AGENCY-IMPORT-PARTIAL-1013 — PC-B
+
+The Organizations XLSX preview no longer blocks the entire workbook because one agency has an invalid phone or another row-level validation error. Valid rows are checked against existing identities and saved independently; invalid rows retain their row number and error and are never written. The result summary separates created, existing and invalid rows. The importer still stops after a write with an uncertain outcome, so retrying cannot silently duplicate it. A mixed-validity regression and all 242 runnable Organizations tests, scoped lint, Web typecheck and production build (62 generated pages) pass. No live agency data, API/schema, permission or dependency change.
+
+Exact-head CI exposed four missing English translations for the new import labels and error. The bounded Web display catalogue is updated; the full suite must pass again on the follow-up commit before review.
+
 ## HOTEL-REPEAT-ADJUSTMENT-1013
 
 Bulk hotel sale adjustments now apply to current sale on every click and store the resulting explicit sale price. Purchase stays independent; invalid negative changes remain atomic. Ten interaction regressions pass. No migration.

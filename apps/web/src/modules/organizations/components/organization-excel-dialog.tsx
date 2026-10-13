@@ -46,8 +46,7 @@ export function OrganizationExcelDialog({
     }
   }
   async function commit() {
-    if (busy || started || !rows.length || rows.some((row) => row.issue))
-      return;
+    if (busy || started || !rows.some((row) => !row.issue)) return;
     setBusy(true);
     setStarted(true);
     setError('');
@@ -122,9 +121,10 @@ export function OrganizationExcelDialog({
         <p className="panel-note">
           حداکثر ۲۰۰ ردیف و ۵ مگابایت. عنوان ستون‌ها می‌تواند فارسی یا انگلیسی و
           با فاصله‌های متفاوت باشد. ستون‌های قالب پیوست مستقیماً خوانده می‌شوند
-          و فیلدهای تکمیلیِ نسخه گسترده نیز پشتیبانی می‌شوند. هر ردیف یک آژانس
-          جدید می‌سازد و اطلاعات تماس و نشانیِ موجود را هم ثبت می‌کند. ایمیل و
-          شماره مجوز اختیاری هستند؛ فرمول و ماکرو مجاز نیست.
+          و فیلدهای تکمیلیِ نسخه گسترده نیز پشتیبانی می‌شوند. ردیف‌های سالم
+          جداگانه ثبت می‌شوند و ردیف‌های خطادار ثبت نمی‌شوند. اطلاعات تماس و
+          نشانیِ موجود نیز ثبت می‌شود. ایمیل و شماره مجوز اختیاری هستند؛ فرمول و
+          ماکرو مجاز نیست.
         </p>
         {error ? (
           <p className="form-error" role="alert">
@@ -134,7 +134,7 @@ export function OrganizationExcelDialog({
         {busy ? (
           <p role="status">
             {started
-              ? `ثبت ${progress.length.toLocaleString('fa-IR')} از ${rows.length.toLocaleString('fa-IR')} ردیف…`
+              ? `بررسی ${progress.length.toLocaleString('fa-IR')} از ${rows.length.toLocaleString('fa-IR')} ردیف…`
               : 'در حال بررسی فایل و رکوردهای موجود…'}
           </p>
         ) : null}
@@ -192,7 +192,11 @@ export function OrganizationExcelDialog({
             {progress
               .filter((row) => row.result === 'skipped')
               .length.toLocaleString('fa-IR')}{' '}
-            موجود بود.{' '}
+            موجود بود؛{' '}
+            {progress
+              .filter((row) => row.result === 'invalid')
+              .length.toLocaleString('fa-IR')}{' '}
+            ردیف خطادار ثبت نشد.{' '}
             {progress.some((row) => row.result === 'failed')
               ? 'عملیات در ردیف خطادار متوقف شد. پس از بررسی نتیجه، فایل را دوباره پیش‌نمایش کنید.'
               : ''}
@@ -204,12 +208,10 @@ export function OrganizationExcelDialog({
           </button>
           <button
             className="btn primary"
-            disabled={
-              busy || started || !rows.length || rows.some((row) => row.issue)
-            }
+            disabled={busy || started || !rows.some((row) => !row.issue)}
             onClick={() => void commit()}
           >
-            ثبت سازمان‌های جدید
+            ثبت ردیف‌های سالم
           </button>
         </div>
       </DialogContent>
