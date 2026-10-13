@@ -5829,3 +5829,6 @@ Tool infrastructure #819 is merged and deployed on loopback4300 with green head/
 ## PC-C — ASSISTANT-ORCHESTRATOR-1013
 
 Gated conversation preparation: shared prepared actions, strict bounded planner contract, disabled-by-default POST/BFF and separate memory-only UI component. Synthetic providers only; live UI activation/provider/business pilot remain gated. See docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md. Candidate validation and CI pending.
+
+
+PC-C release update: filters #822 merged at7ac589fa; postmerge Nora/assistant runs38380041115,38380041148,38380029869,38380029640 all succeeded. Read API preview health200 and anonymous v2 denial401 passed with no business writes. Orchestrator #825 has56 native tests and35 Web tests passing; its final CI and localhost rollout are still gated.

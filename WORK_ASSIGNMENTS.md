@@ -7319,7 +7319,7 @@ and post-merge verification gate local publication.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
 
-## ASSISTANT-TOOLS-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-TOOLS-1013 — PC-C — DONE
 
 Base origin/develop@598fc90c; branch codex/pc-c-assistant-tool-registry-1013.
 User approves the continuation plan. Reserve services/assistant, its dedicated
@@ -7352,7 +7352,7 @@ Contracts package. Source locks are released; no API or database rollout needed.
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
 
-## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-FILTERS-1013 — PC-C — DONE
 
 User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
 requires its green merge. Branch codex/pc-c-assistant-report-filters-1013.
@@ -7369,8 +7369,10 @@ Bounded filter-options extension: reserve assistant-read.module.ts only to regis
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
 
-## ASSISTANT-ORCHESTRATOR-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-ORCHESTRATOR-1013 — PC-C — READY_FOR_REVIEW
 
 User-approved step3 preparation, stacked on filters PR822. Scope services/assistant action composition, message contract, bounded injected-provider orchestrator and tests; optional gated BFF/chat state, own docs. Real model connection remains absent and off; no DB changes.
 
 ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route, separate session-only conversation UI and tests; existing fixed controls remain available.
+
+PC-C handoff: tools #819 and filters #822 merged with green exact-head and postmerge CI. Orchestrator #825 preparation has56 native tests and35 Web tests, scoped lint/typecheck and local production build passing; live conversation remains disabled. Release follows final-head and postmerge CI; rollout evidence is stored privately in tmp/orchestrator-runtime.

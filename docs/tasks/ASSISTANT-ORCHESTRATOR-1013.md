@@ -59,3 +59,5 @@ and Web build to roll back; no database rollback is needed.
   multiple instances and rollback/load/recovery before production expansion.
 
 These are explicit uncompleted business/production gates, not technical-test claims.
+
+Local acceptance:56 native tests and35 Web tests pass, including final conversation-release source reauthorization; TypeScript, lint and Web production build pass. Standard Turbopack is validated by CI; local shared dependency junctions require webpack.
