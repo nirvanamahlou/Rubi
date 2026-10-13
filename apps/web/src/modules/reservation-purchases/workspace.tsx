@@ -308,7 +308,7 @@ function PurchaseHub() {
             ).map(([Icon, label, key, tone]) => (
               <Card
                 key={key}
-                className={`${tone} space-y-3 dark:bg-card dark:text-foreground`}
+                className={`${tone} flex min-h-36 flex-col items-center justify-center gap-3 p-5 text-center dark:bg-card dark:text-foreground`}
               >
                 <Icon className="size-6" />
                 <p className="text-sm font-medium">{label}</p>

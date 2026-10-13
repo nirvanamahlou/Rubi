@@ -1,5 +1,10 @@
 ## 2026-10-13 — ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
 
+## PURCHASE-METRICS-CENTER-1013
+
+Purchase dashboard metric icons, labels and counts are centered with consistent internal padding and a 9rem minimum card height. Responsive grid and existing purchase data/filter logic are preserved. No migration or dependency change.
+
+
 Authenticated browser acceptance reproduced the Accounting form regression: the
 account tree loads all 222 records, but the shared Tabs wrapper treats uncatalogued
 form-local values such as `main` as forbidden screens and removes their trigger and
