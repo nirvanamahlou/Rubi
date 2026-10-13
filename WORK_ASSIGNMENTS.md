@@ -7343,3 +7343,7 @@ Result: the duplicate inner heading was removed while the page-level heading,
 control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
+
+## HOTEL-REPEAT-ADJUSTMENT-1013 — PC-A — READY_FOR_REVIEW
+
+Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
