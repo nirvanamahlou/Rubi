@@ -273,6 +273,8 @@ it('reads latest recorded ticket costs independently of payment, within the exac
       adultUnitCost: '10.0001',
       childUnitCost: '5',
       unitCost: null,
+      seatCount: undefined,
+      invoiceAmount: null,
     },
   ]);
   expect(findMany).toHaveBeenCalledWith(

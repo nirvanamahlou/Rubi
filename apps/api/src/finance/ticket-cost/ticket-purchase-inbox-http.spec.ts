@@ -86,3 +86,26 @@ it('serves the purchase inbox privately without caching', async () => {
     .expect(200);
   expect(result.headers['cache-control']).toBe('private, no-store');
 });
+
+it('accepts a total purchase cost without requiring a rounded client unit price', async () => {
+  const command = {
+    version: 1,
+    operationId: '33333333-3333-4333-8333-333333333333',
+    expectedCostVersion: 0,
+    seatCount: 3,
+    totalCost: '100',
+    currencyCode: 'USD',
+  };
+  await request(app.getHttpServer())
+    .post(
+      '/procurement/ticket-purchases/11111111-1111-4111-8111-111111111111/costs',
+    )
+    .set('Cookie', 'nora_access=buyer')
+    .send(command)
+    .expect(201);
+  expect(costs.recordCost).toHaveBeenLastCalledWith(
+    '11111111-1111-4111-8111-111111111111',
+    command,
+    expect.anything(),
+  );
+});

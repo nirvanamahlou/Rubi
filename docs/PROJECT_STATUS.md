@@ -5849,6 +5849,9 @@ Bulk hotel sale adjustments now apply to current sale on every click and store t
 
 Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.
 
+## 2026-10-13 — FLIGHT-TOTAL-CONTRACT-COST-1013
+
+Ticket Purchasing accepts an exact total flight purchase amount with purchased seat count, while preserving unit-price entry and immutable Finance cost revisions. Sales consumes Finance's public invoice/seat projection and allocates total × assigned ADT/CHD seats ÷ purchased seats, rounding once to four decimals; INF has no seat cost. Outbound and return remain independent, modern service purchases are not counted twice, and missing costs keep profit incomplete. The selected Reservations contract exposes the existing cost/profit view only with finance.read; the API still verifies Sales access and branch. No schema/migration, payment execution or operational runtime change. CAS, operation replay and the post-payment price lock remain enforced.
 
 ## HOTEL-RATE-HUB-1013
 
@@ -5860,3 +5863,7 @@ Gated conversation preparation: shared prepared actions, strict bounded planner 
 
 
 PC-C release update: filters #822 merged at7ac589fa; postmerge Nora/assistant runs38380041115,38380041148,38380029869,38380029640 all succeeded. Read API preview health200 and anonymous v2 denial401 passed with no business writes. Orchestrator #825 has56 native tests and35 Web tests passing; its final CI and localhost rollout are still gated.
+
+## 2026-10-13 — ACCOUNTING-BLUE-THEME-1013 — PC-A execution / PC-B owner
+
+Accounting-only stylesheet applies the approved blue/pastel visual theme while retaining all existing content, routes, fields, commands and permission behavior. No mockup fixtures, additional cards/dashboard, API/schema/migration/dependency or business-data changes. Existing focused tests14/14, full Web lint and full Web TypeScript pass; production build62 routes and browser content/field/control comparison across all91 Accounting destinations pass. Light/dark390/768/1600 layouts pass without page overflow; source lock released for the frozen candidate. The user authorizes final-head CI-gated develop merge and local Rubi3100 activation. See docs/tasks/ACCOUNTING-BLUE-THEME-1013.md.

@@ -439,6 +439,8 @@ export interface FinanceTicketCostCommandV1 {
   /** New ticket purchase flow: the server calculates the invoice from these values. */
   seatCount?: number;
   unitCost?: string;
+  /** Exact total for all purchased seats; mutually exclusive with unitCost. */
+  totalCost?: string;
   /** Legacy values remain accepted only for existing callers. */
   adultUnitCost?: string;
   childUnitCost?: string;
