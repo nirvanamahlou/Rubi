@@ -510,3 +510,12 @@ partial P0 foundation, not completed Enterprise MVP or Production certification.
 - [ ] Finance-approved receivables and combined daily corporate summary.
 
 This first connection is partial Phase1; see docs/tasks/ASSISTANT-PHASE1-REPORTS-1012.md.
+
+## Assistant continuation — 2026-10-13 / PC-C
+
+Approved sequence: controlled tool registry/executor (ASSISTANT-TOOLS-1013),
+versioned <=90-day route/authorized-branch filters, fake-provider orchestration,
+then approved real model and business pilot. Company filter is deferred; chat
+is session-only; accounting receivables await Finance. No organizational data
+may reach a model before the processing/cost decision. Detailed implementation
+and release gates: docs/tasks/ASSISTANT-TOOLS-1013.md.

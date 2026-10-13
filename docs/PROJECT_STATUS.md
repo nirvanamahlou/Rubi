@@ -5793,3 +5793,13 @@ This additive optional field already matches the Web verifier. No permission,
 source, database or dependency change. Full CI gates publication and local rollout.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
+
+## 2026-10-13 — ASSISTANT-TOOLS-1013 — PC-C
+
+Candidate extracts six immutable read tools, authorization, fixed ERP transport,
+shared executor, personal projection and allowlisted audit. Every source read
+uses the executor with before/after native IAM and branch-revocation checks;
+aggregate release guards and public v1 contracts remain.41 native tests and5
+CI-policy tests pass; no schema/migration/dependency/model/Web/producer change.
+Dedicated workflow discovers all tests. Final-head/merged CI and service-only
+localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.

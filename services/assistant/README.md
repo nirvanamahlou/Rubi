@@ -1,112 +1,89 @@
-# Independent executive assistant service
+# Independent assistant service
 
-Phase1 continuation supports real weekly discounted contractual amounts,
-separate operational balances and authorized logged-CALL conversion. Daily
-summary adds corporate sections only with native permissions. Accounting
-receivables/due schedules/refund-adjusted net sales remain explicit source gates.
-See docs/tasks/ASSISTANT-PHASE1-COMPLETION-1012.md for meanings and limits.
+Node 24 native HTTP service; no package installation, database access, model
+provider, user-content persistence, arbitrary URL/SQL execution or write tools.
 
-When publishing reports separately from the old shared Core, launch the ERP-owned
-read-only Nest entrypoint `apps/api/dist/assistant-read/main.js` with the private
-ERP environment. It binds loopback4301, rejects writes and verifies PostgreSQL
-read-only sessions; no dispatchers/migrations start. Set server-only
-`ERP_REPORTS_API_BASE_URL=http://127.0.0.1:4301/api/v1` for the independent service.
-SELF data reads retain ERP_API_BASE_URL. Identity uses ERP_AUTH_API_BASE_URL when
-set, otherwise the configured report base, then ERP_API_BASE_URL. The read runtime
-publishes native IAM GET /iam/auth/access and checks the native manual screen policy
-for fixed personal-source IDs before reading and again before release. This keeps
-current revocations authoritative when Core is an older runtime. No database
-credentials enter the independent service.
+## Current public contract
 
-Node 24, no package installation. This is a bounded read-only service, not an
-enabled LLM or forecasting system.
+- GET /health: process health only; not a claim that ERP sources are available.
+- GET /v1/executive/snapshot: authenticated SELF calendar, notes and assigned
+  procurement follow-ups; at most30 visible records with coverage metadata.
+- GET /v1/assistant/actions/daily-summary: deterministic personal recommendations
+  and separately authorized weekly sales/current contractual balance sections.
+- GET /v1/assistant/actions/sales-analysis: confirmed discounted contractual sales
+  by currency, with optional authorized logged-CALL lead conversion.
+- GET /v1/assistant/actions/receivables-follow-up: current contractual balances,
+  explicitly not Finance-approved accounting receivables or due schedules.
 
-```powershell
-$env:ERP_API_BASE_URL = 'http://127.0.0.1:4000/api/v1'
-$env:ASSISTANT_PORT = '4300'
-node services/assistant/server.mjs
-```
+Only fixed paths without query/body selectors are accepted. Existing version1
+responses and Web validation remain compatible. Missing sources, denial, empty
+records and incomplete coverage remain distinct. Refund-adjusted net sales,
+accounting receivables and contractual-balance recommendation rules are gated.
 
-Web server: `ASSISTANT_SERVICE_URL=http://127.0.0.1:4300` (server-only).
-The ERP access cookie must reach the Web origin as well as the ERP API under
-the approved same-site deployment. The proxy forwards only that cookie, never
-refresh tokens or all browser headers. Cross-site SSO/token exchange needs a
-separate deployment design; do not loosen cookie or CORS policy to work around it.
-The executable binds loopback. Before remote deployment, approve HTTPS private
-ingress/network allowlists and a retained access-controlled audit sink. Do not
-replace any existing ERP runtime merely to test this service.
+## Internal boundaries
 
-`GET /v1/executive/snapshot` accepts only `nora_access`. IAM is revalidated before
-each tool and before response release. All authenticated ERP users may open the
-shared assistant and request their own SELF snapshot (owner authorization,
-2026-10-11). No executive screen grant or bulk role mutation is required.
-Source ERP APIs still enforce their own permissions; a denied source fails closed.
-This does not enable corporate reporting, executive data or write permissions.
+- tools.mjs: six immutable read contracts; input schema, permissions, scope,
+  fixed operation, output validator/projector, errors and transport limits.
+- authorization.mjs: access-cookie extraction, native IAM identity validation,
+  fixed personal-source preflight and corporate permission requirements.
+- erp-client.mjs: only registry operations and native identity; configured bases,
+  GET only, redirect refusal, no-store, byte cap and bounded transport.
+- tool-executor.mjs: strict empty input, fresh identity before and after each
+  read, output validation/projection, branch-revocation check and tool outcome.
+- server.mjs: HTTP dispatch, request limits, aggregate composition and final
+  permission/source rechecks before response release.
+- actions.mjs and recommendations.mjs: deterministic summaries, Tehran-day
+  urgency, source-priority promotion, evidence and source/rule deduplication.
+- personal/sales/balances/conversion-source.mjs: owned response projections.
+- audit.mjs: allowlisted request metadata and stable tool IDs, never raw bodies.
 
-Only personal calendar/notes/assigned procurement reads are allowed. No cache,
-model, DB, browsing, arbitrary query or mutation endpoints. Source status/time/
-coverage are separate. Upstream caps make this a bounded personal queue, not a
-complete corporate KPI. At most 30 results, no note bodies, no completed events
-or completed note checklists. Overdue/upcoming/assigned reasons are deterministic.
+All six source reads pass through the executor. There is no generic public
+execute-tool endpoint. Registry permission declarations do not replace native
+ERP source authorization. Panel visibility does not grant corporate access.
+Missing/unknown source priority is omitted, never presented as recorded NORMAL.
 
-Errors: 401 unauthenticated, 403 missing/revoked grant, 404 unknown path/query,
-405 write attempt, 429 concurrency/rate cap, 502 IAM/source invalid or unavailable.
-Tool-source failures return an explicit partial snapshot. No retry loops.
-Audit includes actor/correlation/tool outcome/time, never cookies or content.
-Rate limits are process-local (8 concurrent requests, 60/IP/minute and
-12/user/minute); the deployed ingress must enforce shared limits across replicas.
-The circuit is bounded by per-read 2.5s and whole-request 10s deadlines; no
-circuit-breaker state or production load/availability guarantee is claimed.
+Tools: calendar and notes require native SELF/source access; procurement requires
+native assigned-follow-up access. sales.weekly requires sales.contracts.read.all;
+sales.contract-balances additionally requires sales.payments.read;
+customer-affairs.call-conversion additionally requires customer_affairs.lead.read
+and retains native authorized-branch scope. Personal row caps are1000/500/100;
+report source caps remain enforced by ERP. No scopes are supplied by the caller.
 
-| Tool        | Fixed ERP GET route                 | Input and output scope                                                                                                   |
-| ----------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| calendar    | `/workbench/calendar`               | Session actor only; at most 1,000 personal events; completed/cancelled excluded. Ignores extra customer-affairs payload. |
-| notes       | `/workbench/notes`                  | Session actor only; at most 500 notes; scheduled reminders only, completed checklists excluded; bodies omitted.          |
-| procurement | `/workbench/procurement-follow-ups` | Session actor's assigned follow-ups; at most 100; no user/branch selector.                                               |
+## Local runtime
 
-All tools require an active ERP session in
-addition to the source API's authorization. No side effects. The 7-day horizon
-includes overdue entries; a cap is disclosed as incomplete coverage. Source
-timestamps describe observation time, not guaranteed event freshness. Output is
-version 1, `scope: SELF`, source status/time, at most 30 deduplicated follow-ups,
-a truncation flag and disabled future capabilities. UI validates this envelope
-in `apps/web/src/modules/assistant/model.ts`. Business metrics must use separately
-approved company-scoped contracts and never reinterpret this personal envelope.
+Run node services/assistant/server.mjs with server-side environment:
 
-```powershell
-node --test services/assistant/server.test.mjs
-node --check services/assistant/server.mjs
-```
+- ERP_API_BASE_URL=http://127.0.0.1:4000/api/v1
+- ERP_REPORTS_API_BASE_URL=http://127.0.0.1:4301/api/v1
+- ERP_AUTH_API_BASE_URL=http://127.0.0.1:4301/api/v1
+- ASSISTANT_PORT=4300
 
-All six reference panels and follow-up gates: `docs/tasks/EXECUTIVE-ASSISTANT-1011.md`.
+Web uses ASSISTANT_SERVICE_URL=http://127.0.0.1:4300. The ERP-owned read entrypoint
+apps/api/dist/assistant-read/main.js retains native IAM and read-only database
+sessions. Database credentials never enter the independent assistant. Keep the
+existing Core and read entrypoint running during this service-only rollout.
+Only nora_access is forwarded. Same-site cookie deployment remains required;
+no relaxed CORS/cookie policy or synthesized service-account grant.
 
-## Deterministic MVP actions — 2026-10-12
+Errors retain401/403/404/405/429/502/503 semantics. Limits:8 concurrent requests,
+60/IP/minute,12/user/minute,2.5 seconds per read,10 seconds per request,
+512KiB upstream body. Web retains its128KiB response cap and12-second deadline.
+No automatic retry or sensitive-data cache. Limits are process-local; a shared
+limiter, HTTPS ingress and retained controlled audit sink are prerequisites for
+multi-instance deployment. A circuit breaker is not implemented.
 
-GET /v1/assistant/actions/daily-summary executes the existing SELF reads and
-returns coverage, reconciled visible counts and rule-linked recommendations.
-GET /v1/assistant/actions/receivables-follow-up authenticates
-and return explicit BLOCKED gates; neither accesses corporate data nor a model.
-Only these three action names are accepted. No scope selectors, prompt or write
-request is accepted. Web quick buttons call /api/assistant/actions/[action].
-No model provider is configured under the owner-approved v1 policy.
-Full contracts, readiness evidence, staged roadmap and rollout limitations:
-../../docs/tasks/ASSISTANT-MVP-FOUNDATION-1012.md.
+## Verification and next gates
 
-Phase1 sales-analysis now reads only /sales/assistant/weekly, requiring existing
-sales.contracts.read.all before/after the read. Approved creation-date Tehran
-weekly counts/primary routes are PARTIAL while net/refund, conversion and full
-route projections remain unavailable. Missing ERP publication and invalid/capped
-sources produce explicit safe blocked causes, never synthetic/zero totals.
-Only whitelisted source fields are returned; no demo reports or financial rows.
-ERP publication and full acceptance: ../../docs/tasks/ASSISTANT-PHASE1-REPORTS-1012.md.
+Run node --test services/assistant/*.test.mjs; syntax-check every .mjs file.
+The dedicated workflow discovers all tests. Existing HTTP tests retain real
+loopback transport, isolation, revocation, source coverage and money validation.
+The main CI also exercises the isolated PostgreSQL-to-Web contract integration.
 
-## Explainable recommendations — 2026-10-13
+No migration or dependency change is required. Roll back by restoring the prior
+assistant process revision; Web/Core/read API contracts are unchanged. Deployment
+follows green final-head and merged-tree CI; business data acceptance is separate.
 
-Daily summaries add policyVersion2 and PERSONAL_DUE_V2 recommendations keyed by
-source record and rule. Tehran calendar urgency is HIGH for overdue/today, MEDIUM
-for days1–3, LOW for days4–7 or assigned undated items. Recorded source priority
-may only promote urgency. Evidence observation time and reason are mandatory;
-completed/out-of-window records disappear on fresh reads. Web shows top5 plus
-view-all and exact current/previous weekly amounts per currency. Contract-balance
-recommendations are explicitly deferred pending real data and approved rules.
-See docs/tasks/ASSISTANT-PHASE2-1013.md. No model, persistence or Write operation.
+Next units: versioned filters (<=90 complete Tehran days, route, permitted branch),
+then simulated conversation/orchestrator. Company ownership, approved Finance
+sources, real model processing/cost policy and production pilot remain gates.
+See ../../docs/tasks/ASSISTANT-TOOLS-1013.md.
