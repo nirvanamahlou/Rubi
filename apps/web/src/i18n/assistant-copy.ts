@@ -1,5 +1,39 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  reportFilters: ['فیلتر گزارش‌ها', 'Report filters'],
+  filterHelp: [
+    'بازهٔ کامل گذشته، حداکثر ۹۰ روز؛ پیش‌فرض هفت روز گذشته است. پس از انتخاب فیلتر، درخواست موردنظر را اجرا کنید.',
+    'Completed past dates, up to 90 days; defaults to the last seven days. Run a request after selecting filters.',
+  ],
+  filterStart: ['از تاریخ', 'Start date'],
+  filterEnd: ['تا تاریخ', 'End date'],
+  filterOrigin: ['مبدأ مسیر اصلی', 'Primary route origin'],
+  filterDestination: ['مقصد مسیر اصلی', 'Primary route destination'],
+  filterBranch: ['شعبه', 'Branch'],
+  filterAll: ['همهٔ موارد مجاز', 'All permitted values'],
+  filterReset: ['بازگشت به گزارش پیش‌فرض', 'Reset to default report'],
+  filterOptionsUnavailable: [
+    'گزینه‌های مسیر و شعبه در دسترس نیستند یا مجوز آن‌ها را ندارید.',
+    'Route and branch choices are unavailable or not permitted.',
+  ],
+  filterOptionsIncomplete: [
+    'فهرست گزینه‌ها کامل نیست؛ برخی مسیرها یا نام‌ها در منبع موجود نیستند.',
+    'Choices are incomplete; some routes or names are not available from the source.',
+  ],
+  filterInvalid: [
+    'بازه را کامل و حداکثر ۹۰ روز انتخاب کنید؛ امروز و روزهای آینده در گزارش دورهٔ کامل نیستند.',
+    'Select a complete range of up to 90 days; today and future dates are excluded from completed-period reports.',
+  ],
+  filteredPeriod: ['بازهٔ انتخاب‌شده', 'Selected period'],
+  filteredPrevious: ['دورهٔ هم‌طول قبلی', 'Previous equal-length period'],
+  balanceAsOf: [
+    'ماندهٔ قراردادی مربوط به زمان دریافت است؛ فیلتر تاریخ به آن اعمال نمی‌شود. پیشنهادهای شخصی نیز افق هفت‌روزهٔ خود را دارند.',
+    'Contract balances are current at retrieval; the date filter does not apply to them. Personal recommendations retain their seven-day horizon.',
+  ],
+  routeConversionUnavailable: [
+    'نرخ تبدیل برای مسیر انتخاب‌شده تا آماده‌شدن منبع انتساب مسیر نمایش داده نمی‌شود.',
+    'Conversion for a selected route awaits a reliable route-attribution source.',
+  ],
   recommendationTitle: ['پیشنهادهای قابل پیگیری', 'Actionable recommendations'],
   allRecommendations: ['مشاهدهٔ همهٔ پیشنهادها', 'View all recommendations'],
   ruleLabel: ['قاعده', 'Rule'],
@@ -112,6 +146,7 @@ export const assistantCopy = {
     'منبع خواندنی فروش در دسترس نیست یا پاسخ آن معتبر نیست؛ عددی نمایش داده نمی‌شود.',
     'The read-only sales source is unavailable or invalid. No figures are displayed.',
   ],
+  salesAnalysis: ['تحلیل فروش دوره انتخاب‌شده', 'Sales for selected period'],
   weeklySales: [
     'فروش هفتگی — شمارش قراردادهای معتبر',
     'Weekly sales — eligible contract counts',

@@ -1,4 +1,8 @@
 import {
+  parseAssistantReportFilters,
+  type AssistantReportFilters,
+} from '../sales/sales-assistant-filters';
+import {
   BadRequestException,
   ConflictException,
   Controller,
@@ -32,6 +36,38 @@ export class CustomerAffairsAssistantController {
   ) {
     if (Object.keys(query).length)
       throw new BadRequestException('ASSISTANT_FIXED_SCOPE');
+    return this.conversionReport(request);
+  }
+
+  @Get('call-conversion/filtered')
+  @Header('Cache-Control', 'private, no-store')
+  async filtered(
+    @Req() request: AuthenticatedRequest,
+    @Query() query: Record<string, unknown>,
+  ) {
+    const now = new Date();
+    const { filters, windows } = parseAssistantReportFilters(
+      query,
+      request.actor,
+      now,
+    );
+    if (filters.originId || filters.destinationId)
+      throw new BadRequestException('ASSISTANT_ROUTE_COHORT_UNAVAILABLE');
+    const report = await this.conversionReport(request, filters, windows, now);
+    return {
+      ...report,
+      version: 2,
+      source: 'customer-affairs.assistant.call-conversion.v2',
+      filters,
+    };
+  }
+
+  private async conversionReport(
+    request: AuthenticatedRequest,
+    filters?: AssistantReportFilters,
+    requestedWindows?: ReturnType<typeof salesAssistantWindows>,
+    now = new Date(),
+  ) {
     const actor = request.actor;
     if (
       !['customer_affairs.lead.read', 'sales.contracts.read.all'].every(
@@ -39,8 +75,8 @@ export class CustomerAffairsAssistantController {
       )
     )
       throw new ForbiddenException('ASSISTANT_COHORT_READ_REQUIRED');
-    const now = new Date();
-    const windows = salesAssistantWindows(now);
+    const windows = requestedWindows ?? salesAssistantWindows(now);
+    const branchIds = filters?.branchId ? [filters.branchId] : actor.branchIds;
     const periods = [];
     let lastUpdate: Date | null = null;
     for (const window of [windows.current, windows.previous]) {
@@ -53,7 +89,7 @@ export class CustomerAffairsAssistantController {
       };
       const leads = await this.database.client.customerAffairsLead.findMany({
         where: {
-          branchId: { in: actor.branchIds },
+          branchId: { in: branchIds },
           timeline: { some: callWhere },
         },
         select: {
@@ -127,7 +163,7 @@ export class CustomerAffairsAssistantController {
       version: 1,
       source: 'customer-affairs.assistant.call-conversion.v1',
       scope: 'AUTHORIZED_BRANCHES',
-      branchCount: actor.branchIds.length,
+      branchCount: branchIds.length,
       timeZone: 'Asia/Tehran',
       observedAt: now.toISOString(),
       sourceUpdatedAt: lastUpdate?.toISOString() ?? null,

@@ -208,72 +208,78 @@ const blockedSchema = z.discriminatedUnion('action', [
     observedAt: z.iso.datetime(),
   }),
 ]);
-const salesPeriod = z
-  .object({
-    contractAmountsBeforeRefunds: z
-      .array(
-        z.object({
-          currencyCode: z.string().regex(/^[A-Z]{3}$/),
-          amount: z.string().regex(/^-?\d{1,24}(?:\.\d{1,4})?$/),
-        }),
-      )
-      .max(100)
-      .refine(
-        (rows) =>
-          new Set(rows.map((row) => row.currencyCode)).size === rows.length,
-      )
-      .optional(),
-    startUtc: z.iso.datetime(),
-    endUtc: z.iso.datetime(),
-    contractCount: z.number().int().min(0).max(5000),
-    passengerCount: z.number().int().nonnegative(),
-    routes: z
-      .array(
-        z.object({
-          originId: z.uuid(),
-          destinationId: z.uuid(),
-          originName: z.string().trim().min(1).max(200).nullable(),
-          destinationName: z.string().trim().min(1).max(200).nullable(),
-          contractCount: z.number().int().positive(),
-          passengerCount: z.number().int().nonnegative(),
-        }),
-      )
-      .max(5000),
-  })
-  .refine(
-    (period) =>
-      period.routes.reduce((total, row) => total + row.contractCount, 0) ===
-        period.contractCount &&
-      period.routes.reduce((total, row) => total + row.passengerCount, 0) ===
-        period.passengerCount &&
-      new Set(
-        period.routes.map((row) => `${row.originId}:${row.destinationId}`),
-      ).size === period.routes.length &&
-      (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 >=
-        6.95 &&
-      (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 <=
-        7.05,
-  );
-const conversionPeriod = z
-  .object({
-    startUtc: z.iso.datetime(),
-    endUtc: z.iso.datetime(),
-    contactedLeads: z.number().int().min(0).max(5000),
-    convertedLeads: z.number().int().min(0).max(5000),
-    conversionBasisPoints: z.number().int().min(0).max(10000).nullable(),
-  })
-  .refine(
-    (period) =>
-      period.convertedLeads <= period.contactedLeads &&
-      period.conversionBasisPoints ===
-        (period.contactedLeads
-          ? Math.round((period.convertedLeads * 10000) / period.contactedLeads)
-          : null) &&
-      Math.abs(
-        (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 -
-          7,
-      ) <= 0.05,
-  );
+const salesPeriodFor = (filtered = false) =>
+  z
+    .object({
+      contractAmountsBeforeRefunds: z
+        .array(
+          z.object({
+            currencyCode: z.string().regex(/^[A-Z]{3}$/),
+            amount: z.string().regex(/^-?\d{1,24}(?:\.\d{1,4})?$/),
+          }),
+        )
+        .max(100)
+        .refine(
+          (rows) =>
+            new Set(rows.map((row) => row.currencyCode)).size === rows.length,
+        )
+        .optional(),
+      startUtc: z.iso.datetime(),
+      endUtc: z.iso.datetime(),
+      contractCount: z.number().int().min(0).max(5000),
+      passengerCount: z.number().int().nonnegative(),
+      routes: z
+        .array(
+          z.object({
+            originId: z.uuid(),
+            destinationId: z.uuid(),
+            originName: z.string().trim().min(1).max(200).nullable(),
+            destinationName: z.string().trim().min(1).max(200).nullable(),
+            contractCount: z.number().int().positive(),
+            passengerCount: z.number().int().nonnegative(),
+          }),
+        )
+        .max(5000),
+    })
+    .refine(
+      (period) =>
+        period.routes.reduce((total, row) => total + row.contractCount, 0) ===
+          period.contractCount &&
+        period.routes.reduce((total, row) => total + row.passengerCount, 0) ===
+          period.passengerCount &&
+        new Set(
+          period.routes.map((row) => `${row.originId}:${row.destinationId}`),
+        ).size === period.routes.length &&
+        (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 >=
+          (filtered ? 0.95 : 6.95) &&
+        (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 <=
+          (filtered ? 90.05 : 7.05),
+    );
+const salesPeriod = salesPeriodFor();
+const conversionPeriodFor = (filtered = false) =>
+  z
+    .object({
+      startUtc: z.iso.datetime(),
+      endUtc: z.iso.datetime(),
+      contactedLeads: z.number().int().min(0).max(5000),
+      convertedLeads: z.number().int().min(0).max(5000),
+      conversionBasisPoints: z.number().int().min(0).max(10000).nullable(),
+    })
+    .refine(
+      (period) =>
+        period.convertedLeads <= period.contactedLeads &&
+        period.conversionBasisPoints ===
+          (period.contactedLeads
+            ? Math.round(
+                (period.convertedLeads * 10000) / period.contactedLeads,
+              )
+            : null) &&
+        (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 >=
+          (filtered ? 0.95 : 6.95) &&
+        (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 <=
+          (filtered ? 90.05 : 7.05),
+    );
+const conversionPeriod = conversionPeriodFor();
 const conversionReport = z
   .object({
     version: z.literal(1),
@@ -441,25 +447,240 @@ export const assistantActionSchema = z.union([
   salesSchema,
   balanceSchema,
 ]);
-export type AssistantActionResult = z.infer<typeof assistantActionSchema>;
+export const reportFiltersSchema = z
+  .object({
+    startDate: z.iso.date(),
+    endDate: z.iso.date(),
+    originId: z.uuid().nullable(),
+    destinationId: z.uuid().nullable(),
+    branchId: z.uuid().nullable(),
+  })
+  .strict()
+  .refine((value) => {
+    const days =
+      (Date.parse(value.endDate) - Date.parse(value.startDate)) / 86400000 + 1;
+    return days >= 1 && days <= 90;
+  });
+export type AssistantReportFilters = Partial<{
+  startDate: string;
+  endDate: string;
+  originId: string;
+  destinationId: string;
+  branchId: string;
+}>;
+const civil = (at: string) => {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
+      timeZone: 'Asia/Tehran',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .formatToParts(new Date(at))
+      .map((part) => [part.type, part.value]),
+  );
+  return parts.year + '-' + parts.month + '-' + parts.day;
+};
+const validWindow = (report: {
+  observedAt: string;
+  filters: z.infer<typeof reportFiltersSchema>;
+  current: { startUtc: string; endUtc: string };
+  previous: { startUtc: string; endUtc: string };
+}) => {
+  const days =
+    (Date.parse(report.filters.endDate) -
+      Date.parse(report.filters.startDate)) /
+      86400000 +
+    1;
+  const shift = (value: string, days: number) =>
+    new Date(Date.parse(value) + days * 86400000).toISOString().slice(0, 10);
+  return (
+    report.filters.endDate < civil(report.observedAt) &&
+    civil(report.current.startUtc) === report.filters.startDate &&
+    civil(report.current.endUtc) === shift(report.filters.endDate, 1) &&
+    civil(report.previous.startUtc) ===
+      shift(report.filters.startDate, -days) &&
+    report.previous.endUtc === report.current.startUtc &&
+    [
+      report.current.startUtc,
+      report.current.endUtc,
+      report.previous.startUtc,
+    ].every(
+      (at) => civil(new Date(Date.parse(at) - 1).toISOString()) !== civil(at),
+    )
+  );
+};
+const filteredSalesReport = z
+  .object({
+    ...salesSchema.shape.report.shape,
+    version: z.literal(2),
+    source: z.literal('sales.assistant.report.v2'),
+    filters: reportFiltersSchema,
+    current: salesPeriodFor(true),
+    previous: salesPeriodFor(true),
+  })
+  .refine(validWindow)
+  .refine(
+    (report) =>
+      report.current.contractCount + report.previous.contractCount <= 5000 &&
+      report.routeNamesComplete ===
+        [...report.current.routes, ...report.previous.routes].every(
+          (row) => row.originName !== null && row.destinationName !== null,
+        ),
+  );
+const filteredConversionReport = z
+  .object({
+    ...conversionReport.shape,
+    version: z.literal(2),
+    source: z.literal('customer-affairs.assistant.call-conversion.v2'),
+    filters: reportFiltersSchema,
+    current: conversionPeriodFor(true),
+    previous: conversionPeriodFor(true),
+  })
+  .refine(validWindow)
+  .refine(
+    (report) => !report.filters.originId && !report.filters.destinationId,
+  );
+const filteredBalanceReport = z
+  .object({
+    ...balanceSchema.shape.report.shape,
+    version: z.literal(2),
+    source: z.literal('sales.assistant.contract-balances.v2'),
+    filters: reportFiltersSchema,
+    dateBasis: z.literal('CURRENT_AS_OF_REQUEST'),
+  })
+  .refine(
+    (report) =>
+      report.items.length <= report.contractCount &&
+      new Set(report.items.map((row) => row.contractId)).size ===
+        report.items.length &&
+      (!report.coverage.itemsTruncated || report.items.length === 30),
+  );
+const filteredConversion = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('READY'), report: filteredConversionReport }),
+  z.object({ status: z.literal('DENIED') }),
+  z.object({
+    status: z.literal('UNAVAILABLE'),
+    reason: z.literal('ROUTE_COHORT_SOURCE_PENDING').optional(),
+  }),
+]);
+export const assistantFilteredActionSchema = z
+  .union([
+    z
+      .object({
+        ...dailySchema.shape,
+        version: z.literal(2),
+        filters: reportFiltersSchema,
+        corporate: z.object({
+          sales: z.discriminatedUnion('status', [
+            z.object({
+              status: z.literal('READY'),
+              report: filteredSalesReport,
+            }),
+            z.object({ status: z.literal('DENIED') }),
+            z.object({ status: z.literal('UNAVAILABLE') }),
+          ]),
+          balances: z.discriminatedUnion('status', [
+            z.object({
+              status: z.literal('READY'),
+              report: filteredBalanceReport,
+            }),
+            z.object({ status: z.literal('DENIED') }),
+            z.object({ status: z.literal('UNAVAILABLE') }),
+          ]),
+        }),
+      })
+      .refine(
+        (value) => dailySchema.safeParse({ ...value, version: 1 }).success,
+      ),
+    ...blockedSchema.options.map((schema) =>
+      schema.extend({ version: z.literal(2), filters: reportFiltersSchema }),
+    ),
+    salesSchema.extend({
+      version: z.literal(2),
+      filters: reportFiltersSchema,
+      report: filteredSalesReport,
+      conversion: filteredConversion.optional(),
+    }),
+    balanceSchema.extend({
+      version: z.literal(2),
+      filters: reportFiltersSchema,
+      report: filteredBalanceReport,
+    }),
+  ])
+  .refine((value) => {
+    const reports =
+      'report' in value
+        ? [
+            value.report,
+            ...('conversion' in value && value.conversion?.status === 'READY'
+              ? [value.conversion.report]
+              : []),
+          ]
+        : 'corporate' in value && value.corporate
+          ? [value.corporate.sales, value.corporate.balances].flatMap(
+              (source) => (source.status === 'READY' ? [source.report] : []),
+            )
+          : [];
+    return reports.every((report) =>
+      Object.entries(value.filters).every(
+        ([key, item]) =>
+          report.filters[key as keyof typeof report.filters] === item,
+      ),
+    );
+  });
+export type AssistantActionResult =
+  | z.infer<typeof assistantActionSchema>
+  | z.infer<typeof assistantFilteredActionSchema>;
 
 export async function loadAssistantAction(
   action: AssistantAction,
   signal: AbortSignal,
+  filters?: AssistantReportFilters,
 ): Promise<AssistantActionResult> {
-  const response = await fetch(`/api/assistant/actions/${action}`, {
+  const path = filters
+    ? '/api/assistant/v2/actions/' +
+      action +
+      '?' +
+      new URLSearchParams(filters).toString()
+    : '/api/assistant/actions/' + action;
+  const response = await fetch(path, {
     credentials: 'same-origin',
     cache: 'no-store',
     signal,
   });
   if (!response.ok)
     throw new Error(
-      [401, 403, 429].includes(response.status)
+      [400, 401, 403, 429].includes(response.status)
         ? `HTTP_${response.status}`
         : 'UNAVAILABLE',
     );
-  const parsed = assistantActionSchema.safeParse(await response.json());
+  const parsed = (
+    filters ? assistantFilteredActionSchema : assistantActionSchema
+  ).safeParse(await response.json());
   if (!parsed.success || parsed.data.action !== action)
+    throw new Error('INVALID_RESPONSE');
+  if (
+    filters &&
+    parsed.data.version === 2 &&
+    Object.entries(filters).some(
+      ([key, value]) =>
+        parsed.data.version === 2 &&
+        parsed.data.filters[key as keyof typeof parsed.data.filters] !==
+          value.toLowerCase(),
+    )
+  )
+    throw new Error('INVALID_RESPONSE');
+  if (
+    filters &&
+    parsed.data.version === 2 &&
+    Object.entries(filters).some(
+      ([key, value]) =>
+        parsed.data.version === 2 &&
+        parsed.data.filters[key as keyof typeof parsed.data.filters] !==
+          value.toLowerCase(),
+    )
+  )
     throw new Error('INVALID_RESPONSE');
   return parsed.data;
 }

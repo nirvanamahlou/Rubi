@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { proxyExecutiveSnapshot, proxyAssistantAction } from './proxy';
+import {
+  proxyExecutiveSnapshot,
+  proxyAssistantAction,
+  proxyAssistantV2Action,
+} from './proxy';
 const request = (cookie = 'nora_access=synthetic; nora_refresh=private') =>
   new Request('http://localhost/api/assistant/executive', {
     headers: { cookie },
@@ -146,4 +150,55 @@ describe('fixed assistant action transport', () => {
     ).toBe(405);
     expect(fetcher).not.toHaveBeenCalled();
   });
+});
+
+it('forwards only allowlisted v2 filters and keeps v1 query-free', async () => {
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(Response.json({ version: 2 }));
+  const make = (query: string) =>
+    new Request(
+      'http://localhost/api/assistant/v2/actions/sales-analysis?' + query,
+      { headers: { cookie: 'nora_access=synthetic' } },
+    );
+  expect(
+    (
+      await proxyAssistantV2Action(
+        make('startDate=2026-10-01&endDate=2026-10-12'),
+        'http://127.0.0.1:4300',
+        'sales-analysis',
+        fetcher,
+      )
+    ).status,
+  ).toBe(200);
+  expect(String(fetcher.mock.calls[0]![0])).toBe(
+    'http://127.0.0.1:4300/v2/assistant/actions/sales-analysis?startDate=2026-10-01&endDate=2026-10-12',
+  );
+  fetcher.mockClear();
+  for (const query of [
+    'userId=other',
+    'branchId=a&branchId=b',
+    'url=https://example.com',
+  ])
+    expect(
+      (
+        await proxyAssistantV2Action(
+          make(query),
+          'http://127.0.0.1:4300',
+          'sales-analysis',
+          fetcher,
+        )
+      ).status,
+    ).toBe(400);
+  expect(
+    (
+      await proxyAssistantAction(
+        make('startDate=2026-10-01'),
+        'http://127.0.0.1:4300',
+        'sales-analysis',
+        fetcher,
+      )
+    ).status,
+  ).toBe(400);
+  expect(fetcher).not.toHaveBeenCalled();
 });

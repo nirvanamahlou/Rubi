@@ -441,8 +441,11 @@ describe.skipIf(!enabled)(
       const proxyUrl = pathToFileURL(
         resolve(process.cwd(), '../web/src/modules/assistant/proxy.ts'),
       ).href;
-      const { assistantActionSchema } = await import(modelUrl);
-      const { proxyAssistantAction } = await import(proxyUrl);
+      const { assistantActionSchema, assistantFilteredActionSchema } =
+        await import(modelUrl);
+      const { proxyAssistantAction, proxyAssistantV2Action } = await import(
+        proxyUrl
+      );
       for (const action of [
         'daily-summary',
         'sales-analysis',
@@ -459,6 +462,82 @@ describe.skipIf(!enabled)(
         const evidence = await result.json();
         expect(assistantActionSchema.safeParse(evidence).success).toBe(true);
       }
+      const options = (await (
+        await get('/sales/assistant/filter-options')
+      ).json()) as Awaited<
+        ReturnType<SalesAssistantController['filterOptions']>
+      >;
+      expect(options.branches).toHaveLength(1);
+      expect(options.cities).toHaveLength(2);
+      const civil = (at: string) => {
+        const parts = Object.fromEntries(
+          new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
+            timeZone: 'Asia/Tehran',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+          })
+            .formatToParts(new Date(at))
+            .map((part) => [part.type, part.value]),
+        );
+        return parts.year + '-' + parts.month + '-' + parts.day;
+      };
+      const params = new URLSearchParams({
+        startDate: civil(weekly.current.startUtc),
+        endDate: civil(
+          new Date(Date.parse(weekly.current.endUtc) - 1).toISOString(),
+        ),
+        branchId: options.branches[0]!.id,
+      });
+      for (const action of [
+        'daily-summary',
+        'sales-analysis',
+        'receivables-follow-up',
+      ]) {
+        const response: Response = await proxyAssistantV2Action(
+          new Request(
+            'http://localhost/api/assistant/v2/actions/' +
+              action +
+              '?' +
+              params,
+            { headers: { cookie } },
+          ),
+          assistantOrigin,
+          action,
+        );
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+          report: Awaited<ReturnType<SalesAssistantController['filtered']>>;
+          conversion: { status: string };
+        };
+        expect(assistantFilteredActionSchema.safeParse(body).success).toBe(
+          true,
+        );
+        if (action === 'sales-analysis') {
+          expect(body.report.current.contractAmountsBeforeRefunds).toEqual(
+            weekly.current.contractAmountsBeforeRefunds,
+          );
+          expect(body.conversion.status).toBe('READY');
+        }
+      }
+      expect(
+        (await get('/sales/assistant/report?branchId=' + randomUUID())).status,
+      ).toBe(403);
+      const route = weekly.current.routes[0]!;
+      params.set('originId', route.originId);
+      params.set('destinationId', route.destinationId);
+      const routeReport = (await (
+        await get('/sales/assistant/report?' + params)
+      ).json()) as Awaited<ReturnType<SalesAssistantController['filtered']>>;
+      expect(routeReport.current.contractCount).toBe(1);
+      params.set('originId', randomUUID());
+      expect(
+        (
+          (await (
+            await get('/sales/assistant/report?' + params)
+          ).json()) as Awaited<ReturnType<SalesAssistantController['filtered']>>
+        ).current.contractCount,
+      ).toBe(0);
       await expect(
         app.get(DatabaseService).client
           .$executeRaw`UPDATE sales_contracts SET version = version WHERE false`,

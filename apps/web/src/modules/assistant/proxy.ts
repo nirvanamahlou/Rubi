@@ -23,6 +23,37 @@ const actionNames = [
   'sales-analysis',
   'receivables-follow-up',
 ];
+export async function proxyAssistantV2Action(
+  request: Request,
+  configuredUrl: string | undefined,
+  action: string,
+  fetcher: typeof fetch = fetch,
+) {
+  if (!actionNames.includes(action))
+    return Response.json(
+      { error: { code: 'NOT_FOUND' } },
+      { status: 404, headers: { 'cache-control': 'private, no-store' } },
+    );
+  return proxyRead(
+    request,
+    configuredUrl,
+    `/v2/assistant/actions/${action}`,
+    fetcher,
+    true,
+  );
+}
+export async function proxyAssistantFilterOptions(
+  request: Request,
+  configuredUrl: string | undefined,
+  fetcher: typeof fetch = fetch,
+) {
+  return proxyRead(
+    request,
+    configuredUrl,
+    '/v2/assistant/filter-options',
+    fetcher,
+  );
+}
 export async function proxyAssistantAction(
   request: Request,
   configuredUrl: string | undefined,
@@ -47,6 +78,7 @@ async function proxyRead(
   configuredUrl: string | undefined,
   path: string,
   fetcher: typeof fetch,
+  filtered = false,
 ): Promise<Response> {
   const headers: Record<string, string> = {
     'cache-control': 'private, no-store',
@@ -57,7 +89,23 @@ async function proxyRead(
   const cookie = tokenCookie(request.headers.get('cookie'));
   if (!cookie) return error(401, 'UNAUTHENTICATED');
   if (request.method !== 'GET') return error(405, 'READ_ONLY');
-  if (new URL(request.url).search) return error(400, 'INVALID_REQUEST');
+  const query = new URL(request.url).searchParams;
+  if (filtered) {
+    const allowed = [
+      'startDate',
+      'endDate',
+      'originId',
+      'destinationId',
+      'branchId',
+    ];
+    if (
+      [...query.keys()].some(
+        (key) => !allowed.includes(key) || query.getAll(key).length !== 1,
+      ) ||
+      [...query.values()].some((value) => value.length > 40)
+    )
+      return error(400, 'INVALID_REQUEST');
+  } else if (query.size) return error(400, 'INVALID_REQUEST');
   if (!configuredUrl) return error(503, 'NOT_CONFIGURED');
   try {
     const target = new URL(configuredUrl);
@@ -75,6 +123,7 @@ async function proxyRead(
     )
       return error(503, 'NOT_CONFIGURED');
     target.pathname = path;
+    if (filtered) target.search = query.toString();
     const response = await fetcher(target, {
       method: 'GET',
       headers: { accept: 'application/json', cookie },
@@ -90,14 +139,16 @@ async function proxyRead(
       headers['x-request-id'] = correlation;
     if (!response.ok)
       return error(
-        [401, 403, 429].includes(response.status) ? response.status : 503,
-        response.status === 401
-          ? 'UNAUTHENTICATED'
-          : response.status === 403
-            ? 'FORBIDDEN'
-            : response.status === 429
-              ? 'RATE_LIMITED'
-              : 'UNAVAILABLE',
+        [400, 401, 403, 429].includes(response.status) ? response.status : 503,
+        response.status === 400
+          ? 'INVALID_REQUEST'
+          : response.status === 401
+            ? 'UNAUTHENTICATED'
+            : response.status === 403
+              ? 'FORBIDDEN'
+              : response.status === 429
+                ? 'RATE_LIMITED'
+                : 'UNAVAILABLE',
       );
     const reader = response.body?.getReader();
     if (!reader) return error(503, 'UNAVAILABLE');

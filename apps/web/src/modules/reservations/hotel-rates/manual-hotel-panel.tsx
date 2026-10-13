@@ -605,14 +605,51 @@ export function HotelCoefficients({
                     selectedKeys.includes(
                       `${room.roomTypeId}:${combination.id}`,
                     )
-                  )
-                    next[room.roomTypeId]![combinationKey(combination)] = {
+                  ) {
+                    const current = calculateManualHotelPrices(
+                      bases[room.roomTypeId] ?? '',
+                      combination.coefficient,
+                      row.currency,
+                      adjustments[room.roomTypeId]?.[
+                        combinationKey(combination)
+                      ],
+                    );
+                    const rule: HotelSaleAdjustmentV1 = {
                       kind: operation as HotelSaleAdjustmentV1['kind'],
                       value:
                         direction === 'decrease' && operation !== 'SET'
                           ? `-${value}`
                           : value,
                     };
+                    const zero = current && Number(current.sale) === 0;
+                    let changed = current
+                      ? calculateManualHotelPrices(
+                          zero ? '1' : current.sale,
+                          '1',
+                          row.currency,
+                          rule,
+                        )
+                      : null;
+                    if (zero && changed) {
+                      if (operation === 'PERCENT')
+                        changed = { ...changed, sale: current.sale };
+                      if (operation === 'AMOUNT')
+                        changed = calculateManualHotelPrices(
+                          '1',
+                          '1',
+                          row.currency,
+                          { kind: 'SET', value: rule.value },
+                        );
+                    }
+                    if (!changed) {
+                      setError('تغییر باعث قیمت منفی یا نرخ نامعتبر می‌شود.');
+                      return;
+                    }
+                    next[room.roomTypeId]![combinationKey(combination)] = {
+                      kind: 'SET',
+                      value: changed.sale,
+                    };
+                  }
                 if (
                   combinations.some(
                     (c) =>

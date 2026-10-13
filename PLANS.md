@@ -519,3 +519,7 @@ then approved real model and business pilot. Company filter is deferred; chat
 is session-only; accounting receivables await Finance. No organizational data
 may reach a model before the processing/cost decision. Detailed implementation
 and release gates: docs/tasks/ASSISTANT-TOOLS-1013.md.
+
+## PC-C — ASSISTANT-FILTERS-1013
+
+Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.

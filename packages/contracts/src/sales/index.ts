@@ -229,6 +229,8 @@ export interface SalesPaymentCreateRequest extends SalesPaymentInput {
 }
 
 export interface SalesContractListQuery {
+  customerType?: SalesReceivablesQuery['customerType'];
+  agencyCustomerId?: string | undefined;
   search?: string;
   branchId?: string;
   ownerUserId?: string;
@@ -356,6 +358,8 @@ export interface SalesDashboard {
 }
 
 export interface SalesReceivablesQuery {
+  search?: string | undefined;
+  settlementStatus?: SalesSettlementStatus | undefined;
   from?: string | undefined;
   to?: string | undefined;
   dateBasis?: 'CONTRACT' | 'TRAVEL' | undefined;
