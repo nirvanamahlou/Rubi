@@ -5,6 +5,18 @@ Current processing policy: no data sent to any model. Do not select a Provider,
 install agent/vector frameworks, or interpret roadmap approval as approval of
 unresolved financial definitions or a production rollout.
 
+## Current status superseding the initial foundation below
+
+The following foundation sections describe the original2026-10-12 candidate.
+[Phase1 continuation](ASSISTANT-PHASE1-COMPLETION-1012.md) supersedes its blocked
+Sales adapter status with permission-controlled Sales, call conversion and separate
+contractual balance projections. Finance-approved accounting receivables and net
+refund adjustments remain deferred; owner reconciliation is not certified.
+[Phase2](ASSISTANT-PHASE2-1013.md) adds the approved deterministic date/source-priority
+policy, explainable top5 recommendations and fixed executive currency comparisons.
+Balance recommendations wait for real data and approved rules. No-model processing
+continues; unresolved access/retention/pilot decisions are not implicitly approved.
+
 ## Deliverable and boundary
 
 One independent read service and fixed capability dispatcher. Existing

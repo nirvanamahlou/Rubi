@@ -1,3 +1,4 @@
+import { explainPersonal } from './recommendation-policy';
 import { z } from 'zod';
 
 export const assistantViews = [
@@ -46,6 +47,7 @@ export const snapshotSchema = z.object({
         id: z.string().max(120),
         title: z.string().max(200),
         source,
+        sourcePriority: z.enum(['LOW', 'NORMAL', 'HIGH', 'URGENT']).optional(),
         dueAt: z.iso.datetime().nullable(),
         reason: z.enum(['ASSIGNED', 'OVERDUE', 'DUE_SOON']),
         href: safeHref,
@@ -72,6 +74,7 @@ const dailySchema = z
   .object({
     version: z.literal(1),
     action: z.literal('daily-summary'),
+    policyVersion: z.literal(2).optional(),
     status: z.enum(['READY', 'PARTIAL']),
     scope: z.literal('SELF'),
     coverage: z.object({
@@ -89,7 +92,24 @@ const dailySchema = z
       .array(
         z.object({
           followUpId: z.string().max(120),
-          ruleId: z.enum(['OVERDUE_V1', 'DUE_SOON_V1', 'ASSIGNED_V1']),
+          ruleId: z.enum([
+            'OVERDUE_V1',
+            'DUE_SOON_V1',
+            'ASSIGNED_V1',
+            'PERSONAL_DUE_V2',
+          ]),
+          id: z.string().max(160).optional(),
+          reason: z
+            .enum([
+              'OVERDUE',
+              'TODAY',
+              'NEXT_THREE_DAYS',
+              'THIS_WEEK',
+              'ASSIGNED',
+            ])
+            .optional(),
+          source: source.optional(),
+          observedAt: z.iso.datetime().optional(),
           priority: z.enum(['HIGH', 'MEDIUM', 'LOW']),
         }),
       )
@@ -116,6 +136,21 @@ const dailySchema = z
         value.recommendations.length === items.length &&
         value.recommendations.every((recommendation, index) => {
           const item = items[index]!;
+          if (value.policyVersion === 2) {
+            const expected = explainPersonal(item, value.snapshot.generatedAt);
+            return (
+              recommendation.followUpId === item.id &&
+              recommendation.id === item.id + ':PERSONAL_DUE_V2' &&
+              recommendation.ruleId === 'PERSONAL_DUE_V2' &&
+              recommendation.reason === expected.reason &&
+              recommendation.priority === expected.priority &&
+              recommendation.source === item.source &&
+              recommendation.observedAt ===
+                value.snapshot.sources.find(
+                  (source) => source.id === item.source,
+                )?.asOf
+            );
+          }
           return (
             recommendation.followUpId === item.id &&
             recommendation.ruleId === `${item.reason}_V1` &&

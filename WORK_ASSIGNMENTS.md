@@ -1,3 +1,15 @@
+## ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-accounting-form-tabs-1013 from
+origin/develop@4122f5da. Reserve the shared Web tab-access fallback, its focused
+regression, Accounting browser acceptance and bounded status entries. Catalogued
+screen tabs remain permission-filtered; uncatalogued tabs are ordinary in-form UI
+and must remain visible. Restore the hidden Accounting main/turnover and nested
+form tabs without changing APIs, IAM grants, schema, dependencies or operational
+data. User explicitly authorizes push, merge to develop and local Web3000/API4000
+refresh after checks. Preserve the dirty primary checkout and existing database.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;
@@ -7228,6 +7240,33 @@ Contracts build. Source lock releases with this candidate.
 COMPUTER_ID=PC-C; user authorizes fetching the latest develop and serving localhost3000. Branch codex/pc-c-latest-localhost-1012 from origin/develop@a98ee1ad; reuse the clean, inactive pc-c-github-identity-1011 worktree. Reserve only this work/status entry and local ignored runtime evidence. No feature, dependency, schema, role or operational data edits. Build before replacing the verified PC-C3000/4000/4300/4301 listeners; preserve unrelated runtimes and existing data. Read-only migration compatibility checks precede API replacement. No main update or release. Exact source revision and HTTP/build verification must be recorded; upstream CI failure is investigated separately without weakening gates.
 
 LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry in apps/web/src/i18n/en-catalog.json for the missing Organizations import warning. Upstream candidate source locks are released. Reproduce the existing English completeness failure; preserve the test and all guards. Also prepare a verified ignored local database backup and isolated migration rehearsal before any request to alter the operational database. No operational migration approval has been inferred from a pull/start request.
+
+## ASSISTANT-PHASE2-1013 — PC-C — IN_PROGRESS
+
+Base develop4122f5da; user approves deterministic priorities (overdue/today urgent, days1-3 important, days4-7 ordinary), short executive summary and top5 with view-all, source/rule deduplication. Recorded source priority may promote but never lower date urgency. Contract-balance recommendations are deferred pending real data and business rules; the separate informational balance report remains. Reserve services/assistant, apps/web/src/modules/assistant, apps/web/src/i18n/assistant-copy.ts and bounded own task/status/foundation documentation. Fixed authenticated SELF sources and separately authorized corporate projections only; preserve public ERP contracts, native IAM revalidation, safe links and no-model/no-write policy. No schema/migration/dependency locks. Acceptance: Tehran-day boundaries, source priority, unique evidence, completed/out-of-window removal on refresh, caps, denied/unavailable sources, exact currency comparisons, top5 expansion and existing injection/revocation tests; scoped checks/build and full CI before develop merge/local rollout.
+
+ASSISTANT-PHASE2-1013 candidate implemented within reserved scope. Service27/27,
+Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
+with review candidate; build, exact-head CI, authorized develop merge, post-merge
+CI and PC-C3000/4300 rollout remain release gates. No database work is required.
+
+## PHASE2-INTEGRATION-CI-1013 — PC-C — IN_PROGRESS
+
+Base develop21d65e26 after PR812. Standing human instruction requires fixing and
+following post-merge CI. The merged PC-B ACCOUNTING-FORM-TABS-1013 changes the
+uncatalogued tab fallback intentionally; its old rendered IAM regression still
+asserts the superseded hidden behavior. Reproduced exactly (1 failed/8 passed).
+Reserve only apps/web/src/modules/iam/access-ui.spec.tsx and this status entry.
+Do not modify the producer access policy or the merged PC-B source files. Preserve
+and explicitly assert catalogued denied tabs/content remain hidden in the same
+render as an allowed ordinary local form tab. No IAM grant/API/schema/dependency
+or runtime behavior change. The producer is already merged; no active local edits
+or unmerged source replacement are involved. Full CI precedes develop merge.
+
+PHASE2-INTEGRATION-CI-1013 candidate: all57 IAM/assistant/translation tests,
+scoped ESLint and Web typecheck passed. Existing integrated production build passed
+before this test-only edit. Production source is unchanged. Source reservation
+released with review candidate; exact-head and post-merge CI still gate rollout.
 
 ## PURCHASE-METRICS-CENTER-1013 — PC-A — READY_FOR_REVIEW
 

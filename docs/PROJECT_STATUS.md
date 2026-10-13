@@ -1,3 +1,13 @@
+## 2026-10-13 — ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+Authenticated browser acceptance reproduced the Accounting form regression: the
+account tree loads all 222 records, but the shared Tabs wrapper treats uncatalogued
+form-local values such as `main` as forbidden screens and removes their trigger and
+content. The bounded fix permits only uncatalogued local tabs while continuing to
+apply the existing permission decision to every catalogued screen tab. No data,
+API, schema, dependency or IAM-grant change.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 Accounting forms, lists and filters are being restyled as inline project-native
@@ -5727,6 +5737,28 @@ Three correspondence cards/routes: Incoming uses unchanged Documents upload form
 ## 2026-10-12 — LATEST-LOCALHOST-1012 — PC-C
 
 User requests latest develop on localhost3000. Clean inactive worktree updated to a98ee1ad; no protected branch or unrelated files changed. Rebuilt Contracts/Database/Config before API/Web to remove stale generated-artifact mismatches. API and Web production builds pass (62 pages). Reproduced upstream Full test suite failure: one new Organizations import warning had no English translation. Added only that Web catalogue entry; original completeness gate and both scoped feature suites pass18/18. No migration, dependency or permission changes. Operational database is57 migrations behind and three historical checksums differ; backup and isolated rehearsal precede any database upgrade. Existing API remains available while the Web cutover is prepared.
+
+## 2026-10-13 — ASSISTANT-PHASE2-1013 — PC-C
+
+Approved deterministic personal recommendations implemented: Tehran-day urgency,
+source-priority promotion, source/rule identity, reason and observation time,
+top5 with view-all and removal on refreshed source completion. Fixed daily summary
+compares both weekly periods and exact per-currency amounts. Contractual balance
+recommendations await real data/rules; informational balances remain separately
+labelled and Finance-approved receivables are still pending. No LLM, Write tool,
+permission, schema or dependency changes. Service27 and Web/translation32 tests,
+scoped lint and Web typecheck pass. Build and full CI gate develop merge and local
+publication; details in docs/tasks/ASSISTANT-PHASE2-1013.md. Business pilot and
+reference reconciliation are separate from these synthetic checks.
+
+## 2026-10-13 — PHASE2-INTEGRATION-CI-1013 — PC-C
+
+PR812 assistant passed all head checks and merged; post-merge tests exposed the
+concurrent PC-B form-tab policy's obsolete rendered test expectation. Reproduced
+locally. The regression now checks ordinary local form content is visible AND
+catalogued denied screen labels/content are hidden in the same render. Runtime
+policy, IAM permissions and producer code are unchanged. This focused integration
+repair must pass full CI before develop publication and the assistant local rollout.
 
 ## PURCHASE-METRICS-CENTER-1013
 
