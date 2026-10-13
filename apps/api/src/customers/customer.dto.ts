@@ -1,0 +1,202 @@
+import { Transform, Type } from 'class-transformer';
+import { CUSTOMER_STATUS_REASON_CODES } from '@nora/contracts';
+import {
+  IsArray,
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  MaxLength,
+  Matches,
+  Min,
+  MinLength,
+  ValidateIf,
+} from 'class-validator';
+
+export class CustomerRegistrationLookupDto {
+  @IsOptional() @IsBoolean() matchByNationalId?: boolean;
+  @IsString() @MaxLength(16) nationalId!: string;
+  @IsString() @MinLength(1) @MaxLength(120) firstName!: string;
+  @IsString() @MinLength(1) @MaxLength(120) lastName!: string;
+  @IsOptional() @IsDateString({ strict: true }) birthDate?: string;
+}
+
+export class CustomerListQueryDto {
+  @IsOptional() @IsString() @MaxLength(100) search = '';
+  @IsOptional() @IsIn(['all', 'person', 'organization']) kind:
+    'all' | 'person' | 'organization' = 'all';
+  @IsOptional() @IsIn(['all', 'active', 'inactive']) status:
+    'all' | 'active' | 'inactive' = 'all';
+  @IsOptional() @IsIn(['all', 'customer', 'passenger']) role:
+    'all' | 'customer' | 'passenger' = 'all';
+  @IsOptional()
+  @IsString()
+  @MaxLength(36)
+  @ValidateIf((value: CustomerListQueryDto) => value.branchId !== 'all')
+  @IsUUID()
+  branchId = 'all';
+  @IsOptional()
+  @IsString()
+  @MaxLength(36)
+  @ValidateIf(
+    (value: CustomerListQueryDto) => value.acquaintanceMethodId !== 'all',
+  )
+  @IsUUID()
+  acquaintanceMethodId = 'all';
+  @IsOptional() @IsDateString() createdFrom: string | null = null;
+  @IsOptional() @IsDateString() createdTo: string | null = null;
+  @IsOptional() @IsDateString() updatedFrom: string | null = null;
+  @IsOptional() @IsDateString() updatedTo: string | null = null;
+  @IsOptional() @IsIn(['displayName', 'updatedAt', 'createdAt']) sortBy:
+    'displayName' | 'updatedAt' | 'createdAt' = 'updatedAt';
+  @IsOptional() @IsIn(['asc', 'desc']) sortDirection: 'asc' | 'desc' = 'desc';
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(1)
+  page = 1;
+  @IsOptional()
+  @Transform(({ value }) => Number(value))
+  @IsInt()
+  @Min(10)
+  @Max(100)
+  pageSize = 25;
+}
+
+export class CustomerMutationDto {
+  @IsIn(['person', 'organization']) kind!: 'person' | 'organization';
+  @IsOptional() @IsUUID() organizationId?: string | null;
+  @ValidateIf((value: CustomerMutationDto) => value.kind === 'person')
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  firstName?: string | null;
+  @ValidateIf((value: CustomerMutationDto) => value.kind === 'person')
+  @IsString()
+  @MinLength(1)
+  @MaxLength(120)
+  lastName?: string | null;
+  @IsString() @MinLength(2) @MaxLength(200) displayName!: string;
+  @IsOptional() @IsDateString() birthDate?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value
+          .trim()
+          .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+          .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+      : value,
+  )
+  @IsString()
+  @Matches(/^\d{10}$/)
+  nationalId?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value.trim().toUpperCase().replace(/\s+/g, '')
+      : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z0-9-]{4,24}$/)
+  passportNumber?: string | null;
+  @IsOptional()
+  @IsDateString({ strict: true })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  passportExpiryDate?: string | null;
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z][A-Za-z '-]{0,119}$/)
+  passportFirstName?: string | null;
+  @IsOptional()
+  @IsString()
+  @Matches(/^[A-Za-z][A-Za-z '-]{0,119}$/)
+  passportLastName?: string | null;
+  @IsOptional() @IsIn(['M', 'F']) gender?: 'M' | 'F' | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  nationalityCode?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  passportIssuingCountryCode?: string | null;
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString()
+  @Matches(/^[A-Z]{3}$/)
+  birthCountryCode?: string | null;
+  @IsArray() @IsIn(['customer', 'passenger'], { each: true }) roles!: (
+    'customer' | 'passenger'
+  )[];
+  @IsOptional() @IsUUID() acquaintanceMethodId?: string | null;
+  @IsOptional() @IsInt() @Min(1) version?: number;
+}
+
+export class CustomerStatusDto {
+  @IsIn(['active', 'inactive']) status!: 'active' | 'inactive';
+  @IsInt() @Min(1) version!: number;
+  @IsIn(CUSTOMER_STATUS_REASON_CODES)
+  reason!: (typeof CUSTOMER_STATUS_REASON_CODES)[number];
+}
+
+export class CustomerContactDto {
+  @IsIn(['phone', 'email']) type!: 'phone' | 'email';
+  @IsOptional() @IsString() @MaxLength(80) label?: string | null;
+  @IsString() @MinLength(3) @MaxLength(320) value!: string;
+  @IsOptional() @IsBoolean() isPrimary = false;
+  @IsInt() @Min(1) version!: number;
+}
+
+export class CustomerAddressDto {
+  @IsIn(['home', 'work', 'billing', 'other']) type!:
+    'home' | 'work' | 'billing' | 'other';
+  @IsString() @MinLength(2) @MaxLength(240) label!: string;
+  @IsOptional() @IsUUID() cityId?: string | null;
+  @IsOptional() @IsBoolean() isPrimary = false;
+  @IsInt() @Min(1) version!: number;
+}
+
+export class CustomerCompanionDto {
+  @IsUUID() relatedCustomerId!: string;
+  @IsIn(['family', 'companion', 'guardian', 'dependent'])
+  relationshipType!: 'family' | 'companion' | 'guardian' | 'dependent';
+  @IsInt() @Min(1) version!: number;
+}
+
+export class CustomerConsentDto {
+  @IsIn(['marketing']) purpose!: 'marketing';
+  @IsIn(['sms', 'email', 'phone', 'all']) channel!:
+    'sms' | 'email' | 'phone' | 'all';
+  @IsIn(['granted', 'revoked']) status!: 'granted' | 'revoked';
+  @IsString() @MinLength(2) @MaxLength(120) source!: string;
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @MinLength(3)
+  @MaxLength(500)
+  reason!: string;
+  @IsOptional() @IsDateString() occurredAt?: string;
+  @IsInt() @Min(1) version!: number;
+}
+
+export class DuplicateCandidateDto {
+  @IsUUID() sourceCustomerId!: string;
+}
+
+export class DuplicateReviewDto {
+  @IsIn(['confirmed-distinct', 'merge-proposed'])
+  status!: 'confirmed-distinct' | 'merge-proposed';
+  @IsString() @MinLength(3) @MaxLength(500) reason!: string;
+  @Type(() => Number) @IsInt() @Min(1) version!: number;
+}

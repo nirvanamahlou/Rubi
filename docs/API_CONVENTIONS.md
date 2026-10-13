@@ -12,9 +12,13 @@
 
 ```text
 GET    /api/v1/customers/{customerId}
-POST   /api/v1/travel-orders
-POST   /api/v1/travel-orders/{orderId}/actions/cancel
-GET    /api/v1/travel-orders?status=&cursor=&limit=&sort=
+POST   /api/v1/sales-contracts
+POST   /api/v1/sales-contracts/{contractId}/passenger-service-allocations
+POST   /api/v1/sales-contracts/{contractId}/actions/request-availability
+POST   /api/v1/reservation-executions/{executionId}/actions/issue
+POST   /api/v1/reservation-operations/{operationId}/purchase-requests
+POST   /api/v1/manifests/{manifestId}/actions/send
+POST   /api/v1/financial-releases/{releaseId}/actions/authorize
 POST   /api/v1/booking/searches
 POST   /api/v1/webhooks/payments/{connectionCode}
 ```
@@ -53,7 +57,8 @@ response یا PII در پاسخ نمایش داده نمی‌شود.
 
 ## Idempotency و concurrency
 
-- `Idempotency-Key` برای create payment/order، booking/issue/cancel/refund و commandهای حساس.
+- `Idempotency-Key` برای create contract، capacity hold/confirm/release، purchase request،
+  payment، booking/issue/cancel/refund، insurance policy و manifest send الزامی است.
 - scope کلید = authenticated client/user + operation؛ request hash متفاوت با همان کلید `409`.
 - پاسخ موفق/قابل تکرار برای مدت مصوب replay می‌شود.
 - webhook با external event/transaction ID و signature dedupe می‌شود.
@@ -70,6 +75,19 @@ response یا PII در پاسخ نمایش داده نمی‌شود.
 
 کار طولانی `202 Accepted` با `operationId` می‌دهد. endpoint وضعیت، progress محدود، result/
 failure code و expiry دارد. queue retry داخلی نباید باعث درخواست تکراری مالی شود.
+
+## قراردادهای مرزی دامنه سفر
+
+- فقط Sales مجاز به command تغییر contract party/passenger/service allocation است.
+- Reservations فقط contract execution snapshot versioned را مصرف و correction request تولید می‌کند.
+- Ticket Catalog فقط query محصول/قیمت/ظرفیت و commandهای versioned inventory منتشر می‌کند؛
+  endpoint صدور passenger document ندارد.
+- Reservations درخواست خرید را از public Procurement port ایجاد می‌کند؛ repository یا جدول
+  Procurement قابل import/query مستقیم نیست.
+- Finance تنها مرجع `financialReleaseStatus` است؛ Sales پس از authorization مجاز به دریافت
+  signed URL و ثبت delivery می‌شود.
+- DTO/Eventهای این جریان مطابق
+  [TRAVEL_WORKFLOW_ARCHITECTURE.md](TRAVEL_WORKFLOW_ARCHITECTURE.md) version می‌شوند.
 
 ## Versioning و deprecation
 

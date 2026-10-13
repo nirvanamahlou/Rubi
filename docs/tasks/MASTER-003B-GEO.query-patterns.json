@@ -1,0 +1,126 @@
+{
+  "queries": [
+    {
+      "id": "regions_by_country",
+      "type": "SELECT",
+      "table": "master_regions",
+      "description": "Country/type/status filter sorted by name",
+      "where_conditions": [
+        {
+          "column": "countryId",
+          "operator": "=",
+          "selectivity": 0.2
+        },
+        {
+          "column": "type",
+          "operator": "=",
+          "selectivity": 0.4
+        },
+        {
+          "column": "isActive",
+          "operator": "=",
+          "selectivity": 0.1
+        }
+      ],
+      "join_conditions": [],
+      "order_by": [
+        {
+          "column": "name",
+          "direction": "ASC"
+        }
+      ],
+      "group_by": [],
+      "frequency": 400,
+      "avg_execution_time_ms": 8
+    },
+    {
+      "id": "cities_by_region",
+      "type": "SELECT",
+      "table": "master_cities",
+      "description": "Region/status filter sorted by name",
+      "where_conditions": [
+        {
+          "column": "regionId",
+          "operator": "=",
+          "selectivity": 0.15
+        },
+        {
+          "column": "isActive",
+          "operator": "=",
+          "selectivity": 0.1
+        }
+      ],
+      "join_conditions": [],
+      "order_by": [
+        {
+          "column": "name",
+          "direction": "ASC"
+        }
+      ],
+      "group_by": [],
+      "frequency": 800,
+      "avg_execution_time_ms": 9
+    },
+    {
+      "id": "airports_by_city",
+      "type": "SELECT",
+      "table": "master_airports",
+      "description": "City/status filter sorted by name",
+      "where_conditions": [
+        {
+          "column": "cityId",
+          "operator": "=",
+          "selectivity": 0.2
+        },
+        {
+          "column": "isActive",
+          "operator": "=",
+          "selectivity": 0.1
+        }
+      ],
+      "join_conditions": [],
+      "order_by": [
+        {
+          "column": "name",
+          "direction": "ASC"
+        }
+      ],
+      "group_by": [],
+      "frequency": 900,
+      "avg_execution_time_ms": 10
+    },
+    {
+      "id": "terminals_by_airport_type",
+      "type": "SELECT",
+      "table": "master_terminals",
+      "description": "Airport/type/status filter sorted by name",
+      "where_conditions": [
+        {
+          "column": "airportId",
+          "operator": "=",
+          "selectivity": 0.25
+        },
+        {
+          "column": "terminalType",
+          "operator": "=",
+          "selectivity": 0.4
+        },
+        {
+          "column": "isActive",
+          "operator": "=",
+          "selectivity": 0.1
+        }
+      ],
+      "join_conditions": [],
+      "order_by": [
+        {
+          "column": "name",
+          "direction": "ASC"
+        }
+      ],
+      "group_by": [],
+      "frequency": 700,
+      "avg_execution_time_ms": 8
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "contract_version": 1,
+  "task_id": "B2B-CONTRACT-GUARANTEE-PUBLISH-1006",
+  "computer_id": "PC-B",
+  "branch": "codex/pc-b-b2b-contract-guarantee-publish-1006",
+  "base_revision": "0c2823f8cc6b661e858681a43bb2021434552ed2",
+  "risk": "R3",
+  "complexity": "C4",
+  "summary": "Move guarantee uploads into their guarantee rows, remove the marked note, and change the agreement form action to save then submit the saved revision for independent approval.",
+  "lead_decisions": [
+    {
+      "decision": "Publish means SUBMIT for independent review, not APPROVE or immediate activation.",
+      "basis": "The user previously chose one independent approver with agreement or credit permission; the creator cannot approve their own request. The existing backend transitions a submitted revision to PENDING and activates only after a separate APPROVE action."
+    },
+    {
+      "decision": "Only the full agreement editor (view=agreements) uses Save and Publish. Credit/guarantee sub-section editors keep their existing save-only behavior.",
+      "basis": "The screenshot shows the complete agreement editor; a focused credit or guarantee edit must not unexpectedly submit an agreement."
+    },
+    {
+      "decision": "Protected documents may require a second action-local code/confirmation step after the draft is saved.",
+      "basis": "The user's prior Option 1 requires a fresh confidential-code grant per submit/approval actor; the uploader's grant cannot be reused as submission authority."
+    },
+    {
+      "decision": "The existing default submission reason is retained.",
+      "basis": "The submit workflow already records this descriptive reason and the service requires at least three characters."
+    }
+  ],
+  "advisor_evidence": {
+    "role": "worker_astra_observer",
+    "task": "/root/contract_publish_advice",
+    "source_revision": "0c2823f8cc6b661e858681a43bb2021434552ed2",
+    "questions": [],
+    "observations": ["CGP-A01", "CGP-A02", "CGP-A03", "CGP-A04", "CGP-A05"],
+    "recommendation": "Capture the saved agreement result, then submit its exact ID/version with a distinct stable requestId; keep save and submit retry paths separate, renew confidential grants without changing semantic request identity, and stop the chain if the original context changes."
+  },
+  "invariants": [
+    "Save and submit are separate phases. Capture saveAgreementTerms().data and submit that exact saved agreement ID/version using a distinct requestId.",
+    "After save succeeds, retry submission only; never resave or create another revision when a submit outcome is uncertain.",
+    "Freeze the submit request's ID, version, reason and semantic payload while its outcome is uncertain. Renew transient grants without changing request identity.",
+    "Submission starts in a fresh actor/session/organization/authorized-branch/proof scope. Never reuse upload or save grants; mint fresh CONFIDENTIAL_VIEW grants for each distinct protected proof on submit.",
+    "Verify actor, session, organization, branch and editor/action generation after each dependent async boundary and before the next command. A stale operation must not submit or update a newly selected context.",
+    "A saved draft whose submit fails remains a draft; report the partial result and resume the same submit. Pending scans may be saved but cannot submit until CLEAN; changed pinned versions remain rejected and must not be silently repinned.",
+    "Duplicate clicks and uploads in progress cannot create duplicate save or submit commands. Keep the existing exact-slot upload protections.",
+    "Only SUBMIT is called from Save and Publish. No API, backend approval, permission, Documents policy, API contract, schema, migration, dependency or operational data change is authorized.",
+    "Guarantee rows use the existing canonical inline uploader directly where the attachment selector currently appears. Retain attached-document removal, upload status/errors, exact branch/org binding, and access checks; remove the redundant selector and nested upload disclosure for guarantee rows.",
+    "Remove only the screenshot-marked draft/approval guidance note. Preserve validation feedback, upload errors, required workflow reason and dialog accessibility."
+  ],
+  "acceptance_criteria": [
+    "The agreement editor's primary action reads 'ذخیره و انتشار'; sub-section-only editors keep their current save behavior.",
+    "A successful save captures the saved record and transitions that exact revision through the existing SUBMIT route to PENDING independent review.",
+    "A protected proof requires fresh code/grant for submission; no proof token or code is persisted, logged, echoed, or reused from upload/save.",
+    "A failed/uncertain submit never claims publication. The draft remains recoverable and retry does not resave.",
+    "Independent approval remains required for activation and the creator remains ineligible to review their own submission.",
+    "Every guarantee presents the upload field inline, with the separate no-attachment selector and nested disclosure absent.",
+    "The marked helper note is absent."
+  ],
+  "adversarial_checks": [
+    "New agreement and amendment: save once and submit returned ID/version with a different requestId; final state is PENDING and prior active revision remains unchanged.",
+    "Save committed but response was lost: retry identical save request, then submit exactly once.",
+    "Submit committed but response was lost: retry only the identical submit command; do not replay the superseded save.",
+    "Expired grant: preserve the submit requestId and payload while renewing grants without duplicate revision/transition.",
+    "Contract plus multiple guarantees and duplicate document IDs: obtain fresh grants for every distinct protected proof and never reuse upload/save grants.",
+    "Pending scan: draft saves, submit is rejected, then the same submit succeeds after CLEAN; a changed pinned version stays rejected.",
+    "Actor/session/organization/branch/editor changes during save or grant issuance: do not submit or apply completion to the new context.",
+    "Rapid double-click and upload-in-progress: at most one logical save and submit; uncertain commands cannot be edited.",
+    "Wrong user/session/document/purpose, unavailable metadata or missing access: fail closed; secret codes/tokens remain out of persistence, storage, errors and fingerprints.",
+    "Creator with approval permission still cannot approve; a different approver needs their own current grants.",
+    "Inline guarantee upload retains attachment removal, exact-slot completion, scan/error feedback and permission gating."
+  ],
+  "review_observation_ids": [
+    "CGP-A01",
+    "CGP-A02",
+    "CGP-A03",
+    "CGP-A04",
+    "CGP-A05"
+  ]
+}

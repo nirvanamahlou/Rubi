@@ -68,14 +68,16 @@ export class AllExceptionsFilter implements ExceptionFilter {
       };
     }
 
-    const payload = response as { message?: string | unknown[] };
+    const payload = response as { code?: string; message?: string | unknown[] };
     const responseMessage = payload.message;
     const messages = Array.isArray(responseMessage) ? responseMessage : [];
     return {
       code:
-        status === HttpStatus.BAD_REQUEST
-          ? 'VALIDATION_ERROR'
-          : this.codeForStatus(status),
+        typeof payload.code === 'string'
+          ? payload.code
+          : status === HttpStatus.BAD_REQUEST
+            ? 'VALIDATION_ERROR'
+            : this.codeForStatus(status),
       details: messages.map((message) => ({ reason: String(message) })),
       message:
         typeof responseMessage === 'string'

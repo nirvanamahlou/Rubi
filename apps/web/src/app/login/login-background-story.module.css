@@ -1,0 +1,80 @@
+.story {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #8dc6eb;
+}
+
+.aviationBackground {
+  position: absolute;
+  inset: -3%;
+  background-image: url('/brand/login-airline-b2.png');
+  background-position: center;
+  background-size: cover;
+}
+
+.story::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    rgb(8 47 94 / 20%),
+    rgb(13 79 135 / 4%) 46%,
+    rgb(255 255 255 / 8%)
+  );
+  content: '';
+}
+
+.videoPoster,
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.videoPoster {
+  background-image: var(--landscape-poster);
+  background-size: cover;
+  background-position: center top;
+}
+
+.video {
+  object-fit: cover;
+  object-position: center top;
+  opacity: 0;
+}
+
+.video[data-visible='true'] {
+  opacity: 1;
+}
+
+@media (max-aspect-ratio: 854/480) {
+  .videoPoster {
+    background-image: var(--portrait-poster);
+    background-size: 100% auto;
+    background-repeat: no-repeat;
+  }
+}
+
+@media (max-aspect-ratio: 854/480) {
+  .video {
+    object-fit: contain;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .aviationBackground {
+    inset: -2%;
+    background-position: 58% center;
+  }
+}

@@ -1,0 +1,314 @@
+import { describe, expect, it } from 'vitest';
+import {
+  canViewRoute,
+  canViewScreen,
+  canUseMasterDataResource,
+  denyPermission,
+  screenForTab,
+  screenPermission,
+  USER_ACCESS_PROFILE_PERMISSION,
+  USER_ACCESS_ADMIN_PERMISSION,
+  USER_ACCESS_SCREENS,
+} from '@nora/contracts';
+describe('per-user screen visibility', () => {
+  it('shows administrative screens and the shared assistant shell', () => {
+    const permissions = [
+      USER_ACCESS_ADMIN_PERMISSION,
+      USER_ACCESS_PROFILE_PERMISSION,
+    ];
+    expect(
+      USER_ACCESS_SCREENS.filter(
+        (s) => !['assistant.executive', 'ticket-purchases.home'].includes(s.id),
+      ).every((s) => canViewScreen(permissions, s.id)),
+    ).toBe(true);
+    // The new purchasing checkbox mirrors the existing route's native grant requirement.
+    expect(canViewRoute(permissions, '/ticket-purchases')).toBe(false);
+    expect(canViewScreen(permissions, 'ticket-purchases.home')).toBe(false);
+    expect(
+      canViewScreen(
+        [...permissions, 'reservations.read'],
+        'ticket-purchases.home',
+      ),
+    ).toBe(true);
+    expect(canViewScreen(permissions, 'assistant.executive')).toBe(true);
+    expect(canViewRoute(permissions, '/assistant')).toBe(true);
+    expect(
+      canViewRoute(
+        [...permissions, screenPermission('assistant.executive')],
+        '/assistant',
+      ),
+    ).toBe(true);
+    for (const route of [
+      '/workbench',
+      '/dashboard',
+      '/reports',
+      '/integrations',
+      '/marketing',
+    ]) {
+      expect(canViewRoute(permissions, route)).toBe(true);
+    }
+    expect(canViewScreen(permissions, 'unknown.future.screen')).toBe(false);
+  });
+  it('shows the assistant for every authenticated permission profile without opening other modules', () => {
+    for (const permissions of [
+      [],
+      [USER_ACCESS_PROFILE_PERMISSION],
+      ['hr.read'],
+      ['sales.contracts.read.own'],
+    ]) {
+      expect(canViewRoute(permissions, '/assistant?view=advisor')).toBe(true);
+      expect(canViewScreen(permissions, 'assistant.executive')).toBe(true);
+      expect(canViewRoute(permissions, '/finance')).toBe(false);
+    }
+  });
+  it('limits legacy navigation to operational grants', () => {
+    expect(canViewRoute(['iam.users.read'], '/system')).toBe(true);
+    expect(canViewRoute([], '/finance')).toBe(false);
+    expect(
+      canViewRoute(['legal-entity.read', 'legal-entity.switch'], '/system'),
+    ).toBe(false);
+    expect(canViewRoute(['sales.contracts.read.own'], '/sales')).toBe(true);
+    expect(
+      canViewRoute(['sales.contracts.read.own'], '/sales/contracts/new'),
+    ).toBe(false);
+    expect(canViewScreen([], 'ticket-catalog.tab.issued')).toBe(false);
+  });
+  it('hides whole modules with no selected child and permits only the checked children', () => {
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
+      screenPermission('ticket-catalog.tab.catalog'),
+    ];
+    expect(canViewRoute(permissions, '/ticket-management')).toBe(true);
+    expect(canViewRoute(permissions, '/finance')).toBe(false);
+    expect(canViewScreen(permissions, 'ticket-catalog.tab.catalog')).toBe(true);
+    expect(canViewScreen(permissions, 'ticket-catalog.tab.issued')).toBe(false);
+  });
+  it('does not leak a denied deep route through its permitted parent', () => {
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
+      screenPermission('sales.home'),
+    ];
+    expect(canViewRoute(permissions, '/sales')).toBe(true);
+    expect(canViewRoute(permissions, '/sales/ticket-prices')).toBe(false);
+    expect(canViewRoute(permissions, '/sales/tours')).toBe(false);
+    expect(
+      canViewRoute(
+        [
+          USER_ACCESS_PROFILE_PERMISSION,
+          'iam.users.read',
+          'ticket_catalog.read',
+          'sales.contracts.read.own',
+          'package_pricing.read',
+          'hr.read',
+          'reservations.read',
+          screenPermission('ticket-catalog.tab.tours'),
+        ],
+        '/sales/tours',
+      ),
+    ).toBe(true);
+    expect(
+      USER_ACCESS_SCREENS.find(
+        (screen) => screen.id === 'ticket-catalog.tab.tours',
+      ),
+    ).toMatchObject({ group: 'sales', route: '/sales/tours' });
+  });
+  it('matches actual tab keys and uses unique stable screen identifiers', () => {
+    expect(screenForTab('/ticket-management', 'catalog')?.id).toBe(
+      'ticket-catalog.tab.catalog',
+    );
+    expect(new Set(USER_ACCESS_SCREENS.map((s) => s.id)).size).toBe(
+      USER_ACCESS_SCREENS.length,
+    );
+  });
+});
+
+describe('additive user-access restrictions', () => {
+  it('repairs only the eight parent-authorized document and tour tabs', () => {
+    const documents = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'documents.read',
+      screenPermission('documents.home'),
+    ];
+    for (const tab of ['preview', 'information', 'access', 'activity'])
+      expect(canViewScreen(documents, `documents.detail.tab.${tab}`)).toBe(
+        true,
+      );
+    expect(
+      canViewScreen(
+        [USER_ACCESS_PROFILE_PERMISSION, 'documents.read'],
+        'documents.detail.tab.preview',
+      ),
+    ).toBe(false);
+
+    const toursOnly = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'ticket_catalog.tours.read',
+      screenPermission('ticket-catalog.tab.tours'),
+    ];
+    expect(canViewRoute(toursOnly, '/sales/tours')).toBe(true);
+    for (const tab of ['intro', 'transport', 'itinerary', 'image'])
+      expect(canViewScreen(toursOnly, `sales.tours.tab.${tab}`)).toBe(true);
+    expect(canViewScreen(toursOnly, 'sales.home')).toBe(false);
+  });
+
+  it('lets an explicit deny override inheritance without affecting administrator bypass', () => {
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'documents.read',
+      screenPermission('documents.home'),
+      denyPermission('documents.detail.tab.access'),
+    ];
+    expect(canViewScreen(permissions, 'documents.detail.tab.access')).toBe(
+      false,
+    );
+    expect(canViewScreen(permissions, 'documents.detail.tab.preview')).toBe(
+      true,
+    );
+    expect(
+      canViewScreen(
+        [...permissions, USER_ACCESS_ADMIN_PERMISSION],
+        'documents.detail.tab.access',
+      ),
+    ).toBe(true);
+  });
+
+  it('keeps historical master-data positives while dedicated consumers inherit the section', () => {
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'master_data.read',
+      screenPermission('master-data.geography'),
+    ];
+    expect(canViewScreen(permissions, 'master-data.resource.countries')).toBe(
+      false,
+    );
+    expect(canUseMasterDataResource(permissions, 'countries')).toBe(true);
+    expect(
+      canUseMasterDataResource(
+        [...permissions, denyPermission('master-data.resource.countries')],
+        'countries',
+      ),
+    ).toBe(false);
+  });
+
+  it('uses the existing accounting and system baselines for new deep routes', () => {
+    const accounting = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'finance.read',
+      screenPermission('finance.accounting.general-ledger.accounts'),
+    ];
+    expect(
+      canViewRoute(accounting, '/finance/accounting/taxpayer-system'),
+    ).toBe(false);
+    expect(
+      canViewRoute(
+        [...accounting, screenPermission('finance.home')],
+        '/finance/accounting/taxpayer-system',
+      ),
+    ).toBe(true);
+    expect(canViewScreen(accounting, 'finance.home')).toBe(false);
+
+    const usersOnly = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      screenPermission('system.users'),
+    ];
+    expect(canViewRoute(usersOnly, '/system?module=general')).toBe(true);
+  });
+
+  it('keeps correspondence authenticated-only and supports an explicit route deny', () => {
+    expect(canViewRoute([], '/correspondence')).toBe(true);
+    expect(
+      canViewRoute([denyPermission('correspondence.home')], '/correspondence'),
+    ).toBe(false);
+  });
+});
+
+describe('query route isolation', () => {
+  it('does not allow a parent section to override a denied explicit tab', () => {
+    const section = USER_ACCESS_SCREENS.find(
+      (s) => s.group === 'hr' && s.query?.section === 'time' && !s.query.tab,
+    )!;
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
+      screenPermission(section.id),
+    ];
+    expect(canViewRoute(permissions, '/hr?section=time')).toBe(true);
+    expect(canViewRoute(permissions, '/hr?section=time&tab=attendance')).toBe(
+      false,
+    );
+  });
+  it('rejects unregistered subsection queries and all modules for an empty managed profile', () => {
+    expect(canViewRoute([USER_ACCESS_PROFILE_PERMISSION], '/finance')).toBe(
+      false,
+    );
+    expect(
+      canViewRoute(
+        [
+          USER_ACCESS_PROFILE_PERMISSION,
+          'iam.users.read',
+          'ticket_catalog.read',
+          'sales.contracts.read.own',
+          'package_pricing.read',
+          'hr.read',
+          'reservations.read',
+          screenPermission('hr.home'),
+        ],
+        '/hr?section=unknown',
+      ),
+    ).toBe(false);
+  });
+  it('normalizes the existing users route without allowing other system pages', () => {
+    const permissions = [
+      USER_ACCESS_PROFILE_PERMISSION,
+      'iam.users.read',
+      'ticket_catalog.read',
+      'sales.contracts.read.own',
+      'package_pricing.read',
+      'hr.read',
+      'reservations.read',
+      screenPermission('system.users'),
+    ];
+    expect(canViewRoute(permissions, '/users')).toBe(true);
+    expect(canViewRoute(permissions, '/system/users')).toBe(true);
+    expect(canViewRoute(permissions, '/system/operations')).toBe(false);
+  });
+});
+
+it('requires operational grants even when a managed screen was selected', () => {
+  const screensOnly = [
+    USER_ACCESS_PROFILE_PERMISSION,
+    screenPermission('finance.home'),
+  ];
+  expect(canViewRoute(screensOnly, '/finance')).toBe(false);
+  expect(canViewScreen(screensOnly, 'finance.home')).toBe(false);
+  expect(canViewRoute([...screensOnly, 'finance.read'], '/finance')).toBe(true);
+});
+
+it('shows explicitly selected owner-scoped workbench screens without a nonexistent native grant', () => {
+  const permissions = [
+    USER_ACCESS_PROFILE_PERMISSION,
+    screenPermission('workbench.home'),
+    screenPermission('workbench.tab.notes'),
+  ];
+  expect(canViewScreen(permissions, 'workbench.home')).toBe(true);
+  expect(canViewRoute(permissions, '/workbench')).toBe(true);
+  expect(canViewScreen(permissions, 'workbench.tab.calendar')).toBe(false);
+});

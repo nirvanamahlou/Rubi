@@ -1,5 +1,5 @@
 {
-  "extends": "@rubi/typescript-config/nest.json",
+  "extends": "@nora/typescript-config/nest.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "."

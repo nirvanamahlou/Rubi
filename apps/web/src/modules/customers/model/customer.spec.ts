@@ -1,0 +1,150 @@
+import { describe, expect, it } from 'vitest';
+import {
+  normalizeCustomerListQuery,
+  serializeCustomerListQuery,
+} from '../api/contracts';
+import {
+  contactDisplayValue,
+  contactCallHref,
+  customerDraft,
+  customerPermissionCodes,
+  customerUiStates,
+  validateCustomerMutation,
+  isValidIranianNationalId,
+  normalizeNationalId,
+} from './customer';
+
+describe('customer frontend live contract', () => {
+  it('omits masked values when preparing an existing customer for editing', () => {
+    const existing = {
+      kind: 'person' as const,
+      organizationId: null,
+      firstName: 'نمونه',
+      lastName: 'قدیمی',
+      displayName: 'نمونه قدیمی',
+      roles: ['customer' as const],
+      acquaintanceMethodId: null,
+      birthDate: null,
+      birthDateMasked: true,
+      version: 3,
+    };
+    const draft = customerDraft(
+      existing as Parameters<typeof customerDraft>[0],
+    );
+    expect(draft).not.toHaveProperty('birthDate');
+    expect(draft).not.toHaveProperty('nationalId');
+    expect(draft.version).toBe(3);
+  });
+  it('covers operational and conflict states with published permissions', () => {
+    expect(customerUiStates).toEqual([
+      'loading',
+      'ready',
+      'empty',
+      'error',
+      'forbidden',
+      'success',
+      'conflict',
+    ]);
+    expect(customerPermissionCodes).toContain('customers.sensitive.read');
+  });
+
+  it('normalizes and serializes server pagination and filters', () => {
+    const query = normalizeCustomerListQuery({
+      search: '  نمونه ۰۱ ',
+      page: -3,
+      pageSize: 500,
+    });
+    expect(query).toMatchObject({
+      search: 'نمونه ۰۱',
+      page: 1,
+      pageSize: 100,
+      role: 'all',
+      kind: 'all',
+      branchId: 'all',
+      acquaintanceMethodId: 'all',
+    });
+    expect(serializeCustomerListQuery(query)).toContain('pageSize=100');
+  });
+
+  it('validates person, organization and role invariants before network submit', () => {
+    expect(
+      validateCustomerMutation({
+        kind: 'person',
+        displayName: '',
+        firstName: '',
+        lastName: '',
+        roles: [],
+      }).valid,
+    ).toBe(false);
+    expect(
+      validateCustomerMutation({
+        kind: 'organization',
+        displayName: 'سازمان ساختگی',
+        organizationId: null,
+        roles: ['customer'],
+      }).errors,
+    ).toHaveProperty('organizationId');
+  });
+  it('normalizes Persian digits and validates national ID checksum', () => {
+    expect(normalizeNationalId(' ۱۲۳۴۵۶۷۸۹۱ ')).toBe('1234567891');
+    expect(isValidIranianNationalId('1234567891')).toBe(true);
+    expect(isValidIranianNationalId('1234567890')).toBe(false);
+    expect(
+      validateCustomerMutation({
+        kind: 'person',
+        displayName: 'مشتری ساختگی',
+        firstName: 'مشتری',
+        lastName: 'ساختگی',
+        nationalId: '1234567891',
+        roles: ['customer'],
+      }).valid,
+    ).toBe(true);
+  });
+  it('keeps real contacts hidden until an authorized user explicitly reveals them', () => {
+    const contact = {
+      id: 'synthetic-contact',
+      type: 'phone' as const,
+      label: null,
+      maskedValue: '0000•••000',
+      value: '0000000000',
+      isPrimary: true,
+      verifiedAt: null,
+      createdAt: '2026-08-24T00:00:00.000Z',
+    };
+    expect(contactDisplayValue(contact, false)).toBe('0000•••000');
+    expect(contactDisplayValue(contact, true)).toBe('0000000000');
+    expect(contactDisplayValue({ ...contact, value: null }, true)).toBe(
+      '0000•••000',
+    );
+  });
+
+  it('only exposes a dialing link for explicitly revealed phone contacts', () => {
+    const contact = {
+      id: 'synthetic-call-contact',
+      type: 'phone' as const,
+      label: null,
+      maskedValue: '0000•••000',
+      value: '+1 (202) 555-0100',
+      isPrimary: true,
+      verifiedAt: null,
+      createdAt: '2026-08-31T00:00:00.000Z',
+    };
+    expect(contactCallHref(contact, true)).toBe('tel:+12025550100');
+    expect(contactCallHref(contact, false)).toBeNull();
+    expect(contactCallHref({ ...contact, value: null }, true)).toBeNull();
+    expect(contactCallHref({ ...contact, type: 'email' }, true)).toBeNull();
+    for (const value of [
+      contact.maskedValue,
+      'javascript:alert(1)',
+      '+12025550100;ext=123',
+      '+12025550100?body=test',
+      '+1202\n5550100',
+      '123',
+      '1'.repeat(16),
+    ]) {
+      expect(contactCallHref({ ...contact, value }, true)).toBeNull();
+    }
+    // Re-masking also removes the callable target even if a value is present.
+    expect(contactCallHref(contact, false)).toBeNull();
+  });
+});

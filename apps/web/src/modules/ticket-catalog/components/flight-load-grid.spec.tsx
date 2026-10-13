@@ -1,0 +1,55 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { describe, it, expect } from 'vitest';
+import type { TicketOfferV1 } from '@nora/contracts';
+import { FlightLoadGrid } from './flight-load-grid';
+
+describe('flight load search entry', () => {
+  it('renders the restored outbound and return tables without delete columns', () => {
+    const source = readFileSync(
+      new URL('./flight-load-grid.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('{table(outbounds, false)}');
+    expect(source).toContain('{table(returns, true)}');
+    expect(source).toContain("back ? 'برگشت' : 'رفت'");
+    expect(source).not.toContain('renderRowActions');
+    expect(source).not.toContain('renderLoadActions');
+    expect(source).not.toContain("'عملیات'");
+  });
+
+  it('does not expose flight rows or management actions before an explicit search', () => {
+    const flight = {
+      id: 'flight',
+      supplyType: 'COMPANY',
+      originId: 'a',
+      destinationId: 'b',
+      departureAt: '2099-10-01T10:00:00Z',
+      arrivalAt: '2099-10-01T12:00:00Z',
+      carrierName: 'Synthetic Air',
+    } as TicketOfferV1;
+    const html = renderToStaticMarkup(
+      <FlightLoadGrid
+        offers={[flight]}
+        cityName={(id) => id}
+        refreshing={false}
+        onRefresh={() => {}}
+        renderActions={() => <button>Manage selected flight</button>}
+      />,
+    );
+    expect(html).toContain('تاریخ‌های معتبر');
+    expect(html).toContain('لود پرواز چارتر');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toMatch(/type="checkbox" checked=""/);
+    expect(html).toContain('جست‌وجو');
+    expect(html).toContain('load-country');
+    expect(html).toContain('شهر');
+    expect(html).toContain('load-origin-country');
+    expect(html).toContain('load-origin');
+    expect(html).not.toContain('<table');
+    expect(html).not.toContain('Manage selected flight');
+    expect(html).not.toContain('مبدأ، مقصد یا تاریخ را انتخاب کنید');
+    expect(html).not.toContain('بلیت‌های قدیمی با نوع تأمین ثبت‌نشده');
+    expect(html).not.toContain('Hold فعال و منقضی‌نشده');
+  });
+});

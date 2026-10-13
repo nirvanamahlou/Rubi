@@ -1,0 +1,9 @@
+# MANIFEST-DOWNLOAD-FINANCE-0928 — PC-A
+
+User reports a silent download and requires financially approved contracts only. Base origin/develop@f9c25af1; branch codex/pc-a-manifest-download-finance-0928; isolated managed manifest worktree.
+
+The browser request no longer requires crypto.randomUUID on an insecure HTTP LAN origin. Request keys use Web Crypto where available, with a non-security fallback for request deduplication. New-only and all-contract retries have distinct stable idempotency keys. Errors appear beside the affected ticket, and a persistent download link permits a direct click if the automatic browser download does not start. Empty responses are rejected. Explicit button types prevent enclosing forms from submitting.
+
+Reservations uses Finance's public delivery approval projection for both card counts and export selection. Expired exceptional approvals are excluded; zero-approved cards explain why export is unavailable. Approval is checked again during export, including retries, before any passenger detail read. Branch scope, sensitive permissions, assignment, workbook formats and export history remain in force. No foreign table access, migration, schema, dependency, permission or shared contract changes.
+
+Validation: 28 targeted API tests passed, including the real Nest HTTP route returning a binary XLSX attachment, mixed approved/pending contracts and expired approval rejection. Six Web tests passed, including HTTP crypto fallback, separate stable retry keys, finance rejection without retry and empty response handling. API/Web production builds (53 Web routes), scoped ESLint and Web typecheck passed. Final API typecheck/format and reviewed local rollout are recorded on completion. The original dirty checkout and operational records are preserved. Authenticated browser click is unavailable because the browser is on the login page; automated coverage uses synthetic data.

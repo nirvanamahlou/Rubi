@@ -1,0 +1,260 @@
+.report {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 4px 2px;
+}
+.heading h2 {
+  font-size: 20px;
+  font-weight: 850;
+}
+.heading p,
+.cardHeader p,
+.note {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.9;
+}
+.timestamp {
+  text-align: end;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.metric {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--report-color) 8%, var(--surface)),
+    var(--surface)
+  );
+  padding: 18px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.metricIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--report-color) 12%, var(--surface));
+  color: var(--report-color);
+}
+.metric p {
+  font-size: 12px;
+  font-weight: 650;
+}
+.metric strong {
+  display: block;
+  font-size: 28px;
+  font-weight: 850;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+.metric small {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.distributions,
+.bottom {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  overflow: hidden;
+  min-width: 0;
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--foreground) 3%, transparent);
+}
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.cardHeader h3 {
+  font-size: 14px;
+  font-weight: 800;
+}
+.badge {
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+.rows {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+}
+.rowLabel,
+.rowLabel > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rowLabel {
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.rowLabel i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--report-color);
+  flex-shrink: 0;
+}
+.rowLabel strong {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.rowLabel small {
+  color: var(--muted-foreground);
+  min-width: 44px;
+  text-align: end;
+}
+.track {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+.track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--report-color);
+}
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+.footer button {
+  display: inline-flex;
+  gap: 8px;
+  font-size: 12px;
+}
+.satisfaction {
+  background: linear-gradient(
+    130deg,
+    color-mix(in srgb, var(--ca-teal) 6%, var(--surface)),
+    var(--surface) 70%
+  );
+}
+.satisfaction svg {
+  color: var(--ca-teal);
+}
+.scoreBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 20px;
+  font-size: 13px;
+}
+.score {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-shrink: 0;
+  color: var(--ca-teal);
+}
+.score strong {
+  font-size: 48px;
+  line-height: 1.2;
+  font-weight: 850;
+}
+.score span {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  padding: 20px;
+}
+.action {
+  padding: 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--report-color) 7%, var(--surface));
+  border-block-start: 3px solid var(--report-color);
+}
+.action span {
+  font-size: 11px;
+  display: block;
+}
+.action strong {
+  font-size: 25px;
+  font-weight: 800;
+}
+.card > .note {
+  padding: 0 20px 18px;
+}
+.empty {
+  color: var(--muted-foreground);
+  padding: 18px 0;
+  font-size: 13px;
+  grid-column: 1 / -1;
+}
+@media (max-width: 1100px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .actionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .timestamp {
+    text-align: start;
+  }
+  .distributions,
+  .bottom {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .metric {
+    padding: 12px;
+    gap: 8px;
+  }
+  .metricIcon {
+    width: 32px;
+    height: 32px;
+  }
+  .metric strong {
+    font-size: 24px;
+  }
+  .cardHeader,
+  .rows {
+    padding: 16px;
+  }
+  .scoreBody {
+    gap: 16px;
+  }
+}

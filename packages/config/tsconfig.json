@@ -1,5 +1,5 @@
 {
-  "extends": "@rubi/typescript-config/library.json",
+  "extends": "@nora/typescript-config/library.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": ".",

@@ -1,0 +1,438 @@
+import { Inject, Injectable } from '@nestjs/common';
+import type { Prisma } from '@nora/database';
+
+import { DatabaseService } from '../database/database.service';
+import { createdDateFilter } from './customer-affairs-date-filter';
+
+export const customerAffairsLeadInclude = {
+  timeline: { orderBy: { occurredAt: 'desc' as const } },
+  handoffs: { orderBy: { createdAt: 'desc' as const } },
+} satisfies Prisma.CustomerAffairsLeadInclude;
+
+export const customerAffairsTicketInclude = {
+  siteOrigin: { include: { site: true } },
+  timeline: { orderBy: { occurredAt: 'desc' as const } },
+  referrals: { orderBy: { createdAt: 'desc' as const } },
+  satisfactions: { orderBy: { createdAt: 'desc' as const } },
+  correctiveActions: { orderBy: { createdAt: 'desc' as const } },
+} satisfies Prisma.CustomerAffairsTicketInclude;
+
+export type CustomerAffairsLeadRow = Prisma.CustomerAffairsLeadGetPayload<{
+  include: typeof customerAffairsLeadInclude;
+}>;
+export type CustomerAffairsTicketRow = Prisma.CustomerAffairsTicketGetPayload<{
+  include: typeof customerAffairsTicketInclude;
+}>;
+
+@Injectable()
+export class CustomerAffairsRepository {
+  async dueReminderIds(kind: 'lead' | 'ticket', now: Date, after?: string) {
+    const page = {
+      select: { id: true },
+      orderBy: { id: 'asc' as const },
+      take: 100,
+    };
+    const cursor = after ? { id: { gt: after } } : {};
+    return kind === 'lead'
+      ? this.database.client.customerAffairsLead.findMany({
+          ...page,
+          where: {
+            ...cursor,
+            stage: { notIn: ['LOST', 'HANDED_OFF'] },
+            nextActionAt: { lte: now },
+          },
+        })
+      : this.database.client.customerAffairsTicket.findMany({
+          ...page,
+          where: {
+            ...cursor,
+            status: { notIn: ['CLOSED', 'CANCELLED', 'RESOLVED'] },
+            OR: [
+              { nextActionAt: { lte: now } },
+              { firstRespondedAt: null, firstResponseDueAt: { lte: now } },
+              {
+                pausedAt: null,
+                resolvedAt: null,
+                resolutionDueAt: { lte: now },
+              },
+            ],
+          },
+        });
+  }
+  findSite(code: string) {
+    return this.database.client.customerAffairsSite.findUnique({
+      where: { code },
+    });
+  }
+
+  findSiteTicket(siteId: string, externalId: string) {
+    return this.database.client.customerAffairsSiteTicket.findUnique({
+      where: { siteId_externalId: { siteId, externalId } },
+      include: { ticket: { select: { branchId: true } } },
+    });
+  }
+
+  findTimelineByDeliveryKey(deliveryKey: string) {
+    return this.database.client.customerAffairsTimeline.findUnique({
+      where: { deliveryKey },
+    });
+  }
+  constructor(
+    @Inject(DatabaseService) private readonly database: DatabaseService,
+  ) {}
+
+  transaction<T>(work: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.database.client.$transaction(work);
+  }
+
+  findLead(id: string): Promise<CustomerAffairsLeadRow | null> {
+    return this.database.client.customerAffairsLead.findUnique({
+      where: { id },
+      include: customerAffairsLeadInclude,
+    });
+  }
+
+  findLeadBySource(branchId: string, sourceReference: string) {
+    return this.database.client.customerAffairsLead.findUnique({
+      where: { branchId_sourceReference: { branchId, sourceReference } },
+      include: customerAffairsLeadInclude,
+    });
+  }
+
+  findLeadCommand(actorUserId: string, key: string) {
+    return this.database.client.customerAffairsCommand.findUnique({
+      where: {
+        actorUserId_scope_idempotencyKey: {
+          actorUserId,
+          scope: 'lead.create',
+          idempotencyKey: key,
+        },
+      },
+    });
+  }
+
+  async listLeads(
+    where: Prisma.CustomerAffairsLeadWhereInput,
+    page: number,
+    pageSize: number,
+  ) {
+    const [data, total] = await Promise.all([
+      this.database.client.customerAffairsLead.findMany({
+        where,
+        include: customerAffairsLeadInclude,
+        orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.database.client.customerAffairsLead.count({ where }),
+    ]);
+    return { data, total };
+  }
+
+  exportLeads(where: Prisma.CustomerAffairsLeadWhereInput) {
+    return this.database.client.customerAffairsLead.findMany({
+      where,
+      select: {
+        trackingNumber: true,
+        title: true,
+        stage: true,
+        priority: true,
+        travelNeed: true,
+        nextAction: true,
+        nextActionAt: true,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 10001,
+    });
+  }
+
+  duplicateLeads(
+    branchIds: string[],
+    contactFingerprint: string,
+    excludeId?: string,
+  ) {
+    return this.database.client.customerAffairsLead.findMany({
+      where: {
+        branchId: { in: branchIds },
+        contactFingerprint,
+        ...(excludeId ? { id: { not: excludeId } } : {}),
+        stage: { notIn: ['LOST', 'HANDED_OFF'] },
+      },
+      select: { id: true, trackingNumber: true, title: true },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+  }
+
+  findTicket(id: string): Promise<CustomerAffairsTicketRow | null> {
+    return this.database.client.customerAffairsTicket.findUnique({
+      where: { id },
+      include: customerAffairsTicketInclude,
+    });
+  }
+
+  findTicketCommand(actorUserId: string, key: string) {
+    return this.database.client.customerAffairsCommand.findUnique({
+      where: {
+        actorUserId_scope_idempotencyKey: {
+          actorUserId,
+          scope: 'ticket.create',
+          idempotencyKey: key,
+        },
+      },
+    });
+  }
+
+  async listTickets(
+    where: Prisma.CustomerAffairsTicketWhereInput,
+    page: number,
+    pageSize: number,
+  ) {
+    const [data, total] = await Promise.all([
+      this.database.client.customerAffairsTicket.findMany({
+        where,
+        include: customerAffairsTicketInclude,
+        orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      this.database.client.customerAffairsTicket.count({ where }),
+    ]);
+    return { data, total };
+  }
+
+  exportTickets(where: Prisma.CustomerAffairsTicketWhereInput) {
+    return this.database.client.customerAffairsTicket.findMany({
+      where,
+      select: {
+        trackingNumber: true,
+        subject: true,
+        status: true,
+        priority: true,
+        category: true,
+        nextAction: true,
+        firstResponseDueAt: true,
+        resolutionDueAt: true,
+      },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 10001,
+    });
+  }
+
+  workbenchReferrals(
+    userId: string,
+    branchIds: string[],
+    destinationModule?: string,
+  ) {
+    return this.database.client.customerAffairsReferral.findMany({
+      where: {
+        ticket: { branchId: { in: branchIds } },
+        status: { in: ['OPEN', 'IN_PROGRESS'] },
+        ...(destinationModule ? { destinationModule } : {}),
+        OR: [{ assignedUserId: userId }, { assignedUserId: null }],
+      },
+      include: { ticket: { select: { trackingNumber: true, subject: true } } },
+      orderBy: [{ dueAt: 'asc' }, { id: 'asc' }],
+      take: 100,
+    });
+  }
+
+  findReferralByKey(ticketId: string, idempotencyKey: string) {
+    return this.database.client.customerAffairsReferral.findUnique({
+      where: { ticketId_idempotencyKey: { ticketId, idempotencyKey } },
+    });
+  }
+
+  findReferral(id: string) {
+    return this.database.client.customerAffairsReferral.findUnique({
+      where: { id },
+      include: { ticket: { select: { branchId: true } } },
+    });
+  }
+
+  audit(entityType: 'LEAD' | 'TICKET', entityId: string, branchIds: string[]) {
+    return this.database.client.customerAffairsAuditEvent.findMany({
+      where: { entityType, entityId, branchId: { in: branchIds } },
+      orderBy: [{ occurredAt: 'desc' }, { id: 'asc' }],
+      take: 200,
+    });
+  }
+
+  async dashboard(
+    branchIds: string[],
+    access: { leadsRead: boolean; ticketsRead: boolean },
+  ) {
+    const now = new Date();
+    const [
+      openLeads,
+      overdueLeads,
+      waitingSales,
+      openTickets,
+      overdueTickets,
+      breached,
+      correctiveActions,
+    ] = await Promise.all([
+      access.leadsRead
+        ? this.database.client.customerAffairsLead.count({
+            where: {
+              branchId: { in: branchIds },
+              stage: { notIn: ['LOST', 'HANDED_OFF'] },
+            },
+          })
+        : Promise.resolve(0),
+      access.leadsRead
+        ? this.database.client.customerAffairsLead.count({
+            where: {
+              branchId: { in: branchIds },
+              stage: { notIn: ['LOST', 'HANDED_OFF'] },
+              nextActionAt: { lt: now },
+            },
+          })
+        : Promise.resolve(0),
+      access.leadsRead
+        ? this.database.client.customerAffairsHandoff.count({
+            where: {
+              lead: { branchId: { in: branchIds } },
+              status: 'WAITING_SALES',
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsTicket.count({
+            where: {
+              branchId: { in: branchIds },
+              status: { notIn: ['CLOSED', 'CANCELLED'] },
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsTicket.count({
+            where: {
+              branchId: { in: branchIds },
+              status: { notIn: ['CLOSED', 'CANCELLED'] },
+              nextActionAt: { lt: now },
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsTicket.count({
+            where: {
+              branchId: { in: branchIds },
+              OR: [
+                { firstResponseBreachedAt: { not: null } },
+                { resolutionBreachedAt: { not: null } },
+                { firstRespondedAt: null, firstResponseDueAt: { lt: now } },
+                {
+                  pausedAt: null,
+                  resolvedAt: null,
+                  resolutionDueAt: { lt: now },
+                },
+              ],
+            },
+          })
+        : Promise.resolve(0),
+      access.ticketsRead
+        ? this.database.client.customerAffairsCorrectiveAction.count({
+            where: {
+              ticket: { branchId: { in: branchIds } },
+              status: { in: ['OPEN', 'IN_PROGRESS'] },
+            },
+          })
+        : Promise.resolve(0),
+    ]);
+    return {
+      leads: { open: openLeads, overdue: overdueLeads, waitingSales },
+      tickets: {
+        open: openTickets,
+        overdue: overdueTickets,
+        breached,
+        correctiveActions,
+      },
+    };
+  }
+
+  async report(
+    branchIds: string[],
+    query: { createdFrom?: string; createdBefore?: string } = {},
+  ) {
+    const created = createdDateFilter(query);
+    const [
+      leadStages,
+      ticketStatuses,
+      ticketPriorities,
+      ticketCategories,
+      satisfaction,
+      correctiveActions,
+    ] = await Promise.all([
+      this.database.client.customerAffairsLead.groupBy({
+        by: ['stage'],
+        where: { branchId: { in: branchIds }, ...created },
+        _count: { _all: true },
+      }),
+      this.database.client.customerAffairsTicket.groupBy({
+        by: ['status'],
+        where: { branchId: { in: branchIds }, ...created },
+        _count: { _all: true },
+      }),
+      this.database.client.customerAffairsTicket.groupBy({
+        by: ['priority'],
+        where: { branchId: { in: branchIds }, ...created },
+        _count: { _all: true },
+      }),
+      this.database.client.customerAffairsTicket.groupBy({
+        by: ['category'],
+        where: { branchId: { in: branchIds }, ...created },
+        _count: { _all: true },
+      }),
+      this.database.client.customerAffairsSatisfaction.aggregate({
+        where: {
+          submittedByCustomer: true,
+          ticket: { branchId: { in: branchIds }, ...created },
+        },
+        _avg: { score: true },
+        _count: { score: true },
+      }),
+      this.database.client.customerAffairsCorrectiveAction.groupBy({
+        by: ['status'],
+        where: { ticket: { branchId: { in: branchIds }, ...created } },
+        _count: { _all: true },
+      }),
+    ]);
+    return {
+      generatedAt: new Date().toISOString(),
+      leadStages,
+      ticketStatuses,
+      ticketPriorities,
+      ticketCategories,
+      satisfaction: {
+        average: satisfaction._avg.score,
+        count: satisfaction._count.score,
+      },
+      correctiveActions,
+    };
+  }
+
+  workbenchRequests(userId: string, branchIds: string[]) {
+    return this.database.client.customerAffairsTicket.findMany({
+      where: {
+        createdByUserId: userId,
+        branchId: { in: branchIds },
+        category: { startsWith: 'WORKBENCH_' },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 100,
+    });
+  }
+
+  hrWorkbenchRequests(branchIds: string[]) {
+    return this.database.client.customerAffairsTicket.findMany({
+      where: {
+        branchId: { in: branchIds },
+        category: { startsWith: 'WORKBENCH_' },
+        executionUnit: { in: ['منابع انسانی', 'سرمایه انسانی', 'اداری'] },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 200,
+    });
+  }
+}

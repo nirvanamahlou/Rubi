@@ -1,0 +1,134 @@
+import { MASTER_DATA_RESOURCES } from '@nora/contracts';
+import { describe, expect, it } from 'vitest';
+import { DEMO_EXCLUDED, masterDataDemoRecords } from './demo-data';
+import { assertLocalDemoTarget } from './local-demo';
+import {
+  LOCAL_DEMO_ACKNOWLEDGEMENT,
+  parseLocalDemoCli,
+} from './local-demo-cli';
+import { realisticMasterDataDemoRecords } from './realistic-demo-data';
+
+describe('explicit local Master Data demo fixtures', () => {
+  it('offers natural labels without rates, personal contacts or invented external connections', () => {
+    const fixtures = realisticMasterDataDemoRecords();
+    expect(fixtures.map((row) => row.key)).toEqual(
+      masterDataDemoRecords().map((row) => row.key),
+    );
+    const values = fixtures.map((row) => row.values((key) => key));
+    expect(JSON.stringify(values)).not.toMatch(
+      /نمونه [12]|Demo (?:Hotel|Supplier|Manufacturer|Bank)|(?:externalProviderReference|fileReferenceId|logoFileReference|primaryPhone|accountNumber|iban|cvv)/i,
+    );
+    expect(
+      fixtures.some((row) => String(row.resource) === 'exchange-rates'),
+    ).toBe(false);
+    expect(values.find((value) => value.code === 'BB')?.englishName).toBe(
+      'Bed & Breakfast',
+    );
+    expect(
+      fixtures.find((row) => row.key === 'aircraft-1')?.values((key) => key),
+    ).toMatchObject({
+      englishName: 'Airbus A320-200',
+      manufacturerModel: 'Airbus / A320-200',
+    });
+    expect(
+      fixtures.find((row) => row.key === 'aircraft-1')?.values((key) => key),
+    ).not.toHaveProperty('name');
+    expect(
+      fixtures.find((row) => row.key === 'cabin-1')?.values((key) => key),
+    ).toMatchObject({ englishName: 'Economy', bookingCode: 'Y' });
+    expect(
+      fixtures.find((row) => row.key === 'cabin-1')?.values((key) => key),
+    ).not.toHaveProperty('name');
+  });
+  it('covers all retained reference catalogs with ordered dependencies and marked synthetic names', () => {
+    const fixtures = masterDataDemoRecords();
+    expect([...new Set(fixtures.map((row) => row.resource))].sort()).toEqual(
+      MASTER_DATA_RESOURCES.filter(
+        (resource) => !(DEMO_EXCLUDED as readonly string[]).includes(resource),
+      ).sort(),
+    );
+    const seen = new Set<string>();
+    for (const row of fixtures) {
+      expect(seen.has(row.key)).toBe(false);
+      const values = row.values((key) => {
+        expect(seen.has(key), `${row.key} depends on ${key}`).toBe(true);
+        return '11111111-1111-4111-8111-111111111111';
+      });
+      if (row.resource === 'aircraft-types') {
+        expect(values.manufacturerModel).toContain(' / ');
+        expect(values).not.toHaveProperty('name');
+        expect(values).not.toHaveProperty('manufacturer');
+        expect(values).not.toHaveProperty('model');
+      } else if (row.resource === 'cabin-classes') {
+        expect(values.englishName).toMatch(/^Demo Cabin \d+$/);
+        expect(values).not.toHaveProperty('name');
+      } else if (row.resource !== 'suppliers')
+        expect(values.name ?? values.legalName ?? values.fullName).toContain(
+          'آزمایشی',
+        );
+      expect(JSON.stringify(values)).not.toMatch(
+        /(?:externalProviderReference|fileReferenceId|logoFileReference|primaryPhone|accountNumber|iban|cvv)/i,
+      );
+      seen.add(row.key);
+    }
+  });
+
+  it.each([
+    ['postgresql://localhost:55432/nora?schema=public', 'development'],
+    [
+      'postgresql://127.0.0.1:55432/nora_md_demo_test_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      'test',
+    ],
+  ])('allows only the intended local targets', (url, environment) => {
+    expect(() => assertLocalDemoTarget(url, environment)).not.toThrow();
+  });
+
+  it.each([
+    ['postgresql://remote.example:55432/nora', 'development'],
+    ['postgresql://127.0.0.1:5432/nora', 'development'],
+    ['postgresql://127.0.0.1:55432/postgres', 'development'],
+    ['postgresql://127.0.0.1:55432/nora', 'production'],
+    ['postgresql://127.0.0.1:55432/nora?host=remote.example', 'development'],
+    ['postgresql://127.0.0.1:55432/nora?schema=other', 'development'],
+  ])(
+    'rejects remote, production, other databases and connection overrides',
+    (url, environment) => {
+      expect(() => assertLocalDemoTarget(url, environment)).toThrow();
+    },
+  );
+
+  it('parses the repository preview and explicitly acknowledged apply commands', () => {
+    expect(parseLocalDemoCli(['--preview-realistic'], {})).toEqual({
+      mode: '--preview-realistic',
+      apply: false,
+      realistic: true,
+    });
+    expect(
+      parseLocalDemoCli(['--apply-realistic', LOCAL_DEMO_ACKNOWLEDGEMENT], {}),
+    ).toEqual({
+      mode: '--apply-realistic',
+      apply: true,
+      realistic: true,
+    });
+  });
+
+  it('retains the environment acknowledgement and rejects accidental apply arguments', () => {
+    expect(
+      parseLocalDemoCli(['--apply'], {
+        NORA_ALLOW_LOCAL_MASTER_DEMO: '1',
+      }),
+    ).toMatchObject({ apply: true, realistic: false });
+    expect(() => parseLocalDemoCli(['--apply-realistic'], {})).toThrow(
+      'acknowledge',
+    );
+    expect(() =>
+      parseLocalDemoCli(
+        ['--preview-realistic', LOCAL_DEMO_ACKNOWLEDGEMENT],
+        {},
+      ),
+    ).toThrow('Preview');
+    expect(() =>
+      parseLocalDemoCli(['--apply-realistic', '--unsafe'], {}),
+    ).toThrow('Specify');
+  });
+});

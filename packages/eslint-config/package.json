@@ -1,5 +1,5 @@
 {
-  "name": "@rubi/eslint-config",
+  "name": "@nora/eslint-config",
   "version": "0.0.0",
   "private": true,
   "type": "module",

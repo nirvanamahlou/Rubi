@@ -1,0 +1,16 @@
+.package-page[class*="istanbul-"] .data-region{background:#fff}
+.package-page[class*="istanbul-"] .data-table{border-collapse:collapse;border-spacing:0;color:#101423;font-family:Arial,Tahoma,sans-serif}
+.package-page[class*="istanbul-"] .data-table td{border:1px solid #dfe7ee;border-radius:0;background:#fff;padding:0 5px;line-height:1.1}
+.package-page[class*="istanbul-"] .data-table tr:nth-child(even) td{background:#f3f8fc}
+.package-page[class*="istanbul-"] .data-table .hotel{text-align:left;font-weight:700;direction:ltr}
+.package-page[class*="istanbul-"] .data-table .service{text-align:left;font-weight:400;direction:ltr}
+.package-page[class*="istanbul-"] .data-table .price{text-align:center;font-weight:700;direction:ltr}
+.package-page[class*="istanbul-"] .date-slot{border-radius:30px;background:#052b75;font-size:27px}
+.package-page[class*="istanbul-"] .duration-slot{font-size:44px;background:#fff}
+.package-page[class*="istanbul-"] .title-slot{font-size:88px;background:#fff}
+.package-page[class*="istanbul-"] .value-slot{background:#fff;color:#081a61;font-family:Tahoma,Arial,sans-serif;line-height:1.15}
+.package-page[class*="istanbul-"] .value-slot b{font-size:30px}
+.package-page[class*="istanbul-"] .value-slot small{font-size:18px!important}
+.package-page[class*="istanbul-"] .value-flightSchedule{padding-left:35px}
+.package-page[class*="istanbul-"] .value-flightSchedule b{font-size:15px;white-space:normal;text-align:center;direction:rtl}
+.package-page[class*="istanbul-"] .services-slot{background:#fff;color:#071d59;font-family:Tahoma,Arial,sans-serif;font-size:20px;line-height:1.45;text-align:center;padding:6px 18px;white-space:pre-wrap}

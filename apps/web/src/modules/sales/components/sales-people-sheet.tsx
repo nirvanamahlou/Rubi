@@ -1,0 +1,748 @@
+'use client';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Check, Search } from 'lucide-react';
+import type { CustomerSummary, MasterDataRecord } from '@nora/contracts';
+import { Button } from '@/components/ui/button';
+import { Input, FormField } from '@/components/ui/form-controls';
+import { Alert } from '@/components/ui/surfaces';
+import {
+  CustomerEntrySheet,
+  CustomerCalendarSwitch,
+  customersApi,
+  type CustomerCalendarMode,
+  type CustomerEntryRow,
+  type EntryField,
+} from '@/modules/customers/public/entry';
+import { SalesOrganizationCustomer } from './sales-organization-customer';
+import { SalesPersonSearch } from './sales-person-search';
+import { SalesDatePicker } from './sales-date-picker';
+import { SalesThemedSelect } from './sales-themed-select';
+import { loadSalesAcquaintanceMethods } from '../api/acquaintance-methods';
+import {
+  salesPassengerAgeLabel,
+  salesPassengerCounts,
+  salesRequiresPassportIdentity,
+  salesTravelDate,
+  type SalesFormState,
+} from '../model/sales-form';
+import {
+  initialSalesPeopleDraft,
+  passengerSlotKeys,
+  peopleRow,
+  emptyPeopleValues,
+  selectedPeopleRow,
+  refreshPeopleRow,
+  saveSalesPeopleDraft,
+  normalizeSalesPeopleDraft,
+  editPeopleRow,
+  setSalesPeopleAcquaintanceMethod,
+  type SalesPeopleDraft,
+} from '../model/sales-people-sheet';
+
+export function SalesPeopleSheet({
+  state,
+  draft: savedDraft,
+  onDraftChange,
+  onConfirmed,
+  onBusyChange,
+  onAddInfant,
+  onTravelDateChange,
+  busy = false,
+}: {
+  state: SalesFormState;
+  draft: SalesPeopleDraft | null;
+  onDraftChange: (draft: SalesPeopleDraft) => void;
+  onConfirmed: (patch: Partial<SalesFormState>) => void;
+  onBusyChange: (busy: boolean) => void;
+  onAddInfant: () => void;
+  onTravelDateChange: (value: string) => void;
+  busy?: boolean;
+}) {
+  const draft = normalizeSalesPeopleDraft(
+    savedDraft ?? initialSalesPeopleDraft(state),
+  );
+  const [calendar, setCalendar] = useState<CustomerCalendarMode>('persian');
+  const [lookup, setLookup] = useState<string | null>(null);
+  const [clearKey, setClearKey] = useState<string | null>(null);
+  const [acquaintanceMethods, setAcquaintanceMethods] = useState<
+    MasterDataRecord[]
+  >([]);
+  const [methodsLoading, setMethodsLoading] = useState(true);
+  const [methodsError, setMethodsError] = useState('');
+  const [methodsRetry, setMethodsRetry] = useState(0);
+  useEffect(() => {
+    let active = true;
+    loadSalesAcquaintanceMethods()
+      .then((items) => {
+        if (active) setAcquaintanceMethods(items);
+      })
+      .catch(() => {
+        if (active) setMethodsError('دریافت فهرست نحوه آشنایی ناموفق بود.');
+      })
+      .finally(() => {
+        if (active) setMethodsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [methodsRetry]);
+  const [error, setError] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+  const inFlight = useRef(false);
+  const slots = passengerSlotKeys(state);
+  const counts = salesPassengerCounts(state);
+  const passportIdentity = salesRequiresPassportIdentity(state);
+  const visibleEntryFields: readonly EntryField[] = passportIdentity
+    ? [
+        'nationalId',
+        'passportFirstName',
+        'passportLastName',
+        'birthDate',
+        'passportNumber',
+        'passportExpiryDate',
+        'gender',
+        'nationalityCode',
+        'passportIssuingCountryCode',
+        'birthCountryCode',
+        'phone',
+        'email',
+      ]
+    : ['firstName', 'lastName', 'nationalId', 'birthDate', 'phone', 'email'];
+  const change = (next: SalesPeopleDraft) => {
+    setConfirmed(false);
+    setError('');
+    onDraftChange(next);
+  };
+  const reveal = async (key: string) => {
+    const row = peopleRow(draft, key);
+    if (!row.person || busy) return;
+    onBusyChange(true);
+    setError('');
+    try {
+      const detail = (
+        await customersApi.detail(row.person.id, 'customer-verification')
+      ).data;
+      change(editPeopleRow(draft, key, refreshPeopleRow(row, detail)));
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'نمایش اطلاعات مجاز نیست.',
+      );
+    } finally {
+      onBusyChange(false);
+    }
+  };
+  const choose = async (person: CustomerSummary) => {
+    if (!lookup || inFlight.current) return;
+    setClearKey(null);
+    const key = lookup;
+    inFlight.current = true;
+    onBusyChange(true);
+    setError('');
+    try {
+      let detail;
+      try {
+        detail = (await customersApi.detail(person.id, 'customer-verification'))
+          .data;
+      } catch (reason) {
+        if (!(
+          reason &&
+          typeof reason === 'object' &&
+          'status' in reason &&
+          reason.status === 403
+        ))
+          throw reason;
+        detail = (await customersApi.detail(person.id)).data;
+      }
+      let next = editPeopleRow(draft, key, selectedPeopleRow(detail));
+      if (
+        (draft.mode === 'person' && key === 'primary') ||
+        (draft.mode === 'first-passenger' && key === 'p0')
+      ) {
+        const phone = selectedPeopleRow(detail).values.phone;
+        next = {
+          ...next,
+          buyerContact: {
+            name: detail.displayName,
+            phone: phone.includes('*') ? '' : phone,
+            address:
+              detail.addresses?.find((address) => address.isPrimary)?.label ??
+              '',
+            postalCode: '',
+          },
+        };
+      }
+      change(next);
+      setLookup(null);
+      requestAnimationFrame(() => {
+        document.getElementById('sales-entry-' + key + '-first-name')?.focus();
+      });
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'پرونده در دسترس نیست.',
+      );
+    } finally {
+      inFlight.current = false;
+      onBusyChange(false);
+    }
+  };
+  const save = async () => {
+    if (inFlight.current) return;
+    setClearKey(null);
+    setLookup(null);
+    inFlight.current = true;
+    onBusyChange(true);
+    setError('');
+    try {
+      const result = await saveSalesPeopleDraft(
+        state,
+        { ...draft, buyerContact },
+        onDraftChange,
+      );
+      onDraftChange(result.draft);
+      onConfirmed(result.patch);
+      setConfirmed(true);
+    } catch (reason) {
+      setError(
+        reason instanceof Error ? reason.message : 'ثبت افراد کامل نشد.',
+      );
+    } finally {
+      inFlight.current = false;
+      onBusyChange(false);
+    }
+  };
+  const buyerKey = draft.mode === 'person' ? 'primary' : 'p0';
+  const buyerRow = peopleRow(draft, buyerKey);
+  const buyerContact = draft.buyerContact ?? {
+    name:
+      draft.mode === 'organization'
+        ? (draft.organization?.displayName ?? '')
+        : (buyerRow.person?.displayName ??
+          [buyerRow.values.firstName, buyerRow.values.lastName]
+            .filter(Boolean)
+            .join(' ')),
+    phone: buyerRow.values.phone.includes('*') ? '' : buyerRow.values.phone,
+    address:
+      buyerRow.profile?.addresses?.find((address) => address.isPrimary)
+        ?.label ?? '',
+    postalCode: '',
+  };
+  const changeBuyer = (field: keyof typeof buyerContact, value: string) => {
+    const normalized =
+      field === 'phone' || field === 'postalCode'
+        ? value.replace(/[۰-۹٠-٩]/g, (digit) =>
+            String(
+              '۰۱۲۳۴۵۶۷۸۹'.includes(digit)
+                ? '۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)
+                : '٠١٢٣٤٥٦٧٨٩'.indexOf(digit),
+            ),
+          )
+        : value;
+    let next: SalesPeopleDraft = {
+      ...draft,
+      buyerContact: { ...buyerContact, [field]: normalized },
+    };
+    if (draft.mode === 'person' && !buyerRow.person && field === 'name') {
+      const [firstName = '', ...last] = normalized.trim().split(/\s+/);
+      next = editPeopleRow(next, 'primary', {
+        ...buyerRow,
+        values: { ...buyerRow.values, firstName, lastName: last.join(' ') },
+      });
+    }
+    if (draft.mode === 'person' && field === 'phone')
+      next = editPeopleRow(next, 'primary', {
+        ...peopleRow(next, 'primary'),
+        values: { ...peopleRow(next, 'primary').values, phone: normalized },
+      });
+    change(next);
+  };
+  const keys = draft.mode === 'person' ? ['primary', ...slots] : slots;
+  const rows: CustomerEntryRow[] = keys.map((key) => {
+    const row = peopleRow(draft, key);
+    const label =
+      key === 'primary'
+        ? 'مشتری اصلی'
+        : `مسافر ${(Number(key.slice(1)) + 1).toLocaleString('fa-IR')}`;
+    return {
+      key: 'sales-entry-' + key,
+      label,
+      values: row.values,
+      readOnly: Boolean(row.person),
+      editableFields:
+        row.person && !row.profile
+          ? ['birthDate']
+          : [
+              'firstName',
+              'lastName',
+              'nationalId',
+              'birthDate',
+              'passportNumber',
+              'passportExpiryDate',
+              'passportFirstName',
+              'passportLastName',
+              'gender',
+              'nationalityCode',
+              'passportIssuingCountryCode',
+              'birthCountryCode',
+              'phone',
+              'email',
+            ],
+      role: (
+        <div className="space-y-1 text-xs text-muted-foreground">
+          <p>
+            {key === 'primary'
+              ? 'طرف قرارداد'
+              : key === 'p0' && draft.mode === 'first-passenger'
+                ? 'مشتری و مسافر اول'
+                : 'مسافر سفر'}
+          </p>
+          {key !== 'primary' ? (
+            <p className="text-primary">
+              {salesPassengerAgeLabel(
+                row.values.birthDate,
+                salesTravelDate(state),
+              )}
+            </p>
+          ) : null}
+          {row.person ? (
+            <p className="flex items-center gap-1 text-emerald-700">
+              <Check className="size-3" />
+              پرونده موجود
+            </p>
+          ) : null}
+          {row.profile ? (
+            <p>اطلاعات قابل ویرایش؛ ذخیره با «ثبت و تأیید افراد»</p>
+          ) : null}
+          {row.reviewRequired ? (
+            <p className="text-amber-700">
+              با تأیید دوباره، ثبت قبلی خودکار بررسی می‌شود
+            </p>
+          ) : null}
+          {row.previousRegistrationRetained ? (
+            <p className="text-amber-700">
+              پرونده کد ملی قبلی بدون تغییر در مشتریان باقی ماند؛ این ردیف با کد
+              ملی فعلی ادامه می‌یابد.
+            </p>
+          ) : null}
+        </div>
+      ),
+      onChange: (field, value) =>
+        change(
+          editPeopleRow(draft, key, {
+            ...row,
+            values: { ...row.values, [field]: value },
+          }),
+        ),
+      actions: (
+        <div className="flex flex-col gap-1">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            onClick={() => setLookup(key)}
+          >
+            <Search className="size-3" />
+            انتخاب موجود
+          </Button>
+          {row.person && (!row.profile || row.profile.birthDateMasked) ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => void reveal(key)}
+            >
+              خواندن اطلاعات برای قرارداد
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={busy}
+            onClick={() => setClearKey(key)}
+          >
+            پاک‌کردن ردیف
+          </Button>
+        </div>
+      ),
+    };
+  });
+  return (
+    <section className="space-y-4" aria-label="ورود یکجای مشتری و مسافران">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-black">مشتری و مسافران همراه</h2>
+        </div>
+        <CustomerCalendarSwitch mode={calendar} onChange={setCalendar} />
+      </div>
+      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-primary/5 p-3">
+        <Button
+          type="button"
+          size="sm"
+          variant={draft.mode !== 'organization' ? 'primary' : 'outline'}
+          disabled={busy}
+          onClick={() =>
+            draft.mode === 'organization' &&
+            change(
+              normalizeSalesPeopleDraft({
+                ...draft,
+                mode: 'first-passenger',
+                buyerContact: {
+                  name: peopleRow(draft, 'p0').person?.displayName ?? '',
+                  phone: '',
+                  address: '',
+                  postalCode: '',
+                },
+                ...(draft.rows.primary
+                  ? { previousSeparateCustomer: draft.rows.primary }
+                  : {}),
+                rows: { ...draft.rows, primary: peopleRow(draft, 'p0') },
+              }),
+            )
+          }
+        >
+          مشتری حقیقی
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={draft.mode === 'organization' ? 'primary' : 'outline'}
+          disabled={busy}
+          onClick={() =>
+            change({
+              ...draft,
+              mode: 'organization',
+              buyerContact: {
+                name: draft.organization?.displayName ?? '',
+                phone: '',
+                address: '',
+                postalCode: '',
+              },
+            })
+          }
+        >
+          حقوقی / آژانس
+        </Button>
+      </div>
+      <div className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.03] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] sm:items-end">
+        <div>
+          <p className="font-bold">نحوه آشنایی با آژانس</p>
+        </div>
+        <SalesThemedSelect
+          label="نحوه آشنایی برای کل قرارداد"
+          value={
+            draft.acquaintanceMethodId ??
+            peopleRow(draft, 'p0').values.acquaintanceMethodId ??
+            ''
+          }
+          disabled={
+            busy ||
+            methodsLoading ||
+            Boolean(methodsError) ||
+            !acquaintanceMethods.length
+          }
+          options={[
+            { value: '', label: 'انتخاب نحوه آشنایی' },
+            ...acquaintanceMethods.map((item) => ({
+              value: item.id,
+              label: item.name,
+            })),
+          ]}
+          onValueChange={(acquaintanceMethodId) =>
+            change(
+              setSalesPeopleAcquaintanceMethod(draft, acquaintanceMethodId),
+            )
+          }
+        />
+      </div>
+      {draft.mode === 'organization' ? (
+        draft.organization ? (
+          <div className="flex items-center justify-between rounded-xl border p-3">
+            <strong>{draft.organization.displayName}</strong>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy}
+              onClick={() => change({ ...draft, organization: null })}
+            >
+              تغییر آژانس
+            </Button>
+          </div>
+        ) : (
+          <SalesOrganizationCustomer
+            disabled={busy}
+            selectedOrganizationId=""
+            onClear={() => change({ ...draft, organization: null })}
+            onBusyChange={onBusyChange}
+            onSelected={(person) =>
+              change({
+                ...draft,
+                buyerContact: {
+                  name: person.displayName,
+                  phone: '',
+                  address: '',
+                  postalCode: '',
+                },
+                organization: {
+                  id: person.id,
+                  displayName: person.displayName,
+                  organizationId: person.organizationId,
+                },
+              })
+            }
+          />
+        )
+      ) : null}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-semibold">
+          {counts.total.toLocaleString('fa-IR')} ردیف مسافر ·{' '}
+          {counts.adults.toLocaleString('fa-IR')} بزرگسال،{' '}
+          {counts.children.toLocaleString('fa-IR')} کودک،{' '}
+          {counts.infants.toLocaleString('fa-IR')} نوزاد
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          disabled={busy || counts.adults === 0}
+          onClick={() => {
+            onDraftChange(draft);
+            setConfirmed(false);
+            onAddInfant();
+          }}
+        >
+          <Plus className="size-4" />
+          افزودن نوزاد
+        </Button>
+      </div>
+
+      {!salesTravelDate(state) ||
+      (!state.serviceKinds.includes('FLIGHT') &&
+        !(state.serviceKinds.includes('HOTEL') && state.hotel.checkIn)) ? (
+        <FormField label="تاریخ شروع سفر" required>
+          <SalesDatePicker
+            value={state.departureDate}
+            onChange={onTravelDateChange}
+            disabled={busy}
+          />
+        </FormField>
+      ) : null}
+      {error ? (
+        <Alert tone="error" title="ثبت افراد کامل نشد" description={error} />
+      ) : null}
+      {methodsLoading ? (
+        <p role="status" className="text-xs text-muted-foreground">
+          در حال دریافت نحوه‌های آشنایی…
+        </p>
+      ) : methodsError || !acquaintanceMethods.length ? (
+        <div className="flex items-center gap-2 text-sm">
+          <p role={methodsError ? 'alert' : 'status'}>
+            {methodsError ||
+              'نحوه آشنایی فعالی ثبت نشده است؛ فهرست را در اطلاعات پایه تکمیل کنید.'}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setMethodsLoading(true);
+              setMethodsError('');
+              setMethodsRetry((n) => n + 1);
+            }}
+          >
+            دریافت دوباره نحوه آشنایی
+          </Button>
+        </div>
+      ) : null}
+      {lookup ? (
+        <SalesPersonSearch
+          purpose={
+            lookup === 'p0' && draft.mode !== 'organization'
+              ? 'customer'
+              : 'passenger'
+          }
+          selectedIds={keys
+            .filter((key) => key !== lookup)
+            .flatMap((key) =>
+              peopleRow(draft, key).person?.id
+                ? [peopleRow(draft, key).person!.id]
+                : [],
+            )}
+          onCancel={() => setLookup(null)}
+          onSelect={(person) => void choose(person)}
+        />
+      ) : null}
+      {clearKey ? (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border p-3 text-sm"
+        >
+          <span>اطلاعات این ردیف پاک شود؟ پرونده ثبت‌شده حذف نمی‌شود.</span>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setClearKey(null)}
+            >
+              انصراف
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                change(
+                  editPeopleRow(draft, clearKey, {
+                    values: emptyPeopleValues(),
+                  }),
+                );
+                setClearKey(null);
+              }}
+            >
+              تأیید پاک‌کردن
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      <section
+        className="grid gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4"
+        aria-label="مشخصات مشتری طرف حساب"
+      >
+        <h3 className="font-bold sm:col-span-2">مشتری و طرف حساب قرارداد</h3>
+        {draft.mode !== 'organization' ? (
+          <label className="flex items-center gap-2 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={draft.mode === 'first-passenger'}
+              disabled={busy}
+              onChange={(event) =>
+                change({
+                  ...draft,
+                  mode: event.target.checked ? 'first-passenger' : 'person',
+                  separateCustomer: !event.target.checked,
+                  buyerContact: {
+                    name: '',
+                    phone: '',
+                    address: '',
+                    postalCode: '',
+                  },
+                  rows: {
+                    ...draft.rows,
+                    primary: event.target.checked
+                      ? peopleRow(draft, 'p0')
+                      : (draft.previousSeparateCustomer ?? {
+                          values: emptyPeopleValues(),
+                        }),
+                  },
+                })
+              }
+            />
+            مشتری طرف حساب همان مسافر اول است
+          </label>
+        ) : null}
+        {draft.mode === 'person' ? (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={busy}
+            onClick={() => setLookup('primary')}
+          >
+            <Search className="size-4" />
+            انتخاب مشتری موجود
+          </Button>
+        ) : null}
+        <div className="grid gap-3 sm:col-span-2 sm:grid-cols-2 lg:grid-cols-4">
+          <FormField label="نام مشتری" id="sales-buyer-name">
+            <Input
+              id="sales-buyer-name"
+              value={buyerContact.name}
+              maxLength={200}
+              disabled={busy}
+              onChange={(event) => changeBuyer('name', event.target.value)}
+            />
+          </FormField>
+          <FormField label="شماره مشتری" id="sales-buyer-phone">
+            <Input
+              id="sales-buyer-phone"
+              type="tel"
+              dir="ltr"
+              value={buyerContact.phone}
+              maxLength={16}
+              disabled={busy}
+              onChange={(event) => changeBuyer('phone', event.target.value)}
+            />
+          </FormField>
+          <FormField label="آدرس مشتری" id="sales-buyer-address">
+            <Input
+              id="sales-buyer-address"
+              value={buyerContact.address}
+              maxLength={1000}
+              disabled={busy}
+              onChange={(event) => changeBuyer('address', event.target.value)}
+            />
+          </FormField>
+          <FormField label="کد پستی مشتری" id="sales-buyer-postal">
+            <Input
+              id="sales-buyer-postal"
+              inputMode="numeric"
+              dir="ltr"
+              value={buyerContact.postalCode}
+              maxLength={10}
+              disabled={busy}
+              onChange={(event) =>
+                changeBuyer('postalCode', event.target.value)
+              }
+            />
+          </FormField>
+        </div>
+      </section>
+
+      <CustomerEntrySheet
+        rows={rows.filter((row) => row.key !== 'sales-entry-primary')}
+        showPassportExpiry={passportIdentity}
+        visibleFields={visibleEntryFields}
+        columnOrder={
+          passportIdentity ? ['passportFirstName', 'passportLastName'] : []
+        }
+        columnLabels={
+          passportIdentity
+            ? {
+                passportFirstName: 'نام انگلیسی مطابق پاسپورت *',
+                passportLastName: 'نام خانوادگی انگلیسی مطابق پاسپورت *',
+                birthDate: 'تاریخ تولد *',
+                passportNumber: 'شماره پاسپورت *',
+                passportExpiryDate: 'انقضای پاسپورت *',
+              }
+            : { birthDate: 'تاریخ تولد *' }
+        }
+        calendarMode={calendar}
+        onCalendarModeChange={setCalendar}
+        disabled={busy}
+      />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button
+          type="button"
+          disabled={busy}
+          loading={busy}
+          onClick={() => void save()}
+        >
+          <Check className="size-4" />
+          {Object.values(draft.rows).some((row) => row.reviewRequired)
+            ? 'بررسی و ادامه ثبت افراد'
+            : 'ثبت و تأیید افراد'}
+        </Button>
+      </div>
+      {confirmed ? (
+        <p
+          role="status"
+          className="rounded-xl bg-emerald-500/10 p-3 text-sm text-emerald-700"
+        >
+          همه مسافران تأیید شدند؛ می‌توانید به مرحله بعد بروید.
+        </p>
+      ) : null}
+    </section>
+  );
+}

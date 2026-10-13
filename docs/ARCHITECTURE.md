@@ -1,4 +1,4 @@
-# معماری Rubi Airline CRM
+# معماری Nora Airline CRM
 
 وضعیت: Baseline پیشنهادی مرحله Bootstrap
 
@@ -7,7 +7,7 @@
 ## محرک‌های معماری
 
 - تراکنش اتمیک میان سفارش، خرید و ثبت مالی بدون پیچیدگی microservice زودهنگام
-- توسعه هم‌زمان دو کامپیوتر با مرز و مالکیت فایل/داده روشن
+- توسعه هم‌زمان Full-Stack دو کامپیوتر با مرز ماژول، داده و قفل فایل مشترک روشن
 - اتصال چند Provider ناسازگار از طریق Anti-corruption Layer
 - حفظ پرداخت تاییدشده هنگام شکست booking/issue و پشتیبانی از جبران
 - گزارش دقیق با grain کنترل‌شده و traceability کامل
@@ -50,8 +50,9 @@ infrastructure local compose, nginx and deployment assets
 tests         cross-application contract, E2E and smoke suites
 ```
 
-در Technical Bootstrap هنوز `packages/ui` ایجاد نشده و طراحی کامل UI متعلق به کار PC-B است.
-Nginx نیز تا تعیین topology و domainها عمداً اضافه نشده است. Prisma schema در
+در Technical Bootstrap هنوز `packages/ui` ایجاد نشده و طراحی کامل UI در Work Item مستقل
+و مطابق مالکیت ماژول انجام می‌شود. Nginx نیز تا تعیین topology و domainها عمداً اضافه
+نشده است. Prisma schema در
 `packages/database/prisma` قرار دارد و تا Work Item تاییدشده دامنه، model یا Migration ندارد.
 
 ## معماری داخلی Backend
@@ -70,10 +71,29 @@ PostgreSQL، transaction هماهنگ‌کننده می‌تواند چند publ
 
 ## ماژول‌ها
 
-ماژول‌های محصول: Dashboard، Customers، Sales، Orders/Reservations، Customer Service،
-Procurement، Finance/Treasury، Marketing، B2B، Tasks/Automation، Documents، Reporting/
-Exports، Integrations، IAM، Master Data و Settings. سرویس‌های افقی: Audit، Notification،
-Idempotency و Observability. مالکیت و dependencyها در `MODULE_BOUNDARIES.md` است.
+ماژول‌های محصول: Dashboard، Customers، Customer Affairs، Sales Contracts، Ticket Catalog،
+Reservation Operations، Procurement، Finance/Treasury، Marketing، B2B، Human Resources،
+Tasks/Automation، Documents، Reporting/Exports، Integrations، IAM، Master Data و Settings.
+IAM و Settings در UI زیر منوی واحد «مدیریت سیستم» نمایش داده می‌شوند، ولی مرز Backend
+مستقل دارند. سرویس‌های افقی: Audit، Notification، Idempotency و Observability.
+
+فروش مالک قرارداد و تخصیص customer/passenger به service item است؛ Ticket Catalog فقط
+محصول/قیمت/ظرفیت بلیت را تعریف می‌کند؛ Reservation Operations snapshot تاییدشده فروش
+را اجرا و بلیت/واچر/بیمه و Manifest را صادر می‌کند. شرح قطعی در
+[TRAVEL_WORKFLOW_ARCHITECTURE.md](TRAVEL_WORKFLOW_ARCHITECTURE.md) و مالکیت داده در
+`MODULE_BOUNDARIES.md` است.
+
+Human Resources مالک Employee و lifecycle استخدام است. Employee به Customer یا Passenger
+تبدیل یا در آن‌ها ادغام نمی‌شود؛ ارتباط اختیاری با IAM User فقط reference حساب ورود است.
+Finance نیز فقط قرارداد کنترل‌شده ورودی پرداخت حقوق را مصرف می‌کند و به جدول یا داده حساس
+HR دسترسی مستقیم ندارد.
+
+## مدل مالکیت توسعه
+
+PC-A و PC-B هر دو Full-Stack هستند و همه لایه‌های ماژول‌های تحت مالکیت خود را توسعه
+می‌دهند. فقط Migration، Dependency/Lockfile، فایل‌های مرکزی و قراردادهای cross-module
+نیازمند رزرو و هماهنگی قبلی هستند. نگاشت نهایی و قواعد قفل در
+[MODULE_OWNERSHIP.md](MODULE_OWNERSHIP.md) ثبت شده است.
 
 ## مدل اجرا و consistency
 
@@ -83,6 +103,34 @@ Idempotency و Observability. مالکیت و dependencyها در `MODULE_BOUNDA
 - Queue پیام را at-least-once تحویل می‌دهد؛ handlerها باید idempotent باشند.
 - cache هرگز source of truth نیست و invalidation/TTL صریح دارد.
 - state transitionهای رزرو/پرداخت/صدور با optimistic version و history ثبت می‌شوند.
+
+### جریان فروش دستی و اجرای سفر
+
+```mermaid
+sequenceDiagram
+  participant C as Customer Affairs
+  participant S as Sales Contracts
+  participant R as Reservation Operations
+  participant P as Procurement
+  participant F as Finance
+  participant D as Documents
+  C->>S: qualified request
+  S->>R: availability/hold request + proposed services
+  R-->>S: availability, price validity, hold
+  S->>S: assign passengers/services + activate contract
+  par execution
+    S->>R: immutable execution snapshot
+    S->>F: financial case + payment terms
+  end
+  R->>P: purchase request(contract/service/supplier, negotiated price)
+  P-->>F: approved purchase/payable source
+  R->>D: issued ticket/voucher/policy + version
+  F-->>S: financial release authorized
+  S->>D: deliver released document to passenger
+```
+
+صدور عملیاتی، release مالی و delivery سه state مستقل هستند. رزرواسیون قرارداد یا
+تخصیص مسافر را ویرایش نمی‌کند؛ نقص ورودی با correction request به فروش برمی‌گردد.
 
 ### جریان رزرو آنلاین
 
@@ -115,6 +163,15 @@ sequenceDiagram
 Payment verification و ثبت آن قبل از queue اتمیک است. شکست Provider payment را حذف
 نمی‌کند؛ retry محدود، manual follow-up یا refund با workflow مجزا انجام می‌شود.
 
+## Legal Entity output boundary
+
+Legal Entity فقط هویت issuer و Branding را مالک است و داده عملیاتی را scope نمی‌کند. تغییر
+Context با `expectedVersion` اجباری و claim اتمیک انجام می‌شود؛ نسخه مجازی اولیه صفر است.
+صدور سند فقط در Context مشخص مجاز است. `DocumentTemplatePolicyPort` داخلی، template/type/
+version و الزام سربرگ را از منبع trusted resolve می‌کند؛ Adapter پیش‌فرض تا اتصال واقعی
+Documents fail-closed است. Issue/Reissue به Branding Version append-only با FK مرکب متصل و
+همراه policy provenance و Audit در transaction ثبت می‌شوند؛ `ALL` هیچ سند ترکیبی تولید نمی‌کند.
+
 ## داده و ذخیره‌سازی
 
 - PostgreSQL: همه داده پایدار، audit metadata، status history و reporting views
@@ -142,7 +199,7 @@ URL کوتاه و audit append-only منطقی. اطلاعات کارت/CVV هر
 ## Reporting
 
 Operational tables برای UI تراکنشی و approved views برای KPI/گزارش. Viewها grain صریح
-دارند و measureهای order/payment پیش از join با passenger/segment aggregate می‌شوند.
+دارند و measureهای contract/payment پیش از join با passenger/segment aggregate می‌شوند.
 Export بزرگ queue-based و snapshot فیلتر/permission دارد. `REPORTING.md` مرجع است.
 
 ## Observability و قابلیت عملیات
@@ -176,3 +233,20 @@ versioned. migration به‌صورت job کنترل‌شده قبل از rollout
 - گزارش grain اشتباه می‌تواند مبلغ را چندبرابر نشان دهد؛ view review اجباری است.
 - PII مدارک هویتی retention و data residency تایید نشده است.
 - توسعه دوکامپیوتری بدون reservation فایل/migration ریسک تعارض دارد؛ workflow اجباری است.
+
+## Executive assistant boundary — EXECUTIVE-ASSISTANT-1011
+
+The assistant UI is integrated at /assistant as the final direct main-menu link.
+Its read backend is an independent Node 24 process in services/assistant; the
+ERP remains a modular monolith. Next /api/assistant/executive is transport only.
+The separate service revalidates the ERP user's active identity and uses fixed
+authenticated Workbench GET APIs. The owner extended the shared SELF assistant
+to all authenticated users on 2026-10-11; source data permissions remain mandatory.
+No database or broad service
+account access, LLM, external news, SQL or business writes are enabled.
+
+Personal data has SELF scope; it must not be presented as company-wide data or
+as a forecast. Six executive views preserve the reference information coverage
+with explicit missing-source states. Deployment, retained audit, data-provider
+policy, company-scoped source contracts and evaluated forecasts remain gates.
+See docs/tasks/EXECUTIVE-ASSISTANT-1011.md and services/assistant/README.md.

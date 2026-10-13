@@ -1,0 +1,13 @@
+# RESERVATION-REFERENCE-FORM-0909
+
+PC-A; branch `codex/pc-a-reservation-reference-form`, based on the current local workflow commit `16dae5f` / PR126. Source visual reference: user-provided `reservation-form-contract-theme (1).pdf`.
+
+Replaced only the reservation-request sheet with the six-section English A4 template: navy/teal header, request metadata, booking summary, outbound/return flights, hotel/room details, tour services, passenger manifest and notice/footer. Preserves the selected registered company/agency logo, workflow status gates and existing voucher output. Current operational order/age and room counts override contract defaults. Master Data public detail APIs supply city/room/meal labels and hotel stars when accessible. Flight timestamps explicitly label Tehran time. Missing supplier, sex, leader or other fields remain `-`; reference passenger/provider identities and contact details are not seeded or copied into source.
+
+The sheet uses the real selected contract snapshot. Reference fetching is bounded to the selected IDs, abandoned selections cannot publish stale results, and print waits for reference loading. Failed references are visibly flagged. Passenger pages estimate wrapped names and preserve all rows and continuous numbering; repeated page header and page count remain available.
+
+Validation: 49 Reservations tests passed, including new ordering/age/room-count, missing-data and pagination tests. Scoped ESLint, TypeScript and production Web build (40 routes) passed. Actual component was rendered to synthetic PDFs using headless Chromium: 10 passengers fit one A4 page; 23 with a long surname fit three pages. Every rendered page was visually inspected with no clipping/overlap. QA files stay ignored under `tmp/pdfs/reservation-reference`; the user PDF itself is unchanged and no passenger PDF is committed.
+
+Local Web3100 refreshed after build; API4000 and database unchanged. No schema, migration, dependency, account/permission grant or merge. Prior workflow permission-grant question remains separate and unanswered. This renderer consumes only existing public data; it does not infer names, gender or supplier identity and does not invent airline issuance. Scope released for review.
+
+Runtime handoff: the listener had been restarted by the completed PDF-settings task. Verified it still used this same worktree, and preserved `SALES_PDF_CHROME_PATH` (installed Chrome) and `SALES_PDF_NAZANIN_PATH` (user-installed BNazanin.ttf) when restarting Web3100. No environment file or credential was changed. Future restarts must retain those two variables; otherwise the separate Sales contract PDF download fails.

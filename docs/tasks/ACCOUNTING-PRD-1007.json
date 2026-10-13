@@ -1,0 +1,2600 @@
+{
+  "title": "سند نیازمندی محصول حسابداری روبی",
+  "version": "1.0",
+  "date": "2026-10-07",
+  "purpose": "تبدیل منوی حسابداری موجود روبی به فرم‌های عملیاتی با الگوگیری از راهکاران و حفظ قراردادهای مالی ERP",
+  "referenceSite": "https://zakeri.rahkaran.ir/",
+  "referenceVersion": "نسخه 20/0 انتشار 7",
+  "repository": "C:/Users/admin/Documents/GitHub/Rubi",
+  "localHead": "ef6d5f66",
+  "scope": "PRD طراحی و برنامه پیاده‌سازی؛ نه تغییر کد یا فعال‌سازی مالیاتی",
+  "routeBase": "/finance/accounting/",
+  "apiBase": "/api/v1/finance/accounting/",
+  "evidencePolicy": "O مشاهده رابط؛ R مشاهده کد و اسناد؛ P پیشنهاد نیازمندی. قواعد و API همه هدف پیشنهادی‌اند مگر صریحاً کد موجود نامیده شوند.",
+  "forms": [
+    {
+      "id": "F01",
+      "title": "دوره مالی",
+      "route": "general-ledger/base-information/fiscal-years",
+      "evidence": "O01 فرم دوره مالی؛ عنوان، عنوان زبان دوم و توضیحات مشاهده شد. تاریخ‌های شروع و پایان در تخصیص سال مالی دفتر کل دیده شد.",
+      "layout": "فهرست دوره‌ها با جست‌وجوی عنوان و وضعیت؛ فرم جزئیات دو ستونه و تب یادداشت. تاریخ‌ها در F02 روی تخصیص دفتر تعیین می‌شوند.",
+      "fields": [
+        {
+          "key": "title",
+          "label": "عنوان دوره مالی",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "۲ تا ۱۰۰ نویسه؛ نام یکتا در فضای حسابداری"
+        },
+        {
+          "key": "titleEn",
+          "label": "عنوان زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "حداکثر ۱۰۰ نویسه"
+        },
+        {
+          "key": "description",
+          "label": "توضیحات",
+          "control": "متن چندخطی",
+          "requirement": "اختیاری",
+          "validation": "حداکثر ۲۰۰۰ نویسه"
+        },
+        {
+          "key": "status",
+          "label": "وضعیت مدیریتی",
+          "control": "نشان وضعیت",
+          "requirement": "سیستمی پیشنهادی",
+          "validation": "وضعیت باز یا بسته از LedgerPeriod خوانده شود؛ وضعیت کل دوره را حدس نزنید"
+        }
+      ],
+      "actions": [
+        "ایجاد، ذخیره، ذخیره و جدید، لغو، مشاهده دفاتر تخصیص‌یافته"
+      ],
+      "rules": [
+        "حذف دوره استفاده‌شده ممنوع؛ عنوان از تاریخ مؤثر دوره جدا باشد.",
+        "قواعد طول و یکتایی پیشنهاد روبی هستند و با ثبت در راهکاران آزموده نشده‌اند."
+      ],
+      "acceptance": [
+        "سال جدید بدون ساخت خودکار سند ایجاد شود؛ انتخاب سال به تنهایی مانده‌ای تولید نکند."
+      ],
+      "phase": "P1",
+      "api": "GET/POST fiscal-years; GET/PATCH fiscal-years/{id}"
+    },
+    {
+      "id": "F02",
+      "title": "دفتر کل و تخصیص سال",
+      "route": "general-ledger/base-information/ledgers",
+      "evidence": "O02 فرم دفتر کل و جدول تخصیص سال مالی مشاهده شد.",
+      "layout": "بالا کد و عنوان؛ گزینه‌های دفتر اصلی، امکان صدور و فعال؛ پایین جدول تخصیص سال با تاریخ شروع و پایان و سال میلادی.",
+      "fields": [
+        {
+          "key": "code",
+          "label": "کد دفتر",
+          "control": "متن عددی",
+          "requirement": "اجباری",
+          "validation": "۱ تا ۲۰ رقم؛ صفر ابتدایی حفظ شود"
+        },
+        {
+          "key": "title",
+          "label": "عنوان",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "۲ تا ۱۶۰ نویسه"
+        },
+        {
+          "key": "titleEn",
+          "label": "عنوان زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۶۰ نویسه"
+        },
+        {
+          "key": "isLeading",
+          "label": "دفتر کل اصلی",
+          "control": "کلید انتخاب",
+          "requirement": "پیش‌فرض پیشنهادی خیر",
+          "validation": "در هر AccountingBookScope فقط یک دفتر اصلی فعال"
+        },
+        {
+          "key": "allowsPosting",
+          "label": "امکان صدور سند",
+          "control": "کلید انتخاب",
+          "requirement": "پیش‌فرض بله",
+          "validation": "سمت سرور پیش از صدور کنترل شود"
+        },
+        {
+          "key": "active",
+          "label": "فعال",
+          "control": "کلید انتخاب",
+          "requirement": "پیش‌فرض بله",
+          "validation": "دفتر غیرفعال در ثبت جدید قابل انتخاب نیست"
+        },
+        {
+          "key": "years[].fiscalYearId",
+          "label": "سال مالی",
+          "control": "انتخاب جست‌وجویی",
+          "requirement": "اجباری در هر ردیف",
+          "validation": "تکرار همان سال در همان دفتر ممنوع"
+        },
+        {
+          "key": "years[].startsOn",
+          "label": "تاریخ شروع",
+          "control": "تاریخ شمسی با معادل میلادی",
+          "requirement": "اجباری",
+          "validation": "شروع قبل از پایان؛ بدون هم‌پوشانی در همان دفتر"
+        },
+        {
+          "key": "years[].endsOn",
+          "label": "تاریخ پایان",
+          "control": "تاریخ",
+          "requirement": "اجباری",
+          "validation": "تاریخ محلی حسابداری؛ تغییر پس از گردش محدود"
+        },
+        {
+          "key": "years[].gregorianYear",
+          "label": "سال مالی میلادی",
+          "control": "عدد یا مقدار مشتق",
+          "requirement": "پیشنهادی",
+          "validation": "تعریف سال برچسبی از بازه واقعی مستقل باشد"
+        },
+        {
+          "key": "baseCurrencyCode",
+          "label": "ارز پایه دفتر",
+          "control": "انتخاب ارز",
+          "requirement": "افزوده پیشنهادی اجباری",
+          "validation": "مصرف Master Data؛ پس از اولین posting تغییر مستقیم ممنوع"
+        },
+        {
+          "key": "accountingBookScopeId",
+          "label": "حوزه دفتر حسابداری",
+          "control": "انتخاب کنترل‌شده",
+          "requirement": "افزوده پیشنهادی اجباری",
+          "validation": "با context برند یا issuer روبی یکی فرض نشود"
+        }
+      ],
+      "actions": [
+        "ذخیره، افزودن تخصیص سال، مشاهده وضعیت دوره، غیرفعال‌سازی با مجوز"
+      ],
+      "rules": [
+        "وضعیت هر تخصیص OPEN/CLOSING/CLOSED مستقل است.",
+        "تعویض دفتر در هدر با وجود فرم کثیف ابتدا هشدار خروج نشان دهد؛ داده قبلی در دفتر جدید ذخیره نشود."
+      ],
+      "acceptance": [
+        "دو درخواست همزمان نتوانند دو دفتر اصلی یا دو دوره هم‌پوشان بسازند."
+      ],
+      "phase": "P1",
+      "api": "GET/POST ledgers; PATCH ledgers/{id}; POST ledgers/{id}/periods"
+    },
+    {
+      "id": "F03",
+      "title": "نوع سند",
+      "route": "general-ledger/base-information/voucher-types",
+      "evidence": "O03 عنوان، عنوان زبان دوم و توضیحات مشاهده شد.",
+      "layout": "فرم کوتاه در پنل کناری فهرست؛ عنوان و توضیحات در یک ستون.",
+      "fields": [
+        {
+          "key": "title",
+          "label": "عنوان نوع سند",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "۲ تا ۱۰۰ نویسه و یکتا در حوزه"
+        },
+        {
+          "key": "titleEn",
+          "label": "عنوان زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۰۰ نویسه"
+        },
+        {
+          "key": "description",
+          "label": "توضیحات",
+          "control": "متن چندخطی",
+          "requirement": "اختیاری",
+          "validation": "۲۰۰۰ نویسه"
+        },
+        {
+          "key": "systemKind",
+          "label": "نوع سیستمی",
+          "control": "فقط خواندنی",
+          "requirement": "پیشنهادی",
+          "validation": "GENERAL، OPENING، CLOSING، REVERSAL، FX؛ انواع سیستمی حذف نشوند"
+        },
+        {
+          "key": "active",
+          "label": "فعال",
+          "control": "کلید انتخاب",
+          "requirement": "پیشنهادی بله",
+          "validation": "غیرفعال‌سازی روی تاریخچه اثر نگذارد"
+        }
+      ],
+      "actions": [
+        "ذخیره، ذخیره و جدید، لغو، غیرفعال‌سازی"
+      ],
+      "rules": [
+        "نوع سیستمی با عنوان قابل تغییر کاربر تعیین نشود."
+      ],
+      "acceptance": [
+        "تغییر عنوان، نوع سیستمی و رفتار سندهای قبلی را عوض نکند."
+      ],
+      "phase": "P1",
+      "api": "GET/POST voucher-types; PATCH voucher-types/{id}"
+    },
+    {
+      "id": "F04",
+      "title": "ساختار حساب‌ها",
+      "route": "general-ledger/accounts/chart",
+      "evidence": "O04 درخت گروه، کل و معین، مشخصات هر سطح و تب مالیاتی معین مستقیماً مشاهده شد.",
+      "layout": "درخت در سمت راست با عرض ۳۰ درصد؛ پنل مشخصات در سمت چپ. انتخاب گروه یا کل فرم کوتاه و انتخاب معین فرم ویژگی‌ها و تب‌ها را نمایش دهد. جست‌وجو نتیجه را همراه مسیر والد نشان دهد.",
+      "fields": [
+        {
+          "key": "code",
+          "label": "کد حساب",
+          "control": "متن عددی و پیشوند والد",
+          "requirement": "اجباری",
+          "validation": "کد یکتا در دفتر؛ فرزند با پیشوند والد؛ صفر ابتدایی حفظ شود"
+        },
+        {
+          "key": "title",
+          "label": "عنوان",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "۲ تا ۱۶۰ نویسه"
+        },
+        {
+          "key": "titleEn",
+          "label": "عنوان زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۶۰ نویسه"
+        },
+        {
+          "key": "level",
+          "label": "سطح",
+          "control": "فقط خواندنی از محل ایجاد",
+          "requirement": "اجباری",
+          "validation": "GROUP، GENERAL، SUBSIDIARY؛ مدل هدف پس از D02"
+        },
+        {
+          "key": "parentId",
+          "label": "حساب والد",
+          "control": "نمایش مسیر",
+          "requirement": "اجباری به‌جز گروه",
+          "validation": "چرخه یا جابه‌جایی زیر فرزند ممنوع"
+        },
+        {
+          "key": "permanence",
+          "label": "نوع حساب",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "دائم یا موقت؛ گزینه‌های نهایی مصوب محصول"
+        },
+        {
+          "key": "nature",
+          "label": "ماهیت",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "بدهکار یا بستانکار؛ دوماهیتی فقط پس از تصمیم دامنه"
+        },
+        {
+          "key": "traceable",
+          "label": "ویژگی پیگیری",
+          "control": "کلید انتخاب",
+          "requirement": "معین؛ پیش‌فرض خیر",
+          "validation": "فعال‌شدن، شماره و تاریخ پیگیری ردیف را طبق سیاست الزامی کند"
+        },
+        {
+          "key": "multiCurrency",
+          "label": "ویژگی ارزی",
+          "control": "کلید انتخاب",
+          "requirement": "معین؛ پیش‌فرض خیر",
+          "validation": "ارز و نرخ تنها برای حساب ارزی فعال شوند"
+        },
+        {
+          "key": "revaluable",
+          "label": "تسعیرپذیر",
+          "control": "کلید انتخاب",
+          "requirement": "معین؛ پیش‌فرض خیر",
+          "validation": "فقط برای حساب دارای ویژگی ارزی"
+        },
+        {
+          "key": "defaultCurrencyCode",
+          "label": "ارز پیش‌فرض",
+          "control": "انتخاب جست‌وجویی",
+          "requirement": "اختیاری",
+          "validation": "از ارزهای فعال Master Data؛ رفتار enabled طبق سیاست پیشنهادی"
+        },
+        {
+          "key": "natureControl",
+          "label": "کنترل ماهیت طی دوره",
+          "control": "انتخاب",
+          "requirement": "پیشنهادی NONE/WARN/BLOCK",
+          "validation": "بدون کنترل، هشدار یا منع؛ معنای نهایی سمت سرور واحد"
+        },
+        {
+          "key": "zeroBalanceAtClose",
+          "label": "مانده صفر پایان دوره",
+          "control": "انتخاب",
+          "requirement": "پیشنهادی NONE/WARN/BLOCK",
+          "validation": "در پیش‌نمایش بستن سال اعمال شود"
+        },
+        {
+          "key": "detailRules[]",
+          "label": "سطوح تفصیلی ۴ تا ۶",
+          "control": "جدول سطح و نوع مجاز",
+          "requirement": "مشروط",
+          "validation": "برای هر سطح نوع‌های مجاز و الزامی‌بودن؛ ترکیب نامعتبر رد شود"
+        },
+        {
+          "key": "counterpartyRule",
+          "label": "طرف مقابل",
+          "control": "تب مستقل",
+          "requirement": "وجود تب مشاهده شد",
+          "validation": "جزئیات داخل تب بررسی نشده؛ فیلد پیشنهادی پس از تعریف سیاست"
+        },
+        {
+          "key": "vatAccountType",
+          "label": "معین مالیاتی",
+          "control": "انتخاب در تب مالیاتی",
+          "requirement": "مشروط",
+          "validation": "مرجع نسخه‌دار؛ نرخ مالیات اینجا hardcode نشود"
+        },
+        {
+          "key": "taxAccountType",
+          "label": "انواع مالیاتی",
+          "control": "انتخاب وابسته",
+          "requirement": "مشروط",
+          "validation": "در فرم مشاهده‌شده تا انتخاب مرتبط غیرفعال بود"
+        },
+        {
+          "key": "defaultDescriptions[]",
+          "label": "شرح‌های پیش‌فرض",
+          "control": "جدول متن",
+          "requirement": "وجود تب مشاهده شد",
+          "validation": "جزئیات پیشنهاد روبی؛ انتخاب شرح متن ردیف را پر کند"
+        },
+        {
+          "key": "active",
+          "label": "فعال",
+          "control": "کلید انتخاب",
+          "requirement": "پیش‌فرض بله",
+          "validation": "حساب غیرفعال در انتخاب ثبت جدید نباشد"
+        },
+        {
+          "key": "description",
+          "label": "توضیحات",
+          "control": "چندخطی",
+          "requirement": "اختیاری",
+          "validation": "۲۰۰۰ نویسه"
+        }
+      ],
+      "actions": [
+        "ایجاد زیرحساب، ذخیره، لغو، مشاهده گردش، غیرفعال‌سازی، حذف فقط حساب بدون استفاده"
+      ],
+      "rules": [
+        "کنترل حذف علاوه بر گردش، فرزند و ارجاع الگو را بررسی کند.",
+        "تغییر ماهیت، سطح یا والد پس از posting از مسیر بازطبقه‌بندی نسخه‌دار انجام شود.",
+        "مدل فعلی روبی فقط DETAIL را قابل posting می‌داند؛ تغییر آن بدون D02 و تست سازگاری مجاز نیست."
+      ],
+      "acceptance": [
+        "انتخاب معین، سه سطح تفصیلی مجاز را برای F08 تعیین کند.",
+        "حساب دارای گردش حذف نشود و گزارش تاریخی پس از تغییر عنوان قابل بازتولید بماند."
+      ],
+      "phase": "P1",
+      "api": "GET accounts/tree; GET/POST accounts; PATCH accounts/{id}; GET accounts/{id}/turnover"
+    },
+    {
+      "id": "F05",
+      "title": "نوع تفصیلی",
+      "route": "general-ledger/accounts/detail-types",
+      "evidence": "O05 همه فیلدهای اصلی مشاهده شد.",
+      "layout": "فرم دو ستونه؛ مشخصات نام و شماره سمت راست، رابطه پدر و کنترل رابطه سمت چپ.",
+      "fields": [
+        {
+          "key": "title",
+          "label": "عنوان",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "یکتا؛ ۲ تا ۱۰۰ نویسه"
+        },
+        {
+          "key": "titleEn",
+          "label": "عنوان زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۰۰ نویسه"
+        },
+        {
+          "key": "defaultFirstCode",
+          "label": "اولین کد پیش‌فرض",
+          "control": "متن عددی",
+          "requirement": "اختیاری",
+          "validation": "پیشنهاد کد؛ تخصیص نهایی اتمیک در سرور"
+        },
+        {
+          "key": "parentTypeId",
+          "label": "نوع تفصیلی پدر",
+          "control": "انتخاب جست‌وجویی",
+          "requirement": "اختیاری",
+          "validation": "بدون چرخه"
+        },
+        {
+          "key": "classificationNumberLength",
+          "label": "طول شماره طبقه‌بندی",
+          "control": "عدد صحیح",
+          "requirement": "اجباری",
+          "validation": "پیشنهادی ۱ تا ۲۰؛ تغییر پس از استفاده نیازمند مهاجرت"
+        },
+        {
+          "key": "enforceParent",
+          "label": "کنترل رابطه پدر فرزندی",
+          "control": "کلید انتخاب",
+          "requirement": "پیش‌فرض خیر",
+          "validation": "اگر فعال است parentTypeId اجباری"
+        },
+        {
+          "key": "description",
+          "label": "توضیحات",
+          "control": "چندخطی",
+          "requirement": "اختیاری",
+          "validation": "۲۰۰۰ نویسه"
+        }
+      ],
+      "actions": [
+        "ذخیره، لغو، فهرست تفصیلی‌های این نوع"
+      ],
+      "rules": [
+        "نوع‌های مشتری، تأمین‌کننده، مرکز هزینه و پروژه، داده پایه متفاوت دارند؛ نوع به‌تنهایی مجوز دسترسی به داده مرجع نمی‌دهد."
+      ],
+      "acceptance": [
+        "دو کاربر همزمان کد پیشنهادی یکسان دریافت کنند، اما ذخیره با شماره یکتای اتمیک انجام شود."
+      ],
+      "phase": "P1",
+      "api": "GET/POST detail-types; PATCH detail-types/{id}"
+    },
+    {
+      "id": "F06",
+      "title": "حساب تفصیلی",
+      "route": "general-ledger/accounts/details",
+      "evidence": "O06 نوع تفصیلی، پدر، کد، طبقه‌بندی، عنوان، ارز، فعال و توضیحات مشاهده شد.",
+      "layout": "فهرست فیلترپذیر بر اساس نوع و فعال؛ پنل جزئیات دو ستونه و lookup وابسته به نوع.",
+      "fields": [
+        {
+          "key": "detailTypeId",
+          "label": "نوع تفصیلی",
+          "control": "انتخاب جست‌وجویی",
+          "requirement": "اجباری",
+          "validation": "نوع فعال؛ تغییر نوع دارای گردش مستقیم ممنوع"
+        },
+        {
+          "key": "parentDetailId",
+          "label": "تفصیلی پدر",
+          "control": "انتخاب وابسته",
+          "requirement": "مشروط",
+          "validation": "مطابق نوع پدر F05؛ چرخه ممنوع"
+        },
+        {
+          "key": "code",
+          "label": "کد",
+          "control": "متن عددی",
+          "requirement": "اجباری",
+          "validation": "یکتا در حوزه دفتر؛ صفر ابتدایی حفظ شود"
+        },
+        {
+          "key": "classificationNumber",
+          "label": "شماره طبقه‌بندی",
+          "control": "متن",
+          "requirement": "اختیاری یا طبق نوع",
+          "validation": "طول دقیق مطابق F05"
+        },
+        {
+          "key": "title",
+          "label": "عنوان",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "۲ تا ۱۶۰ نویسه"
+        },
+        {
+          "key": "titleEn",
+          "label": "عنوان زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۶۰ نویسه"
+        },
+        {
+          "key": "defaultCurrencyCode",
+          "label": "ارز پیش‌فرض",
+          "control": "انتخاب",
+          "requirement": "اختیاری",
+          "validation": "ارز فعال"
+        },
+        {
+          "key": "active",
+          "label": "فعال",
+          "control": "کلید انتخاب",
+          "requirement": "پیش‌فرض بله",
+          "validation": "تاریخچه باقی بماند"
+        },
+        {
+          "key": "description",
+          "label": "توضیحات",
+          "control": "چندخطی",
+          "requirement": "اختیاری",
+          "validation": "۲۰۰۰ نویسه"
+        },
+        {
+          "key": "ownerReference",
+          "label": "ارتباط با مشتری یا سازمان یا پروژه",
+          "control": "lookup مجاز",
+          "requirement": "افزوده روبی",
+          "validation": "شناسه مرجع از public contract؛ ایجاد مشتری تکراری ممنوع"
+        }
+      ],
+      "actions": [
+        "ذخیره، لغو، گردش تفصیلی، رفتن به رکورد مرجع در صورت مجوز"
+      ],
+      "rules": [
+        "اگر عنوان از رکورد مالک می‌آید، نام مرجع فقط خواندنی و عنوان حسابداری مستقل مشخص باشد.",
+        "تفصیلی مشترک می‌تواند در معین‌های مجاز استفاده شود و به یک شاخه درخت محدود نباشد."
+      ],
+      "acceptance": [
+        "انتخاب نوع مشتری فقط مرجع مجاز Customers را نشان دهد؛ اطلاعات شخصی غیرضروری کپی نشود."
+      ],
+      "phase": "P1",
+      "api": "GET/POST details; PATCH details/{id}; GET details/{id}/turnover"
+    },
+    {
+      "id": "F07",
+      "title": "گروه‌بندی و نگاشت حساب",
+      "route": "general-ledger/accounts/mappings",
+      "evidence": "O07 وجود منوهای گروه‌بندی حساب، گروه‌بندی تفصیلی، نگاشت و تبدیل نوع تفصیل تأیید شد؛ فیلدهای زیر پیشنهادی‌اند.",
+      "layout": "تب‌های گروه‌بندی، نگاشت داخلی به خارجی و تاریخچه نسخه؛ تبدیل نوع به صورت ویزارد پیش‌نمایش اثر.",
+      "fields": [
+        {
+          "key": "title",
+          "label": "عنوان نگاشت یا گروه",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "۲ تا ۱۶۰ نویسه"
+        },
+        {
+          "key": "effectiveFrom",
+          "label": "تاریخ اثر",
+          "control": "تاریخ",
+          "requirement": "اجباری",
+          "validation": "بازه نسخه‌های فعال هم‌پوشانی نداشته باشد"
+        },
+        {
+          "key": "rows[].sourceAccountId",
+          "label": "حساب مبدأ",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "فعال و متعلق به دفتر"
+        },
+        {
+          "key": "rows[].targetAccountCode",
+          "label": "کد حساب مقصد",
+          "control": "متن یا lookup Connector",
+          "requirement": "اجباری",
+          "validation": "تأیید قالب مقصد؛ نامعلوم بودن قابل علامت‌گذاری"
+        },
+        {
+          "key": "rows[].dimensionMap",
+          "label": "نگاشت سطوح تفصیلی",
+          "control": "جدول سطح مبدأ و مقصد",
+          "requirement": "مشروط",
+          "validation": "هر سطح لازم مقصد پوشش داده شود"
+        },
+        {
+          "key": "version",
+          "label": "نسخه",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "نسخه استفاده‌شده بازنویسی نشود"
+        },
+        {
+          "key": "reason",
+          "label": "دلیل تغییر",
+          "control": "چندخطی",
+          "requirement": "برای انتشار",
+          "validation": "حداقل ۱۰ نویسه"
+        }
+      ],
+      "actions": [
+        "ذخیره پیش‌نویس، اعتبارسنجی، پیش‌نمایش، انتشار نسخه جدید"
+      ],
+      "rules": [
+        "Journalهای قبلی immutable؛ نگاشت جدید فقط روی batch جدید اعمال شود."
+      ],
+      "acceptance": [
+        "Batch قدیمی پس از انتشار نگاشت جدید همچنان checksum و نسخه قبلی را نگه دارد."
+      ],
+      "phase": "P2",
+      "api": "GET/POST account-mappings; POST account-mappings/{id}/actions/publish"
+    },
+    {
+      "id": "F08",
+      "title": "ورود و مشاهده سند حسابداری",
+      "route": "general-ledger/documents/journals",
+      "evidence": "O08 فرم سند حسابداری و ستون‌های آن در بررسی قبلی مستقیماً مشاهده شد؛ چرخه تأیید و API زیر پیشنهاد سازگار با روبی است.",
+      "layout": "هدر دفتر و دوره ثابت؛ نوار عملیات؛ سربرگ سند در سه ستون؛ جدول ویرایش ردیف‌ها تمام‌عرض؛ پایین جمع بدهکار، بستانکار و اختلاف ثابت؛ تب یادداشت و پیوست.",
+      "fields": [
+        {
+          "key": "ledgerId",
+          "label": "دفتر کل",
+          "control": "هدر فقط خواندنی",
+          "requirement": "اجباری",
+          "validation": "از context؛ در payload و مجوز دوباره کنترل شود"
+        },
+        {
+          "key": "fiscalPeriodId",
+          "label": "دوره مالی",
+          "control": "هدر و lookup",
+          "requirement": "اجباری",
+          "validation": "تاریخ در بازه و دوره باز"
+        },
+        {
+          "key": "documentDate",
+          "label": "تاریخ سند",
+          "control": "DatePicker",
+          "requirement": "اجباری",
+          "validation": "تاریخ معتبر؛ تبدیل شمسی مطابق قرارداد پروژه"
+        },
+        {
+          "key": "voucherTypeId",
+          "label": "نوع سند",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "پیش‌فرض عمومی؛ نوع فعال"
+        },
+        {
+          "key": "number",
+          "label": "شماره سند",
+          "control": "فقط خواندنی",
+          "requirement": "پس از تخصیص",
+          "validation": "سرور اتمیک و یکتا؛ با عطف یکی نیست"
+        },
+        {
+          "key": "dailyNumber",
+          "label": "شماره روزانه",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "تعریف دامنه شمارنده در D04"
+        },
+        {
+          "key": "auxiliaryNumber",
+          "label": "شماره فرعی",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "حداکثر ۶۴ نویسه"
+        },
+        {
+          "key": "referenceNumber",
+          "label": "شماره عطف",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "شناسه پایدار برای پیگیری قبل از شماره نهایی"
+        },
+        {
+          "key": "creator",
+          "label": "صادرکننده",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "از IAM؛ ورودی کاربر پذیرفته نشود"
+        },
+        {
+          "key": "description",
+          "label": "شرح سند",
+          "control": "چندخطی",
+          "requirement": "پیشنهادی اجباری",
+          "validation": "حداقل ۳ و حداکثر ۲۰۰۰ نویسه"
+        },
+        {
+          "key": "descriptionEn",
+          "label": "شرح زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۲۰۰۰ نویسه"
+        },
+        {
+          "key": "lines[].subsidiaryAccountId",
+          "label": "حساب معین",
+          "control": "جست‌وجوی کد و عنوان",
+          "requirement": "اجباری",
+          "validation": "حساب فعال و قابل ثبت در مدل D02"
+        },
+        {
+          "key": "lines[].detail4Id",
+          "label": "سطح ۴",
+          "control": "lookup وابسته",
+          "requirement": "طبق معین",
+          "validation": "نوع و رابطه پدر معتبر"
+        },
+        {
+          "key": "lines[].detail5Id",
+          "label": "سطح ۵",
+          "control": "lookup وابسته",
+          "requirement": "طبق معین",
+          "validation": "با تغییر سطح قبل، مقدار ناسازگار پاک و پیام داده شود"
+        },
+        {
+          "key": "lines[].detail6Id",
+          "label": "سطح ۶",
+          "control": "lookup وابسته",
+          "requirement": "طبق معین",
+          "validation": "کنترل ترکیب سمت سرور"
+        },
+        {
+          "key": "lines[].description",
+          "label": "شرح ردیف",
+          "control": "متن",
+          "requirement": "پیشنهادی اجباری",
+          "validation": "پیش‌فرض از شرح سند؛ حداکثر ۱۰۰۰ نویسه"
+        },
+        {
+          "key": "lines[].debit",
+          "label": "بدهکار",
+          "control": "MoneyInput",
+          "requirement": "یکی از دو طرف",
+          "validation": "مثبت؛ بستانکار همان ردیف صفر؛ Decimal string"
+        },
+        {
+          "key": "lines[].credit",
+          "label": "بستانکار",
+          "control": "MoneyInput",
+          "requirement": "یکی از دو طرف",
+          "validation": "مثبت؛ بدهکار همان ردیف صفر"
+        },
+        {
+          "key": "lines[].currencyCode",
+          "label": "ارز معامله",
+          "control": "lookup",
+          "requirement": "برای حساب ارزی",
+          "validation": "افزوده مشخصات پیشنهادی؛ ارز فعال"
+        },
+        {
+          "key": "lines[].transactionAmount",
+          "label": "مبلغ ارزی",
+          "control": "MoneyInput",
+          "requirement": "برای حساب ارزی",
+          "validation": "مثبت؛ با نرخ و جهت ردیف سازگار"
+        },
+        {
+          "key": "lines[].fxSnapshotId",
+          "label": "نرخ ارز مصوب",
+          "control": "lookup نرخ با تاریخ",
+          "requirement": "برای حساب ارزی",
+          "validation": "نرخ، منبع و سیاست گردکردن در سرور snapshot شود"
+        },
+        {
+          "key": "lines[].trackingNumber",
+          "label": "شماره پیگیری",
+          "control": "متن",
+          "requirement": "طبق ویژگی معین",
+          "validation": "۶۴ نویسه"
+        },
+        {
+          "key": "lines[].trackingDate",
+          "label": "تاریخ پیگیری",
+          "control": "DatePicker",
+          "requirement": "طبق ویژگی معین",
+          "validation": "تاریخ معتبر؛ جدا از تاریخ سند"
+        },
+        {
+          "key": "lines[].taxStatus",
+          "label": "وضعیت مالیاتی",
+          "control": "انتخاب",
+          "requirement": "طبق سیاست",
+          "validation": "مرجع نسخه‌دار؛ مقدار دلخواه ممنوع"
+        },
+        {
+          "key": "lines[].descriptionEn",
+          "label": "شرح دوم ردیف",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۰۰۰ نویسه"
+        },
+        {
+          "key": "sourceReference",
+          "label": "سند مبدأ ERP",
+          "control": "لینک فقط خواندنی",
+          "requirement": "برای سند خودکار",
+          "validation": "نوع ماژول، شناسه و نسخه؛ مجوز مشاهده مستقل"
+        },
+        {
+          "key": "attachments",
+          "label": "پیوست‌ها",
+          "control": "انتخاب از Documents",
+          "requirement": "پیشنهادی اختیاری",
+          "validation": "reference و دسترسی؛ فایل در Finance کپی نشود"
+        }
+      ],
+      "actions": [
+        "ذخیره پیش‌نویس، ذخیره و جدید، درخواست تأیید، تأیید یا بازگرداندن، قطعی‌کردن با مجوز، چاپ، یادداشت",
+        "ردیف: افزودن، کپی، حذف پیش‌نویس، بالا و پایین، جست‌وجو، جابه‌جایی بدهکار و بستانکار با پیش‌نمایش محلی"
+      ],
+      "rules": [
+        "هر ردیف فقط یک جهت دارد؛ کل سند برای posting حداقل دو ردیف و توازن دقیق در ارز پایه می‌خواهد.",
+        "Draft می‌تواند ناقص ذخیره شود؛ مدل Draft جدا از JournalEntry فعلی نیاز است چون سازنده فعلی حداقل دو ردیف را حتی در Draft الزام می‌کند.",
+        "مبالغ F08 با direction و Money فعلی API سازگار شوند؛ debit و credit نمای UI هستند.",
+        "تغییر مبلغ، ارز، معین یا تفصیلی، تأیید پیشین را باطل کند. سند POSTED قابل ویرایش مالی یا حذف نیست؛ اصلاح با reversal و سند جدید.",
+        "سند خودکار readonly مالی است؛ اصلاح ابتدا در مالک مبدأ و سپس correction event.",
+        "خطای هر سلول زیر همان سلول و خلاصه خطا در بالای جدول؛ اولین سلول نامعتبر focus بگیرد."
+      ],
+      "acceptance": [
+        "بدهکار ۱۰۰۰۰۰۰ و بستانکار ۱۰۰۰۰۰۰ قابل ارسال برای تأیید؛ اختلاف یک ریال مانع posting شود.",
+        "دو بار کلیک قطعی‌کردن یا retry شبکه فقط یک سند و یک اثر مانده بسازد.",
+        "تعویض معین به حساب با نوع تفصیلی متفاوت، ترکیب قبلی را بی‌صدا حفظ نکند."
+      ],
+      "phase": "P1",
+      "api": "GET/POST journals; GET/PATCH journals/{id}; POST journals/{id}/actions/{submit|approve|return|post|reverse|cancel}"
+    },
+    {
+      "id": "F09",
+      "title": "فهرست و مرور اسناد",
+      "route": "general-ledger/documents/list",
+      "evidence": "O09 منوهای اسناد و مرور اسناد مشاهده شد؛ جزئیات فهرست پیشنهادی بر اساس الگوی فهرست راهکاران و استاندارد روبی است.",
+      "layout": "جست‌وجو و فیلتر بالا؛ جدول با ستون شماره، تاریخ، نوع، شرح، وضعیت، صادرکننده، مبلغ و مبدأ؛ پنل جزئیات ردیف انتخاب‌شده.",
+      "fields": [
+        {
+          "key": "dateRange",
+          "label": "بازه تاریخ",
+          "control": "دو DatePicker",
+          "requirement": "اختیاری",
+          "validation": "از قبل از تا"
+        },
+        {
+          "key": "numberRange",
+          "label": "بازه شماره",
+          "control": "دو متن عددی",
+          "requirement": "اختیاری",
+          "validation": "عطف از شماره نهایی جدا"
+        },
+        {
+          "key": "statuses",
+          "label": "وضعیت‌ها",
+          "control": "چندانتخابی",
+          "requirement": "اختیاری",
+          "validation": "پیش‌فرض همه مجاز"
+        },
+        {
+          "key": "voucherTypeIds",
+          "label": "نوع سند",
+          "control": "چندانتخابی",
+          "requirement": "اختیاری",
+          "validation": "lookup دفتر"
+        },
+        {
+          "key": "creatorId",
+          "label": "صادرکننده",
+          "control": "lookup IAM مجاز",
+          "requirement": "اختیاری",
+          "validation": "محدوده دسترسی"
+        },
+        {
+          "key": "sourceModule",
+          "label": "ماژول مبدأ",
+          "control": "انتخاب",
+          "requirement": "اختیاری",
+          "validation": "دستی، فروش، خرید، حقوق، خزانه"
+        },
+        {
+          "key": "search",
+          "label": "شرح یا مرجع",
+          "control": "جست‌وجو",
+          "requirement": "اختیاری",
+          "validation": "حداقل ۲ نویسه برای جست‌وجوی متنی"
+        },
+        {
+          "key": "selectedIds",
+          "label": "اسناد انتخاب‌شده",
+          "control": "checkbox ردیف",
+          "requirement": "اختیاری",
+          "validation": "انتخاب همه با snapshot فیلتر، نه کل دیتابیس"
+        }
+      ],
+      "actions": [
+        "بازکردن، کپی به پیش‌نویس جدید، چاپ، خروجی، ارسال گروهی برای بررسی"
+      ],
+      "rules": [
+        "پیش‌فرض pageSize=50 و گزینه‌های 25/50/100؛ مرتب‌سازی سمت سرور.",
+        "اسناد لغوشده در view مستقل با actor و دلیل؛ حذف سخت سند دارای سابقه ممنوع."
+      ],
+      "acceptance": [
+        "فیلتر و خروجی دقیقاً یک مجموعه رکورد و دامنه مجوز را به کار ببرند."
+      ],
+      "phase": "P1",
+      "api": "GET journals?filters; POST journal-exports"
+    },
+    {
+      "id": "F10",
+      "title": "بررسی و قطعی‌کردن اسناد",
+      "route": "general-ledger/documents/posting",
+      "evidence": "O10 منوهای بررسی و قطعی‌کردن مشاهده شد؛ گردش و فیلدهای ویزارد پیشنهادی‌اند.",
+      "layout": "سه گام انتخاب، نتیجه اعتبارسنجی و اجرای مجاز؛ هر خطا به سند و ردیف مربوط لینک شود.",
+      "fields": [
+        {
+          "key": "journalIds",
+          "label": "اسناد هدف",
+          "control": "انتخاب از فهرست",
+          "requirement": "اجباری",
+          "validation": "نسخه هر سند snapshot شود"
+        },
+        {
+          "key": "validationRows",
+          "label": "نتیجه کنترل",
+          "control": "جدول فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "توازن، دوره، حساب، تفصیلی، FX، مجوز و تأیید"
+        },
+        {
+          "key": "reason",
+          "label": "دلیل رد یا بازگشت",
+          "control": "متن",
+          "requirement": "برای رد و بازگشت",
+          "validation": "حداقل ۱۰ نویسه"
+        },
+        {
+          "key": "approver",
+          "label": "تأییدکننده",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "از actor؛ متفاوت با maker"
+        },
+        {
+          "key": "operationProgress",
+          "label": "پیشرفت",
+          "control": "نشان وضعیت",
+          "requirement": "برای batch",
+          "validation": "موفق، ناموفق و در انتظار برای هر سند"
+        }
+      ],
+      "actions": [
+        "اعتبارسنجی، تأیید مجاز، بازگشت، قطعی‌کردن، دریافت نتیجه"
+      ],
+      "rules": [
+        "Validation مجوز posting نیست؛ در زمان اجرا همه invariantها دوباره بررسی شود.",
+        "Batch چند سندی، هر سند را اتمیک ثبت کند؛ شکست جزئی صریح و retry فقط شکست‌ها."
+      ],
+      "acceptance": [
+        "سازنده نتواند سند حساس خودش را تأیید کند؛ مجوز رابط کاربری جای کنترل سرور را نگیرد."
+      ],
+      "phase": "P1",
+      "api": "POST journal-validations; POST posting-jobs; GET operations/{id}"
+    },
+    {
+      "id": "F11",
+      "title": "شماره‌گذاری و جابه‌جایی اسناد",
+      "route": "general-ledger/documents/numbering",
+      "evidence": "O11 فقط منوهای شماره‌گذاری و جابه‌جایی مشاهده شد؛ قرارداد اجرایی پیشنهادی است.",
+      "layout": "بازه و مرتب‌سازی بالا؛ پیش‌نمایش شماره فعلی و پیشنهادی؛ گزارش تغییرات پس از اجرا.",
+      "fields": [
+        {
+          "key": "ledgerId",
+          "label": "دفتر",
+          "control": "context",
+          "requirement": "اجباری",
+          "validation": "دفتر معتبر"
+        },
+        {
+          "key": "periodId",
+          "label": "دوره",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "باز و مجاز"
+        },
+        {
+          "key": "range",
+          "label": "بازه اسناد",
+          "control": "تاریخ و عطف",
+          "requirement": "اجباری",
+          "validation": "فقط وضعیت مجاز"
+        },
+        {
+          "key": "orderBy",
+          "label": "ترتیب",
+          "control": "انتخاب",
+          "requirement": "پیشنهادی تاریخ سپس عطف",
+          "validation": "deterministic"
+        },
+        {
+          "key": "startingNumber",
+          "label": "شروع شماره",
+          "control": "عدد صحیح",
+          "requirement": "اجباری",
+          "validation": "مثبت؛ تعارض با رزرو شماره بررسی شود"
+        },
+        {
+          "key": "preview",
+          "label": "شماره قبلی و جدید",
+          "control": "جدول",
+          "requirement": "سیستمی",
+          "validation": "سند، نسخه، شماره، دلیل منع"
+        },
+        {
+          "key": "reason",
+          "label": "دلیل",
+          "control": "متن",
+          "requirement": "اجباری برای اعمال",
+          "validation": "۱۰ تا ۲۰۰۰ نویسه"
+        }
+      ],
+      "actions": [
+        "پیش‌نمایش، اعتبارسنجی، اعمال شماره به اسناد مجاز"
+      ],
+      "rules": [
+        "شماره داخلی POSTED تغییر نکند؛ شماره قانونی مستقل و صرفاً پس از D01/D04.",
+        "جابه‌جایی تاریخ یا دوره سند posted به معنی اصلاح مالی است و فقط reversal/new entry دارد."
+      ],
+      "acceptance": [
+        "رقابت دو job شماره تکراری نسازد و شکست job شماره مصرف‌شده را مخفیانه بازاستفاده نکند."
+      ],
+      "phase": "P2",
+      "api": "POST numbering-previews; POST numbering-jobs"
+    },
+    {
+      "id": "F12",
+      "title": "الگوی سند اتوماتیک",
+      "route": "general-ledger/documents/automatic-templates",
+      "evidence": "O12 کد، عنوان، شرح‌ها، حساب‌های مبدأ و مقصد و درصد مقصد مستقیماً مشاهده شد.",
+      "layout": "مشخصات الگو در بالا؛ جدول مقصد با درصد و جدول مبدأ با حساب و سطوح تفصیلی؛ تب نسخه و تاریخچه افزوده روبی.",
+      "fields": [
+        {
+          "key": "code",
+          "label": "کد الگو",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "یکتا"
+        },
+        {
+          "key": "title",
+          "label": "عنوان",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "۲ تا ۱۶۰ نویسه"
+        },
+        {
+          "key": "titleEn",
+          "label": "عنوان زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۶۰ نویسه"
+        },
+        {
+          "key": "defaultDescription",
+          "label": "شرح پیش‌فرض",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۰۰۰ نویسه"
+        },
+        {
+          "key": "defaultDescriptionEn",
+          "label": "شرح پیش‌فرض زبان دوم",
+          "control": "متن",
+          "requirement": "اختیاری",
+          "validation": "۱۰۰۰ نویسه"
+        },
+        {
+          "key": "sources[]",
+          "label": "حساب‌های مبدأ",
+          "control": "جدول معین و سطح ۴ تا ۶",
+          "requirement": "اجباری",
+          "validation": "حداقل یک منبع؛ ترکیب معتبر"
+        },
+        {
+          "key": "targets[]",
+          "label": "حساب‌های مقصد",
+          "control": "جدول معین و سطح ۴ تا ۶",
+          "requirement": "اجباری",
+          "validation": "حداقل یک مقصد"
+        },
+        {
+          "key": "targets[].percentage",
+          "label": "درصد",
+          "control": "DecimalInput",
+          "requirement": "اجباری",
+          "validation": "مثبت؛ جمع درصدها در انتشار ۱۰۰"
+        },
+        {
+          "key": "effectiveFrom",
+          "label": "تاریخ اثر",
+          "control": "تاریخ",
+          "requirement": "افزوده پیشنهادی",
+          "validation": "نسخه مصوب و مؤثر"
+        },
+        {
+          "key": "version",
+          "label": "نسخه",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "الگوی مصرف‌شده overwrite نشود"
+        }
+      ],
+      "actions": [
+        "ذخیره پیش‌نویس، اعتبارسنجی، پیش‌نمایش محاسبه، انتشار نسخه"
+      ],
+      "rules": [
+        "این الگوی مشاهده‌شده توزیع از مبدأ به مقصد است؛ آن را با موتور posting رویداد فروش و خرید یک قابلیت فرض نکنید.",
+        "باقیمانده گردکردن طبق policy مصوب به ردیف تعیین‌شده تخصیص یابد و جمع دقیق حفظ شود."
+      ],
+      "acceptance": [
+        "درصدهای ۶۰ و ۴۰ روی مبلغ ۱۰۰۰، خروجی ۶۰۰ و ۴۰۰ دهند؛ مجموع ۹۹ مانع انتشار شود."
+      ],
+      "phase": "P2",
+      "api": "GET/POST allocation-templates; POST allocation-templates/{id}/actions/publish"
+    },
+    {
+      "id": "F13",
+      "title": "صدور خودکار و ورودی رویداد ERP",
+      "route": "general-ledger/documents/automatic-runs",
+      "evidence": "O13 منوی صدور اتوماتیک مشاهده شد؛ فرم اجرا و اتصال ERP پیشنهاد روبی است.",
+      "layout": "دو تب اجرای الگوی توزیع و منابع دریافت‌شده ERP؛ هر دو پیش‌نمایش سند و وضعیت job دارند.",
+      "fields": [
+        {
+          "key": "templateVersionId",
+          "label": "نسخه الگو",
+          "control": "lookup",
+          "requirement": "برای توزیع",
+          "validation": "مصوب و مؤثر"
+        },
+        {
+          "key": "sourceRange",
+          "label": "بازه منبع",
+          "control": "تاریخ و فیلتر حساب",
+          "requirement": "اجباری",
+          "validation": "فقط خطوط posted و خارج از خروجی همین اجرا"
+        },
+        {
+          "key": "documentDate",
+          "label": "تاریخ سند خروجی",
+          "control": "DatePicker",
+          "requirement": "اجباری",
+          "validation": "دوره باز"
+        },
+        {
+          "key": "sourceReference",
+          "label": "مرجع و نسخه مبدأ",
+          "control": "فقط خواندنی",
+          "requirement": "برای رویداد ERP",
+          "validation": "ترکیب producer، sourceId، sourceVersion و نوع اثر یکتا"
+        },
+        {
+          "key": "recognitionRuleVersion",
+          "label": "قاعده شناسایی",
+          "control": "نمایش فقط خواندنی",
+          "requirement": "برای رویداد ERP",
+          "validation": "از Settings؛ بدون حدس trigger از دریافت پول"
+        },
+        {
+          "key": "previewLines",
+          "label": "ردیف‌های پیشنهادی",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "حساب‌ها، تفصیلی‌ها، بدهکار و بستانکار"
+        },
+        {
+          "key": "runStatus",
+          "label": "وضعیت اجرا",
+          "control": "نشان وضعیت",
+          "requirement": "سیستمی",
+          "validation": "QUEUED/RUNNING/SUCCEEDED/PARTIAL_FAILED/FAILED"
+        }
+      ],
+      "actions": [
+        "پیش‌نمایش، ایجاد پیش‌نویس خروجی، بررسی خطا، retry مجاز"
+      ],
+      "rules": [
+        "تأیید دریافت پول به‌خودی‌خود شناسایی درآمد نیست.",
+        "رویداد فقط منبع حسابداری می‌سازد؛ posting تابع policy و approval است.",
+        "خطای رویداد بیرونی نباید دریافت ثبت‌شده یا عملیات سفر را حذف کند."
+      ],
+      "acceptance": [
+        "تحویل چندباره یک source event تنها یک اثر حسابداری فعال بسازد."
+      ],
+      "phase": "P2",
+      "api": "POST automatic-runs; GET accounting-sources; POST accounting-sources/{id}/actions/retry"
+    },
+    {
+      "id": "F14",
+      "title": "تسعیر ارز",
+      "route": "general-ledger/documents/fx-revaluation",
+      "evidence": "O14 الگو و صدور سند تسعیر در منو مشاهده شد؛ فیلدهای زیر پیشنهادند.",
+      "layout": "انتخاب تاریخ و حساب‌ها؛ جدول مانده ارزی، ارزش دفتری، نرخ جدید و اختلاف؛ سند پیشنهادی در گام آخر.",
+      "fields": [
+        {
+          "key": "asOfDate",
+          "label": "تاریخ تسعیر",
+          "control": "DatePicker",
+          "requirement": "اجباری",
+          "validation": "دوره باز و snapshot مانده"
+        },
+        {
+          "key": "accountIds",
+          "label": "حساب‌های تسعیرپذیر",
+          "control": "چندانتخابی",
+          "requirement": "اجباری",
+          "validation": "multiCurrency و revaluable فعال"
+        },
+        {
+          "key": "currencyRates[]",
+          "label": "نرخ‌های جدید",
+          "control": "lookup نرخ مصوب",
+          "requirement": "اجباری",
+          "validation": "جفت ارز و تاریخ معتبر"
+        },
+        {
+          "key": "gainAccountId",
+          "label": "حساب سود تسعیر",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "نگاشت مصوب"
+        },
+        {
+          "key": "lossAccountId",
+          "label": "حساب زیان تسعیر",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "نگاشت مصوب"
+        },
+        {
+          "key": "previewRows",
+          "label": "نتیجه تسعیر",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "مانده ارزی × نرخ جدید منهای ارزش دفتری با rounding مصوب"
+        },
+        {
+          "key": "reason",
+          "label": "شرح اجرا",
+          "control": "متن",
+          "requirement": "اجباری",
+          "validation": "قابل ردگیری"
+        }
+      ],
+      "actions": [
+        "محاسبه پیش‌نمایش، ساخت Draft، مشاهده سند مرتبط"
+      ],
+      "rules": [
+        "snapshot نرخ و مانده روی run ثابت؛ اجرای مجدد همان scope بدون supersede یا reversal اثر تکراری ندهد."
+      ],
+      "acceptance": [
+        "مجموع اختلاف‌های پیش‌نمایش دقیقاً برابر اثر سند خروجی باشد."
+      ],
+      "phase": "P2",
+      "api": "POST revaluation-previews; POST revaluation-runs"
+    },
+    {
+      "id": "F15",
+      "title": "عملیات پایان سال",
+      "route": "general-ledger/year-end",
+      "evidence": "O15 منوهای الگوی بستن، بستن حساب‌ها، تعدیل ماهیت، اختتامیه و افتتاحیه مشاهده شد؛ ویزارد پیشنهادی است.",
+      "layout": "ویزارد کنترل پیش‌نیازها، پیش‌نمایش بستن، بررسی، اعمال و گزارش؛ وضعیت و نتیجه هر مرحله مستقل.",
+      "fields": [
+        {
+          "key": "periodId",
+          "label": "دوره مبدأ",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "OPEN برای شروع؛ قفل انحصاری بستن"
+        },
+        {
+          "key": "nextPeriodId",
+          "label": "دوره مقصد افتتاحیه",
+          "control": "lookup",
+          "requirement": "اجباری در انتقال",
+          "validation": "بازه بعدی معتبر"
+        },
+        {
+          "key": "closingTemplateVersionId",
+          "label": "الگوی بستن",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "حساب‌های موقت و مقصد سود یا زیان مشخص"
+        },
+        {
+          "key": "preflight",
+          "label": "نتیجه پیش‌نیازها",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "اسناد تأییدنشده، منابع پردازش‌نشده، مانده‌های ناسازگار و FX"
+        },
+        {
+          "key": "adjustments",
+          "label": "تعدیل ماهیت",
+          "control": "جدول پیشنهادی",
+          "requirement": "مشروط",
+          "validation": "سند جدا با حساب مقصد مصوب"
+        },
+        {
+          "key": "openingPreview",
+          "label": "مانده انتقالی",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "حساب دائمی و تفصیلی و ارز بدون از دست‌دادن ابعاد"
+        },
+        {
+          "key": "approval",
+          "label": "تأیید مرحله",
+          "control": "نشان وضعیت",
+          "requirement": "اجباری",
+          "validation": "maker/checker و مجوز مستقل"
+        }
+      ],
+      "actions": [
+        "بررسی پیش‌نیاز، پیش‌نمایش، ایجاد اسناد Draft، تأیید مراحل، مشاهده تطبیق"
+      ],
+      "rules": [
+        "قفل period با posting race هماهنگ باشد؛ ورود جدید در CLOSING ممنوع.",
+        "بستن عملیاتی طبق مرز فعلی؛ بستن و دفاتر رسمی تا تصویب D01 فعال نشود.",
+        "Reopen فرمان ویژه با دلیل و audit است؛ تغییر مستقیم وضعیت ممنوع."
+      ],
+      "acceptance": [
+        "جمع افتتاحیه مقصد با اختتامیه مبدأ برای هر حساب و تفصیلی و ارز تطبیق کند؛ retry سند تکراری نسازد."
+      ],
+      "phase": "P2",
+      "api": "POST closing-runs; GET closing-runs/{id}; POST closing-runs/{id}/actions/{validate|approve|execute}"
+    },
+    {
+      "id": "F16",
+      "title": "گزارش تراز",
+      "route": "general-ledger/reports/trial-balance",
+      "evidence": "O16 فیلتر اولیه و ساختار چهارستونی، نوع مانده، ترتیب حساب‌ها و گزینه‌های چاپ مستقیماً مشاهده شد؛ فیلتر ثانویه فقط به عنوان تب دیده شد.",
+      "layout": "فیلتر در بالای صفحه جمع‌شونده؛ جدول نتیجه تمام‌عرض و جمع کل ثابت؛ جابه‌جایی ترتیب سطوح با دکمه بالا و پایین.",
+      "fields": [
+        {
+          "key": "fromPeriodId",
+          "label": "از دوره مالی",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "همان دفتر و حوزه"
+        },
+        {
+          "key": "toPeriodId",
+          "label": "تا دوره مالی",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "بعد یا برابر دوره آغاز"
+        },
+        {
+          "key": "structure",
+          "label": "ساختار گزارش",
+          "control": "انتخاب",
+          "requirement": "پیش‌فرض چهارستونی",
+          "validation": "۲ و ۶ و ۸ ستونی پیشنهاد آینده؛ صرفاً چهارستونی مشاهده شد"
+        },
+        {
+          "key": "balanceType",
+          "label": "نوع مانده",
+          "control": "انتخاب",
+          "requirement": "پیش‌فرض بدهکار بستانکار",
+          "validation": "خالص یا دوطرفه با تعریف صریح"
+        },
+        {
+          "key": "dateFilter",
+          "label": "فیلتر زمان",
+          "control": "ماه یا تاریخ",
+          "requirement": "اجباری",
+          "validation": "ماه مشاهده شد؛ بازه تاریخ پیشنهاد روبی"
+        },
+        {
+          "key": "voucherTypeIds",
+          "label": "نوع سند",
+          "control": "چندانتخابی",
+          "requirement": "اختیاری",
+          "validation": "انتخاب همه با label روشن"
+        },
+        {
+          "key": "currencyMode",
+          "label": "ویژگی",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "ارزی یا غیرارزی طبق حساب"
+        },
+        {
+          "key": "currencyBasis",
+          "label": "مبنای ارز",
+          "control": "انتخاب",
+          "requirement": "مشروط",
+          "validation": "فعال فقط برای گزارش ارزی"
+        },
+        {
+          "key": "showBaseAmounts",
+          "label": "نمایش مبالغ ریالی یا پایه",
+          "control": "checkbox",
+          "requirement": "مشروط",
+          "validation": "نام ارز پایه واقعی نمایش یابد"
+        },
+        {
+          "key": "showCurrencyAmounts",
+          "label": "نمایش مبالغ ارزی",
+          "control": "checkbox",
+          "requirement": "مشروط",
+          "validation": "ارزهای متفاوت جدا شوند"
+        },
+        {
+          "key": "levelsOrder",
+          "label": "اولویت سطوح",
+          "control": "لیست قابل ترتیب",
+          "requirement": "اجباری",
+          "validation": "گروه، کل، معین، سطح ۴، ۵، ۶ بدون تکرار"
+        },
+        {
+          "key": "withoutDetailsOnly",
+          "label": "فقط حساب بدون تفصیلی",
+          "control": "checkbox",
+          "requirement": "اختیاری",
+          "validation": "معنای فیلتر در tooltip"
+        },
+        {
+          "key": "separatePages",
+          "label": "چاپ حساب‌ها در صفحات مجزا",
+          "control": "checkbox",
+          "requirement": "اختیاری",
+          "validation": "فقط چاپ"
+        },
+        {
+          "key": "includePreviousYearTurnover",
+          "label": "گردش سال گذشته",
+          "control": "checkbox",
+          "requirement": "مشروط",
+          "validation": "در مشاهده غیرفعال بود؛ قاعده فعال‌شدن نیازمند تصمیم"
+        },
+        {
+          "key": "separateOpening",
+          "label": "افتتاحیه در ستون مجزا",
+          "control": "checkbox",
+          "requirement": "مشروط",
+          "validation": "وابسته به ساختار گزارش"
+        },
+        {
+          "key": "activeOnly",
+          "label": "فقط معین فعال",
+          "control": "checkbox",
+          "requirement": "اختیاری",
+          "validation": "پیش‌فرض خیر تا تاریخچه حذف نشود"
+        },
+        {
+          "key": "traceableOnly",
+          "label": "معین دارای پیگیری",
+          "control": "checkbox",
+          "requirement": "اختیاری",
+          "validation": "ویژگی حساب"
+        }
+      ],
+      "actions": [
+        "نمایش، drill-down به F17، چاپ، خروجی Excel، پاک‌کردن فیلتر"
+      ],
+      "rules": [
+        "مبنای پیش‌فرض فقط POSTED؛ گزارش شامل Draft برچسب غیرقطعی و permission جدا می‌خواهد.",
+        "جمع گروه‌ها نباید به دلیل join تفصیلی یا مسافر تکثیر شود.",
+        "چهارستونی: گردش بدهکار، گردش بستانکار، مانده بدهکار، مانده بستانکار؛ بازه و نحوه افتتاحیه در سرصفحه ثبت شود."
+      ],
+      "acceptance": [
+        "جمع مانده خالص حساب‌ها صفر باشد؛ کلیک روی رقم، جزئیات همان snapshot و فیلتر را نشان دهد."
+      ],
+      "phase": "P1",
+      "api": "POST reports/trial-balance/query; POST report-exports"
+    },
+    {
+      "id": "F17",
+      "title": "مرور حساب و گردش",
+      "route": "general-ledger/reports/account-browser",
+      "evidence": "O17 منوی مرور حساب و تب گردش در ساختار حساب مشاهده شد؛ شکل جدول و drill-down زیر پیشنهادی است.",
+      "layout": "breadcrumb از گروه تا ردیف سند؛ فیلتر ثابت؛ جدول گردش با مانده تجمعی و پنل سند بدون ترک گزارش.",
+      "fields": [
+        {
+          "key": "accountId",
+          "label": "حساب",
+          "control": "lookup",
+          "requirement": "اجباری یا انتخاب از تراز",
+          "validation": "scope کنترل شود"
+        },
+        {
+          "key": "detailFilters",
+          "label": "فیلتر تفصیلی‌ها",
+          "control": "lookup وابسته",
+          "requirement": "اختیاری",
+          "validation": "ترکیب معتبر"
+        },
+        {
+          "key": "dateRange",
+          "label": "بازه",
+          "control": "تاریخ",
+          "requirement": "اجباری",
+          "validation": "snapshot از F16 حفظ شود"
+        },
+        {
+          "key": "rows",
+          "label": "گردش",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "تاریخ، شماره، شرح، مبدأ، بدهکار، بستانکار، مانده"
+        },
+        {
+          "key": "openingBalance",
+          "label": "مانده ابتدای بازه",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "جمع خطوط پیش از بازه با policy ثابت"
+        },
+        {
+          "key": "currencyCode",
+          "label": "ارز",
+          "control": "انتخاب",
+          "requirement": "برای ارزی",
+          "validation": "گردش و مانده هر ارز مستقل"
+        }
+      ],
+      "actions": [
+        "ورود به سطح بعد، بازگشت، بازکردن سند، بازکردن مبدأ با مجوز، خروجی"
+      ],
+      "rules": [
+        "مانده تجمعی بر مبنای ترتیب پایدار تاریخ، شماره و شناسه ردیف محاسبه شود؛ pagination مانده را از صفر شروع نکند."
+      ],
+      "acceptance": [
+        "جمع گردش صفحه‌ها و مانده افتتاحیه دقیقاً به مانده پایان برسد."
+      ],
+      "phase": "P1",
+      "api": "GET reports/account-turnover; GET journals/{id}"
+    },
+    {
+      "id": "F18",
+      "title": "گزارش‌های تحلیلی و قانونی",
+      "route": "general-ledger/reports/catalog",
+      "evidence": "O18 عناوین گزارش‌ها در منو مشاهده شد؛ فیلتر و فرمول‌ها پیشنهادی‌اند.",
+      "layout": "کاتالوگ گزارش‌ها با عنوان روشن؛ گزارش انتخابی از فیلتر مشترک F16 استفاده کند و خروجی نسخه‌دار داشته باشد.",
+      "fields": [
+        {
+          "key": "reportKind",
+          "label": "نوع گزارش",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "ماتریسی، مقایسه‌ای، تجزیه سنی، راکد، خلاف ماهیت، جامع، اقلام سند، دفاتر"
+        },
+        {
+          "key": "dimensions",
+          "label": "سطر و ستون تحلیل",
+          "control": "چندانتخابی",
+          "requirement": "طبق گزارش",
+          "validation": "ابعاد معتبر و بدون تکرار"
+        },
+        {
+          "key": "asOfDate",
+          "label": "تاریخ مبنا",
+          "control": "تاریخ",
+          "requirement": "برای سنی و مانده",
+          "validation": "از snapshot واحد"
+        },
+        {
+          "key": "agingBuckets",
+          "label": "بازه‌های سنی",
+          "control": "لیست روز",
+          "requirement": "برای سنی",
+          "validation": "پیشنهادی ۰ تا ۳۰، ۳۱ تا ۶۰، ۶۱ تا ۹۰، بیش از ۹۰"
+        },
+        {
+          "key": "comparisonRange",
+          "label": "بازه مقایسه",
+          "control": "تاریخ",
+          "requirement": "برای مقایسه‌ای",
+          "validation": "تعریف ارز و مبنا یکسان"
+        },
+        {
+          "key": "legalFormatVersion",
+          "label": "نسخه قالب قانونی",
+          "control": "lookup",
+          "requirement": "فقط فاز قانونی",
+          "validation": "مرجع تأییدشده؛ نرخ یا قالب حدسی ممنوع"
+        }
+      ],
+      "actions": [
+        "اجرا، خروجی، ذخیره نمای شخصی، بازکردن جزئیات"
+      ],
+      "rules": [
+        "تجزیه سنی از مانده باز و سررسید مطالبات یا بدهی ساخته شود؛ از تاریخ ثبت سند به‌طور ضمنی استفاده نشود.",
+        "صورت سود و زیان و ترازنامه با این عنوان‌ها در محیط بررسی‌شده تأیید نشدند؛ افزودن آن‌ها نیازمندی جداست."
+      ],
+      "acceptance": [
+        "گزارش خلاف ماهیت فقط حساب دارای policy مربوط را پرچم کند؛ اسناد معکوس‌شده با اثر خالص درست حساب شوند."
+      ],
+      "phase": "P2",
+      "api": "POST reports/{kind}/query; POST report-exports"
+    },
+    {
+      "id": "F19",
+      "title": "بسته انتقال به حسابداری بیرونی",
+      "route": "general-ledger/documents/posting-batches",
+      "evidence": "R04 تصمیم پذیرفته‌شده روبی؛ فرم متناظر در راهکاران مشاهده نشد.",
+      "layout": "فهرست batchها؛ جزئیات شامل scope، نسخه نگاشت، جمع‌ها، اسناد و پاسخ مقصد.",
+      "fields": [
+        {
+          "key": "scope",
+          "label": "دفتر و دوره و حوزه",
+          "control": "فقط خواندنی",
+          "requirement": "اجباری",
+          "validation": "مطابق D03"
+        },
+        {
+          "key": "mappingVersion",
+          "label": "نسخه نگاشت",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "مصوب و ثابت پس از اعتبارسنجی"
+        },
+        {
+          "key": "journalIds",
+          "label": "اسناد قطعی",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "فقط اسناد صادرنشده یا مسیر supersede کنترل‌شده"
+        },
+        {
+          "key": "totals",
+          "label": "جمع‌ها و checksum",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "برابر داده واقعی و تغییرناپذیر"
+        },
+        {
+          "key": "state",
+          "label": "وضعیت",
+          "control": "نشان وضعیت",
+          "requirement": "سیستمی",
+          "validation": "DRAFT/VALIDATED/EXPORTED/ACCEPTED/REJECTED/SUPERSEDED"
+        },
+        {
+          "key": "externalReference",
+          "label": "مرجع مقصد",
+          "control": "فقط خواندنی",
+          "requirement": "پس از پاسخ",
+          "validation": "از Connector معتبر"
+        },
+        {
+          "key": "error",
+          "label": "نتیجه خطا",
+          "control": "متن امن",
+          "requirement": "در شکست",
+          "validation": "بدون credential یا payload حساس"
+        }
+      ],
+      "actions": [
+        "ساخت batch، اعتبارسنجی، خروجی، ارسال Connector در صورت فعال‌بودن، retry، supersede"
+      ],
+      "rules": [
+        "پذیرش بیرونی Journal داخلی را تغییر ندهد؛ خطای Connector عملیات سفر را rollback نکند."
+      ],
+      "acceptance": [
+        "پاسخ تکراری مقصد state یا مبلغ را دوباره اعمال نکند."
+      ],
+      "phase": "P2",
+      "api": "GET/POST posting-batches; POST posting-batches/{id}/actions/{validate|export|send|supersede}"
+    },
+    {
+      "id": "F20",
+      "title": "صورتحساب‌های مؤدیان",
+      "route": "taxpayer-system/invoices",
+      "evidence": "O20 فهرست، ستون‌ها، فیلتر، انتخاب چندرکوردی، Excel و متن خطا مستقیماً مشاهده شد؛ اجرای ارسال آزموده نشد.",
+      "layout": "جدول عریض با ستون‌های ضروری ثابت و انتخاب ستون؛ پنل جزئیات با تب اطلاعات، مبالغ، پرداخت‌ها و سابقه ارسال.",
+      "fields": [
+        {
+          "key": "uniqueTaxId",
+          "label": "شناسه یکتای صورتحساب",
+          "control": "فقط خواندنی",
+          "requirement": "پس از تولید معتبر",
+          "validation": "تولید طبق نسخه قرارداد مقصد؛ شناسه ساختگی ممنوع"
+        },
+        {
+          "key": "referenceTaxId",
+          "label": "شناسه مرجع",
+          "control": "فقط خواندنی یا lookup",
+          "requirement": "برای اصلاح یا ابطال",
+          "validation": "ارتباط معتبر با اصل"
+        },
+        {
+          "key": "serialNumber",
+          "label": "شماره سریال",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "یکتا در scope مصوب"
+        },
+        {
+          "key": "subject",
+          "label": "موضوع و دلیل ایجاد",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "نوع‌ها از قرارداد نسخه‌دار"
+        },
+        {
+          "key": "billType",
+          "label": "نوع و الگوی صورتحساب",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "ترکیب مجاز از schema مقصد"
+        },
+        {
+          "key": "sourceReference",
+          "label": "نوع موجودیت، شماره و تاریخ",
+          "control": "لینک readonly",
+          "requirement": "اجباری",
+          "validation": "منبع ERP و نسخه"
+        },
+        {
+          "key": "seller",
+          "label": "شناسه اقتصادی فروشنده و گمرک",
+          "control": "snapshot readonly",
+          "requirement": "مشروط",
+          "validation": "از هویت مؤثر فروشنده"
+        },
+        {
+          "key": "buyer",
+          "label": "نوع شخص، کد مشتری، شناسه و شعبه",
+          "control": "snapshot readonly",
+          "requirement": "مشروط",
+          "validation": "الزام‌ها از schema الگو؛ اطلاعات غیرضروری نمایش داده نشود"
+        },
+        {
+          "key": "amounts",
+          "label": "قبل تخفیف، تخفیف، بعد تخفیف، مالیات، عوارض، کل",
+          "control": "جدول readonly",
+          "requirement": "اجباری",
+          "validation": "محاسبه Decimal و تطبیق با اقلام"
+        },
+        {
+          "key": "settlement",
+          "label": "روش تسویه و اجزای نقدی و نسیه",
+          "control": "جدول readonly",
+          "requirement": "اجباری",
+          "validation": "جمع سهم‌ها با صورتحساب برابر"
+        },
+        {
+          "key": "state",
+          "label": "وضعیت ارسال",
+          "control": "نشان وضعیت",
+          "requirement": "سیستمی پیشنهادی",
+          "validation": "DRAFT/VALIDATED/QUEUED/SENT/PENDING/ACCEPTED/REJECTED/UNKNOWN"
+        },
+        {
+          "key": "workFolderState",
+          "label": "وضعیت کارپوشه",
+          "control": "نشان مستقل",
+          "requirement": "پس از استعلام",
+          "validation": "با وضعیت انتقال شبکه یکی نیست"
+        },
+        {
+          "key": "errorMessage",
+          "label": "متن خطا",
+          "control": "متن امن",
+          "requirement": "در خطا",
+          "validation": "زمان و شناسه پیگیری؛ secret حذف شود"
+        },
+        {
+          "key": "middlewareVersion",
+          "label": "نسخه نرم‌افزار ارسال",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "روی هر تلاش ثبت شود"
+        }
+      ],
+      "actions": [
+        "فیلتر، مشاهده، اعتبارسنجی، صف ارسال، استعلام، retry مجاز، پیش‌نویس ابطال، Excel"
+      ],
+      "rules": [
+        "فقط پس از D01 و قرارداد معتبر مقصد فعال؛ وجود فرم مجوز ادعای انطباق مالیاتی نیست.",
+        "timeout پس از ارسال به UNKNOWN برود و ابتدا استعلام شود؛ ارسال دوباره کور ممنوع.",
+        "صورتحساب ارسال‌شده ویرایش نشود؛ اصلاح یا ابطال سند مرتبط و تاریخچه مستقل دارد."
+      ],
+      "acceptance": [
+        "فیلتر rejected خطا را نشان دهد؛ retry نتیجه موفق قبلی را دوباره صادر نکند."
+      ],
+      "phase": "P3",
+      "api": "GET tax-invoices; POST tax-invoices/{id}/actions/{validate|enqueue|inquire|retry|prepare-cancellation}"
+    },
+    {
+      "id": "F21",
+      "title": "تنظیمات و مغایرت مؤدیان",
+      "route": "taxpayer-system/reconciliation",
+      "evidence": "O21 وجود تنظیمات، اطلاعات فروشنده، میدلور، مغایرت‌گیری و زمان‌بندی در منو تأیید شد؛ فیلدهای زیر پیشنهادند.",
+      "layout": "سه صفحه مستقل تنظیمات اتصال، اجرای تطبیق و زمان‌بندی؛ اسرار اتصال از فرم گزارش حذف شوند.",
+      "fields": [
+        {
+          "key": "sellerProfileRef",
+          "label": "هویت فروشنده",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "مرجع معتبر؛ context برند با مالک دفتر یکی فرض نشود"
+        },
+        {
+          "key": "connectorRef",
+          "label": "اتصال و محیط",
+          "control": "lookup Integrations",
+          "requirement": "اجباری",
+          "validation": "sandbox یا production واضح"
+        },
+        {
+          "key": "credentialRef",
+          "label": "مرجع کلید",
+          "control": "نمایش ماسک‌شده",
+          "requirement": "مشروط",
+          "validation": "Secret فقط در Integrations؛ مقدار خام در Finance نیاید"
+        },
+        {
+          "key": "dateRange",
+          "label": "بازه تطبیق",
+          "control": "تاریخ",
+          "requirement": "اجباری",
+          "validation": "محدوده حجم کنترل‌شده"
+        },
+        {
+          "key": "differences",
+          "label": "نوع مغایرت",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "فقط داخلی، فقط کارپوشه، مبلغ متفاوت، وضعیت متفاوت"
+        },
+        {
+          "key": "schedule",
+          "label": "زمان‌بندی",
+          "control": "روز و ساعت و منطقه زمانی",
+          "requirement": "اختیاری",
+          "validation": "نمایش Asia/Tehran و ذخیره schedule صریح"
+        },
+        {
+          "key": "lastRun",
+          "label": "آخرین اجرا و نتیجه",
+          "control": "فقط خواندنی",
+          "requirement": "سیستمی",
+          "validation": "progress، خطا و نیاز به اقدام"
+        }
+      ],
+      "actions": [
+        "پیش‌نمایش تنظیمات، آزمون اتصال sandbox، اجرای خواندنی تطبیق، ایجاد درخواست اصلاح، مدیریت زمان‌بندی"
+      ],
+      "rules": [
+        "مغایرت به معنای مجوز اصلاح خودکار سند مالی نیست.",
+        "زمان‌بندی بدون صلاحیت actor در زمان اجرا عملیات حساس انجام ندهد."
+      ],
+      "acceptance": [
+        "اختلاف یک مبلغ، task بررسی بسازد و هیچ Journal قطعی را بازنویسی نکند."
+      ],
+      "phase": "P3",
+      "api": "GET tax-reconciliations; POST tax-reconciliation-jobs; GET/POST tax-schedules"
+    },
+    {
+      "id": "F22",
+      "title": "حسابداری مالیاتی و گزارش فصلی",
+      "route": "tax-accounting/returns",
+      "evidence": "O22 عناوین دوره مالیاتی، حدنصاب، روش تجمیع، هویت مؤدی، نگاشت، اظهارنامه و گزارش فصلی در منو مشاهده شد؛ جزئیات پیشنهادی‌اند.",
+      "layout": "فهرست دوره‌های مالیاتی، پیکربندی نسخه‌دار و ویزارد تهیه پیش‌نویس گزارش؛ ریز اقلام قابل ردگیری.",
+      "fields": [
+        {
+          "key": "taxPeriod",
+          "label": "دوره مالیاتی",
+          "control": "تاریخ شروع و پایان",
+          "requirement": "اجباری",
+          "validation": "مستقل از دوره مالی"
+        },
+        {
+          "key": "identityRef",
+          "label": "هویت مؤدی",
+          "control": "lookup",
+          "requirement": "اجباری",
+          "validation": "snapshot در گزارش"
+        },
+        {
+          "key": "aggregationPolicyVersion",
+          "label": "روش تجمیع و حدنصاب",
+          "control": "lookup نسخه",
+          "requirement": "اجباری",
+          "validation": "effective-dated؛ عدد قانونی حدسی ممنوع"
+        },
+        {
+          "key": "mappingVersion",
+          "label": "نگاشت فصلی",
+          "control": "lookup نسخه",
+          "requirement": "اجباری",
+          "validation": "source و مقصد و دلیل نگاشت روشن"
+        },
+        {
+          "key": "returnKind",
+          "label": "نوع خروجی",
+          "control": "انتخاب",
+          "requirement": "اجباری",
+          "validation": "عمومی، آلایندگی، خریدوفروش فصلی مطابق منوی مرجع"
+        },
+        {
+          "key": "lineItems",
+          "label": "ریز اقلام",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "منبع، تاریخ، مبلغ و مالیات"
+        },
+        {
+          "key": "validationResult",
+          "label": "خطاها",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "با مرجع ردیف"
+        },
+        {
+          "key": "outputVersion",
+          "label": "نسخه قالب",
+          "control": "فقط خواندنی",
+          "requirement": "اجباری",
+          "validation": "قالب و schema معتبر همان دوره"
+        }
+      ],
+      "actions": [
+        "تهیه پیش‌نویس، مشاهده ریز اقلام، تطبیق جمع، تأیید داخلی، خروجی مجاز"
+      ],
+      "rules": [
+        "هیچ نرخ، حدنصاب یا قالب ارسالی از روی نام منو استنتاج نشود؛ مشخصات جاری مقصد باید پیش از پیاده‌سازی جداگانه تأیید شود."
+      ],
+      "acceptance": [
+        "جمع ریز اقلام با گزارش کل برابر و هر عدد به منبع داخلی traceable باشد."
+      ],
+      "phase": "P3",
+      "api": "GET tax-periods; POST tax-return-drafts; GET tax-returns/{id}/items"
+    },
+    {
+      "id": "F23",
+      "title": "گزارش دریافت و پرداخت",
+      "route": "receipts-payments/reports",
+      "evidence": "R05 مسیر در منوی روبی موجود است. در راهکاران فقط شرح استاندارد دریافت و پرداخت قابل دسترس بود؛ طراحی این فرم از نیاز روبی است.",
+      "layout": "فیلتر حساب تسویه، طرف‌حساب، قرارداد، روش و وضعیت؛ جدول با مبلغ معامله، نرخ، معادل پایه، کارمزد و مرجع سند.",
+      "fields": [
+        {
+          "key": "dateRange",
+          "label": "بازه عملیات",
+          "control": "تاریخ",
+          "requirement": "اجباری",
+          "validation": "زمان پرداخت واقعی و تاریخ ثبت جدا"
+        },
+        {
+          "key": "settlementAccountId",
+          "label": "حساب بانک یا صندوق",
+          "control": "lookup",
+          "requirement": "اختیاری",
+          "validation": "از FinanceSettlementAccount موجود"
+        },
+        {
+          "key": "partyReference",
+          "label": "طرف‌حساب",
+          "control": "lookup مجاز",
+          "requirement": "اختیاری",
+          "validation": "نوع و شناسه مرجع"
+        },
+        {
+          "key": "contractReference",
+          "label": "قرارداد",
+          "control": "lookup Sales",
+          "requirement": "اختیاری",
+          "validation": "از public contract"
+        },
+        {
+          "key": "method",
+          "label": "روش پرداخت",
+          "control": "lookup Master Data",
+          "requirement": "اختیاری",
+          "validation": "همان روش‌های API موجود"
+        },
+        {
+          "key": "status",
+          "label": "وضعیت مالی",
+          "control": "چندانتخابی",
+          "requirement": "اختیاری",
+          "validation": "confirmed از pending جدا"
+        },
+        {
+          "key": "rows",
+          "label": "ردیف عملیات",
+          "control": "جدول readonly",
+          "requirement": "سیستمی",
+          "validation": "شناسه، جهت، مبلغ، ارز، نرخ، پایه، کارمزد، پیگیری و Journal مرتبط"
+        }
+      ],
+      "actions": [
+        "نمایش، مشاهده درخواست، گردش حساب، خروجی"
+      ],
+      "rules": [
+        "FinanceSettlementAccount حساب تسویه است و جایگزین ChartAccount نیست؛ رابطه نگاشت نسخه‌دار نیاز است.",
+        "خروجی ریالی جمع ارزهای خام نیست و فقط با FX snapshot محاسبه می‌شود."
+      ],
+      "acceptance": [
+        "یک دریافت در کارتابل و گزارش همان مرجع و مبلغ را داشته باشد و با اضافه‌شدن حسابداری دوباره ثبت نشود."
+      ],
+      "phase": "P1",
+      "api": "GET finance receipt/payment read-model through public Finance services"
+    },
+    {
+      "id": "F24",
+      "title": "اتصال کارتابل مالی به حسابداری",
+      "route": "/finance/requests",
+      "evidence": "R06 controller و client کارتابل، مدل حساب تسویه و revisionهای مالی در کد موجودند؛ اجرای زنده روبی در این بررسی آزموده نشد.",
+      "layout": "همان Workspace موجود حفظ شود؛ پنل حسابداری در جزئیات درخواست اضافه شود با مرجع source، وضعیت ثبت و لینک Journal.",
+      "fields": [
+        {
+          "key": "accountingState",
+          "label": "وضعیت حسابداری",
+          "control": "نشان وضعیت",
+          "requirement": "افزوده پیشنهادی",
+          "validation": "NOT_READY/PENDING/DRAFTED/POSTED/FAILED"
+        },
+        {
+          "key": "journalReference",
+          "label": "سند مرتبط",
+          "control": "لینک readonly",
+          "requirement": "پس از ایجاد",
+          "validation": "مجوز مستقل مشاهده"
+        },
+        {
+          "key": "sourceVersion",
+          "label": "نسخه منبع",
+          "control": "داخلی",
+          "requirement": "اجباری",
+          "validation": "در UI عادی نمایش فنی داده نشود"
+        },
+        {
+          "key": "reconciliationState",
+          "label": "تطبیق اثر",
+          "control": "نشان وضعیت",
+          "requirement": "سیستمی",
+          "validation": "عملیات confirmed بدون سند به صف بررسی برود"
+        },
+        {
+          "key": "failureReason",
+          "label": "علت نقص حسابداری",
+          "control": "متن قابل اقدام",
+          "requirement": "در شکست",
+          "validation": "رفع نگاشت، دوره، FX یا permission؛ بدون خطای خام"
+        }
+      ],
+      "actions": [
+        "مشاهده سند، مشاهده خطا، retry منبع با مجوز، ارجاع برای اصلاح"
+      ],
+      "rules": [
+        "تأیید دریافت، پرداخت، release و تحویل مدارک چهار اثر متفاوت‌اند؛ با posting یکی نشوند.",
+        "Finance از قرارداد عمومی Sales/Procurement/HR استفاده کند و جدول آن‌ها را مستقیم query نکند.",
+        "ثبت منبع حسابداری و outbox مرتبط اتمیک باشد؛ اگر تراکنش مشترک در دسترس نیست، delivery تضمین‌شده با dedupe و reconciliation تعریف شود."
+      ],
+      "acceptance": [
+        "پرداخت تأییدشده با خطای نگاشت در وضعیت پرداخت خود باقی بماند و صرفاً accountingState=FAILED شود."
+      ],
+      "phase": "P1",
+      "api": "Reuse /finance/inbox and existing decision routes; add read-only accounting linkage"
+    }
+  ],
+  "acceptanceTests": [
+    {
+      "id": "AC01",
+      "forms": "F01 F02",
+      "scenario": "ساخت دو دوره هم‌پوشان در یک دفتر",
+      "expected": "دومین درخواست در سرور رد شود؛ در دفتر مستقل مطابق scope مجاز باشد."
+    },
+    {
+      "id": "AC02",
+      "forms": "F02 F08",
+      "scenario": "تعویض دفتر با Draft کثیف",
+      "expected": "هشدار و انتخاب حفظ یا لغو؛ هیچ ذخیره در context جدید رخ ندهد."
+    },
+    {
+      "id": "AC03",
+      "forms": "F04",
+      "scenario": "حذف حساب دارای گردش یا فرزند",
+      "expected": "رد با علت و پیشنهاد غیرفعال‌سازی."
+    },
+    {
+      "id": "AC04",
+      "forms": "F05 F06",
+      "scenario": "انتخاب تفصیلی با والد یا نوع نامعتبر",
+      "expected": "هم UI و هم API رد کنند."
+    },
+    {
+      "id": "AC05",
+      "forms": "F08",
+      "scenario": "ذخیره Draft با یک ردیف ناقص",
+      "expected": "Draft ذخیره شود؛ submit تا تکمیل ممنوع باشد."
+    },
+    {
+      "id": "AC06",
+      "forms": "F08 F10",
+      "scenario": "ثبت بدهکار و بستانکار در یک ردیف",
+      "expected": "خطای سلول؛ هیچ posting رخ ندهد."
+    },
+    {
+      "id": "AC07",
+      "forms": "F08 F10",
+      "scenario": "توازن ۱۰۰۰۰۰۰ در برابر ۹۹۹۹۹۹",
+      "expected": "اختلاف یک ریال و منع posting."
+    },
+    {
+      "id": "AC08",
+      "forms": "F08",
+      "scenario": "ورود ارقام فارسی و عربی و جداکننده هزارگان",
+      "expected": "به Decimal canonical تبدیل شود؛ صفر ابتدایی کد حفظ شود."
+    },
+    {
+      "id": "AC09",
+      "forms": "F08 F14",
+      "scenario": "نرخ با ۱۸ رقم اعشار",
+      "expected": "بدون Number و بدون بریدن به چهار رقم پردازش شود."
+    },
+    {
+      "id": "AC10",
+      "forms": "F08 F10",
+      "scenario": "نرخ Draft یا منقضی",
+      "expected": "posting رد و نیاز به نرخ مصوب نمایش داده شود."
+    },
+    {
+      "id": "AC11",
+      "forms": "F10",
+      "scenario": "maker همان checker",
+      "expected": "رد سمت سرور حتی با فراخوانی مستقیم API."
+    },
+    {
+      "id": "AC12",
+      "forms": "F08 F10",
+      "scenario": "تغییر مبلغ بعد از تأیید",
+      "expected": "تأیید invalidate و وضعیت به Draft برگردد."
+    },
+    {
+      "id": "AC13",
+      "forms": "F08",
+      "scenario": "دو ویرایش همزمان با یک version",
+      "expected": "یک موفق و دیگری 409؛ overwrite خام رخ ندهد."
+    },
+    {
+      "id": "AC14",
+      "forms": "F10 F11",
+      "scenario": "دو posting همزمان",
+      "expected": "شماره یکتا و بدون دوباره‌شماری مانده."
+    },
+    {
+      "id": "AC15",
+      "forms": "F10 F15",
+      "scenario": "posting همزمان با بستن دوره",
+      "expected": "تنها نتیجه سازگار با lock دوره پذیرفته شود."
+    },
+    {
+      "id": "AC16",
+      "forms": "F08",
+      "scenario": "ویرایش یا حذف سند POSTED",
+      "expected": "رد؛ فقط reversal/new entry مجاز."
+    },
+    {
+      "id": "AC17",
+      "forms": "F08 F16",
+      "scenario": "سند ۱۰۰ و reversal آن",
+      "expected": "گزارش اثر خالص صفر؛ اصل با REVERSED حذف محاسباتی نشود."
+    },
+    {
+      "id": "AC18",
+      "forms": "F13 F24",
+      "scenario": "تحویل دوباره رویداد مبدأ",
+      "expected": "یک source marker و یک اثر فعال."
+    },
+    {
+      "id": "AC19",
+      "forms": "F24",
+      "scenario": "شکست نگاشت پس از تأیید پرداخت",
+      "expected": "پرداخت باقی بماند؛ accounting failure قابل retry باشد."
+    },
+    {
+      "id": "AC20",
+      "forms": "F12",
+      "scenario": "درصدهای جمعاً ۹۹ یا ۱۰۱",
+      "expected": "انتشار الگو رد شود."
+    },
+    {
+      "id": "AC21",
+      "forms": "F12 F13",
+      "scenario": "توزیع مبلغ با باقیمانده گردکردن",
+      "expected": "جمع دقیقاً برابر مبدأ و policy روی run ثبت شود."
+    },
+    {
+      "id": "AC22",
+      "forms": "F14",
+      "scenario": "اجرای دوباره تسعیر برای یک snapshot",
+      "expected": "بدون اثر تکراری؛ reversal/supersede صریح."
+    },
+    {
+      "id": "AC23",
+      "forms": "F15",
+      "scenario": "افتتاحیه دوره بعد",
+      "expected": "تطبیق حساب و تفصیلی و ارز با اختتامیه."
+    },
+    {
+      "id": "AC24",
+      "forms": "F16 F17",
+      "scenario": "drill-down و برگشت به گزارش",
+      "expected": "همان فیلتر و snapshot و مبلغ حفظ شود."
+    },
+    {
+      "id": "AC25",
+      "forms": "F16 F18",
+      "scenario": "join یک قرارداد با چند مسافر",
+      "expected": "مبلغ قرارداد یا سند تکثیر نشود."
+    },
+    {
+      "id": "AC26",
+      "forms": "F17",
+      "scenario": "صفحه دوم گردش",
+      "expected": "مانده تجمعی ادامه صفحه قبل باشد."
+    },
+    {
+      "id": "AC27",
+      "forms": "F16 F23",
+      "scenario": "داده USD و IRR در گزارش",
+      "expected": "جمع خام مخلوط ممنوع؛ جدا یا تبدیل معتبر."
+    },
+    {
+      "id": "AC28",
+      "forms": "F09 F16",
+      "scenario": "خروجی با فیلتر و scope محدود",
+      "expected": "هیچ ردیف خارج مجوز یا خارج فیلتر صادر نشود."
+    },
+    {
+      "id": "AC29",
+      "forms": "F19",
+      "scenario": "خطای مقصد حسابداری",
+      "expected": "Journal قطعی تغییر نکند و batch retry-safe باشد."
+    },
+    {
+      "id": "AC30",
+      "forms": "F20",
+      "scenario": "timeout مبهم ارسال مؤدیان",
+      "expected": "UNKNOWN و استعلام مقدم بر ارسال مجدد."
+    },
+    {
+      "id": "AC31",
+      "forms": "F20 F21",
+      "scenario": "مغایرت کارپوشه",
+      "expected": "فقط گزارش و task؛ اصلاح خودکار مبلغ رخ ندهد."
+    },
+    {
+      "id": "AC32",
+      "forms": "F22",
+      "scenario": "تغییر policy مالیاتی در تاریخ جدید",
+      "expected": "گزارش قبلی با snapshot نسخه خود بازتولید شود."
+    },
+    {
+      "id": "AC33",
+      "forms": "همه",
+      "scenario": "403 یا scope شعبه دیگر",
+      "expected": "API و UI هر دو دسترسی را محدود کنند."
+    },
+    {
+      "id": "AC34",
+      "forms": "F08",
+      "scenario": "قطع شبکه هنگام ذخیره",
+      "expected": "Draft و پیام خطا حفظ؛ retry با همان کلید اثر تکراری ندهد."
+    },
+    {
+      "id": "AC35",
+      "forms": "همه",
+      "scenario": "پیمایش تنها با صفحه‌کلید در RTL",
+      "expected": "ترتیب focus، خطاها، dialog و جدول قابل استفاده باشند."
+    },
+    {
+      "id": "AC36",
+      "forms": "Migration",
+      "scenario": "اجرای dry-run و backfill دوباره",
+      "expected": "شمارش و checksum ثابت؛ منبع confirmed دوباره ثبت نشود."
+    }
+  ],
+  "backlog": [
+    {
+      "id": "B01",
+      "phase": "P0",
+      "scope": "ثبت D01 تا D07 و تعیین مرز محصول",
+      "deliverable": "ADR پیشنهادی، glossary و scope ماتریس",
+      "depends": "قبل از schema"
+    },
+    {
+      "id": "B02",
+      "phase": "P0",
+      "scope": "طراحی قرارداد و persistence افزایشی",
+      "deliverable": "مدل و migration plan، DTO نسخه‌دار، source marker",
+      "depends": "B01"
+    },
+    {
+      "id": "B03",
+      "phase": "P1",
+      "scope": "پوسته مشترک و registry فرم‌ها",
+      "deliverable": "context، breadcrumb، permission، error states",
+      "depends": "B01"
+    },
+    {
+      "id": "B04",
+      "phase": "P1",
+      "scope": "F01 تا F03",
+      "deliverable": "دوره و دفتر و نوع سند با persistence",
+      "depends": "B02 B03"
+    },
+    {
+      "id": "B05",
+      "phase": "P1",
+      "scope": "F04 تا F06",
+      "deliverable": "کدینگ و تفصیلی مستقل با lookup و rules",
+      "depends": "B02 B03"
+    },
+    {
+      "id": "B06",
+      "phase": "P1",
+      "scope": "F08 F09",
+      "deliverable": "ویرایشگر سند و فهرست و Draft واقعی",
+      "depends": "B04 B05"
+    },
+    {
+      "id": "B07",
+      "phase": "P1",
+      "scope": "F10 و invariants",
+      "deliverable": "تأیید، posting، reversal، شماره اتمیک و audit",
+      "depends": "B06"
+    },
+    {
+      "id": "B08",
+      "phase": "P1",
+      "scope": "F16 F17",
+      "deliverable": "تراز، گردش، drill-down و خروجی مجاز",
+      "depends": "B07"
+    },
+    {
+      "id": "B09",
+      "phase": "P1",
+      "scope": "F23 F24",
+      "deliverable": "linkage کارتابل و گزارش دریافت و پرداخت",
+      "depends": "B07 و قرارداد مالک منبع"
+    },
+    {
+      "id": "B10",
+      "phase": "P2",
+      "scope": "F07 F11 F19",
+      "deliverable": "نگاشت، شماره‌گذاری کنترل‌شده و batch بیرونی",
+      "depends": "B07"
+    },
+    {
+      "id": "B11",
+      "phase": "P2",
+      "scope": "F12 F13 F14",
+      "deliverable": "الگو، posting source و تسعیر",
+      "depends": "B07 B09"
+    },
+    {
+      "id": "B12",
+      "phase": "P2",
+      "scope": "F15 F18",
+      "deliverable": "بستن عملیاتی و گزارش‌های پیشرفته",
+      "depends": "B08 B11"
+    },
+    {
+      "id": "B13",
+      "phase": "P3",
+      "scope": "F20 F21 F22",
+      "deliverable": "اتصال مؤدیان، تطبیق و گزارش مالیاتی",
+      "depends": "D01 مصوب و schema معتبر مقصد"
+    },
+    {
+      "id": "B14",
+      "phase": "عرضی",
+      "scope": "Migration و cutover و تطبیق",
+      "deliverable": "dry-run، تست migration، backfill و rollback plan",
+      "depends": "قبل از فعال‌سازی"
+    },
+    {
+      "id": "B15",
+      "phase": "عرضی",
+      "scope": "پذیرش و handoff",
+      "deliverable": "AC01 تا AC36، lint/typecheck/build، smoke مجاز",
+      "depends": "هر برش محصول"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "D01",
+      "topic": "مرز حسابداری قانونی",
+      "evidence": "DEC-OPEN-001 دفاتر قانونی و مالیات را بیرونی می‌داند",
+      "proposal": "پیشنهاد: هسته عملیاتی و Connector در P1/P2؛ انتقال مالکیت دفاتر و مؤدیان به روبی فقط با ADR جایگزین قبل از P3."
+    },
+    {
+      "id": "D02",
+      "topic": "کدینگ و تفصیلی",
+      "evidence": "کد فعلی detail را برگ قابل ثبت می‌داند؛ راهکاران معین و ابعاد مستقل دارد",
+      "proposal": "پیشنهاد هدف: گروه → کل → معین، همراه DetailType/DetailAccount مستقل و رابطه مجاز سطح ۴ تا ۶؛ adapter نسخه قدیم و migration mapping."
+    },
+    {
+      "id": "D03",
+      "topic": "حوزه حسابداری و هویت حقوقی",
+      "evidence": "finance.domain دارای legalEntityReference است؛ معماری Legal Entity را صرفاً issuer/branding می‌داند",
+      "proposal": "پیشنهاد: AccountingBookScope و branch scope مستقل؛ هیچ فیلتر داده عملیاتی به context برند اضافه نشود. مالکیت دفتر باید پیش از schema روشن شود."
+    },
+    {
+      "id": "D04",
+      "topic": "شماره و تاریخ سند",
+      "evidence": "شماره، روزانه، عطف و فرعی مستقل در مرجع؛ زمان UTC در API روبی",
+      "proposal": "پیشنهاد: عطف پایدار در Draft؛ شماره داخلی هنگام posting با scope دفتر/دوره؛ business date محلی و audit timestamp UTC مستقل؛ شماره قانونی جدا."
+    },
+    {
+      "id": "D05",
+      "topic": "گردکردن و نرخ",
+      "evidence": "DEC-OPEN-004 سیاست نسخه‌دار، نرخ مصوب و دقت بالا را می‌خواهد",
+      "proposal": "مرجع نرخ مصوب و نمایش ریال/تومان روشن؛ نرخ تا ۱۸ رقم اعشار؛ rounding طبق نسخه مصوب نه Number."
+    },
+    {
+      "id": "D06",
+      "topic": "پیش‌نویس ناقص",
+      "evidence": "JournalEntry فعلی حداقل دو ردیف و شرح را در constructor می‌خواهد",
+      "proposal": "Draft aggregate یا DTO مستقل؛ invariant کامل در submit/post؛ preview محلی هرگز پیام ثبت موفق عملیاتی ندهد."
+    },
+    {
+      "id": "D07",
+      "topic": "دامنه خزانه‌داری",
+      "evidence": "در راهکاران این حساب فقط شرح استاندارد نشان داد",
+      "proposal": "گزارش و linkage بر اساس کد واقعی روبی؛ چک و بانک و reconciliation کامل نیازمندی مستقل دارند."
+    }
+  ],
+  "sources": [
+    {
+      "id": "O01",
+      "location": "راهکاران / مالی / دفتر کل / اطلاعات پایه / معرفی دوره مالی",
+      "supports": "فرم عنوان و شرح؛ تاریخ تخصیص در O02"
+    },
+    {
+      "id": "O02",
+      "location": "راهکاران / معرفی دفتر کل",
+      "supports": "کد، اصلی، صدور، فعال و جدول تخصیص سال"
+    },
+    {
+      "id": "O03",
+      "location": "راهکاران / تعریف نوع سند",
+      "supports": "عنوان، زبان دوم، توضیحات"
+    },
+    {
+      "id": "O04",
+      "location": "راهکاران / تعریف ساختار حساب‌ها",
+      "supports": "درخت و انتخاب گروه و کل و معین ارزی؛ تب مالیاتی"
+    },
+    {
+      "id": "O05 O06",
+      "location": "راهکاران / نوع تفصیلی و حساب تفصیلی",
+      "supports": "فرم‌های خالی فقط مشاهده شدند"
+    },
+    {
+      "id": "O08 O16",
+      "location": "راهکاران / صدور سند حسابداری و تراز",
+      "supports": "سربرگ، ردیف‌ها، جمع، فیلتر اولیه و ترتیب سطوح"
+    },
+    {
+      "id": "O12",
+      "location": "راهکاران / تعریف الگوی سند اتوماتیک",
+      "supports": "حساب‌های مبدأ و مقصد و درصد"
+    },
+    {
+      "id": "O20",
+      "location": "راهکاران / مؤدیان / فهرست صورتحساب",
+      "supports": "ستون‌ها و ابزار فهرست؛ در مشاهده قبلی هیچ سطری نمایش داده نشد"
+    },
+    {
+      "id": "O07 O09 تا O11 O13 تا O15 O17 O18 O21 O22",
+      "location": "منوهای مالی راهکاران",
+      "supports": "وجود گزینه‌ها؛ جزئیات پیشنهادی با برچسب جدا"
+    },
+    {
+      "id": "R01",
+      "location": "apps/web/package.json و apps/api/package.json",
+      "supports": "فناوری و نسخه محلی"
+    },
+    {
+      "id": "R02",
+      "location": "apps/web/src/modules/finance/components/accounting-navigation-workspace.tsx",
+      "supports": "منوی واقعی و EmptyState"
+    },
+    {
+      "id": "R03",
+      "location": "apps/api/src/finance/finance.domain.ts و finance.accounting.ts",
+      "supports": "Journal، توازن، مدل چهارسطحی، FX و تأیید"
+    },
+    {
+      "id": "R04",
+      "location": "docs/decisions/DEC-OPEN-001-finance-ledger-boundary.md",
+      "supports": "مرز دفتر عملیاتی و حسابداری بیرونی"
+    },
+    {
+      "id": "R05",
+      "location": "docs/tasks/FINANCE-004-ACCOUNTING-SECONDARY-NAV.md",
+      "supports": "دامنه پوسته حسابداری"
+    },
+    {
+      "id": "R06",
+      "location": "finance-inbox.controller.ts، finance-inbox-api.ts و schema.prisma",
+      "supports": "API موجود و persistence حساب تسویه و revisionها"
+    },
+    {
+      "id": "R07",
+      "location": "docs/decisions/DEC-OPEN-004-money-fx-tax-recognition.md",
+      "supports": "ارز و گردکردن و policy"
+    },
+    {
+      "id": "R08",
+      "location": "docs/decisions/DEC-OPEN-005-finance-approval-matrix.md",
+      "supports": "maker/checker و approval snapshot"
+    },
+    {
+      "id": "R09",
+      "location": "docs/decisions/DEC-OPEN-016-financial-release-policy.md",
+      "supports": "استقلال release و delivery"
+    },
+    {
+      "id": "R10",
+      "location": "docs/ARCHITECTURE.md، MODULE_BOUNDARIES.md، PRODUCT_REQUIREMENTS.md، DATA_MODEL.md و API_CONVENTIONS.md",
+      "supports": "معماری، scope برند، قرارداد و گزارش"
+    },
+    {
+      "id": "R11",
+      "location": "apps/web/src/components/ui/money-input.tsx",
+      "supports": "نرمال‌سازی ارقام و محدودیت چهار اعشار"
+    }
+  ],
+  "sections": [
+    {
+      "id": "purpose",
+      "title": "هدف و نتیجه مورد انتظار"
+    },
+    {
+      "id": "baseline",
+      "title": "وضعیت واقعی روبی و فاصله تا محصول هدف"
+    },
+    {
+      "id": "decisions",
+      "title": "تصمیم‌های لازم پیش از پیاده‌سازی"
+    },
+    {
+      "id": "scope",
+      "title": "دامنه و نقش‌های کاربری"
+    },
+    {
+      "id": "navigation",
+      "title": "ناوبری و استاندارد مشترک فرم‌ها"
+    },
+    {
+      "id": "screen-layouts",
+      "title": "چیدمان اجرایی سه صفحه اصلی"
+    },
+    {
+      "id": "forms",
+      "title": "مشخصات عینی فرم‌ها"
+    },
+    {
+      "id": "permissions",
+      "title": "مجوزهای اجرایی فرم‌ها"
+    },
+    {
+      "id": "states",
+      "title": "چرخه وضعیت و کنترل عملیات"
+    },
+    {
+      "id": "data",
+      "title": "مدل داده و سازگاری با اطلاعات موجود"
+    },
+    {
+      "id": "integration",
+      "title": "اتصال به معماری و فایل‌های روبی"
+    },
+    {
+      "id": "api",
+      "title": "قرارداد اجرایی نمونه و خطاها"
+    },
+    {
+      "id": "acceptance",
+      "title": "سناریوهای پذیرش قابل آزمون"
+    },
+    {
+      "id": "delivery",
+      "title": "برنامه تحویل و تعریف انجام‌شدن"
+    },
+    {
+      "id": "sources",
+      "title": "مراجع و دامنه اعتبار شواهد"
+    }
+  ]
+}
