@@ -279,3 +279,100 @@ it('honours explicit single/double rooms and refuses unknown extra-bed placement
     ),
   ).toBeNull();
 });
+
+describe('recorded hotel-only cost projection', () => {
+  const actor = {
+    permissions: ['reservations.read'],
+    branchIds: ['branch'],
+  } as never;
+  function setup(purchases: unknown[] = []) {
+    const findFirst = vi.fn().mockResolvedValue({
+      branchId: 'branch',
+      snapshot,
+      servicePurchases: purchases,
+      hotelPurchases: [],
+    });
+    const service = new ReservationHotelSavingsService(
+      { client: { reservationIntake: { findFirst } } } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    return { service, findFirst };
+  }
+  const purchase = (kind = 'HOTEL', key = 'hotel') => ({
+    serviceKind: kind,
+    serviceClientKey: key,
+    amount: { toFixed: () => '180', toString: () => '180' },
+    currencyCode: 'USD',
+    financeRevisions: [],
+    passengerPrices: {
+      hotelSavings: {
+        version: 1,
+        status: 'AVAILABLE',
+        referenceAmount: '200',
+        actualAmount: '180',
+        savingsAmount: '20',
+        currencyCode: 'USD',
+        reason: null,
+        capturedAt: '2026-10-13',
+        sourceBatchId: 'rate',
+        sourceBrokerName: 'broker',
+        checkIn: '2026-10-01',
+        checkOut: '2026-10-03',
+        flightCost: '999',
+      },
+    },
+  });
+  it('only returns latest non-rejected hotel costs and a bounded projection', async () => {
+    const { service, findFirst } = setup([
+      purchase('FLIGHT', 'flight'),
+      purchase(),
+      purchase(),
+      {
+        ...purchase('HOTEL', 'rejected'),
+        financeRevisions: [{ status: 'REJECTED' }],
+      },
+      purchase('HOTEL', 'rejected'),
+    ]);
+    const result = await service.recorded('id', actor);
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]).toMatchObject({
+      referenceAmount: '200',
+      actualAmount: '180',
+      savingsAmount: '20',
+    });
+    expect(JSON.stringify(result)).not.toContain('flightCost');
+    expect(JSON.stringify(result)).not.toContain('999');
+    expect(findFirst.mock.calls[0]![0]).toMatchObject({
+      where: { id: 'id', branchId: { in: ['branch'] } },
+      include: { servicePurchases: { where: { serviceKind: 'HOTEL' } } },
+    });
+  });
+  it('rejects missing permission before query and unavailable branch intake', async () => {
+    const { service, findFirst } = setup();
+    await expect(
+      service.recorded('id', {
+        permissions: [],
+        branchIds: ['branch'],
+      } as never),
+    ).rejects.toThrow();
+    expect(findFirst).not.toHaveBeenCalled();
+    findFirst.mockResolvedValue(null);
+    await expect(service.recorded('id', actor)).rejects.toThrow();
+  });
+  it('quotes current reference for old purchases but keeps final recorded amount', async () => {
+    const { service } = setup([{ ...purchase(), passengerPrices: [] }]);
+    const quote = vi.spyOn(service, 'quote').mockResolvedValue({
+      status: 'AVAILABLE',
+      actualAmount: '180',
+      referenceAmount: '210',
+    } as never);
+    expect((await service.recorded('id', actor)).data[0]).toMatchObject({
+      actualAmount: '180',
+      referenceAmount: '210',
+      reason: 'CURRENT_REFERENCE',
+    });
+    expect(quote).toHaveBeenCalledWith(snapshot, 'branch', 'USD', actor, '180');
+  });
+});

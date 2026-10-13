@@ -17,3 +17,28 @@ describe('hotel savings presentation', () => {
     );
   });
 });
+
+it('shows final hotel purchase even without a matching reference', () => {
+  const html = renderToStaticMarkup(
+    <HotelPurchaseSavings
+      value={{
+        version: 1,
+        status: 'UNAVAILABLE',
+        reason: 'NO_MATCHING_RATE',
+        actualAmount: '180',
+        referenceAmount: null,
+        savingsAmount: null,
+        currencyCode: 'USD',
+        capturedAt: '',
+        sourceBatchId: null,
+        sourceBrokerName: null,
+        checkIn: '',
+        checkOut: '',
+      }}
+    />,
+  );
+  expect(html).toContain('180');
+  expect(html).toContain('USD');
+  expect(html).toContain('خرید واقعی رزرواسیون');
+  expect(html).toContain('مقایسه قابل محاسبه نیست');
+});

@@ -26,8 +26,11 @@ export function isAllowedOrganizationWorkbookRelationship(
   if (targetMode.toLowerCase() === 'external') {
     if (type !== hyperlinkRelationshipType) return false;
     // Hyperlink metadata is never followed or rendered; only cell text is read.
+    // Excel can append an encoded line ending to an otherwise ordinary mailto
+    // target. Ignore that metadata suffix without weakening cell validation.
+    const mailtoTarget = target.replace(/(?:%0[ad])+$/gi, '');
     if (
-      safeMailtoTarget.test(target) ||
+      safeMailtoTarget.test(mailtoTarget) ||
       /^tel:\+?[\d(). -]{3,30}$/i.test(target)
     )
       return true;

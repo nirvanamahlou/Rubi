@@ -1,3 +1,13 @@
+## 2026-10-13 — RESERVATION-HOTEL-COST-VISIBILITY-1013 — PC-A
+
+## ACCOUNTING-KPI-NAVIGATION-1013 — PC-A — REVIEW CANDIDATE
+
+Four read-only page-specific Accounting KPI cards now precede the existing toolbar. Internal navigation borders removed and desktop navigation made taller. Existing snapshot/journal/tax/seller read APIs and caches only; unavailable and truncated data never display a fabricated zero. PC-B Finances confirms no overlapping lock/deploy.14 focused tests and full Web typecheck pass;91 browser routes preserve existing content/fields/buttons and show four correctly positioned cards; light/dark390/768/1600 have no document overflow. Full Web lint/build and final-head CI gate publication. No business data, permission, API, schema, migration or dependency changes. User explicitly authorizes push, develop merge and existing3100 activation with nirvanamahlou. Details: docs/tasks/ACCOUNTING-KPI-NAVIGATION-1013.md.
+
+ACCOUNTING-KPI-NAVIGATION-1013 translation correction:52 additive Web-only KPI translations cover all new labels, unavailable/loading notes and accessible section title. Existing catalogue values are preserved. English coverage/render and KPI regressions gate the corrected head; the bounded translate.ts reservation releases with that commit. No UI controls, metrics or API changes.
+
+Reservations replaces the full Sales contract-profit action with a hotel-only comparison. The branch-scoped reservations.read endpoint loads only hotel purchases, picks the latest revision per service, excludes rejected purchases and emits a bounded HotelPurchaseSavingsV1 projection without flight acquisition costs or full-contract profit totals. Saved reference evidence is preserved; legacy purchases use a clearly marked current matching reference. Final recorded hotel amount remains visible when reference comparison is unavailable. The separate managerial Sales profit endpoint keeps finance.read enforcement. No schema/migration/dependency or operational data writes. Focused API authorization/projection and Web render regressions, typechecks and CI quality/build gates validate the user-authorized develop merge.
+
 ## 2026-10-13 — COMPACT-TICKET-PRICING-1013 — PC-A
 
 Flight pricing uses compact responsive two-column cards, smaller summaries and channel rows, a collapsed manual pair editor, and directly selectable all/one-way/round-trip modes. Unpriced reverse legs from the same published load, branch and cabin within an explicit return window are offered automatically; saved/manual prices take precedence and are not duplicated. This is a pricing candidate projection, not a persisted new fare. Older offers without load identity remain available through the manual editor. Fifteen focused model/render regressions pass. No API/schema/migration/dependency or live price mutations. Full quality/build checks gate the user-authorized develop merge.
@@ -5878,6 +5888,18 @@ Candidate validation: 243 Organizations tests pass (one opt-in private workbook
 test skipped), 93 Master Data deletion tests pass; scoped lint and Web/API
 typecheck pass. Prisma schema validates, translations synchronize, API build
 and Web 62-route production build pass. No live import or deletion was run.
+
+## 2026-10-13 — AGENCY-XLSX-INERT-MAILTO-1013 — PC-B
+
+The supplied agency workbook has 102 populated rows and two Excel `mailto:` hyperlink targets
+with percent-encoded trailing line feeds. These are inert metadata, but the
+Organizations parser rejected the entire file. The parser now tolerates only
+encoded trailing CR/LF on an otherwise valid email hyperlink, while keeping
+formula, external workbook link, unsafe scheme and invalid cell checks. The
+workbook remains outside Git; no live agency records were imported. Focused
+regression and opt-in local-file validation pass (21 tests), as do all 244
+Organizations tests, scoped Web lint/typecheck and the Web build (62 routes).
+No API, schema, migration or dependency changes.
 ## RESERVATION-HOTEL-SAVINGS-1013 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A. Owner requests hotel reference purchase versus actual buying comparison in purchase form, Reservations dashboard and Finance supplier payment, and authorizes develop merge after validation. Reserve new Reservations benchmark service/controller/tests; purchase persistence/public projections/runtime registration; bounded Sales public guest-age projection; shared Travel/Finance optional comparison contracts; Web purchase/dashboard/payment displays and additive English entries. Producers: Sales guest ages, Reservations rate/purchase snapshots. Consumers: Reservations Web and Finance existing public purchase projection. Preserve branch permissions, exact Decimal/currency, idempotency, purchase revisions and older payloads. Snapshot reference with purchase in existing JSON; no schema/migration/dependency change. No unrelated Accounting or shared runtime edits.
@@ -5888,8 +5910,6 @@ Implementation: reference PURCHASE tariff minus actual hotel purchase, exact Dec
 
 Manual report filter controls removed from assistant composer at user request. Text-derived filters remain the target flow through the bounded orchestrator and native tool validation. Existing fixed actions remain available until the provider and data-processing policy are approved. No claim of live natural-language processing; report filter APIs and evidence metadata remain available. Validation: 35 assistant tests, scoped ESLint, production build and its TypeScript gate passed. Provider/key activation explicitly deferred by owner. Exact-head and postmerge CI gate local rollout.
 
-## ACCOUNTING-KPI-NAVIGATION-1013 — PC-A — REVIEW CANDIDATE
+## FLIGHT-LOAD-SCROLL-1013 — PC-A — READY_FOR_CI
 
-Four read-only page-specific Accounting KPI cards now precede the existing toolbar. Internal navigation borders removed and desktop navigation made taller. Existing snapshot/journal/tax/seller read APIs and caches only; unavailable and truncated data never display a fabricated zero. PC-B Finances confirms no overlapping lock/deploy.14 focused tests and full Web typecheck pass;91 browser routes preserve existing content/fields/buttons and show four correctly positioned cards; light/dark390/768/1600 have no document overflow. Full Web lint/build and final-head CI gate publication. No business data, permission, API, schema, migration or dependency changes. User explicitly authorizes push, develop merge and existing3100 activation with nirvanamahlou. Details: docs/tasks/ACCOUNTING-KPI-NAVIGATION-1013.md.
-
-ACCOUNTING-KPI-NAVIGATION-1013 translation correction:52 additive Web-only KPI translations cover all new labels, unavailable/loading notes and accessible section title. Existing catalogue values are preserved. English coverage/render and KPI regressions gate the corrected head; the bounded translate.ts reservation releases with that commit. No UI controls, metrics or API changes.
+Flight load retains its result and detail regions after the first search while changed filters invalidate stale selections. Outbound/return viewports and detail panels have stable height; selected-row styling no longer changes border dimensions. Scroll anchoring and scroll chaining are disabled within the load panels. Existing route/return/date filtering is unchanged. Fifteen focused selection, rendering and flight-load model tests pass. Scoped lint and Web typecheck pass; full production build and PostgreSQL migration/seed gate pass in CI; exact-head CI gates the authorized develop merge. No API, migration, dependency or localhost runtime change.
