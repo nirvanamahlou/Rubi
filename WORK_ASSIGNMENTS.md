@@ -7343,3 +7343,8 @@ Result: the duplicate inner heading was removed while the page-level heading,
 control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
+## HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-hotel-import-city-normalize-1013` from origin/develop. Reserve Hotel import parser/service regressions, panel guidance and own docs. Normalize city comparison for Unicode/Persian spelling, whitespace/joiners and case; keep selected city FK/country scope and all file/token/transaction security unchanged. Only hotel name and row city required; optional fields keep validation when populated. No migration/dependency/runtime change; no merge authorization in this request.
+
+Implemented comparison-only normalization for spaces/joiners, Latin case, Arabic/Persian letter variants and آ/ا. Missing row city is explicitly rejected rather than silently populated. The supplied downloadable template commits against selected city «کوش اداسی» despite its «کوش‌آداسی» cells. Focused API tests pass 44/44, focused Web tests 16/16, scoped lint, Prettier, API/Web typechecks and builds pass. No live database write or localhost runtime rollout was performed. Source locks released for review.

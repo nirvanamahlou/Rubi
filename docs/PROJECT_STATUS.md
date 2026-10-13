@@ -1,3 +1,15 @@
+## 2026-10-13 — HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B
+
+Hotel Excel import accepts equivalent city spelling across whitespace/joiners,
+Latin case, Arabic/Persian letters and آ/ا while persisting the explicitly selected
+city FK. Only hotel name and city are required row values; populated optional
+fields retain their validation. Tests cover the downloadable template against
+«کوش اداسی», minimal rows, missing required values and real different-city rejection.
+Focused API 44/44 and Web 16/16 tests, scoped ESLint and Prettier pass. No migration,
+dependency change, live database write, merge or localhost rollout in this task.
+API/Web typechecks and builds pass. Generated contracts/client outputs were
+refreshed without accessing an operational database. Source locks released for review.
+
 ## 2026-10-13 — MERGE-SALES-UI-773-1013 — PC-A
 
 Owner authorizes develop merge of PR773 Sales follow-up/dashboard UI. Reconcile latest develop with the reviewed presentation changes, preserving all current features and both status histories. Documentation-only conflicts resolved; new-head full CI gates merge. No runtime rollout, schema, dependency or data changes.

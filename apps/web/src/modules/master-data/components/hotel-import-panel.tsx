@@ -151,6 +151,11 @@ export function HotelImportPanel({
               افزودن گروهی هتل از اکسل
             </h2>
           </div>
+          <p className="mt-2 text-sm text-slate-600">
+            در ردیف‌های اکسل فقط «نام هتل» و «شهر» الزامی است؛ سایر فیلدها
+            اختیاری‌اند. شهر بدون حساسیت به فاصله و بزرگی حروف تطبیق داده
+            می‌شود.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <a
