@@ -179,3 +179,22 @@ it('keeps the voucher button disabled when a legacy requested/confirmed flag has
   );
   expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
 });
+
+it('shows contract profit only to the authorized reservation manager', () => {
+  expect(
+    renderToStaticMarkup(<ContractActionPanel request={request} />),
+  ).not.toContain('هزینه خرید و سود قرارداد');
+  expect(
+    renderToStaticMarkup(
+      <ContractActionPanel request={request} canReadProfit />,
+    ),
+  ).toContain('هزینه خرید و سود قرارداد');
+  expect(
+    renderToStaticMarkup(
+      <ContractActionContent
+        action="هزینه خرید و سود قرارداد"
+        request={request}
+      />,
+    ),
+  ).toContain('هزینه خرید و سود قرارداد');
+});

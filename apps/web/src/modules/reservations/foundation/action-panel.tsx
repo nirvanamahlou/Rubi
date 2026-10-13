@@ -1,4 +1,5 @@
 'use client';
+import { ContractProfit } from '@/modules/sales/components/contract-profit';
 import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
 import { ReservationNotes } from '../components/reservation-notes';
 import { ReservationPassengers } from '../passenger-files/passengers';
@@ -40,7 +41,13 @@ export const contractActionGroups = [
   },
   {
     title: 'اطلاعات قرارداد',
-    items: ['مشخصات کلی', 'اسامی مسافران', 'مشاهده', 'مدارک'],
+    items: [
+      'مشخصات کلی',
+      'اسامی مسافران',
+      'مشاهده',
+      'مدارک',
+      'هزینه خرید و سود قرارداد',
+    ],
   },
   {
     title: 'یادداشت‌ها',
@@ -55,6 +62,8 @@ export function ContractActionContent({
   action: string;
   request: RequestView;
 }) {
+  if (action === 'هزینه خرید و سود قرارداد' && request.contractId)
+    return <ContractProfit key={request.contractId} id={request.contractId} />;
   if (action === 'خرید') return <ReservationPurchaseDialog id={request.id} />;
   if (action === 'فرم رزواسیون')
     return <TravelWorkflowForm id={request.id} action="رزرواسیون" />;
@@ -138,8 +147,10 @@ export function ContractActionContent({
 
 export function ContractActionPanel({
   request,
+  canReadProfit = false,
 }: {
   request?: RequestView | undefined;
+  canReadProfit?: boolean;
 }) {
   return (
     <aside className={styles.panel} aria-label="عملیات قرارداد انتخاب‌شده">
@@ -169,88 +180,94 @@ export function ContractActionPanel({
           >
             <h2>{group.title}</h2>
             <div className={styles.buttons}>
-              {group.items.map((action) =>
-                action === 'خرید' ? (
-                  request ? (
-                    <AccessLink
-                      key={action}
-                      href={purchaseHubHref(request)}
-                      className={styles.action}
-                      aria-label="خرید خدمات این قرارداد"
-                    >
-                      {action}
-                    </AccessLink>
-                  ) : (
-                    <button
-                      key={action}
-                      type="button"
-                      disabled
-                      className={styles.action}
-                    >
-                      {action}
-                    </button>
-                  )
-                ) : action === 'مفاد' ? (
-                  request ? (
-                    <a
-                      key={action}
-                      href="/contracts/terms.pdf"
-                      download="مفاد.pdf"
-                      className={`${styles.action} ${styles.download}`}
-                      aria-label="دریافت PDF مفاد قرارداد"
-                    >
-                      {action}
-                    </a>
-                  ) : (
-                    <button
-                      key={action}
-                      type="button"
-                      disabled
-                      className={styles.action}
-                    >
-                      {action}
-                    </button>
-                  )
-                ) : (
-                  <Dialog key={action}>
-                    <DialogTrigger asChild>
+              {group.items
+                .filter(
+                  (action) =>
+                    action !== 'هزینه خرید و سود قرارداد' || canReadProfit,
+                )
+                .map((action) =>
+                  action === 'خرید' ? (
+                    request ? (
+                      <AccessLink
+                        key={action}
+                        href={purchaseHubHref(request)}
+                        className={styles.action}
+                        aria-label="خرید خدمات این قرارداد"
+                      >
+                        {action}
+                      </AccessLink>
+                    ) : (
                       <button
+                        key={action}
                         type="button"
-                        disabled={
-                          !request ||
-                          (action === 'واچر' && !request.voucherReady)
-                        }
-                        className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
-                        aria-label={
-                          action === 'توضیحات' && request?.hasNotes
-                            ? 'توضیحات؛ این قرارداد یادداشت دارد'
-                            : action
-                        }
+                        disabled
+                        className={styles.action}
                       >
                         {action}
                       </button>
-                    </DialogTrigger>
-                    {request && (
-                      <DialogContent
-                        dir="rtl"
-                        className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش', 'فرم رزواسیون'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
+                    )
+                  ) : action === 'مفاد' ? (
+                    request ? (
+                      <a
+                        key={action}
+                        href="/contracts/terms.pdf"
+                        download="مفاد.pdf"
+                        className={`${styles.action} ${styles.download}`}
+                        aria-label="دریافت PDF مفاد قرارداد"
                       >
-                        <DialogTitle className="pe-10">{action}</DialogTitle>
-                        <DialogDescription>
-                          قرارداد {request.contractNumber} ·{' '}
-                          {request.customerName !== '—'
-                            ? request.customerName
-                            : (request.passengerNames[0] ?? request.branchName)}
-                        </DialogDescription>
-                        <ContractActionContent
-                          action={action}
-                          request={request}
-                        />
-                      </DialogContent>
-                    )}
-                  </Dialog>
-                ),
-              )}
+                        {action}
+                      </a>
+                    ) : (
+                      <button
+                        key={action}
+                        type="button"
+                        disabled
+                        className={styles.action}
+                      >
+                        {action}
+                      </button>
+                    )
+                  ) : (
+                    <Dialog key={action}>
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={
+                            !request ||
+                            (action === 'واچر' && !request.voucherReady)
+                          }
+                          className={`${styles.action} ${action === 'توضیحات' && request?.hasNotes ? styles.hasNotes : ''}`}
+                          aria-label={
+                            action === 'توضیحات' && request?.hasNotes
+                              ? 'توضیحات؛ این قرارداد یادداشت دارد'
+                              : action
+                          }
+                        >
+                          {action}
+                        </button>
+                      </DialogTrigger>
+                      {request && (
+                        <DialogContent
+                          dir="rtl"
+                          className={`max-h-[92dvh] overflow-y-auto ${['مشاهده', 'دریافت‌ها', 'ویرایش', 'فرم رزواسیون'].includes(action) ? 'sm:max-w-6xl' : 'sm:max-w-3xl'}`}
+                        >
+                          <DialogTitle className="pe-10">{action}</DialogTitle>
+                          <DialogDescription>
+                            قرارداد {request.contractNumber} ·{' '}
+                            {request.customerName !== '—'
+                              ? request.customerName
+                              : (request.passengerNames[0] ??
+                                request.branchName)}
+                          </DialogDescription>
+                          <ContractActionContent
+                            action={action}
+                            request={request}
+                          />
+                        </DialogContent>
+                      )}
+                    </Dialog>
+                  ),
+                )}
             </div>
           </section>
         ))}

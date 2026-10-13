@@ -66,7 +66,9 @@ export class FinanceTicketCostService {
         'تأمین‌کننده پرواز باید در درخواست خرید مشخص باشد.',
       );
     const isSeatPricing =
-      input.seatCount !== undefined || input.unitCost !== undefined;
+      input.seatCount !== undefined ||
+      input.unitCost !== undefined ||
+      input.totalCost !== undefined;
     const seatCount = isSeatPricing
       ? (input.seatCount ?? request.seatCount)
       : null;
@@ -87,12 +89,23 @@ export class FinanceTicketCostService {
         throw new BadRequestException(
           'تعداد صندلی خریداری‌شده معتبر لازم است.',
         );
-      if (!input.unitCost)
-        throw new BadRequestException('قیمت خرید هر صندلی لازم است.');
-      unitCost = money(input.unitCost);
+      if (input.totalCost !== undefined) {
+        if (input.unitCost !== undefined)
+          throw new BadRequestException(
+            'Specify either total cost or unit cost.',
+          );
+        invoice = money(input.totalCost);
+        unitCost = invoice.div(seatCount).toDecimalPlaces(4);
+        if (unitCost.lte(0))
+          throw new BadRequestException('Purchase cost per seat is too small.');
+      } else {
+        if (!input.unitCost)
+          throw new BadRequestException('قیمت خرید هر صندلی لازم است.');
+        unitCost = money(input.unitCost);
+        invoice = unitCost.mul(seatCount).toDecimalPlaces(4);
+      }
       adult = unitCost;
       child = new Prisma.Decimal(0);
-      invoice = unitCost.mul(seatCount).toDecimalPlaces(4);
       money(invoice.toString());
     } else {
       if (!input.adultUnitCost || !input.childUnitCost || !input.invoiceAmount)
@@ -438,6 +451,8 @@ export class FinanceTicketCostService {
           adultUnitCost: true,
           childUnitCost: true,
           unitCost: true,
+          seatCount: true,
+          invoiceAmount: true,
         },
       });
     const seen = new Set<string>();
@@ -452,6 +467,8 @@ export class FinanceTicketCostService {
           adultUnitCost: row.adultUnitCost.toString(),
           childUnitCost: row.childUnitCost.toString(),
           unitCost: row.unitCost?.toString() ?? null,
+          seatCount: row.seatCount,
+          invoiceAmount: row.invoiceAmount?.toString() ?? null,
         },
       ];
     });

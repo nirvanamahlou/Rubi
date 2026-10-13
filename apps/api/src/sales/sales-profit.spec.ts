@@ -63,6 +63,63 @@ const ticket = {
   currencyCode: 'USD',
 };
 describe('actual contract package margin', () => {
+  it('allocates each flight total to the sold adult/child seats, rounds once and keeps infant and other contracts out', () => {
+    const priced = {
+      ...ticket,
+      unitCost: '33.3333',
+      seatCount: 3,
+      invoiceAmount: '100',
+    };
+    const result = contractProfit(contract, intake, [priced]);
+    expect(
+      result.costs.find((c) => c.source === 'FINANCE_TICKET')?.amount,
+    ).toBe('66.6667');
+    const full = {
+      ...contract,
+      passengersDetail: [
+        ...contract.passengersDetail,
+        contract.passengersDetail[0]!,
+      ],
+    };
+    expect(
+      contractProfit(full, intake, [priced]).costs.find(
+        (c) => c.source === 'FINANCE_TICKET',
+      )?.amount,
+    ).toBe('100');
+    const returnTrip = {
+      ...contract,
+      servicesDetail: [
+        ...contract.servicesDetail,
+        { ...contract.servicesDetail[0]!, clientKey: 'return' },
+      ],
+      ticketSelections: [
+        ...contract.ticketSelections,
+        {
+          ...contract.ticketSelections[0]!,
+          serviceClientKey: 'return',
+          offerId: 'return-offer',
+        },
+      ],
+      passengersDetail: contract.passengersDetail.map((p) => ({
+        ...p,
+        serviceClientKeys: [...p.serviceClientKeys, 'return'],
+      })),
+    };
+    const both = contractProfit(returnTrip, intake, [
+      priced,
+      {
+        ...priced,
+        id: 'return-cost',
+        offerId: 'return-offer',
+        invoiceAmount: '150',
+      },
+    ]);
+    expect(
+      both.costs
+        .filter((c) => c.source === 'FINANCE_TICKET')
+        .map((c) => c.amount),
+    ).toEqual(['66.6667', '100']);
+  });
   it('subtracts each actual purchase once and costs only the assigned adult/child seats, in exact separate currencies', () => {
     const result = contractProfit(contract, intake, [ticket]);
     expect(result.complete).toBe(true);

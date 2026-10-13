@@ -75,7 +75,7 @@ export class TicketPurchaseInboxController {
       !input?.operationId ||
       input.expectedCostVersion === undefined ||
       input.seatCount === undefined ||
-      input.unitCost === undefined
+      (input.unitCost === undefined && input.totalCost === undefined)
     )
       throw new BadRequestException(
         'تعداد صندلی، قیمت تکی، شناسه عملیات و نسخه قیمت لازم است.',
