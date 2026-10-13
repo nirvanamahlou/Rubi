@@ -1,3 +1,13 @@
+## 2026-10-13 — ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+Authenticated browser acceptance reproduced the Accounting form regression: the
+account tree loads all 222 records, but the shared Tabs wrapper treats uncatalogued
+form-local values such as `main` as forbidden screens and removes their trigger and
+content. The bounded fix permits only uncatalogued local tabs while continuing to
+apply the existing permission decision to every catalogued screen tab. No data,
+API, schema, dependency or IAM-grant change.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 Accounting forms, lists and filters are being restyled as inline project-native
@@ -5731,3 +5741,16 @@ User requests latest develop on localhost3000. Clean inactive worktree updated t
 ## 2026-10-13 — HOTEL-RATES-COMPACT-1013 — IN_PROGRESS
 
 Reservation hotel purchase-rate editor presentation is being compacted so one hotel's selectors, stay range and room-rate table are reachable with less scrolling. The existing save, validation, pricing and history flows remain unchanged; no API or database migration is planned. PR to develop follows focused verification.
+
+## 2026-10-13 — ASSISTANT-PHASE2-1013 — PC-C
+
+Approved deterministic personal recommendations implemented: Tehran-day urgency,
+source-priority promotion, source/rule identity, reason and observation time,
+top5 with view-all and removal on refreshed source completion. Fixed daily summary
+compares both weekly periods and exact per-currency amounts. Contractual balance
+recommendations await real data/rules; informational balances remain separately
+labelled and Finance-approved receivables are still pending. No LLM, Write tool,
+permission, schema or dependency changes. Service27 and Web/translation32 tests,
+scoped lint and Web typecheck pass. Build and full CI gate develop merge and local
+publication; details in docs/tasks/ASSISTANT-PHASE2-1013.md. Business pilot and
+reference reconciliation are separate from these synthetic checks.

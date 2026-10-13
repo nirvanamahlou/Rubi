@@ -840,3 +840,32 @@
     font-size: 16px;
   }
 }
+
+.composer .overdue {
+  color: #fda4af;
+  background: #fb718520;
+}
+.composer .due {
+  color: #5eead4;
+  background: #2dd4bf20;
+}
+.composer .sourceLink {
+  color: #93c5fd;
+}
+.recommendationDetails {
+  margin-top: 16px;
+}
+.recommendationDetails > summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 13px;
+  color: var(--foreground);
+}
+.recommendationDetails > summary:focus-visible {
+  outline: 2px solid #22d3ee;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.followUp > p {
+  margin-block: 0;
+}

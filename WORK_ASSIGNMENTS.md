@@ -1,3 +1,15 @@
+## ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-accounting-form-tabs-1013 from
+origin/develop@4122f5da. Reserve the shared Web tab-access fallback, its focused
+regression, Accounting browser acceptance and bounded status entries. Catalogued
+screen tabs remain permission-filtered; uncatalogued tabs are ordinary in-form UI
+and must remain visible. Restore the hidden Accounting main/turnover and nested
+form tabs without changing APIs, IAM grants, schema, dependencies or operational
+data. User explicitly authorizes push, merge to develop and local Web3000/API4000
+refresh after checks. Preserve the dirty primary checkout and existing database.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;
@@ -7232,3 +7244,12 @@ LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry
 ## HOTEL-RATES-COMPACT-1013 — PC-A — IN_PROGRESS
 
 Branch `codex/pc-a-hotel-rates-compact-1013` from `origin/develop@4122f5da`. Reserve only Reservations hotel-rate Web editor layout (`packs-workspace`, destination fields, rate/room CSS) and focused presentation tests, plus bounded own status entries. Compact destination/hotel selectors, collapse prior periods while editing, and fit room-rate grids more densely without changing calculations, handlers, validation, API, schema, permissions, dependencies, or operational data. User explicitly authorizes PR and merge to develop after conflict and CI review. No localhost:3100 update is requested.
+
+## ASSISTANT-PHASE2-1013 — PC-C — IN_PROGRESS
+
+Base develop4122f5da; user approves deterministic priorities (overdue/today urgent, days1-3 important, days4-7 ordinary), short executive summary and top5 with view-all, source/rule deduplication. Recorded source priority may promote but never lower date urgency. Contract-balance recommendations are deferred pending real data and business rules; the separate informational balance report remains. Reserve services/assistant, apps/web/src/modules/assistant, apps/web/src/i18n/assistant-copy.ts and bounded own task/status/foundation documentation. Fixed authenticated SELF sources and separately authorized corporate projections only; preserve public ERP contracts, native IAM revalidation, safe links and no-model/no-write policy. No schema/migration/dependency locks. Acceptance: Tehran-day boundaries, source priority, unique evidence, completed/out-of-window removal on refresh, caps, denied/unavailable sources, exact currency comparisons, top5 expansion and existing injection/revocation tests; scoped checks/build and full CI before develop merge/local rollout.
+
+ASSISTANT-PHASE2-1013 candidate implemented within reserved scope. Service27/27,
+Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
+with review candidate; build, exact-head CI, authorized develop merge, post-merge
+CI and PC-C3000/4300 rollout remain release gates. No database work is required.

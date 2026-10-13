@@ -1,3 +1,4 @@
+import { recommendations } from './recommendations.mjs';
 /** Fixed read capabilities; neither prompts nor scope selectors are accepted. */
 export const ACTIONS = Object.freeze({
   'daily-summary': Object.freeze({ kind: 'PERSONAL', sideEffects: false }),
@@ -43,16 +44,8 @@ export function dailySummary(snapshot) {
     // Counts describe the visible bounded evidence, never the complete ERP queue.
     coverage: { horizonDays: 7, limit: 30, includesOverdue: true },
     counts,
-    recommendations: snapshot.followUps.map((item) => ({
-      followUpId: item.id,
-      ruleId: `${item.reason}_V1`,
-      priority:
-        item.reason === 'OVERDUE'
-          ? 'HIGH'
-          : item.reason === 'DUE_SOON'
-            ? 'MEDIUM'
-            : 'LOW',
-    })),
+    policyVersion: 2,
+    recommendations: recommendations(snapshot),
     snapshot,
   };
 }

@@ -99,3 +99,14 @@ route projections remain unavailable. Missing ERP publication and invalid/capped
 sources produce explicit safe blocked causes, never synthetic/zero totals.
 Only whitelisted source fields are returned; no demo reports or financial rows.
 ERP publication and full acceptance: ../../docs/tasks/ASSISTANT-PHASE1-REPORTS-1012.md.
+
+## Explainable recommendations — 2026-10-13
+
+Daily summaries add policyVersion2 and PERSONAL_DUE_V2 recommendations keyed by
+source record and rule. Tehran calendar urgency is HIGH for overdue/today, MEDIUM
+for days1–3, LOW for days4–7 or assigned undated items. Recorded source priority
+may only promote urgency. Evidence observation time and reason are mandatory;
+completed/out-of-window records disappear on fresh reads. Web shows top5 plus
+view-all and exact current/previous weekly amounts per currency. Contract-balance
+recommendations are explicitly deferred pending real data and approved rules.
+See docs/tasks/ASSISTANT-PHASE2-1013.md. No model, persistence or Write operation.
