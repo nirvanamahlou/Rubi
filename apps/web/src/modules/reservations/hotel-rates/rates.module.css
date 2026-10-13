@@ -735,3 +735,87 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Compact manual entry keeps destination, stay and hotel prices together. */
+.root .destinationSetup {
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(240px, 1fr);
+  align-items: end;
+  gap: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.destinationSetup .destinationRow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: none;
+  gap: 6px 12px;
+}
+.destinationSetup .destinationRow h2 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13px;
+}
+.destinationSetup .destinationHotel {
+  margin: 0;
+  min-width: 0;
+}
+.destinationSetup .confirmation {
+  grid-column: 1 / -1;
+}
+.periodDisclosure {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: var(--surface);
+}
+.periodDisclosure > summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.periodDisclosure .periodPanel {
+  margin: 0;
+  border: 0;
+}
+.root .staySetup {
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.staySetup h2 {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.stayFields {
+  gap: 10px;
+}
+.destinationField {
+  gap: 4px;
+}
+.stayFields output {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+.root .modeBar {
+  margin-bottom: 10px;
+}
+.root header {
+  margin-bottom: 12px;
+}
+.root .editor input:not([type='checkbox']),
+.root .destinationSetup button[role='combobox'],
+.root .editor button[role='combobox'] {
+  min-height: 34px;
+  height: 34px;
+  padding-block: 4px;
+  font-size: 13px;
+}
+.root .saveBar {
+  padding: 10px 0;
+}
+@media (max-width: 760px) {
+  .root .destinationSetup {
+    grid-template-columns: 1fr;
+  }
+}

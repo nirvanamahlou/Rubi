@@ -5729,14 +5729,18 @@ Three correspondence cards/routes: Incoming uses unchanged Documents upload form
 - PC-B fixed the Organizations XLSX preview gate so optional website-like
   values entered in the email column are omitted with a visible warning rather
   than disabling the create action for the whole workbook.
-- Required identity, duplicate, formula/control-character and workbook safety
-  checks remain blocking. No schema, API, dependency or operational data was
+- Required identity, duplicate, formula/control-character and workbook safety  checks remain blocking. No schema, API, dependency or operational data was
   changed.
 - Focused Organizations tests pass 32/32; scoped ESLint and Web typecheck pass.
 
 ## 2026-10-12 — LATEST-LOCALHOST-1012 — PC-C
 
 User requests latest develop on localhost3000. Clean inactive worktree updated to a98ee1ad; no protected branch or unrelated files changed. Rebuilt Contracts/Database/Config before API/Web to remove stale generated-artifact mismatches. API and Web production builds pass (62 pages). Reproduced upstream Full test suite failure: one new Organizations import warning had no English translation. Added only that Web catalogue entry; original completeness gate and both scoped feature suites pass18/18. No migration, dependency or permission changes. Operational database is57 migrations behind and three historical checksums differ; backup and isolated rehearsal precede any database upgrade. Existing API remains available while the Web cutover is prepared.
+
+
+## 2026-10-13 — HOTEL-RATES-COMPACT-1013 — READY_FOR_REVIEW
+
+Reservation hotel purchase-rate editor presentation is being compacted so one hotel's selectors, stay range and room-rate table are reachable with less scrolling. The existing save, validation, pricing and history flows remain unchanged; no API or database migration is planned. PR to develop follows focused verification.
 
 ## 2026-10-13 — ASSISTANT-PHASE2-1013 — PC-C
 
@@ -5750,6 +5754,8 @@ permission, schema or dependency changes. Service27 and Web/translation32 tests,
 scoped lint and Web typecheck pass. Build and full CI gate develop merge and local
 publication; details in docs/tasks/ASSISTANT-PHASE2-1013.md. Business pilot and
 reference reconciliation are separate from these synthetic checks.
+
+Compact hotel-rate layout candidate: destination selectors and hotel share a full-width row, saved periods remain available in a collapsed disclosure during manual entry, and stay/room/price controls use reduced spacing and height. Responsive single-column fallback retained. No pricing, validation, API, database or runtime changes. Complete focused verification and exact-head CI gate authorized develop merge.
 
 ## 2026-10-13 — PHASE2-INTEGRATION-CI-1013 — PC-C
 
@@ -5767,3 +5773,5 @@ upstream actually supplies a recognized priority. Absent/unknown values no longe
 appear as recorded NORMAL; deterministic due-date urgency remains unchanged.
 This additive optional field already matches the Web verifier. No permission,
 source, database or dependency change. Full CI gates publication and local rollout.
+
+HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
