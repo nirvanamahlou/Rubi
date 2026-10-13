@@ -7260,6 +7260,10 @@ Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
 with review candidate; build, exact-head CI, authorized develop merge, post-merge
 CI and PC-C3000/4300 rollout remain release gates. No database work is required.
 
+## PERSIAN-CALENDAR-MONTHS-1013 — PC-A — IN_PROGRESS
+
+User authorizes continuing this branch and develop merge. Reserve shared date-picker locale and header Persian presentation plus focused checks. Base origin/develop@21d65e26. No schema/dependency/runtime changes.
+
 HOTEL-RATES-COMPACT-1013 candidate: full-width horizontal destination/hotel selectors, collapsed prior periods during entry, compact stay fields and room/coefficients tables. Source locks released at candidate freeze; focused hotel suites, Web lint/types/build and exact-head CI gate explicit develop merge. No API, schema, pricing arithmetic or operational runtime changes.
 
 ## PHASE2-INTEGRATION-CI-1013 — PC-C — IN_PROGRESS

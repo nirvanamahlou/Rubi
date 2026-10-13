@@ -5759,6 +5759,9 @@ permission, schema or dependency changes. Service27 and Web/translation32 tests,
 scoped lint and Web typecheck pass. Build and full CI gate develop merge and local
 publication; details in docs/tasks/ASSISTANT-PHASE2-1013.md. Business pilot and
 reference reconciliation are separate from these synthetic checks.
+## PERSIAN-CALENDAR-MONTHS-1013
+
+Shared Persian date pickers and the header now use Persian month names in both interface languages. Gregorian formatting, digit preferences and stored dates remain unchanged. Develop merge is authorized; GitHub CLI authentication currently blocks PR creation.
 
 Compact hotel-rate layout candidate: destination selectors and hotel share a full-width row, saved periods remain available in a collapsed disclosure during manual entry, and stay/room/price controls use reduced spacing and height. Responsive single-column fallback retained. No pricing, validation, API, database or runtime changes. Complete focused verification and exact-head CI gate authorized develop merge.
 

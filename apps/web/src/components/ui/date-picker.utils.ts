@@ -84,7 +84,7 @@ function latinNumber(value: string): number {
 function localeFor(system: CalendarSystem, gregorianEnglish = false): string {
   return system === 'persian'
     ? gregorianEnglish
-      ? 'en-GB-u-ca-persian-nu-latn'
+      ? 'fa-IR-u-ca-persian-nu-latn'
       : 'fa-IR-u-ca-persian'
     : gregorianEnglish
       ? 'en-GB-u-ca-gregory-nu-latn'
