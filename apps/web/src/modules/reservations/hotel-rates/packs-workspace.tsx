@@ -831,7 +831,6 @@ export function HotelRatePacksWorkspace() {
           aria-label="انتخاب مقصد و هتل"
         >
           <PackDestinationFields
-            stacked
             countries={countries}
             cities={cities}
             countryId={countryId}
@@ -884,17 +883,23 @@ export function HotelRatePacksWorkspace() {
         </section>
       )}
       {cityId && branch && (
-        <HotelPeriodsPanel
-          key={`${branch}:${cityId}`}
-          branchId={branch}
-          cityId={cityId}
-          hotelId={manualHotelId}
-          revision={revision}
-          disabled={busy || opening || browserLocked}
-          canWrite={canWrite}
-          onEdit={(id, hotelId) => void openPack(id, hotelId)}
-          onSaved={() => setRevision((value) => value + 1)}
-        />
+        <details
+          className={styles.periodDisclosure}
+          open={editorMode === 'list'}
+        >
+          <summary>دوره‌های ثبت‌شده</summary>
+          <HotelPeriodsPanel
+            key={`${branch}:${cityId}`}
+            branchId={branch}
+            cityId={cityId}
+            hotelId={manualHotelId}
+            revision={revision}
+            disabled={busy || opening || browserLocked}
+            canWrite={canWrite}
+            onEdit={(id, hotelId) => void openPack(id, hotelId)}
+            onSaved={() => setRevision((value) => value + 1)}
+          />
+        </details>
       )}
       <div hidden={inputMode !== 'manual'}>
         {editorMode !== 'list' && (

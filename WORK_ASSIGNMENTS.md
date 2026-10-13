@@ -7241,6 +7241,10 @@ COMPUTER_ID=PC-C; user authorizes fetching the latest develop and serving localh
 
 LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry in apps/web/src/i18n/en-catalog.json for the missing Organizations import warning. Upstream candidate source locks are released. Reproduce the existing English completeness failure; preserve the test and all guards. Also prepare a verified ignored local database backup and isolated migration rehearsal before any request to alter the operational database. No operational migration approval has been inferred from a pull/start request.
 
+## HOTEL-RATES-COMPACT-1013 — PC-A — READY_FOR_REVIEW
+
+Branch `codex/pc-a-hotel-rates-compact-1013` from `origin/develop@4122f5da`. Reserve only Reservations hotel-rate Web editor layout (`packs-workspace`, destination fields, rate/room CSS) and focused presentation tests, plus bounded own status entries. Compact destination/hotel selectors, collapse prior periods while editing, and fit room-rate grids more densely without changing calculations, handlers, validation, API, schema, permissions, dependencies, or operational data. User explicitly authorizes PR and merge to develop after conflict and CI review. No localhost:3100 update is requested.
+
 ## ASSISTANT-PHASE2-1013 — PC-C — IN_PROGRESS
 
 Base develop4122f5da; user approves deterministic priorities (overdue/today urgent, days1-3 important, days4-7 ordinary), short executive summary and top5 with view-all, source/rule deduplication. Recorded source priority may promote but never lower date urgency. Contract-balance recommendations are deferred pending real data and business rules; the separate informational balance report remains. Reserve services/assistant, apps/web/src/modules/assistant, apps/web/src/i18n/assistant-copy.ts and bounded own task/status/foundation documentation. Fixed authenticated SELF sources and separately authorized corporate projections only; preserve public ERP contracts, native IAM revalidation, safe links and no-model/no-write policy. No schema/migration/dependency locks. Acceptance: Tehran-day boundaries, source priority, unique evidence, completed/out-of-window removal on refresh, caps, denied/unavailable sources, exact currency comparisons, top5 expansion and existing injection/revocation tests; scoped checks/build and full CI before develop merge/local rollout.
@@ -7252,3 +7256,38 @@ CI and PC-C3000/4300 rollout remain release gates. No database work is required.
 ## PERSIAN-CALENDAR-MONTHS-1013 — PC-A — IN_PROGRESS
 
 User authorizes continuing this branch and develop merge. Reserve shared date-picker locale and header Persian presentation plus focused checks. Base origin/develop@21d65e26. No schema/dependency/runtime changes.
+
+HOTEL-RATES-COMPACT-1013 candidate: full-width horizontal destination/hotel selectors, collapsed prior periods during entry, compact stay fields and room/coefficients tables. Source locks released at candidate freeze; focused hotel suites, Web lint/types/build and exact-head CI gate explicit develop merge. No API, schema, pricing arithmetic or operational runtime changes.
+
+## PHASE2-INTEGRATION-CI-1013 — PC-C — IN_PROGRESS
+
+Base develop21d65e26 after PR812. Standing human instruction requires fixing and
+following post-merge CI. The merged PC-B ACCOUNTING-FORM-TABS-1013 changes the
+uncatalogued tab fallback intentionally; its old rendered IAM regression still
+asserts the superseded hidden behavior. Reproduced exactly (1 failed/8 passed).
+Reserve only apps/web/src/modules/iam/access-ui.spec.tsx and this status entry.
+Do not modify the producer access policy or the merged PC-B source files. Preserve
+and explicitly assert catalogued denied tabs/content remain hidden in the same
+render as an allowed ordinary local form tab. No IAM grant/API/schema/dependency
+or runtime behavior change. The producer is already merged; no active local edits
+or unmerged source replacement are involved. Full CI precedes develop merge.
+
+PHASE2-INTEGRATION-CI-1013 candidate: all57 IAM/assistant/translation tests,
+scoped ESLint and Web typecheck passed. Existing integrated production build passed
+before this test-only edit. Production source is unchanged. Source reservation
+released with review candidate; exact-head and post-merge CI still gate rollout.
+
+## ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C — IN_PROGRESS
+
+Base developce487a4e. Final Phase2 evidence review: absent upstream priority must
+not be labelled as recorded NORMAL. Reserve only services/assistant/server.mjs,
+its focused regression and own docs entries. Omit sourcePriority when absent or
+unrecognized; existing deterministic date ranking stays unchanged and the Web
+already supports optional sourcePriority. No source/API/permission/schema change.
+
+ASSISTANT-PRIORITY-EVIDENCE-1013 candidate: service28/28 tests pass, including
+missing/unknown priority evidence and all existing authorization checks. Source
+reservation released with review candidate. Web build is unchanged; final full CI
+and post-merge verification gate local publication.
+
+HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.

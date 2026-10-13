@@ -866,3 +866,21 @@ test('Phase2 midnight is Tehran midnight, not UTC midnight', async (t) => {
   assert.equal(body.recommendations[0].reason, 'TODAY');
   assert.equal(body.recommendations[0].priority, 'HIGH');
 });
+
+test('recommendations do not fabricate a recorded priority when the source omits it', async (t) => {
+  const h = await harness(t, { rows: [example] });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(
+    Object.hasOwn(body.snapshot.followUps[0], 'sourcePriority'),
+    false,
+  );
+  assert.equal(body.recommendations[0].priority, 'HIGH');
+  const unknown = personalFollowUps(
+    'calendar',
+    [{ ...example, priority: 'UNKNOWN' }],
+    clock(),
+  );
+  assert.equal(Object.hasOwn(unknown[0], 'sourcePriority'), false);
+});

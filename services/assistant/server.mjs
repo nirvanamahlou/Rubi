@@ -115,9 +115,9 @@ export function personalFollowUps(tool, rows, now) {
       id: `${tool}:${row.id}`,
       title: row.title.slice(0, 200),
       source: tool,
-      sourcePriority: ['LOW', 'NORMAL', 'HIGH', 'URGENT'].includes(row.priority)
-        ? row.priority
-        : 'NORMAL',
+      ...(['LOW', 'NORMAL', 'HIGH', 'URGENT'].includes(row.priority)
+        ? { sourcePriority: row.priority }
+        : {}),
       dueAt: due ? new Date(due).toISOString() : null,
       reason: !due
         ? 'ASSIGNED'
