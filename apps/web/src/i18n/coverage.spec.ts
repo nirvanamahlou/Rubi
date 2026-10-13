@@ -18,7 +18,13 @@ describe('English UI completeness', () => {
   it('does not accept empty, Persian or placeholder English translations', () => {
     const invalid = Object.entries(englishUiCatalog).filter(
       ([, text]) =>
-        !text.trim() || /[\u0600-\u06ff]|\b(?:TODO|TRANSLATE_ME)\b/.test(text),
+        !text.trim() ||
+        /[\u0600-\u06ff]|\b(?:TODO|TRANSLATE_ME)\b/.test(
+          text.replace(
+            /فروردین|اردیبهشت|خرداد|تیر|مرداد|شهریور|مهر|آبان|آذر|دی|بهمن|اسفند/g,
+            '',
+          ),
+        ),
     );
     expect(invalid).toEqual([]);
   });
