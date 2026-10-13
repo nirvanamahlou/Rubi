@@ -1,3 +1,15 @@
+## 2026-10-13 — HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B
+
+Hotel Excel import accepts equivalent city spelling across whitespace/joiners,
+Latin case, Arabic/Persian letters and آ/ا while persisting the explicitly selected
+city FK. Only hotel name and city are required row values; populated optional
+fields retain their validation. Tests cover the downloadable template against
+«کوش اداسی», minimal rows, missing required values and real different-city rejection.
+Focused API 44/44 and Web 16/16 tests, scoped ESLint and Prettier pass. No migration,
+dependency change, live database write, merge or localhost rollout in this task.
+API/Web typechecks and builds pass. Generated contracts/client outputs were
+refreshed without accessing an operational database. Source locks released for review.
+
 ## SALES-UNIFIED-FILTERS-1013 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A. Reserve Sales Web filters, API list/receivables/export/repository, Sales optional query contracts and focused tests. Sales API producer and Web consumer coordinate additive backward-compatible filter fields. No migration/dependency. User requests unified contract/receivables filters; merge not requested. Delivered one Apply/Reset form, combined search/settlement/date/route/customer criteria and matching Excel export. Customer filtering runs before pagination through the public Customers adapter; authorized scope and payment-reference permission remain enforced. Web 22 and API 7 focused tests pass; scoped lint and API typecheck pass. Production builds gate local3100/API4000 refresh; no operational records changed.
@@ -5834,4 +5846,11 @@ Tool infrastructure #819 is merged and deployed on loopback4300 with green head/
 
 ## HOTEL-RATE-HUB-1013
 
-Hotel purchase rates now open with four entry cards: Excel import, new pack, existing packs/edit, and remove pack. Removal is confirmed archival with retained history, branch/write authorization, optimistic version checks and an actor audit. Archive history supports search and read-only rate details. Archived packs are excluded from new-rate selections and shared-period sources; historical snapshots remain unchanged. Additive archivedAt migration must precede API rollout. Focused API and Web tests, lint, typecheck and production builds are release gates; final CI and develop merge pending. No operational data or local runtime changed.
+Hotel purchase rates now open with four entry cards: Excel import, new pack, existing packs/edit, and remove pack. Removal is confirmed archival with retained history, branch/write authorization, optimistic version checks and an actor audit. Archive history supports search and read-only rate details. Archived packs are excluded from new-rate selections and shared-period sources; historical snapshots remain unchanged. Additive archivedAt migration must precede API rollout. PR826 passes focused API/Web tests and full CI quality, tests, production build and PostgreSQL migration/seed checks. Latest-develop compatibility checks gate the authorized merge. No operational data or local runtime changed.
+
+## PC-C — ASSISTANT-ORCHESTRATOR-1013
+
+Gated conversation preparation: shared prepared actions, strict bounded planner contract, disabled-by-default POST/BFF and separate memory-only UI component. Synthetic providers only; live UI activation/provider/business pilot remain gated. See docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md. Candidate validation and CI pending.
+
+
+PC-C release update: filters #822 merged at7ac589fa; postmerge Nora/assistant runs38380041115,38380041148,38380029869,38380029640 all succeeded. Read API preview health200 and anonymous v2 denial401 passed with no business writes. Orchestrator #825 has56 native tests and35 Web tests passing; its final CI and localhost rollout are still gated.

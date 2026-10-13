@@ -3,6 +3,7 @@ import {
   proxyExecutiveSnapshot,
   proxyAssistantAction,
   proxyAssistantV2Action,
+  proxyAssistantConversation,
 } from './proxy';
 const request = (cookie = 'nora_access=synthetic; nora_refresh=private') =>
   new Request('http://localhost/api/assistant/executive', {
@@ -201,4 +202,64 @@ it('forwards only allowlisted v2 filters and keeps v1 query-free', async () => {
     ).status,
   ).toBe(400);
   expect(fetcher).not.toHaveBeenCalled();
+});
+
+it('conversation transport rejects foreign origins and excessive bodies before forwarding', async () => {
+  const fetcher = vi
+    .fn<typeof fetch>()
+    .mockResolvedValue(
+      Response.json(
+        { error: { code: 'CONVERSATION_DISABLED' } },
+        { status: 503 },
+      ),
+    );
+  const make = (origin: string, body: string) =>
+    new Request('http://localhost/api/assistant/v2/conversation', {
+      method: 'POST',
+      headers: {
+        origin,
+        cookie: 'nora_access=synthetic',
+        'content-type': 'application/json',
+      },
+      body,
+    });
+  expect(
+    (
+      await proxyAssistantConversation(
+        make('https://other.example', '{}'),
+        'http://127.0.0.1:4300',
+        fetcher,
+      )
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await proxyAssistantConversation(
+        make('http://localhost', 'x'.repeat(65537)),
+        'http://127.0.0.1:4300',
+        fetcher,
+      )
+    ).status,
+  ).toBe(413);
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(
+    (
+      await proxyAssistantConversation(
+        make(
+          'http://localhost',
+          JSON.stringify({ version: 1, message: 'synthetic', history: [] }),
+        ),
+        'http://127.0.0.1:4300',
+        fetcher,
+      )
+    ).status,
+  ).toBe(503);
+  expect(String(fetcher.mock.calls[0]![0])).toBe(
+    'http://127.0.0.1:4300/v2/assistant/conversation',
+  );
+  expect(fetcher.mock.calls[0]![1]).toMatchObject({
+    method: 'POST',
+    redirect: 'error',
+    cache: 'no-store',
+  });
 });

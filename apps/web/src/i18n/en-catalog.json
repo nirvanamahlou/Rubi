@@ -17225,6 +17225,8 @@
   "نامه‌های خروجی": "Outgoing letters",
   "نامه‌های ورودی": "Incoming letters",
   "مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.": "The email column value was not an email address and was ignored.",
+  "در ردیف‌های اکسل فقط «نام هتل» و «شهر» الزامی است؛ سایر فیلدها اختیاری‌اند. شهر بدون حساسیت به فاصله و بزرگی حروف تطبیق داده می‌شود.": "Only hotel name and city are required in Excel rows; other fields are optional. City matching ignores spacing and letter case.",
+  "شهر الزامی است.": "City is required.",
   "انتخاب هتل، بازهٔ سفر و ثبت قیمت خرید": "Choose a hotel, travel dates and purchase prices",
   "این بسته از انتخاب نرخ‌های جدید کنار گذاشته می‌شود. سوابق قبلی حفظ می‌شوند.": "This pack will no longer be available for new rates. Existing history will be retained.",
   "بازگشت به نرخ هتل": "Back to hotel rates",

@@ -72,6 +72,8 @@ function fixture(options?: {
   entries?: Readonly<Record<string, string>>;
   city?: string;
   nameOnly?: boolean;
+  requiredOnly?: boolean;
+  name?: string;
   formula?: boolean;
   macro?: boolean;
   badHeader?: boolean;
@@ -83,7 +85,7 @@ function fixture(options?: {
   if (options?.badHeader) headers[0] = 'کد' as (typeof headers)[0];
   const values = [
     options?.code ?? 'HTL-BODRUM-001',
-    'Test Hotel',
+    options?.name ?? 'Test Hotel',
     'بدروم',
     options?.city ?? 'بدروم',
     '',
@@ -106,6 +108,8 @@ function fixture(options?: {
       .map((value, index) => {
         const reference = `${column(index)}${number}`;
         if (options?.nameOnly && number === 2 && index !== 1)
+          return cell(reference, '');
+        if (options?.requiredOnly && number === 2 && index !== 1 && index !== 3)
           return cell(reference, '');
         return options?.formula && number === 2 && index === 15
           ? `<c r="${reference}"><f>1+1</f><v>2</v></c>`
@@ -282,8 +286,8 @@ function externalRejection(buffer: ReturnType<typeof fixture>) {
 }
 
 describe('parseHotelImportWorkbook', () => {
-  it('creates a stable identity for a name-only row using the selected city', () => {
-    const parsed = parse(fixture({ nameOnly: true }));
+  it('creates a stable identity with only hotel name and city supplied', () => {
+    const parsed = parse(fixture({ requiredOnly: true }));
     expect(parsed.issues).toEqual([]);
     expect(parsed.rows[0]).toMatchObject({
       englishName: 'Test Hotel',
@@ -293,8 +297,39 @@ describe('parseHotelImportWorkbook', () => {
       internalNote: null,
     });
     expect(parsed.rows[0]?.code).toMatch(/^HOTEL_[A-F0-9]{12}$/);
-    expect(parse(fixture({ nameOnly: true })).rows[0]?.code).toBe(
+    expect(parse(fixture({ requiredOnly: true })).rows[0]?.code).toBe(
       parsed.rows[0]?.code,
+    );
+  });
+  it.each([
+    ['کوش اداسی', 'کوش‌آداسی'],
+    ['  کوش\u00a0 اداسی  ', 'کوش‌آداسی'],
+    ['كوش اداسي', 'کوش‌آداسی'],
+    ['کوشاداسی', 'کوش آداسی'],
+    [' kUs A dAsI ', 'KUSADASI'],
+    ['Kuş adası', 'KUŞ ADASI'],
+  ])(
+    'matches city %s to %s without spacing or case sensitivity',
+    (city, expectedCityName) => {
+      expect(
+        parseHotelImportWorkbook({
+          buffer: fixture({ city, requiredOnly: true }),
+          fileName: 'hotels.xlsx',
+          mimeType: HOTEL_IMPORT_MIME,
+          expectedCityName,
+        }).issues,
+      ).toEqual([]);
+    },
+  );
+
+  it('requires both city and hotel name rather than silently filling city', () => {
+    expect(parse(fixture({ nameOnly: true })).issues).toContainEqual(
+      expect.objectContaining({ column: 'شهر', code: 'REQUIRED' }),
+    );
+    expect(
+      parse(fixture({ requiredOnly: true, name: '' })).issues,
+    ).toContainEqual(
+      expect.objectContaining({ column: 'نام هتل', code: 'REQUIRED' }),
     );
   });
   it('reads status after self-closing empty cells in the exact v1 format', () => {
