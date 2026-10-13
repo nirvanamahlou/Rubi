@@ -46,8 +46,9 @@ export interface OrganizationPreviewRow extends OrganizationImportRow {
   rowNumber: number;
   issue?: string;
   warning?: string;
+  reviewFields?: string[];
   existing?: MasterDataRecord;
-  result?: 'created' | 'skipped' | 'invalid' | 'failed';
+  result?: 'created' | 'review' | 'skipped' | 'invalid' | 'failed';
   message?: string;
 }
 
@@ -114,6 +115,7 @@ export function validateOrganizationRows(
     };
     let issue: string | undefined;
     let warning: string | undefined;
+    const reviewFields: string[] = [];
     const hasUnsafeCell = Object.values(source).some((value) => {
       const normalized = String(value ?? '').normalize('NFKC');
       return (
@@ -130,7 +132,7 @@ export function validateOrganizationRows(
       !hasUnsafeCell
     ) {
       row.email = '';
-      warning = 'مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.';
+      reviewFields.push('email');
     }
     if (row.code && !/^[A-Z0-9][A-Z0-9_-]{1,31}$/.test(row.code))
       issue = 'کد باید ۲ تا ۳۲ نویسه انگلیسی، عدد، خط تیره یا زیرخط باشد.';
@@ -143,28 +145,6 @@ export function validateOrganizationRows(
     else if (!['LEGAL', 'NATURAL'].includes(row.personType))
       issue = 'نوع شخصیت باید LEGAL یا NATURAL باشد.';
     else if (
-      row.nationalId &&
-      (row.personType !== 'LEGAL' || !/^\d{11}$/.test(row.nationalId))
-    )
-      issue = 'شناسه ملی باید ۱۱ رقم و فقط برای شخصیت حقوقی باشد.';
-    else if (
-      row.chiefExecutiveNationalId &&
-      !/^\d{10}$/.test(row.chiefExecutiveNationalId)
-    )
-      issue = 'کد ملی مدیرعامل باید ۱۰ رقم باشد.';
-    else if (
-      row.chiefExecutiveMobile &&
-      !/^(?:\+98|0098|0)?9\d{9}$/.test(row.chiefExecutiveMobile)
-    )
-      issue = 'شماره موبایل مدیرعامل معتبر نیست.';
-    else if (row.officePhone && !/^\+?\d{7,20}$/.test(row.officePhone))
-      issue = 'شماره تلفن معتبر نیست.';
-    else if (
-      (row.addressLine && row.addressLine.length < 5) ||
-      (importAddressLine(row)?.length ?? 0) > 500
-    )
-      issue = 'نشانی کامل آژانس باید بین ۵ تا ۵۰۰ نویسه باشد.';
-    else if (
       !row.roleCodes ||
       row.roleCodes
         .split(',')
@@ -173,13 +153,51 @@ export function validateOrganizationRows(
       issue = 'نقش فقط AGENCY یا CORPORATE_CUSTOMER یا ترکیب آن‌هاست.';
     else if (hasUnsafeCell)
       issue = 'فرمول یا نویسه کنترلی در سلول‌ها مجاز نیست.';
+    if (!issue) {
+      if (
+        row.nationalId &&
+        (row.personType !== 'LEGAL' || !/^\d{11}$/.test(row.nationalId))
+      ) {
+        row.nationalId = '';
+        reviewFields.push('nationalId');
+      }
+      if (
+        row.chiefExecutiveNationalId &&
+        !/^\d{10}$/.test(row.chiefExecutiveNationalId)
+      ) {
+        row.chiefExecutiveNationalId = '';
+        reviewFields.push('chiefExecutiveNationalId');
+      }
+      if (
+        row.chiefExecutiveMobile &&
+        !/^(?:\+98|0098|0)?9\d{9}$/.test(row.chiefExecutiveMobile)
+      ) {
+        row.chiefExecutiveMobile = '';
+        reviewFields.push('chiefExecutiveMobile');
+      }
+      if (row.officePhone && !/^\+?\d{7,20}$/.test(row.officePhone)) {
+        row.officePhone = '';
+        reviewFields.push('officePhone');
+      }
+      if (
+        (row.addressLine && row.addressLine.length < 5) ||
+        (importAddressLine(row)?.length ?? 0) > 500
+      ) {
+        row.addressLine = '';
+        row.province = '';
+        row.city = '';
+        reviewFields.push('addressLine');
+      }
+      if (reviewFields.length)
+        warning = `نیازمند اصلاح: ${reviewFields.map((field) => ({ nationalId: 'شناسه ملی', chiefExecutiveNationalId: 'کد ملی مدیرعامل', chiefExecutiveMobile: 'موبایل مدیرعامل', officePhone: 'تلفن', email: 'ایمیل', addressLine: 'نشانی' })[field]).join('، ')}`;
+    }
     codes.add(row.code);
     names.add(row.legalName.normalize('NFKC').toLowerCase());
     return {
       ...row,
       rowNumber: index + 2,
       ...(issue ? { issue } : {}),
-      ...(!issue && warning ? { warning } : {}),
+      ...(!issue && warning ? { warning, reviewFields } : {}),
     };
   });
 }
@@ -272,6 +290,8 @@ export async function importOrganizations(
     throw new Error('هیچ ردیف قابل ثبت در فایل وجود ندارد.');
   const results: OrganizationPreviewRow[] = [];
   for (const [index, row] of checked.entries()) {
+    const reviewFields = rows[index]?.reviewFields ?? row.reviewFields ?? [];
+    const warning = rows[index]?.warning ?? row.warning;
     const issue = row.issue ?? rows[index]?.issue;
     if (issue) {
       results.push({ ...row, issue, result: 'invalid', message: issue });
@@ -301,6 +321,9 @@ export async function importOrganizations(
             economicCode: row.economicCode || null,
             tourismLicenseNumber: row.tourismLicenseNumber || null,
             roleCodes: row.roleCodes,
+            ...(reviewFields.length
+              ? { importReviewFields: reviewFields.join(',') }
+              : {}),
           },
         });
         const primaryPhone = row.chiefExecutiveMobile || row.officePhone;
@@ -347,8 +370,11 @@ export async function importOrganizations(
         results.push({
           ...row,
           code: created.data.code,
-          result: 'created',
-          message: `ثبت شد — ${created.data.code}`,
+          reviewFields,
+          result: reviewFields.length ? 'review' : 'created',
+          message: reviewFields.length
+            ? `ثبت شد؛ ${warning ?? 'نیازمند بازبینی'} — ${created.data.code}`
+            : `ثبت شد — ${created.data.code}`,
         });
       }
     } catch (error) {

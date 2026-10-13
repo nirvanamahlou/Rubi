@@ -526,6 +526,38 @@ describe('cooperation wizard writes', () => {
       contact,
     );
   });
+  it('clears only corrected import review fields after their contact update succeeds', async () => {
+    const existing = {
+      id: 'identity',
+      version: 1,
+      attributes: {
+        roleCodes: 'AGENCY',
+        importReviewFields: 'officePhone,addressLine',
+      },
+    } as unknown as MasterDataRecord;
+    const updated = { ...existing, version: 2 } as MasterDataRecord;
+    const update = vi
+      .spyOn(masterDataApi, 'update')
+      .mockResolvedValueOnce({ data: updated })
+      .mockResolvedValueOnce({ data: { ...updated, version: 3 } });
+    const contact = {
+      id: 'contact',
+      version: 1,
+      attributes: { organizationId: 'identity' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(agencyClient, 'saveContact').mockResolvedValue({ data: contact });
+
+    await saveCooperation(
+      { ...draft, fullName: 'نماینده', phone: '09123456789', addressLine: '' },
+      ['master_data.read', 'master_data.update'],
+      existing,
+      { contact },
+    );
+    expect(update).toHaveBeenNthCalledWith(2, 'organizations', 'identity', {
+      version: 2,
+      values: { importReviewFields: 'addressLine' },
+    });
+  });
   it('persists a typed address without inventing country or city identifiers', async () => {
     const existing = {
       id: 'identity',

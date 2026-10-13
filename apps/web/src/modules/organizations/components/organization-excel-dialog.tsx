@@ -121,10 +121,10 @@ export function OrganizationExcelDialog({
         <p className="panel-note">
           حداکثر ۲۰۰ ردیف و ۵ مگابایت. عنوان ستون‌ها می‌تواند فارسی یا انگلیسی و
           با فاصله‌های متفاوت باشد. ستون‌های قالب پیوست مستقیماً خوانده می‌شوند
-          و فیلدهای تکمیلیِ نسخه گسترده نیز پشتیبانی می‌شوند. ردیف‌های سالم
-          جداگانه ثبت می‌شوند و ردیف‌های خطادار ثبت نمی‌شوند. اطلاعات تماس و
-          نشانیِ موجود نیز ثبت می‌شود. ایمیل و شماره مجوز اختیاری هستند؛ فرمول و
-          ماکرو مجاز نیست.
+          و فیلدهای تکمیلیِ نسخه گسترده نیز پشتیبانی می‌شوند. ردیف‌های دارای
+          فیلد اختیاری نامعتبر با نشان بازبینی ثبت می‌شوند و از فهرست قابل
+          اصلاح‌اند. اطلاعات تماس و نشانیِ موجود نیز ثبت می‌شود. ایمیل و شماره
+          مجوز اختیاری هستند؛ فرمول و ماکرو مجاز نیست.
         </p>
         {error ? (
           <p className="form-error" role="alert">
@@ -154,7 +154,14 @@ export function OrganizationExcelDialog({
                 {rows.map((row, index) => {
                   const result = progress[index];
                   return (
-                    <tr key={row.rowNumber}>
+                    <tr
+                      className={
+                        row.reviewFields?.length || result?.result === 'review'
+                          ? 'organization-review-row'
+                          : undefined
+                      }
+                      key={row.rowNumber}
+                    >
                       <td>{row.rowNumber.toLocaleString('fa-IR')}</td>
                       <td>
                         <bdi>
@@ -188,7 +195,11 @@ export function OrganizationExcelDialog({
             {progress
               .filter((row) => row.result === 'created')
               .length.toLocaleString('fa-IR')}{' '}
-            ثبت شد؛{' '}
+            ثبت کامل شد؛{' '}
+            {progress
+              .filter((row) => row.result === 'review')
+              .length.toLocaleString('fa-IR')}{' '}
+            با نیاز به اصلاح ثبت شد؛{' '}
             {progress
               .filter((row) => row.result === 'skipped')
               .length.toLocaleString('fa-IR')}{' '}
@@ -211,7 +222,7 @@ export function OrganizationExcelDialog({
             disabled={busy || started || !rows.some((row) => !row.issue)}
             onClick={() => void commit()}
           >
-            ثبت ردیف‌های سالم
+            ثبت ردیف‌های قابل ذخیره
           </button>
         </div>
       </DialogContent>

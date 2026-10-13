@@ -1438,6 +1438,21 @@
     max-width: 320px;
     overflow-wrap: anywhere;
   }
+  .organization-review-row,
+  .excel-preview tr.organization-review-row {
+    background: #fff2f2;
+  }
+  .organization-review-row:hover,
+  .excel-preview tr.organization-review-row:hover {
+    background: #ffe8e8;
+  }
+  .organization-review-notice {
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fff2f2;
+    color: #9f1239;
+    padding: 10px 12px;
+  }
   .wizard .boundary-note {
     margin-top: 18px;
   }
