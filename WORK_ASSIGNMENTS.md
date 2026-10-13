@@ -1,3 +1,25 @@
+## MERGE-SALES-UI-773-1013 — PC-A — READY_FOR_CI
+
+Owner explicitly authorizes merging UI PR773 to develop. Reconcile its original branch60bd2c09 with current develop, preserve both documentation histories and all current source changes. Temporary integration branch codex/pc-a-merge-sales-ui-773-1013 updates the existing PR head without force-push; no runtime, schema, migration, dependency or operational data change. Only documentation conflicts exist; two Sales presentation files merge cleanly. Existing eight original-head CI checks pass; complete new-head CI gates merge and releases bounded documentation locks.
+
+## ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+## PURCHASE-METRICS-CENTER-1013 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; user explicitly requests the purchase dashboard metrics to be centered and merged to develop. Reserve only reservation-purchases workspace metric presentation and own status docs; bounded cross-owner UI correction authorized by this request. No active overlapping source lock found. No purchase logic, API, schema, migration or dependency changes.
+
+PURCHASE-METRICS-CENTER-1013 validation: all 7 existing purchase workspace tests pass with a 30s per-test allowance on the slow local host; unchanged assertions. Scoped lint and CI quality/test/build gate the authorized develop merge. Presentation lock released with review candidate.
+
+COMPUTER_ID=PC-B; branch codex/pc-b-accounting-form-tabs-1013 from
+origin/develop@4122f5da. Reserve the shared Web tab-access fallback, its focused
+regression, Accounting browser acceptance and bounded status entries. Catalogued
+screen tabs remain permission-filtered; uncatalogued tabs are ordinary in-form UI
+and must remain visible. Restore the hidden Accounting main/turnover and nested
+form tabs without changing APIs, IAM grants, schema, dependencies or operational
+data. User explicitly authorizes push, merge to develop and local Web3000/API4000
+refresh after checks. Preserve the dirty primary checkout and existing database.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;
@@ -6782,6 +6804,14 @@ Validation: 8 focused Web tests, scoped ESLint, Web typecheck, Prettier and Web 
 
 CI integration follow-up: `develop` advanced with stepwise agency editing while this PR was in flight; its eight new Persian UI strings lacked English display translations and failed the combined Web i18n coverage gate. The already-reserved shared Web override catalogue now includes only those eight translations; Organizations source and behavior remain untouched. The final exact-head gate must rerun.
 
+## SALES-FOLLOWUPS-UI-1011 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-sales-followups-ui-1011` from `origin/develop`. Reserve Sales workspace follow-up presentation and bounded status documentation. Replace the stretched empty panel with compact status rows, accessible icons and responsive intrinsic-height layout. No API, financial logic, schema, migration, dependency or shared translations change. User requests local preview and a PR to develop; no merge requested.
+
+Validation: scoped ESLint, Web typecheck and 13 Sales workspace tests pass. Production Web build and local runtime smoke verification are recorded with the delivery. No migration needed; bounded presentation lock releases with the review commit.
+
+SALES-FOLLOWUPS-UI-1011 follow-up reservation: user requests full-width stacked panels, three follow-up tiles in one desktop row and horizontally arranged receivable filters. Extend the same bounded lock to `sales-receivables-card.tsx`; no behavior/API change.
+
 ## CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-chrome-local-login-1011` from
@@ -7232,3 +7262,54 @@ LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry
 ## TICKET-TWO-TABLE-RESTORE-1013 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-two-table-restore-1013` from current `origin/develop`. Owner requests that only «تعریف و ظرفیت پرواز» return to the pre-delete two-table presentation from commit `97ae3a19`: separate outbound/return tables and no row-level or whole-load delete controls. Reserve Ticket Catalog Web load grid/workspace, focused tests and bounded status docs. Preserve current API/data, LAN UUID compatibility, past-date opt-in, silent legacy reconciliation and all unrelated newer project changes. No API/schema/migration/dependency/permission or operational-data change. Push/PR only; per repository policy the author will not merge the PR. Implementation complete; nine focused tests, Web TypeScript, Web lint and the production Web build (62 routes) pass.
+## HOTEL-RATES-COMPACT-1013 — PC-A — READY_FOR_REVIEW
+
+Branch `codex/pc-a-hotel-rates-compact-1013` from `origin/develop@4122f5da`. Reserve only Reservations hotel-rate Web editor layout (`packs-workspace`, destination fields, rate/room CSS) and focused presentation tests, plus bounded own status entries. Compact destination/hotel selectors, collapse prior periods while editing, and fit room-rate grids more densely without changing calculations, handlers, validation, API, schema, permissions, dependencies, or operational data. User explicitly authorizes PR and merge to develop after conflict and CI review. No localhost:3100 update is requested.
+
+## ASSISTANT-PHASE2-1013 — PC-C — IN_PROGRESS
+
+Base develop4122f5da; user approves deterministic priorities (overdue/today urgent, days1-3 important, days4-7 ordinary), short executive summary and top5 with view-all, source/rule deduplication. Recorded source priority may promote but never lower date urgency. Contract-balance recommendations are deferred pending real data and business rules; the separate informational balance report remains. Reserve services/assistant, apps/web/src/modules/assistant, apps/web/src/i18n/assistant-copy.ts and bounded own task/status/foundation documentation. Fixed authenticated SELF sources and separately authorized corporate projections only; preserve public ERP contracts, native IAM revalidation, safe links and no-model/no-write policy. No schema/migration/dependency locks. Acceptance: Tehran-day boundaries, source priority, unique evidence, completed/out-of-window removal on refresh, caps, denied/unavailable sources, exact currency comparisons, top5 expansion and existing injection/revocation tests; scoped checks/build and full CI before develop merge/local rollout.
+
+ASSISTANT-PHASE2-1013 candidate implemented within reserved scope. Service27/27,
+Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
+with review candidate; build, exact-head CI, authorized develop merge, post-merge
+CI and PC-C3000/4300 rollout remain release gates. No database work is required.
+
+## PERSIAN-CALENDAR-MONTHS-1013 — PC-A — IN_PROGRESS
+
+User authorizes continuing this branch and develop merge. Reserve shared date-picker locale and header Persian presentation plus focused checks. Base origin/develop@21d65e26. No schema/dependency/runtime changes.
+
+HOTEL-RATES-COMPACT-1013 candidate: full-width horizontal destination/hotel selectors, collapsed prior periods during entry, compact stay fields and room/coefficients tables. Source locks released at candidate freeze; focused hotel suites, Web lint/types/build and exact-head CI gate explicit develop merge. No API, schema, pricing arithmetic or operational runtime changes.
+
+## PHASE2-INTEGRATION-CI-1013 — PC-C — IN_PROGRESS
+
+Base develop21d65e26 after PR812. Standing human instruction requires fixing and
+following post-merge CI. The merged PC-B ACCOUNTING-FORM-TABS-1013 changes the
+uncatalogued tab fallback intentionally; its old rendered IAM regression still
+asserts the superseded hidden behavior. Reproduced exactly (1 failed/8 passed).
+Reserve only apps/web/src/modules/iam/access-ui.spec.tsx and this status entry.
+Do not modify the producer access policy or the merged PC-B source files. Preserve
+and explicitly assert catalogued denied tabs/content remain hidden in the same
+render as an allowed ordinary local form tab. No IAM grant/API/schema/dependency
+or runtime behavior change. The producer is already merged; no active local edits
+or unmerged source replacement are involved. Full CI precedes develop merge.
+
+PHASE2-INTEGRATION-CI-1013 candidate: all57 IAM/assistant/translation tests,
+scoped ESLint and Web typecheck passed. Existing integrated production build passed
+before this test-only edit. Production source is unchanged. Source reservation
+released with review candidate; exact-head and post-merge CI still gate rollout.
+
+## ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C — IN_PROGRESS
+
+Base developce487a4e. Final Phase2 evidence review: absent upstream priority must
+not be labelled as recorded NORMAL. Reserve only services/assistant/server.mjs,
+its focused regression and own docs entries. Omit sourcePriority when absent or
+unrecognized; existing deterministic date ranking stays unchanged and the Web
+already supports optional sourcePriority. No source/API/permission/schema change.
+
+ASSISTANT-PRIORITY-EVIDENCE-1013 candidate: service28/28 tests pass, including
+missing/unknown priority evidence and all existing authorization checks. Source
+reservation released with review candidate. Web build is unchanged; final full CI
+and post-merge verification gate local publication.
+
+HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.

@@ -364,7 +364,7 @@ test('daily summary reconciles counts and priorities to bounded SELF evidence', 
   );
   assert.ok(
     body.recommendations.every(
-      (item) => item.priority === 'HIGH' && item.ruleId === 'OVERDUE_V1',
+      (item) => item.priority === 'HIGH' && item.ruleId === 'PERSONAL_DUE_V2',
     ),
   );
   assert.equal(h.audit[0].event, 'assistant.action.read');
@@ -784,4 +784,103 @@ test('personal sources are preflighted and rechecked at release by the current I
     assert.equal(response.status, 403);
     assert.ok(!(await response.text()).includes(example.title));
   }
+});
+
+test('Phase2 uses Tehran civil-day boundaries, source priority and a complete seventh day', async (t) => {
+  const rows = [
+    { ...example, id: 'week', dueAt: '2026-10-18T20:29:59.000Z' },
+    { ...example, id: 'day4', dueAt: '2026-10-15T08:00:00.000Z' },
+    { ...example, id: 'day3', dueAt: '2026-10-14T08:00:00.000Z' },
+    { ...example, id: 'today', dueAt: '2026-10-11T20:29:59.000Z' },
+    { ...example, id: 'past', dueAt: '2026-10-10T08:00:00.000Z' },
+    {
+      ...example,
+      id: 'promoted',
+      dueAt: '2026-10-17T08:00:00.000Z',
+      priority: 'URGENT',
+    },
+    {
+      ...example,
+      id: 'important',
+      dueAt: '2026-10-16T08:00:00.000Z',
+      priority: 'HIGH',
+    },
+    { ...example, id: 'excluded', dueAt: '2026-10-18T20:30:00.000Z' },
+  ];
+  const h = await harness(t, { rows });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(body.policyVersion, 2);
+  const find = (id) =>
+    body.recommendations.find((r) => r.followUpId === 'calendar:' + id);
+  assert.equal(find('past').priority, 'HIGH');
+  assert.equal(find('today').reason, 'TODAY');
+  assert.equal(find('today').priority, 'HIGH');
+  assert.equal(find('day3').priority, 'MEDIUM');
+  assert.equal(find('day4').priority, 'LOW');
+  assert.equal(find('week').priority, 'LOW');
+  assert.equal(find('promoted').priority, 'HIGH');
+  assert.equal(find('important').priority, 'MEDIUM');
+  assert.equal(find('excluded'), undefined);
+  assert.deepEqual(
+    body.recommendations.slice(0, 3).map((r) => r.priority),
+    ['HIGH', 'HIGH', 'HIGH'],
+  );
+  for (const recommendation of body.recommendations) {
+    assert.equal(
+      recommendation.id,
+      recommendation.followUpId + ':PERSONAL_DUE_V2',
+    );
+    assert.equal(recommendation.source, 'calendar');
+    assert.equal(recommendation.observedAt, clock().toISOString());
+  }
+  assert.equal(body.snapshot.capabilities.llm, false);
+  assert.ok(body.recommendations.every((r) => r.source !== 'balances'));
+});
+
+test('Phase2 refresh removes completed records and keeps one evidence/rule pair', async (t) => {
+  const row = { ...example };
+  const h = await harness(t, { rows: [row, row] });
+  const first = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(first.recommendations.length, 1);
+  row.status = 'COMPLETED';
+  const second = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(second.recommendations.length, 0);
+  assert.equal(second.counts.visible, 0);
+});
+
+test('Phase2 midnight is Tehran midnight, not UTC midnight', async (t) => {
+  const h = await harness(t, {
+    rows: [
+      { ...example, id: 'local-today', dueAt: '2026-10-10T21:00:00.000Z' },
+    ],
+  });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(body.recommendations[0].reason, 'TODAY');
+  assert.equal(body.recommendations[0].priority, 'HIGH');
+});
+
+test('recommendations do not fabricate a recorded priority when the source omits it', async (t) => {
+  const h = await harness(t, { rows: [example] });
+  const body = await (
+    await h.get('nora_access=user-a', '/v1/assistant/actions/daily-summary')
+  ).json();
+  assert.equal(
+    Object.hasOwn(body.snapshot.followUps[0], 'sourcePriority'),
+    false,
+  );
+  assert.equal(body.recommendations[0].priority, 'HIGH');
+  const unknown = personalFollowUps(
+    'calendar',
+    [{ ...example, priority: 'UNKNOWN' }],
+    clock(),
+  );
+  assert.equal(Object.hasOwn(unknown[0], 'sourcePriority'), false);
 });

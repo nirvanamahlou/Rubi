@@ -1,3 +1,22 @@
+## 2026-10-13 — MERGE-SALES-UI-773-1013 — PC-A
+
+Owner authorizes develop merge of PR773 Sales follow-up/dashboard UI. Reconcile latest develop with the reviewed presentation changes, preserving all current features and both status histories. Documentation-only conflicts resolved; new-head full CI gates merge. No runtime rollout, schema, dependency or data changes.
+
+## 2026-10-13 — ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+## PURCHASE-METRICS-CENTER-1013
+
+Purchase dashboard metric icons, labels and counts are centered with consistent internal padding and a 9rem minimum card height. Responsive grid and existing purchase data/filter logic are preserved. No migration or dependency change.
+
+
+Authenticated browser acceptance reproduced the Accounting form regression: the
+account tree loads all 222 records, but the shared Tabs wrapper treats uncatalogued
+form-local values such as `main` as forbidden screens and removes their trigger and
+content. The bounded fix permits only uncatalogued local tabs while continuing to
+apply the existing permission decision to every catalogued screen tab. No data,
+API, schema, dependency or IAM-grant change.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
 ## 2026-10-12 — ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
 
 Accounting forms, lists and filters are being restyled as inline project-native
@@ -5446,6 +5465,12 @@ The exact 18-row database write path passed inside a forced-rollback transaction
 - Calendar and Procurement suggestions can be explicitly saved as ordinary personal notes. An exact source marker prevents the same saved suggestion from appearing again. This is a transparent rule-based assistant over existing authorized data; no generative model or background scheduler is connected. No API contract, schema/migration, dependency, permission or operational data change.
 - During integration, a concurrent Agency edit merged into `develop` with eight untranslated UI strings. Added the missing English display translations in the shared Web override catalogue so the combined i18n test can pass; Agency behavior was not changed.
 
+## SALES-FOLLOWUPS-UI-1011
+
+PC-A redesigned the Sales follow-up card as compact, icon-led status rows with readable counts. Dashboard panels align to their own content height, avoiding an empty stretched follow-up panel. Existing data, labels, permissions and filters are preserved. No migration or dependency change. Local preview and a develop PR are requested.
+
+User follow-up: receivables now occupy a full-width row with five desktop filter columns; follow-ups occupy their own full-width row with three side-by-side status tiles. Mobile filters and tiles stack responsively.
+
 ## 2026-10-11 — CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
 
 Chrome login on the local runtime now keeps Web and API on the same loopback or
@@ -5719,8 +5744,7 @@ Three correspondence cards/routes: Incoming uses unchanged Documents upload form
 - PC-B fixed the Organizations XLSX preview gate so optional website-like
   values entered in the email column are omitted with a visible warning rather
   than disabling the create action for the whole workbook.
-- Required identity, duplicate, formula/control-character and workbook safety
-  checks remain blocking. No schema, API, dependency or operational data was
+- Required identity, duplicate, formula/control-character and workbook safety  checks remain blocking. No schema, API, dependency or operational data was
   changed.
 - Focused Organizations tests pass 32/32; scoped ESLint and Web typecheck pass.
 
@@ -5730,3 +5754,43 @@ User requests latest develop on localhost3000. Clean inactive worktree updated t
 ## 2026-10-13 — Restore two-table flight capacity view — PC-B
 
 At the owner's request, «تعریف و ظرفیت پرواز» restores the pre-delete presentation from `97ae3a19`: one outbound table and one return table, with selected-leg «مشاهده»/«ویرایش» and status/hold actions but no row-level or whole-load delete controls. Current backend data and newer compatibility fixes remain unchanged. Nine focused tests, Web TypeScript, Web lint and the production Web build (62 routes) pass.
+## 2026-10-13 — HOTEL-RATES-COMPACT-1013 — READY_FOR_REVIEW
+
+Reservation hotel purchase-rate editor presentation is being compacted so one hotel's selectors, stay range and room-rate table are reachable with less scrolling. The existing save, validation, pricing and history flows remain unchanged; no API or database migration is planned. PR to develop follows focused verification.
+
+## 2026-10-13 — ASSISTANT-PHASE2-1013 — PC-C
+
+Approved deterministic personal recommendations implemented: Tehran-day urgency,
+source-priority promotion, source/rule identity, reason and observation time,
+top5 with view-all and removal on refreshed source completion. Fixed daily summary
+compares both weekly periods and exact per-currency amounts. Contractual balance
+recommendations await real data/rules; informational balances remain separately
+labelled and Finance-approved receivables are still pending. No LLM, Write tool,
+permission, schema or dependency changes. Service27 and Web/translation32 tests,
+scoped lint and Web typecheck pass. Build and full CI gate develop merge and local
+publication; details in docs/tasks/ASSISTANT-PHASE2-1013.md. Business pilot and
+reference reconciliation are separate from these synthetic checks.
+## PERSIAN-CALENDAR-MONTHS-1013
+
+Shared Persian date pickers and the header now use Persian month names in both interface languages. Gregorian formatting, digit preferences and stored dates remain unchanged. Develop merge is authorized; GitHub CLI authentication currently blocks PR creation.
+
+Compact hotel-rate layout candidate: destination selectors and hotel share a full-width row, saved periods remain available in a collapsed disclosure during manual entry, and stay/room/price controls use reduced spacing and height. Responsive single-column fallback retained. No pricing, validation, API, database or runtime changes. Complete focused verification and exact-head CI gate authorized develop merge.
+
+## 2026-10-13 — PHASE2-INTEGRATION-CI-1013 — PC-C
+
+PR812 assistant passed all head checks and merged; post-merge tests exposed the
+concurrent PC-B form-tab policy's obsolete rendered test expectation. Reproduced
+locally. The regression now checks ordinary local form content is visible AND
+catalogued denied screen labels/content are hidden in the same render. Runtime
+policy, IAM permissions and producer code are unchanged. This focused integration
+repair must pass full CI before develop publication and the assistant local rollout.
+
+## 2026-10-13 — ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C
+
+Phase2 final evidence correction: show a recorded source priority only when the
+upstream actually supplies a recognized priority. Absent/unknown values no longer
+appear as recorded NORMAL; deterministic due-date urgency remains unchanged.
+This additive optional field already matches the Web verifier. No permission,
+source, database or dependency change. Full CI gates publication and local rollout.
+
+HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.

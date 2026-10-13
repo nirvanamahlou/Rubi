@@ -288,3 +288,61 @@ describe('assistant evidence contract', () => {
     }
   });
 });
+
+it('validates Phase2 priority and provenance against the source evidence', () => {
+  const evidence = {
+    ...snapshot,
+    followUps: [
+      {
+        ...snapshot.followUps[0]!,
+        dueAt: '2026-10-16T08:00:00.000Z',
+        reason: 'DUE_SOON',
+        sourcePriority: 'URGENT',
+      },
+    ],
+  };
+  const recommendation = {
+    followUpId: 'calendar:synthetic',
+    id: 'calendar:synthetic:PERSONAL_DUE_V2',
+    ruleId: 'PERSONAL_DUE_V2',
+    reason: 'THIS_WEEK',
+    priority: 'HIGH',
+    source: 'calendar',
+    observedAt: evidence.sources[0]!.asOf,
+  };
+  const value = {
+    ...daily,
+    policyVersion: 2,
+    snapshot: evidence,
+    counts: { visible: 1, overdue: 0, dueSoon: 1, assigned: 0 },
+    recommendations: [recommendation],
+  };
+  expect(assistantActionSchema.safeParse(value).success).toBe(true);
+  for (const change of [
+    { priority: 'LOW' },
+    { source: 'notes' },
+    { observedAt: '2026-10-11T08:00:00.000Z' },
+    { reason: 'OVERDUE' },
+    { id: 'invented' },
+  ]) {
+    expect(
+      assistantActionSchema.safeParse({
+        ...value,
+        recommendations: [{ ...recommendation, ...change }],
+      }).success,
+    ).toBe(false);
+  }
+  expect(
+    assistantActionSchema.safeParse({
+      ...value,
+      snapshot: {
+        ...evidence,
+        sources: evidence.sources.map((source) => ({
+          ...source,
+          status: 'UNAVAILABLE',
+          asOf: null,
+        })),
+      },
+    }).success,
+  ).toBe(false);
+});

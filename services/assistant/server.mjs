@@ -1,3 +1,4 @@
+import { tehranDay, comparePersonal } from './recommendations.mjs';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
@@ -81,7 +82,7 @@ async function boundedJson(response) {
   }
 }
 export function personalFollowUps(tool, rows, now) {
-  const cutoff = now.getTime() + 7 * 86400000;
+  const cutoff = tehranDay(now) + 7;
   const result = [];
   for (const row of rows) {
     if (
@@ -104,7 +105,7 @@ export function personalFollowUps(tool, rows, now) {
     )
       continue;
     if (tool !== 'procurement' && !due) continue;
-    if (due && Date.parse(due) > cutoff) continue;
+    if (due && tehranDay(due) > cutoff) continue;
     if (
       tool === 'procurement' &&
       (typeof row.requestId !== 'string' || row.requestId.length > 100)
@@ -114,6 +115,9 @@ export function personalFollowUps(tool, rows, now) {
       id: `${tool}:${row.id}`,
       title: row.title.slice(0, 200),
       source: tool,
+      ...(['LOW', 'NORMAL', 'HIGH', 'URGENT'].includes(row.priority)
+        ? { sourcePriority: row.priority }
+        : {}),
       dueAt: due ? new Date(due).toISOString() : null,
       reason: !due
         ? 'ASSIGNED'
@@ -510,19 +514,16 @@ export function createAssistantServer({
           )
             throw new ServiceError(403, 'FORBIDDEN');
         }
+        const evaluatedAt = now();
         const unique = [
           ...new Map(followUps.map((item) => [item.id, item])).values(),
-        ].sort(
-          (a, b) =>
-            (a.dueAt ?? '9999').localeCompare(b.dueAt ?? '9999') ||
-            a.id.localeCompare(b.id),
-        );
+        ].sort((a, b) => comparePersonal(a, b, evaluatedAt));
         outcome = sources.every((item) => item.status === 'READY')
           ? 'SUCCESS'
           : 'PARTIAL';
         const snapshot = {
           version: 1,
-          generatedAt: now().toISOString(),
+          generatedAt: evaluatedAt.toISOString(),
           scope: 'SELF',
           sources,
           followUps: unique.slice(0, 30),

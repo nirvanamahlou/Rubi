@@ -240,3 +240,60 @@
     grid-template-columns: 1fr;
   }
 }
+
+.panel {
+  padding: 12px;
+  border-radius: 10px;
+}
+.panels {
+  gap: 10px;
+}
+.hotelHeader {
+  gap: 8px;
+  padding-bottom: 8px;
+}
+.hotelHeader h2 {
+  font-size: 15px;
+}
+.hotelSettings {
+  margin: 10px 0;
+  gap: 10px;
+  max-width: none;
+  grid-template-columns: minmax(180px, 1fr) minmax(90px, 140px);
+}
+.panel .coefficients {
+  margin-bottom: 10px;
+}
+.panel .coefficients summary {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.panel table.coefficientTable th,
+.panel table.coefficientTable td {
+  padding: 5px 8px;
+}
+.selectionTools {
+  padding-bottom: 8px;
+}
+.bulkBar {
+  padding: 8px;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.roomHeader {
+  padding: 8px 10px;
+  gap: 8px;
+}
+.roomHeader h3 {
+  font-size: 13px;
+}
+.roomGrid {
+  gap: 10px;
+}
+.panel table.priceTable {
+  font-size: 13px;
+}
+.panel table.priceTable th,
+.panel table.priceTable td {
+  padding: 4px 7px;
+}
