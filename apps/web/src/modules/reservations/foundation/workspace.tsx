@@ -1,4 +1,5 @@
 'use client';
+import { HotelSavingsDashboard } from '../components/hotel-purchase-savings';
 import { useQueueNames } from './queue-names';
 import { TableStatusCheckbox, tableFlagColumns } from './table-status-checkbox';
 import { ContractTableAction } from './contract-table-action';
@@ -340,6 +341,11 @@ export function ReservationOperationsWorkspace({
                   </p>
                 )}
               </section>
+              <HotelSavingsDashboard
+                from={effectiveQuery.fromDate}
+                to={effectiveQuery.toDate}
+                dateBasis={effectiveQuery.dateBasis}
+              />
               <section className={styles.metrics} aria-label="خلاصه رزرواسیون">
                 {(Object.keys(statusLabels) as (keyof typeof statusLabels)[])
                   .filter(

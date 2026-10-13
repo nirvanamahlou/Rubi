@@ -23,6 +23,7 @@ export class HotelPurchaseRatesPublicService {
     tourDepartureId?: string,
     cityId?: string,
     includeOccupancy = false,
+    allMatches = false,
   ): Promise<readonly PackageTourHotelPurchaseBatchV1[]> {
     if (!hotelIds.length && !tourDepartureId && !cityId) return [];
     const start = new Date(`${startsOn}T00:00:00.000Z`);
@@ -83,13 +84,13 @@ export class HotelPurchaseRatesPublicService {
           },
         },
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-        take: 200,
+        ...(allMatches ? {} : { take: 200 }),
       });
     return batches
       .filter(
         (batch) => !batch.pack || batch.version === batch.pack.currentVersion,
       )
-      .slice(0, 100)
+      .slice(0, allMatches ? undefined : 100)
       .map((batch) => ({
         id: batch.id,
         sharedPeriod: !!batch.pack?.sourcePeriods?.length,

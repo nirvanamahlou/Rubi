@@ -1,3 +1,4 @@
+import type { HotelPurchaseSavingsV1 } from '../travel/hotel-savings';
 export const FINANCE_CONTRACT_VERSION = 'finance.v1-proposal' as const;
 export const FINANCE_API_PREFIX = '/api/v1/finance' as const;
 export const FINANCE_FOUNDATION_NOTICE =
@@ -409,6 +410,7 @@ export interface FinanceInboxItemV1 {
   /** Atomic Reservations submission; absent on legacy single-service purchases. */
   reservationPurchase?: {
     lines: readonly {
+      hotelSavings?: HotelPurchaseSavingsV1;
       purchaseId: string;
       serviceTitle: string;
       supplierName: string;

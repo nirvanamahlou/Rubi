@@ -1,3 +1,4 @@
+import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import { NotificationsModule } from '../../notifications/notifications.module';
 import { NotificationsService } from '../../notifications/notifications.service';
 import {
@@ -88,9 +89,16 @@ export class FinanceDeliveryService {
       supplierName: row.supplierNameSnapshot,
       amount: row.amount.toString(),
       currencyCode: row.currencyCode,
+      ...(hotelPurchaseSavingsEvidence(row.passengerPrices)
+        ? { hotelSavings: hotelPurchaseSavingsEvidence(row.passengerPrices)! }
+        : {}),
       passengerPrices: Array.isArray(row.passengerPrices)
         ? (row.passengerPrices as ReservationServicePurchaseV1['passengerPrices'])
-        : [],
+        : ((
+            row.passengerPrices as {
+              passengers?: ReservationServicePurchaseV1['passengerPrices'];
+            } | null
+          )?.passengers ?? []),
       actorUserId: row.actorUserId,
       createdAt: row.createdAt.toISOString(),
       finance: finance

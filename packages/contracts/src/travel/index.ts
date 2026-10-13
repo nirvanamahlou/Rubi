@@ -1,3 +1,5 @@
+export * from './hotel-savings';
+import type { HotelPurchaseSavingsV1 } from './hotel-savings';
 import type { SalesReservationRequestV1 } from '../sales';
 
 export const TRAVEL_RUNTIME_VERSION = 1 as const;
@@ -308,6 +310,7 @@ export interface ReservationManifestTicketExportInputV1 {
 }
 
 export interface ReservationServicePurchaseV1 {
+  hotelSavings?: HotelPurchaseSavingsV1;
   pricingCalculation?: ReservationServicePurchaseCalculationV1;
   id: string;
   batchId?: string | null;

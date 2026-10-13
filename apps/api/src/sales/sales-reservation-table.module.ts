@@ -1,3 +1,4 @@
+import { hotelAgeOn, type SalesReservationRequestV1 } from '@nora/contracts';
 import { Inject, Injectable, Module } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -16,6 +17,79 @@ export class SalesReservationTableService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(TicketPublicService) private readonly tickets: TicketPublicService,
   ) {}
+  async hotelSavingsContracts(
+    ids: readonly string[],
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('reservations.read') || !ids.length)
+      return new Map<string, { createdAt: Date; status: string }>();
+    const rows = await this.database.client.salesContract.findMany({
+      where: { id: { in: [...ids] }, branchId: { in: [...actor.branchIds] } },
+      select: { id: true, createdAt: true, status: true },
+    });
+    return new Map(
+      rows.map((row) => [
+        row.id,
+        { createdAt: row.createdAt, status: row.status },
+      ]),
+    );
+  }
+  async hotelGuestAges(
+    snapshot: SalesReservationRequestV1,
+    actor: AuthenticatedActor,
+  ): Promise<number[] | null> {
+    if (
+      !actor.permissions.includes('reservations.read') ||
+      !snapshot.hotelSelection
+    )
+      return null;
+    const hotel = snapshot.hotelSelection;
+    const row = await this.database.client.salesContract.findFirst({
+      where: {
+        id: snapshot.contractId,
+        branchId: { in: [...actor.branchIds] },
+        status: { not: 'CANCELLED' },
+      },
+      include: {
+        hotelSelection: true,
+        passengers: {
+          include: { allocations: { include: { service: true } } },
+        },
+      },
+    });
+    const current = row?.hotelSelection;
+    if (
+      !row ||
+      !current ||
+      current.hotelId !== hotel.hotelId ||
+      current.roomTypeId !== hotel.roomTypeId ||
+      current.roomCount !== hotel.roomCount ||
+      current.mealServiceId !== (hotel.mealServiceId ?? null) ||
+      (current.singleRoomCount ?? 0) !== (hotel.singleRoomCount ?? 0) ||
+      (current.doubleRoomCount ?? hotel.roomCount) !==
+        (hotel.doubleRoomCount ?? hotel.roomCount) ||
+      (current.extraBedCount ?? 0) !== (hotel.extraBedCount ?? 0) ||
+      current.checkInDate.toISOString().slice(0, 10) !== hotel.checkInDate ||
+      current.checkOutDate.toISOString().slice(0, 10) !== hotel.checkOutDate
+    )
+      return null;
+    const ids = snapshot.passengerAssignments
+      ?.filter((p) => p.serviceClientKeys.includes(hotel.serviceClientKey))
+      .map((p) => p.customerId);
+    if (!ids?.length) return null;
+    const guests = row.passengers.filter((p) =>
+      p.allocations.some((a) => a.service.clientKey === hotel.serviceClientKey),
+    );
+    if (
+      guests.length !== ids.length ||
+      guests.some((p) => !ids.includes(p.customerId))
+    )
+      return null;
+    const ages = guests.map((p) =>
+      hotelAgeOn(p.birthDate.toISOString().slice(0, 10), hotel.checkInDate),
+    );
+    return ages.some((age) => age === null) ? null : (ages as number[]);
+  }
   async read(
     ids: readonly string[],
     actor: AuthenticatedActor,
