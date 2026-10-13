@@ -47,7 +47,7 @@ export interface OrganizationPreviewRow extends OrganizationImportRow {
   issue?: string;
   warning?: string;
   existing?: MasterDataRecord;
-  result?: 'created' | 'skipped' | 'failed';
+  result?: 'created' | 'skipped' | 'invalid' | 'failed';
   message?: string;
 }
 
@@ -243,9 +243,12 @@ export async function previewOrganizations(
   rows: readonly OrganizationImportRow[],
 ) {
   const checked = validateOrganizationRows(rows);
-  if (checked.some((row) => row.issue)) return checked;
   const result: OrganizationPreviewRow[] = [];
   for (const row of checked) {
+    if (row.issue) {
+      result.push(row);
+      continue;
+    }
     try {
       const existing = await resolveImportIdentity(row);
       result.push({ ...row, ...(existing ? { existing } : {}) });
@@ -265,10 +268,16 @@ export async function importOrganizations(
   onProgress: (rows: OrganizationPreviewRow[]) => void,
 ) {
   const checked = validateOrganizationRows(rows);
-  if (checked.some((row) => row.issue))
-    throw new Error('ابتدا خطاهای فایل را اصلاح کنید.');
+  if (!checked.some((row, index) => !row.issue && !rows[index]?.issue))
+    throw new Error('هیچ ردیف قابل ثبت در فایل وجود ندارد.');
   const results: OrganizationPreviewRow[] = [];
-  for (const row of checked) {
+  for (const [index, row] of checked.entries()) {
+    const issue = row.issue ?? rows[index]?.issue;
+    if (issue) {
+      results.push({ ...row, issue, result: 'invalid', message: issue });
+      onProgress([...results]);
+      continue;
+    }
     try {
       const existing = await resolveImportIdentity(row);
       if (existing)

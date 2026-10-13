@@ -5811,3 +5811,6 @@ localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
 تکراری داخل کارت کنترل مالی حذف شد. نشان مرکز کنترل مالی، دکمه‌ها و شاخص‌های
 کارت بدون تغییر باقی ماندند. این تغییر فقط رابط Web است و API، مجوزها، داده و
 ساختار دیتابیس را تغییر نمی‌دهد.
+## 2026-10-13 — AGENCY-IMPORT-PARTIAL-1013 — PC-B
+
+The Organizations XLSX preview no longer blocks the entire workbook because one agency has an invalid phone or another row-level validation error. Valid rows are checked against existing identities and saved independently; invalid rows retain their row number and error and are never written. The result summary separates created, existing and invalid rows. The importer still stops after a write with an uncertain outcome, so retrying cannot silently duplicate it. A mixed-validity regression and all 242 runnable Organizations tests, scoped lint, Web typecheck and production build (62 generated pages) pass. No live agency data, API/schema, permission or dependency change.
