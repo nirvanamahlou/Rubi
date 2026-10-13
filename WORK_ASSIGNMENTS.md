@@ -6,7 +6,6 @@ COMPUTER_ID=PC-A; user explicitly requests the purchase dashboard metrics to be 
 
 PURCHASE-METRICS-CENTER-1013 validation: all 7 existing purchase workspace tests pass with a 30s per-test allowance on the slow local host; unchanged assertions. Scoped lint and CI quality/test/build gate the authorized develop merge. Presentation lock released with review candidate.
 
-
 COMPUTER_ID=PC-B; branch codex/pc-b-accounting-form-tabs-1013 from
 origin/develop@4122f5da. Reserve the shared Web tab-access fallback, its focused
 regression, Accounting browser acceptance and bounded status entries. Catalogued
