@@ -5750,3 +5750,12 @@ permission, schema or dependency changes. Service27 and Web/translation32 tests,
 scoped lint and Web typecheck pass. Build and full CI gate develop merge and local
 publication; details in docs/tasks/ASSISTANT-PHASE2-1013.md. Business pilot and
 reference reconciliation are separate from these synthetic checks.
+
+## 2026-10-13 — PHASE2-INTEGRATION-CI-1013 — PC-C
+
+PR812 assistant passed all head checks and merged; post-merge tests exposed the
+concurrent PC-B form-tab policy's obsolete rendered test expectation. Reproduced
+locally. The regression now checks ordinary local form content is visible AND
+catalogued denied screen labels/content are hidden in the same render. Runtime
+policy, IAM permissions and producer code are unchanged. This focused integration
+repair must pass full CI before develop publication and the assistant local rollout.

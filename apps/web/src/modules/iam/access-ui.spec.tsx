@@ -106,7 +106,7 @@ it('does not render application navigation or business content before account pe
   expect(markup).not.toContain('Main navigation');
 });
 
-it('keeps uncatalogued future tabs hidden for a managed account', () => {
+it('shows ordinary form tabs while keeping catalogued denied screens hidden', () => {
   const markup = render(
     [
       USER_ACCESS_PROFILE_PERMISSION,
@@ -120,17 +120,21 @@ it('keeps uncatalogued future tabs hidden for a managed account', () => {
     ],
     createElement(
       Tabs,
-      { defaultValue: 'future' },
+      { defaultValue: 'local-form' },
       createElement(
         TabsList,
         {},
-        createElement(TabsTrigger, { value: 'future' }, 'FUTURE TAB'),
+        createElement(TabsTrigger, { value: 'local-form' }, 'LOCAL FORM TAB'),
+        createElement(TabsTrigger, { value: 'issued' }, 'DENIED SCREEN TAB'),
       ),
-      createElement(TabsContent, { value: 'future' }, 'FUTURE CONTENT'),
+      createElement(TabsContent, { value: 'local-form' }, 'LOCAL FORM CONTENT'),
+      createElement(TabsContent, { value: 'issued' }, 'DENIED SCREEN CONTENT'),
     ),
   );
-  expect(markup).not.toContain('FUTURE TAB');
-  expect(markup).not.toContain('FUTURE CONTENT');
+  expect(markup).toContain('LOCAL FORM TAB');
+  expect(markup).not.toContain('DENIED SCREEN TAB');
+  expect(markup).toContain('LOCAL FORM CONTENT');
+  expect(markup).not.toContain('DENIED SCREEN CONTENT');
 });
 
 it('hides operation buttons without the required grant', () => {
