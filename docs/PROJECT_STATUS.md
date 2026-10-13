@@ -1,5 +1,10 @@
 ## 2026-10-13 — ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
 
+## PURCHASE-METRICS-CENTER-1013
+
+Purchase dashboard metric icons, labels and counts are centered with consistent internal padding and a 9rem minimum card height. Responsive grid and existing purchase data/filter logic are preserved. No migration or dependency change.
+
+
 Authenticated browser acceptance reproduced the Accounting form regression: the
 account tree loads all 222 records, but the shared Tabs wrapper treats uncatalogued
 form-local values such as `main` as forbidden screens and removes their trigger and
@@ -5760,6 +5765,10 @@ catalogued denied screen labels/content are hidden in the same render. Runtime
 policy, IAM permissions and producer code are unchanged. This focused integration
 repair must pass full CI before develop publication and the assistant local rollout.
 
-## PURCHASE-METRICS-CENTER-1013
+## 2026-10-13 — ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C
 
-Purchase dashboard metric icons, labels and counts are centered with consistent internal padding and a 9rem minimum card height. Responsive grid and existing purchase data/filter logic are preserved. No migration or dependency change.
+Phase2 final evidence correction: show a recorded source priority only when the
+upstream actually supplies a recognized priority. Absent/unknown values no longer
+appear as recorded NORMAL; deterministic due-date urgency remains unchanged.
+This additive optional field already matches the Web verifier. No permission,
+source, database or dependency change. Full CI gates publication and local rollout.

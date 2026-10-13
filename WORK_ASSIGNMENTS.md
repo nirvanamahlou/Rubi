@@ -1,5 +1,12 @@
 ## ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
 
+## PURCHASE-METRICS-CENTER-1013 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; user explicitly requests the purchase dashboard metrics to be centered and merged to develop. Reserve only reservation-purchases workspace metric presentation and own status docs; bounded cross-owner UI correction authorized by this request. No active overlapping source lock found. No purchase logic, API, schema, migration or dependency changes.
+
+PURCHASE-METRICS-CENTER-1013 validation: all 7 existing purchase workspace tests pass with a 30s per-test allowance on the slow local host; unchanged assertions. Scoped lint and CI quality/test/build gate the authorized develop merge. Presentation lock released with review candidate.
+
+
 COMPUTER_ID=PC-B; branch codex/pc-b-accounting-form-tabs-1013 from
 origin/develop@4122f5da. Reserve the shared Web tab-access fallback, its focused
 regression, Accounting browser acceptance and bounded status entries. Catalogued
@@ -7268,8 +7275,15 @@ scoped ESLint and Web typecheck passed. Existing integrated production build pas
 before this test-only edit. Production source is unchanged. Source reservation
 released with review candidate; exact-head and post-merge CI still gate rollout.
 
-## PURCHASE-METRICS-CENTER-1013 — PC-A — READY_FOR_REVIEW
+## ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C — IN_PROGRESS
 
-COMPUTER_ID=PC-A; user explicitly requests the purchase dashboard metrics to be centered and merged to develop. Reserve only reservation-purchases workspace metric presentation and own status docs; bounded cross-owner UI correction authorized by this request. No active overlapping source lock found. No purchase logic, API, schema, migration or dependency changes.
+Base developce487a4e. Final Phase2 evidence review: absent upstream priority must
+not be labelled as recorded NORMAL. Reserve only services/assistant/server.mjs,
+its focused regression and own docs entries. Omit sourcePriority when absent or
+unrecognized; existing deterministic date ranking stays unchanged and the Web
+already supports optional sourcePriority. No source/API/permission/schema change.
 
-PURCHASE-METRICS-CENTER-1013 validation: all 7 existing purchase workspace tests pass with a 30s per-test allowance on the slow local host; unchanged assertions. Scoped lint and CI quality/test/build gate the authorized develop merge. Presentation lock released with review candidate.
+ASSISTANT-PRIORITY-EVIDENCE-1013 candidate: service28/28 tests pass, including
+missing/unknown priority evidence and all existing authorization checks. Source
+reservation released with review candidate. Web build is unchanged; final full CI
+and post-merge verification gate local publication.
