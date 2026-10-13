@@ -1,18 +1,14 @@
+import { createOrchestrator, readMessage } from './orchestrator.mjs';
 import { parseFilterSearch, resolveReportFilters } from './report-filters.mjs';
-import { comparePersonal } from './recommendations.mjs';
+import { runPreparedAction } from './prepared-actions.mjs';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { actionFromPath, blockedAction, dailySummary } from './actions.mjs';
-import { getTool, PERSONAL_TOOLS } from './tools.mjs';
+import { actionFromPath } from './actions.mjs';
+import { getTool } from './tools.mjs';
 import { ServiceError } from './errors.mjs';
 import { createErpClient } from './erp-client.mjs';
-import {
-  accessCookie,
-  createAuthorization,
-  isToolAllowed,
-  requireToolAccess,
-} from './authorization.mjs';
+import { accessCookie, createAuthorization } from './authorization.mjs';
 import { createToolExecutor } from './tool-executor.mjs';
 import { recordRequestAudit } from './audit.mjs';
 export { accessCookie } from './authorization.mjs';
@@ -27,6 +23,7 @@ export function createAssistantServer({
   audit = (event) => process.stdout.write(JSON.stringify(event) + '\n'),
   timeoutMs = 2500,
   now = () => new Date(),
+  conversation,
 }) {
   const client = createErpClient({
     erpBaseUrl,
@@ -41,6 +38,7 @@ export function createAssistantServer({
     authenticate: authenticateErp,
     now,
   });
+  const orchestrate = createOrchestrator({ ...conversation, now });
   const windows = new Map();
   let inFlight = 0;
   function withinLimit(key, limit) {
@@ -62,6 +60,7 @@ export function createAssistantServer({
       response.once('close', () => {
         if (!response.writableEnded) deadline.abort();
       });
+      const conversationRequest = request.url === '/v2/assistant/conversation';
       let actorId;
       let action;
       let optionsRequest = false;
@@ -88,8 +87,11 @@ export function createAssistantServer({
       let counted = false;
       let outcome = 'FAILED';
       const toolOutcomes = [];
-      const runTool = (id, cookie, observedAt) =>
-        execute(
+      let toolCalls = 0;
+      const runTool = (id, cookie, observedAt) => {
+        if (++toolCalls > 6)
+          throw new ServiceError(429, 'TOOL_BUDGET_EXCEEDED');
+        return execute(
           actualTool(id),
           getTool(actualTool(id)).filtered ? reportInput : {},
           {
@@ -100,6 +102,7 @@ export function createAssistantServer({
             record: (entry) => toolOutcomes.push(entry),
           },
         );
+      };
       const send = (status, body) => {
         response.writeHead(status, {
           'content-type': 'application/json; charset=utf-8',
@@ -110,7 +113,7 @@ export function createAssistantServer({
         });
         response.end(
           JSON.stringify(
-            filteredRequest && status === 200
+            filteredRequest && !conversationRequest && status === 200
               ? {
                   ...body,
                   version: 2,
@@ -121,7 +124,12 @@ export function createAssistantServer({
         );
       };
       try {
-        if (request.method !== 'GET') throw new ServiceError(405, 'READ_ONLY');
+        if (
+          conversationRequest
+            ? request.method !== 'POST'
+            : request.method !== 'GET'
+        )
+          throw new ServiceError(405, 'READ_ONLY');
         if (request.url === '/health') {
           outcome = 'HEALTH';
           send(200, { status: 'ok' });
@@ -138,7 +146,8 @@ export function createAssistantServer({
         if (
           request.url !== '/v1/executive/snapshot' &&
           !action &&
-          !optionsRequest
+          !optionsRequest &&
+          !conversationRequest
         )
           throw new ServiceError(404, 'NOT_FOUND');
         if (
@@ -154,220 +163,62 @@ export function createAssistantServer({
         actorId = actor.userId;
         if (!withinLimit(`user:${actorId}`, 12))
           throw new ServiceError(429, 'RATE_LIMITED');
+        if (conversationRequest) {
+          const message = await readMessage(request, deadline.signal);
+          const result = await orchestrate(message, {
+            signal: deadline.signal,
+            runAction: async (selected, filters) => {
+              action = selected;
+              filteredRequest = true;
+              reportInput = filters;
+              await authenticate(cookie, deadline.signal, actorId);
+              const result = await runPreparedAction({
+                action,
+                runTool,
+                authenticate,
+                cookie,
+                actor,
+                actorId,
+                deadline,
+                now,
+                actualTool,
+                filteredRequest,
+                reportInput,
+              });
+              outcome = result.outcome;
+              return {
+                ...result.body,
+                version: 2,
+                filters: resolveReportFilters(reportInput, now()),
+              };
+            },
+          });
+          await authenticate(cookie, deadline.signal, actorId);
+          if (result.status === 'CLARIFY') outcome = 'SUCCESS';
+          send(200, result);
+          return;
+        }
         if (optionsRequest) {
           const options = await runTool('sales.filter-options', cookie);
           outcome = 'SUCCESS';
           send(200, options);
           return;
         }
-        if (action === 'sales-analysis' || action === 'receivables-follow-up') {
-          const balances = action === 'receivables-follow-up';
-          const tool = balances ? 'sales.contract-balances' : 'sales.weekly';
-          const validate = getTool(actualTool(tool)).validate;
-          const allowed = (principal) => isToolAllowed(principal, tool);
-          requireToolAccess(actor, tool);
-          let report;
-          let conversion;
-          let failure = 'SOURCE_UNAVAILABLE';
-          try {
-            report = await runTool(tool, cookie);
-          } catch (error) {
-            if (
-              error instanceof ServiceError &&
-              [401, 403].includes(error.status)
-            )
-              throw error;
-            if (
-              error instanceof ServiceError &&
-              [
-                'SOURCE_NOT_CONNECTED',
-                'SOURCE_NOT_READY',
-                'SOURCE_CAP_EXCEEDED',
-                'SOURCE_TOO_LARGE',
-                'INVALID_SOURCE',
-                'SOURCE_TIMEOUT',
-                'SOURCE_UNAVAILABLE',
-              ].includes(error.message)
-            )
-              failure = error.message;
-          }
-          const afterSales = await authenticate(
-            cookie,
-            deadline.signal,
-            actorId,
-          );
-          if (!allowed(afterSales)) throw new ServiceError(403, 'FORBIDDEN');
-          if (!balances && report) {
-            conversion = { status: 'DENIED' };
-            if (
-              filteredRequest &&
-              (reportInput.originId || reportInput.destinationId)
-            ) {
-              conversion = {
-                status: 'UNAVAILABLE',
-                reason: 'ROUTE_COHORT_SOURCE_PENDING',
-              };
-            } else if (
-              afterSales.permissions.includes('customer_affairs.lead.read')
-            ) {
-              try {
-                const value = await runTool(
-                  'customer-affairs.call-conversion',
-                  cookie,
-                );
-                if (
-                  value.current.startUtc !== report.current.startUtc ||
-                  value.current.endUtc !== report.current.endUtc
-                )
-                  throw new ServiceError(502, 'INVALID_SOURCE');
-                conversion = { status: 'READY', report: value };
-              } catch (error) {
-                if (
-                  error instanceof ServiceError &&
-                  [401, 403].includes(error.status)
-                )
-                  throw error;
-                conversion = { status: 'UNAVAILABLE' };
-              }
-              const finalActor = await authenticate(
-                cookie,
-                deadline.signal,
-                actorId,
-              );
-              if (
-                !allowed(finalActor) ||
-                !finalActor.permissions.includes('customer_affairs.lead.read')
-              )
-                throw new ServiceError(403, 'FORBIDDEN');
-            }
-          }
-          outcome = report && validate(report) ? 'PARTIAL' : 'BLOCKED';
-          send(
-            200,
-            outcome === 'PARTIAL'
-              ? {
-                  version: 1,
-                  action,
-                  status: 'PARTIAL',
-                  scope: 'ALL_AUTHORIZED_SALES',
-                  report,
-                  ...(!balances ? { conversion } : {}),
-                }
-              : { ...blockedAction(action, now().toISOString()), failure },
-          );
-          return;
-        }
-        const observedAt = now();
-        const followUps = [];
-        const sources = [];
-        for (const tool of PERSONAL_TOOLS) {
-          try {
-            const result = await runTool(tool.id, cookie, observedAt);
-            followUps.push(...result.followUps);
-            sources.push({
-              id: tool.id,
-              status: 'READY',
-              asOf: now().toISOString(),
-              truncated: result.truncated,
-            });
-          } catch (error) {
-            if (
-              error instanceof ServiceError &&
-              [401, 403].includes(error.status)
-            )
-              throw error;
-            sources.push({
-              id: tool.id,
-              status: 'UNAVAILABLE',
-              asOf: null,
-              truncated: false,
-            });
-          }
-        }
-        const finalPersonalActor = await authenticate(
+        const result = await runPreparedAction({
+          action,
+          runTool,
+          authenticate,
           cookie,
-          deadline.signal,
+          actor,
           actorId,
-        );
-        for (const source of sources.filter(
-          (source) => source.status === 'READY',
-        ))
-          await authenticate(cookie, deadline.signal, actorId, source.id);
-        let corporate;
-        if (action === 'daily-summary') {
-          corporate = {
-            sales: { status: 'DENIED' },
-            balances: { status: 'DENIED' },
-          };
-          const definitions = [
-            { key: 'sales', id: 'sales.weekly' },
-            { key: 'balances', id: 'sales.contract-balances' },
-          ];
-          await Promise.all(
-            definitions.map(async (definition) => {
-              if (!isToolAllowed(finalPersonalActor, definition.id)) return;
-              try {
-                corporate[definition.key] = {
-                  status: 'READY',
-                  report: await runTool(definition.id, cookie),
-                };
-              } catch (error) {
-                if (
-                  error instanceof ServiceError &&
-                  [401, 403].includes(error.status)
-                )
-                  throw error;
-                corporate[definition.key] = { status: 'UNAVAILABLE' };
-              }
-            }),
-          );
-          const releaseActor = await authenticate(
-            cookie,
-            deadline.signal,
-            actorId,
-          );
-          for (const source of sources.filter(
-            (source) => source.status === 'READY',
-          ))
-            await authenticate(cookie, deadline.signal, actorId, source.id);
-          if (
-            definitions.some(
-              (definition) =>
-                corporate[definition.key].status === 'READY' &&
-                !isToolAllowed(releaseActor, definition.id),
-            )
-          )
-            throw new ServiceError(403, 'FORBIDDEN');
-        }
-        const evaluatedAt = now();
-        const unique = [
-          ...new Map(followUps.map((item) => [item.id, item])).values(),
-        ].sort((a, b) => comparePersonal(a, b, evaluatedAt));
-        outcome = sources.every((item) => item.status === 'READY')
-          ? 'SUCCESS'
-          : 'PARTIAL';
-        const snapshot = {
-          version: 1,
-          generatedAt: evaluatedAt.toISOString(),
-          scope: 'SELF',
-          sources,
-          followUps: unique.slice(0, 30),
-          truncated:
-            unique.length > 30 || sources.some((source) => source.truncated),
-          capabilities: {
-            forecasting: false,
-            news: false,
-            scenarios: false,
-            llm: false,
-            writes: false,
-          },
-        };
-        send(
-          200,
-          action === 'daily-summary'
-            ? { ...dailySummary(snapshot), corporate }
-            : snapshot,
-        );
+          deadline,
+          now,
+          actualTool,
+          filteredRequest,
+          reportInput,
+        });
+        outcome = result.outcome;
+        send(200, result.body);
       } catch (error) {
         const status = error instanceof ServiceError ? error.status : 503;
         outcome = status === 401 || status === 403 ? 'DENIED' : 'FAILED';
@@ -381,6 +232,7 @@ export function createAssistantServer({
         clearTimeout(timer);
         if (counted) inFlight--;
         recordRequestAudit(audit, {
+          conversation: conversationRequest,
           action,
           correlationId,
           actorId,

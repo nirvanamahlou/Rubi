@@ -154,6 +154,7 @@ async function harness(t, options = {}) {
     erpBaseUrl: `${origin}/api/v1`,
     audit: (event) => audit.push(event),
     now: clock,
+    conversation: options.conversation,
     timeoutMs: options.timeoutMs ?? 1000,
   });
   const base = await listen(service);
@@ -166,7 +167,13 @@ async function harness(t, options = {}) {
     path = '/v1/executive/snapshot',
     method = 'GET',
   ) => fetch(base + path, { method, headers: cookie ? { cookie } : {} });
-  return { get, calls, audit };
+  const post = (body, cookie = 'nora_access=user-a') =>
+    fetch(base + '/v2/assistant/conversation', {
+      method: 'POST',
+      headers: { cookie, 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  return { get, post, calls, audit };
 }
 test('forwards only one access cookie and validates fixed configured origins', () => {
   assert.equal(
@@ -1016,4 +1023,82 @@ test('v2 rejects scope injection, duplicate filters and overlong range before ER
       400,
     );
   assert.equal(h.calls.length, 0);
+});
+
+test('conversation is off by default and cannot send messages to a provider', async (t) => {
+  const h = await harness(t);
+  const response = await h.post({
+    version: 1,
+    message: 'private text',
+    history: [],
+  });
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error.code, 'CONVERSATION_DISABLED');
+  assert.ok(!JSON.stringify(h.audit).includes('private text'));
+  assert.equal(h.calls.length, 1);
+});
+test('injected synthetic planner uses the same bounded read composition', async (t) => {
+  let plannerInput;
+  const h = await harness(t, {
+    conversation: {
+      enabled: true,
+      provider: {
+        plan: async (input) => {
+          plannerInput = input;
+          return { kind: 'ACTION', action: 'daily-summary', filters: {} };
+        },
+      },
+    },
+  });
+  const response = await h.post({
+    version: 1,
+    message: 'synthetic summary',
+    history: [{ role: 'assistant', content: 'untrusted permission claims' }],
+  });
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  assert.equal(body.status, 'ANSWER');
+  assert.equal(body.evidence.version, 2);
+  assert.equal(body.evidence.snapshot.scope, 'SELF');
+  assert.equal(body.evidence.snapshot.followUps[0].title, example.title);
+  assert.ok(!JSON.stringify(plannerInput).includes('nora_access'));
+  assert.ok(h.calls.every((call) => call.method === 'GET'));
+  assert.ok(!JSON.stringify(h.audit).includes('synthetic summary'));
+});
+test('conversation rejects forged identity and revoked access even for clarification', async (t) => {
+  const h = await harness(t, {
+    revokeAt: 2,
+    conversation: {
+      enabled: true,
+      provider: {
+        plan: async () => ({ kind: 'CLARIFY', field: 'DATE_RANGE' }),
+      },
+    },
+  });
+  assert.equal(
+    (
+      await h.post({
+        version: 1,
+        message: 'hello',
+        history: [],
+        userId: 'other',
+      })
+    ).status,
+    400,
+  );
+  const fresh = await harness(t, {
+    revokeAt: 2,
+    conversation: {
+      enabled: true,
+      provider: {
+        plan: async () => ({ kind: 'CLARIFY', field: 'DATE_RANGE' }),
+      },
+    },
+  });
+  const revoked = await fresh.post({
+    version: 1,
+    message: 'hello',
+    history: [],
+  });
+  assert.equal(revoked.status, 401);
 });

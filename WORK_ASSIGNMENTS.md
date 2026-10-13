@@ -7360,3 +7360,9 @@ prior assistant candidates released; do not edit active Sales workspace files.
 Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
+
+## ASSISTANT-ORCHESTRATOR-1013 — PC-C — IN_PROGRESS
+
+User-approved step3 preparation, stacked on filters PR822. Scope services/assistant action composition, message contract, bounded injected-provider orchestrator and tests; optional gated BFF/chat state, own docs. Real model connection remains absent and off; no DB changes.
+
+ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route, separate session-only conversation UI and tests; existing fixed controls remain available.

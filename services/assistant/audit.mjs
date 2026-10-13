@@ -11,13 +11,24 @@ const actions = new Set([
 // Construct an allowlisted event rather than serializing request/source objects.
 export function recordRequestAudit(
   sink,
-  { action, correlationId, actorId, at, outcome, tools, durationMs },
+  {
+    action,
+    correlationId,
+    actorId,
+    at,
+    outcome,
+    tools,
+    durationMs,
+    conversation = false,
+  },
 ) {
   try {
     sink({
-      event: actions.has(action)
-        ? 'assistant.action.read'
-        : 'assistant.executive.read',
+      event: conversation
+        ? 'assistant.conversation.read'
+        : actions.has(action)
+          ? 'assistant.action.read'
+          : 'assistant.executive.read',
       ...(actions.has(action) ? { action } : {}),
       correlationId,
       ...(actorId ? { actorId } : {}),

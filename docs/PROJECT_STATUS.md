@@ -5816,3 +5816,8 @@ localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
 ## PC-C — ASSISTANT-FILTERS-1013
 
 Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.
+
+
+## PC-C — ASSISTANT-ORCHESTRATOR-1013
+
+Gated conversation preparation: shared prepared actions, strict bounded planner contract, disabled-by-default POST/BFF and separate memory-only UI component. Synthetic providers only; live UI activation/provider/business pilot remain gated. See docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md. Candidate validation and CI pending.

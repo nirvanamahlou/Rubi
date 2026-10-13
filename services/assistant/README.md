@@ -92,3 +92,12 @@ sources, real model processing/cost policy and production pilot remain gates.
 See ../../docs/tasks/ASSISTANT-TOOLS-1013.md.
 
 Versioned filter contract and rollout: ../../docs/tasks/ASSISTANT-FILTERS-1013.md.
+
+## Gated conversation preparation
+
+POST /v2/assistant/conversation has bounded JSON and native IAM, but the runtime
+ships without a provider and returns503 CONVERSATION_DISABLED. Synthetic tests
+inject a planner; prepared-actions.mjs shares existing read compositions with
+orchestrator.mjs. No real message or ERP data goes to a model. The separate Web
+conversation component is not mounted pending policy approval. See
+../../docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md for activation and pilot gates.
