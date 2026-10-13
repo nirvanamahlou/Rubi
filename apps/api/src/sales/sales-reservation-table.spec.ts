@@ -102,3 +102,59 @@ it('does not project debt without financial permission or query without reservat
   ).toBe(0);
   expect(s.findMany).not.toHaveBeenCalled();
 });
+
+it('projects ages only for the matching hotel contract and allocated guests', async () => {
+  const hotel = {
+    hotelId: 'hotel',
+    roomTypeId: 'room',
+    roomCount: 1,
+    mealServiceId: null,
+    singleRoomCount: 0,
+    doubleRoomCount: 1,
+    extraBedCount: 0,
+    checkInDate: new Date('2026-10-01'),
+    checkOutDate: new Date('2026-10-03'),
+  };
+  const row = {
+    hotelSelection: hotel,
+    passengers: [
+      {
+        customerId: 'guest',
+        birthDate: new Date('1990-10-02'),
+        allocations: [{ service: { clientKey: 'hotel-service' } }],
+      },
+    ],
+  };
+  const findFirst = vi.fn().mockResolvedValue(row);
+  const service = new SalesReservationTableService(
+    { client: { salesContract: { findFirst } } } as never,
+    {} as never,
+  );
+  const snapshot = {
+    contractId: 'contract',
+    hotelSelection: {
+      ...hotel,
+      mealServiceId: undefined,
+      serviceClientKey: 'hotel-service',
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-03',
+    },
+    passengerAssignments: [
+      { customerId: 'guest', serviceClientKeys: ['hotel-service'] },
+    ],
+  } as never;
+  const actor = {
+    permissions: ['reservations.read'],
+    branchIds: ['branch'],
+  } as never;
+  expect(await service.hotelGuestAges(snapshot, actor)).toEqual([35]);
+  expect(findFirst.mock.calls[0]![0].where).toMatchObject({
+    branchId: { in: ['branch'] },
+    status: { not: 'CANCELLED' },
+  });
+  row.passengers[0]!.customerId = 'other';
+  expect(await service.hotelGuestAges(snapshot, actor)).toBeNull();
+  row.passengers[0]!.customerId = 'guest';
+  hotel.roomCount = 2;
+  expect(await service.hotelGuestAges(snapshot, actor)).toBeNull();
+});

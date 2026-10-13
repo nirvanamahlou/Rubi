@@ -78,6 +78,8 @@ export function quoteHotelOccupancy(
     adults: number;
     childAges: readonly number[];
     rooms: number;
+    /** Optional exact adult occupancy for each booked room. */
+    roomAdults?: readonly number[];
     checkIn: string;
     checkOut: string;
     currencyCode?: string;
@@ -99,6 +101,13 @@ export function quoteHotelOccupancy(
     input.adults < 1 ||
     input.adults + input.childAges.length > 30 ||
     input.childAges.some((age) => !Number.isFinite(age) || age < 0 || age >= 18)
+  )
+    return null;
+  if (
+    input.roomAdults &&
+    (input.roomAdults.length !== input.rooms ||
+      input.roomAdults.some((a) => !Number.isInteger(a) || a < 1) ||
+      input.roomAdults.reduce((a, b) => a + b, 0) !== input.adults)
   )
     return null;
   const currencies = [...new Set(rates.map((row) => row.currencyCode))];
@@ -161,13 +170,19 @@ export function quoteHotelOccupancy(
     if (adults < rooms) return null;
     const key = JSON.stringify([rooms, adults, ages]);
     if (cache.has(key)) return cache.get(key)!;
-    if (rooms === 1) return roomPrice(adults, ages);
+    if (rooms === 1)
+      return !input.roomAdults ||
+        input.roomAdults[input.rooms - rooms] === adults
+        ? roomPrice(adults, ages)
+        : null;
     let best: bigint | null = null;
     const shapes = [
       ...new Set(options.map((row) => `${row.adults}:${row.childAges.length}`)),
     ];
     for (const shape of shapes) {
       const [a = 0, c = 0] = shape.split(':').map(Number);
+      if (input.roomAdults && input.roomAdults[input.rooms - rooms] !== a)
+        continue;
       if (a < 1 || a > adults - (rooms - 1) || c > ages.length) continue;
       function subsets(index: number, selected: number[]) {
         if (--budget < 0) return;

@@ -1,3 +1,4 @@
+import { HotelPurchaseSavings } from '@/modules/reservations/components/hotel-purchase-savings';
 import styles from './finance-inbox.module.css';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import {
@@ -1285,6 +1286,9 @@ export function FinanceInboxLiveWorkspace() {
                             <span dir="ltr">
                               {line.amount} {line.currencyCode}
                             </span>
+                            {line.hotelSavings ? (
+                              <HotelPurchaseSavings value={line.hotelSavings} />
+                            ) : null}
                             {line.status !== 'PAID' ? (
                               <Button
                                 size="sm"
@@ -1597,6 +1601,19 @@ export function FinanceInboxLiveWorkspace() {
               className="grid gap-3"
               disabled={actionBusy || paymentUncertain}
             >
+              {actionKind === 'PAYMENT' &&
+                actionItem?.reservationPurchase?.lines
+                  .filter(
+                    (line) =>
+                      line.purchaseId === actionItem.sourceReference &&
+                      line.hotelSavings,
+                  )
+                  .map((line) => (
+                    <HotelPurchaseSavings
+                      key={line.purchaseId}
+                      value={line.hotelSavings}
+                    />
+                  ))}
               {actionKind === 'PAYMENT' && actionItem?.ticketPurchase ? (
                 <div className="rounded-xl border bg-muted/40 p-3 text-sm">
                   قیمت خرید ثبت‌شده در خرید و تأمین:{' '}

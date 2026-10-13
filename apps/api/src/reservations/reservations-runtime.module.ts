@@ -1,3 +1,7 @@
+import {
+  ReservationHotelSavingsService,
+  ReservationHotelSavingsController,
+} from './reservation-hotel-savings.service';
 import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { FinanceTicketCostService } from '../finance/ticket-cost/finance-ticket-cost.service';
 import {
@@ -628,12 +632,14 @@ export class ReservationRequestsController {
     TicketRuntimeModule,
   ],
   controllers: [
+    ReservationHotelSavingsController,
     ReservationRequestsController,
     ReservationPassengerFilesController,
     ReservationManifestController,
     ReservationManifestBatchController,
   ],
   providers: [
+    ReservationHotelSavingsService,
     ReservationTicketDocumentsService,
     AuthGuard,
     ReservationOperationInterceptor,

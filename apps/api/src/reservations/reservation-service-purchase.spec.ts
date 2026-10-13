@@ -238,9 +238,19 @@ it.each([false, true, 'split'])(
       brokerReference: vi.fn(async (id: string) => ({ id, name: 'کارگزار' })),
       currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
     };
+    const hotelSavings = {
+      version: 1,
+      status: 'AVAILABLE',
+      referenceAmount: '500',
+      actualAmount: '450',
+      savingsAmount: '50',
+      currencyCode: 'IRR',
+    };
+    const savings = { quote: vi.fn().mockResolvedValue(hotelSavings) };
     const service = new ReservationServicePurchaseService(
       database as never,
       directory as never,
+      savings as never,
     );
     const purchases = [
       {
@@ -353,6 +363,16 @@ it.each([false, true, 'split'])(
     expect(create).toHaveBeenCalledTimes(formula === 'split' ? 3 : 2);
     const hotel = create.mock.calls[0]![0].data;
     const transfer = create.mock.calls[1]![0].data;
+    expect(hotel.passengerPrices.hotelSavings).toEqual(hotelSavings);
+    expect(transfer.passengerPrices.hotelSavings).toBeUndefined();
+    if (!formula) expect(hotel.passengerPrices.passengers).toHaveLength(2);
+    expect(savings.quote).toHaveBeenLastCalledWith(
+      expect.anything(),
+      'branch-1',
+      'IRR',
+      expect.anything(),
+      '450',
+    );
     expect(hotel.batchId).toBe(transfer.batchId);
     expect(hotel.serviceTitleSnapshot).toBe('Royal Wings');
     expect(transfer.serviceTitleSnapshot).toBe(
@@ -371,6 +391,7 @@ it.each([false, true, 'split'])(
     expect(transfer.amount).toBe(formula ? '50' : '80');
     if (formula) {
       expect(hotel.passengerPrices).toEqual({
+        hotelSavings,
         calculation: {
           baseAmount: '100',
           factor: '1.5',

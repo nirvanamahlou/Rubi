@@ -1,3 +1,4 @@
+import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import {
   parsePurchaseQuery,
   type PurchaseQueryInput,
@@ -120,6 +121,13 @@ function present(
                 .calculation as unknown as ReservationServicePurchaseCalculationV1,
             }
           : {}),
+        ...(hotelPurchaseSavingsEvidence(purchase.passengerPrices)
+          ? {
+              hotelSavings: hotelPurchaseSavingsEvidence(
+                purchase.passengerPrices,
+              )!,
+            }
+          : {}),
         passengerPrices: Array.isArray(purchase.passengerPrices)
           ? (purchase.passengerPrices as unknown as {
               customerId: string;
@@ -129,7 +137,13 @@ function present(
               unitAmount?: string;
               totalAmount: string;
             }[])
-          : [],
+          : ((
+              purchase.passengerPrices as unknown as {
+                passengers?: NonNullable<
+                  ReservationIntakeV1['servicePurchases']
+                >[number]['passengerPrices'];
+              } | null
+            )?.passengers ?? []),
         actorUserId: purchase.actorUserId,
         createdAt: purchase.createdAt.toISOString(),
         finance: finance

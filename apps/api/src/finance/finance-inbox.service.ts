@@ -376,6 +376,9 @@ export class FinanceInboxService {
             origin: 'PERSISTED_SOURCE',
             reservationPurchase: {
               lines: purchases.map((purchase) => ({
+                ...(purchase.hotelSavings
+                  ? { hotelSavings: purchase.hotelSavings }
+                  : {}),
                 purchaseId: purchase.id,
                 serviceTitle: purchase.serviceTitle,
                 supplierName: purchase.supplierName,

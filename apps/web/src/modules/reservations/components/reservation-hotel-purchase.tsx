@@ -1,4 +1,8 @@
 'use client';
+import {
+  HotelPurchaseSavingsPreview,
+  HotelPurchaseSavings,
+} from './hotel-purchase-savings';
 import { ReservationInsurancePurchase } from './reservation-insurance-purchase';
 
 import { useEffect, useRef, useState } from 'react';
@@ -490,6 +494,19 @@ export function ReservationHotelPurchase({
             جمع خرید هتل: {hotelTotal ? formatSalesMoney(hotelTotal) : '—'}{' '}
             {hotelCurrency?.id ?? ''}
           </p>
+          <HotelPurchaseSavingsPreview
+            intakeId={request.id}
+            currencyCode={hotelCurrency?.id ?? ''}
+            actualAmount={hotelTotal || ''}
+          />
+          {hotelPurchase?.hotelSavings ? (
+            <div className="space-y-2">
+              <p className="text-sm font-semibold">
+                مقایسه ذخیره‌شده هنگام ثبت خرید
+              </p>
+              <HotelPurchaseSavings value={hotelPurchase.hotelSavings} />
+            </div>
+          ) : null}
         </section>
       ) : null}
       {transfers.length ? (
