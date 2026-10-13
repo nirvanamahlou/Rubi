@@ -75,6 +75,7 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
   let note = bookId
     ? 'کل دفتر؛ مستقل از فیلترهای فرم'
     : 'دفتر حسابداری انتخاب نشده است';
+  if (route.split('/').at(-1) === 'ledgers') note = 'دفاتر کل';
   if (documents) {
     items = ['کل اسناد', 'پیش‌نویس', 'تأییدشده', 'قطعی'].map((label, i) => ({
       label,
