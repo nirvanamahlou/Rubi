@@ -5811,3 +5811,7 @@ localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
 تکراری داخل کارت کنترل مالی حذف شد. نشان مرکز کنترل مالی، دکمه‌ها و شاخص‌های
 کارت بدون تغییر باقی ماندند. این تغییر فقط رابط Web است و API، مجوزها، داده و
 ساختار دیتابیس را تغییر نمی‌دهد.
+
+## HOTEL-REPEAT-ADJUSTMENT-1013
+
+Bulk hotel sale adjustments now apply to current sale on every click and store the resulting explicit sale price. Purchase stays independent; invalid negative changes remain atomic. Ten interaction regressions pass. No migration.
