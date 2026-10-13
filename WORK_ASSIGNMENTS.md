@@ -7267,3 +7267,16 @@ PHASE2-INTEGRATION-CI-1013 candidate: all57 IAM/assistant/translation tests,
 scoped ESLint and Web typecheck passed. Existing integrated production build passed
 before this test-only edit. Production source is unchanged. Source reservation
 released with review candidate; exact-head and post-merge CI still gate rollout.
+
+## ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C — IN_PROGRESS
+
+Base developce487a4e. Final Phase2 evidence review: absent upstream priority must
+not be labelled as recorded NORMAL. Reserve only services/assistant/server.mjs,
+its focused regression and own docs entries. Omit sourcePriority when absent or
+unrecognized; existing deterministic date ranking stays unchanged and the Web
+already supports optional sourcePriority. No source/API/permission/schema change.
+
+ASSISTANT-PRIORITY-EVIDENCE-1013 candidate: service28/28 tests pass, including
+missing/unknown priority evidence and all existing authorization checks. Source
+reservation released with review candidate. Web build is unchanged; final full CI
+and post-merge verification gate local publication.
