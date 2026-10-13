@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Filter, RotateCcw, WalletCards } from 'lucide-react';
-import type { SalesReceivables, SalesReceivablesQuery } from '@nora/contracts';
+import type {
+  SalesReceivables,
+  SalesReceivablesQuery,
+  SalesContractListQuery,
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Card, Skeleton } from '@/components/ui/surfaces';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -12,15 +16,27 @@ import { salesApi } from '../api/client';
 import { SalesThemedSelect } from './sales-themed-select';
 
 export function SalesReceivablesCard({
+  listQuery = {},
+  onApply,
   refreshVersion,
   formatAmount,
 }: {
+  listQuery?: SalesContractListQuery;
+  onApply?: (query: SalesContractListQuery) => void;
   refreshVersion: unknown;
   formatAmount: (amount: string, currencyCode: string) => string;
 }) {
   const [draft, setDraft] = useState<SalesReceivablesQuery>({
-    dateBasis: 'CONTRACT',
-    customerType: 'ALL',
+    dateBasis:
+      listQuery.travelFrom || listQuery.travelTo ? 'TRAVEL' : 'CONTRACT',
+    from: listQuery.createdFrom || listQuery.travelFrom,
+    to: listQuery.createdTo || listQuery.travelTo,
+    customerType: listQuery.customerType ?? 'ALL',
+    originId: listQuery.originId,
+    destinationId: listQuery.destinationId,
+    agencyCustomerId: listQuery.agencyCustomerId,
+    search: listQuery.search,
+    settlementStatus: listQuery.settlementStatus,
   });
   const [query, setQuery] = useState(draft);
   const [data, setData] = useState<SalesReceivables['data'] | null>(null);
@@ -55,6 +71,22 @@ export function SalesReceivablesCard({
       live = false;
     };
   }, [query, refreshVersion]);
+  function apply(next: SalesReceivablesQuery) {
+    setQuery(next);
+    const result: SalesContractListQuery = { page: 1 };
+    if (next.search?.trim()) result.search = next.search.trim();
+    if (next.settlementStatus) result.settlementStatus = next.settlementStatus;
+    if (next.originId) result.originId = next.originId;
+    if (next.destinationId) result.destinationId = next.destinationId;
+    if (next.customerType) result.customerType = next.customerType;
+    if (next.agencyCustomerId) result.agencyCustomerId = next.agencyCustomerId;
+    if (next.from)
+      result[next.dateBasis === 'TRAVEL' ? 'travelFrom' : 'createdFrom'] =
+        next.from;
+    if (next.to)
+      result[next.dateBasis === 'TRAVEL' ? 'travelTo' : 'createdTo'] = next.to;
+    onApply?.(result);
+  }
   const invalid = Boolean(draft.from && draft.to && draft.from > draft.to);
   return (
     <Card className="relative overflow-hidden rounded-2xl border-primary/20 bg-gradient-to-br from-primary/10 via-surface to-surface p-5">
@@ -63,7 +95,7 @@ export function SalesReceivablesCard({
           <span className="grid size-9 place-items-center rounded-xl bg-primary/10 text-primary">
             <WalletCards className="size-5" />
           </span>
-          مانده قابل دریافت
+          <span>قراردادها</span> / <span>مانده قابل دریافت</span>
         </h2>
         {!busy && data ? (
           <span className="rounded-full border border-primary/15 bg-surface px-3 py-1 text-xs text-muted-foreground">
@@ -75,9 +107,45 @@ export function SalesReceivablesCard({
         className="mt-4 grid gap-3 rounded-2xl border border-border/70 bg-surface/80 p-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!invalid) setQuery({ ...draft });
+          if (!invalid) apply({ ...draft });
         }}
       >
+        <FormField label="جست‌وجوی قرارداد">
+          <input
+            aria-label="جست‌وجوی قرارداد"
+            placeholder="شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت…"
+            maxLength={160}
+            value={draft.search ?? ''}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                search: event.target.value,
+              }))
+            }
+            className="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm"
+          />
+        </FormField>
+        <FormField label="وضعیت تسویه">
+          <SalesThemedSelect
+            label="وضعیت تسویه"
+            value={draft.settlementStatus ?? ''}
+            onValueChange={(value) =>
+              setDraft((current) => ({
+                ...current,
+                settlementStatus: value
+                  ? (value as SalesReceivablesQuery['settlementStatus'])
+                  : undefined,
+              }))
+            }
+            options={[
+              { value: '', label: 'همه وضعیت‌های تسویه' },
+              { value: 'UNPAID', label: 'تسویه نشده' },
+              { value: 'PARTIALLY_SETTLED', label: 'تسویه ناقص' },
+              { value: 'SETTLED', label: 'تسویه شده' },
+              { value: 'OVERPAID', label: 'بستانکار' },
+            ]}
+          />
+        </FormField>
         <FormField label="مبنای تاریخ">
           <SalesThemedSelect
             label="مبنای تاریخ مانده"
@@ -199,7 +267,7 @@ export function SalesReceivablesCard({
                 customerType: 'ALL',
               };
               setDraft(cleared);
-              setQuery(cleared);
+              apply(cleared);
             }}
           >
             <RotateCcw className="size-4" />

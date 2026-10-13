@@ -13,6 +13,23 @@ import {
 } from './sales-workspace';
 
 describe('sales dashboard loading', () => {
+  it('renders one filter form for contracts and receivables', () => {
+    const html = renderToStaticMarkup(<SalesWorkspace />);
+    expect(html.match(/<form/g)).toHaveLength(1);
+    expect(html).toContain('جست‌وجوی قرارداد');
+    expect(html).toContain('نوع مشتری');
+    expect(html).toContain('مبنای تاریخ');
+  });
+  it('uses expanded server-side pages for travel dates too', async () => {
+    const api = {
+      dashboard: vi.fn().mockResolvedValue({ data: {} }),
+      list: vi.fn().mockResolvedValue({ data: [], meta: { total: 0 } }),
+    };
+    await loadSalesWorkspace(api as never, { travelFrom: '2026-10-01' });
+    expect(api.list).toHaveBeenCalledWith(
+      expect.objectContaining({ travelFrom: '2026-10-01', pageSize: 10_000 }),
+    );
+  });
   it('renders customer phone and destination only with the original contract date rather than its last edit', () => {
     const createdAt = '2026-09-01T12:00:00.000Z';
     const contract = {
@@ -197,8 +214,8 @@ describe('sales dashboard loading', () => {
     expect(html).toContain('جست‌وجوی قرارداد');
     expect(html).toContain('وضعیت تسویه');
     expect(html).toContain('شماره قرارداد، نام مشتری یا شماره پیگیری پرداخت');
-    expect(html).toContain('از تاریخ ثبت');
-    expect(html).toContain('تا تاریخ ثبت');
+    expect(html).toContain('از تاریخ مانده قابل دریافت');
+    expect(html).toContain('تا تاریخ مانده قابل دریافت');
     expect(html).toContain(
       'بدون فیلتر تاریخ، فقط ۲۰ قراردادِ آخر نمایش داده می‌شود.',
     );

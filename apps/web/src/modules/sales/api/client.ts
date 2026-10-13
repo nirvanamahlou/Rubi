@@ -117,6 +117,14 @@ export const salesApi = {
         : {}),
       ...(query.createdFrom ? { createdFrom: query.createdFrom } : {}),
       ...(query.createdTo ? { createdTo: query.createdTo } : {}),
+      ...(query.originId ? { originId: query.originId } : {}),
+      ...(query.destinationId ? { destinationId: query.destinationId } : {}),
+      ...(query.customerType ? { customerType: query.customerType } : {}),
+      ...(query.agencyCustomerId
+        ? { agencyCustomerId: query.agencyCustomerId }
+        : {}),
+      ...(query.travelFrom ? { travelFrom: query.travelFrom } : {}),
+      ...(query.travelTo ? { travelTo: query.travelTo } : {}),
       sortBy: query.sortBy ?? 'updatedAt',
       sortDirection: query.sortDirection ?? 'desc',
     };
