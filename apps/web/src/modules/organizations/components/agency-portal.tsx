@@ -11,6 +11,7 @@ import { clearHeaderSession } from '@/lib/header-session';
 import { logoutAuthenticatedSession } from '@/modules/profile/api/client';
 import { agencyClient } from '../api/agency-client';
 import './corporate-design.css';
+import { AgencyPassengers } from './agency-passengers';
 export function AgencyPortal() {
   const router = useRouter();
   const [identity, setIdentity] = useState<B2bPortalIdentity>(),
@@ -53,7 +54,7 @@ export function AgencyPortal() {
   }, []);
   useEffect(() => {
     let active = true;
-    if (!section) return;
+    if (!section || section === 'passengers') return;
     void agencyClient
       .portalSection(section)
       .then((r) => {
@@ -108,6 +109,17 @@ export function AgencyPortal() {
           </p>
         ) : null}
         <nav className="flex flex-wrap gap-3" aria-label="بخش‌های مجاز پرونده">
+          {identity?.canViewPassengers && (
+            <Button
+              variant={section === 'passengers' ? 'primary' : 'outline'}
+              onClick={() => {
+                setContent(undefined);
+                setSection('passengers');
+              }}
+            >
+              مسافران و ویرایش جزئیات
+            </Button>
+          )}
           {B2B_DOSSIER_SECTIONS.filter((s) =>
             identity?.sections.includes(s.id),
           ).map((s) => (
@@ -124,6 +136,9 @@ export function AgencyPortal() {
             </Button>
           ))}
         </nav>
+        {section === 'passengers' && identity?.canViewPassengers && (
+          <AgencyPassengers />
+        )}
         {content ? (
           <section className="panel">
             <header className="panel-head">

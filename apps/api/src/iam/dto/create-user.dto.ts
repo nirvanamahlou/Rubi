@@ -3,6 +3,7 @@ import {
   ArrayMaxSize,
   ArrayUnique,
   IsArray,
+  IsBoolean,
   IsEmail,
   IsOptional,
   IsString,
@@ -15,6 +16,9 @@ import {
 import { INITIAL_PASSWORD_MIN_LENGTH } from '../password-policy';
 
 export class CreateUserDto {
+  @IsOptional()
+  @IsBoolean()
+  manualAccessV3?: boolean;
   @ApiProperty({ example: 'ramtin' })
   @IsString()
   @Matches(/^[a-zA-Z0-9._-]+$/)
@@ -74,4 +78,12 @@ export class CreateUserDto {
   @ArrayMaxSize(1000)
   @IsString({ each: true })
   screenIds?: string[];
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(1000)
+  @IsString({ each: true })
+  deniedControlIds?: string[];
 }

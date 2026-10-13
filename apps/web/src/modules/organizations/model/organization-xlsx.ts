@@ -23,8 +23,22 @@ export function isAllowedOrganizationWorkbookRelationship(
   target: string,
   targetMode: string,
 ) {
-  if (targetMode.toLowerCase() === 'external')
-    return type === hyperlinkRelationshipType && safeMailtoTarget.test(target);
+  if (targetMode.toLowerCase() === 'external') {
+    if (type !== hyperlinkRelationshipType) return false;
+    // Hyperlink metadata is never followed or rendered; only cell text is read.
+    if (
+      safeMailtoTarget.test(target) ||
+      /^tel:\+?[\d(). -]{3,30}$/i.test(target)
+    )
+      return true;
+    if (!/^https?:\/\//i.test(target) || /[\s\\]/.test(target)) return false;
+    try {
+      const url = new URL(target);
+      return Boolean(url.hostname) && !url.username && !url.password;
+    } catch {
+      return false;
+    }
+  }
   return !/:|\\/.test(target);
 }
 
@@ -328,29 +342,7 @@ function cellColumn(reference: string) {
 }
 
 export function hasRequiredOrganizationColumns(normalized: readonly string[]) {
-  const compactRequiredKeys = [
-    'legalName',
-    'chiefExecutiveName',
-    'officePhone',
-    'chiefExecutiveMobile',
-    'addressLine',
-  ];
-  const extendedRequiredKeys = [
-    'legalName',
-    'registrationNumber',
-    'nationalId',
-    'economicCode',
-    'chiefExecutiveName',
-    'chiefExecutiveNationalId',
-    'chiefExecutiveMobile',
-    'province',
-    'city',
-    'addressLine',
-  ];
-  return (
-    compactRequiredKeys.every((key) => normalized.includes(key)) ||
-    extendedRequiredKeys.every((key) => normalized.includes(key))
-  );
+  return normalized.includes('legalName');
 }
 
 export async function parseOrganizationXlsx(
@@ -400,8 +392,6 @@ export async function parseOrganizationXlsx(
       .join(''),
   );
   const sourceRows = [...sheet.getElementsByTagNameNS('*', 'row')];
-  if (sourceRows.length > organizationImportLimit + 1)
-    throw new Error('حداکثر ۲۰۰ سازمان در هر فایل مجاز است.');
   const rows = sourceRows.map((row) => {
     const values: string[] = [];
     for (const cell of row.getElementsByTagNameNS('*', 'c')) {
@@ -432,6 +422,10 @@ export async function parseOrganizationXlsx(
     return values;
   });
   const [headers = [], ...data] = rows;
+  // Excel retains styled empty template rows. They are not agency records.
+  const populatedRows = data.filter((row) => row.some(Boolean));
+  if (populatedRows.length > organizationImportLimit)
+    throw new Error('حداکثر ۲۰۰ سازمان در هر فایل مجاز است.');
   const columns = [
     [
       'legalName',
@@ -550,24 +544,22 @@ export async function parseOrganizationXlsx(
     throw new Error('ستون‌های فایل با قالب سازمان‌ها مطابقت ندارند.');
   const value = (row: readonly string[], key: string) =>
     row[normalized.indexOf(key)] ?? '';
-  return data
-    .filter((row) => row.some(Boolean))
-    .map((row) => ({
-      code: value(row, 'code'),
-      legalName: value(row, 'legalName'),
-      personType: value(row, 'personType') || 'LEGAL',
-      nationalId: value(row, 'nationalId'),
-      registrationNumber: value(row, 'registrationNumber'),
-      economicCode: value(row, 'economicCode'),
-      tourismLicenseNumber: value(row, 'tourismLicenseNumber'),
-      chiefExecutiveName: value(row, 'chiefExecutiveName'),
-      chiefExecutiveNationalId: value(row, 'chiefExecutiveNationalId'),
-      chiefExecutiveMobile: value(row, 'chiefExecutiveMobile'),
-      officePhone: value(row, 'officePhone'),
-      email: value(row, 'email'),
-      province: value(row, 'province'),
-      city: value(row, 'city'),
-      addressLine: value(row, 'addressLine'),
-      roleCodes: value(row, 'roleCodes') || 'AGENCY',
-    }));
+  return populatedRows.map((row) => ({
+    code: value(row, 'code'),
+    legalName: value(row, 'legalName'),
+    personType: value(row, 'personType') || 'LEGAL',
+    nationalId: value(row, 'nationalId'),
+    registrationNumber: value(row, 'registrationNumber'),
+    economicCode: value(row, 'economicCode'),
+    tourismLicenseNumber: value(row, 'tourismLicenseNumber'),
+    chiefExecutiveName: value(row, 'chiefExecutiveName'),
+    chiefExecutiveNationalId: value(row, 'chiefExecutiveNationalId'),
+    chiefExecutiveMobile: value(row, 'chiefExecutiveMobile'),
+    officePhone: value(row, 'officePhone'),
+    email: value(row, 'email'),
+    province: value(row, 'province'),
+    city: value(row, 'city'),
+    addressLine: value(row, 'addressLine'),
+    roleCodes: value(row, 'roleCodes') || 'AGENCY',
+  }));
 }

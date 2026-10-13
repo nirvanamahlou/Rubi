@@ -16,6 +16,7 @@ import {
   PackageSearch,
   Settings,
   SlidersHorizontal,
+  Sparkles,
   Ticket,
   UsersRound,
   type LucideIcon,
@@ -38,6 +39,7 @@ export interface HrBreadcrumbLocation {
 }
 
 const iconByHref: Record<NavigationHref, LucideIcon> = {
+  '/assistant': Sparkles,
   '/workbench': House,
   '/dashboard': Gauge,
   '/customers': UsersRound,
@@ -55,6 +57,7 @@ const iconByHref: Record<NavigationHref, LucideIcon> = {
   '/organizations': Building2,
   '/human-resources': HeartHandshake,
   '/documents': FileStack,
+  '/correspondence': FileStack,
   '/reports': BarChart3,
   '/integrations': SlidersHorizontal,
   '/system': Settings,
@@ -117,10 +120,22 @@ export const navigationGroups = [
     hrefs: ['/documents', '/reports'],
   },
   {
+    id: 'correspondence',
+    dotClass: 'bg-[#818cf8]',
+    title: 'مکاتبات',
+    hrefs: ['/correspondence'],
+  },
+  {
     id: 'system',
     dotClass: 'bg-[#fb923c]',
     title: 'تنظیمات شرکت',
     hrefs: ['/system', '/master-data', '/integrations'],
+  },
+  {
+    id: 'assistant',
+    dotClass: 'bg-[#a78bfa]',
+    title: 'دستیار هوشمند',
+    hrefs: ['/assistant'],
   },
 ] as const satisfies readonly {
   id: string;

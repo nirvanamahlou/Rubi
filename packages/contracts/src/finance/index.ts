@@ -681,6 +681,9 @@ export function normalizeFinanceListQuery(
 export type FinanceHistorySourceV1 =
   'SALES' | 'TICKET' | 'RESERVATIONS' | 'INVOICE' | 'OPERATIONAL';
 export interface FinanceHistoryQueryV1 {
+  /** Inclusive ISO date range in UTC; applied before pagination. */
+  from?: string;
+  to?: string;
   cursor?: string;
   /** Exact persisted transaction ID; never a pending request ID. */
   recordId?: string | undefined;

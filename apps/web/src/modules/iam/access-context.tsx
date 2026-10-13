@@ -12,11 +12,12 @@ import Link from '@/i18n/link';
 import {
   canViewRoute,
   accessGroupForRoute,
-  hasManagedAccess,
   USER_ACCESS_SCREENS,
   canViewScreen,
+  canUseMasterDataResource,
   screenForTab,
   type AuthenticatedActor,
+  type MasterDataResource,
 } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 import {
@@ -48,10 +49,18 @@ export function useScreenAccess() {
     [permissions],
   );
 }
+export function useMasterDataResourceAccess() {
+  const permissions = useAccessPermissions();
+  return useCallback(
+    (resource: MasterDataResource) =>
+      Array.isArray(permissions) &&
+      canUseMasterDataResource(permissions, resource),
+    [permissions],
+  );
+}
 export function useTabAccess() {
   const pathname = usePathname();
   const query = useSearchParams();
-  const permissions = useAccessPermissions();
   const allowed = useScreenAccess();
   return (value: string) => {
     const screen = screenForTab(
@@ -59,14 +68,14 @@ export function useTabAccess() {
       value,
       Object.fromEntries(query?.entries() ?? []),
     );
-    return screen
-      ? allowed(screen.id)
-      : !(
-          permissions &&
-          hasManagedAccess(permissions) &&
-          accessGroupForRoute(pathname ?? '/')
-        );
+    return tabAccessDecision(screen?.id, allowed);
   };
+}
+export function tabAccessDecision(
+  screenId: string | undefined,
+  canView: (id: string) => boolean,
+) {
+  return screenId ? canView(screenId) : true;
 }
 export function AccessProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<readonly string[] | null>(

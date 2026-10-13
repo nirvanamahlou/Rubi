@@ -15,6 +15,7 @@ import {
   Plug,
   Send,
   Settings,
+  Sparkles,
   Ticket,
   UserRoundCheck,
   UsersRound,
@@ -27,6 +28,7 @@ export const sidebarIcons: Record<
   NavigationHref | '/sales/pricing' | '/sales/ticket-prices' | '/sales/tours',
   LucideIcon
 > = {
+  '/assistant': Sparkles,
   '/workbench': House,
   '/dashboard': LayoutGrid,
   '/sales': FileText,
@@ -47,6 +49,7 @@ export const sidebarIcons: Record<
   '/finance/delivery': FileCheck2,
   '/human-resources': UserRoundCheck,
   '/documents': Archive,
+  '/correspondence': FileText,
   '/reports': ChartColumn,
   '/master-data': Database,
   '/integrations': Plug,

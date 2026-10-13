@@ -115,6 +115,73 @@ const row = {
 };
 
 describe('CustomerService', () => {
+  it('enforces positive manual field grants on actual updates, even without legacy deny tokens', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue(row),
+      update: vi.fn().mockResolvedValue({ ...row, version: 2 }),
+    } as unknown as CustomerRepository;
+    const { service } = createService(repository);
+    const scoped: AuthenticatedActor = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.manual.v3',
+        'ui.allow.field.customers.birthDate',
+      ],
+    };
+    await expect(
+      service.update(
+        row.id,
+        { ...mutation, firstName: 'changed', version: 1 },
+        scoped,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.update).not.toHaveBeenCalled();
+    await expect(
+      service.update(
+        row.id,
+        { ...mutation, birthDate: '1991-01-01', version: 1 },
+        scoped,
+      ),
+    ).resolves.toBeDefined();
+    expect(repository.update).toHaveBeenCalledTimes(1);
+  });
+  it('rejects denied create values including null and allows only unchanged denied updates', async () => {
+    const repository = {
+      find: vi.fn().mockResolvedValue(row),
+      create: vi.fn(),
+      update: vi.fn().mockResolvedValue({ ...row, version: 2 }),
+    } as unknown as CustomerRepository;
+    const { service, nationalIdProtector } = createService(repository);
+    const restricted = {
+      ...actor,
+      permissions: [
+        ...actor.permissions,
+        'ui.deny.field.customers.displayName',
+      ],
+    } as AuthenticatedActor;
+    await expect(
+      service.create({ ...mutation, displayName: null } as never, restricted),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(
+      service.update(
+        row.id,
+        { ...mutation, displayName: row.displayName, version: 1 },
+        restricted,
+      ),
+    ).resolves.toBeDefined();
+    await expect(
+      service.update(
+        row.id,
+        { ...mutation, displayName: 'نام تازه', version: 1 },
+        restricted,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.update).toHaveBeenCalledTimes(1);
+    expect(nationalIdProtector.decrypt).not.toHaveBeenCalled();
+    expect(nationalIdProtector.decryptPassportNumber).not.toHaveBeenCalled();
+  });
   it('allows explicit national-ID matching for authorized correction while preserving scope and audit', async () => {
     const repository = {
       findRegistration: vi.fn().mockResolvedValue(row),

@@ -1,0 +1,554 @@
+export type AssistantText = readonly [string, string];
+export const assistantCopy = {
+  recommendationTitle: ['پیشنهادهای قابل پیگیری', 'Actionable recommendations'],
+  allRecommendations: ['مشاهدهٔ همهٔ پیشنهادها', 'View all recommendations'],
+  ruleLabel: ['قاعده', 'Rule'],
+  recordedPriority: ['اولویت ثبت‌شده در منبع', 'Priority recorded by source'],
+  balanceRecommendationsDeferred: [
+    'پیشنهاد پیگیری مانده‌ها پس از ورود داده و تعیین قاعده فعال می‌شود.',
+    'Balance follow-up recommendations await data and an approved rule.',
+  ],
+  priorities: {
+    HIGH: ['فوری', 'Urgent'],
+    MEDIUM: ['مهم', 'Important'],
+    LOW: ['عادی', 'Ordinary'],
+  },
+  sourcePriorities: {
+    URGENT: ['فوری', 'Urgent'],
+    HIGH: ['بالا', 'High'],
+    NORMAL: ['عادی', 'Normal'],
+    LOW: ['کم', 'Low'],
+  },
+  ruleReasons: {
+    OVERDUE: [
+      'موعد این کار در روزهای گذشته بوده است.',
+      'This item was due on a previous day.',
+    ],
+    TODAY: ['موعد این کار امروز است.', 'This item is due today.'],
+    NEXT_THREE_DAYS: [
+      'موعد این کار در یک تا سه روز آینده است.',
+      'This item is due in the next one to three days.',
+    ],
+    THIS_WEEK: [
+      'موعد این کار در چهار تا هفت روز آینده است.',
+      'This item is due in four to seven days.',
+    ],
+    ASSIGNED: [
+      'این پیگیری به شما تخصیص یافته و موعد ثبت‌شده ندارد.',
+      'This follow-up is assigned to you without a recorded due date.',
+    ],
+  },
+  sourceUpdated: ['آخرین به‌روزرسانی دادهٔ منبع', 'Latest source data update'],
+  noSourceUpdate: [
+    'زمان به‌روزرسانی منبع موجود نیست',
+    'Source update time is unavailable',
+  ],
+  callConversion: [
+    'تبدیل سرنخ دارای تماس ثبت‌شده به قرارداد تأییدشده',
+    'Logged-call lead to confirmed contract conversion',
+  ],
+  callCoverage: [
+    'هر سرنخ در هر دوره یک بار شمرده می‌شود. فقط تماس CALL ثبت‌شده و ارتباط پذیرفته‌شده با قرارداد معتبر ملاک است؛ پاسخ‌داده‌شدن تماس یا انتساب کامل تمام فروش‌ها تأیید نشده است. محدوده فقط شعب مجاز شماست و نتیجه تا زمان درخواست محاسبه می‌شود.',
+    'Each lead is counted once per period. Evidence is a logged CALL and accepted handoff to a valid contract; answered calls and complete sales attribution are not verified. Scope is your authorized branches and conversion is evaluated as of the request.',
+  ],
+  contactedLeads: ['سرنخ دارای تماس ثبت‌شده', 'Leads with a logged call'],
+  convertedLeads: [
+    'سرنخ با قرارداد تأییدشده',
+    'Leads with a confirmed contract',
+  ],
+  noConversionEvidence: [
+    'منبع تبدیل در دسترس نیست یا مجوز مشاهده ندارید.',
+    'Conversion source is unavailable or access is denied.',
+  ],
+  contractBalances: [
+    'ماندهٔ قراردادی عملیاتی',
+    'Operational contract balances',
+  ],
+  balanceLimitations: [
+    'این گزارش مطالبات حسابداری نیست. استرداد، سررسید اقساط و مطالبات تأییدشدهٔ مالی در این منبع موجود نیستند؛ ماندهٔ قراردادی به معنی مبلغ سررسیدگذشته نیست.',
+    'This is not accounting receivables. Refund adjustments, installment due dates and Finance-approved receivables are unavailable; contractual outstanding does not mean overdue.',
+  ],
+  contractAmount: [
+    'مبلغ قرارداد پس از تخفیف، پیش از استرداد',
+    'Contract amount after discounts, before refunds',
+  ],
+  confirmedReceipts: ['دریافت تأییدشدهٔ مالی', 'Finance-confirmed receipts'],
+  pendingReceipts: [
+    'دریافت در انتظار تأیید مالی',
+    'Receipts pending Finance confirmation',
+  ],
+  outstandingBalance: ['ماندهٔ قراردادی', 'Contractual outstanding'],
+  reviewContract: ['بررسی در قراردادها', 'Review in Sales contracts'],
+  partialBalanceList: [
+    'فهرست به ۳۰ قرارداد محدود است؛ جمع مبالغ شامل تمام قراردادهای گزارش است.',
+    'The list is limited to 30 contracts; totals cover all contracts in this report.',
+  ],
+  title: ['دستیار هوشمند', 'Smart assistant'],
+  composerTitle: ['چه کاری برات انجام بدم؟', 'What can I do for you?'],
+  composerPlaceholder: [
+    'پیامت را برای نورا بنویس…',
+    'Write your message to Noura…',
+  ],
+  quickDaily: ['خلاصه امروز', 'Today’s summary'],
+  quickSales: ['تحلیل فروش', 'Sales analysis'],
+  quickReceivables: ['پیگیری مطالبات', 'Receivables follow-up'],
+  fixedActions: [
+    'سه درخواست آماده با ابزارهای خواندنی اجرا می‌شوند؛ گفت‌وگوی آزاد و ارسال داده به مدل غیرفعال است.',
+    'The three fixed requests use read-only tools. Free conversation and model data transfer are disabled.',
+  ],
+  dailyTitle: [
+    'خلاصه پیگیری‌های شخصی دریافت‌شده',
+    'Summary of retrieved personal follow-ups',
+  ],
+  dailyCoverage: [
+    'این شمارنده‌ها فقط پیگیری‌های شخصی دریافت‌شده، شامل موارد عقب‌افتاده و موعدهای هفت روز آینده تا سقف ۳۰ مورد هستند. گزارش‌های سازمانی جداگانه و طبق مجوز نمایش داده می‌شوند.',
+    'These counts cover retrieved personal follow-ups only, including overdue items and the next seven days, up to 30 items. Corporate reports appear separately according to access.',
+  ],
+  visibleCount: ['موارد نمایش‌داده‌شده', 'Visible items'],
+  overdueCount: ['عقب‌افتاده', 'Overdue'],
+  dueSoonCount: ['موعد نزدیک', 'Due soon'],
+  assignedCount: ['تخصیص‌یافته بدون موعد', 'Assigned without a deadline'],
+  salesDefinitionGate: [
+    'منبع خواندنی فروش در دسترس نیست یا پاسخ آن معتبر نیست؛ عددی نمایش داده نمی‌شود.',
+    'The read-only sales source is unavailable or invalid. No figures are displayed.',
+  ],
+  weeklySales: [
+    'فروش هفتگی — شمارش قراردادهای معتبر',
+    'Weekly sales — eligible contract counts',
+  ],
+  salesCoverage: [
+    'بر اساس تاریخ ایجاد، هفت روز کامل گذشته و هفت روز قبل؛ فقط محدوده مجاز فروش کل مجموعه. مسیرها در این نسخه، مسیر اصلی قرارداد هستند.',
+    'Creation-date basis, last seven complete days versus the preceding seven days. Authorized all-sales scope only; routes currently mean each contract’s primary route.',
+  ],
+  salesMissing: [
+    'مبلغ خالص فروش پس از استرداد و پوشش کامل قطعات سفر هنوز آماده نیستند. تبدیل لید دارای تماس ثبت‌شده، جداگانه با محدوده و محدودیت‌های خودش ارائه می‌شود.',
+    'Refund-adjusted net sales and complete trip-segment coverage remain unavailable. Logged-call lead conversion is shown separately with its own scope and limitations.',
+  ],
+  currentPeriod: ['هفت روز گذشته', 'Last seven days'],
+  previousPeriod: ['هفت روز قبل از آن', 'Preceding seven days'],
+  contractsCount: ['تعداد قرارداد', 'Contracts'],
+  passengersCount: ['تعداد مسافر', 'Passengers'],
+  primaryRoute: ['مسیر اصلی', 'Primary route'],
+  missingCityNames: [
+    'نام بعضی شهرها از مرجع اطلاعات پایه دریافت نشده است.',
+    'Some city names could not be retrieved from reference data.',
+  ],
+  sourceFailure: {
+    SOURCE_NOT_CONNECTED: [
+      'API خواندنی فروش در نسخهٔ جاری ERP منتشر نشده است.',
+      'The read-only sales API is not published in the running ERP version.',
+    ],
+    SOURCE_NOT_READY: [
+      'منبع فروش هنوز آمادهٔ ارائهٔ گزارش نیست.',
+      'The sales source is not ready to report.',
+    ],
+    SOURCE_CAP_EXCEEDED: [
+      'حجم منبع از حد امن گزارش بیشتر است؛ جمع ناقص نمایش داده نمی‌شود.',
+      'The source exceeds the safe report limit; incomplete totals are not displayed.',
+    ],
+    SOURCE_TOO_LARGE: [
+      'پاسخ منبع از حد مجاز بزرگ‌تر است.',
+      'The source response exceeds the size limit.',
+    ],
+    INVALID_SOURCE: [
+      'ساختار یا شمارنده‌های منبع معتبر نیستند.',
+      'The source structure or counts are invalid.',
+    ],
+    SOURCE_TIMEOUT: ['مهلت پاسخ منبع پایان یافت.', 'The source timed out.'],
+    SOURCE_UNAVAILABLE: [
+      'ارتباط با منبع فروش برقرار نشد.',
+      'The sales source could not be reached.',
+    ],
+  },
+  receivablesSourceGate: [
+    'پیگیری مطالبات هنوز فعال نیست؛ منبع تأییدشده مالی و قرارداد سررسید و مانده باید آماده شوند.',
+    'Receivables follow-up is not active: the approved Finance source and due-date/balance contract are required.',
+  ],
+  send: ['ارسال پیام', 'Send message'],
+  attach: ['پیوست فایل', 'Attach a file'],
+  voice: ['پیام صوتی', 'Voice message'],
+  attachUnavailable: [
+    'پیوست فایل هنوز فعال نیست.',
+    'File attachments are not available yet.',
+  ],
+  voiceUnavailable: [
+    'پیام صوتی هنوز فعال نیست.',
+    'Voice messages are not available yet.',
+  ],
+  messageNotSubmitted: [
+    'پیام ارسال نشد؛ گفت‌وگوی هوشمند هنوز فعال نیست. متن شما در همین صفحه باقی می‌ماند.',
+    'Message not sent: AI conversation is not active yet. Your draft stays on this page.',
+  ],
+  executive: ['پنل مدیرعامل', 'Executive workspace'],
+  intro: [
+    'دید روشن‌تر، تصمیم آگاهانه‌تر',
+    'A clearer view. Better-informed decisions.',
+  ],
+  subtitle: [
+    'تصویری یکپارچه از عملکرد، آینده کسب‌وکار و اقدام‌های پیش رو',
+    'Performance, business outlook and your next actions in one workspace',
+  ],
+  readOnly: ['دسترسی خواندنی', 'Read-only access'],
+  refresh: ['به‌روزرسانی', 'Refresh'],
+  report: ['گزارش مدیریتی', 'Executive report'],
+  reportUnavailable: [
+    'گزارش پس از آماده‌شدن داده‌های معتبر قابل دریافت است.',
+    'Reports become available when verified data is ready.',
+  ],
+  sources: ['منابع و اعتبار داده‌ها', 'Sources and data quality'],
+  noEstimate: ['هنوز قابل برآورد نیست', 'Not yet estimable'],
+  notZero: ['نبود داده به معنای صفر نیست.', 'Missing data does not mean zero.'],
+  actual: ['داده واقعی', 'Observed data'],
+  forecast: ['پیش‌بینی', 'Forecast'],
+  upcoming: ['آینده', 'Future'],
+  prior: ['گذشته', 'Past'],
+  estimateGate: [
+    'برای نمایش این برآورد، داده معتبر و روش محاسبه تأییدشده لازم است.',
+    'This estimate needs verified data and an approved calculation method.',
+  ],
+  liveGate: [
+    'پیش‌بینی‌ها، تحلیل اخبار و گفت‌وگوی هوشمند هنوز فعال نشده‌اند. هیچ عدد نمونه‌ای به‌عنوان عملکرد شرکت نمایش داده نمی‌شود.',
+    'Forecasts, news analysis and AI conversation are not active yet. Sample figures are never presented as company performance.',
+  ],
+  personal: ['پیگیری‌های شخصی من', 'My personal follow-ups'],
+  personalScope: [
+    'ویژه کاربر واردشده؛ مستقل از فیلتر شرکت و در محدوده دسترسی خودتان',
+    'For the signed-in user, within your own access; independent of the company filter',
+  ],
+  openSource: ['مشاهده منبع', 'Open source'],
+  emptyPersonal: [
+    'در منابع دریافت‌شده، پیگیری نزدیک یا عقب‌افتاده‌ای پیدا نشد.',
+    'No upcoming or overdue follow-ups were found in the retrieved sources.',
+  ],
+  partial: [
+    'بخشی از منابع دریافت نشد؛ فهرست پیگیری‌ها کامل نیست.',
+    'Some sources could not be retrieved; the follow-up list is incomplete.',
+  ],
+  limited: [
+    'نمایش حداکثر ۳۰ پیگیری از منابع محدودشده؛ فهرست کامل را در میزکار ببینید.',
+    'Up to 30 follow-ups from bounded sources. Open your workspace for the full list.',
+  ],
+  pendingPersonal: [
+    'برای دریافت پیگیری‌ها، اتصال امن به سرویس دستیار لازم است.',
+    'A secure assistant connection is needed to retrieve your follow-ups.',
+  ],
+  asOf: ['زمان دریافت داده', 'Data retrieved at'],
+  sourceStatus: ['وضعیت منابع', 'Source status'],
+  connected: ['دریافت شد', 'Retrieved'],
+  pending: ['در انتظار اتصال', 'Awaiting connection'],
+  unknown: ['داده در دسترس نیست', 'Data unavailable'],
+  company: ['دامنه اطلاعات شرکتی', 'Company data scope'],
+  companyGate: [
+    'شاخص‌های شرکتی پس از تأیید دسترسی همان شرکت و اتصال منبع نمایش داده می‌شوند.',
+    'Company metrics appear only after that company’s access and source are verified.',
+  ],
+  noDecision: [
+    'هنوز تصمیم ثبت‌شده‌ای از منبع معتبر دریافت نشده است.',
+    'No recorded decisions have been retrieved from an authoritative source.',
+  ],
+  noNews: [
+    'هنوز خبر تأییدشده‌ای برای تحلیل دریافت نشده است.',
+    'No verified news has been retrieved for analysis yet.',
+  ],
+  newsGate: [
+    'هر خبر باید منبع، تاریخ انتشار و پیوند قابل بررسی داشته باشد.',
+    'Each item requires a source, publication date and a verifiable link.',
+  ],
+  noAdvice: [
+    'پس از دریافت شواهد کافی، پیشنهادها با دلیل و اقدام مشخص نمایش داده می‌شوند.',
+    'Recommendations will include evidence, a reason and a specific next action.',
+  ],
+  financeGate: [
+    'مبالغ، ارز و سررسیدها باید با منبع مالی تطبیق داده شوند.',
+    'Amounts, currencies and due dates must reconcile with the financial source.',
+  ],
+  noData: ['داده کافی برای نمایش وجود ندارد', 'Not enough data to display'],
+  modelGate: [
+    'درجه اطمینان و سهم عوامل پس از ارزیابی روش پیش‌بینی مشخص می‌شود.',
+    'Confidence and factor contributions require an evaluated forecasting method.',
+  ],
+  assumptions: ['فرض‌های شما', 'Your assumptions'],
+  assumptionsHint: [
+    'این ورودی‌ها فرض سناریو هستند، نه داده واقعی یا توصیه مالی.',
+    'These inputs are scenario assumptions, not observed data or financial advice.',
+  ],
+  fx: ['تغییر نرخ ارز', 'Exchange-rate change'],
+  ads: ['تغییر بودجه تبلیغات', 'Advertising-budget change'],
+  demand: ['تغییر تقاضای سفر', 'Travel-demand change'],
+  cost: ['تغییر هزینه تأمین', 'Supply-cost change'],
+  reset: ['بازنشانی فرض‌ها', 'Reset assumptions'],
+  calculate: ['مقایسه سناریوها', 'Compare scenarios'],
+  save: ['ذخیره سناریو', 'Save scenario'],
+  scenarioGate: [
+    'برای محاسبه و ذخیره، ابتدا خط مبنا و روش شبیه‌سازی باید تأیید شوند. تغییر فرض‌ها به‌تنهایی پیش‌بینی ایجاد نمی‌کند.',
+    'Calculation and saving require an approved baseline and simulation method. Changing assumptions alone does not produce a forecast.',
+  ],
+  pessimistic: ['بدبینانه', 'Pessimistic'],
+  baseline: ['محتمل', 'Base case'],
+  optimistic: ['خوش‌بینانه', 'Optimistic'],
+  chat: ['گفت‌وگو با دستیار مدیرعامل', 'Ask your executive assistant'],
+  chatHint: [
+    'سؤال خود را درباره عملکرد، ریسک‌ها یا پیگیری‌های شرکت بنویسید…',
+    'Ask about business performance, risks or follow-ups…',
+  ],
+  chatGate: [
+    'گفت‌وگو پس از تعیین سیاست پردازش داده و اتصال مدل فعال می‌شود.',
+    'Conversation will be enabled after the data-processing policy and model connection are approved.',
+  ],
+  promptOne: ['مهم‌ترین موضوع امروز چیست؟', 'What matters most today?'],
+  promptTwo: [
+    'نقدینگی آینده چه ریسک‌هایی دارد؟',
+    'What risks affect future cash flow?',
+  ],
+  promptThree: [
+    'کدام تصمیم‌ها نیاز به پیگیری دارند؟',
+    'Which decisions need follow-up?',
+  ],
+  noPersonalAccess: [
+    'نشست معتبر و مجوز مشاهدهٔ اطلاعات منبع لازم است. دستیار مجوزهای ERP شما را تغییر نمی‌دهد.',
+    'An active session and source data access are required. The assistant preserves your ERP permissions.',
+  ],
+  returnLogin: ['ورود دوباره', 'Sign in again'],
+  states: {
+    loading: [
+      'در حال دریافت اطلاعات دستیار…',
+      'Retrieving assistant information…',
+    ],
+    ready: [
+      'پیگیری‌های شخصی از ERP دریافت شد',
+      'Personal follow-ups retrieved from ERP',
+    ],
+    'not-configured': [
+      'سرویس دستیار هنوز به این محیط متصل نشده است.',
+      'The assistant service is not connected to this environment yet.',
+    ],
+    unavailable: [
+      'ارتباط با سرویس دستیار برقرار نشد؛ دوباره تلاش کنید.',
+      'The assistant service could not be reached. Try again.',
+    ],
+    forbidden: [
+      'مجوز مشاهدهٔ اطلاعات درخواستی را ندارید.',
+      'You do not have permission to read the requested information.',
+    ],
+    unauthenticated: [
+      'نشست معتبر نیست؛ دوباره وارد شوید.',
+      'Your session is invalid. Sign in again.',
+    ],
+    'rate-limited': [
+      'تعداد درخواست‌ها زیاد است؛ یک دقیقه دیگر تلاش کنید.',
+      'Too many requests. Try again in one minute.',
+    ],
+  },
+  reasons: {
+    OVERDUE: ['عقب‌افتاده', 'Overdue'],
+    DUE_SOON: ['تا هفت روز آینده', 'Due within seven days'],
+    ASSIGNED: ['واگذارشده به شما', 'Assigned to you'],
+  },
+  sourceNames: {
+    calendar: ['تقویم من', 'My calendar'],
+    notes: ['یادداشت‌های من', 'My notes'],
+    procurement: ['پیگیری خرید', 'Procurement follow-ups'],
+  },
+  views: {
+    overview: {
+      label: ['نمای کلی', 'Overview'],
+      title: ['مرکز هوشمند پیش‌بینی', 'Business outlook'],
+      description: [
+        'روند آینده شرکت بر پایه داده‌های داخلی و شواهد معتبر',
+        'The business outlook based on internal data and verifiable evidence',
+      ],
+      metrics: [
+        ['پیش‌بینی فروش ماه آینده', 'Next-month sales forecast'],
+        ['حاشیه سود پیش‌بینی‌شده', 'Forecast profit margin'],
+        ['وضعیت نقدینگی', 'Liquidity position'],
+        ['سطح ریسک', 'Risk level'],
+      ],
+    },
+    sales: {
+      label: ['فروش و تقاضا', 'Sales & demand'],
+      title: ['پیش‌بینی فروش و تقاضا', 'Sales and demand forecast'],
+      description: [
+        'تقاضای سفر، سرنخ‌ها، نرخ تبدیل و فرصت‌های فروش',
+        'Travel demand, leads, conversion and sales opportunities',
+      ],
+      metrics: [
+        ['فروش پیش‌بینی‌شده ماه آینده', 'Forecast next-month sales'],
+        ['تعداد سرنخ‌های پیش‌بینی‌شده', 'Forecast leads'],
+        ['نرخ تبدیل مورد انتظار', 'Expected conversion rate'],
+        ['مقصد برتر', 'Top destination'],
+      ],
+    },
+    finance: {
+      label: ['مالی و نقدینگی', 'Finance & cash flow'],
+      title: ['پیش‌بینی مالی و نقدینگی', 'Financial and liquidity forecast'],
+      description: [
+        'جریان نقد، سود، تعهدات و فشار پرداخت‌ها',
+        'Cash flow, profit, obligations and payment pressure',
+      ],
+      metrics: [
+        ['درآمد پیش‌بینی‌شده', 'Forecast revenue'],
+        ['حاشیه سود', 'Profit margin'],
+        ['مانده نقد', 'Cash balance'],
+        ['فشار بدهی', 'Debt pressure'],
+      ],
+    },
+    news: {
+      label: ['اخبار و ریسک بازار', 'News & market risk'],
+      title: ['تحلیل اخبار و ریسک بازار', 'News and market-risk analysis'],
+      description: [
+        'اخبار مؤثر و شواهد اثر آن‌ها بر کسب‌وکار',
+        'Relevant news and evidence of its business impact',
+      ],
+      metrics: [
+        ['اخبار با اثر بالا', 'High-impact news'],
+        ['ریسک کل', 'Overall risk'],
+        ['فرصت‌های مثبت', 'Positive opportunities'],
+        ['مسیرهای متأثر', 'Affected routes'],
+      ],
+    },
+    scenarios: {
+      label: ['سناریوها', 'Scenarios'],
+      title: ['شبیه‌ساز سناریوها', 'Scenario simulator'],
+      description: [
+        'مقایسه پیامد تصمیم‌ها پیش از اجرا، بر پایه فرض‌های روشن',
+        'Compare decision outcomes before acting, using explicit assumptions',
+      ],
+      metrics: [
+        ['فروش مورد انتظار', 'Expected sales'],
+        ['سود مورد انتظار', 'Expected profit'],
+        ['نقدینگی', 'Liquidity'],
+        ['ریسک', 'Risk'],
+      ],
+    },
+    advisor: {
+      label: ['مشاور مدیرعامل', 'Executive advisor'],
+      title: ['مشاور هوشمند مدیرعامل', 'Executive advisor'],
+      description: [
+        'خلاصه مدیریتی، پیشنهادهای مستند و پیگیری تصمیم‌ها',
+        'Executive brief, evidence-based recommendations and decision follow-up',
+      ],
+      metrics: [
+        ['نتیجه کلی پیش‌بینی', 'Overall outlook'],
+        ['درجه اطمینان', 'Confidence level'],
+        ['هشدارهای فوری', 'Urgent alerts'],
+        ['فرصت‌های مهم', 'Key opportunities'],
+      ],
+    },
+  },
+  blocks: {
+    trend: [
+      'روند واقعی و پیش‌بینی سه‌ماهه',
+      'Actual trend and three-month forecast',
+    ],
+    summary: ['جمع‌بندی هوشمند', 'Intelligent summary'],
+    news: ['اخبار اثرگذار', 'Influential news'],
+    factors: ['عوامل اصلی پیش‌بینی', 'Main forecast factors'],
+    immediate: ['پیشنهادهای فوری', 'Immediate recommendations'],
+    salesTrend: ['روند تقاضا و فروش', 'Demand and sales trend'],
+    destinations: ['مقاصد پرتقاضا', 'Popular destinations'],
+    funnel: ['مسیر تبدیل', 'Conversion funnel'],
+    products: ['محصولات پیشنهادی', 'Suggested products'],
+    salesSummary: ['جمع‌بندی فروش و تقاضا', 'Sales and demand summary'],
+    cashTrend: ['جریان نقدی ۹۰ روز آینده', 'Next 90 days of cash flow'],
+    obligations: ['ترکیب تعهدات', 'Obligation breakdown'],
+    balances: ['وضعیت مطالبات و بدهی‌ها', 'Receivables and payables'],
+    alerts: ['هشدارهای مالی', 'Financial alerts'],
+    actions: ['اقدام‌های پیشنهادی', 'Suggested actions'],
+    impact: ['تأثیر بر کسب‌وکار', 'Business impact'],
+    risks: ['نقاط ریسک', 'Risk areas'],
+    riskMap: ['نقشه ریسک', 'Risk map'],
+    comparison: ['مقایسه سناریوها', 'Scenario comparison'],
+    result: ['خلاصه نتیجه', 'Result summary'],
+    companies: ['اثر بر شرکت‌ها', 'Company impact'],
+    sensitivity: ['تحلیل حساسیت', 'Sensitivity analysis'],
+    history: ['تاریخچه سناریوها', 'Scenario history'],
+    daily: ['خلاصه مدیریتی امروز', 'Today’s executive brief'],
+    priorities: ['اولویت‌ها', 'Priorities'],
+    decisions: ['پیگیری تصمیم‌ها', 'Decision follow-up'],
+    reasons: ['دلایل اصلی', 'Main reasons'],
+    variables: ['متغیرهای سناریو', 'Scenario variables'],
+  },
+  rows: {
+    factors: [
+      ['فروش', 'Sales'],
+      ['تماس‌ها', 'Calls'],
+      ['نرخ تبدیل', 'Conversion rate'],
+      ['اخبار', 'News'],
+    ],
+    funnel: [
+      ['سرنخ', 'Lead'],
+      ['تماس', 'Contact'],
+      ['پیشنهاد', 'Offer'],
+      ['فروش', 'Sale'],
+    ],
+    salesSummary: [
+      ['رشد تقاضا', 'Demand growth'],
+      ['بهترین کانال جذب', 'Best acquisition channel'],
+      ['اقدام پیشنهادی', 'Suggested action'],
+    ],
+    obligations: [
+      ['پرداخت تأمین‌کننده', 'Supplier payments'],
+      ['حقوق', 'Payroll'],
+      ['تبلیغات', 'Advertising'],
+      ['سایر', 'Other'],
+    ],
+    balances: [
+      ['مطالبات', 'Receivables'],
+      ['بدهی تأمین‌کننده', 'Supplier payables'],
+      ['چک‌ها', 'Checks'],
+      ['پیش‌پرداخت‌ها', 'Prepayments'],
+    ],
+    financeAlerts: [
+      ['سررسید پرداخت تأمین‌کنندگان', 'Supplier payment deadlines'],
+      ['نسبت بدهی به درآمد', 'Debt-to-revenue ratio'],
+      ['احتمال کاهش مانده نقد', 'Potential cash shortfall'],
+    ],
+    financeActions: [
+      ['بهینه‌سازی زمان پرداخت‌ها', 'Optimize payment timing'],
+      ['افزایش وصول مطالبات', 'Improve receivables collection'],
+      ['بازنگری هزینه‌های غیرضروری', 'Review nonessential spending'],
+    ],
+    impact: [
+      ['فروش', 'Sales'],
+      ['حاشیه سود', 'Profit margin'],
+      ['تقاضا', 'Demand'],
+      ['ریسک عملیاتی', 'Operational risk'],
+    ],
+    risks: [
+      ['ویزا', 'Visa'],
+      ['ارز', 'Currency'],
+      ['پرواز', 'Flights'],
+      ['مقررات', 'Regulations'],
+    ],
+    result: [
+      ['تغییر درآمد', 'Revenue change'],
+      ['تغییر حاشیه سود', 'Margin change'],
+      ['تغییر نقدینگی', 'Liquidity change'],
+      ['تغییر سطح ریسک', 'Risk change'],
+    ],
+    companies: [
+      ['جهان باستان', 'Jahan Bastan'],
+      ['نیایش سیر سحر', 'Niyayesh Seir Sahar'],
+      ['قسطی رو', 'Ghesati Ro'],
+      ['جهان آکادمیا', 'Jahan Academia'],
+    ],
+    daily: [
+      ['روند پیش‌بینی‌شده شرکت', 'Forecast business trend'],
+      ['دلایل اصلی این پیش‌بینی', 'Main reasons for this forecast'],
+      ['مهم‌ترین ریسک پیش رو', 'Leading upcoming risk'],
+      ['اصلی‌ترین پیشنهاد', 'Primary recommendation'],
+    ],
+    priorities: [
+      ['فوری', 'Urgent'],
+      ['این هفته', 'This week'],
+      ['مالی', 'Finance'],
+      ['فروش', 'Sales'],
+    ],
+    reasons: [
+      ['داده‌های فروش', 'Sales data'],
+      ['کال سنتر', 'Call center'],
+      ['بازاریابی', 'Marketing'],
+      ['اخبار', 'News'],
+    ],
+  },
+} as const;

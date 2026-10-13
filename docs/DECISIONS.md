@@ -1,3 +1,7 @@
+## MANUAL-USER-ACCESS-V3-1012 — authoritative individual grants
+
+The user's2026-10-12 instruction supersedes additive shared-role behavior for manually converted users. Their exclusive versioned snapshot is the sole effective grant source; existing shared memberships remain for history but cannot restore an unchecked grant. Titles are labels. New catalog controls default off. Conversion snapshots the current effective legacy scope and requires before/after equality, serializable concurrency and matching active runtime capabilities. Agency identity edits use verified organization/contract ownership and immutable names. No passenger login role is introduced. Details: docs/tasks/MANUAL-USER-ACCESS-V3-1012.md.
+
 ## HOTEL-OCCUPANCY-IMPORT-PREVIEW-1006 — owner occupancy policy (2026-10-06)
 
 Source monetary precision is retained up to12decimal places as Decimal strings; source Excel IEEE754 serialization noise is normalized within machine precision only. Exact BigInt sums round once to the existing4-place Sales financial boundary (half-up), never each nightly source price. The157 reversed date ranges found in the original data are explicitly rejected/reported by import, not guessed/swapped; corrected occupancy output retains source dates and prices.
@@ -415,6 +419,15 @@ The owner requests moving travel ticket purchase pricing from Finance to a separ
 ## 2026-10-07 — PROCUREMENT-PETTY-CASH-ACTIONS-1007
 
 The owner explicitly requests permanent deletion and deletion on rejection. The pre-existing remove API conflicts with unconditional append-only database triggers. Resolve with an exact-request, transaction-local purge capability used only after API deletion authorization/CAS and the Finance commitment guard. The database independently verifies the exact request and absence of accepted/paid Finance handoffs before allowing DELETE on that request's history. UPDATE remains forbidden, idempotency records never allow deletion, and a minimal immutable actor/branch/request-number deletion receipt survives in ProcurementIdempotency. Ordinary history mutation and cross-request purges remain rejected. No Finance-owned record is deleted. Rejection with deleteRejected=true is atomic and requires approval, deletion and foreign-request assignment permissions; existing rejection clients retain their previous behavior. Display rename to تنخواه changes no financial accounting semantics. Approval exposes the approved request in orders; an actual order still requires supplier, amounts and commitment approval.
+
+## ACCOUNTING-PRD-1007 — operational accounting persistence
+
+User authorizes the PRD implementation, not statutory ownership or external filing. Implement internal branch-scoped books and local business dates; issuer Legal Entity does not filter operational records. Preserve DEC-OPEN-001 external legal ownership. Independent detailed accounts are dimensions separate from group/general/subsidiary chart levels; legacy preview DETAIL leaves are not migrated implicitly. Incomplete draft lines are persisted without constructing the existing fully validated JournalEntry; transitions validate all posting invariants transactionally. Posted originals remain immutable and included after reversal. New ledger/period/account entities are additive; existing settlement accounts and payment revisions remain their source of truth.
+
+ACCOUNTING-PRD-1007 FX carry policy: operational closing/opening preserves immutable posted historical lots grouped by account/dimensions/currency/approved snapshot/rate, including their signed quantities and base values. It does not create a fresh FX valuation. The server-owned OPEN/CLOSE provenance retains this policy; ordinary manual journals cannot use it to bypass current-rate checks. Zero-base/nonzero-quantity lots fail preflight for explicit resolution.
+
+ACCOUNTING-PRD-1007 report scope: trial balance and turnover select exactly one fiscal period (explicit ID, reference date, then latest available period). Opening is the posted balance before the selected from-date within that period. Prior-period movements are excluded after carry-forward; arbitrary multi-period aggregation requires a separately designed consolidation policy. UI hides results when their generating filters no longer match.
+
 ## HOTEL-MANUAL-COEFFICIENTS-1008 — owner manual pricing policy (2026-10-08)
 
 The owner confirms purchase/night = the selected room type's base price × the hotel's exact guest-composition coefficient. Sale adjustments affect only selected sale rows and are relative to purchase, never compounded against current sale. Fixed additions/subtractions, percentage adjustments and an explicit sale override replace the prior selected rule. All monetary arithmetic is exact Decimal-string/BigInt with currency half-up rounding and bounded values; negative sale and non-positive purchase are rejected.
@@ -426,3 +439,58 @@ Reservations produces additive optional manual metadata and sale amounts inside 
 ## ADR-HOTEL-SHARED-PERIODS-1008 — Accepted
 
 The owner requests independently editable hotel rate periods and a selectable common stay for package creation. Keep original versioned rate periods and materialize selected complete nightly tariffs into a separate immutable shared pack, with restrictive source-batch FKs. Recheck source versions and create the shared snapshot atomically under Serializable isolation. Do not reinterpret room capacities as prices, mix brokers/room types/boards/currencies, silently fill missing nights or average rates without weighting nights. Package Pricing keeps its established batch references, exact-night calculator and publication controls. Repricing a source requires explicitly creating a new shared snapshot; previously published packages remain unchanged. No change to operational contract sale prices or historical data.
+
+## EXECUTIVE-ASSISTANT-1011 — independent executive assistant (2026-10-11)
+
+The owner explicitly requests an ERP-integrated assistant UI with a separately
+running backend. Keep the ERP modular monolith and domain ownership unchanged;
+add a bounded external read adapter, not a second owner of ERP tables. The Web
+same-origin proxy transports one access cookie to the configured service. IAM
+and fixed public Workbench APIs enforce user scope. The assistant requires an
+explicit executive screen grant; administrator alone is insufficient.
+
+This slice uses existing Node 24 without dependencies or DB/model credentials.
+No LLM or news provider is selected because the owner deferred data-processing
+policy. Generated reference images define panel coverage, not factual metrics.
+Business forecasts and scenarios fail closed as unavailable until source,
+company scope, metric definitions and evaluation are approved. Details and
+acceptance: docs/tasks/EXECUTIVE-ASSISTANT-1011.md. No migration or role grant.
+
+## ASSISTANT-ALL-USERS-1011 — shared SELF access (2026-10-11)
+
+Supersedes only the executive-only entry gate in EXECUTIVE-ASSISTANT-1011.
+The owner explicitly requests temporary access for all departments and users,
+including Amin. The existing six-view shell is available to every authenticated
+ERP user; current tools return SELF data only. Revalidate the active IAM identity
+before each tool and response, forward only the access cookie, and preserve source
+API permission checks and fail-closed denial. No bulk executive grants, role
+changes, corporate scope, new persona, write tool or administrator bypass.
+Future corporate capabilities require separate source authorization. No expiry
+was requested; revisit shared availability before final product rollout.
+## ASSISTANT-MVP-FOUNDATION-1012 — no-model first delivery (2026-10-12)
+
+The owner approves implementing the staged plan and confirms that the first
+version must send no data to a model. Implement read-only fixed capabilities and
+deterministic source-backed output first. A capability dispatcher is not an LLM
+or general conversation. Shared SELF entry remains authenticated and existing
+source permissions remain authoritative. Corporate source contracts/definitions,
+RAG documents, model processing and Production pilot are independent gates.
+This explicitly supersedes the former deferred-provider policy for the current
+iteration: no provider is selected or called. Financial catalog metadata does not
+prove readiness; receivables producer is PENDING_CONNECTION. See the foundation
+task for fixed APIs, source discovery and complete staged acceptance tracking.
+# HOTEL-TEMPLATE-IMPORT-1012 — editable hotel source metadata
+
+The user's 2026-10-12 follow-up requires supplied workbook data to remain available in each hotel's editable profile. Store hotel service level and internal note as nullable Master Data profile fields; expose the existing description and hotelRules fields. Preserve workbook destination, refund text, image-source addresses and featured flag as nullable descriptive source fields. This resolves the earlier import behavior that discarded these values: storing source text does not authorize a Procurement cancellation policy, Sales popularity computation, Documents binary ingestion or remote URL fetch. Public Master Data scalar attributes carry these additive optional fields; older clients preserve them when omitted. Existing geography FKs remain authoritative and no data is backfilled or fabricated.
+## ASSISTANT-PHASE1-REPORTS-1012 — accepted definitions, real source (2026-10-12)
+
+Owner confirms creation-date valid contracts, discount inclusion/refund exclusion,
+separate currencies, two seven-completed-day Tehran windows, route contract counts
+with passengers separate, contacted-lead conversion and Finance-owned receivables.
+Owner explicitly advances from Phase0, deferring final source/business acceptance
+and access/retention refinements. Existing authorization remains mandatory.
+READY demo Reporting metadata cannot substitute for a real Sales public projection.
+Add a bounded native-permission Sales-owned read API; independent assistant has no
+DB access and exposes only reconciled aggregates with explicit unavailable metrics.
+No money/net/refund or CRM cohort is inferred. See Phase1 task for source readiness,
+full accepted definitions, partial coverage and separate ERP runtime publication.

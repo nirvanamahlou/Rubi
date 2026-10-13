@@ -45,9 +45,22 @@ export interface OrganizationImportRow {
 export interface OrganizationPreviewRow extends OrganizationImportRow {
   rowNumber: number;
   issue?: string;
+  warning?: string;
   existing?: MasterDataRecord;
   result?: 'created' | 'skipped' | 'failed';
   message?: string;
+}
+
+function importAddressLine(row: OrganizationImportRow) {
+  if ((!row.province && !row.city) || (row.province && row.city))
+    return row.addressLine;
+  return [
+    row.province ? `استان: ${row.province}` : '',
+    row.city ? `شهر: ${row.city}` : '',
+    row.addressLine,
+  ]
+    .filter(Boolean)
+    .join('، ');
 }
 
 export function validateOrganizationRows(
@@ -100,6 +113,25 @@ export function validateOrganizationRows(
       ].join(','),
     };
     let issue: string | undefined;
+    let warning: string | undefined;
+    const hasUnsafeCell = Object.values(source).some((value) => {
+      const normalized = String(value ?? '').normalize('NFKC');
+      return (
+        /^[=+@-]/.test(normalized) ||
+        [...normalized].some((character) => {
+          const code = character.codePointAt(0)!;
+          return code < 32 && ![9, 10, 13].includes(code);
+        })
+      );
+    });
+    if (
+      row.email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email) &&
+      !hasUnsafeCell
+    ) {
+      row.email = '';
+      warning = 'مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.';
+    }
     if (row.code && !/^[A-Z0-9][A-Z0-9_-]{1,31}$/.test(row.code))
       issue = 'کد باید ۲ تا ۳۲ نویسه انگلیسی، عدد، خط تیره یا زیرخط باشد.';
     else if (row.code && codes.has(row.code))
@@ -127,13 +159,9 @@ export function validateOrganizationRows(
       issue = 'شماره موبایل مدیرعامل معتبر نیست.';
     else if (row.officePhone && !/^\+?\d{7,20}$/.test(row.officePhone))
       issue = 'شماره تلفن معتبر نیست.';
-    else if (row.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email))
-      issue = 'ایمیل معتبر نیست.';
-    else if (Boolean(row.province) !== Boolean(row.city))
-      issue = 'استان و شهر باید با هم تکمیل شوند.';
     else if (
-      row.addressLine &&
-      (row.addressLine.length < 5 || row.addressLine.length > 500)
+      (row.addressLine && row.addressLine.length < 5) ||
+      (importAddressLine(row)?.length ?? 0) > 500
     )
       issue = 'نشانی کامل آژانس باید بین ۵ تا ۵۰۰ نویسه باشد.';
     else if (
@@ -143,20 +171,16 @@ export function validateOrganizationRows(
         .some((role) => !['AGENCY', 'CORPORATE_CUSTOMER'].includes(role))
     )
       issue = 'نقش فقط AGENCY یا CORPORATE_CUSTOMER یا ترکیب آن‌هاست.';
-    else if (
-      Object.values(row).some(
-        (value) =>
-          /^[=+@-]/.test(value) ||
-          [...value].some((character) => {
-            const code = character.codePointAt(0)!;
-            return code < 32 && ![9, 10, 13].includes(code);
-          }),
-      )
-    )
+    else if (hasUnsafeCell)
       issue = 'فرمول یا نویسه کنترلی در سلول‌ها مجاز نیست.';
     codes.add(row.code);
     names.add(row.legalName.normalize('NFKC').toLowerCase());
-    return { ...row, rowNumber: index + 2, ...(issue ? { issue } : {}) };
+    return {
+      ...row,
+      rowNumber: index + 2,
+      ...(issue ? { issue } : {}),
+      ...(!issue && warning ? { warning } : {}),
+    };
   });
 }
 
@@ -301,10 +325,13 @@ export async function importOrganizations(
               isPrimary: 'false',
             },
           });
-        if (row.addressLine)
+        // Keep a partially supplied location as editable address text, without
+        // inventing a city/country foreign key or dropping the supplied value.
+        const addressLine = importAddressLine(row);
+        if (addressLine)
           await masterDataApi.createOrganizationAddress(created.data.id, {
             ...(city ? { countryId: city.countryId, cityId: city.id } : {}),
-            addressLine: row.addressLine,
+            addressLine,
             label: 'نشانی دفتر مرکزی',
             isPrimary: true,
           });

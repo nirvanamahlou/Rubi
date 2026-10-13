@@ -24,6 +24,10 @@ export const englishNavigation: Record<
   NavigationHref,
   { description: string; title: string }
 > = {
+  '/assistant': {
+    title: 'Smart assistant',
+    description: 'Executive insights and decision support',
+  },
   '/workbench': { title: 'My workspace', description: 'My tasks and files' },
   '/dashboard': { title: 'Dashboard', description: 'Performance overview' },
   '/customers': {
@@ -76,6 +80,10 @@ export const englishNavigation: Record<
     title: 'Human resources',
     description: 'Employee operations',
   },
+  '/correspondence': {
+    title: 'Correspondence',
+    description: 'Letter composer and PNG/PDF exports',
+  },
   '/documents': { title: 'Documents & files', description: 'File archive' },
   '/reports': { title: 'Reports', description: 'Management reports' },
   '/integrations': {
@@ -87,6 +95,7 @@ export const englishNavigation: Record<
 };
 
 export const englishNavigationGroups: Record<string, string> = {
+  assistant: 'Smart assistant',
   work: 'Workspace',
   sales: 'Sales & customer relations',
   operations: 'Reservations',
@@ -94,6 +103,7 @@ export const englishNavigationGroups: Record<string, string> = {
   'ticket-purchases': 'Purchasing & supply',
   hr: 'Human resources',
   resources: 'Documents & reports',
+  correspondence: 'Correspondence',
   system: 'Company settings',
 };
 

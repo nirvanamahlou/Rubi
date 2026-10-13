@@ -48,6 +48,7 @@ describe('ticket workspace entry points', () => {
       'utf8',
     );
     expect(source).toContain('toursApi.archiveOfferBatch(');
+    expect(source).toContain('toursApi.archiveOffer(');
     expect(source).toContain('toursApi.reviseOfferBatch(');
     expect(source).toContain('toursApi.resizeOfferBatch(');
     expect(source).not.toContain(
@@ -66,6 +67,8 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('formStyles.scheduleDialog');
     expect(source).toContain('سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند');
     expect(source).toContain('updatePublishedStatus');
+    expect(source).toContain('renderRowActions={renderRowActions}');
+    expect(source).not.toContain('>مشاهده</Button>');
   });
   it('matches the browser card to the authoritative published offer', () => {
     const definition = emptyInput();
@@ -180,6 +183,10 @@ describe('ticket workspace entry points', () => {
     expect(source).toContain('publishExistingFlights(');
     expect(source).toContain('`ticket-catalog:${product.id}`');
     expect(source).toContain('backfillStarted.current');
+    expect(source).toContain('announceProblems = true');
+    expect(source).toMatch(
+      /publishExistingFlights\(\s*restoredProducts,\s*stored\.references,\s*false/,
+    );
     expect(source).toContain('repeatedDefinitions(');
     expect(source).toContain('publishRepeatedProducts(');
     expect(source).toContain('setRepeat(');
@@ -192,7 +199,7 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain('بلیط‌های ثبت‌شده برای فروش و قرارداد');
     expect(source).toContain('renderActions={renderOfferActions}');
     expect(source).toContain('renderLoadActions={renderLoadActions}');
-    expect(source).toContain('setOfferForm({ offer, readOnly: true })');
+    expect(source).not.toContain('setOfferForm({ offer, readOnly: true })');
     expect(source).toContain('updateCapacityHold({');
   });
 

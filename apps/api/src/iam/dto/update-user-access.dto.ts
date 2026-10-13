@@ -10,19 +10,21 @@ import {
 } from 'class-validator';
 
 export class UpdateUserAccessDto {
-  @ApiProperty({ type: [String] })
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
   @IsArray()
   @ArrayUnique()
   @ArrayMaxSize(20)
   @IsUUID('4', { each: true })
-  roleIds!: string[];
+  roleIds?: string[];
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
   @IsArray()
   @ArrayUnique()
   @ArrayMaxSize(50)
   @IsUUID('4', { each: true })
-  branchIds!: string[];
+  branchIds?: string[];
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
@@ -44,4 +46,18 @@ export class UpdateUserAccessDto {
   @ArrayMaxSize(1000)
   @IsString({ each: true })
   screenIds?: string[];
+
+  @ApiProperty({ type: [String], required: false })
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @ArrayMaxSize(1000)
+  @IsString({ each: true })
+  deniedControlIds?: string[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  accessRevision?: string;
 }

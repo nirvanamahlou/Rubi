@@ -8,7 +8,11 @@ import {
 } from './organization-identity.policy';
 import { createHash } from 'node:crypto';
 
-import { isMasterTransportFormResource } from '@nora/contracts';
+import {
+  changedDeniedFields,
+  hasAccessControl,
+  isMasterTransportFormResource,
+} from '@nora/contracts';
 import { transportStatusData } from './transport-form.policy';
 import {
   BadRequestException,
@@ -475,6 +479,13 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'address',
     'description',
     'hotelRules',
+    'serviceLevel',
+    'internalNote',
+    'sourceDestination',
+    'sourceRefundRules',
+    'sourceMainImage',
+    'sourceGalleryImages',
+    'sourceFeatured',
     'website',
     'checkInTime',
     'checkOutTime',
@@ -1291,6 +1302,7 @@ export class MasterDataService {
     requestedBranch?: string,
   ) {
     const resource = resourceOf(resourceValue);
+    this.assertResourceMutationAccess(resource, values, actor);
     if (
       resource === 'exchange-rates' &&
       !actor.permissions.includes('master_data.currency_rate.create')
@@ -1335,10 +1347,33 @@ export class MasterDataService {
     assertGenericCurrencyRateMutationAllowed(resource);
     if (!version)
       throw new BadRequestException('version برای ویرایش الزامی است.');
+    this.assertResourceControl(resource, actor);
+    const hasDeniedSuppliedField = Object.keys(values).some(
+      (field) =>
+        !hasAccessControl(
+          actor.permissions,
+          `field.master-data.${resource}.${field}`,
+        ),
+    );
+    const existing =
+      hasDeniedSuppliedField ||
+      resource === 'exchange-rates' ||
+      resource === 'terminals'
+        ? await this.repository.find(resource, id)
+        : null;
+    if (hasDeniedSuppliedField) {
+      if (!existing)
+        throw new NotFoundException('رکورد اطلاعات پایه یافت نشد.');
+      const presented = toMasterDataRecord(resource, existing);
+      this.assertResourceMutationAccess(resource, values, actor, {
+        ...presented.attributes,
+        code: presented.code,
+        name: presented.name,
+      });
+    }
     if (resource === 'exchange-rates') {
       if (!actor.permissions.includes('master_data.currency_rate.create'))
         throw new ForbiddenException('مجوز ثبت نرخ ارز وجود ندارد.');
-      const existing = await this.repository.find(resource, id);
       if (String(existing?.status) !== 'DRAFT')
         throw new ConflictException({
           code: 'CURRENCY_RATE_IMMUTABLE',
@@ -1351,12 +1386,7 @@ export class MasterDataService {
         : resource === 'tour-types'
           ? prepareTourTypeForm(values, actor, false)
           : resource === 'terminals'
-            ? prepareTerminalForm(
-                values,
-                actor,
-                false,
-                (await this.repository.find(resource, id)) ?? {},
-              )
+            ? prepareTerminalForm(values, actor, false, existing ?? {})
             : resource === 'transfer-types' || resource === 'visa-services'
               ? prepareTravelReferenceForm(resource, values, actor, false)
               : { values, statusData: {} };
@@ -1405,6 +1435,7 @@ export class MasterDataService {
     if (!actor.permissions.includes('master_data.delete'))
       throw new ForbiddenException('مجوز حذف اطلاعات پایه وجود ندارد.');
     const resource = resourceOf(resourceValue);
+    this.assertResourceControl(resource, actor);
     if (!uuidPattern.test(id))
       throw new BadRequestException('شناسه رکورد معتبر نیست.');
     if (!Number.isSafeInteger(version) || version < 1 || version > 2147483646)
@@ -1439,6 +1470,7 @@ export class MasterDataService {
     requestedBranch?: string,
   ) {
     const resource = resourceOf(resourceValue);
+    this.assertResourceControl(resource, actor);
     assertGenericCurrencyRateMutationAllowed(resource);
     const row = await this.repository.setStatus(
       resource,
@@ -1469,6 +1501,7 @@ export class MasterDataService {
     requestedBranch?: string,
   ) {
     const resource = validateExportInput(input);
+    this.assertResourceControl(resource, actor);
     const request = await this.repository.createExport({
       resource,
       format: input.format.toUpperCase() as 'XLSX' | 'PDF',
@@ -1501,6 +1534,7 @@ export class MasterDataService {
     if (input.format !== 'xlsx')
       throw new BadRequestException('این مسیر فقط خروجی Excel را می‌پذیرد.');
     const resource = validateExportInput(input);
+    this.assertResourceControl(resource, actor);
     const actorBranchId = branchOf(actor, requestedBranch);
     const query = exportQuery(input);
     const firstPage = await this.repository.list(resource, query);
@@ -2821,6 +2855,33 @@ export class MasterDataService {
       data.displayOrder = displayOrder;
     }
     if (resource === 'hotels') {
+      for (const [field, limit] of [
+        ['serviceLevel', 160],
+        ['sourceDestination', 160],
+        ['internalNote', 2000],
+        ['sourceRefundRules', 2000],
+        ['sourceMainImage', 2000],
+        ['sourceGalleryImages', 2000],
+        ['description', 2000],
+        ['hotelRules', 2000],
+        ['address', 1000],
+      ] as const) {
+        if (!Object.hasOwn(data, field)) continue;
+        const value = String(data[field] ?? '').trim();
+        if (value.length > limit)
+          throw new BadRequestException(
+            `${field}: maximum ${limit} characters.`,
+          );
+        data[field] = value || null;
+      }
+      if (Object.hasOwn(data, 'sourceFeatured')) {
+        const value = String(data.sourceFeatured ?? '').trim();
+        if (!['', 'true', 'false'].includes(value))
+          throw new BadRequestException(
+            'sourceFeatured must be true or false.',
+          );
+        data.sourceFeatured = value === '' ? null : value === 'true';
+      }
       if (data.isSaleableReference === '') delete data.isSaleableReference;
       else if (data.isSaleableReference !== undefined)
         data.isSaleableReference =
@@ -3584,5 +3645,41 @@ export class MasterDataService {
       }
     }
     return data;
+  }
+
+  private assertResourceMutationAccess(
+    resource: MasterDataResource,
+    values: Record<string, string | number | readonly string[] | null>,
+    actor: AuthenticatedActor,
+    current?: Readonly<Record<string, unknown>>,
+  ) {
+    this.assertResourceControl(resource, actor);
+    const denied = changedDeniedFields(
+      actor.permissions,
+      `field.master-data.${resource}`,
+      values,
+      current,
+    );
+    if (denied.length)
+      throw new ForbiddenException({
+        code: 'MASTER_DATA_FIELDS_RESTRICTED',
+        controlIds: denied.map(
+          (field) => `field.master-data.${resource}.${field}`,
+        ),
+        message: 'ویرایش یک یا چند فیلد اطلاعات پایه محدود شده است.',
+      });
+  }
+
+  private assertResourceControl(
+    resource: MasterDataResource,
+    actor: AuthenticatedActor,
+  ) {
+    const controlId = `master-data.resource.${resource}`;
+    if (!hasAccessControl(actor.permissions, controlId))
+      throw new ForbiddenException({
+        code: 'MASTER_DATA_RESOURCE_RESTRICTED',
+        controlId,
+        message: 'عملیات این بخش اطلاعات پایه محدود شده است.',
+      });
   }
 }

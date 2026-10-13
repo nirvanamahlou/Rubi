@@ -1,4 +1,5 @@
 'use client';
+import { HotelProfileInformation } from './hotel-profile-information';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
   MasterDataDateRangeFilter,
@@ -36,6 +37,7 @@ import {
 } from 'lucide-react';
 import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -274,6 +276,11 @@ function Detail({ label, value }: { label: string; value: string }) {
 }
 
 export function MasterDataAccommodationWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () => tabs.filter((item) => canUseResource(resourceFor(item.id))),
+    [canUseResource],
+  );
   const [tab, setTab] = useState<AccommodationTab>('hotels');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [summary, setSummary] =
@@ -302,9 +309,28 @@ export function MasterDataAccommodationWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.id === tab)) {
+      const frame = window.requestAnimationFrame(() => setTab(fallback.id));
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, [tab, visibleTabs]);
   const current = copy[tab];
   const resource = resourceFor(tab);
+  const resourceAllowed = visibleTabs.some((item) => item.id === tab);
   const definition = getMasterDataDefinition(resource);
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resourceAllowed]);
   const visibleCities = useMemo(
     () =>
       countryFilter === 'all'
@@ -372,6 +398,11 @@ export function MasterDataAccommodationWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     if (tab === 'import') {
       setRequestState('ready');
       return;
@@ -405,6 +436,7 @@ export function MasterDataAccommodationWorkspace() {
     dateFilters,
     page,
     resource,
+    resourceAllowed,
     scopedFilters,
     search,
     status,
@@ -589,6 +621,7 @@ export function MasterDataAccommodationWorkspace() {
   }, [summary, summaryLoaded, tab]);
 
   function changeTab(next: AccommodationTab) {
+    if (!visibleTabs.some((item) => item.id === next)) return;
     setTab(next);
     setSearch('');
     resetColumnFilters();
@@ -1111,6 +1144,18 @@ export function MasterDataAccommodationWorkspace() {
           record={selected}
           title={selected.name}
         />
+        <Button
+          permission="master_data.update"
+          variant="outline"
+          onClick={() => {
+            setProfileOpen(false);
+            setFormMode('edit');
+          }}
+        >
+          <FilePenLine aria-hidden="true" className="size-4" />
+          ویرایش اطلاعات هتل
+        </Button>
+        <HotelProfileInformation record={selected} />
         <MasterDataDetailSection title="خلاصه هتل">
           <MasterDataDetailItem label="درجه" value={stars || '—'} />
           <MasterDataDetailItem
@@ -1195,6 +1240,10 @@ export function MasterDataAccommodationWorkspace() {
               <Detail
                 label="نوع‌های اتاق"
                 value={attribute(selected, 'roomTypeNames')}
+              />
+              <Detail
+                label="امکانات هتل"
+                value={attribute(selected, 'facilityNames')}
               />
             </dl>
           </Card>
@@ -1333,6 +1382,12 @@ export function MasterDataAccommodationWorkspace() {
 
   const showFilters = tab !== 'import';
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -1384,23 +1439,21 @@ export function MasterDataAccommodationWorkspace() {
           aria-label="زیرمجموعه‌های اقامت و هتل"
           className="flex min-w-max gap-1"
         >
-          {tabs
-            .filter((item) => item.id !== 'meals' && item.id !== 'facilities')
-            .map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  aria-current={tab === item.id ? 'page' : undefined}
-                  className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
-                  key={item.id}
-                  onClick={() => changeTab(item.id)}
-                  type="button"
-                >
-                  <Icon className="size-4" />
-                  {item.label}
-                </button>
-              );
-            })}
+          {visibleTabs.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                aria-current={tab === item.id ? 'page' : undefined}
+                className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=page]:bg-background aria-[current=page]:text-primary aria-[current=page]:shadow-sm"
+                key={item.id}
+                onClick={() => changeTab(item.id)}
+                type="button"
+              >
+                <Icon className="size-4" />
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
       </Card>
       {kpis.length ? (

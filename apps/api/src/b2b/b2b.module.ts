@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AgencyPassengerAccessService } from './agency-passenger-access.service';
 import { B2bActivityController } from './b2b-activity.controller';
 import { B2bActivityService } from './b2b-activity.service';
 import { B2bActivityRepository } from './b2b-activity.repository';
@@ -59,6 +60,7 @@ import { B2bPhoneVerificationStore } from './b2b-phone-verification.store';
     B2bPhoneVerificationController,
   ],
   providers: [
+    AgencyPassengerAccessService,
     B2bActivityService,
     B2bCrmConnectionsService,
     B2bActivityRepository,

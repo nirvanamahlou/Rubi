@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMasterDataResourceAccess } from '@/modules/iam/access-context';
 
 import { Button, buttonVariants } from '@/components/ui/button';
 import {
@@ -204,6 +205,16 @@ function partnerPersonType(record: MasterDataRecord) {
 }
 
 export function MasterDataSuppliersWorkspace() {
+  const canUseResource = useMasterDataResourceAccess();
+  const visibleTabs = useMemo(
+    () =>
+      tabs.filter((item) =>
+        item.id === 'collaboration'
+          ? canUseResource('suppliers') && canUseResource('brokers')
+          : canUseResource(resourceFor(item.id)),
+      ),
+    [canUseResource],
+  );
   const [tab, setTab] = useState<SupplierTab>('suppliers');
   const [records, setRecords] = useState<readonly MasterDataRecord[]>([]);
   const [collaborationRecords, setCollaborationRecords] = useState<
@@ -228,14 +239,33 @@ export function MasterDataSuppliersWorkspace() {
   const [formMode, setFormMode] = useState<MasterDataFormMode | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    const fallback = visibleTabs[0];
+    if (fallback && !visibleTabs.some((item) => item.id === tab)) {
+      const frame = window.requestAnimationFrame(() => setTab(fallback.id));
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, [tab, visibleTabs]);
   const copy = tabCopy[tab];
   const resource = resourceFor(tab);
+  const resourceAllowed = visibleTabs.some((item) => item.id === tab);
   const definition = getMasterDataDefinition(resource);
   const formDefinition = getMasterDataDefinition(
     formMode && formMode !== 'create' && selected
       ? selected.resource
       : resource,
   );
+
+  useEffect(() => {
+    if (resourceAllowed) return;
+    const frame = window.requestAnimationFrame(() => {
+      setFormMode(null);
+      setSelected(undefined);
+      setProfileOpen(false);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [resourceAllowed]);
 
   const loadSummary = useCallback(async () => {
     const requestId = ++summaryRequestRef.current;
@@ -268,6 +298,12 @@ export function MasterDataSuppliersWorkspace() {
   } = useMasterDataDateRange(() => setPage(1));
 
   const load = useCallback(async () => {
+    if (!resourceAllowed) {
+      setRecords([]);
+      setCollaborationRecords([]);
+      setRequestState('forbidden');
+      return;
+    }
     const sequence = ++loadSequence.current;
     setRequestState('loading');
     try {
@@ -311,7 +347,16 @@ export function MasterDataSuppliersWorkspace() {
           : 'error',
       );
     }
-  }, [columnFilters, dateFilters, page, resource, search, status, tab]);
+  }, [
+    columnFilters,
+    dateFilters,
+    page,
+    resource,
+    resourceAllowed,
+    search,
+    status,
+    tab,
+  ]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadSummary(), 0);
@@ -415,6 +460,7 @@ export function MasterDataSuppliersWorkspace() {
   }, [fourthKpis, summary, tab]);
 
   function changeTab(next: SupplierTab) {
+    if (!visibleTabs.some((item) => item.id === next)) return;
     if (next === tab) return;
     loadSequence.current += 1;
     setRequestState('loading');
@@ -986,6 +1032,12 @@ export function MasterDataSuppliersWorkspace() {
       />
     );
 
+  if (!resourceAllowed) {
+    return (
+      <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <PageHeader
@@ -1021,7 +1073,7 @@ export function MasterDataSuppliersWorkspace() {
           aria-label="زیرمجموعه‌های سازمان‌ها و تأمین‌کنندگان"
           className="flex min-w-max gap-1"
         >
-          {tabs.map((item) => {
+          {visibleTabs.map((item) => {
             const Icon = item.icon;
             return (
               <button

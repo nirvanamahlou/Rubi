@@ -9,6 +9,85 @@ import {
 } from './organization-import';
 afterEach(() => vi.restoreAllMocks());
 describe('organization import boundaries', () => {
+  it('rejects an overlong combined partial address before creating an identity', () => {
+    const [row] = validateOrganizationRows([
+      { ...syntheticOrganizations[0]!, city: '', addressLine: 'x'.repeat(500) },
+    ]);
+    expect(row?.issue).toContain('نشانی');
+  });
+  it.each([
+    { province: 'تهران', city: '' },
+    { province: '', city: 'قم' },
+  ])(
+    'preserves a partial location without requiring its missing counterpart',
+    async (location) => {
+      const rows = validateOrganizationRows([
+        {
+          code: '',
+          legalName: 'آژانس نمونه',
+          personType: '',
+          nationalId: '',
+          roleCodes: '',
+          ...location,
+        },
+      ]);
+      expect(rows[0]?.issue).toBeUndefined();
+      vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+        data: [],
+        meta: { total: 0, page: 1, pageSize: 100 },
+      });
+      vi.spyOn(masterDataApi, 'create').mockResolvedValue({
+        data: { id: 'org-1', code: 'ORG-1' } as MasterDataRecord,
+      });
+      const address = vi
+        .spyOn(masterDataApi, 'createOrganizationAddress')
+        .mockResolvedValue({ data: {} as never });
+      await importOrganizations(rows, () => {});
+      expect(address).toHaveBeenCalledWith('org-1', {
+        addressLine: location.province ? 'استان: تهران' : 'شهر: قم',
+        label: 'نشانی دفتر مرکزی',
+        isPrimary: true,
+      });
+    },
+  );
+  it('accepts a name-only agency and creates no empty contacts or addresses', async () => {
+    const rows = validateOrganizationRows([
+      {
+        code: '',
+        legalName: 'آژانس نمونه',
+        personType: '',
+        nationalId: '',
+        roleCodes: '',
+      },
+    ]);
+    expect(rows[0]?.issue).toBeUndefined();
+    vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, pageSize: 100 },
+    });
+    const create = vi.spyOn(masterDataApi, 'create').mockResolvedValue({
+      data: { id: 'org-1', code: 'ORG-1' } as MasterDataRecord,
+    });
+    const address = vi.spyOn(masterDataApi, 'createOrganizationAddress');
+    const results = await importOrganizations(rows, () => {});
+    expect(results[0]?.result).toBe('created');
+    expect(create).toHaveBeenCalledTimes(1);
+    expect(address).not.toHaveBeenCalled();
+  });
+
+  it('still rejects a missing name and safely omits a non-email optional value', () => {
+    expect(
+      validateOrganizationRows([
+        { ...syntheticOrganizations[0]!, legalName: '' },
+      ])[0]?.issue,
+    ).toBeTruthy();
+    const [row] = validateOrganizationRows([
+      { ...syntheticOrganizations[0]!, email: 'https://example.com' },
+    ]);
+    expect(row?.issue).toBeUndefined();
+    expect(row?.email).toBe('');
+    expect(row?.warning).toContain('نادیده گرفته شد');
+  });
   it('accepts blank email and tourism license values', () => {
     const [row] = validateOrganizationRows([
       {
@@ -20,6 +99,14 @@ describe('organization import boundaries', () => {
     expect(row?.issue).toBeUndefined();
     expect(row?.email).toBe('');
     expect(row?.tourismLicenseNumber).toBe('');
+  });
+
+  it('never turns a formula-like optional email into an allowed blank', () => {
+    const [row] = validateOrganizationRows([
+      { ...syntheticOrganizations[0]!, email: '=HYPERLINK("x")' },
+    ]);
+    expect(row?.issue).toContain('فرمول');
+    expect(row?.warning).toBeUndefined();
   });
 
   it('rejects case-insensitive duplicates, formulas and unrelated roles before writing', () => {

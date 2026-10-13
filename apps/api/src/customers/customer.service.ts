@@ -22,6 +22,7 @@ import type {
   DuplicateCandidate,
   DuplicateReviewRequest,
 } from '@nora/contracts';
+import { changedDeniedFields, hasAccessControl } from '@nora/contracts';
 import { CustomerKind, type Prisma } from '@nora/database';
 
 import { CustomerContactCrypto } from './customer-contact.crypto';
@@ -662,6 +663,7 @@ export class CustomerService {
     requestedBranch?: string,
     traceId?: string,
   ) {
+    this.assertMutationFields(input, actor);
     let row;
     try {
       row = await this.repository.create(
@@ -749,6 +751,24 @@ export class CustomerService {
   ) {
     if (!input.version)
       throw new BadRequestException('version برای ویرایش الزامی است.');
+    const deniedSuppliedFields = Object.keys(input).filter(
+      (field) =>
+        field !== 'version' &&
+        !hasAccessControl(actor.permissions, `field.customers.${field}`),
+    );
+    if (deniedSuppliedFields.length) {
+      const existing = await this.repository.find(id, actor.branchIds);
+      if (!existing)
+        throw new NotFoundException({
+          code: 'CUSTOMER_NOT_FOUND',
+          message: 'مشتری یافت نشد.',
+        });
+      this.assertMutationFields(
+        input,
+        actor,
+        this.mutationSnapshot(existing, deniedSuppliedFields),
+      );
+    }
     let row;
     try {
       row = await this.repository.update(
@@ -785,6 +805,72 @@ export class CustomerService {
     }
     if (!row) throw conflict();
     return { data: await this.present(row, actor, traceId) };
+  }
+
+  private mutationSnapshot(
+    row: CustomerRow,
+    deniedSuppliedFields: readonly string[],
+  ): Record<string, unknown> {
+    let nationalId: string | null = null;
+    let passportNumber: string | null = null;
+    try {
+      if (deniedSuppliedFields.includes('nationalId'))
+        nationalId = this.nationalIdProtector.decrypt(row);
+      if (deniedSuppliedFields.includes('passportNumber'))
+        passportNumber = this.nationalIdProtector.decryptPassportNumber({
+          passportNumberEncrypted: row.passportNumberEncrypted ?? null,
+          passportNumberIv: row.passportNumberIv ?? null,
+          passportNumberAuthTag: row.passportNumberAuthTag ?? null,
+          passportNumberKeyVersion: row.passportNumberKeyVersion ?? null,
+        });
+    } catch {
+      // A denied unchanged sensitive value can still be omitted. Supplied values fail closed.
+    }
+    return {
+      kind: row.kind.toLowerCase(),
+      organizationId: row.organizationId,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      displayName: row.displayName,
+      birthDate: row.birthDate?.toISOString().slice(0, 10) ?? null,
+      nationalId,
+      passportNumber,
+      passportExpiryDate:
+        row.passportExpiryDate?.toISOString().slice(0, 10) ?? null,
+      passportFirstName: row.passportFirstName ?? null,
+      passportLastName: row.passportLastName ?? null,
+      gender: row.gender ?? null,
+      nationalityCode: row.nationalityCode ?? null,
+      passportIssuingCountryCode: row.passportIssuingCountryCode ?? null,
+      birthCountryCode: row.birthCountryCode ?? null,
+      roles: [
+        ...(row.isCustomer ? ['customer'] : []),
+        ...(row.isPassenger ? ['passenger'] : []),
+      ].sort(),
+      acquaintanceMethodId: row.acquaintanceMethodId,
+    };
+  }
+
+  private assertMutationFields(
+    input: CustomerMutationRequest,
+    actor: AuthenticatedActor,
+    current?: Readonly<Record<string, unknown>>,
+  ) {
+    const next = { ...input } as Record<string, unknown>;
+    delete next.version;
+    if (Array.isArray(next.roles)) next.roles = [...next.roles].sort();
+    const denied = changedDeniedFields(
+      actor.permissions,
+      'field.customers',
+      next,
+      current,
+    );
+    if (denied.length)
+      throw new ForbiddenException({
+        code: 'CUSTOMER_FIELDS_RESTRICTED',
+        controlIds: denied.map((field) => `field.customers.${field}`),
+        message: 'ویرایش یک یا چند فیلد مشتری محدود شده است.',
+      });
   }
 
   async status(

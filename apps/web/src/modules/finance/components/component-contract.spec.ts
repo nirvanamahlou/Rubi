@@ -121,7 +121,7 @@ describe('finance workspace component contract', () => {
     expect(pageSource).not.toContain('ModuleOverview');
   });
 
-  it('provides the requested collapsible accounting navigation with empty destinations', () => {
+  it('provides collapsible accounting navigation connected to the operational workspace', () => {
     for (const label of [
       'دفتر کل',
       'اطلاعات پایه',
@@ -130,20 +130,28 @@ describe('finance workspace component contract', () => {
       'عملیات پایان سال',
       'گزارش‌ها',
       'دریافت و پرداخت',
-      'گزارش پرداخت و دریافت',
       'ارتباط با سامانه مودیان مالیاتی',
       'حسابداری مالیاتی',
     ]) {
       expect(accountingNavigationSource).toContain(label);
     }
     expect(accountingNavigationSource).toContain('بازکردن منوی حسابداری');
+    expect(accountingNavigationSource).not.toContain(
+      'گزارش پرداخت و دریافت روبی',
+    );
+    expect(accountingNavigationSource).not.toContain(
+      'الگوهای تخصیص داخلی روبی',
+    );
     expect(accountingNavigationSource).toContain('جمع‌کردن منوی حسابداری');
     expect(accountingNavigationSource).toContain(
-      'accountingNavigationGroups.map((group) => group.id)',
+      'group.sections.map((section) =>',
     );
-    expect(accountingNavigationSource).toContain('group.items.length > 0');
+    expect(accountingNavigationSource).toContain(
+      'closedSections.includes(sectionId)',
+    );
     expect(accountingNavigationSource).not.toContain('if (group.href)');
-    expect(accountingNavigationSource).toContain('در انتظار تعریف جزئیات');
+    expect(accountingNavigationSource).toContain('<AccountingWorkspace');
+    expect(accountingNavigationSource).not.toContain('در انتظار تعریف جزئیات');
     expect(accountingNavigationSource).toContain('usePageBreadcrumbs');
     expect(accountingNavigationSource).not.toMatch(
       /fetch\(|financeInboxPreview/,

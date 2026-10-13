@@ -6,6 +6,7 @@ import {
 import { describe, expect, it, vi } from 'vitest';
 import {
   USER_ACCESS_PROFILE_PERMISSION,
+  denyPermission,
   screenPermission,
   type AuthenticatedActor,
 } from '@nora/contracts';
@@ -83,7 +84,11 @@ function fixture() {
         }: {
           data: Array<{ userId: string; roleId: string }>;
         }) => {
-          for (const row of data) memberships.get(row.userId)!.push(row.roleId);
+          for (const row of data) {
+            const current = memberships.get(row.userId) ?? [];
+            if (!current.includes(row.roleId)) current.push(row.roleId);
+            memberships.set(row.userId, current);
+          }
         },
       ),
     },
@@ -255,6 +260,234 @@ describe('independent managed user access', () => {
       data: [{ userId: 'first', branchId: 'branch', isPrimary: true }],
     });
     expect(f.client.role.upsert).not.toHaveBeenCalled();
+  });
+  it('adds an override role without replacing shared or inactive memberships', async () => {
+    const f = fixture();
+    f.memberships.set('first', ['shared-active', 'shared-inactive']);
+    f.client.user.findUnique.mockResolvedValue({
+      status: 'ACTIVE',
+      roles: [
+        {
+          roleId: 'shared-active',
+          role: { id: 'shared-active', isActive: true, permissions: [] },
+        },
+        {
+          roleId: 'shared-inactive',
+          role: { id: 'shared-inactive', isActive: false, permissions: [] },
+        },
+      ],
+      branches: [],
+    } as never);
+    await f.service.updateUserAccess(
+      'first',
+      { deniedControlIds: ['documents.detail.tab.access'] },
+      {
+        ...actor,
+        permissions: [...actor.permissions, 'documents.metadata.read'],
+      },
+      {},
+    );
+    expect(f.client.userRole.deleteMany).not.toHaveBeenCalled();
+    expect(f.memberships.get('first')).toEqual([
+      'shared-active',
+      'shared-inactive',
+      'personal-access-first',
+    ]);
+    expect(f.grants.get('personal-access-first')).toEqual([
+      denyPermission('documents.detail.tab.access'),
+    ]);
+    expect(f.grants.get('personal-access-first')).not.toContain(
+      USER_ACCESS_PROFILE_PERMISSION,
+    );
+  });
+  it('does not convert a legacy user when an override-only save is a no-op', async () => {
+    const f = fixture();
+    f.client.user.findUnique.mockResolvedValue({
+      status: 'ACTIVE',
+      roles: [
+        {
+          roleId: 'legacy',
+          role: { id: 'legacy', isActive: true, permissions: [] },
+        },
+      ],
+      branches: [],
+    } as never);
+    await f.service.updateUserAccess(
+      'first',
+      { deniedControlIds: [] },
+      actor,
+      {},
+    );
+    expect(f.client.role.upsert).not.toHaveBeenCalled();
+    expect(f.client.userRole.deleteMany).not.toHaveBeenCalled();
+    expect(f.client.userRole.createMany).not.toHaveBeenCalled();
+    expect(f.client.userBranch.deleteMany).not.toHaveBeenCalled();
+  });
+  it('rejects forged restriction identifiers before mutation', async () => {
+    const f = fixture();
+    await expect(
+      f.service.updateUserAccess(
+        'first',
+        { deniedControlIds: ['field.customers.futureSecret'] },
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(f.client.$transaction).not.toHaveBeenCalled();
+  });
+  it('preserves existing denials when an older managed client omits the new field', async () => {
+    const f = fixture();
+    const permissions = [
+      { permission: { id: 'read', code: 'sales.contracts.read.own' } },
+      {
+        permission: {
+          id: USER_ACCESS_PROFILE_PERMISSION,
+          code: USER_ACCESS_PROFILE_PERMISSION,
+        },
+      },
+      {
+        permission: {
+          id: screenPermission('sales.home'),
+          code: screenPermission('sales.home'),
+        },
+      },
+      {
+        permission: {
+          id: denyPermission('documents.detail.tab.access'),
+          code: denyPermission('documents.detail.tab.access'),
+        },
+      },
+    ];
+    f.client.user.findUnique
+      .mockResolvedValueOnce({ roles: [] } as never)
+      .mockResolvedValueOnce({
+        status: 'ACTIVE',
+        roles: [
+          {
+            roleId: 'personal-access-first',
+            role: {
+              id: 'personal-access-first',
+              code: 'personal-access-first',
+              name: access.accessTitle,
+              isActive: true,
+              permissions,
+            },
+          },
+        ],
+        branches: [],
+      } as never);
+    await f.service.updateUserAccess('first', access, actor, {});
+    expect(f.client.role.upsert).not.toHaveBeenCalled();
+    expect(f.client.rolePermission.deleteMany).not.toHaveBeenCalled();
+  });
+  it('rejects a stale revision before mutating memberships or grants', async () => {
+    const f = fixture();
+    f.client.user.findUnique.mockResolvedValue({
+      status: 'ACTIVE',
+      roles: [],
+      branches: [],
+    } as never);
+    await expect(
+      f.service.updateUserAccess(
+        'first',
+        { deniedControlIds: [], accessRevision: 'stale' },
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(f.client.role.upsert).not.toHaveBeenCalled();
+    expect(f.client.userRole.createMany).not.toHaveBeenCalled();
+  });
+  it('preserves an unchanged restriction outside the editor delegation scope', async () => {
+    const f = fixture();
+    f.client.user.findUnique.mockResolvedValue({
+      status: 'ACTIVE',
+      branches: [],
+      roles: [
+        {
+          roleId: 'personal-access-first',
+          role: {
+            id: 'personal-access-first',
+            code: 'personal-access-first',
+            isActive: true,
+            permissions: [
+              {
+                permission: {
+                  id: 'restricted',
+                  code: denyPermission('documents.detail.tab.access'),
+                },
+              },
+            ],
+          },
+        },
+      ],
+    } as never);
+    await f.service.updateUserAccess(
+      'first',
+      { deniedControlIds: ['documents.detail.tab.access'] },
+      actor,
+      {},
+    );
+    expect(f.client.role.upsert).not.toHaveBeenCalled();
+    expect(f.client.userRole.deleteMany).not.toHaveBeenCalled();
+    expect(f.client.userBranch.deleteMany).not.toHaveBeenCalled();
+  });
+  it('rejects removing a restriction when the editor is itself denied that control', async () => {
+    const f = fixture();
+    f.client.user.findUnique.mockResolvedValue({
+      status: 'ACTIVE',
+      branches: [],
+      roles: [
+        {
+          roleId: 'personal-access-first',
+          role: {
+            id: 'personal-access-first',
+            code: 'personal-access-first',
+            isActive: true,
+            permissions: [
+              {
+                permission: {
+                  id: 'restricted',
+                  code: denyPermission('field.customers.firstName'),
+                },
+              },
+            ],
+          },
+        },
+      ],
+    } as never);
+    await expect(
+      f.service.updateUserAccess(
+        'first',
+        { deniedControlIds: [] },
+        {
+          ...actor,
+          permissions: [
+            ...actor.permissions,
+            'customers.read',
+            'customers.update',
+            denyPermission('field.customers.firstName') as never,
+          ],
+        },
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(f.client.rolePermission.deleteMany).not.toHaveBeenCalled();
+  });
+  it('preserves known screens that a filtered editor cannot delegate', async () => {
+    const f = fixture();
+    f.client.role.upsert.mockImplementation(async () => ({
+      id: 'personal-access-first',
+      users: [{ userId: 'first' }],
+      permissions: [
+        {
+          permissionId: 'existing-finance',
+          permission: { code: screenPermission('finance.home') },
+        },
+      ],
+    }));
+    await f.service.updateUserAccess('first', access, actor, {});
+    expect(f.grants.get('personal-access-first')).toContain('existing-finance');
   });
 });
 

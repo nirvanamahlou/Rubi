@@ -31,6 +31,8 @@ export interface B2bPortalSection {
   rows: { label: string; values: { label: string; value: string }[] }[];
 }
 export interface B2bPortalIdentity {
+  canViewPassengers?: boolean;
+  canEditPassengers?: boolean;
   displayName: string;
   organizationName: string;
   roleName: string;

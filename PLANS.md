@@ -1,5 +1,18 @@
 # برنامه اجرای Nora
 
+## ASSISTANT-PHASE1-COMPLETION-1012
+
+- [x] Human permits separate contractual balances; Finance receivables deferred.
+- [x] Exact discounted contract amounts and authorized balance source.
+- [x] Logged-CALL conversion through accepted handoff and Sales public reader.
+- [x] Corporate sections in SELF daily summary; no model transfer.
+- [x] Real isolated PostgreSQL/HTTP/Web acceptance,61 targeted tests and builds.
+- [ ] Local read publication after final CI; preserve shared Core.
+- [ ] Final checks/CI, develop merge and post-merge CI.
+- [ ] Approved commercial adjustment/net-sales source and business reconciliation.
+
+Scope/limits: docs/tasks/ASSISTANT-PHASE1-COMPLETION-1012.md.
+
 ## DASHBOARD-REPORTING-LATEST-009 — runtime مشترک
 
 - [x] ترکیب آخرین Dashboard و Reports، اتصال route نهایی Dashboard و اعتبارسنجی
@@ -460,3 +473,40 @@ Review2 adds protected-document code handoff, rendered persisted graph edges, sa
 - [ ] Ticket Management must publish a versioned base-fare/capacity resolver and recheck command.
 - [ ] Finance must expose only approved FX snapshots; Renderer/Worker must consume render intents and archive completed files through Documents.
 - [ ] After Ticket/FX/Renderer producers land, extend the adapter beyond hotel-only references, unlock the remaining mixed-package create/price/publish flow, and add end-to-end renderer tests and Excel/PDF exporters.
+
+## EXECUTIVE-ASSISTANT-1011 — CEO first slice
+
+- [x] Final direct sidebar entry, six executive views, Persian/English and current theme.
+- [x] Independent read-only service, same-origin transport, explicit executive grant.
+- [x] Bounded personal follow-ups via existing ERP APIs and explicit unavailable states.
+- [ ] Approved deployment and CEO account assignment; real ERP integration acceptance.
+- [ ] Company-scoped source contracts, metric definitions and reconciled actual reports.
+- [ ] Validated forecasts/scenarios and approved news sources.
+- [ ] Data-processing policy, model/RAG selection and evaluated conversational assistant.
+
+No operational runtime is replaced. Full scope, evidence and release gates are
+in docs/tasks/EXECUTIVE-ASSISTANT-1011.md; the panel shell is not production AI.
+
+## ASSISTANT-MVP-FOUNDATION-1012 — Enterprise staged implementation
+
+- [x] Owner confirms no model data transfer in first delivery.
+- [x] Three fixed read actions with explicit readiness/source gates.
+- [x] Personal daily evidence/counts/priority rules and live Web action transport.
+- [ ] Approve sales definition, comparison periods and company/branch scope.
+- [ ] Reconcile sales public projection and publish Finance receivables source.
+- [ ] Corporate summary/rules and actual sales/receivables output.
+- [ ] Pilot/hardening sign-off; LLM/RAG/event recommendations and advanced stages.
+
+Full ordered acceptance: docs/tasks/ASSISTANT-MVP-FOUNDATION-1012.md. This is a
+partial P0 foundation, not completed Enterprise MVP or Production certification.
+
+## ASSISTANT-PHASE1-REPORTS-1012
+
+- [x] Owner advances to Phase1 and confirms business definitions.
+- [x] Sales-owned bounded read source and independent validated weekly adapter.
+- [x] Real contract/passenger counts, Tehran windows and source-failure reasons.
+- [ ] Publish the ERP read endpoint in the approved runtime; business reconciliation.
+- [ ] Refund-aware separate-currency net sales, multiple routes and call cohort.
+- [ ] Finance-approved receivables and combined daily corporate summary.
+
+This first connection is partial Phase1; see docs/tasks/ASSISTANT-PHASE1-REPORTS-1012.md.

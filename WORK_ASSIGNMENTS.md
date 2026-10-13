@@ -1,3 +1,202 @@
+## MERGE-SALES-UI-773-1013 — PC-A — READY_FOR_CI
+
+Owner explicitly authorizes merging UI PR773 to develop. Reconcile its original branch60bd2c09 with current develop, preserve both documentation histories and all current source changes. Temporary integration branch codex/pc-a-merge-sales-ui-773-1013 updates the existing PR head without force-push; no runtime, schema, migration, dependency or operational data change. Only documentation conflicts exist; two Sales presentation files merge cleanly. Existing eight original-head CI checks pass; complete new-head CI gates merge and releases bounded documentation locks.
+
+## ACCOUNTING-FORM-TABS-1013 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch codex/pc-b-accounting-form-tabs-1013 from
+origin/develop@4122f5da. Reserve the shared Web tab-access fallback, its focused
+regression, Accounting browser acceptance and bounded status entries. Catalogued
+screen tabs remain permission-filtered; uncatalogued tabs are ordinary in-form UI
+and must remain visible. Restore the hidden Accounting main/turnover and nested
+form tabs without changing APIs, IAM grants, schema, dependencies or operational
+data. User explicitly authorizes push, merge to develop and local Web3000/API4000
+refresh after checks. Preserve the dirty primary checkout and existing database.
+Focused IAM/Accounting tests 21, scoped ESLint and full Web TypeScript pass.
+
+## ACCOUNTING-INLINE-FORMS-1012 — PC-B owner / PC-A execution — READY_FOR_CI
+
+COMPUTER_ID=PC-A. User directly requests the next accounting presentation unit;
+Accounting ownership remains PC-B. Branch codex/pc-a-accounting-inline-forms-1012
+from origin/develop@2de87ce4. Prior accounting integration and seller fix are merged.
+Reserve accounting Web form/list/filter presentation, shared accounting operation
+toolbar, scoped CSS and preservation tests, plus own assignment/status/task entries.
+Inspiration is read-only Organizations/Master Data design; do not modify those modules.
+All existing fields, validation, handlers, routes, permissions, payloads and inline
+editing remain intact. No new form dialogs, API/schema/migration/dependency or data
+changes. The running worktree and unrelated main-checkout files remain untouched.
+Implementation is frozen after scoped ESLint, Web TypeScript, 11 focused tests and
+the production Web build (62 routes) passed on the reconciled develop head. User
+authorizes push, exact-head CI-gated merge and activation on local Web3000.
+
+## ACCOUNTING-EMPTY-SELLER-1012 — PC-B — READY_FOR_CI
+
+Browser acceptance after PR803 found that a missing seller produces an empty HTTP body instead of the contracted JSON null. Reserve accounting-taxpayer.controller.ts and accounting-completion.controller.spec.ts plus own status entries. Branch codex/pc-b-accounting-empty-seller-1012 from develop@04acd08a. Preserve existing nullable API contract and all guards; no schema, dependency, permission or business-data changes. Existing user authorization covers correction, push, CI-gated merge and local refresh. Git fetch recovered. Local regression reproduced before correction; nine API tests, API TypeScript and scoped lint passed.
+
+## ACCOUNTING-COMPLETION-INTEGRATION-1012 — PC-B — MERGED
+
+PR803 merged at04acd08a after all checks passed; all merged-tree checks passed too. Deployed this exact tree to rubi Web3100/API4192. Authenticated threshold form renders; acceptance found the missing-seller response defect tracked above. All32 screens passed rendering tests; complete statutory returns/provider workflows remain outside this integration.
+
+User explicitly authorizes PC-B to connect the prepared accounting components on 2026-10-12, superseding the earlier independent-files-only hold. Base origin/develop@61167e61; branch codex/pc-b-accounting-completion-integration-1012 in the clean prior accounting worktree. PR799 and PR800 are merged and their source reservations released. Reserve finance.module.ts, AccountingCompletionModule, accounting-workspace.tsx, accounting-navigation-workspace.tsx, accounting-parity-definitions.ts, completion adapters, tax/taxpayer integration fixes and focused tests, plus this work entry and PROJECT_STATUS/task evidence. Reserve two new English overrides for the diagnostic-only notice and inherited reports label; no existing translation keys are changed. Root is sole writer. Preserve current authorization/book isolation, existing closing/opening commands and all provider/dependency gates. No schema, migration, dependency, IAM grant, source-system or operational business-data mutation. Existing session authorization covers push, exact-head CI-gated develop merge and refresh of PC-B rubi Compose Web3100/API4192 using the existing database/storage.
+
+## MANUAL-USER-ACCESS-V3-1012 — PC-A — READY_FOR_REVIEW — PR806
+
+COMPUTER_ID=PC-A for this IAM-owned task; isolated branch codex/pc-a-manual-user-access-v3-1012 from origin/develop@61167e61. User explicitly authorizes implementing the reviewed manual-access document, authoritative allow/revoke enforcement, and mapping existing live users to equivalent previous access; genuinely new permissions must remain ungranted and be reported for manual decision. Reserve IAM contracts/API/Web, additive scoped domain authorization consumers/tests, a transactional preview/apply migration command and bounded own task/status/decision documentation. Producer IAM manual access v3, consumers AuthGuard/domain APIs and Web access editor; legacy accounts remain compatible until an explicit verified conversion. Personal snapshots must preserve effective permissions, branch scope, inactive/shared memberships and unknown grants without mutating shared roles. All changed live grants require a preview, durable before snapshot, concurrency check and after-equivalence verification. No dependency/lockfile or schema migration reserved. Accounting and unrelated active owners remain untouched. Root is sole writer; no delegation. Original dirty checkout is untouched. Local target and identity will be verified before operational writes. This authorization includes requested IAM user mapping, not unrelated data changes or destructive migrations.
+
+## ACCOUNTING-YEAREND-TAX-AUDIT-1012 — PC-B — INDEPENDENT_CANDIDATE
+
+COMPUTER_ID=PC-B confirmed by the user on 2026-10-12. Base origin/develop@4fe291b5;
+branch codex/pc-b-accounting-yearend-tax-audit-1012, isolated worktree.
+User requests a read-only Rahkaran crawl and completion of year-end, reports,
+taxpayer and tax accounting. User subsequently explicitly requires independent
+files only while PC-A ACCOUNTING-TREE-CLEANUP-1012 owns accounting-workspace.tsx.
+Reserve NEW accounting-completion-* API/Web/model/tests, scripts/accounting-completion-audit.ts and task evidence files;
+existing accounting source, shared workspace/navigation, contracts barrels,
+Prisma/schema/migrations, manifests/lockfiles and PC-A edits remain untouched.
+Bounded own status/assignment entries are coordination only. Integration is prepared
+as documented owner steps, not applied. No source business writes, record/credential
+imports or operational runtime/database changes. Existing Finance authorization,
+book/branch boundaries, Decimal amounts, immutable postings and external-provider
+gates remain mandatory. Full operational parity cannot be claimed before source
+blockers, shared integration and actual provider contracts are resolved.
+Publication receipt: implementation commit a2de09e4, pushed to origin/codex/pc-b-accounting-yearend-tax-audit-1012. Draft PR800: https://github.com/nirvanamahlou/Rubi/pull/800 (authenticated author nirvanamahlou). Independent source reservation is frozen/released for review; shared integration remains held by the explicit user instruction. Final API/Web TypeScript and both production builds passed. Disposable rubi-completion-test-1012 container is stopped; its synthetic evidence database is retained. No merge or deployment.
+
+2026-10-12 publication follow-up: the user explicitly authorizes push, merge to develop and local startup. PR799 is already merged at eab0ad6c; its ownership and UI changes are preserved. Reserve only this task documentation for conflict resolution and deployment evidence. The earlier independent-files-only instruction is retained: shared UI/API activation is not part of this publication. Exact-head CI must pass before merging PR800. Prepare the rubi Compose runtime on PC-B (Web3100/API4192) using the existing local Rubi database and document storage, without replacing another computer's runtime or altering the dirty primary checkout. No new migration is introduced.
+
+## ACCOUNTING-OWNERSHIP-PC-B-1012 — PC-B — OWNER_ASSIGNED
+
+User explicitly transfers final Accounting ownership to PC-B on2026-10-12.
+Scope: Accounting Database/Backend/Frontend/Test; other Finance/Treasury remains PC-A.
+Canonical ownership: docs/MODULE_OWNERSHIP.md. No data/API or operating-system identity
+change. The existing PC-A tree-cleanup branch is an in-flight execution/handoff only;
+new accounting work belongs to PC-B and still requires independent file/central locks.
+Reserve MODULE_OWNERSHIP and the ownership note in MODULE_BOUNDARIES for this transfer.
+
+## ACCOUNTING-TREE-CLEANUP-1012 — PC-B owner / PC-A execution — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-tree-cleanup-1012` from
+`origin/develop@de1c81d4`. Follow-up requested by the accounting redesign owner:
+restyle the account tree without changing its hierarchy or behavior, show the current
+route title in the hero, and remove Rubi-only additions from the accounting UI.
+Reserve Finance Web tree/navigation/workspace/ledger/history components and focused tests plus this
+work record and PROJECT_STATUS. Existing records, APIs, schemas, permissions and
+dependencies remain untouched. Root agent is sole writer. Previous redesign merged
+through PR797; stale icon-toolbar reservation is already integrated in develop.
+PR799 includes the requested UI cleanup and ownership handoff. Reserve the existing
+Finance component-contract test to replace its obsolete required Rubi-only report
+assertion with absence assertions. Source locks release with candidate freeze;
+exact-head successful CI is required before authorized develop merge.
+
+## AGENCY-IMPORT-BLANKS-1012 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; isolated branch codex/pc-b-agency-import-blanks-1012 from origin/develop@08a7c20c. User requests agency XLSX upload with empty optional fields. Reserve Organizations workbook reader/validation/dialog and focused tests, bounded own status entries only. Read the supplied workbook without importing operational records. Accept missing optional columns and ignore blank formatted rows; inert phone/web/email hyperlinks must never be fetched or executed. Preserve required organization identity, populated-value validation, duplicate/no-overwrite semantics, formulas/macros/external-data rejection and size bounds. No schema, migration, dependency, shared API contract or operational data mutation. Main checkout and its concurrent hotel work remain untouched.
+
+Delivered name-only/optional-column import, inert hyperlink handling and partial location preservation. Organizations suite240 passed; private-file container test passed separately; scoped lint/typecheck passed. Source locks release with candidate. No merge or shared runtime replacement; website values in email cells still require correction or an explicit user-authorized discard policy.
+
+CI follow-up: reserve only the two new province/city prefix entries in Web en-overrides.json. Full test gate found missing English catalogue entries, not a workbook parsing regression. Existing hotel changes are merged and this isolated target is clean. Other checks passed. No runtime or database changes; bounded translation lock releases with fix commit.
+
+## ACCOUNTING-UI-REDESIGN-1012 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-accounting-ui-redesign-1012` from
+`origin/develop@08a7c20c`. The owner directly requests a complete visual redesign of
+Accounting that is visibly distinct from Rahkaran while preserving the existing forms,
+routes, permissions, commands and functional coverage. In Documents, Accounting
+Journal, General Ledger Document, Automatic Journal Template, Revaluation Template and
+Revaluation must exist only below the `فهرست` navigation subgroup. Reserve Finance Web
+accounting navigation/shell styling, focused navigation/presentation tests, this work
+record and `docs/tasks/ACCOUNTING-UI-REDESIGN-1012.md`. No API, shared contract, schema,
+migration, dependency/lockfile, permission, operational data or external-system change.
+The stale `ACCOUNTING-ICON-TOOLBAR-1008` branch is already an ancestor of develop; its
+implemented behavior is preserved and this unit does not revive any unmerged delta.
+User authorizes push, PR, exact-head CI repair, merge to develop and local Rubi runtime
+refresh. Root agent is the sole writer; no delegation. Delivered a Rubi-native dark
+navy/cyan accounting shell, responsive navigation, modern route tabs and scoped
+form/table surface treatment while preserving all functional components. The five
+requested document destinations occur exactly once and only below `فهرست`; hidden
+editor routes remain tab-addressable from their lists. Focused navigation test1/1,
+scoped ESLint, full Web TypeScript and production build59 routes pass. Isolated3112
+preview correctly reached authenticated login; authenticated visual/data QA is deferred
+to the merged local runtime because no preview session/credential was available. Source
+locks release at candidate freeze; exact-head CI remains the merge gate.
+
+## USER-ACCESS-COMPLETENESS-1011 — PC-B — READY_FOR_CI
+
+User explicitly authorizes repairing IAM screen/section/field controls, preserving every existing user's access, pushing and merging to develop after final-head checks. Base origin/develop@68987832; reused isolated Rubi-api-audit-0928 checkout on codex/pc-b-user-access-completeness-1011. IAM contracts/API/Web catalogue, additive restrictions, bounded consumer guards and preservation tests implemented. User subsequently required direct continuation without Worker Orchestrator; parallel implementation stopped and lead completed/reviewed source directly. New controls inherit actual legacy behavior; only explicit authorized saves alter restrictions. No account backfill, seed, migration, dependency, operational database or shared runtime changes. Canonical administrator and executive-only rules, branch/domain/sensitive-read checks preserved. Source locks release at candidate freeze; merge requires exact-head full CI. Coverage and precise UI/edit-only/API boundaries: docs/tasks/USER-ACCESS-COMPLETENESS-1011.md.
+
+## CORRESPONDENCE-1010 — PC-A — READY_FOR_REVIEW
+
+Follow-up: user requested primary group order resources → correspondence → system. Moved correspondence between Documents/Reports and Company Settings; navigation-only change, scoped lint passed and3100 reused.
+
+Direct user-authorized standalone local letter composer at bottom of primary tree, three company variants, editable template/body and PNG/PDF downloads only. Reserve new correspondence Web module/route and additive navigation/messages/sidebar icon/test changes; no existing Documents module implementation, API, permissions, schema/dependencies or server persistence. Sole writer, no delegation; preview3100 reused.
+
+Delivered browser-local composer for نیایش سیر / جهان باستان / قسطی روو with editable template, validated variables, matching canvas preview/PNG and multipage raster PDF. Added last primary navigation group; system-management category adapter excludes this client-only tool from server module categories. Scoped lint, TypeScript and Web build57 routes passed; focused tests26/26 passed. Browser verified all company variants, two-page PNG links and PDF link; native PNG visually checked including word wrapping. Browser blob-download automation timed out, so saved-file PDF inspection is not claimed. Preview3100/API4217 and isolated synthetic PG restarted; no business-data writes, API sending, persistence, migration, dependencies or delegation.
+
+## ACCOUNTING-LEDGER-LIST-1008 — PC-A — READY_FOR_REVIEW
+
+Direct screenshot-led ledger list columns/inline filters and clear/multi-select icon actions. Own shared Finance base-list UI only; preserve scoped reads, filtering and selection. No backend/schema/dependency/data changes/delegation.
+
+Delivered screenshot ledger columns code/title/main-book/posting/status and per-column text/boolean filters intersecting advanced tree/search. Added always-visible FilterX clear action Alt+Shift+C and ListChecks multi-selection Alt+Shift+M; tooltips preserved. Clear resets all filters/selection/page, column changes reset selection/page, preset view resets column filters. Browser verified main=false0 results, shortcut clear1 result, multi-select and selected count1. Tests9/9, scoped lint/typecheck and Web build56 routes passed; final key-only repair/scoped lint passed. Same3100 preview retained; no data writes/API/schema/dependency changes or delegation.
+
+## ACCOUNTING-FISCAL-FILTER-TREE-1008 — PC-A — READY_FOR_REVIEW
+
+Sole-writer fiscal-year list branching filter UI and semantics: recursive per-branch add menu, source screenshot fields/modes and related-period grouped predicates. Own Finance Web filters/list/tests; no backend/schema/dependencies or source writes. Existing isolated3100 preview and branch reused; no delegation.
+
+Delivered recursive branch-local add menu with screenshot field/relation/logical choices, four combination modes and removal; removed three-level depth restriction while retaining existing32-node size guard. Related-period branches evaluate all child predicates against the same allocation within authorized current book; no cross-book reads implied by source captions. Shared group editor also benefits existing ledger/voucher lists. Tests9/9, scoped lint/typecheck and Web build56 routes passed after correcting explicit literal/optional types. Authenticated3100 browser built four nested branches, added related-period title condition, applied negative root logic and confirmed0 results. Proof Fiscal-Year-Branching-Filters.png retained; no data mutations, backend/schema/dependency changes or delegation.
+
+## ACCOUNTING-SHARED-OPERATIONS-1008 — PC-A — READY_FOR_REVIEW
+
+Direct sole-writer UI standardization across Accounting: shared nine-icon toolbar, callback bindings preserving native forms/permissions, tooltip/shortcuts, displayed-view Excel/PDF exports and guarded unused base-record deletion. Finance Web/API service/focused tests and own docs reserved; no schema/dependency changes or delegation. Reuse branch3100/4217 synthetic preview.
+
+Delivered shared nine-operation icon toolbar on Accounting routes with Alt+Shift+A/S/N/W/D/H/R/E/P, permission-aware native callbacks and tooltips. Save/new/close dispositions supported by editable base, chart/group/template/mapping and journal editors; inapplicable/read-only operations disabled. Unused base-record deletion uses scoped permissions, version checks, book locks, replay protection, restrictive references and confirmation; journal deletion remains recoverable cancellation with posted-state guards. Displayed-view XLSX/PDF fallback preserves textual decimals; existing server report exports retained. PG48/48 broad regression and final deletion3/3 passed; focused Web19/19, scoped checks and affected builds validated. Final browser caught and repaired missing generic-definition bindings; verified voucher selection and shortcut tooltip. Synthetic local3100/4217 only, no Rahkaran writes or delegation. No schema/dependency changes. Full source parity remains37 functional/46 dependency/4 source-error routes; this unit completes the shared toolbar request within implemented editors, not blocked form functionality.
+
+## ACCOUNTING-FISCAL-YEAR-BUTTONS-1008 — PC-A — READY_FOR_REVIEW
+
+Sole-writer fiscal-year definition icon toolbar repair; existing save actions, new/reload/close, real shortcuts/tooltips, no backend/data changes. Reserve Finance Web workspace/new toolbar and own docs; reuse current branch and3100. No delegation. Scoped lint/typecheck and Web build56 routes passed. Browser verified edit via Enter, new shortcut clearing draft, close shortcut navigation and reload; no saved business data. Delete/export lifecycle remains separate unfinished work.
+
+## ACCOUNTING-BASE-LIST-FILTERS-1008 — PC-A — READY_FOR_REVIEW
+
+User confirms all three base-information lists: fiscal years, ledgers and voucher types. Direct sole-writer task; reserve Finance Web list/filter model, component, workspace integration, focused tests and own docs. Reuse task branch/current3100 preview. Improved grouped filters with source logical modes and real allocation predicates, icon actions for multi-selection/count/list navigation with shortcuts/tooltips, scope-safe state reset and accurate complete-loaded-dataset counts. No backend/schema/dependency/permission/data mutations, source writes or delegation. Validation: focused Web tests10/10, scoped lint/typecheck and production build56 routes passed; authenticated browser verified all three lists, Persian predicates, relation quantifiers, zero-result filters, count/selection shortcuts and scope resets. Final icon contrast corrected and lint/visual rechecked. Allocation predicates use the current selected book. Previous all-accounting delete/export toolbar remains separate unfinished work.
+
+## ACCOUNTING-REMOVE-FX-RATES-1008 — PC-A — READY_FOR_REVIEW
+
+Direct user request: remove approved-FX-rate management UI entirely, following approval-policy removal. Accounting navigation/workspace and own docs reserved on existing branch. Removed menu item, internal page registration, rate form/table and approval action controls. Old URL no longer opens an FX editor. Retain historical snapshots and server currency/approval safeguards used by journals; no backend/schema/data writes. Same3100 preview, scoped Web verification; no orchestration or delegation.
+
+## ACCOUNTING-REMOVE-APPROVAL-POLICIES-1008 — PC-A — READY_FOR_REVIEW
+
+Direct user request: remove Rubi approval-policy management UI entirely. Reserve Accounting navigation/workspace and own docs; reuse same task branch. Removed menu item, internal section registration and editable form/attribute branch, so the former URL no longer opens a policy editor. Preserve all backend independent approval, scoped permissions, audit and existing policy data; no backend or DB writes. Includes already-owned, previously browser-verified active accordion collapse fix from toolbar work. Local3100 navigation verified. No orchestration/delegation.
+
+## ACCOUNTING-VOUCHER-TYPE-FIELD-1008 — PC-A — READY_FOR_REVIEW
+
+Direct user request: remove the book selector only on general-ledger/base-information/voucher-types. Existing task branch and accounting-workspace.tsx reservation reused. Selected book resolution and server scope preserved; other routes unchanged. Local3100 browser verification and scoped lint/typecheck; no backend, migration, data writes or delegation. Separate toolbar task remains unfinished.
+
+## ACCOUNTING-LEDGER-FORM-1008 — PC-A — READY_FOR_REVIEW
+
+Direct implementation requested by user from attached screenshot. Reserve Finance ledger Web editor, bounded AccountingService/contract updates, additive AccountingBook metadata migration and own docs/tests. Migration Owner PC-A extends existing task reservation only for nullable titleEn/description/notes; no dependencies, other modules, operational DB, source writes or delegation. Preview 3100/4217, synthetic DB55437 only. Preserve existing approval, scope, version, replay and period guards. Delivered unified ledger editor with main/notes tabs, code/title/second-language/description fields, three flags, fiscal-year allocation grid and bounded edit/add form. Save/new/reload icons top-left with Alt+Shift+S/N/R tooltips, shortcut guards and form validation. Nullable metadata persists through create/update; old settings consumers preserve omitted fields. Synthetic migration55437 applied, database/contracts/API builds and scoped API/Web lint pass; final Web typecheck/build verified. Real PostgreSQL45/45 pass with CLI testTimeout15000 (initial resource-contention runs hit time limits). Browser verifies saved notes after server refresh, restores blank notes, opens allocation editor and exercises new shortcut. No source writes or operational rollout; previous full toolbar task remains unfinished.
+
+## ACCOUNTING-FISCAL-YEAR-FIELD-1008 — PC-A — READY_FOR_REVIEW
+
+Direct user-requested amendment on codex/pc-a-accounting-icon-toolbar-1008: reserve accounting-workspace.tsx and own status entry; remove only the book selector from the fiscal-year definition route. Selected book resolution and server scope remain intact; other accounting routes retain their selector. Authenticated local3100 browser verifies the form and existing fiscal-year row without the field; no data writes, API/schema/dependency changes or delegation. The separate toolbar request remains IN_PROGRESS.
+
+## ACCOUNTING-ICON-TOOLBAR-1008 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-accounting-icon-toolbar-1008 continues the existing synthetic accounting preview and preserves sidebar repair. User confirms Accounting-only icon action toolbar top-left with tooltips/shortcuts, true delete/delete-close/delete-new/reload/XLSX/PDF, and collapsible active base-information accordion. User explicitly prohibits Worker Orchestrator and delegation for this and subsequent tasks: root is the sole direct writer; adviser stopped before implementation. Reserve Finance accounting Web/API/contracts/tests and own docs plus bounded server-authorized accounting export renderer/route consumers. Migration Owner=PC-A/ACCOUNTING-ICON-TOOLBAR-1008 for additive nullable deletion timestamps only on Finance-owned accounting records and associated deletion event constraint extension; no unrelated schema/dependency/lockfile. Logical deletion retains rows, references and immutable command/event audit, and provides real restoration; posted/approved/numbered/generated/source-linked or referenced records are ineligible. Preserve maker/checker, CAS/replay, book locks, actor/branch isolation and current dependencies. Existing unaccepted parity code and evidence retained. No operational DB, Rahkaran writes, grants, other runtimes or merge. Same3100/4217 preview; migrations/data tests only isolated synthetic55437.
+
+## SIDEBAR-DISMISS-1008 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sidebar-dismiss-1008 retains the existing accounting preview candidate. User authorizes closing opened sidebar groups by clicking beside the menu. Bounded central app-shell.tsx navigation dismissal and own status docs reserved; no active overlapping source lock found, released sidebar/English reservations preserved. Delivered capture-phase outside pointer dismissal with cleanup and Escape dismissal. Actual authenticated synthetic browser checks: two independent groups open on inside clicks, individual header toggle retained, outside click closes all, Escape closes the focused group. Existing navigation tests2/2, scoped ESLint, Web typecheck and production build56 routes pass. Existing3100 dev runtime serves the change; no API, schema, dependency, financial command, source Rahkaran or shared runtime change. Source lock released with candidate. No merge authorized.
+
+## ACCOUNTING-PRD-1007 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A for this Finance-owned work; branch codex/pc-a-accounting-prd-1007 from origin/develop@ead11783. Human owner requests implementing the reviewed Rahkaran-based PRD in Finance / Accounting. Reserve Finance accounting API/Web/tests, additive accounting contracts and IAM permission catalogue/seed entries, additive Prisma accounting models/migration and bounded DATA_MODEL/DECISIONS/status/task entries. Producer Finance accounting v1, consumer Finance Web; existing settlement/payment/source contracts remain compatible. No dependency/lockfile ownership or changes. Open PR inspection found no current accounting/schema overlap; latest bounded migration reservations release with delivered candidates. Additive migration and bounded central-doc reservations release with this review candidate. Existing dirty main checkout and all other worktrees remain untouched. No operational DB writes, Rahkaran writes, merge or deployment. Rehearse only isolated synthetic PostgreSQL. Official tax dispatch/returns require a configured approved external connector and schema; do not fabricate acknowledgements.
+
+Scope includes backward-compatible Finance history date filters/accounting row links and bounded English/generated catalogs. No other module data ownership is changed.
+
+Delivered Finance-owned internal ledger with real branch-scoped forms, immutable posted effects, independent approval/FX, year-end historical carry, allocation, exact reports/Excel, confirmed-source links and Documents attachments. Coverage and external-contract gates are explicit in docs/tasks/ACCOUNTING-PRD-1007.md. Local validation: 31 focused API/HTTP/migration tests plus 22 clean PostgreSQL integration tests; 21 Web money/i18n tests; API/Web lint and typechecks and affected production builds. All 130 migrations rehearse on the isolated accounting_clean database, retaining existing Finance tables. Browser creates, independently approves/posts journal1, verifies 100000 IRR balances and downloads the real XLSX. No production/source writes, operational migration, role grants, merge or deploy. Exact-head CI remains the merge gate.
+
+Scope includes backward-compatible Finance history date filters/accounting row links and bounded English/generated catalogs. No other module data ownership is changed.
+
+Scope includes backward-compatible Finance history date filters/accounting row links and bounded English/generated catalogs. No other module data ownership is changed.
+
 ## TICKET-LOAD-RESIZE-EDIT-1010 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch codex/pc-b-ticket-load-resize-edit-1010 from origin/develop@f048e473. Owner reports full-load edit is blocked unless the generated row count remains identical and authorizes the corrective push/develop merge. Delivered one atomic load replacement that revises retained rows, logically archives removed rows and publishes added rows while preserving optimistic versions, branch permission, active-hold/tour protections, sales/pricing/purchase/finance/audit history and stable load grouping; legacy same-browser groups receive a durable server group marker on first resized edit. No schema/migration/dependency/lockfile, physical deletion or unrelated operational-data mutation. Ticket Catalog API188/22 opt-in skips and Web201/one skip pass; focused resize/API-client tests, English coverage, both typechecks, scoped lint and API/Web production builds pass. Exact-head CI gates merge; bounded locks release with the review candidate.
@@ -763,6 +962,76 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-label-1005. User authorizes corr
 - اعتبارسنجی: ۲۱ تست هدفمند Web، lint و typecheck Web و build تولیدی Web موفق‌اند. Migration، دادهٔ عملیاتی، Permission، Dependency/Lockfile و Runtime مشترک تغییر نکردند.
 
 # Work Assignments
+
+## ASSISTANT-HTTP-AUTH-1012 — PC-C — READY_FOR_REVIEW
+
+Base develop0f111706, clean inactive checkout; branch codex/pc-c-assistant-http-auth-1012.
+Real local smoke found missing-cookie assistant API requests redirected to HTML
+login, masking session loss as service failure. Reserve only the missing-cookie
+/api/assistant/ response branch in apps/web/src/proxy.ts and focused proxy tests,
+own status/task entries. Return no-store JSON401; preserve UI login redirects,
+stale-cookie forwarding and native backend authentication/source authorization.
+No IAM grant, database, dependency, Core restart or overlap with PC-A manual-access
+source files. Acceptance: four assistant routes give JSON401 without redirect,
+stale cookies remain checked by backend, affected tests/typecheck/build and final
+CI before authorized develop merge; Web-only runtime refresh afterward.
+
+Six middleware tests and27 assistant Web tests passed; scoped ESLint, full Web
+typecheck and production build59 routes passed. Candidate source lock releases;
+final CI and actual JSON401 local smoke follow in the PR. Other IAM work untouched.
+
+Integration extension after PC-A manual-access v3 merged: reserve own read-runtime
+identity controller/module/test and independent assistant identity-base wiring.
+Use current native IAM as the report-runtime authority, not an older Core actor
+union that could resurrect revoked shared grants. Personal-source preflight calls
+native IAM screen policy over fixed source IDs. No IAM policy/source file is edited;
+the existing exported policy and AuthGuard are reused. Test manual source denial
+and real authenticated transport; update read4301/assistant4300 with the same IAM
+revision after final CI, preserving Core4000 and operational records.
+
+## ASSISTANT-PHASE1-COMPLETION-1012 — PC-C — READY_FOR_REVIEW
+
+Base origin/develop@04acd08a; branch codex/pc-c-assistant-phase1-completion-1012.
+Human explicitly requests continuation of all remaining Phase1 work. Sole writer
+reserves Sales assistant projection/controller/tests only, independent assistant
+source adapters/actions/server/tests, Web assistant model/workspace/tests/copy,
+and bounded own task/status/plan entries. Public read contracts are owned by Sales
+and consumed over authenticated HTTP; no private cross-domain query. Preserve
+concurrent Accounting owner files and shared runtime. No schema, dependency, IAM
+grant or operational data change. Add explicitly named contractual amounts and
+balances, not Finance-approved receivables or refund-adjusted net sales. Investigate
+Finance and lead conversion sources; unapproved or missing accounting producers
+remain explicit gates. Existing user authorization covers push and exact-head
+green-CI merge to develop; shared Core deployment needs compatibility assessment.
+Acceptance: Decimal/currency reconciliation, discount/cancellation/partial payment,
+bounded source completeness, authorization/revocation, transport and UI validation,
+affected builds/tests and all final/post-merge CI.
+
+Bounded extension: new Customer Affairs assistant call-cohort read controller/test
+and additive module registration; one SalesService public confirmation lookup.
+Customer Affairs owns CALL timeline and accepted handoff references; Sales owns
+confirmation/lifecycle. Logged CALL is explicit evidence, not proof of an answered
+call. Cohorts remain actor-authorized branches; no all-company CRM grant is invented.
+Accounting stays untouched. Human confirms contractual balances may be shown
+separately while Finance-approved receivables remain pending.
+
+Runtime extension: new apps/api/src/assistant-read, SalesRepository bounded public
+lookup and SalesModule reader export. Compose only native IAM and owned read
+controllers; force PostgreSQL session read-only before pool creation and verify it.
+Reject write HTTP methods; start no business module/dispatcher. AI service keeps
+HTTP-only access, optionally using a server-configured report base for three exact
+paths. Core runtime/migrations/data remain unchanged. Dedicated synthetic test
+database exercises the real PostgreSQL/HTTP/Web transport chain.
+
+Reserve one additive step in .github/workflows/ci.yml PostgreSQL job to run the
+new isolated assistant integration suite. Existing gates and workflow permissions
+are unchanged; no dependency/lockfile or shared schema change.
+
+Candidate evidence:23 native HTTP tests,27 Web tests,10 API tests and1 actual
+disposable-PostgreSQL end-to-end test pass, including foreign-branch isolation,
+native JWT revocation and SQL write refusal. Scoped lint/API-Web typechecks and
+production builds pass. Source locks release at candidate freeze; exact-head CI
+and post-merge results follow in the PR. Shared Core/data remain preserved.
 
 ## DASHBOARD-REPORTING-FINAL-VISUAL-INTEGRATION-0928 — PC-C — LOCAL_COMPLETE
 
@@ -6149,6 +6418,82 @@ Verification: all137 focused Sales component tests pass; Web typecheck passes. S
 
 Scope also reserves one additive English Sales display translation for the shortened floating-ticket action; no overlapping active catalogue lock.
 
+## ACCOUNTING-RAHKARAN-PARITY-1007 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; continue on the existing `codex/pc-a-accounting-prd-1007` checkout at `388b672b`. Reserve the Finance-owned Accounting Web/API/tests and bounded accounting task/status documentation needed to replace the grouped 24-screen candidate with distinct verified Rahkaran leaf identities. Source evidence is read-only `work/rahkaran-recrawl/{forms,curated-forms,menu}.json`; dynamic values and credentials are excluded. Preserve the existing accounting transaction boundary, commands, branch/book scope, Decimal, maker/checker, closed-period, replay/version and immutable-posting rules. Source error pages, the invalid legal-report alias and blocked closing steps remain explicit evidence gaps. `Migration Owner = PC-A/ACCOUNTING-RAHKARAN-PARITY-1007` for one additive Finance-owned migration/schema extension covering only approved true-FK account/detail grouping, template, deleted-audit and document-move structures; exact schema/commands require the lead-frozen proposal before edits. No dependency/lockfile, shared runtime, operational database, Rahkaran write, connector, role grant, merge or deploy. Existing generated `apps/web/next-env.d.ts` dirt is outside scope.
+
+## ACCOUNTING-FILTER-COPY-1011 — PC-A — READY_FOR_REVIEW
+
+User-authorized sole-writer copy removal in accounting-base-list.tsx: removed allocation explanation from fiscal-year list and trailing condition helper from shared group editor. Filter controls/semantics unchanged. Diff check passed; no tests needed for text-only deletion, no delegation or data changes.
+
+## ACCOUNTING-LEDGER-LAYOUT-1011 — PC-A — READY_FOR_REVIEW
+
+Direct screenshot733 layout follow-up, sole writer of accounting-base-list.tsx. Ledger-only compact bordered grid with pale header, full-width preset, initially collapsed filter strip, tall table region and repeated icon toolbar with independent list popovers. Default50 rows, first/last page controls with shortcuts and record range. Existing column filters and scoped data preserved. Focused filter tests9/9, scoped lint, TypeScript and diff checks passed;3100 browser verified negative title filter, clear and bottom multi-selection. No data/backend/schema/dependency changes or delegation.
+
+## ACCOUNTING-LIST-BOOK-SELECTOR-1011 — PC-A — READY_FOR_REVIEW
+
+User-authorized sole-writer accounting-workspace.tsx display-only change: hide book selector on fiscal-year, ledger and voucher-type base list routes. Current book state/read authorization preserved. Scoped lint/diff check passed;3100 browser verified selector absent on all three routes. No data/backend changes or delegation.
+
+## ACCOUNTING-VOUCHER-LIST-1011 — PC-A — READY_FOR_REVIEW
+
+User screenshot734 follow-up; sole writer shared base-list UI/filter adapter/tests. Voucher list uses title/isDefault columns, inline filters, compact striped rows, repeated icon toolbar and50-row pagination. Default flag reads attributes.isDefault (true/string true); absent flag is false, never inferred from active status. No source/sample records copied into DB. Filter test10/10, lint/TypeScript and browser0→1 default-filter/clear checks passed on3100. No backend/schema/dependency/business-data changes or delegation.
+
+## ACCOUNTING-ROUTE-TABS-1011 — PC-A — READY_FOR_REVIEW
+
+User screenshot735 route-tab request; sole writer accounting navigation wrapper/new route-tabs component. RTL closable tabs above content, route deduplication, current highlighting, adjacent fallback on active close, home plus action and sessionStorage restoration. Only known authorized accounting routes retained, titles derived from navigation, current book query retained. React external-store subscription used; scoped lint/TypeScript/diff checks passed.3100 browser verified three routes, switching, close-active fallback and reload restoration. Navigation tabs only: forms still remount and unsaved form drafts are not preserved, disclosed to user. No backend/schema/dependency/data changes or delegation.
+
+## ACCOUNTING-CHART-TREE-1011 — PC-A — READY_FOR_REVIEW
+
+User screenshot737 tree and actual13-group request; sole writer chart tree/new component and chart editor layout. Right-side compact real account tree, collapse controls, search/results and blank detail area until selection/new. Existing groups outside reference codes remain accessible. Source code11 conflicted with protected parent GENERAL11; user explicitly chose new book instead of changing old hierarchy. Created local isolated book REF737 / bba7b2bb-178e-47fa-938b-c22afba11737 titled دفتر کل ساختار حساب and13 GROUP accounts11,12,21,22,31,51,61,62,63,81,91,92,93 through authenticated API commands. Old book preserved; no Rahkaran writes. Debit/credit defaults use conventional account category; performance/closing debit and temporary, adjustable before use. API readback count13/code/title/level verified; scoped lint/TypeScript passed; browser selected group11 and search انتظامی returned91/92. No schema/dependency changes or delegation.
+
+## ACCOUNTING-ALL-BOOK-SELECTOR-1011 — PC-A — READY_FOR_REVIEW
+
+User explicitly requested removal of book dropdown everywhere in Accounting. Sole-writer deleted shared accounting-workspace selector markup, preserving URL/current book state and authorized reads. No data changes, delegation or new selection behavior.
+
+## ACCOUNTING-CURRENT-ASSETS-1011 — PC-A — READY_FOR_REVIEW
+
+User screenshot738 actual child-account continuation: created5 GENERAL accounts1110/1112/1113/1119/1120 under existing GROUP11 in authorized local REF737 book through guarded API, debit/permanent defaults. Verified readback code/title/parent/level and browser expanded all five. Data-only local task; no source code changes, old book/Rahkaran writes or delegation.
+
+## ACCOUNTING-CURRENT-ASSETS-FORMS-1011 — PC-A — READY_FOR_REVIEW
+
+Continue existing branch as sole writer, without delegation. Reserve chart editor/tree, focused form model/tests, Finance account validation and bounded status docs. Read-only Rahkaran DOM evidence stays outside Git; copy only user-authorized current-asset records into isolated REF737 through existing API. No external writes, old-book edits, migration or dependency changes. Exact observed group/general/subsidiary fields and tabs replace the earlier generic editor; account attributes remain backwards compatible, existing posting guards retained. Desktop authenticated ERP, existing Next rendering/design system; preserve keyboard labels and focus access. No framework or performance architecture change.
+
+Scope clarification: reserve Finance-owned packages/contracts/src/accounting.ts for additive ANY nature value (producer API and consumer Web updated together; database already stores varchar). Existing DEBIT/CREDIT records and clients remain valid.
+
+Database regression found the existing accounting_chart_level CHECK also limits nature. Continue the same PC-A accounting migration ownership under this item for one non-destructive constraint extension allowing ANY, preserving all level/numeric-code/parent/posting guards and existing rows. No shared schema model or unrelated table changes; apply only to the isolated local accounting database. This supersedes this item's initial no-migration expectation.
+
+Completed read-only DOM capture of GROUP11, five GENERAL and41 SUBSIDIARY forms (including eight prepayments), their checkboxes and four subsidiary tabs. Raw evidence remains outside Git. Created41 actual children and corrected the six existing records in local REF737 through guarded APIs;47 source records verified,59 total book accounts. No Rahkaran save, source amounts/balances/journals/rates, or old-book updates. REF737 has zero journals, periods and FX rates. Form now has observed code split, title/second language/type/nature/description/active, subsidiary flags/control/zero-balance and detail/counterpart/tax/default-description tabs. Existing attributes survive edit/save. Neutral nature, multi-type references and scoped nature checks retain book/version/used-account guards. Local migration applied only after status confirmed it was the sole pending migration.
+
+Verification: Web model4 tests, API form/validation13 tests and isolated PostgreSQL49 tests passed; initial fixture omitted a required detail-type length, fixed, and database test exposed the missing ANY constraint, resolved by migration. The busy host required a20s test timeout for the final DB run; no production timeout changed. Scoped lint, Contracts build, API/Web TypeScript and production builds passed; final formatting/diff checks passed.3100 browser verified imported tree, form values, tab switching, conditional taxable fields, save and Alt+Shift+S; proof outputs/Rubi-Current-Assets-Form.png outside Git. Known shared development JSX-localization key warnings remain outside this scope. Source/contract/migration locks released with review candidate; no dependency changes, delegation or merge.
+
+## ACCOUNTING-REMAINING-CHART-1011 — PC-A — READY_FOR_REVIEW
+
+Sole writer, no delegation; continue existing user-authorized accounting branch from311372fa. Reserve bounded Accounting chart follow-up and own status documentation. Read-only Rahkaran DOM crawl covers all12 remaining root groups through closing/opening,175 forms including132 subsidiary four-tab forms; evidence and resumable capture remain outside Git. Import only observed structural records and field values to the existing isolated REF737 through guarded API, preserving current-assets subtree and old book. No source save, amounts, balances, journal or FX transfer. Existing chart UI/API already supports all observed field shapes; no schema, shared contract or dependency changes anticipated. Source-used flags are not copied as fabricated local transactions. Backup before import and complete code/parent/value readback required.
+
+Completed DOM-only inventory of175 remaining records (12 GROUP,31 GENERAL,132 SUBSIDIARY), with each subsidiary's four tabs and code identity checked. Entire source tree expanded with no unresolved branches; empty general accounts remain empty. Created163 records and reconciled12 roots through existing authenticated/versioned APIs. Every observed field, attribute, level and parent matched readback; final REF737 count222 (13/36/173). Current-assets47 records compare unchanged. Journal API total0, periods0 and FX rates0; no source balances, amounts, transactions or external saves. Evidence, backup, strict dry-run/import script and readback plan/results remain outside Git. One initial readback guard correctly halted because the API stores description inside attributes; expected representation corrected before continuing. No unknown fields or references were skipped.
+
+Existing common chart editor supports all observed shapes. Bounded responsive fix changes its split layout from viewport-xl to actual available container width, keeping the tree on the right at the user's current desktop size. Browser rendered all222 nodes; verified land, currency-enabled revenue with only active level4, memorandum/neutral accounts, closing permanent/neutral and four subsidiary tabs. Web form4 tests, scoped lint and TypeScript pass; Web production build57 routes passed. No new schema, dependency, backend change, delegation or merge. Proof outputs/Rubi-Complete-Chart-Of-Accounts.png; source locks release with pushed candidate.
+
+## ACCOUNTING-ACCOUNTS-SECTIONS-1011 — PC-A — IN_PROGRESS
+
+Sole writer, no delegation. Continue user-authorized Finance branch from2bea8b68. Reserve Accounts editors/lists, Finance guarded configuration/detail/group/mapping/conversion actions and focused tests, additive Finance contract fields if required, and bounded status/task docs. Read-only Rahkaran UI evidence outside Git covers detail types, details, account/detail groups, mappings and conversions plus lists. No source saves or numeric financial imports. Existing isolated REF737/3100/4217 remains target; no dependency changes, operational DB, merge or unrelated module edits. Existing book/version/permission/used-record/posted-history guards remain. Source-driven fields only; schema lock will be explicitly extended before any additive migration. Authenticated desktop ERP using existing Next/design system and accessible labels/keyboard interaction; no architecture or framework change.
+
+Scope extension: PC-A owns the additive Accounting-only migration/schema for FK-backed subsidiary mappings and detail-type conversion definitions, optional group parent links and structured notes. Producer Finance v1 snapshot adds optional collections; Web is the sole new consumer. Preserve existing mapping-export configurations and posted history, no change to operational transfer semantics. No cross-module write or dependency change. Migration applied only to isolated55437 after pending status review.
+
+Reviewable local candidate implemented: six editors/three lists, FK-backed mappings with source detail paths, group detail allocations, conversion definitions, notes and attachments.52 database integration tests and15 Web tests passed with scoped lint/typechecks/builds;3100 browser verified core interactions.26 actual observed system type definitions added to REF737 only;222 accounts and no periods/details/transactions retained. Source session expired again during conditional detail-title checks; pending user login. Full parity remains IN_PROGRESS: unverified conditional entity providers and conversion execution are explicitly not claimed. See docs/tasks/ACCOUNTING-ACCOUNTS-SECTIONS-1011.md. Applied migrations remain immutable; no dependency/shared cross-module writes/delegation/merge. Extend bounded documentation scope to docs/DATA_MODEL.md for the new Finance-owned models.
+
+Implementation commits: d7539808 (storage/guards/tests), 1060897f (editors/lists). Migration/schema/contract editing locks are released with this review candidate; source-dependent parity remains open and must be reserved again before the next code extension. Dependency ownership was never taken.
+
+## ACCOUNTING-DETAIL-LEVEL-TYPES-1011 — PC-A — READY_FOR_REVIEW
+
+Sole writer, no delegation. Reserve bounded chart detail-level/type selector, its model/regression tests and task/status documentation on the existing Finance branch from930569b1. Read-only Rahkaran DOM inspection verifies double-click level selection, all observed type titles and independent saved choices. No Rahkaran saves, balances or transaction imports. Reuse26 observed detail types and existing guarded account attributes; no schema, contract, dependency or cross-module changes. Only verified structural assignments may be reconciled in isolated REF737 with backup/version/readback. Preserve old book and other account attributes. Validate on3100, scoped lint/typecheck/tests/build, then push review candidate without merge.
+
+Completed: dedicated three-level/type grid with explicit double-click and keyboard selection, source26 titles from existing book configuration, independent per-level persistence and legacy selection compatibility. Older level4-only imports retain access to5/6; new-level edits update allocation eligibility without changing other levels.13 focused tests, scoped lint/typecheck and57-route build passed.3100 browser verified source-equivalent type table, all26 titles, independent switches and save/reload; guarded readback confirms observed111001 level4 cash assignment only,221 other accounts unchanged. No source writes, numeric financial imports, backend/schema/dependency changes or delegation. Captures/backup/receipt/proof outside Git; no full per-account assignment audit claimed. Editing locks released with review candidate; no merge.
+
+## ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 — PC-A — DONE
+
+User explicitly authorizes push, develop merge and deployment of the entire accounting/correspondence candidate to the existing rubi Compose project. Sole writer, no delegation. Reserve integration conflict resolution, affected Finance/navigation/contracts/schema merges, Compose runtime configuration and bounded status docs. Preserve other-PC changes and existing operational data; use backups before additive migrations/import. Resolve exact-head CI failures before merge. Existing accounting worktree remains source; a clean runtime checkout will serve merged develop. Future accounting changes target rubi Compose (3100/4192), not separate4217 preview. No destructive migration or dependency change planned.
+
 ## FINANCE-INBOX-REDESIGN-1007 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; independent branch from latest origin/develop. Reserve Finance inbox live presentation, Finance request inbox wrapper only, followup saved-view display switch, local CSS and focused render/API/filter/delivery regressions, own docs. Remove branch/person/due filters and saved-view/global transaction-history UI; retain scoped per-request payments, manager settings and financial operations. Compact light cyan reference styling and labelled responsive filters; search uses existing backend query. No API/schema/dependency/IAM/runtime changes. Prior Finance workflow reservation released with merged candidate; no overlapping source lock. No new merge authorization is inferred from this request.
@@ -6460,3 +6805,490 @@ COMPUTER_ID=PC-A; branch `codex/pc-a-sales-followups-ui-1011` from `origin/devel
 Validation: scoped ESLint, Web typecheck and 13 Sales workspace tests pass. Production Web build and local runtime smoke verification are recorded with the delivery. No migration needed; bounded presentation lock releases with the review commit.
 
 SALES-FOLLOWUPS-UI-1011 follow-up reservation: user requests full-width stacked panels, three follow-up tiles in one desktop row and horizontally arranged receivable filters. Extend the same bounded lock to `sales-receivables-card.tsx`; no behavior/API change.
+
+## CHROME-LOCAL-LOGIN-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-chrome-local-login-1011` from
+`origin/develop@85dc15a4`. Chrome login reaches the local API successfully but
+loops back to Login when Web is opened with `localhost` while the configured API
+uses the LAN IPv4 host, because authentication cookies are host-scoped. Reserve
+only the Web local-runtime API hostname resolver, its focused tests and bounded
+status docs. Align loopback/private Web and API hosts while retaining configured
+ports and paths; remote API hosts remain unchanged. Update ignored local runtime
+CORS/dev-origin settings and restart the existing 3000/4000 listeners without
+changing user accounts, passwords, schema, migration, dependency or operational
+records.
+
+Delivered same-host resolution for loopback/private local runtimes and updated
+ignored local CORS/dev-origin settings. Twenty-four focused tests, scoped ESLint
+and Web typecheck pass. Live Demo authentication on localhost returns 200 with
+two cookies, Workbench accepts that session with 200, 127.0.0.1 CORS preflight
+returns 204 and LAN health returns 200. Bounded source locks release with the
+review commit.
+
+## AGENCY-PROFILE-LICENSE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; continue local review branch
+`codex/pc-b-chrome-local-login-1011` at `9796db2b`. User requests the agency
+«اطلاعات پایه و نقش‌ها» card to display the stored license number. Reserve only
+the Organizations corporate-profile identity summary, its focused regression and
+bounded status docs. Show `tourismLicenseNumber` only when the organization has
+the AGENCY role and use an explicit missing-value label. No API/schema/migration,
+dependency, permission, data or runtime-database mutation.
+
+Delivered the agency-only «شماره مجوز» row in «اطلاعات پایه و نقش‌ها», backed
+by the existing `tourismLicenseNumber` attribute. Missing values point users to
+«ویرایش اطلاعات». The focused Organizations regression (9 tests), scoped
+ESLint and Web typecheck pass. No API/schema/migration, dependency, permission
+or operational-data change. The bounded source locks release with the review
+commit.
+
+## AGENCY-COMMERCIAL-HEADER-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-commercial-header-actions-1011`
+from the current reviewed local agency profile branch. User requests the create
+actions in the agency «قرارداد و شرایط تجاری» subsections to appear beside the
+«نمای ۳۶۰ درجه» action. Reserve only the Organizations dossier header, agreement
+and agreed-rate panel presentation, a small local action-slot component, focused
+Web tests and bounded status docs. Preserve existing handlers, permission/loading
+guards, dialogs, exports, filters and row-level workflow actions. No API/schema/
+migration, dependency, permission or operational-data change.
+
+Delivered the primary create actions for framework contracts, agreed rates,
+discounts and commissions into the dossier banner beside «نمای ۳۶۰ درجه». The
+same handlers, disabled states and permission checks are rendered through a
+local header action slot; standalone panel reuse retains the original in-panel
+fallback. Twenty-one focused tests, scoped ESLint and Web typecheck pass. No
+API/schema/migration, dependency, permission or operational-data change. The
+bounded source locks release with the review commit.
+
+## TICKET-LOAD-ROW-ACTIONS-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-row-actions-1011` from current `origin/develop`. Owner requests that enabling «تاریخ‌های معتبر» immediately show the valid load range, and that each load row expose only its own edit/delete actions instead of «مشاهده». Reserve Ticket Catalog Web flight-load grid/workspace, the existing single-offer archive/revise API client calls, focused tests and bounded status docs. Preserve the existing table capacity totals, whole-load actions, active-hold/tour protections, optimistic versions, sales/history and the existing company/legacy load scope. No API/schema/migration/dependency/operational-data change.
+
+Delivered: valid-date toggle now searches immediately using the computed inclusive current-to-latest range. Each row has an operation column with «ویرایش» opening the editable published-offer form and a confirmed «حذف» calling the single-offer archive route; the lower «مشاهده» action is removed. Ticket Catalog Web 202 tests (one existing skip), scoped ESLint, Web typecheck and 57-route production build pass. Capacity-total calculation remains unchanged. Push/merge and LAN runtime rollout require owner confirmation for this new slice.
+
+## TICKET-LOAD-ROW-ACTIONS-VISIBLE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-row-actions-visible-1011` from merged PR #774. The owner reports that the new per-row controls are not visible in the local Chrome layout and clarifies that «تاریخ‌های معتبر» must leave both date fields untouched while immediately showing every current load as its own table block. Reserve only Ticket Catalog load-grid filtering/grouping, action placement, selected-offer action composition, focused regressions and bounded status docs. Keep the existing single-row API behavior, whole-load actions and capacity calculations unchanged. No API/schema/migration/dependency/operational-data change.
+
+Delivered locally: the valid-date toggle now uses blank date bounds only in its search snapshot and never mutates either date input. Current offers are grouped by server `loadGroupId` and every group receives its own outbound/return table block and whole-load actions. The row operation column is beside selection, and selecting a row repeats its scoped edit/delete actions in the detail panel. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass; localhost and LAN both serve the rebuilt process with HTTP 200.
+
+## TICKET-LOAD-GROUP-TABLE-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-load-group-table-1011` from merged PR #776. Owner clarifies that every form submission is one load and must render as exactly one multi-row table; five submissions must produce five tables, not separate outbound/return tables. Reserve only the Ticket Catalog load-table composition, focused regression and bounded status docs. Keep grouping on the server-issued `loadGroupId`, row actions, whole-load actions, filtering, capacity totals and API behavior unchanged. No API/schema/migration/dependency/operational-data change.
+
+Delivered: each `loadGroupId` renders exactly one full-width multi-row table. Outbound and return rows remain together and use the new «مسیر» column; whole-load actions and totals operate on the complete group. Focused tests, scoped ESLint, Web typecheck and the 57-route production build pass. The rebuilt localhost/LAN service runs on port 3000.
+
+## TICKET-SILENT-LEGACY-BACKFILL-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-ticket-silent-backfill-1011` from current `origin/develop`. Owner requests removal of the repeated top-of-page «مرجع درخواست خرید پرواز تغییر کرده است» text emitted while the page silently reconnects legacy browser tickets. Reserve only Ticket Catalog legacy-backfill presentation, its focused regression and bounded status docs. Keep explicit user-triggered publication errors visible and do not change Procurement validation, APIs, schema, migrations, dependencies or operational data.
+
+Delivered: automatic legacy-ticket reconciliation passes `announceProblems=false`, so its repeated per-row conflicts no longer populate the top Ticket Catalog alert. Explicit user-triggered publication keeps the default visible-error behavior. Ten focused tests, scoped ESLint, Web typecheck and the 59-route production build pass. No API, Procurement rule, schema/migration, dependency or operational-data change.
+
+## EXECUTIVE-ASSISTANT-1011 — PC-C — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-C, confirmed by the owner in this chat. Branch
+`codex/pc-c-executive-assistant-1011` from `origin/develop@b52480e2`.
+The owner requests the Smart Assistant entry at the end of ERP navigation,
+initially one executive workspace covering all six supplied reference images,
+with its backend running independently of the ERP. External-model data policy
+is explicitly deferred. Reserve new Web assistant module/route, a standalone
+read-only assistant service, focused tests, and bounded additive navigation,
+IAM permission/screen-contract, offline English translations and own docs.
+Additional bounded files: Web access-policy regression for explicit executive
+access, Web server-only env example, and a new independent-service CI workflow.
+Browser review reserves the bounded app-shell standalone navigation seam and
+system-management navigation-category exclusion: the assistant must appear as
+the last direct main-menu link, not inside Company settings.
+Producer/consumer: the independent service consumes only authenticated public
+ERP read APIs; Web consumes the versioned assistant envelope. No direct database
+access, broad service account, automatic role grants, production data, business
+writes, LLM/news-provider traffic, migration, dependency/lockfile changes, merge
+or runtime replacement. The separate active IAM access-catalog branch modifies
+user-management presentation only; its files remain untouched. Existing source
+reservations and all unrelated work are preserved. Requirements, acceptance and
+remaining source/forecast-policy gates are recorded in the task document.
+
+Verification: Contracts143, Web57, service12 passed; scoped lint, typechecks and
+Web production build passed. Browser-to-service smoke used synthetic ERP only.
+All six views, standalone final sidebar link, two languages, themes and mobile
+were verified. No actual ERP integration or production readiness claimed.
+Bounded source locks release with the review commit; no merge/runtime handoff
+is authorized. See the task document for deployment and data-source gates.
+
+## ASSISTANT-LOCALHOST-1011 — PC-C — READY_FOR_REVIEW
+
+Owner asks to diagnose and fix the missing assistant at localhost:3000. The
+listener runs develop-localhost@ff6a8c36 (Reporting follow-up branch), whereas
+the assistant exists only at e29daf76/PR779. Reserve this isolated integration
+branch, own startup script and status/task docs. Base e29daf76; copy only the two
+published Reporting source/test changes from ff6a8c36 so the local UI retains
+its current department/connection filters. Do not edit the running source tree,
+its modified next-env.d.ts, protected branches or any API/database/permission.
+After tests/build, replace only the verified Web listener with this combined
+runtime on port3000. Existing API4000 and operational data remain independent.
+Executive access stays explicit; requested account assignment requires a named
+account and authorized IAM path. No general administrator bypass.
+
+Owner explicitly authorizes temporary executive access for username Amin.
+Reserve a local-only IAM maintenance command/test: one isolated per-user role
+with only ui.screen.assistant.executive, retaining all existing roles/branches,
+dry-run default, atomic grant/revoke and truthful local-operator audit. Existing
+API4000 can read persisted permission grants; no API restart or session creation.
+
+Completed: the owner-selected active account received only the temporary
+executive screen role with an atomic audit. Existing roles and branches were
+verified unchanged. Combined Web includes current Reporting filters and English
+labels; 51 focused Web +4 IAM tests, lint/typecheck/build pass. Own runtime
+launcher refuses occupied ports. See docs/tasks/ASSISTANT-LOCALHOST-1011.md for
+runtime provenance, rollback, grant revocation and verification limitations.
+
+## ASSISTANT-CI-MERGE-1011 — PC-C — READY_FOR_REVIEW
+
+The owner now authorizes continuing every PR until all CI/CD checks pass, then
+merging to develop. Continue PR780, the integration successor of PR779, on the
+existing isolated branch. Reserve its IAM maintenance test runner import,
+assistant README formatting, own status/task entries, WORK_ASSIGNMENTS formatting
+and the bounded DEVELOPMENT_WORKFLOW merge policy paragraph. No gate suppression,
+dependency/migration or local runtime change. CI diagnosis: Vitest discovers a
+node:test suite without Vitest tests; changed-file formatting flags two files.
+Acceptance: all checks pass on the final PR revision before the approved merge.
+
+Full PR-diff formatting also flags the assistant PLANS entry, own English
+overrides and the two imported Reporting files; reserve formatting-only changes
+there so both push and pull-request bases satisfy the same formatting gate.
+
+CI repair implemented. Four IAM tests pass through API Vitest, scoped API lint
+passes and full PR changed-file formatting passes. Bounded locks release with
+this review commit. Remote checks must pass on the final revision before merge;
+record their result and merge provenance in the PR handoff. No gate weakened.
+
+## GITHUB-IDENTITY-1011 — PC-C — READY_FOR_REVIEW
+
+User identifies their GitHub account as Amin-tech11 and asks to fix PRs authored
+under nirvanamahlou. Reserve only the GitHub identity paragraph in
+DEVELOPMENT_WORKFLOW and own additive status/assignment entries. Branch from
+origin/develop@5b7598bc; preserve all existing source, runtime and credentials.
+Diagnosis: the assistant explicitly selected the repository owner's connector
+instead of the user's connected account. Live account lookup verifies Amin-tech11
+(211146168), repository push permission and collaborator write access; local GCM
+already lists Amin-tech11. Repository ownership/remote and Git commit metadata
+are distinct from authenticated PR authorship. Acceptance: create this corrective
+PR through Amin-tech11, verify its returned author, wait for every final-head CI
+check, then merge to develop using the same account. No credential expansion,
+token logging, historical attribution rewrite or repository transfer.
+
+The bounded documentation repair passes changed-file formatting and diff checks.
+Locks release with the review commit; actual author verification and CI/merge
+provenance are recorded in the corrective PR handoff. No ERP code is affected.
+
+## AMIN-PR-CI-AUDIT-1011 — PC-C — READY_FOR_REVIEW
+
+The user authorizes CI diagnosis/repair of their unmerged Rubi PRs and develop
+integration after all checks pass. Audit finds open Amin-tech11 PR308/328/362
+target main although every head is already an ancestor of develop, with zero
+unique commits. PR361 is develop-to-main and cannot merge into itself. Their
+disposition is awaiting the user's clarification; no main release is authorized.
+Reserve formatting-only repair of the eleven paths flagged in PR361's current
+quality gate, plus own assignment/status/task entries. No behavior, dependency,
+migration, operational runtime or data change. Existing module work is preserved.
+Branch starts at develop@056828bf; source gates remain intact.
+
+- `apps/api/src/package-pricing/package-pricing.domain.spec.ts`
+- `apps/api/src/package-pricing/package-tour-pricing.controller.ts`
+- `apps/api/src/reporting/reporting-dashboard-calendar.ts`
+- `apps/api/src/reservations/hotel-rate-packs.service.spec.ts`
+- `apps/web/src/modules/dashboard/components/dashboard-scroll.spec.ts`
+- `apps/web/src/modules/dashboard/model/trend-axis.ts`
+- `apps/web/src/modules/master-data/api/tour-type-actors.spec.ts`
+- `apps/web/src/modules/pricing-management/components/tour-price-math.spec.ts`
+- `apps/web/src/modules/pricing-management/components/tour-price-math.ts`
+- `packages/database/test/master-data-migration.spec.ts`
+- `packages/database/test/master-data-partner-forms-migration.spec.ts`
+
+Acceptance: preserve source ASTs, pass the release-wide changed-file formatter
+comparison and all final-head CI checks, then merge the repair into develop.
+Resolve stale PR disposition only according to the pending user clarification.
+
+Clarification received: after current develop CI passes, close PR308/328/362
+as already integrated and keep release PR361 open. All eleven source ASTs were
+compared against the base and are unchanged. No tests/gates are excluded.
+Bounded formatting locks release with the review commit; final-head CI, merge
+and stale-PR closure provenance are recorded in the repair PR handoff.
+
+ACCOUNTING-RUBI-COMPOSE-INTEGRATION-1011 completion: PR778 merged to develop at57793ab3 after all exact-head CI gates passed. Runtime checkout clean at that revision; rubi-api-1 and rubi-web-1 healthy on4192/3100. All reviewed migrations applied after fresh backup. Guarded service transfer verified222 accounts/26 detail types, preserving6 existing users and0 existing journals. Standard seven accounting permission seeds added only to existing system administrator role, no user-role changes. Preview4217 stopped. Sole-writer documentation receipt branch codex/pc-a-accounting-rubi-cutover-1011 reserves only this completion entry, PROJECT_STATUS and runtime handoff; source and migration locks released. Authenticated browser verified after existing Rubi user login: chart hierarchy, subsidiary form and level-four detail-type panel.
+
+## ACCOUNTING-EMPTY-HOME-1011 — PC-A — READY_FOR_REVIEW
+
+Sole writer; reserve accounting-workspace.tsx home shortcut grid removal, scoped docs and Rubi Compose web deployment. User requests empty accounting landing content while existing sidebar/form navigation stays available. No data, API, migration or dependency changes; no delegation.
+
+ACCOUNTING-EMPTY-HOME-1011 result: shortcut card grids removed from accounting landing/group pages. Existing navigation and record forms preserved. Authenticated browser verified /finance on rubi Web3100 without shortcut cards; bounded ESLint/typecheck and CI validate candidate. Frontend-only immutable image deployed on existing rubi Compose; no database/API changes.
+
+## ACCOUNTING-DOCUMENTS-PARITY-1011 — PC-A — IN_PROGRESS
+
+Sole writer, no delegation. Reserve Finance Accounting document forms, lists, filters, command handlers and contracts; observed source evidence and scoped tests/docs. Crawl Rahkaran read-only from journal creation through deleted journals; no source save/delete/execute or numeric transaction import. No invented fields/data. Preserve shared Rubi Compose runtime, IAM and other modules. Schema/migration changes require a separate verified exclusive lock; prefer existing Finance-owned storage where compatible.
+
+Scope extension: sole Migration Owner/schema lock PC-A/ACCOUNTING-DOCUMENTS-PARITY-1011 for additive AccountingTemplateLine.role and AccountingTemplate.attributes only. Latest origin/develop@68987832 reviewed: previous PC-B AGENCY-FULL-XLSX-IMPORT-1010 migration lock explicitly released with its merged review commit; no later active Migration Owner found. Reserve packages/contracts/src/accounting.ts and bounded DATA_MODEL entry. Finance snapshot producer and Finance Web consumer ship optional v1 role/attributes together. Existing side, percentage, include and real composite book/account/detail FKs remain unchanged; legacy rows have null role. Role explicitly distinguishes observed SOURCE/TARGET and OFFSET/BASIS grids, never changes legacy debit/credit semantics. No dependency lock, source operational write, historical backfill or live migration before isolated tests and backup.
+
+Migration lock scope now also reserves additive accounting_journal_status CHECK expansion for MEMORANDUM (20261011162000_accounting_memorandum_status). Official source journal help distinguishes memorandum from temporary saving; existing journal-save behavior remains compatible, new journal-document-save/journal-memorandum-save commands enforce the observed distinction. No historical status backfill; migration applied only to isolated accounting_test pending financial regression checks. Main Rubi migration and deployment remain pending. Lock ACTIVE, not released.
+
+The same exclusive PC-A migration lock reserves 20261011173000_accounting_period_document_numbers: replace book-wide document-number uniqueness with book/period/number uniqueness and retain a partial legacy uniqueness index for null-period drafts. No stored number is changed by migration. New source saves allocate numbers under the existing per-book transaction lock; legacy book serials remain supported. Test-only migration first; no main Rubi apply before full regression verification and backup. Lock remains ACTIVE.
+
+Exclusive schema scope extends to typed AccountingGeneralDocument/member/line storage for the observed General Ledger document wizard. These records aggregate already-posted journals at GENERAL account level; they never create duplicate financial postings. Member journals are unique, same-book foreign keys enforced, and registration is audited through AccountingCommand. No source data import or main migration. Lock remains ACTIVE.
+
+ACCOUNTING-DOCUMENTS-PARITY-1011 schema lock extension: typed AccountingJournalTransfer source/target book-journal composite foreign keys, immutable correspondence and source-journal/target-book uniqueness. The additive fifth migration is test-only; main Rubi remains unchanged. PC-A sole writer remains ACTIVE.
+
+The same PC-A exclusive scope reserves AccountingStatement and 20261011213000_accounting_statements after read-only observation of actual ordinary/currency statement forms. Same-book journal/period/recipient FKs, per-period/recipient serials, immutable selected-article JSON snapshots, version guards, recoverable cancellation and AccountingCommand audit belong to Finance. Six migrations are isolated-test-only; main Rubi/3100 unchanged. Lock remains ACTIVE; no delegation.
+
+2026-10-12 publication extension (same sole writer): reserve apps/api/scripts/accounting-reference-data.mjs, data/accounting and bounded PROJECT_STATUS update. Human explicitly authorized publishing this work with GitHub actor nirvanamahlou. Structural reference seed contains222accounts/26detail types; public API preview refuses collisions/divergence and uses existing authorized IAM branch. Preserve all live Rubi accounting data and archive synthetic QA data separately. No credentials/source operational amounts in Git. Central/schema locks remain ACTIVE until exact-head CI and develop merge.
+Publication gate scope also reserves apps/web/src/i18n/en-accounting-documents.json, translate.ts, scripts/i18n-sync.cjs and regenerated API/legacy catalogs for Documents labels only. Other worktrees may add their own overrides; preserve them when integrating latest develop and regenerate combined catalogs.
+
+## ASSISTANT-ALL-USERS-1011 — PC-C — READY_FOR_REVIEW
+
+User authorization: temporarily enable the assistant for all authenticated ERP
+users and departments, including Amin. Base: origin/develop. Reserve assistant
+service/tests/README, Web assistant workspace and IAM visibility tests,
+packages/contracts/src/iam/user-access.ts (assistant branches only), and additive
+own status/architecture/decision entries. No IAM role mutation, database access,
+corporate data grant, migration or dependency change. SELF sources retain their
+ERP authorization. Acceptance: universal authenticated visibility; anonymous
+rejection; isolation/revocation/source denial tests; lint/typecheck/build; all
+final-head CI checks before merge to develop; activate localhost3000 afterward.
+
+Scope also includes the assistant denial translation, workspace identity
+regression and packages/contracts/test/assistant-access.spec.ts. Verification:
+13 HTTP tests,31 focused Web tests and all143 contract tests passed; affected
+Web/Contracts lint and typecheck passed. Existing explicit-grant contract tests
+were updated to the new owner-authorized shared-shell policy while preserving
+unrelated module restrictions. CI, integration and local runtime evidence are
+recorded on PR786. Business sources still enforce existing permissions.
+
+Additional test-only scope: apps/web/src/app/(crm)/users/role-access-presets.spec.tsx.
+The shared assistant may be recommended as a visible screen; native operational
+permission recommendations still intersect actor grants and available options.
+This updates the obsolete screen-list expectation, not the role editor or IAM.
+
+## ASSISTANT-COMPOSER-1011 — PC-C — READY_FOR_REVIEW
+
+User requests replacing only the assistant hero with the supplied “What can I do
+for you?” message composer. Base: develop461a008c. Reserve Web assistant
+workspace/styles/spec, assistant translations, and additive own status entry.
+Keep all six views and source/refresh controls; remove duplicate advisor-only
+chat placeholder. Prompt chips populate a local draft, no storage/network/model
+submission; inactive microphone/attachment must not request access. Preserve
+all authentication and source-data permissions. Acceptance: matching composer,
+RTL/LTR, light/dark/mobile, truthful unavailable state, focused tests/lint/typecheck/
+Web build, all final-head CI before authorized develop merge and local activation.
+
+## ACCOUNTING-TAX-PARITY-1011 — PC-A — IN_PROGRESS
+
+Base origin/develop@9a41c1cc; branch codex/pc-a-tax-accounting-parity-1011 in reused clean worktree. User explicitly requests the whole Tax Accounting menu/forms crawl and implementation, retaining the prohibition on entering or changing data in Rahkaran. Reserve new accounting-tax-* models/components/tests and a dedicated tax-accounting API service/controller if ownership coordination permits; raw evidence outside Git in work/tax-source. Active PC-B Finances retains accounting.service.ts, accounting-workspace.tsx, parity definitions, contracts and schema/migrations. No migration/deploy/shared runtime writes until coordinated release. Existing stack, RTL design and accessibility conventions retained. Final verification target is Rubi3100; isolated preview does not establish deployment.
+
+PC-B coordination granted dedicated FinanceModule service/controller registration,
+new accounting-tax.ts plus limited barrel export. Shared notes file is unchanged;
+a scoped tax notes editor avoids conflicting edits. Candidate provides3 persisted
+reference kinds and10 observed form/list layouts.11 API tests and4 UI model tests
+passed; full web/API build, lint and typecheck passed before final small refinements;
+final checks recorded in task doc. Central workspace integration, dedicated financial
+models, source-item/lookups, attachments and3100 deployment remain pending owner
+integration. No source writes, source-record import or schema/migration changes.
+
+## ACCOUNTING-TAXPAYER-PARITY-1011 — PC-A — IN_PROGRESS
+
+Branch codex/pc-a-taxpayer-system-parity-1011 preserves prior tax candidate commits
+bfba7d2e and2dde78b0. Read-only source crawl and new independent accounting-taxpayer-*
+Web catalog/model/components/tests reserved. No source data, credentials, network
+submission, central workspace/service/schema edits or shared runtime mutation.
+PC-B Finances retains shared-file locks; API/domain/secret-vault integration is
+being coordinated. All13 observed menu leaves must have an explicit evidence
+status; source license error must not be replaced by invented fields.
+
+PC-B confirmed independent accounting-taxpayer-* files and standalone contract do
+not conflict. Existing shared locks remain ACTIVE. Seller reference API implemented;
+central registration/dispatch/evidence edits supplied only in integration patch.
+No secret-bearing attributes, real sends or success simulation. Final verification
+and remaining dependencies are recorded in ACCOUNTING-TAXPAYER-PARITY-1011 task doc.
+
+## ACCOUNTING-EMPTY-CHART-TRANSFER-1011 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B. Direct user authorization extends bounded Accounting chart empty-state work and local accounting export/import packaging. Branch codex/pc-b-accounting-empty-chart-transfer-1011. Reserve accounting-workspace.tsx, accounting-chart-editor.tsx, focused tests, additive en-overrides translations and task documentation; no schema/dependency/permission changes. Preserve concurrent books-error follow-up by distinguishing request failure from empty data. Transfer artifacts stay outside Git; source read-only; destination import requires explicit target branch, preview and backup. User authorizes push and develop merge after checks.
+
+Validation: nine focused chart tests, scoped lint and Web typecheck passed. PR789 exact implementation head passed all remote quality, test, production-build and PostgreSQL migration/seed gates. Source reservation released after the authorized merge; data package remains outside Git and receiving-machine import is not claimed.
+
+## ASSISTANT-TOOLBAR-GRADIENT-1011 — PC-C — READY_FOR_REVIEW
+
+Base: develop9a41c1cc. Sole writer reserves Web assistant workspace and styles,
+plus additive own status entry. User requests removing Sources/data-quality
+button, moving Refresh next to Management report, and a navy gradient composer.
+Preserve refresh callback/loading guard, six views, authorization and local-only
+draft behavior. No API, data, migration or dependency change. Acceptance: no
+Sources button, adjacent report/refresh controls, readable navy composer in both
+themes and RTL/LTR/mobile; focused existing tests, lint/typecheck/build, green
+final-head CI before authorized develop merge, then localhost activation.
+
+## ACCOUNTING-COA-REPORTS-YEAREND-1011 — PC-A — IN_PROGRESS
+
+Base origin/develop@68987832; branch codex/pc-a-coa-reports-year-end-1011. User explicitly authorizes source-only crawling and exact COA/report/year-end implementation coordinated with PC-B Finances. Independent worktree; sole writer. Reserve accounting-chart-* and accounting-report-workspace.tsx, accounting-year-end-workspace.tsx, new isolated report/year-end components/models/tests and own task/status entries. Active document owner retains accounting.service.ts, accounting-workspace.tsx, accounting-parity-definitions.ts, contracts/accounting.ts and schema/migrations until explicit release. No shared runtime or test DB mutation, no dependency changes, no source financial actions, invented fields or transaction imports. UI assumptions: authenticated desktop/corporate ERP, existing Next.js stack and Rubi design system, best-effort WCAG AA owned by this work item; targets LCP2500ms/INP200ms/CLS0.1 p75 and additional route JS80KB gzip, Lighthouse accessibility90/performance80 are targets, not measured claims. No framework decision or new Site.
+
+ACCOUNTING-COA-REPORTS-YEAREND-1011 candidate: tree/search/root fixes and AccountingChartReport ready for coordinated integration; web lint/typecheck/build and15 targeted tests passed. No raw financial source data entered Git. Active central locks respected. Full objective remains IN_PROGRESS, with source and contract blockers documented in the task file. PC-B Finances will connect the report route after reviewing the commit. No merge/deploy/runtime mutation performed by this work item.
+
+## ACCOUNTING-CONSOLIDATED-PUBLISH-1011 — PC-A — IN_PROGRESS
+
+User authorizes pushing and merging all completed work from this chat into develop.
+Branch codex/pc-a-accounting-consolidated-1011 combines tax candidates bfba7d2e,
+2dde78b0,4c7fa22d and chart candidate786480fd (cherry-picked with existing empty-book
+handling preserved), rebased by merge onto develop7cdea1da. Raw evidence, source
+records, credentials and test fixtures remain outside Git. PC-B confirms structural
+222 accounts/26 detail types already reside in Rubi; no Rahkaran journals imported.
+Central workspace/parity/service/schema locks remain with PC-B's unfinished document
+work. This publication is a candidate implementation, not complete runtime parity.
+GitHub publication is waiting on account selection: current CLI/connector is
+nirvanamahlou, while recorded user instruction requires Amin-tech11. No substitute
+identity mutation until the human explicitly authorizes it or correct connection exists.
+
+Consolidated chart/tax regression:26 tests across6 files passed; chart ESLint passed. Account selection remains pending.
+
+2026-10-12 human explicitly authorizes nirvanamahlou for this publication, overriding the recorded Amin-tech11 restriction for this task. Publish/PR/CI/merge use authenticated nirvanamahlou id100076016.
+
+PR791 CI follow-up reserves additive translations for140 observed chart/tax labels and generated API/legacy catalogues. Three English coverage/synchronization tests passed; operational forms and domain fields stay unchanged.
+
+## ASSISTANT-MVP-FOUNDATION-1012 — PC-C — READY_FOR_REVIEW
+
+Base: develop8deea508. User authorizes implementing the staged Enterprise plan.
+Reserve services/assistant server/tests/new action-contract module, Web assistant
+workspace/model/proxy/tests/copy/styles and one new fixed-action GET route,
+assistant README/task documentation, additive own status/plan/decision entries.
+No Reporting/Finance producer, IAM, schema, migration or dependency edits.
+First deliverable: deterministic personal daily summary and recommendation
+priority over existing bounded SELF reads; typed fixed-action dispatch for three
+MVP shortcuts; explicit business gates for unapproved sales metric and missing
+receivables producer. No LLM or user text transmission. Corporate definitions,
+processing policy and producer acceptance remain external gates, requested from
+owner. Acceptance: counts reconcile with visible evidence, no fabricated totals,
+source failure/denial and revocation fail closed, strict fixed-route allowlist,
+validated response and real UI shortcut execution, safe trace/audit, focused
+service/transport/schema/UI tests, lint/typecheck/build and full final CI before
+owner-authorized develop merge. No production rollout/pilot claimed.
+
+## FINANCE-INBOX-UI-1012 — PC-A — READY_FOR_REVIEW
+
+Reserve Finance inbox workspace presentation/CSS and own status entries on codex/pc-a-finance-inbox-ui-1012 from origin/develop. User authorizes redesign, removing redundant explanatory copy, organizing search controls, push and develop merge. Preserve all handlers, query state, financial actions and permissions. No API/schema/dependency/data changes.
+
+Validation: scoped ESLint, existing render regression and Web typecheck passed. Production compilation passed; final Next build and CI gate publication. Presentation locks released with candidate; financial logic unchanged.
+
+## 2026-10-12 publication result — ACCOUNTING-DOCUMENTS-PARITY-1011
+
+PR792 (https://github.com/nirvanamahlou/Rubi/pull/792) merged to develop at8deea50863d797444364b2fc9f702bac9ec12f58. Authorized actor: nirvanamahlou. All eight quality/test/build/PostgreSQL gates passed on head e6600e777621654f5d0cd25574ddc6e86fb7d298. Post-integration API/Web typechecks passed; the isolated PostgreSQL suite passed67/67 after a local Docker slowdown caused timeouts in the preceding attempt. No source writes or source operational amounts imported. Six additive migrations and222accounts/26detail-type structural seed are published.
+
+Repository central/schema/contracts/catalog locks for this publication are RELEASED. Full source parity remains partial as documented; further implementation requires a new bounded reservation. Main Rubi data is preserved. Runtime installation is pending recovery of Docker Desktop; no new live migrations were applied before the engine failure. Verified full backup and separate main/QA accounting-only archives remain outside Git; synthetic QA records are never restored over Rubi.
+
+## CORRESPONDENCE-LETTERHEADS-1012 — PC-A — READY_FOR_REVIEW
+
+CI follow-up: bounded Web English catalogue reservation for the two new letterhead validation/loading errors only; no API or offline-editor catalogue change. Released with repaired candidate.
+
+Sole writer; no delegation. Reserve apps/web/src/modules/correspondence, apps/web/public/correspondence/letterheads and bounded work/status docs. User-supplied three letterhead images used unchanged as company backgrounds; overlay metadata/body for PNG/PDF and preview. No API/schema/dependency changes. Reuse Rubi Compose3100. Preserve other edits. Source locks RELEASED at candidate freeze. Four composition tests, scoped lint and Web typecheck passed; actual production renderer visually checked for all three companies and multipage output. PR801 requires exact-head CI before authorized develop merge and Web-only rollout; API and database remain unchanged.
+
+## HOTEL-TEMPLATE-IMPORT-1012 — PC-A — READY_FOR_REVIEW
+
+Follow-up candidate verification: real PostgreSQL preview/create/profile/edit/reopen/duplicate-skip integration passes; all147 migrations apply to isolated synthetic55439. API527, parser32, Web22 and Contracts143 tests pass; scoped lint, API/Web typechecks and API build pass. Source/schema/shared catalogue locks RELEASED with candidate freeze. Exact-head CI gates the explicitly authorized develop merge; no operational data or shared runtime rollout.
+
+Additive shared-contract reservation: `packages/contracts/src/master-data/editable-fields.ts` hotel field catalogue, producer Master Data API and consumers Web/IAM field controls. Existing permissions stay unchanged; new fields inherit existing update permission and support explicit deny controls. No root exports or cross-module commands change.
+
+2026-10-12 follow-up IN_PROGRESS: user explicitly authorizes imported hotel records with complete editable profile data, push and develop merge. Continue same bounded work/PR796. Reserve Master Data import/parser/service/repository tests, hotel catalogue/form/profile and own docs. Sole additive Migration/schema Owner PC-A/HOTEL-TEMPLATE-IMPORT-1012 for nullable hotel profile/source columns; prior ACCOUNTING-DOCUMENTS-PARITY-1011 lock explicitly released at PR792 and no later schema-changing active PR found. Reserve bounded Master Data generic scalar attributes producer/consumer additions and i18n catalogues; no root contract/dependency change. Preserve ownership of authoritative Procurement cancellation policy, Sales popularity and Documents binaries; imported values are editable descriptive source metadata only. No operational import or runtime migration authorized by this follow-up; local database tests use isolated synthetic data.
+
+Additional bounded central reservation: one new Web-only label in `apps/web/src/i18n/en-catalog.json` for the template download; no API/legacy catalogue changes required.
+
+Delivered exact XLSX asset/download, LAN-compatible final import request IDs, real-workbook parser/service regressions and localized UI/commit tests. No production API changes needed: existing parser accepts all three supplied rows. User confirmed GitHub actor `nirvanamahlou`. Bounded source locks release with the review candidate; see `docs/tasks/HOTEL-TEMPLATE-IMPORT-1012.md` for validation and handoff.
+
+COMPUTER_ID=PC-A confirmed by user. Branch `codex/pc-a-hotel-template-import-1012` from `origin/develop@08a7c20c` in isolated worktree. Direct request authorizes bounded Master Data hotel import/template work; permanent PC-B ownership remains unchanged. Reserve hotel-import-panel.tsx, matching public XLSX asset, focused Web import tests, API hotel-import parser/service regression tests and own status/task entries. Previous HOTEL-EXCEL-TEMPLATE-1001 candidate is already present in develop; no overlapping active source writer found. Preserve the supplied workbook byte-for-byte and existing preview, duplicate, permissions, atomic commit and audit behavior. No API contract, schema, migration, dependency, operational data, merge or runtime deployment changes.
+
+## ASSISTANT-PHASE1-REPORTS-1012 — PC-C — READY_FOR_REVIEW
+
+Base developeab0ad6c. User approves Phase1 with confirmed metric definitions.
+Reserve new Sales-owned weekly read projection/controller/tests and additive
+SalesModule registration; assistant fixed adapter/server/test/contracts/UI/copy,
+and own task/status/decision entries. Producer Sales consumes only its own
+SalesContract aggregate; consumer independent assistant uses authenticated HTTP.
+Contract v1 /sales/assistant/weekly: no input/scope selectors, native
+sales.contracts.read.all required, counts by canonical origin/destination route
+and passengers over two completed Tehran seven-day windows, CREATED_AT basis,
+non-cancelled confirmed contracts only. No PII, amount inference, public demo
+report facts, new permission, database/migration/dependency changes. Financial
+net sales/refunds and call-cohort conversion stay explicitly unavailable until
+approved producer contracts exist. No Finance/CRM owner tables read. Existing
+SELF access and snapshot preserved. Acceptance: pure source-backed projection,
+permission/empty/cap/window/cancel/duplicate tests, strict source validation,
+API/Web/service checks and exact-head CI before authorized develop merge.
+
+## CORRESPONDENCE-WORKFLOWS-1012 — PC-A — READY_FOR_REVIEW
+
+Base origin/develop@2de87ce4; sole writer, no delegation. Reserve correspondence Web module/routes, additive SystemManagement-owned correspondence numbering service/controller/module registration, bounded Web/API English catalogue entries and own docs. No schema/migration/dependency change. Existing System numbering tables remain producer-owned; per-company yearly atomic sequence with actor-scoped idempotency and audit. Authenticated correspondence screen control applies. Incoming letters consume unchanged Documents upload dialog/API with original permissions and archive storage; internal remains empty. User requests three cards, automatic numbering without input, centered logos, editable administrative templates and recipient/sender. Reuse Rubi3100; human-authorized nirvanamahlou publication/develop merge after exact-head CI. No raw operational data in Git.
+
+CORRESPONDENCE-WORKFLOWS-1012 candidate: three real routes/cards; incoming consumes the original Documents dialog/upload API and reports archive code; internal blank; outgoing has five editable original administrative templates, explicit recipient/title/sender and centered original logo pixels. Atomic System-owned numbering at POST /api/v1/correspondence/v1/numbers uses company ID, ISO date and UUID replay key; authenticated actor and correspondence.home denial enforced. Per-company/year sequence, date-bearing number and transactional audit; no schema migration. Five numbering unit tests, three HTTP authorization tests, real PostgreSQL concurrency/replay/brand test, five letter tests and three English coverage tests pass; scoped lint and API/Web typechecks pass. Source/catalog/module-registration locks RELEASED with candidate. Full CI gates develop merge and Rubi deployment.
+
+## AGENCY-IMPORT-REGISTER-ENABLE-1012 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-agency-import-register-enable-1012` from
+`origin/develop@f9146227`. The user reports that the supplied agency workbook is
+read successfully but the create button remains disabled. Reserve only the
+Organizations XLSX validation/preview, focused tests and bounded status/work
+documentation. The supplied workbook has 39 populated agencies; 28 optional
+email cells contain website addresses rather than emails. Treat a non-email
+value in the optional email column as an omitted email with a visible warning,
+while retaining formula/control-character rejection and all required identity,
+duplicate and safety validation. No API/schema/migration/dependency/permission
+or operational-data change. Merge and runtime deployment remain separately
+gated by review and user authorization.
+
+Candidate result: optional non-email values are cleared before create and shown
+as non-blocking warnings, so the supplied 39-row workbook is no longer blocked
+by its 28 website values. Formula-like values remain blocking. The two focused
+Organizations suites pass 32/32; scoped ESLint and Web typecheck pass after the
+Contracts build. Source lock releases with this candidate.
+
+## LATEST-LOCALHOST-1012 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; user authorizes fetching the latest develop and serving localhost3000. Branch codex/pc-c-latest-localhost-1012 from origin/develop@a98ee1ad; reuse the clean, inactive pc-c-github-identity-1011 worktree. Reserve only this work/status entry and local ignored runtime evidence. No feature, dependency, schema, role or operational data edits. Build before replacing the verified PC-C3000/4000/4300/4301 listeners; preserve unrelated runtimes and existing data. Read-only migration compatibility checks precede API replacement. No main update or release. Exact source revision and HTTP/build verification must be recorded; upstream CI failure is investigated separately without weakening gates.
+
+LATEST-LOCALHOST-1012 bounded CI correction: reserve one additive Web-only entry in apps/web/src/i18n/en-catalog.json for the missing Organizations import warning. Upstream candidate source locks are released. Reproduce the existing English completeness failure; preserve the test and all guards. Also prepare a verified ignored local database backup and isolated migration rehearsal before any request to alter the operational database. No operational migration approval has been inferred from a pull/start request.
+
+## ASSISTANT-PHASE2-1013 — PC-C — IN_PROGRESS
+
+Base develop4122f5da; user approves deterministic priorities (overdue/today urgent, days1-3 important, days4-7 ordinary), short executive summary and top5 with view-all, source/rule deduplication. Recorded source priority may promote but never lower date urgency. Contract-balance recommendations are deferred pending real data and business rules; the separate informational balance report remains. Reserve services/assistant, apps/web/src/modules/assistant, apps/web/src/i18n/assistant-copy.ts and bounded own task/status/foundation documentation. Fixed authenticated SELF sources and separately authorized corporate projections only; preserve public ERP contracts, native IAM revalidation, safe links and no-model/no-write policy. No schema/migration/dependency locks. Acceptance: Tehran-day boundaries, source priority, unique evidence, completed/out-of-window removal on refresh, caps, denied/unavailable sources, exact currency comparisons, top5 expansion and existing injection/revocation tests; scoped checks/build and full CI before develop merge/local rollout.
+
+ASSISTANT-PHASE2-1013 candidate implemented within reserved scope. Service27/27,
+Web/translation32/32, scoped ESLint and Web typecheck pass. Source locks release
+with review candidate; build, exact-head CI, authorized develop merge, post-merge
+CI and PC-C3000/4300 rollout remain release gates. No database work is required.
+
+## PHASE2-INTEGRATION-CI-1013 — PC-C — IN_PROGRESS
+
+Base develop21d65e26 after PR812. Standing human instruction requires fixing and
+following post-merge CI. The merged PC-B ACCOUNTING-FORM-TABS-1013 changes the
+uncatalogued tab fallback intentionally; its old rendered IAM regression still
+asserts the superseded hidden behavior. Reproduced exactly (1 failed/8 passed).
+Reserve only apps/web/src/modules/iam/access-ui.spec.tsx and this status entry.
+Do not modify the producer access policy or the merged PC-B source files. Preserve
+and explicitly assert catalogued denied tabs/content remain hidden in the same
+render as an allowed ordinary local form tab. No IAM grant/API/schema/dependency
+or runtime behavior change. The producer is already merged; no active local edits
+or unmerged source replacement are involved. Full CI precedes develop merge.
+
+PHASE2-INTEGRATION-CI-1013 candidate: all57 IAM/assistant/translation tests,
+scoped ESLint and Web typecheck passed. Existing integrated production build passed
+before this test-only edit. Production source is unchanged. Source reservation
+released with review candidate; exact-head and post-merge CI still gate rollout.
+
+## ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C — IN_PROGRESS
+
+Base developce487a4e. Final Phase2 evidence review: absent upstream priority must
+not be labelled as recorded NORMAL. Reserve only services/assistant/server.mjs,
+its focused regression and own docs entries. Omit sourcePriority when absent or
+unrecognized; existing deterministic date ranking stays unchanged and the Web
+already supports optional sourcePriority. No source/API/permission/schema change.
+
+ASSISTANT-PRIORITY-EVIDENCE-1013 candidate: service28/28 tests pass, including
+missing/unknown priority evidence and all existing authorization checks. Source
+reservation released with review candidate. Web build is unchanged; final full CI
+and post-merge verification gate local publication.

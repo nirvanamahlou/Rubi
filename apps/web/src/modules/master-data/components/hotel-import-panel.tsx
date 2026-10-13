@@ -8,12 +8,13 @@ import type {
   MasterHotelImportCommitResult,
   MasterHotelImportPreview,
 } from '@nora/contracts';
-import { FileCheck2, FileSpreadsheet, Upload } from 'lucide-react';
+import { Download, FileCheck2, FileSpreadsheet, Upload } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-controls';
 import { Alert, Badge, Card } from '@/components/ui/surfaces';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { masterDataApi } from '../api/client';
 import { MasterDataClearableField } from './master-data-clearable-field';
 
@@ -119,7 +120,7 @@ export function HotelImportPanel({
         preview.sessionId,
         {
           previewToken: preview.previewToken,
-          idempotencyKey: crypto.randomUUID(),
+          idempotencyKey: browserRandomUuid(),
           duplicateBehavior,
           createMissingReferences,
         },
@@ -151,7 +152,17 @@ export function HotelImportPanel({
             </h2>
           </div>
         </div>
-        <Badge>HOTEL_IMPORT_V1</Badge>
+        <div className="flex items-center gap-3">
+          <a
+            href="/templates/hotel-master-template.xlsx"
+            download="hotel-master-template.xlsx"
+            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-sky-200 bg-white px-3 text-sm font-semibold text-sky-700 hover:bg-sky-50"
+          >
+            <Download aria-hidden="true" className="size-4" />
+            دانلود قالب اکسل هتل‌ها
+          </a>
+          <Badge>HOTEL_IMPORT_V1</Badge>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

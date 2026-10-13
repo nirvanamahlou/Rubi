@@ -1,3 +1,8 @@
+import { AccountingController } from './accounting/accounting.controller';
+import { AccountingTaxController } from './accounting/accounting-tax.controller';
+import { AccountingTaxService } from './accounting/accounting-tax.service';
+import { AccountingService } from './accounting/accounting.service';
+import { AccountingCompletionModule } from './accounting/accounting-completion.module';
 import { Module } from '@nestjs/common';
 
 import { HrModule } from '../hr/hr.module';
@@ -30,14 +35,19 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
     ReservationsRuntimeModule,
     ProcurementModule,
     FinanceTicketCostModule,
+    AccountingCompletionModule,
   ],
   controllers: [
+    AccountingTaxController,
+    AccountingController,
     FinanceInboxController,
     FinancePayrollController,
     FinanceFollowupController,
     FinanceRequestsController,
   ],
   providers: [
+    AccountingTaxService,
+    AccountingService,
     AuthGuard,
     PermissionGuard,
     FinanceInboxService,

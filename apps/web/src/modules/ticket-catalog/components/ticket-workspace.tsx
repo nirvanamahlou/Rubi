@@ -538,13 +538,15 @@ function TicketCatalogWorkspace() {
   const publishExistingFlights = async (
     items: readonly Product[],
     itemReferences: readonly Reference[],
+    announceProblems = true,
   ) => {
     const { publishable, problems } = planCatalogPublication(
       items,
       itemReferences,
     );
     if (!publishable.length) {
-      if (problems.length) setPublishedProblem(problems.join('؛ '));
+      if (announceProblems && problems.length)
+        setPublishedProblem(problems.join('؛ '));
       return;
     }
     const base = getPublicApiBaseUrl();
@@ -577,7 +579,8 @@ function TicketCatalogWorkspace() {
           `${publishable[index]!.product.definition.title}: ${result.reason instanceof Error ? result.reason.message : 'ثبت ناموفق بود.'}`,
         );
     });
-    if (problems.length) setPublishedProblem(problems.join('؛ '));
+    if (announceProblems && problems.length)
+      setPublishedProblem(problems.join('؛ '));
   };
 
   useEffect(() => {
@@ -615,6 +618,7 @@ function TicketCatalogWorkspace() {
           void publishExistingFlights(
             restoredProducts,
             stored.references,
+            false,
           ).catch((error) =>
             setPublishedProblem(
               error instanceof Error
@@ -1036,16 +1040,57 @@ function TicketCatalogWorkspace() {
       </>
     );
   };
+  const editPublishedOffer = (offer: TicketOfferV1) => {
+    setOfferForm({ offer, readOnly: false });
+  };
+  const archivePublishedOffer = async (offer: TicketOfferV1) => {
+    setDeleteSaving(offer.id);
+    setPublishedProblem('');
+    setPublishedNotice('');
+    try {
+      await toursApi.archiveOffer(offer.id, offer.version);
+      await refreshPublishedOffers();
+      setPublishedNotice('ردیف انتخاب‌شده حذف شد؛ سوابق آن حفظ شده است.');
+    } catch (error) {
+      setPublishedProblem(
+        error instanceof Error ? error.message : 'حذف ردیف ناموفق بود.',
+      );
+    } finally {
+      setDeleteSaving(undefined);
+    }
+  };
+  const renderRowActions = (offer: TicketOfferV1) => (
+    <div className="flex flex-wrap justify-center gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => editPublishedOffer(offer)}
+      >
+        ویرایش
+      </Button>
+      <ConfirmDialog
+        title="حذف همین ردیف لود"
+        description="فقط همین رکورد از مدیریت و فروش جدید خارج می‌شود؛ سوابق فروش، قیمت، خرید، مالی و ممیزی باقی می‌مانند."
+        destructive
+        onConfirm={() => void archivePublishedOffer(offer)}
+        trigger={
+          <Button
+            size="sm"
+            variant="destructive"
+            loading={deleteSaving === offer.id}
+            disabled={Boolean(deleteSaving)}
+          >
+            <Trash2 className="size-4" aria-hidden />
+            حذف
+          </Button>
+        }
+      />
+    </div>
+  );
   const renderOfferActions = (offer: TicketOfferV1) => {
     return (
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setOfferForm({ offer, readOnly: true })}
-        >
-          مشاهده
-        </Button>
+        {renderRowActions(offer)}
         {new Date(offer.departureAt).getTime() > catalogNow ? (
           <div className="flex flex-wrap gap-2">
             <Button
@@ -1124,6 +1169,7 @@ function TicketCatalogWorkspace() {
         references={references}
         offers={publishedOffers}
         renderActions={renderOfferActions}
+        renderRowActions={renderRowActions}
         renderLoadActions={renderLoadActions}
         cityName={(id) => referenceLabel('city', id, id)}
         refreshing={publishedRefreshing}

@@ -61,6 +61,7 @@ import {
   type PageBreadcrumb,
 } from '@/components/layout/page-breadcrumbs';
 import { navigationGroups } from '@/lib/navigation';
+import { useScreenAccess } from '@/modules/iam/access-context';
 import {
   systemManagementApi,
   SystemManagementApiError,
@@ -190,7 +191,10 @@ const systemCategoryIdByNavigationGroup = {
   resources: 'documents-reports',
   system: 'company-settings',
 } as const satisfies Record<
-  Exclude<(typeof navigationGroups)[number]['id'], 'finance'>,
+  Exclude<
+    (typeof navigationGroups)[number]['id'],
+    'finance' | 'correspondence' | 'assistant'
+  >,
   Exclude<SystemCategoryId, 'all'>
 >;
 
@@ -211,8 +215,13 @@ const systemCategoryGroups: readonly SystemCategoryGroup[] = navigationGroups
   .filter(
     (
       group,
-    ): group is Exclude<(typeof navigationGroups)[number], { id: 'finance' }> =>
-      group.id !== 'finance',
+    ): group is Exclude<
+      (typeof navigationGroups)[number],
+      { id: 'finance' | 'correspondence' | 'assistant' }
+    > =>
+      group.id !== 'finance' &&
+      group.id !== 'correspondence' &&
+      group.id !== 'assistant',
   )
   .map((group) => {
     const id = systemCategoryIdByNavigationGroup[group.id];
@@ -299,6 +308,7 @@ function apiMessage(error: unknown, language: SystemManagementLanguage) {
 }
 
 export function SystemManagementWorkspace() {
+  const screenAllowed = useScreenAccess();
   const preferences = useSystemPreferences();
   const language = preferences.language;
   const english = language === 'en';
@@ -362,11 +372,16 @@ export function SystemManagementWorkspace() {
         view: 'مشاهده تنظیمات',
       };
   const localizedModules = useMemo(
-    () => localizeSettingModules(settingsModules, language),
-    [language],
+    () =>
+      localizeSettingModules(settingsModules, language).filter((module) =>
+        screenAllowed(`system.module.${module.id}`),
+      ),
+    [language, screenAllowed],
   );
   const [page, setPage] = useState<Page>('overview');
-  const [selectedModuleId, setSelectedModuleId] = useState('general');
+  const [selectedModuleId, setSelectedModuleId] = useState(
+    localizedModules[0]?.id ?? 'general',
+  );
   const [category, setCategory] = useState<SystemCategoryId>('all');
   const [query, setQuery] = useState('');
   const scope: SettingsScope = globalScope;
@@ -406,7 +421,7 @@ export function SystemManagementWorkspace() {
   useEffect(() => {
     const syncViewFromLocation = () => {
       const moduleId = new URL(window.location.href).searchParams.get('module');
-      const moduleExists = settingsModules.some(
+      const moduleExists = localizedModules.some(
         (settingsModule) => settingsModule.id === moduleId,
       );
       if (moduleId && moduleExists) {
@@ -422,7 +437,7 @@ export function SystemManagementWorkspace() {
     syncViewFromLocation();
     window.addEventListener('popstate', syncViewFromLocation);
     return () => window.removeEventListener('popstate', syncViewFromLocation);
-  }, []);
+  }, [localizedModules]);
 
   useEffect(() => {
     if (!toast) return;
@@ -441,7 +456,8 @@ export function SystemManagementWorkspace() {
 
   const selectedModule =
     localizedModules.find((module) => module.id === selectedModuleId) ??
-    localizedModules[0]!;
+    localizedModules[0] ??
+    settingsModules[0]!;
 
   const openOverview = useCallback(() => {
     setPage('overview');
@@ -980,6 +996,14 @@ export function SystemManagementWorkspace() {
             : 'تاریخچه تغییرات'
           : copy.overview;
 
+  if (!localizedModules.length)
+    return (
+      <p role="status">
+        {english
+          ? 'No settings section is available.'
+          : 'بخشی از تنظیمات برای مشاهده مجاز نیست.'}
+      </p>
+    );
   return (
     <section className={styles.workspace} dir={preferences.direction}>
       <div className={styles.main}>

@@ -233,3 +233,20 @@ versioned. migration به‌صورت job کنترل‌شده قبل از rollout
 - گزارش grain اشتباه می‌تواند مبلغ را چندبرابر نشان دهد؛ view review اجباری است.
 - PII مدارک هویتی retention و data residency تایید نشده است.
 - توسعه دوکامپیوتری بدون reservation فایل/migration ریسک تعارض دارد؛ workflow اجباری است.
+
+## Executive assistant boundary — EXECUTIVE-ASSISTANT-1011
+
+The assistant UI is integrated at /assistant as the final direct main-menu link.
+Its read backend is an independent Node 24 process in services/assistant; the
+ERP remains a modular monolith. Next /api/assistant/executive is transport only.
+The separate service revalidates the ERP user's active identity and uses fixed
+authenticated Workbench GET APIs. The owner extended the shared SELF assistant
+to all authenticated users on 2026-10-11; source data permissions remain mandatory.
+No database or broad service
+account access, LLM, external news, SQL or business writes are enabled.
+
+Personal data has SELF scope; it must not be presented as company-wide data or
+as a forecast. Six executive views preserve the reference information coverage
+with explicit missing-source states. Deployment, retained audit, data-provider
+policy, company-scoped source contracts and evaluated forecasts remain gates.
+See docs/tasks/EXECUTIVE-ASSISTANT-1011.md and services/assistant/README.md.

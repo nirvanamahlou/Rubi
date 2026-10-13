@@ -1,10 +1,17 @@
+import { ACCOUNTING_PERMISSIONS } from '../accounting';
 export * from './user-access';
+export * from './user-access-controls';
+export * from './manual-access';
 import { HR_PERMISSION_CODES } from '../hr';
 import { PROCUREMENT_PERMISSION_CODES } from '../procurement';
 import { CUSTOMER_AFFAIRS_PERMISSIONS } from '../customer-affairs';
 import { PACKAGE_PRICING_PERMISSION_CODES } from '../package-pricing';
 import { MARKETING_PERMISSION_CODES } from '../marketing';
 import { SYSTEM_PERMISSION_CODES } from '../system-management';
+import {
+  MANUAL_NEW_PERMISSIONS,
+  PORTAL_SECTION_PERMISSIONS,
+} from './manual-access';
 
 export const IAM_PERMISSION_CONTRACT_VERSION = 13 as const;
 export const IAM_STEP_UP_CONTRACT_VERSION = 1 as const;
@@ -118,6 +125,8 @@ export const IAM_SALES_PERMISSION_CODES = [
 ] as const;
 
 export const IAM_PERMISSION_CODES = [
+  ...MANUAL_NEW_PERMISSIONS.map(([code]) => code),
+  ...PORTAL_SECTION_PERMISSIONS,
   ...PROCUREMENT_PERMISSION_CODES,
   ...IAM_CORE_PERMISSION_CODES,
   ...MASTER_DATA_PERMISSION_CODES,
@@ -136,6 +145,7 @@ export const IAM_PERMISSION_CODES = [
   'ticket_catalog.tours.manage',
   'reservations.read',
   'reservations.documents.manage',
+  ...ACCOUNTING_PERMISSIONS,
   'finance.read',
   'finance.export',
   'finance.request.manage',
@@ -151,9 +161,14 @@ export const IAM_PERMISSION_CODES = [
 
 export type IamPermissionCode =
   | (typeof IAM_PERMISSION_CODES)[number]
+  | (typeof MANUAL_NEW_PERMISSIONS)[number][0]
+  | (typeof PORTAL_SECTION_PERMISSIONS)[number]
   | 'ui.profile'
   | 'ui.administrator'
-  | `ui.screen.${string}`;
+  | 'ui.manual.v3'
+  | `ui.allow.${string}`
+  | `ui.screen.${string}`
+  | `ui.deny.${string}`;
 
 export interface AuthenticatedActor {
   userId: string;
