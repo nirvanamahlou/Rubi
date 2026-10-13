@@ -146,3 +146,41 @@ it('disables archive for read-only users and never offers it for an archived pac
     ),
   ).toBe(false);
 });
+
+it('blocks leaving while the active workflow is saving', () => {
+  const cards = render(HotelRateHub);
+  (
+    cards.find((n) => n.props['data-section'] === 'excel')!.props
+      .onClick as () => void
+  )();
+  let tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.type === HotelRatePacksWorkspace)!.props
+      .onBusyChange as (busy: boolean) => void
+  )(true);
+  tree = render(HotelRateHub);
+  expect(
+    tree.find((n) => n.props.children === 'بازگشت به نرخ هتل')!.props.disabled,
+  ).toBe(true);
+});
+
+it('confirms exit in the page and keeps the workflow when cancelled', () => {
+  const cards = render(HotelRateHub);
+  (
+    cards.find((n) => n.props['data-section'] === 'manual')!.props
+      .onClick as () => void
+  )();
+  let tree = render(HotelRateHub);
+  (
+    tree.find((n) => n.props.children === 'بازگشت به نرخ هتل')!.props
+      .onClick as () => void
+  )();
+  tree = render(HotelRateHub);
+  expect(tree.some((n) => n.props.role === 'alert')).toBe(true);
+  (
+    tree.find((n) => n.props.children === 'انصراف')!.props.onClick as () => void
+  )();
+  tree = render(HotelRateHub);
+  expect(tree.some((n) => n.type === HotelRatePacksWorkspace)).toBe(true);
+  expect(tree.some((n) => n.props.role === 'alert')).toBe(false);
+});

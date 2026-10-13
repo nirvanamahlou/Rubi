@@ -101,31 +101,31 @@ function click(label: string) {
 }
 beforeEach(() => {
   initialMode = 'manual';
+  vi.stubGlobal('window', {
+    confirm: vi.fn(() => true),
+    location: { hostname: 'test', origin: 'http://test' },
+  });
   vi.useFakeTimers();
   hooks.states = [];
   hooks.refs = [];
   hooks.deps = [];
   hooks.effects = [];
 });
-afterEach(() => vi.useRealTimers());
-it('starts with the manual editor visible above the collapsed saved-pack browser', async () => {
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
+it('starts with only the manual workflow without the saved-pack browser', async () => {
   const tree = await settle();
   expect(
     tree.some((n) => n.props['aria-label'] === 'ویرایش دستی بستهٔ نرخ'),
   ).toBe(true);
-  const editor = tree.findIndex(
-    (n) => n.props['aria-label'] === 'ویرایش دستی بستهٔ نرخ',
+  expect(tree.some((n) => n.props.className === styles.savedPackages)).toBe(
+    false,
   );
-  const details = tree.findIndex(
-    (n) => n.type === 'details' && n.props.className === styles.savedPackages,
+  expect(tree.some((n) => n.props.className === styles.periodDisclosure)).toBe(
+    false,
   );
-  const periods = tree.find(
-    (n) =>
-      n.type === 'details' && n.props.className === styles.periodDisclosure,
-  );
-  expect(periods?.props.open).toBe(false);
-  expect(editor).toBeLessThan(details);
-  expect(tree[details]!.props.open).not.toBe(true);
   expect(tree.some((n) => n.type === ManualHotelSelector)).toBe(true);
   expect(tree.some((n) => n.type === ManualHotelPanel)).toBe(true);
   expect(
@@ -191,7 +191,91 @@ it('opens Excel import directly from its hub card', async () => {
   initialMode = 'excel';
   const tree = await settle();
   expect(tree.some((n) => n.type === OccupancyBulkPanel)).toBe(true);
-  expect(tree.some((n) => n.type === 'div' && n.props.hidden === true)).toBe(
+  expect(tree.some((n) => n.type === ManualHotelPanel)).toBe(false);
+  expect(tree.some((n) => n.props.className === styles.savedPackages)).toBe(
+    false,
+  );
+  expect(
+    tree.some(
+      (n) => n.type === 'button' && n.props.children === '+ بستهٔ جدید',
+    ),
+  ).toBe(false);
+});
+
+it('keeps Excel import enabled after switching branch', async () => {
+  initialMode = 'excel';
+  await settle();
+  const branch = nodes(render()).find(
+    (n) => n.props.label === 'شعبهٔ جدول نرخ هتل',
+  )!;
+  (branch.props.onChange as (value: string) => void)('other-branch');
+  const tree = await settle();
+  const importer = tree.find((n) => n.type === OccupancyBulkPanel)!;
+  expect(importer.props.branchId).toBe('other-branch');
+  expect(importer.props.disabled).toBe(false);
+});
+it('keeps selected draft when discarding is declined', async () => {
+  await settle();
+  const selector = nodes(render()).find((n) => n.type === ManualHotelSelector)!;
+  (selector.props.onChoose as (id: string) => void)('hotel');
+  vi.mocked(window.confirm).mockReturnValue(false);
+  click('+ بستهٔ جدید');
+  expect(
+    nodes(render()).find((n) => n.type === ManualHotelPanel)?.props.hotelId,
+  ).toBe('hotel');
+});
+
+it('preserves saved room rates absent from refreshed hotel master links', async () => {
+  await settle();
+  const selector = nodes(render()).find((n) => n.type === ManualHotelSelector)!;
+  (selector.props.onChoose as (id: string) => void)('hotel');
+  const panel = nodes(render()).find((n) => n.type === ManualHotelPanel)!;
+  const room = {
+    roomTypeId: 'historic-room',
+    roomTypeName: 'Historic room',
+    factor: '1',
+    maxAdults: '3',
+    maxChildren2To6: '0',
+    maxChildren6To12: '0',
+    maxInfants: '0',
+    occupancyRates: [],
+  };
+  (panel.props.onChange as (id: string, patch: unknown) => void)('hotel', {
+    roomRates: [room],
+  });
+  const currency = nodes(render()).find(
+    (n) => n.props.label === 'ارز پیش‌فرض ردیف جدید',
+  )!;
+  (currency.props.onChange as (value: string) => void)('USD');
+  const tree = await settle();
+  const rows = tree.find((n) => n.type === ManualHotelPanel)!.props.rows as {
+    hotel: { id: string; roomTypes: { id: string }[] };
+    roomRates: unknown[];
+  }[];
+  const hotel = rows.find((r) => r.hotel.id === 'hotel')!;
+  expect(hotel.roomRates).toContainEqual(room);
+  expect(hotel.hotel.roomTypes.some((r) => r.id === 'historic-room')).toBe(
     true,
   );
+});
+
+it('requires confirmation before changing destination with an Excel file pending', async () => {
+  initialMode = 'excel';
+  await settle();
+  const importer = nodes(render()).find((n) => n.type === OccupancyBulkPanel)!;
+  (importer.props.onDirtyChange as (dirty: boolean) => void)(true);
+  const fields = nodes(render()).find(
+    (n) => typeof n.props.onCountryChange === 'function',
+  )!;
+  (fields.props.onCountryChange as (id: string) => void)('other-country');
+  const tree = nodes(render());
+  expect(
+    tree.find((n) => typeof n.props.onCountryChange === 'function')!.props
+      .countryId,
+  ).toBe('country');
+  expect(
+    tree.some(
+      (n) => n.props.children === 'تأیید تغییر مقصد و پاک‌کردن پیش‌نویس',
+    ),
+  ).toBe(true);
 });
