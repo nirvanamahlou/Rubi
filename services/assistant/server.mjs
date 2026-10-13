@@ -8,7 +8,11 @@ import { actionFromPath } from './actions.mjs';
 import { getTool } from './tools.mjs';
 import { ServiceError } from './errors.mjs';
 import { createErpClient } from './erp-client.mjs';
-import { accessCookie, createAuthorization } from './authorization.mjs';
+import {
+  accessCookie,
+  createAuthorization,
+  requireToolAccess,
+} from './authorization.mjs';
 import { createToolExecutor } from './tool-executor.mjs';
 import { recordRequestAudit } from './audit.mjs';
 export { accessCookie } from './authorization.mjs';
@@ -193,7 +197,29 @@ export function createAssistantServer({
               };
             },
           });
-          await authenticate(cookie, deadline.signal, actorId);
+          const releaseActor = await authenticate(
+            cookie,
+            deadline.signal,
+            actorId,
+          );
+          if (result.status === 'ANSWER') {
+            if (
+              actor.branchIds.some((id) => !releaseActor.branchIds.includes(id))
+            )
+              throw new ServiceError(403, 'FORBIDDEN');
+            for (const entry of toolOutcomes.filter(
+              (entry) => entry.outcome === 'SUCCESS',
+            )) {
+              requireToolAccess(releaseActor, entry.tool);
+              if (getTool(entry.tool).scope === 'SELF')
+                await authenticate(
+                  cookie,
+                  deadline.signal,
+                  actorId,
+                  entry.tool,
+                );
+            }
+          }
           if (result.status === 'CLARIFY') outcome = 'SUCCESS';
           send(200, result);
           return;

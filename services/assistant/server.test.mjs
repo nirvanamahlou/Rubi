@@ -1102,3 +1102,37 @@ test('conversation rejects forged identity and revoked access even for clarifica
   });
   assert.equal(revoked.status, 401);
 });
+
+test('conversation repeats native source checks at final evidence release', async (t) => {
+  const conversation = {
+    enabled: true,
+    provider: {
+      plan: async () => ({
+        kind: 'ACTION',
+        action: 'daily-summary',
+        filters: {},
+      }),
+    },
+  };
+  const first = await harness(t, { conversation });
+  assert.equal(
+    (await first.post({ version: 1, message: 'synthetic', history: [] }))
+      .status,
+    200,
+  );
+  const authCount = first.calls.filter(
+    (call) => call.path === '/api/v1/iam/auth/access',
+  ).length;
+  const revoked = await harness(t, {
+    conversation,
+    deniedSource: 'calendar',
+    sourceDenyAt: authCount - 2,
+  });
+  const response = await revoked.post({
+    version: 1,
+    message: 'synthetic',
+    history: [],
+  });
+  assert.equal(response.status, 403);
+  assert.ok(!JSON.stringify(await response.json()).includes(example.title));
+});
