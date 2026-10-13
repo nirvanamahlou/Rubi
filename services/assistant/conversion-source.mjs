@@ -4,7 +4,7 @@ const iso = (value) =>
   Number.isFinite(Date.parse(value));
 export const conversionBasis =
   'UNIQUE_LEADS_WITH_LOGGED_CALL_TO_ACCEPTED_CONFIRMED_CONTRACT_AS_OF_REQUEST';
-export function validConversionSource(value) {
+export function validConversionSource(value, expectedDays = 7) {
   return (
     value?.version === 1 &&
     value.source === 'customer-affairs.assistant.call-conversion.v1' &&
@@ -25,7 +25,7 @@ export function validConversionSource(value) {
         iso(period.endUtc) &&
         Math.abs(
           (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000 -
-            7,
+            expectedDays,
         ) <= 0.05 &&
         Number.isSafeInteger(period.contactedLeads) &&
         period.contactedLeads >= 0 &&

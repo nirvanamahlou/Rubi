@@ -6,7 +6,7 @@ const uuid = (value) =>
   typeof value === 'string' &&
   /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(value);
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
-export function validSalesSource(value) {
+export function validSalesSource(value, expectedDays = 7) {
   if (typeof value?.routeNamesComplete !== 'boolean') return false;
   if (
     !value ||
@@ -64,7 +64,7 @@ export function validSalesSource(value) {
       return false;
     const days =
       (Date.parse(period.endUtc) - Date.parse(period.startUtc)) / 86400000;
-    if (days < 6.95 || days > 7.05) return false;
+    if (Math.abs(days - expectedDays) > 0.05) return false;
     let contracts = 0,
       passengers = 0;
     const unique = new Set();

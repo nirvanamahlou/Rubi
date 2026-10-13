@@ -5819,3 +5819,8 @@ localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
 ## HOTEL-REPEAT-ADJUSTMENT-1013
 
 Bulk hotel sale adjustments now apply to current sale on every click and store the resulting explicit sale price. Purchase stays independent; invalid negative changes remain atomic. Ten interaction regressions pass. No migration.
+
+
+## PC-C — ASSISTANT-FILTERS-1013
+
+Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.

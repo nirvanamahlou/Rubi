@@ -7356,3 +7356,22 @@ Reserve manual hotel panel and focused regressions. User authorizes repeat adjus
 ## HOTEL-RATE-HUB-1013 — PC-A — IN_PROGRESS
 
 Branch codex/pc-a-hotel-rate-hub-1013 from origin/develop@016f3e2a. User requests four hotel-rate entry cards: Excel import, new pack, existing packs/edit, and archive. User explicitly chooses archival with preserved history and authorizes develop merge. Reserve Reservations hotel-rate Web navigation and archive service/controller tests plus own docs. Archive requires persisted lifecycle state, write/branch authorization and audit; all new-rate consumers must exclude archived packs while existing immutable references remain readable. Schema/migration and shared consumer scope must be checked and reserved before implementation; no operational archive, migration or runtime rollout authorized. No feature implementation or merge yet.
+
+## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
+
+User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
+requires its green merge. Branch codex/pc-c-assistant-report-filters-1013.
+Reserve assistant-specific Sales/Customer Affairs read controllers/projections/
+tests, services/assistant versioned filter transport, Web assistant model/proxy/
+filter controls/copy/tests and own docs only. No shared schema/dependencies/IAM.
+Additive v2 reads accept <=90 complete Tehran days, primary route and authorized
+branch; v1 remains unchanged. Current balance ignores date with explicit as-of
+semantics. Route-filtered CRM conversion must not bias the denominator by filtering
+only converted contracts; unsupported route attribution remains explicit.
+Company ownership and real-model processing remain deferred. Source locks for
+prior assistant candidates released; do not edit active Sales workspace files.
+Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
+
+ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
+
+HOTEL-RATE-HUB-1013 scope: PC-A sole additive schema/Migration owner for archivedAt on Reservations hotel rate packs. Earlier hotel import schema lock released with merged candidate; no later overlapping schema owner found. Reserve Reservations owned pack service/controller/public rate projection and legacy list guards, Web hub/archive panel, focused tests, additive migration, and bounded English labels. Public rate projection producer excludes archived packs; existing Sales/Package consumers retain unchanged contract and historical snapshots. No operational migration or data modification.

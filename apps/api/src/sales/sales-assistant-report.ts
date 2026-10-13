@@ -8,7 +8,7 @@ export const SALES_ASSISTANT_STATUSES = [
 ] as const;
 export const SALES_ASSISTANT_LIMIT = 5000;
 
-function midnight(day: Date): Date {
+export function tehranMidnight(day: Date): Date {
   const target = Date.UTC(
     day.getUTCFullYear(),
     day.getUTCMonth(),
@@ -25,7 +25,8 @@ function midnight(day: Date): Date {
     second: '2-digit',
     hourCycle: 'h23',
   });
-  for (let i = 0; i < 3; i++) {
+  const candidates: number[] = [];
+  for (let i = 0; i < 4; i++) {
     const parts = Object.fromEntries(
       format
         .formatToParts(new Date(candidate))
@@ -39,9 +40,11 @@ function midnight(day: Date): Date {
       Number(parts.minute),
       Number(parts.second),
     );
+    if (wall >= target && wall < target + 86400000) candidates.push(candidate);
     candidate += target - wall;
   }
-  return new Date(candidate);
+  // A historical DST gap can skip midnight; select the first real instant of that civil day.
+  return new Date(Math.min(...candidates));
 }
 
 export function salesAssistantWindows(now: Date) {
@@ -59,7 +62,7 @@ export function salesAssistantWindows(now: Date) {
     Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)),
   );
   const shift = (days: number) =>
-    midnight(new Date(today.getTime() - days * 86400000));
+    tehranMidnight(new Date(today.getTime() - days * 86400000));
   return {
     current: {
       startUtc: shift(7).toISOString(),
@@ -87,8 +90,8 @@ export interface AssistantContractFact {
 export function buildSalesAssistantReport(
   facts: readonly AssistantContractFact[],
   now: Date,
+  periods = salesAssistantWindows(now),
 ) {
-  const periods = salesAssistantWindows(now);
   const eligible = [
     ...new Map(
       facts
