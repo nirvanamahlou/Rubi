@@ -579,6 +579,12 @@ export class SalesService {
         'SETTLED',
         'OVERPAID',
       ),
+      originId: Joi.string().guid(),
+      destinationId: Joi.string().guid(),
+      customerType: Joi.string().valid('ALL', 'AGENCY', 'IN_PERSON'),
+      agencyCustomerId: Joi.string().guid(),
+      travelFrom: Joi.string().isoDate(),
+      travelTo: Joi.string().isoDate(),
       createdFrom: Joi.string().isoDate(),
       createdTo: Joi.string().isoDate(),
       sortBy: Joi.string().valid(
@@ -637,6 +643,43 @@ export class SalesService {
         code: 'SALES_CONTRACT_FORBIDDEN',
         message: 'مجوز مشاهده قرارداد وجود ندارد.',
       });
+    if (query.customerType || query.agencyCustomerId) {
+      const validation = Joi.object({
+        customerType: Joi.string().valid('ALL', 'AGENCY', 'IN_PERSON'),
+        agencyCustomerId: Joi.string().guid(),
+      }).validate({
+        customerType: query.customerType,
+        agencyCustomerId: query.agencyCustomerId,
+      });
+      if (
+        validation.error ||
+        (query.agencyCustomerId && query.customerType !== 'AGENCY')
+      )
+        throw new BadRequestException('فیلتر مانده قابل دریافت معتبر نیست.');
+      if (query.customerType && query.customerType !== 'ALL') {
+        const rows = await this.repository.dashboardRows(scope);
+        const buyers = await this.customers.partyKinds(
+          [...new Set(rows.map((row) => row.customerId))],
+          actor,
+        );
+        const ids = buyers
+          .filter(
+            (buyer) =>
+              buyer.kind ===
+              (query.customerType === 'AGENCY' ? 'ORGANIZATION' : 'PERSON'),
+          )
+          .map((buyer) => buyer.id);
+        scope = {
+          AND: [
+            scope,
+            { customerId: { in: ids } },
+            ...(query.agencyCustomerId
+              ? [{ customerId: query.agencyCustomerId }]
+              : []),
+          ],
+        };
+      }
+    }
     const result = await this.repository.list(
       query,
       scope,
@@ -1250,6 +1293,13 @@ export class SalesService {
           : helpers.error('any.invalid');
       });
     const validated = Joi.object({
+      search: Joi.string().trim().max(160).allow(''),
+      settlementStatus: Joi.string().valid(
+        'UNPAID',
+        'PARTIALLY_SETTLED',
+        'SETTLED',
+        'OVERPAID',
+      ),
       from: day,
       to: day,
       dateBasis: Joi.string().valid('CONTRACT', 'TRAVEL').default('CONTRACT'),
@@ -1315,6 +1365,18 @@ export class SalesService {
         .toISOString()
         .slice(0, 10);
       return (
+        (!filters.search ||
+          [
+            row.contractNumber,
+            row.customerNameSnapshot,
+            ...(has(actor, 'sales.payments.read')
+              ? row.payments.map((payment) => payment.paymentReference ?? '')
+              : []),
+          ].some((value) =>
+            value.toLowerCase().includes(filters.search!.toLowerCase()),
+          )) &&
+        (!filters.settlementStatus ||
+          row.settlementStatus === filters.settlementStatus) &&
         (!filters.from || value >= filters.from) &&
         (!filters.to || value <= filters.to) &&
         (!filters.originId || row.originId === filters.originId) &&

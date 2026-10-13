@@ -1,3 +1,7 @@
+## SALES-UNIFIED-FILTERS-1013 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A. Reserve Sales Web filters, API list/receivables/export/repository, Sales optional query contracts and focused tests. Sales API producer and Web consumer coordinate additive backward-compatible filter fields. No migration/dependency. User requests unified contract/receivables filters; merge not requested. Delivered one Apply/Reset form, combined search/settlement/date/route/customer criteria and matching Excel export. Customer filtering runs before pagination through the public Customers adapter; authorized scope and payment-reference permission remain enforced. Web 22 and API 7 focused tests pass; scoped lint and API typecheck pass. Production builds gate local3100/API4000 refresh; no operational records changed.
+
 ## 2026-10-13 — MERGE-SALES-UI-773-1013 — PC-A
 
 Owner authorizes develop merge of PR773 Sales follow-up/dashboard UI. Reconcile latest develop with the reviewed presentation changes, preserving all current features and both status histories. Documentation-only conflicts resolved; new-head full CI gates merge. No runtime rollout, schema, dependency or data changes.
