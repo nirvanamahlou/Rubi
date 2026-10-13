@@ -462,9 +462,11 @@ describe.skipIf(!enabled)(
         const evidence = await result.json();
         expect(assistantActionSchema.safeParse(evidence).success).toBe(true);
       }
-      const options = await (
+      const options = (await (
         await get('/sales/assistant/filter-options')
-      ).json();
+      ).json()) as Awaited<
+        ReturnType<SalesAssistantController['filterOptions']>
+      >;
       expect(options.branches).toHaveLength(1);
       expect(options.cities).toHaveLength(2);
       const civil = (at: string) => {
@@ -485,7 +487,7 @@ describe.skipIf(!enabled)(
         endDate: civil(
           new Date(Date.parse(weekly.current.endUtc) - 1).toISOString(),
         ),
-        branchId: options.branches[0].id,
+        branchId: options.branches[0]!.id,
       });
       for (const action of [
         'daily-summary',
@@ -504,7 +506,10 @@ describe.skipIf(!enabled)(
           action,
         );
         expect(response.status).toBe(200);
-        const body = await response.json();
+        const body = (await response.json()) as {
+          report: Awaited<ReturnType<SalesAssistantController['filtered']>>;
+          conversion: { status: string };
+        };
         expect(assistantFilteredActionSchema.safeParse(body).success).toBe(
           true,
         );
@@ -521,14 +526,17 @@ describe.skipIf(!enabled)(
       const route = weekly.current.routes[0]!;
       params.set('originId', route.originId);
       params.set('destinationId', route.destinationId);
-      const routeReport = await (
+      const routeReport = (await (
         await get('/sales/assistant/report?' + params)
-      ).json();
+      ).json()) as Awaited<ReturnType<SalesAssistantController['filtered']>>;
       expect(routeReport.current.contractCount).toBe(1);
       params.set('originId', randomUUID());
       expect(
-        (await (await get('/sales/assistant/report?' + params)).json()).current
-          .contractCount,
+        (
+          (await (
+            await get('/sales/assistant/report?' + params)
+          ).json()) as Awaited<ReturnType<SalesAssistantController['filtered']>>
+        ).current.contractCount,
       ).toBe(0);
       await expect(
         app.get(DatabaseService).client
