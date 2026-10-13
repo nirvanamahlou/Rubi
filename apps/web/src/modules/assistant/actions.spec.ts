@@ -385,19 +385,17 @@ it('validates filtered daily summaries without dropping personal evidence checks
 it('rejects a filtered response for a different requested period', async () => {
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockResolvedValue(
-        Response.json({
-          ...daily,
-          version: 2,
-          filters,
-          corporate: {
-            sales: { status: 'UNAVAILABLE' },
-            balances: { status: 'DENIED' },
-          },
-        }),
-      ),
+    vi.fn().mockResolvedValue(
+      Response.json({
+        ...daily,
+        version: 2,
+        filters,
+        corporate: {
+          sales: { status: 'UNAVAILABLE' },
+          balances: { status: 'DENIED' },
+        },
+      }),
+    ),
   );
   try {
     await expect(

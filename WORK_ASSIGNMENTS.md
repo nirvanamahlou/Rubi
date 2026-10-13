@@ -1,3 +1,7 @@
+## SALES-UNIFIED-FILTERS-1013 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A. Reserve Sales Web filters, API list/receivables/export/repository, Sales optional query contracts and focused tests. Sales API producer and Web consumer coordinate additive backward-compatible filter fields. No migration/dependency. User requests unified contract/receivables filters; merge not requested. Delivered one Apply/Reset form, combined search/settlement/date/route/customer criteria and matching Excel export. Customer filtering runs before pagination through the public Customers adapter; authorized scope and payment-reference permission remain enforced. Web 22 and API 7 focused tests pass; scoped lint and API typecheck pass. Production builds gate local3100/API4000 refresh; no operational records changed.
+
 ## MERGE-SALES-UI-773-1013 — PC-A — READY_FOR_CI
 
 Owner explicitly authorizes merging UI PR773 to develop. Reconcile its original branch60bd2c09 with current develop, preserve both documentation histories and all current source changes. Temporary integration branch codex/pc-a-merge-sales-ui-773-1013 updates the existing PR head without force-push; no runtime, schema, migration, dependency or operational data change. Only documentation conflicts exist; two Sales presentation files merge cleanly. Existing eight original-head CI checks pass; complete new-head CI gates merge and releases bounded documentation locks.
@@ -7343,6 +7347,10 @@ Result: the duplicate inner heading was removed while the page-level heading,
 control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
+
+## HOTEL-REPEAT-ADJUSTMENT-1013 — PC-A — READY_FOR_REVIEW
+
+Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
 
 ## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
 

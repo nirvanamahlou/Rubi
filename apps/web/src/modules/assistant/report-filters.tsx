@@ -38,7 +38,6 @@ export function AssistantReportFilterControls({
   useEffect(() => {
     if (!open || disabled) return;
     const controller = new AbortController();
-    setFailed(false);
     void fetch('/api/assistant/v2/filter-options', {
       credentials: 'same-origin',
       cache: 'no-store',
@@ -49,7 +48,10 @@ export function AssistantReportFilterControls({
         return filterOptionsSchema.parse(await response.json());
       })
       .then((result) => {
-        if (!controller.signal.aborted) setOptions(result);
+        if (!controller.signal.aborted) {
+          setOptions(result);
+          setFailed(false);
+        }
       })
       .catch(() => {
         if (!controller.signal.aborted) setFailed(true);

@@ -152,6 +152,74 @@ describe('filtered receivables', () => {
     );
     return { service, dashboardRows, partyKinds };
   }
+  it('restricts agency contracts before repository pagination and preserves read scope', async () => {
+    const list = vi
+      .fn()
+      .mockResolvedValue({ data: [], total: 0, page: 1, pageSize: 20 });
+    const service = new SalesService(
+      {
+        list,
+        dashboardRows: vi
+          .fn()
+          .mockResolvedValue([
+            { customerId: agencyId },
+            { customerId: 'person' },
+          ]),
+      } as never,
+      {
+        partyKinds: vi.fn().mockResolvedValue([
+          { id: agencyId, kind: 'ORGANIZATION' },
+          { id: 'person', kind: 'PERSON' },
+        ]),
+      } as never,
+      {} as never,
+    );
+    await service.list(
+      { customerType: 'AGENCY', agencyCustomerId: agencyId },
+      actor,
+    );
+    expect(list).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        AND: [
+          {
+            branchId: { in: ['branch'] },
+            OR: [{ ownerUserId: 'owner' }, { assignedUserId: 'owner' }],
+          },
+          { customerId: { in: [agencyId] } },
+          { customerId: agencyId },
+        ],
+      },
+      false,
+    );
+  });
+  it('combines text, settlement, agency and travel filters for exact balances', async () => {
+    const { service } = setup();
+    const result = await service.receivables(
+      {
+        search: 'ONE',
+        settlementStatus: 'OVERPAID',
+        customerType: 'AGENCY',
+        agencyCustomerId: agencyId,
+        dateBasis: 'TRAVEL',
+        from: '2026-10-15',
+        to: '2026-10-15',
+      },
+      actor,
+    );
+    expect(result.data.contractCount).toBe(1);
+    expect(result.data.balances).toEqual([
+      { currencyCode: 'IRR', amount: '80.25' },
+    ]);
+    expect(
+      (
+        await service.receivables(
+          { search: 'one', settlementStatus: 'SETTLED' },
+          actor,
+        )
+      ).data.contractCount,
+    ).toBe(0);
+  });
   it('uses inclusive contract date bounds, authorized scope and Decimal balances', async () => {
     const { service, dashboardRows } = setup();
     const result = await service.receivables(
