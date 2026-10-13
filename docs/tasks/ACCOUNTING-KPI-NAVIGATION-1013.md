@@ -38,3 +38,5 @@ are publication gates; runtime receipts and private backup stay outside Git.
 Activation preserves the current Compose database, document storage and all
 unrelated running application changes. A scoped Web overlay is preferred after
 verifying the Accounting source baseline; API and migrations remain untouched.
+
+CI follow-up adds52 Web-only English display translations in a dedicated KPI catalogue. Existing translation values and all completeness/synchronization guards are retained; no API or standalone-editor catalogue changes are needed.
