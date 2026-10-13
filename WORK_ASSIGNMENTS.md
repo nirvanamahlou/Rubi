@@ -7319,7 +7319,7 @@ and post-merge verification gate local publication.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
 
-## ASSISTANT-TOOLS-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-TOOLS-1013 — PC-C — DONE
 
 Base origin/develop@598fc90c; branch codex/pc-c-assistant-tool-registry-1013.
 User approves the continuation plan. Reserve services/assistant, its dedicated
@@ -7348,6 +7348,14 @@ control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
 
+## HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B — READY_FOR_REVIEW
+
+2026-10-13 follow-up: user explicitly authorizes develop merge and localhost3100 update. Reserve only two additive English translations in Web/API catalogues for this task, documentation conflict reconciliation and safe app-container replacement preserving the existing database and document mounts. Latest-head CI must pass before merge; no migration/dependency change.
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-hotel-import-city-normalize-1013` from origin/develop. Reserve Hotel import parser/service regressions, panel guidance and own docs. Normalize city comparison for Unicode/Persian spelling, whitespace/joiners and case; keep selected city FK/country scope and all file/token/transaction security unchanged. Only hotel name and row city required; optional fields keep validation when populated. No migration/dependency/runtime change; no merge authorization in this request.
+
+Implemented comparison-only normalization for spaces/joiners, Latin case, Arabic/Persian letter variants and آ/ا. Missing row city is explicitly rejected rather than silently populated. The supplied downloadable template commits against selected city «کوش اداسی» despite its «کوش‌آداسی» cells. Focused API tests pass 44/44, focused Web tests 16/16, scoped lint, Prettier, API/Web typechecks and builds pass. No live database write or localhost runtime rollout was performed. Source locks released for review.
+
 ## AGENCY-IMPORT-PARTIAL-1013 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-organization-import-partial-1013` from `origin/develop@ebcb016f`. The Organizations XLSX preview currently disables the whole import when one row has an invalid optional phone. Reserve only `apps/web/src/modules/organizations/model/organization-import.ts`, its focused test, `components/organization-excel-dialog.tsx`, and bounded task status documentation. Import valid rows while leaving invalid rows unmodified and visibly reported. Preserve strict validation, no-overwrite checks, uncertain-write stop, and original row/progress alignment. No API/schema/migration/dependency/permission or operational data change. No other active owner holds these target files.
@@ -7360,7 +7368,7 @@ CI follow-up: reserve four additive Web-only English translations in `apps/web/s
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
 
-## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-FILTERS-1013 — PC-C — DONE
 
 User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
 requires its green merge. Branch codex/pc-c-assistant-report-filters-1013.
@@ -7376,6 +7384,16 @@ prior assistant candidates released; do not edit active Sales workspace files.
 Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
+
+## ASSISTANT-ORCHESTRATOR-1013 — PC-C — READY_FOR_REVIEW
+
+User-approved step3 preparation, stacked on filters PR822. Scope services/assistant action composition, message contract, bounded injected-provider orchestrator and tests; optional gated BFF/chat state, own docs. Real model connection remains absent and off; no DB changes.
+
+ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route, separate session-only conversation UI and tests; existing fixed controls remain available.
+
+PC-C handoff: tools #819 and filters #822 merged with green exact-head and postmerge CI. Orchestrator #825 preparation has56 native tests and35 Web tests, scoped lint/typecheck and local production build passing; live conversation remains disabled. Release follows final-head and postmerge CI; rollout evidence is stored privately in tmp/orchestrator-runtime.
+
+ASSISTANT-ORCHESTRATOR-1013 CI fix: conversation labels use the existing assistant-copy.ts bilingual source; translation coverage remains enforced.
 
 ## ACCOUNTING-BLUE-THEME-1013 — PC-B owner / PC-A execution — READY_FOR_CI
 
