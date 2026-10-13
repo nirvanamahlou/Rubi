@@ -327,7 +327,7 @@ describe('unpriced defined load pairs', () => {
   });
   it('retains saved manual pairs without duplicating the automatic pair', () => {
     const rows = ticketPriceRows([
-      { ...going, roundTripSalePrices: outbound.roundTripSalePrices },
+      { ...going, roundTripSalePrices: outbound.roundTripSalePrices! },
       back,
     ]);
     expect(rows.filter((row) => row.id === 'out:back')).toHaveLength(1);
