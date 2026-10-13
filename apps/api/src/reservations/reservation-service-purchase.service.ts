@@ -1,3 +1,5 @@
+import { Optional } from '@nestjs/common';
+import { ReservationHotelSavingsService } from './reservation-hotel-savings.service';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
@@ -206,6 +208,9 @@ export class ReservationServicePurchaseService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(MasterTravelDirectory)
     private readonly directory: MasterTravelDirectory,
+    @Optional()
+    @Inject(ReservationHotelSavingsService)
+    private readonly savings?: ReservationHotelSavingsService,
   ) {}
 
   async recordBatch(
@@ -409,6 +414,21 @@ export class ReservationServicePurchaseService {
           throw new BadRequestException(
             'مبلغ کل خرید با محاسبهٔ خدمت یکسان نیست.',
           );
+        if (service.kind === 'HOTEL' && this.savings) {
+          const hotelSavings = await this.savings.quote(
+            snapshot,
+            intake.branchId,
+            row.currencyCode,
+            actor,
+            amount,
+          );
+          passengerPrices = {
+            ...(Array.isArray(passengerPrices)
+              ? { passengers: passengerPrices }
+              : (passengerPrices as object)),
+            hotelSavings,
+          } as unknown as Prisma.InputJsonValue;
+        }
         return { row, service, broker, amount, passengerPrices };
       }),
     );
@@ -573,6 +593,16 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'قیمت مسافری فقط برای خرید هتل ثبت می‌شود.',
       );
+    const hotelSavings =
+      hotelPricing && this.savings
+        ? await this.savings.quote(
+            snapshot,
+            intake.branchId,
+            input.currencyCode,
+            actor,
+            hotelPricing.amount,
+          )
+        : undefined;
     const fingerprint = createHash('sha256')
       .update(JSON.stringify({ intakeId, ...input }))
       .digest('hex');
@@ -633,8 +663,9 @@ export class ReservationServicePurchaseService {
             currencyCode: input.currencyCode,
             ...(hotelPricing
               ? {
-                  passengerPrices:
-                    hotelPricing.passengerPrices as Prisma.InputJsonValue,
+                  passengerPrices: (hotelSavings
+                    ? { passengers: hotelPricing.passengerPrices, hotelSavings }
+                    : hotelPricing.passengerPrices) as unknown as Prisma.InputJsonValue,
                 }
               : {}),
             actorUserId: actor.userId,
