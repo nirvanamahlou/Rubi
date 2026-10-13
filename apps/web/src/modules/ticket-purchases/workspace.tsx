@@ -51,6 +51,7 @@ export function TicketPurchaseWorkspace({
     ),
     [seats, setSeats] = useState(''),
     [unit, setUnit] = useState(''),
+    [pricingMode, setPricingMode] = useState<'TOTAL' | 'UNIT'>('TOTAL'),
     [currency, setCurrency] = useState('IRR'),
     [busy, setBusy] = useState(false),
     [uncertain, setUncertain] = useState(false),
@@ -98,12 +99,18 @@ export function TicketPurchaseWorkspace({
         .toLowerCase()
         .includes(search.trim().toLowerCase()),
   );
-  const total = ticketPurchaseTotal(seats, unit);
+  const total =
+    pricingMode === 'TOTAL'
+      ? ticketPurchaseTotal(seats, '1')
+        ? ticketPurchaseTotal('1', unit)
+        : null
+      : ticketPurchaseTotal(seats, unit);
   function open(item: TicketPurchaseInboxItemV1) {
     frozen.current = null;
     setSelected(item);
     setSeats(String(item.cost?.seatCount ?? item.request.seatCount ?? ''));
-    setUnit(item.cost?.unitCost ?? '');
+    setPricingMode('TOTAL');
+    setUnit(item.cost?.invoiceAmount ?? '');
     setCurrency(item.cost?.currencyCode ?? 'IRR');
     setPriceError('');
     setUncertain(false);
@@ -117,7 +124,7 @@ export function TicketPurchaseWorkspace({
       operationId: crypto.randomUUID(),
       expectedCostVersion: selected.cost?.version ?? 0,
       seatCount: Number(seats),
-      unitCost: unit,
+      ...(pricingMode === 'TOTAL' ? { totalCost: unit } : { unitCost: unit }),
       currencyCode: currency,
     };
     try {
@@ -308,7 +315,9 @@ export function TicketPurchaseWorkspace({
                         <span>
                           {item.stage === 'PAID'
                             ? 'تسویه کامل'
-                            : 'قیمت خرید قفل شده'}
+                            : !canPrice
+                              ? 'مجوز ثبت قیمت خرید ندارید'
+                              : 'قیمت خرید قفل شده'}
                         </span>
                       )}
                     </td>
@@ -358,6 +367,20 @@ export function TicketPurchaseWorkspace({
               disabled={busy || uncertain}
               className="grid gap-4 sm:grid-cols-2"
             >
+              <label className="space-y-2 sm:col-span-2">
+                <span>مبنای قیمت خرید</span>
+                <select
+                  className="w-full rounded-xl border bg-background p-2"
+                  value={pricingMode}
+                  onChange={(e) => {
+                    setPricingMode(e.target.value as 'TOTAL' | 'UNIT');
+                    setUnit('');
+                  }}
+                >
+                  <option value="TOTAL">مبلغ کل خرید پرواز</option>
+                  <option value="UNIT">قیمت خرید هر صندلی</option>
+                </select>
+              </label>
               <label className="space-y-2">
                 <span>تعداد صندلی خریداری‌شده</span>
                 <Input
@@ -370,7 +393,11 @@ export function TicketPurchaseWorkspace({
                 />
               </label>
               <label className="space-y-2">
-                <span>قیمت خرید هر صندلی</span>
+                <span>
+                  {pricingMode === 'TOTAL'
+                    ? 'مبلغ کل خرید پرواز'
+                    : 'قیمت خرید هر صندلی'}
+                </span>
                 <MoneyInput required value={unit} onValueChange={setUnit} />
               </label>
               <label className="space-y-2">

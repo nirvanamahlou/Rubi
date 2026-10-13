@@ -5830,3 +5830,7 @@ Bulk hotel sale adjustments now apply to current sale on every click and store t
 ## PC-C — ASSISTANT-FILTERS-1013
 
 Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.
+
+## 2026-10-13 — FLIGHT-TOTAL-CONTRACT-COST-1013
+
+Ticket Purchasing accepts an exact total flight purchase amount with purchased seat count, while preserving unit-price entry and immutable Finance cost revisions. Sales consumes Finance's public invoice/seat projection and allocates total × assigned ADT/CHD seats ÷ purchased seats, rounding once to four decimals; INF has no seat cost. Outbound and return remain independent, modern service purchases are not counted twice, and missing costs keep profit incomplete. The selected Reservations contract exposes the existing cost/profit view only with finance.read; the API still verifies Sales access and branch. No schema/migration, payment execution or operational runtime change. CAS, operation replay and the post-payment price lock remain enforced.

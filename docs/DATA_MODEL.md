@@ -798,3 +798,7 @@ AccountingStatement is Finance-owned correspondence generated from selected save
 ## Hotel editable import profile — HOTEL-TEMPLATE-IMPORT-1012
 
 MasterHotel adds nullable serviceLevel/sourceDestination (varchar160), internalNote/sourceRefundRules/sourceMainImage/sourceGalleryImages (varchar2000) and sourceFeatured (boolean). Existing description/hotelRules become visible/editable in the profile. Gallery source addresses remain pipe-delimited descriptive text matching the workbook; no document binary or external fetch is implied. Canonical country/city, meal, room and facility references retain their FKs. Refund and featured source values do not replace Procurement/Sales authority. Existing records remain NULL and old clients preserve omitted fields. Migration20261012140000_hotel_import_profile_fields is additive.
+
+## Flight total purchase allocation (FLIGHT-TOTAL-CONTRACT-COST-1013)
+
+No storage change: the existing invoiceAmount stores the exact whole-flight purchase; unitCost is its four-decimal per-seat display equivalent. The additive totalCost command is mutually exclusive with unitCost; existing unit commands remain valid. Finance's public recorded-cost projection adds seatCount and invoiceAmount. Sales uses exact invoice × assigned seat count / purchased seat count, rounded once per contract/flight; legacy age-specific records retain prior behavior. Total and unit command retries use the existing canonical invoice/seat fingerprint, CAS and payment lock. Settled-cost publication policy is unchanged.

@@ -13,6 +13,8 @@ type TicketCost = {
   adultUnitCost: string;
   childUnitCost: string;
   unitCost: string | null;
+  seatCount?: number | null;
+  invoiceAmount?: string | null;
 };
 export function contractProfit(
   contract: SalesContractDetail,
@@ -78,19 +80,28 @@ export function contractProfit(
       p.serviceClientKeys.includes(selection.serviceClientKey),
     );
     if (!assigned.length) continue;
-    const amount = assigned.reduce(
-      (sum, p) =>
-        sum +
-        (p.ageCategory === 'INF'
-          ? 0n
-          : moneyUnits(
-              cost.unitCost ??
-                (p.ageCategory === 'CHD'
-                  ? cost.childUnitCost
-                  : cost.adultUnitCost),
-            )),
-      0n,
-    );
+    const soldSeats = assigned.filter((p) => p.ageCategory !== 'INF').length;
+    const proportional =
+      cost.seatCount && cost.invoiceAmount
+        ? (moneyUnits(cost.invoiceAmount) * BigInt(soldSeats) +
+            BigInt(cost.seatCount) / 2n) /
+          BigInt(cost.seatCount)
+        : null;
+    const amount =
+      proportional ??
+      assigned.reduce(
+        (sum, p) =>
+          sum +
+          (p.ageCategory === 'INF'
+            ? 0n
+            : moneyUnits(
+                cost.unitCost ??
+                  (p.ageCategory === 'CHD'
+                    ? cost.childUnitCost
+                    : cost.adultUnitCost),
+              )),
+        0n,
+      );
     costs.push({
       serviceClientKeys: [selection.serviceClientKey],
       serviceTitles: [title(selection.serviceClientKey)],

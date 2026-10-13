@@ -81,6 +81,24 @@ function fixture() {
   };
 }
 describe('Travel purchase cost handoff', () => {
+  it('preserves a total that cannot be evenly divided and protects total-cost replay', async () => {
+    const f = fixture();
+    const { unitCost: _unit, ...base } = input;
+    const command = { ...base, seatCount: 3, totalCost: '100' };
+    const result = await f.service.recordCost('request', command, actor);
+    expect(result.invoiceAmount).toBe('100');
+    expect(result.unitCost).toBe('33.3333');
+    expect(await f.service.recordCost('request', command, actor)).toEqual(
+      result,
+    );
+    expect(f.create).toHaveBeenCalledTimes(1);
+    await expect(
+      f.service.recordCost('request', { ...command, totalCost: '101' }, actor),
+    ).rejects.toBeInstanceOf(ConflictException);
+    await expect(
+      f.service.recordCost('request', { ...command, unitCost: '10' }, actor),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
   it('requires buyer permission and branches; Finance payment permission cannot price', async () => {
     const f = fixture();
     await expect(

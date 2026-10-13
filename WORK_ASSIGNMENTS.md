@@ -7376,3 +7376,9 @@ prior assistant candidates released; do not edit active Sales workspace files.
 Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
+
+## FLIGHT-TOTAL-CONTRACT-COST-1013 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-flight-total-contract-cost-1013 from origin/develop@390f9ff2. Owner authorizes total flight purchase entry and per-sold-seat contract costs/profit, with develop merge. Reserve Finance ticket-cost command/controller/public reader/tests, Ticket Purchase Web form/tests, Sales profit calculation/tests and own docs. Shared lock: additive optional totalCost on FinanceTicketCostCommandV1 and bounded English catalog entries. Finance remains producer; Purchasing UI sends either unitCost or totalCost with seats, Sales consumes public recorded cost projection. Existing callers retain unit pricing; invoice remains exact, proportional contract cost rounds once at four decimals. Preserve permissions, branch scope, CAS, replay, paid-price lock and per-currency profit. No schema/migration/dependency/runtime or operational data changes. Existing released ticket purchase work remains intact.
+
+FLIGHT-TOTAL-CONTRACT-COST-1013 scope clarification: reserve Reservations action-panel/workspace consumer and tests for the existing Sales profit view, visible with finance.read. Bounded derived API/standalone English catalogue regeneration includes four existing base labels required by the offline synchronization gate; no new unrelated business behavior. DATA_MODEL own additive allocation paragraph reserved; no migration or dependency lock required.

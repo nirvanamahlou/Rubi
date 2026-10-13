@@ -17224,5 +17224,8 @@
   "نامه در اسناد و فایل‌ها ثبت شد. کد آرشیو:": "The letter was saved in Documents and Files. Archive code:",
   "نامه‌های خروجی": "Outgoing letters",
   "نامه‌های ورودی": "Incoming letters",
-  "مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.": "The email column value was not an email address and was ignored."
+  "مقدار ستون ایمیل، نشانی ایمیل نبود و نادیده گرفته شد.": "The email column value was not an email address and was ignored.",
+  "مبلغ کل خرید پرواز": "Total flight purchase cost",
+  "مبنای قیمت خرید": "Purchase pricing basis",
+  "مجوز ثبت قیمت خرید ندارید": "You do not have permission to record purchase prices"
 }
