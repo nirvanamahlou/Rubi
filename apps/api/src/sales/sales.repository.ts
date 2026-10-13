@@ -331,7 +331,9 @@ export class SalesRepository {
     // Date-filtered contract lists are intentionally expanded for operational review.
     // The regular list remains capped to keep the default dashboard responsive.
     const pageSize = Math.min(
-      query.createdFrom || query.createdTo ? 10_000 : 100,
+      query.createdFrom || query.createdTo || query.travelFrom || query.travelTo
+        ? 10_000
+        : 100,
       Math.max(1, query.pageSize ?? 20),
     );
     const sortBy = query.sortBy ?? 'updatedAt';
