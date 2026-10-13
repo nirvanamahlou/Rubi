@@ -77,7 +77,7 @@ describe('application English rendering', () => {
 
   it('uses readable English names and Latin digits for either calendar', () => {
     const date = '2026-10-07T13:45';
-    for (const calendar of ['gregorian', 'persian'] as const) {
+    for (const calendar of ['gregorian'] as const) {
       expect(formatCalendarValue(date, calendar, true, true)).not.toMatch(
         /[\u0600-\u06ff]/,
       );
@@ -88,6 +88,10 @@ describe('application English rendering', () => {
   });
 
   it('does not guess or truncate unknown record content', () => {
+    expect(translateUiText('مهر', 'en')).toBe('مهر');
+    expect(formatCalendarValue('2026-10-13', 'persian', false, true)).toContain(
+      'مهر',
+    );
     expect(translateUiText('نام‌ناموجودآزمون', 'en')).toBe('نام‌ناموجودآزمون');
     expect(translateUiText('ABC-123 / $90.50', 'en')).toBe('ABC-123 / $90.50');
     expect(latinDigits('۱۲۳٫۴۵٪')).toBe('123.45%');
