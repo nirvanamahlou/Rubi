@@ -7448,3 +7448,9 @@ Implementation: reference PURCHASE tariff minus actual hotel purchase, exact Dec
 ## ASSISTANT-TEXT-ONLY-1013 — PC-C — READY_FOR_REVIEW
 
 User requests text-only assistant input with model-derived filters. Reserve assistant executive-workspace.tsx and own docs from develop f3d25bd6. Remove manual report selectors; retain server filter validation and evidence display. Real provider activation awaits explicit provider/data-processing decision. No dependency, database, permission or public API change.
+
+## FLIGHT-LOAD-SCROLL-1013 — PC-A — READY_FOR_CI
+
+Reserve Ticket Catalog flight-load-grid component/styles and focused regression coverage. User requests stable load-table scroll when selecting/changing outbound and return flights and authorizes develop merge. Owner PC-A; no overlapping source lock found. Keep route/filter/selection business semantics and accessibility; stabilize table/detail geometry and prevent automatic scroll anchoring/chaining. No API, migration, dependency, operational-data or active localhost changes.
+
+Flight load stabilization candidate: PR835. Fifteen focused tests, scoped ESLint and Web typecheck pass; full production build and database gate pass in CI. Source is frozen; no API/schema/dependency changes. User-authorized merge waits for all exact-head checks. No local rollout included.
