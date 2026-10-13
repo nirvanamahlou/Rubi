@@ -5854,3 +5854,8 @@ Gated conversation preparation: shared prepared actions, strict bounded planner 
 
 
 PC-C release update: filters #822 merged at7ac589fa; postmerge Nora/assistant runs38380041115,38380041148,38380029869,38380029640 all succeeded. Read API preview health200 and anonymous v2 denial401 passed with no business writes. Orchestrator #825 has56 native tests and35 Web tests passing; its final CI and localhost rollout are still gated.
+
+
+## HOTEL-RATE-LOCAL-1013 — Local rollout complete
+
+Merged PR826 is deployed locally on Web3100/API4000. Both production builds pass. The additive hotel rate archive migration is applied after a verified backup, preserving fingerprints of all282 existing business tables. Login/assets/guards, API health and CORS smoke checks pass on localhost and loopback. Existing scheduled tasks and private active-release metadata identify the protected runtime worktree. No seed, reset or operational pack archive was performed.

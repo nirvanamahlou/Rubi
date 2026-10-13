@@ -7402,3 +7402,9 @@ ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route
 PC-C handoff: tools #819 and filters #822 merged with green exact-head and postmerge CI. Orchestrator #825 preparation has56 native tests and35 Web tests, scoped lint/typecheck and local production build passing; live conversation remains disabled. Release follows final-head and postmerge CI; rollout evidence is stored privately in tmp/orchestrator-runtime.
 
 ASSISTANT-ORCHESTRATOR-1013 CI fix: conversation labels use the existing assistant-copy.ts bilingual source; translation coverage remains enforced.
+
+## HOTEL-RATE-LOCAL-1013 — PC-A — DONE
+
+User explicitly authorizes local rollout of merged PR826 and its additive migration. Reserve local runtime preparation from 0aecd39f, runtime task actions, database backup and reviewed pending migration deploy, and own local verification records. Existing source changes and operational records must be preserved; no seed/reset/archive operation. Port3100 is currently down and existing scheduled tasks refer to an obsolete release. Local database is rubi on loopback5432. No shared application source changes are planned.
+
+Local rollout verified: merged 0aecd39f has the same application tree as the CI-approved PR826 head. API and Web production builds completed sequentially. A verified PostgreSQL backup precedes the sole additive archive migration; all282 existing table fingerprints are unchanged and no migrations remain pending. Existing Rubi-Local3100 scheduled tasks now serve this release (Web3100/API4000). Both localhost and loopback login, assets, route guards, API health and login CORS pass. Private evidence and active release metadata are under the primary workspace .runtime/hotel-rate-local-1013; no credentials or operational records entered Git. Runtime remains active and must not be removed by worktree cleanup.
