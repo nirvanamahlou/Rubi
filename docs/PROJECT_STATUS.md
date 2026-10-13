@@ -5854,3 +5854,7 @@ Gated conversation preparation: shared prepared actions, strict bounded planner 
 
 
 PC-C release update: filters #822 merged at7ac589fa; postmerge Nora/assistant runs38380041115,38380041148,38380029869,38380029640 all succeeded. Read API preview health200 and anonymous v2 denial401 passed with no business writes. Orchestrator #825 has56 native tests and35 Web tests passing; its final CI and localhost rollout are still gated.
+
+## 2026-10-13 — ACCOUNTING-BLUE-THEME-1013 — PC-A execution / PC-B owner
+
+Accounting-only stylesheet applies the approved blue/pastel visual theme while retaining all existing content, routes, fields, commands and permission behavior. No mockup fixtures, additional cards/dashboard, API/schema/migration/dependency or business-data changes. Existing focused tests14/14, full Web lint and full Web TypeScript pass; production build62 routes and browser content/field/control comparison across all91 Accounting destinations pass. Light/dark390/768/1600 layouts pass without page overflow; source lock released for the frozen candidate. The user authorizes final-head CI-gated develop merge and local Rubi3100 activation. See docs/tasks/ACCOUNTING-BLUE-THEME-1013.md.
