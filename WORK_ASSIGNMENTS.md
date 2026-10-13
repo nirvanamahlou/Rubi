@@ -7255,3 +7255,36 @@ with review candidate; build, exact-head CI, authorized develop merge, post-merg
 CI and PC-C3000/4300 rollout remain release gates. No database work is required.
 
 HOTEL-RATES-COMPACT-1013 candidate: full-width horizontal destination/hotel selectors, collapsed prior periods during entry, compact stay fields and room/coefficients tables. Source locks released at candidate freeze; focused hotel suites, Web lint/types/build and exact-head CI gate explicit develop merge. No API, schema, pricing arithmetic or operational runtime changes.
+
+## PHASE2-INTEGRATION-CI-1013 — PC-C — IN_PROGRESS
+
+Base develop21d65e26 after PR812. Standing human instruction requires fixing and
+following post-merge CI. The merged PC-B ACCOUNTING-FORM-TABS-1013 changes the
+uncatalogued tab fallback intentionally; its old rendered IAM regression still
+asserts the superseded hidden behavior. Reproduced exactly (1 failed/8 passed).
+Reserve only apps/web/src/modules/iam/access-ui.spec.tsx and this status entry.
+Do not modify the producer access policy or the merged PC-B source files. Preserve
+and explicitly assert catalogued denied tabs/content remain hidden in the same
+render as an allowed ordinary local form tab. No IAM grant/API/schema/dependency
+or runtime behavior change. The producer is already merged; no active local edits
+or unmerged source replacement are involved. Full CI precedes develop merge.
+
+PHASE2-INTEGRATION-CI-1013 candidate: all57 IAM/assistant/translation tests,
+scoped ESLint and Web typecheck passed. Existing integrated production build passed
+before this test-only edit. Production source is unchanged. Source reservation
+released with review candidate; exact-head and post-merge CI still gate rollout.
+
+## ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C — IN_PROGRESS
+
+Base developce487a4e. Final Phase2 evidence review: absent upstream priority must
+not be labelled as recorded NORMAL. Reserve only services/assistant/server.mjs,
+its focused regression and own docs entries. Omit sourcePriority when absent or
+unrecognized; existing deterministic date ranking stays unchanged and the Web
+already supports optional sourcePriority. No source/API/permission/schema change.
+
+ASSISTANT-PRIORITY-EVIDENCE-1013 candidate: service28/28 tests pass, including
+missing/unknown priority evidence and all existing authorization checks. Source
+reservation released with review candidate. Web build is unchanged; final full CI
+and post-merge verification gate local publication.
+
+HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.

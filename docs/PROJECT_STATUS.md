@@ -5756,3 +5756,22 @@ publication; details in docs/tasks/ASSISTANT-PHASE2-1013.md. Business pilot and
 reference reconciliation are separate from these synthetic checks.
 
 Compact hotel-rate layout candidate: destination selectors and hotel share a full-width row, saved periods remain available in a collapsed disclosure during manual entry, and stay/room/price controls use reduced spacing and height. Responsive single-column fallback retained. No pricing, validation, API, database or runtime changes. Complete focused verification and exact-head CI gate authorized develop merge.
+
+## 2026-10-13 — PHASE2-INTEGRATION-CI-1013 — PC-C
+
+PR812 assistant passed all head checks and merged; post-merge tests exposed the
+concurrent PC-B form-tab policy's obsolete rendered test expectation. Reproduced
+locally. The regression now checks ordinary local form content is visible AND
+catalogued denied screen labels/content are hidden in the same render. Runtime
+policy, IAM permissions and producer code are unchanged. This focused integration
+repair must pass full CI before develop publication and the assistant local rollout.
+
+## 2026-10-13 — ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C
+
+Phase2 final evidence correction: show a recorded source priority only when the
+upstream actually supplies a recognized priority. Absent/unknown values no longer
+appear as recorded NORMAL; deterministic due-date urgency remains unchanged.
+This additive optional field already matches the Web verifier. No permission,
+source, database or dependency change. Full CI gates publication and local rollout.
+
+HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
