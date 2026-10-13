@@ -7401,5 +7401,4 @@ PC-C handoff: tools #819 and filters #822 merged with green exact-head and postm
 
 ASSISTANT-ORCHESTRATOR-1013 CI fix: conversation labels use the existing assistant-copy.ts bilingual source; translation coverage remains enforced.
 
-
 FLIGHT-TOTAL-CONTRACT-COST-1013 validation: focused Finance/Sales and Web purchase/action tests pass; full production build, full test suite and PostgreSQL migration/seed CI passed at39772df4. Corrected one unused test variable and merged current develop preserving both document/catalog additions. Final-head full quality/build/tests gate PR827 merge. No migration or local deployment; bounded source locks release with candidate.
