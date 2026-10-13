@@ -324,8 +324,12 @@ describe('owned association cleanup', () => {
     async (resource, delegate, key) => {
       const deleteMany = vi.fn();
       const cityDelete = vi.fn();
+      const contactDelete = vi.fn();
+      const addressDelete = vi.fn();
       const tx = {
         masterBrokerCity: { deleteMany: cityDelete },
+        masterOrganizationContact: { deleteMany: contactDelete },
+        masterOrganizationAddress: { deleteMany: addressDelete },
         [delegate]: { deleteMany },
       } as unknown as Prisma.TransactionClient;
       await removeOwnedMasterDataLinks(tx, resource, id);
@@ -333,6 +337,20 @@ describe('owned association cleanup', () => {
       if (resource === 'brokers')
         expect(cityDelete).toHaveBeenCalledWith({ where: { brokerId: id } });
       else expect(cityDelete).not.toHaveBeenCalled();
+      if (resource === 'organizations') {
+        expect(contactDelete).toHaveBeenCalledWith({
+          where: { organizationId: id },
+        });
+        expect(addressDelete).toHaveBeenCalledWith({
+          where: { organizationId: id },
+        });
+        expect(contactDelete.mock.invocationCallOrder[0]).toBeLessThan(
+          deleteMany.mock.invocationCallOrder[0]!,
+        );
+      } else {
+        expect(contactDelete).not.toHaveBeenCalled();
+        expect(addressDelete).not.toHaveBeenCalled();
+      }
     },
   );
 

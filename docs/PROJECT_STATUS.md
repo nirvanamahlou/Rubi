@@ -5861,3 +5861,16 @@ PC-C release update: filters #822 merged at7ac589fa; postmerge Nora/assistant ru
 ## 2026-10-13 — ACCOUNTING-BLUE-THEME-1013 — PC-A execution / PC-B owner
 
 Accounting-only stylesheet applies the approved blue/pastel visual theme while retaining all existing content, routes, fields, commands and permission behavior. No mockup fixtures, additional cards/dashboard, API/schema/migration/dependency or business-data changes. Existing focused tests14/14, full Web lint and full Web TypeScript pass; production build62 routes and browser content/field/control comparison across all91 Accounting destinations pass. Light/dark390/768/1600 layouts pass without page overflow; source lock released for the frozen candidate. The user authorizes final-head CI-gated develop merge and local Rubi3100 activation. See docs/tasks/ACCOUNTING-BLUE-THEME-1013.md.
+## 2026-10-13 — AGENCY-IMPORT-REVIEW-DELETE-1013 — PC-B
+
+In progress: preserve recoverable invalid optional XLSX rows as editable
+organization review records, mark them pale red in the agency list, and make
+permanent deletion remove aggregate-owned contacts and addresses atomically
+while retaining restrictive business FK protections. Additive organization
+review marker migration, focused Web/API regressions and Compose 3100 rollout
+remain gated by validation, exact-head CI and develop merge.
+
+Candidate validation: 243 Organizations tests pass (one opt-in private workbook
+test skipped), 93 Master Data deletion tests pass; scoped lint and Web/API
+typecheck pass. Prisma schema validates, translations synchronize, API build
+and Web 62-route production build pass. No live import or deletion was run.

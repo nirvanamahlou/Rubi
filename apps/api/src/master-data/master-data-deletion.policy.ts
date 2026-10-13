@@ -43,6 +43,15 @@ export async function removeOwnedMasterDataLinks(
 ) {
   switch (resource) {
     case 'organizations':
+      // These records are owned by the organization. Consumer references to
+      // contacts or to the organization still have restrictive FKs and cause
+      // the enclosing transaction to roll back without losing history.
+      await tx.masterOrganizationContact.deleteMany({
+        where: { organizationId: id },
+      });
+      await tx.masterOrganizationAddress.deleteMany({
+        where: { organizationId: id },
+      });
       await tx.masterOrganizationRole.deleteMany({
         where: { organizationId: id },
       });
