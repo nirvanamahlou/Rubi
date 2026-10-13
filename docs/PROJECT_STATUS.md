@@ -5882,6 +5882,18 @@ Candidate validation: 243 Organizations tests pass (one opt-in private workbook
 test skipped), 93 Master Data deletion tests pass; scoped lint and Web/API
 typecheck pass. Prisma schema validates, translations synchronize, API build
 and Web 62-route production build pass. No live import or deletion was run.
+
+## 2026-10-13 — AGENCY-XLSX-INERT-MAILTO-1013 — PC-B
+
+The supplied agency workbook has 102 populated rows and two Excel `mailto:` hyperlink targets
+with percent-encoded trailing line feeds. These are inert metadata, but the
+Organizations parser rejected the entire file. The parser now tolerates only
+encoded trailing CR/LF on an otherwise valid email hyperlink, while keeping
+formula, external workbook link, unsafe scheme and invalid cell checks. The
+workbook remains outside Git; no live agency records were imported. Focused
+regression and opt-in local-file validation pass (21 tests), as do all 244
+Organizations tests, scoped Web lint/typecheck and the Web build (62 routes).
+No API, schema, migration or dependency changes.
 ## RESERVATION-HOTEL-SAVINGS-1013 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A. Owner requests hotel reference purchase versus actual buying comparison in purchase form, Reservations dashboard and Finance supplier payment, and authorizes develop merge after validation. Reserve new Reservations benchmark service/controller/tests; purchase persistence/public projections/runtime registration; bounded Sales public guest-age projection; shared Travel/Finance optional comparison contracts; Web purchase/dashboard/payment displays and additive English entries. Producers: Sales guest ages, Reservations rate/purchase snapshots. Consumers: Reservations Web and Finance existing public purchase projection. Preserve branch permissions, exact Decimal/currency, idempotency, purchase revisions and older payloads. Snapshot reference with purchase in existing JSON; no schema/migration/dependency change. No unrelated Accounting or shared runtime edits.
