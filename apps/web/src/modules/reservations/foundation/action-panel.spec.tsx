@@ -43,7 +43,7 @@ describe('selected contract actions', () => {
 
   it('keeps remaining actions visible and disabled without a selection', () => {
     const html = renderToStaticMarkup(<ContractActionPanel />);
-    expect(html.match(/disabled=""/g) ?? []).toHaveLength(13);
+    expect(html.match(/disabled=""/g) ?? []).toHaveLength(14);
     for (const label of [
       'واچر',
       'فرم رزواسیون',
@@ -71,7 +71,7 @@ describe('selected contract actions', () => {
     expect(html).toContain('SYNTH-01');
     expect(html.match(/disabled=""/g)).toHaveLength(1);
     expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
-    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(11);
+    expect(html.match(/aria-haspopup="dialog"/g) ?? []).toHaveLength(12);
     expect(html).toContain(
       'href="/ticket-purchases?reservationId=test&amp;contractNumber=SYNTH-01"',
     );
@@ -180,21 +180,16 @@ it('keeps the voucher button disabled when a legacy requested/confirmed flag has
   expect(html).toMatch(/disabled=""[^>]*aria-label="واچر"/);
 });
 
-it('shows contract profit only to the authorized reservation manager', () => {
-  expect(
-    renderToStaticMarkup(<ContractActionPanel request={request} />),
-  ).not.toContain('هزینه خرید و سود قرارداد');
-  expect(
-    renderToStaticMarkup(
-      <ContractActionPanel request={request} canReadProfit />,
-    ),
-  ).toContain('هزینه خرید و سود قرارداد');
+it('shows hotel comparison without exposing full contract profit', () => {
+  const html = renderToStaticMarkup(<ContractActionPanel request={request} />);
+  expect(html).toContain('سودآوری رزرواسیون هتل');
+  expect(html).not.toContain('هزینه خرید و سود قرارداد');
   expect(
     renderToStaticMarkup(
       <ContractActionContent
-        action="هزینه خرید و سود قرارداد"
+        action="سودآوری رزرواسیون هتل"
         request={request}
       />,
     ),
-  ).toContain('هزینه خرید و سود قرارداد');
+  ).toContain('در حال دریافت نرخ مرجع هتل');
 });

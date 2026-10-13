@@ -72,6 +72,27 @@ describe('organization XLSX container', () => {
         'External',
       ),
     ).toBe(false);
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        type,
+        'mailto:agency@example.com%0A',
+        'External',
+      ),
+    ).toBe(true);
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        type,
+        'mailto:agency@example.com%0D%0A',
+        'External',
+      ),
+    ).toBe(true);
+    expect(
+      isAllowedOrganizationWorkbookRelationship(
+        type,
+        'mailto:agency@example.com%00',
+        'External',
+      ),
+    ).toBe(false);
   });
   it('requires only the identity column', () => {
     expect(hasRequiredOrganizationColumns(['legalName'])).toBe(true);

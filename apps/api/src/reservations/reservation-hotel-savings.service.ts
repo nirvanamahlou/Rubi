@@ -213,6 +213,90 @@ export class ReservationHotelSavingsService {
       ),
     };
   }
+  async recorded(id: string, actor: AuthenticatedActor) {
+    if (!actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    const intake = await this.db.client.reservationIntake.findFirst({
+      where: { id, branchId: { in: [...actor.branchIds] } },
+      include: {
+        servicePurchases: {
+          where: { serviceKind: 'HOTEL' },
+          orderBy: { version: 'desc' },
+          include: {
+            financeRevisions: { orderBy: { version: 'desc' }, take: 1 },
+          },
+        },
+        hotelPurchases: { orderBy: { version: 'desc' }, take: 1 },
+      },
+    });
+    if (!intake) throw new NotFoundException();
+    const snapshot = intake.snapshot as unknown as SalesReservationRequestV1;
+    const data: HotelPurchaseSavingsV1[] = [];
+    const seen = new Set<string>();
+    for (const purchase of intake.servicePurchases) {
+      if (
+        purchase.serviceKind !== 'HOTEL' ||
+        seen.has(purchase.serviceClientKey)
+      )
+        continue;
+      seen.add(purchase.serviceClientKey);
+      if (purchase.financeRevisions[0]?.status === 'REJECTED') continue;
+      const saved = hotelPurchaseSavingsEvidence(purchase.passengerPrices);
+      // Only the persisted hotel projection leaves this endpoint, never a full intake or profit total.
+      if (saved)
+        data.push({
+          version: 1,
+          status: saved.status,
+          reason: saved.reason,
+          referenceAmount: saved.referenceAmount,
+          actualAmount: purchase.amount.toFixed(),
+          savingsAmount:
+            saved.referenceAmount === null
+              ? null
+              : new Prisma.Decimal(saved.referenceAmount)
+                  .sub(purchase.amount.toFixed())
+                  .toFixed(),
+          currencyCode: purchase.currencyCode,
+          capturedAt: saved.capturedAt,
+          sourceBatchId: saved.sourceBatchId,
+          sourceBrokerName: saved.sourceBrokerName,
+          checkIn: saved.checkIn,
+          checkOut: saved.checkOut,
+        });
+      else {
+        const current = await this.quote(
+          snapshot,
+          intake.branchId,
+          purchase.currencyCode,
+          actor,
+          purchase.amount.toFixed(),
+        );
+        data.push({
+          ...current,
+          reason:
+            current.status === 'AVAILABLE'
+              ? 'CURRENT_REFERENCE'
+              : current.reason,
+        });
+      }
+    }
+    if (!seen.size && intake.hotelPurchases[0] && snapshot.hotelSelection) {
+      const purchase = intake.hotelPurchases[0];
+      const current = await this.quote(
+        snapshot,
+        intake.branchId,
+        purchase.currencyCode,
+        actor,
+        purchase.amount.toFixed(),
+      );
+      data.push({
+        ...current,
+        reason:
+          current.status === 'AVAILABLE' ? 'CURRENT_REFERENCE' : current.reason,
+      });
+    }
+    return { data };
+  }
   async summary(
     query: { from?: string; to?: string; dateBasis?: string },
     actor: AuthenticatedActor,
@@ -325,6 +409,14 @@ export class ReservationHotelSavingsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.service.summary(query, req.actor);
+  }
+  @Get('recorded/:id')
+  @Header('Cache-Control', 'private, no-store')
+  recorded(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.service.recorded(id, req.actor);
   }
   @Get(':id')
   @Header('Cache-Control', 'private, no-store')

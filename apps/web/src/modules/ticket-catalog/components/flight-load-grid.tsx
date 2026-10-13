@@ -99,6 +99,7 @@ export function FlightLoadGrid({
     originCountry,
   );
   const [searched, setSearched] = useState<FlightLoadFilter>();
+  const [hasSearched, setHasSearched] = useState(false);
   const [searchedCurrent, setSearchedCurrent] = useState(false);
   const [validDates, setValidDates] = useState(true);
   const [outboundId, setOutboundId] = useState(''),
@@ -521,6 +522,7 @@ export function FlightLoadGrid({
             Boolean(validDates && (!searchFilter.from || !searchFilter.to))
           }
           onClick={() => {
+            setHasSearched(true);
             setSearched({ ...searchFilter });
             setSearchedCurrent(validDates);
             setSearchedCountry(country);
@@ -566,13 +568,13 @@ export function FlightLoadGrid({
       {!company.length && (
         <p className={styles.help}>بلیتی برای نمایش در لود وجود ندارد.</p>
       )}
-      {searched && (
+      {hasSearched && (
         <div className={styles.tables}>
           {table(outbounds, false)}
           {table(returns, true)}
         </div>
       )}
-      {searched && (
+      {hasSearched && (
         <div className={styles.details}>
           {detail(outbound, false)}
           {detail(returning, true)}

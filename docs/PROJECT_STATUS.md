@@ -1,3 +1,7 @@
+## 2026-10-13 — RESERVATION-HOTEL-COST-VISIBILITY-1013 — PC-A
+
+Reservations replaces the full Sales contract-profit action with a hotel-only comparison. The branch-scoped reservations.read endpoint loads only hotel purchases, picks the latest revision per service, excludes rejected purchases and emits a bounded HotelPurchaseSavingsV1 projection without flight acquisition costs or full-contract profit totals. Saved reference evidence is preserved; legacy purchases use a clearly marked current matching reference. Final recorded hotel amount remains visible when reference comparison is unavailable. The separate managerial Sales profit endpoint keeps finance.read enforcement. No schema/migration/dependency or operational data writes. Focused API authorization/projection and Web render regressions, typechecks and CI quality/build gates validate the user-authorized develop merge.
+
 ## 2026-10-13 — COMPACT-TICKET-PRICING-1013 — PC-A
 
 Flight pricing uses compact responsive two-column cards, smaller summaries and channel rows, a collapsed manual pair editor, and directly selectable all/one-way/round-trip modes. Unpriced reverse legs from the same published load, branch and cabin within an explicit return window are offered automatically; saved/manual prices take precedence and are not duplicated. This is a pricing candidate projection, not a persisted new fare. Older offers without load identity remain available through the manual editor. Fifteen focused model/render regressions pass. No API/schema/migration/dependency or live price mutations. Full quality/build checks gate the user-authorized develop merge.
@@ -5878,6 +5882,18 @@ Candidate validation: 243 Organizations tests pass (one opt-in private workbook
 test skipped), 93 Master Data deletion tests pass; scoped lint and Web/API
 typecheck pass. Prisma schema validates, translations synchronize, API build
 and Web 62-route production build pass. No live import or deletion was run.
+
+## 2026-10-13 — AGENCY-XLSX-INERT-MAILTO-1013 — PC-B
+
+The supplied agency workbook has 102 populated rows and two Excel `mailto:` hyperlink targets
+with percent-encoded trailing line feeds. These are inert metadata, but the
+Organizations parser rejected the entire file. The parser now tolerates only
+encoded trailing CR/LF on an otherwise valid email hyperlink, while keeping
+formula, external workbook link, unsafe scheme and invalid cell checks. The
+workbook remains outside Git; no live agency records were imported. Focused
+regression and opt-in local-file validation pass (21 tests), as do all 244
+Organizations tests, scoped Web lint/typecheck and the Web build (62 routes).
+No API, schema, migration or dependency changes.
 ## RESERVATION-HOTEL-SAVINGS-1013 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A. Owner requests hotel reference purchase versus actual buying comparison in purchase form, Reservations dashboard and Finance supplier payment, and authorizes develop merge after validation. Reserve new Reservations benchmark service/controller/tests; purchase persistence/public projections/runtime registration; bounded Sales public guest-age projection; shared Travel/Finance optional comparison contracts; Web purchase/dashboard/payment displays and additive English entries. Producers: Sales guest ages, Reservations rate/purchase snapshots. Consumers: Reservations Web and Finance existing public purchase projection. Preserve branch permissions, exact Decimal/currency, idempotency, purchase revisions and older payloads. Snapshot reference with purchase in existing JSON; no schema/migration/dependency change. No unrelated Accounting or shared runtime edits.
@@ -5892,4 +5908,8 @@ Manual report filter controls removed from assistant composer at user request. T
 
 COMPUTER_ID=PC-A. User authorizes removing the hotel-rate loading blocker, showing hotel rate room types and their largest recorded adult/child-age combinations, then merging develop. Reserve Sales contract form, new room option/capacity presentation helpers and tests; Reservations available-room public projection/tests; additive optional HotelRoomRateV1 capacityCombinations and shared composition helpers/tests; English overrides and own status entries. Producer Reservations supplies independent capacity metadata; Sales consumes it without changing selected pricing source, server validation or permissions. Preserve stale-request isolation and linked room fallback. No schema/migration/dependency/runtime or operational data writes. Reuse clean merged worktree on unique task branch based on current origin/develop.
 
-SALES-HOTEL-ROOM-CAPACITY-1013 validation: 23 Web/form/i18n regressions, 14 API regressions and 10 shared occupancy tests pass. Scoped lint passes. Removed only the loading blocker; server capacity/rate checks remain authoritative. All rated room IDs remain selectable, including absent master-list entries. Capacity metadata aggregates real date-matching rows independently of the existing quote source; the largest total and all tied age-specific combinations display per room, never independent maxima. Production build/typecheck and exact-head CI gate the authorized merge. No migration or live rollout.
+SALES-HOTEL-ROOM-CAPACITY-1013 validation: 23 Web/form/i18n regressions, 14 API regressions and 10 shared occupancy tests pass. Scoped lint passes. Removed only the loading blocker; server capacity/rate checks remain authoritative. All rated room IDs remain selectable, including absent master-list entries. Capacity metadata aggregates real date-matching rows independently of the existing quote source; the largest total and all tied age-specific combinations display per room, never independent maxima. Full quality/typecheck, production build, full test suite and database gates pass on bbf74742. PR837 reconciles subsequent develop changes with documentation-only conflict resolution; exact-head CI gates the authorized merge. No migration or live rollout.
+
+## FLIGHT-LOAD-SCROLL-1013 — PC-A — READY_FOR_CI
+
+Flight load retains its result and detail regions after the first search while changed filters invalidate stale selections. Outbound/return viewports and detail panels have stable height; selected-row styling no longer changes border dimensions. Scroll anchoring and scroll chaining are disabled within the load panels. Existing route/return/date filtering is unchanged. Fifteen focused selection, rendering and flight-load model tests pass. Scoped lint and Web typecheck pass; full production build and PostgreSQL migration/seed gate pass in CI; exact-head CI gates the authorized develop merge. No API, migration, dependency or localhost runtime change.
