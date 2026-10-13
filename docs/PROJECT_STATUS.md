@@ -1,5 +1,11 @@
 ## 2026-10-13 — RESERVATION-HOTEL-COST-VISIBILITY-1013 — PC-A
 
+## ACCOUNTING-KPI-NAVIGATION-1013 — PC-A — REVIEW CANDIDATE
+
+Four read-only page-specific Accounting KPI cards now precede the existing toolbar. Internal navigation borders removed and desktop navigation made taller. Existing snapshot/journal/tax/seller read APIs and caches only; unavailable and truncated data never display a fabricated zero. PC-B Finances confirms no overlapping lock/deploy.14 focused tests and full Web typecheck pass;91 browser routes preserve existing content/fields/buttons and show four correctly positioned cards; light/dark390/768/1600 have no document overflow. Full Web lint/build and final-head CI gate publication. No business data, permission, API, schema, migration or dependency changes. User explicitly authorizes push, develop merge and existing3100 activation with nirvanamahlou. Details: docs/tasks/ACCOUNTING-KPI-NAVIGATION-1013.md.
+
+ACCOUNTING-KPI-NAVIGATION-1013 translation correction:52 additive Web-only KPI translations cover all new labels, unavailable/loading notes and accessible section title. Existing catalogue values are preserved. English coverage/render and KPI regressions gate the corrected head; the bounded translate.ts reservation releases with that commit. No UI controls, metrics or API changes.
+
 Reservations replaces the full Sales contract-profit action with a hotel-only comparison. The branch-scoped reservations.read endpoint loads only hotel purchases, picks the latest revision per service, excludes rejected purchases and emits a bounded HotelPurchaseSavingsV1 projection without flight acquisition costs or full-contract profit totals. Saved reference evidence is preserved; legacy purchases use a clearly marked current matching reference. Final recorded hotel amount remains visible when reference comparison is unavailable. The separate managerial Sales profit endpoint keeps finance.read enforcement. No schema/migration/dependency or operational data writes. Focused API authorization/projection and Web render regressions, typechecks and CI quality/build gates validate the user-authorized develop merge.
 
 ## 2026-10-13 — COMPACT-TICKET-PRICING-1013 — PC-A

@@ -1,11 +1,13 @@
 import englishCatalog from './en-catalog.json';
 import accountingDocuments from './en-accounting-documents.json';
+import accountingPageKpis from './en-accounting-page-kpis.json';
 import englishOverrides from './en-overrides.json';
 import type { DisplayLanguage } from './language';
 
 export const englishUiCatalog: Readonly<Record<string, string>> = {
   ...englishCatalog,
   ...accountingDocuments,
+  ...accountingPageKpis,
   ...englishOverrides,
 };
 const persianScript = /[\u0600-\u06ff]/;

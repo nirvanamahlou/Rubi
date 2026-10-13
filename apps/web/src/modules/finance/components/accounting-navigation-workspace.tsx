@@ -1,6 +1,7 @@
 'use client';
 import { AccountingWorkspace } from './accounting-workspace';
 import { AccountingRouteTabs } from './accounting-route-tabs';
+import { AccountingPageKpis } from './accounting-page-kpis';
 import { accountingParityDefinitions } from './accounting-parity-definitions';
 
 import {
@@ -577,6 +578,7 @@ function AccountingNavigationWorkspaceContent() {
             )}
           >
             <Suspense fallback={<p role="status">در حال بارگذاری…</p>}>
+              <AccountingPageKpis pathname={pathname} />
               <AccountingWorkspace key={pathname} pathname={pathname} />
             </Suspense>
           </div>
