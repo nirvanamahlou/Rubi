@@ -1,5 +1,39 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  conversationClarification: {
+    ACTION: [
+      'خلاصه امروز، تحلیل فروش یا مانده قراردادی را می‌خواهید؟',
+      'Choose today’s summary, sales analysis or contractual balances.',
+    ],
+    DATE_RANGE: [
+      'بازه تاریخ گزارش را مشخص کنید؛ حداکثر ۹۰ روز کامل گذشته.',
+      'Choose up to 90 completed past days.',
+    ],
+    ROUTE: [
+      'مبدأ و مقصد مسیر را از فیلترهای مجاز مشخص کنید.',
+      'Choose an origin and destination from the available filters.',
+    ],
+    BRANCH: [
+      'شعبه موردنظر را از شعب مجاز مشخص کنید.',
+      'Choose an authorized branch.',
+    ],
+    COMPANY_UNAVAILABLE: [
+      'فیلتر شرکت حقوقی هنوز منبع تأییدشده ندارد؛ از شعبه مجاز استفاده کنید.',
+      'Legal-company filtering has no approved source yet; use an authorized branch.',
+    ],
+  },
+  conversationEvidence: [
+    'نتیجه مستند درخواست در پایین نمایش داده شد.',
+    'The source-backed result is shown below.',
+  ],
+  conversationLabel: ['گفت‌وگو', 'Conversation'],
+  conversationMessage: ['پیام', 'Message'],
+  conversationSend: ['ارسال', 'Send'],
+  conversationClear: ['پاک‌کردن گفت‌وگو', 'Clear conversation'],
+  conversationUnavailable: [
+    'گفت‌وگو در دسترس نیست؛ گزارش‌های آماده همچنان قابل استفاده‌اند.',
+    'Conversation is unavailable. The fixed reports remain available.',
+  ],
   reportFilters: ['فیلتر گزارش‌ها', 'Report filters'],
   filterHelp: [
     'بازهٔ کامل گذشته، حداکثر ۹۰ روز؛ پیش‌فرض هفت روز گذشته است. پس از انتخاب فیلتر، درخواست موردنظر را اجرا کنید.',

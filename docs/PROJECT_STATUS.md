@@ -1,8 +1,20 @@
-## RESERVATION-HOTEL-SAVINGS-1013 — PC-A — VALIDATING
+## RESERVATION-HOTEL-SAVINGS-1013 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A. Owner requests hotel reference purchase versus actual buying comparison in purchase form, Reservations dashboard and Finance supplier payment, and authorizes develop merge after validation. Reserve new Reservations benchmark service/controller/tests; purchase persistence/public projections/runtime registration; bounded Sales public guest-age projection; shared Travel/Finance optional comparison contracts; Web purchase/dashboard/payment displays and additive English entries. Producers: Sales guest ages, Reservations rate/purchase snapshots. Consumers: Reservations Web and Finance existing public purchase projection. Preserve branch permissions, exact Decimal/currency, idempotency, purchase revisions and older payloads. Snapshot reference with purchase in existing JSON; no schema/migration/dependency change. No unrelated Accounting or shared runtime edits.
 
-Implementation: reference PURCHASE tariff minus actual hotel purchase, exact Decimal amounts and separate currencies. Lowest complete matching current hotel tariff is selected; evidence/source/date range is snapshotted on each new purchase revision in existing JSON. Form previews current rates separately from saved evidence; Reservations dashboard aggregates latest non-cancelled/non-rejected purchases; Finance shows saved evidence in the supplier row and payment dialog. Public Sales projections provide branch-scoped ages and contract dates/status. Missing rate/age/meal/currency match or ambiguous extra-bed placement is unavailable, never zero; no historical backfill. Optional occupancy room-adult constraint preserves existing callers. English labels included. Initial 24 API and 5 Web/i18n tests pass; API lint/build/typecheck pass. Final regression, Web build and exact-head CI remain merge gates. No migration or dependency changes.
+Implementation: reference PURCHASE tariff minus actual hotel purchase, exact Decimal amounts and separate currencies. Lowest complete matching current hotel tariff is selected; evidence/source/date range is snapshotted on each new purchase revision in existing JSON. Form previews current rates separately from saved evidence; Reservations dashboard aggregates latest non-cancelled/non-rejected purchases; Finance shows saved evidence in the supplier row and payment dialog. Public Sales projections provide branch-scoped ages and contract dates/status. Missing rate/age/meal/currency match or ambiguous extra-bed placement is unavailable, never zero; no historical backfill. Optional occupancy room-adult constraint preserves existing callers. English labels included. Focused regressions: 35 API tests plus 6 rate-projection tests and 15 Web/i18n tests pass. Scoped API/Web lint, API typecheck/build and full Web production build pass. PR829 targets develop; exact-head CI remains the merge gate. Source locks released with review candidate. No migration or dependency changes.
+
+## 2026-10-13 — HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B
+
+Hotel Excel import accepts equivalent city spelling across whitespace/joiners,
+Latin case, Arabic/Persian letters and آ/ا while persisting the explicitly selected
+city FK. Only hotel name and city are required row values; populated optional
+fields retain their validation. Tests cover the downloadable template against
+«کوش اداسی», minimal rows, missing required values and real different-city rejection.
+Focused API 44/44 and Web 16/16 tests, scoped ESLint and Prettier pass. No migration,
+dependency change, live database write, merge or localhost rollout in this task.
+API/Web typechecks and builds pass. Generated contracts/client outputs were
+refreshed without accessing an operational database. Source locks released for review.
 
 ## SALES-UNIFIED-FILTERS-1013 — PC-A — READY_FOR_REVIEW
 
@@ -5836,3 +5848,15 @@ Bulk hotel sale adjustments now apply to current sale on every click and store t
 ## PC-C — ASSISTANT-FILTERS-1013
 
 Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.
+
+
+## HOTEL-RATE-HUB-1013
+
+Hotel purchase rates now open with four entry cards: Excel import, new pack, existing packs/edit, and remove pack. Removal is confirmed archival with retained history, branch/write authorization, optimistic version checks and an actor audit. Archive history supports search and read-only rate details. Archived packs are excluded from new-rate selections and shared-period sources; historical snapshots remain unchanged. Additive archivedAt migration must precede API rollout. PR826 passes focused API/Web tests and full CI quality, tests, production build and PostgreSQL migration/seed checks. Latest-develop compatibility checks gate the authorized merge. No operational data or local runtime changed.
+
+## PC-C — ASSISTANT-ORCHESTRATOR-1013
+
+Gated conversation preparation: shared prepared actions, strict bounded planner contract, disabled-by-default POST/BFF and separate memory-only UI component. Synthetic providers only; live UI activation/provider/business pilot remain gated. See docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md. Candidate validation and CI pending.
+
+
+PC-C release update: filters #822 merged at7ac589fa; postmerge Nora/assistant runs38380041115,38380041148,38380029869,38380029640 all succeeded. Read API preview health200 and anonymous v2 denial401 passed with no business writes. Orchestrator #825 has56 native tests and35 Web tests passing; its final CI and localhost rollout are still gated.

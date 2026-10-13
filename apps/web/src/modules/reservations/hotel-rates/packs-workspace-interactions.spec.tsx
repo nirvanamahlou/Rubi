@@ -4,6 +4,7 @@ import type * as ReactModule from 'react';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { HotelRatePacksWorkspace } from './packs-workspace';
 import styles from './rates.module.css';
+import { OccupancyBulkPanel } from './occupancy-bulk-panel';
 import { ManualHotelPanel, ManualHotelSelector } from './manual-hotel-panel';
 
 const hooks = vi.hoisted(() => ({
@@ -67,9 +68,10 @@ vi.mock('./controls', async (original) => ({
     return { data, meta: { total: data.length } };
   },
 }));
+let initialMode: 'manual' | 'excel' | 'existing' = 'manual';
 function render() {
   hooks.stateIndex = hooks.refIndex = hooks.effectIndex = 0;
-  const tree = HotelRatePacksWorkspace();
+  const tree = HotelRatePacksWorkspace({ initialMode });
   hooks.effects.splice(0).forEach((effect) => effect());
   return tree;
 }
@@ -98,6 +100,7 @@ function click(label: string) {
   (node.props.onClick as () => void)();
 }
 beforeEach(() => {
+  initialMode = 'manual';
   vi.useFakeTimers();
   hooks.states = [];
   hooks.refs = [];
@@ -170,4 +173,25 @@ it('close then new package restores the editor rather than leaving it collapsed'
       (n) => n.props['aria-label'] === 'ویرایش دستی بستهٔ نرخ',
     ),
   ).toBe(true);
+});
+
+it('opens the existing-pack directory without starting an empty draft', async () => {
+  initialMode = 'existing';
+  const tree = await settle();
+  expect(
+    tree.find(
+      (n) => n.type === 'details' && n.props.className === styles.savedPackages,
+    )?.props.open,
+  ).toBe(true);
+  expect(
+    tree.some((n) => n.props['aria-label'] === 'ویرایش دستی بستهٔ نرخ'),
+  ).toBe(false);
+});
+it('opens Excel import directly from its hub card', async () => {
+  initialMode = 'excel';
+  const tree = await settle();
+  expect(tree.some((n) => n.type === OccupancyBulkPanel)).toBe(true);
+  expect(tree.some((n) => n.type === 'div' && n.props.hidden === true)).toBe(
+    true,
+  );
 });

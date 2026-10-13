@@ -1,8 +1,8 @@
-## RESERVATION-HOTEL-SAVINGS-1013 — PC-A — VALIDATING
+## RESERVATION-HOTEL-SAVINGS-1013 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A. Owner requests hotel reference purchase versus actual buying comparison in purchase form, Reservations dashboard and Finance supplier payment, and authorizes develop merge after validation. Reserve new Reservations benchmark service/controller/tests; purchase persistence/public projections/runtime registration; bounded Sales public guest-age projection; shared Travel/Finance optional comparison contracts and backward-compatible optional room-adult constraint in occupancy quoting; Web purchase/dashboard/payment displays and additive English entries. Producers: Sales guest ages, Reservations rate/purchase snapshots. Consumers: Reservations Web and Finance existing public purchase projection. Preserve branch permissions, exact Decimal/currency, idempotency, purchase revisions and older payloads. Snapshot reference with purchase in existing JSON; no schema/migration/dependency change. No unrelated Accounting or shared runtime edits.
 
-Implementation: reference PURCHASE tariff minus actual hotel purchase, exact Decimal amounts and separate currencies. Lowest complete matching current hotel tariff is selected; evidence/source/date range is snapshotted on each new purchase revision in existing JSON. Form previews current rates separately from saved evidence; Reservations dashboard aggregates latest non-cancelled/non-rejected purchases; Finance shows saved evidence in the supplier row and payment dialog. Public Sales projections provide branch-scoped ages and contract dates/status. Missing rate/age/meal/currency match or ambiguous extra-bed placement is unavailable, never zero; no historical backfill. Optional occupancy room-adult constraint preserves existing callers. English labels included. Initial 24 API and 5 Web/i18n tests pass; API lint/build/typecheck pass. Final regression, Web build and exact-head CI remain merge gates. No migration or dependency changes.
+Implementation: reference PURCHASE tariff minus actual hotel purchase, exact Decimal amounts and separate currencies. Lowest complete matching current hotel tariff is selected; evidence/source/date range is snapshotted on each new purchase revision in existing JSON. Form previews current rates separately from saved evidence; Reservations dashboard aggregates latest non-cancelled/non-rejected purchases; Finance shows saved evidence in the supplier row and payment dialog. Public Sales projections provide branch-scoped ages and contract dates/status. Missing rate/age/meal/currency match or ambiguous extra-bed placement is unavailable, never zero; no historical backfill. Optional occupancy room-adult constraint preserves existing callers. English labels included. Focused regressions: 35 API tests plus 6 rate-projection tests and 15 Web/i18n tests pass. Scoped API/Web lint, API typecheck/build and full Web production build pass. PR829 targets develop; exact-head CI remains the merge gate. Source locks released with review candidate. No migration or dependency changes.
 
 ## SALES-UNIFIED-FILTERS-1013 — PC-A — READY_FOR_REVIEW
 
@@ -7325,7 +7325,7 @@ and post-merge verification gate local publication.
 
 HOTEL-RATES-COMPACT-1013 validation:104 hotel tests pass across the focused run and corrected three-test layout rerun; scoped ESLint, Web typecheck and production build (62 routes) pass. Source locks released; exact-head CI gates develop merge. No runtime rollout or migration.
 
-## ASSISTANT-TOOLS-1013 — PC-C — IN_PROGRESS
+## ASSISTANT-TOOLS-1013 — PC-C — DONE
 
 Base origin/develop@598fc90c; branch codex/pc-c-assistant-tool-registry-1013.
 User approves the continuation plan. Reserve services/assistant, its dedicated
@@ -7354,6 +7354,14 @@ control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
 
+## HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B — READY_FOR_REVIEW
+
+2026-10-13 follow-up: user explicitly authorizes develop merge and localhost3100 update. Reserve only two additive English translations in Web/API catalogues for this task, documentation conflict reconciliation and safe app-container replacement preserving the existing database and document mounts. Latest-head CI must pass before merge; no migration/dependency change.
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-hotel-import-city-normalize-1013` from origin/develop. Reserve Hotel import parser/service regressions, panel guidance and own docs. Normalize city comparison for Unicode/Persian spelling, whitespace/joiners and case; keep selected city FK/country scope and all file/token/transaction security unchanged. Only hotel name and row city required; optional fields keep validation when populated. No migration/dependency/runtime change; no merge authorization in this request.
+
+Implemented comparison-only normalization for spaces/joiners, Latin case, Arabic/Persian letter variants and آ/ا. Missing row city is explicitly rejected rather than silently populated. The supplied downloadable template commits against selected city «کوش اداسی» despite its «کوش‌آداسی» cells. Focused API tests pass 44/44, focused Web tests 16/16, scoped lint, Prettier, API/Web typechecks and builds pass. No live database write or localhost runtime rollout was performed. Source locks released for review.
+
 ## AGENCY-IMPORT-PARTIAL-1013 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-organization-import-partial-1013` from `origin/develop@ebcb016f`. The Organizations XLSX preview currently disables the whole import when one row has an invalid optional phone. Reserve only `apps/web/src/modules/organizations/model/organization-import.ts`, its focused test, `components/organization-excel-dialog.tsx`, and bounded task status documentation. Import valid rows while leaving invalid rows unmodified and visibly reported. Preserve strict validation, no-overwrite checks, uncertain-write stop, and original row/progress alignment. No API/schema/migration/dependency/permission or operational data change. No other active owner holds these target files.
@@ -7366,7 +7374,11 @@ CI follow-up: reserve four additive Web-only English translations in `apps/web/s
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
 
-## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
+## HOTEL-RATE-HUB-1013 — PC-A — READY_FOR_REVIEW
+
+Branch codex/pc-a-hotel-rate-hub-1013 from origin/develop@016f3e2a. User requests four hotel-rate entry cards: Excel import, new pack, existing packs/edit, and archive. User explicitly chooses archival with preserved history and authorizes develop merge. Reserve Reservations hotel-rate Web navigation and archive service/controller tests plus own docs. Archive requires persisted lifecycle state, write/branch authorization and audit; all new-rate consumers must exclude archived packs while existing immutable references remain readable. Schema/migration and shared consumer scope must be checked and reserved before implementation; no operational archive, migration or runtime rollout authorized. Implementation complete in PR826; user-approved develop merge follows final checks.
+
+## ASSISTANT-FILTERS-1013 — PC-C — DONE
 
 User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
 requires its green merge. Branch codex/pc-c-assistant-report-filters-1013.
@@ -7382,3 +7394,17 @@ prior assistant candidates released; do not edit active Sales workspace files.
 Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
+
+HOTEL-RATE-HUB-1013 scope: PC-A sole additive schema/Migration owner for archivedAt on Reservations hotel rate packs. Earlier hotel import schema lock released with merged candidate; no later overlapping schema owner found. Reserve Reservations owned pack service/controller/public rate projection and legacy list guards, Web hub/archive panel, focused tests, additive migration, and bounded English labels. Public rate projection producer excludes archived packs; existing Sales/Package consumers retain unchanged contract and historical snapshots. No operational migration or data modification.
+
+HOTEL-RATE-HUB-1013 implementation: four-card hub and direct editor/import/browser modes, searchable archival confirmation/history, additive UTC archivedAt plus audit and concurrency guards, and active-only public/source/legacy queries. Bounded English labels include API error catalogue; no dependency change. PR826 candidate 666f9fcc passed full quality, test, production build, PostgreSQL migration/seed and read-boundary CI. Local focused tests and initial typecheck passed; local builds were stopped to relieve memory pressure. Schema and source locks are released for this candidate. Latest-develop compatibility CI remains the merge gate. No operational migration/archive or runtime rollout performed.
+
+## ASSISTANT-ORCHESTRATOR-1013 — PC-C — READY_FOR_REVIEW
+
+User-approved step3 preparation, stacked on filters PR822. Scope services/assistant action composition, message contract, bounded injected-provider orchestrator and tests; optional gated BFF/chat state, own docs. Real model connection remains absent and off; no DB changes.
+
+ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route, separate session-only conversation UI and tests; existing fixed controls remain available.
+
+PC-C handoff: tools #819 and filters #822 merged with green exact-head and postmerge CI. Orchestrator #825 preparation has56 native tests and35 Web tests, scoped lint/typecheck and local production build passing; live conversation remains disabled. Release follows final-head and postmerge CI; rollout evidence is stored privately in tmp/orchestrator-runtime.
+
+ASSISTANT-ORCHESTRATOR-1013 CI fix: conversation labels use the existing assistant-copy.ts bilingual source; translation coverage remains enforced.
