@@ -823,7 +823,7 @@ export function PersonalFollowUps({
             {eligible.slice(0, 5).map(renderItem)}
           </div>
           {eligible.length > 5 && (
-            <details>
+            <details className={styles.recommendationDetails}>
               <summary>
                 {t(c.allRecommendations)} ({eligible.length})
               </summary>

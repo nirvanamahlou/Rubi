@@ -137,7 +137,7 @@ it('shows five evidence-backed recommendations first and keeps the rest in a clo
       english={false}
     />,
   );
-  const [visible, disclosure] = html.split('<details>');
+  const [visible, disclosure] = html.split('<details');
   expect((visible!.match(/<article/g) ?? []).length).toBe(5);
   expect((disclosure!.match(/<article/g) ?? []).length).toBe(2);
   expect(html).not.toContain('<details open');
