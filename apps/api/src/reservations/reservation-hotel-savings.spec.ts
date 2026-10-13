@@ -286,14 +286,12 @@ describe('recorded hotel-only cost projection', () => {
     branchIds: ['branch'],
   } as never;
   function setup(purchases: unknown[] = []) {
-    const findFirst = vi
-      .fn()
-      .mockResolvedValue({
-        branchId: 'branch',
-        snapshot,
-        servicePurchases: purchases,
-        hotelPurchases: [],
-      });
+    const findFirst = vi.fn().mockResolvedValue({
+      branchId: 'branch',
+      snapshot,
+      servicePurchases: purchases,
+      hotelPurchases: [],
+    });
     const service = new ReservationHotelSavingsService(
       { client: { reservationIntake: { findFirst } } } as never,
       {} as never,
@@ -365,13 +363,11 @@ describe('recorded hotel-only cost projection', () => {
   });
   it('quotes current reference for old purchases but keeps final recorded amount', async () => {
     const { service } = setup([{ ...purchase(), passengerPrices: [] }]);
-    const quote = vi
-      .spyOn(service, 'quote')
-      .mockResolvedValue({
-        status: 'AVAILABLE',
-        actualAmount: '180',
-        referenceAmount: '210',
-      } as never);
+    const quote = vi.spyOn(service, 'quote').mockResolvedValue({
+      status: 'AVAILABLE',
+      actualAmount: '180',
+      referenceAmount: '210',
+    } as never);
     expect((await service.recorded('id', actor)).data[0]).toMatchObject({
       actualAmount: '180',
       referenceAmount: '210',
