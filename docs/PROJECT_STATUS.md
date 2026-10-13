@@ -5759,3 +5759,11 @@ locally. The regression now checks ordinary local form content is visible AND
 catalogued denied screen labels/content are hidden in the same render. Runtime
 policy, IAM permissions and producer code are unchanged. This focused integration
 repair must pass full CI before develop publication and the assistant local rollout.
+
+## 2026-10-13 — ASSISTANT-PRIORITY-EVIDENCE-1013 — PC-C
+
+Phase2 final evidence correction: show a recorded source priority only when the
+upstream actually supplies a recognized priority. Absent/unknown values no longer
+appear as recorded NORMAL; deterministic due-date urgency remains unchanged.
+This additive optional field already matches the Web verifier. No permission,
+source, database or dependency change. Full CI gates publication and local rollout.
