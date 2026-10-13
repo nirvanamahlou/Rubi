@@ -850,7 +850,6 @@ export function ReservationOperationsWorkspace({
           <ContractActionPanel
             key={selected?.id ?? 'unselected'}
             request={selected}
-            canReadProfit={access.permissions.includes('finance.read')}
           />
         )}
       </div>
