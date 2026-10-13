@@ -71,18 +71,12 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
     books.data?.books,
   );
   let loading = books.isPending || (!!bookId && snapshot.isPending);
-  let unavailable = books.isError || snapshot.isError;
-  let note = bookId
-    ? 'کل دفتر؛ مستقل از فیلترهای فرم'
-    : 'دفتر حسابداری انتخاب نشده است';
-  if (route.split('/').at(-1) === 'ledgers') note = 'دفاتر کل';
   if (documents) {
     items = ['کل اسناد', 'پیش‌نویس', 'تأییدشده', 'قطعی'].map((label, i) => ({
       label,
       value: totals[i]?.data?.total ?? null,
     }));
     loading = loading || totals.some((q) => q.isFetching && !q.data);
-    unavailable = unavailable || totals.some((q) => q.isError);
   } else if (tax) {
     const rows = taxRecords.data?.items;
     const required = tax.form.fields.filter(
@@ -121,9 +115,6 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
     loading =
       loading ||
       (!!tax.form.writable && taxRecords.isPending && !!snapshot.data);
-    unavailable = unavailable || taxRecords.isError || !tax.form.writable;
-    if (taxRecords.data?.truncated)
-      note = 'داده محدود شده است؛ جمع کل قابل محاسبه نیست';
   } else if (taxpayer) {
     const values = seller.data?.values;
     const labels = sellerPage
@@ -161,15 +152,7 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
           : null,
     }));
     loading = loading || (sellerPage && seller.isPending && !!snapshot.data);
-    unavailable = unavailable || seller.isError || !sellerPage;
-    if (sellerPage)
-      note = 'شناسه‌های ثبت‌شده فروشنده؛ به معنی تأیید سامانه مودیان نیست';
   }
-  if (unavailable) note = 'داده این شاخص‌ها از سرویس فعلی قابل دریافت نیست';
-  if (route.startsWith('receipts-payments/'))
-    note = 'داده عملیاتی این بخش از سرویس فعلی قابل دریافت نیست';
-  if (route.startsWith('tax-accounting/') && !tax)
-    note = 'داده عملیاتی این بخش از سرویس فعلی قابل دریافت نیست';
   return (
     <section
       aria-label="شاخص‌های صفحه حسابداری"
@@ -199,9 +182,6 @@ export function AccountingPageKpis({ pathname }: { pathname: string }) {
           );
         })}
       </div>
-      <p className={styles.kpiNote}>
-        {loading ? 'در حال دریافت شاخص‌ها…' : note}
-      </p>
     </section>
   );
 }
