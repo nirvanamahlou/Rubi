@@ -806,3 +806,12 @@ MasterHotel adds nullable serviceLevel/sourceDestination (varchar160), internalN
 ## HOTEL-RATE-HUB-1013 — Hotel rate pack archive
 
 ReservationHotelRatePack.archivedAt is a nullable UTC timestamptz lifecycle marker. Archive requires Reservations purchase-write permission, an authorized branch and the expected current version, and writes an actor audit in the same transaction. It never deletes or rewrites rate batches, rate rows, published price snapshots or historical foreign keys. Default directories, source periods, legacy selectable rates and the public new-pricing projection exclude archived packs before pagination. Explicit branch-scoped history listing and detail reads remain available; updates and new shared-period sources reject archived packs. Migration 20261013130000_hotel_rate_pack_archive is additive; operational migration is a deployment prerequisite.
+## Organization import review (2026-10-13)
+
+`MasterOrganization.importReviewFields` is a nullable, bounded comma-separated
+set of allowed field keys for recoverable optional XLSX import errors. It contains
+no raw phone, email, national-ID or address value. Invalid optional values are
+omitted from typed fields, while the base organization is registered and remains
+editable. A successful registration edit removes only keys whose replacement
+passes the normal field validation; an unresolved key keeps the review marker.
+Unsafe formulas, invalid or duplicate organization identities still block import.

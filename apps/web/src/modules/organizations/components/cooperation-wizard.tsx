@@ -460,6 +460,33 @@ export function CooperationWizard({
                 ][step - 1]
               }
             </h3>
+            {editRecord?.attributes.importReviewFields ? (
+              <p className="organization-review-notice" role="status">
+                فیلدهای نیازمند اصلاح:{' '}
+                {String(editRecord.attributes.importReviewFields)
+                  .split(',')
+                  .map(
+                    (field) =>
+                      ({
+                        nationalId: 'شناسه ملی',
+                        chiefExecutiveNationalId: 'کد ملی مدیرعامل',
+                        chiefExecutiveMobile: 'موبایل مدیرعامل',
+                        officePhone: 'تلفن',
+                        email: 'ایمیل',
+                        addressLine: 'نشانی',
+                      })[
+                        field as
+                          | 'nationalId'
+                          | 'chiefExecutiveNationalId'
+                          | 'chiefExecutiveMobile'
+                          | 'officePhone'
+                          | 'email'
+                          | 'addressLine'
+                      ] ?? field,
+                  )
+                  .join('، ')}
+              </p>
+            ) : null}
             {step === 1 ? (
               <>
                 {!editing ? (

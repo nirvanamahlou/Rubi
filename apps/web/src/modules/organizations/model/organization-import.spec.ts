@@ -14,7 +14,7 @@ describe('organization import boundaries', () => {
     const [row] = validateOrganizationRows([
       { ...syntheticOrganizations[0]!, city: '', addressLine: 'x'.repeat(500) },
     ]);
-    expect(row?.issue).toContain('نشانی');
+    expect(row?.reviewFields).toContain('addressLine');
   });
   it.each([
     { province: 'تهران', city: '' },
@@ -76,7 +76,7 @@ describe('organization import boundaries', () => {
     expect(address).not.toHaveBeenCalled();
   });
 
-  it('still rejects a missing name and safely omits a non-email optional value', () => {
+  it('still rejects a missing name and saves a non-email optional value for review', () => {
     expect(
       validateOrganizationRows([
         { ...syntheticOrganizations[0]!, legalName: '' },
@@ -87,7 +87,7 @@ describe('organization import boundaries', () => {
     ]);
     expect(row?.issue).toBeUndefined();
     expect(row?.email).toBe('');
-    expect(row?.warning).toContain('نادیده گرفته شد');
+    expect(row?.reviewFields).toContain('email');
   });
   it('accepts blank email and tourism license values', () => {
     const [row] = validateOrganizationRows([
@@ -102,7 +102,7 @@ describe('organization import boundaries', () => {
     expect(row?.tourismLicenseNumber).toBe('');
   });
 
-  it('previews and registers valid rows around an invalid phone without dropping row alignment', async () => {
+  it('registers an invalid optional phone as a review record without sending the malformed value', async () => {
     const agency = {
       code: '',
       personType: 'LEGAL',
@@ -129,11 +129,11 @@ describe('organization import boundaries', () => {
     const preview = await previewOrganizations(source);
     expect(preview.map((row) => Boolean(row.issue))).toEqual([
       false,
-      true,
+      false,
       false,
     ]);
-    expect(preview[1]?.issue).toContain('شماره تلفن معتبر نیست');
-    expect(list).toHaveBeenCalledTimes(2);
+    expect(preview[1]?.reviewFields).toEqual(['officePhone']);
+    expect(list).toHaveBeenCalledTimes(3);
 
     const snapshots: OrganizationPreviewRow[][] = [];
     const result = await importOrganizations(preview, (rows) => {
@@ -141,20 +141,24 @@ describe('organization import boundaries', () => {
     });
     expect(result.map((row) => row.result)).toEqual([
       'created',
-      'invalid',
+      'review',
       'created',
     ]);
     expect(result.map((row) => row.rowNumber)).toEqual([2, 3, 4]);
     expect(snapshots.at(-1)?.map((row) => row.result)).toEqual([
       'created',
-      'invalid',
+      'review',
       'created',
     ]);
-    expect(create).toHaveBeenCalledTimes(2);
+    expect(create).toHaveBeenCalledTimes(3);
     expect(create.mock.calls.map(([, body]) => body.values.legalName)).toEqual([
       'آژانس یک',
+      'آژانس دو',
       'آژانس سه',
     ]);
+    expect(create.mock.calls[1]?.[1].values).toMatchObject({
+      importReviewFields: 'officePhone',
+    });
   });
 
   it('never turns a formula-like optional email into an allowed blank', () => {

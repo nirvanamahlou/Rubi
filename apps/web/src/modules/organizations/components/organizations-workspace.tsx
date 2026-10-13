@@ -641,9 +641,17 @@ export function OrganizationsWorkspace() {
           <>
             <div className="grid gap-3 md:hidden">
               {records.map((record) => (
-                <Card key={record.id} className="min-w-0 space-y-3 p-4">
+                <Card
+                  key={record.id}
+                  className={`min-w-0 space-y-3 p-4 ${record.attributes.importReviewFields ? 'organization-review-row' : ''}`}
+                >
                   <div className="flex flex-wrap justify-between gap-2">
                     <strong className="break-words">{record.name}</strong>
+                    {record.attributes.importReviewFields ? (
+                      <span className="text-xs text-red-700">
+                        نیازمند اصلاح اطلاعات وارداتی
+                      </span>
+                    ) : null}
                     <Badge>
                       {record.status === 'active' ? 'فعال' : 'غیرفعال'}
                     </Badge>
@@ -726,7 +734,24 @@ export function OrganizationsWorkspace() {
                 </thead>
                 <tbody>
                   {records.map((record) => (
-                    <tr className="border-t border-border" key={record.id}>
+                    <tr
+                      className={`border-t border-border ${record.attributes.importReviewFields ? 'organization-review-row cursor-pointer' : ''}`}
+                      key={record.id}
+                      title={
+                        record.attributes.importReviewFields
+                          ? 'برای اصلاح فیلدهای نیازمند بازبینی کلیک کنید'
+                          : undefined
+                      }
+                      onClick={(event) => {
+                        if (
+                          !record.attributes.importReviewFields ||
+                          (event.target as HTMLElement).closest('button')
+                        )
+                          return;
+                        void openProfile(record);
+                        setRegistrationEditOpen(true);
+                      }}
+                    >
                       <td>
                         <div className="org-cell">
                           <div className="avatar">
@@ -734,6 +759,11 @@ export function OrganizationsWorkspace() {
                           </div>
                           <div>
                             <b>{record.name}</b>
+                            {record.attributes.importReviewFields ? (
+                              <small className="text-red-700">
+                                نیازمند اصلاح اطلاعات وارداتی
+                              </small>
+                            ) : null}
                             <small>
                               {record.attributes.nationalId
                                 ? `شناسه ملی: ${record.attributes.nationalId}`

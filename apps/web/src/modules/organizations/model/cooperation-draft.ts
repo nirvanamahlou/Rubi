@@ -364,6 +364,37 @@ export async function saveCooperation(
           isPrimary: Boolean(editContext),
         });
     }
+    if (editContext && existing?.attributes.importReviewFields) {
+      const unresolved = String(existing.attributes.importReviewFields)
+        .split(',')
+        .filter((field) => {
+          if (field === 'nationalId')
+            return !/^\d{11}$/.test(draft.nationalId.trim());
+          if (field === 'chiefExecutiveNationalId')
+            return !/^\d{10}$/.test(draft.chiefExecutiveNationalId.trim());
+          if (field === 'chiefExecutiveMobile' || field === 'officePhone')
+            return (
+              !draft.fullName.trim() || !normalizeIranianMobile(draft.phone)
+            );
+          if (field === 'email')
+            return (
+              !draft.fullName.trim() ||
+              !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(draft.email.trim())
+            );
+          if (field === 'addressLine')
+            return draft.addressLine.trim().length < 5;
+          return true;
+        });
+      if (
+        unresolved.join(',') !== String(existing.attributes.importReviewFields)
+      )
+        organization = (
+          await masterDataApi.update('organizations', organization.id, {
+            version: organization.version,
+            values: { importReviewFields: unresolved.join(',') || null },
+          })
+        ).data;
+    }
     if (draft.withAgreement) {
       const savedOrganization = organization;
       if (!savedOrganization)

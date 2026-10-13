@@ -528,6 +528,7 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'registrationNumber',
     'economicCode',
     'tourismLicenseNumber',
+    'importReviewFields',
     'logoFileReference',
   ],
   suppliers: [
@@ -1733,6 +1734,22 @@ export class MasterDataService {
       data.personType = personType || null;
     }
     if (resource === 'organizations') {
+      if (Object.hasOwn(data, 'importReviewFields')) {
+        const fields = String(data.importReviewFields ?? '')
+          .split(',')
+          .filter(Boolean);
+        const allowed = new Set([
+          'nationalId',
+          'chiefExecutiveNationalId',
+          'chiefExecutiveMobile',
+          'officePhone',
+          'email',
+          'addressLine',
+        ]);
+        if (fields.some((field) => !allowed.has(field)) || fields.length > 6)
+          throw new BadRequestException('فیلدهای بازبینی واردات معتبر نیستند.');
+        data.importReviewFields = [...new Set(fields)].join(',') || null;
+      }
       for (const field of [
         'registrationNumber',
         'economicCode',

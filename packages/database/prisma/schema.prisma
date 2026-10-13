@@ -1308,6 +1308,7 @@ model MasterOrganization {
   registrationNumber          String?                      @unique @db.VarChar(80)
   economicCode                String?                      @unique @db.VarChar(80)
   tourismLicenseNumber        String?                      @unique @db.VarChar(80)
+  importReviewFields          String?                      @db.VarChar(512)
   logoFileReference           String?                      @db.Uuid
   displayOrder                Int                          @default(0)
   isActive                    Boolean                      @default(true)
