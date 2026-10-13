@@ -7348,6 +7348,14 @@ control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
 
+## HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B — READY_FOR_REVIEW
+
+2026-10-13 follow-up: user explicitly authorizes develop merge and localhost3100 update. Reserve only two additive English translations in Web/API catalogues for this task, documentation conflict reconciliation and safe app-container replacement preserving the existing database and document mounts. Latest-head CI must pass before merge; no migration/dependency change.
+
+- COMPUTER_ID=PC-B; branch `codex/pc-b-hotel-import-city-normalize-1013` from origin/develop. Reserve Hotel import parser/service regressions, panel guidance and own docs. Normalize city comparison for Unicode/Persian spelling, whitespace/joiners and case; keep selected city FK/country scope and all file/token/transaction security unchanged. Only hotel name and row city required; optional fields keep validation when populated. No migration/dependency/runtime change; no merge authorization in this request.
+
+Implemented comparison-only normalization for spaces/joiners, Latin case, Arabic/Persian letter variants and آ/ا. Missing row city is explicitly rejected rather than silently populated. The supplied downloadable template commits against selected city «کوش اداسی» despite its «کوش‌آداسی» cells. Focused API tests pass 44/44, focused Web tests 16/16, scoped lint, Prettier, API/Web typechecks and builds pass. No live database write or localhost runtime rollout was performed. Source locks released for review.
+
 ## AGENCY-IMPORT-PARTIAL-1013 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-organization-import-partial-1013` from `origin/develop@ebcb016f`. The Organizations XLSX preview currently disables the whole import when one row has an invalid optional phone. Reserve only `apps/web/src/modules/organizations/model/organization-import.ts`, its focused test, `components/organization-excel-dialog.tsx`, and bounded task status documentation. Import valid rows while leaving invalid rows unmodified and visibly reported. Preserve strict validation, no-overwrite checks, uncertain-write stop, and original row/progress alignment. No API/schema/migration/dependency/permission or operational data change. No other active owner holds these target files.
