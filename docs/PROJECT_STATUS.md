@@ -5847,6 +5847,10 @@ Tool infrastructure #819 is merged and deployed on loopback4300 with green head/
 
 Ticket Purchasing accepts an exact total flight purchase amount with purchased seat count, while preserving unit-price entry and immutable Finance cost revisions. Sales consumes Finance's public invoice/seat projection and allocates total × assigned ADT/CHD seats ÷ purchased seats, rounding once to four decimals; INF has no seat cost. Outbound and return remain independent, modern service purchases are not counted twice, and missing costs keep profit incomplete. The selected Reservations contract exposes the existing cost/profit view only with finance.read; the API still verifies Sales access and branch. No schema/migration, payment execution or operational runtime change. CAS, operation replay and the post-payment price lock remain enforced.
 
+## HOTEL-RATE-HUB-1013
+
+Hotel purchase rates now open with four entry cards: Excel import, new pack, existing packs/edit, and remove pack. Removal is confirmed archival with retained history, branch/write authorization, optimistic version checks and an actor audit. Archive history supports search and read-only rate details. Archived packs are excluded from new-rate selections and shared-period sources; historical snapshots remain unchanged. Additive archivedAt migration must precede API rollout. PR826 passes focused API/Web tests and full CI quality, tests, production build and PostgreSQL migration/seed checks. Latest-develop compatibility checks gate the authorized merge. No operational data or local runtime changed.
+
 ## PC-C — ASSISTANT-ORCHESTRATOR-1013
 
 Gated conversation preparation: shared prepared actions, strict bounded planner contract, disabled-by-default POST/BFF and separate memory-only UI component. Synthetic providers only; live UI activation/provider/business pilot remain gated. See docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md. Candidate validation and CI pending.

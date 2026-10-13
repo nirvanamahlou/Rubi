@@ -1,3 +1,11 @@
+## FLIGHT-TOTAL-CONTRACT-COST-1013 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-flight-total-contract-cost-1013 from origin/develop@390f9ff2. Owner authorizes total flight purchase entry and per-sold-seat contract costs/profit, with develop merge. Reserve Finance ticket-cost command/controller/public reader/tests, Ticket Purchase Web form/tests, Sales profit calculation/tests and own docs. Shared lock: additive optional totalCost on FinanceTicketCostCommandV1 and bounded English catalog entries. Finance remains producer; Purchasing UI sends either unitCost or totalCost with seats, Sales consumes public recorded cost projection. Existing callers retain unit pricing; invoice remains exact, proportional contract cost rounds once at four decimals. Preserve permissions, branch scope, CAS, replay, paid-price lock and per-currency profit. No schema/migration/dependency/runtime or operational data changes. Existing released ticket purchase work remains intact.
+
+FLIGHT-TOTAL-CONTRACT-COST-1013 scope clarification: reserve Reservations action-panel/workspace consumer and tests for the existing Sales profit view, visible with finance.read. Bounded derived API/standalone English catalogue regeneration includes four existing base labels required by the offline synchronization gate; no new unrelated business behavior. DATA_MODEL own additive allocation paragraph reserved; no migration or dependency lock required.
+
+FLIGHT-TOTAL-CONTRACT-COST-1013 validation: focused Finance/Sales and Web purchase/action tests pass; full production build, full test suite and PostgreSQL migration/seed CI passed at39772df4. Corrected one unused test variable and merged current develop preserving both document/catalog additions. Final-head full quality/build/tests gate PR827 merge. No migration or local deployment; bounded source locks release with candidate.
+
 ## SALES-UNIFIED-FILTERS-1013 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A. Reserve Sales Web filters, API list/receivables/export/repository, Sales optional query contracts and focused tests. Sales API producer and Web consumer coordinate additive backward-compatible filter fields. No migration/dependency. User requests unified contract/receivables filters; merge not requested. Delivered one Apply/Reset form, combined search/settlement/date/route/customer criteria and matching Excel export. Customer filtering runs before pagination through the public Customers adapter; authorized scope and payment-reference permission remain enforced. Web 22 and API 7 focused tests pass; scoped lint and API typecheck pass. Production builds gate local3100/API4000 refresh; no operational records changed.
@@ -7368,6 +7376,10 @@ CI follow-up: reserve four additive Web-only English translations in `apps/web/s
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
 
+## HOTEL-RATE-HUB-1013 — PC-A — READY_FOR_REVIEW
+
+Branch codex/pc-a-hotel-rate-hub-1013 from origin/develop@016f3e2a. User requests four hotel-rate entry cards: Excel import, new pack, existing packs/edit, and archive. User explicitly chooses archival with preserved history and authorizes develop merge. Reserve Reservations hotel-rate Web navigation and archive service/controller tests plus own docs. Archive requires persisted lifecycle state, write/branch authorization and audit; all new-rate consumers must exclude archived packs while existing immutable references remain readable. Schema/migration and shared consumer scope must be checked and reserved before implementation; no operational archive, migration or runtime rollout authorized. Implementation complete in PR826; user-approved develop merge follows final checks.
+
 ## ASSISTANT-FILTERS-1013 — PC-C — DONE
 
 User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
@@ -7385,11 +7397,9 @@ Bounded filter-options extension: reserve assistant-read.module.ts only to regis
 
 ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.
 
-## FLIGHT-TOTAL-CONTRACT-COST-1013 — PC-A — READY_FOR_REVIEW
+HOTEL-RATE-HUB-1013 scope: PC-A sole additive schema/Migration owner for archivedAt on Reservations hotel rate packs. Earlier hotel import schema lock released with merged candidate; no later overlapping schema owner found. Reserve Reservations owned pack service/controller/public rate projection and legacy list guards, Web hub/archive panel, focused tests, additive migration, and bounded English labels. Public rate projection producer excludes archived packs; existing Sales/Package consumers retain unchanged contract and historical snapshots. No operational migration or data modification.
 
-COMPUTER_ID=PC-A; branch codex/pc-a-flight-total-contract-cost-1013 from origin/develop@390f9ff2. Owner authorizes total flight purchase entry and per-sold-seat contract costs/profit, with develop merge. Reserve Finance ticket-cost command/controller/public reader/tests, Ticket Purchase Web form/tests, Sales profit calculation/tests and own docs. Shared lock: additive optional totalCost on FinanceTicketCostCommandV1 and bounded English catalog entries. Finance remains producer; Purchasing UI sends either unitCost or totalCost with seats, Sales consumes public recorded cost projection. Existing callers retain unit pricing; invoice remains exact, proportional contract cost rounds once at four decimals. Preserve permissions, branch scope, CAS, replay, paid-price lock and per-currency profit. No schema/migration/dependency/runtime or operational data changes. Existing released ticket purchase work remains intact.
-
-FLIGHT-TOTAL-CONTRACT-COST-1013 scope clarification: reserve Reservations action-panel/workspace consumer and tests for the existing Sales profit view, visible with finance.read. Bounded derived API/standalone English catalogue regeneration includes four existing base labels required by the offline synchronization gate; no new unrelated business behavior. DATA_MODEL own additive allocation paragraph reserved; no migration or dependency lock required.
+HOTEL-RATE-HUB-1013 implementation: four-card hub and direct editor/import/browser modes, searchable archival confirmation/history, additive UTC archivedAt plus audit and concurrency guards, and active-only public/source/legacy queries. Bounded English labels include API error catalogue; no dependency change. PR826 candidate 666f9fcc passed full quality, test, production build, PostgreSQL migration/seed and read-boundary CI. Local focused tests and initial typecheck passed; local builds were stopped to relieve memory pressure. Schema and source locks are released for this candidate. Latest-develop compatibility CI remains the merge gate. No operational migration/archive or runtime rollout performed.
 
 ## ASSISTANT-ORCHESTRATOR-1013 — PC-C — READY_FOR_REVIEW
 
@@ -7400,5 +7410,3 @@ ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route
 PC-C handoff: tools #819 and filters #822 merged with green exact-head and postmerge CI. Orchestrator #825 preparation has56 native tests and35 Web tests, scoped lint/typecheck and local production build passing; live conversation remains disabled. Release follows final-head and postmerge CI; rollout evidence is stored privately in tmp/orchestrator-runtime.
 
 ASSISTANT-ORCHESTRATOR-1013 CI fix: conversation labels use the existing assistant-copy.ts bilingual source; translation coverage remains enforced.
-
-FLIGHT-TOTAL-CONTRACT-COST-1013 validation: focused Finance/Sales and Web purchase/action tests pass; full production build, full test suite and PostgreSQL migration/seed CI passed at39772df4. Corrected one unused test variable and merged current develop preserving both document/catalog additions. Final-head full quality/build/tests gate PR827 merge. No migration or local deployment; bounded source locks release with candidate.

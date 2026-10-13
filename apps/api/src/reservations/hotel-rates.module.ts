@@ -146,6 +146,7 @@ export class HotelRatesService {
     const where: Prisma.ReservationHotelGroupRateWhereInput = {
       ...(query.hotelId ? { hotelId: query.hotelId } : {}),
       batch: {
+        OR: [{ packId: null }, { pack: { archivedAt: null } }],
         branchId: { in: actor.branchIds },
         ...(query.from ? { checkOut: { gt: new Date(query.from) } } : {}),
         ...(query.to ? { checkIn: { lte: new Date(query.to) } } : {}),
@@ -236,8 +237,14 @@ export class HotelRatesController {
     @Req() req: AuthenticatedRequest,
     @Query('branchId') branchId?: string,
     @Query('page') page = '1',
+    @Query('includeArchived') includeArchived?: string,
   ) {
-    return this.packs.list(req.actor, branchId, Number(page));
+    return this.packs.list(
+      req.actor,
+      branchId,
+      Number(page),
+      includeArchived === 'true',
+    );
   }
 
   @Get('periods')
@@ -277,6 +284,15 @@ export class HotelRatesController {
     @Headers('idempotency-key') key?: string,
   ) {
     return this.packs.create(body, key, req.actor);
+  }
+
+  @Post('packs/:id/archive')
+  archivePack(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { expectedVersion?: unknown },
+  ) {
+    return this.packs.archive(id, body?.expectedVersion, req.actor);
   }
 
   @Patch('packs/:id')

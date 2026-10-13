@@ -19,6 +19,7 @@ describe('Reservations hotel purchase public projection', () => {
     expect(query.where).toEqual({
       branchId: 'branch-1',
       tourDepartureId: 'departure-1',
+      AND: [{ OR: [{ packId: null }, { pack: { archivedAt: null } }] }],
     });
     expect(query.include.rows.where).toBeUndefined();
   });

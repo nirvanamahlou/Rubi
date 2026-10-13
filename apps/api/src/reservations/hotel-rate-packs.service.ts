@@ -177,6 +177,7 @@ export class HotelRatePacksService {
                   id: period.id,
                   branchId: input.branchId,
                   currentVersion: period.version,
+                  archivedAt: null,
                 },
                 select: { id: true },
               });
@@ -264,6 +265,7 @@ export class HotelRatePacksService {
       where: {
         branchId,
         cityId,
+        archivedAt: null,
         tourDepartureId: null,
         sourcePeriods: { none: {} },
       },
@@ -443,6 +445,8 @@ export class HotelRatePacksService {
         },
       },
     });
+    if (pack?.archivedAt)
+      throw new ConflictException('بسته کنار گذاشته شده است.');
     if (pack?.sourcePeriods?.length)
       throw new BadRequestException(
         'برای اصلاح بازهٔ مشترک، دوره‌های مبدأ را ویرایش و بازهٔ مشترک تازه ثبت کنید.',
@@ -489,7 +493,7 @@ export class HotelRatePacksService {
     try {
       return await this.db.client.$transaction(async (tx) => {
         const changed = await tx.reservationHotelRatePack.updateMany({
-          where: { id, currentVersion: expectedVersion },
+          where: { id, currentVersion: expectedVersion, archivedAt: null },
           data: {
             cityId: input.cityId,
             tourDepartureId: input.tourDepartureId ?? null,
@@ -547,13 +551,63 @@ export class HotelRatePacksService {
     }
   }
 
-  async list(actor: AuthenticatedActor, branchId?: string, page = 1) {
+  async archive(
+    id: string,
+    expectedVersion: unknown,
+    actor: AuthenticatedActor,
+  ) {
+    this.require(actor, true);
+    if (!Number.isSafeInteger(expectedVersion) || Number(expectedVersion) < 1)
+      throw new BadRequestException();
+    return this.db.client.$transaction(async (tx) => {
+      const pack = await tx.reservationHotelRatePack.findFirst({
+        where: { id, branchId: { in: actor.branchIds } },
+      });
+      if (!pack) throw new NotFoundException();
+      if (pack.archivedAt)
+        return { id, archivedAt: pack.archivedAt.toISOString() };
+      const archivedAt = new Date();
+      const changed = await tx.reservationHotelRatePack.updateMany({
+        where: {
+          id,
+          currentVersion: Number(expectedVersion),
+          archivedAt: null,
+        },
+        data: { archivedAt },
+      });
+      if (changed.count !== 1)
+        throw new ConflictException(
+          'نسخهٔ بسته تغییر کرده است؛ تازه‌سازی کنید.',
+        );
+      await tx.auditEvent.create({
+        data: {
+          actorUserId: actor.userId,
+          action: 'reservations.hotel_rate_pack.archive',
+          entityType: 'ReservationHotelRatePack',
+          entityId: id,
+          outcome: 'SUCCESS',
+          metadata: { branchId: pack.branchId, version: pack.currentVersion },
+        },
+      });
+      return { id, archivedAt: archivedAt.toISOString() };
+    });
+  }
+
+  async list(
+    actor: AuthenticatedActor,
+    branchId?: string,
+    page = 1,
+    includeArchived = false,
+  ) {
     this.require(actor);
     if (branchId && !actor.branchIds.includes(branchId))
       throw new ForbiddenException();
     if (!Number.isInteger(page) || page < 1 || page > 10000)
       throw new BadRequestException();
-    const where = { branchId: { in: branchId ? [branchId] : actor.branchIds } };
+    const where = {
+      branchId: { in: branchId ? [branchId] : actor.branchIds },
+      ...(includeArchived ? {} : { archivedAt: null }),
+    };
     const [packs, total] = await this.db.client.$transaction([
       this.db.client.reservationHotelRatePack.findMany({
         where,
@@ -583,6 +637,7 @@ export class HotelRatePacksService {
     return {
       data: packs.map((pack) => ({
         id: pack.id,
+        archivedAt: pack.archivedAt?.toISOString() ?? null,
         tourDepartureId: pack.tourDepartureId,
         sharedPeriod: !!pack.sourcePeriods?.length,
         branchId: pack.branchId,
