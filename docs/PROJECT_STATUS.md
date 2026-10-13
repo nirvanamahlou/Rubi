@@ -5751,8 +5751,9 @@ Three correspondence cards/routes: Incoming uses unchanged Documents upload form
 ## 2026-10-12 — LATEST-LOCALHOST-1012 — PC-C
 
 User requests latest develop on localhost3000. Clean inactive worktree updated to a98ee1ad; no protected branch or unrelated files changed. Rebuilt Contracts/Database/Config before API/Web to remove stale generated-artifact mismatches. API and Web production builds pass (62 pages). Reproduced upstream Full test suite failure: one new Organizations import warning had no English translation. Added only that Web catalogue entry; original completeness gate and both scoped feature suites pass18/18. No migration, dependency or permission changes. Operational database is57 migrations behind and three historical checksums differ; backup and isolated rehearsal precede any database upgrade. Existing API remains available while the Web cutover is prepared.
+## 2026-10-13 — Restore two-table flight capacity view — PC-B
 
-
+At the owner's request, «تعریف و ظرفیت پرواز» restores the pre-delete presentation from `97ae3a19`: one outbound table and one return table, with selected-leg «مشاهده»/«ویرایش» and status/hold actions but no row-level or whole-load delete controls. Current backend data and newer compatibility fixes remain unchanged. Nine focused tests, Web TypeScript, Web lint and the production Web build (62 routes) pass.
 ## 2026-10-13 — HOTEL-RATES-COMPACT-1013 — READY_FOR_REVIEW
 
 Reservation hotel purchase-rate editor presentation is being compacted so one hotel's selectors, stay range and room-rate table are reachable with less scrolling. The existing save, validation, pricing and history flows remain unchanged; no API or database migration is planned. PR to develop follows focused verification.
@@ -5803,3 +5804,10 @@ aggregate release guards and public v1 contracts remain.41 native tests and5
 CI-policy tests pass; no schema/migration/dependency/model/Web/producer change.
 Dedicated workflow discovers all tests. Final-head/merged CI and service-only
 localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
+
+## FINANCE-INBOX-SINGLE-TITLE-1013 — حذف عنوان تکراری کارتابل
+
+عنوان «کارتابل درخواست‌ها» فقط در سربرگ اصلی صفحه نمایش داده می‌شود و نمونهٔ
+تکراری داخل کارت کنترل مالی حذف شد. نشان مرکز کنترل مالی، دکمه‌ها و شاخص‌های
+کارت بدون تغییر باقی ماندند. این تغییر فقط رابط Web است و API، مجوزها، داده و
+ساختار دیتابیس را تغییر نمی‌دهد.

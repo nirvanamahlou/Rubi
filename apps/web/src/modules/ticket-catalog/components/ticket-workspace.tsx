@@ -3,12 +3,11 @@ import { flightCabinCode } from '../model/flight-cabins';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { TicketOfferCreateV1, TicketOfferV1 } from '@nora/contracts';
-import { Power, Plus, Ticket, TicketCheck, Trash2 } from 'lucide-react';
+import { Power, Plus, Ticket, TicketCheck } from 'lucide-react';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import {
   Alert,
   Button,
-  ConfirmDialog,
   Dialog,
   DialogContent,
   DialogDescription,
@@ -67,7 +66,6 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import {
   catalogProductsFromOffers,
   catalogOffer,
-  publishedLoadGroups,
   publishedOfferInput,
   samePublishedFlight,
 } from '../model/published-catalog';
@@ -294,7 +292,6 @@ function TicketCatalogWorkspace() {
   const [publishedNotice, setPublishedNotice] = useState('');
   const [publishedRefreshing, setPublishedRefreshing] = useState(false);
   const [statusSaving, setStatusSaving] = useState<string>();
-  const [deleteSaving, setDeleteSaving] = useState<string>();
   const [capacityHold, setCapacityHold] = useState<{
     offer: TicketOfferV1;
     quantity: number;
@@ -369,80 +366,6 @@ function TicketCatalogWorkspace() {
       throw error;
     } finally {
       setStatusSaving(undefined);
-    }
-  };
-  const editPublishedLoad = (visibleOffers: readonly TicketOfferV1[]) => {
-    const offers = publishedLoadGroups(
-      visibleOffers,
-      publishedOffers,
-      products,
-    );
-    const offer = visibleOffers[0];
-    if (!offer || !offers.length) {
-      setPublishedProblem('ردیفی برای ویرایش در این جدول وجود ندارد.');
-      return;
-    }
-    const selected = displayedProducts.find(
-      (item) => item.id === `offer:${offer.id}`,
-    );
-    const selectedSegment = selected?.definition.segments[0];
-    const grouped = offers.flatMap((item) => {
-      const product = displayedProducts.find(
-        (candidate) => candidate.id === `offer:${item.id}`,
-      );
-      if (!product || !selectedSegment) return [];
-      const segment = product.definition.segments[0]!;
-      const sameDirection =
-        segment.originCityId === selectedSegment.originCityId &&
-        segment.destinationCityId === selectedSegment.destinationCityId;
-      return [
-        {
-          ...product,
-          definition: {
-            ...product.definition,
-            journeyRole: sameDirection
-              ? ('outbound' as const)
-              : ('return' as const),
-          },
-        },
-      ];
-    });
-    const product = grouped.find((item) => item.id === `offer:${offer.id}`);
-    if (!product || grouped.length !== offers.length) {
-      setPublishedProblem(
-        'اطلاعات فرم این لود آماده نیست؛ فهرست را به‌روزرسانی کنید.',
-      );
-      return;
-    }
-    setOfferForm(null);
-    setForm({ mode: 'edit', product, products: grouped, offers });
-  };
-  const archivePublishedLoad = async (
-    visibleOffers: readonly TicketOfferV1[],
-  ) => {
-    const offers = publishedLoadGroups(
-      visibleOffers,
-      publishedOffers,
-      products,
-    );
-    if (!offers.length) return;
-    setDeleteSaving(offers[0]!.id);
-    setPublishedProblem('');
-    setPublishedNotice('');
-    try {
-      await toursApi.archiveOfferBatch(
-        offers.map(({ id, version }) => ({ id, expectedVersion: version })),
-      );
-      await refreshPublishedOffers();
-      setPublishedNotice(
-        `${offers.length.toLocaleString('fa-IR')} ردیف لود باهم حذف شد؛ سوابق قیمت، خرید، مالی و ممیزی حفظ شده است.`,
-      );
-    } catch (error) {
-      setPublishedProblem(
-        error instanceof Error ? error.message : 'حذف لود ناموفق بود.',
-      );
-    } finally {
-      setDeleteSaving(undefined);
     }
   };
   const submitCapacityHold = async () => {
@@ -1008,138 +931,66 @@ function TicketCatalogWorkspace() {
       );
     }
   }
-  const renderLoadActions = (visibleOffers: readonly TicketOfferV1[]) => {
-    const load = publishedLoadGroups(visibleOffers, publishedOffers, products);
-    const count = load.length.toLocaleString('fa-IR');
-    return (
-      <>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => editPublishedLoad(visibleOffers)}
-        >
-          ویرایش کل جدول ({count})
-        </Button>
-        <ConfirmDialog
-          title={`حذف کل جدول لود (${count} ردیف)`}
-          description="تمام ردیف‌های رفت و برگشت متعلق به لودهای نمایش‌داده‌شده در این بلوک، به‌صورت یکجا از مدیریت و فروش جدید خارج می‌شوند. فروش‌ها و سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند. عملیات اتمیک است؛ اگر رزرو ظرفیت فعال یا تور متصل وجود داشته باشد هیچ ردیفی حذف نمی‌شود."
-          destructive
-          onConfirm={() => void archivePublishedLoad(visibleOffers)}
-          trigger={
-            <Button
-              size="sm"
-              variant="destructive"
-              loading={Boolean(deleteSaving)}
-              disabled={Boolean(deleteSaving)}
-            >
-              <Trash2 className="size-4" aria-hidden />
-              حذف کل جدول ({count})
-            </Button>
-          }
-        />
-      </>
-    );
-  };
-  const editPublishedOffer = (offer: TicketOfferV1) => {
-    setOfferForm({ offer, readOnly: false });
-  };
-  const archivePublishedOffer = async (offer: TicketOfferV1) => {
-    setDeleteSaving(offer.id);
-    setPublishedProblem('');
-    setPublishedNotice('');
-    try {
-      await toursApi.archiveOffer(offer.id, offer.version);
-      await refreshPublishedOffers();
-      setPublishedNotice('ردیف انتخاب‌شده حذف شد؛ سوابق آن حفظ شده است.');
-    } catch (error) {
-      setPublishedProblem(
-        error instanceof Error ? error.message : 'حذف ردیف ناموفق بود.',
-      );
-    } finally {
-      setDeleteSaving(undefined);
-    }
-  };
-  const renderRowActions = (offer: TicketOfferV1) => (
-    <div className="flex flex-wrap justify-center gap-2">
+  const renderOfferActions = (offer: TicketOfferV1) => (
+    <div className="flex flex-wrap gap-2">
       <Button
         size="sm"
         variant="outline"
-        onClick={() => editPublishedOffer(offer)}
+        onClick={() => setOfferForm({ offer, readOnly: true })}
       >
-        ویرایش
+        مشاهده
       </Button>
-      <ConfirmDialog
-        title="حذف همین ردیف لود"
-        description="فقط همین رکورد از مدیریت و فروش جدید خارج می‌شود؛ سوابق فروش، قیمت، خرید، مالی و ممیزی باقی می‌مانند."
-        destructive
-        onConfirm={() => void archivePublishedOffer(offer)}
-        trigger={
+      {new Date(offer.departureAt).getTime() > catalogNow ? (
+        <div className="flex flex-wrap gap-2">
           <Button
             size="sm"
-            variant="destructive"
-            loading={deleteSaving === offer.id}
-            disabled={Boolean(deleteSaving)}
+            variant="outline"
+            onClick={() => setOfferForm({ offer, readOnly: false })}
           >
-            <Trash2 className="size-4" aria-hidden />
-            حذف
+            ویرایش
           </Button>
-        }
-      />
-    </div>
-  );
-  const renderOfferActions = (offer: TicketOfferV1) => {
-    return (
-      <div className="flex flex-wrap gap-2">
-        {renderRowActions(offer)}
-        {new Date(offer.departureAt).getTime() > catalogNow ? (
-          <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={statusSaving === offer.id}
+            aria-label={
+              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+            }
+            title={
+              offer.status === 'ACTIVE' ? 'غیرفعال کردن بلیت' : 'فعال کردن بلیت'
+            }
+            className={
+              offer.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
+            }
+            onClick={() =>
+              void updatePublishedStatus(
+                offer,
+                offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
+              ).catch(() => undefined)
+            }
+          >
+            <Power className="size-5" aria-hidden />
+          </Button>
+          {offer.status === 'ACTIVE' ? (
             <Button
               size="sm"
               variant="outline"
-              disabled={statusSaving === offer.id}
-              aria-label={
-                offer.status === 'ACTIVE'
-                  ? 'غیرفعال کردن بلیت'
-                  : 'فعال کردن بلیت'
-              }
-              title={
-                offer.status === 'ACTIVE'
-                  ? 'غیرفعال کردن بلیت'
-                  : 'فعال کردن بلیت'
-              }
-              className={
-                offer.status === 'ACTIVE' ? 'text-red-600' : 'text-emerald-600'
-              }
+              disabled={offer.remainingCapacity < 1}
               onClick={() =>
-                void updatePublishedStatus(
+                updateCapacityHold({
                   offer,
-                  offer.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE',
-                ).catch(() => undefined)
+                  quantity: 1,
+                  requesterName: '',
+                })
               }
             >
-              <Power className="size-5" aria-hidden />
+              رزرو ظرفیت
             </Button>
-            {offer.status === 'ACTIVE' ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={offer.remainingCapacity < 1}
-                onClick={() =>
-                  updateCapacityHold({
-                    offer,
-                    quantity: 1,
-                    requesterName: '',
-                  })
-                }
-              >
-                رزرو ظرفیت
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    );
-  };
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
   return (
     <div className="space-y-5" dir="rtl">
       <PageHeader
@@ -1169,8 +1020,6 @@ function TicketCatalogWorkspace() {
         references={references}
         offers={publishedOffers}
         renderActions={renderOfferActions}
-        renderRowActions={renderRowActions}
-        renderLoadActions={renderLoadActions}
         cityName={(id) => referenceLabel('city', id, id)}
         refreshing={publishedRefreshing}
         onRefresh={() => void refreshPublishedOffers(true)}

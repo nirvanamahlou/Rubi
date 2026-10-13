@@ -42,33 +42,29 @@ describe('ticket workspace entry points', () => {
     expect(weekly).toContain('allowPastDate');
   });
 
-  it('exposes safe load edit and archive beside the authoritative view', () => {
+  it('restores selected-leg view and edit actions without delete controls', () => {
     const source = readFileSync(
       new URL('./ticket-workspace.tsx', import.meta.url),
       'utf8',
     );
-    expect(source).toContain('toursApi.archiveOfferBatch(');
-    expect(source).toContain('toursApi.archiveOffer(');
+    expect(source).not.toContain('toursApi.archiveOfferBatch(');
+    expect(source).not.toContain('toursApi.archiveOffer(');
     expect(source).toContain('toursApi.reviseOfferBatch(');
     expect(source).toContain('toursApi.resizeOfferBatch(');
     expect(source).not.toContain(
       'طوری تنظیم کنید که همین تعداد ردیف ساخته شود',
     );
-    expect(source).toContain('publishedLoadGroups(');
-    expect(source).toContain('ویرایش کل جدول');
-    expect(source).toContain('حذف کل جدول');
-    expect(source).toContain(
-      "setForm({ mode: 'edit', product, products: grouped, offers })",
-    );
+    expect(source).not.toContain('publishedLoadGroups(');
+    expect(source).not.toContain('ویرایش کل جدول');
+    expect(source).not.toContain('حذف کل جدول');
     expect(source).toContain('catalogOffer(current, publishedOffers)');
     expect(source).toContain('currentPublishedOffer.version');
     expect(source).toContain('initial={form.product?.definition}');
     expect(source).toContain("editing={form.mode === 'edit'}");
     expect(source).toContain('formStyles.scheduleDialog');
-    expect(source).toContain('سوابق قیمت، خرید، مالی و ممیزی باقی می‌مانند');
     expect(source).toContain('updatePublishedStatus');
-    expect(source).toContain('renderRowActions={renderRowActions}');
-    expect(source).not.toContain('>مشاهده</Button>');
+    expect(source).not.toContain('renderRowActions={renderRowActions}');
+    expect(source).toContain('setOfferForm({ offer, readOnly: true })');
   });
   it('matches the browser card to the authoritative published offer', () => {
     const definition = emptyInput();
@@ -198,8 +194,8 @@ describe('ticket workspace entry points', () => {
     expect(source).not.toContain('maxLength={3}');
     expect(source).not.toContain('بلیط‌های ثبت‌شده برای فروش و قرارداد');
     expect(source).toContain('renderActions={renderOfferActions}');
-    expect(source).toContain('renderLoadActions={renderLoadActions}');
-    expect(source).not.toContain('setOfferForm({ offer, readOnly: true })');
+    expect(source).not.toContain('renderLoadActions={renderLoadActions}');
+    expect(source).toContain('setOfferForm({ offer, readOnly: true })');
     expect(source).toContain('updateCapacityHold({');
   });
 
