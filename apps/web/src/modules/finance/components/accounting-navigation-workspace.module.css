@@ -173,11 +173,6 @@
   font-weight: 800;
   line-height: 1.25;
 }
-.kpiNote {
-  margin: 0.5rem 0 0;
-  font-size: 0.65rem;
-  color: var(--muted-foreground);
-}
 @media (min-width: 48rem) {
   .kpiGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
