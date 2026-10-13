@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
+import { assistantCopy as c, type AssistantText } from '@/i18n/assistant-copy';
 import {
   assistantFilteredActionSchema,
   type AssistantActionResult,
@@ -35,28 +36,7 @@ export const conversationResponseSchema = z.discriminatedUnion('status', [
     .strict()
     .refine((value) => value.action === value.evidence.action),
 ]);
-const clarification = {
-  ACTION: [
-    'خلاصه امروز، تحلیل فروش یا مانده قراردادی را می‌خواهید؟',
-    'Choose today’s summary, sales analysis or contractual balances.',
-  ],
-  DATE_RANGE: [
-    'بازه تاریخ گزارش را مشخص کنید؛ حداکثر ۹۰ روز کامل گذشته.',
-    'Choose up to 90 completed past days.',
-  ],
-  ROUTE: [
-    'مبدأ و مقصد مسیر را از فیلترهای مجاز مشخص کنید.',
-    'Choose an origin and destination from the available filters.',
-  ],
-  BRANCH: [
-    'شعبه موردنظر را از شعب مجاز مشخص کنید.',
-    'Choose an authorized branch.',
-  ],
-  COMPANY_UNAVAILABLE: [
-    'فیلتر شرکت حقوقی هنوز منبع تأییدشده ندارد؛ از شعبه مجاز استفاده کنید.',
-    'Legal-company filtering has no approved source yet; use an authorized branch.',
-  ],
-} as const;
+
 type Message = { role: 'user' | 'assistant'; content: string };
 
 /** Prepared UI only: mount after provider/data policy approval with a real identity/session key. */
@@ -87,6 +67,7 @@ function ConversationSession({
   english: boolean;
   onEvidence: (evidence: AssistantActionResult) => void;
 }) {
+  const t = (text: AssistantText) => text[english ? 1 : 0];
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState('');
   const [busy, setBusy] = useState(false);
@@ -120,10 +101,8 @@ function ConversationSession({
       if (controller.signal.aborted) return;
       const answer =
         result.status === 'CLARIFY'
-          ? clarification[result.field][english ? 1 : 0]
-          : english
-            ? 'The source-backed result is shown below.'
-            : 'نتیجه مستند درخواست در پایین نمایش داده شد.';
+          ? c.conversationClarification[result.field][english ? 1 : 0]
+          : t(c.conversationEvidence);
       setMessages((previous) =>
         [
           ...previous,
@@ -140,7 +119,7 @@ function ConversationSession({
     }
   };
   return (
-    <section aria-label={english ? 'Conversation' : 'گفت‌وگو'}>
+    <section aria-label={t(c.conversationLabel)}>
       <div aria-live="polite">
         {messages.map((message, index) => (
           <p key={index} dir="auto">
@@ -156,14 +135,14 @@ function ConversationSession({
       >
         <textarea
           className={styles.composerInput}
-          aria-label={english ? 'Message' : 'پیام'}
+          aria-label={t(c.conversationMessage)}
           maxLength={4000}
           value={draft}
           disabled={busy}
           onChange={(event) => setDraft(event.target.value)}
         />
         <button type="submit" disabled={busy || !draft.trim()}>
-          {english ? 'Send' : 'ارسال'}
+          {t(c.conversationSend)}
         </button>
         <button
           type="button"
@@ -175,16 +154,10 @@ function ConversationSession({
             setFailed(false);
           }}
         >
-          {english ? 'Clear conversation' : 'پاک‌کردن گفت‌وگو'}
+          {t(c.conversationClear)}
         </button>
       </form>
-      {failed && (
-        <p role="alert">
-          {english
-            ? 'Conversation is unavailable. The fixed reports remain available.'
-            : 'گفت‌وگو در دسترس نیست؛ گزارش‌های آماده همچنان قابل استفاده‌اند.'}
-        </p>
-      )}
+      {failed && <p role="alert">{t(c.conversationUnavailable)}</p>}
     </section>
   );
 }

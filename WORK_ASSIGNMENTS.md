@@ -7376,3 +7376,5 @@ User-approved step3 preparation, stacked on filters PR822. Scope services/assist
 ASSISTANT-ORCHESTRATOR-1013 scope includes additive gated conversation BFF/route, separate session-only conversation UI and tests; existing fixed controls remain available.
 
 PC-C handoff: tools #819 and filters #822 merged with green exact-head and postmerge CI. Orchestrator #825 preparation has56 native tests and35 Web tests, scoped lint/typecheck and local production build passing; live conversation remains disabled. Release follows final-head and postmerge CI; rollout evidence is stored privately in tmp/orchestrator-runtime.
+
+ASSISTANT-ORCHESTRATOR-1013 CI fix: conversation labels use the existing assistant-copy.ts bilingual source; translation coverage remains enforced.
