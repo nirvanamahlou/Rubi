@@ -1,5 +1,43 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  recommendationTitle: ['پیشنهادهای قابل پیگیری', 'Actionable recommendations'],
+  allRecommendations: ['مشاهدهٔ همهٔ پیشنهادها', 'View all recommendations'],
+  ruleLabel: ['قاعده', 'Rule'],
+  recordedPriority: ['اولویت ثبت‌شده در منبع', 'Priority recorded by source'],
+  balanceRecommendationsDeferred: [
+    'پیشنهاد پیگیری مانده‌ها پس از ورود داده و تعیین قاعده فعال می‌شود.',
+    'Balance follow-up recommendations await data and an approved rule.',
+  ],
+  priorities: {
+    HIGH: ['فوری', 'Urgent'],
+    MEDIUM: ['مهم', 'Important'],
+    LOW: ['عادی', 'Ordinary'],
+  },
+  sourcePriorities: {
+    URGENT: ['فوری', 'Urgent'],
+    HIGH: ['بالا', 'High'],
+    NORMAL: ['عادی', 'Normal'],
+    LOW: ['کم', 'Low'],
+  },
+  ruleReasons: {
+    OVERDUE: [
+      'موعد این کار در روزهای گذشته بوده است.',
+      'This item was due on a previous day.',
+    ],
+    TODAY: ['موعد این کار امروز است.', 'This item is due today.'],
+    NEXT_THREE_DAYS: [
+      'موعد این کار در یک تا سه روز آینده است.',
+      'This item is due in the next one to three days.',
+    ],
+    THIS_WEEK: [
+      'موعد این کار در چهار تا هفت روز آینده است.',
+      'This item is due in four to seven days.',
+    ],
+    ASSIGNED: [
+      'این پیگیری به شما تخصیص یافته و موعد ثبت‌شده ندارد.',
+      'This follow-up is assigned to you without a recorded due date.',
+    ],
+  },
   sourceUpdated: ['آخرین به‌روزرسانی دادهٔ منبع', 'Latest source data update'],
   noSourceUpdate: [
     'زمان به‌روزرسانی منبع موجود نیست',
@@ -63,13 +101,13 @@ export const assistantCopy = {
     'Summary of retrieved personal follow-ups',
   ],
   dailyCoverage: [
-    'شامل موارد عقب‌افتاده و موعدهای هفت روز آینده؛ حداکثر ۳۰ مورد. این خلاصه شامل فروش و مطالبات سازمانی نیست.',
-    'Includes overdue items and the next seven days, up to 30 items. Corporate sales and receivables are not included.',
+    'این شمارنده‌ها فقط پیگیری‌های شخصی دریافت‌شده، شامل موارد عقب‌افتاده و موعدهای هفت روز آینده تا سقف ۳۰ مورد هستند. گزارش‌های سازمانی جداگانه و طبق مجوز نمایش داده می‌شوند.',
+    'These counts cover retrieved personal follow-ups only, including overdue items and the next seven days, up to 30 items. Corporate reports appear separately according to access.',
   ],
   visibleCount: ['موارد نمایش‌داده‌شده', 'Visible items'],
-  overdueCount: ['عقب‌افتاده — اولویت بالا', 'Overdue — high priority'],
-  dueSoonCount: ['موعد نزدیک — اولویت متوسط', 'Due soon — medium priority'],
-  assignedCount: ['تخصیص‌یافته — اولویت عادی', 'Assigned — normal priority'],
+  overdueCount: ['عقب‌افتاده', 'Overdue'],
+  dueSoonCount: ['موعد نزدیک', 'Due soon'],
+  assignedCount: ['تخصیص‌یافته بدون موعد', 'Assigned without a deadline'],
   salesDefinitionGate: [
     'منبع خواندنی فروش در دسترس نیست یا پاسخ آن معتبر نیست؛ عددی نمایش داده نمی‌شود.',
     'The read-only sales source is unavailable or invalid. No figures are displayed.',

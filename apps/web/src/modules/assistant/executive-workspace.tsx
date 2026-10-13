@@ -1,4 +1,5 @@
 'use client';
+import { explainPersonal } from './recommendation-policy';
 
 import {
   useCallback,
@@ -438,24 +439,81 @@ export function AssistantComposer({
                     / {t(c.previousPeriod)}:{' '}
                     {actionResult.corporate.sales.report.previous.contractCount}
                   </p>
+                  {[
+                    ['current', c.currentPeriod],
+                    ['previous', c.previousPeriod],
+                  ].map(([key, label]) => {
+                    const sales = actionResult.corporate!.sales;
+                    if (sales.status !== 'READY') return null;
+                    const period = sales.report[key as 'current' | 'previous'];
+                    const format = new Intl.DateTimeFormat(
+                      english ? 'en-GB' : 'fa-IR',
+                      { timeZone: 'Asia/Tehran', dateStyle: 'short' },
+                    );
+                    return (
+                      <p className={styles.composerHint} key={key as string}>
+                        {t(label as AssistantText)}:{' '}
+                        <time dateTime={period.startUtc}>
+                          {format.format(new Date(period.startUtc))}
+                        </time>{' '}
+                        —{' '}
+                        <time dateTime={period.endUtc}>
+                          {format.format(
+                            new Date(Date.parse(period.endUtc) - 1),
+                          )}
+                        </time>
+                      </p>
+                    );
+                  })}
                   <SourceUpdated
                     value={actionResult.corporate.sales.report.sourceUpdatedAt}
                     english={english}
                     t={t}
                   />
-                  {actionResult.corporate.sales.report.current.contractAmountsBeforeRefunds?.map(
-                    (amount) => (
-                      <p
-                        className={styles.composerHint}
-                        key={amount.currencyCode}
-                      >
-                        {t(c.contractAmount)}:{' '}
-                        <bdi>
-                          {amount.amount} {amount.currencyCode}
-                        </bdi>
-                      </p>
-                    ),
-                  )}
+                  {[
+                    ...new Set([
+                      ...(
+                        actionResult.corporate.sales.report.current
+                          .contractAmountsBeforeRefunds ?? []
+                      ).map((row) => row.currencyCode),
+                      ...(
+                        actionResult.corporate.sales.report.previous
+                          .contractAmountsBeforeRefunds ?? []
+                      ).map((row) => row.currencyCode),
+                    ]),
+                  ]
+                    .sort()
+                    .map((currency) => {
+                      const report = actionResult.corporate!.sales;
+                      if (report.status !== 'READY') return null;
+                      const current =
+                        report.report.current.contractAmountsBeforeRefunds;
+                      const previous =
+                        report.report.previous.contractAmountsBeforeRefunds;
+                      return (
+                        <p className={styles.composerHint} key={currency}>
+                          {t(c.contractAmount)} — {t(c.currentPeriod)}:{' '}
+                          <bdi>
+                            {current
+                              ? (current.find(
+                                  (row) => row.currencyCode === currency,
+                                )?.amount ?? '0')
+                              : '—'}{' '}
+                            {currency}
+                          </bdi>
+                          {' / '}
+                          {t(c.previousPeriod)}:{' '}
+                          <bdi>
+                            {previous
+                              ? (previous.find(
+                                  (row) => row.currencyCode === currency,
+                                )?.amount ?? '0')
+                              : '—'}{' '}
+                            {currency}
+                          </bdi>
+                        </p>
+                      );
+                    })}
                 </>
               ) : (
                 <p className={styles.composerHint}>
@@ -467,6 +525,9 @@ export function AssistantComposer({
                 </p>
               )}
               <h3>{t(c.contractBalances)}</h3>
+              <p className={styles.composerHint}>
+                {t(c.balanceRecommendationsDeferred)}
+              </p>
               <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
               {actionResult.corporate.balances.status === 'READY' && (
                 <SourceUpdated
@@ -675,7 +736,7 @@ export function AssistantComposer({
     </section>
   );
 }
-function PersonalFollowUps({
+export function PersonalFollowUps({
   t,
   snapshot,
   english,
@@ -685,8 +746,68 @@ function PersonalFollowUps({
   english: boolean;
 }) {
   const partial = snapshot?.sources.some((source) => source.status !== 'READY');
+  const renderItem = (item: ExecutiveSnapshot['followUps'][number]) => {
+    const rule = explainPersonal(item, snapshot!.generatedAt);
+    const observedAt = snapshot!.sources.find(
+      (source) => source.id === item.source && source.status === 'READY',
+    )?.asOf;
+    if (!observedAt) return null;
+    return (
+      <article key={item.id} className={styles.followUp}>
+        <span
+          className={rule.priority === 'HIGH' ? styles.overdue : styles.due}
+        >
+          {t(c.priorities[rule.priority])} · {t(c.reasons[item.reason])}
+        </span>
+        <strong>{item.title}</strong>
+        <p className={styles.footnote}>{t(c.ruleReasons[rule.reason])}</p>
+        {item.sourcePriority && (
+          <p className={styles.footnote}>
+            {t(c.recordedPriority)}:{' '}
+            {t(c.sourcePriorities[item.sourcePriority])}
+          </p>
+        )}
+        <div className={styles.followMeta}>
+          <span>{t(c.sourceNames[item.source])}</span>
+          {item.dueAt && (
+            <time dateTime={item.dueAt}>
+              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                timeZone: 'Asia/Tehran',
+                dateStyle: 'short',
+                timeStyle: 'short',
+              }).format(new Date(item.dueAt))}
+            </time>
+          )}
+        </div>
+        <p className={styles.footnote}>
+          {t(c.asOf)}:{' '}
+          <time dateTime={observedAt}>
+            {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+              timeZone: 'Asia/Tehran',
+              dateStyle: 'short',
+              timeStyle: 'short',
+            }).format(new Date(observedAt))}
+          </time>
+        </p>
+        <p className={styles.footnote}>
+          {t(c.ruleLabel)}: <bdi>PERSONAL_DUE_V2</bdi>
+        </p>
+        <Link href={item.href} className={styles.sourceLink}>
+          {t(c.openSource)}
+          <ArrowUpLeft size={14} aria-hidden="true" />
+        </Link>
+      </article>
+    );
+  };
+  const eligible =
+    snapshot?.followUps.filter((item) =>
+      snapshot.sources.some(
+        (source) =>
+          source.id === item.source && source.status === 'READY' && source.asOf,
+      ),
+    ) ?? [];
   return (
-    <Panel title={t(c.personal)} icon={CalendarClock}>
+    <Panel title={t(c.recommendationTitle)} icon={CalendarClock}>
       <p className={styles.footnote}>{t(c.personalScope)}</p>
       {partial && (
         <p className={styles.inlineNotice} role="status">
@@ -696,37 +817,22 @@ function PersonalFollowUps({
       {snapshot?.truncated && (
         <p className={styles.inlineNotice}>{t(c.limited)}</p>
       )}
-      {snapshot?.followUps.length ? (
-        <div className={styles.followUps}>
-          {snapshot.followUps.map((item) => (
-            <article key={item.id} className={styles.followUp}>
-              <span
-                className={
-                  item.reason === 'OVERDUE' ? styles.overdue : styles.due
-                }
-              >
-                {t(c.reasons[item.reason])}
-              </span>
-              <strong>{item.title}</strong>
-              <div className={styles.followMeta}>
-                <span>{t(c.sourceNames[item.source])}</span>
-                {item.dueAt && (
-                  <time dateTime={item.dueAt}>
-                    {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                      timeZone: 'Asia/Tehran',
-                      month: 'short',
-                      day: 'numeric',
-                    }).format(new Date(item.dueAt))}
-                  </time>
-                )}
+      {eligible.length ? (
+        <>
+          <div className={styles.followUps}>
+            {eligible.slice(0, 5).map(renderItem)}
+          </div>
+          {eligible.length > 5 && (
+            <details className={styles.recommendationDetails}>
+              <summary>
+                {t(c.allRecommendations)} ({eligible.length})
+              </summary>
+              <div className={styles.followUps}>
+                {eligible.slice(5).map(renderItem)}
               </div>
-              <Link href={item.href} className={styles.sourceLink}>
-                {t(c.openSource)}
-                <ArrowUpLeft size={14} aria-hidden="true" />
-              </Link>
-            </article>
-          ))}
-        </div>
+            </details>
+          )}
+        </>
       ) : (
         <Empty
           compact
