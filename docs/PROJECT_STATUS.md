@@ -5887,3 +5887,7 @@ Implementation: reference PURCHASE tariff minus actual hotel purchase, exact Dec
 ## ASSISTANT-TEXT-ONLY-1013 — PC-C
 
 Manual report filter controls removed from assistant composer at user request. Text-derived filters remain the target flow through the bounded orchestrator and native tool validation. Existing fixed actions remain available until the provider and data-processing policy are approved. No claim of live natural-language processing; report filter APIs and evidence metadata remain available. Validation: 35 assistant tests, scoped ESLint, production build and its TypeScript gate passed. Provider/key activation explicitly deferred by owner. Exact-head and postmerge CI gate local rollout.
+
+## FLIGHT-LOAD-SCROLL-1013 — PC-A — VALIDATION
+
+Flight load retains its result and detail regions after the first search while changed filters invalidate stale selections. Outbound/return viewports and detail panels have stable height; selected-row styling no longer changes border dimensions. Scroll anchoring and scroll chaining are disabled within the load panels. Existing route/return/date filtering is unchanged. Fifteen focused selection, rendering and flight-load model tests pass. Scoped lint and Web typecheck pass; production build is running; exact-head CI gates the authorized develop merge. No API, migration, dependency or localhost runtime change.

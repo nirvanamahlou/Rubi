@@ -1,6 +1,7 @@
 .root {
   border: 1px solid var(--border);
   border-radius: 14px;
+  overflow-anchor: none;
   overflow: hidden;
   background: var(--surface);
 }
@@ -48,11 +49,15 @@
   font-weight: 800;
   padding: 10px;
   background: var(--surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .scroller {
-  max-height: 330px;
-  min-height: 160px;
+  height: 330px;
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 .table {
   min-width: 1080px;
@@ -103,14 +108,15 @@
 .table .selected td {
   background: var(--primary);
   color: var(--primary-foreground);
-  border-top: 2px solid var(--primary);
-  border-bottom: 2px solid var(--primary);
+  box-shadow:
+    inset 0 1px var(--primary),
+    inset 0 -1px var(--primary);
 }
 .table .selected td:first-child {
-  border-inline-start: 2px solid var(--primary);
+  border-inline-start-color: var(--primary);
 }
 .table .selected td:last-child {
-  border-inline-end: 2px solid var(--primary);
+  border-inline-end-color: var(--primary);
 }
 .empty {
   padding: 24px 12px;
@@ -135,6 +141,10 @@
   gap: 12px;
 }
 .details section {
+  height: 240px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
