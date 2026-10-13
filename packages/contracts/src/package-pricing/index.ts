@@ -259,9 +259,16 @@ export {
   quoteHotelOccupancy,
   hotelAgeOn,
   hotelMaximumCombinations,
+  hotelRoomCapacityCombinations,
+  hotelLargestCombinations,
 } from './hotel-occupancy';
 
 export interface HotelRoomRateV1 {
+  /** Display-only recorded combinations across matching tariffs; never a price quote. */
+  capacityCombinations?: readonly Pick<
+    HotelOccupancyRateV1,
+    'adults' | 'childAges'
+  >[];
   /** Exact room-per-night occupancy tariffs; absence preserves legacy factors. */
   occupancyRates?: readonly HotelOccupancyRateV1[];
   roomTypeId: string;

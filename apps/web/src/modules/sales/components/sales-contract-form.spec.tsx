@@ -9,6 +9,8 @@ const fixture = vi.hoisted(() => ({
   hotel: false,
   roundTrip: false,
   step: 0,
+  firstDetail: false,
+  zeroIndex: 0,
   ticketDraft: null as SalesFormState | null,
 }));
 vi.mock('react', async (original) => ({
@@ -61,7 +63,12 @@ vi.mock('react', async (original) => ({
       fixture.ticketDraft
     )
       value = fixture.ticketDraft;
-    if (value === 0) value = fixture.step;
+    if (value === 0)
+      value = fixture.firstDetail
+        ? fixture.zeroIndex++ === 0
+          ? fixture.step
+          : 0
+        : fixture.step;
     return [value, vi.fn()];
   },
 }));
@@ -201,4 +208,29 @@ it('offers the expert reservation note on sale pricing rather than only at final
   const final = renderToStaticMarkup(<SalesContractForm />);
   fixture.step = 0;
   expect(final).not.toContain('یادداشت کارشناس برای رزرواسیون (اختیاری)');
+});
+
+it('does not block hotel details while the date rate request is still pending', () => {
+  fixture.firstDetail = true;
+  fixture.zeroIndex = 0;
+  fixture.step = 1;
+  fixture.ticketDraft = {
+    ...emptySalesForm,
+    serviceKinds: ['HOTEL'],
+    hotel: {
+      ...emptySalesForm.hotel,
+      hotelId: 'hotel',
+      checkIn: '2099-10-01',
+      checkOut: '2099-10-05',
+    },
+  };
+  try {
+    const html = renderToStaticMarkup(<SalesContractForm />);
+    expect(html).not.toContain('تا دریافت موفق ادامه ندهید');
+    expect(html).toContain('نوع اتاق');
+  } finally {
+    fixture.firstDetail = false;
+    fixture.step = 0;
+    fixture.ticketDraft = null;
+  }
 });

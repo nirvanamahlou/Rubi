@@ -1,4 +1,6 @@
 'use client';
+import { HotelRoomCapacity } from './hotel-room-capacity';
+import { salesHotelRoomOptions } from '../model/sales-hotel-room-options';
 import {
   isTicketOnlyContract,
   ticketOnlySaleDefaults,
@@ -78,7 +80,6 @@ import {
   salesHotelCapacityError,
   salesHotelOccupancyQuote,
   hotelOccupancySaleDefaults,
-  salesHotelRoomTypes,
   salesOfferHasCapacity,
   salesDirections,
   salesTravelDate,
@@ -268,19 +269,18 @@ export function SalesContractForm() {
   const submission = useRef({ fingerprint: '', key: '' });
   const selectableHotelRoomTypes = useMemo(
     () =>
-      salesHotelRoomTypes(
+      salesHotelRoomOptions(
         state.hotel.hotelId,
         references.hotels,
         references.roomTypes,
-        hotelRoomRates.map((rate) => rate.roomTypeId),
-      ).filter((room) => {
-        const rate = hotelRoomRates.find((item) => item.roomTypeId === room.id);
-        return (
-          !rate?.occupancyRates ||
-          Boolean(salesHotelOccupancyQuote(state, rate))
-        );
-      }),
-    [hotelRoomRates, references.hotels, references.roomTypes, state],
+        hotelRoomRates,
+      ),
+    [
+      hotelRoomRates,
+      references.hotels,
+      references.roomTypes,
+      state.hotel.hotelId,
+    ],
   );
   const selectableHotels = useMemo(() => {
     const hotelsAtDestination = references.hotels.filter(
@@ -565,12 +565,7 @@ export function SalesContractForm() {
   );
   const pricedState = hotelOccupancySaleDefaults(state, occupancyRoom);
   const passengerCounts = salesPassengerCounts(state);
-  const hotelCapacityError =
-    state.serviceKinds.includes('HOTEL') &&
-    state.hotel.hotelId &&
-    hotelRateSnapshot.key !== hotelRateKey
-      ? 'در حال دریافت نرخ هتل برای تاریخ انتخاب‌شده؛ تا دریافت موفق ادامه ندهید.'
-      : salesHotelCapacityError(state, hotelRoomRates);
+  const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
   const updatePassengerCount = (
     kind: keyof SalesFormState['passengerComposition'],
@@ -1478,6 +1473,11 @@ export function SalesContractForm() {
                     }
                   />
                   <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground md:col-span-3">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {hotelRoomRates.map((room) => (
+                        <HotelRoomCapacity key={room.roomTypeId} room={room} />
+                      ))}
+                    </div>
                     {hotelRoomRates
                       .filter((room) => room.occupancyRates)
                       .map((room) => {
@@ -1528,17 +1528,10 @@ export function SalesContractForm() {
                         </Button>
                       ) : null;
                     })()}
-                    {hotelRoomRates.length
-                      ? hotelRoomRates
-                          .filter((room) => !room.occupancyRates)
-                          .map(
-                            (room) =>
-                              `${room.roomTypeName}: ${room.maxAdults} بزرگسال + ${room.maxChildren2To6 ?? room.maxChildren} کودک ۲–۶ + ${room.maxChildren6To12 ?? 0} کودک ۶–۱۲ + ${room.maxInfants ?? 0} نوزاد`,
-                          )
-                          .join(' | ')
-                      : selectableHotelRoomTypes.length
+                    {!hotelRoomRates.length &&
+                      (selectableHotelRoomTypes.length
                         ? 'نوع اتاق‌های متصل به هتل قابل انتخاب‌اند؛ نبود ضریب فعال مانع ثبت قرارداد نیست.'
-                        : 'نوع اتاقی در اطلاعات پایه به این هتل متصل نشده است.'}
+                        : 'نوع اتاقی در اطلاعات پایه به این هتل متصل نشده است.')}
                   </div>{' '}
                   {hotelCapacityError ? (
                     <div className="md:col-span-3">

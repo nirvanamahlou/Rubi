@@ -1,3 +1,7 @@
+import {
+  hotelLargestCombinations,
+  hotelRoomCapacityCombinations,
+} from '../src/package-pricing/hotel-occupancy';
 import { describe, expect, it } from 'vitest';
 import {
   hotelAgeOn,
@@ -113,4 +117,54 @@ describe('exact hotel occupancy and room nightly rates', () => {
     expect(hotelAgeOn('2020-10-06', '2026-10-06')).toBe(6);
     expect(hotelAgeOn('2020-02-30', '2026-10-06')).toBeNull();
   });
+});
+
+it('reports largest real combinations, preserving tied age ranges instead of adding independent maxima', () => {
+  const result = hotelLargestCombinations([
+    { adults: 4, childAges: [] },
+    {
+      adults: 3,
+      childAges: [
+        { min: 2, maxExclusive: 6 },
+        { min: 6, maxExclusive: 12 },
+      ],
+    },
+    {
+      adults: 3,
+      childAges: [
+        { min: 6, maxExclusive: 12 },
+        { min: 2, maxExclusive: 6 },
+      ],
+    },
+    {
+      adults: 3,
+      childAges: [
+        { min: 0, maxExclusive: 2 },
+        { min: 6, maxExclusive: 12 },
+      ],
+    },
+  ]);
+  expect(result.total).toBe(5);
+  expect(result.combinations).toHaveLength(2);
+  expect(result.combinations.every((c) => c.adults === 3)).toBe(true);
+  expect(result.combinations.some((c) => c.childAges[0]!.min === 0)).toBe(true);
+  expect(hotelLargestCombinations([])).toEqual({ total: 0, combinations: [] });
+});
+it('preserves legacy per-room capacity and exact child age bands', () => {
+  const combinations = hotelRoomCapacityCombinations({
+    maxAdults: 2,
+    maxChildren: 1,
+    maxChildren6To12: 1,
+    maxInfants: 1,
+  } as never);
+  expect(combinations).toEqual([
+    {
+      adults: 2,
+      childAges: [
+        { min: 2, maxExclusive: 6 },
+        { min: 6, maxExclusive: 12 },
+        { min: 0, maxExclusive: 2 },
+      ],
+    },
+  ]);
 });

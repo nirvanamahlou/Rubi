@@ -1,4 +1,4 @@
-import type { HotelOccupancyRateV1 } from './index';
+import type { HotelOccupancyRateV1, HotelRoomRateV1 } from './index';
 
 const dateStamp = (value: string): number => {
   const stamp = Date.parse(`${value}T00:00:00Z`);
@@ -237,4 +237,58 @@ export function hotelAgeOn(
   )
     age--;
   return age;
+}
+
+/** Preserve real rows: never combine independent adult/child maxima. */
+export function hotelRoomCapacityCombinations(
+  room: HotelRoomRateV1,
+): readonly Pick<HotelOccupancyRateV1, 'adults' | 'childAges'>[] {
+  if (room.capacityCombinations) return room.capacityCombinations;
+  if (room.occupancyRates) return room.occupancyRates;
+  const repeat = (count: number, min: number, maxExclusive: number) =>
+    Array.from({ length: Math.max(0, count) }, () => ({ min, maxExclusive }));
+  return [
+    {
+      adults: room.maxAdults,
+      childAges: [
+        ...repeat(room.maxChildren2To6 ?? room.maxChildren, 2, 6),
+        ...repeat(room.maxChildren6To12 ?? 0, 6, 12),
+        ...repeat(room.maxInfants ?? 0, 0, 2),
+      ],
+    },
+  ];
+}
+
+export function hotelLargestCombinations(
+  combinations: readonly Pick<HotelOccupancyRateV1, 'adults' | 'childAges'>[],
+) {
+  const unique = [
+    ...new Map(
+      combinations.map((row) => {
+        const value = {
+          adults: row.adults,
+          childAges: [...row.childAges].sort(
+            (a, b) => a.min - b.min || a.maxExclusive - b.maxExclusive,
+          ),
+        };
+        return [JSON.stringify(value), value] as const;
+      }),
+    ).values(),
+  ];
+  const total = Math.max(
+    0,
+    ...unique.map((row) => row.adults + row.childAges.length),
+  );
+  return {
+    total,
+    combinations: unique
+      .filter((row) => row.adults + row.childAges.length === total)
+      .sort(
+        (a, b) =>
+          b.adults - a.adults ||
+          JSON.stringify(a.childAges).localeCompare(
+            JSON.stringify(b.childAges),
+          ),
+      ),
+  };
 }
