@@ -7351,3 +7351,8 @@ Contracts package. Source locks are released; no API or database rollout needed.
 ## HOTEL-REPEAT-ADJUSTMENT-1013 — PC-A — READY_FOR_REVIEW
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
+
+
+## HOTEL-RATE-HUB-1013 — PC-A — IN_PROGRESS
+
+Branch codex/pc-a-hotel-rate-hub-1013 from origin/develop@016f3e2a. User requests four hotel-rate entry cards: Excel import, new pack, existing packs/edit, and archive. User explicitly chooses archival with preserved history and authorizes develop merge. Reserve Reservations hotel-rate Web navigation and archive service/controller tests plus own docs. Archive requires persisted lifecycle state, write/branch authorization and audit; all new-rate consumers must exclude archived packs while existing immutable references remain readable. Schema/migration and shared consumer scope must be checked and reserved before implementation; no operational archive, migration or runtime rollout authorized. No feature implementation or merge yet.
