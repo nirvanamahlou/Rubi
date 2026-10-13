@@ -2,15 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { TOOLS, PERSONAL_TOOLS, getTool, validateToolInput } from './tools.mjs';
 
-test('six immutable read contracts have validators, bounded limits and native grants', () => {
-  assert.equal(TOOLS.length, 6);
+test('legacy and filtered read contracts have validators, bounded limits and native grants', () => {
+  assert.equal(TOOLS.length, 10);
+  assert.equal(TOOLS.filter((tool) => tool.version === 1).length, 6);
   assert.equal(PERSONAL_TOOLS.length, 3);
-  assert.equal(new Set(TOOLS.map((tool) => tool.path)).size, 6);
+  assert.equal(new Set(TOOLS.map((tool) => tool.path)).size, 10);
   for (const tool of TOOLS) {
     assert.equal(getTool(tool.id), tool);
     assert.equal(tool.method, 'GET');
     assert.equal(tool.sideEffects, false);
-    assert.equal(tool.version, 1);
+    assert.ok([1, 2].includes(tool.version));
     assert.equal(typeof tool.validate, 'function');
     assert.equal(typeof tool.project, 'function');
     assert.equal(tool.limits.maxResponseBytes, 524288);

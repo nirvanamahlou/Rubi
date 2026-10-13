@@ -1,5 +1,5 @@
 import { ServiceError } from './errors.mjs';
-import { getTool, PERSONAL_TOOLS } from './tools.mjs';
+import { getTool, PERSONAL_TOOLS, validateToolInput } from './tools.mjs';
 export function configuredErpOrigin(value) {
   const url = new URL(value);
   const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
@@ -69,6 +69,8 @@ export function createErpClient({
           response.status,
           response.status === 401 ? 'UNAUTHENTICATED' : 'FORBIDDEN',
         );
+      if (response.status === 400)
+        throw new ServiceError(400, 'INVALID_REPORT_FILTER');
       if (response.status === 404)
         throw new ServiceError(502, 'SOURCE_NOT_CONNECTED');
       if (response.status === 409) {
@@ -101,10 +103,14 @@ export function createErpClient({
         throw new ServiceError(400, 'INVALID_TOOL_INPUT');
       return read('/iam/auth/access', authBase, cookie, signal, source);
     },
-    readTool(id, cookie, signal) {
+    readTool(id, cookie, signal, input = {}) {
       const tool = getTool(id);
+      const filters = validateToolInput(input, id);
+      const path =
+        tool.path +
+        (filters ? '?' + new URLSearchParams(filters).toString() : '');
       return read(
-        tool.path,
+        path,
         tool.base === 'reports' ? reportBase : base,
         cookie,
         signal,

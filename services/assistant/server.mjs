@@ -1,3 +1,4 @@
+import { parseFilterSearch, resolveReportFilters } from './report-filters.mjs';
 import { comparePersonal } from './recommendations.mjs';
 import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
@@ -34,8 +35,12 @@ export function createAssistantServer({
     fetcher,
     timeoutMs,
   });
-  const authenticate = createAuthorization(client);
-  const execute = createToolExecutor({ client, authenticate, now });
+  const authenticateErp = createAuthorization(client);
+  const execute = createToolExecutor({
+    client,
+    authenticate: authenticateErp,
+    now,
+  });
   const windows = new Map();
   let inFlight = 0;
   function withinLimit(key, limit) {
@@ -59,13 +64,34 @@ export function createAssistantServer({
       });
       let actorId;
       let action;
+      let optionsRequest = false;
+      let filteredRequest = false;
+      let reportInput = {};
+      const authenticate = async (...args) => {
+        const actor = await authenticateErp(...args);
+        if (
+          reportInput.branchId &&
+          !actor.branchIds.includes(reportInput.branchId)
+        )
+          throw new ServiceError(403, 'FORBIDDEN');
+        return actor;
+      };
+      const actualTool = (id) =>
+        filteredRequest
+          ? ({
+              'sales.weekly': 'sales.report.v2',
+              'sales.contract-balances': 'sales.contract-balances.v2',
+              'customer-affairs.call-conversion':
+                'customer-affairs.call-conversion.v2',
+            }[id] ?? id)
+          : id;
       let counted = false;
       let outcome = 'FAILED';
       const toolOutcomes = [];
       const runTool = (id, cookie, observedAt) =>
         execute(
-          id,
-          {},
+          actualTool(id),
+          getTool(actualTool(id)).filtered ? reportInput : {},
           {
             cookie,
             signal: deadline.signal,
@@ -82,7 +108,17 @@ export function createAssistantServer({
           'x-request-id': correlationId,
           ...(status === 429 ? { 'retry-after': '60' } : {}),
         });
-        response.end(JSON.stringify(body));
+        response.end(
+          JSON.stringify(
+            filteredRequest && status === 200
+              ? {
+                  ...body,
+                  version: 2,
+                  filters: resolveReportFilters(reportInput, now()),
+                }
+              : body,
+          ),
+        );
       };
       try {
         if (request.method !== 'GET') throw new ServiceError(405, 'READ_ONLY');
@@ -91,8 +127,19 @@ export function createAssistantServer({
           send(200, { status: 'ok' });
           return;
         }
-        action = actionFromPath(request.url);
-        if (request.url !== '/v1/executive/snapshot' && !action)
+        if (request.url.startsWith('/v2/assistant/actions/')) {
+          const url = new URL(request.url, 'http://localhost');
+          action = actionFromPath('/v1' + url.pathname.slice(3));
+          if (!action) throw new ServiceError(404, 'NOT_FOUND');
+          reportInput = parseFilterSearch(url.search, now());
+          filteredRequest = true;
+        } else action = actionFromPath(request.url);
+        optionsRequest = request.url === '/v2/assistant/filter-options';
+        if (
+          request.url !== '/v1/executive/snapshot' &&
+          !action &&
+          !optionsRequest
+        )
           throw new ServiceError(404, 'NOT_FOUND');
         if (
           inFlight >= 8 ||
@@ -107,10 +154,16 @@ export function createAssistantServer({
         actorId = actor.userId;
         if (!withinLimit(`user:${actorId}`, 12))
           throw new ServiceError(429, 'RATE_LIMITED');
+        if (optionsRequest) {
+          const options = await runTool('sales.filter-options', cookie);
+          outcome = 'SUCCESS';
+          send(200, options);
+          return;
+        }
         if (action === 'sales-analysis' || action === 'receivables-follow-up') {
           const balances = action === 'receivables-follow-up';
           const tool = balances ? 'sales.contract-balances' : 'sales.weekly';
-          const validate = getTool(tool).validate;
+          const validate = getTool(actualTool(tool)).validate;
           const allowed = (principal) => isToolAllowed(principal, tool);
           requireToolAccess(actor, tool);
           let report;
@@ -146,7 +199,17 @@ export function createAssistantServer({
           if (!allowed(afterSales)) throw new ServiceError(403, 'FORBIDDEN');
           if (!balances && report) {
             conversion = { status: 'DENIED' };
-            if (afterSales.permissions.includes('customer_affairs.lead.read')) {
+            if (
+              filteredRequest &&
+              (reportInput.originId || reportInput.destinationId)
+            ) {
+              conversion = {
+                status: 'UNAVAILABLE',
+                reason: 'ROUTE_COHORT_SOURCE_PENDING',
+              };
+            } else if (
+              afterSales.permissions.includes('customer_affairs.lead.read')
+            ) {
               try {
                 const value = await runTool(
                   'customer-affairs.call-conversion',

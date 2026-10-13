@@ -73,7 +73,7 @@ async function harness(t, options = {}) {
             (options.revokeSalesAfterRead && corporateRead)
               ? []
               : (options.permissions ?? [EXECUTIVE_PERMISSION]),
-          branchIds: ['branch-a'],
+          branchIds: options.branchIds ?? ['branch-a'],
         }),
       );
       return;
@@ -114,6 +114,20 @@ async function harness(t, options = {}) {
           sources: { internal: 'must-not-leak' },
         }),
       );
+      return;
+    }
+    const filteredPath = request.url.split('?')[0];
+    const filteredSources = {
+      '/api/v1/sales/assistant/report': options.filteredSalesReport,
+      '/api/v1/sales/assistant/contract-balances/filtered':
+        options.filteredBalanceReport,
+      '/api/v1/customer-affairs/assistant/call-conversion/filtered':
+        options.filteredConversionReport,
+      '/api/v1/sales/assistant/filter-options': options.filterOptions,
+    };
+    if (Object.hasOwn(filteredSources, filteredPath)) {
+      corporateRead = true;
+      response.end(JSON.stringify(filteredSources[filteredPath] ?? {}));
       return;
     }
     if (request.url === '/api/v1/sales/assistant/weekly') {
@@ -896,4 +910,110 @@ test('recommendations do not fabricate a recorded priority when the source omits
     clock(),
   );
   assert.equal(Object.hasOwn(unknown[0], 'sourcePriority'), false);
+});
+
+const filteredFixture = () => ({
+  ...salesFixture(),
+  version: 2,
+  source: 'sales.assistant.report.v2',
+  filters: {
+    startDate: '2026-10-10',
+    endDate: '2026-10-10',
+    branchId: null,
+    originId: null,
+    destinationId: null,
+  },
+  current: {
+    ...salesFixture().current,
+    startUtc: '2026-10-09T20:30:00.000Z',
+    endUtc: '2026-10-10T20:30:00.000Z',
+  },
+  previous: {
+    ...salesFixture().previous,
+    startUtc: '2026-10-08T20:30:00.000Z',
+    endUtc: '2026-10-09T20:30:00.000Z',
+  },
+});
+test('v2 report filters reach only versioned source and preserve current balances', async (t) => {
+  const filters = filteredFixture().filters;
+  const h = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'sales.payments.read'],
+    filteredSalesReport: filteredFixture(),
+    filteredBalanceReport: {
+      ...balanceFixture(),
+      version: 2,
+      source: 'sales.assistant.contract-balances.v2',
+      filters,
+      dateBasis: 'CURRENT_AS_OF_REQUEST',
+    },
+  });
+  const body = await (
+    await h.get(
+      undefined,
+      '/v2/assistant/actions/daily-summary?startDate=2026-10-10&endDate=2026-10-10',
+    )
+  ).json();
+  assert.equal(body.version, 2);
+  assert.equal(body.corporate.sales.status, 'READY');
+  assert.equal(body.corporate.balances.status, 'READY');
+  assert.equal(
+    body.corporate.balances.report.dateBasis,
+    'CURRENT_AS_OF_REQUEST',
+  );
+  assert.equal(body.snapshot.version, 1);
+  assert.deepEqual(body.filters, filters);
+  assert.ok(
+    h.calls.some(
+      (call) =>
+        call.path ===
+        '/api/v1/sales/assistant/report?startDate=2026-10-10&endDate=2026-10-10',
+    ),
+  );
+  assert.ok(
+    !h.calls.some((call) => call.path === '/api/v1/sales/assistant/weekly'),
+  );
+});
+test('v2 withholds mismatched filters and does not invent route conversion', async (t) => {
+  const route = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  const report = filteredFixture();
+  report.filters.originId = route;
+  const h = await harness(t, {
+    permissions: ['sales.contracts.read.all', 'customer_affairs.lead.read'],
+    filteredSalesReport: report,
+  });
+  const result = await (
+    await h.get(
+      undefined,
+      '/v2/assistant/actions/sales-analysis?startDate=2026-10-10&endDate=2026-10-10&originId=' +
+        route,
+    )
+  ).json();
+  assert.equal(result.status, 'PARTIAL');
+  assert.deepEqual(result.conversion, {
+    status: 'UNAVAILABLE',
+    reason: 'ROUTE_COHORT_SOURCE_PENDING',
+  });
+  assert.ok(!h.calls.some((call) => call.path.includes('call-conversion')));
+  const mismatched = await (
+    await h.get(
+      undefined,
+      '/v2/assistant/actions/sales-analysis?startDate=2026-10-10&endDate=2026-10-10',
+    )
+  ).json();
+  assert.equal(mismatched.status, 'BLOCKED');
+  assert.equal(mismatched.report, undefined);
+});
+test('v2 rejects scope injection, duplicate filters and overlong range before ERP access', async (t) => {
+  const h = await harness(t);
+  for (const query of [
+    'userId=other',
+    'branchId=a&branchId=b',
+    'startDate=2026-01-01&endDate=2026-10-10',
+  ])
+    assert.equal(
+      (await h.get(undefined, '/v2/assistant/actions/sales-analysis?' + query))
+        .status,
+      400,
+    );
+  assert.equal(h.calls.length, 0);
 });

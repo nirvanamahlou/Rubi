@@ -5803,3 +5803,8 @@ aggregate release guards and public v1 contracts remain.41 native tests and5
 CI-policy tests pass; no schema/migration/dependency/model/Web/producer change.
 Dedicated workflow discovers all tests. Final-head/merged CI and service-only
 localhost4300 publication remain gates; see tasks/ASSISTANT-TOOLS-1013.md.
+
+
+## PC-C — ASSISTANT-FILTERS-1013
+
+Tool infrastructure #819 is merged and deployed on loopback4300 with green head/postmerge CI. Versioned report filters are implemented in a separate candidate branch; validation and release gates remain pending. See docs/tasks/ASSISTANT-FILTERS-1013.md. No model or database change.
