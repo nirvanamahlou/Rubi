@@ -18,6 +18,7 @@ export function OccupancyBulkPanel({
   disabled,
   onBusy,
   onSaved,
+  onDirtyChange,
 }: {
   branchId: string;
   countryId: string;
@@ -27,6 +28,7 @@ export function OccupancyBulkPanel({
   disabled: boolean;
   onBusy: (busy: boolean) => void;
   onSaved: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<{
@@ -103,8 +105,9 @@ export function OccupancyBulkPanel({
         onSaved,
       });
       setDone(true);
+      onDirtyChange?.(false);
       setMessage(
-        `${result.hotels.toLocaleString('fa-IR')} هتل، ${result.prices.toLocaleString('fa-IR')} قیمت بررسی شد: ${result.created} بسته جدید، ${result.updated} بسته به‌روزرسانی و ${result.unchanged} بسته بدون تغییر. از بخش بسته‌های موجود پایین صفحه قابل مشاهده و ویرایش است.${preview.issues.length ? ` ${preview.issues.length} ردیف خطادار ثبت نشد.` : ''}`,
+        `${result.hotels.toLocaleString('fa-IR')} هتل، ${result.prices.toLocaleString('fa-IR')} قیمت بررسی شد: ${result.created} بسته جدید، ${result.updated} بسته به‌روزرسانی و ${result.unchanged} بسته بدون تغییر. از کارت «بسته‌های موجود» در صفحهٔ نرخ هتل قابل مشاهده و ویرایش است.${preview.issues.length ? ` ${preview.issues.length} ردیف خطادار ثبت نشد.` : ''}`,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ثبت ناموفق بود.');
@@ -137,6 +140,7 @@ export function OccupancyBulkPanel({
           disabled={disabled || busy}
           onChange={(e) => {
             setFile(e.target.files?.[0] ?? null);
+            onDirtyChange?.(Boolean(e.target.files?.[0]));
             setPreview(null);
             setPlanReady(false);
             setDone(false);

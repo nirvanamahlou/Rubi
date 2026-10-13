@@ -13,7 +13,9 @@ import styles from './hotel-rate-hub.module.css';
 const archiveDirectoryRequest = <T,>(path: string) =>
   rateRequest<T>(`${path}&includeArchived=true`);
 
-export function PackArchivePanel() {
+export function PackArchivePanel({
+  onBusyChange,
+}: { onBusyChange?: (busy: boolean) => void } = {}) {
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [branch, setBranch] = useState('');
   const [packs, setPacks] = useState<PackSummary[]>([]);
@@ -25,6 +27,10 @@ export function PackArchivePanel() {
   const [message, setMessage] = useState('');
   const [selected, setSelected] = useState<PackSummary | null>(null);
   const [detail, setDetail] = useState<PackDetail | null>(null);
+  useEffect(() => {
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [busy, onBusyChange]);
   useEffect(() => {
     let active = true;
     refreshAuthenticatedSession(getPublicApiBaseUrl() ?? '')

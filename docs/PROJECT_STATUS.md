@@ -1,3 +1,7 @@
+## 2026-10-13 — HOTEL-RATE-HUB-FIXES-1013 — PC-A — READY_FOR_REVIEW
+
+Browser-reproduced hotel rate hub defects: Excel entry still exposed manual creation and saved-pack workflows, branch switching disabled import, and saved room tariffs could be lost when refreshed master room links omitted them. Separate workflows now stay isolated, branch selection retains the correct editor mode, pending Excel files require discard confirmation on destination changes, and leaving during writes is blocked. Hub exit uses in-page confirmation; duplicate headings removed. Authenticated read-only browser checks passed for isolated Excel, existing pack/editor and archive. Focused tests118, scoped lint and Web typecheck pass; production build and exact-head CI gate delivery. No operational rate changes, migration or live3100 replacement.
+
 ## 2026-10-13 — RESERVATION-HOTEL-COST-VISIBILITY-1013 — PC-A
 
 ## ACCOUNTING-KPI-NAVIGATION-1013 — PC-A — REVIEW CANDIDATE

@@ -224,7 +224,11 @@ export function HotelRatePackTable({
 
 export function HotelRatePacksWorkspace({
   initialMode = 'manual',
-}: { initialMode?: 'manual' | 'excel' | 'existing' } = {}) {
+  onBusyChange,
+}: {
+  initialMode?: 'manual' | 'excel' | 'existing';
+  onBusyChange?: (busy: boolean) => void;
+} = {}) {
   const [session, setSession] = useState<LoginResponse | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
@@ -252,9 +256,7 @@ export function HotelRatePacksWorkspace({
     id: string;
     version: number;
   } | null>(null);
-  const [inputMode, setInputMode] = useState<'manual' | 'excel'>(
-    initialMode === 'excel' ? 'excel' : 'manual',
-  );
+  const inputMode = initialMode === 'excel' ? 'excel' : 'manual';
   const [draftGeneration, setDraftGeneration] = useState(0);
   const [editorMode, setEditorMode] = useState<'list' | 'new' | 'edit'>('list');
   const editorRef = useRef<HTMLDivElement>(null);
@@ -264,9 +266,15 @@ export function HotelRatePacksWorkspace({
   const [opening, setOpening] = useState(false);
   const [browserLocked, setBrowserLocked] = useState(false);
   const [message, setMessage] = useState('');
+  const [importDirty, setImportDirty] = useState(false);
   const pending = useRef<{ route: string; body: string; key: string } | null>(
     null,
   );
+
+  useEffect(() => {
+    onBusyChange?.(busy || opening);
+    return () => onBusyChange?.(false);
+  }, [busy, opening, onBusyChange]);
 
   useEffect(() => {
     if (editorMode === 'list') return;
@@ -385,8 +393,37 @@ export function HotelRatePacksWorkspace({
         const saved = new Map(old.map((row) => [row.hotel.id, row]));
         const available = hotels.map((hotel) => ({
           ...(saved.get(hotel.id) ?? blankRow(hotel, currency)),
-          hotel,
-          roomRates: (hotel.roomTypes ?? []).map(
+          hotel: {
+            ...hotel,
+            roomTypes: [
+              ...(hotel.roomTypes ?? []),
+              ...(saved.get(hotel.id)?.roomRates ?? [])
+                .filter(
+                  (room) =>
+                    !(hotel.roomTypes ?? []).some(
+                      (option) => option.id === room.roomTypeId,
+                    ),
+                )
+                .map((room) => ({
+                  id: room.roomTypeId,
+                  name: room.roomTypeName,
+                })),
+            ],
+          },
+          roomRates: [
+            ...(hotel.roomTypes ?? []),
+            ...(saved.get(hotel.id)?.roomRates ?? [])
+              .filter(
+                (room) =>
+                  !(hotel.roomTypes ?? []).some(
+                    (option) => option.id === room.roomTypeId,
+                  ),
+              )
+              .map((room) => ({
+                id: room.roomTypeId,
+                name: room.roomTypeName,
+              })),
+          ].map(
             (room) =>
               saved
                 .get(hotel.id)
@@ -431,7 +468,7 @@ export function HotelRatePacksWorkspace({
     return () => {
       active = false;
     };
-  }, [session, cityId, currency]);
+  }, [session, cityId, currency, branch]);
 
   const nights = dayCount(checkIn, checkOut);
   const selected = rows.filter((row) => row.selected);
@@ -440,9 +477,13 @@ export function HotelRatePacksWorkspace({
     false;
 
   function newPack() {
-    if (busy || browserLocked) return;
+    if (busy || browserLocked || opening) return;
+    if (
+      (selected.length || importDirty) &&
+      !window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شوند؟')
+    )
+      return;
     setEditing(null);
-    setInputMode('manual');
     setDraftGeneration((value) => value + 1);
     setEditorMode('new');
     setCountryId(preferredPackDestination(countries, 'country'));
@@ -469,7 +510,12 @@ export function HotelRatePacksWorkspace({
     pending.current = null;
   }
   function closeEditor() {
-    if (busy) return;
+    if (busy || opening || browserLocked) return;
+    if (
+      (selected.length || importDirty) &&
+      !window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شوند؟')
+    )
+      return;
     setEditorMode('list');
     setEditing(null);
     setError('');
@@ -477,15 +523,27 @@ export function HotelRatePacksWorkspace({
     pending.current = null;
   }
   function switchBranch(value: string) {
-    if (busy) return;
+    if (busy || opening || value === branch) return;
+    if (
+      (selected.length || importDirty) &&
+      !window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شوند؟')
+    )
+      return;
     if (browserLocked) {
       setError('ابتدا تغییرات قیمت بستهٔ موجود را ذخیره یا کنار بگذارید.');
       return;
     }
-    closeEditor();
+    setEditing(null);
+    setError('');
+    setMessage('');
+    pending.current = null;
     setBranch(value);
-    setCityId('');
+    setImportDirty(false);
+    setEditorMode(initialMode === 'existing' ? 'list' : 'new');
     setRows([]);
+    setManualHotelId('');
+    setManualValidity({});
+    setDraftGeneration((value) => value + 1);
   }
   function changeRow(id: string, patch: Partial<GridRow>) {
     setRows((old) =>
@@ -508,11 +566,12 @@ export function HotelRatePacksWorkspace({
     confirmed = false,
   ) {
     if ((kind === 'country' ? countryId : cityId) === id) return;
-    if (selected.length && !confirmed) {
+    if ((selected.length || importDirty) && !confirmed) {
       setDestinationChange({ kind, id });
       return;
     }
     setDestinationChange(null);
+    setImportDirty(false);
     if (kind === 'city') {
       chooseCity(id);
       return;
@@ -526,6 +585,11 @@ export function HotelRatePacksWorkspace({
   }
   async function openPack(id: string, hotelId?: string) {
     if (busy || browserLocked || opening) return;
+    if (
+      (selected.length || importDirty) &&
+      !window.confirm('تغییرات ذخیره‌نشده کنار گذاشته شوند؟')
+    )
+      return;
     setOpening(true);
     setError('');
     setMessage('');
@@ -545,7 +609,6 @@ export function HotelRatePacksWorkspace({
       setCountryId(city.countryId);
       setEditing({ id: item.id, version: item.version });
       setEditorMode('edit');
-      setInputMode('manual');
       setDraftGeneration((value) => value + 1);
       setBranch(item.branchId);
       setCityId(item.cityId);
@@ -779,20 +842,18 @@ export function HotelRatePacksWorkspace({
     return <p role="alert">مجوز مشاهدهٔ رزرواسیون ندارید.</p>;
 
   return (
-    <main className={styles.root} dir="rtl">
+    <section className={styles.root} dir="rtl">
       <header className={styles.toolbar}>
-        <div>
-          <p>رزرواسیون / نرخ هتل</p>
-          <h1>مدیریت نرخ‌های هتل</h1>
-        </div>
-        <button
-          className={styles.primary}
-          type="button"
-          onClick={newPack}
-          disabled={!canWrite || busy || browserLocked || opening}
-        >
-          + بستهٔ جدید
-        </button>
+        {initialMode === 'manual' && (
+          <button
+            className={styles.primary}
+            type="button"
+            onClick={newPack}
+            disabled={!canWrite || busy || browserLocked || opening}
+          >
+            + بستهٔ جدید
+          </button>
+        )}
       </header>
       {error && (
         <p role="alert" className={styles.error}>
@@ -801,22 +862,6 @@ export function HotelRatePacksWorkspace({
       )}
       {message && <p role="status">{message}</p>}
       <div className={styles.modeBar} aria-label="روش ورود نرخ">
-        <button
-          type="button"
-          aria-pressed={inputMode === 'manual'}
-          disabled={busy || opening || browserLocked}
-          onClick={() => setInputMode('manual')}
-        >
-          ثبت دستی نرخ
-        </button>
-        <button
-          type="button"
-          aria-pressed={inputMode === 'excel'}
-          disabled={busy || opening || browserLocked || editorMode === 'edit'}
-          onClick={() => setInputMode('excel')}
-        >
-          ورودی اکسل
-        </button>
         <label className={styles.branchFilter}>
           شعبه
           <Choice
@@ -888,7 +933,7 @@ export function HotelRatePacksWorkspace({
           )}
         </section>
       )}
-      {cityId && branch && (
+      {initialMode === 'existing' && cityId && branch && (
         <details
           className={styles.periodDisclosure}
           open={editorMode === 'list'}
@@ -907,142 +952,147 @@ export function HotelRatePacksWorkspace({
           />
         </details>
       )}
-      <div hidden={inputMode !== 'manual'}>
-        {editorMode !== 'list' && (
-          <div
-            ref={editorRef}
-            className={styles.editor}
-            aria-label="ویرایش دستی بستهٔ نرخ"
-          >
-            <form onSubmit={(event) => void save(event)}>
-              <fieldset
-                disabled={busy || !canWrite || opening || browserLocked}
-              >
-                <section className={styles.staySetup}>
-                  <h2>بازهٔ نرخ</h2>
-                  <div className={styles.stayFields}>
-                    <label className={styles.destinationField}>
-                      ورود به هتل
-                      <DatePicker
-                        defaultCalendarSystem="gregorian"
-                        gregorianEnglish
-                        id="hotel-rate-check-in"
-                        name="checkIn"
-                        required
-                        value={checkIn}
-                        onChange={changeCheckIn}
-                        aria-label="ورود به هتل"
-                      />
-                    </label>
-                    <label className={styles.destinationField}>
-                      تعداد شب اقامت
-                      <input
-                        aria-label="تعداد شب اقامت"
-                        type="number"
-                        min="1"
-                        max="365"
-                        required
-                        value={stayNights}
-                        onChange={(event) =>
-                          changeStayNights(event.target.value)
-                        }
-                      />
-                    </label>
-                    <div className={styles.destinationField}>
-                      <span>خروج خودکار</span>
-                      <output dir="ltr">{checkOut || '—'}</output>
-                    </div>
-                    <label className={styles.destinationField}>
-                      ارز پیش‌فرض ردیف جدید
-                      <Choice
-                        label="ارز پیش‌فرض ردیف جدید"
-                        value={currency}
-                        onChange={setCurrency}
-                        options={[
-                          { id: 'EUR', name: 'یورو · EUR' },
-                          { id: 'USD', name: 'دلار · USD' },
-                          { id: 'IRR', name: 'ریال · IRR' },
-                        ]}
-                      />
-                    </label>
-                  </div>
-                </section>
-                <ManualHotelPanel
-                  hideSelector
-                  key={`${editing?.id ?? 'new'}:${cityId}:${draftGeneration}`}
-                  rows={rows}
-                  hotelId={manualHotelId}
-                  checkIn={checkIn}
-                  checkOut={checkOut}
-                  onChoose={chooseManualHotel}
-                  onChange={(id, patch) =>
-                    changeRow(id, {
-                      ...patch,
-                      ...(patch.roomRates ? { factors: blankFactors() } : {}),
-                    })
-                  }
-                  onValidityChange={(id, valid) =>
-                    setManualValidity((old) => ({ ...old, [id]: valid }))
-                  }
-                />
-                {selected.flatMap((row) =>
-                  row.roomRates
-                    .filter(
-                      (room) =>
-                        room.occupancyRates &&
-                        !room.occupancyRates.some((rate) => rate.manualPricing),
-                    )
-                    .map((room) => (
-                      <section key={`${row.hotel.id}:${room.roomTypeId}`}>
-                        <h3>
-                          {row.hotel.name} / {room.roomTypeName}
-                        </h3>
-                        <OccupancyRateEditor
-                          disabled={!canWrite || busy}
-                          rates={room.occupancyRates!}
-                          onChange={(rates) => {
-                            setRows((current) =>
-                              current.map((hotelRow) =>
-                                hotelRow.hotel.id !== row.hotel.id
-                                  ? hotelRow
-                                  : {
-                                      ...hotelRow,
-                                      roomRates: hotelRow.roomRates.map((r) =>
-                                        r.roomTypeId === room.roomTypeId
-                                          ? { ...r, occupancyRates: rates }
-                                          : r,
-                                      ),
-                                    },
-                              ),
-                            );
-                            pending.current = null;
-                          }}
+      {inputMode === 'manual' && (
+        <div>
+          {editorMode !== 'list' && (
+            <div
+              ref={editorRef}
+              className={styles.editor}
+              aria-label="ویرایش دستی بستهٔ نرخ"
+            >
+              <form onSubmit={(event) => void save(event)}>
+                <fieldset
+                  disabled={busy || !canWrite || opening || browserLocked}
+                >
+                  <section className={styles.staySetup}>
+                    <h2>بازهٔ نرخ</h2>
+                    <div className={styles.stayFields}>
+                      <label className={styles.destinationField}>
+                        ورود به هتل
+                        <DatePicker
+                          defaultCalendarSystem="gregorian"
+                          gregorianEnglish
+                          id="hotel-rate-check-in"
+                          name="checkIn"
+                          required
+                          value={checkIn}
+                          onChange={changeCheckIn}
+                          aria-label="ورود به هتل"
                         />
-                      </section>
-                    )),
-                )}
-                <div className={styles.saveBar}>
-                  <span>
-                    {selected.length.toLocaleString('fa-IR')} هتل منتخب
-                  </span>
-                  <div>
-                    <button type="button" onClick={closeEditor}>
-                      بستن جدول ویرایش
-                    </button>
-                    <button className={styles.primary} type="submit">
-                      {busy
-                        ? 'در حال ذخیره…'
-                        : editing
-                          ? 'ذخیرهٔ نسخهٔ جدید'
-                          : 'ثبت بستهٔ نرخ'}
-                    </button>
+                      </label>
+                      <label className={styles.destinationField}>
+                        تعداد شب اقامت
+                        <input
+                          aria-label="تعداد شب اقامت"
+                          type="number"
+                          min="1"
+                          max="365"
+                          required
+                          value={stayNights}
+                          onChange={(event) =>
+                            changeStayNights(event.target.value)
+                          }
+                        />
+                      </label>
+                      <div className={styles.destinationField}>
+                        <span>خروج خودکار</span>
+                        <output dir="ltr">{checkOut || '—'}</output>
+                      </div>
+                      <label className={styles.destinationField}>
+                        ارز پیش‌فرض ردیف جدید
+                        <Choice
+                          label="ارز پیش‌فرض ردیف جدید"
+                          value={currency}
+                          onChange={setCurrency}
+                          options={[
+                            { id: 'EUR', name: 'یورو · EUR' },
+                            { id: 'USD', name: 'دلار · USD' },
+                            { id: 'IRR', name: 'ریال · IRR' },
+                          ]}
+                        />
+                      </label>
+                    </div>
+                  </section>
+                  <ManualHotelPanel
+                    hideSelector
+                    key={`${editing?.id ?? 'new'}:${cityId}:${draftGeneration}`}
+                    rows={rows}
+                    hotelId={manualHotelId}
+                    checkIn={checkIn}
+                    checkOut={checkOut}
+                    onChoose={chooseManualHotel}
+                    onChange={(id, patch) =>
+                      changeRow(id, {
+                        ...patch,
+                        ...(patch.roomRates ? { factors: blankFactors() } : {}),
+                      })
+                    }
+                    onValidityChange={(id, valid) =>
+                      setManualValidity((old) => ({ ...old, [id]: valid }))
+                    }
+                  />
+                  {selected.flatMap((row) =>
+                    row.roomRates
+                      .filter(
+                        (room) =>
+                          room.occupancyRates &&
+                          !room.occupancyRates.some(
+                            (rate) => rate.manualPricing,
+                          ),
+                      )
+                      .map((room) => (
+                        <section key={`${row.hotel.id}:${room.roomTypeId}`}>
+                          <h3>
+                            {row.hotel.name} / {room.roomTypeName}
+                          </h3>
+                          <OccupancyRateEditor
+                            disabled={!canWrite || busy}
+                            rates={room.occupancyRates!}
+                            onChange={(rates) => {
+                              setRows((current) =>
+                                current.map((hotelRow) =>
+                                  hotelRow.hotel.id !== row.hotel.id
+                                    ? hotelRow
+                                    : {
+                                        ...hotelRow,
+                                        roomRates: hotelRow.roomRates.map(
+                                          (r) =>
+                                            r.roomTypeId === room.roomTypeId
+                                              ? { ...r, occupancyRates: rates }
+                                              : r,
+                                        ),
+                                      },
+                                ),
+                              );
+                              pending.current = null;
+                            }}
+                          />
+                        </section>
+                      )),
+                  )}
+                  <div className={styles.saveBar}>
+                    <span>
+                      {selected.length.toLocaleString('fa-IR')} هتل منتخب
+                    </span>
+                    <div>
+                      <button type="button" onClick={closeEditor}>
+                        بستن جدول ویرایش
+                      </button>
+                      <button className={styles.primary} type="submit">
+                        {busy
+                          ? 'در حال ذخیره…'
+                          : editing
+                            ? 'ذخیرهٔ نسخهٔ جدید'
+                            : 'ثبت بستهٔ نرخ'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </fieldset>
-            </form>
-          </div>
-        )}
-      </div>
+                </fieldset>
+              </form>
+            </div>
+          )}
+        </div>
+      )}
       {inputMode === 'excel' && (
         <OccupancyBulkPanel
           key={`${branch}:${cityId}:${editorMode}`}
@@ -1055,6 +1105,7 @@ export function HotelRatePacksWorkspace({
             !canWrite || editorMode !== 'new' || !cityId || browserLocked
           }
           onBusy={setBusy}
+          onDirtyChange={setImportDirty}
           onSaved={() => setRevision((value) => value + 1)}
         />
       )}
@@ -1063,21 +1114,23 @@ export function HotelRatePacksWorkspace({
           مجوز ثبت نرخ خرید ندارید؛ مشاهدهٔ بسته‌ها در دسترس است.
         </p>
       )}
-      <details
-        className={styles.savedPackages}
-        open={initialMode === 'existing' || undefined}
-      >
-        <summary>بسته‌های ثبت‌شده و ویرایش نرخ</summary>
-        <ExistingPacksBrowser
-          key={branch}
-          branchId={branch}
-          revision={revision}
-          canWrite={canWrite && !busy && !opening}
-          onEdit={(id) => void openPack(id)}
-          onLockChange={setBrowserLocked}
-          onSaved={() => setRevision((value) => value + 1)}
-        />
-      </details>
-    </main>
+      {initialMode === 'existing' && (
+        <details
+          className={styles.savedPackages}
+          open={initialMode === 'existing' || undefined}
+        >
+          <summary>بسته‌های ثبت‌شده و ویرایش نرخ</summary>
+          <ExistingPacksBrowser
+            key={branch}
+            branchId={branch}
+            revision={revision}
+            canWrite={canWrite && !busy && !opening}
+            onEdit={(id) => void openPack(id)}
+            onLockChange={setBrowserLocked}
+            onSaved={() => setRevision((value) => value + 1)}
+          />
+        </details>
+      )}
+    </section>
   );
 }

@@ -42,6 +42,8 @@ type Section = (typeof sections)[number]['id'];
 
 export function HotelRateHub() {
   const [section, setSection] = useState<Section | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   return (
     <div className={styles.root} dir="rtl">
       {section ? (
@@ -50,23 +52,46 @@ export function HotelRateHub() {
             <h1>{sections.find((item) => item.id === section)?.title}</h1>
             <button
               type="button"
+              disabled={busy}
               onClick={() => {
-                if (
-                  section === 'archive' ||
-                  window.confirm(
-                    'به صفحهٔ نرخ هتل برگردید؟ تغییرات ذخیره‌نشده از بین می‌روند.',
-                  )
-                )
-                  setSection(null);
+                if (busy) return;
+                if (section === 'archive') setSection(null);
+                else setConfirmExit(true);
               }}
             >
               بازگشت به نرخ هتل
             </button>
           </header>
+          {confirmExit && (
+            <div role="alert" className={styles.panel}>
+              <p>
+                به صفحهٔ نرخ هتل برگردید؟ تغییرات ذخیره‌نشده از بین می‌روند.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  if (!busy) {
+                    setConfirmExit(false);
+                    setSection(null);
+                  }
+                }}
+              >
+                تأیید
+              </button>
+              <button type="button" onClick={() => setConfirmExit(false)}>
+                انصراف
+              </button>
+            </div>
+          )}
           {section === 'archive' ? (
-            <PackArchivePanel />
+            <PackArchivePanel onBusyChange={setBusy} />
           ) : (
-            <HotelRatePacksWorkspace key={section} initialMode={section} />
+            <HotelRatePacksWorkspace
+              key={section}
+              initialMode={section}
+              onBusyChange={setBusy}
+            />
           )}
         </>
       ) : (
