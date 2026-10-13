@@ -7351,3 +7351,20 @@ Contracts package. Source locks are released; no API or database rollout needed.
 ## HOTEL-REPEAT-ADJUSTMENT-1013 — PC-A — READY_FOR_REVIEW
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
+
+## ASSISTANT-FILTERS-1013 — PC-C — IN_PROGRESS
+
+User-approved next unit, stacked on tools candidate d5cf5743/PR819; publication
+requires its green merge. Branch codex/pc-c-assistant-report-filters-1013.
+Reserve assistant-specific Sales/Customer Affairs read controllers/projections/
+tests, services/assistant versioned filter transport, Web assistant model/proxy/
+filter controls/copy/tests and own docs only. No shared schema/dependencies/IAM.
+Additive v2 reads accept <=90 complete Tehran days, primary route and authorized
+branch; v1 remains unchanged. Current balance ignores date with explicit as-of
+semantics. Route-filtered CRM conversion must not bias the denominator by filtering
+only converted contracts; unsupported route attribution remains explicit.
+Company ownership and real-model processing remain deferred. Source locks for
+prior assistant candidates released; do not edit active Sales workspace files.
+Bounded filter-options extension: reserve assistant-read.module.ts only to register the existing exported IAM directory reader. Sales consumes its public branches projection and Master Data public city labels; no direct foreign-table query or IAM source change.
+
+ASSISTANT-FILTERS-1013 scope extension (PC-C): isolated assistant-read.postgres.spec.ts v2 end-to-end acceptance; no shared runtime database mutation.

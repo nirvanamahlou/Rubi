@@ -1,4 +1,5 @@
 'use client';
+import { AssistantReportFilterControls } from './report-filters';
 import { explainPersonal } from './recommendation-policy';
 
 import {
@@ -51,6 +52,7 @@ import {
   loadAssistantAction,
   type AssistantAction,
   type AssistantActionResult,
+  type AssistantReportFilters,
   type AssistantLoadState,
   type AssistantView,
   type ExecutiveSnapshot,
@@ -219,6 +221,8 @@ export function AssistantComposer({
   const helpId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
+  const [filters, setFilters] = useState<AssistantReportFilters | undefined>();
+  const [filterError, setFilterError] = useState(false);
   const [notSubmitted, setNotSubmitted] = useState(false);
   const [actionResult, setActionResult] =
     useState<AssistantActionResult | null>(null);
@@ -240,8 +244,13 @@ export function AssistantComposer({
     setActionResult(null);
     setNotSubmitted(false);
     setActionState('loading');
+    setFilterError(false);
     try {
-      const result = await loadAssistantAction(action, controller.signal);
+      const result = await loadAssistantAction(
+        action,
+        controller.signal,
+        filters,
+      );
       if (!controller.signal.aborted) {
         setActionResult(result);
         setActionState(null);
@@ -249,6 +258,11 @@ export function AssistantComposer({
     } catch (error) {
       if (!controller.signal.aborted) {
         const message = error instanceof Error ? error.message : '';
+        if (message === 'HTTP_400') {
+          setFilterError(true);
+          setActionState(null);
+          return;
+        }
         setActionState(
           message === 'HTTP_401'
             ? 'unauthenticated'
@@ -342,6 +356,19 @@ export function AssistantComposer({
           </button>
         </div>
       </form>
+      <AssistantReportFilterControls
+        value={filters}
+        disabled={denied}
+        t={t}
+        onChange={(next) => {
+          pending.current?.abort();
+          setActionResult(null);
+          setActionState(null);
+          setFilterError(false);
+          setFilters(next);
+        }}
+      />
+      {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
       <div className={styles.composerPrompts}>
         {prompts.map(([prompt, action]) => (
           <button
@@ -364,6 +391,30 @@ export function AssistantComposer({
           {t(notSubmitted ? c.messageNotSubmitted : c.fixedActions)}
         </p>
       </div>
+      {!denied && actionResult && 'filters' in actionResult && (
+        <div className={styles.composerHint}>
+          <p>
+            {t(c.filteredPeriod)}:{' '}
+            {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+              timeZone: 'Asia/Tehran',
+              dateStyle: 'medium',
+            }).format(new Date(actionResult.filters.startDate))}{' '}
+            —{' '}
+            {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+              timeZone: 'Asia/Tehran',
+              dateStyle: 'medium',
+            }).format(new Date(actionResult.filters.endDate))}
+          </p>
+          {actionResult.action !== 'sales-analysis' && (
+            <p>{t(c.balanceAsOf)}</p>
+          )}
+          {actionResult.action === 'sales-analysis' &&
+            (actionResult.filters.originId ||
+              actionResult.filters.destinationId) && (
+              <p>{t(c.routeConversionUnavailable)}</p>
+            )}
+        </div>
+      )}
       {!denied && actionState && (
         <p role="status" className={styles.composerHint}>
           {t(c.states[actionState])}
@@ -429,19 +480,44 @@ export function AssistantComposer({
           />
           {actionResult.corporate && (
             <section>
-              <h3>{t(c.weeklySales)}</h3>
+              <h3>
+                {t(
+                  actionResult.version === 2 ? c.salesAnalysis : c.weeklySales,
+                )}
+              </h3>
               <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
               {actionResult.corporate.sales.status === 'READY' ? (
                 <>
                   <p className={styles.composerHint}>
-                    {t(c.currentPeriod)}:{' '}
+                    {t(
+                      actionResult.version === 2
+                        ? c.filteredPeriod
+                        : c.currentPeriod,
+                    )}
+                    :{' '}
                     {actionResult.corporate.sales.report.current.contractCount}{' '}
-                    / {t(c.previousPeriod)}:{' '}
+                    /{' '}
+                    {t(
+                      actionResult.version === 2
+                        ? c.filteredPrevious
+                        : c.previousPeriod,
+                    )}
+                    :{' '}
                     {actionResult.corporate.sales.report.previous.contractCount}
                   </p>
                   {[
-                    ['current', c.currentPeriod],
-                    ['previous', c.previousPeriod],
+                    [
+                      'current',
+                      actionResult.version === 2
+                        ? c.filteredPeriod
+                        : c.currentPeriod,
+                    ],
+                    [
+                      'previous',
+                      actionResult.version === 2
+                        ? c.filteredPrevious
+                        : c.previousPeriod,
+                    ],
                   ].map(([key, label]) => {
                     const sales = actionResult.corporate!.sales;
                     if (sales.status !== 'READY') return null;
@@ -492,7 +568,13 @@ export function AssistantComposer({
                         report.report.previous.contractAmountsBeforeRefunds;
                       return (
                         <p className={styles.composerHint} key={currency}>
-                          {t(c.contractAmount)} — {t(c.currentPeriod)}:{' '}
+                          {t(c.contractAmount)} —{' '}
+                          {t(
+                            actionResult.version === 2
+                              ? c.filteredPeriod
+                              : c.currentPeriod,
+                          )}
+                          :{' '}
                           <bdi>
                             {current
                               ? (current.find(
@@ -502,7 +584,12 @@ export function AssistantComposer({
                             {currency}
                           </bdi>
                           {' / '}
-                          {t(c.previousPeriod)}:{' '}
+                          {t(
+                            actionResult.version === 2
+                              ? c.filteredPrevious
+                              : c.previousPeriod,
+                          )}
+                          :{' '}
                           <bdi>
                             {previous
                               ? (previous.find(
@@ -619,7 +706,9 @@ export function AssistantComposer({
         actionResult?.action === 'sales-analysis' &&
         actionResult.status === 'PARTIAL' && (
           <div className={styles.actionResult}>
-            <h2>{t(c.weeklySales)}</h2>
+            <h2>
+              {t(actionResult.version === 2 ? c.salesAnalysis : c.weeklySales)}
+            </h2>
             <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
             <p className={styles.composerHint}>
               {t(c.asOf)}:{' '}
@@ -651,8 +740,16 @@ export function AssistantComposer({
                   actionResult.conversion.report.previous,
                 ].map((period, index) => (
                   <p className={styles.composerHint} key={period.startUtc}>
-                    {t(index === 0 ? c.currentPeriod : c.previousPeriod)}:{' '}
-                    {t(c.contactedLeads)} {period.contactedLeads} /{' '}
+                    {t(
+                      index === 0
+                        ? actionResult.version === 2
+                          ? c.filteredPeriod
+                          : c.currentPeriod
+                        : actionResult.version === 2
+                          ? c.filteredPrevious
+                          : c.previousPeriod,
+                    )}
+                    : {t(c.contactedLeads)} {period.contactedLeads} /{' '}
                     {t(c.convertedLeads)} {period.convertedLeads} —{' '}
                     <bdi>
                       {period.conversionBasisPoints === null
@@ -669,8 +766,16 @@ export function AssistantComposer({
               <p className={styles.composerHint}>{t(c.missingCityNames)}</p>
             )}
             {[
-              [c.currentPeriod, actionResult.report.current],
-              [c.previousPeriod, actionResult.report.previous],
+              [
+                actionResult.version === 2 ? c.filteredPeriod : c.currentPeriod,
+                actionResult.report.current,
+              ],
+              [
+                actionResult.version === 2
+                  ? c.filteredPrevious
+                  : c.previousPeriod,
+                actionResult.report.previous,
+              ],
             ].map(([label, period]) => {
               const value = period as typeof actionResult.report.current;
               return (

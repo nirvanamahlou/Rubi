@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { assistantActionSchema, loadAssistantAction } from './model';
+import {
+  assistantActionSchema,
+  assistantFilteredActionSchema,
+  loadAssistantAction,
+} from './model';
 
 const snapshot = {
   version: 1,
@@ -345,4 +349,62 @@ it('validates Phase2 priority and provenance against the source evidence', () =>
       },
     }).success,
   ).toBe(false);
+});
+
+const filters = {
+  startDate: '2026-10-01',
+  endDate: '2026-10-11',
+  originId: null,
+  destinationId: null,
+  branchId: null,
+};
+it('validates filtered daily summaries without dropping personal evidence checks', () => {
+  const value = {
+    ...daily,
+    version: 2,
+    filters,
+    corporate: {
+      sales: { status: 'UNAVAILABLE' },
+      balances: { status: 'DENIED' },
+    },
+  };
+  expect(assistantFilteredActionSchema.safeParse(value).success).toBe(true);
+  expect(
+    assistantFilteredActionSchema.safeParse({
+      ...value,
+      counts: { ...daily.counts, visible: 5 },
+    }).success,
+  ).toBe(false);
+  expect(
+    assistantFilteredActionSchema.safeParse({
+      ...value,
+      filters: { ...filters, companyId: 'x' },
+    }).success,
+  ).toBe(false);
+});
+it('rejects a filtered response for a different requested period', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(
+      Response.json({
+        ...daily,
+        version: 2,
+        filters,
+        corporate: {
+          sales: { status: 'UNAVAILABLE' },
+          balances: { status: 'DENIED' },
+        },
+      }),
+    ),
+  );
+  try {
+    await expect(
+      loadAssistantAction('daily-summary', new AbortController().signal, {
+        startDate: '2026-10-02',
+        endDate: filters.endDate,
+      }),
+    ).rejects.toThrow('INVALID_RESPONSE');
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });
