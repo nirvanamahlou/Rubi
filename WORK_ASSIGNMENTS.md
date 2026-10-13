@@ -1,3 +1,7 @@
+## COMPACT-TICKET-PRICING-1013 — PC-A — READY_FOR_REVIEW
+
+User authorizes compact flight pricing, selectable trip mode, automatic unpriced eligible same-load reverse-leg pairs and continued manual pair pricing, followed by develop merge. Branch codex/pc-a-compact-ticket-pricing-1013 from origin/develop@0b830554. Reserve Sales ticket-prices-workspace, scoped target CSS, ticket-price-rows model/tests and own docs. Preserve branch/cabin/return-window boundaries and saved/manual fares. No schema, migration, dependency or operational data writes.
+
 ## FLIGHT-TOTAL-CONTRACT-COST-1013 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-flight-total-contract-cost-1013 from origin/develop@390f9ff2. Owner authorizes total flight purchase entry and per-sold-seat contract costs/profit, with develop merge. Reserve Finance ticket-cost command/controller/public reader/tests, Ticket Purchase Web form/tests, Sales profit calculation/tests and own docs. Shared lock: additive optional totalCost on FinanceTicketCostCommandV1 and bounded English catalog entries. Finance remains producer; Purchasing UI sends either unitCost or totalCost with seats, Sales consumes public recorded cost projection. Existing callers retain unit pricing; invoice remains exact, proportional contract cost rounds once at four decimals. Preserve permissions, branch scope, CAS, replay, paid-price lock and per-currency profit. No schema/migration/dependency/runtime or operational data changes. Existing released ticket purchase work remains intact.

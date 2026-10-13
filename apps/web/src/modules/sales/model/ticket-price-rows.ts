@@ -1,4 +1,5 @@
 import {
+  eligibleTicketReturn,
   moneyUnits,
   moneyDecimal,
   type TicketOfferV1,
@@ -60,7 +61,7 @@ export function orderFlightCabins(offers: readonly TicketOfferV1[]) {
 export function ticketPriceRows(
   offers: readonly TicketOfferV1[],
 ): TicketPriceRow[] {
-  return orderFlightCabins(offers).flatMap((offer) => [
+  const rows: TicketPriceRow[] = orderFlightCabins(offers).flatMap((offer) => [
     {
       id: offer.id,
       offer,
@@ -83,6 +84,26 @@ export function ticketPriceRows(
       }),
     ),
   ]);
+  const known = new Set(rows.map((row) => row.id));
+  for (const offer of orderFlightCabins(offers)) {
+    // Only a defined load with an explicit return window can suggest pairs.
+    // Saved and manually selected pairs above remain authoritative.
+    if (!offer.loadGroupId || offer.returnMaxDays == null) continue;
+    for (const returning of offers) {
+      const id = offer.id + ':' + returning.id;
+      if (
+        known.has(id) ||
+        returning.loadGroupId !== offer.loadGroupId ||
+        returning.branchId !== offer.branchId ||
+        returning.cabinClassCode !== offer.cabinClassCode ||
+        !eligibleTicketReturn(offer, returning)
+      )
+        continue;
+      rows.push({ id, offer, returning, returnOfferId: returning.id });
+      known.add(id);
+    }
+  }
+  return rows;
 }
 export function normalizePercent(value: string) {
   return value

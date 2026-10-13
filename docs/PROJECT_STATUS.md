@@ -1,3 +1,7 @@
+## 2026-10-13 — COMPACT-TICKET-PRICING-1013 — PC-A
+
+Flight pricing uses compact responsive two-column cards, smaller summaries and channel rows, a collapsed manual pair editor, and directly selectable all/one-way/round-trip modes. Unpriced reverse legs from the same published load, branch and cabin within an explicit return window are offered automatically; saved/manual prices take precedence and are not duplicated. This is a pricing candidate projection, not a persisted new fare. Older offers without load identity remain available through the manual editor. Fifteen focused model/render regressions pass. No API/schema/migration/dependency or live price mutations. Full quality/build checks gate the user-authorized develop merge.
+
 ## 2026-10-13 — HOTEL-IMPORT-CITY-NORMALIZE-1013 — PC-B
 
 Hotel Excel import accepts equivalent city spelling across whitespace/joiners,
