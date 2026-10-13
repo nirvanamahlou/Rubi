@@ -7348,6 +7348,14 @@ control badge, actions and metrics remain unchanged. Focused Finance contract
 tests pass 9/9, scoped ESLint and Web typecheck pass after rebuilding the current
 Contracts package. Source locks are released; no API or database rollout needed.
 
+## AGENCY-IMPORT-PARTIAL-1013 — PC-B — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-B; branch `codex/pc-b-organization-import-partial-1013` from `origin/develop@ebcb016f`. The Organizations XLSX preview currently disables the whole import when one row has an invalid optional phone. Reserve only `apps/web/src/modules/organizations/model/organization-import.ts`, its focused test, `components/organization-excel-dialog.tsx`, and bounded task status documentation. Import valid rows while leaving invalid rows unmodified and visibly reported. Preserve strict validation, no-overwrite checks, uncertain-write stop, and original row/progress alignment. No API/schema/migration/dependency/permission or operational data change. No other active owner holds these target files.
+
+Implementation: independently preview each valid row, enable import when at least one row is valid, skip malformed rows with their original row number and error, and continue saving the remaining valid rows. A possibly completed write still stops the batch on failure. Focused mixed-validity test and full Organizations suite (242 pass, one opt-in private-workbook test skipped), scoped lint, Web typecheck and production build (62 generated pages) pass. No operational workbook or live organization was imported.
+
+CI follow-up: reserve four additive Web-only English translations in `apps/web/src/i18n/en-overrides.json` for this import flow. The exact-head full-suite gate found only these missing display translations; preserve all existing catalogue entries. No API/legacy catalogue or runtime behavior changes. This bounded catalogue lock releases with the follow-up commit.
+
 ## HOTEL-REPEAT-ADJUSTMENT-1013 — PC-A — READY_FOR_REVIEW
 
 Reserve manual hotel panel and focused regressions. User authorizes repeat adjustment correction and develop merge. Each apply changes current sale price; preserve purchase and atomic validation. No migration/dependency change.
