@@ -6,6 +6,7 @@ import {
   previewOrganizations,
   syntheticOrganizations,
   validateOrganizationRows,
+  type OrganizationPreviewRow,
 } from './organization-import';
 afterEach(() => vi.restoreAllMocks());
 describe('organization import boundaries', () => {
@@ -99,6 +100,61 @@ describe('organization import boundaries', () => {
     expect(row?.issue).toBeUndefined();
     expect(row?.email).toBe('');
     expect(row?.tourismLicenseNumber).toBe('');
+  });
+
+  it('previews and registers valid rows around an invalid phone without dropping row alignment', async () => {
+    const agency = {
+      code: '',
+      personType: 'LEGAL',
+      nationalId: '',
+      roleCodes: 'AGENCY',
+    };
+    const source = [
+      { ...agency, legalName: 'آژانس یک' },
+      { ...agency, legalName: 'آژانس دو', officePhone: '۱۲۳' },
+      { ...agency, legalName: 'آژانس سه' },
+    ];
+    const list = vi.spyOn(masterDataApi, 'list').mockResolvedValue({
+      data: [],
+      meta: { total: 0, page: 1, pageSize: 100 },
+    });
+    const create = vi
+      .spyOn(masterDataApi, 'create')
+      .mockImplementation(async () => ({
+        data: {
+          id: `org-${create.mock.calls.length}`,
+          code: `ORG-${create.mock.calls.length}`,
+        } as MasterDataRecord,
+      }));
+    const preview = await previewOrganizations(source);
+    expect(preview.map((row) => Boolean(row.issue))).toEqual([
+      false,
+      true,
+      false,
+    ]);
+    expect(preview[1]?.issue).toContain('شماره تلفن معتبر نیست');
+    expect(list).toHaveBeenCalledTimes(2);
+
+    const snapshots: OrganizationPreviewRow[][] = [];
+    const result = await importOrganizations(preview, (rows) => {
+      snapshots.push(rows);
+    });
+    expect(result.map((row) => row.result)).toEqual([
+      'created',
+      'invalid',
+      'created',
+    ]);
+    expect(result.map((row) => row.rowNumber)).toEqual([2, 3, 4]);
+    expect(snapshots.at(-1)?.map((row) => row.result)).toEqual([
+      'created',
+      'invalid',
+      'created',
+    ]);
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls.map(([, body]) => body.values.legalName)).toEqual([
+      'آژانس یک',
+      'آژانس سه',
+    ]);
   });
 
   it('never turns a formula-like optional email into an allowed blank', () => {
