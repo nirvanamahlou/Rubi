@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useEffect, useEffectEvent, useState, type FormEvent } from 'react';
 import { calculateManualHotelPrices } from '@nora/contracts';
 import type {
   HotelOccupancyRateV1,
@@ -13,6 +13,14 @@ import {
   combinationsFromRates,
   type Combination,
 } from './manual-coefficients';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/overlays';
+import { Input } from '@/components/ui/form-controls';
 import styles from './manual-tables.module.css';
 
 export type ManualRoom = {
@@ -44,6 +52,9 @@ export function ManualHotelPanel({
   checkOut,
   onValidityChange,
   hideSelector = false,
+  canAddRoomType = false,
+  disabled = false,
+  onAddRoomType,
 }: {
   rows: readonly ManualHotelRow[];
   hotelId: string;
@@ -53,6 +64,9 @@ export function ManualHotelPanel({
   checkOut: string;
   onValidityChange: (id: string, valid: boolean) => void;
   hideSelector?: boolean;
+  canAddRoomType?: boolean;
+  disabled?: boolean;
+  onAddRoomType?: (hotelId: string, name: string) => Promise<Option>;
 }) {
   return (
     <div className={styles.panels} aria-label="پنل دستی هتل">
@@ -76,6 +90,9 @@ export function ManualHotelPanel({
               onValidityChange={(valid) =>
                 onValidityChange(selected.hotel.id, valid)
               }
+              canAddRoomType={canAddRoomType}
+              disabled={disabled}
+              {...(onAddRoomType ? { onAddRoomType } : {})}
             />
           </div>
         ))}
@@ -141,12 +158,18 @@ export function HotelCoefficients({
   checkIn,
   checkOut,
   onValidityChange,
+  canAddRoomType = false,
+  disabled = false,
+  onAddRoomType,
 }: {
   row: ManualHotelRow;
   onChange: (patch: Partial<ManualHotelRow>) => void;
   checkIn: string;
   checkOut: string;
   onValidityChange: (valid: boolean) => void;
+  canAddRoomType?: boolean;
+  disabled?: boolean;
+  onAddRoomType?: (hotelId: string, name: string) => Promise<Option>;
 }) {
   const allRooms: ManualRoom[] = (row.hotel.roomTypes ?? []).map(
     (room) =>
@@ -197,6 +220,10 @@ export function HotelCoefficients({
   const [value, setValue] = useState('');
   const [error, setError] = useState('');
   const [saleDrafts, setSaleDrafts] = useState<Record<string, string>>({});
+  const [roomTypeDialogOpen, setRoomTypeDialogOpen] = useState(false);
+  const [roomTypeName, setRoomTypeName] = useState('');
+  const [addingRoomType, setAddingRoomType] = useState(false);
+  const [roomTypeError, setRoomTypeError] = useState('');
   const imported = row.roomRates.some((r) =>
     r.occupancyRates?.some((p) => !p.manualPricing),
   );
@@ -345,6 +372,23 @@ export function HotelCoefficients({
     setAdjustments(next);
     update(combinations, bases, next, nextDrafts);
   }
+  async function submitRoomType(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!onAddRoomType || addingRoomType || disabled) return;
+    setRoomTypeError('');
+    setAddingRoomType(true);
+    try {
+      await onAddRoomType(row.hotel.id, roomTypeName);
+      setRoomTypeName('');
+      setRoomTypeDialogOpen(false);
+    } catch (cause) {
+      setRoomTypeError(
+        cause instanceof Error ? cause.message : 'افزودن نوع اتاق انجام نشد.',
+      );
+    } finally {
+      setAddingRoomType(false);
+    }
+  }
   if (imported)
     return (
       <div role="status">
@@ -356,15 +400,31 @@ export function HotelCoefficients({
     <article className={styles.panel}>
       <div className={styles.hotelHeader}>
         <h2>{row.hotel.name}</h2>
-        <button
-          type="button"
-          onClick={() => {
-            onValidityChange(true);
-            onChange({ selected: false });
-          }}
-        >
-          کنارگذاشتن هتل از این بسته
-        </button>
+        <div className={styles.hotelActions}>
+          {canAddRoomType && onAddRoomType ? (
+            <button
+              className={styles.addRoomType}
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                setRoomTypeError('');
+                setRoomTypeDialogOpen(true);
+              }}
+            >
+              افزودن نوع اتاق
+            </button>
+          ) : null}
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => {
+              onValidityChange(true);
+              onChange({ selected: false });
+            }}
+          >
+            کنارگذاشتن هتل از این بسته
+          </button>
+        </div>
       </div>
       <div className={styles.hotelSettings}>
         <Lookup
@@ -832,11 +892,52 @@ export function HotelCoefficients({
         })}
       </div>
       {!allRooms.length && (
-        <p role="alert">
-          برای این هتل ابتدا نوع اتاق را در اطلاعات پایه ثبت کنید.
-        </p>
+        <p role="alert">برای این هتل ابتدا نوع اتاق را اضافه کنید.</p>
       )}
       {error && <p role="alert">{error}</p>}
+      <Dialog
+        open={roomTypeDialogOpen}
+        onOpenChange={(open) => {
+          if (!addingRoomType) setRoomTypeDialogOpen(open);
+        }}
+      >
+        <DialogContent dir="rtl">
+          <div className={styles.roomTypeDialogHeader}>
+            <DialogTitle>افزودن نوع اتاق به هتل</DialogTitle>
+            <DialogClose asChild>
+              <button type="button" disabled={addingRoomType}>
+                بستن
+              </button>
+            </DialogClose>
+          </div>
+          <DialogDescription>
+            نوع اتاق جدید در اطلاعات پایه تعریف و به این هتل وصل می‌شود. بعد
+            می‌توانید ظرفیت و نرخ آن را در همین بسته ثبت کنید.
+          </DialogDescription>
+          <form className={styles.roomTypeForm} onSubmit={submitRoomType}>
+            <label htmlFor={`room-type-name-${row.hotel.id}`}>
+              نام نوع اتاق
+            </label>
+            <Input
+              id={`room-type-name-${row.hotel.id}`}
+              autoFocus
+              maxLength={160}
+              required
+              value={roomTypeName}
+              disabled={addingRoomType}
+              onChange={(event) => setRoomTypeName(event.target.value)}
+            />
+            {roomTypeError ? <p role="alert">{roomTypeError}</p> : null}
+            <button
+              className={styles.addRoomType}
+              type="submit"
+              disabled={addingRoomType || disabled || !roomTypeName.trim()}
+            >
+              {addingRoomType ? 'در حال افزودن…' : 'ثبت و اتصال به هتل'}
+            </button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </article>
   );
 }

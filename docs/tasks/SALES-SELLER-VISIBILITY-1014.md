@@ -27,4 +27,4 @@ authorized branches. All sellers continue to use the common Reservations intake.
 
 No migration, dependency change, operational data change or runtime activation.
 Validation: 236 Sales/IAM tests and 36 Web tests pass; scoped lint, API/Web typechecks
-and affected production builds pass. Final CI gates the user-authorized develop merge.
+and affected production builds pass. All eight GitHub checks passed; PR852 merged to develop at ab2b71d2 with authenticated author ramtinghashghaie.
