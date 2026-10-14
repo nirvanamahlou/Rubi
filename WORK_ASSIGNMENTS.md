@@ -7616,6 +7616,14 @@ Validation: action-panel regressions 14/14, scoped ESLint, Web typecheck,
 Prettier for the changed CSS, and full 62-route Web production build passed.
 No migration or dependency change; exact-head CI remains the merge gate.
 
+## RESERVATION-PASSENGER-AGE-TABLE-1014 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-passenger-age-table-1014 from latest origin/develop. User authorizes removing the separate age-category correction panel and editing categories plus child details in the existing passenger identity table, followed by develop merge. Reserve reservation-contract-editor.tsx, reservation-sales-amendment.tsx, passenger-files/passengers.tsx, bounded amendment/table helper and focused regressions, own status/task docs and new translation labels/generated catalogues. Existing Sales amendment command remains owner of contract category/capacity changes; Customer identity edits retain their separate permissions and records. No overlapping active source lock found; earlier Reservations editor candidate released. No dependency, migration, live data or runtime change planned.
+
+Child-band scope confirmed by owner: 2–6 and 6–12, independently of real birth date. Reserve additive nullable SalesContractPassenger.childAgeBand column and sole schema/migration ownership for this unit (prior agency/hotel migrations released); shared optional SalesPassengerInput/Reservation assignment projection, Sales persistence/domain/presentation/audit snapshots and focused API tests. Producer Sales, consumer Reservations inline table; old payloads/records remain valid and no backfill or live migration is performed. Existing exact birth-date hotel/insurance validation remains authoritative; age band is explicit contract classification, never a fabricated birth date.
+
+Validation: 64 API domain/amendment/flight/hotel regressions pass, including band-only operational publication and older-client field preservation; 11 focused Web/table/model tests and 3 English coverage tests pass. Scoped API/Web ESLint, Web typecheck and changed-file formatting pass. Prisma format/generate succeeds against a nonoperational placeholder URL. Local API/Web builds and full exact-head CI remain gates. Source/schema locks release with the frozen candidate; no operational migration or runtime publication.
+
 ## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.

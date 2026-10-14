@@ -6021,6 +6021,10 @@ Validation passed: 14 action-panel tests, scoped ESLint, Web typecheck,
 changed-CSS formatting, and full Web production build (62 routes). No
 migration or dependency changes; exact-head GitHub checks remain required.
 
+## RESERVATION-PASSENGER-AGE-TABLE-1014 — PC-A — IN_PROGRESS
+
+Removed the duplicate category correction table from Reservations contract editing. Category, requested child bands (2–6/6–12), and accommodation can now be edited inside the existing passenger identity table. Sales remains owner of contract classification, with exact version/capacity/audit guards and separate customer identity permissions. Additive nullable childAgeBand migration; no live migration, backfill or runtime rollout. Focused tests and full CI gate the authorized develop merge.
+
 ## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
 COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
 

@@ -113,9 +113,65 @@ function setup() {
     } as never,
     tickets as never,
   );
-  return { repo, service, tickets };
+  return { row, repo, service, tickets };
 }
 describe('canonical Sales amendment', () => {
+  it('publishes a new operational version for a band-only change and preserves it for older clients omitting the field', async () => {
+    const { row, service, repo } = setup();
+    Object.assign(row.passengers[0]!, {
+      ageCategory: 'CHD',
+      childAgeBand: 'AGE_2_6',
+    });
+    const categories = { [person]: 'CHD' as const };
+    const next = {
+      ...input,
+      passengerCategories: categories,
+      passengers: input.passengers.map((p) => ({
+        ...p,
+        childAgeBand: 'AGE_6_12' as const,
+      })),
+    };
+    await service.update(id, next, actor, undefined, categories);
+    expect(
+      (repo.updateDraft.mock.calls[0]?.[5] as { snapshot: unknown }).snapshot,
+    ).toBeDefined();
+    repo.updateDraft.mockClear();
+    await service.update(id, input, actor, undefined, categories);
+    const saved = repo.updateDraft.mock
+      .calls[0]?.[1] as SalesContractAmendmentV1;
+    expect(saved.passengers[0]?.childAgeBand).toBe('AGE_2_6');
+    expect(
+      (repo.updateDraft.mock.calls[0]?.[5] as { snapshot: unknown }).snapshot,
+    ).toBeUndefined();
+  });
+  it('persists and republishes a child-band correction with unchanged identity and transactional capacity', async () => {
+    const { service, repo, tickets } = setup();
+    const categories = { [person]: 'CHD' as const };
+    const next = {
+      ...input,
+      passengerCategories: categories,
+      passengers: input.passengers.map((p) => ({
+        ...p,
+        childAgeBand: 'AGE_6_12' as const,
+      })),
+    };
+    await service.update(id, next, actor, undefined, categories);
+    const saved = repo.updateDraft.mock
+      .calls[0]?.[1] as SalesContractAmendmentV1;
+    expect(saved.passengers[0]).toMatchObject({
+      birthDate: '1990-01-01',
+      childAgeBand: 'AGE_6_12',
+    });
+    const options = repo.updateDraft.mock.calls[0]?.[5] as {
+      snapshot: { passengerAssignments: { childAgeBand: string }[] };
+      reserve: (tx: unknown) => Promise<void>;
+    };
+    expect(options.snapshot.passengerAssignments[0]?.childAgeBand).toBe(
+      'AGE_6_12',
+    );
+    await options.reserve({});
+    expect(tickets.amend).toHaveBeenCalledWith({}, [], 'branch', id, 1);
+  });
   it('changes exact sale amounts while retaining payment evidence and operational state', async () => {
     const { service, repo } = setup();
     const next = {

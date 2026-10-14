@@ -265,6 +265,15 @@ export function validateSalesContract(
       categories[passenger.customerId] ??
       passengerAgeCategory(passenger.birthDate, input.departureDate);
     if (
+      passenger.childAgeBand != null &&
+      (age !== 'CHD' ||
+        !['AGE_2_6', 'AGE_6_12'].includes(passenger.childAgeBand))
+    )
+      throw new SalesDomainError(
+        'SALES_CHILD_AGE_BAND_INVALID',
+        'رده سنی کودک معتبر نیست.',
+      );
+    if (
       passenger.accommodationKind !== undefined &&
       (!salesAccommodationValid(passenger.accommodationKind, age) ||
         !input.services.some(

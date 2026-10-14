@@ -104,6 +104,8 @@ export interface SalesServiceInput {
 export * from './passenger-correction';
 
 export interface SalesPassengerInput {
+  /** Contract child classification; independent from the person's real birth date. */
+  childAgeBand?: 'AGE_2_6' | 'AGE_6_12' | null;
   accommodationKind?: SalesAccommodationKind;
   /** Explicit agreed total of all services for this person; absent on legacy contracts. */
   agreedPrices?: readonly SalesMoney[];
@@ -388,6 +390,7 @@ export interface SalesReceivables {
 
 export interface SalesReservationRequestV1 {
   passengerAssignments?: readonly {
+    childAgeBand?: SalesPassengerInput['childAgeBand'];
     customerId: string;
     displayNameSnapshot?: string;
     ageCategory: SalesPassengerAgeCategory;
