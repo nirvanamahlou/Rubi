@@ -117,11 +117,9 @@ describe('selected contract actions', () => {
       'طرف قرارداد',
       'پرواز',
       'هتل',
-      'سایر',
       'مسافران',
       'سوابق',
       'ابطال قرارداد',
-      'تأیید و لغو ابطال',
     ])
       expect(html).toContain(section);
     expect(html).not.toContain('ثبت ترتیب و رده سنی');

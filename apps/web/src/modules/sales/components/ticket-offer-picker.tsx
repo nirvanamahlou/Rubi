@@ -14,6 +14,7 @@ import { flightDay } from '../model/exact-flight-dates';
 
 export function TicketOfferPicker({
   query,
+  carrierName,
   prepared,
   exactDay,
   allowedOfferIds,
@@ -28,6 +29,7 @@ export function TicketOfferPicker({
   acceptAnyRoundTripFare = false,
 }: {
   query: TicketOfferSearchV1;
+  carrierName?: string | undefined;
   prepared?: PreparedTicketSearch | undefined;
   exactDay?: string | undefined;
   allowedOfferIds?: readonly string[] | undefined;
@@ -118,25 +120,29 @@ export function TicketOfferPicker({
       ) : !offers.length ? (
         <p>بلیطی برای این مسیر و تاریخ پیدا نشد.</p>
       ) : (
-        offers.map((offer) => (
-          <TicketOfferCard
-            key={offer.id}
-            offer={offer}
-            selected={selectedId === offer.id}
-            requiredSeats={requiredSeats}
-            requireStandaloneFare={
-              requireStandaloneFare &&
-              !(acceptAnyRoundTripFare && offer.roundTripSalePrices?.length) &&
-              !roundTripOutbound?.roundTripSalePrices?.some(
-                (price) => price.returnOfferId === offer.id,
-              )
-            }
-            {...(roundTripOutbound ? { roundTripOutbound } : {})}
-            onSelect={onSelect}
-            {...(originLabel ? { originLabel } : {})}
-            {...(destinationLabel ? { destinationLabel } : {})}
-          />
-        ))
+        offers
+          .filter((offer) => !carrierName || offer.carrierName === carrierName)
+          .map((offer) => (
+            <TicketOfferCard
+              key={offer.id}
+              offer={offer}
+              selected={selectedId === offer.id}
+              requiredSeats={requiredSeats}
+              requireStandaloneFare={
+                requireStandaloneFare &&
+                !(
+                  acceptAnyRoundTripFare && offer.roundTripSalePrices?.length
+                ) &&
+                !roundTripOutbound?.roundTripSalePrices?.some(
+                  (price) => price.returnOfferId === offer.id,
+                )
+              }
+              {...(roundTripOutbound ? { roundTripOutbound } : {})}
+              onSelect={onSelect}
+              {...(originLabel ? { originLabel } : {})}
+              {...(destinationLabel ? { destinationLabel } : {})}
+            />
+          ))
       )}
       <div className="flex gap-2">
         {page > 1 ? (

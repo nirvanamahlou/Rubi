@@ -63,3 +63,24 @@ describe('NotificationsRepository recipient scoping', () => {
     });
   });
 });
+
+it('filters unauthorized destinations before pagination and unread counting', async () => {
+  const findMany = vi.fn().mockResolvedValue([
+    { id: 'finance', href: '/finance', readAt: null },
+    { id: 'private', href: null, readAt: null },
+    { id: 'read', href: null, readAt: new Date() },
+  ]);
+  const repository = new NotificationsRepository({
+    client: {
+      notification: { findMany, count: vi.fn().mockResolvedValue(99) },
+      $transaction: async (items: Promise<unknown>[]) => Promise.all(items),
+    },
+  } as unknown as DatabaseService);
+  const result = await repository.listForRecipient('limited-user', 1, []);
+  expect(result.rows.map((row) => row.id)).toEqual(['private']);
+  expect(result.unreadCount).toBe(1);
+  expect(findMany.mock.calls[0]![0].where).toEqual({
+    recipientUserId: 'limited-user',
+  });
+  expect(findMany.mock.calls[0]![0]).not.toHaveProperty('take');
+});

@@ -1,3 +1,23 @@
+## 2026-10-14 — SALES-CORRECTION-PURPLE-1014 — PC-A
+
+Purple reservation queue highlighting now reflects explicit successful sales passenger corrections, excluding operational reservation/form amendments and general updates. Existing light/dark colors and historical records are retained. No migration or local activation; focused projection test and CI gate develop merge.
+
+## 2026-10-14 — NOTIFICATION-USER-ISOLATION-1014 — PC-A
+
+Notification browser history is isolated by authenticated user, authorized branches and current permissions; legacy shared history is not imported. The center remounts on identity/scope changes and filters destination visibility. Server listing filters recipient rows against current route permissions before pagination and unread counting, preserving direct recipient-only personal notices and ownership checks for read/clear operations. No schema/migration or local activation. Focused access/notification tests, types/lint and CI validate the source candidate.
+
+## 2026-10-14 — SALES-PASSENGER-CORRECTIONS-1014 — PC-A — VALIDATING
+
+Sales finalized-contract operations add a protected correction form for passenger DOB/passport/expiry and Reservations notes. Contract-version CAS, encrypted append-only before/after evidence, actor/time, immutable operation IDs and same-transaction branch-authorized notifications protect integrity. Canonical Customer profiles, amounts, commercial passenger categories, allocations and previously issued snapshots remain unchanged. DOB changes crossing a commercial age category require contract amendment. Reservations queue marks corrected contracts PURPLE (latest user instruction); notification links open exact event history, with field values masked without sensitive permission. Passenger details and new Manifest outputs use public Sales contract-specific identity overlays. No schema/migration/dependency or operational runtime/data change. Tests, build and exact-head CI gate authorized develop merge.
+
+## 2026-10-14 — RESERVATION-EDITOR-SECTIONS-1014 — PC-A
+
+Reservation editing keeps party, flight, hotel, sale amounts, passenger editing, history and a single status-aware cancel/reopen section. Contract passenger categories are edited through the existing validated amendment command while identity editing remains available. Form age and hotel child bands stay form-only; duplicate form/correction/other sections are removed from the contract editor. Airline selection filters eligible flight replacements; manual flights retain their editable airline. No migration or local rollout.
+
+## 2026-10-14 — HIDE-CONTRACT-FLIGHT-CAPACITY-1014 — PC-A
+
+New-contract flight cards omit total capacity, remaining seats and round-trip available-seat figures. Existing insufficient-seat validation and selection disabling remain enforced. No API/schema/migration/dependency or local runtime change. Focused render regressions and full CI gate the authorized develop merge.
+
 ## 2026-10-14 — FINANCE-FOREIGN-SUPPLIER-1014 — PC-A — VALIDATING
 
 Every non-IRR outgoing inbox payment selects an active paying supplier instead of a settlement account. Covers ticket purchases, procurement invoices, Reservations purchases and direct/payroll requests. Finance validates through the Master Data public directory in the same transaction; new restrictive supplier FKs retain supplier identity and name evidence. Existing historical account payments remain readable. IRR retains branch-scoped active accounts; mixed source inputs are rejected. History/receipt/Excel preserve the paying name and invoice currency without requiring an account. Additive migration only; no live payment, operational migration or runtime rollout.
@@ -5944,3 +5964,9 @@ RESERVATION-CONTRACT-EDIT-1013 handoff: PR842, branch `codex/pc-a-reservation-co
 ## 2026-10-14 — HOTEL-RATE-INLINE-ROOM-TYPE-1014 — PC-A — READY_FOR_CI
 
 Manual hotel purchase-rate editor adds/reuses a canonical room type through the public Master Data API and attaches it to the selected hotel with version checking, preserving existing links. The new type appears as an empty rate row for immediate occupancy and price entry. Bounded Web English labels; no contract/schema/migration/dependency/grant or live data mutation. Focused Web tests19/19, scoped ESLint, full Web typecheck and production build (62 routes) pass. Exact-head CI gates the user-authorized develop merge. See docs/tasks/HOTEL-RATE-INLINE-ROOM-TYPE-1014.md.
+## ASSISTANT-GROQ-TEST-1014 — PC-C
+
+Synthetic-only Groq adapter, bounded strict-schema transport and fixed evaluation CLI prepared. Native63 tests pass. Live probe is blocked: HTTP403 from provider with and without key; no key validity or model quality claim. Runtime conversation stays disabled and no organizational data was sent. See docs/tasks/ASSISTANT-GROQ-TEST-1014.md. CI pending.
+
+## ROLE-ACCESS-TEMPLATES-1014 — PC-A
+Persisted administrator-configured job role defaults through dedicated unassigned IAM roles using existing managed-access validation and transactional grants. User creation copies selected role screens/operations/restrictions into editable independent access. No hardcoded recommendation fallback; unconfigured roles start empty. Existing users are unchanged by template saves.24 focused IAM tests pass; scoped API lint passes. Local generated Contracts/Prisma types required refresh after newer develop changes. Full quality, typechecks, tests and builds gate authorized develop merge. No schema/migration/dependency/runtime change.

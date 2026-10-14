@@ -10,6 +10,41 @@ vi.mock('@/lib/auth-session', () => ({
 
 afterEach(() => vi.unstubAllGlobals());
 describe('sales API dashboard connection', () => {
+  it('submits an immutable correction identity and retrieves exact history using authenticated uncached requests', async () => {
+    const fetch = vi.fn().mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            version: 4,
+            id: 'operation',
+            items: [],
+            nextCursor: null,
+          }),
+        ),
+    );
+    vi.stubGlobal('fetch', fetch);
+    const input = {
+      operationId: 'operation',
+      expectedVersion: 3,
+      passengers: [],
+      note: 'Synthetic note',
+    };
+    await salesApi.correctPassengers('contract', input);
+    expect(fetch).toHaveBeenLastCalledWith(
+      'http://localhost:4000/api/v1/sales/contracts/contract/passenger-corrections',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        body: JSON.stringify(input),
+      }),
+    );
+    await salesApi.passengerCorrectionHistory('contract', undefined, 'event');
+    expect(fetch).toHaveBeenLastCalledWith(
+      'http://localhost:4000/api/v1/sales/contracts/contract/passenger-corrections?eventId=event',
+      expect.objectContaining({ credentials: 'include', cache: 'no-store' }),
+    );
+  });
   it('sends independent receivables date, route and agency filters with the session', async () => {
     const fetch = vi
       .fn()

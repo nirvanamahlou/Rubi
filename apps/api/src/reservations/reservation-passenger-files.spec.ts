@@ -111,6 +111,45 @@ function setup() {
   };
 }
 describe('Reservations passenger and document consumers', () => {
+  it('uses contract-specific corrected identity without changing the canonical customer', async () => {
+    const s = setup();
+    const corrections = {
+      effective: vi.fn(
+        async () =>
+          new Map([
+            [
+              s.pid,
+              {
+                birthDate: '2000-02-02',
+                passportNumber: 'CORRECTED123',
+                passportExpiryDate: '2035-01-01',
+              },
+            ],
+          ]),
+      ),
+    };
+    const service = new ReservationPassengerFilesService(
+      s.workflow as unknown as TravelWorkflowService,
+      s.customers as unknown as CustomerService,
+      s.documents as unknown as DocumentsService,
+      corrections as never,
+    );
+    const result = await service.passengers(s.id, {
+      ...s.actor,
+      permissions: [...s.actor.permissions, 'customers.sensitive.read'],
+    } as AuthenticatedActor);
+    expect(result.data[0]).toMatchObject({
+      birthDate: '2000-02-02',
+      passportNumber: 'CORRECTED123',
+      passportExpiryDate: '2035-01-01',
+    });
+    expect(s.customer.birthDate).toBe('2001-01-01');
+    expect(s.customer.passportNumber).toBe('not-returned');
+    expect(corrections.effective).toHaveBeenCalledWith(
+      s.contractId,
+      expect.objectContaining({ userId: s.actor.userId }),
+    );
+  });
   it('loads names, contract age and masked identity without leaking full values', async () => {
     const s = setup();
     const r = await s.service.passengers(s.id, s.actor);

@@ -24,6 +24,10 @@ import {
   refreshAuthenticatedSession,
   AUTH_SESSION_RECOVERED_EVENT,
 } from '@/lib/auth-session';
+const ActorContext = createContext<AuthenticatedActor | null>(null);
+export function useAccessActor() {
+  return useContext(ActorContext);
+}
 const AccessContext = createContext<readonly string[] | null | undefined>(
   undefined,
 );
@@ -81,6 +85,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<readonly string[] | null>(
     null,
   );
+  const [actor, setActor] = useState<AuthenticatedActor | null>(null);
   const [error, setError] = useState(false);
   const [expired, setExpired] = useState(false);
   useEffect(() => {
@@ -110,6 +115,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
         }
         if (response.status === 403) {
           if (active) {
+            setActor(null);
             setPermissions([]);
             setError(false);
           }
@@ -119,6 +125,7 @@ export function AccessProvider({ children }: { children: ReactNode }) {
         const actor = (await response.json()) as AuthenticatedActor;
         if (!Array.isArray(actor.permissions)) throw Error();
         if (active) {
+          setActor(actor);
           setPermissions(actor.permissions);
           setError(false);
         }
@@ -145,17 +152,19 @@ export function AccessProvider({ children }: { children: ReactNode }) {
   }, []);
   if (expired) redirect('/login');
   return (
-    <AccessContext.Provider value={permissions}>
-      {permissions === null ? (
-        <div role="status" className="p-6 text-center">
-          {error
-            ? 'ارتباط با سامانه برقرار نشد؛ تلاش مجدد به‌صورت خودکار انجام می‌شود.'
-            : 'در حال بررسی دسترسی…'}
-        </div>
-      ) : (
-        children
-      )}
-    </AccessContext.Provider>
+    <ActorContext.Provider value={actor}>
+      <AccessContext.Provider value={permissions}>
+        {permissions === null ? (
+          <div role="status" className="p-6 text-center">
+            {error
+              ? 'ارتباط با سامانه برقرار نشد؛ تلاش مجدد به‌صورت خودکار انجام می‌شود.'
+              : 'در حال بررسی دسترسی…'}
+          </div>
+        ) : (
+          children
+        )}
+      </AccessContext.Provider>
+    </ActorContext.Provider>
   );
 }
 export function RouteAccessGuard({ children }: { children: ReactNode }) {

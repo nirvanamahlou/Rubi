@@ -108,7 +108,7 @@ export class SalesReservationTableService {
           where: {
             outcome: 'SUCCESS',
             action: {
-              in: ['sales.contract.updated', 'OPERATIONAL_FORM_AMENDMENT'],
+              in: ['SALES_PASSENGER_CORRECTION'],
             },
           },
           orderBy: { occurredAt: 'desc' },
