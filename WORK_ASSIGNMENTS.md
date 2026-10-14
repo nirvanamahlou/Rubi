@@ -2,6 +2,10 @@
 
 COMPUTER_ID=PC-A. User requests fixing the misleading no-ticket message during contract flight editing. Branch codex/pc-a-reservation-edit-ticket-1014 from origin/develop. Reserve ReservationSalesAmendment, a focused flight-search model/test, TicketOfferPicker and focused tests, bounded English labels/derived offline catalogs and own status docs. Initialize direction-specific search from the saved flight's Tehran date; keep existing ticket evidence and distinguish an empty replacement search from a missing contract ticket. Preserve real search failures, route/date/carrier filtering, amendment validation and seat controls. Existing reservation-editor task is frozen READY_FOR_REVIEW; no overlapping active source reservation found. No API/shared contract/schema/migration/dependency/runtime or operational data changes.
 
+## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.
+
 ## FINANCE-CONTRACT-PRICE-CORRECTION-1014 — PC-A — READY_FOR_REVIEW
 
 User requests IRR/foreign total correction below Sales passenger details, visible/writable only to Finance and Manager roles, with develop merge. Reserve new Sales correction service/UI/tests, passenger-correction dialog/module, Sales client, IAM directory role-check projection and scoped translations/status. IAM producer checks active effective roles including manual-role precedence; Sales consumer enforces branch/status/version, Decimal per-currency adjustment and audit. Reserve bounded en-overrides and regenerated offline API/standalone catalogs for the new labels. No schema/migration/dependency/runtime or live record edits.
@@ -7611,3 +7615,7 @@ authorizes develop merge after required checks.
 Validation: action-panel regressions 14/14, scoped ESLint, Web typecheck,
 Prettier for the changed CSS, and full 62-route Web production build passed.
 No migration or dependency change; exact-head CI remains the merge gate.
+
+## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.

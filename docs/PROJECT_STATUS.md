@@ -1,6 +1,11 @@
 ## RESERVATION-EDIT-TICKET-1014 — PC-A — READY_FOR_REVIEW
 
 Fix misleading no-ticket output while amending existing contract flights: retain saved ticket evidence, initialize both directions from the actual Tehran flight day, and distinguish an empty replacement list from a missing selection. Airline-filtered empty results and genuine search failures remain explicit. Sixteen focused tests, scoped lint, full Web typecheck, formatting, offline English sync and production build (62 routes) pass. Source locks released for review; CI pending. No migration, dependency, runtime or operational-data changes. See [task](tasks/RESERVATION-EDIT-TICKET-1014.md).
+
+## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.
+
 ## 2026-10-14 — FINANCE-CONTRACT-PRICE-CORRECTION-1014 — PC-A
 
 Sales passenger-correction dialog includes rial and foreign contract-total correction authorized by the server only for active Finance/Manager roles. IAM manual-role precedence is respected; ordinary Sales users cannot read or write price correction data through this endpoint. Price changes append exact per-currency BASE/DISCOUNT adjustments, preserve receipts/purchases and record before/after audit under optimistic contract version checks. Existing balances derive the new total without changing payments. Currency codes are validated; invalid/stale/cross-branch requests are rejected. Nine focused role/Decimal/concurrency tests pass. No schema/migration or operational data/runtime changes; CI gates the requested develop merge.
@@ -6015,3 +6020,6 @@ CI/build gate the user-authorized develop merge.
 Validation passed: 14 action-panel tests, scoped ESLint, Web typecheck,
 changed-CSS formatting, and full Web production build (62 routes). No
 migration or dependency changes; exact-head GitHub checks remain required.
+
+## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
+COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
