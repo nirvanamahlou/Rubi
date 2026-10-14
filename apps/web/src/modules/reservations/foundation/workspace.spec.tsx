@@ -430,3 +430,17 @@ it('marks only the second cell of noted requests, including the initially select
   );
   expect(html).toContain('دارای یادداشت در توضیحات');
 });
+
+it('keeps correction history but restores status colors after a reservation operation', () => {
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[{ ...row(), correctedAt: now, salesCorrectionPending: false }]}
+      access={access}
+      now={now}
+      initialSection="inbox"
+    />,
+  );
+  expect(html).toContain('data-corrected="false"');
+  expect(html).not.toContain('data-corrected="true"');
+});

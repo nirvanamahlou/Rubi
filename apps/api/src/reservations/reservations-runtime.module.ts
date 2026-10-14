@@ -581,33 +581,42 @@ export class ReservationRequestsController {
     }
     return {
       version: 1,
-      data: rows.map(({ salesOwnerUserId, ...row }) => ({
-        ...row,
-        tableSummary: summaries.get(row.contractId) ?? null,
-        workflow: row.workflow
-          ? {
-              ...(row.workflow as TravelWorkflowStateV1),
-              tableFlags: Object.fromEntries(
-                Object.entries(
-                  (row.workflow as TravelWorkflowStateV1).tableFlags ?? {},
-                ).map(([key, flag]) => [
-                  key,
-                  {
-                    ...flag,
-                    actorName: actorNames.get(flag!.updatedByUserId) ?? null,
-                  },
-                ]),
-              ),
-            }
-          : null,
-        sellerName: salesOwnerUserId
-          ? (names.get(salesOwnerUserId) ?? null)
-          : null,
-        contractPartyName:
-          summaries.get(row.contractId)?.contractPartyName ??
-          parties.get(row.snapshot.customerId) ??
-          null,
-      })),
+      data: await Promise.all(
+        rows.map(async ({ salesOwnerUserId, ...row }) => ({
+          salesCorrectionPending: summaries.get(row.contractId)?.correctedAt
+            ? await this.service.salesCorrectionPending(
+                row.id,
+                req.actor.branchIds,
+                summaries.get(row.contractId)?.correctedAt,
+              )
+            : false,
+          ...row,
+          tableSummary: summaries.get(row.contractId) ?? null,
+          workflow: row.workflow
+            ? {
+                ...(row.workflow as TravelWorkflowStateV1),
+                tableFlags: Object.fromEntries(
+                  Object.entries(
+                    (row.workflow as TravelWorkflowStateV1).tableFlags ?? {},
+                  ).map(([key, flag]) => [
+                    key,
+                    {
+                      ...flag,
+                      actorName: actorNames.get(flag!.updatedByUserId) ?? null,
+                    },
+                  ]),
+                ),
+              }
+            : null,
+          sellerName: salesOwnerUserId
+            ? (names.get(salesOwnerUserId) ?? null)
+            : null,
+          contractPartyName:
+            summaries.get(row.contractId)?.contractPartyName ??
+            parties.get(row.snapshot.customerId) ??
+            null,
+        })),
+      ),
     };
   }
 
