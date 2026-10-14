@@ -15,6 +15,9 @@ import type {
   SalesReceivables,
   SalesReceivablesQuery,
   SalesPaymentCreateRequest,
+  SalesPassengerIdentityV1,
+  SalesPassengerCorrectionHistoryV1,
+  SalesPassengerCorrectionCommandV1,
 } from '@nora/contracts';
 
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
@@ -101,6 +104,24 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  passengerCorrectionForm: (id: string) =>
+    request<{
+      version: number;
+      contractNumber: string;
+      passengers: SalesPassengerIdentityV1[];
+    }>(`/contracts/${encodeURIComponent(id)}/passenger-corrections/form`),
+  passengerCorrectionHistory: (id: string, cursor?: string, eventId?: string) =>
+    request<{
+      items: SalesPassengerCorrectionHistoryV1[];
+      nextCursor: string | null;
+    }>(
+      `/contracts/${encodeURIComponent(id)}/passenger-corrections?${new URLSearchParams({ ...(cursor ? { cursor } : {}), ...(eventId ? { eventId } : {}) })}`,
+    ),
+  correctPassengers: (id: string, input: SalesPassengerCorrectionCommandV1) =>
+    request<{ version: number; id: string }>(
+      `/contracts/${encodeURIComponent(id)}/passenger-corrections`,
+      { method: 'POST', body: JSON.stringify(input) },
+    ),
   amend: (id: string, input: SalesContractAmendmentV1) =>
     request<{ data: SalesContractDetail }>(`/contracts/${id}/amend`, {
       method: 'PATCH',

@@ -21,7 +21,7 @@ import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
 import styles from './user-management.module.css';
-import { recommendRoleAccess } from './role-access-presets';
+
 import { RoleAccessProposal } from './role-access-proposal';
 import { UserPasswordReset } from './user-password-reset';
 import { initialUserPasswordError } from './user-password-policy';
@@ -175,6 +175,10 @@ function Check({
   );
 }
 export function UserManagement() {
+  const [templateMode, setTemplateMode] = useState(false);
+  const [templates, setTemplates] = useState<
+    UserRow['roles'][number]['role'][]
+  >([]);
   const [users, setUsers] = useState<UserRow[]>([]),
     [options, setOptions] = useState<Options>({
       permissions: [],
@@ -186,7 +190,7 @@ export function UserManagement() {
     [actor, setActor] = useState<AuthenticatedActor | null>(null);
   const [selected, setSelected] = useState<UserRow | null>(null),
     [search, setSearch] = useState(''),
-    [title, setTitle] = useState<string>(USER_JOB_TITLES[1]),
+    [title, setTitle] = useState<string>(''),
     [permissionIds, setPermissionIds] = useState<string[]>([]),
     [screenIds, setScreenIds] = useState<string[]>([]),
     [deniedControlIds, setDeniedControlIds] = useState<string[]>(
@@ -196,15 +200,51 @@ export function UserManagement() {
     [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
-  const [proposalOpen, setProposalOpen] = useState(true);
+  const [proposalOpen, setProposalOpen] = useState(false);
   const [accessControlSearch, setAccessControlSearch] = useState('');
   const accessGrid = useRef<HTMLDivElement>(null);
-  const proposal = recommendRoleAccess(
-    title,
-    options.permissions,
-    actor?.permissions ?? [],
-    options.canAssignAll,
-  );
+  function applyTemplate(nextTitle: string, rows = templates) {
+    const codes =
+      rows
+        .find((r) => r.name === nextTitle)
+        ?.permissions.map((p) => p.permission.code) ?? [];
+    setPermissionIds(
+      options.permissions
+        .filter(
+          (p) =>
+            codes.includes(p.code) &&
+            (options.canAssignAll ||
+              actor?.permissions.includes(p.code as never)),
+        )
+        .map((p) => p.id),
+    );
+    setScreenIds(
+      USER_ACCESS_SCREENS.filter(
+        (s) =>
+          codes.includes(screenPermission(s.id)) &&
+          (options.canAssignAll || options.assignableScreenIds.includes(s.id)),
+      ).map((s) => s.id),
+    );
+    setDeniedControlIds(
+      USER_ACCESS_DENY_CONTROLS.filter(
+        (c) =>
+          !rows.some((r) => r.name === nextTitle) ||
+          codes.includes(denyPermission(c.id)) ||
+          (!options.canAssignAll &&
+            !options.assignableControlIds.includes(c.id)),
+      ).map((c) => c.id),
+    );
+    setProposalOpen(false);
+  }
+  const proposal = {
+    screenIds,
+    permissionIds,
+    groups: [],
+    permissions: options.permissions.filter((p) =>
+      permissionIds.includes(p.id),
+    ),
+    reason: 'دسترسی‌های ذخیره‌شدهٔ نقش',
+  };
   function applyProposal(customize: boolean) {
     setScreenIds(proposal.screenIds);
     setPermissionIds(proposal.permissionIds);
@@ -225,6 +265,8 @@ export function UserManagement() {
         request('/iam/users/access-options'),
         request('/iam/auth/access'),
       ]);
+      if (access.permissions.includes('iam.users.manage'))
+        setTemplates(await request('/iam/access-options/templates'));
       setUsers(rows);
       setSelected((current) =>
         current
@@ -263,21 +305,24 @@ export function UserManagement() {
       item.role.permissions.map(({ permission }) => permission.code),
     );
   function edit(user: UserRow | null) {
+    setTemplateMode(false);
+    if (!user) setTitle('');
     setSelected(user);
-    setProposalOpen(!user);
+    setProposalOpen(false);
     setMessage('');
     form.current?.reset();
     const roles =
       user?.roles.filter((r) => r.role.isActive).map((r) => r.role) ?? [];
-    setTitle(
-      USER_JOB_TITLES.includes(
-        roles[0]?.name as (typeof USER_JOB_TITLES)[number],
-      )
-        ? roles[0]!.name
-        : roles.some((role) => role.code === 'administrator')
-          ? USER_JOB_TITLES[0]
-          : USER_JOB_TITLES[1],
-    );
+    if (user)
+      setTitle(
+        USER_JOB_TITLES.includes(
+          roles[0]?.name as (typeof USER_JOB_TITLES)[number],
+        )
+          ? roles[0]!.name
+          : roles.some((role) => role.code === 'administrator')
+            ? USER_JOB_TITLES[0]
+            : USER_JOB_TITLES[1],
+      );
     const codes = roles.flatMap((r) =>
       r.permissions.map((p) => p.permission.code),
     );
@@ -318,6 +363,30 @@ export function UserManagement() {
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving.current || !canManage) return;
+    if (templateMode) {
+      saving.current = true;
+      setBusy(true);
+      try {
+        await request('/iam/access-options/templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            accessTitle: title,
+            permissionIds,
+            screenIds,
+            deniedControlIds,
+          }),
+        });
+        setTemplates(await request('/iam/access-options/templates'));
+        setMessage('دسترسی نقش ذخیره شد.');
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : 'Save failed.');
+      } finally {
+        saving.current = false;
+        setBusy(false);
+      }
+      return;
+    }
     const fields = new FormData(event.currentTarget);
     if (!selected) {
       const passwordError = initialUserPasswordError(
@@ -422,6 +491,17 @@ export function UserManagement() {
       ) : (
         <div className={styles.layout}>
           <aside className={styles.userList}>
+            {options.canAssignAll && (
+              <Button
+                type="button"
+                onClick={() => {
+                  edit(null);
+                  setTemplateMode(true);
+                }}
+              >
+                تنظیم دسترسی نقش‌ها
+              </Button>
+            )}
             <Input
               aria-label="جست‌وجوی کاربران"
               placeholder="نام، نام کاربری یا نقش"
@@ -429,7 +509,13 @@ export function UserManagement() {
               onChange={(e) => setSearch(e.target.value)}
             />
             {canManage && (
-              <Button type="button" onClick={() => edit(null)}>
+              <Button
+                type="button"
+                onClick={() => {
+                  setTemplateMode(false);
+                  edit(null);
+                }}
+              >
                 تعریف کاربر جدید
               </Button>
             )}
@@ -488,10 +574,12 @@ export function UserManagement() {
               <h2 className={styles.editorTitle}>
                 {selected
                   ? 'دسترسی ' + selected.displayName
-                  : 'تعریف کاربر جدید'}
+                  : templateMode
+                    ? 'تنظیم دسترسی نقش‌ها'
+                    : 'تعریف کاربر جدید'}
               </h2>
               <fieldset disabled={!canManage || busy} className="grid gap-4">
-                {!selected && (
+                {!selected && !templateMode && (
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label>
                       نام و نام خانوادگی
@@ -535,10 +623,11 @@ export function UserManagement() {
                       optionLimit={USER_JOB_TITLES.length}
                       onChange={(e) => {
                         setTitle(e.target.value);
-                        setProposalOpen(true);
+                        applyTemplate(e.target.value);
                       }}
                       className={styles.roleSelect}
                     >
+                      <option value="">انتخاب نقش</option>
                       {USER_JOB_TITLES.map((t) => (
                         <option key={t} value={t}>
                           {t}
@@ -785,14 +874,16 @@ export function UserManagement() {
                 {canManage && (
                   <Button
                     type="submit"
-                    disabled={busy}
+                    disabled={busy || !title}
                     className={styles.saveButton}
                   >
                     {busy
                       ? 'در حال ذخیره…'
                       : selected
                         ? 'ذخیره شعبه‌های کاربر'
-                        : 'ساخت کاربر با تیک‌های انتخاب‌شده'}
+                        : templateMode
+                          ? 'ذخیره دسترسی نقش'
+                          : 'ساخت کاربر با تیک‌های انتخاب‌شده'}
                   </Button>
                 )}
               </fieldset>

@@ -1089,6 +1089,60 @@ export class IamService implements IamStepUpPort {
     );
   }
 
+  listRoleTemplates() {
+    return this.database.client.role.findMany({
+      where: {
+        code: { startsWith: 'personal-access-template-job-' },
+        isActive: true,
+      },
+      include: { permissions: { include: { permission: true } } },
+    });
+  }
+  async saveRoleTemplate(
+    dto: {
+      accessTitle?: string;
+      permissionIds?: string[];
+      screenIds?: string[];
+      deniedControlIds?: string[];
+    },
+    actor: AuthenticatedActor,
+    metadata: RequestMetadata,
+  ) {
+    if (!(await this.isSystemAdministrator(actor)))
+      throw new ForbiddenException(
+        'Only system administrators can configure role defaults.',
+      );
+    const profile = await this.managedAccess(
+      { ...dto, manualAccessV3: true },
+      actor,
+    );
+    if (!profile || !Array.isArray(dto.deniedControlIds))
+      throw new BadRequestException(
+        'Complete role access settings are required.',
+      );
+    const key =
+      'template-job-' +
+      USER_JOB_TITLES.indexOf(
+        profile.title as (typeof USER_JOB_TITLES)[number],
+      );
+    const id = await this.database.client.$transaction(async (tx) =>
+      this.personalAccessRole(
+        tx,
+        key,
+        { ...profile, deniedControlIds: dto.deniedControlIds! },
+        actor,
+      ),
+    );
+    await this.audit(
+      actor.userId,
+      'iam.role.template.update',
+      'Role',
+      id,
+      AuditOutcome.SUCCESS,
+      metadata,
+    );
+    return { id };
+  }
   async createRole(
     dto: CreateRoleDto,
     actor: AuthenticatedActor,

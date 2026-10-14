@@ -1,4 +1,5 @@
 import { SalesPartyCorrectionService } from './sales-party-correction.service';
+import { PassengerCorrectionModule } from './corrections/passenger-correction.module';
 import { SalesProfitService } from './sales-profit.service';
 import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
@@ -26,6 +27,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
 
 @Module({
   imports: [
+    PassengerCorrectionModule,
     FinanceTicketCostModule,
     MasterDataModule,
     IamModule,

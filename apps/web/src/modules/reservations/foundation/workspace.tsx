@@ -10,7 +10,11 @@ import {
   reservationExportRows,
 } from './reservation-table';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import {
+  ContractCorrectionDeepLink,
+  ContractCorrectionHistoryButton,
+} from '../components/contract-correction-history';
 import { ContractActionPanel } from './action-panel';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -704,6 +708,7 @@ export function ReservationOperationsWorkspace({
                       {result.filteredRows.map((row) => (
                         <tr
                           key={row.id}
+                          data-corrected={Boolean(row.correctedAt)}
                           data-tone={statusTones[row.status]}
                           data-selected={selected?.id === row.id}
                           aria-selected={selected?.id === row.id}
@@ -742,6 +747,11 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
+                                  {row.correctedAt ? (
+                                    <small className="block font-bold">
+                                      اصلاح‌شده
+                                    </small>
+                                  ) : null}
                                 </button>
                               ) : index === 9 || index === 10 ? (
                                 <HotelTableAction
@@ -852,7 +862,13 @@ export function ReservationOperationsWorkspace({
             request={selected}
           />
         )}
+        {selected?.contractId ? (
+          <ContractCorrectionHistoryButton contractId={selected.contractId} />
+        ) : null}
       </div>
+      <Suspense fallback={null}>
+        <ContractCorrectionDeepLink />
+      </Suspense>
     </main>
   );
 }

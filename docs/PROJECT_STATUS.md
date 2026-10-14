@@ -1,3 +1,11 @@
+## 2026-10-14 — SALES-PASSENGER-CORRECTIONS-1014 — PC-A — VALIDATING
+
+Sales finalized-contract operations add a protected correction form for passenger DOB/passport/expiry and Reservations notes. Contract-version CAS, encrypted append-only before/after evidence, actor/time, immutable operation IDs and same-transaction branch-authorized notifications protect integrity. Canonical Customer profiles, amounts, commercial passenger categories, allocations and previously issued snapshots remain unchanged. DOB changes crossing a commercial age category require contract amendment. Reservations queue marks corrected contracts PURPLE (latest user instruction); notification links open exact event history, with field values masked without sensitive permission. Passenger details and new Manifest outputs use public Sales contract-specific identity overlays. No schema/migration/dependency or operational runtime/data change. Tests, build and exact-head CI gate authorized develop merge.
+
+## 2026-10-14 — RESERVATION-EDITOR-SECTIONS-1014 — PC-A
+
+Reservation editing keeps party, flight, hotel, sale amounts, passenger editing, history and a single status-aware cancel/reopen section. Contract passenger categories are edited through the existing validated amendment command while identity editing remains available. Form age and hotel child bands stay form-only; duplicate form/correction/other sections are removed from the contract editor. Airline selection filters eligible flight replacements; manual flights retain their editable airline. No migration or local rollout.
+
 ## 2026-10-14 — HIDE-CONTRACT-FLIGHT-CAPACITY-1014 — PC-A
 
 New-contract flight cards omit total capacity, remaining seats and round-trip available-seat figures. Existing insufficient-seat validation and selection disabling remain enforced. No API/schema/migration/dependency or local runtime change. Focused render regressions and full CI gate the authorized develop merge.
@@ -5951,3 +5959,6 @@ Synthetic-only Groq adapter, bounded strict-schema transport and fixed evaluatio
 ## 2026-10-14 — SALES-SELLER-VISIBILITY-1014 — PC-A — VALIDATING
 
 Owner explicitly requests global contract read and creation for active Manager/Sales Manager profiles and strict own-contract scope for Sales Experts. Sales list/detail/dashboard/receivables/Excel are aligned; IAM valid manual profiles follow the bounded new policy while malformed/disabled snapshots still deny. Seller names use the public IAM directory after contract authorization. Yellow contract rows use successful Sales audit corrections, including price-only changes and corrections applied from the operational form; internal-only form edits remain unmarked and are not exposed in the list. User creation now shows all job titles including Sales Manager. No schema/migration/dependency/operational data changes. Focused API53 and Web36 pass before additional edge-case tests; final lint/typechecks/build and CI pending. User authorizes develop merge. See docs/tasks/SALES-SELLER-VISIBILITY-1014.md.
+
+## ROLE-ACCESS-TEMPLATES-1014 — PC-A
+Persisted administrator-configured job role defaults through dedicated unassigned IAM roles using existing managed-access validation and transactional grants. User creation copies selected role screens/operations/restrictions into editable independent access. No hardcoded recommendation fallback; unconfigured roles start empty. Existing users are unchanged by template saves.24 focused IAM tests pass; scoped API lint passes. Local generated Contracts/Prisma types required refresh after newer develop changes. Full quality, typechecks, tests and builds gate authorized develop merge. No schema/migration/dependency/runtime change.

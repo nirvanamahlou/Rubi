@@ -101,6 +101,8 @@ export interface SalesServiceInput {
   metadata?: Readonly<Record<string, string | number | boolean | null>>;
 }
 
+export * from './passenger-correction';
+
 export interface SalesPassengerInput {
   accommodationKind?: SalesAccommodationKind;
   /** Explicit agreed total of all services for this person; absent on legacy contracts. */

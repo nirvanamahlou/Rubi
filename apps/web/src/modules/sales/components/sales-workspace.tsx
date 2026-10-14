@@ -42,6 +42,7 @@ import { SalesTravelDocuments } from './sales-travel-documents';
 import { ContractOutputButton } from './contract-output';
 import { ContractTableScroll } from './contract-table-scroll';
 import { SalesReceivablesCard } from './sales-receivables-card';
+import { PassengerCorrectionButton } from './passenger-correction';
 
 export const DEFAULT_CONTRACT_PAGE_SIZE = 20;
 export const DATE_FILTERED_CONTRACT_PAGE_SIZE = 10_000;
@@ -557,6 +558,11 @@ export function SalesWorkspace() {
                     </td>
                     <td className="px-4 py-3 last:pl-5">
                       <div className="grid min-w-72 grid-cols-3 gap-1.5">
+                        <PassengerCorrectionButton
+                          contractId={contract.id}
+                          status={contract.status}
+                          onSaved={() => void load()}
+                        />
                         <Button
                           permission="sales.payments.read"
                           size="sm"
