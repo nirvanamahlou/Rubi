@@ -1,3 +1,4 @@
+import { ContractPriceCorrectionService } from './contract-price-correction.service';
 import {
   Body,
   Controller,
@@ -27,7 +28,25 @@ export class PassengerCorrectionController {
   constructor(
     @Inject(PassengerCorrectionService)
     private readonly service: PassengerCorrectionService,
+    @Inject(ContractPriceCorrectionService)
+    private readonly prices: ContractPriceCorrectionService,
   ) {}
+  @Get(':id/price-correction')
+  @Header('Cache-Control', 'private, no-store')
+  priceForm(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.prices.form(id, req.actor);
+  }
+  @Post(':id/price-correction')
+  correctPrice(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: unknown,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.prices.save(id, input, req.actor);
+  }
   @Get(':id/passenger-corrections/form')
   @Header('Cache-Control', 'private, no-store')
   form(
@@ -58,7 +77,11 @@ export class PassengerCorrectionController {
 @Module({
   imports: [IamModule, CustomersModule, NotificationsModule],
   controllers: [PassengerCorrectionController],
-  providers: [PassengerCorrectionService, PassengerCorrectionCrypto],
+  providers: [
+    PassengerCorrectionService,
+    PassengerCorrectionCrypto,
+    ContractPriceCorrectionService,
+  ],
   exports: [PassengerCorrectionService],
 })
 export class PassengerCorrectionModule {}

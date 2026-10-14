@@ -2376,5 +2376,13 @@
   "افزودن نوع اتاق انجام نشد.": "The room type could not be added.",
   "برای این هتل ابتدا نوع اتاق را اضافه کنید.": "Add a room type for this hotel first.",
   "ابتدا وارد سامانه شوید و شهر هتل را انتخاب کنید.": "Sign in and select the hotel's city first.",
-  "هتل در شهر انتخاب‌شده پیدا نشد؛ صفحه را تازه کنید.": "The hotel was not found in the selected city. Refresh the page."
+  "هتل در شهر انتخاب‌شده پیدا نشد؛ صفحه را تازه کنید.": "The hotel was not found in the selected city. Refresh the page.",
+  "مجوز ویرایش قیمت قرارداد وجود ندارد.": "You do not have permission to correct contract prices.",
+  "مبلغ و ارز معتبر وارد کنید.": "Enter a valid amount and currency.",
+  "نسخه قرارداد تغییر کرده؛ آخرین نسخه را دریافت کنید.": "The contract changed. Load its latest version.",
+  "اصلاح مبلغ کل قرارداد": "Contract total correction",
+  "تغییر مبلغ کل قرارداد": "Change contract total",
+  "مبلغ کل ریالی": "Total in rials",
+  "مبلغ کل ارزی": "Foreign currency total",
+  "ثبت مبلغ کل قرارداد": "Save contract total"
 }
