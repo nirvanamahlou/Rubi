@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { agreedSalePrice } from '../model/agreed-sale-pricing';
 import {
   moneyDecimal,
@@ -149,7 +150,7 @@ export function SalesPricingPanel({
                         className="rounded-lg border bg-background px-3 py-2 text-sm font-semibold"
                         aria-label={`ارز ${service.title}`}
                       >
-                        {price.currencyCode}
+                        {currencySymbol(price.currencyCode ?? '')}
                       </div>
                     ) : (
                       <SalesCurrencySelect
@@ -277,7 +278,7 @@ export function SalesPricingPanel({
                               {entryBasis === 'NIGHT'
                                 ? `کل اقامت: ${formatSalesMoney(partTotals.dayTotal)}`
                                 : `متوسط هر شب (تقریبی): ${formatSalesMoney(partTotals.dayNight)}`}{' '}
-                              {price.currencyCode}
+                              {currencySymbol(price.currencyCode ?? '')}
                             </p>
                           ) : null}
                         </div>
@@ -290,9 +291,9 @@ export function SalesPricingPanel({
                         ? 'افزایش توافقی: '
                         : 'تخفیف فروشنده: '}
                       {formatSalesMoney(totals.discount.replace('-', ''))}{' '}
-                      {price.currencyCode} · قابل پرداخت:{' '}
+                      {currencySymbol(price.currencyCode ?? '')} · قابل پرداخت:{' '}
                       {formatSalesMoney(totals.agreedTotal)}{' '}
-                      {price.currencyCode}
+                      {currencySymbol(price.currencyCode ?? '')}
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
@@ -362,17 +363,18 @@ export function SalesPricingSummary({
           </span>
           <span>
             قیمت روز کل: {formatSalesMoney(totals.dayTotal)}{' '}
-            {price.currencyCode}
+            {currencySymbol(price.currencyCode ?? '')}
           </span>
           <span>
             توافق کل: {formatSalesMoney(totals.agreedTotal)}{' '}
-            {price.currencyCode}
+            {currencySymbol(price.currencyCode ?? '')}
           </span>
         </div>
       ))}
       {[...totalsByCurrency].map(([code, amount]) => (
         <p key={code} className="font-bold text-primary">
-          جمع توافق‌شده: {formatSalesMoney(moneyDecimal(amount))} {code}
+          جمع توافق‌شده: {formatSalesMoney(moneyDecimal(amount))}{' '}
+          {currencySymbol(code)}
         </p>
       ))}
       <p className="text-xs text-muted-foreground">

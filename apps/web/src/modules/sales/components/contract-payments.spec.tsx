@@ -111,11 +111,11 @@ describe('saved contract payment currency control', () => {
       />,
     );
     expect(html).toContain('مبلغ کل قرارداد');
-    expect(html).toContain('192,000,000 IRR');
-    expect(html).toContain('48,000,000 IRR');
+    expect(html).toContain('192,000,000 ﷼');
+    expect(html).toContain('48,000,000 ﷼');
     expect(html).toContain('25٪ از کل قرارداد');
-    expect(html).toContain('در انتظار مالی: 10,000,000 IRR');
-    expect(html).toContain('112,000,000 IRR');
-    expect(html).not.toContain('1,000 USD');
+    expect(html).toContain('در انتظار مالی: 10,000,000 ﷼');
+    expect(html).toContain('112,000,000 ﷼');
+    expect(html).not.toContain('1,000 $');
   });
 });

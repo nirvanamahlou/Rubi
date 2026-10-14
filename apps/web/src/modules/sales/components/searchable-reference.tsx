@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import type { MasterDataRecord } from '@nora/contracts';
 import { useId } from 'react';
 import { FormField } from '@/components/ui/form-controls';
@@ -7,6 +8,8 @@ export function salesReferenceDisplayName(
   item: Pick<MasterDataRecord, 'name'> & Partial<MasterDataRecord>,
   preferEnglishName = false,
 ) {
+  if (item.resource === 'currencies' && item.code)
+    return currencySymbol(item.code);
   const englishName = item.attributes?.englishName;
   return (
     (preferEnglishName && typeof englishName === 'string' && englishName.trim()

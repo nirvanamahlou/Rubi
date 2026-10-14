@@ -4,6 +4,7 @@ import {
   Fragment,
 } from 'react/jsx-runtime';
 import { LocalizedElement, LocalizedText } from './localized-text';
+import { isCurrencySymbol } from './currency-symbol';
 
 export { Fragment };
 export type { JSX } from 'react/jsx-runtime';
@@ -20,6 +21,8 @@ const attributes = [
 const verbatimTags = new Set(['script', 'style', 'title', 'textarea']);
 
 function localizedChildren(children: unknown, index?: number): unknown {
+  if (typeof children === 'string' && isCurrencySymbol(children))
+    return children;
   if (typeof children === 'string' && persian.test(children))
     return reactJsx(
       LocalizedText,

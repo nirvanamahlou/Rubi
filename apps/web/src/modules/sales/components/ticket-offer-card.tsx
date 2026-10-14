@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { CheckCircle2, Circle, Plane } from 'lucide-react';
 import type { TicketOfferV1 } from '@nora/contracts';
@@ -157,7 +158,7 @@ export function TicketOfferCard({
           {requireStandaloneFare ? (
             <strong className={missingFare ? 'text-rose-600' : ''}>
               {offer.standaloneSalePrice
-                ? `فروش تکی هر صندلی: ${offer.standaloneSalePrice.amount} ${offer.standaloneSalePrice.currencyCode}`
+                ? `فروش تکی هر صندلی: ${offer.standaloneSalePrice.amount} ${currencySymbol(offer.standaloneSalePrice.currencyCode)}`
                 : 'قیمت فروش تکی ثبت نشده'}
             </strong>
           ) : null}

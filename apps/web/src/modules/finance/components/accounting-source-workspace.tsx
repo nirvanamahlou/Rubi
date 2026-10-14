@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -167,7 +168,9 @@ export function AccountingSourceWorkspace({
                   <td className="p-3">{row.occurredAt.slice(0, 10)}</td>
                   <td className="p-3">{row.title}</td>
                   <td className="p-3">{row.amount}</td>
-                  <td className="p-3">{row.currencyCode}</td>
+                  <td className="p-3">
+                    {currencySymbol(row.currencyCode ?? '')}
+                  </td>
                   <td className="p-3">{row.accountTitle ?? '—'}</td>
                   <td className="p-3">
                     {row.accounting
@@ -225,7 +228,8 @@ export function AccountingSourceWorkspace({
           }}
         >
           <h3 className="font-bold">
-            پیش‌نویس از {item.title} · {item.amount} {item.currencyCode}
+            پیش‌نویس از {item.title} · {item.amount}{' '}
+            {currencySymbol(item.currencyCode ?? '')}
           </h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label="دوره مالی">

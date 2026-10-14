@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState, type ReactNode } from 'react';
 import { ticketCalendarDate, type TicketOfferV1 } from '@nora/contracts';
 import { Button, FormField, Input } from '@/components/ui';
@@ -355,7 +356,8 @@ export function FlightLoadGrid({
           </p>
           {offer.targetedStandaloneSalePrices?.map((price) => (
             <p key={price.salePriceTarget.id}>
-              {price.salePriceTarget.name}: {price.amount} {price.currencyCode}
+              {price.salePriceTarget.name}: {price.amount}{' '}
+              {currencySymbol(price.currencyCode ?? '')}
               {offer.saleCommissions?.find(
                 (c) =>
                   c.salePriceTargetId === price.salePriceTarget.id &&

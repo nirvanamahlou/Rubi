@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -60,11 +61,11 @@ export function CampaignDetail({
         />
         <Definition
           label="بودجه"
-          value={`${campaign.budgetAmount} ${campaign.budgetCurrencyCode ?? campaign.currencyCode}`}
+          value={`${campaign.budgetAmount} ${currencySymbol(campaign.budgetCurrencyCode ?? campaign.currencyCode)}`}
         />
         <Definition
           label="هدف فروش"
-          value={`${campaign.salesTarget} ${campaign.targetCurrencyCode ?? campaign.currencyCode}`}
+          value={`${campaign.salesTarget} ${currencySymbol(campaign.targetCurrencyCode ?? campaign.currencyCode)}`}
         />
         <Definition label="پیشرفت" value={`${campaign.progressPercent}%`} />
         <Definition
@@ -92,7 +93,7 @@ export function CampaignDetail({
             <Definition
               key={line.id ?? `${line.label}-${line.currencyCode}`}
               label={line.label}
-              value={`${line.amount} ${line.currencyCode}`}
+              value={`${line.amount} ${currencySymbol(line.currencyCode)}`}
             />
           ))
         ) : (
@@ -103,8 +104,8 @@ export function CampaignDetail({
         {campaign.spendTotals?.map((total) => (
           <Definition
             key={total.currencyCode}
-            label={`جمع ${total.currencyCode}`}
-            value={`${total.amount} ${total.currencyCode}`}
+            label={`جمع ${currencySymbol(total.currencyCode)}`}
+            value={`${total.amount} ${currencySymbol(total.currencyCode)}`}
           />
         ))}
       </Card>

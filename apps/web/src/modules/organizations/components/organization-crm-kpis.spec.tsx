@@ -131,6 +131,6 @@ describe('organization CRM KPI source availability', () => {
       },
     });
 
-    expect(metricValue(markup, 'مانده قراردادهای فروش')).toBe('۱۰۰ IRR');
+    expect(metricValue(markup, 'مانده قراردادهای فروش')).toBe('۱۰۰ ﷼');
   });
 });

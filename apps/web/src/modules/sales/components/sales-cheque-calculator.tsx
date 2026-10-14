@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useState } from 'react';
 import {
@@ -182,12 +183,14 @@ export function SalesChequeCalculator({
               >
                 <div className="space-y-3">
                   <h4 className="font-bold">
-                    ماشین‌حساب اقساط · {total.currencyCode}
+                    ماشین‌حساب اقساط ·{' '}
+                    {currencySymbol(total.currencyCode ?? '')}
                   </h4>
                   <p>
                     مبلغ خرید:{' '}
                     <strong dir="ltr">
-                      {formatSalesMoney(total.amount)} {total.currencyCode}
+                      {formatSalesMoney(total.amount)}{' '}
+                      {currencySymbol(total.currencyCode ?? '')}
                     </strong>
                   </p>
                   <label className="block space-y-1">

@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type { MasterDataRecord } from '@nora/contracts';
@@ -227,7 +228,9 @@ export function OrganizationFinancePreview({
                 >
                   <option value="">همه ارزها</option>
                   {currencies.map((currency) => (
-                    <option key={currency}>{currency}</option>
+                    <option key={currency} value={currency}>
+                      {currencySymbol(currency)}
+                    </option>
                   ))}
                 </NativeSearchSelect>
               </label>
@@ -302,7 +305,7 @@ export function OrganizationFinancePreview({
                       <td>{formatDate(row.date)}</td>
                       <td>{row.title}</td>
                       <td>{moneyLabel(row.amount, row.currency)}</td>
-                      <td>{row.currency}</td>
+                      <td>{currencySymbol(row.currency)}</td>
                       <td>{row.status}</td>
                       <td>
                         <Button

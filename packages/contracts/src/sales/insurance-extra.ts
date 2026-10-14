@@ -1,5 +1,6 @@
 import type { SalesContractCreateRequest } from './index';
 import { moneyUnits, moneyDecimal } from './pricing';
+import { SALES_CHEQUE_FEE } from './cheque-terms';
 
 export function passengerOverSixty(
   birthDate: string,
@@ -29,6 +30,12 @@ export function validateInsuranceExtras(
   input: SalesContractCreateRequest,
 ): void {
   const seen = new Set<string>();
+  const contractTotal =
+    input.services.length > 0 &&
+    input.services.every(
+      (service) => service.metadata?.contractPackagePricingVersion === 1,
+    );
+  let surchargeTotal = 0n;
   for (const service of input.services) {
     if (service.metadata?.insuranceAgeSurcharge !== true) continue;
     const id = service.metadata.passengerId;
@@ -45,6 +52,7 @@ export function validateInsuranceExtras(
       throw new Error('هزینه اضافه بیمه با مسافر و خدمت بیمه مطابقت ندارد.');
     seen.add(id);
     const amount = insuranceExtraRials(toman);
+    surchargeTotal += moneyUnits(amount);
     const price = service.pricing?.[0];
     if (
       service.kind !== 'OTHER' ||
@@ -63,6 +71,7 @@ export function validateInsuranceExtras(
     )
       throw new Error('مبلغ یا تخصیص هزینه اضافه بیمه معتبر نیست.');
     if (
+      !contractTotal &&
       !person.agreedPrices?.some(
         (p) =>
           p.currencyCode === 'IRR' &&
@@ -70,6 +79,19 @@ export function validateInsuranceExtras(
       )
     )
       throw new Error('هزینه اضافه بیمه باید در جمع همان مسافر ثبت شود.');
+  }
+  if (contractTotal) {
+    const total = input.priceComponents.reduce(
+      (sum, part) =>
+        part.currencyCode === 'IRR' &&
+        (!input.paymentTerms || part.title !== SALES_CHEQUE_FEE)
+          ? sum +
+            moneyUnits(part.amount) * (part.type === 'DISCOUNT' ? -1n : 1n)
+          : sum,
+      0n,
+    );
+    if (total < surchargeTotal)
+      throw new Error('مبلغ ریالی قرارداد باید هزینه اضافه بیمه را پوشش دهد.');
   }
 }
 export function addInsuranceExtra(

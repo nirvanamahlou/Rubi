@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
   Building2,
@@ -108,7 +109,7 @@ const accountingCards: readonly [string, string, LucideIcon][] = [
 ];
 
 function money(amount: string, currency: string) {
-  return `${amount.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')} ${currency}`;
+  return `${amount.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')} ${currencySymbol(currency)}`;
 }
 
 function AccountTree({
@@ -196,7 +197,11 @@ function AccountingSpace() {
               />
             </FormField>
             <FormField label="ارز پیش‌فرض">
-              <Input dir="ltr" readOnly value={selected.currencyCode} />
+              <Input
+                dir="ltr"
+                readOnly
+                value={currencySymbol(selected.currencyCode)}
+              />
             </FormField>
           </div>
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -390,7 +395,8 @@ function ActionDialog({
                 </SelectContent>
               </Select>
               <p className="mt-1 text-xs text-muted-foreground">
-                فقط حساب‌های فعال و قابل Posting با ارز {request.currencyCode}
+                فقط حساب‌های فعال و قابل Posting با ارز{' '}
+                {currencySymbol(request.currencyCode ?? '')}
               </p>
             </FormField>
             {isReceipt ? (
@@ -408,11 +414,15 @@ function ActionDialog({
               </FormField>
             )}
             <FormField label="ارز قرارداد" required>
-              <Input dir="ltr" readOnly value={draft.currencyCode} />
+              <Input
+                dir="ltr"
+                readOnly
+                value={currencySymbol(draft.currencyCode)}
+              />
             </FormField>
             {request.currencyCode !== 'IRR' ? (
               <FormField
-                label={`نرخ روز هر ۱ ${request.currencyCode} به ریال`}
+                label={`نرخ روز هر ۱ ${currencySymbol(request.currencyCode)} به ریال`}
                 required
               >
                 <MoneyInput
@@ -598,8 +608,8 @@ function ActionDialog({
                     : money(rialEquivalent, 'IRR')}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground" dir="ltr">
-                  1 {request.currencyCode} = {draft.exchangeRateToIrr || '—'}{' '}
-                  IRR
+                  1 {currencySymbol(request.currencyCode ?? '')} ={' '}
+                  {draft.exchangeRateToIrr || '—'} IRR
                 </p>
               </Card>
             ) : null}

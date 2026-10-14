@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
   AlertTriangle,
@@ -1349,7 +1350,7 @@ export function ReportResultPanel({
                         {row.ownerUserId}
                       </td>
                       <td className="p-3 text-center" dir="ltr">
-                        {row.currencyCode}
+                        {currencySymbol(row.currencyCode ?? '')}
                       </td>
                       <td className="p-3 text-center" dir="ltr">
                         {row.contractCount.toLocaleString('fa-IR')}
@@ -1447,7 +1448,7 @@ export function ReportResultPanel({
                           {row.branchId} · {row.ownerUserId}
                         </span>
                         <span className="shrink-0 font-semibold" dir="ltr">
-                          {row.amount} {row.currencyCode}
+                          {row.amount} {currencySymbol(row.currencyCode ?? '')}
                         </span>
                       </div>
                       <div className="h-3 overflow-hidden rounded-full bg-muted">
@@ -1500,7 +1501,7 @@ export function ReportResultPanel({
                           className="block truncate text-[11px] font-semibold"
                           dir="ltr"
                         >
-                          {row.amount} {row.currencyCode}
+                          {row.amount} {currencySymbol(row.currencyCode ?? '')}
                         </span>
                         <div className="mt-2 flex h-44 items-end justify-center">
                           <div
@@ -1553,7 +1554,7 @@ export function ReportResultPanel({
                           className="mt-2 block text-xs font-bold"
                           dir="ltr"
                         >
-                          {group.currencyCode}
+                          {currencySymbol(group.currencyCode ?? '')}
                         </span>
                       </div>
                       <div className="mt-4 border-t border-border pt-4">

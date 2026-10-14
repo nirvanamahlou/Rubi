@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
@@ -391,7 +392,7 @@ export function HotelBaseRateWorkspace() {
                     <p className="mt-3 text-xs text-muted-foreground">
                       {period.includedHotels.toLocaleString('fa-IR')} هتل از{' '}
                       {period.totalHotels.toLocaleString('fa-IR')} ·{' '}
-                      {period.currencyCode}
+                      {currencySymbol(period.currencyCode ?? '')}
                     </p>
                   </button>
                 ))}
@@ -630,7 +631,7 @@ export function HotelBaseRateWorkspace() {
                             }
                           />
                           <small className="mt-1 block text-center text-muted-foreground">
-                            {currencyCode}
+                            {currencySymbol(currencyCode ?? '')}
                           </small>
                         </td>
                         {MASTER_HOTEL_RATE_FACTOR_KEYS.map((key) => (

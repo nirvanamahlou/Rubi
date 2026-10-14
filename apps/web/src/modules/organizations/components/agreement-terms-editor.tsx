@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useEffect, useState } from 'react';
@@ -363,7 +364,7 @@ export function AgreementTermsEditor({
                         )
                       }
                     />
-                    {currency.name} <span dir="ltr">{currency.code}</span>
+                    {currencySymbol(currency.code)}
                   </label>
                 ))}
               </div>
@@ -384,7 +385,7 @@ export function AgreementTermsEditor({
                         )
                       }
                     />
-                    {code} — خارج از فهرست فعال
+                    {currencySymbol(code)} — خارج از فهرست فعال
                   </label>
                 ))}
             </fieldset>
@@ -551,7 +552,7 @@ export function AgreementTermsEditor({
           {value.creditPolicies.map((policy, index) => (
             <div className="agreement-subcard" key={index}>
               <div className="agreement-row-title">
-                <b>سقف اعتبار {policy.currencyCode}</b>
+                <b>سقف اعتبار {currencySymbol(policy.currencyCode ?? '')}</b>
                 <button
                   type="button"
                   className="btn danger"

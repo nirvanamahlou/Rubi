@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
@@ -612,13 +613,13 @@ export function TourWorkspace({
                           [
                             'قیمت پایه',
                             pack.details.basePrice
-                              ? `${pack.details.basePrice.amount} ${pack.details.basePrice.currency}`
+                              ? `${pack.details.basePrice.amount} ${currencySymbol(pack.details.basePrice.currency)}`
                               : undefined,
                           ],
                           [
                             'هزینه جداگانه پرواز',
                             pack.details.flightPrice
-                              ? `${pack.details.flightPrice.amount} ${pack.details.flightPrice.currency}`
+                              ? `${pack.details.flightPrice.amount} ${currencySymbol(pack.details.flightPrice.currency)}`
                               : undefined,
                           ],
                         ].map(

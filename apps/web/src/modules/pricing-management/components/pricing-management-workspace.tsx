@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
@@ -90,7 +91,7 @@ export async function loadPricingWorkspace(
 function money(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
   const formatted = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
-  return `${formatted}${fraction ? `٫${fraction}` : ''} ${currencyCode}`.replace(
+  return `${formatted}${fraction ? `٫${fraction}` : ''} ${currencySymbol(currencyCode)}`.replace(
     /\d/g,
     (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!,
   );

@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
   Banknote,
@@ -126,7 +127,7 @@ function failureMessage(reason: unknown): string {
 
 export function formatMoney(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
-  return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')}${fraction ? `٫${fraction}` : ''} ${currencyCode === 'IRR' ? 'ریال' : currencyCode}`.replace(
+  return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')}${fraction ? `٫${fraction}` : ''} ${currencySymbol(currencyCode)}`.replace(
     /\d/g,
     (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!,
   );

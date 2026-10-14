@@ -169,8 +169,8 @@ describe('reservation general details', () => {
       'CHD 1',
       'SAMPLE AIR',
       'SA101',
-      '1,200 USD',
-      '1,100 USD',
+      '1,200 $',
+      '1,100 $',
       'اتاق‌ها کنار هم باشند',
     ])
       expect(content).toContain(expected);

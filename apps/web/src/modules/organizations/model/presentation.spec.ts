@@ -5,10 +5,10 @@ import { agreementLabel, cooperationLabel, moneyLabel } from './presentation';
 describe('organization presentation from real projections', () => {
   it('preserves Decimal precision above the safe integer limit', () => {
     expect(moneyLabel('123456789012345678.1234', 'IRR')).toBe(
-      '۱۲۳٬۴۵۶٬۷۸۹٬۰۱۲٬۳۴۵٬۶۷۸٫۱۲۳۴ IRR',
+      '۱۲۳٬۴۵۶٬۷۸۹٬۰۱۲٬۳۴۵٬۶۷۸٫۱۲۳۴ ﷼',
     );
     expect(moneyLabel('invalid', 'IRR')).toBe('نامشخص');
-    expect(moneyLabel('-0.0001', 'IRR')).toBe('−۰٫۰۰۰۱ IRR');
+    expect(moneyLabel('-0.0001', 'IRR')).toBe('−۰٫۰۰۰۱ ﷼');
   });
   it('labels a dual-role organization without duplicating its identity', () => {
     expect(cooperationLabel('AGENCY,CORPORATE_CUSTOMER')).toBe(

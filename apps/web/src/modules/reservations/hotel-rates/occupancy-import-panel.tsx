@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useMemo, useState } from 'react';
 import type { HotelOccupancyRateV1 } from '@nora/contracts';
 import { SearchCombobox } from '@/components/ui/search-combobox';
@@ -116,7 +117,7 @@ export function OccupancyRateEditor({
                       }
                     />
                   </td>
-                  <td>{rate.currencyCode}</td>
+                  <td>{currencySymbol(rate.currencyCode ?? '')}</td>
                   <td>
                     <input
                       aria-label={`قیمت نرخ ${index + 1}`}
@@ -378,7 +379,7 @@ export function OccupancyImportPanel({
           />
           <p>
             {chosen.length.toLocaleString('fa-IR')} نرخ هم‌پوشان با تاریخ بسته و
-            ارز {currency}
+            ارز {currencySymbol(currency)}
           </p>
           {sourceRooms.map((room) => (
             <div key={room}>
