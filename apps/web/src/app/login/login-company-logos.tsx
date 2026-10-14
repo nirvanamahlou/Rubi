@@ -23,7 +23,7 @@ export function CompanyLogos({ compact = false }: { compact?: boolean }) {
         >
           <Image
             alt="لوگوی شرکت نیایش سیر"
-            className="object-contain p-2"
+            className={compact ? 'object-contain p-1' : 'object-contain p-2'}
             fill
             priority={!compact}
             sizes={compact ? '45vw' : '220px'}
@@ -39,7 +39,7 @@ export function CompanyLogos({ compact = false }: { compact?: boolean }) {
         >
           <Image
             alt="لوگوی شرکت جهان باستان"
-            className="object-contain p-2"
+            className={compact ? 'object-contain p-1' : 'object-contain p-2'}
             fill
             priority={!compact}
             sizes={compact ? '45vw' : '220px'}

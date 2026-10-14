@@ -19,7 +19,9 @@ describe('login company logos', () => {
         expect(html).toContain('niyayesh-seir-full.png');
         expect(html).toContain('jahan-bastan.png');
         expect(html).toContain(compact ? 'h-32' : 'h-48');
-        expect(html.match(/object-contain p-2/g)).toHaveLength(2);
+        expect(
+          html.split(compact ? 'object-contain p-1' : 'object-contain p-2'),
+        ).toHaveLength(3);
         expect(html).not.toContain('Travel agency');
         expect(html).toContain(
           language === 'en'

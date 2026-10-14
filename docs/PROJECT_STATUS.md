@@ -1,6 +1,6 @@
 ## 2026-10-14 — LOGOS-LOCALE-LOGIN-1014 — PC-A
 
-Remove the English-only text replacement of login company logos; both languages now render the same real image assets through the localized Image wrapper. Increase login logo card height from176 to192px on desktop and112 to128px on mobile, with8px containment padding. Preserve aspect ratio, localized accessibility and existing application brand selection. Bilingual responsive login and all-company image-identity regressions cover the fix. No API/schema/migration/dependency or local runtime changes; tests/build and exact-head CI gate the authorized develop merge.
+Remove the English-only text replacement of login company logos; both languages now render the same real image assets through the localized Image wrapper. Increase login logo card height from176 to192px on desktop and112 to128px on mobile, with8px desktop and4px mobile containment padding so narrow screens also gain visible logo area. Preserve aspect ratio, localized accessibility and existing application brand selection. Bilingual responsive login and all-company image-identity regressions cover the fix. No API/schema/migration/dependency or local runtime changes; tests/build and exact-head CI gate the authorized develop merge.
 
 ## RESERVATION-FORM-SUBMIT-1014 — PC-A — READY_FOR_CI
 
