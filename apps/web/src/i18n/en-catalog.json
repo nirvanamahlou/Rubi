@@ -1575,6 +1575,7 @@
   "ارتباط با آرشیو اسناد برقرار نشد.": "Communication with the document archive could not be established.",
   "ارتباط با سامانه برقرار نشد؛ تلاش مجدد به‌صورت خودکار انجام می‌شود.": "Communication with the system was not established; The retry will be done automatically.",
   "ارتباط با سامانه برقرار نیست.": "Communication with the system is not established.",
+  "ارتباط با سامانه مودیان مالیاتی": "Communication with the taxpayer system",
   "سامانه مودیان": "Taxpayer System",
   "ارتباط با سرور برقرار نشد؛ اتصال را بررسی و دوباره تلاش کنید.": "The connection with the server could not be established; Check the connection and try again.",
   "ارتباط با سرور برقرار نشد؛ اطلاعات فرم حفظ شده است. اتصال را بررسی و دوباره تلاش کنید.": "The connection with the server could not be established; Form information is saved. Check the connection and try again.",
