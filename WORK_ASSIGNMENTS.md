@@ -1,3 +1,7 @@
+## FINANCE-CONTRACT-PRICE-CORRECTION-1014 — PC-A — READY_FOR_REVIEW
+
+User requests IRR/foreign total correction below Sales passenger details, visible/writable only to Finance and Manager roles, with develop merge. Reserve new Sales correction service/UI/tests, passenger-correction dialog/module, Sales client, IAM directory role-check projection and scoped translations/status. IAM producer checks active effective roles including manual-role precedence; Sales consumer enforces branch/status/version, Decimal per-currency adjustment and audit. Reserve bounded en-overrides and regenerated offline API/standalone catalogs for the new labels. No schema/migration/dependency/runtime or live record edits.
+
 ## CLEAR-CORRECTION-ON-OPERATION-1014 — PC-A — IN_PROGRESS
 
 User authorizes removing sales-correction purple after a later recorded reservation operation and develop merge. Reserve Reservations list controller/public operation projection, Web live-feed/model/workspace and focused regressions plus own status. Additive salesCorrectionPending list field compares correction with server-recorded operation timestamp; preserve correction history. No schema/migration/dependency/runtime change.

@@ -104,6 +104,26 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  priceCorrection: (id: string) =>
+    request<{
+      version: number;
+      totals: { currencyCode: string; amount: string }[];
+    }>(`/contracts/${id}/price-correction`),
+  correctPrice: (
+    id: string,
+    input: {
+      expectedVersion: number;
+      totals: { currencyCode: string; amount: string }[];
+      reason: string;
+    },
+  ) =>
+    request<{
+      version: number;
+      totals: { currencyCode: string; amount: string }[];
+    }>(`/contracts/${id}/price-correction`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }),
   passengerCorrectionForm: (id: string) =>
     request<{
       version: number;
