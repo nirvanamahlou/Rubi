@@ -66,6 +66,26 @@ describe('manual hotel coefficient tables', () => {
     expect(html).toContain('قیمت پایه Land View');
     expect(html).toContain('قیمت پایه Sea View');
   });
+  it('shows inline room type creation only when Master Data access is available', () => {
+    const props = {
+      rows: [row],
+      hotelId: 'h1',
+      checkIn: '2026-10-01',
+      checkOut: '2026-11-01',
+      onChoose: vi.fn(),
+      onChange: vi.fn(),
+      onValidityChange: vi.fn(),
+      onAddRoomType: vi.fn().mockResolvedValue({ id: 'room-3', name: 'Suite' }),
+    };
+    const permitted = renderToStaticMarkup(
+      <ManualHotelPanel {...props} canAddRoomType />,
+    );
+    const readOnly = renderToStaticMarkup(
+      <ManualHotelPanel {...props} canAddRoomType={false} />,
+    );
+    expect(permitted).toContain('افزودن نوع اتاق');
+    expect(readOnly).not.toContain('افزودن نوع اتاق');
+  });
   it('never converts imported amounts into manual factors', () => {
     const imported = {
       ...row,
