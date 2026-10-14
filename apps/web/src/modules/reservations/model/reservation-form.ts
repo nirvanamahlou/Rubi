@@ -212,6 +212,14 @@ export function reservationFormData(
           hotelRecord?.attributes.mealServiceCodes ||
             hotelRecord?.attributes.mealServiceNames,
         ),
+    roomBreakdown: (hotel?.rooms ?? []).map((r) => ({
+      ordinal: r.ordinal,
+      roomType: references[r.roomTypeId]
+        ? name(references[r.roomTypeId])
+        : r.roomTypeNameSnapshot,
+      adults: r.adults,
+      childAges: [...r.childAges],
+    })),
     roomType: hotel?.roomTypeId ? name(references[hotel.roomTypeId]) : '-',
     checkIn: reservationFormDate(hotel?.checkInDate),
     checkOut: reservationFormDate(hotel?.checkOutDate),
@@ -246,4 +254,13 @@ export function reservationPassengerPages(
     used += units;
   }
   return pages;
+}
+
+export function reservationRoomAppendices(
+  rooms: ReturnType<typeof reservationFormData>['roomBreakdown'],
+) {
+  return Array.from(
+    { length: Math.ceil(Math.max(0, rooms.length - 4) / 12) },
+    (_, i) => rooms.slice(4 + i * 12, 4 + (i + 1) * 12),
+  );
 }

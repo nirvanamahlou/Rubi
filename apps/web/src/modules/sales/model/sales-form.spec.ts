@@ -679,3 +679,39 @@ it('persists the reduced transfer count separately for each selected direction',
       .map((s) => s.metadata?.passengerCount),
   ).toEqual([2, 2]);
 });
+
+describe('explicit visa applicants', () => {
+  const state = {
+    ...emptySalesForm,
+    departureDate: '2026-10-01',
+    serviceKinds: ['VISA' as const],
+    visaComposition: { adults: 1, children: 1 },
+    visaChildAges: [6],
+    visaApplicantIds: ['a', 'c'],
+    passengers: [
+      { customerId: 'a', displayName: 'A', birthDate: '1990-01-01' },
+      { customerId: 'b', displayName: 'B', birthDate: '1991-01-01' },
+      { customerId: 'c', displayName: 'C', birthDate: '2020-01-01' },
+    ],
+  };
+  it('assigns visas only to selected identities', () => {
+    const payload = salesPayload(state);
+    expect(payload.passengers.map((p) => p.serviceClientKeys)).toEqual([
+      ['visa'],
+      [],
+      ['visa'],
+    ]);
+    expect(payload.services[0]?.metadata).toMatchObject({
+      applicantAdults: 1,
+      applicantChildren: 1,
+      applicantChildAges: '6',
+    });
+  });
+  it('rejects wrong counts, ages and infants instead of assigning arbitrary people', () => {
+    expect(() =>
+      salesPayload({ ...state, visaApplicantIds: ['a', 'b'] }),
+    ).toThrow();
+    expect(() => salesPayload({ ...state, visaChildAges: [5] })).toThrow();
+    expect(() => salesPayload({ ...state, visaApplicantIds: [] })).toThrow();
+  });
+});

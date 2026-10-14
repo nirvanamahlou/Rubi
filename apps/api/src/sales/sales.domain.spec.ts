@@ -652,3 +652,100 @@ it('rejects transfer quantity above non-infant passengers or below zero', () => 
     );
   }
 });
+
+describe('visa party integrity', () => {
+  it('validates the assigned subset independently from all contract passengers', () => {
+    const input = {
+      ...draft,
+      services: [
+        ...draft.services,
+        {
+          clientKey: 'visa',
+          kind: 'VISA' as const,
+          titleSnapshot: 'Visa',
+          metadata: {
+            applicantAdults: 1,
+            applicantChildren: 0,
+            applicantChildAges: '',
+          },
+        },
+      ],
+      passengers: draft.passengers.map((p) => ({
+        ...p,
+        serviceClientKeys: [...p.serviceClientKeys, 'visa'],
+      })),
+    };
+    expect(() => validateSalesContract(input)).not.toThrow();
+    expect(() =>
+      validateSalesContract({ ...input, passengers: draft.passengers }),
+    ).toThrow();
+  });
+});
+
+describe('hotel room party integrity', () => {
+  it('validates room ordinals, canonical IDs and actual guest ages', () => {
+    const id = '10000000-0000-4000-8000-000000000010';
+    const input: SalesContractCreateRequest = {
+      ...draft,
+      services: [{ clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' }],
+      ticketSelections: [],
+      passengers: [{ ...draft.passengers[0]!, serviceClientKeys: ['hotel'] }],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'hotel',
+        hotelNameSnapshot: 'Hotel',
+        cityId: draft.destinationId,
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-03',
+        roomCount: 1,
+        roomTypeId: id,
+        occupancy: 1,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: id,
+            roomTypeNameSnapshot: 'Single',
+            adults: 1,
+            childAges: [],
+          },
+        ],
+      },
+    };
+    expect(() => validateSalesContract(input)).not.toThrow();
+    const hotel = input.hotelSelection!;
+    expect(() =>
+      validateSalesContract({
+        ...input,
+        hotelSelection: {
+          ...hotel,
+          rooms: [{ ...hotel.rooms![0]!, ordinal: 2 }],
+        },
+      }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...input,
+        hotelSelection: {
+          ...hotel,
+          rooms: [{ ...hotel.rooms![0]!, roomTypeId: 'unknown' }],
+        },
+      }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...input,
+        hotelSelection: {
+          ...hotel,
+          rooms: [{ ...hotel.rooms![0]!, adults: 2 }],
+        },
+      }),
+    ).toThrow();
+    expect(() =>
+      validateSalesContract({
+        ...input,
+        hotelSelection: { ...hotel, rooms: [null] as never },
+      }),
+    ).toThrow();
+  });
+});
