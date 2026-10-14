@@ -1,3 +1,7 @@
+## RESERVATION-FORM-SUBMIT-1014 — PC-A — READY_FOR_CI
+
+Reserve reservation settings/workflow form and submission helper/tests. Default current-company branding, require broker before save/send, one submit action showing issued form with persistent download/print controls. User authorizes tests and develop merge. No schema/dependency or operational writes.
+
 ## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
 
 Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.
@@ -7623,3 +7627,7 @@ Validation: 64 API domain/amendment/flight/hotel regressions pass, including ban
 ## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
+
+## VOUCHER-OPTIONAL-1014 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; reserve travel-workflow form/domain and voucher leader mount identity. Optional note for supplier confirmation/voucher issuance; optional supplier reference; preserve required cancellation reasons. Stable leader editor identity prevents selection remount. No schema/dependency/data change. User authorizes develop merge after CI.

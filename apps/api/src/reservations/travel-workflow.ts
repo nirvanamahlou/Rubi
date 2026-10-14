@@ -34,7 +34,8 @@ export function transitionTravelWorkflow(
     throw new Error('نسخه تغییر کرده است؛ اطلاعات را دوباره دریافت کنید.');
   if (
     typeof command.note !== 'string' ||
-    !command.note.trim() ||
+    (!command.note.trim() &&
+      !['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(command.action)) ||
     command.note.trim().length > 500
   )
     throw new Error('دلیل عملیات را تا ۵۰۰ نویسه وارد کنید.');
@@ -152,10 +153,9 @@ export function transitionTravelWorkflow(
         );
       if (
         typeof command.supplierReference !== 'string' ||
-        !command.supplierReference.trim() ||
         command.supplierReference.length > 200
       )
-        throw new Error('مرجع تأیید کارگزار الزامی است.');
+        throw new Error('مرجع تأیید کارگزار باید حداکثر ۲۰۰ نویسه باشد.');
       if (
         current.sentSupplierFormSettings?.brokerId &&
         current.voucherSettings?.brokerId !==
