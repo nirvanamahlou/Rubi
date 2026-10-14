@@ -576,7 +576,7 @@ export function SalesWorkspace() {
                         </Button>
                         <ContractOutputButton
                           contractId={contract.id}
-                          label="PDF قرارداد"
+                          label="قرارداد"
                           className="h-8 min-w-0 px-2 text-xs shadow-sm"
                         />
                         <SalesTravelDocuments

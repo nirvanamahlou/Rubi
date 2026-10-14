@@ -7611,3 +7611,7 @@ authorizes develop merge after required checks.
 Validation: action-panel regressions 14/14, scoped ESLint, Web typecheck,
 Prettier for the changed CSS, and full 62-route Web production build passed.
 No migration or dependency change; exact-head CI remains the merge gate.
+
+## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
