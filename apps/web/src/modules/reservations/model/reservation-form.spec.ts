@@ -95,3 +95,26 @@ describe('reservation reference form', () => {
     expect(reservationPassengerPages([])).toEqual([[]]);
   });
 });
+
+it('shows transfer direction and excludes infants from the automatic quantity', () => {
+  const data = structuredClone(input);
+  data.snapshot.serviceSelections = [
+    { clientKey: 't', kind: 'TRANSFER', metadata: { direction: 'OUTBOUND' } },
+  ] as never;
+  data.snapshot.passengerAssignments = data.snapshot.passengerAssignments!.map(
+    (p) => ({ ...p, serviceClientKeys: ['t'] }),
+  );
+  expect(
+    reservationFormData(data as unknown as ReservationFormIntake).transfer,
+  ).toBe('OUTBOUND ONLY · 2 PAX');
+  data.snapshot.serviceSelections = [
+    {
+      clientKey: 't',
+      kind: 'TRANSFER',
+      metadata: { direction: 'RETURN', passengerCount: 1 },
+    },
+  ] as never;
+  expect(
+    reservationFormData(data as unknown as ReservationFormIntake).transfer,
+  ).toBe('RETURN ONLY · 1 PAX');
+});

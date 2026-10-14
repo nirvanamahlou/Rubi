@@ -90,3 +90,34 @@ it('uses saved voucher settings, selected passengers and service flags without r
   copy.text.hotel = 'NEXT VERSION';
   expect(settings.text.hotel).toBe('SAVED HOTEL');
 });
+
+it('prints English carrier and supplier plus the explicit NOTICE remarks', () => {
+  const intake = {
+    receivedAt: '2026-10-14',
+    snapshot: {
+      contractNumber: 'TEST',
+      passengerIds: [],
+      passengerAssignments: [],
+      serviceSelections: [],
+      hotelSelection: null,
+    },
+    workflow: { roomOrder: [], ageOverrides: {}, note: '' },
+  } as unknown as ReservationFormIntake;
+  const settings = defaultVoucherSettings(intake, {});
+  settings.text.arrivalAirline = 'ایرلاین';
+  settings.text.broker = 'کارگزار';
+  settings.text.remarks = 'NOTICE TEST';
+  intake.workflow.supplierFormSettings = settings;
+  const refs = {
+    airline: {
+      id: 'a',
+      name: 'ایرلاین',
+      attributes: { englishName: 'AIRLINE' },
+    },
+    broker: { id: 'b', name: 'کارگزار', attributes: { englishName: 'BROKER' } },
+  } as never;
+  const data = supplierFormData(intake, refs);
+  expect(data.supplier).toBe('BROKER');
+  expect(data.flights[0]?.airline).toBe('AIRLINE');
+  expect(data.notes).toBe('NOTICE TEST');
+});

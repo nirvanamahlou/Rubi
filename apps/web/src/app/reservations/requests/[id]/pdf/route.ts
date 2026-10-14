@@ -1,3 +1,4 @@
+import { loadOutputReferences } from '@/modules/reservations/model/output-references';
 import { salesContractFlights } from '@nora/contracts';
 import { languageFromCookies } from '@/i18n/language';
 import { readFile } from 'node:fs/promises';
@@ -48,6 +49,10 @@ export async function GET(
     const { data: intake } = (await response.json()) as {
       data: ReservationFormIntake;
     };
+    if (!voucher && intake.workflow.sentSupplierFormSettings) {
+      intake.workflow.supplierFormSettings =
+        intake.workflow.sentSupplierFormSettings;
+    }
     if (voucher && !intake.workflow.voucherIssued)
       return fail('واچر هنوز صادر نشده است.', 409);
     if (
@@ -111,7 +116,13 @@ export async function GET(
           'base64',
         );
     }
-    const refs: ReservationFormReferences = {};
+    const refs: ReservationFormReferences = await loadOutputReferences(
+      async (path) => {
+        const response = await get(path);
+        return response.ok ? response.json() : {};
+      },
+      id,
+    );
     const hotel = intake.snapshot.hotelSelection;
     const keys = [
       ['hotels', hotel?.hotelId],

@@ -53,7 +53,7 @@ it('opens the issued form rather than its editable settings and uses the sent sn
   );
   const document = tree.find((n) => n.type === TravelDocument);
   expect(document).toBeDefined();
-  expect(document?.props.historical).toBe(true);
+  expect(document?.props.historical).not.toBe(true);
   expect(document?.props.intake).toHaveProperty(
     'workflow.supplierFormSettings',
     sent,

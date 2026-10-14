@@ -2407,5 +2407,8 @@
   "تغییر مبلغ کل قرارداد": "Change contract total",
   "مبلغ کل ریالی": "Total in rials",
   "مبلغ کل ارزی": "Foreign currency total",
-  "ثبت مبلغ کل قرارداد": "Save contract total"
+  "ثبت مبلغ کل قرارداد": "Save contract total",
+  "تعداد مسافران ترانسفر": "Transfer passengers",
+  "یادداشت فرم رزرواسیون (NOTICE)": "Reservation form note (NOTICE)",
+  "تعداد مسافران ترانسفر معتبر نیست.": "Invalid transfer passenger count."
 }
