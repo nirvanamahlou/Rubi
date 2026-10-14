@@ -15,7 +15,7 @@ function setup() {
   return { findMany, service };
 }
 describe('reservation saved ticket access scope and history', () => {
-  it('paginates beyond the newest hundred while retaining branch restrictions', async () => {
+  it('paginates latest contract versions while retaining branch and search restrictions', async () => {
     const { service, findMany } = setup();
     await service.list(['branch-a'], {
       page: '3',
@@ -29,7 +29,12 @@ describe('reservation saved ticket access scope and history', () => {
         },
         take: 100,
         skip: 200,
-        orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
+        distinct: ['contractId'],
+        orderBy: [
+          { contractVersion: 'desc' },
+          { receivedAt: 'desc' },
+          { id: 'asc' },
+        ],
       }),
     );
   });
