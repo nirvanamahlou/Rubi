@@ -88,8 +88,10 @@ export class MasterProcurementDirectory {
       hasMore: rows.length > 50,
     };
   }
-  async supplier(id: string) {
-    const row = await this.database.client.masterSupplier.findFirst({
+  async supplier(id: string, transaction?: Prisma.TransactionClient) {
+    const row = await (
+      transaction ?? this.database.client
+    ).masterSupplier.findFirst({
       where: { id, isActive: true, collaborationStatus: 'ACTIVE' },
       select: { id: true, name: true, code: true, version: true },
     });

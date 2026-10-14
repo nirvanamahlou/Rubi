@@ -5,9 +5,11 @@ const { inventory } = require('./i18n-inventory.cjs');
 const root = path.resolve(__dirname, '../../..');
 const overrides = require('../src/i18n/en-overrides.json');
 const accountingDocuments = require('../src/i18n/en-accounting-documents.json');
+const accountingPageKpis = require('../src/i18n/en-accounting-page-kpis.json');
 const catalogue = {
   ...require('../src/i18n/en-catalog.json'),
   ...accountingDocuments,
+  ...accountingPageKpis,
   ...overrides,
 };
 const api = { ...accountingDocuments, ...overrides },

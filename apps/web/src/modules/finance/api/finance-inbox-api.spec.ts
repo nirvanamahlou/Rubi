@@ -12,6 +12,50 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 
 describe('Finance inbox API', () => {
+  it('loads paginated suppliers with encoded search and authenticated transport', async () => {
+    const data = {
+      items: [{ id: 'supplier', name: 'Supplier' }],
+      hasMore: true,
+    };
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ data })));
+    vi.stubGlobal('fetch', fetch);
+    await expect(financeInboxApi.payingSuppliers('A & B', 2)).resolves.toEqual(
+      data,
+    );
+    const [url, options] = fetch.mock.calls[0]!;
+    const parsed = new URL(url);
+    expect(parsed.pathname).toBe('/api/v1/finance/paying-suppliers');
+    expect(parsed.searchParams.get('search')).toBe('A & B');
+    expect(parsed.searchParams.get('page')).toBe('2');
+    expect(options).toMatchObject({
+      credentials: 'include',
+      cache: 'no-store',
+    });
+  });
+  it('sends supplier identity and a null account for foreign invoice payments', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ data: { status: 'PAID' } })),
+      );
+    vi.stubGlobal('fetch', fetch);
+    await financeInboxApi.payInvoice('invoice', {
+      version: 1,
+      expectedVersion: 2,
+      accountId: null,
+      payingSupplierId: 'supplier',
+      paymentMethodId: 'method',
+      paidAmount: '10',
+      exchangeRateToIrr: '600000',
+      transferAt: '2026-10-14T10:00:00Z',
+    });
+    expect(JSON.parse(fetch.mock.calls[0]![1].body)).toMatchObject({
+      accountId: null,
+      payingSupplierId: 'supplier',
+    });
+  });
   it('responds to HR through its public endpoint with an idempotency key and source version', async () => {
     const fetch = vi
       .fn()

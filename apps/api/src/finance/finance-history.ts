@@ -248,7 +248,13 @@ export async function readFinanceHistory(
       amount: row.paidAmount!.toString(),
       currencyCode: row.request.currencyCode,
       accountId: row.accountId,
-      accountTitle: row.account?.title ?? null,
+      accountTitle:
+        row.snapshot &&
+        typeof row.snapshot === 'object' &&
+        !Array.isArray(row.snapshot) &&
+        typeof row.snapshot.payingSupplierName === 'string'
+          ? row.snapshot.payingSupplierName
+          : (row.account?.title ?? null),
       method:
         row.snapshot &&
         typeof row.snapshot === 'object' &&
@@ -277,7 +283,7 @@ export async function readFinanceHistory(
       amount: row.paidAmount.toString(),
       currencyCode: row.cost.currencyCode,
       accountId: row.accountId,
-      accountTitle: row.account.title,
+      accountTitle: row.payingSupplierName ?? row.account?.title ?? null,
       method: row.paymentMethod.name,
       reference: row.paymentReference,
       installment: row.version,
@@ -292,9 +298,9 @@ export async function readFinanceHistory(
       title: 'پرداخت فاکتور خرید',
       occurredAt: row.transferAt!.toISOString(),
       amount: row.paidAmount!.toString(),
-      currencyCode: row.account?.currencyCode ?? '—',
+      currencyCode: row.paymentCurrencyCode ?? row.account?.currencyCode ?? '—',
       accountId: row.accountId,
-      accountTitle: row.account?.title ?? null,
+      accountTitle: row.payingSupplierName ?? row.account?.title ?? null,
       method: row.paymentMethod?.name ?? null,
       reference: row.paymentReference,
       installment: null,
@@ -314,7 +320,7 @@ export async function readFinanceHistory(
       amount: row.paidAmount!.toString(),
       currencyCode: purchases.get(row.purchaseId)!.currencyCode,
       accountId: row.accountId,
-      accountTitle: row.account?.title ?? null,
+      accountTitle: row.payingSupplierName ?? row.account?.title ?? null,
       method: row.paymentMethod?.name ?? null,
       reference: row.paymentReference,
       installment: null,

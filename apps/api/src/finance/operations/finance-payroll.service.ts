@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { paymentSource } from '../payments/payment-source';
 import {
   BadRequestException,
   ConflictException,
@@ -80,6 +81,7 @@ export class FinancePayrollService {
       'reason',
       'paidAmount',
       'accountId',
+      'payingSupplierId',
       'methodId',
       'transferAt',
       'paymentReference',
@@ -179,6 +181,8 @@ export class FinancePayrollService {
           methodId: string | null = null,
           transferAt: Date | null = null;
         let methodName: string | null = null;
+        let payingSupplierId: string | null = null;
+        let payingSupplierName: string | null = null;
         let cumulativePaid = last.cumulativePaid,
           remainingAmount = last.remainingAmount,
           status = transition.to;
@@ -191,21 +195,29 @@ export class FinancePayrollService {
             throw new BadRequestException(
               'مبلغ باید مثبت و حداکثر برابر مانده باشد.',
             );
-          accountId = validate.uuid(input.accountId);
           methodId = validate.uuid(input.methodId);
-          const account = await tx.financeSettlementAccount.findFirst({
-            where: {
-              id: accountId,
-              branchId: current.branchId,
-              currencyCode: current.currencyCode,
-              isActive: true,
+          const source = await paymentSource(
+            tx,
+            this.master,
+            {
+              accountId: input.accountId
+                ? validate.uuid(input.accountId)
+                : null,
+              payingSupplierId: input.payingSupplierId
+                ? validate.uuid(input.payingSupplierId)
+                : null,
             },
-          });
+            current.currencyCode,
+            current.branchId,
+          );
+          accountId = source.account?.id ?? null;
+          payingSupplierId = source.payingSupplierId;
+          payingSupplierName = source.payingSupplierName;
           const method = await this.master?.activeOutgoingPaymentMethod(
             methodId,
             tx,
           );
-          if (!account || !method)
+          if (!method)
             throw new BadRequestException(
               'حساب هم‌ارز فعال یا روش پرداخت معتبر نیست.',
             );
@@ -247,11 +259,13 @@ export class FinancePayrollService {
               sourceId: source.id,
               sourceVersion: source.version,
               methodName,
+              payingSupplierName,
             },
             paidAmount,
             cumulativePaid,
             remainingAmount,
             accountId,
+            payingSupplierId,
             methodId,
             transferAt,
             paymentReference:

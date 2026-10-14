@@ -1,4 +1,7 @@
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
+import { paymentSource } from '../payments/payment-source';
+import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
+import { MasterDataModule } from '../../master-data/master-data.module';
 import { NotificationsModule } from '../../notifications/notifications.module';
 import { NotificationsService } from '../../notifications/notifications.service';
 import {
@@ -8,6 +11,7 @@ import {
   Injectable,
   Module,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   FinanceSupplierPaymentCommandV1,
@@ -33,6 +37,9 @@ export class FinanceDeliveryService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(NotificationsService)
     private readonly notifications: NotificationsService,
+    @Optional()
+    @Inject(MasterProcurementDirectory)
+    private readonly supplierDirectory?: MasterProcurementDirectory,
   ) {}
 
   private presentPurchase(row: {
@@ -52,6 +59,7 @@ export class FinanceDeliveryService {
     actorUserId: string;
     createdAt: Date;
     financeRevisions: Array<{
+      payingSupplierName?: string | null;
       version: number;
       status: 'PARTIALLY_PAID' | 'PAID' | 'REJECTED';
       bankId: string | null;
@@ -107,7 +115,8 @@ export class FinanceDeliveryService {
             status: finance.status,
             bankId: finance.account?.bankId ?? finance.bankId,
             accountId: finance.accountId,
-            accountTitle: finance.account?.title ?? null,
+            accountTitle:
+              finance.payingSupplierName ?? finance.account?.title ?? null,
             paymentMethodId: finance.paymentMethodId,
             paymentMethodName: finance.paymentMethod?.name ?? null,
             paidAmount: legacyPaid
@@ -230,7 +239,7 @@ export class FinanceDeliveryService {
       (command.reason?.trim().length ?? 0) > 500 ||
       (!paid && !command.reason?.trim()) ||
       (paid &&
-        (!command.accountId ||
+        ((!command.accountId && !command.payingSupplierId) ||
           !command.paymentMethodId ||
           !paidAmount ||
           paidAmount.lte(0) ||
@@ -258,19 +267,19 @@ export class FinanceDeliveryService {
         currencyCode: string;
       } | null = null;
       let paymentMethod: { id: string; name: string } | null = null;
+      let payingSupplierId: string | null = null;
+      let payingSupplierName: string | null = null;
       if (paid) {
-        account = await tx.financeSettlementAccount.findFirst({
-          where: {
-            id: command.accountId!,
-            branchId: purchase.intake.branchId,
-            isActive: true,
-          },
-          select: { id: true, title: true, bankId: true, currencyCode: true },
-        });
-        if (!account || account.currencyCode !== purchase.currencyCode)
-          throw new BadRequestException(
-            'حساب فعال هم‌ارز برای این پرداخت معتبر نیست.',
-          );
+        const source = await paymentSource(
+          tx,
+          this.supplierDirectory,
+          command,
+          purchase.currencyCode,
+          purchase.intake.branchId,
+        );
+        account = source.account;
+        payingSupplierId = source.payingSupplierId;
+        payingSupplierName = source.payingSupplierName;
         paymentMethod = await tx.masterPaymentMethod.findFirst({
           where: {
             id: command.paymentMethodId!,
@@ -320,8 +329,10 @@ export class FinanceDeliveryService {
           purchaseId,
           version: command.expectedVersion + 1,
           status: nextStatus,
-          bankId: paid ? account!.bankId : null,
-          accountId: paid ? account!.id : null,
+          bankId: paid ? (account?.bankId ?? null) : null,
+          accountId: paid ? (account?.id ?? null) : null,
+          payingSupplierId,
+          payingSupplierName,
           paymentMethodId: paid ? paymentMethod!.id : null,
           paidAmount: paid ? paidAmount : null,
           exchangeRateToIrr: paid ? exchangeRate : null,
@@ -341,7 +352,7 @@ export class FinanceDeliveryService {
         status: row.status,
         bankId: row.bankId,
         accountId: row.accountId,
-        accountTitle: account?.title ?? null,
+        accountTitle: payingSupplierName ?? account?.title ?? null,
         paymentMethodId: row.paymentMethodId,
         paymentMethodName: paymentMethod?.name ?? null,
         paidAmount: row.cumulativePaid?.toString() ?? '0',
@@ -658,7 +669,7 @@ export class FinanceDeliveryService {
   }
 }
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, MasterDataModule],
   providers: [FinanceDeliveryService],
   exports: [FinanceDeliveryService],
 })

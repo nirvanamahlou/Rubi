@@ -200,6 +200,15 @@ export function FinanceInboxLiveWorkspace() {
   const [reason, setReason] = useState('');
   const [issueDocumentDelivery, setIssueDocumentDelivery] = useState(false);
   const [accountId, setAccountId] = useState('');
+  const [payingSupplierId, setPayingSupplierId] = useState('');
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [supplierPage, setSupplierPage] = useState(1);
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>(
+    [],
+  );
+  const [supplierMore, setSupplierMore] = useState(false);
+  const [supplierError, setSupplierError] = useState('');
+  const [supplierBusy, setSupplierBusy] = useState(false);
   const [paymentMethodId, setPaymentMethodId] = useState('');
   const [paidAmount, setPaidAmount] = useState('');
   const [exchangeRate, setExchangeRate] = useState('');
@@ -249,6 +258,43 @@ export function FinanceInboxLiveWorkspace() {
   const paymentCurrency = actionItem?.ticketPurchase
     ? actionItem.amount?.currencyCode
     : actionItem?.amount?.currencyCode;
+  const foreignPayment =
+    actionKind === 'PAYMENT' &&
+    Boolean(paymentCurrency) &&
+    paymentCurrency !== 'IRR';
+
+  useEffect(() => {
+    if (!foreignPayment) return;
+    let active = true;
+    const timer = setTimeout(() => {
+      setSupplierBusy(true);
+      setSupplierError('');
+      void financeInboxApi
+        .payingSuppliers(supplierSearch, supplierPage)
+        .then((result) => {
+          if (!active) return;
+          setSuppliers(result.items);
+          setSupplierMore(result.hasMore);
+        })
+        .catch((error: unknown) => {
+          if (active) {
+            setSuppliers([]);
+            setSupplierError(
+              error instanceof Error
+                ? error.message
+                : 'فهرست تأمین‌کنندگان در دسترس نیست.',
+            );
+          }
+        })
+        .finally(() => {
+          if (active) setSupplierBusy(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [foreignPayment, supplierSearch, supplierPage]);
 
   useEffect(() => {
     let active = true;
@@ -397,7 +443,14 @@ export function FinanceInboxLiveWorkspace() {
     );
     setActionItem(item);
     setActionKind('PAYMENT');
-    setAccountId(eligibleAccounts[0]?.id ?? '');
+    setAccountId(
+      item.amount?.currencyCode === 'IRR'
+        ? (eligibleAccounts[0]?.id ?? '')
+        : '',
+    );
+    setPayingSupplierId('');
+    setSupplierSearch('');
+    setSupplierPage(1);
     setPaymentMethodId(methods[0]?.id ?? '');
     setPaidAmount(
       item.settlement?.remainingAmount ?? item.amount?.amount ?? '',
@@ -488,7 +541,8 @@ export function FinanceInboxLiveWorkspace() {
           operationId: crypto.randomUUID(),
           expectedPaymentVersion: actionItem.ticketPurchase.paymentCount,
           costRevisionId: prepared.sourceContextReference,
-          accountId,
+          accountId: foreignPayment ? null : accountId,
+          payingSupplierId: foreignPayment ? payingSupplierId : null,
           paymentMethodId,
           paidAmount,
           exchangeRateToIrr: exchangeRate,
@@ -541,7 +595,8 @@ export function FinanceInboxLiveWorkspace() {
             version: 1,
             expectedVersion: actionItem.financeVersion ?? 0,
             expectedSourceVersion: actionItem.sourceVersion,
-            accountId,
+            accountId: foreignPayment ? null : accountId,
+            payingSupplierId: foreignPayment ? payingSupplierId : null,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
@@ -569,7 +624,8 @@ export function FinanceInboxLiveWorkspace() {
           {
             expectedVersion: actionItem.sourceVersion,
             status: 'PAID',
-            accountId,
+            accountId: foreignPayment ? null : accountId,
+            payingSupplierId: foreignPayment ? payingSupplierId : null,
             paymentMethodId,
             paidAmount,
             exchangeRateToIrr: exchangeRate,
@@ -1628,38 +1684,98 @@ export function FinanceInboxLiveWorkspace() {
               {actionKind === 'PAYMENT' ? (
                 <>
                   <label className="grid gap-2">
-                    <span>حساب پرداخت‌کننده</span>
-                    <Select value={accountId} onValueChange={setAccountId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="انتخاب حساب مبدأ" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts
-                          .filter(
-                            (account) =>
-                              account.branchId ===
-                                actionItem?.branchReference &&
-                              account.currencyCode === paymentCurrency,
-                          )
-                          .map((account) => (
-                            <SelectItem key={account.id} value={account.id}>
-                              {account.title} · {account.currencyCode}
-                            </SelectItem>
+                    {foreignPayment ? (
+                      <>
+                        <span>تأمین‌کننده پرداخت‌کننده</span>
+                        <Input
+                          aria-label="جست‌وجوی تأمین‌کننده پرداخت‌کننده"
+                          value={supplierSearch}
+                          onChange={(event) => {
+                            setSupplierSearch(event.target.value);
+                            setSupplierPage(1);
+                            setPayingSupplierId('');
+                          }}
+                        />
+                        <NativeSearchSelect
+                          required
+                          aria-label="تأمین‌کننده پرداخت‌کننده"
+                          value={payingSupplierId}
+                          onChange={(event) =>
+                            setPayingSupplierId(event.target.value)
+                          }
+                          disabled={supplierBusy}
+                        >
+                          <option value="">انتخاب تأمین‌کننده</option>
+                          {suppliers.map((supplier) => (
+                            <option key={supplier.id} value={supplier.id}>
+                              {supplier.name}
+                            </option>
                           ))}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setAccountDialog(true);
-                        setActionError('');
-                      }}
-                    >
-                      <PlusCircle className="size-4" />
-                      تعریف حساب جدید
-                    </Button>
+                        </NativeSearchSelect>
+                        {supplierError ? (
+                          <span role="alert">{supplierError}</span>
+                        ) : null}
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={supplierBusy || supplierPage === 1}
+                            onClick={() => {
+                              setSupplierPage(supplierPage - 1);
+                              setPayingSupplierId('');
+                            }}
+                          >
+                            صفحه قبلی
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            disabled={supplierBusy || !supplierMore}
+                            onClick={() => {
+                              setSupplierPage(supplierPage + 1);
+                              setPayingSupplierId('');
+                            }}
+                          >
+                            صفحه بعدی
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span>حساب پرداخت‌کننده</span>
+                        <Select value={accountId} onValueChange={setAccountId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="انتخاب حساب مبدأ" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {accounts
+                              .filter(
+                                (account) =>
+                                  account.branchId ===
+                                    actionItem?.branchReference &&
+                                  account.currencyCode === paymentCurrency,
+                              )
+                              .map((account) => (
+                                <SelectItem key={account.id} value={account.id}>
+                                  {account.title} · {account.currencyCode}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setAccountDialog(true);
+                            setActionError('');
+                          }}
+                        >
+                          <PlusCircle className="size-4" />
+                          تعریف حساب جدید
+                        </Button>
+                      </>
+                    )}
                   </label>
                   <label className="grid gap-2">
                     <span>روش پرداخت</span>
@@ -1860,7 +1976,9 @@ export function FinanceInboxLiveWorkspace() {
                     actionItem?.source === 'SALES' &&
                     !accountId) ||
                   (actionKind === 'PAYMENT' &&
-                    (!accountId || !paymentMethodId || !paidAmount))
+                    (!(foreignPayment ? payingSupplierId : accountId) ||
+                      !paymentMethodId ||
+                      !paidAmount))
                 }
               >
                 {actionBusy ? 'در حال ثبت…' : 'ثبت عملیات'}

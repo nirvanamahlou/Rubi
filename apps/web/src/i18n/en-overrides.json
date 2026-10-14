@@ -1,4 +1,12 @@
 {
+  "انتخاب تأمین‌کننده": "Select supplier",
+  "تأمین‌کننده پرداخت‌کننده": "Paying supplier",
+  "جست‌وجوی تأمین‌کننده پرداخت‌کننده": "Search paying suppliers",
+  "فهرست تأمین‌کنندگان در دسترس نیست.": "The supplier directory is unavailable.",
+  "برای پرداخت ارزی تأمین‌کننده پرداخت‌کننده را انتخاب کنید.": "Select a paying supplier for foreign-currency payments.",
+  "برای پرداخت ریالی حساب پرداخت‌کننده را انتخاب کنید.": "Select a paying account for IRR payments.",
+  "حساب / تأمین‌کننده / روش": "Account / supplier / method",
+  "حساب / تأمین‌کننده پرداخت‌کننده": "Account / paying supplier",
   "بسته بدون تغییر. از کارت «بسته‌های موجود» در صفحهٔ نرخ هتل قابل مشاهده و ویرایش است.": "unchanged packs. View and edit them from the Existing packs card on the hotel rates page.",
   "تغییرات ذخیره‌نشده کنار گذاشته شوند؟": "Discard unsaved changes?",
   "با نیاز به اصلاح ثبت شد؛": "Saved for correction;",

@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { paymentSource } from './payments/payment-source';
+import { MasterProcurementDirectory } from '../master-data/master-procurement-directory';
 import {
   BadRequestException,
   ConflictException,
@@ -64,6 +66,9 @@ export class FinanceInboxService {
     @Optional()
     @Inject(IamFinanceDirectory)
     private readonly identity?: IamFinanceDirectory,
+    @Optional()
+    @Inject(MasterProcurementDirectory)
+    private readonly supplierDirectory?: MasterProcurementDirectory,
   ) {}
 
   history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
@@ -74,6 +79,18 @@ export class FinanceInboxService {
       query,
       actor,
     );
+  }
+
+  async payingSuppliers(search: string, page: number) {
+    if (!this.supplierDirectory)
+      throw new BadRequestException('فهرست تأمین‌کنندگان در دسترس نیست.');
+    const result = await this.supplierDirectory.suppliers(search, page);
+    return {
+      ...result,
+      items: result.items
+        .filter((row) => row.isActive && row.collaborationStatus === 'ACTIVE')
+        .map((row) => ({ id: row.id, name: row.name || row.code })),
+    };
   }
 
   private async completeHrInbox(actor: AuthenticatedActor) {
@@ -903,7 +920,7 @@ export class FinanceInboxService {
       input?.version !== 1 ||
       !Number.isSafeInteger(input.expectedVersion) ||
       input.expectedVersion < 1 ||
-      !input.accountId ||
+      (!input.accountId && !input.payingSupplierId) ||
       !input.paymentMethodId ||
       paidAmount.compare(DecimalValue.zero()) <= 0 ||
       exchangeRate.compare(DecimalValue.zero()) <= 0 ||
@@ -945,17 +962,13 @@ export class FinanceInboxService {
           current.sourceVersion !== source.sourceVersion
         )
           throw new ConflictException('وضعیت پرداخت هم‌زمان تغییر کرده است.');
-        const account = await tx.financeSettlementAccount.findFirst({
-          where: {
-            id: input.accountId,
-            branchId: source.branchId,
-            currencyCode: source.currencyCode,
-            isActive: true,
-          },
-        });
-        if (!account)
-          throw new BadRequestException(
-            'حساب فعال هم‌ارز برای پرداخت معتبر نیست.',
+        const { account, payingSupplierId, payingSupplierName } =
+          await paymentSource(
+            tx,
+            this.supplierDirectory,
+            input,
+            source.currencyCode,
+            source.branchId,
           );
         const method = await tx.masterPaymentMethod.findFirst({
           where: {
@@ -985,7 +998,10 @@ export class FinanceInboxService {
             branchId: source.branchId,
             version: current.version + 1,
             status,
-            accountId: account.id,
+            accountId: account?.id ?? null,
+            payingSupplierId,
+            payingSupplierName,
+            paymentCurrencyCode: source.currencyCode,
             paymentMethodId: method.id,
             paidAmount: paidAmount.toString(),
             exchangeRateToIrr: exchangeRate.toString(),

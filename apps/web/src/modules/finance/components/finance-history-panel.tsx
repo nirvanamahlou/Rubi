@@ -175,7 +175,9 @@ export function FinanceHistoryPanel({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">حساب / روش</dt>
+                <dt className="text-xs text-muted-foreground">
+                  حساب / تأمین‌کننده / روش
+                </dt>
                 <dd>
                   {row.accountTitle ?? '—'} · {row.method ?? '—'}
                 </dd>

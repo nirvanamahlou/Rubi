@@ -23,6 +23,7 @@ import { PermissionGuard } from '../iam/permission.guard';
 import { RequirePermissions } from '../iam/iam.decorators';
 import type { AuthenticatedRequest } from '../iam/iam.types';
 import { ProcurementModule } from '../procurement/procurement.module';
+import { MasterDataModule } from '../master-data/master-data.module';
 import { FinanceTicketCostService } from './ticket-cost/finance-ticket-cost.service';
 
 @Controller('finance/ticket-purchases')
@@ -85,7 +86,7 @@ export class TicketPurchaseInboxController {
 }
 
 @Module({
-  imports: [IamModule, ProcurementModule],
+  imports: [IamModule, ProcurementModule, MasterDataModule],
   controllers: [FinanceTicketCostController, TicketPurchaseInboxController],
   providers: [AuthGuard, PermissionGuard, FinanceTicketCostService],
   exports: [FinanceTicketCostService],

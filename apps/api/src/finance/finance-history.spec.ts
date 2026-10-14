@@ -248,8 +248,9 @@ describe('persisted finance transaction history', () => {
         purchaseId: id(100),
         transferAt: new Date(occurredAt),
         paidAmount: { toString: () => '25' },
-        accountId: id(500),
-        account: { title: 'ارزی' },
+        accountId: null,
+        account: null,
+        payingSupplierName: 'Paying supplier',
         paymentMethod: { name: 'حواله' },
         paymentReference: null,
         cumulativePaid: { toString: () => '100' },
@@ -261,6 +262,7 @@ describe('persisted finance transaction history', () => {
       requestId: id(100),
     } as never);
     expect(result.items[0]?.currencyCode).toBe('EUR');
+    expect(result.items[0]?.accountTitle).toBe('Paying supplier');
     expect(d.reservations.financeHistoryPurchases).toHaveBeenCalledWith(
       ['branch-a'],
       id(100),

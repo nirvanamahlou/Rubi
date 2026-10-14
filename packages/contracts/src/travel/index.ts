@@ -422,6 +422,7 @@ export function reservationServicePurchaseTotal(
 }
 
 export interface FinanceSupplierPaymentCommandV1 {
+  payingSupplierId?: string | null;
   expectedVersion: number;
   status: 'PAID' | 'REJECTED';
   bankId?: string | null;
