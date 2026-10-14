@@ -5979,3 +5979,6 @@ Persisted administrator-configured job role defaults through dedicated unassigne
 Removed purchase/profit output from Sales payment dialog. The existing per-currency actual-cost view is now in Finance inbox details for Sales receipt contracts. Existing finance and Sales branch/read authorization remains unchanged. No data, calculation, API, migration or dependency change. Focused tests and full CI gate authorized develop merge.
 
 Finance-only read clarification: profit uses an internal Sales-owned projection authorized by finance.read and the actual contract branch, without requiring Sales screen grants. Ordinary contract detail/identity permissions are unchanged.14 Web presentation tests and9 profit/HTTP/branch authorization tests pass; full CI gates merge.
+
+## PROFIT-ACTION-LAYOUT-1014 — PC-A
+Hotel profitability action now appears below Descriptions in the Notes column. Contract-information/actions return to two rows; existing single-column Notes grid uses the free second row. Dialog and authorization unchanged. No API/migration/dependency/runtime change; authorized develop merge follows checks.
