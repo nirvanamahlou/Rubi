@@ -7550,3 +7550,13 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-seller-visibility-1014 from origin/dev
 Reserve IAM role template commands/DTO/controller, user management editor and focused tests; user authorizes editable persisted job-role defaults and develop merge. Templates use unassigned dedicated IAM roles; user access remains an independent snapshot. Existing managed-access validation, administrator restriction, audit and transaction apply. No schema/dependency/migration/runtime change.
 
 ROLE-ACCESS-TEMPLATES-1014: PR849, implementation b4a406e2.24 IAM tests and scoped API/Web lint pass; production build passes CI. Preserve concurrent develop translations during integration. Source locks release with candidate; exact-head full CI gates authorized merge. No migration or local publication.
+
+## FINANCE-ONLY-CONTRACT-PROFIT-1014 — PC-A — IN_PROGRESS
+
+Reserve Sales payments profit removal, Finance inbox contract profit component placement and focused regressions. User authorizes develop merge. Existing finance.read and Sales branch/record read guards remain authoritative; no new grants, money calculation, API/schema/migration/dependency change. No overlapping active source lock found.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014:14 Sales/Finance presentation regressions and7 actual-profit/HTTP authorization tests pass. Profit is absent from Sales payments and available only in Finance Sales-receipt details; finance.read, contract scope and existing no-store behavior preserved. Source locks release with candidate; full exact-head quality/test/build/database CI required for authorized develop merge. No local rollout.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014 scope refinement: Sales-owned internal profit read projection uses finance.read plus actual contract branch scope, so Finance-only staff do not require Sales UI/contract-read grants. The ordinary Sales detail endpoint and identity visibility are unchanged; profit response contains only existing cost/profit facts. Reserve Sales service/profit service and permission regressions.
+
+Final validation:14 Web presentation tests and9 API cost/profit/Finance-only/branch-scope regressions pass. Ordinary Sales contract detail permission remains unchanged; only the internal profit source reads for authorized Finance staff. No calculation or financial data changes.
