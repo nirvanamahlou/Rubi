@@ -306,6 +306,7 @@ export function UserManagement() {
     );
   function edit(user: UserRow | null) {
     setTemplateMode(false);
+    if (!user) setTitle('');
     setSelected(user);
     setProposalOpen(false);
     setMessage('');
@@ -496,7 +497,6 @@ export function UserManagement() {
                 onClick={() => {
                   edit(null);
                   setTemplateMode(true);
-                  applyTemplate(title);
                 }}
               >
                 تنظیم دسترسی نقش‌ها
@@ -514,7 +514,6 @@ export function UserManagement() {
                 onClick={() => {
                   setTemplateMode(false);
                   edit(null);
-                  applyTemplate(title);
                 }}
               >
                 تعریف کاربر جدید

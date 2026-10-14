@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
   accessibleRows,
@@ -38,6 +39,27 @@ function row(id = 'test-request'): RequestView {
   };
 }
 describe('reservations workspace access and states', () => {
+  it('marks corrected contracts with text and purple light/dark queue styling', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[{ ...row(), correctedAt: now }]}
+        access={access}
+        now={now}
+        initialSection="inbox"
+      />,
+    );
+    expect(html).toContain('data-corrected="true"');
+    expect(html).toContain('اصلاح‌شده');
+    const css = readFileSync(
+      new URL('./workspace.module.css', import.meta.url),
+      'utf8',
+    );
+    expect(css).toMatch(/data-corrected='true'[\s\S]*?#f3e8ff/);
+    expect(css).toMatch(
+      /:global\(\.dark\)[^{}]*data-corrected='true'[\s\S]*?#3b0764/,
+    );
+  });
   it.each([
     'LOADING',
     'EMPTY',

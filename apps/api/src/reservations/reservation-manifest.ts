@@ -1,3 +1,4 @@
+import { PassengerCorrectionService } from '../sales/corrections/passenger-correction.service';
 import {
   BadRequestException,
   Body,
@@ -201,6 +202,9 @@ export class ReservationManifestService {
     @Optional()
     @Inject(MasterDataService)
     private readonly master?: MasterDataService,
+    @Optional()
+    @Inject(PassengerCorrectionService)
+    private readonly corrections?: PassengerCorrectionService,
   ) {}
 
   private geographyResolver() {
@@ -488,6 +492,10 @@ export class ReservationManifestService {
         ? intake.workflow.roomOrder
         : intake.snapshot.passengerIds;
     const passengers: IranAirtourManifestRow[] = [];
+    const corrections = await this.corrections?.effective(
+      intake.snapshot.contractId,
+      actor,
+    );
     const selectedIds = new Set(
       offerId
         ? this.ticketPassengerIds(intake.snapshot, offerId)
@@ -502,6 +510,13 @@ export class ReservationManifestService {
           'customer-verification',
         )
       ).data;
+      const corrected = corrections?.get(customerId);
+      if (corrected)
+        Object.assign(customer, {
+          birthDate: corrected.birthDate,
+          passportNumber: corrected.passportNumber,
+          passportExpiryDate: corrected.passportExpiryDate,
+        });
       const override = intake.workflow.ageOverrides[customerId];
       const age = override ?? assignments.get(customerId)?.ageCategory;
       passengers.push({
@@ -563,6 +578,10 @@ export class ReservationManifestService {
       ]),
     ].filter((id) => allowed.has(id));
     const rows: DefaultManifestRow[] = [];
+    const corrections = await this.corrections?.effective(
+      intake.snapshot.contractId,
+      actor,
+    );
     for (const customerId of order) {
       const customer = (
         await this.customers.detail(
@@ -572,6 +591,13 @@ export class ReservationManifestService {
           'customer-verification',
         )
       ).data;
+      const corrected = corrections?.get(customerId);
+      if (corrected)
+        Object.assign(customer, {
+          birthDate: corrected.birthDate,
+          passportNumber: corrected.passportNumber,
+          passportExpiryDate: corrected.passportExpiryDate,
+        });
       const assignment = intake.snapshot.passengerAssignments?.find(
         (item) => item.customerId === customerId,
       );
@@ -1040,6 +1066,10 @@ export class ReservationManifestService {
       ? intake.workflow.roomOrder
       : intake.snapshot.passengerIds;
     const passengers: IranAirtourManifestRow[] = [];
+    const corrections = await this.corrections?.effective(
+      intake.snapshot.contractId,
+      actor,
+    );
     for (const customerId of order) {
       const customer = (
         await this.customers.detail(
@@ -1049,6 +1079,13 @@ export class ReservationManifestService {
           'customer-verification',
         )
       ).data;
+      const corrected = corrections?.get(customerId);
+      if (corrected)
+        Object.assign(customer, {
+          birthDate: corrected.birthDate,
+          passportNumber: corrected.passportNumber,
+          passportExpiryDate: corrected.passportExpiryDate,
+        });
       const override = intake.workflow.ageOverrides[customerId];
       const age = override ?? assignments.get(customerId)?.ageCategory;
       passengers.push({

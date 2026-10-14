@@ -673,15 +673,29 @@ export function ReservationSettingsForm({
                       />
                     </td>
                     <td>
-                      <span>
-                        {
-                          {
-                            ADL: 'بزرگسال (ADL)',
-                            CHD: 'کودک (CHD)',
-                            INF: 'نوزاد (INF)',
-                          }[p.age]
+                      <ReservationSelect
+                        ariaLabel={`رده سنی مسافر ${i + 1}`}
+                        value={p.age}
+                        options={[
+                          { value: 'ADL', label: 'بزرگسال (ADL)' },
+                          { value: 'CHD', label: 'کودک (CHD)' },
+                          { value: 'INF', label: 'نوزاد (INF)' },
+                        ]}
+                        onValueChange={(age) =>
+                          update({
+                            ...draft,
+                            passengers: draft.passengers.map((v, j) =>
+                              j === i
+                                ? {
+                                    ...v,
+                                    age: age as 'ADL' | 'CHD' | 'INF',
+                                    hotelChildAgeBand: '',
+                                  }
+                                : v,
+                            ),
+                          })
                         }
-                      </span>
+                      />
                     </td>
                     <td>
                       {p.age === 'CHD' ? (

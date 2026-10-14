@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { IamReservationsDirectory } from './iam-reservations-directory';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -35,6 +36,7 @@ import { ManualAccessVersionController } from './manual-access-version.controlle
     AuditController,
   ],
   providers: [
+    IamReservationsDirectory,
     ManualUserAccessService,
     IamProcurementDirectory,
     IamFinanceDirectory,
@@ -45,6 +47,7 @@ import { ManualAccessVersionController } from './manual-access-version.controlle
     { provide: IAM_STEP_UP_PORT, useExisting: IamService },
   ],
   exports: [
+    IamReservationsDirectory,
     IamService,
     IAM_STEP_UP_PORT,
     IamProcurementDirectory,
