@@ -1,6 +1,8 @@
 # INTEGRATIONS-PC-D-FOUNDATION-1014
 
-COMPUTER_ID=PC-D. Base: `origin/develop@86c87667` (2026-10-14).
+COMPUTER_ID=PC-D. Initial base: `origin/develop@86c87667` (2026-10-14).
+Review candidate rebased onto `origin/develop@3465556f`; concurrent PC-A records
+were retained in both assignment and status ledgers.
 Branch: `codex/pc-d-integrations-foundation-1014`.
 
 ## Authorization and first delivery
@@ -101,9 +103,32 @@ shared navigation/IAM policy or operational database/runtime is reserved.
 
 ## Verification and handoff
 
-Pending: strict contract/security/branch/CAS/archive tests, preservation of existing
-supplier routes/tests, API/Web lint/typecheck/build, changed-file formatting,
-synthetic interactive UI and read-only credential/URL rejection evidence.
+Local verification: 38 API permission/HTTP/schema/branch/CAS/archive/security and
+existing supplier/System Management tests, 11 Web/model/route/localization tests
+and 147 existing shared-contract tests pass. Scoped API/Web lint, Contracts lint,
+API/Web typechecks and production builds (62 Web routes) pass. Changed-file
+formatting and offline localization synchronization pass. Source compilation uses
+an isolated worktree and generated Prisma client; no operational DB is accessed.
+
+Synthetic interactive acceptance uses the actual Web components and compiled
+registry service with an in-memory owner adapter, on loopback4337. It verifies
+explicit preset creation, a second system under one brand, configurable capability
+creation, all nine sections, Academy sales not-applicable state, dedicated system
+health/configuration views, search empty state and searchable domain selection.
+Styled390/768/1265 checks have no horizontal overflow; light/dark screenshots are
+saved locally under ignored `tmp/integrations-preview`. This is not an authenticated
+ERP/real PostgreSQL or external-site end-to-end claim. Docker's local engine is
+unavailable; hosted CI remains the full repository/migration/seed gate. No new
+migration exists. Production connection tests, general webhook replay/retry,
+business KPI reconciliation and real SSO acceptance are intentionally pending.
+
+Administrators still require the native `system.settings.manage` permission and
+an assigned branch. Controlled manual profiles additionally require existing
+module/field allow controls; any missing assignment/registration must be coordinated
+with IAM, not bypassed by Integrations. Individual operational connection permissions
+are part of the future registry work. GitHub actor `ehsandni` (60431015) was selected
+by the user and verified with repository write permission.
+
 No general webhook/sync, live provider, business KPI or SSO acceptance is claimed.
 Merge, deploy and operational database changes require separate explicit approval,
 superseding any older standing merge text in DEVELOPMENT_WORKFLOW.

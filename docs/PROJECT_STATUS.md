@@ -1,3 +1,25 @@
+## 2026-10-14 — INTEGRATIONS-PC-D-FOUNDATION-1014 — PC-D — READY_FOR_REVIEW
+
+The owner requests the initial integration-centre structure before supplying links.
+The existing sample page is replaced by nine Persian RTL sections, configurable
+brand/system/capability forms, per-system settings/connection/sync/health/history,
+and branch-scoped counts with drill-down. Explicit initialization persists four
+editable presets through the existing public audited/versioned Settings contract;
+GET never writes. Education is not direct travel sales. Missing business sources
+and unverified external connections remain explicit. Existing Procurement supplier
+and Customer Affairs website bridges are preserved; no parallel business store,
+external URL, credential, SSO, new webhook or sync execution is activated.
+
+38 API,11 Web and147 Contracts tests, scoped lint/typechecks and API/Web production
+builds (62 routes) pass. Synthetic browser acceptance covers all sections, form
+saves, multiple systems per brand, dynamic capabilities, search/domain selection,
+390/768/1265 layouts and light/dark; it uses in-memory storage, not a live ERP/DB.
+No schema/migration, dependency/lockfile, grant, merge, deployment or operational
+data change. Local Docker engine is unavailable; full hosted CI and real runtime
+acceptance remain gates. User-selected GitHub actor ehsandni is verified with write
+permission. Scope and follow-up contracts:
+[INTEGRATIONS-PC-D-FOUNDATION-1014](tasks/INTEGRATIONS-PC-D-FOUNDATION-1014.md).
+
 ## 2026-10-14 — CONTRACT-UUID-FALLBACK-1014 — PC-A
 
 New-contract form submission and Sales API default request identity use the existing browserRandomUuid compatibility helper. LAN HTTP browsers lacking crypto.randomUUID can register agency/customer contracts without changing authentication, branch checks or payloads. The form retains its fingerprint-bound key across identical retries, preserving server idempotency. Targeted agency request/absent API/explicit retry key and form-consumer regressions gate the fix. No global crypto patch, schema/migration/dependency, operational data or local runtime changes; exact-head CI gates authorized develop merge.

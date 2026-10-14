@@ -1,4 +1,6 @@
-## INTEGRATIONS-PC-D-FOUNDATION-1014 — PC-D — IN_PROGRESS
+## INTEGRATIONS-PC-D-FOUNDATION-1014 — PC-D — READY_FOR_REVIEW
+
+Delivery: configuration API/UI and nine sections are implemented;38 API,11 Web and147 Contracts tests pass, scoped lint/typechecks and API/Web builds (62 routes) pass. Actual components/registry service passed synthetic interactive tests for presets, multiple systems, configurable capabilities, Academy exclusion, all sections, domain selection and search empty state; styled390/768/1265 and light/dark checks pass. No real ERP/PostgreSQL/external-site acceptance, migration, grants, dependency/lockfile, merge/deploy or operational writes. Local Docker engine unavailable; full hosted CI gates review. User selects and tool verifies GitHub actor ehsandni with write permission. Bounded source/central reservations freeze and release with this candidate; every next slice must reserve independently.
 
 Localization lock clarification: reserve a new `en-integrations.json`, additive import/spread lines in `translate.ts` and `apps/web/scripts/i18n-sync.cjs`, and derived API/standalone English outputs. Existing catalogue values remain unchanged. This is a bounded integration of this unit's labels, not a dependency or IAM-policy change.
 
