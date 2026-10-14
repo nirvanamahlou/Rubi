@@ -7564,3 +7564,7 @@ FINANCE-ONLY-CONTRACT-PROFIT-1014:14 Sales/Finance presentation regressions and7
 FINANCE-ONLY-CONTRACT-PROFIT-1014 scope refinement: Sales-owned internal profit read projection uses finance.read plus actual contract branch scope, so Finance-only staff do not require Sales UI/contract-read grants. The ordinary Sales detail endpoint and identity visibility are unchanged; profit response contains only existing cost/profit facts. Reserve Sales service/profit service and permission regressions.
 
 Final validation:14 Web presentation tests and9 API cost/profit/Finance-only/branch-scope regressions pass. Ordinary Sales contract detail permission remains unchanged; only the internal profit source reads for authorized Finance staff. No calculation or financial data changes.
+
+## PROFIT-ACTION-LAYOUT-1014 — PC-A — IN_PROGRESS
+
+Reserve Reservations action-panel button grouping only and own docs. Move hotel-profit action from contract-information to below Notes/Descriptions, retaining action, permissions and dialog. User authorizes develop merge; no API/schema/dependency/runtime changes. Previous locks released.
