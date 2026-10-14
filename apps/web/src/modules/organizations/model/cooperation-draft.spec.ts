@@ -526,6 +526,68 @@ describe('cooperation wizard writes', () => {
       contact,
     );
   });
+  it('fills an empty protected email without clearing undisclosed phone and national ID', async () => {
+    const existing = {
+      id: 'identity',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    const contact = {
+      id: 'contact',
+      version: 2,
+      attributes: { organizationId: 'identity' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'update').mockResolvedValue({ data: existing });
+    const saveContact = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: contact });
+
+    await saveCooperation(
+      { ...draft, fullName: 'نماینده', email: 'new@example.com' },
+      ['master_data.read', 'master_data.update'],
+      existing,
+      {
+        contact,
+        preserveSensitiveContactFields: true,
+        editedSensitiveFields: ['email'],
+      },
+    );
+
+    expect(saveContact).toHaveBeenCalledWith(
+      'identity',
+      { fullName: 'نماینده', jobTitle: '', email: 'new@example.com' },
+      contact,
+    );
+  });
+  it('creates a missing representative with a newly entered phone during dossier editing', async () => {
+    const existing = {
+      id: 'identity',
+      version: 1,
+      attributes: { roleCodes: 'AGENCY' },
+    } as unknown as MasterDataRecord;
+    vi.spyOn(masterDataApi, 'update').mockResolvedValue({ data: existing });
+    const saveContact = vi
+      .spyOn(agencyClient, 'saveContact')
+      .mockResolvedValue({ data: {} as MasterDataRecord });
+    const saveVerifiedContact = vi.spyOn(agencyClient, 'saveVerifiedContact');
+
+    await saveCooperation(
+      { ...draft, fullName: 'نماینده جدید', phone: '09121234567' },
+      ['master_data.read', 'master_data.create', 'master_data.update'],
+      existing,
+      {},
+    );
+
+    expect(saveContact).toHaveBeenCalledWith(
+      'identity',
+      expect.objectContaining({
+        fullName: 'نماینده جدید',
+        phone: '09121234567',
+      }),
+      undefined,
+    );
+    expect(saveVerifiedContact).not.toHaveBeenCalled();
+  });
   it('clears only corrected import review fields after their contact update succeeds', async () => {
     const existing = {
       id: 'identity',

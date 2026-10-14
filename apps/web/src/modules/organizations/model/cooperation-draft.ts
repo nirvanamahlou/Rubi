@@ -172,6 +172,9 @@ export interface CooperationEditContext {
   contact?: MasterDataRecord;
   address?: MasterOrganizationAddressV1;
   preserveSensitiveContactFields?: boolean;
+  editedSensitiveFields?: readonly (
+    'phone' | 'email' | 'chiefExecutiveNationalId'
+  )[];
 }
 export function normalizeOtpCode(value: string) {
   return value
@@ -294,18 +297,30 @@ export async function saveCooperation(
           {
             fullName: draft.fullName.trim(),
             jobTitle: draft.jobTitle.trim(),
-            ...(editContext.preserveSensitiveContactFields
-              ? {}
-              : {
-                  phone: draft.phone.trim(),
-                  email: draft.email.trim(),
-                  nationalId: draft.chiefExecutiveNationalId.trim(),
+            ...(!editContext.preserveSensitiveContactFields ||
+            editContext.editedSensitiveFields?.includes('phone')
+              ? { phone: draft.phone.trim() }
+              : {}),
+            ...(!editContext.preserveSensitiveContactFields ||
+            editContext.editedSensitiveFields?.includes('email')
+              ? { email: draft.email.trim() }
+              : {}),
+            ...(!editContext.preserveSensitiveContactFields ||
+            editContext.editedSensitiveFields?.includes(
+              'chiefExecutiveNationalId',
+            )
+              ? { nationalId: draft.chiefExecutiveNationalId.trim() }
+              : {}),
+            ...(!editContext.contact ||
+            !editContext.preserveSensitiveContactFields
+              ? {
                   preferredChannel: draft.phone.trim()
                     ? 'PHONE'
                     : draft.email.trim()
                       ? 'EMAIL'
                       : 'OTHER',
-                }),
+                }
+              : {}),
           },
           editContext.contact,
         );

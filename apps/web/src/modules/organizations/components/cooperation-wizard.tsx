@@ -89,6 +89,9 @@ export function CooperationWizard({
   const [contactSensitiveAvailable, setContactSensitiveAvailable] =
     useState(false);
   const hydratedContact = useRef('');
+  const editedSensitiveFields = useRef<
+    Set<'phone' | 'email' | 'chiefExecutiveNationalId'>
+  >(new Set());
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<readonly MasterDataRecord[]>([]);
   const [searching, setSearching] = useState(false);
@@ -175,9 +178,17 @@ export function CooperationWizard({
         setContactSensitiveAvailable(true);
         setDraft((current) => ({
           ...current,
-          phone: data.phone ?? '',
-          email: data.email ?? '',
-          chiefExecutiveNationalId: data.nationalId ?? '',
+          phone: editedSensitiveFields.current.has('phone')
+            ? current.phone
+            : (data.phone ?? ''),
+          email: editedSensitiveFields.current.has('email')
+            ? current.email
+            : (data.email ?? ''),
+          chiefExecutiveNationalId: editedSensitiveFields.current.has(
+            'chiefExecutiveNationalId',
+          )
+            ? current.chiefExecutiveNationalId
+            : (data.nationalId ?? ''),
         }));
       })
       .catch(() => {
@@ -352,6 +363,7 @@ export function CooperationWizard({
                 ...(editAddress ? { address: editAddress } : {}),
                 preserveSensitiveContactFields:
                   Boolean(editContact) && !contactSensitiveAvailable,
+                editedSensitiveFields: [...editedSensitiveFields.current],
               }
             : undefined,
         ),
@@ -388,14 +400,20 @@ export function CooperationWizard({
         placeholder={
           key === 'code' ? 'پس از ثبت، خودکار تولید می‌شود' : undefined
         }
-        onChange={(event) =>
-          key === 'phone'
-            ? changeIdentity((current) => ({
-                ...current,
-                phone: event.target.value,
-              }))
-            : set(key, event.target.value)
-        }
+        onChange={(event) => {
+          if (
+            key === 'phone' ||
+            key === 'email' ||
+            key === 'chiefExecutiveNationalId'
+          )
+            editedSensitiveFields.current.add(key);
+          if (key === 'phone')
+            changeIdentity((current) => ({
+              ...current,
+              phone: event.target.value,
+            }));
+          else set(key, event.target.value);
+        }}
       />
     </label>
   );
@@ -694,10 +712,7 @@ export function CooperationWizard({
                     20,
                     !permissions.includes(
                       editing ? 'master_data.update' : 'master_data.create',
-                    ) ||
-                      (editing &&
-                        Boolean(editContact) &&
-                        !contactSensitiveAvailable),
+                    ),
                   )}
                   {field(
                     'jobTitle',
@@ -713,10 +728,7 @@ export function CooperationWizard({
                     32,
                     !permissions.includes(
                       editing ? 'master_data.update' : 'master_data.create',
-                    ) ||
-                      (editing &&
-                        Boolean(editContact) &&
-                        !contactSensitiveAvailable),
+                    ),
                     'tel',
                   )}
                   {field(
@@ -725,10 +737,7 @@ export function CooperationWizard({
                     200,
                     !permissions.includes(
                       editing ? 'master_data.update' : 'master_data.create',
-                    ) ||
-                      (editing &&
-                        Boolean(editContact) &&
-                        !contactSensitiveAvailable),
+                    ),
                     'email',
                   )}
                 </div>

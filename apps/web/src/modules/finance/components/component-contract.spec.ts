@@ -130,7 +130,7 @@ describe('finance workspace component contract', () => {
       'عملیات پایان سال',
       'گزارش‌ها',
       'دریافت و پرداخت',
-      'ارتباط با سامانه مودیان مالیاتی',
+      'سامانه مودیان',
       'حسابداری مالیاتی',
     ]) {
       expect(accountingNavigationSource).toContain(label);

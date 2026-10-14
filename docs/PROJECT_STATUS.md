@@ -5928,3 +5928,7 @@ Flight load retains its result and detail regions after the first search while c
 ### PC-A — RESERVATION-CONTRACT-EDIT-1013 — 2026-10-14
 
 Implemented Sales-owned contract correction from Reservations: counterparty/contact changes with preserved receipt attribution; actual flight capacity, hotel, sale-price and age amendments; read-only passenger list with separate identity editor; issued reservation form and prior version viewing. Outbox-backed execution snapshots and atomic inventory changes preserve existing documents/payment evidence. No migration/dependency/local-runtime change. Validation and develop PR merge in progress.
+
+## 2026-10-13 — AGENCY-EDIT-EMPTY-FIELDS-1013 — PC-B
+
+Agency registration editing now permits filling previously blank protected contact fields even when existing values cannot be unmasked. Save writes only sensitive fields explicitly changed in that case, preserving undisclosed values. If an agency has no representative, editing can create one with a phone through the authorized contact save path instead of requiring a registration-only verification grant. Late contact hydration does not overwrite the user's new entries. No API/schema/migration/dependency or IAM change, and validation does not alter operational records. Organizations regressions: 245 pass, one opt-in local workbook test skipped; scoped lint, Web typecheck and production build (62 routes) pass. Exact-head CI gates develop merge and local Web3100 rollout.

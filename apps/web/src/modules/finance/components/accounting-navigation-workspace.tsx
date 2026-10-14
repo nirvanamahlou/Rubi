@@ -134,7 +134,7 @@ export const accountingNavigationGroups: readonly AccountingNavigationGroup[] =
     },
     {
       id: 'taxpayer-system',
-      title: 'ارتباط با سامانه مودیان مالیاتی',
+      title: 'سامانه مودیان',
       icon: ScrollText,
       sections: [
         {
