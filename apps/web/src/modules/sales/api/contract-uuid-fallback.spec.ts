@@ -11,11 +11,33 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.clearAllMocks();
 });
-const input = {
+const input: SalesContractCreateRequest = {
   customerId: 'agency-customer',
   payerCustomerId: 'agency-customer',
-  passengers: [{ customerId: 'traveler' }],
-} as SalesContractCreateRequest;
+  tripType: 'ONE_WAY',
+  originId: 'origin',
+  destinationId: 'destination',
+  departureDate: '2099-01-01',
+  passengers: [
+    {
+      customerId: 'traveler',
+      displayNameSnapshot: 'Synthetic traveler',
+      birthDate: '1990-01-01',
+      serviceClientKeys: ['visa'],
+    },
+  ],
+  services: [
+    { clientKey: 'visa', kind: 'VISA', titleSnapshot: 'Synthetic visa' },
+  ],
+  priceComponents: [
+    {
+      type: 'BASE',
+      title: 'Synthetic price',
+      amount: '100',
+      currencyCode: 'IRR',
+    },
+  ],
+};
 const uuid =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 function setup() {
