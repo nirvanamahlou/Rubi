@@ -2315,5 +2315,20 @@
   "ویرایش قرارداد": "Edit contract",
   "ویرایش مسافران": "Edit passengers",
   "یادداشت کارشناس": "Agent note",
-  "کشور تولد": "Country of birth"
+  "کشور تولد": "Country of birth",
+  "نام نوع اتاق": "Room type name",
+  "افزودن نوع اتاق به هتل": "Add a room type to the hotel",
+  "نوع اتاق جدید در اطلاعات پایه تعریف و به این هتل وصل می‌شود. بعد می‌توانید ظرفیت و نرخ آن را در همین بسته ثبت کنید.": "The new room type will be created in Master Data and linked to this hotel. Then you can enter its capacity and rate in this pack.",
+  "ثبت و اتصال به هتل": "Create and link to hotel",
+  "در حال افزودن…": "Adding…",
+  "نام نوع اتاق را تا ۱۶۰ نویسه وارد کنید.": "Enter a room type name of up to 160 characters.",
+  "برای افزودن نوع اتاق، مجوز خواندن و ویرایش اطلاعات پایه لازم است.": "Master Data read and update permissions are required to add a room type.",
+  "هتل دیگر فعال نیست یا به شهر انتخاب‌شده تعلق ندارد.": "The hotel is no longer active or does not belong to the selected city.",
+  "این نوع اتاق از قبل غیرفعال است؛ ابتدا آن را در اطلاعات پایه فعال کنید.": "This room type already exists but is inactive. Activate it in Master Data first.",
+  "برای ساخت نوع اتاق جدید، مجوز ایجاد اطلاعات پایه لازم است.": "Master Data create permission is required to create a new room type.",
+  "اطلاعات هتل هنگام افزودن نوع اتاق تغییر کرد؛ دوباره بررسی کنید.": "The hotel changed while the room type was being added. Review it and try again.",
+  "نوع اتاق ثبت‌شده به هتل وصل نشد؛ صفحه را تازه کنید و دوباره تلاش کنید.": "The existing room type could not be linked to the hotel. Refresh the page and try again.",
+  "نوع اتاق ساخته شد اما به هتل وصل نشد؛ صفحه را تازه کنید و دوباره تلاش کنید.": "The room type was created but could not be linked to the hotel. Refresh the page and try again.",
+  "افزودن نوع اتاق انجام نشد.": "The room type could not be added.",
+  "برای این هتل ابتدا نوع اتاق را اضافه کنید.": "Add a room type for this hotel first."
 }
