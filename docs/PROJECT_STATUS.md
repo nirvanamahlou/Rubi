@@ -6019,3 +6019,8 @@ migration or dependency changes; exact-head GitHub checks remain required.
 
 ## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
 COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
+
+
+## VOUCHER-OPTIONAL-1014 — PC-A — READY_FOR_REVIEW
+COMPUTER_ID=PC-A; reserve travel-workflow form/domain and voucher leader mount identity. Optional note for supplier confirmation/voucher issuance; optional supplier reference; preserve required cancellation reasons. Stable leader editor identity prevents selection remount. No schema/dependency/data change. User authorizes develop merge after CI.
+
