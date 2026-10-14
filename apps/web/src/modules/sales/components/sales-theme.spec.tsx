@@ -56,7 +56,7 @@ describe('Sales theme consistency', () => {
     expect(html).toContain('۱۲');
     expect(html).toContain('۲۴');
     expect(html).toContain('۷');
-    expect(html).toContain('۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ریال');
+    expect(html).toContain('۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ﷼');
     expect(html).not.toContain('مطابق فیلتر');
   });
 });

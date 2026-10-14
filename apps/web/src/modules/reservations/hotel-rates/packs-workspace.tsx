@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useEffect, useRef, useState } from 'react';
 import { ManualHotelPanel, ManualHotelSelector } from './manual-hotel-panel';
@@ -21,6 +22,7 @@ import type { HotelOccupancyRateV1 } from '@nora/contracts';
 import { retimeManualRates } from './manual-coefficients';
 import { OccupancyRateEditor } from './occupancy-import-panel';
 import { OccupancyBulkPanel } from './occupancy-bulk-panel';
+import { registerRoomTypeForHotel } from './room-type-registration';
 
 type RoomTypeOption = Option & { code?: string };
 type HotelOption = Option & {
@@ -174,7 +176,7 @@ export function HotelRatePackTable({
               {draft.nights > 0 ? draft.nights.toLocaleString('fa-IR') : '—'}
             </td>
             <td>{draft.hotelCount.toLocaleString('fa-IR')}</td>
-            <td>{draft.currency}</td>
+            <td>{currencySymbol(draft.currency)}</td>
             <td>ثبت‌نشده</td>
             <td>
               <button type="button" onClick={onDraftFocus}>
@@ -550,6 +552,60 @@ export function HotelRatePacksWorkspace({
       old.map((row) => (row.hotel.id === id ? { ...row, ...patch } : row)),
     );
     pending.current = null;
+  }
+  async function addRoomType(hotelId: string, name: string) {
+    if (!session || !cityId)
+      throw new Error('ابتدا وارد سامانه شوید و شهر هتل را انتخاب کنید.');
+    const existingRow = rows.find((row) => row.hotel.id === hotelId);
+    if (!existingRow || !existingRow.inCityList)
+      throw new Error('هتل در شهر انتخاب‌شده پیدا نشد؛ صفحه را تازه کنید.');
+    const roomType = await registerRoomTypeForHotel({
+      hotelId,
+      cityId,
+      name,
+      permissions: session.user.permissions,
+    });
+    if (
+      existingRow.hotel.roomTypes?.some(
+        (candidate) => candidate.id === roomType.id,
+      )
+    )
+      return roomType;
+    setRows((current) =>
+      current.map((row) => {
+        if (row.hotel.id !== hotelId) return row;
+        const roomTypes = row.hotel.roomTypes ?? [];
+        if (roomTypes.some((candidate) => candidate.id === roomType.id))
+          return row;
+        return {
+          ...row,
+          hotel: { ...row.hotel, roomTypes: [...roomTypes, roomType] },
+          roomRates: row.roomRates.some(
+            (rate) => rate.roomTypeId === roomType.id,
+          )
+            ? row.roomRates
+            : [
+                ...row.roomRates,
+                {
+                  roomTypeId: roomType.id,
+                  roomTypeName: roomType.name,
+                  factor: '1',
+                  maxAdults: '2',
+                  maxChildren2To6: '0',
+                  maxChildren6To12: '0',
+                  maxInfants: '0',
+                },
+              ],
+        };
+      }),
+    );
+    if (
+      !existingRow.roomRates.some((rate) => rate.roomTypeId === roomType.id)
+    ) {
+      pending.current = null;
+      setManualValidity((current) => ({ ...current, [hotelId]: false }));
+    }
+    return roomType;
   }
   function chooseCity(id: string) {
     if (!cities.some((city) => city.id === id && city.countryId === countryId))
@@ -1020,6 +1076,13 @@ export function HotelRatePacksWorkspace({
                     hotelId={manualHotelId}
                     checkIn={checkIn}
                     checkOut={checkOut}
+                    canAddRoomType={
+                      canWrite &&
+                      session.user.permissions.includes('master_data.read') &&
+                      session.user.permissions.includes('master_data.update')
+                    }
+                    disabled={busy || opening}
+                    onAddRoomType={addRoomType}
                     onChoose={chooseManualHotel}
                     onChange={(id, patch) =>
                       changeRow(id, {

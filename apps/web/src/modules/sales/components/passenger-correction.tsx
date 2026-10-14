@@ -1,4 +1,5 @@
 'use client';
+import { ContractPriceCorrection } from './contract-price-correction';
 import { useEffect, useRef, useState } from 'react';
 import type {
   SalesPassengerCorrectionCommandV1,
@@ -230,6 +231,14 @@ function CorrectionForm({
           دریافت آخرین نسخه
         </Button>
       </div>
+      <ContractPriceCorrection
+        refreshVersion={revision}
+        contractId={contractId}
+        onSaved={() => {
+          setRevision((value) => value + 1);
+          onSaved();
+        }}
+      />
       <h3 className="font-bold">سوابق اصلاح قرارداد</h3>
       <PassengerCorrectionHistory key={revision} contractId={contractId} />
     </div>
@@ -255,7 +264,9 @@ export function PassengerCorrectionButton({
     !permissions?.some(
       (p) =>
         p === 'sales.contracts.update.branch' ||
-        p === 'sales.contracts.update.own',
+        p === 'sales.contracts.update.own' ||
+        p === 'finance.read' ||
+        p === 'sales.contracts.read.all',
     )
   )
     return null;
@@ -283,7 +294,17 @@ export function PassengerCorrectionButton({
           <DialogDescription>
             تاریخ تولد، مشخصات پاسپورت و توضیحات رزرواسیون
           </DialogDescription>
-          {open ? (
+          {open &&
+          !permissions?.some(
+            (p) =>
+              p === 'sales.contracts.update.branch' ||
+              p === 'sales.contracts.update.own',
+          ) ? (
+            <ContractPriceCorrection
+              contractId={contractId}
+              onSaved={onSaved}
+            />
+          ) : open ? (
             <CorrectionForm
               contractId={contractId}
               onSaved={onSaved}

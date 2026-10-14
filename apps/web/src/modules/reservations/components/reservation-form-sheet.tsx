@@ -35,6 +35,7 @@ export function useReservationFormReferences(
     hotel ? ['hotels', hotel.hotelId] : null,
     hotel?.roomTypeId ? ['room-types', hotel.roomTypeId] : null,
     hotel?.mealServiceId ? ['meal-services', hotel.mealServiceId] : null,
+    ...flights.map((f) => ['airline-name', f.carrierNameSnapshot]),
   ].filter((entry): entry is string[] => !!entry);
   const key = JSON.stringify(entries);
   useEffect(() => {
@@ -44,6 +45,20 @@ export function useReservationFormReferences(
     void Promise.all(
       requested.map(async ([resource, id]) => {
         try {
+          if (resource === ('airline-name' as MasterDataResource)) {
+            const result = await masterDataApi.list('airlines', {
+              search: id,
+              status: 'all',
+              sortBy: 'name',
+              sortDirection: 'asc',
+              page: 1,
+              pageSize: 100,
+            });
+            const data = result.data.find((record) =>
+              [record.name, record.attributes.englishName].includes(id),
+            );
+            return { id, data };
+          }
           const { data } = await masterDataApi.detail(resource, id);
           return { id, data };
         } catch {
@@ -319,7 +334,7 @@ export function ReservationFormSheet({
                     </tbody>
                   </table>
                 </div>
-                {settings && (
+                {settings && !voucher && (
                   <p className={styles.voucherDetails}>
                     Country: {settings.text.country || '-'} · Website:{' '}
                     {settings.text.website || '-'} · CUSTOM:{' '}
@@ -355,7 +370,7 @@ export function ReservationFormSheet({
                 </tr>
               </tbody>
             </table>
-            {settings && (
+            {settings && !voucher && (
               <p className={styles.voucherDetails}>
                 Transfer:{' '}
                 {settings.flags.transfer
@@ -412,7 +427,7 @@ export function ReservationFormSheet({
             <div className={voucher ? styles.voucherClosing : undefined}>
               <div className={styles.notice}>
                 <span>SPECIAL REQUESTS / REMARKS</span>
-                <p dir="auto">{voucher ? '\u00a0' : data.notes || '\u00a0'}</p>
+                <p dir="auto">{data.notes || '\u00a0'}</p>
                 <div />
               </div>
               {voucher && (
@@ -422,7 +437,7 @@ export function ReservationFormSheet({
               )}
             </div>
             <footer className={styles.footer}>
-              {!voucher && (
+              {
                 <div
                   data-reservation-footer
                   dangerouslySetInnerHTML={{
@@ -434,11 +449,11 @@ export function ReservationFormSheet({
                     ),
                   }}
                 />
-              )}
+              }
               <div>
                 <span>
                   {voucher
-                    ? 'Hotel voucher - present at check-in.'
+                    ? ''
                     : 'Reservation request - subject to supplier confirmation.'}
                 </span>
               </div>

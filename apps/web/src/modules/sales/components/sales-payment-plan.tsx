@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useId, useState } from 'react';
 import { Plus, Trash2, WalletCards, ReceiptText } from 'lucide-react';
@@ -142,7 +143,8 @@ export function SalesPaymentPlan({
                   </span>
                   {payment.amount ? (
                     <span className="text-xs text-muted-foreground" dir="ltr">
-                      {formatSalesMoney(payment.amount)} {payment.currencyCode}
+                      {formatSalesMoney(payment.amount)}{' '}
+                      {currencySymbol(payment.currencyCode ?? '')}
                     </span>
                   ) : null}
                 </div>

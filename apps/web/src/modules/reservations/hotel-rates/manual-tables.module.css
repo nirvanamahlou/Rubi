@@ -25,6 +25,45 @@
   margin: 0;
   font-weight: 700;
 }
+.hotelActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.addRoomType {
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+  font-weight: 600;
+}
+.addRoomType:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+}
+.addRoomType:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.roomTypeDialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.roomTypeForm {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+.roomTypeForm > button {
+  justify-self: start;
+}
+.roomTypeForm [role='alert'] {
+  color: var(--destructive);
+  font-size: 13px;
+}
 .hotelHeader {
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);

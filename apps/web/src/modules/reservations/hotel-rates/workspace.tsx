@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useRef, useState } from 'react';
 import type { LoginResponse } from '@nora/contracts';
 import { getPublicApiBaseUrl } from '@/lib/environment';
@@ -277,7 +278,7 @@ export function HotelGroupRates() {
                             change(r.id, { base: e.target.value })
                           }
                         />
-                        <small>{currency}</small>
+                        <small>{currencySymbol(currency)}</small>
                       </td>
                       {kinds.map((k, j) => (
                         <td key={k}>

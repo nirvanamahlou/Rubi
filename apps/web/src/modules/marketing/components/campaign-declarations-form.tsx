@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useRef, useState } from 'react';
 import { Plus, Save, Trash2 } from 'lucide-react';
@@ -269,7 +270,10 @@ export function CampaignDeclarationsForm({
           <strong>هزینه واقعی</strong>
           <p dir="ltr">
             {totals
-              .map((total) => `${total.amount} ${total.currencyCode}`)
+              .map(
+                (total) =>
+                  `${total.amount} ${currencySymbol(total.currencyCode)}`,
+              )
               .join(' + ') || '۰'}
           </p>
         </div>

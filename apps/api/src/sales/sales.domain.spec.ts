@@ -78,6 +78,29 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('validates explicit child bands without changing birth dates and rejects them for other categories', () => {
+    const input = structuredClone(draft);
+    const person = input.passengers[0]!;
+    person.childAgeBand = 'AGE_2_6';
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'CHD' }),
+    ).not.toThrow();
+    person.childAgeBand = 'AGE_6_12';
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'CHD' }),
+    ).not.toThrow();
+    expect(person.birthDate).toBe('1990-01-01');
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'ADT' }),
+    ).toThrow('رده سنی کودک');
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'INF' }),
+    ).toThrow('رده سنی کودک');
+    person.childAgeBand = 'INVALID' as never;
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'CHD' }),
+    ).toThrow('رده سنی کودک');
+  });
   it.each([
     null,
     {},
@@ -574,5 +597,36 @@ it('validates package passenger totals without inventing service prices', () => 
       { amount: '1', currencyCode: input.priceComponents[0]!.currencyCode },
     ],
   }));
+  expect(() => validateSalesContract(input)).toThrow();
+});
+
+it('accepts opted-in contract totals without inferring passenger sale allocations', () => {
+  const input = structuredClone(draft);
+  input.services = input.services.map((service) => ({
+    ...service,
+    metadata: { ...service.metadata, contractPackagePricingVersion: 1 },
+  }));
+  input.passengers = input.passengers.map((person) => {
+    const next = { ...person };
+    delete next.agreedPrices;
+    return next;
+  });
+  input.priceComponents = [
+    {
+      type: 'BASE',
+      title: 'Contract total',
+      amount: '1234.5678',
+      currencyCode: 'USD',
+    },
+    {
+      type: 'BASE',
+      title: 'Contract total',
+      amount: '2500000',
+      currencyCode: 'IRR',
+    },
+  ];
+  input.payments = [];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.services[0]!.pricing = [];
   expect(() => validateSalesContract(input)).toThrow();
 });

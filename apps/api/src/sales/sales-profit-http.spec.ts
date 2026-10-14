@@ -25,11 +25,13 @@ const contract = {
 const reservations = { contractPurchaseContext: vi.fn(async () => null) };
 const finance = { recordedCostsForOffers: vi.fn(async () => []) };
 const sales = {
-  detail: vi.fn(async (_id: string, actor: { permissions: string[] }) => {
-    if (!actor.permissions.includes('sales.contracts.read.own'))
-      throw new ForbiddenException();
-    return { data: contract };
-  }),
+  detailForProfit: vi.fn(
+    async (_id: string, actor: { permissions: string[] }) => {
+      if (!actor.permissions.includes('finance.read'))
+        throw new ForbiddenException();
+      return { data: contract };
+    },
+  ),
 };
 beforeAll(async () => {
   const module = await Test.createTestingModule({
@@ -71,11 +73,11 @@ beforeAll(async () => {
 afterAll(async () => {
   await app?.close();
 });
-it('authenticates the profit route and denies missing finance/Sales or other branch before costs are read', async () => {
+it('authenticates the profit route and denies missing finance or other branch before costs are read', async () => {
   await request(app.getHttpServer())
     .get(`/sales/contracts/${id}/profit`)
     .expect(401);
-  for (const token of ['no-finance', 'no-sales', 'other-branch'])
+  for (const token of ['no-finance', 'other-branch'])
     await request(app.getHttpServer())
       .get(`/sales/contracts/${id}/profit`)
       .set('Cookie', `nora_access=${token}`)
@@ -104,4 +106,11 @@ it('returns no-store incomplete actual profit for an authorized contract instead
     id,
     'branch',
   );
+});
+
+it('allows finance-only staff without granting Sales screen access', async () => {
+  await request(app.getHttpServer())
+    .get(`/sales/contracts/${id}/profit`)
+    .set('Cookie', 'nora_access=no-sales')
+    .expect(200);
 });

@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useEffect, useMemo, useState } from 'react';
 import type {
@@ -194,7 +195,7 @@ export function ReservationReceipts({ contractId }: { contractId?: string }) {
           {summary?.confirmed.length ? (
             summary.confirmed.map(({ amount, currency }) => (
               <p key={currency} className="mt-1 font-bold" dir="ltr">
-                {amount} {currency}
+                {amount} {currencySymbol(currency)}
               </p>
             ))
           ) : (
@@ -206,7 +207,7 @@ export function ReservationReceipts({ contractId }: { contractId?: string }) {
           {summary?.pending.length ? (
             summary.pending.map(({ amount, currency }) => (
               <p key={currency} className="mt-1 font-bold" dir="ltr">
-                {amount} {currency}
+                {amount} {currencySymbol(currency)}
               </p>
             ))
           ) : (

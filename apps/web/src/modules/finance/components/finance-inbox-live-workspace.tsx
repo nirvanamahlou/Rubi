@@ -1,3 +1,5 @@
+import { currencySymbol } from '@/lib/currency-symbol';
+import { ContractProfit } from './contract-profit';
 import { HotelPurchaseSavings } from '@/modules/reservations/components/hotel-purchase-savings';
 import styles from './finance-inbox.module.css';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
@@ -110,7 +112,7 @@ function faDate(value: string | null) {
 
 function money(item: FinanceInboxItemV1) {
   if (!item.amount) return 'بدون مبلغ مالی';
-  return `${item.amount.amount.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')} ${item.amount.currencyCode}`;
+  return `${item.amount.amount.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')} ${currencySymbol(item.amount.currencyCode)}`;
 }
 
 function sourceTone(source: FinanceInboxSource) {
@@ -901,7 +903,9 @@ export function FinanceInboxLiveWorkspace() {
                       <span className="truncate text-sm font-semibold">
                         {account.title}
                       </span>
-                      <Badge>{account.currencyCode}</Badge>
+                      <Badge>
+                        {currencySymbol(account.currencyCode ?? '')}
+                      </Badge>
                     </div>
                   ))}
                 {!accounts.filter((account) => account.isActive).length ? (
@@ -1340,7 +1344,8 @@ export function FinanceInboxLiveWorkspace() {
                               {line.serviceTitle} · {line.supplierName}
                             </span>
                             <span dir="ltr">
-                              {line.amount} {line.currencyCode}
+                              {line.amount}{' '}
+                              {currencySymbol(line.currencyCode ?? '')}
                             </span>
                             {line.hotelSavings ? (
                               <HotelPurchaseSavings value={line.hotelSavings} />
@@ -1378,7 +1383,8 @@ export function FinanceInboxLiveWorkspace() {
                             key={total.currencyCode}
                             className="text-sm font-bold"
                           >
-                            جمع درخواست: {total.amount} {total.currencyCode}
+                            جمع درخواست: {total.amount}{' '}
+                            {currencySymbol(total.currencyCode ?? '')}
                           </p>
                         ))}
                       </div>
@@ -1450,6 +1456,13 @@ export function FinanceInboxLiveWorkspace() {
                         </strong>
                       </div>
                     ))}
+                    {selected.source === 'SALES' &&
+                      selected.kind === 'RECEIPT_VERIFICATION' && (
+                        <ContractProfit
+                          key={selected.sourceContextReference}
+                          id={selected.sourceContextReference}
+                        />
+                      )}
                     {selected.hrReferral ? (
                       <div className="space-y-2">
                         {selected.hrReferral.response ? (
@@ -1676,8 +1689,8 @@ export function FinanceInboxLiveWorkspace() {
                   <bdi>
                     {actionItem.ticketPurchase.seatCount ?? '—'} صندلی · هر
                     صندلی {actionItem.ticketPurchase.unitCost ?? '—'}{' '}
-                    {actionItem.amount?.currencyCode} · جمع{' '}
-                    {actionItem.amount?.amount}
+                    {currencySymbol(actionItem.amount?.currencyCode ?? '')} ·
+                    جمع {actionItem.amount?.amount}
                   </bdi>
                 </div>
               ) : null}
@@ -1757,7 +1770,8 @@ export function FinanceInboxLiveWorkspace() {
                               )
                               .map((account) => (
                                 <SelectItem key={account.id} value={account.id}>
-                                  {account.title} · {account.currencyCode}
+                                  {account.title} ·{' '}
+                                  {currencySymbol(account.currencyCode ?? '')}
                                 </SelectItem>
                               ))}
                           </SelectContent>
@@ -1898,7 +1912,8 @@ export function FinanceInboxLiveWorkspace() {
                         )
                         .map((account) => (
                           <SelectItem key={account.id} value={account.id}>
-                            {account.title} · {account.currencyCode}
+                            {account.title} ·{' '}
+                            {currencySymbol(account.currencyCode ?? '')}
                           </SelectItem>
                         ))}
                     </SelectContent>

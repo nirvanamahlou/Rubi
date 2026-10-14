@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useRef, useState } from 'react';
 import type {
   FinanceInboxItemV1,
@@ -146,7 +147,7 @@ export function FinancePayrollActions({
           ? 'حقوق قابل پرداخت تأییدشده منابع انسانی'
           : 'درخواست مستقیم مالی'}{' '}
         — مانده: {detail?.remainingAmount ?? item.amount?.amount}{' '}
-        {item.amount?.currencyCode}
+        {currencySymbol(item.amount?.currencyCode ?? '')}
       </p>
       <label>
         توضیح / علت برگشت

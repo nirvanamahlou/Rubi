@@ -67,7 +67,7 @@ export class PassengerCorrectionService {
     return (
       actor.permissions.includes('sales.contracts.update.branch') ||
       (actor.permissions.includes('sales.contracts.update.own') &&
-        [row.ownerUserId, row.assignedUserId].includes(actor.userId))
+        row.ownerUserId === actor.userId)
     );
   }
   async contract(id: string, actor: AuthenticatedActor, write = false) {
@@ -81,7 +81,7 @@ export class PassengerCorrectionService {
       actor.permissions.includes('sales.contracts.read.all') ||
       actor.permissions.includes('sales.contracts.read.branch') ||
       (actor.permissions.includes('sales.contracts.read.own') &&
-        [row.ownerUserId, row.assignedUserId].includes(actor.userId));
+        row.ownerUserId === actor.userId);
     if (write ? !this.canWrite(row, actor) : !readable)
       throw new ForbiddenException('مجوز ویرایش یا مشاهده قرارداد لازم است.');
     return row;

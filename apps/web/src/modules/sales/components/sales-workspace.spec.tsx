@@ -204,10 +204,10 @@ describe('sales dashboard loading', () => {
   });
   it('formats money without lossy floating point conversion or mixing currencies', () => {
     expect(formatMoney('9007199254740993.25', 'IRR')).toBe(
-      '۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ریال',
+      '۹٬۰۰۷٬۱۹۹٬۲۵۴٬۷۴۰٬۹۹۳٫۲۵ ﷼',
     );
-    expect(formatMoney('-1234.50', 'USD')).toBe('-۱٬۲۳۴٫۵۰ USD');
-    expect(formatMoney('0', 'IRR')).toBe('۰ ریال');
+    expect(formatMoney('-1234.50', 'USD')).toBe('-۱٬۲۳۴٫۵۰ $');
+    expect(formatMoney('0', 'IRR')).toBe('۰ ﷼');
   });
   it('exposes labelled server-backed search and settlement controls', () => {
     const html = renderToStaticMarkup(<SalesWorkspace />);

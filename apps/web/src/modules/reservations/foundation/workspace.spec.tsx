@@ -55,6 +55,8 @@ describe('reservations workspace access and states', () => {
       new URL('./workspace.module.css', import.meta.url),
       'utf8',
     );
+    expect(css).toContain('td:is(:nth-child(2), :nth-child(3))');
+    expect(css).not.toContain("tr[data-corrected='true'] td {");
     expect(css).toMatch(/data-corrected='true'[\s\S]*?#f3e8ff/);
     expect(css).toMatch(
       /:global\(\.dark\)[^{}]*data-corrected='true'[\s\S]*?#3b0764/,
@@ -427,4 +429,18 @@ it('marks only the second cell of noted requests, including the initially select
     /<tr[^>]*data-selected="true"[\s\S]*?<td[^>]*data-has-note="false"[\s\S]*?<td[^>]*data-has-note="true"/,
   );
   expect(html).toContain('دارای یادداشت در توضیحات');
+});
+
+it('keeps correction history but restores status colors after a reservation operation', () => {
+  const html = renderToStaticMarkup(
+    <ReservationOperationsWorkspace
+      state="SUCCESS"
+      rows={[{ ...row(), correctedAt: now, salesCorrectionPending: false }]}
+      access={access}
+      now={now}
+      initialSection="inbox"
+    />,
+  );
+  expect(html).toContain('data-corrected="false"');
+  expect(html).not.toContain('data-corrected="true"');
 });

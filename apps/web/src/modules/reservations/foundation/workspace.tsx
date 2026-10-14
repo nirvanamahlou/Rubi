@@ -708,7 +708,10 @@ export function ReservationOperationsWorkspace({
                       {result.filteredRows.map((row) => (
                         <tr
                           key={row.id}
-                          data-corrected={Boolean(row.correctedAt)}
+                          data-corrected={
+                            Boolean(row.correctedAt) &&
+                            row.salesCorrectionPending !== false
+                          }
                           data-tone={statusTones[row.status]}
                           data-selected={selected?.id === row.id}
                           aria-selected={selected?.id === row.id}
@@ -747,7 +750,8 @@ export function ReservationOperationsWorkspace({
                                   onClick={() => setSelectedId(row.id)}
                                 >
                                   {value}
-                                  {row.correctedAt ? (
+                                  {row.correctedAt &&
+                                  row.salesCorrectionPending !== false ? (
                                     <small className="block font-bold">
                                       اصلاح‌شده
                                     </small>

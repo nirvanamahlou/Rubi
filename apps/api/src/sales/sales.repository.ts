@@ -103,6 +103,29 @@ export class SalesRepository {
     });
   }
 
+  amendedContractIds(contractIds: readonly string[]) {
+    if (!contractIds.length) return Promise.resolve([]);
+    return this.database.client.salesContractAuditEvent.findMany({
+      where: {
+        contractId: { in: [...contractIds] },
+        outcome: 'SUCCESS',
+        OR: [
+          { action: 'OPERATIONAL_FORM_AMENDMENT' },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'CONTRACT' },
+          },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'PARTY' },
+          },
+        ],
+      },
+      select: { contractId: true },
+      distinct: ['contractId'],
+    });
+  }
+
   confirmedFinancePayments(
     branchIds: readonly string[],
     after: object,
@@ -459,6 +482,7 @@ export class SalesRepository {
               contractId: contract.id,
               customerId: passenger.customerId,
               accommodationKind: passenger.accommodationKind ?? null,
+              childAgeBand: passenger.childAgeBand ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),
@@ -690,6 +714,7 @@ export class SalesRepository {
               contractId: id,
               customerId: passenger.customerId,
               accommodationKind: passenger.accommodationKind ?? null,
+              childAgeBand: passenger.childAgeBand ?? null,
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),

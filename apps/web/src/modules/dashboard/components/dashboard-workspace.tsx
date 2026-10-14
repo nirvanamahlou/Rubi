@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -1260,16 +1261,6 @@ function Metric({
     </div>
   );
 }
-
-const currencySymbols: Readonly<Record<string, string>> = {
-  USD: '$',
-  EUR: '€',
-  GBP: '£',
-  AED: 'د.إ',
-  TRY: '₺',
-  IRR: '﷼',
-  IRI: '﷼',
-};
 
 const currencyNames: Readonly<Record<string, string>> = {
   USD: 'دلار آمریکا',
@@ -3294,7 +3285,7 @@ function ProjectionSlot({
                           value={series.currencyCode}
                         >
                           <span className="block w-full text-right">
-                            <bdi dir="ltr">{`${symbol} ${series.currencyCode}`}</bdi>
+                            <bdi dir="ltr">{symbol}</bdi>
                           </span>
                         </SelectItem>
                       );
@@ -3339,7 +3330,10 @@ function ProjectionSlot({
         <div className="relative flex-1 p-3.5">
           {displayData?.currencyCode ? (
             <span className="mb-2 block text-[11px] font-semibold text-muted-foreground">
-              مبلغ فروش · <bdi dir="ltr">{displayData.currencyCode}</bdi>
+              مبلغ فروش ·{' '}
+              <bdi dir="ltr">
+                {currencySymbol(displayData.currencyCode ?? '')}
+              </bdi>
             </span>
           ) : null}
           {loading ? (

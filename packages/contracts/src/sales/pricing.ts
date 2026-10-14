@@ -141,6 +141,24 @@ export function servicePriceComponents(
   if (
     services.some(
       (service) =>
+        service.metadata?.contractPackagePricingVersion !== undefined,
+    )
+  ) {
+    if (
+      services.some(
+        (service) =>
+          service.metadata?.contractPackagePricingVersion !== 1 ||
+          service.metadata?.passengerPackagePricingVersion !== undefined ||
+          (service.pricing !== undefined &&
+            service.metadata?.insuranceAgeSurcharge !== true),
+      )
+    )
+      throw new Error('مبلغ کل قرارداد نباید با قیمت جداگانه خدمات ترکیب شود.');
+    return null;
+  }
+  if (
+    services.some(
+      (service) =>
         service.metadata?.passengerPackagePricingVersion !== undefined,
     )
   ) {

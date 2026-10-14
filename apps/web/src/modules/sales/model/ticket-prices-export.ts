@@ -1,3 +1,4 @@
+import { currencySymbol } from '@/lib/currency-symbol';
 import type { TicketOfferV1, TicketSalePriceTargetV1 } from '@nora/contracts';
 import { netTicketPrice, type TicketPriceRow } from './ticket-price-rows';
 
@@ -64,7 +65,7 @@ export function ticketPriceExportRows(
     ...rows.map((row) => {
       const path = `${cities[row.offer.originId] ?? row.offer.originId} ← ${cities[row.offer.destinationId] ?? row.offer.destinationId}`;
       const baseAmount = row.base?.amount ?? '';
-      const baseCurrency = row.base?.currencyCode ?? '';
+      const baseCurrency = currencySymbol(row.base?.currencyCode);
       const commission = (targetId: string | null) =>
         row.offer.saleCommissions?.find(
           (item) =>
@@ -84,9 +85,13 @@ export function ticketPriceExportRows(
             saved.percent,
             saved.isHidden || Number(saved.percent) === 100
               ? 'عدم نمایش'
-              : `${saved.amount} ${saved.currencyCode}`,
+              : `${saved.amount} ${currencySymbol(saved.currencyCode)}`,
           ];
-        if (legacy) return ['—', `${legacy.amount} ${legacy.currencyCode}`];
+        if (legacy)
+          return [
+            '—',
+            `${legacy.amount} ${currencySymbol(legacy.currencyCode)}`,
+          ];
         const amount = row.base ? netTicketPrice(row.base.amount, '0') : '';
         return amount ? ['0', `${amount} ${baseCurrency}`] : ['', ''];
       };
@@ -101,7 +106,7 @@ export function ticketPriceExportRows(
         direct
           ? direct.isHidden || Number(direct.percent) === 100
             ? 'عدم نمایش'
-            : `${direct.amount} ${direct.currencyCode}`
+            : `${direct.amount} ${currencySymbol(direct.currencyCode)}`
           : row.base
             ? `${netTicketPrice(row.base.amount, '0') ?? ''} ${baseCurrency}`.trim()
             : '',

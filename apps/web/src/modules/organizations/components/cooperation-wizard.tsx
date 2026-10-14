@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
@@ -964,7 +965,10 @@ export function CooperationWizard({
                           [
                             'سقف‌های اعتبار',
                             draft.agreementTerms.creditPolicies
-                              .map((p) => `${p.creditLimit} ${p.currencyCode}`)
+                              .map(
+                                (p) =>
+                                  `${p.creditLimit} ${currencySymbol(p.currencyCode)}`,
+                              )
                               .join(' · ') || 'بدون سقف اعتباری',
                           ],
                           [

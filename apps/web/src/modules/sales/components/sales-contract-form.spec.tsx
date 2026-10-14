@@ -124,8 +124,8 @@ describe('compact sales contract form', () => {
       fixture.step = 0;
       fixture.ticketDraft = null;
     }
-    expect(html).toContain('قیمت ریالی Sample');
-    expect(html).toContain('قیمت ارزی Sample');
+    expect(html).toContain('مبلغ کل قرارداد');
+    expect(html).toContain('افزودن مبلغ با ارز دیگر');
     expect(html).not.toContain('قیمت روز فروش بلیط');
     expect(html).not.toContain('مبلغ توافق‌شده با مشتری بلیط');
   });
@@ -135,8 +135,8 @@ describe('compact sales contract form', () => {
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.roundTrip = false;
     fixture.step = 0;
-    expect(html).toContain('قیمت ریالی (IRR)');
-    expect(html).toContain('قیمت ارزی');
+    expect(html).toContain('مبلغ کل قرارداد');
+    expect(html).toContain('خلاصه خدمات قرارداد');
     expect(html).not.toContain('قیمت روز فروش');
     expect(html).not.toContain('مبلغ توافق‌شده با مشتری');
   });

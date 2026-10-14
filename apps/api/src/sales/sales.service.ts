@@ -1,4 +1,5 @@
 import type { DisplayLanguage } from '../common/i18n/language';
+import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import { MasterDataService } from '../master-data/master-data.service';
@@ -50,6 +51,7 @@ import {
 import {
   calculateSalesBalances,
   passengerAgeYears,
+  passengerAgeCategory,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -253,6 +255,10 @@ export function presentSalesContract(
       displayNameSnapshot: passenger.displayNameSnapshot,
       birthDate: passenger.birthDate.toISOString().slice(0, 10),
       ageCategory: passenger.ageCategory,
+      ...(passenger.childAgeBand === 'AGE_2_6' ||
+      passenger.childAgeBand === 'AGE_6_12'
+        ? { childAgeBand: passenger.childAgeBand }
+        : {}),
       ...(passenger.accommodationKind
         ? {
             accommodationKind:
@@ -389,6 +395,9 @@ export class SalesService {
     @Optional()
     @Inject(MasterDataService)
     private readonly references?: MasterDataService,
+    @Optional()
+    @Inject(IamFinanceDirectory)
+    private readonly identities?: IamFinanceDirectory,
   ) {}
 
   async availableHotelRoomRates(
@@ -530,7 +539,7 @@ export class SalesService {
     if (
       has(actor, 'sales.contracts.read.own') &&
       actor.branchIds.includes(row.branchId) &&
-      (row.ownerUserId === actor.userId || row.assignedUserId === actor.userId)
+      row.ownerUserId === actor.userId
     )
       return;
     throw new ForbiddenException({
@@ -548,7 +557,7 @@ export class SalesService {
     if (
       has(actor, 'sales.contracts.update.own') &&
       actor.branchIds.includes(row.branchId) &&
-      (row.ownerUserId === actor.userId || row.assignedUserId === actor.userId)
+      row.ownerUserId === actor.userId
     )
       return;
     throw new ForbiddenException({
@@ -637,7 +646,7 @@ export class SalesService {
     else if (has(actor, 'sales.contracts.read.own'))
       scope = {
         branchId: { in: actor.branchIds },
-        OR: [{ ownerUserId: actor.userId }, { assignedUserId: actor.userId }],
+        ownerUserId: actor.userId,
       };
     else
       throw new ForbiddenException({
@@ -691,6 +700,21 @@ export class SalesService {
       presentSalesContract(row, undefined, this.buyerCrypto),
     );
     const cityNames = new Map<string, string | null>();
+    const amendedIds = new Set(
+      (
+        (await this.repository.amendedContractIds?.(
+          result.data.map((row) => row.id),
+        )) ?? []
+      ).map((row) => row.contractId),
+    );
+    const sellerNames = new Map(
+      (
+        (await this.identities?.displayNames(
+          result.data.map((row) => row.ownerUserId),
+          [...new Set(result.data.map((row) => row.branchId))],
+        )) ?? []
+      ).map((user) => [user.id, user.displayName]),
+    );
     const phones = new Map<string, string | null>();
     const cityIds = [
       ...new Set(
@@ -728,6 +752,8 @@ export class SalesService {
     return {
       data: details.map((detail) => ({
         ...summary(detail),
+        sellerName: sellerNames.get(detail.ownerUserId) ?? null,
+        reservationContractChanged: amendedIds.has(detail.id),
         customerPhone:
           detail.buyerContact?.phone ?? phones.get(detail.customerId) ?? null,
         originName: cityNames.get(detail.originId) ?? null,
@@ -857,6 +883,14 @@ export class SalesService {
       createdByName: names.get(row.createdByUserId) ?? null,
       contractVersion: row.contract.version,
     }));
+  }
+
+  async detailForProfit(id: string, actor: AuthenticatedActor) {
+    if (!has(actor, 'finance.read')) throw new ForbiddenException();
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    if (!actor.branchIds.includes(row.branchId)) throw new ForbiddenException();
+    return { data: presentSalesContract(row, undefined, this.buyerCrypto) };
   }
 
   async detail(id: string, actor: AuthenticatedActor) {
@@ -1004,6 +1038,20 @@ export class SalesService {
       );
     input = {
       ...input,
+      passengers: input.passengers.map((passenger) => {
+        if (passenger.childAgeBand !== undefined) return passenger;
+        const before = row.passengers.find(
+          (p) => p.customerId === passenger.customerId,
+        );
+        const age =
+          categories?.[passenger.customerId] ??
+          passengerAgeCategory(passenger.birthDate, input.departureDate);
+        return age === 'CHD' &&
+          (before?.childAgeBand === 'AGE_2_6' ||
+            before?.childAgeBand === 'AGE_6_12')
+          ? { ...passenger, childAgeBand: before.childAgeBand }
+          : passenger;
+      }),
       paymentTerms:
         input.paymentTerms === undefined
           ? ((row.paymentTerms as unknown as SalesContractDetail['paymentTerms']) ??
@@ -1082,6 +1130,10 @@ export class SalesService {
         tickets: c.ticketSelections ?? [],
         hotel: c.hotelSelection ?? null,
         ages,
+        childAgeBands: c.passengers.map((p) => [
+          p.customerId,
+          p.childAgeBand ?? null,
+        ]),
         services: c.services.map((s) => ({
           clientKey: s.clientKey,
           kind: s.kind,
@@ -1104,6 +1156,7 @@ export class SalesService {
             services: previous.servicesDetail,
             ticketSelections: previous.ticketSelections,
             hotelSelection: previous.hotelSelection,
+            passengers: previous.passengersDetail,
           },
           Object.fromEntries(
             previous.passengersDetail.map((p) => [p.customerId, p.ageCategory]),
@@ -1124,6 +1177,7 @@ export class SalesService {
               customerId: p.customerId,
               displayNameSnapshot: p.displayNameSnapshot,
               ageCategory: categories[p.customerId]!,
+              ...(p.childAgeBand ? { childAgeBand: p.childAgeBand } : {}),
               serviceClientKeys: p.serviceClientKeys,
             })),
             serviceSelections: input.services,
@@ -1157,6 +1211,7 @@ export class SalesService {
                 categories: row.passengers.map((p) => ({
                   customerId: p.customerId,
                   ageCategory: p.ageCategory,
+                  childAgeBand: p.childAgeBand,
                 })),
               }),
             ) as Prisma.InputJsonValue,
@@ -1316,6 +1371,9 @@ export class SalesService {
         customerId: passenger.customerId,
         displayNameSnapshot: passenger.displayNameSnapshot,
         ageCategory: passenger.ageCategory,
+        ...(passenger.childAgeBand
+          ? { childAgeBand: passenger.childAgeBand }
+          : {}),
         serviceClientKeys: passenger.serviceClientKeys,
       })),
       ticketSelections: presented.ticketSelections,
@@ -1568,7 +1626,7 @@ export class SalesService {
     if (has(actor, 'sales.contracts.read.own'))
       return {
         branchId: { in: actor.branchIds },
-        OR: [{ ownerUserId: actor.userId }, { assignedUserId: actor.userId }],
+        ownerUserId: actor.userId,
       };
     throw new ForbiddenException('مجوز مشاهده قرارداد وجود ندارد.');
   }
@@ -1581,7 +1639,7 @@ export class SalesService {
     else if (has(actor, 'sales.contracts.read.own'))
       scope = {
         branchId: { in: actor.branchIds },
-        OR: [{ ownerUserId: actor.userId }, { assignedUserId: actor.userId }],
+        ownerUserId: actor.userId,
       };
     else
       throw new ForbiddenException({

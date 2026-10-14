@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeftRight,
@@ -1384,7 +1385,7 @@ function CurrencySelect({
       <SelectContent>
         {values.map((code) => (
           <SelectItem key={code} value={code}>
-            {code}
+            {currencySymbol(code)}
           </SelectItem>
         ))}
       </SelectContent>

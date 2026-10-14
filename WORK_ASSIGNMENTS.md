@@ -1,3 +1,27 @@
+## RESERVATION-FORM-SUBMIT-1014 — PC-A — READY_FOR_CI
+
+Reserve reservation settings/workflow form and submission helper/tests. Default current-company branding, require broker before save/send, one submit action showing issued form with persistent download/print controls. User authorizes tests and develop merge. No schema/dependency or operational writes.
+
+## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.
+
+## FINANCE-CONTRACT-PRICE-CORRECTION-1014 — PC-A — READY_FOR_REVIEW
+
+User requests IRR/foreign total correction below Sales passenger details, visible/writable only to Finance and Manager roles, with develop merge. Reserve new Sales correction service/UI/tests, passenger-correction dialog/module, Sales client, IAM directory role-check projection and scoped translations/status. IAM producer checks active effective roles including manual-role precedence; Sales consumer enforces branch/status/version, Decimal per-currency adjustment and audit. Reserve bounded en-overrides and regenerated offline API/standalone catalogs for the new labels. No schema/migration/dependency/runtime or live record edits.
+
+## CLEAR-CORRECTION-ON-OPERATION-1014 — PC-A — IN_PROGRESS
+
+User authorizes removing sales-correction purple after a later recorded reservation operation and develop merge. Reserve Reservations list controller/public operation projection, Web live-feed/model/workspace and focused regressions plus own status. Additive salesCorrectionPending list field compares correction with server-recorded operation timestamp; preserve correction history. No schema/migration/dependency/runtime change.
+
+## HOTEL-RATE-INLINE-ROOM-TYPE-1014 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A. User asks to add a canonical room type directly from the hotel purchase-rate editor and merge the change to develop. Branch `codex/pc-a-hotel-room-type-inline-1014` from `origin/develop@f5651cc7`; integrated with origin/develop@ab2b71d2 for publication after GitHub access was verified. Bounded offline API/legacy English sync outputs are additionally reserved; the Sales visibility candidate merged as PR852. Its bounded own handoff docs are reserved for the completed merge receipt. Reserve Reservations Web `manual-hotel-panel.tsx`, `packs-workspace.tsx`, focused tests, one helper using the existing public Master Data API client, bounded Web English labels, and this task's status/task docs. Master Data remains PC-B-owned: no direct table access or edits to its module; create/reuse active canonical room type, then version-check and append its ID to the selected hotel through public APIs. Require `master_data.read` and `master_data.update`; require `master_data.create` only when needed. Preserve existing room links, rates, occupancy combinations, and saved/imported evidence. No new API/shared contract, schema, migration, dependency, permission grant or operational data mutation during development; writes occur only after an authorized user's explicit UI action. Exact-head checks and CI gate the authorized develop merge.
+
+## CORRECTION-COLUMNS-1014 — PC-A — READY_FOR_REVIEW
+
+User requests purple correction background only on reservation columns two and three and develop merge. Reserve workspace.module.css and existing styling regression plus own status entries. Preserve sales-only correction source, note marker precedence and light/dark palettes. No API/schema/dependency/runtime changes.
+
 ## SALES-CORRECTION-PURPLE-1014 — PC-A — IN_PROGRESS
 
 User requests purple for corrected-by-sales, not reservation operational edits, with develop merge. Reserve Sales reservation table audit projection and regression plus own status. The explicit SALES_PASSENGER_CORRECTION event drives the purple correctedAt marker; reservation form/general amendments do not. No schema/migration/dependency/runtime change.
@@ -7537,11 +7561,80 @@ RESERVATION-CONTRACT-EDIT-1013 CI follow-up: full regression found the existing 
 
 COMPUTER_ID=PC-C; branch codex/pc-c-assistant-groq-test-1014 from develop f5651cc7. Owner placed local Groq key after agreeing to initial synthetic tests. Reserve new services/assistant/groq-provider.mjs, provider tests, fixed synthetic evaluation CLI and assistant own docs/README. No server/provider activation, real user/ERP data transfer, UI, dependencies, migration or permission change. Use fixed HTTPS endpoint, strict plan schema, bounded response/time, generic errors and no retries. Exact-head and postmerge CI required; key remains outside Git. No overlapping assistant source owner.
 
+## SALES-SELLER-VISIBILITY-1014 — PC-A — MERGED
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-seller-visibility-1014 from origin/develop@dbdefcdf. User authorizes seller identity column, own-only Sales access, system-wide sales-manager read access with contract creation, common Reservations intake, and contract-only reservation amendment highlighting (internal form changes remain private), followed by develop merge. Reserve Sales API/Web/list/detail/export/dashboard permission tests, Reservations boundary regression tests and bounded IAM grant policy inspection; optional Sales summary sellerName/reservationContractChanged fields are produced by Sales and consumed compatibly by Web. Reserve bounded English labels and own status/task docs. No migration/dependency/operational data changes planned. Owner explicitly authorizes role-based scope for active Manager/Sales Manager and own-only Sales Experts, including valid manual profiles; malformed/disabled snapshots remain denied. Also reserve IAM permission resolver/tests, user-creation title selector, role-access proposals/tests, Sales repository audit projection and DECISIONS.md. Additionally reserve effective manager-grant delegation checks in iam.service.ts, user-access regression tests, own-only direct Sales correction guards/tests, and offline API/legacy English sync outputs. Source locks release with the frozen candidate. CI must pass before merge; existing hotel-room commit remains separate.
+
 ## ROLE-ACCESS-TEMPLATES-1014 — PC-A — IN_PROGRESS
 
 Reserve IAM role template commands/DTO/controller, user management editor and focused tests; user authorizes editable persisted job-role defaults and develop merge. Templates use unassigned dedicated IAM roles; user access remains an independent snapshot. Existing managed-access validation, administrator restriction, audit and transaction apply. No schema/dependency/migration/runtime change.
 
 ROLE-ACCESS-TEMPLATES-1014: PR849, implementation b4a406e2.24 IAM tests and scoped API/Web lint pass; production build passes CI. Preserve concurrent develop translations during integration. Source locks release with candidate; exact-head full CI gates authorized merge. No migration or local publication.
+
+## CONTRACT-TOTAL-PRICING-1014 — PC-A — READY_FOR_CI
+
+Owner explicitly authorizes contract-level sale totals, selected-service summary in the price/payment step, currency symbols throughout presentation, and develop merge. Reserve Sales form/model and new contract-total editor/summary, focused model checks, shared currency presentation helper and bounded display consumers, own documentation and translations. Preserve legacy passenger pricing, currency codes in storage/API/inputs, Decimal arithmetic, insurance surcharges and cheque calculations; no operational data rewrite, schema or migration. No overlapping active Sales creation or currency presentation lock found in current assignments. Central display scope is bounded to currency formatting; no general localization or dependency change.
+
+Shared-contract reservation: additive opt-in `contractPackagePricingVersion: 1`, producer Sales new-contract Web, consumer shared pricing/insurance validation used by API and Web, delivered together. Legacy markers/unmarked records unchanged. Currency presentation includes bounded shared glyph registry, JSX/text glyph preservation, reference labels, monetary formatters and print/export displays across modules; no module-owned write or data shape changes. Details in docs/tasks/CONTRACT-TOTAL-PRICING-1014.md. No migration or dependency lock taken.
+
+Validation: 372 Sales tests passed (one existing skip), 145 existing Contracts tests passed, and five focused contract-pricing/insurance tests passed.44 API Sales domain tests passed including opt-in totals.54 focused display regressions passed after updating intentional currency-symbol expectations and rerunning resource-contention timeouts with bounded workers. New total-editor/service-summary/amendment UI checks pass. Scoped lint and Web typecheck passed before final presentation refinements; final build/type/lint and exact-head CI gate merge. Bounded source locks release with this frozen review candidate. No operational data or migration change.
+
+## SALES-ROW-ACTIONS-1014 — PC-A — IN_PROGRESS
+
+User requests the Sales contracts table correction action to stay on the same row as the other row operations. Reserve only `apps/web/src/modules/sales/components/sales-workspace.tsx`, its focused component test, and this bounded assignment/status entry. Four row actions (passenger correction, payments, contract PDF, travel documents) must render in one horizontal group; preserve permissions, labels, click behavior, responsive horizontal table scroll, and all contract data. No API/schema/migration/dependency/runtime change. User explicitly requests develop merge; push the branch and open a PR to develop after scoped validation; follow repository review requirements for final merge.
+
+## FINANCE-ONLY-CONTRACT-PROFIT-1014 — PC-A — IN_PROGRESS
+
+Reserve Sales payments profit removal, Finance inbox contract profit component placement and focused regressions. User authorizes develop merge. Existing finance.read and Sales branch/record read guards remain authoritative; no new grants, money calculation, API/schema/migration/dependency change. No overlapping active source lock found.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014:14 Sales/Finance presentation regressions and7 actual-profit/HTTP authorization tests pass. Profit is absent from Sales payments and available only in Finance Sales-receipt details; finance.read, contract scope and existing no-store behavior preserved. Source locks release with candidate; full exact-head quality/test/build/database CI required for authorized develop merge. No local rollout.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014 scope refinement: Sales-owned internal profit read projection uses finance.read plus actual contract branch scope, so Finance-only staff do not require Sales UI/contract-read grants. The ordinary Sales detail endpoint and identity visibility are unchanged; profit response contains only existing cost/profit facts. Reserve Sales service/profit service and permission regressions.
+
+Final validation:14 Web presentation tests and9 API cost/profit/Finance-only/branch-scope regressions pass. Ordinary Sales contract detail permission remains unchanged; only the internal profit source reads for authorized Finance staff. No calculation or financial data changes.
+
+## PROFIT-ACTION-LAYOUT-1014 — PC-A — MERGED
+
+Reserve Reservations action-panel button grouping only and own docs. Move hotel-profit action from contract-information to below Notes/Descriptions, retaining action, permissions and dialog. User authorizes develop merge; no API/schema/dependency/runtime changes. Previous locks released.
+
+PR858 merged to develop as
+`3cd7fe1556c90f69b67889368157db68431504af` after all eight exact-head checks
+passed.
+
+## RESERVATION-PANEL-OVERFLOW-1014 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-panel-overflow-1014` from
+`origin/develop@bf7a1927`. Reserve Reservations selected-contract action-panel
+CSS, focused existing regressions and bounded task/status docs. Keep action
+groups and buttons inside their own bordered cards as the page/container
+narrows; use the panel's available width for responsive layout and wrap long
+labels. Preserve action order, permissions and dialog behavior. No API,
+schema, migration, dependency, runtime or operational-data change. User
+authorizes develop merge after required checks.
+
+Validation: action-panel regressions 14/14, scoped ESLint, Web typecheck,
+Prettier for the changed CSS, and full 62-route Web production build passed.
+No migration or dependency change; exact-head CI remains the merge gate.
+
+## RESERVATION-PASSENGER-AGE-TABLE-1014 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-passenger-age-table-1014 from latest origin/develop. User authorizes removing the separate age-category correction panel and editing categories plus child details in the existing passenger identity table, followed by develop merge. Reserve reservation-contract-editor.tsx, reservation-sales-amendment.tsx, passenger-files/passengers.tsx, bounded amendment/table helper and focused regressions, own status/task docs and new translation labels/generated catalogues. Existing Sales amendment command remains owner of contract category/capacity changes; Customer identity edits retain their separate permissions and records. No overlapping active source lock found; earlier Reservations editor candidate released. No dependency, migration, live data or runtime change planned.
+
+Child-band scope confirmed by owner: 2–6 and 6–12, independently of real birth date. Reserve additive nullable SalesContractPassenger.childAgeBand column and sole schema/migration ownership for this unit (prior agency/hotel migrations released); shared optional SalesPassengerInput/Reservation assignment projection, Sales persistence/domain/presentation/audit snapshots and focused API tests. Producer Sales, consumer Reservations inline table; old payloads/records remain valid and no backfill or live migration is performed. Existing exact birth-date hotel/insurance validation remains authoritative; age band is explicit contract classification, never a fabricated birth date.
+
+Validation: 64 API domain/amendment/flight/hotel regressions pass, including band-only operational publication and older-client field preservation; 11 focused Web/table/model tests and 3 English coverage tests pass. Scoped API/Web ESLint, Web typecheck and changed-file formatting pass. Prisma format/generate succeeds against a nonoperational placeholder URL. Local API/Web builds and full exact-head CI remain gates. Source/schema locks release with the frozen candidate; no operational migration or runtime publication.
+
+## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
+
+## VOUCHER-OPTIONAL-1014 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A; reserve travel-workflow form/domain and voucher leader mount identity. Optional note for supplier confirmation/voucher issuance; optional supplier reference; preserve required cancellation reasons. Stable leader editor identity prevents selection remount. No schema/dependency/data change. User authorizes develop merge after CI.
+
+## VOUCHER-OUTPUT-1014 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; reserve voucher sheet/PDF/model, workflow note label and airline reference loading. Owner authorizes English airline names, clean voucher details, shared reservation footer, issuance notice and develop merge. No schema/dependency changes.
 
 ## ACCOUNTING-DESIGN-IMPLEMENTATION-1014 — PC-B owner / PC-A execution — IN_PROGRESS
 

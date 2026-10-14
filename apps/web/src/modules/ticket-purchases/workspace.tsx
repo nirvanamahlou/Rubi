@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from '@/i18n/link';
 import {
@@ -190,7 +191,7 @@ export function TicketPurchaseWorkspace({
         <section className="flex flex-wrap gap-4 rounded-2xl border p-4">
           {summary.totals.map((t) => (
             <div key={t.currencyCode} className="space-y-1">
-              <strong>{t.currencyCode}</strong>
+              <strong>{currencySymbol(t.currencyCode ?? '')}</strong>
               <p>
                 کل خرید: <bdi>{formatSalesMoney(t.invoice)}</bdi>
               </p>
@@ -280,7 +281,7 @@ export function TicketPurchaseWorkspace({
                         {item.cost?.unitCost
                           ? formatSalesMoney(item.cost.unitCost)
                           : '—'}{' '}
-                        {item.cost?.currencyCode}
+                        {currencySymbol(item.cost?.currencyCode ?? '')}
                       </bdi>
                     </td>
                     <td className="p-3">
@@ -288,7 +289,7 @@ export function TicketPurchaseWorkspace({
                         {item.cost
                           ? formatSalesMoney(item.cost.invoiceAmount)
                           : '—'}{' '}
-                        {item.cost?.currencyCode}
+                        {currencySymbol(item.cost?.currencyCode ?? '')}
                       </bdi>
                     </td>
                     <td className="p-3">
@@ -296,7 +297,7 @@ export function TicketPurchaseWorkspace({
                         {item.cost
                           ? formatSalesMoney(item.cost.remainingAmount)
                           : '—'}{' '}
-                        {item.cost?.currencyCode}
+                        {currencySymbol(item.cost?.currencyCode ?? '')}
                       </bdi>
                     </td>
                     <td className="p-3">

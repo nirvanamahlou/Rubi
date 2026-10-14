@@ -1,3 +1,4 @@
+import { currencySymbol } from '@/lib/currency-symbol';
 import type { B2bAgencyAgreementV1 } from '@nora/contracts';
 
 /** Keep Decimal precision: never convert money to a JavaScript Number. */
@@ -11,7 +12,7 @@ export function moneyLabel(amount: string, currency: string): string {
   );
   const negativeFraction =
     match[1] === '-' && BigInt(match[2]!) === 0n ? '−' : '';
-  return `${negativeFraction}${integer}${fraction ? `٫${fraction}` : ''} ${currency}`.trim();
+  return `${negativeFraction}${integer}${fraction ? `٫${fraction}` : ''} ${currencySymbol(currency)}`.trim();
 }
 
 export function agreementLabel(

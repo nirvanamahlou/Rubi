@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useRouteAccess } from '@/modules/iam/access-context';
 import type { AuthenticatedActor } from '@nora/contracts';
 
@@ -163,7 +164,7 @@ const toneClasses: Record<
 function formatMoney(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
   const grouped = integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
-  return `${grouped}${fraction ? `٫${fraction}` : ''} ${currencyCode}`;
+  return `${grouped}${fraction ? `٫${fraction}` : ''} ${currencySymbol(currencyCode)}`;
 }
 
 function formatDate(value: string) {

@@ -38,7 +38,7 @@ it('shows final hotel purchase even without a matching reference', () => {
     />,
   );
   expect(html).toContain('180');
-  expect(html).toContain('USD');
+  expect(html).toContain('$');
   expect(html).toContain('خرید واقعی رزرواسیون');
   expect(html).toContain('مقایسه قابل محاسبه نیست');
 });

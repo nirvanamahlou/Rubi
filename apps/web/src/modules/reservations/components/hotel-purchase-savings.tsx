@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState } from 'react';
 import { moneyUnits, type HotelPurchaseSavingsV1 } from '@nora/contracts';
 import { formatSalesMoney } from '@/components/ui/money-input';
@@ -39,7 +40,8 @@ export function HotelPurchaseSavings({
         <p>
           <span>خرید واقعی رزرواسیون</span>:{' '}
           <bdi>
-            {formatSalesMoney(value.actualAmount)} {value.currencyCode}
+            {formatSalesMoney(value.actualAmount)}{' '}
+            {currencySymbol(value.currencyCode ?? '')}
           </bdi>
         </p>
       )}
@@ -48,7 +50,8 @@ export function HotelPurchaseSavings({
           <p>
             <span>کمترین نرخ خرید مرجع هتل</span>:{' '}
             <bdi>
-              {formatSalesMoney(value.referenceAmount!)} {value.currencyCode}
+              {formatSalesMoney(value.referenceAmount!)}{' '}
+              {currencySymbol(value.currencyCode ?? '')}
             </bdi>
           </p>
           <p>
@@ -57,7 +60,7 @@ export function HotelPurchaseSavings({
               {actualAmount || value.actualAmount
                 ? formatSalesMoney(actualAmount || value.actualAmount!)
                 : '—'}{' '}
-              {value.currencyCode}
+              {currencySymbol(value.currencyCode ?? '')}
             </bdi>
           </p>
           <p
@@ -70,7 +73,7 @@ export function HotelPurchaseSavings({
             <span>اختلاف با نرخ خرید مرجع</span>:{' '}
             <bdi dir="ltr">
               {savings === null ? '—' : formatSalesMoney(savings)}{' '}
-              {value.currencyCode}
+              {currencySymbol(value.currencyCode ?? '')}
             </bdi>
           </p>
           <p className="text-xs text-muted-foreground">
@@ -197,7 +200,8 @@ export function HotelSavingsDashboard({
           <div className="flex flex-wrap gap-4">
             {result.data?.totals.map((total) => (
               <bdi key={total.currencyCode} className="text-xl font-bold">
-                {formatSalesMoney(total.amount)} {total.currencyCode}
+                {formatSalesMoney(total.amount)}{' '}
+                {currencySymbol(total.currencyCode ?? '')}
               </bdi>
             ))}
           </div>

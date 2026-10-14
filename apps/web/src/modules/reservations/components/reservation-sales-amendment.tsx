@@ -1,4 +1,10 @@
 'use client';
+import { ReservationPassengers } from '../passenger-files/passengers';
+import {
+  PassengerAgeEditor,
+  changeAmendmentPassengerAge,
+} from './passenger-age-editor';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState } from 'react';
 import type {
   MasterDataRecord,
@@ -6,7 +12,6 @@ import type {
   SalesContractDetail,
   SalesContractAmendmentV1,
   SalesHotelSelectionInput,
-  SalesPassengerAgeCategory,
   SalesTicketDirection,
 } from '@nora/contracts';
 import {
@@ -34,10 +39,12 @@ import {
 
 export function ReservationSalesAmendment({
   contract,
+  requestId,
   section,
   onSaved,
 }: {
   contract: SalesContractDetail;
+  requestId?: string;
   section: 'FLIGHT' | 'HOTEL' | 'OTHER' | 'CORRECTION' | 'PRICES';
   onSaved: () => void;
 }) {
@@ -126,28 +133,6 @@ export function ReservationSalesAmendment({
           : {}),
       });
   }
-  function changeAge(id: string, category: SalesPassengerAgeCategory) {
-    patch({
-      passengerCategories: { ...draft.passengerCategories, [id]: category },
-      passengers: draft.passengers.map((p) =>
-        p.customerId === id
-          ? {
-              ...p,
-              ...(p.accommodationKind
-                ? {
-                    accommodationKind:
-                      category === 'INF'
-                        ? 'INFANT'
-                        : category === 'CHD'
-                          ? 'CHILD_WITH_BED'
-                          : 'DBL',
-                  }
-                : {}),
-            }
-          : p,
-      ),
-    });
-  }
   async function submit() {
     setBusy(true);
     setError('');
@@ -223,11 +208,16 @@ export function ReservationSalesAmendment({
   const chosen = draft.ticketSelections?.find((t) => t.direction === direction);
   return (
     <div className="grid gap-4">
-      <p className="text-sm text-muted-foreground">
-        اصلاح روی اصل قرارداد ذخیره می‌شود؛ دریافت‌های قبلی و سابقهٔ مدارک حفظ
-        می‌شوند.
-      </p>
-      <fieldset disabled={busy || saved} className="grid gap-4">
+      {section !== 'CORRECTION' && (
+        <p className="text-sm text-muted-foreground">
+          اصلاح روی اصل قرارداد ذخیره می‌شود؛ دریافت‌های قبلی و سابقهٔ مدارک حفظ
+          می‌شوند.
+        </p>
+      )}
+      <fieldset
+        disabled={busy || (section !== 'CORRECTION' && saved)}
+        className="grid gap-4"
+      >
         {section === 'FLIGHT' && (
           <>
             <div className="grid gap-3 md:grid-cols-3">
@@ -444,78 +434,58 @@ export function ReservationSalesAmendment({
             </label>
           </>
         )}
-        {section === 'CORRECTION' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr>
-                  <th>مسافر</th>
-                  <th>رده سنی</th>
-                  <th>نوع اقامت</th>
-                </tr>
-              </thead>
-              <tbody>
-                {draft.passengers.map((p) => (
-                  <tr key={p.customerId}>
-                    <td className="p-2">{p.displayNameSnapshot}</td>
-                    <td className="p-2">
-                      <select
-                        className="rounded-lg border bg-background p-2"
-                        value={draft.passengerCategories[p.customerId]}
-                        onChange={(e) =>
-                          changeAge(
-                            p.customerId,
-                            e.target.value as SalesPassengerAgeCategory,
-                          )
-                        }
-                      >
-                        <option value="ADT">بزرگسال</option>
-                        <option value="CHD">کودک</option>
-                        <option value="INF">نوزاد</option>
-                      </select>
-                    </td>
-                    <td>
-                      {p.accommodationKind && (
-                        <select
-                          className="rounded-lg border bg-background p-2"
-                          value={p.accommodationKind}
-                          onChange={(e) =>
-                            patch({
-                              passengers: draft.passengers.map((v) =>
-                                v.customerId === p.customerId
-                                  ? {
-                                      ...v,
-                                      accommodationKind: e.target
-                                        .value as typeof p.accommodationKind,
-                                    }
-                                  : v,
-                              ),
-                            })
-                          }
-                        >
-                          {(draft.passengerCategories[p.customerId] === 'INF'
-                            ? ['INFANT']
-                            : draft.passengerCategories[p.customerId] === 'CHD'
-                              ? ['CHILD_WITH_BED', 'CHILD_WITHOUT_BED']
-                              : ['DBL', 'SINGLE']
-                          ).map((a) => (
-                            <option key={a}>{a}</option>
-                          ))}
-                        </select>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {section === 'CORRECTION' && requestId && (
+          <ReservationPassengers
+            id={requestId}
+            ageEditor={(customerId) => {
+              const passenger = draft.passengers.find(
+                (p) => p.customerId === customerId,
+              );
+              if (!passenger) return '—';
+              return (
+                <PassengerAgeEditor
+                  passenger={passenger}
+                  category={draft.passengerCategories[customerId]!}
+                  disabled={busy || saved}
+                  onCategory={(category) =>
+                    setDraft((current) =>
+                      changeAmendmentPassengerAge(
+                        current,
+                        customerId,
+                        category,
+                      ),
+                    )
+                  }
+                  onBand={(childAgeBand) =>
+                    patch({
+                      passengers: draft.passengers.map((p) =>
+                        p.customerId === customerId
+                          ? { ...p, childAgeBand: childAgeBand ?? null }
+                          : p,
+                      ),
+                    })
+                  }
+                  onAccommodation={(accommodationKind) =>
+                    patch({
+                      passengers: draft.passengers.map((p) =>
+                        p.customerId === customerId
+                          ? { ...p, accommodationKind }
+                          : p,
+                      ),
+                    })
+                  }
+                />
+              );
+            }}
+          />
         )}
         {section === 'PRICES' && (
           <>
             {draft.services.some(
               (s) =>
                 s.pricing?.length &&
-                s.metadata?.passengerPackagePricingVersion !== 1,
+                s.metadata?.passengerPackagePricingVersion !== 1 &&
+                s.metadata?.contractPackagePricingVersion !== 1,
             )
               ? draft.services.map((s) => (
                   <div
@@ -525,7 +495,7 @@ export function ReservationSalesAmendment({
                     <strong>{s.titleSnapshot}</strong>
                     {s.pricing?.map((v, i) => (
                       <label key={v.currencyCode}>
-                        {v.currencyCode} ·{' '}
+                        {currencySymbol(v.currencyCode ?? '')} ·{' '}
                         {v.agreed.basis === 'NIGHT' ? 'هر شب' : 'مبلغ کل'}
                         <Input
                           dir="ltr"
@@ -571,7 +541,7 @@ export function ReservationSalesAmendment({
                       <strong>{p.displayNameSnapshot}</strong>
                       {p.agreedPrices?.map((v) => (
                         <label key={v.currencyCode}>
-                          {v.currencyCode}
+                          {currencySymbol(v.currencyCode ?? '')}
                           <Input
                             dir="ltr"
                             inputMode="decimal"
@@ -586,7 +556,7 @@ export function ReservationSalesAmendment({
                   ))
                 : draft.priceComponents.map((p, i) => (
                     <label key={i}>
-                      {p.title} · {p.currencyCode}
+                      {p.title} · {currencySymbol(p.currencyCode ?? '')}
                       <Input
                         dir="ltr"
                         inputMode="decimal"
@@ -607,7 +577,7 @@ export function ReservationSalesAmendment({
                 <span key={i}>
                   {p.title}:{' '}
                   <b dir="ltr">
-                    {p.amount} {p.currencyCode}
+                    {p.amount} {currencySymbol(p.currencyCode ?? '')}
                   </b>
                 </span>
               ))}

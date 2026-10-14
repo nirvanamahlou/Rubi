@@ -19,7 +19,8 @@ export const salesCurrencyOptions = (currencies: readonly SalesCurrency[]) =>
     )
     .map((currency) => ({
       id: currency.code,
-      name: `${currency.name} (${currency.code})`,
+      name: currency.name,
+      resource: 'currencies' as const,
       code: currency.code,
     }));
 export function defaultSalesCurrency(currencies: readonly SalesCurrency[]) {

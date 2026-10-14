@@ -46,7 +46,7 @@ function setup() {
     id,
     branchId: 'branch',
     ownerUserId: 'owner',
-    assignedUserId: null,
+    assignedUserId: null as string | null,
     status: 'SENT_TO_RESERVATIONS',
     version: 3,
     contractNumber: 'SC-SYNTHETIC',
@@ -158,6 +158,14 @@ function setup() {
   };
 }
 describe('contract-specific passenger correction', () => {
+  it('denies reading or changing another seller contract even when assigned to the actor', async () => {
+    const s = setup();
+    s.row.ownerUserId = 'other';
+    s.row.assignedUserId = actor.userId;
+    await expect(s.service.contract(id, actor)).rejects.toThrow('مجوز');
+    await expect(s.service.correct(id, input(), actor)).rejects.toThrow('مجوز');
+    expect(s.tx.salesContract.updateMany).not.toHaveBeenCalled();
+  });
   it('encrypts evidence with randomized nonces and binds it to the contract', () => {
     const c = cipher(),
       e = c.protect(id, person);

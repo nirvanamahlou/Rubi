@@ -1,3 +1,4 @@
+import { salesContractFlights } from '@nora/contracts';
 import { languageFromCookies } from '@/i18n/language';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -133,6 +134,26 @@ export async function GET(
         }
       }),
     );
+    const airlineNames = new Set(
+      salesContractFlights(
+        intake.snapshot.serviceSelections,
+        intake.snapshot.ticketSelections ?? [],
+      ).map((ticket) => ticket.carrierNameSnapshot),
+    );
+    for (const name of airlineNames) {
+      const response = await get(
+        '/master-data/airlines?search=' +
+          encodeURIComponent(name) +
+          '&page=1&pageSize=100',
+      );
+      if (response.ok) {
+        const result = (await response.json()) as { data: MasterDataRecord[] };
+        const record = result.data.find((item) =>
+          [item.name, item.attributes.englishName].includes(name),
+        );
+        if (record) refs[name] = record;
+      }
+    }
     const css = await readFile(
       join(
         process.cwd(),

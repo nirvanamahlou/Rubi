@@ -43,7 +43,10 @@ import { AuditOutcome, SessionStatus, UserStatus } from '@nora/database';
 import { hash, verify } from 'argon2';
 
 import { DatabaseService } from '../database/database.service';
-import { authenticatedPermissionCodes } from './authenticated-permissions';
+import {
+  authenticatedPermissionCodes,
+  salesManagerRolePermissions,
+} from './authenticated-permissions';
 import {
   ACCESS_TTL_SECONDS,
   LOCK_MINUTES,
@@ -1154,6 +1157,12 @@ export class IamService implements IamStepUpPort {
     )
       throw new BadRequestException('پیشوند نقش اختصاصی رزرو شده است.');
     await this.assertPermissionsAssignable(dto.permissionIds, actor);
+    this.assertPermissionCodesAssignable(
+      salesManagerRolePermissions([
+        { role: { code: dto.code, name: dto.name.trim(), isActive: true } },
+      ]),
+      actor,
+    );
     const role = await this.database.client.role.create({
       data: {
         code: dto.code,
@@ -1993,8 +2002,15 @@ export class IamService implements IamStepUpPort {
         permissionIds.push(masterDataRead.id);
     }
     const isAdministrator = await this.isSystemAdministrator(actor);
-    if (!isAdministrator)
+    if (!isAdministrator) {
+      this.assertPermissionCodesAssignable(
+        salesManagerRolePermissions([
+          { role: { name: dto.accessTitle, isActive: true } },
+        ]),
+        actor,
+      );
       await this.assertPermissionsAssignable(permissionIds, actor);
+    }
     const permissions = await this.database.client.permission.findMany({
       where: { id: { in: permissionIds } },
       select: { code: true },
@@ -2210,6 +2226,7 @@ export class IamService implements IamStepUpPort {
       select: {
         id: true,
         code: true,
+        name: true,
         permissions: { select: { permission: { select: { code: true } } } },
       },
     });
@@ -2228,7 +2245,15 @@ export class IamService implements IamStepUpPort {
     const permissionCodes = roles.flatMap((role) =>
       role.permissions.map(({ permission }) => permission.code),
     );
-    this.assertPermissionCodesAssignable(permissionCodes, actor);
+    this.assertPermissionCodesAssignable(
+      [
+        ...permissionCodes,
+        ...salesManagerRolePermissions(
+          roles.map((role) => ({ role: { ...role, isActive: true } })),
+        ),
+      ],
+      actor,
+    );
   }
   private async assertPermissionsAssignable(
     permissionIds: readonly string[],

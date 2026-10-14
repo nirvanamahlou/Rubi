@@ -1,7 +1,7 @@
 'use client';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/form-controls';
@@ -31,9 +31,11 @@ const nullable = (value: string | null) => value?.trim() || '';
 export function ReservationPassengers({
   id,
   readOnly = false,
+  ageEditor,
 }: {
   id: string;
   readOnly?: boolean;
+  ageEditor?: (customerId: string) => ReactNode;
 }) {
   const [rows, setRows] = useState<PassengerName[]>([]);
   const [canEdit, setCanEdit] = useState(false);
@@ -273,7 +275,11 @@ export function ReservationPassengers({
                       form={`passenger-${row.id}`}
                     />
                   </td>
-                  <td>{row.ageCategory ?? 'ثبت نشده'}</td>
+                  <td>
+                    {ageEditor
+                      ? ageEditor(row.id)
+                      : (row.ageCategory ?? 'ثبت نشده')}
+                  </td>
                   <td>
                     <NativeSearchSelect
                       aria-label={`جنسیت مسافر ${index + 1}`}

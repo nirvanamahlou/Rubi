@@ -2,6 +2,34 @@ import 'reflect-metadata';
 import { expect, it, vi } from 'vitest';
 import { SalesOperationalAmendmentService } from './sales-operational-amendment.module';
 import type { AuthenticatedActor, VoucherSettingsV1 } from '@nora/contracts';
+it('denies form-to-contract writes to another seller contract assigned to the actor', async () => {
+  const service = new SalesOperationalAmendmentService();
+  const tx = {
+    salesContract: {
+      findUnique: vi.fn().mockResolvedValue({
+        branchId: 'b',
+        ownerUserId: 'other',
+        assignedUserId: 'u',
+      }),
+      updateMany: vi.fn(),
+    },
+  };
+  await expect(
+    service.apply(
+      tx as never,
+      'c',
+      1,
+      {} as VoucherSettingsV1,
+      {
+        userId: 'u',
+        branchIds: ['b'],
+        permissions: ['sales.contracts.update.own'],
+      } as AuthenticatedActor,
+      'edit',
+    ),
+  ).rejects.toThrow('مجوز');
+  expect(tx.salesContract.updateMany).not.toHaveBeenCalled();
+});
 it('checks Sales scope and preserves existing metadata with a versioned audit', async () => {
   const row = {
     id: 'c',

@@ -225,7 +225,7 @@ describe('Saved contract print output', () => {
       hotelWebsite: 'https://hotel.example',
     });
     expect(html).toContain('9,007,199,254,740,995.37');
-    expect(html).toContain('50.25 EUR');
+    expect(html).toContain('50.25 €');
     expect(html).toContain(
       '<td class="contract-total"><div><bdi class="money">2.25</bdi></div></td><td></td>',
     );
@@ -250,7 +250,7 @@ describe('Saved contract print output', () => {
       hotelWebsite: '<img>',
     });
     expect(html).toContain(
-      '<td class="contract-total"></td><td><div><bdi class="money">100 USD',
+      '<td class="contract-total"></td><td><div><bdi class="money">100 $',
     );
     expect(html).toContain('&lt;script&gt;');
     expect(html).not.toContain('<img>');
@@ -279,7 +279,7 @@ describe('Saved contract print output', () => {
     expect(html).not.toContain('999,999,999');
     expect(html).not.toContain('40,000,000');
     expect(html).toContain('900.50');
-    expect(html).toContain('USD');
+    expect(html).toContain('$');
     expect(html).toContain('BUSINESS');
     expect(html).toContain('ترانسفر رفت');
     expect(html).not.toContain('<th>کمیسیون</th>');

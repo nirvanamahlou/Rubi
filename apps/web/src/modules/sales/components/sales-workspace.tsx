@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
   Banknote,
@@ -126,7 +127,7 @@ function failureMessage(reason: unknown): string {
 
 export function formatMoney(amount: string, currencyCode: string) {
   const [integer = '0', fraction] = amount.split('.');
-  return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')}${fraction ? `٫${fraction}` : ''} ${currencyCode === 'IRR' ? 'ریال' : currencyCode}`.replace(
+  return `${integer.replace(/\B(?=(\d{3})+(?!\d))/g, '٬')}${fraction ? `٫${fraction}` : ''} ${currencySymbol(currencyCode)}`.replace(
     /\d/g,
     (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]!,
   );
@@ -431,6 +432,7 @@ export function SalesWorkspace() {
                   {[
                     'شماره',
                     'مشتری',
+                    'فروشنده',
                     'شماره تلفن مشتری',
                     'مقصد',
                     'تاریخ بستن قرارداد',
@@ -454,7 +456,11 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className="group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]"
+                    className={
+                      contract.reservationContractChanged
+                        ? 'group border-t border-amber-300 bg-amber-100/70 transition-colors hover:bg-amber-100 dark:bg-amber-950/40'
+                        : 'group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]'
+                    }
                     key={contract.id}
                   >
                     <td className="px-4 py-3 font-bold first:pr-5">
@@ -462,6 +468,11 @@ export function SalesWorkspace() {
                         <FileText className="size-3.5" />
                         <span dir="ltr">{contract.contractNumber}</span>
                       </div>
+                      {contract.reservationContractChanged && (
+                        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                          اصلاح قرارداد توسط رزرواسیون
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -473,6 +484,7 @@ export function SalesWorkspace() {
                         </span>
                       </div>
                     </td>
+                    <td className="px-4 py-3">{contract.sellerName ?? '—'}</td>
                     <ContractListContactRouteDate contract={contract} />
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 font-semibold text-foreground">
@@ -546,7 +558,7 @@ export function SalesWorkspace() {
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
                     <td className="px-4 py-3 last:pl-5">
-                      <div className="grid min-w-72 grid-cols-3 gap-1.5">
+                      <div className="grid min-w-72 grid-cols-4 gap-1.5">
                         <PassengerCorrectionButton
                           contractId={contract.id}
                           status={contract.status}
@@ -564,7 +576,7 @@ export function SalesWorkspace() {
                         </Button>
                         <ContractOutputButton
                           contractId={contract.id}
-                          label="PDF قرارداد"
+                          label="قرارداد"
                           className="h-8 min-w-0 px-2 text-xs shadow-sm"
                         />
                         <SalesTravelDocuments

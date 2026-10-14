@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { PurchaseFilterControls } from './filters';
 import { useDisplayLanguage } from '@/i18n/locale-context';
 import { Suspense, useEffect, useState } from 'react';
@@ -490,7 +491,7 @@ function PurchaseHub() {
                               <p>
                                 <bdi>
                                   {formatSalesMoney(purchase.amount)}{' '}
-                                  {purchase.currencyCode}
+                                  {currencySymbol(purchase.currencyCode ?? '')}
                                 </bdi>
                               </p>
                             </>
@@ -507,7 +508,9 @@ function PurchaseHub() {
                                     flight.cost.unitCost ??
                                       flight.cost.invoiceAmount,
                                   )}{' '}
-                                  {flight.cost.currencyCode}
+                                  {currencySymbol(
+                                    flight.cost.currencyCode ?? '',
+                                  )}
                                 </bdi>
                               </p>
                             </>
@@ -517,7 +520,7 @@ function PurchaseHub() {
                                 خرید قدیمی هتل:{' '}
                                 <bdi>
                                   {formatSalesMoney(cost.amount)}{' '}
-                                  {cost.currencyCode}
+                                  {currencySymbol(cost.currencyCode ?? '')}
                                 </bdi>
                               </p>
                             ))

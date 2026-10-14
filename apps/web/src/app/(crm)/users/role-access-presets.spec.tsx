@@ -45,6 +45,18 @@ const permissions = codes.map((code) => ({ id: code, code, name: code }));
 const proposal = (title: string) =>
   recommendRoleAccess(title, permissions, codes);
 describe('role access recommendations', () => {
+  it('offers the sales manager title with system-wide contract read and creation', () => {
+    expect(USER_JOB_TITLES).toContain('مدیر فروش');
+    expect(proposal('مدیر فروش').permissionIds).toContain(
+      'sales.contracts.read.all',
+    );
+    expect(proposal('مدیر فروش').permissionIds).toContain(
+      'sales.contracts.create',
+    );
+    expect(proposal('مدیر فروش').permissionIds).not.toContain(
+      'iam.users.manage',
+    );
+  });
   it.each(USER_JOB_TITLES)('has an explicit recommendation for %s', (title) => {
     const result = proposal(title);
     expect(result.screenIds.length).toBeGreaterThan(0);
@@ -146,7 +158,7 @@ describe('role access recommendations', () => {
   });
 });
 
-it('recommends branch-wide contracts for the sales manager without global access', () => {
+it('recommends system-wide read and branch-scoped editing for the sales manager', () => {
   const codes = [
     'sales.contracts.read.branch',
     'sales.contracts.update.branch',
@@ -154,7 +166,7 @@ it('recommends branch-wide contracts for the sales manager without global access
   ];
   const available = codes.map((code) => ({ id: code, code, name: code }));
   const proposal = recommendRoleAccess('مدیر فروش', available, codes);
-  expect(proposal.permissionIds).toContain('sales.contracts.read.branch');
+  expect(proposal.permissionIds).not.toContain('sales.contracts.read.branch');
   expect(proposal.permissionIds).toContain('sales.contracts.update.branch');
-  expect(proposal.permissionIds).not.toContain('sales.contracts.read.all');
+  expect(proposal.permissionIds).toContain('sales.contracts.read.all');
 });

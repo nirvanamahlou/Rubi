@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { Button } from '@/components/ui/button';
 import { insuranceExtraRials, passengerOverSixty } from '@nora/contracts';
 import { salesTravelDate } from '../model/sales-form';
@@ -153,7 +154,7 @@ export function PassengerPackagePrices({
         {[...totals].map(([code, amount]) => (
           <span key={code}>
             <bdi>
-              {formatSalesMoney(moneyDecimal(amount))} {code}
+              {formatSalesMoney(moneyDecimal(amount))} {currencySymbol(code)}
             </bdi>
           </span>
         ))}
