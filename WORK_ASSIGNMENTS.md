@@ -1,3 +1,7 @@
+## HIDE-CONTRACT-FLIGHT-CAPACITY-1014 — PC-A — READY_FOR_REVIEW
+
+User authorizes removing capacity and remaining-seat figures from new-contract flight cards and develop merge. Reserve Sales ticket-offer-card and its existing regression tests, plus own status entries. Keep availability validation and booking capacity enforcement. No API, schema, migration, dependency or runtime change.
+
 ## FINANCE-FOREIGN-SUPPLIER-1014 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A. Branch codex/pc-a-finance-foreign-supplier-1014 from origin/develop@2d32af1e. Reference-PC owner explicitly authorizes implementation and develop merge. Every currency other than IRR uses a selected paying supplier instead of a settlement account; IRR retains account selection. Reserve Finance inbox API/Web/contracts/history/tests, bounded public Master Data supplier directory consumption, additive payment supplier FK/schema/migration and own status/docs. Producer Finance and consumer Web ship compatible optional paying-supplier fields together; historical payments remain readable, branch scope, Decimal amounts, payment replay/concurrency and audit remain enforced. No live payments or operational migration/runtime rollout. Owner explicitly authorizes this bounded schema work despite earlier migration coordination concern; preserve all other migration files. Exact-head tests and CI gate merge.

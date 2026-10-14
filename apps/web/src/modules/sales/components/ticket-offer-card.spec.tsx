@@ -40,7 +40,7 @@ describe('readable sales ticket card', () => {
           />,
         );
       expect(render(3)).toContain('disabled=""');
-      expect(render(3)).toContain('قابل‌فروش رفت‌وبرگشت: ۲ نفر');
+      expect(render(3)).not.toContain('قابل‌فروش رفت‌وبرگشت');
       expect(render(2)).not.toContain('disabled=""');
     },
   );
@@ -113,12 +113,12 @@ describe('readable sales ticket card', () => {
       'Test Airline',
       'TEST-1',
       'انتخاب‌شده',
-      'ظرفیت کل',
       'aria-pressed="true"',
       'ring-primary/20',
     ])
       expect(html).toContain(text);
-    expect(html).toContain('مانده');
+    expect(html).not.toContain('مانده');
+    expect(html).not.toContain('ظرفیت کل');
     expect(html).not.toContain('قیمت');
   });
   it('uses fixed Tehran times without seconds and shows overnight arrival date', () => {
