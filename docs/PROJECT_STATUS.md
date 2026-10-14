@@ -1,3 +1,7 @@
+## 2026-10-14 — PAYMENT-DELETE-ICON-1014 — PC-A
+
+New-contract payment deletion uses an icon-only trash button with a row-specific accessible label and tooltip. Existing confirmation and deletion logic remain intact. No migration or local activation.
+
 ## 2026-10-14 — SALES-CORRECTION-PURPLE-1014 — PC-A
 
 Purple reservation queue highlighting now reflects explicit successful sales passenger corrections, excluding operational reservation/form amendments and general updates. Existing light/dark colors and historical records are retained. No migration or local activation; focused projection test and CI gate develop merge.
