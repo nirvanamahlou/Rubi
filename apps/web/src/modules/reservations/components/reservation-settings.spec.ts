@@ -63,3 +63,24 @@ describe('reservation supplier directory', () => {
     ]);
   });
 });
+
+import { sendSavedReservationForm } from './reservation-settings';
+it('requires a saved broker before sending and uses the newly saved version', async () => {
+  request.mockClear();
+  await expect(
+    sendSavedReservationForm('r', { version: 4 } as never),
+  ).rejects.toThrow();
+  expect(request).not.toHaveBeenCalled();
+  request.mockResolvedValueOnce({
+    data: { version: 6, supplierStatus: 'REQUESTED' },
+  });
+  const result = await sendSavedReservationForm('r', {
+    version: 5,
+    supplierFormSettings: { brokerId: 'b' },
+  } as never);
+  expect(request).toHaveBeenCalledWith(
+    'reservations/requests/r/workflow',
+    expect.objectContaining({ action: 'REQUEST_SUPPLIER', expectedVersion: 5 }),
+  );
+  expect(result.data.version).toBe(6);
+});

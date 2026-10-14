@@ -205,7 +205,7 @@ export function TravelWorkflowForm({
           {error}
         </p>
       )}
-      {!closed && ['بلیط', 'رزرواسیون', 'واچر'].includes(action) && (
+      {!closed && ['بلیط', 'واچر'].includes(action) && (
         <section className="grid gap-2 rounded border border-border p-3">
           <p>خروجی با سربرگ خودمان باشد؟</p>
           <label>
@@ -368,6 +368,8 @@ export function TravelWorkflowForm({
                   : {}),
               });
               setSettingsDirty(false);
+              if (workflow.sentSupplierFormVersion === workflow.version)
+                setEditingForm(false);
             }}
           />
         )}
@@ -491,23 +493,6 @@ export function TravelWorkflowForm({
               </label>
             )}
           <div className="flex flex-wrap gap-2">
-            {action === 'رزرواسیون' && (
-              <Button
-                disabled={
-                  busy ||
-                  settingsDirty ||
-                  !state.supplierFormSettings?.brokerId ||
-                  !['NEW', 'REQUESTED'].includes(state.supplierStatus)
-                }
-                onClick={() => void run('REQUEST_SUPPLIER')}
-              >
-                {busy
-                  ? 'در حال ثبت…'
-                  : state.supplierStatus === 'REQUESTED'
-                    ? 'ثبت ارسال مجدد فرم اصلاح‌شده'
-                    : 'ثبت ارسال درخواست به کارگزار'}
-              </Button>
-            )}
             {action === 'Confirmation' && (
               <>
                 <Button
