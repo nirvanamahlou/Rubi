@@ -55,6 +55,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     'posts the complete reviewed interval atomically and rejects stale previews',
     'calculates document turnover from complete temporary records and excludes memorandum and legacy drafts',
   ]);
+  let sourceBeforeFinal: Awaited<ReturnType<AccountingService['report']>>;
   let priorDocumentIds: string[] = [];
   beforeEach(async (context) => {
     if (!documentFixtureTests.has(context.task.name)) return;
@@ -102,8 +103,13 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
     const target = new URL(url!);
     if (
       target.hostname !== '127.0.0.1' ||
-      target.port !== '55437' ||
-      !['/accounting_test', '/accounting_clean'].includes(target.pathname)
+      !(
+        (target.port === '55437' &&
+          ['/accounting_test', '/accounting_clean'].includes(
+            target.pathname,
+          )) ||
+        (target.port === '55494' && target.pathname === '/accounting_design_qa')
+      )
     )
       throw new Error('Dedicated accounting test container required.');
     db = createDatabaseClient(url);
@@ -5756,7 +5762,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         }),
       ).toBe(1);
   });
-  it('rejects selected or percentage closing and revaluation template execution without effects', async () => {
+  it('rejects invalid closing percentages and unsupported legacy revaluation selections without effects', async () => {
     const closing = await command<{ id: string; version: number }>(
       'save-template',
       {
@@ -5801,7 +5807,7 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         maker,
         closingKey,
       ),
-    ).rejects.toThrow('دارای ردیف انتخابی یا درصدی هنوز پشتیبانی نمی‌شود');
+    ).rejects.toThrow('در مجموع ۱۰۰');
     await expect(
       command(
         'revaluation-preview',
@@ -5871,12 +5877,20 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
         lines: [],
       },
     );
-    let closing = await command<AccountingJournalV1>('year-end-closing', {
+    const closingPayload = {
       periodId,
       templateId: template.id,
       templateVersion: template.version,
       documentDate: '2026-12-31',
       fxCarryPolicy: 'HISTORICAL_LOTS',
+    };
+    const closingPreview = await command<{ checksum: string }>(
+      'year-end-preview',
+      { ...closingPayload, operation: 'year-end-closing' },
+    );
+    let closing = await command<AccountingJournalV1>('year-end-closing', {
+      ...closingPayload,
+      checksum: closingPreview.checksum,
     });
     expect(closing.attributes.templateId).toBe(template.id);
     closing = await command<AccountingJournalV1>(
@@ -5903,6 +5917,35 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       command('close-period', { id: periodId }, 1),
     ).rejects.toThrow();
     await command('cancel', { id: j.id }, j.version);
+    sourceBeforeFinal = await service.report(bookId, { periodId }, maker);
+    const finalPayload = {
+      operation: 'year-end-final',
+      periodId,
+      retainedAccountId: creditId,
+      typeId,
+      documentDate: '2026-12-31',
+      fxCarryPolicy: 'HISTORICAL_LOTS',
+    };
+    const finalPreview = await command<{ checksum: string }>(
+      'year-end-preview',
+      finalPayload,
+    );
+    let final = await command<AccountingJournalV1>('year-end-final', {
+      ...finalPayload,
+      checksum: finalPreview.checksum,
+    });
+    final = await command<AccountingJournalV1>(
+      'submit',
+      { id: final.id },
+      final.version,
+    );
+    final = await command<AccountingJournalV1>(
+      'approve',
+      { id: final.id },
+      final.version,
+      checker,
+    );
+    await command('post', { id: final.id }, final.version);
     await command('close-period', { id: periodId }, 1);
     j = await command<AccountingJournalV1>('journal-save', { lines: [] });
     await expect(
@@ -5920,16 +5963,24 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       startDate: '2027-01-01',
       endDate: '2027-12-31',
     });
-    const source = await service.report(bookId, { periodId }, maker);
+    const source = sourceBeforeFinal;
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date('2030-01-01T00:00:00Z'));
     try {
-      let opening = await command<AccountingJournalV1>('year-end-opening', {
+      const openingPayload = {
         periodId,
         nextPeriodId: next.id,
         typeId,
         documentDate: '2027-01-01',
         fxCarryPolicy: 'HISTORICAL_LOTS',
+      };
+      const openingPreview = await command<{ checksum: string }>(
+        'year-end-preview',
+        { ...openingPayload, operation: 'year-end-opening' },
+      );
+      let opening = await command<AccountingJournalV1>('year-end-opening', {
+        ...openingPayload,
+        checksum: openingPreview.checksum,
       });
       expect(opening.lines.some((l) => l.currency === 'USD')).toBe(true);
       opening = await command<AccountingJournalV1>(

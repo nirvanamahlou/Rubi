@@ -6,6 +6,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Input, Textarea, FormField } from '@/components/ui/form-controls';
 import { cn } from '@/lib/utils';
 
+import { accountingRouteCapabilities } from '../accounting-route-capabilities';
 import type { AccountingParityDefinition } from './accounting-parity-definitions';
 
 const supportCopy = {
@@ -97,6 +98,7 @@ export function AccountingParityWorkspace({
 }) {
   const support = supportCopy[definition.support];
   const SupportIcon = support.icon;
+  const capabilities = accountingRouteCapabilities(definition);
   return (
     <section className="space-y-5" data-accounting-route={definition.route}>
       <div className="space-y-1">
@@ -121,6 +123,19 @@ export function AccountingParityWorkspace({
         </div>
       </div>
 
+      <dl className="grid gap-2 text-sm sm:grid-cols-4">
+        {[
+          ['ذخیره داخلی', capabilities.storage],
+          ['اجرای داخلی', capabilities.execution],
+          ['گزارش داخلی', capabilities.reporting],
+          ['اتصال رسمی', capabilities.externalConnected],
+        ].map(([label, available]) => (
+          <div key={String(label)}>
+            <dt>{label}</dt>
+            <dd>{available ? 'فعال' : 'غیرفعال'}</dd>
+          </div>
+        ))}
+      </dl>
       {definition.stages.length > 1 ? (
         <ol className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {definition.stages.map((stage, index) => (

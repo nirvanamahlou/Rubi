@@ -51,6 +51,11 @@ import { generalDocumentPreview } from './accounting.document-general';
 import { sourceRevaluationPreview } from './accounting.document-revaluation';
 import { documentTransferPreview } from './accounting.document-transfer';
 import { documentStatementBasis } from './accounting.document-statement';
+import {
+  distributeClosing,
+  selectClosingLots,
+  validateHistoricalCarry,
+} from './accounting.year-end';
 
 type Tx = Prisma.TransactionClient;
 type BufferedStateEvent = {
@@ -318,7 +323,10 @@ export class AccountingService {
             orderBy: { code: 'asc' },
           }),
           tx.accountingConfiguration.findMany({
-            where: { bookId: id },
+            where: {
+              bookId: id,
+              NOT: { kind: { startsWith: 'taxpayer-draft-' } },
+            },
             orderBy: { code: 'asc' },
           }),
           tx.accountingFxSnapshot.findMany({
@@ -695,6 +703,8 @@ export class AccountingService {
                     'year-end-closing',
                     'year-end-opening',
                     'year-end-preview',
+                    'year-end-final',
+                    'year-end-nature-adjustment',
                   ].includes(action)
                 ? 'finance.period.close'
                 : [
@@ -1564,17 +1574,71 @@ export class AccountingService {
       return { id, entity, deleted: true };
     }
     if (
-      ['year-end-preview', 'year-end-closing', 'year-end-opening'].includes(
-        action,
-      )
+      [
+        'year-end-preview',
+        'year-end-closing',
+        'year-end-opening',
+        'year-end-final',
+        'year-end-nature-adjustment',
+      ].includes(action)
     ) {
+      if (
+        Object.keys(p).some(
+          (key) =>
+            ![
+              'periodId',
+              'nextPeriodId',
+              'retainedAccountId',
+              'typeId',
+              'documentDate',
+              'fxCarryPolicy',
+              'templateId',
+              'templateVersion',
+              'accountIds',
+              'operation',
+              'checksum',
+              'auxiliaryNumber',
+              'reverseAdjustment',
+            ].includes(key),
+        )
+      )
+        v.invalid('فیلد پایان سال معتبر نیست.');
+      if (p.reverseAdjustment === true)
+        v.rule('برگشت تعدیل ماهیت به فرمان مستقل نیاز دارد.');
       const periodId = v.uuid(p.periodId)!,
         period = await tx.accountingPeriod.findFirst({
           where: { id: periodId, bookId },
         });
       if (!period) throw new NotFoundException();
+      const currencyReference = this.master
+        ? (await accountingCurrencies(this.master)).find(
+            (c) => c.code === book.baseCurrency,
+          )
+        : undefined;
+      const scale =
+        currencyReference?.decimalDigits ??
+        (['IRR', 'USD', 'EUR', 'TRY', 'AED'].includes(book.baseCurrency)
+          ? book.baseCurrency === 'IRR'
+            ? 0
+            : 2
+          : -1);
+      if (!Number.isInteger(scale) || scale < 0 || scale > 8)
+        v.rule('دقت ارز پایه برای عملیات پایان سال تعریف نشده است.');
+      const operation =
+        action === 'year-end-preview'
+          ? (p.operation ?? 'year-end-closing')
+          : action;
+      if (
+        ![
+          'year-end-closing',
+          'year-end-opening',
+          'year-end-final',
+          'year-end-nature-adjustment',
+        ].includes(String(operation))
+      )
+        v.invalid('عملیات پایان سال معتبر نیست.');
       const closingTemplateId =
-        action === 'year-end-closing' ? v.uuid(p.templateId, true) : null;
+        operation === 'year-end-closing' ? v.uuid(p.templateId, true) : null;
       const closingTemplate = closingTemplateId
         ? await tx.accountingTemplate.findFirst({
             where: {
@@ -1590,17 +1654,18 @@ export class AccountingService {
         v.rule('الگوی بستن حساب فعال همین دفتر لازم است.');
       if (closingTemplate) {
         this.version(closingTemplate.version, p.templateVersion);
-        if (closingTemplate.lines.length)
-          v.rule(
-            'اجرای الگوی بستن دارای ردیف انتخابی یا درصدی هنوز پشتیبانی نمی‌شود.',
-          );
       }
       const sourceKey =
-        action === 'year-end-opening'
+        operation === 'year-end-opening'
           ? `OPEN:${periodId}`
-          : `CLOSE:${periodId}`;
+          : operation === 'year-end-final'
+            ? `FINAL:${periodId}`
+            : operation === 'year-end-nature-adjustment'
+              ? `NATURE:${periodId}`
+              : `CLOSE:${periodId}`;
       const accounts = await tx.accountingAccount.findMany({
           where: { bookId },
+          orderBy: { id: 'asc' },
         }),
         accountMap = new Map(accounts.map((a) => [a.id, a]));
       const lots = await tx.$queryRaw<
@@ -1612,35 +1677,60 @@ export class AccountingService {
           currency: string | null;
           fxSnapshotId: string | null;
           rate: Prisma.Decimal | null;
+          sourceLineIds: string[];
+          trackingNumber: string | null;
+          trackingDate: string | null;
           valuationCurrency: string | null;
           balance: Prisma.Decimal;
           foreignBalance: Prisma.Decimal | null;
         }[]
       >`
-        SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN l.attributes->>'valuationCurrency' ELSE NULL END AS "valuationCurrency",
-          SUM(l.debit-l.credit) AS balance,
+        SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber' AS "trackingNumber",l.attributes->>'trackingDate' AS "trackingDate",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN l.attributes->>'valuationCurrency' ELSE NULL END AS "valuationCurrency",
+          ARRAY_AGG(l.id ORDER BY l.id) AS "sourceLineIds", SUM(l.debit-l.credit) AS balance,
           SUM(CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END) AS "foreignBalance"
         FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
         WHERE j."bookId"=${bookId}::uuid AND j."periodId"=${periodId}::uuid AND j.status='POSTED'
-        GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN l.attributes->>'valuationCurrency' ELSE NULL END`;
+          AND (${operation !== 'year-end-opening'} OR j."sourceKey" IS NULL OR j."sourceKey" NOT LIKE 'FINAL:%')
+        GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber',l.attributes->>'trackingDate',CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN l.attributes->>'valuationCurrency' ELSE NULL END`;
+      lots.sort((a, b) =>
+        JSON.stringify([
+          a.accountId,
+          a.detail4Id,
+          a.detail5Id,
+          a.detail6Id,
+          a.currency,
+          a.fxSnapshotId,
+          a.rate?.toFixed(),
+          a.valuationCurrency,
+          a.trackingNumber,
+          a.trackingDate,
+        ]).localeCompare(
+          JSON.stringify([
+            b.accountId,
+            b.detail4Id,
+            b.detail5Id,
+            b.detail6Id,
+            b.currency,
+            b.fxSnapshotId,
+            b.rate?.toFixed(),
+            b.valuationCurrency,
+            b.trackingNumber,
+            b.trackingDate,
+          ]),
+        ),
+      );
+      for (const lot of lots)
+        validateHistoricalCarry(
+          lot.balance.toFixed(),
+          lot.foreignBalance?.toFixed() ?? null,
+        );
       const balances = lots
-        .filter((r) => !DecimalValue.parse(r.balance.toString()).isZero)
+        .filter((r) => !DecimalValue.parse(r.balance.toFixed()).isZero)
         .map((r) => ({
           ...r,
-          balance: r.balance.toString(),
+          balance: r.balance.toFixed(),
           permanent: accountMap.get(r.accountId)?.permanent ?? true,
         }));
-      if (
-        lots.some(
-          (r) =>
-            r.balance.toString() === '0' &&
-            r.foreignBalance &&
-            !DecimalValue.parse(r.foreignBalance.toString()).isZero,
-        )
-      )
-        v.rule(
-          'مانده ارزی با ارزش پایه صفر باید قبل از انتقال تعیین تکلیف شود.',
-        );
       const drafts = await tx.accountingJournal.count({
         where: {
           bookId,
@@ -1648,10 +1738,37 @@ export class AccountingService {
           status: { in: ['DRAFT', 'PENDING_APPROVAL', 'APPROVED'] },
         },
       });
-      if (action === 'year-end-preview')
+      const sourceJournals = await tx.accountingJournal.findMany({
+        where: { bookId, periodId, status: { not: 'CANCELLED' } },
+        select: { id: true, version: true, status: true },
+        orderBy: { id: 'asc' },
+      });
+      const checksum = createHash('sha256')
+        .update(
+          JSON.stringify(
+            canonical({
+              book: { id: book.id, version: book.version },
+              period,
+              accounts,
+              closingTemplate,
+              currencyPolicy: {
+                id: currencyReference?.id ?? 'DEC-OPEN-004',
+                version: currencyReference?.version ?? 1,
+                scale,
+              },
+              lots,
+              sourceJournals,
+              operation,
+              payload: { ...p, checksum: undefined, operation: undefined },
+            }),
+          ),
+        )
+        .digest('hex');
+      if (action === 'year-end-preview' && p.operation === undefined)
         return {
           period,
           unfinished: drafts,
+          checksum,
           balances: balances.map((r) => ({
             accountId: r.accountId,
             detail4Id: r.detail4Id,
@@ -1662,11 +1779,38 @@ export class AccountingService {
           })),
         };
       this.require(actor, 'finance.journal.create');
-      const existing = await tx.accountingJournal.findUnique({
+      let existing = await tx.accountingJournal.findUnique({
         where: { bookId_sourceKey: { bookId, sourceKey } },
         include: journalInclude,
       });
-      if (existing) return existing;
+      const operationInput = JSON.stringify(
+        canonical({ ...p, checksum: undefined, operation: undefined }),
+      );
+      const reissueOfId = existing?.status === 'CANCELLED' ? existing.id : null;
+      if (existing && action !== 'year-end-preview') {
+        if (existing.status === 'CANCELLED') {
+          await tx.accountingJournal.update({
+            where: { id: existing.id },
+            data: {
+              sourceKey: `${sourceKey}:CANCELLED:${existing.id}`,
+              version: { increment: 1 },
+              attributes: json({
+                ...v.attributes(existing.attributes),
+                supersededSourceKey: sourceKey,
+              }),
+            },
+          });
+          existing = null;
+        } else {
+          if (
+            v.attributes(existing.attributes).operationInput !== operationInput
+          )
+            throw new ConflictException(
+              'این عملیات قبلاً با مشخصات دیگری صادر شده است.',
+            );
+          return existing;
+        }
+      }
       if (drafts) v.rule('تمام اسناد دوره باید تعیین تکلیف شده باشند.');
       const hasFx = balances.some(
         (r) => r.currency && r.currency !== book.baseCurrency,
@@ -1676,9 +1820,21 @@ export class AccountingService {
           'برای انتقال ارزی، سیاست حفظ ارزش تاریخی و نرخ‌های سند مبدأ را انتخاب کنید.',
         );
       const targetDate = v.date(p.documentDate)!;
+      if (
+        operation === 'year-end-final' &&
+        (await tx.accountingJournal.findFirst({
+          where: {
+            bookId,
+            periodId,
+            status: 'POSTED',
+            documentDate: { gt: targetDate },
+          },
+        }))
+      )
+        v.rule('تاریخ اختتامیه نباید قبل از آخرین سند قطعی دوره باشد.');
       let targetPeriodId = periodId,
         rows: Record<string, unknown>[] = [];
-      if (action === 'year-end-closing') {
+      if (operation === 'year-end-closing') {
         if (period.status !== 'OPEN') v.rule('دوره مبدأ باید باز باشد.');
         const retainedId = closingTemplate?.retainedAccountId
             ? closingTemplate.retainedAccountId
@@ -1691,7 +1847,21 @@ export class AccountingService {
           !retained.permanent
         )
           v.rule('حساب دائمی مقصد سود و زیان لازم است.');
-        const temp = balances.filter((r) => r.permanent === false);
+        const sourceSelections = (closingTemplate?.lines ?? []).filter(
+          (line) => !accountMap.get(line.accountId)?.permanent,
+        );
+        const targets = (closingTemplate?.lines ?? [])
+          .filter(
+            (line) => accountMap.get(line.accountId)?.permanent && line.include,
+          )
+          .sort((a, b) => a.position - b.position);
+        if (targets.length)
+          distributeClosing(
+            '0',
+            targets.map((line) => line.percentage.toString()),
+            scale,
+          );
+        const temp = selectClosingLots(balances, sourceSelections);
         if (!temp.length) v.rule('حساب موقت با مانده باقی نمانده است.');
         let net = DecimalValue.zero();
         rows = temp.map((r) => {
@@ -1704,16 +1874,142 @@ export class AccountingService {
             detail6Id: r.detail6Id,
             currency: r.currency,
             fxSnapshotId: r.currency ? r.fxSnapshotId : null,
-            attributes: r.valuationCurrency
-              ? { valuationCurrency: r.valuationCurrency }
-              : {},
+            attributes: {
+              sourceLineIds: r.sourceLineIds,
+              ...(r.valuationCurrency
+                ? { valuationCurrency: r.valuationCurrency }
+                : {}),
+              ...(r.trackingNumber ? { trackingNumber: r.trackingNumber } : {}),
+              ...(r.trackingDate ? { trackingDate: r.trackingDate } : {}),
+            },
             rate: r.rate?.toString() ?? null,
             foreignAmount: r.foreignBalance
-              ? DecimalValue.parse(r.foreignBalance.toString()).isNegative
+              ? DecimalValue.parse(r.foreignBalance.toFixed()).isNegative
                 ? DecimalValue.zero()
-                    .subtract(DecimalValue.parse(r.foreignBalance.toString()))
+                    .subtract(DecimalValue.parse(r.foreignBalance.toFixed()))
                     .toString()
-                : r.foreignBalance.toString()
+                : r.foreignBalance.toFixed()
+              : null,
+            debit: value.isNegative
+              ? DecimalValue.zero().subtract(value).toString()
+              : '0',
+            credit: value.isNegative ? '0' : value.toString(),
+          };
+        });
+        const destinations = targets.length
+          ? targets
+          : [
+              {
+                accountId: retainedId,
+                detail4Id: null,
+                detail5Id: null,
+                detail6Id: null,
+                percentage: '100',
+              },
+            ];
+        // Validate percentages even when selected positive and negative balances net to zero.
+        const shares = distributeClosing(
+          net.toString(),
+          destinations.map((line) => line.percentage.toString()),
+          scale,
+        );
+        for (const [index, target] of destinations.entries()) {
+          const value = DecimalValue.parse(shares[index]!);
+          if (!value.isZero)
+            rows.push({
+              accountId: target.accountId,
+              detail4Id: target.detail4Id,
+              detail5Id: target.detail5Id,
+              detail6Id: target.detail6Id,
+              debit: value.isNegative ? '0' : value.toString(),
+              credit: value.isNegative
+                ? DecimalValue.zero().subtract(value).toString()
+                : '0',
+            });
+        }
+      } else if (
+        operation === 'year-end-final' ||
+        operation === 'year-end-nature-adjustment'
+      ) {
+        if (period.status !== 'OPEN') v.rule('دوره مبدأ باید باز باشد.');
+        if (
+          operation === 'year-end-final' &&
+          balances.some((r) => !r.permanent)
+        )
+          v.rule('حساب‌های موقت هنوز بسته نشده‌اند.');
+        const counterpartId = v.uuid(p.retainedAccountId)!;
+        const counterpart = accountMap.get(counterpartId);
+        if (
+          !counterpart?.active ||
+          !counterpart.permanent ||
+          counterpart.level !== 'SUBSIDIARY'
+        )
+          v.rule('حساب دائمی طرف مقابل لازم است.');
+        const selectedIds =
+          operation === 'year-end-nature-adjustment'
+            ? Array.isArray(p.accountIds)
+              ? p.accountIds.map((id) => v.uuid(id)!)
+              : []
+            : [];
+        if (
+          operation === 'year-end-nature-adjustment' &&
+          (!selectedIds.length ||
+            new Set(selectedIds).size !== selectedIds.length)
+        )
+          v.rule('حساب‌های مجاز تعدیل را بدون تکرار انتخاب کنید.');
+        if (selectedIds.includes(counterpartId))
+          v.rule('طرف مقابل نمی‌تواند حساب مبدأ باشد.');
+        if (
+          selectedIds.some(
+            (id) =>
+              !accountMap.get(id)?.active ||
+              accountMap.get(id)?.nature === 'ANY',
+          )
+        )
+          v.rule('حساب مجاز با ماهیت کنترل‌شده لازم است.');
+        const accountBalances = new Map<string, DecimalValue>();
+        for (const r of balances)
+          accountBalances.set(
+            r.accountId,
+            (accountBalances.get(r.accountId) ?? DecimalValue.zero()).add(
+              DecimalValue.parse(r.balance),
+            ),
+          );
+        const selected = balances.filter((r) => {
+          if (operation === 'year-end-final')
+            return r.accountId !== counterpartId;
+          const account = accountMap.get(r.accountId)!;
+          const value = accountBalances.get(r.accountId)!;
+          return (
+            selectedIds.includes(r.accountId) &&
+            !value.isZero &&
+            account.nature !== 'ANY' &&
+            (account.nature === 'DEBIT' ? value.isNegative : !value.isNegative)
+          );
+        });
+        if (!selected.length) v.rule('مانده مجازی برای عملیات وجود ندارد.');
+        let net = DecimalValue.zero();
+        rows = selected.map((r) => {
+          const value = DecimalValue.parse(r.balance);
+          net = net.add(value);
+          return {
+            accountId: r.accountId,
+            detail4Id: r.detail4Id,
+            detail5Id: r.detail5Id,
+            detail6Id: r.detail6Id,
+            currency: r.currency,
+            fxSnapshotId: r.currency ? r.fxSnapshotId : null,
+            rate: r.rate?.toString() ?? null,
+            attributes: {
+              sourceLineIds: r.sourceLineIds,
+              ...(r.valuationCurrency
+                ? { valuationCurrency: r.valuationCurrency }
+                : {}),
+              ...(r.trackingNumber ? { trackingNumber: r.trackingNumber } : {}),
+              ...(r.trackingDate ? { trackingDate: r.trackingDate } : {}),
+            },
+            foreignAmount: r.foreignBalance
+              ? r.foreignBalance.abs().toString()
               : null,
             debit: value.isNegative
               ? DecimalValue.zero().subtract(value).toString()
@@ -1723,7 +2019,7 @@ export class AccountingService {
         });
         if (!net.isZero)
           rows.push({
-            accountId: retainedId,
+            accountId: counterpartId,
             debit: net.isNegative ? '0' : net.toString(),
             credit: net.isNegative
               ? DecimalValue.zero().subtract(net).toString()
@@ -1739,6 +2035,17 @@ export class AccountingService {
           v.rule('دوره باز بعدی لازم است.');
         if (balances.some((r) => r.permanent === false))
           v.rule('حساب‌های موقت هنوز بسته نشده‌اند.');
+        if (
+          !(await tx.accountingJournal.findFirst({
+            where: {
+              bookId,
+              periodId,
+              sourceKey: `FINAL:${periodId}`,
+              status: 'POSTED',
+            },
+          }))
+        )
+          v.rule('اختتامیه قطعی مبدأ برای افتتاحیه لازم است.');
         targetPeriodId = nextId;
         rows = balances.map((r) => {
           const value = DecimalValue.parse(r.balance);
@@ -1749,16 +2056,21 @@ export class AccountingService {
             detail6Id: r.detail6Id,
             currency: r.currency,
             fxSnapshotId: r.currency ? r.fxSnapshotId : null,
-            attributes: r.valuationCurrency
-              ? { valuationCurrency: r.valuationCurrency }
-              : {},
+            attributes: {
+              sourceLineIds: r.sourceLineIds,
+              ...(r.valuationCurrency
+                ? { valuationCurrency: r.valuationCurrency }
+                : {}),
+              ...(r.trackingNumber ? { trackingNumber: r.trackingNumber } : {}),
+              ...(r.trackingDate ? { trackingDate: r.trackingDate } : {}),
+            },
             rate: r.rate?.toString() ?? null,
             foreignAmount: r.foreignBalance
-              ? DecimalValue.parse(r.foreignBalance.toString()).isNegative
+              ? DecimalValue.parse(r.foreignBalance.toFixed()).isNegative
                 ? DecimalValue.zero()
-                    .subtract(DecimalValue.parse(r.foreignBalance.toString()))
+                    .subtract(DecimalValue.parse(r.foreignBalance.toFixed()))
                     .toString()
-                : r.foreignBalance.toString()
+                : r.foreignBalance.toFixed()
               : null,
             debit: value.isNegative ? '0' : value.toString(),
             credit: value.isNegative
@@ -1768,6 +2080,20 @@ export class AccountingService {
         });
         if (!rows.length) v.rule('مانده‌ای برای انتقال وجود ندارد.');
       }
+      await this.references(tx, bookId, v.lines(rows, true));
+      if (action === 'year-end-preview')
+        return {
+          period,
+          unfinished: drafts,
+          checksum,
+          balances,
+          lines: rows,
+          operation,
+        };
+      if (action !== 'year-end-preview' && p.checksum !== checksum)
+        throw new ConflictException(
+          'مبنای پایان سال تغییر کرده است؛ دوباره پیش‌نمایش بگیرید.',
+        );
       const result = (await this.execute(
         tx,
         book,
@@ -1777,9 +2103,13 @@ export class AccountingService {
           typeId: closingTemplate?.voucherTypeId ?? p.typeId,
           documentDate: targetDate,
           description:
-            action === 'year-end-opening'
+            operation === 'year-end-opening'
               ? 'افتتاحیه دوره عملیاتی'
-              : 'بستن حساب‌های موقت',
+              : operation === 'year-end-final'
+                ? 'اختتامیه دوره عملیاتی'
+                : operation === 'year-end-nature-adjustment'
+                  ? 'تعدیل ماهیت حساب‌ها'
+                  : 'بستن حساب‌های موقت',
           lines: rows,
         },
         undefined,
@@ -1787,13 +2117,26 @@ export class AccountingService {
         true,
         stateEvents,
       )) as { id: string };
-      return tx.accountingJournal.update({
+      const generated = await tx.accountingJournal.update({
         where: { id: result.id },
         data: {
           sourceKey,
           attributes: {
             sourcePeriodId: periodId,
-            operation: action,
+            operation,
+            operationInput,
+            currencyPolicyId: currencyReference?.id ?? 'DEC-OPEN-004',
+            currencyPolicyVersion: String(currencyReference?.version ?? 1),
+            currencyScale: String(scale),
+            ...(reissueOfId ? { reissueOfId } : {}),
+            auxiliaryNumber: v.text(p.auxiliaryNumber, 100),
+            sourceChecksum: checksum,
+            sourceJournalChecksum: createHash('sha256')
+              .update(JSON.stringify(sourceJournals))
+              .digest('hex'),
+            sourceAccountChecksum: createHash('sha256')
+              .update(JSON.stringify(canonical(accounts)))
+              .digest('hex'),
             fxCarryPolicy: hasFx ? 'HISTORICAL_LOTS' : 'BASE',
             ...(closingTemplate
               ? {
@@ -1807,6 +2150,8 @@ export class AccountingService {
         },
         include: journalInclude,
       });
+      await this.validatePosting(tx, book, generated);
+      return generated;
     }
     if (action === 'revaluation-preview' || action === 'revaluation-run') {
       const periodId = v.uuid(p.periodId)!,
@@ -3450,7 +3795,9 @@ export class AccountingService {
             };
           if (
             existing.sourceKey &&
-            /^(REVALUE|OPEN|CLOSE|REVERSE):/.test(existing.sourceKey) &&
+            /^(REVALUE|OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(
+              existing.sourceKey,
+            ) &&
             [4, 5, 6].some(
               (n) =>
                 row[`detail${n}Id` as 'detail4Id'] !==
@@ -3474,7 +3821,14 @@ export class AccountingService {
               row.currency === old.currency &&
               row.rate === (old.rate?.toString() ?? null) &&
               row.foreignAmount === (old.foreignAmount?.toString() ?? null) &&
-              (row.fxSnapshotId ?? null) === old.fxSnapshotId
+              (row.fxSnapshotId ?? null) === old.fxSnapshotId &&
+              row.detail4Id === old.detail4Id &&
+              row.detail5Id === old.detail5Id &&
+              row.detail6Id === old.detail6Id &&
+              v.attributes(row.attributes).trackingNumber ===
+                v.attributes(old.attributes).trackingNumber &&
+              v.attributes(row.attributes).trackingDate ===
+                v.attributes(old.attributes).trackingDate
             );
           });
         if (!unchanged)
@@ -3935,6 +4289,8 @@ export class AccountingService {
       if (action === 'restore') {
         if (journal.status !== 'CANCELLED')
           v.rule('فقط سند لغوشده قابل بازیابی است.');
+        if (v.attributes(journal.attributes).supersededSourceKey)
+          v.rule('سند پایان سال جایگزین‌شده قابل بازیابی نیست.');
         if (
           journal.makerId !== actor.userId &&
           !actor.permissions.includes('finance.journal.approve')
@@ -4246,6 +4602,52 @@ export class AccountingService {
       include: typeof journalInclude;
     }>,
   ) {
+    const endAttributes = v.attributes(journal.attributes);
+    const historicalHeader =
+      !!journal.sourceKey &&
+      /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
+      (endAttributes.fxCarryPolicy === 'HISTORICAL_LOTS' ||
+        !!journal.reversalOfId);
+    if (endAttributes.sourceJournalChecksum && endAttributes.sourcePeriodId) {
+      const basis = await tx.accountingJournal.findMany({
+        where: {
+          bookId: book.id,
+          periodId: String(endAttributes.sourcePeriodId),
+          id: { not: journal.id },
+          status: { not: 'CANCELLED' },
+        },
+        select: { id: true, version: true, status: true },
+        orderBy: { id: 'asc' },
+      });
+      const accounts = await tx.accountingAccount.findMany({
+        where: { bookId: book.id },
+        orderBy: { id: 'asc' },
+      });
+      if (
+        createHash('sha256').update(JSON.stringify(basis)).digest('hex') !==
+          endAttributes.sourceJournalChecksum ||
+        createHash('sha256')
+          .update(JSON.stringify(canonical(accounts)))
+          .digest('hex') !== endAttributes.sourceAccountChecksum
+      )
+        v.rule(
+          'مبنای سند پایان سال تغییر کرده است؛ سند را لغو و دوباره محاسبه کنید.',
+        );
+      if (endAttributes.templateId) {
+        const template = await tx.accountingTemplate.findFirst({
+          where: {
+            id: String(endAttributes.templateId),
+            bookId: book.id,
+            active: true,
+          },
+        });
+        if (
+          !template ||
+          String(template.version) !== endAttributes.templateVersion
+        )
+          v.rule('الگوی مبنای سند پایان سال تغییر کرده است.');
+      }
+    }
     if (journal.sourceKey?.startsWith('REVALUE:')) {
       const attrs = v.attributes(journal.attributes);
       if (attrs.revaluationSourceChecksum) {
@@ -4295,6 +4697,18 @@ export class AccountingService {
       journal.documentDate > period.endDate
     )
       v.rule('تاریخ سند باید داخل دوره باز باشد.');
+    if (
+      !journal.sourceKey?.startsWith('FINAL:') &&
+      (await tx.accountingJournal.findFirst({
+        where: {
+          bookId: book.id,
+          periodId: period.id,
+          status: 'POSTED',
+          sourceKey: `FINAL:${period.id}`,
+        },
+      }))
+    )
+      v.rule('پس از اختتامیه قطعی، ثبت سند در دوره مبدأ مجاز نیست.');
     if (
       !journal.typeId ||
       !(await tx.accountingConfiguration.findFirst({
@@ -4453,7 +4867,8 @@ export class AccountingService {
         });
         if (
           !fx ||
-          (!journal.reversalOfId &&
+          (!historicalHeader &&
+            !journal.reversalOfId &&
             (fx.validFrom > new Date() || fx.validTo < new Date()))
         )
           v.rule('نرخ تسعیر دیگر معتبر نیست.');
@@ -4461,7 +4876,7 @@ export class AccountingService {
       if (row.currency && row.currency !== book.baseCurrency) {
         const historicalCarry =
           !!journal.sourceKey &&
-          /^(OPEN|CLOSE|REVERSE):/.test(journal.sourceKey) &&
+          /^(OPEN|CLOSE|FINAL|NATURE|REVERSE):/.test(journal.sourceKey) &&
           (v.attributes(journal.attributes).fxCarryPolicy ===
             'HISTORICAL_LOTS' ||
             !!journal.reversalOfId);
@@ -4576,12 +4991,12 @@ export class AccountingService {
       }[]
     >`
       SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",
-        CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
+        CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END AS currency,
         SUM(CASE WHEN l.currency<>${book.baseCurrency} THEN CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END ELSE 0 END) AS quantity,
         SUM(l.debit-l.credit) AS base
       FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
       WHERE j."bookId"=${book.id}::uuid AND j."periodId"=${periodId}::uuid AND j.status='POSTED' AND j."documentDate"<=${asOf}
-      GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
+      GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN COALESCE(l.attributes->>'valuationCurrency',l.currency) ELSE l.currency END`;
     const rows = values
       .filter(
         (r) =>
@@ -4978,15 +5393,36 @@ export class AccountingService {
     this.require(actor);
     if (kind === 'document-statements') {
       await this.book(this.database.client, bookId, actor);
-      const journalId = v.uuid(query.journalId)!;
+      const journalId = v.uuid(query.journalId, true);
+      const page = Number(query.page ?? '1');
+      if (!Number.isSafeInteger(page) || page < 1 || page > 200000)
+        v.invalid('صفحه معتبر نیست.');
+      const where: Prisma.AccountingStatementWhereInput = {
+        bookId,
+        ...(journalId ? { journalId } : {}),
+        ...(query.id ? { id: v.uuid(query.id)! } : {}),
+        ...(query.periodId ? { periodId: v.uuid(query.periodId)! } : {}),
+      };
+      if (query.status) {
+        if (!['CREATED', 'SENT', 'CANCELLED'].includes(query.status))
+          v.invalid('وضعیت اعلامیه معتبر نیست.');
+        where.status = query.status;
+      }
+      if (query.search) {
+        const search = v.text(query.search, 160, true);
+        where.OR = [
+          { description: { contains: search, mode: 'insensitive' } },
+          { snapshot: { path: ['recipientTitle'], string_contains: search } },
+          ...(/^[1-9]\d{0,8}$/.test(search)
+            ? [{ number: Number(search) }, { recipientNumber: Number(search) }]
+            : []),
+        ];
+      }
       const rows = await this.database.client.accountingStatement.findMany({
-        where: {
-          bookId,
-          journalId,
-          ...(query.id ? { id: v.uuid(query.id)! } : {}),
-        },
+        where,
         orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
-        take: 101,
+        take: journalId ? 101 : 50,
+        skip: journalId ? 0 : (page - 1) * 50,
       });
       if (rows.length > 100)
         v.rule(
@@ -5000,6 +5436,9 @@ export class AccountingService {
         actor.branchIds,
       );
       return {
+        page,
+        pageSize: journalId ? 100 : 50,
+        total: await this.database.client.accountingStatement.count({ where }),
         items: rows.map((row) => ({
           ...row,
           makerName:

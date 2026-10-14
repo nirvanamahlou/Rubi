@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,26 @@ import { AccountingTaxpayerService } from './accounting-taxpayer.service';
 @UseGuards(AuthGuard, PermissionGuard)
 @RequirePermissions('finance.read', 'finance.journal.read')
 export class AccountingTaxpayerController {
+  @Get('drafts/:kind')
+  @Header('Cache-Control', 'private, no-store')
+  drafts(
+    @Param('bookId') id: string,
+    @Param('kind') kind: string,
+    @Query() query: Record<string, unknown>,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.drafts(id, kind, query, request.actor);
+  }
+  @Post('drafts/:kind')
+  @RequirePermissions('finance.read', 'finance.account.manage')
+  saveDraft(
+    @Param('bookId') id: string,
+    @Param('kind') kind: string,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.saveDraft(id, kind, body, request.actor);
+  }
   constructor(
     @Inject(AccountingTaxpayerService)
     private readonly service: AccountingTaxpayerService,

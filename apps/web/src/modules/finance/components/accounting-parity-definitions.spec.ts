@@ -42,18 +42,27 @@ describe('accounting parity evidence controls', () => {
     );
   });
 
+  it('uses the observed menu title while retaining source errors as evidence', () => {
+    const failed = accountingParityDefinitions.filter(
+      (d) => d.evidenceStatus === 'source-error',
+    );
+    expect(failed).toHaveLength(4);
+    expect(
+      failed.every((d) => d.title !== 'خطا' && d.stages.includes('خطا')),
+    ).toBe(true);
+  });
   it('publishes the exact support totals used by the executable matrix', () => {
     expect(accountingParityDefinitions).toHaveLength(91);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'supported',
       ),
-    ).toHaveLength(48);
+    ).toHaveLength(52);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'dependency',
       ),
-    ).toHaveLength(39);
+    ).toHaveLength(35);
     expect(
       accountingParityDefinitions.filter(
         (item) => item.support === 'source-error',

@@ -6,7 +6,10 @@ import { describe, expect, it, vi } from 'vitest';
 import { AccountingCompletionWorkspace } from './accounting-completion-workspace';
 import { accountingCompletionRoute } from '../accounting-completion-routes';
 import { accountingParityDefinitions } from './accounting-parity-definitions';
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock('@/i18n/link', () => ({
   default: ({ children, ...props }: ComponentProps<'a'>) => (
     <a {...props}>{children}</a>
@@ -60,7 +63,7 @@ describe('mounted completion screens', () => {
       if (route.includes('/year-end/'))
         expect(html).toContain('صدور سند فعال نیست');
       if (route === 'taxpayer-system/cancellation-invoice')
-        expect(html).toContain('ارسال و تولید شماره مالیاتی فعال نیست');
+        expect(html).toContain('پیش‌نویس محلی');
       client.clear();
     },
     15000,

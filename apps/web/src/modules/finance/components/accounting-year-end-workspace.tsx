@@ -6,12 +6,14 @@ import type {
   AccountingJournalV1,
 } from '@nora/contracts';
 import { AccountingButton as Button } from './accounting-operations';
-import { FormField } from '@/components/ui/form-controls';
+import { FormField, Input } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import { DatePicker } from '@/components/ui/date-picker';
 import Link from '@/i18n/link';
 type Preflight = {
   unfinished: number;
+  checksum: string;
+  lines?: { accountId: string; debit: string; credit: string }[];
   balances: { accountId: string; balance: string; permanent: boolean }[];
 };
 export function AccountingYearEndWorkspace({
@@ -22,7 +24,7 @@ export function AccountingYearEndWorkspace({
 }: {
   book: AccountingSnapshotV1;
   busy: boolean;
-  mode: 'closing' | 'opening';
+  mode: 'closing' | 'opening' | 'final' | 'nature-adjustment';
   run: <T = unknown>(
     action: string,
     payload: AccountingCommandV1['payload'],
@@ -37,29 +39,55 @@ export function AccountingYearEndWorkspace({
     [preflight, setPreflight] = useState<Preflight | null>(null),
     [result, setResult] = useState<AccountingJournalV1 | null>(null);
   const period = book.periods.find((p) => p.id === periodId);
-  const preview = async () => {
-    const r = await run<Preflight>('year-end-preview', { periodId });
-    if (r) setPreflight(r);
+  const [templateId, setTemplateId] = useState('');
+  const [accountIds, setAccountIds] = useState<string[]>([]);
+  const [previewBasis, setPreviewBasis] = useState('');
+  const [auxiliaryNumber, setAuxiliaryNumber] = useState('');
+  const template = book.templates.find((t) => t.id === templateId);
+  const payload = {
+    periodId,
+    nextPeriodId,
+    retainedAccountId,
+    typeId,
+    documentDate: date,
+    auxiliaryNumber,
+    fxCarryPolicy: 'HISTORICAL_LOTS',
+    operation: `year-end-${mode}`,
+    ...(templateId && mode === 'closing'
+      ? { templateId, templateVersion: template?.version }
+      : {}),
+    ...(mode === 'nature-adjustment' ? { accountIds } : {}),
   };
-  const generate = async (opening: boolean) => {
-    const r = await run<AccountingJournalV1>(
-      opening ? 'year-end-opening' : 'year-end-closing',
-      {
-        periodId,
-        nextPeriodId,
-        retainedAccountId,
-        typeId,
-        documentDate: date,
-        fxCarryPolicy: 'HISTORICAL_LOTS',
-      },
-    );
-    if (r) setResult(r);
+  const basis = JSON.stringify(payload);
+  const current = !!preflight && previewBasis === basis;
+  const titles = {
+    closing: 'صدور سند بستن حساب‌ها',
+    opening: 'صدور سند افتتاحیه',
+    final: 'صدور سند اختتامیه',
+    'nature-adjustment': 'تعدیل ماهیت',
+  };
+  const preview = async () => {
+    setPreflight(null);
+    const r = await run<Preflight>('year-end-preview', payload);
+    if (r) {
+      setPreflight(r);
+      setPreviewBasis(basis);
+    }
+  };
+  const generate = async () => {
+    if (!current) return;
+    const r = await run<AccountingJournalV1>(`year-end-${mode}`, {
+      ...payload,
+      checksum: preflight!.checksum,
+    });
+    if (r) {
+      setResult(r);
+      setPreflight(null);
+    }
   };
   return (
     <section className="space-y-5">
-      <h2 className="text-lg font-black">
-        {mode === 'opening' ? 'صدور سند افتتاحیه' : 'صدور سند بستن حساب‌ها'}
-      </h2>
+      <h2 className="text-lg font-black">{titles[mode]}</h2>
       <p className="text-sm text-muted-foreground">
         افتتاحیه و بستن ارزی، مقادیر و ارزش تاریخی هر نرخ مصوب را از اسناد قطعی
         مبدأ حفظ می‌کند؛ تغییر نرخ با تسعیر جداگانه انجام می‌شود.
@@ -69,10 +97,10 @@ export function AccountingYearEndWorkspace({
           '۱. کنترل اسناد و مانده‌ها',
           mode === 'opening'
             ? '۲. کنترل بسته‌بودن دوره مبدأ'
-            : '۲. بستن حساب‌های موقت',
+            : '۲. کنترل حساب‌های منتخب',
           mode === 'opening'
             ? '۳. انتقال مانده‌های دائمی'
-            : '۳. بستن دوره مبدأ',
+            : '۳. ایجاد پیش‌نویس سند',
           mode === 'opening'
             ? '۴. ایجاد پیش‌نویس افتتاحیه'
             : '۴. تأیید و ثبت از فهرست اسناد',
@@ -83,6 +111,25 @@ export function AccountingYearEndWorkspace({
         ))}
       </ol>
       <div className="grid gap-4 sm:grid-cols-2">
+        {mode === 'closing' && (
+          <FormField label="الگوی بستن حساب">
+            <SearchCombobox
+              label="الگوی بستن حساب"
+              value={templateId}
+              onValueChange={(id) => {
+                setTemplateId(id);
+                const selected = book.templates.find((t) => t.id === id);
+                if (selected) {
+                  setTypeId(selected.voucherTypeId ?? '');
+                  setRetainedAccountId(selected.retainedAccountId ?? '');
+                }
+              }}
+              options={book.templates
+                .filter((t) => t.kind === 'CLOSING' && t.active)
+                .map((t) => ({ value: t.id, label: `${t.code} — ${t.title}` }))}
+            />
+          </FormField>
+        )}
         <FormField label="دوره مبدأ">
           <SearchCombobox
             label="دوره مبدأ"
@@ -113,7 +160,13 @@ export function AccountingYearEndWorkspace({
               }))}
           />
         </FormField>
-        <FormField label="حساب دائمی سود و زیان">
+        <FormField
+          label={
+            mode === 'final' || mode === 'nature-adjustment'
+              ? 'حساب مقابل'
+              : 'حساب دائمی سود و زیان'
+          }
+        >
           <SearchCombobox
             label="حساب سود و زیان"
             value={retainedAccountId}
@@ -125,6 +178,32 @@ export function AccountingYearEndWorkspace({
               .map((a) => ({ value: a.id, label: `${a.code} — ${a.title}` }))}
           />
         </FormField>
+        {mode === 'nature-adjustment' && (
+          <fieldset className="rounded-xl border p-3">
+            <legend>حساب‌های مجاز تعدیل</legend>
+            {book.accounts
+              .filter(
+                (a) =>
+                  a.active && a.level === 'SUBSIDIARY' && a.nature !== 'ANY',
+              )
+              .map((a) => (
+                <label key={a.id} className="flex items-center gap-2 py-1">
+                  <input
+                    type="checkbox"
+                    checked={accountIds.includes(a.id)}
+                    onChange={(e) =>
+                      setAccountIds((ids) =>
+                        e.target.checked
+                          ? [...ids, a.id]
+                          : ids.filter((id) => id !== a.id),
+                      )
+                    }
+                  />
+                  {a.code} — {a.title}
+                </label>
+              ))}
+          </fieldset>
+        )}
         <FormField label="نوع سند">
           <SearchCombobox
             label="نوع سند"
@@ -142,6 +221,15 @@ export function AccountingYearEndWorkspace({
             onChange={setDate}
           />
         </FormField>
+        {(mode === 'final' || mode === 'opening') && (
+          <FormField label="شماره فرعی">
+            <Input
+              aria-label="شماره فرعی"
+              value={auxiliaryNumber}
+              onChange={(e) => setAuxiliaryNumber(e.target.value)}
+            />
+          </FormField>
+        )}
       </div>
       <Button
         permission="finance.period.close"
@@ -151,9 +239,9 @@ export function AccountingYearEndWorkspace({
       >
         کنترل پیش‌نیازها
       </Button>
-      {preflight ? (
+      {current ? (
         <>
-          <p role="status">اسناد نهایی‌نشده: {preflight.unfinished}</p>
+          <p role="status">اسناد نهایی‌نشده: {preflight!.unfinished}</p>
           <div className="overflow-auto rounded-xl border">
             <table className="w-full text-sm">
               <thead className="bg-muted">
@@ -166,7 +254,7 @@ export function AccountingYearEndWorkspace({
                 </tr>
               </thead>
               <tbody>
-                {preflight.balances.map((r, i) => (
+                {preflight!.balances.map((r, i) => (
                   <tr key={i} className="border-t">
                     <td className="p-3">
                       {book.accounts.find((a) => a.id === r.accountId)?.title}
@@ -178,6 +266,32 @@ export function AccountingYearEndWorkspace({
               </tbody>
             </table>
           </div>
+          {preflight!.lines && (
+            <div className="overflow-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    {['حساب', 'بدهکار', 'بستانکار'].map((t) => (
+                      <th key={t} className="p-3 text-start">
+                        {t}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {preflight!.lines.map((r, i) => (
+                    <tr key={i}>
+                      <td className="p-3">
+                        {book.accounts.find((a) => a.id === r.accountId)?.title}
+                      </td>
+                      <td className="p-3">{r.debit}</td>
+                      <td className="p-3">{r.credit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             {mode === 'closing' ? (
               <>
@@ -185,10 +299,10 @@ export function AccountingYearEndWorkspace({
                   permission="finance.period.close"
                   disabled={
                     busy ||
-                    preflight.unfinished > 0 ||
+                    preflight!.unfinished > 0 ||
                     period?.status !== 'OPEN'
                   }
-                  onClick={() => void generate(false)}
+                  onClick={() => void generate()}
                 >
                   ایجاد سند بستن موقت‌ها
                 </Button>
@@ -197,7 +311,7 @@ export function AccountingYearEndWorkspace({
                   variant="outline"
                   disabled={
                     busy ||
-                    preflight.unfinished > 0 ||
+                    preflight!.unfinished > 0 ||
                     period?.status !== 'OPEN'
                   }
                   onClick={() => {
@@ -222,10 +336,14 @@ export function AccountingYearEndWorkspace({
             ) : (
               <Button
                 permission="finance.period.close"
-                disabled={busy || period?.status !== 'CLOSED'}
-                onClick={() => void generate(true)}
+                disabled={
+                  busy ||
+                  preflight!.unfinished > 0 ||
+                  period?.status !== (mode === 'opening' ? 'CLOSED' : 'OPEN')
+                }
+                onClick={() => void generate()}
               >
-                ایجاد سند افتتاحیه
+                {titles[mode]}
               </Button>
             )}
           </div>
@@ -235,7 +353,7 @@ export function AccountingYearEndWorkspace({
         <div role="status" className="rounded-xl bg-emerald-500/10 p-4">
           پیش‌نویس ایجاد شد؛ تأیید مستقل و ثبت قطعی در{' '}
           <Link
-            href={`/finance/accounting/general-ledger/documents/list?bookId=${book.book.id}&journalId=${result.id}`}
+            href={`/finance/accounting/general-ledger/documents/journals?bookId=${book.book.id}&journalId=${result.id}`}
             className="font-bold text-primary"
           >
             فهرست اسناد

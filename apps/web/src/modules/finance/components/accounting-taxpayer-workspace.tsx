@@ -1,11 +1,14 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   AccountingSnapshotV1,
   AccountingTaxpayerSeller,
+  AccountingTaxpayerDraft,
+  TaxpayerDraftKind,
 } from '@nora/contracts';
-import { useRouter } from 'next/navigation';
+import { taxpayerDraftColumn } from '@nora/contracts';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { AccountingButton } from './accounting-operations';
 import { Input } from '@/components/ui/form-controls';
 import { DatePicker } from '@/components/ui/date-picker';
@@ -16,6 +19,7 @@ import {
   visibleTaxpayerFields,
   changeTaxpayerValue,
   type TaxpayerValues,
+  publicTaxpayerDraft,
 } from '../accounting-taxpayer-model';
 import type { TaxpayerPage } from '../accounting-taxpayer-catalog';
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
@@ -36,6 +40,16 @@ const listForms: Record<string, string> = {
   cancellations: 'cancellation-invoice',
   'batch-schedules': 'operations/batch-schedules',
 };
+const subscribeSecureContext = () => () => undefined;
+const draftKindForRoute = (route: string): TaxpayerDraftKind | undefined =>
+  route.endsWith('/settings')
+    ? 'settings'
+    : route.endsWith('/cancellations') ||
+        route.endsWith('/cancellation-invoice')
+      ? 'cancellations'
+      : route.endsWith('/batch-schedules')
+        ? 'schedules'
+        : undefined;
 
 export function AccountingTaxpayerWorkspace({
   book,
@@ -61,6 +75,34 @@ function TaxpayerLoader({
   bookId: string;
 }) {
   const isSeller = page.route.endsWith('/seller-information');
+  const id = useSearchParams().get('id') ?? '';
+  const draftKind = draftKindForRoute(page.route);
+  const [listFilters, setListFilters] = useState<Record<string, string>>({});
+  const [listPage, setListPage] = useState(1);
+  const draftQuery = useQuery({
+    queryKey: [
+      'accounting-taxpayer-drafts',
+      bookId,
+      draftKind,
+      id,
+      listPage,
+      listFilters,
+    ],
+    enabled:
+      !!draftKind && (page.kind === 'list' || !!id || draftKind === 'settings'),
+    retry: false,
+    queryFn: () =>
+      accountingTaxpayerApi.drafts(bookId, draftKind!, {
+        page: String(listPage),
+        ...(id ? { id } : {}),
+        ...(Object.keys(listFilters).length
+          ? { filters: JSON.stringify(listFilters) }
+          : {}),
+      }),
+  });
+  const draftRecord = id
+    ? draftQuery.data?.items.find((r) => r.id === id)
+    : undefined;
   const query = useQuery({
     queryKey: ['accounting-taxpayer-seller', bookId],
     queryFn: () => accountingTaxpayerApi.seller(bookId),
@@ -78,12 +120,31 @@ function TaxpayerLoader({
         </button>
       </div>
     );
+  if (draftKind && id && draftQuery.isPending)
+    return <p role="status">در حال بارگذاری…</p>;
+  if (draftKind && id && (draftQuery.isError || !draftRecord))
+    return <p role="alert">پیش‌نویس پیدا نشد یا دریافت آن ناموفق بود.</p>;
   return (
     <TaxpayerScreen
-      key={`${page.route}:${query.data?.version ?? 0}`}
+      key={`${page.route}:${query.data?.version ?? 0}:${draftRecord?.version ?? 0}`}
       page={page}
       bookId={bookId}
       seller={isSeller ? query.data : undefined}
+      draftKind={draftKind}
+      draftRecord={draftRecord}
+      listData={
+        !draftQuery.isFetching && !draftQuery.isError
+          ? draftQuery.data
+          : undefined
+      }
+      listLoading={draftQuery.isFetching}
+      listError={draftQuery.isError}
+      secretStorageAvailable={draftQuery.data?.secretStorageAvailable === true}
+      onFilters={(filters) => {
+        setListFilters(filters);
+        setListPage(1);
+      }}
+      onPage={setListPage}
     />
   );
 }
@@ -91,17 +152,47 @@ function TaxpayerScreen({
   page,
   bookId,
   seller,
+  draftKind,
+  draftRecord,
+  listData,
+  listLoading,
+  listError,
+  onFilters,
+  onPage,
+  secretStorageAvailable,
 }: {
   page: TaxpayerPage;
   bookId: string;
   seller?: AccountingTaxpayerSeller | null | undefined;
+  draftKind?: TaxpayerDraftKind | undefined;
+  draftRecord?: AccountingTaxpayerDraft | undefined;
+  listData?:
+    | {
+        items: AccountingTaxpayerDraft[];
+        total: number;
+        page: number;
+        pageSize: number;
+      }
+    | undefined;
+  listLoading: boolean;
+  listError: boolean;
+  onFilters: (filters: Record<string, string>) => void;
+  onPage: (page: number) => void;
+  secretStorageAvailable: boolean;
 }) {
   const router = useRouter(),
     client = useQueryClient();
   const [values, setValues] = useState<TaxpayerValues>(() => ({
     ...initialTaxpayerValues(page),
     ...seller?.values,
+    ...draftRecord?.values,
   }));
+  const [savedDraft, setSavedDraft] = useState(draftRecord);
+  const secureContext = useSyncExternalStore(
+    subscribeSecureContext,
+    () => window.isSecureContext,
+    () => false,
+  );
   const [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false);
   const [tab, setTab] = useState('اطلاعات اصلی');
@@ -113,14 +204,15 @@ function TaxpayerScreen({
   const suffix = page.route.replace('taxpayer-system/', '');
   const isSeller = suffix === 'seller-information';
   const isList = page.kind === 'list';
-  const dependency =
-    page.blocker ||
-    dependencies[suffix] ||
-    (isList
-      ? 'داده‌های این فهرست هنوز به سرویس صورتحساب متصل نیستند.'
-      : page.kind === 'report'
-        ? 'گزارش به اتصال داده‌های صورتحساب و پرداخت نیاز دارد.'
-        : '');
+  const dependency = draftKind
+    ? 'این داده‌ها پیش‌نویس محلی هستند؛ فعال‌سازی زمان‌بندی، ارسال و پذیرش رسمی انجام نمی‌شود.'
+    : page.blocker ||
+      dependencies[suffix] ||
+      (isList
+        ? 'داده‌های این فهرست هنوز به سرویس صورتحساب متصل نیستند.'
+        : page.kind === 'report'
+          ? 'گزارش به اتصال داده‌های صورتحساب و پرداخت نیاز دارد.'
+          : '');
   const fields = visibleTaxpayerFields(page, values);
   const change = (id: string, value: string | boolean) => {
     requestKey.current = null;
@@ -128,11 +220,41 @@ function TaxpayerScreen({
     setMessage('');
   };
   const save = async () => {
-    if (!isSeller || busy) return;
+    if ((!isSeller && !draftKind) || busy || savedDraft?.legacyRequest) return;
     setBusy(true);
     setMessage('');
     try {
       requestKey.current ??= browserRandomUuid();
+      if (draftKind) {
+        const saved = await accountingTaxpayerApi.saveDraft(bookId, draftKind, {
+          ...(savedDraft ? { id: savedDraft.id } : {}),
+          version: savedDraft?.version ?? 0,
+          key: requestKey.current,
+          values: {
+            ...publicTaxpayerDraft(page, values),
+            ...Object.fromEntries(
+              fields
+                .filter(
+                  (f) =>
+                    secretStorageAvailable &&
+                    secureContext &&
+                    f.sensitive &&
+                    !f.disabled &&
+                    values[f.id],
+                )
+                .map((f) => [f.id, values[f.id]!]),
+            ),
+          },
+        });
+        setSavedDraft(saved);
+        setValues({ ...initialTaxpayerValues(page), ...saved.values });
+        requestKey.current = null;
+        await client.invalidateQueries({
+          queryKey: ['accounting-taxpayer-drafts', bookId],
+        });
+        setMessage('پیش‌نویس محلی ذخیره شد؛ ارسال رسمی انجام نشده است.');
+        return;
+      }
       const saved = await accountingTaxpayerApi.saveSeller(bookId, {
         key: requestKey.current,
         version: seller?.version ?? 0,
@@ -159,7 +281,21 @@ function TaxpayerScreen({
       await client.invalidateQueries({
         queryKey: ['accounting-taxpayer-seller', bookId],
       });
-    else setMessage(dependency);
+    else if (draftKind) {
+      await client.invalidateQueries({
+        queryKey: ['accounting-taxpayer-drafts', bookId],
+      });
+      if (savedDraft && !isList) {
+        const result = await accountingTaxpayerApi.drafts(bookId, draftKind, {
+          id: savedDraft.id,
+        });
+        const fresh = result.items[0];
+        if (fresh) {
+          setSavedDraft(fresh);
+          setValues({ ...initialTaxpayerValues(page), ...fresh.values });
+        }
+      }
+    } else setMessage(dependency);
   };
   const canNew = isList && !!listForms[suffix.split('/').at(-1)!];
   const tabs =
@@ -214,7 +350,11 @@ function TaxpayerScreen({
           {page.kind === 'form' && (
             <AccountingButton
               permission="finance.account.manage"
-              disabled={!isSeller || busy}
+              disabled={
+                (!isSeller && !draftKind) ||
+                busy ||
+                savedDraft?.legacyRequest === true
+              }
               onClick={() => void save()}
             >
               ذخیره
@@ -311,7 +451,9 @@ function TaxpayerScreen({
                 const disabled =
                   busy ||
                   f.disabled ||
-                  f.sensitive ||
+                  (f.sensitive &&
+                    (!secretStorageAvailable || !secureContext)) ||
+                  savedDraft?.legacyRequest === true ||
                   (f.type === 'select' && !f.options?.length);
                 return (
                   <div
@@ -362,6 +504,11 @@ function TaxpayerScreen({
                         value={String(values[f.id] ?? '')}
                         readOnly={f.readOnly}
                         disabled={disabled}
+                        placeholder={
+                          savedDraft?.storedSecretFields?.includes(f.id)
+                            ? 'ذخیره‌شده در محل امن'
+                            : ''
+                        }
                         onChange={(e) => change(f.id, e.target.value)}
                       />
                     ) : (
@@ -378,6 +525,11 @@ function TaxpayerScreen({
                         readOnly={f.readOnly}
                         disabled={disabled}
                         required={f.required}
+                        placeholder={
+                          savedDraft?.storedSecretFields?.includes(f.id)
+                            ? 'ذخیره‌شده در محل امن'
+                            : ''
+                        }
                         onChange={(e) => change(f.id, e.target.value)}
                       />
                     )}
@@ -434,12 +586,14 @@ function TaxpayerScreen({
                             <Input
                               aria-label={`فیلتر ${c}`}
                               value={filters[c] ?? ''}
-                              onChange={(e) =>
-                                setFilters((v) => ({
-                                  ...v,
+                              onChange={(e) => {
+                                const next = {
+                                  ...filters,
                                   [c]: e.target.value,
-                                }))
-                              }
+                                };
+                                setFilters(next);
+                                onFilters(next);
+                              }}
                             />
                           </th>
                         ))}
@@ -447,17 +601,63 @@ function TaxpayerScreen({
                     )}
                   </thead>
                   <tbody>
-                    <tr>
-                      <td
-                        colSpan={Math.max(1, columns.length)}
-                        className="p-5 text-center"
-                      >
-                        داده دریافت نشده است.
-                      </td>
-                    </tr>
+                    {draftKind &&
+                      listData?.items.map((row) => (
+                        <tr
+                          key={row.id}
+                          onDoubleClick={() =>
+                            router.push(
+                              `/finance/accounting/taxpayer-system/${listForms[suffix.split('/').at(-1)!]}?${new URLSearchParams({ bookId, id: row.id })}`,
+                            )
+                          }
+                        >
+                          {columns.map((column) => (
+                            <td key={column} className="border-b p-3">
+                              {taxpayerDraftColumn(row, column) || '—'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    {(!draftKind || !listData?.items.length) && (
+                      <tr>
+                        <td
+                          colSpan={Math.max(1, columns.length)}
+                          className="p-5 text-center"
+                        >
+                          {listLoading
+                            ? 'در حال بارگذاری…'
+                            : listError
+                              ? 'دریافت داده ناموفق بود.'
+                              : draftKind
+                                ? 'سطری برای نمایش وجود ندارد.'
+                                : 'داده دریافت نشده است.'}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
+              {draftKind && listData && (
+                <div className="flex items-center gap-3">
+                  <span>تعداد رکوردها: {listData.total}</span>
+                  <AccountingButton
+                    variant="outline"
+                    disabled={listData.page <= 1}
+                    onClick={() => onPage(listData.page - 1)}
+                  >
+                    قبلی
+                  </AccountingButton>
+                  <AccountingButton
+                    variant="outline"
+                    disabled={
+                      listData.page * listData.pageSize >= listData.total
+                    }
+                    onClick={() => onPage(listData.page + 1)}
+                  >
+                    بعدی
+                  </AccountingButton>
+                </div>
+              )}
             </>
           )}
         </>

@@ -22,6 +22,16 @@ export class AccountingCompletionController {
     @Inject(AccountingCompletionService)
     private readonly service: AccountingCompletionService,
   ) {}
+  @Get('reports/:kind')
+  @Header('Cache-Control', 'private, no-store')
+  report(
+    @Param('bookId') bookId: string,
+    @Param('kind') kind: string,
+    @Query() query: Record<string, unknown>,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.service.internalReport(bookId, kind, query, request.actor);
+  }
   @Get('journal-lines')
   @Header('Cache-Control', 'private, no-store')
   lines(

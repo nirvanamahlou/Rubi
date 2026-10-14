@@ -3,8 +3,8 @@ import { taxpayerPage } from './accounting-taxpayer-model';
 
 /** Exact matching prevents a prefix from activating an unimplemented tax command. */
 export function accountingCompletionRoute(route: string) {
-  // Preserve the existing inactive connection-request editor until secure settings
-  // persistence is implemented; the observed replacement currently cannot save.
+  // Settings are dispatched explicitly with secure draft storage and the retained
+  // inactive legacy request editor in AccountingWorkspace.
   if (route === 'taxpayer-system/settings') return undefined;
   if (accountingTaxRoute(route)) return 'tax' as const;
   if (taxpayerPage(route)) return 'taxpayer' as const;
@@ -12,11 +12,6 @@ export function accountingCompletionRoute(route: string) {
     return 'chart' as const;
   if (route === 'general-ledger/reports/journal-lines')
     return 'journal-lines' as const;
-  if (
-    route === 'general-ledger/year-end/nature-adjustment' ||
-    route === 'general-ledger/year-end/final'
-  )
-    return 'readiness' as const;
   return undefined;
 }
 
