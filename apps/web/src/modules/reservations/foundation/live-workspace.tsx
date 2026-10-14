@@ -109,6 +109,11 @@ export function LiveReservationQueue() {
     const resume = () => {
       if (document.visibilityState === 'visible') void update();
     };
+    const priceChanged = (event: StorageEvent) => {
+      if (event.key === 'rubi-contract-price-updated') resume();
+    };
+    window.addEventListener('storage', priceChanged);
+    window.addEventListener('focus', resume);
     document.addEventListener('visibilitychange', resume);
     window.addEventListener('reservation-workflow-changed', resume);
     void update();
@@ -116,6 +121,8 @@ export function LiveReservationQueue() {
       disposed = true;
       controller.abort();
       if (timer) clearTimeout(timer);
+      window.removeEventListener('storage', priceChanged);
+      window.removeEventListener('focus', resume);
       document.removeEventListener('visibilitychange', resume);
       window.removeEventListener('reservation-workflow-changed', resume);
     };
