@@ -161,20 +161,6 @@ export function TicketOfferCard({
                 : 'قیمت فروش تکی ثبت نشده'}
             </strong>
           ) : null}
-          <span>
-            ظرفیت کل:{' '}
-            {new Intl.NumberFormat('fa-IR').format(offer.totalCapacity)} نفر
-          </span>
-          <strong className={insufficient ? 'text-rose-600' : ''}>
-            مانده:{' '}
-            {new Intl.NumberFormat('fa-IR').format(offer.remainingCapacity)} نفر
-          </strong>
-          {roundTripOutbound ? (
-            <strong>
-              قابل‌فروش رفت‌وبرگشت:{' '}
-              {new Intl.NumberFormat('fa-IR').format(availableSeats)} نفر
-            </strong>
-          ) : null}
           {insufficient ? (
             <span className="w-full text-rose-600">
               برای {new Intl.NumberFormat('fa-IR').format(requiredSeats)} صندلی

@@ -1,3 +1,7 @@
+## 2026-10-14 — HIDE-CONTRACT-FLIGHT-CAPACITY-1014 — PC-A
+
+New-contract flight cards omit total capacity, remaining seats and round-trip available-seat figures. Existing insufficient-seat validation and selection disabling remain enforced. No API/schema/migration/dependency or local runtime change. Focused render regressions and full CI gate the authorized develop merge.
+
 ## 2026-10-14 — FINANCE-FOREIGN-SUPPLIER-1014 — PC-A — VALIDATING
 
 Every non-IRR outgoing inbox payment selects an active paying supplier instead of a settlement account. Covers ticket purchases, procurement invoices, Reservations purchases and direct/payroll requests. Finance validates through the Master Data public directory in the same transaction; new restrictive supplier FKs retain supplier identity and name evidence. Existing historical account payments remain readable. IRR retains branch-scoped active accounts; mixed source inputs are rejected. History/receipt/Excel preserve the paying name and invoice currency without requiring an account. Additive migration only; no live payment, operational migration or runtime rollout.
