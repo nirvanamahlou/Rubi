@@ -1,3 +1,7 @@
+## 2026-10-14 — CORRECTION-COLUMNS-1014 — PC-A
+
+Reservation sales-correction purple styling is restricted to table cells two and three in both themes. Other cells retain their normal/selected/status styling; the notes marker retains precedence. No migration or local activation. Existing workspace styling regression and CI gate develop merge.
+
 ## 2026-10-14 — SALES-CORRECTION-PURPLE-1014 — PC-A
 
 Purple reservation queue highlighting now reflects explicit successful sales passenger corrections, excluding operational reservation/form amendments and general updates. Existing light/dark colors and historical records are retained. No migration or local activation; focused projection test and CI gate develop merge.
