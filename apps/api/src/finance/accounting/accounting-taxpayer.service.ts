@@ -194,6 +194,7 @@ export class AccountingTaxpayerService {
     input: unknown,
     actor: AuthenticatedActor,
   ) {
+    bookId = v.uuid(bookId)!.toLowerCase();
     const kind = draftKind(kindText),
       body = v.object(input);
     if (
@@ -202,8 +203,8 @@ export class AccountingTaxpayerService {
       )
     )
       v.invalid('درخواست پیش‌نویس معتبر نیست.');
-    const id = v.uuid(body.id, true),
-      key = v.uuid(body.key)!;
+    const id = v.uuid(body.id, true)?.toLowerCase() ?? null,
+      key = v.uuid(body.key)!.toLowerCase();
     if (
       !Number.isSafeInteger(body.version) ||
       Number(body.version) < 0 ||

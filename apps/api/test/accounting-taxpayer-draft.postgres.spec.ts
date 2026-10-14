@@ -246,7 +246,12 @@ describe.skipIf(!url)('local taxpayer drafts on isolated PostgreSQL', () => {
       txtDirectPrivate: pair.privateKey,
     };
     const input = { key: randomUUID(), version: 0, values };
-    const row = await secure!.saveDraft(bookId, 'settings', input, actor);
+    const row = await secure!.saveDraft(
+      bookId.toUpperCase(),
+      'settings',
+      input,
+      actor,
+    );
     expect(row.storedSecretFields).toEqual(['txtDirectPrivate']);
     expect(JSON.stringify(row)).not.toContain('PRIVATE KEY');
     expect((await secure!.saveDraft(bookId, 'settings', input, actor)).id).toBe(
@@ -271,12 +276,37 @@ describe.skipIf(!url)('local taxpayer drafts on isolated PostgreSQL', () => {
     ).snapshot(bookId, actor);
     expect(snapshot.configurations.some((c) => c.id === row.id)).toBe(false);
     expect(JSON.stringify(snapshot)).not.toContain('ciphertext');
+    const { txtDirectPrivate: secret, ...publicValues } = values;
+    const preserved = await secure!.saveDraft(
+      bookId,
+      'settings',
+      {
+        id: row.id.toUpperCase(),
+        version: row.version,
+        key: randomUUID(),
+        values: publicValues,
+      },
+      actor,
+    );
+    expect(preserved.storedSecretFields).toEqual(['txtDirectPrivate']);
+    const updated = await secure!.saveDraft(
+      bookId,
+      'settings',
+      {
+        id: row.id.toUpperCase(),
+        version: preserved.version,
+        key: randomUUID(),
+        values: { ...publicValues, txtDirectPrivate: secret },
+      },
+      actor,
+    );
+    expect(updated.storedSecretFields).toEqual(['txtDirectPrivate']);
     const changed = await secure!.saveDraft(
       bookId,
       'settings',
       {
         id: row.id,
-        version: row.version,
+        version: updated.version,
         key: randomUUID(),
         values: {
           lkpSendingType_ComboBox_Input: 'ارسال از شرکت معتمد',

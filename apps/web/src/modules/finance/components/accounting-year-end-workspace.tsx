@@ -306,32 +306,6 @@ export function AccountingYearEndWorkspace({
                 >
                   ایجاد سند بستن موقت‌ها
                 </Button>
-                <Button
-                  permission="finance.period.close"
-                  variant="outline"
-                  disabled={
-                    busy ||
-                    preflight!.unfinished > 0 ||
-                    period?.status !== 'OPEN'
-                  }
-                  onClick={() => {
-                    if (
-                      period &&
-                      window.confirm(
-                        'دوره بسته شود؟ ثبت سند جدید در این دوره متوقف خواهد شد.',
-                      )
-                    )
-                      void run(
-                        'close-period',
-                        { id: period.id },
-                        period.version,
-                      ).then((r) => {
-                        if (r) setPreflight(null);
-                      });
-                  }}
-                >
-                  بستن دوره
-                </Button>
               </>
             ) : (
               <Button
@@ -349,9 +323,33 @@ export function AccountingYearEndWorkspace({
           </div>
         </>
       ) : null}
+      {(mode === 'closing' || mode === 'final') && (
+        <Button
+          permission="finance.period.close"
+          variant="outline"
+          disabled={busy || !period || period.status !== 'OPEN'}
+          onClick={() => {
+            if (
+              period &&
+              window.confirm(
+                'دوره بسته شود؟ ثبت سند جدید در این دوره متوقف خواهد شد.',
+              )
+            )
+              void run('close-period', { id: period.id }, period.version).then(
+                (r) => {
+                  if (r) setPreflight(null);
+                },
+              );
+          }}
+        >
+          بستن دوره
+        </Button>
+      )}
       {result ? (
         <div role="status" className="rounded-xl bg-emerald-500/10 p-4">
-          پیش‌نویس ایجاد شد؛ تأیید مستقل و ثبت قطعی در{' '}
+          {result.status === 'POSTED'
+            ? 'سند این عملیات قبلاً قطعی ثبت شده است؛ مشاهده در'
+            : 'سند عملیات ذخیره شده است؛ تأیید مستقل و ثبت قطعی در'}{' '}
           <Link
             href={`/finance/accounting/general-ledger/documents/journals?bookId=${book.book.id}&journalId=${result.id}`}
             className="font-bold text-primary"

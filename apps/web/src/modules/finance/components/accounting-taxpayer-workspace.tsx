@@ -458,7 +458,11 @@ function TaxpayerScreen({
                 return (
                   <div
                     key={f.id}
-                    className={f.type === 'textarea' ? 'md:col-span-2' : ''}
+                    data-accounting-sensitive={f.sensitive ? 'true' : undefined}
+                    className={[
+                      f.type === 'textarea' ? 'md:col-span-2' : '',
+                      f.sensitive ? 'print:hidden' : '',
+                    ].join(' ')}
                   >
                     <label htmlFor={id} className="mb-1 block text-sm">
                       {f.label}

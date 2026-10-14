@@ -1615,13 +1615,14 @@ export class AccountingService {
             (c) => c.code === book.baseCurrency,
           )
         : undefined;
+      // Existing posting validation requires integer IRR amounts regardless of generic currency metadata.
       const scale =
-        currencyReference?.decimalDigits ??
-        (['IRR', 'USD', 'EUR', 'TRY', 'AED'].includes(book.baseCurrency)
-          ? book.baseCurrency === 'IRR'
-            ? 0
-            : 2
-          : -1);
+        book.baseCurrency === 'IRR'
+          ? 0
+          : (currencyReference?.decimalDigits ??
+            (['USD', 'EUR', 'TRY', 'AED'].includes(book.baseCurrency)
+              ? 2
+              : -1));
       if (!Number.isInteger(scale) || scale < 0 || scale > 8)
         v.rule('دقت ارز پایه برای عملیات پایان سال تعریف نشده است.');
       const operation =
@@ -1685,13 +1686,13 @@ export class AccountingService {
           foreignBalance: Prisma.Decimal | null;
         }[]
       >`
-        SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber' AS "trackingNumber",l.attributes->>'trackingDate' AS "trackingDate",CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN l.attributes->>'valuationCurrency' ELSE NULL END AS "valuationCurrency",
+        SELECT l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber' AS "trackingNumber",l.attributes->>'trackingDate' AS "trackingDate",l.attributes->>'valuationCurrency' AS "valuationCurrency",
           ARRAY_AGG(l.id ORDER BY l.id) AS "sourceLineIds", SUM(l.debit-l.credit) AS balance,
           SUM(CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END) AS "foreignBalance"
         FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
         WHERE j."bookId"=${bookId}::uuid AND j."periodId"=${periodId}::uuid AND j.status='POSTED'
           AND (${operation !== 'year-end-opening'} OR j."sourceKey" IS NULL OR j."sourceKey" NOT LIKE 'FINAL:%')
-        GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber',l.attributes->>'trackingDate',CASE WHEN j."sourceKey" LIKE 'REVALUE:%' OR j."sourceKey" LIKE 'OPEN:%' OR j."sourceKey" LIKE 'CLOSE:%' OR j."sourceKey" LIKE 'FINAL:%' OR j."sourceKey" LIKE 'NATURE:%' OR j."sourceKey" LIKE 'REVERSE:%' THEN l.attributes->>'valuationCurrency' ELSE NULL END`;
+        GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'trackingNumber',l.attributes->>'trackingDate',l.attributes->>'valuationCurrency'`;
       lots.sort((a, b) =>
         JSON.stringify([
           a.accountId,
@@ -1755,6 +1756,11 @@ export class AccountingService {
                 id: currencyReference?.id ?? 'DEC-OPEN-004',
                 version: currencyReference?.version ?? 1,
                 scale,
+                declaredScale: currencyReference?.decimalDigits ?? null,
+                postingPolicy:
+                  book.baseCurrency === 'IRR'
+                    ? 'IRR_INTEGER'
+                    : 'CURRENCY_REFERENCE',
               },
               lots,
               sourceJournals,
@@ -1821,7 +1827,7 @@ export class AccountingService {
         );
       const targetDate = v.date(p.documentDate)!;
       if (
-        operation === 'year-end-final' &&
+        operation !== 'year-end-opening' &&
         (await tx.accountingJournal.findFirst({
           where: {
             bookId,
@@ -1831,7 +1837,7 @@ export class AccountingService {
           },
         }))
       )
-        v.rule('تاریخ اختتامیه نباید قبل از آخرین سند قطعی دوره باشد.');
+        v.rule('تاریخ سند پایان سال نباید قبل از آخرین سند قطعی دوره باشد.');
       let targetPeriodId = periodId,
         rows: Record<string, unknown>[] = [];
       if (operation === 'year-end-closing') {
@@ -1873,7 +1879,7 @@ export class AccountingService {
             detail5Id: r.detail5Id,
             detail6Id: r.detail6Id,
             currency: r.currency,
-            fxSnapshotId: r.currency ? r.fxSnapshotId : null,
+            fxSnapshotId: r.fxSnapshotId,
             attributes: {
               sourceLineIds: r.sourceLineIds,
               ...(r.valuationCurrency
@@ -1882,7 +1888,7 @@ export class AccountingService {
               ...(r.trackingNumber ? { trackingNumber: r.trackingNumber } : {}),
               ...(r.trackingDate ? { trackingDate: r.trackingDate } : {}),
             },
-            rate: r.rate?.toString() ?? null,
+            rate: r.rate?.toFixed() ?? null,
             foreignAmount: r.foreignBalance
               ? DecimalValue.parse(r.foreignBalance.toFixed()).isNegative
                 ? DecimalValue.zero()
@@ -1945,6 +1951,11 @@ export class AccountingService {
           counterpart.level !== 'SUBSIDIARY'
         )
           v.rule('حساب دائمی طرف مقابل لازم است.');
+        if (
+          operation === 'year-end-final' &&
+          balances.some((r) => r.accountId === counterpartId)
+        )
+          v.rule('حساب واسطه اختتامیه باید بدون مانده باشد.');
         const selectedIds =
           operation === 'year-end-nature-adjustment'
             ? Array.isArray(p.accountIds)
@@ -1998,8 +2009,8 @@ export class AccountingService {
             detail5Id: r.detail5Id,
             detail6Id: r.detail6Id,
             currency: r.currency,
-            fxSnapshotId: r.currency ? r.fxSnapshotId : null,
-            rate: r.rate?.toString() ?? null,
+            fxSnapshotId: r.fxSnapshotId,
+            rate: r.rate?.toFixed() ?? null,
             attributes: {
               sourceLineIds: r.sourceLineIds,
               ...(r.valuationCurrency
@@ -2009,7 +2020,7 @@ export class AccountingService {
               ...(r.trackingDate ? { trackingDate: r.trackingDate } : {}),
             },
             foreignAmount: r.foreignBalance
-              ? r.foreignBalance.abs().toString()
+              ? r.foreignBalance.abs().toFixed()
               : null,
             debit: value.isNegative
               ? DecimalValue.zero().subtract(value).toString()
@@ -2017,14 +2028,18 @@ export class AccountingService {
             credit: value.isNegative ? '0' : value.toString(),
           };
         });
-        if (!net.isZero)
-          rows.push({
-            accountId: counterpartId,
-            debit: net.isNegative ? '0' : net.toString(),
-            credit: net.isNegative
-              ? DecimalValue.zero().subtract(net).toString()
-              : '0',
-          });
+        if (operation === 'year-end-final') {
+          if (!net.isZero) v.rule('مانده‌های دائمی برای اختتامیه تراز نیستند.');
+        } else {
+          rows.push(
+            ...selected.map((r, index) => ({
+              ...rows[index]!,
+              accountId: counterpartId,
+              debit: rows[index]!.credit,
+              credit: rows[index]!.debit,
+            })),
+          );
+        }
       } else {
         if (period.status !== 'CLOSED') v.rule('ابتدا دوره مبدأ را ببندید.');
         const nextId = v.uuid(p.nextPeriodId)!,
@@ -2035,6 +2050,7 @@ export class AccountingService {
           v.rule('دوره باز بعدی لازم است.');
         if (balances.some((r) => r.permanent === false))
           v.rule('حساب‌های موقت هنوز بسته نشده‌اند.');
+        if (!balances.length) v.rule('مانده‌ای برای انتقال وجود ندارد.');
         if (
           !(await tx.accountingJournal.findFirst({
             where: {
@@ -2055,7 +2071,7 @@ export class AccountingService {
             detail5Id: r.detail5Id,
             detail6Id: r.detail6Id,
             currency: r.currency,
-            fxSnapshotId: r.currency ? r.fxSnapshotId : null,
+            fxSnapshotId: r.fxSnapshotId,
             attributes: {
               sourceLineIds: r.sourceLineIds,
               ...(r.valuationCurrency
@@ -2064,7 +2080,7 @@ export class AccountingService {
               ...(r.trackingNumber ? { trackingNumber: r.trackingNumber } : {}),
               ...(r.trackingDate ? { trackingDate: r.trackingDate } : {}),
             },
-            rate: r.rate?.toString() ?? null,
+            rate: r.rate?.toFixed() ?? null,
             foreignAmount: r.foreignBalance
               ? DecimalValue.parse(r.foreignBalance.toFixed()).isNegative
                 ? DecimalValue.zero()
@@ -2128,6 +2144,13 @@ export class AccountingService {
             currencyPolicyId: currencyReference?.id ?? 'DEC-OPEN-004',
             currencyPolicyVersion: String(currencyReference?.version ?? 1),
             currencyScale: String(scale),
+            declaredCurrencyScale: String(
+              currencyReference?.decimalDigits ?? scale,
+            ),
+            currencyScalePolicy:
+              book.baseCurrency === 'IRR'
+                ? 'IRR_INTEGER'
+                : 'CURRENCY_REFERENCE',
             ...(reissueOfId ? { reissueOfId } : {}),
             auxiliaryNumber: v.text(p.auxiliaryNumber, 100),
             sourceChecksum: checksum,
@@ -3838,6 +3861,17 @@ export class AccountingService {
       const periodId = v.uuid(p.periodId, true),
         typeId = v.uuid(p.typeId, true),
         documentDate = v.date(p.documentDate, true);
+      if (
+        existing?.sourceKey &&
+        !internal &&
+        /^(OPEN|CLOSE|FINAL|NATURE):/.test(existing.sourceKey) &&
+        (periodId !== existing.periodId ||
+          typeId !== existing.typeId ||
+          documentDate !== existing.documentDate)
+      )
+        v.rule(
+          'دوره، نوع و تاریخ سند پایان سال فقط از جریان سازنده قابل تغییر است.',
+        );
       const setupOpening =
         p.sourcePage === 'setup-opening' ||
         (existing &&
@@ -4552,6 +4586,24 @@ export class AccountingService {
         )
           v.rule('حساب موقت یا حساب کنترل‌شده مانده غیرصفر دارد.');
       }
+      if (
+        !(await tx.accountingJournal.findFirst({
+          where: {
+            bookId,
+            periodId: id,
+            status: 'POSTED',
+            sourceKey: `FINAL:${id}`,
+          },
+        }))
+      ) {
+        const outstanding = await tx.$queryRaw<{ present: number }[]>`
+          SELECT 1 AS present FROM accounting_journal_lines l JOIN accounting_journals j ON j.id=l."journalId"
+          WHERE j."bookId"=${bookId}::uuid AND j."periodId"=${id}::uuid AND j.status='POSTED'
+          GROUP BY l."accountId",l."detail4Id",l."detail5Id",l."detail6Id",l.currency,l."fxSnapshotId",l.rate,l.attributes->>'valuationCurrency',l.attributes->>'trackingNumber',l.attributes->>'trackingDate'
+          HAVING SUM(l.debit-l.credit)<>0 OR COALESCE(SUM(CASE WHEN l.debit>0 THEN l."foreignAmount" ELSE -l."foreignAmount" END),0)<>0 LIMIT 1`;
+        if (outstanding.length)
+          v.rule('اختتامیه قطعی برای بستن دوره دارای مانده لازم است.');
+      }
       return tx.accountingPeriod.update({
         where: { id },
         data: { status: 'CLOSED', version: { increment: 1 } },
@@ -4848,6 +4900,7 @@ export class AccountingService {
         (!row.currency || row.currency === book.baseCurrency)
       ) {
         if (
+          !historicalHeader &&
           !journal.sourceKey?.startsWith('REVALUE:') &&
           !(
             journal.reversalOfId &&

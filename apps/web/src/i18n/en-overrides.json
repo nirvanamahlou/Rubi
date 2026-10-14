@@ -2458,5 +2458,7 @@
   "ذخیره داخلی": "Internal storage",
   "گزارش داخلی": "Internal report",
   "برای این مرجع پیش‌نویس ابطال موجود است.": "A cancellation draft already exists for this reference.",
-  "مرجع پیش‌نویس ابطال قابل تغییر نیست.": "The cancellation draft reference cannot be changed."
+  "مرجع پیش‌نویس ابطال قابل تغییر نیست.": "The cancellation draft reference cannot be changed.",
+  "سند این عملیات قبلاً قطعی ثبت شده است؛ مشاهده در": "This operation was already posted; view it in",
+  "سند عملیات ذخیره شده است؛ تأیید مستقل و ثبت قطعی در": "The operation voucher is saved; independent approval and posting take place in"
 }

@@ -24,6 +24,8 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
   async function fixture(
     cashNature: 'ANY' | 'DEBIT' | 'CREDIT' = 'ANY',
     tracked = false,
+    declaredCurrencyScale?: number,
+    foreignCapable = false,
   ) {
     const branchId = randomUUID(),
       makerId = randomUUID(),
@@ -55,6 +57,7 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
       ],
     };
     const checker = { ...actor, userId: checkerId };
+    const currencyId = randomUUID();
     const service = new AccountingService(
       { client: db } as never,
       {
@@ -62,6 +65,23 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
         displayNames: async (ids: string[]) =>
           ids.map((id) => ({ id, displayName: 'Synthetic' })),
       } as never,
+      undefined,
+      declaredCurrencyScale === undefined
+        ? undefined
+        : ({
+            list: async () => ({
+              data: [
+                {
+                  id: currencyId,
+                  version: 1,
+                  code: 'IRR',
+                  name: 'Synthetic IRR',
+                  attributes: { decimalDigits: declaredCurrencyScale },
+                },
+              ],
+              meta: { total: 1 },
+            }),
+          } as never),
     );
     const book = await service.createBook(
       {
@@ -125,8 +145,13 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
         level: 'SUBSIDIARY',
         nature,
         permanent,
-        ...(tracked && code === '1101'
-          ? { attributes: { traceable: true } }
+        ...((tracked && code === '1101') || foreignCapable
+          ? {
+              attributes: {
+                ...(tracked && code === '1101' ? { traceable: true } : {}),
+                ...(foreignCapable ? { multiCurrency: true } : {}),
+              },
+            }
           : {}),
       });
     const cash = await account('1101', true, cashNature),
@@ -299,10 +324,42 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
         final.version,
       ),
     ).rejects.toThrow('جریان اصلی');
+    await expect(
+      f.command(
+        'journal-save',
+        {
+          id: final.id,
+          periodId: f.period.id,
+          typeId: f.type.id,
+          documentDate: '2026-11-01',
+          lines: final.lines.map((l) => ({
+            accountId: l.accountId,
+            detail4Id: l.detail4Id,
+            detail5Id: l.detail5Id,
+            detail6Id: l.detail6Id,
+            debit: l.debit.toString(),
+            credit: l.credit.toString(),
+            currency: l.currency,
+            rate: l.rate?.toString() ?? null,
+            foreignAmount: l.foreignAmount?.toString() ?? null,
+            fxSnapshotId: l.fxSnapshotId,
+            attributes: {
+              ...(l.attributes.trackingNumber
+                ? { trackingNumber: l.attributes.trackingNumber }
+                : {}),
+              ...(l.attributes.trackingDate
+                ? { trackingDate: l.attributes.trackingDate }
+                : {}),
+            },
+          })),
+        },
+        final.version,
+      ),
+    ).rejects.toThrow('جریان سازنده');
     await f.post(final);
   });
   it('previews and posts 60/40 closing once; final and opening restore historical balances', async () => {
-    const f = await fixture();
+    const f = await fixture('ANY', false, 2);
     const template = await f.command<{ id: string; version: number }>(
       'save-template',
       {
@@ -373,7 +430,13 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
         )
       ).id,
     ).toBe(closing.id);
+    expect(closing.attributes.currencyScale).toBe('0');
+    expect(closing.attributes.declaredCurrencyScale).toBe('2');
+    expect(closing.attributes.currencyScalePolicy).toBe('IRR_INTEGER');
     await f.post(closing);
+    await expect(
+      f.command('close-period', { id: f.period.id }, 1),
+    ).rejects.toThrow('اختتامیه');
     const finalPayload = {
       operation: 'year-end-final',
       periodId: f.period.id,
@@ -382,6 +445,12 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
       documentDate: '2026-12-31',
       fxCarryPolicy: 'HISTORICAL_LOTS',
     };
+    await expect(
+      f.command('year-end-preview', {
+        ...finalPayload,
+        retainedAccountId: f.retained.id,
+      }),
+    ).rejects.toThrow('بدون مانده');
     const finalPreview = await f.command<{ checksum: string }>(
       'year-end-preview',
       finalPayload,
@@ -548,6 +617,100 @@ describe.skipIf(!url)('I01–I05 year-end design on isolated PostgreSQL', () => 
       f.command('restore', { id: old.id }, old.version),
     ).rejects.toThrow('جایگزین‌شده');
     await f.post(second);
+  });
+  it('carries the foreign position to the counterpart instead of erasing it during adjustment', async () => {
+    const f = await fixture('CREDIT', false, undefined, true);
+    const rate = await db.accountingFxSnapshot.create({
+      data: {
+        bookId: f.book.id,
+        currency: 'USD',
+        rate: '10',
+        source: 'Synthetic rate',
+        validFrom: new Date('2026-01-01'),
+        validTo: new Date('2026-12-31T23:59:59Z'),
+        status: 'APPROVED',
+        makerId: f.actor.userId,
+        approverId: f.checker.userId,
+      },
+    });
+    const source = await f.command<AccountingJournalV1>('journal-save', {
+      periodId: f.period.id,
+      typeId: f.type.id,
+      documentDate: '2026-10-02',
+      description: 'Synthetic foreign source',
+      lines: [
+        {
+          accountId: f.cash.id,
+          debit: '400',
+          credit: '0',
+          currency: 'USD',
+          rate: '10',
+          foreignAmount: '40',
+          fxSnapshotId: rate.id,
+        },
+        {
+          accountId: f.income.id,
+          debit: '0',
+          credit: '400',
+          currency: 'USD',
+          rate: '10',
+          foreignAmount: '40',
+          fxSnapshotId: rate.id,
+        },
+      ],
+    });
+    await f.post(source);
+    const payload = {
+      operation: 'year-end-nature-adjustment',
+      periodId: f.period.id,
+      accountIds: [f.cash.id],
+      retainedAccountId: f.bridge.id,
+      typeId: f.type.id,
+      documentDate: '2026-12-31',
+      fxCarryPolicy: 'HISTORICAL_LOTS',
+    };
+    const preview = await f.command<{ checksum: string }>(
+      'year-end-preview',
+      payload,
+    );
+    const adjustment = await f.command<AccountingJournalV1>(
+      'year-end-nature-adjustment',
+      { ...payload, checksum: preview.checksum },
+    );
+    const foreign = adjustment.lines.filter((l) => l.currency === 'USD');
+    expect(foreign).toHaveLength(2);
+    expect(
+      foreign.every(
+        (l) =>
+          l.fxSnapshotId === rate.id && l.foreignAmount?.toString() === '40',
+      ),
+    ).toBe(true);
+    expect(
+      foreign.find((l) => l.accountId === f.cash.id)?.credit.toString(),
+    ).toBe('400');
+    expect(
+      foreign.find((l) => l.accountId === f.bridge.id)?.debit.toString(),
+    ).toBe('400');
+    await f.post(adjustment);
+  });
+  it('closes a genuinely empty period without inventing a financial voucher', async () => {
+    const f = await fixture();
+    const year = await f.command<{ id: string }>('save-configuration', {
+      kind: 'fiscal-years',
+      code: '2028',
+      title: 'Synthetic empty year',
+    });
+    const period = await f.command<{ id: string }>('save-period', {
+      fiscalYearId: year.id,
+      startDate: '2028-01-01',
+      endDate: '2028-12-31',
+    });
+    await f.command('close-period', { id: period.id }, 1);
+    expect(
+      await db.accountingJournal.count({
+        where: { bookId: f.book.id, periodId: period.id },
+      }),
+    ).toBe(0);
   });
   it('adjusts only explicitly selected contrary-nature accounts with a distinct permanent counterpart', async () => {
     const f = await fixture('CREDIT');

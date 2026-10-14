@@ -5917,11 +5917,23 @@ describe.skipIf(!url)('accounting on isolated PostgreSQL', () => {
       command('close-period', { id: periodId }, 1),
     ).rejects.toThrow();
     await command('cancel', { id: j.id }, j.version);
+    const bridge = await command<{ id: string }>('save-account', {
+      code: '1198',
+      title: 'Synthetic final bridge',
+      parentId: (
+        await db.accountingAccount.findUniqueOrThrow({
+          where: { id: creditId },
+        })
+      ).parentId,
+      level: 'SUBSIDIARY',
+      nature: 'ANY',
+      permanent: true,
+    });
     sourceBeforeFinal = await service.report(bookId, { periodId }, maker);
     const finalPayload = {
       operation: 'year-end-final',
       periodId,
-      retainedAccountId: creditId,
+      retainedAccountId: bridge.id,
       typeId,
       documentDate: '2026-12-31',
       fxCarryPolicy: 'HISTORICAL_LOTS',
