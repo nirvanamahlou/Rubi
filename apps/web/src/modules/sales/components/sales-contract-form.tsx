@@ -1488,7 +1488,7 @@ export function SalesContractForm() {
                           <p key={room.roomTypeId}>
                             {room.roomTypeName}:{' '}
                             {quote
-                              ? `قیمت پایهٔ کل ${state.hotel.roomCount} اتاق برای تمام شب‌ها: ${quote.amount} ${quote.currencyCode}`
+                              ? `قیمت پایهٔ کل ${state.hotel.roomCount} اتاق برای تمام شب‌ها: ${quote.amount} ${currencySymbol(quote.currencyCode)}`
                               : 'برای ترکیب/سن/تاریخ فعلی نرخ ندارد'}
                           </p>
                         );

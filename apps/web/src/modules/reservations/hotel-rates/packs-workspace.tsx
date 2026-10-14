@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useEffect, useRef, useState } from 'react';
 import { ManualHotelPanel, ManualHotelSelector } from './manual-hotel-panel';
@@ -175,7 +176,7 @@ export function HotelRatePackTable({
               {draft.nights > 0 ? draft.nights.toLocaleString('fa-IR') : '—'}
             </td>
             <td>{draft.hotelCount.toLocaleString('fa-IR')}</td>
-            <td>{draft.currency}</td>
+            <td>{currencySymbol(draft.currency)}</td>
             <td>ثبت‌نشده</td>
             <td>
               <button type="button" onClick={onDraftFocus}>

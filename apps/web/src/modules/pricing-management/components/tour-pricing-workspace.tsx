@@ -801,7 +801,9 @@ export function TourPricingWorkspace() {
                               >
                                 <option value="percent">٪</option>
                                 <option value="fixed">
-                                  {row.currencyCode ?? batch.currencyCode}
+                                  {currencySymbol(
+                                    row.currencyCode ?? batch.currencyCode,
+                                  )}
                                 </option>
                               </NativeSearchSelect>
                               {adjustment.mode === 'fixed' ? (
@@ -991,7 +993,9 @@ export function TourPricingWorkspace() {
                 {tourPriceFields(publication).map((field) => (
                   <Badge key={field.id}>
                     {field.title} {field.amount}{' '}
-                    {field.mode === 'percent' ? '٪' : field.currencyCode}
+                    {field.mode === 'percent'
+                      ? '٪'
+                      : currencySymbol(field.currencyCode)}
                   </Badge>
                 ))}
               </div>
