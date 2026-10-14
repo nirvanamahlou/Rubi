@@ -7477,7 +7477,7 @@ HOTEL-RATE-HUB-FIXES-1013: Reproduced Excel card switching into manual entry and
 
 Validation: 118 focused hotel-rate/translation tests pass across the completed runs, scoped ESLint and Web typecheck pass. Authenticated read-only browser proof on localhost3000 covers isolated Excel entry, city/date selection, preserved manual purchase/sale values, editor opening, in-page exit confirmation and archive directory. Production build and exact-head CI remain delivery gates. No live3100 replacement, merge or operational-data modification. Source scope frozen for review.
 
-## RESERVATION-CONTRACT-EDIT-1013 — PC-A — IN_PROGRESS
+## RESERVATION-CONTRACT-EDIT-1013 — PC-A — READY_FOR_CI
 
 Base origin/develop@9bad9b8b. User authorizes correcting Reservations contract editing, separate read-only passenger information and identity editing, contract age corrections, editable customer/agency counterparty contacts, issued-form viewing, and develop merge. Reserve Reservations action panel/contract editor/passenger UI and focused tests; Sales-owned additive amendment API/service and public contracts as needed; bounded English labels and own docs. Producer Sales owns contract amendments; Reservations UI is a consumer, Customers owns identity and existing directory APIs remain authoritative. Preserve original issued snapshots, audit, version/branch permissions and financial/inventory invariants. No schema/migration/dependency or live operational changes. Previous Reservations source locks are frozen/released; do not touch active hotel-rate or Sales creation UI work.
 
