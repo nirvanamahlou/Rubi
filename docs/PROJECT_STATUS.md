@@ -1,3 +1,7 @@
+## RESERVATION-EDIT-TICKET-1014 — PC-A — READY_FOR_REVIEW
+
+Fix misleading no-ticket output while amending existing contract flights: retain saved ticket evidence, initialize both directions from the actual Tehran flight day, and distinguish an empty replacement list from a missing selection. Airline-filtered empty results and genuine search failures remain explicit. Sixteen focused tests, scoped lint, full Web typecheck, formatting, offline English sync and production build (62 routes) pass. Source locks released for review; CI pending. No migration, dependency, runtime or operational-data changes. See [task](tasks/RESERVATION-EDIT-TICKET-1014.md).
+
 ## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
 
 Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.

@@ -1,3 +1,7 @@
+## RESERVATION-EDIT-TICKET-1014 — PC-A — READY_FOR_REVIEW
+
+COMPUTER_ID=PC-A. User requests fixing the misleading no-ticket message during contract flight editing. Branch codex/pc-a-reservation-edit-ticket-1014 from origin/develop. Reserve ReservationSalesAmendment, a focused flight-search model/test, TicketOfferPicker and focused tests, bounded English labels/derived offline catalogs and own status docs. Initialize direction-specific search from the saved flight's Tehran date; keep existing ticket evidence and distinguish an empty replacement search from a missing contract ticket. Preserve real search failures, route/date/carrier filtering, amendment validation and seat controls. Existing reservation-editor task is frozen READY_FOR_REVIEW; no overlapping active source reservation found. No API/shared contract/schema/migration/dependency/runtime or operational data changes.
+
 ## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
 
 Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.
