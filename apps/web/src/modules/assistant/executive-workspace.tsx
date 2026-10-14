@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { explainPersonal } from './recommendation-policy';
 
@@ -611,7 +612,8 @@ export function AssistantComposer({
                   <p className={styles.composerHint} key={balance.currencyCode}>
                     {t(c.outstandingBalance)}:{' '}
                     <bdi>
-                      {balance.outstanding} {balance.currencyCode}
+                      {balance.outstanding}{' '}
+                      {currencySymbol(balance.currencyCode ?? '')}
                     </bdi>
                   </p>
                 ))
@@ -661,7 +663,8 @@ export function AssistantComposer({
                     <dt>{t(label as AssistantText)}</dt>
                     <dd>
                       <bdi>
-                        {amount as string} {balance.currencyCode}
+                        {amount as string}{' '}
+                        {currencySymbol(balance.currencyCode ?? '')}
                       </bdi>
                     </dd>
                   </div>
@@ -677,7 +680,8 @@ export function AssistantComposer({
                 {item.balances.map((balance) => (
                   <bdi key={balance.currencyCode}>
                     {' '}
-                    {balance.outstanding} {balance.currencyCode}{' '}
+                    {balance.outstanding}{' '}
+                    {currencySymbol(balance.currencyCode ?? '')}{' '}
                   </bdi>
                 ))}{' '}
                 <Link href={item.href}>{t(c.reviewContract)}</Link>
@@ -798,7 +802,8 @@ export function AssistantComposer({
                     >
                       {t(c.contractAmount)}:{' '}
                       <bdi>
-                        {amount.amount} {amount.currencyCode}
+                        {amount.amount}{' '}
+                        {currencySymbol(amount.currencyCode ?? '')}
                       </bdi>
                     </p>
                   ))}

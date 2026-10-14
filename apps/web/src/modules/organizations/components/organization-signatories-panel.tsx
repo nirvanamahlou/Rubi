@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
@@ -684,7 +685,7 @@ export function OrganizationSignatoriesPanel({
                 سقف اختیار:{' '}
                 {row.authorityLimit === null
                   ? 'ثبت نشده'
-                  : `${row.authorityLimit} ${row.currencyCode}`}
+                  : `${row.authorityLimit} ${currencySymbol(row.currencyCode)}`}
               </p>
               <p>
                 اعتبار: <bdi>{row.validFrom}</bdi> تا{' '}

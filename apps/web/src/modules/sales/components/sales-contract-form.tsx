@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { HotelRoomCapacity } from './hotel-room-capacity';
 import { salesHotelRoomOptions } from '../model/sales-hotel-room-options';
 import {
@@ -36,7 +37,8 @@ import {
   validateSalesChequePayments,
 } from '@nora/contracts';
 import { SalesChequeCalculator } from './sales-cheque-calculator';
-import { PassengerPackagePrices } from './passenger-package-prices';
+import { ContractTotalPrices } from './contract-total-prices';
+import { ContractServiceSummary } from './contract-service-summary';
 import { SalesPaymentPlan } from './sales-payment-plan';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { SalesDatePicker as DatePicker } from './sales-date-picker';
@@ -166,17 +168,17 @@ export function SalesContractForm() {
   const [draftState, setState] = useState<SalesFormState>({
     ...emptySalesForm,
     servicePricing: {},
-    priceEntryMode: 'PASSENGER_TOTAL',
+    priceEntryMode: 'CONTRACT_TOTAL',
   });
   const state = useMemo<SalesFormState>(() => {
     if (isTicketOnlyContract(draftState))
       return ticketOnlySaleDefaults({
         ...draftState,
-        priceEntryMode: 'PASSENGER_TOTAL',
+        priceEntryMode: 'CONTRACT_TOTAL',
       });
     return {
       ...draftState,
-      priceEntryMode: 'PASSENGER_TOTAL',
+      priceEntryMode: 'CONTRACT_TOTAL',
       servicePricing: draftState.servicePricing ?? {},
       catalogSalePricing:
         !draftState.tour &&
@@ -649,7 +651,7 @@ export function SalesContractForm() {
         payload.paymentTerms
           ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
           : payload.priceComponents,
-        true,
+        state.priceEntryMode === 'PASSENGER_TOTAL',
       );
       return payload.priceComponents.length > 0 ||
         (payload.services.length > 0 &&
@@ -732,7 +734,7 @@ export function SalesContractForm() {
         payload.paymentTerms
           ? payload.priceComponents.filter((p) => p.title !== SALES_CHEQUE_FEE)
           : payload.priceComponents,
-        true,
+        state.priceEntryMode === 'PASSENGER_TOTAL',
       );
       const fingerprint = JSON.stringify(payload);
       validateSalesChequePayments(
@@ -1858,23 +1860,27 @@ export function SalesContractForm() {
         {step === 3 ? (
           <div className="grid gap-4 grid-cols-1">
             <div className="grid content-start gap-3">
-              {state.serviceKinds.includes('TRANSFER') ? (
-                <p className="rounded-xl bg-primary/5 p-3 text-sm text-primary">
-                  ترانسفر{' '}
-                  {salesDirections(state, 'TRANSFER')
-                    .map((direction) =>
-                      direction === 'OUTBOUND' ? 'رفت' : 'برگشت',
-                    )
-                    .join(' و ')}{' '}
-                  در قیمت کل خدمات هر مسافر لحاظ می‌شود.
-                </p>
-              ) : null}
+              <ContractServiceSummary
+                state={state}
+                roomType={
+                  references.roomTypes.find(
+                    (r) => r.id === state.hotel.roomTypeId,
+                  )?.name
+                }
+                origin={
+                  references.cities.find((c) => c.id === state.originId)?.name
+                }
+                destination={
+                  references.cities.find((c) => c.id === state.destinationId)
+                    ?.name
+                }
+              />
             </div>
             <div className="grid content-start gap-3">
-              <PassengerPackagePrices
+              <ContractTotalPrices
                 state={state}
                 currencies={references.currencies}
-                onChange={(passengerPrices) => patchState({ passengerPrices })}
+                onChange={(contractPrices) => patchState({ contractPrices })}
               />
               <InsuranceExtraSummary state={state} />
               <SalesChequeCalculator
@@ -1987,10 +1993,10 @@ export function SalesContractForm() {
               </Card>
             </div>
             <InsuranceExtraSummary state={state} />
-            <PassengerPackagePrices
+            <ContractTotalPrices
               state={state}
               currencies={references.currencies}
-              onChange={(passengerPrices) => patchState({ passengerPrices })}
+              onChange={(contractPrices) => patchState({ contractPrices })}
             />
             {state.serviceKinds.includes('FLIGHT') ? (
               <Alert
@@ -2099,7 +2105,7 @@ function InsuranceExtraSummary({ state }: { state: SalesFormState }) {
       ))}
       {[...totals].map(([code, amount]) => (
         <p key={code}>
-          جمع نهایی قرارداد: {moneyDecimal(amount)} {code}
+          جمع نهایی قرارداد: {moneyDecimal(amount)} {currencySymbol(code)}
         </p>
       ))}
     </section>

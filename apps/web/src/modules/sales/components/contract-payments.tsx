@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { ContractProfit } from './contract-profit';
 import { SalesThemedSelect } from './sales-themed-select';
 import { PaymentDocuments } from './payment-documents';
@@ -74,7 +75,7 @@ export function ContractPaymentCurrencySelect({
 }
 
 const paymentMoney = (amount: string, currencyCode: string) =>
-  `${formatSalesMoney(amount)} ${currencyCode}`;
+  `${formatSalesMoney(amount)} ${currencySymbol(currencyCode)}`;
 
 export function ContractPaymentShareSummary({
   balances,
@@ -96,7 +97,7 @@ export function ContractPaymentShareSummary({
     return (
       <Alert
         tone="warning"
-        title={`برای ارز ${currencyCode} مبلغی در قرارداد ثبت نشده است.`}
+        title={`برای ارز ${currencySymbol(currencyCode)} مبلغی در قرارداد ثبت نشده است.`}
         className="md:col-span-2"
       />
     );
@@ -109,7 +110,7 @@ export function ContractPaymentShareSummary({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <strong>خلاصه مبلغ این پرداخت</strong>
         <span className="text-xs text-muted-foreground">
-          همه مبالغ به {currencyCode}
+          همه مبالغ به {currencySymbol(currencyCode ?? '')}
         </span>
       </div>
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
@@ -324,8 +325,8 @@ export function ContractPayments({
         <ContractProfit key={id} id={id} />
         {contract?.balances.map((balance) => (
           <p key={balance.currencyCode}>
-            مانده {balance.currencyCode}: {balance.outstanding} · پرداخت
-            تأییدشده: {balance.confirmedPaid}
+            مانده {currencySymbol(balance.currencyCode ?? '')}:{' '}
+            {balance.outstanding} · پرداخت تأییدشده: {balance.confirmedPaid}
           </p>
         ))}
         <form
@@ -366,7 +367,7 @@ export function ContractPayments({
         {contract?.payments.map((item) => (
           <div key={item.id} className="rounded-xl border p-3">
             <strong>
-              {item.amount} {item.currencyCode}
+              {item.amount} {currencySymbol(item.currencyCode ?? '')}
             </strong>{' '}
             ·{' '}
             {

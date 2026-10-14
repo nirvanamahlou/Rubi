@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui';
 import { SearchCombobox } from '@/components/ui/search-combobox';
@@ -9,7 +10,12 @@ import {
   type PublishedResource,
 } from '../api/references';
 import type { Reference } from '../model/catalog';
-export function ticketReferenceDisplayName(reference: Pick<Reference, 'name'>) {
+export function ticketReferenceDisplayName(
+  reference: Pick<Reference, 'name'> &
+    Partial<Pick<Reference, 'kind' | 'code'>>,
+) {
+  if (reference.kind === 'currency' && reference.code)
+    return currencySymbol(reference.code);
   return reference.name.trim();
 }
 export function ReferencePicker({

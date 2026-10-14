@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useMemo, useState } from 'react';
 import type { ImportedOccupancy } from './occupancy-import';
@@ -184,7 +185,9 @@ export function OccupancyImportPreview({
                   <td className="p-2" dir="ltr">
                     {row.amount}
                   </td>
-                  <td className="p-2">{row.currencyCode}</td>
+                  <td className="p-2">
+                    {currencySymbol(row.currencyCode ?? '')}
+                  </td>
                 </tr>
               ))}
             {!filtered.length && (

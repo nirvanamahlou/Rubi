@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useEffect, useState, type ReactNode } from 'react';
 import type {
@@ -327,7 +328,7 @@ export function WorkbenchPerformance() {
                       className="min-w-40 rounded-xl bg-primary/5 p-4"
                     >
                       <span className="text-xs text-muted-foreground">
-                        {amount.currencyCode}
+                        {currencySymbol(amount.currencyCode ?? '')}
                       </span>
                       <strong className="mt-2 block text-2xl" dir="ltr">
                         {amount.amount}
@@ -452,7 +453,10 @@ function MonthlySales({
           value={
             sales.current.amounts.length
               ? sales.current.amounts
-                  .map((item) => `${money(item.amount)} ${item.currencyCode}`)
+                  .map(
+                    (item) =>
+                      `${money(item.amount)} ${currencySymbol(item.currencyCode)}`,
+                  )
                   .join(' · ')
               : '۰'
           }
@@ -580,14 +584,16 @@ function MonthlySales({
                   <td className="p-3">
                     {route.amounts
                       .map(
-                        (item) => `${money(item.amount)} ${item.currencyCode}`,
+                        (item) =>
+                          `${money(item.amount)} ${currencySymbol(item.currencyCode)}`,
                       )
                       .join(' · ') || '—'}
                   </td>
                   <td className="p-3">
                     {route.previousAmounts
                       .map(
-                        (item) => `${money(item.amount)} ${item.currencyCode}`,
+                        (item) =>
+                          `${money(item.amount)} ${currencySymbol(item.currencyCode)}`,
                       )
                       .join(' · ') || '—'}
                   </td>

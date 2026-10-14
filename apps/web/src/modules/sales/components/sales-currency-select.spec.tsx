@@ -71,7 +71,7 @@ describe('registered currencies and themed Sales selectors', () => {
       />,
     );
     expect(html).toContain('role="combobox"');
-    expect(html).toContain('دلار (USD)');
+    expect(html).toContain('$');
     expect(html).toContain('rounded-xl');
     expect(html).not.toContain('<select');
   });

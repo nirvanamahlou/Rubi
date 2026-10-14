@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState } from 'react';
 import type { SalesContractProfitV1 } from '@nora/contracts';
 import { salesApi } from '../api/client';
@@ -85,7 +86,7 @@ export function ContractProfit({ id }: { id: string }) {
                   <tbody>
                     {value.totals.map((r) => (
                       <tr key={r.currencyCode}>
-                        <td>{r.currencyCode}</td>
+                        <td>{currencySymbol(r.currencyCode ?? '')}</td>
                         <td>{formatSalesMoney(r.salesAmount)}</td>
                         <td>{formatSalesMoney(r.purchaseAmount)}</td>
                         <td>
@@ -102,7 +103,7 @@ export function ContractProfit({ id }: { id: string }) {
                 {value.costs.map((c, i) => (
                   <li key={c.referenceId + ':' + i}>
                     {c.serviceTitles.join('، ')}: {formatSalesMoney(c.amount)}{' '}
-                    {c.currencyCode} ·{' '}
+                    {currencySymbol(c.currencyCode ?? '')} ·{' '}
                     {c.source === 'FINANCE_TICKET'
                       ? 'خرید بلیت ثبت‌شده در مالی'
                       : 'خرید رزرواسیون'}

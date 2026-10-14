@@ -1,3 +1,4 @@
+import { currencySymbol } from '@/lib/currency-symbol';
 import {
   moneyDecimal,
   moneyUnits,
@@ -102,7 +103,7 @@ export function contractPrintHtml(
     ? [...passengerTotals]
         .map(
           ([code, amount]) =>
-            `<div class="agreement-amount"><bdi>${contractMoney(moneyDecimal(amount))}</bdi><span class="agreement-currency">${e(code === 'IRR' ? 'ریال' : code)}</span></div>`,
+            `<div class="agreement-amount"><bdi>${contractMoney(moneyDecimal(amount))}</bdi><span class="agreement-currency">${e(currencySymbol(code))}</span></div>`,
         )
         .join('')
     : null;
@@ -110,7 +111,7 @@ export function contractPrintHtml(
     c.balances
       .map(
         (b) =>
-          `<div class="agreement-amount"><bdi>${contractMoney(b[field])}</bdi><span class="agreement-currency">${e(b.currencyCode === 'IRR' ? 'ریال' : b.currencyCode)}</span></div>`,
+          `<div class="agreement-amount"><bdi>${contractMoney(b[field])}</bdi><span class="agreement-currency">${e(currencySymbol(b.currencyCode))}</span></div>`,
       )
       .join('');
   const chequeTerms =
@@ -123,7 +124,7 @@ export function contractPrintHtml(
               (p) => p.currencyCode === total.currencyCode,
             )!;
             const result = calculateSalesCheque(total.amount, plan);
-            return `<p class="note">${e(total.currencyCode)} · مبلغ خرید: ${e(contractMoney(total.amount))} · پیش‌پرداخت: ${e(contractMoney(plan.downPayment))} · سود کل: ${e(contractMoney(result.fee))} · ${plan.months} چک · اولین سررسید: ${e(date(plan.firstDueDate))}</p>`;
+            return `<p class="note">${e(currencySymbol(total.currencyCode))} · مبلغ خرید: ${e(contractMoney(total.amount))} · پیش‌پرداخت: ${e(contractMoney(plan.downPayment))} · سود کل: ${e(contractMoney(result.fee))} · ${plan.months} چک · اولین سررسید: ${e(date(plan.firstDueDate))}</p>`;
           })
           .join('')}`
       : c.paymentTerms?.mode === 'CASH'
@@ -171,7 +172,7 @@ export function contractPrintHtml(
             (price) =>
               '<div><bdi class="money">' +
               contractMoney(price.amount) +
-              (foreign ? ' ' + e(price.currencyCode) : '') +
+              (foreign ? ' ' + e(currencySymbol(price.currencyCode)) : '') +
               '</bdi></div>',
           )
           .join('');

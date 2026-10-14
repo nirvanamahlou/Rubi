@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useEffect, useRef, useState } from 'react';
 import { SearchCombobox } from '@/components/ui/search-combobox';
@@ -122,11 +123,12 @@ export function SavedPackHotelPrices({
                               <td>{rate.manualPricing?.baseAmount ?? '—'}</td>
                               <td>{rate.manualPricing?.coefficient ?? '—'}</td>
                               <td dir="ltr">
-                                {rate.amount} {rate.currencyCode}
+                                {rate.amount}{' '}
+                                {currencySymbol(rate.currencyCode ?? '')}
                               </td>
                               <td dir="ltr">
                                 {rate.saleAmount ?? rate.amount}{' '}
-                                {rate.currencyCode}
+                                {currencySymbol(rate.currencyCode ?? '')}
                               </td>
                             </tr>
                           ))}

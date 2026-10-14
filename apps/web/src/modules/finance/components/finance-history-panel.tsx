@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -171,7 +172,7 @@ export function FinanceHistoryPanel({
               <div>
                 <dt className="text-xs text-muted-foreground">مبلغ این نوبت</dt>
                 <dd dir="ltr" className="text-end font-bold">
-                  {row.amount} {row.currencyCode}
+                  {row.amount} {currencySymbol(row.currencyCode ?? '')}
                 </dd>
               </div>
               <div>
@@ -188,7 +189,8 @@ export function FinanceHistoryPanel({
                     جمع پرداخت تا این نوبت
                   </dt>
                   <dd dir="ltr" className="text-end">
-                    {row.cumulativePaid} {row.currencyCode}
+                    {row.cumulativePaid}{' '}
+                    {currencySymbol(row.currencyCode ?? '')}
                   </dd>
                 </div>
               ) : null}
@@ -198,7 +200,8 @@ export function FinanceHistoryPanel({
                     مانده پس از این نوبت
                   </dt>
                   <dd dir="ltr" className="text-end">
-                    {row.remainingAmount} {row.currencyCode}
+                    {row.remainingAmount}{' '}
+                    {currencySymbol(row.currencyCode ?? '')}
                   </dd>
                 </div>
               ) : null}

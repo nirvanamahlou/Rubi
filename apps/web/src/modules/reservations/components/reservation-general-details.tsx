@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
@@ -94,7 +95,7 @@ function priceSummary(intake: ReservationFormIntake) {
       .map(([currency, amount]) => {
         const value =
           kind === 'discount' ? amount.day - amount.agreed : amount[kind];
-        return `${formatSalesMoney(moneyDecimal(value))} ${currency}`;
+        return `${formatSalesMoney(moneyDecimal(value))} ${currencySymbol(currency)}`;
       })
       .join(' · ') || unavailable;
   return {

@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type {
@@ -797,7 +798,7 @@ function OperationFields({
                 <option value="">انتخاب ارز</option>
                 {bootstrap.currencies.map((currency) => (
                   <option key={currency.id} value={currency.code}>
-                    {currency.name} ({currency.code})
+                    {currencySymbol(currency.code)}
                   </option>
                 ))}
               </ProcurementSelect>

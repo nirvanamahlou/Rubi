@@ -576,3 +576,34 @@ it('validates package passenger totals without inventing service prices', () => 
   }));
   expect(() => validateSalesContract(input)).toThrow();
 });
+
+it('accepts opted-in contract totals without inferring passenger sale allocations', () => {
+  const input = structuredClone(draft);
+  input.services = input.services.map((service) => ({
+    ...service,
+    metadata: { ...service.metadata, contractPackagePricingVersion: 1 },
+  }));
+  input.passengers = input.passengers.map((person) => {
+    const next = { ...person };
+    delete next.agreedPrices;
+    return next;
+  });
+  input.priceComponents = [
+    {
+      type: 'BASE',
+      title: 'Contract total',
+      amount: '1234.5678',
+      currencyCode: 'USD',
+    },
+    {
+      type: 'BASE',
+      title: 'Contract total',
+      amount: '2500000',
+      currencyCode: 'IRR',
+    },
+  ];
+  input.payments = [];
+  expect(() => validateSalesContract(input)).not.toThrow();
+  input.services[0]!.pricing = [];
+  expect(() => validateSalesContract(input)).toThrow();
+});

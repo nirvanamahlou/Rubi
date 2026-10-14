@@ -49,8 +49,8 @@ describe('sales pricing entry', () => {
       />,
     );
     expect(html).toContain('6,000,000');
-    expect(html).toContain('جمع توافق‌شده: 5,500,000 IRR');
-    expect(html).toContain('جمع توافق‌شده: 95 USD');
+    expect(html).toContain('جمع توافق‌شده: 5,500,000 ﷼');
+    expect(html).toContain('جمع توافق‌شده: 95 $');
     expect(html).not.toContain('5,500,095');
   });
   it('formats without floating point conversion and normalizes Persian input', () => {

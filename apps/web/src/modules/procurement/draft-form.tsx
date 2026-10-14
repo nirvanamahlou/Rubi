@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { uiConfirm } from '@/i18n/dialogs';
 
 import { useEffect, useRef, useState } from 'react';
@@ -897,7 +898,7 @@ export function DraftForm({
                 <option value="">انتخاب ارز</option>
                 {bootstrap.currencies.map((currency) => (
                   <option key={currency.id} value={currency.code}>
-                    {currency.name} ({currency.code})
+                    {currencySymbol(currency.code)}
                   </option>
                 ))}
               </ProcurementSelect>

@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import {
   HotelPurchaseSavingsPreview,
   HotelPurchaseSavings,
@@ -487,7 +488,7 @@ export function ReservationHotelPurchase({
           {hotelPurchase && (
             <p className="text-sm">
               آخرین خرید: {formatSalesMoney(hotelPurchase.amount)}{' '}
-              {hotelPurchase.currencyCode}
+              {currencySymbol(hotelPurchase.currencyCode ?? '')}
             </p>
           )}
           <p className="font-bold">
@@ -605,7 +606,8 @@ export function ReservationHotelPurchase({
         <div className="space-y-3">
           {[...totals].map(([code, amounts]) => (
             <p key={code} className="font-bold">
-              جمع درخواست خرید: {formatSalesMoney(totalOf(amounts))} {code}
+              جمع درخواست خرید: {formatSalesMoney(totalOf(amounts))}{' '}
+              {currencySymbol(code)}
             </p>
           ))}
           <Button
@@ -634,8 +636,8 @@ export function ReservationHotelPurchase({
           <summary>سوابق قدیمی هزینه هتل</summary>
           {request.hotelPurchases.map((cost) => (
             <p key={cost.id}>
-              {formatSalesMoney(cost.amount)} {cost.currencyCode} · نسخه{' '}
-              {cost.version}
+              {formatSalesMoney(cost.amount)}{' '}
+              {currencySymbol(cost.currencyCode ?? '')} · نسخه {cost.version}
             </p>
           ))}
         </details>

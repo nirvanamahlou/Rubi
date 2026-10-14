@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
@@ -55,7 +56,7 @@ const displayAmounts = (
 ) =>
   amounts
     .filter((item) => item[field] !== null && Number(item[field]) !== 0)
-    .map((item) => `${item[field]} ${item.currencyCode}`)
+    .map((item) => `${item[field]} ${currencySymbol(item.currencyCode)}`)
     .join(' + ') || '۰';
 
 const roomColumns = [
@@ -671,7 +672,8 @@ export function TourPricingWorkspace() {
                 {grid.purchaseBatches.map((item) => (
                   <option key={item.id} value={item.id}>
                     {item.sharedPeriod ? 'بازهٔ مشترک · ' : ''}
-                    {item.checkIn} تا {item.checkOut} · {item.currencyCode} ·{' '}
+                    {item.checkIn} تا {item.checkOut} ·{' '}
+                    {currencySymbol(item.currencyCode ?? '')} ·{' '}
                     {item.rows.length} هتل
                   </option>
                 ))}
@@ -881,7 +883,8 @@ export function TourPricingWorkspace() {
                   {cost ? (
                     <p className="mt-2 text-xs text-muted-foreground">
                       خرید پرداخت‌شده: بزرگسال {cost.adultUnitCost} · کودک{' '}
-                      {cost.childUnitCost} {cost.currencyCode}
+                      {cost.childUnitCost}{' '}
+                      {currencySymbol(cost.currencyCode ?? '')}
                     </p>
                   ) : (
                     <p className="mt-2 text-xs text-destructive">
@@ -1041,7 +1044,7 @@ export function TourPricingWorkspace() {
                                             price.currencyAmounts,
                                             'sale',
                                           )
-                                        : `${price.packageSale ?? price.hotelSale} ${price.currencyCode}`}
+                                        : `${price.packageSale ?? price.hotelSale} ${currencySymbol(price.currencyCode)}`}
                                     </strong>
                                     <span className="block text-xs text-muted-foreground">
                                       {publication.selectedHotelRateIds

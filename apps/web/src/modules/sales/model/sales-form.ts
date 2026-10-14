@@ -17,6 +17,7 @@ import {
   quoteHotelOccupancy,
   hotelAgeOn,
   moneyUnits,
+  moneyDecimal,
 } from '@nora/contracts';
 import type {
   CustomerSummary,
@@ -95,7 +96,8 @@ export const salesSteps = [
 export interface SalesFormState {
   childAges?: (number | null)[];
   infantAges?: (number | null)[];
-  priceEntryMode?: 'PASSENGER_TOTAL';
+  priceEntryMode?: 'PASSENGER_TOTAL' | 'CONTRACT_TOTAL';
+  contractPrices?: SalesMoney[];
   insuranceExtraToman?: Record<string, string>;
   tour?: TourDepartureV1 | undefined;
   insurancePlan?: SalesInsuranceSelection | undefined;
@@ -180,6 +182,43 @@ export interface ContractFlightDraft {
   carrierName: string;
   serviceNumber: string;
   cabinClassCode: 'ECONOMY' | 'BUSINESS' | 'FIRST';
+}
+
+export function contractSaleComponents(
+  state: SalesFormState,
+  extras: readonly { customerId: string }[] = [],
+): SalesPriceComponentInput[] {
+  const prices = state.contractPrices ?? [];
+  if (!prices.length) throw new Error('مبلغ کل قرارداد را وارد کنید.');
+  const totals = new Map<string, bigint>();
+  for (const price of prices) {
+    if (
+      !/^[A-Z]{3}$/.test(price.currencyCode) ||
+      totals.has(price.currencyCode)
+    )
+      throw new Error('ارز مبلغ قرارداد باید معتبر و یکتا باشد.');
+    totals.set(price.currencyCode, moneyUnits(price.amount));
+  }
+  for (const person of extras)
+    totals.set(
+      'IRR',
+      (totals.get('IRR') ?? 0n) +
+        moneyUnits(
+          insuranceExtraRials(state.insuranceExtraToman![person.customerId]!),
+        ),
+    );
+  return [...totals]
+    .filter(([, value]) => value > 0n)
+    .map(([currencyCode, value]) => {
+      const amount = moneyDecimal(value);
+      moneyUnits(amount);
+      return {
+        type: 'BASE' as const,
+        title: 'مبلغ کل قرارداد',
+        currencyCode,
+        amount,
+      };
+    });
 }
 
 export function salesFlightSelection(
@@ -939,7 +978,7 @@ export function salesPayload(
       ...contractFlightMetadata({ ...flight, version: 1 }),
     };
   }
-  if (state.servicePricing && state.priceEntryMode !== 'PASSENGER_TOTAL')
+  if (state.servicePricing && !state.priceEntryMode)
     for (const service of services) {
       if (service.kind === 'TRANSFER') {
         service.metadata = { ...service.metadata, includedWithoutCharge: true };
@@ -1018,6 +1057,23 @@ export function salesPayload(
           catalogSaleQuoteCurrency: catalog.currencyCode,
           catalogSaleQuoteAmount: catalog.daySale.amount,
         };
+    }
+  if (state.priceEntryMode === 'CONTRACT_TOTAL')
+    for (const service of services) {
+      if (service.metadata?.insuranceAgeSurcharge !== true)
+        delete service.pricing;
+      service.metadata = {
+        ...Object.fromEntries(
+          Object.entries(service.metadata ?? {}).filter(
+            ([key]) =>
+              ![
+                'passengerPackagePricingVersion',
+                'includedWithoutCharge',
+              ].includes(key),
+          ),
+        ),
+        contractPackagePricingVersion: 1,
+      };
     }
   const pairedTicketFares =
     state.outboundOffer && state.returnOffer
@@ -1150,7 +1206,7 @@ export function salesPayload(
       state.passengerAccommodations?.[item.customerId]
         ? { accommodationKind: state.passengerAccommodations[item.customerId] }
         : {}),
-      ...(state.passengerPrices
+      ...(state.passengerPrices && state.priceEntryMode !== 'CONTRACT_TOTAL'
         ? {
             agreedPrices: packagePrices
               ? packagePrices.prices[item.customerId]
@@ -1195,7 +1251,9 @@ export function salesPayload(
       ? { paymentTerms: state.paymentTerms }
       : {}),
     priceComponents: salesChequeComponents(
-      packagePrices?.components ??
+      (state.priceEntryMode === 'CONTRACT_TOTAL'
+        ? contractSaleComponents(state, extras)
+        : packagePrices?.components) ??
         servicePriceComponents(
           services,
           state.serviceKinds.includes('HOTEL')

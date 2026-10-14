@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState } from 'react';
 import type {
   MasterDataRecord,
@@ -515,7 +516,8 @@ export function ReservationSalesAmendment({
             {draft.services.some(
               (s) =>
                 s.pricing?.length &&
-                s.metadata?.passengerPackagePricingVersion !== 1,
+                s.metadata?.passengerPackagePricingVersion !== 1 &&
+                s.metadata?.contractPackagePricingVersion !== 1,
             )
               ? draft.services.map((s) => (
                   <div
@@ -525,7 +527,7 @@ export function ReservationSalesAmendment({
                     <strong>{s.titleSnapshot}</strong>
                     {s.pricing?.map((v, i) => (
                       <label key={v.currencyCode}>
-                        {v.currencyCode} ·{' '}
+                        {currencySymbol(v.currencyCode ?? '')} ·{' '}
                         {v.agreed.basis === 'NIGHT' ? 'هر شب' : 'مبلغ کل'}
                         <Input
                           dir="ltr"
@@ -571,7 +573,7 @@ export function ReservationSalesAmendment({
                       <strong>{p.displayNameSnapshot}</strong>
                       {p.agreedPrices?.map((v) => (
                         <label key={v.currencyCode}>
-                          {v.currencyCode}
+                          {currencySymbol(v.currencyCode ?? '')}
                           <Input
                             dir="ltr"
                             inputMode="decimal"
@@ -586,7 +588,7 @@ export function ReservationSalesAmendment({
                   ))
                 : draft.priceComponents.map((p, i) => (
                     <label key={i}>
-                      {p.title} · {p.currencyCode}
+                      {p.title} · {currencySymbol(p.currencyCode ?? '')}
                       <Input
                         dir="ltr"
                         inputMode="decimal"
@@ -607,7 +609,7 @@ export function ReservationSalesAmendment({
                 <span key={i}>
                   {p.title}:{' '}
                   <b dir="ltr">
-                    {p.amount} {p.currencyCode}
+                    {p.amount} {currencySymbol(p.currencyCode ?? '')}
                   </b>
                 </span>
               ))}

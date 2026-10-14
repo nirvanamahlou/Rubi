@@ -65,7 +65,7 @@ describe('readable sales ticket card', () => {
       },
     });
     expect(priced).not.toContain('disabled=""');
-    expect(priced).toContain('2500000 IRR');
+    expect(priced).toContain('2500000 ﷼');
   });
   it.each([true, false])(
     'shows both dates prominently while keeping times compact (selected=%s)',

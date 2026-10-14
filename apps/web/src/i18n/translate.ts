@@ -3,6 +3,7 @@ import accountingDocuments from './en-accounting-documents.json';
 import accountingPageKpis from './en-accounting-page-kpis.json';
 import englishOverrides from './en-overrides.json';
 import type { DisplayLanguage } from './language';
+import { isCurrencySymbol } from './currency-symbol';
 
 export const englishUiCatalog: Readonly<Record<string, string>> = {
   ...englishCatalog,
@@ -46,6 +47,7 @@ export function translateUiText(
   value: string,
   language: DisplayLanguage,
 ): string {
+  if (isCurrencySymbol(value.trim())) return value;
   if (language === 'fa') return value;
   const normalized = normalizeUiText(value);
   const exact = englishUiCatalog[normalized];

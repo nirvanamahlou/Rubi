@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import {
@@ -309,7 +310,7 @@ function RevisionSummary({
               <tbody>
                 {revision.creditPolicies.map((p) => (
                   <tr key={p.currencyCode}>
-                    <td dir="ltr">{p.currencyCode}</td>
+                    <td dir="ltr">{currencySymbol(p.currencyCode ?? '')}</td>
                     <td dir="ltr">{p.creditLimit}</td>
                     <td>{p.limitType === 'HARD' ? 'سخت' : 'نرم'}</td>
                     <td>{p.dueDays} روز</td>
@@ -342,7 +343,7 @@ function RevisionSummary({
                 — {g.reference}
               </b>
               <p>
-                {g.amount} {g.currencyCode} · {g.issuer} ·{' '}
+                {g.amount} {currencySymbol(g.currencyCode ?? '')} · {g.issuer} ·{' '}
                 {g.status === 'RECEIVED' ? 'دریافت‌شده' : 'موردنیاز'}
               </p>
               <p>

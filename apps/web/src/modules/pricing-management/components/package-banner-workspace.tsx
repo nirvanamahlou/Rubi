@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import type {
@@ -132,7 +133,7 @@ function money(amount: string, currencyCode: string) {
         number,
       )
     : amount;
-  return `${value} ${currencyCode}`;
+  return `${value} ${currencySymbol(currencyCode)}`;
 }
 
 function templateTheme(template: PackageBannerTemplateV1) {

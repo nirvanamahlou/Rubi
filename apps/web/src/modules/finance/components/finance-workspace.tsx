@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 import {
   ArrowDownUp,
   Banknote,
@@ -284,7 +285,7 @@ function FinanceFilters({
             <SelectItem value="ALL">همه ارزها</SelectItem>
             {['IRR', 'USD', 'EUR', 'TRY', 'AED'].map((currency) => (
               <SelectItem key={currency} value={currency}>
-                {currency}
+                {currencySymbol(currency)}
               </SelectItem>
             ))}
           </SelectContent>

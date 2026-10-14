@@ -1,4 +1,5 @@
 'use client';
+import { currencySymbol } from '@/lib/currency-symbol';
 
 import {
   CheckCircle2,
@@ -278,7 +279,7 @@ export function FinancePreviewForm({
                   <SelectContent>
                     {['IRR', 'USD', 'EUR', 'TRY', 'AED'].map((currency) => (
                       <SelectItem key={currency} value={currency}>
-                        {currency}
+                        {currencySymbol(currency)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -318,11 +319,11 @@ export function FinancePreviewForm({
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <Alert
-                  description={`بدهکار: ${draft.amount || '۰'} ${draft.currencyCode}`}
+                  description={`بدهکار: ${draft.amount || '۰'} ${currencySymbol(draft.currencyCode)}`}
                   title="حساب صندوق نمونه"
                 />
                 <Alert
-                  description={`بستانکار: ${draft.amount || '۰'} ${draft.currencyCode}`}
+                  description={`بستانکار: ${draft.amount || '۰'} ${currencySymbol(draft.currencyCode)}`}
                   title="حساب دریافتنی نمونه"
                 />
               </div>

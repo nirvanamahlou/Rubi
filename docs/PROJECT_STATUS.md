@@ -5970,3 +5970,7 @@ Owner explicitly requests global contract read and creation for active Manager/S
 
 ## ROLE-ACCESS-TEMPLATES-1014 — PC-A
 Persisted administrator-configured job role defaults through dedicated unassigned IAM roles using existing managed-access validation and transactional grants. User creation copies selected role screens/operations/restrictions into editable independent access. No hardcoded recommendation fallback; unconfigured roles start empty. Existing users are unchanged by template saves.24 focused IAM tests pass; scoped API lint passes. Local generated Contracts/Prisma types required refresh after newer develop changes. Full quality, typechecks, tests and builds gate authorized develop merge. No schema/migration/dependency/runtime change.
+
+## 2026-10-14 — CONTRACT-TOTAL-PRICING-1014 — PC-A
+
+Sales new-contract pricing now accepts exact contract totals per currency with a selected-services summary above the price/payment editor. The additive shared contract-total marker preserves legacy passenger pricing and insurance surcharge controls; cheque/payment calculations consume the aggregate totals. Currency symbols replace display currency names/codes in monetary views and currency pickers while wire/storage codes and name/code search remain unchanged. No schema/migration or operational-data rewrite. Validation and CI gate the user-authorized develop merge; see [task handoff](tasks/CONTRACT-TOTAL-PRICING-1014.md).
