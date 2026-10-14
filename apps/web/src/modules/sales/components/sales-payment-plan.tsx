@@ -149,13 +149,13 @@ export function SalesPaymentPlan({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="sm"
+                  size="icon"
+                  title={`حذف پرداخت ${index + 1}`}
                   aria-label={`حذف پرداخت ${index + 1}`}
                   className="text-muted-foreground hover:text-destructive"
                   onClick={() => setRemoving(index)}
                 >
-                  <Trash2 className="size-4" />
-                  حذف
+                  <Trash2 aria-hidden="true" className="size-4" />
                 </Button>
               </div>
               {removing === index ? (

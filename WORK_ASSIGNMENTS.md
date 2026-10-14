@@ -1,3 +1,7 @@
+## PAYMENT-DELETE-ICON-1014 — PC-A — READY_FOR_REVIEW
+
+User requests a trash icon for deleting a new-contract payment row. Reserve sales-payment-plan presentation and own status entries. Icon-only themed button retains accessible label, tooltip, confirmation and existing deletion handler. No API/schema/dependency/runtime changes.
+
 ## SALES-CORRECTION-PURPLE-1014 — PC-A — IN_PROGRESS
 
 User requests purple for corrected-by-sales, not reservation operational edits, with develop merge. Reserve Sales reservation table audit projection and regression plus own status. The explicit SALES_PASSENGER_CORRECTION event drives the purple correctedAt marker; reservation form/general amendments do not. No schema/migration/dependency/runtime change.
