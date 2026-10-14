@@ -1,6 +1,6 @@
 'use client';
-import { ReservationPartyEditor } from './reservation-party-editor';
 import { ReservationPassengers } from '../passenger-files/passengers';
+import { ReservationPartyEditor } from './reservation-party-editor';
 import { TravelWorkflowForm } from './travel-workflow-form';
 
 import { useEffect, useState } from 'react';
@@ -31,14 +31,10 @@ const sections = [
   'طرف قرارداد',
   'پرواز',
   'هتل',
-  'سایر',
   'مبالغ فروش',
   'ویرایش مسافران',
-  'فرم رزواسیون',
   'سوابق',
-  'اصلاح قرارداد',
   'ابطال قرارداد',
-  'تأیید و لغو ابطال',
 ] as const;
 type Section = (typeof sections)[number];
 
@@ -203,13 +199,7 @@ export function ReservationContractEditor({
   }, [contractId, requestId, revision]);
 
   const editSection =
-    active === 'پرواز'
-      ? 'FLIGHT'
-      : active === 'هتل'
-        ? 'HOTEL'
-        : active === 'سایر'
-          ? 'OTHER'
-          : undefined;
+    active === 'پرواز' ? 'FLIGHT' : active === 'هتل' ? 'HOTEL' : undefined;
   const updateWorkflow = (workflow: TravelWorkflowStateV1) =>
     setIntake((current) =>
       current
@@ -279,25 +269,15 @@ export function ReservationContractEditor({
           ) : (
             <p role="status">در حال دریافت اطلاعات طرف قرارداد…</p>
           ))}
-        {active === 'ویرایش مسافران' && (
-          <ReservationPassengers key={requestId} id={requestId} />
-        )}
-        {active === 'فرم رزواسیون' && (
-          <TravelWorkflowForm
-            key={requestId}
-            id={requestId}
-            action="رزرواسیون"
-          />
-        )}
         {(editSection ||
-          active === 'اصلاح قرارداد' ||
+          active === 'ویرایش مسافران' ||
           active === 'مبالغ فروش') &&
           contract && (
             <ReservationSalesAmendment
               key={active + contract.version}
               contract={contract}
               section={
-                active === 'اصلاح قرارداد'
+                active === 'ویرایش مسافران'
                   ? 'CORRECTION'
                   : active === 'مبالغ فروش'
                     ? 'PRICES'
@@ -306,6 +286,9 @@ export function ReservationContractEditor({
               onSaved={() => setRevision((v) => v + 1)}
             />
           )}
+        {active === 'ویرایش مسافران' && (
+          <ReservationPassengers key={requestId} id={requestId} />
+        )}
         {active === 'سوابق' && (
           <div className={styles.history}>
             <div className="flex flex-wrap gap-2">
@@ -346,18 +329,11 @@ export function ReservationContractEditor({
             <WorkflowCommand
               id={requestId}
               intake={intake}
-              action="CANCEL"
-              onSaved={updateWorkflow}
-            />
-          ) : (
-            <p role="status">در حال دریافت وضعیت…</p>
-          ))}
-        {active === 'تأیید و لغو ابطال' &&
-          (intake ? (
-            <WorkflowCommand
-              id={requestId}
-              intake={intake}
-              action="REOPEN"
+              action={
+                intake.workflow.supplierStatus === 'CANCELLED'
+                  ? 'REOPEN'
+                  : 'CANCEL'
+              }
               onSaved={updateWorkflow}
             />
           ) : (

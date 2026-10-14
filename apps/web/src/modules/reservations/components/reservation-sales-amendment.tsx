@@ -51,6 +51,7 @@ export function ReservationSalesAmendment({
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
+  const [airline, setAirline] = useState('');
   const [day, setDay] = useState(contract.departureDate.slice(0, 10));
   useEffect(() => {
     let live = true;
@@ -299,7 +300,14 @@ export function ReservationSalesAmendment({
                 }}
               />
             )}
+            <SearchableReference
+              label="ایرلاین"
+              value={airline}
+              options={refs.airlines ?? []}
+              onChange={setAirline}
+            />
             <TicketOfferPicker
+              carrierName={refs.airlines?.find((r) => r.id === airline)?.name}
               exactDay={day}
               query={{
                 originId:

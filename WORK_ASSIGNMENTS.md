@@ -8,6 +8,10 @@ SALES-PASSENGER-CORRECTIONS-1014 user follow-up supersedes orange: corrected que
 
 Validation: 414 Sales/Reservations tests passed (7 opt-in skipped), 21 new correction/IAM tests and 11 passenger-consumer tests passed. Web related run passed 494 tests with one existing ticket-pricing render timeout; targeted correction client and purple queue regressions pass. API/Web typechecks, API build and Web production build pass. Scoped lint passes. Full exact-head CI must resolve the local timing-only failure before merge. Source reservations released for the frozen PR candidate; no live rollout.
 
+## RESERVATION-EDITOR-SECTIONS-1014 — PC-A — READY_FOR_REVIEW
+
+User authorizes airline selection, contract passenger age editing, form-only hotel age editing and compact nonduplicated reservation editor sections, followed by develop merge. Reserve reservation-contract-editor, reservation-sales-amendment, reservation-settings and focused tests plus scoped English labels. Reserve bounded optional carrierName presentation filter on Sales TicketOfferPicker consumed by Reservations. No migration/dependency/runtime changes. Preserve actual contract amendment validation and form-only hotel age overrides.
+
 ## HIDE-CONTRACT-FLIGHT-CAPACITY-1014 — PC-A — READY_FOR_REVIEW
 
 User authorizes removing capacity and remaining-seat figures from new-contract flight cards and develop merge. Reserve Sales ticket-offer-card and its existing regression tests, plus own status entries. Keep availability validation and booking capacity enforcement. No API, schema, migration, dependency or runtime change.
