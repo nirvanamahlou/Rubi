@@ -1,4 +1,5 @@
 import { ReservationOperationInterceptor } from './reservation-operation.interceptor';
+import { PassengerCorrectionService } from '../sales/corrections/passenger-correction.service';
 import {
   BadRequestException,
   Body,
@@ -10,6 +11,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
   Param,
   Patch,
   Post,
@@ -133,6 +135,9 @@ export class ReservationPassengerFilesService {
     private readonly workflow: TravelWorkflowService,
     @Inject(CustomerService) private readonly customers: CustomerService,
     @Inject(DocumentsService) private readonly documents: DocumentsService,
+    @Optional()
+    @Inject(PassengerCorrectionService)
+    private readonly corrections?: PassengerCorrectionService,
   ) {}
   private require(actor: AuthenticatedActor, permissions: readonly string[]) {
     if (
@@ -160,6 +165,10 @@ export class ReservationPassengerFilesService {
       'customers.sensitive.read',
     );
     const data = [];
+    const corrections = await this.corrections?.effective(
+      intake.snapshot.contractId,
+      actor,
+    );
     for (const customerId of [...new Set(intake.snapshot.passengerIds)]) {
       const { data: customer } = await this.customers.detail(
         customerId,
@@ -170,7 +179,21 @@ export class ReservationPassengerFilesService {
       const assignment = intake.snapshot.passengerAssignments?.find(
         (item) => item.customerId === customerId,
       );
-      data.push(nameView(customer, assignment?.ageCategory, canReadSensitive));
+      const corrected = corrections?.get(customerId);
+      data.push(
+        nameView(
+          corrected
+            ? {
+                ...customer,
+                birthDate: corrected.birthDate,
+                passportNumber: corrected.passportNumber,
+                passportExpiryDate: corrected.passportExpiryDate,
+              }
+            : customer,
+          assignment?.ageCategory,
+          canReadSensitive,
+        ),
+      );
     }
     return {
       data,
