@@ -155,6 +155,9 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
     () => notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY),
     [CHANGE_NOTIFICATIONS_STORAGE_KEY],
   );
+
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const loginChecked = useRef(false);
   const serverWrites = useRef(Promise.resolve());
   const pendingWrites = useRef(0);
   const feedVersion = useRef(0);
@@ -191,6 +194,16 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
       setServerItems(response.data);
       setServerUnreadCount(response.meta.unreadCount);
       setServerError(null);
+      if (!loginChecked.current) {
+        loginChecked.current = true;
+        if (
+          response.data.some(
+            (item) =>
+              !item.isRead && item.eventType === 'sales.passenger-corrected',
+          )
+        )
+          setDropdownOpen(true);
+      }
     } catch (error) {
       setServerError(
         error instanceof Error
@@ -445,7 +458,9 @@ function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
   return (
     <DropdownMenu
       dir="rtl"
+      open={dropdownOpen}
       onOpenChange={(open) => {
+        setDropdownOpen(open);
         if (!open) return;
         void loadServer();
         void syncMasterDataFeed(true);

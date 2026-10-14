@@ -2,6 +2,7 @@
 import { ReservationHotelCosts } from '../components/reservation-hotel-costs';
 import { ReservationPurchaseDialog } from '../components/reservation-hotel-purchase';
 import { ReservationNotes } from '../components/reservation-notes';
+import { PassengerCorrectionHistory } from '@/modules/sales/components/passenger-correction-history';
 import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationFiles } from '../passenger-files/files';
 import { EnglishHotelName } from '../components/english-hotel-name';
@@ -85,7 +86,17 @@ export function ContractActionContent({
   if (action === 'مشخصات کلی')
     return <ReservationGeneralDetails key={request.id} request={request} />;
   if (action === 'توضیحات')
-    return <ReservationNotes key={request.id} id={request.id} />;
+    return (
+      <div className="grid gap-4">
+        <ReservationNotes key={request.id} id={request.id} />
+        {request.contractId ? (
+          <PassengerCorrectionHistory
+            key={request.contractId}
+            contractId={request.contractId}
+          />
+        ) : null}
+      </div>
+    );
   if (
     ['رزرواسیون', 'Confirmation', 'بلیط', 'واچر', 'بیمه‌نامه'].includes(action)
   )

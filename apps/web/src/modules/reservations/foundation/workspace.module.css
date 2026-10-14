@@ -591,6 +591,18 @@
 }
 
 /* Keep the notes marker visible when the request is selected. */
+.requestTable tbody tr[data-corrected='true'] td {
+  background: #f3e8ff;
+  color: #581c87;
+  border-color: #d8b4fe;
+}
+:global(.dark) .requestTable tbody tr[data-corrected='true'] td {
+  background: #3b0764;
+  color: #f3e8ff;
+  border-color: #a855f7;
+}
+
+/* Keep the notes marker visible when the request is selected. */
 .requestTable tbody tr td[data-has-note='true'] {
   background: #ffe082;
   color: #422d00;

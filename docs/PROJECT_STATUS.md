@@ -2,6 +2,10 @@
 
 Notification browser history is isolated by authenticated user, authorized branches and current permissions; legacy shared history is not imported. The center remounts on identity/scope changes and filters destination visibility. Server listing filters recipient rows against current route permissions before pagination and unread counting, preserving direct recipient-only personal notices and ownership checks for read/clear operations. No schema/migration or local activation. Focused access/notification tests, types/lint and CI validate the source candidate.
 
+## 2026-10-14 — SALES-PASSENGER-CORRECTIONS-1014 — PC-A — VALIDATING
+
+Sales finalized-contract operations add a protected correction form for passenger DOB/passport/expiry and Reservations notes. Contract-version CAS, encrypted append-only before/after evidence, actor/time, immutable operation IDs and same-transaction branch-authorized notifications protect integrity. Canonical Customer profiles, amounts, commercial passenger categories, allocations and previously issued snapshots remain unchanged. DOB changes crossing a commercial age category require contract amendment. Reservations queue marks corrected contracts PURPLE (latest user instruction); notification links open exact event history, with field values masked without sensitive permission. Passenger details and new Manifest outputs use public Sales contract-specific identity overlays. No schema/migration/dependency or operational runtime/data change. Tests, build and exact-head CI gate authorized develop merge.
+
 ## 2026-10-14 — RESERVATION-EDITOR-SECTIONS-1014 — PC-A
 
 Reservation editing keeps party, flight, hotel, sale amounts, passenger editing, history and a single status-aware cancel/reopen section. Contract passenger categories are edited through the existing validated amendment command while identity editing remains available. Form age and hotel child bands stay form-only; duplicate form/correction/other sections are removed from the contract editor. Airline selection filters eligible flight replacements; manual flights retain their editable airline. No migration or local rollout.
