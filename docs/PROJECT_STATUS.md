@@ -2,6 +2,10 @@
 
 Remove the English-only text replacement of login company logos; both languages now render the same real image assets through the localized Image wrapper. Increase login logo card height from176 to192px on desktop and112 to128px on mobile, with8px desktop and4px mobile containment padding so narrow screens also gain visible logo area. Preserve aspect ratio, localized accessibility and existing application brand selection. Bilingual responsive login and all-company image-identity regressions cover the fix. No API/schema/migration/dependency or local runtime changes; tests/build and exact-head CI gate the authorized develop merge.
 
+## RESERVATION-TRANSFER-OUTPUT-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales transfer-count draft/payload/contract output, Reservations shared form/PDF models/renderers, public reference consumers and issued-download controls/tests. Default transfer count adults+children with manual reduction; shared direction/count output and explicit NOTICE note; English airline/broker references; remove requested auxiliary print rows. Preserve historical output semantics and existing module public boundaries. Reserve bounded English overrides/offline sync and Sales domain transfer-count validation. No schema/dependency/migration or operational data edits. User authorizes tests and develop merge.
+
 ## RESERVATION-FORM-SUBMIT-1014 — PC-A — READY_FOR_CI
 
 Reserve reservation settings/workflow form and submission helper/tests. Default current-company branding, require broker before save/send, one submit action showing issued form with persistent download/print controls. User authorizes tests and develop merge. No schema/dependency or operational writes.

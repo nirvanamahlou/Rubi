@@ -189,7 +189,13 @@ export function contractPrintHtml(
     .join('');
   const transfers = c.servicesDetail
     .filter((s) => s.kind === 'TRANSFER')
-    .map((s) => s.titleSnapshot)
+    .map(
+      (s) =>
+        s.titleSnapshot +
+        (typeof s.metadata?.passengerCount === 'number'
+          ? ` · ${s.metadata.passengerCount} نفر`
+          : ''),
+    )
     .join('، ');
   const issuerName =
     output.company.code === 'JAHAN_BASTAN'

@@ -4,6 +4,10 @@ User authorizes retaining company logo images when switching to English, slightl
 
 LOGOS-LOCALE-LOGIN-1014 validation:53 login/localization/legal-entity regressions pass, including both images in fa/en desktop/mobile and unchanged image identity for all four existing company selections. Scoped lint passes; Web typecheck/build and exact-head CI gate merge. No new strings, asset changes or runtime deployment. Bounded source lock released with candidate.
 
+## RESERVATION-TRANSFER-OUTPUT-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales transfer-count draft/payload/contract output, Reservations shared form/PDF models/renderers, public reference consumers and issued-download controls/tests. Default transfer count adults+children with manual reduction; shared direction/count output and explicit NOTICE note; English airline/broker references; remove requested auxiliary print rows. Preserve historical output semantics and existing module public boundaries. Reserve bounded English overrides/offline sync and Sales domain transfer-count validation. No schema/dependency/migration or operational data edits. User authorizes tests and develop merge.
+
 ## RESERVATION-FORM-SUBMIT-1014 — PC-A — READY_FOR_CI
 
 Reserve reservation settings/workflow form and submission helper/tests. Default current-company branding, require broker before save/send, one submit action showing issued form with persistent download/print controls. User authorizes tests and develop merge. No schema/dependency or operational writes.

@@ -78,6 +78,7 @@ import {
   salesPassengerAgeLabel,
   salesPassengerCompositionMatches,
   salesPassengerCounts,
+  salesTransferCount,
   salesHotelGuestIds,
   salesHotelCapacityError,
   salesHotelOccupancyQuote,
@@ -1003,6 +1004,29 @@ export function SalesContractForm() {
                           )}
                         </div>
                       ) : null}
+                      {kind === 'TRANSFER' &&
+                        state.serviceKinds.includes(kind) && (
+                          <label className="mt-3 grid gap-2">
+                            تعداد مسافران ترانسفر
+                            <Input
+                              type="number"
+                              min={0}
+                              max={
+                                salesPassengerCounts(state).adults +
+                                salesPassengerCounts(state).children
+                              }
+                              value={salesTransferCount(state)}
+                              onChange={(event) =>
+                                patchState({
+                                  ...state,
+                                  transferPassengerCount: Number(
+                                    event.target.value,
+                                  ),
+                                })
+                              }
+                            />
+                          </label>
+                        )}
                     </fieldset>
                   ))}
                 </div>
