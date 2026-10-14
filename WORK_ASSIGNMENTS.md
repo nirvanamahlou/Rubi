@@ -7559,6 +7559,10 @@ Reserve IAM role template commands/DTO/controller, user management editor and fo
 
 ROLE-ACCESS-TEMPLATES-1014: PR849, implementation b4a406e2.24 IAM tests and scoped API/Web lint pass; production build passes CI. Preserve concurrent develop translations during integration. Source locks release with candidate; exact-head full CI gates authorized merge. No migration or local publication.
 
+## SALES-ROW-ACTIONS-1014 — PC-A — IN_PROGRESS
+
+User requests the Sales contracts table correction action to stay on the same row as the other row operations. Reserve only `apps/web/src/modules/sales/components/sales-workspace.tsx`, its focused component test, and this bounded assignment/status entry. Four row actions (passenger correction, payments, contract PDF, travel documents) must render in one horizontal group; preserve permissions, labels, click behavior, responsive horizontal table scroll, and all contract data. No API/schema/migration/dependency/runtime change. User explicitly requests develop merge; push the branch and open a PR to develop after scoped validation; follow repository review requirements for final merge.
+
 ## FINANCE-ONLY-CONTRACT-PROFIT-1014 — PC-A — IN_PROGRESS
 
 Reserve Sales payments profit removal, Finance inbox contract profit component placement and focused regressions. User authorizes develop merge. Existing finance.read and Sales branch/record read guards remain authoritative; no new grants, money calculation, API/schema/migration/dependency change. No overlapping active source lock found.

@@ -557,7 +557,7 @@ export function SalesWorkspace() {
                       {new Date(contract.updatedAt).toLocaleDateString('fa-IR')}
                     </td>
                     <td className="px-4 py-3 last:pl-5">
-                      <div className="grid min-w-72 grid-cols-3 gap-1.5">
+                      <div className="grid min-w-72 grid-cols-4 gap-1.5">
                         <PassengerCorrectionButton
                           contractId={contract.id}
                           status={contract.status}
