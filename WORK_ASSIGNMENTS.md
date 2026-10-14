@@ -1,3 +1,7 @@
+## RESERVATION-EDITOR-SECTIONS-1014 — PC-A — READY_FOR_REVIEW
+
+User authorizes airline selection, contract passenger age editing, form-only hotel age editing and compact nonduplicated reservation editor sections, followed by develop merge. Reserve reservation-contract-editor, reservation-sales-amendment, reservation-settings and focused tests plus scoped English labels. Reserve bounded optional carrierName presentation filter on Sales TicketOfferPicker consumed by Reservations. No migration/dependency/runtime changes. Preserve actual contract amendment validation and form-only hotel age overrides.
+
 ## HIDE-CONTRACT-FLIGHT-CAPACITY-1014 — PC-A — READY_FOR_REVIEW
 
 User authorizes removing capacity and remaining-seat figures from new-contract flight cards and develop merge. Reserve Sales ticket-offer-card and its existing regression tests, plus own status entries. Keep availability validation and booking capacity enforcement. No API, schema, migration, dependency or runtime change.
