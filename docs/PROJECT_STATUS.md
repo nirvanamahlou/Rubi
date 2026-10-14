@@ -1,3 +1,7 @@
+## 2026-10-14 — SALES-CORRECTION-PURPLE-1014 — PC-A
+
+Purple reservation queue highlighting now reflects explicit successful sales passenger corrections, excluding operational reservation/form amendments and general updates. Existing light/dark colors and historical records are retained. No migration or local activation; focused projection test and CI gate develop merge.
+
 ## 2026-10-14 — NOTIFICATION-USER-ISOLATION-1014 — PC-A
 
 Notification browser history is isolated by authenticated user, authorized branches and current permissions; legacy shared history is not imported. The center remounts on identity/scope changes and filters destination visibility. Server listing filters recipient rows against current route permissions before pagination and unread counting, preserving direct recipient-only personal notices and ownership checks for read/clear operations. No schema/migration or local activation. Focused access/notification tests, types/lint and CI validate the source candidate.
