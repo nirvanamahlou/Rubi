@@ -58,3 +58,25 @@ describe('historical reservation operation fallback', () => {
     ).rejects.toThrow(NotFoundException);
   });
 });
+
+it('clears correction highlighting only after a later recorded operation and restores it for new sales corrections', async () => {
+  const service = new ReservationsPublicService({} as never);
+  const operation = vi
+    .spyOn(service, 'lastRecordedOperation')
+    .mockResolvedValue(null);
+  expect(await service.salesCorrectionPending('i', ['b'], null)).toBe(false);
+  expect(operation).not.toHaveBeenCalled();
+  expect(
+    await service.salesCorrectionPending('i', ['b'], '2026-10-14T10:00:00Z'),
+  ).toBe(true);
+  operation.mockResolvedValue({
+    actorUserId: 'r',
+    occurredAt: new Date('2026-10-14T10:01:00Z'),
+  });
+  expect(
+    await service.salesCorrectionPending('i', ['b'], '2026-10-14T10:00:00Z'),
+  ).toBe(false);
+  expect(
+    await service.salesCorrectionPending('i', ['b'], '2026-10-14T10:02:00Z'),
+  ).toBe(true);
+});

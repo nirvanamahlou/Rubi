@@ -1,6 +1,5 @@
 'use client';
 import { currencySymbol } from '@/lib/currency-symbol';
-import { ContractProfit } from './contract-profit';
 import { SalesThemedSelect } from './sales-themed-select';
 import { PaymentDocuments } from './payment-documents';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -322,7 +321,6 @@ export function ContractPayments({
           سوابق پرداخت، سررسید اقساط و رسیدهای همین قرارداد
         </DialogDescription>
         {error ? <Alert tone="error" title={error} /> : null}
-        <ContractProfit key={id} id={id} />
         {contract?.balances.map((balance) => (
           <p key={balance.currencyCode}>
             مانده {currencySymbol(balance.currencyCode ?? '')}:{' '}

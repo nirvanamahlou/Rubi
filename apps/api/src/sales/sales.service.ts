@@ -880,6 +880,14 @@ export class SalesService {
     }));
   }
 
+  async detailForProfit(id: string, actor: AuthenticatedActor) {
+    if (!has(actor, 'finance.read')) throw new ForbiddenException();
+    const row = await this.repository.findById(id);
+    if (!row) throw new NotFoundException('قرارداد یافت نشد.');
+    if (!actor.branchIds.includes(row.branchId)) throw new ForbiddenException();
+    return { data: presentSalesContract(row, undefined, this.buyerCrypto) };
+  }
+
   async detail(id: string, actor: AuthenticatedActor) {
     const row = await this.repository.findById(id);
     if (!row)

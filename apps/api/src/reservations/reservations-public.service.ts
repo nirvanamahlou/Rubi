@@ -358,6 +358,17 @@ export class ReservationsPublicService {
   }
 
   /** Historical fallback from this module's immutable mutation revisions. */
+  async salesCorrectionPending(
+    id: string,
+    branchIds: readonly string[],
+    correctedAt?: string | null,
+  ) {
+    if (!correctedAt) return false;
+    const operation = await this.lastRecordedOperation(id, branchIds);
+    return (
+      !operation || operation.occurredAt.getTime() <= Date.parse(correctedAt)
+    );
+  }
   async lastRecordedOperation(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.reservationIntake.findFirst({
       where: { id, branchId: { in: [...branchIds] } },

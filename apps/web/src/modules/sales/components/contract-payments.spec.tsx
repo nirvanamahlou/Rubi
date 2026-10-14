@@ -40,6 +40,7 @@ describe('saved contract payment currency control', () => {
     expect(html).not.toContain(
       'جست‌وجوی شماره پیگیری در پرداخت‌های این قرارداد',
     );
+    expect(html).not.toContain('هزینه خرید و سود قرارداد');
     expect(html).toContain('role="dialog"');
     expect(html).toContain('پرداخت‌ها و اقساط قرارداد');
     expect(html).toContain('در حال دریافت پرداخت‌ها');

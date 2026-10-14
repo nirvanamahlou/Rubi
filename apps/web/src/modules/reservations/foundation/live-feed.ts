@@ -153,6 +153,7 @@ const envelopeSchema = z.object({
           .nullable()
           .optional(),
         tableSummary: summarySchema.nullish(),
+        salesCorrectionPending: z.boolean().optional(),
         hotelPurchases: z
           .array(z.object({ amount: z.string(), currencyCode: z.string() }))
           .optional(),
@@ -348,6 +349,7 @@ export function decodeIntake(
           : false,
         hotelConfirmed: row.workflow?.voucherIssued === true,
         correctedAt: row.tableSummary?.correctedAt ?? undefined,
+        salesCorrectionPending: row.salesCorrectionPending,
         ...(travelDate ? { travelDate } : {}),
         ...(snapshot.hotelSelection
           ? {

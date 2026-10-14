@@ -2,7 +2,7 @@
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useState } from 'react';
 import type { SalesContractProfitV1 } from '@nora/contracts';
-import { salesApi } from '../api/client';
+import { salesApi } from '@/modules/sales/api/client';
 import { Button } from '@/components/ui/button';
 import { formatSalesMoney } from '@/components/ui/money-input';
 
