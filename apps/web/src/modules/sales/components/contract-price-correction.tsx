@@ -7,9 +7,11 @@ import { salesApi, SalesApiError } from '../api/client';
 export function ContractPriceCorrection({
   contractId,
   onSaved,
+  refreshVersion = 0,
 }: {
   contractId: string;
   onSaved: () => void;
+  refreshVersion?: number;
 }) {
   const [form, setForm] = useState<{
     version: number;
@@ -24,7 +26,9 @@ export function ContractPriceCorrection({
     void salesApi
       .priceCorrection(contractId)
       .then((result) => {
-        if (live)
+        if (live) {
+          setSaved(false);
+          setReason('');
           setForm({
             ...result,
             totals: [
@@ -37,6 +41,7 @@ export function ContractPriceCorrection({
                 : []),
             ],
           });
+        }
       })
       .catch((e: unknown) => {
         if (live && !(e instanceof SalesApiError && e.status === 403))
@@ -49,7 +54,7 @@ export function ContractPriceCorrection({
     return () => {
       live = false;
     };
-  }, [contractId]);
+  }, [contractId, refreshVersion]);
   if (!form) return error ? <p role="alert">{error}</p> : null;
   async function save() {
     if (!form || busy || saved) return;
@@ -63,6 +68,15 @@ export function ContractPriceCorrection({
       });
       setForm(result);
       setSaved(true);
+      window.dispatchEvent(new Event('reservation-workflow-changed'));
+      try {
+        localStorage.setItem(
+          'rubi-contract-price-updated',
+          crypto.randomUUID(),
+        );
+      } catch {
+        /* Storage may be disabled; the inbox also polls current prices. */
+      }
       onSaved();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'ثبت اصلاح ناموفق بود.');

@@ -100,3 +100,69 @@ it('atomically records adjustment and audit without modifying receipts, and reje
   });
   expect(tx.salesContractAuditEvent.create).toHaveBeenCalled();
 });
+
+it('reuses one correction row and consolidates previous corrections without adding rows', async () => {
+  const tx = {
+    salesContract: {
+      findFirst: vi.fn().mockResolvedValue({
+        version: 3,
+        branchId: 'b',
+        status: 'IN_PROGRESS',
+        priceComponents: [
+          {
+            id: 'base',
+            title: 'original',
+            type: 'BASE',
+            currencyCode: 'IRR',
+            amount: new Prisma.Decimal('100'),
+          },
+          {
+            id: 'a',
+            title: 'اصلاح مبلغ کل قرارداد',
+            type: 'DISCOUNT',
+            currencyCode: 'IRR',
+            amount: new Prisma.Decimal('20'),
+          },
+          {
+            id: 'b',
+            title: 'اصلاح مبلغ کل قرارداد',
+            type: 'BASE',
+            currencyCode: 'IRR',
+            amount: new Prisma.Decimal('10'),
+          },
+        ],
+      }),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+    salesContractPriceComponent: {
+      createMany: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+    salesContractAuditEvent: { create: vi.fn() },
+  };
+  const service = new ContractPriceCorrectionService(
+    {
+      client: { $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) },
+    } as never,
+    { canCorrectContractPrice: async () => true } as never,
+  );
+  await service.save(
+    'c',
+    {
+      expectedVersion: 3,
+      totals: [{ currencyCode: 'IRR', amount: '80' }],
+      reason: 'test',
+    },
+    actor,
+  );
+  expect(tx.salesContractPriceComponent.createMany).not.toHaveBeenCalled();
+  expect(tx.salesContractPriceComponent.update).toHaveBeenCalledWith({
+    where: { id: 'a' },
+    data: { type: 'DISCOUNT', amount: '20' },
+  });
+  expect(tx.salesContractPriceComponent.deleteMany).toHaveBeenCalledWith({
+    where: { contractId: 'c', id: { in: ['b'] } },
+  });
+  expect(tx.salesContractAuditEvent.create).toHaveBeenCalled();
+});

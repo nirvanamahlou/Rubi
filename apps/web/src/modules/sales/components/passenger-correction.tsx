@@ -232,7 +232,7 @@ function CorrectionForm({
         </Button>
       </div>
       <ContractPriceCorrection
-        key={revision}
+        refreshVersion={revision}
         contractId={contractId}
         onSaved={() => {
           setRevision((value) => value + 1);

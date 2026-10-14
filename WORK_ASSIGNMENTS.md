@@ -1,3 +1,7 @@
+## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.
+
 ## FINANCE-CONTRACT-PRICE-CORRECTION-1014 — PC-A — READY_FOR_REVIEW
 
 User requests IRR/foreign total correction below Sales passenger details, visible/writable only to Finance and Manager roles, with develop merge. Reserve new Sales correction service/UI/tests, passenger-correction dialog/module, Sales client, IAM directory role-check projection and scoped translations/status. IAM producer checks active effective roles including manual-role precedence; Sales consumer enforces branch/status/version, Decimal per-currency adjustment and audit. Reserve bounded en-overrides and regenerated offline API/standalone catalogs for the new labels. No schema/migration/dependency/runtime or live record edits.

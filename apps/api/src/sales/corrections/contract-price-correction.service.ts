@@ -123,17 +123,45 @@ export class ContractPriceCorrectionService {
         throw new ConflictException(
           'نسخه قرارداد تغییر کرده؛ آخرین نسخه را دریافت کنید.',
         );
-      await tx.salesContractPriceComponent.createMany({
-        data: adjustments.map((t) => ({
-          contractId: id,
-          currencyCode: t.currencyCode,
-          type: t.delta.isNegative()
-            ? ('DISCOUNT' as const)
-            : ('BASE' as const),
-          title: 'اصلاح مبلغ کل قرارداد',
-          amount: t.delta.abs().toFixed(),
-        })),
-      });
+      // Keep one current correction per currency; immutable audit retains every edit.
+      for (const adjustment of adjustments) {
+        const currencyCode = adjustment.currencyCode;
+        const previous = row.priceComponents.filter(
+          (p) =>
+            p.currencyCode === currencyCode &&
+            p.title === 'اصلاح مبلغ کل قرارداد',
+        );
+        const existing = contractCurrencyTotals(previous)[0]?.amount ?? '0';
+        const delta = new Prisma.Decimal(existing).add(adjustment.delta);
+        const data = {
+          type: delta.isNegative() ? ('DISCOUNT' as const) : ('BASE' as const),
+          amount: delta.abs().toFixed(),
+        };
+        if (previous[0]) {
+          await tx.salesContractPriceComponent.update({
+            where: { id: previous[0].id },
+            data,
+          });
+          if (previous.length > 1)
+            await tx.salesContractPriceComponent.deleteMany({
+              where: {
+                contractId: id,
+                id: { in: previous.slice(1).map((p) => p.id) },
+              },
+            });
+        } else {
+          await tx.salesContractPriceComponent.createMany({
+            data: [
+              {
+                contractId: id,
+                currencyCode,
+                title: 'اصلاح مبلغ کل قرارداد',
+                ...data,
+              },
+            ],
+          });
+        }
+      }
       await tx.salesContractAuditEvent.create({
         data: {
           contractId: id,
