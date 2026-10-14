@@ -501,3 +501,12 @@ full accepted definitions, partial coverage and separate ERP runtime publication
 User explicitly requested actual flight/hotel/sale-price amendments, independent passenger identity editing and counterparty reassignment including existing debt and receipts. Sales remains the writer of the canonical contract. The additive party command changes buyer/payer together under Sales edit plus Finance receipt-approval permission, with encrypted contact audit; payment IDs, amounts, confirmations and bank/check evidence remain unchanged. The additive full amendment command uses optimistic versioning and a Serializable transaction; Ticket's public capacity method participates in that transaction and locks both old/new offers before replacing allocations. No cross-module table writes are performed by Sales.
 
 A changed execution selection or age category creates a new durable Sales reservation snapshot in the same transaction. Previously issued intake snapshots and operational revisions are retained and viewable from contract history. Price-only amendments retain the current operational intake. Newly amended operational selections return to the Reservations queue for review/issuance; previous documents are historical, not silently rewritten. Passenger identity remains Customers-owned; contract age correction does not alter birth dates. No schema or migration changes.
+## 2026-10-14 — Explicit Sales role scope
+
+The reference-PC owner explicitly overrides the earlier title-neutral Sales scope
+for the bounded Manager, Sales Manager and Sales Expert profiles. Active Manager
+and Sales Manager profiles receive system-wide contract read and contract creation;
+Sales Expert profiles remain owner-only, including valid manual snapshots. Other
+permissions, explicit UI restrictions and malformed/disabled snapshot denial remain
+authoritative. This is source policy only, not an operational grant migration.
+See tasks/SALES-SELLER-VISIBILITY-1014.md.

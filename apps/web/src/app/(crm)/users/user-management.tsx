@@ -532,6 +532,7 @@ export function UserManagement() {
                     <NativeSearchSelect
                       disabled={editingLegacy}
                       value={title}
+                      optionLimit={USER_JOB_TITLES.length}
                       onChange={(e) => {
                         setTitle(e.target.value);
                         setProposalOpen(true);

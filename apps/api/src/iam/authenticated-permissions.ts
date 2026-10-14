@@ -15,6 +15,47 @@ export interface PermissionBearingRole {
   };
 }
 
+function salesRolePolicy(
+  codes: IamPermissionCode[],
+  roles: readonly PermissionBearingRole[],
+) {
+  const manager = roles.some(
+    ({ role }) =>
+      role.isActive &&
+      (role.code === 'administrator' ||
+        role.code === 'sales_manager' ||
+        role.code === 'sales-manager' ||
+        role.name === 'مدیر فروش' ||
+        role.name === 'مدیر'),
+  );
+  if (manager)
+    return [
+      ...new Set<IamPermissionCode>([
+        ...codes,
+        'sales.contracts.read.all',
+        'sales.contracts.create',
+      ]),
+    ];
+  const expert = roles.some(
+    ({ role }) =>
+      role.isActive &&
+      (role.code === 'sales_staff' || role.name === 'کارشناس فروش'),
+  );
+  if (!expert) return codes;
+  return [
+    ...new Set(
+      codes.map((code) =>
+        code === 'sales.contracts.read.all' ||
+        code === 'sales.contracts.read.branch'
+          ? 'sales.contracts.read.own'
+          : code === 'sales.contracts.update.branch'
+            ? 'sales.contracts.update.own'
+            : code,
+      ),
+    ),
+  ];
+}
+
 export function authenticatedPermissionCodes(
   roles: readonly PermissionBearingRole[],
 ): IamPermissionCode[] {
@@ -31,21 +72,19 @@ export function authenticatedPermissionCodes(
       )
     )
       return [];
-    return [
-      ...new Set(
-        snapshots[0]!.role.permissions.map(
-          ({ permission }) => permission.code as IamPermissionCode,
+    return salesRolePolicy(
+      [
+        ...new Set(
+          snapshots[0]!.role.permissions.map(
+            ({ permission }) => permission.code as IamPermissionCode,
+          ),
         ),
-      ),
-    ].filter((code) => code !== USER_ACCESS_ADMIN_PERMISSION);
+      ].filter((code) => code !== USER_ACCESS_ADMIN_PERMISSION),
+      snapshots,
+    );
   }
   const administrator = roles.some(
     ({ role }) => role.isActive && role.code === 'administrator',
-  );
-  const salesExpert = roles.some(
-    ({ role }) =>
-      role.isActive &&
-      (role.code === 'sales_staff' || role.name === 'کارشناس فروش'),
   );
   const codes = [
     ...new Set<IamPermissionCode>([
@@ -66,20 +105,5 @@ export function authenticatedPermissionCodes(
       ...(administrator ? [USER_ACCESS_ADMIN_PERMISSION] : []),
     ]),
   ];
-  if (!salesExpert) return codes;
-  // A personal sales-expert profile remains own-scoped even with old broad grants.
-  return [
-    ...new Set(
-      codes.map((code) => {
-        if (
-          code === 'sales.contracts.read.all' ||
-          code === 'sales.contracts.read.branch'
-        )
-          return 'sales.contracts.read.own' as IamPermissionCode;
-        if (code === 'sales.contracts.update.branch')
-          return 'sales.contracts.update.own' as IamPermissionCode;
-        return code;
-      }),
-    ),
-  ];
+  return salesRolePolicy(codes, roles);
 }

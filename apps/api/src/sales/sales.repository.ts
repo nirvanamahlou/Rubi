@@ -103,6 +103,29 @@ export class SalesRepository {
     });
   }
 
+  amendedContractIds(contractIds: readonly string[]) {
+    if (!contractIds.length) return Promise.resolve([]);
+    return this.database.client.salesContractAuditEvent.findMany({
+      where: {
+        contractId: { in: [...contractIds] },
+        outcome: 'SUCCESS',
+        OR: [
+          { action: 'OPERATIONAL_FORM_AMENDMENT' },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'CONTRACT' },
+          },
+          {
+            action: 'sales.contract.updated',
+            afterSnapshot: { path: ['correction'], equals: 'PARTY' },
+          },
+        ],
+      },
+      select: { contractId: true },
+      distinct: ['contractId'],
+    });
+  }
+
   confirmedFinancePayments(
     branchIds: readonly string[],
     after: object,

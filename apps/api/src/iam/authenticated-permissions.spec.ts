@@ -15,7 +15,7 @@ describe('administrator screen authority', () => {
     const admin = { role: { ...role(true).role, code: 'administrator' } };
     const permissions = authenticatedPermissionCodes([admin]);
     expect(permissions).toContain(USER_ACCESS_ADMIN_PERMISSION);
-    expect(permissions).not.toContain('sales.contracts.create');
+    expect(permissions).toContain('sales.contracts.create');
     expect(
       authenticatedPermissionCodes([
         { role: { ...admin.role, isActive: false } },
@@ -76,6 +76,30 @@ describe('authenticated legal-entity baseline permissions', () => {
 });
 
 describe('sales role scope', () => {
+  it.each(['مدیر', 'مدیر فروش'])(
+    'gives active %s read-all and creation while retaining unrelated restrictions',
+    (name) => {
+      const manager = {
+        role: { ...role(true).role, code: 'personal-access-manager', name },
+      };
+      const expert = {
+        role: {
+          ...role(true, 'sales.contracts.read.branch').role,
+          code: 'sales_staff',
+          name: 'کارشناس فروش',
+        },
+      };
+      const codes = authenticatedPermissionCodes([manager, expert]);
+      expect(codes).toContain('sales.contracts.read.all');
+      expect(codes).toContain('sales.contracts.create');
+      expect(codes).not.toContain('finance.payment.create');
+      expect(
+        authenticatedPermissionCodes([
+          { role: { ...manager.role, isActive: false } },
+        ]),
+      ).not.toContain('sales.contracts.read.all');
+    },
+  );
   it('narrows inherited broad grants for an active sales expert', () => {
     const expert = {
       role: {
@@ -98,7 +122,7 @@ describe('sales role scope', () => {
     expect(permissions).not.toContain('sales.contracts.read.branch');
     expect(permissions).not.toContain('sales.contracts.update.branch');
   });
-  it('preserves explicitly granted manager scope without granting permissions by title', () => {
+  it('gives the sales manager system-wide read and contract creation', () => {
     const manager = {
       role: {
         ...role(true, 'sales.contracts.read.branch').role,
@@ -109,8 +133,11 @@ describe('sales role scope', () => {
     expect(authenticatedPermissionCodes([manager])).toContain(
       'sales.contracts.read.branch',
     );
-    expect(authenticatedPermissionCodes([manager])).not.toContain(
+    expect(authenticatedPermissionCodes([manager])).toContain(
       'sales.contracts.read.all',
+    );
+    expect(authenticatedPermissionCodes([manager])).toContain(
+      'sales.contracts.create',
     );
   });
 });
