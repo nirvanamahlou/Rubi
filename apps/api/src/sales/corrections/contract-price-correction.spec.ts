@@ -1,0 +1,104 @@
+import { it, expect, vi } from 'vitest';
+import { Prisma } from '@nora/database';
+import {
+  ContractPriceCorrectionService,
+  contractCurrencyTotals,
+} from './contract-price-correction.service';
+const actor = { userId: 'u', branchIds: ['b'], permissions: [] } as never;
+it('keeps currencies and discounts exact', () => {
+  expect(
+    contractCurrencyTotals([
+      {
+        type: 'BASE',
+        amount: new Prisma.Decimal('9007199254740993.0001'),
+        currencyCode: 'IRR',
+      },
+      {
+        type: 'DISCOUNT',
+        amount: new Prisma.Decimal('1'),
+        currencyCode: 'IRR',
+      },
+      { type: 'BASE', amount: new Prisma.Decimal('20'), currencyCode: 'USD' },
+    ]),
+  ).toEqual([
+    { currencyCode: 'IRR', amount: '9007199254740992.0001' },
+    { currencyCode: 'USD', amount: '20' },
+  ]);
+});
+it('denies both direct read and write before querying when role is not authorized', async () => {
+  const db = {
+    client: { salesContract: { findFirst: vi.fn() }, $transaction: vi.fn() },
+  };
+  const service = new ContractPriceCorrectionService(
+    db as never,
+    { canCorrectContractPrice: vi.fn().mockResolvedValue(false) } as never,
+  );
+  await expect(service.form('c', actor)).rejects.toThrow();
+  await expect(service.save('c', {}, actor)).rejects.toThrow();
+  expect(db.client.$transaction).not.toHaveBeenCalled();
+  expect(db.client.salesContract.findFirst).not.toHaveBeenCalled();
+});
+it('atomically records adjustment and audit without modifying receipts, and rejects stale versions', async () => {
+  const tx = {
+    salesContract: {
+      findFirst: vi
+        .fn()
+        .mockResolvedValue({
+          version: 2,
+          branchId: 'b',
+          status: 'IN_PROGRESS',
+          priceComponents: [
+            {
+              type: 'BASE',
+              currencyCode: 'IRR',
+              amount: new Prisma.Decimal('100'),
+            },
+          ],
+        }),
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+    salesContractPriceComponent: { createMany: vi.fn() },
+    salesContractAuditEvent: { create: vi.fn() },
+  };
+  const service = new ContractPriceCorrectionService(
+    {
+      client: { $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) },
+    } as never,
+    { canCorrectContractPrice: vi.fn().mockResolvedValue(true) } as never,
+  );
+  await expect(
+    service.save(
+      'c',
+      {
+        expectedVersion: 1,
+        totals: [{ currencyCode: 'IRR', amount: '80' }],
+        reason: 'test',
+      },
+      actor,
+    ),
+  ).rejects.toThrow();
+  expect(tx.salesContractPriceComponent.createMany).not.toHaveBeenCalled();
+  await service.save(
+    'c',
+    {
+      expectedVersion: 2,
+      totals: [{ currencyCode: 'IRR', amount: '80' }],
+      reason: 'test',
+    },
+    actor,
+  );
+  expect(tx.salesContract.findFirst.mock.calls[0]![0].where).toMatchObject({
+    id: 'c',
+    branchId: { in: ['b'] },
+  });
+  expect(tx.salesContractPriceComponent.createMany).toHaveBeenCalledWith({
+    data: [
+      expect.objectContaining({
+        type: 'DISCOUNT',
+        amount: '20',
+        currencyCode: 'IRR',
+      }),
+    ],
+  });
+  expect(tx.salesContractAuditEvent.create).toHaveBeenCalled();
+});

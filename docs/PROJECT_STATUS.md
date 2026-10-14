@@ -1,3 +1,7 @@
+## 2026-10-14 — FINANCE-CONTRACT-PRICE-CORRECTION-1014 — PC-A
+
+Sales passenger-correction dialog includes rial and foreign contract-total correction authorized by the server only for active Finance/Manager roles. IAM manual-role precedence is respected; ordinary Sales users cannot read or write price correction data through this endpoint. Price changes append exact per-currency BASE/DISCOUNT adjustments, preserve receipts/purchases and record before/after audit under optimistic contract version checks. Existing balances derive the new total without changing payments. Currency codes are validated; invalid/stale/cross-branch requests are rejected. Nine focused role/Decimal/concurrency tests pass. No schema/migration or operational data/runtime changes; CI gates the requested develop merge.
+
 ## 2026-10-14 — CLEAR-CORRECTION-ON-OPERATION-1014 — PC-A
 
 Sales-correction purple is pending only until a later server-recorded reservation operation. The branch-scoped list projects an additive pending flag using existing workflow, arrangement and purchase operation history. Correction timestamps remain intact for audit; a new later sales correction restores pending styling. Web clears only the purple marker and uses the existing current-status colors. No migration or local activation. Focused chronology and render tests plus CI gate develop merge.
