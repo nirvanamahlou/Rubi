@@ -7528,3 +7528,9 @@ RESERVATION-CONTRACT-EDIT-1013 CI follow-up: full regression found the existing 
 ## ASSISTANT-GROQ-TEST-1014 — PC-C — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-C; branch codex/pc-c-assistant-groq-test-1014 from develop f5651cc7. Owner placed local Groq key after agreeing to initial synthetic tests. Reserve new services/assistant/groq-provider.mjs, provider tests, fixed synthetic evaluation CLI and assistant own docs/README. No server/provider activation, real user/ERP data transfer, UI, dependencies, migration or permission change. Use fixed HTTPS endpoint, strict plan schema, bounded response/time, generic errors and no retries. Exact-head and postmerge CI required; key remains outside Git. No overlapping assistant source owner.
+
+## ROLE-ACCESS-TEMPLATES-1014 — PC-A — IN_PROGRESS
+
+Reserve IAM role template commands/DTO/controller, user management editor and focused tests; user authorizes editable persisted job-role defaults and develop merge. Templates use unassigned dedicated IAM roles; user access remains an independent snapshot. Existing managed-access validation, administrator restriction, audit and transaction apply. No schema/dependency/migration/runtime change.
+
+ROLE-ACCESS-TEMPLATES-1014: PR849, implementation b4a406e2.24 IAM tests and scoped API/Web lint pass; production build passes CI. Preserve concurrent develop translations during integration. Source locks release with candidate; exact-head full CI gates authorized merge. No migration or local publication.

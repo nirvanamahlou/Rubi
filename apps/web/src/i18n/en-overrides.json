@@ -2352,5 +2352,10 @@
   "مسافر تکراری در اصلاح قرارداد مجاز نیست.": "Duplicate passengers are not allowed in a correction.",
   "نتیجه هنوز قطعی نیست؛ همان اصلاح را دوباره ارسال کنید.": "The outcome is not confirmed; retry the same correction.",
   "نسخه یا وضعیت قرارداد تغییر کرده است.": "The contract version or status has changed.",
-  "نمایش همه سوابق اصلاح": "Show all correction history"
+  "نمایش همه سوابق اصلاح": "Show all correction history",
+  "تنظیم دسترسی نقش‌ها": "Configure role access",
+  "ذخیره دسترسی نقش": "Save role access",
+  "دسترسی نقش ذخیره شد.": "Role access saved.",
+  "دسترسی‌های ذخیره‌شدهٔ نقش": "Saved role access defaults",
+  "انتخاب نقش": "Select role"
 }
