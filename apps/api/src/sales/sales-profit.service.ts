@@ -19,7 +19,7 @@ export class SalesProfitService {
       throw new ForbiddenException(
         'مجوز مشاهده هزینه و سود قرارداد وجود ندارد.',
       );
-    const { data: contract } = await this.sales.detail(id, actor);
+    const { data: contract } = await this.sales.detailForProfit(id, actor);
     if (!actor.branchIds.includes(contract.branchId))
       throw new ForbiddenException('شعبه قرارداد در دسترس نیست.');
     const [intake, tickets] = await Promise.all([

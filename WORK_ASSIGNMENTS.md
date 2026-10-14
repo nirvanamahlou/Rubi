@@ -2,6 +2,10 @@
 
 COMPUTER_ID=PC-A. User asks to add a canonical room type directly from the hotel purchase-rate editor and merge the change to develop. Branch `codex/pc-a-hotel-room-type-inline-1014` from `origin/develop@f5651cc7`; integrated with origin/develop@ab2b71d2 for publication after GitHub access was verified. Bounded offline API/legacy English sync outputs are additionally reserved; the Sales visibility candidate merged as PR852. Its bounded own handoff docs are reserved for the completed merge receipt. Reserve Reservations Web `manual-hotel-panel.tsx`, `packs-workspace.tsx`, focused tests, one helper using the existing public Master Data API client, bounded Web English labels, and this task's status/task docs. Master Data remains PC-B-owned: no direct table access or edits to its module; create/reuse active canonical room type, then version-check and append its ID to the selected hotel through public APIs. Require `master_data.read` and `master_data.update`; require `master_data.create` only when needed. Preserve existing room links, rates, occupancy combinations, and saved/imported evidence. No new API/shared contract, schema, migration, dependency, permission grant or operational data mutation during development; writes occur only after an authorized user's explicit UI action. Exact-head checks and CI gate the authorized develop merge.
 
+## CORRECTION-COLUMNS-1014 — PC-A — READY_FOR_REVIEW
+
+User requests purple correction background only on reservation columns two and three and develop merge. Reserve workspace.module.css and existing styling regression plus own status entries. Preserve sales-only correction source, note marker precedence and light/dark palettes. No API/schema/dependency/runtime changes.
+
 ## SALES-CORRECTION-PURPLE-1014 — PC-A — IN_PROGRESS
 
 User requests purple for corrected-by-sales, not reservation operational edits, with develop merge. Reserve Sales reservation table audit projection and regression plus own status. The explicit SALES_PASSENGER_CORRECTION event drives the purple correctedAt marker; reservation form/general amendments do not. No schema/migration/dependency/runtime change.
@@ -7550,3 +7554,13 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-seller-visibility-1014 from origin/dev
 Reserve IAM role template commands/DTO/controller, user management editor and focused tests; user authorizes editable persisted job-role defaults and develop merge. Templates use unassigned dedicated IAM roles; user access remains an independent snapshot. Existing managed-access validation, administrator restriction, audit and transaction apply. No schema/dependency/migration/runtime change.
 
 ROLE-ACCESS-TEMPLATES-1014: PR849, implementation b4a406e2.24 IAM tests and scoped API/Web lint pass; production build passes CI. Preserve concurrent develop translations during integration. Source locks release with candidate; exact-head full CI gates authorized merge. No migration or local publication.
+
+## FINANCE-ONLY-CONTRACT-PROFIT-1014 — PC-A — IN_PROGRESS
+
+Reserve Sales payments profit removal, Finance inbox contract profit component placement and focused regressions. User authorizes develop merge. Existing finance.read and Sales branch/record read guards remain authoritative; no new grants, money calculation, API/schema/migration/dependency change. No overlapping active source lock found.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014:14 Sales/Finance presentation regressions and7 actual-profit/HTTP authorization tests pass. Profit is absent from Sales payments and available only in Finance Sales-receipt details; finance.read, contract scope and existing no-store behavior preserved. Source locks release with candidate; full exact-head quality/test/build/database CI required for authorized develop merge. No local rollout.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014 scope refinement: Sales-owned internal profit read projection uses finance.read plus actual contract branch scope, so Finance-only staff do not require Sales UI/contract-read grants. The ordinary Sales detail endpoint and identity visibility are unchanged; profit response contains only existing cost/profit facts. Reserve Sales service/profit service and permission regressions.
+
+Final validation:14 Web presentation tests and9 API cost/profit/Finance-only/branch-scope regressions pass. Ordinary Sales contract detail permission remains unchanged; only the internal profit source reads for authorized Finance staff. No calculation or financial data changes.

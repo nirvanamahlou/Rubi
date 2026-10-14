@@ -1,3 +1,7 @@
+## 2026-10-14 — CORRECTION-COLUMNS-1014 — PC-A
+
+Reservation sales-correction purple styling is restricted to table cells two and three in both themes. Other cells retain their normal/selected/status styling; the notes marker retains precedence. No migration or local activation. Existing workspace styling regression and CI gate develop merge.
+
 ## 2026-10-14 — SALES-CORRECTION-PURPLE-1014 — PC-A
 
 Purple reservation queue highlighting now reflects explicit successful sales passenger corrections, excluding operational reservation/form amendments and general updates. Existing light/dark colors and historical records are retained. No migration or local activation; focused projection test and CI gate develop merge.
@@ -5973,3 +5977,8 @@ Owner explicitly requests global contract read and creation for active Manager/S
 
 ## ROLE-ACCESS-TEMPLATES-1014 — PC-A
 Persisted administrator-configured job role defaults through dedicated unassigned IAM roles using existing managed-access validation and transactional grants. User creation copies selected role screens/operations/restrictions into editable independent access. No hardcoded recommendation fallback; unconfigured roles start empty. Existing users are unchanged by template saves.24 focused IAM tests pass; scoped API lint passes. Local generated Contracts/Prisma types required refresh after newer develop changes. Full quality, typechecks, tests and builds gate authorized develop merge. No schema/migration/dependency/runtime change.
+
+## FINANCE-ONLY-CONTRACT-PROFIT-1014 — PC-A
+Removed purchase/profit output from Sales payment dialog. The existing per-currency actual-cost view is now in Finance inbox details for Sales receipt contracts. Existing finance and Sales branch/read authorization remains unchanged. No data, calculation, API, migration or dependency change. Focused tests and full CI gate authorized develop merge.
+
+Finance-only read clarification: profit uses an internal Sales-owned projection authorized by finance.read and the actual contract branch, without requiring Sales screen grants. Ordinary contract detail/identity permissions are unchanged.14 Web presentation tests and9 profit/HTTP/branch authorization tests pass; full CI gates merge.
