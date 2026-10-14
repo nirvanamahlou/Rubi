@@ -7585,6 +7585,25 @@ FINANCE-ONLY-CONTRACT-PROFIT-1014 scope refinement: Sales-owned internal profit 
 
 Final validation:14 Web presentation tests and9 API cost/profit/Finance-only/branch-scope regressions pass. Ordinary Sales contract detail permission remains unchanged; only the internal profit source reads for authorized Finance staff. No calculation or financial data changes.
 
-## PROFIT-ACTION-LAYOUT-1014 — PC-A — IN_PROGRESS
+## PROFIT-ACTION-LAYOUT-1014 — PC-A — MERGED
 
 Reserve Reservations action-panel button grouping only and own docs. Move hotel-profit action from contract-information to below Notes/Descriptions, retaining action, permissions and dialog. User authorizes develop merge; no API/schema/dependency/runtime changes. Previous locks released.
+
+PR858 merged to develop as
+`3cd7fe1556c90f69b67889368157db68431504af` after all eight exact-head checks
+passed.
+
+## RESERVATION-PANEL-OVERFLOW-1014 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch `codex/pc-a-reservation-panel-overflow-1014` from
+`origin/develop@bf7a1927`. Reserve Reservations selected-contract action-panel
+CSS, focused existing regressions and bounded task/status docs. Keep action
+groups and buttons inside their own bordered cards as the page/container
+narrows; use the panel's available width for responsive layout and wrap long
+labels. Preserve action order, permissions and dialog behavior. No API,
+schema, migration, dependency, runtime or operational-data change. User
+authorizes develop merge after required checks.
+
+Validation: action-panel regressions 14/14, scoped ESLint, Web typecheck,
+Prettier for the changed CSS, and full 62-route Web production build passed.
+No migration or dependency change; exact-head CI remains the merge gate.

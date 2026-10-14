@@ -5997,3 +5997,18 @@ Finance-only read clarification: profit uses an internal Sales-owned projection 
 
 ## PROFIT-ACTION-LAYOUT-1014 — PC-A
 Hotel profitability action now appears below Descriptions in the Notes column. Contract-information/actions return to two rows; existing single-column Notes grid uses the free second row. Dialog and authorization unchanged. No API/migration/dependency/runtime change; authorized develop merge follows checks.
+
+PR858 merged to develop as `3cd7fe1556c90f69b67889368157db68431504af` after all eight exact-head checks passed.
+
+## 2026-10-14 — RESERVATION-PANEL-OVERFLOW-1014 — PC-A — READY_FOR_CI
+
+Selected-contract action groups now size against their own panel width. Narrow
+panels switch to a two-column layout and then stack fully, while action buttons
+wrap labels within their group; group overflow is clipped to the card. Existing
+action order, permissions and dialogs are preserved. No API, schema, migration,
+dependency, runtime or operational-data change. Scoped regressions and exact-head
+CI/build gate the user-authorized develop merge.
+
+Validation passed: 14 action-panel tests, scoped ESLint, Web typecheck,
+changed-CSS formatting, and full Web production build (62 routes). No
+migration or dependency changes; exact-head GitHub checks remain required.
