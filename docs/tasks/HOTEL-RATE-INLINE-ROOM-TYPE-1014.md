@@ -6,6 +6,8 @@ Master Data read/update access can open the action; Master Data create permissio
 is checked only if that room type does not already exist. Existing room links are
 preserved with the hotel's current version check. The new type appears as an empty
 room-rate row so its occupancy and prices can be entered immediately.
+Reusing an already linked type keeps the pending pack unchanged; existing room-rate
+rows are preserved instead of duplicated when a canonical link is restored.
 
 The implementation consumes the public Master Data API client and does not add a
 contract, schema, migration, permission grant, dependency, or operational data

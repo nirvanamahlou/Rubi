@@ -1,7 +1,4 @@
-import type {
-  MasterDataRecord,
-  MasterDataResource,
-} from '@nora/contracts';
+import type { MasterDataRecord, MasterDataResource } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 
 type RoomType = { id: string; name: string };
@@ -68,7 +65,9 @@ export async function registerRoomTypeForHotel(
     !input.permissions.includes('master_data.read') ||
     !input.permissions.includes('master_data.update')
   )
-    throw new Error('برای افزودن نوع اتاق، مجوز خواندن و ویرایش اطلاعات پایه لازم است.');
+    throw new Error(
+      'برای افزودن نوع اتاق، مجوز خواندن و ویرایش اطلاعات پایه لازم است.',
+    );
 
   const hotelResult = await api.detail('hotels', input.hotelId);
   const hotel = hotelResult.data;
@@ -99,10 +98,10 @@ export async function registerRoomTypeForHotel(
     roomType = match;
   } else {
     if (!input.permissions.includes('master_data.create'))
-      throw new Error('برای ساخت نوع اتاق جدید، مجوز ایجاد اطلاعات پایه لازم است.');
-    roomType = (
-      await api.create('room-types', { values: { name } })
-    ).data;
+      throw new Error(
+        'برای ساخت نوع اتاق جدید، مجوز ایجاد اطلاعات پایه لازم است.',
+      );
+    roomType = (await api.create('room-types', { values: { name } })).data;
   }
 
   const latestHotel = (await api.detail('hotels', input.hotelId)).data;
@@ -111,7 +110,9 @@ export async function registerRoomTypeForHotel(
     latestHotel.status !== 'active' ||
     latestHotel.attributes.cityId !== input.cityId
   )
-    throw new Error('اطلاعات هتل هنگام افزودن نوع اتاق تغییر کرد؛ دوباره بررسی کنید.');
+    throw new Error(
+      'اطلاعات هتل هنگام افزودن نوع اتاق تغییر کرد؛ دوباره بررسی کنید.',
+    );
   const currentIds = linkedRoomIds(latestHotel);
   if (currentIds.includes(roomType.id)) return roomTypeFrom(roomType);
 

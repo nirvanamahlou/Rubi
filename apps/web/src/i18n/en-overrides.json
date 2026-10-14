@@ -2374,5 +2374,7 @@
   "نوع اتاق ثبت‌شده به هتل وصل نشد؛ صفحه را تازه کنید و دوباره تلاش کنید.": "The existing room type could not be linked to the hotel. Refresh the page and try again.",
   "نوع اتاق ساخته شد اما به هتل وصل نشد؛ صفحه را تازه کنید و دوباره تلاش کنید.": "The room type was created but could not be linked to the hotel. Refresh the page and try again.",
   "افزودن نوع اتاق انجام نشد.": "The room type could not be added.",
-  "برای این هتل ابتدا نوع اتاق را اضافه کنید.": "Add a room type for this hotel first."
+  "برای این هتل ابتدا نوع اتاق را اضافه کنید.": "Add a room type for this hotel first.",
+  "ابتدا وارد سامانه شوید و شهر هتل را انتخاب کنید.": "Sign in and select the hotel's city first.",
+  "هتل در شهر انتخاب‌شده پیدا نشد؛ صفحه را تازه کنید.": "The hotel was not found in the selected city. Refresh the page."
 }

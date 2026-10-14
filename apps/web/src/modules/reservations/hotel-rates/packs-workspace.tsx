@@ -564,6 +564,12 @@ export function HotelRatePacksWorkspace({
       name,
       permissions: session.user.permissions,
     });
+    if (
+      existingRow.hotel.roomTypes?.some(
+        (candidate) => candidate.id === roomType.id,
+      )
+    )
+      return roomType;
     setRows((current) =>
       current.map((row) => {
         if (row.hotel.id !== hotelId) return row;
@@ -573,23 +579,31 @@ export function HotelRatePacksWorkspace({
         return {
           ...row,
           hotel: { ...row.hotel, roomTypes: [...roomTypes, roomType] },
-          roomRates: [
-            ...row.roomRates,
-            {
-              roomTypeId: roomType.id,
-              roomTypeName: roomType.name,
-              factor: '1',
-              maxAdults: '2',
-              maxChildren2To6: '0',
-              maxChildren6To12: '0',
-              maxInfants: '0',
-            },
-          ],
+          roomRates: row.roomRates.some(
+            (rate) => rate.roomTypeId === roomType.id,
+          )
+            ? row.roomRates
+            : [
+                ...row.roomRates,
+                {
+                  roomTypeId: roomType.id,
+                  roomTypeName: roomType.name,
+                  factor: '1',
+                  maxAdults: '2',
+                  maxChildren2To6: '0',
+                  maxChildren6To12: '0',
+                  maxInfants: '0',
+                },
+              ],
         };
       }),
     );
-    pending.current = null;
-    setManualValidity((current) => ({ ...current, [hotelId]: false }));
+    if (
+      !existingRow.roomRates.some((rate) => rate.roomTypeId === roomType.id)
+    ) {
+      pending.current = null;
+      setManualValidity((current) => ({ ...current, [hotelId]: false }));
+    }
     return roomType;
   }
   function chooseCity(id: string) {

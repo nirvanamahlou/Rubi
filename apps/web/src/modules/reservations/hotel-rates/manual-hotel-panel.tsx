@@ -1,10 +1,5 @@
 'use client';
-import {
-  useEffect,
-  useEffectEvent,
-  useState,
-  type FormEvent,
-} from 'react';
+import { useEffect, useEffectEvent, useState, type FormEvent } from 'react';
 import { calculateManualHotelPrices } from '@nora/contracts';
 import type {
   HotelOccupancyRateV1,
@@ -388,9 +383,7 @@ export function HotelCoefficients({
       setRoomTypeDialogOpen(false);
     } catch (cause) {
       setRoomTypeError(
-        cause instanceof Error
-          ? cause.message
-          : 'افزودن نوع اتاق انجام نشد.',
+        cause instanceof Error ? cause.message : 'افزودن نوع اتاق انجام نشد.',
       );
     } finally {
       setAddingRoomType(false);
@@ -899,9 +892,7 @@ export function HotelCoefficients({
         })}
       </div>
       {!allRooms.length && (
-        <p role="alert">
-          برای این هتل ابتدا نوع اتاق را اضافه کنید.
-        </p>
+        <p role="alert">برای این هتل ابتدا نوع اتاق را اضافه کنید.</p>
       )}
       {error && <p role="alert">{error}</p>}
       <Dialog
@@ -924,7 +915,9 @@ export function HotelCoefficients({
             می‌توانید ظرفیت و نرخ آن را در همین بسته ثبت کنید.
           </DialogDescription>
           <form className={styles.roomTypeForm} onSubmit={submitRoomType}>
-            <label htmlFor={`room-type-name-${row.hotel.id}`}>نام نوع اتاق</label>
+            <label htmlFor={`room-type-name-${row.hotel.id}`}>
+              نام نوع اتاق
+            </label>
             <Input
               id={`room-type-name-${row.hotel.id}`}
               autoFocus
@@ -934,9 +927,7 @@ export function HotelCoefficients({
               disabled={addingRoomType}
               onChange={(event) => setRoomTypeName(event.target.value)}
             />
-            {roomTypeError ? (
-              <p role="alert">{roomTypeError}</p>
-            ) : null}
+            {roomTypeError ? <p role="alert">{roomTypeError}</p> : null}
             <button
               className={styles.addRoomType}
               type="submit"

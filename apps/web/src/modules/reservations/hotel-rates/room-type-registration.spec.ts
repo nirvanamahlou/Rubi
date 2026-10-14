@@ -33,7 +33,11 @@ function api(overrides: Partial<HotelRoomTypeApi> = {}): HotelRoomTypeApi {
   };
 }
 
-const permissions = ['master_data.read', 'master_data.create', 'master_data.update'];
+const permissions = [
+  'master_data.read',
+  'master_data.create',
+  'master_data.update',
+];
 
 describe('registerRoomTypeForHotel', () => {
   it('creates a canonical room type and appends it without replacing linked types', async () => {
@@ -42,12 +46,18 @@ describe('registerRoomTypeForHotel', () => {
         .fn()
         .mockResolvedValueOnce({
           data: record('hotels', {
-            attributes: { cityId: 'city-1', roomTypeIds: 'room-old,room-older' },
+            attributes: {
+              cityId: 'city-1',
+              roomTypeIds: 'room-old,room-older',
+            },
           }),
         })
         .mockResolvedValueOnce({
           data: record('hotels', {
-            attributes: { cityId: 'city-1', roomTypeIds: 'room-old,room-older' },
+            attributes: {
+              cityId: 'city-1',
+              roomTypeIds: 'room-old,room-older',
+            },
           }),
         }),
     });
@@ -113,9 +123,7 @@ describe('registerRoomTypeForHotel', () => {
   it('rejects an inactive type and a hotel outside the selected city', async () => {
     const inactiveApi = api({
       list: vi.fn().mockResolvedValue({
-        data: [
-          record('room-types', { name: 'دریا', status: 'inactive' }),
-        ],
+        data: [record('room-types', { name: 'دریا', status: 'inactive' })],
       }),
     });
     await expect(
