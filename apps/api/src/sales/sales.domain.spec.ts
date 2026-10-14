@@ -630,3 +630,25 @@ it('accepts opted-in contract totals without inferring passenger sale allocation
   input.services[0]!.pricing = [];
   expect(() => validateSalesContract(input)).toThrow();
 });
+
+it('rejects transfer quantity above non-infant passengers or below zero', () => {
+  for (const passengerCount of [-1, 2, 0.5]) {
+    const input = structuredClone(draft);
+    input.services = [
+      ...input.services,
+      {
+        clientKey: 'transfer',
+        kind: 'TRANSFER',
+        titleSnapshot: 'Transfer',
+        metadata: { direction: 'OUTBOUND', passengerCount },
+      },
+    ];
+    input.passengers[0]!.serviceClientKeys = [
+      ...input.passengers[0]!.serviceClientKeys,
+      'transfer',
+    ];
+    expect(() => validateSalesContract(input)).toThrow(
+      'تعداد مسافران ترانسفر معتبر نیست.',
+    );
+  }
+});

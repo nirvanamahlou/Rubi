@@ -350,6 +350,27 @@ export function validateSalesContract(
       'تعداد یا مسیر بلیت‌ها با قرارداد سازگار نیست.',
     );
   for (const service of input.services) {
+    if (
+      service.kind === 'TRANSFER' &&
+      service.metadata?.passengerCount !== undefined
+    ) {
+      const count = service.metadata.passengerCount;
+      const max = input.passengers.filter(
+        (p) =>
+          (categories[p.customerId] ??
+            passengerAgeCategory(p.birthDate, input.departureDate)) !== 'INF',
+      ).length;
+      if (
+        typeof count !== 'number' ||
+        !Number.isInteger(count) ||
+        count < 0 ||
+        count > max
+      )
+        throw new SalesDomainError(
+          'SALES_SERVICE_INVALID',
+          'تعداد مسافران ترانسفر معتبر نیست.',
+        );
+    }
     const direction = service.metadata?.direction;
     if (
       direction &&

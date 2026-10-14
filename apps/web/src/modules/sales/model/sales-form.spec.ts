@@ -651,3 +651,31 @@ it.each([
     ).toBe(expected);
   },
 );
+
+import { salesTransferCount } from './sales-form';
+it('defaults transfer quantity to adults plus children and bounds a manual reduction', () => {
+  const state = {
+    ...emptySalesForm,
+    passengerComposition: { adults: 2, children: 1, infants: 1 },
+  };
+  expect(salesTransferCount(state)).toBe(3);
+  expect(salesTransferCount({ ...state, transferPassengerCount: 2 })).toBe(2);
+  expect(salesTransferCount({ ...state, transferPassengerCount: 99 })).toBe(3);
+  expect(salesTransferCount({ ...state, transferPassengerCount: -1 })).toBe(0);
+});
+
+it('persists the reduced transfer count separately for each selected direction', () => {
+  const input = salesPayload({
+    ...emptySalesForm,
+    tripType: 'ROUND_TRIP',
+    serviceKinds: ['TRANSFER'],
+    serviceDirections: { TRANSFER: ['OUTBOUND', 'RETURN'] },
+    passengerComposition: { adults: 2, children: 1, infants: 1 },
+    transferPassengerCount: 2,
+  });
+  expect(
+    input.services
+      .filter((s) => s.kind === 'TRANSFER')
+      .map((s) => s.metadata?.passengerCount),
+  ).toEqual([2, 2]);
+});
