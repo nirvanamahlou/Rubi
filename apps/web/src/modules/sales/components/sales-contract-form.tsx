@@ -1356,6 +1356,11 @@ export function SalesContractForm() {
                       {!state.contractFlights?.OUTBOUND ? (
                         <>
                           <TicketOfferPicker
+                            calendarSystem={
+                              salesInternationalTravel(state)
+                                ? 'gregorian'
+                                : 'persian'
+                            }
                             prepared={preparedTickets}
                             enabled={flightDatesReady}
                             originLabel={
@@ -1430,6 +1435,11 @@ export function SalesContractForm() {
                           {!flightDirections.includes('OUTBOUND') ||
                           salesFlightSelection(state, 'OUTBOUND') ? (
                             <TicketOfferPicker
+                              calendarSystem={
+                                salesInternationalTravel(state)
+                                  ? 'gregorian'
+                                  : 'persian'
+                              }
                               enabled={flightDatesReady}
                               originLabel={
                                 references.cities.find(

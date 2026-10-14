@@ -4,7 +4,10 @@ import { currencySymbol } from '@/lib/currency-symbol';
 import { CheckCircle2, Circle, Plane } from 'lucide-react';
 import type { TicketOfferV1 } from '@nora/contracts';
 
-export function ticketDisplayTime(value: string) {
+export function ticketDisplayTime(
+  value: string,
+  calendarSystem: 'persian' | 'gregorian' = 'persian',
+) {
   const date = new Date(value);
   return {
     time: new Intl.DateTimeFormat('fa-IR', {
@@ -14,6 +17,7 @@ export function ticketDisplayTime(value: string) {
       hourCycle: 'h23',
     }).format(date),
     date: new Intl.DateTimeFormat('fa-IR', {
+      calendar: calendarSystem === 'gregorian' ? 'gregory' : 'persian',
       timeZone: 'Asia/Tehran',
       weekday: 'short',
       day: 'numeric',
@@ -53,6 +57,7 @@ export function TicketOfferCard({
   requiredSeats = 1,
   requireStandaloneFare = false,
   roundTripOutbound,
+  calendarSystem = 'persian',
 }: {
   offer: TicketOfferV1;
   selected: boolean;
@@ -62,14 +67,15 @@ export function TicketOfferCard({
   requiredSeats?: number;
   requireStandaloneFare?: boolean;
   roundTripOutbound?: TicketOfferV1;
+  calendarSystem?: 'persian' | 'gregorian';
 }) {
-  const departure = ticketDisplayTime(offer.departureAt);
+  const departure = ticketDisplayTime(offer.departureAt, calendarSystem);
   const availableSeats = roundTripOutbound
     ? Math.min(offer.remainingCapacity, roundTripOutbound.remainingCapacity)
     : offer.remainingCapacity;
   const insufficient = availableSeats < requiredSeats;
   const missingFare = requireStandaloneFare && !offer.standaloneSalePrice;
-  const arrival = ticketDisplayTime(offer.arrivalAt);
+  const arrival = ticketDisplayTime(offer.arrivalAt, calendarSystem);
   return (
     <button
       type="button"
