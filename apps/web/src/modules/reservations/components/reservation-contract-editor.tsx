@@ -1,4 +1,5 @@
 'use client';
+import { ReservationPassengers } from '../passenger-files/passengers';
 import { ReservationPartyEditor } from './reservation-party-editor';
 import { TravelWorkflowForm } from './travel-workflow-form';
 
@@ -286,6 +287,9 @@ export function ReservationContractEditor({
               onSaved={() => setRevision((v) => v + 1)}
             />
           )}
+        {active === 'ویرایش مسافران' && !contract && (
+          <ReservationPassengers key={requestId} id={requestId} />
+        )}
         {active === 'سوابق' && (
           <div className={styles.history}>
             <div className="flex flex-wrap gap-2">
