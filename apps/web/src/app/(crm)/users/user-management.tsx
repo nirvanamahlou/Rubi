@@ -620,7 +620,7 @@ export function UserManagement() {
                     <NativeSearchSelect
                       disabled={editingLegacy}
                       value={title}
-                      optionLimit={USER_JOB_TITLES.length}
+                      optionLimit={USER_JOB_TITLES.length + 1}
                       onChange={(e) => {
                         setTitle(e.target.value);
                         applyTemplate(e.target.value);

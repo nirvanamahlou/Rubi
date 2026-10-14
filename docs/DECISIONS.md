@@ -509,4 +509,6 @@ and Sales Manager profiles receive system-wide contract read and contract creati
 Sales Expert profiles remain owner-only, including valid manual snapshots. Other
 permissions, explicit UI restrictions and malformed/disabled snapshot denial remain
 authoritative. This is source policy only, not an operational grant migration.
+Role/profile producers must validate these effective Sales grants during assignment;
+the display title cannot bypass an operator's delegation boundary.
 See tasks/SALES-SELLER-VISIBILITY-1014.md.

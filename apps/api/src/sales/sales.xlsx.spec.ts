@@ -297,7 +297,7 @@ it.each([
       findById.mockResolvedValue({
         branchId: 'branch',
         ownerUserId: 'other',
-        assignedUserId: null,
+        assignedUserId: 'actor',
       });
       await expect(service.detail('colleague-contract', actor)).rejects.toThrow(
         'قرارداد خارج',

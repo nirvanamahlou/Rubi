@@ -15,10 +15,11 @@ export interface PermissionBearingRole {
   };
 }
 
-function salesRolePolicy(
-  codes: IamPermissionCode[],
-  roles: readonly PermissionBearingRole[],
-) {
+export function salesManagerRolePermissions(
+  roles: readonly {
+    role: Pick<PermissionBearingRole['role'], 'isActive' | 'code' | 'name'>;
+  }[],
+): IamPermissionCode[] {
   const manager = roles.some(
     ({ role }) =>
       role.isActive &&
@@ -28,14 +29,15 @@ function salesRolePolicy(
         role.name === 'مدیر فروش' ||
         role.name === 'مدیر'),
   );
-  if (manager)
-    return [
-      ...new Set<IamPermissionCode>([
-        ...codes,
-        'sales.contracts.read.all',
-        'sales.contracts.create',
-      ]),
-    ];
+  return manager ? ['sales.contracts.read.all', 'sales.contracts.create'] : [];
+}
+
+function salesRolePolicy(
+  codes: IamPermissionCode[],
+  roles: readonly PermissionBearingRole[],
+) {
+  const managerCodes = salesManagerRolePermissions(roles);
+  if (managerCodes.length) return [...new Set([...codes, ...managerCodes])];
   const expert = roles.some(
     ({ role }) =>
       role.isActive &&
