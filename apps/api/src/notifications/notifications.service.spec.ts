@@ -33,3 +33,14 @@ describe('NotificationsService', () => {
     });
   });
 });
+
+it('forwards the authenticated permissions into the recipient query', async () => {
+  const listForRecipient = vi
+    .fn()
+    .mockResolvedValue({ rows: [], unreadCount: 0 });
+  const service = new NotificationsService({
+    listForRecipient,
+  } as unknown as NotificationsRepository);
+  await service.list('user-a', '20', []);
+  expect(listForRecipient).toHaveBeenCalledWith('user-a', 20, []);
+});

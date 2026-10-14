@@ -1,3 +1,4 @@
+import { canViewRoute } from '@nora/contracts';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma } from '@nora/database';
 
@@ -17,18 +18,31 @@ export class NotificationsRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  async listForRecipient(recipientUserId: string, limit: number) {
+  async listForRecipient(
+    recipientUserId: string,
+    limit: number,
+    permissions?: readonly string[],
+  ) {
     const [rows, unreadCount] = await this.database.client.$transaction([
       this.database.client.notification.findMany({
         where: { recipientUserId },
         include: notificationInclude,
         orderBy: [{ occurredAt: 'desc' }, { id: 'desc' }],
-        take: limit,
+        ...(permissions ? {} : { take: limit }),
       }),
       this.database.client.notification.count({
         where: { recipientUserId, readAt: null },
       }),
     ]);
+    if (permissions) {
+      const allowed = rows.filter(
+        (row) => !row.href || canViewRoute(permissions, row.href),
+      );
+      return {
+        rows: allowed.slice(0, limit),
+        unreadCount: allowed.filter((row) => row.readAt === null).length,
+      };
+    }
     return { rows, unreadCount };
   }
 
