@@ -1,3 +1,7 @@
+## SALES-CORRECTION-PURPLE-1014 — PC-A — IN_PROGRESS
+
+User requests purple for corrected-by-sales, not reservation operational edits, with develop merge. Reserve Sales reservation table audit projection and regression plus own status. The explicit SALES_PASSENGER_CORRECTION event drives the purple correctedAt marker; reservation form/general amendments do not. No schema/migration/dependency/runtime change.
+
 ## NOTIFICATION-USER-ISOLATION-1014 — PC-A — READY_FOR_REVIEW
 
 User requests notification privacy by user and permissions. Reserve notification-center, scoped storage model/tests and IAM access-context actor projection plus own status. Preserve recipient-scoped server operations; isolate browser cache by authenticated user/branch/permission scope and filter visible feeds by authorized destination. Central access-context lock bounded to exposing current actor and remounting notification center. Reserve Notifications controller/service/repository and existing tests for server-side current-route permission filtering before pagination/counting. No migration/dependency/runtime writes.
