@@ -27,6 +27,10 @@ import { exactFlightQuery } from '@/modules/sales/model/exact-flight-dates';
 import { TicketOfferPicker } from '@/modules/sales/components/ticket-offer-picker';
 import { SalesDatePicker } from '@/modules/sales/components/sales-date-picker';
 import {
+  amendmentFlightDay,
+  matchesSavedAmendmentFlight,
+} from './amendment-flight-search';
+import {
   amendmentFromContract,
   manualAmendmentFlights,
   applyManualAmendmentFlights,
@@ -53,7 +57,7 @@ export function ReservationSalesAmendment({
   const [saved, setSaved] = useState(false);
   const [direction, setDirection] = useState<SalesTicketDirection>('OUTBOUND');
   const [airline, setAirline] = useState('');
-  const [day, setDay] = useState(contract.departureDate.slice(0, 10));
+  const [day, setDay] = useState(() => amendmentFlightDay(draft, 'OUTBOUND'));
   useEffect(() => {
     let live = true;
     const resources: MasterDataResource[] = [
@@ -266,11 +270,7 @@ export function ReservationSalesAmendment({
                     variant={direction === d ? 'primary' : 'outline'}
                     onClick={() => {
                       setDirection(d);
-                      setDay(
-                        draft.ticketSelections
-                          ?.find((t) => t.direction === d)
-                          ?.departureAt.slice(0, 10) ?? day,
-                      );
+                      setDay(amendmentFlightDay(draft, d));
                     }}
                   >
                     {d === 'OUTBOUND' ? 'رفت' : 'برگشت'}
@@ -308,6 +308,17 @@ export function ReservationSalesAmendment({
               onChange={setAirline}
             />
             <TicketOfferPicker
+              enabled={!!day}
+              emptyMessage={
+                matchesSavedAmendmentFlight(
+                  draft,
+                  direction,
+                  day,
+                  refs.airlines?.find((r) => r.id === airline)?.name,
+                )
+                  ? 'بلیت جایگزینی برای این مسیر و تاریخ پیدا نشد؛ بلیت فعلی قرارداد حفظ شده است.'
+                  : undefined
+              }
               carrierName={refs.airlines?.find((r) => r.id === airline)?.name}
               exactDay={day}
               query={{
