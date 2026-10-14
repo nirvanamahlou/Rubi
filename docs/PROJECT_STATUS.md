@@ -1,3 +1,7 @@
+## 2026-10-14 — SALES-PASSENGER-CORRECTIONS-1014 — PC-A — VALIDATING
+
+Sales finalized-contract operations add a protected correction form for passenger DOB/passport/expiry and Reservations notes. Contract-version CAS, encrypted append-only before/after evidence, actor/time, immutable operation IDs and same-transaction branch-authorized notifications protect integrity. Canonical Customer profiles, amounts, commercial passenger categories, allocations and previously issued snapshots remain unchanged. DOB changes crossing a commercial age category require contract amendment. Reservations queue marks corrected contracts PURPLE (latest user instruction); notification links open exact event history, with field values masked without sensitive permission. Passenger details and new Manifest outputs use public Sales contract-specific identity overlays. No schema/migration/dependency or operational runtime/data change. Tests, build and exact-head CI gate authorized develop merge.
+
 ## 2026-10-14 — HIDE-CONTRACT-FLIGHT-CAPACITY-1014 — PC-A
 
 New-contract flight cards omit total capacity, remaining seats and round-trip available-seat figures. Existing insufficient-seat validation and selection disabling remain enforced. No API/schema/migration/dependency or local runtime change. Focused render regressions and full CI gate the authorized develop merge.

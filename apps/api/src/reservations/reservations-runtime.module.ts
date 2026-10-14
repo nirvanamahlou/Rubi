@@ -20,6 +20,7 @@ import { Optional } from '@nestjs/common';
 import { ReservationOperationInterceptor } from './reservation-operation.interceptor';
 import { ParseUUIDPipe } from '@nestjs/common';
 import { SalesOperationalAmendmentModule } from '../sales/sales-operational-amendment.module';
+import { PassengerCorrectionModule } from '../sales/corrections/passenger-correction.module';
 import { CustomersModule } from '../customers/customers.module';
 import { CustomerService } from '../customers/customer.service';
 import { IamService } from '../iam/iam.service';
@@ -640,6 +641,7 @@ export class ReservationRequestsController {
     DocumentsModule,
     HotelRatesModule,
     NotificationsModule,
+    PassengerCorrectionModule,
     FinanceDeliveryModule,
     LegalEntitiesModule,
     MasterDataModule,
