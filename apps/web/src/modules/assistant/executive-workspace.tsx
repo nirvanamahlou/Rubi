@@ -375,32 +375,6 @@ export function AssistantComposer({
           {t(notSubmitted ? c.messageNotSubmitted : c.fixedActions)}
         </p>
       </div>
-      <ActionEvidence
-        t={t}
-        denied={denied}
-        english={english}
-        actionResult={actionResult}
-        actionState={actionState}
-      />
-    </section>
-  );
-}
-export function ActionEvidence({
-  t,
-  denied = false,
-  english = false,
-  actionResult,
-  actionState = null,
-}: {
-  t: Translate;
-  denied?: boolean;
-  english?: boolean;
-  actionResult: AssistantActionResult | null;
-  actionState?: AssistantLoadState | null;
-}) {
-  return (
-    <>
-      {' '}
       {!denied && actionResult && 'filters' in actionResult && (
         <div className={styles.composerHint}>
           <p>
@@ -677,9 +651,6 @@ export function ActionEvidence({
                 }).format(new Date(actionResult.report.observedAt))}
               </time>
             </p>
-            {actionResult.report.totals.length === 0 && (
-              <p className={styles.composerHint}>{t(c.noData)}</p>
-            )}
             {actionResult.report.totals.map((balance) => (
               <dl className={styles.actionCounts} key={balance.currencyCode}>
                 {[
@@ -855,14 +826,8 @@ export function ActionEvidence({
             })}
           </div>
         )}
-    </>
+    </section>
   );
-}
-export function actionForView(view: AssistantView): AssistantAction | null {
-  if (view === 'sales') return 'sales-analysis';
-  if (view === 'finance') return 'receivables-follow-up';
-  if (view === 'overview' || view === 'advisor') return 'daily-summary';
-  return null;
 }
 export function PersonalFollowUps({
   t,
@@ -1222,16 +1187,12 @@ export function ExecutivePanels({
   state = 'not-configured',
   snapshot = null,
   onRefresh,
-  report = null,
-  reportState = null,
 }: {
   view: AssistantView;
   english?: boolean;
   state?: AssistantLoadState;
   snapshot?: ExecutiveSnapshot | null;
   onRefresh?: () => void;
-  report?: AssistantActionResult | null;
-  reportState?: AssistantLoadState | null;
 }) {
   const t: Translate = (text) => text[english ? 1 : 0];
   const screen = c.views[view];
@@ -1331,51 +1292,33 @@ export function ExecutivePanels({
               </Button>
             </div>
           </div>
-          {actionForView(view) && (report || reportState) ? (
-            <section
-              className={styles.panel}
-              aria-live="polite"
-              aria-busy={reportState === 'loading'}
-            >
-              <ActionEvidence
-                t={t}
-                english={english}
-                actionResult={reportState ? null : report}
-                actionState={reportState}
-              />
-            </section>
-          ) : (
-            <>
-              {' '}
-              <div className={styles.metrics}>
-                {screen.metrics.map((metric, index) => {
-                  const MetricIcon = metricIcons[view][index]!;
-                  return (
-                    <article
-                      key={metric[1]}
-                      className={styles.metric}
-                      data-tone={index}
-                    >
-                      <div>
-                        <p>{t(metric)}</p>
-                        <strong aria-label={t(c.unknown)}>—</strong>
-                        <small>{t(c.noEstimate)}</small>
-                      </div>
-                      <span className={styles.metricIcon}>
-                        <MetricIcon size={23} aria-hidden="true" />
-                      </span>
-                    </article>
-                  );
-                })}
-              </div>
-              <ViewContent
-                view={view}
-                t={t}
-                snapshot={snapshot}
-                english={english}
-              />
-            </>
-          )}
+          <div className={styles.metrics}>
+            {screen.metrics.map((metric, index) => {
+              const MetricIcon = metricIcons[view][index]!;
+              return (
+                <article
+                  key={metric[1]}
+                  className={styles.metric}
+                  data-tone={index}
+                >
+                  <div>
+                    <p>{t(metric)}</p>
+                    <strong aria-label={t(c.unknown)}>—</strong>
+                    <small>{t(c.noEstimate)}</small>
+                  </div>
+                  <span className={styles.metricIcon}>
+                    <MetricIcon size={23} aria-hidden="true" />
+                  </span>
+                </article>
+              );
+            })}
+          </div>
+          <ViewContent
+            view={view}
+            t={t}
+            snapshot={snapshot}
+            english={english}
+          />
           <footer className={styles.integrityNote}>
             <Info size={17} aria-hidden="true" />
             <p>{t(c.liveGate)}</p>
@@ -1391,38 +1334,6 @@ export function ExecutiveWorkspace({ view }: { view: AssistantView }) {
   const permissions = useAccessPermissions();
   const allowed = Array.isArray(permissions);
   const [reload, setReload] = useState(0);
-  const reportKey = view + ':' + reload + ':' + JSON.stringify(permissions);
-  const action = actionForView(view);
-  const [loadedReport, setLoadedReport] = useState<{
-    key: string;
-    result: AssistantActionResult | null;
-    state: AssistantLoadState | null;
-  } | null>(null);
-  useEffect(() => {
-    if (!allowed || !action) return;
-    const controller = new AbortController();
-    void loadAssistantAction(action, controller.signal).then(
-      (result) => {
-        if (!controller.signal.aborted)
-          setLoadedReport({ key: reportKey, result, state: null });
-      },
-      (error: unknown) => {
-        if (controller.signal.aborted) return;
-        const message = error instanceof Error ? error.message : '';
-        const state =
-          message === 'HTTP_401'
-            ? 'unauthenticated'
-            : message === 'HTTP_403'
-              ? 'forbidden'
-              : message === 'HTTP_429'
-                ? 'rate-limited'
-                : 'unavailable';
-        setLoadedReport({ key: reportKey, result: null, state });
-      },
-    );
-    return () => controller.abort();
-  }, [allowed, action, reportKey]);
-  const currentReport = loadedReport?.key === reportKey ? loadedReport : null;
   const [result, setResult] = useState<{
     state: AssistantLoadState;
     snapshot: ExecutiveSnapshot | null;
@@ -1455,12 +1366,6 @@ export function ExecutiveWorkspace({ view }: { view: AssistantView }) {
       state={allowed ? result.state : 'forbidden'}
       snapshot={allowed ? result.snapshot : null}
       onRefresh={refresh}
-      report={allowed ? (currentReport?.result ?? null) : null}
-      reportState={
-        allowed && action
-          ? (currentReport?.state ?? (currentReport ? null : 'loading'))
-          : null
-      }
     />
   );
 }
