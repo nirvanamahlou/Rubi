@@ -4436,5 +4436,18 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "اصلاح ظرفیت بلیت در دسترس نیست.": "Ticket capacity amendment is unavailable.",
+  "اطلاعات اصلاح طرف قرارداد معتبر نیست.": "Invalid counterparty correction details.",
+  "اطلاعات اصلاح قرارداد معتبر نیست.": "Invalid contract amendment details.",
+  "اطلاعات هویتی مسافران را در ویرایش مسافران اصلاح کنید.": "Correct passenger identity details in the passenger editor.",
+  "انتقال طرف حساب قرارداد به مجوز تأیید دریافت مالی نیاز دارد.": "Transferring the contract counterparty requires receipt approval permission.",
+  "بلیط انتخاب‌شده تغییر کرده یا قابل رزرو نیست.": "The selected ticket has changed or cannot be reserved.",
+  "دلیل اصلاح قرارداد الزامی است.": "A reason for the contract amendment is required.",
+  "رده سنی مسافران را مشخص کنید.": "Specify passenger age categories.",
+  "طرف قرارداد را در بخش طرف قرارداد اصلاح کنید.": "Correct the counterparty in the counterparty section.",
+  "قرارداد ابطال‌شده قابل اصلاح نیست.": "A cancelled contract cannot be amended.",
+  "مجوز ویرایش قرارداد لازم است.": "Contract editing permission is required.",
+  "مسیر یا تاریخ بلیت برگشت معتبر نیست.": "Invalid return flight route or date.",
+  "نسخه قرارداد تغییر کرده یا قرارداد ابطال شده است.": "The contract version has changed or the contract is cancelled."
 }

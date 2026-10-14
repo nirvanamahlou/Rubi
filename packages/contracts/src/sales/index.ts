@@ -484,3 +484,17 @@ export interface SalesContractProfitV1 {
     currencyCode: string;
   }[];
 }
+
+/** Explicit buyer correction; existing contract receipts and debt follow the new payer. */
+export interface SalesContractPartyCorrectionV1 {
+  version: number;
+  reason: string;
+  customerId: string;
+  buyerContact: SalesBuyerContactV1 | null;
+  transferFinancialHistory: true;
+}
+
+/** Explicit correction of a previously confirmed Sales contract. */
+export interface SalesContractAmendmentV1 extends SalesContractUpdateRequest {
+  passengerCategories: Readonly<Record<string, SalesPassengerAgeCategory>>;
+}

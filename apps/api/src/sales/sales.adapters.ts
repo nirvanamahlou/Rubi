@@ -1,3 +1,4 @@
+import type { Prisma } from '@nora/database';
 import {
   BadRequestException,
   Inject,
@@ -17,6 +18,13 @@ export const SALES_TICKET_AVAILABILITY_PORT = Symbol(
 );
 
 export interface SalesTicketAvailabilityPort {
+  amend?(
+    tx: Prisma.TransactionClient,
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+    contractId: string,
+    seatCount: number,
+  ): Promise<void>;
   revalidate(
     offerIds: readonly string[],
     branchId: string,
@@ -44,6 +52,15 @@ export class SalesTicketsPublicAdapter implements SalesTicketAvailabilityPort {
   constructor(
     @Inject(TicketPublicService) private readonly catalog: TicketPublicService,
   ) {}
+  amend(
+    tx: Prisma.TransactionClient,
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+    contractId: string,
+    seatCount: number,
+  ) {
+    return this.catalog.amend(tx, selections, branchId, contractId, seatCount);
+  }
   revalidate(
     offerIds: readonly string[],
     branchId: string,

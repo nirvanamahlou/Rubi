@@ -137,6 +137,7 @@ export function passengerAgeCategory(
 export function validateSalesContract(
   input: SalesContractCreateRequest,
   requireChequeTerms = false,
+  categories: Readonly<Record<string, 'ADT' | 'CHD' | 'INF'>> = {},
 ): void {
   if (
     !input ||
@@ -260,7 +261,9 @@ export function validateSalesContract(
         'SALES_PASSENGER_INVALID',
         'مشخصات مسافر کامل نیست.',
       );
-    const age = passengerAgeCategory(passenger.birthDate, input.departureDate);
+    const age =
+      categories[passenger.customerId] ??
+      passengerAgeCategory(passenger.birthDate, input.departureDate);
     if (
       passenger.accommodationKind !== undefined &&
       (!salesAccommodationValid(passenger.accommodationKind, age) ||

@@ -53,7 +53,7 @@ const sectionLabels: Record<ReservationSettingsSection, string> = {
   FLIGHT: 'ویرایش اطلاعات پرواز',
   HOTEL: 'ویرایش اطلاعات هتل',
   OTHER: 'ویرایش سایر خدمات',
-  PASSENGERS: 'ویرایش مسافران فرم رزواسیون',
+  PASSENGERS: 'اصلاح رده سنی و اسکان مسافران',
 };
 
 const emptySelectValue = '__UNSELECTED__';
@@ -122,7 +122,9 @@ function ReservationSelect({
   value,
   options,
   onValueChange,
+  disabled = false,
 }: {
+  disabled?: boolean;
   ariaLabel: string;
   value?: string;
   options: readonly ReservationSelectOption[];
@@ -135,7 +137,11 @@ function ReservationSelect({
         onValueChange(next === emptySelectValue ? '' : next)
       }
     >
-      <SelectTrigger aria-label={ariaLabel} className={styles.selectTrigger}>
+      <SelectTrigger
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className={styles.selectTrigger}
+      >
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -667,28 +673,21 @@ export function ReservationSettingsForm({
                       />
                     </td>
                     <td>
-                      <ReservationSelect
-                        ariaLabel={`رده سنی مسافر ${i + 1}`}
-                        value={p.age}
-                        options={[
-                          { value: 'ADL', label: 'بزرگسال (ADL)' },
-                          { value: 'CHD', label: 'کودک (CHD)' },
-                          { value: 'INF', label: 'نوزاد (INF)' },
-                        ]}
-                        onValueChange={(age) =>
-                          update({
-                            ...draft,
-                            passengers: draft.passengers.map((v, j) =>
-                              j === i ? { ...v, age: age as typeof p.age } : v,
-                            ),
-                          })
+                      <span>
+                        {
+                          {
+                            ADL: 'بزرگسال (ADL)',
+                            CHD: 'کودک (CHD)',
+                            INF: 'نوزاد (INF)',
+                          }[p.age]
                         }
-                      />
+                      </span>
                     </td>
                     <td>
                       {p.age === 'CHD' ? (
                         <ReservationSelect
                           ariaLabel={`رده کودک هتل مسافر ${i + 1}`}
+
                           value={p.hotelChildAgeBand ?? ''}
                           options={[
                             {
@@ -723,62 +722,9 @@ export function ReservationSettingsForm({
                         <span>—</span>
                       )}
                     </td>
-                    <td>
-                      <ReservationSelect
-                        ariaLabel={`جنسیت مسافر ${i + 1}`}
-                        value={p.sex ?? ''}
-                        options={[
-                          { value: emptySelectValue, label: 'نامشخص' },
-                          { value: 'MALE', label: 'مرد' },
-                          { value: 'FEMALE', label: 'زن' },
-                        ]}
-                        onValueChange={(sex) =>
-                          update({
-                            ...draft,
-                            passengers: draft.passengers.map((v, j) =>
-                              j === i
-                                ? {
-                                    ...v,
-                                    sex: sex as 'MALE' | 'FEMALE' | '',
-                                  }
-                                : v,
-                            ),
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <DatePicker
-                        defaultCalendarSystem="gregorian"
-                        gregorianEnglish
-                        value={p.birthDate ?? ''}
-                        onChange={(value) =>
-                          update({
-                            ...draft,
-                            passengers: draft.passengers.map((v, j) =>
-                              j === i ? { ...v, birthDate: value } : v,
-                            ),
-                          })
-                        }
-                      />
-                    </td>
-                    <td>
-                      <Input
-                        aria-label={`شماره مدرک مسافر ${i + 1}`}
-                        maxLength={100}
-                        value={p.documentNumber ?? ''}
-                        onChange={(e) =>
-                          update({
-                            ...draft,
-                            passengers: draft.passengers.map((v, j) =>
-                              j === i
-                                ? { ...v, documentNumber: e.target.value }
-                                : v,
-                            ),
-                          })
-                        }
-                      />
-                    </td>
+                    <td>{p.sex || '—'}</td>
+                    <td>{p.birthDate || '—'}</td>
+                    <td>{p.documentNumber || '—'}</td>
                   </tr>
                 ))}
               </tbody>

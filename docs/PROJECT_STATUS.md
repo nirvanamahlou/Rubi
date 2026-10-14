@@ -5923,6 +5923,14 @@ SALES-HOTEL-ROOM-CAPACITY-1013 validation: 23 Web/form/i18n regressions, 14 API 
 ## FLIGHT-LOAD-SCROLL-1013 — PC-A — READY_FOR_CI
 
 Flight load retains its result and detail regions after the first search while changed filters invalidate stale selections. Outbound/return viewports and detail panels have stable height; selected-row styling no longer changes border dimensions. Scroll anchoring and scroll chaining are disabled within the load panels. Existing route/return/date filtering is unchanged. Fifteen focused selection, rendering and flight-load model tests pass. Scoped lint and Web typecheck pass; full production build and PostgreSQL migration/seed gate pass in CI; exact-head CI gates the authorized develop merge. No API, migration, dependency or localhost runtime change.
+
+
+### PC-A — RESERVATION-CONTRACT-EDIT-1013 — 2026-10-14
+
+Implemented Sales-owned contract correction from Reservations: counterparty/contact changes with preserved receipt attribution; actual flight capacity, hotel, sale-price and age amendments; read-only passenger list with separate identity editor; issued reservation form and prior version viewing. Outbox-backed execution snapshots and atomic inventory changes preserve existing documents/payment evidence. No migration/dependency/local-runtime change. Validation and develop PR merge in progress.
+
 ## 2026-10-13 — AGENCY-EDIT-EMPTY-FIELDS-1013 — PC-B
 
 Agency registration editing now permits filling previously blank protected contact fields even when existing values cannot be unmasked. Save writes only sensitive fields explicitly changed in that case, preserving undisclosed values. If an agency has no representative, editing can create one with a phone through the authorized contact save path instead of requiring a registration-only verification grant. Late contact hydration does not overwrite the user's new entries. No API/schema/migration/dependency or IAM change, and validation does not alter operational records. Organizations regressions: 245 pass, one opt-in local workbook test skipped; scoped lint, Web typecheck and production build (62 routes) pass. Exact-head CI gates develop merge and local Web3100 rollout.
+
+RESERVATION-CONTRACT-EDIT-1013 handoff: PR842, branch `codex/pc-a-reservation-contract-edit-1013`, implementation `e7d324f9`, reconciled with develop through `897f0857`. Final scoped lint and API/Web typechecks passed; 26 amendment/party/capacity transaction tests passed again after reconciliation. Existing Sales/Reservations regressions and Web model/issued-form/read-only/i18n tests passed; API/Web production builds passed. No migration; other computers fetch develop after the authorized exact-head-CI-gated merge. Local3100 was not replaced. Changed execution creates a new operational version requiring review, while old issued forms remain in history and all payment evidence is retained.

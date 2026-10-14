@@ -1,3 +1,4 @@
+import { SalesPartyCorrectionService } from '../sales/sales-party-correction.service';
 import { SalesProfitService } from '../sales/sales-profit.service';
 import 'reflect-metadata';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -20,6 +21,7 @@ describe('finance gate on passenger documents', () => {
     const module = await Test.createTestingModule({
       controllers: [SalesController],
       providers: [
+        { provide: SalesPartyCorrectionService, useValue: {} },
         { provide: SalesProfitService, useValue: {} },
         { provide: SalesService, useValue: { detail } },
         { provide: SalesOutputService, useValue: {} },

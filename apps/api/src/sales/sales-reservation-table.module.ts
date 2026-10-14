@@ -172,7 +172,12 @@ export class SalesReservationTableService {
                 at.getUTCDate() < birth.getUTCDate())
                 ? 1
                 : 0);
-            if (age < 2) counts.infants++;
+            if (person.ageCategory === 'INF') counts.infants++;
+            else if (person.ageCategory === 'ADT') counts.adults++;
+            else if (person.ageCategory === 'CHD') {
+              if (age < 6) counts.children2To6++;
+              else counts.children6To12++;
+            } else if (age < 2) counts.infants++;
             else if (age < 6) counts.children2To6++;
             else if (age < 12) counts.children6To12++;
             else counts.adults++;
@@ -206,6 +211,7 @@ export class SalesReservationTableService {
           return [
             row.id,
             {
+              contractPartyName: row.customerNameSnapshot,
               createdAt: row.createdAt.toISOString(),
               contractVersion: row.version,
               correctedAt: row.auditEvents[0]?.occurredAt.toISOString() ?? null,

@@ -28,7 +28,13 @@ type EditableField =
 
 const nullable = (value: string | null) => value?.trim() || '';
 
-export function ReservationPassengers({ id }: { id: string }) {
+export function ReservationPassengers({
+  id,
+  readOnly = false,
+}: {
+  id: string;
+  readOnly?: boolean;
+}) {
   const [rows, setRows] = useState<PassengerName[]>([]);
   const [canEdit, setCanEdit] = useState(false);
   const [canEditIdentity, setCanEditIdentity] = useState(false);
@@ -68,6 +74,7 @@ export function ReservationPassengers({ id }: { id: string }) {
   }
 
   async function save(row: PassengerName) {
+    if (readOnly) return;
     setBusy(row.id);
     setError('');
     setMessage('');
@@ -116,6 +123,66 @@ export function ReservationPassengers({ id }: { id: string }) {
   }
 
   if (loading) return <p>در حال دریافت اطلاعات مسافران…</p>;
+
+  if (readOnly)
+    return (
+      <div className="space-y-3">
+        {error && (
+          <p role="alert" className="text-destructive">
+            {error}
+          </p>
+        )}
+        <div className={styles.tableWrap}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {[
+                  'نام',
+                  'نام خانوادگی',
+                  'نام لاتین پاسپورت',
+                  'نام خانوادگی لاتین پاسپورت',
+                  'رده سنی',
+                  'جنسیت',
+                  'تاریخ تولد',
+                  'شماره ملی',
+                  'شماره پاسپورت',
+                  'انقضای پاسپورت',
+                  'ملیت',
+                  'محل صدور پاسپورت',
+                  'کشور تولد',
+                ].map((label) => (
+                  <th key={label}>{label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  {[
+                    row.firstName,
+                    row.lastName,
+                    row.passportFirstName,
+                    row.passportLastName,
+                    row.ageCategory,
+                    row.gender,
+                    row.birthDate,
+                    row.nationalId,
+                    row.passportNumber,
+                    row.passportExpiryDate,
+                    row.nationalityCode,
+                    row.passportIssuePlace,
+                    row.birthCountryCode,
+                  ].map((value, i) => (
+                    <td key={i}>{value || '—'}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {!rows.length && !error && <p>مسافری به این قرارداد متصل نشده است.</p>}
+      </div>
+    );
 
   return (
     <div className="space-y-4">

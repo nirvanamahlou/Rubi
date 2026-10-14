@@ -1,3 +1,8 @@
+import { SalesPartyCorrectionService } from './sales-party-correction.service';
+import type {
+  SalesContractPartyCorrectionV1,
+  SalesContractAmendmentV1,
+} from '@nora/contracts';
 import { requestDisplayLanguage } from '../common/i18n/language';
 import { SalesProfitService } from './sales-profit.service';
 import { ForbiddenException } from '@nestjs/common';
@@ -41,6 +46,8 @@ import { SALES_XLSX_MIME } from './sales.xlsx';
 @Controller('sales')
 export class SalesController {
   constructor(
+    @Inject(SalesPartyCorrectionService)
+    private readonly partyCorrection: SalesPartyCorrectionService,
     @Inject(SalesProfitService) private readonly profit: SalesProfitService,
     @Inject(SalesService) private readonly service: SalesService,
     @Inject(SalesOutputService) private readonly output: SalesOutputService,
@@ -49,6 +56,36 @@ export class SalesController {
     @Inject(FinanceDeliveryService)
     private readonly delivery: FinanceDeliveryService,
   ) {}
+
+  @Patch('contracts/:id/amend')
+  amend(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: SalesContractAmendmentV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (
+      !input?.passengerCategories ||
+      typeof input.passengerCategories !== 'object' ||
+      Array.isArray(input.passengerCategories)
+    )
+      throw new ForbiddenException('رده سنی مسافران را مشخص کنید.');
+    return this.service.update(
+      id,
+      input,
+      request.actor,
+      undefined,
+      input.passengerCategories,
+    );
+  }
+
+  @Patch('contracts/:id/party')
+  correctParty(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: SalesContractPartyCorrectionV1,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.partyCorrection.correct(id, input, request.actor);
+  }
 
   @Get('contracts/:id/travel-documents')
   @Header('Cache-Control', 'private, no-store')
