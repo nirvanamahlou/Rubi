@@ -7635,3 +7635,7 @@ COMPUTER_ID=PC-A; reserve travel-workflow form/domain and voucher leader mount i
 ## VOUCHER-OUTPUT-1014 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; reserve voucher sheet/PDF/model, workflow note label and airline reference loading. Owner authorizes English airline names, clean voucher details, shared reservation footer, issuance notice and develop merge. No schema/dependency changes.
+
+## ASSISTANT-DETERMINISTIC-1014 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-assistant-deterministic-1014 from origin/develop@86c87667. User authorizes inspection of Reporting, Dashboard and other domain definitions and implementation of eligible non-LLM assistant views. Reserve assistant Web workspace, reusable evidence presentation and focused tests, assistant bilingual copy if needed and own documentation. Reuse existing authenticated action APIs without source/schema/permission changes. Prior assistant UI candidates merged; no overlapping active source lock found. Reporting accounting balances, due checks and cash position remain PENDING_CONNECTION; travel demo metrics cannot stand in for approved accounting or CALL conversion. Acceptance: automatic per-view action reads, fresh/empty/denied/error states, exact currency evidence, refresh cancellation, deterministic advisor, no LLM/data writes. Full CI gates develop merge; no migration or dependency lock.
