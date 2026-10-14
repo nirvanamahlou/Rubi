@@ -147,73 +147,49 @@ it('shows five evidence-backed recommendations first and keeps the rest in a clo
   expect(html).toContain(assistantCopy.asOf[0]);
 });
 
-it('renders the daily report in overview and advisor without requiring a chat action', () => {
-  const report = {
-    version: 1 as const,
-    action: 'daily-summary' as const,
-    status: 'READY' as const,
-    scope: 'SELF' as const,
-    coverage: {
-      horizonDays: 7 as const,
-      limit: 30 as const,
-      includesOverdue: true as const,
-    },
-    counts: { visible: 1, overdue: 1, dueSoon: 0, assigned: 0 },
-    recommendations: [
-      {
-        followUpId: snapshot.followUps[0]!.id,
-        ruleId: 'OVERDUE_V1' as const,
-        priority: 'HIGH' as const,
-      },
-    ],
-    snapshot,
-  };
-  for (const view of ['overview', 'advisor'] as const) {
-    const html = renderToStaticMarkup(
-      <ExecutivePanels view={view} state="ready" report={report} />,
+it.each(['overview', 'sales', 'finance', 'advisor'] as const)(
+  'keeps the dedicated %s layout while authenticated data loads',
+  (view) => {
+    const initial = renderToStaticMarkup(
+      <AccessPermissionsProvider value={[]}>
+        <ExecutiveWorkspace view={view} />
+      </AccessPermissionsProvider>,
     );
-    expect(html).toContain('Private synthetic follow-up');
-    expect(html).toContain(assistantCopy.dailyCoverage[0]);
-    expect(html).not.toContain(assistantCopy.noEstimate[0]);
-    for (const reportState of [
-      'loading',
-      'unavailable',
-      'forbidden',
-      'unauthenticated',
-    ] as const) {
-      const hidden = renderToStaticMarkup(
+    for (const metric of assistantCopy.views[view].metrics)
+      expect(initial).toContain(metric[0]);
+    for (const state of ['loading', 'ready', 'unavailable'] as const) {
+      const html = renderToStaticMarkup(
         <ExecutivePanels
           view={view}
-          state="ready"
-          report={report}
-          reportState={reportState}
+          state={state}
+          snapshot={state === 'ready' ? snapshot : null}
         />,
       );
-      expect(hidden).not.toContain('Private synthetic follow-up');
-      expect(hidden).toContain(assistantCopy.states[reportState][0]);
+      for (const metric of assistantCopy.views[view].metrics)
+        expect(html).toContain(metric[0]);
+      const blocks = {
+        overview: [
+          assistantCopy.blocks.trend,
+          assistantCopy.blocks.summary,
+          assistantCopy.blocks.factors,
+        ],
+        sales: [
+          assistantCopy.blocks.salesTrend,
+          assistantCopy.blocks.destinations,
+          assistantCopy.blocks.funnel,
+        ],
+        finance: [
+          assistantCopy.blocks.cashTrend,
+          assistantCopy.blocks.obligations,
+          assistantCopy.blocks.balances,
+        ],
+        advisor: [
+          assistantCopy.blocks.daily,
+          assistantCopy.blocks.actions,
+          assistantCopy.blocks.priorities,
+        ],
+      };
+      for (const block of blocks[view]) expect(html).toContain(block[0]);
     }
-    const denied = renderToStaticMarkup(
-      <ExecutivePanels view={view} state="forbidden" report={report} />,
-    );
-    expect(denied).not.toContain('Private synthetic follow-up');
-  }
-});
-
-it('shows report source failure rather than invented finance values', () => {
-  const html = renderToStaticMarkup(
-    <ExecutivePanels
-      view="finance"
-      state="ready"
-      report={{
-        version: 1,
-        action: 'receivables-follow-up',
-        status: 'BLOCKED',
-        scope: 'NONE',
-        reason: 'RECEIVABLES_SOURCE_PENDING',
-        observedAt: snapshot.generatedAt,
-      }}
-    />,
-  );
-  expect(html).toContain(assistantCopy.receivablesSourceGate[0]);
-  expect(html).not.toContain(assistantCopy.noEstimate[0]);
-});
+  },
+);

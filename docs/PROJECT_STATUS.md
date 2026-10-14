@@ -6047,3 +6047,7 @@ COMPUTER_ID=PC-A; reserve voucher sheet/PDF/model, workflow note label and airli
 ## ASSISTANT-DETERMINISTIC-1014 — PC-C
 
 Inspected Reporting/Dashboard, accounting report APIs and existing assistant sources. Automatic evidence panels now connect overview/advisor to daily summary, sales to contract/CALL reports and finance to current contractual balances. Shared presentation retains scope, currency precision, provenance and incomplete/denied states. Accounting catalog producers remain pending; per-book reports need a defined aggregate scope, and travel demo gross-profit/conversion proxies are not substituted. News/scenario/forecast gates remain.37 assistant Web tests pass; local build/type and CI are in progress. See tasks/ASSISTANT-DETERMINISTIC-1014.md. No schema/API/provider/permission change.
+
+## ASSISTANT-TAB-LAYOUT-1014 — PC-C
+
+Correct #871 presentation regression: the report/reportState conditional replaced all dedicated metrics and ViewContent with ActionEvidence, including during loading. Restore the original dedicated tabs and composer-only action execution; remove automatic tab action reads until evidence is mapped into individual widgets. Existing source gates and personal recommendations remain. Added four tab regressions across loading/ready/unavailable. No API/schema/dependency/provider change. Validation and CI pending.
