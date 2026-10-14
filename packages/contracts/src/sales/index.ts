@@ -1,3 +1,5 @@
+export * from './hotel-rooms';
+import type { SalesHotelRoomV1 } from './hotel-rooms';
 import type { SalesServicePricingV1 } from './pricing';
 import type { LegalEntityCode } from '../legal-entities';
 export const SALES_CONTRACT_VERSION = 1 as const;
@@ -151,6 +153,7 @@ export interface SalesTicketSelectionInput {
 }
 
 export interface SalesHotelSelectionInput {
+  rooms?: readonly SalesHotelRoomV1[];
   serviceClientKey: string;
   hotelId: string;
   hotelNameSnapshot: string;

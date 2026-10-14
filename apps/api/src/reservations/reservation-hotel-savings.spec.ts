@@ -376,3 +376,51 @@ describe('recorded hotel-only cost projection', () => {
     expect(quote).toHaveBeenCalledWith(snapshot, 'branch', 'USD', actor, '180');
   });
 });
+
+it('sums separate room purchases only when a single batch covers the whole stay', () => {
+  const mixed = {
+    ...snapshot,
+    hotelSelection: {
+      ...snapshot.hotelSelection!,
+      roomCount: 2,
+      rooms: [
+        {
+          ordinal: 1,
+          roomTypeId: 'room',
+          roomTypeNameSnapshot: 'Double',
+          adults: 2,
+          childAges: [],
+        },
+        {
+          ordinal: 2,
+          roomTypeId: 'single',
+          roomTypeNameSnapshot: 'Single',
+          adults: 1,
+          childAges: [],
+        },
+      ],
+    },
+  };
+  const b = batch();
+  const row = b.rows[0]!;
+  const single = {
+    ...row.roomRates[0]!,
+    roomTypeId: 'single',
+    occupancyRates: row.roomRates[0]!.occupancyRates!.map((r) => ({
+      ...r,
+      adults: 1,
+      amount: '60.25',
+    })),
+  };
+  const complete = {
+    ...b,
+    rows: [{ ...row, roomRates: [...row.roomRates, single] }],
+  };
+  expect(
+    hotelReferencePurchase([complete], mixed, [30, 31, 32], 'USD', 'BB')
+      ?.amount,
+  ).toBe('320.5');
+  expect(
+    hotelReferencePurchase([b], mixed, [30, 31, 32], 'USD', 'BB'),
+  ).toBeNull();
+});

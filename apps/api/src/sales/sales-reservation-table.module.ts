@@ -51,7 +51,7 @@ export class SalesReservationTableService {
         status: { not: 'CANCELLED' },
       },
       include: {
-        hotelSelection: true,
+        hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
         passengers: {
           include: { allocations: { include: { service: true } } },
         },
@@ -64,6 +64,22 @@ export class SalesReservationTableService {
       current.hotelId !== hotel.hotelId ||
       current.roomTypeId !== hotel.roomTypeId ||
       current.roomCount !== hotel.roomCount ||
+      JSON.stringify(
+        (current.rooms ?? []).map((r) => ({
+          ordinal: r.ordinal,
+          roomTypeId: r.roomTypeId,
+          adults: r.adults,
+          childAges: r.childAges,
+        })),
+      ) !==
+        JSON.stringify(
+          (hotel.rooms ?? []).map((r) => ({
+            ordinal: r.ordinal,
+            roomTypeId: r.roomTypeId,
+            adults: r.adults,
+            childAges: r.childAges,
+          })),
+        ) ||
       current.mealServiceId !== (hotel.mealServiceId ?? null) ||
       (current.singleRoomCount ?? 0) !== (hotel.singleRoomCount ?? 0) ||
       (current.doubleRoomCount ?? hotel.roomCount) !==

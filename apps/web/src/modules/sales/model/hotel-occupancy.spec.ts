@@ -150,3 +150,64 @@ describe('new sales hotel occupancy pricing', () => {
     expect(salesHotelOccupancyQuote(s, room)).toBeNull();
   });
 });
+
+describe('independent room quotes', () => {
+  it('quotes each room type separately across every night and sums exact amounts', () => {
+    const single = {
+      ...room,
+      roomTypeId: 'single',
+      occupancyRates: [
+        {
+          ...room.occupancyRates![0]!,
+          adults: 1,
+          childAges: [],
+          amount: '70.25',
+        },
+      ],
+    };
+    const state = {
+      ...draft(),
+      hotel: {
+        ...draft().hotel,
+        roomCount: 2,
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: 'standard',
+            roomTypeNameSnapshot: 'Standard',
+            adults: 2,
+            childAges: [6],
+          },
+          {
+            ordinal: 2,
+            roomTypeId: 'single',
+            roomTypeNameSnapshot: 'Single',
+            adults: 1,
+            childAges: [],
+          },
+        ],
+      },
+    };
+    expect(salesHotelOccupancyQuote(state, room, [room, single])).toEqual({
+      amount: '381.5',
+      currencyCode: 'EUR',
+    });
+    expect(salesHotelOccupancyQuote(state, room, [room])).toBeNull();
+    expect(
+      salesHotelOccupancyQuote(state, room, [
+        room,
+        {
+          ...single,
+          occupancyRates: single.occupancyRates.map((r) => ({
+            ...r,
+            currencyCode: 'USD',
+          })),
+        },
+      ]),
+    ).toBeNull();
+    expect(
+      hotelOccupancySaleDefaults(state, room, [room, single]).servicePricing
+        ?.hotel?.[0]?.daySale.amount,
+    ).toBe('381.5');
+  });
+});

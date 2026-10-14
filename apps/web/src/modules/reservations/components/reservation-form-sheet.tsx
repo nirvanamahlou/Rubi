@@ -11,6 +11,7 @@ import { salesContractFlights } from '@nora/contracts';
 import { masterDataApi } from '@/modules/master-data/api/client';
 import {
   reservationPassengerPages,
+  reservationRoomAppendices,
   type ReservationFormIntake,
   type ReservationFormReferences,
 } from '../model/reservation-form';
@@ -37,6 +38,7 @@ export function useReservationFormReferences(
         : null,
     hotel ? ['hotels', hotel.hotelId] : null,
     hotel?.roomTypeId ? ['room-types', hotel.roomTypeId] : null,
+    ...(hotel?.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
     hotel?.mealServiceId ? ['meal-services', hotel.mealServiceId] : null,
     ...flights.map((f) => ['airline-name', f.carrierNameSnapshot]),
   ].filter((entry): entry is string[] => !!entry);
@@ -155,6 +157,11 @@ export function ReservationFormSheet({
           : 10,
       )
     : [data.passengers];
+  const roomAppendices =
+    !settings || settings.flags.hotel
+      ? reservationRoomAppendices(data.roomBreakdown)
+      : [];
+  const pageCount = pages.length + roomAppendices.length;
   return (
     <div className={styles.document}>
       {pages.map((people, page) => {
@@ -315,6 +322,29 @@ export function ReservationFormSheet({
                     </tr>
                   </tbody>
                 </table>
+                {data.roomBreakdown.length ? (
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'].map(
+                          (t) => (
+                            <th key={t}>{t}</th>
+                          ),
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.roomBreakdown.slice(0, 4).map((r) => (
+                        <tr key={r.ordinal}>
+                          <td>{r.ordinal}</td>
+                          <td dir="auto">{r.roomType}</td>
+                          <td>{r.adults}</td>
+                          <td>{r.childAges.join(', ') || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : null}
                 <div className={styles.accommodationBreakdown}>
                   <table className={styles.table}>
                     <caption>STAY DATES</caption>
@@ -444,12 +474,51 @@ export function ReservationFormSheet({
                 <span>{''}</span>
               </div>
               <b>
-                {page + 1} / {pages.length}
+                {page + 1} / {pageCount}
               </b>
             </footer>
           </article>
         );
       })}
+      {roomAppendices.map((rooms, index) => (
+        <article
+          className={styles.page}
+          key={`rooms-${index}`}
+          dir="ltr"
+          data-reservation-form-page
+        >
+          <header className={styles.header}>
+            <h1>ROOM DETAILS</h1>
+          </header>
+          <p>
+            {data.request} · {data.hotel} · {data.checkIn} / {data.checkOut}
+          </p>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'].map((t) => (
+                  <th key={t}>{t}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rooms.map((r) => (
+                <tr key={r.ordinal}>
+                  <td>{r.ordinal}</td>
+                  <td dir="auto">{r.roomType}</td>
+                  <td>{r.adults}</td>
+                  <td>{r.childAges.join(', ') || '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <footer className={styles.footer}>
+            <b>
+              {pages.length + index + 1} / {pageCount}
+            </b>
+          </footer>
+        </article>
+      ))}
     </div>
   );
 }

@@ -323,6 +323,17 @@ export function presentSalesContract(
             ? {}
             : { extraBedCount: row.hotelSelection.extraBedCount }),
           roomTypeId: row.hotelSelection.roomTypeId,
+          ...(row.hotelSelection.rooms?.length
+            ? {
+                rooms: row.hotelSelection.rooms.map((room) => ({
+                  ordinal: room.ordinal,
+                  roomTypeId: room.roomTypeId,
+                  roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                  adults: room.adults,
+                  childAges: room.childAges as number[],
+                })),
+              }
+            : {}),
           mealServiceId: row.hotelSelection.mealServiceId,
           occupancy: row.hotelSelection.occupancy,
           inventoryStatus: row.hotelSelection.inventoryStatus as
@@ -413,6 +424,46 @@ export class SalesService {
       data: await this.hotelRates.availableRoomRates({ branchId, ...input }),
     };
   }
+  private async assertIndividualHotelRooms(
+    hotel: NonNullable<SalesContractCreateRequest['hotelSelection']>,
+    branchId: string,
+  ): Promise<void> {
+    for (const room of hotel.rooms ?? []) {
+      const rate = await this.hotelRates!.roomAvailability({
+        branchId,
+        hotelId: hotel.hotelId,
+        roomTypeId: room.roomTypeId,
+        checkIn: hotel.checkInDate,
+        checkOut: hotel.checkOutDate,
+      });
+      if (!rate)
+        throw new BadRequestException(
+          'برای یکی از انواع اتاق، نرخ معتبر در بازه انتخاب‌شده وجود ندارد.',
+        );
+      if (rate.occupancyRates) {
+        if (
+          !quoteHotelOccupancy(rate.occupancyRates, {
+            adults: room.adults,
+            childAges: room.childAges,
+            rooms: 1,
+            checkIn: hotel.checkInDate,
+            checkOut: hotel.checkOutDate,
+          })
+        )
+          throw new BadRequestException(
+            'نرخ یا ظرفیت یکی از اتاق‌ها با ترکیب مهمانان سازگار نیست.',
+          );
+      } else if (
+        room.adults > rate.maxAdults ||
+        room.childAges.filter((a) => a < 2).length > (rate.maxInfants ?? 0) ||
+        room.childAges.filter((a) => a >= 2 && a < 6).length >
+          (rate.maxChildren2To6 ?? rate.maxChildren) ||
+        room.childAges.filter((a) => a >= 6).length >
+          (rate.maxChildren6To12 ?? 0)
+      )
+        throw new BadRequestException('ظرفیت یکی از اتاق‌ها کافی نیست.');
+    }
+  }
   private async assertHotelRoomCapacity(
     input: SalesContractCreateRequest,
     branchId: string,
@@ -421,6 +472,8 @@ export class SalesService {
     if (!hotel) return;
     if (!this.hotelRates)
       throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    if (hotel.rooms?.length)
+      return this.assertIndividualHotelRooms(hotel, branchId);
     const roomRate = await this.hotelRates.roomAvailability({
       branchId,
       hotelId: hotel.hotelId,
@@ -472,6 +525,8 @@ export class SalesService {
     if (!hotel) return;
     if (!this.hotelRates)
       throw new BadRequestException('سرویس نرخ اتاق هتل در دسترس نیست.');
+    if (hotel.rooms?.length)
+      return this.assertIndividualHotelRooms(hotel, contract.branchId);
     const roomRate = await this.hotelRates.roomAvailability({
       branchId: contract.branchId,
       hotelId: hotel.hotelId,

@@ -131,6 +131,7 @@ export async function GET(
         hotel?.cityId ?? intake.snapshot.ticketSelections?.[0]?.destinationId,
       ],
       ['room-types', hotel?.roomTypeId],
+      ...(hotel?.rooms ?? []).map((r) => ['room-types', r.roomTypeId]),
       ['meal-services', hotel?.mealServiceId],
     ];
     await Promise.all(
