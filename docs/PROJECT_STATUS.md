@@ -1,5 +1,8 @@
 ## 2026-10-14 — INTEGRATIONS-PC-D-FOUNDATION-1014 — PC-D — READY_FOR_REVIEW
 
+Published by ehsandni as draft [PR874](https://github.com/nirvanamahlou/Rubi/pull/874)
+to develop, review base e57f7117; full hosted CI remains a gate. No merge or rollout.
+
 The owner requests the initial integration-centre structure before supplying links.
 The existing sample page is replaced by nine Persian RTL sections, configurable
 brand/system/capability forms, per-system settings/connection/sync/health/history,

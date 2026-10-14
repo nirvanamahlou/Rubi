@@ -1,9 +1,12 @@
 # INTEGRATIONS-PC-D-FOUNDATION-1014
 
 COMPUTER_ID=PC-D. Initial base: `origin/develop@86c87667` (2026-10-14).
-Review candidate rebased onto `origin/develop@3465556f`; concurrent PC-A records
+Review candidate rebased onto `origin/develop@e57f7117`; concurrent PC-A records
 were retained in both assignment and status ledgers.
 Branch: `codex/pc-d-integrations-foundation-1014`.
+Published by `ehsandni` as draft [PR874](https://github.com/nirvanamahlou/Rubi/pull/874)
+to `develop`; no merge or runtime rollout is authorized. Full hosted CI remains
+a review gate.
 
 ## Authorization and first delivery
 
