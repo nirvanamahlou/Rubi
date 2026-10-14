@@ -7631,3 +7631,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b3
 ## VOUCHER-OPTIONAL-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; reserve travel-workflow form/domain and voucher leader mount identity. Optional note for supplier confirmation/voucher issuance; optional supplier reference; preserve required cancellation reasons. Stable leader editor identity prevents selection remount. No schema/dependency/data change. User authorizes develop merge after CI.
+
+## VOUCHER-OUTPUT-1014 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; reserve voucher sheet/PDF/model, workflow note label and airline reference loading. Owner authorizes English airline names, clean voucher details, shared reservation footer, issuance notice and develop merge. No schema/dependency changes.
