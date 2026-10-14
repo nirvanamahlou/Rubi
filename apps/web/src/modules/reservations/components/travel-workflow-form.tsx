@@ -125,14 +125,14 @@ export function TravelWorkflowForm({
   async function run(operation: TravelWorkflowCommandV1['action']) {
     if (!intake || busy || readOnly) return;
     const operationNote = workflowOperationNote(operation, note);
-    if (!operationNote) {
+    if (
+      !operationNote &&
+      !['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(operation)
+    ) {
       setError('توضیح / دلیل عملیات را وارد کنید.');
       return;
     }
-    if (operation === 'CONFIRM_SUPPLIER' && !reference.trim()) {
-      setError('مرجع تأیید کارگزار را وارد کنید.');
-      return;
-    }
+
     setBusy(true);
     setError('');
     try {
@@ -377,7 +377,7 @@ export function TravelWorkflowForm({
         !closed &&
         hasSentReservationForm(state) && (
           <VoucherLeaderEditor
-            key={`${intake.id}:${state.version}`}
+            key={intake.id}
             intake={intake}
             onDirty={() => setSettingsDirty(true)}
             onSaved={(workflow) => {
