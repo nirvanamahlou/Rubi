@@ -156,6 +156,9 @@ describe('compact sales contract form', () => {
     fixture.flight = true;
     const html = renderToStaticMarkup(<SalesContractForm />);
     fixture.flight = false;
+    expect(html.match(/type="number"/g)).toHaveLength(3);
+    for (const label of ['بزرگسال', 'کودک', 'نوزاد'])
+      expect(html).toContain(`aria-label="تعداد ${label}"`);
     expect(html).not.toContain('انتخاب تاریخ بلیط رفت و بلیط برگشت');
     expect(html).toContain('تاریخ بلیط رفت');
     expect(html).toContain('نقطهٔ قرمز');
@@ -175,15 +178,8 @@ describe('compact sales contract form', () => {
     expect(html).toContain('داشبورد قراردادها');
     expect(html).toContain('مراحل ثبت قرارداد');
     expect(html).toContain('مسیر سفر');
-    expect(html).toContain('تعداد مسافران');
-    expect(html).toContain('بزرگسال');
-    expect(html).toContain('کودک');
-    expect(html).toContain('نوزاد');
-    expect(html.match(/type="number"/g)).toHaveLength(3);
-    for (const label of ['بزرگسال', 'کودک', 'نوزاد']) {
-      expect(html).toContain(`aria-label="تعداد ${label}"`);
-    }
-    expect(html).toContain('نوزاد لازم نیست در تعداد صندلی بلیط شمرده شود');
+    expect(html).not.toContain('تعداد مسافران');
+    expect(html).not.toContain('type="number"');
     expect(html).toContain('aria-label="مبدأ سفر"');
     expect(html).toContain('aria-label="مقصد سفر"');
     expect(html).toMatch(
