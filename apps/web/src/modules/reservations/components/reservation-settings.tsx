@@ -323,16 +323,35 @@ export function ReservationSettingsForm({
       );
       return;
     }
+    if (showDocument && !draft.brokerId) {
+      setError('پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.');
+      return;
+    }
     setBusy(true);
     setError('');
     setMessage('');
+    let savedWorkflow: TravelWorkflowStateV1 | undefined;
     try {
+      let currentVersion = intake.workflow.version;
+      if (showDocument && !intake.workflow.branding) {
+        const branded = await travelRequest<{ data: TravelWorkflowStateV1 }>(
+          `reservations/requests/${intake.id}/workflow`,
+          {
+            action: 'BRANDING',
+            expectedVersion: currentVersion,
+            note: 'انتخاب سربرگ خروجی',
+            branding: { kind: 'OWN' },
+          },
+        );
+        currentVersion = branded.data.version;
+        savedWorkflow = branded.data;
+      }
       const r = await travelRequest<{ data: TravelWorkflowStateV1 }>(
         `reservations/requests/${intake.id}/workflow`,
         {
           action: 'SUPPLIER_FORM_SETTINGS',
           applyToContractAndVoucher: false,
-          expectedVersion: intake.workflow.version,
+          expectedVersion: currentVersion,
           note: sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
           voucherSettings: {
             ...draft,
@@ -349,10 +368,15 @@ export function ReservationSettingsForm({
           },
         },
       );
-      onSaved(r.data);
+      savedWorkflow = r.data;
+      const result = showDocument
+        ? await sendSavedReservationForm(intake.id, r.data)
+        : r;
+      onSaved(result.data);
       setMessage('نسخهٔ جدید با موفقیت ثبت شد.');
       window.dispatchEvent(new Event('reservation-workflow-changed'));
     } catch (e) {
+      if (savedWorkflow) onSaved(savedWorkflow);
       setError(e instanceof Error ? e.message : 'ذخیره انجام نشد.');
     } finally {
       setBusy(false);
@@ -506,9 +530,18 @@ export function ReservationSettingsForm({
   const saveButton = (
     <Button
       onClick={() => void save()}
-      disabled={busy || activeDirectory.loading || !selected.length}
+      disabled={
+        busy ||
+        activeDirectory.loading ||
+        !selected.length ||
+        (showDocument && !draft.brokerId)
+      }
     >
-      {busy ? 'در حال ذخیره…' : 'ثبت نسخهٔ جدید فرم رزرواسیون'}
+      {busy
+        ? 'در حال ذخیره…'
+        : showDocument
+          ? 'ارسال به کارگزار'
+          : 'ثبت نسخهٔ جدید فرم رزرواسیون'}
     </Button>
   );
   return (
@@ -860,5 +893,23 @@ export function ReservationSettings(props: {
     <ReservationSettingsForm {...props} refs={refs.references} />
   ) : (
     <p>در حال دریافت تنظیمات…</p>
+  );
+}
+
+export async function sendSavedReservationForm(
+  id: string,
+  state: TravelWorkflowStateV1,
+) {
+  if (!state.supplierFormSettings?.brokerId)
+    throw new Error(
+      'پیش از صدور فرم رزرواسیون، کارگزار را انتخاب و ذخیره کنید.',
+    );
+  return travelRequest<{ data: TravelWorkflowStateV1 }>(
+    `reservations/requests/${id}/workflow`,
+    {
+      action: 'REQUEST_SUPPLIER',
+      expectedVersion: state.version,
+      note: 'ثبت ارسال فرم رزرواسیون به کارگزار',
+    },
   );
 }
