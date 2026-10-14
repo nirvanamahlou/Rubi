@@ -1,3 +1,7 @@
+## CLEAR-CORRECTION-ON-OPERATION-1014 — PC-A — IN_PROGRESS
+
+User authorizes removing sales-correction purple after a later recorded reservation operation and develop merge. Reserve Reservations list controller/public operation projection, Web live-feed/model/workspace and focused regressions plus own status. Additive salesCorrectionPending list field compares correction with server-recorded operation timestamp; preserve correction history. No schema/migration/dependency/runtime change.
+
 ## CORRECTION-COLUMNS-1014 — PC-A — READY_FOR_REVIEW
 
 User requests purple correction background only on reservation columns two and three and develop merge. Reserve workspace.module.css and existing styling regression plus own status entries. Preserve sales-only correction source, note marker precedence and light/dark palettes. No API/schema/dependency/runtime changes.

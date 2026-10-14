@@ -1,3 +1,7 @@
+## 2026-10-14 — CLEAR-CORRECTION-ON-OPERATION-1014 — PC-A
+
+Sales-correction purple is pending only until a later server-recorded reservation operation. The branch-scoped list projects an additive pending flag using existing workflow, arrangement and purchase operation history. Correction timestamps remain intact for audit; a new later sales correction restores pending styling. Web clears only the purple marker and uses the existing current-status colors. No migration or local activation. Focused chronology and render tests plus CI gate develop merge.
+
 ## 2026-10-14 — CORRECTION-COLUMNS-1014 — PC-A
 
 Reservation sales-correction purple styling is restricted to table cells two and three in both themes. Other cells retain their normal/selected/status styling; the notes marker retains precedence. No migration or local activation. Existing workspace styling regression and CI gate develop merge.

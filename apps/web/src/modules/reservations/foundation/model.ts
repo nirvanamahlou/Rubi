@@ -97,6 +97,7 @@ export interface RequestView {
   voucherReady?: boolean | undefined;
   hotelConfirmed?: boolean | undefined;
   correctedAt?: string | undefined;
+  salesCorrectionPending?: boolean | undefined;
   createdAt: string;
   status: QueueStatus;
   /** Counts issued documents once, not once per passenger/segment join. */
