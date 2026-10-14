@@ -1,5 +1,7 @@
 'use client';
 import { ServiceParties } from './service-parties';
+
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { HotelRoomCapacity } from './hotel-room-capacity';
 import { salesHotelRoomOptions } from '../model/sales-hotel-room-options';
@@ -810,7 +812,7 @@ export function SalesContractForm() {
         payload.paymentTerms,
       );
       if (submission.current.fingerprint !== fingerprint)
-        submission.current = { fingerprint, key: crypto.randomUUID() };
+        submission.current = { fingerprint, key: browserRandomUuid() };
       const response = await salesApi.create(payload, submission.current.key);
       if (response.data.status !== 'SENT_TO_RESERVATIONS')
         await salesApi.confirm(response.data.id, response.data.version);
