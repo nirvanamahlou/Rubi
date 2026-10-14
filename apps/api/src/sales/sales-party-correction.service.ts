@@ -67,7 +67,7 @@ export class SalesPartyCorrectionService {
           !(
             actor.permissions.includes('sales.contracts.update.branch') ||
             (actor.permissions.includes('sales.contracts.update.own') &&
-              [row.ownerUserId, row.assignedUserId].includes(actor.userId))
+              row.ownerUserId === actor.userId)
           )
         )
           throw new ForbiddenException('مجوز ویرایش قرارداد لازم است.');

@@ -1,3 +1,4 @@
+import { SalesService } from './sales.service';
 import { describe, expect, it, vi } from 'vitest';
 import type { SalesContractDetail, ReservationIntakeV1 } from '@nora/contracts';
 import { contractProfit } from './sales-profit';
@@ -164,7 +165,7 @@ describe('actual contract package margin', () => {
     expect(result.costs.some((c) => c.referenceId === 'transfer')).toBe(false);
   });
   it('requires financial permission and an authorized Sales contract before public cost queries', async () => {
-    const sales = { detail: vi.fn(async () => ({ data: contract })) };
+    const sales = { detailForProfit: vi.fn(async () => ({ data: contract })) };
     const reservations = { contractPurchaseContext: vi.fn(async () => intake) };
     const finance = { recordedCostsForOffers: vi.fn(async () => [ticket]) };
     const service = new SalesProfitService(
@@ -178,7 +179,7 @@ describe('actual contract package margin', () => {
         branchIds: ['branch'],
       } as never),
     ).rejects.toThrow();
-    expect(sales.detail).not.toHaveBeenCalled();
+    expect(sales.detailForProfit).not.toHaveBeenCalled();
     await expect(
       service.detail('contract', {
         permissions: ['finance.read'],
@@ -201,4 +202,24 @@ describe('actual contract package margin', () => {
       'branch',
     );
   });
+});
+
+it('keeps the Finance-only Sales projection branch-scoped before presentation', async () => {
+  const service = Object.create(SalesService.prototype) as SalesService;
+  const findById = vi.fn(async () => ({ branchId: 'foreign' }));
+  Object.assign(service, { repository: { findById } });
+  await expect(
+    service.detailForProfit('contract', {
+      permissions: [],
+      branchIds: ['foreign'],
+    } as never),
+  ).rejects.toThrow();
+  expect(findById).not.toHaveBeenCalled();
+  await expect(
+    service.detailForProfit('contract', {
+      permissions: ['finance.read'],
+      branchIds: ['allowed'],
+    } as never),
+  ).rejects.toThrow();
+  expect(findById).toHaveBeenCalledOnce();
 });

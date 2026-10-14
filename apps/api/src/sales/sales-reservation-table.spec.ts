@@ -158,3 +158,15 @@ it('projects ages only for the matching hotel contract and allocated guests', as
   hotel.roomCount = 2;
   expect(await service.hotelGuestAges(snapshot, actor)).toBeNull();
 });
+
+it('uses only explicit sales corrections for the purple correction marker', async () => {
+  const s = setup();
+  await s.service.read(['c'], {
+    permissions: ['reservations.read'],
+    branchIds: ['b'],
+  } as never);
+  expect(s.findMany.mock.calls[0]![0].include.auditEvents.where).toEqual({
+    outcome: 'SUCCESS',
+    action: { in: ['SALES_PASSENGER_CORRECTION'] },
+  });
+});

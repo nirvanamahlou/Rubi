@@ -1,3 +1,11 @@
+## 2026-10-14 — CORRECTION-COLUMNS-1014 — PC-A
+
+Reservation sales-correction purple styling is restricted to table cells two and three in both themes. Other cells retain their normal/selected/status styling; the notes marker retains precedence. No migration or local activation. Existing workspace styling regression and CI gate develop merge.
+
+## 2026-10-14 — SALES-CORRECTION-PURPLE-1014 — PC-A
+
+Purple reservation queue highlighting now reflects explicit successful sales passenger corrections, excluding operational reservation/form amendments and general updates. Existing light/dark colors and historical records are retained. No migration or local activation; focused projection test and CI gate develop merge.
+
 ## 2026-10-14 — NOTIFICATION-USER-ISOLATION-1014 — PC-A
 
 Notification browser history is isolated by authenticated user, authorized branches and current permissions; legacy shared history is not imported. The center remounts on identity/scope changes and filters destination visibility. Server listing filters recipient rows against current route permissions before pagination and unread counting, preserving direct recipient-only personal notices and ownership checks for read/clear operations. No schema/migration or local activation. Focused access/notification tests, types/lint and CI validate the source candidate.
@@ -5960,6 +5968,14 @@ RESERVATION-CONTRACT-EDIT-1013 handoff: PR842, branch `codex/pc-a-reservation-co
 ## ASSISTANT-GROQ-TEST-1014 — PC-C
 
 Synthetic-only Groq adapter, bounded strict-schema transport and fixed evaluation CLI prepared. Native63 tests pass. Live probe is blocked: HTTP403 from provider with and without key; no key validity or model quality claim. Runtime conversation stays disabled and no organizational data was sent. See docs/tasks/ASSISTANT-GROQ-TEST-1014.md. CI pending.
+## 2026-10-14 — SALES-SELLER-VISIBILITY-1014 — PC-A — READY_FOR_CI
+
+Owner explicitly requests global contract read and creation for active Manager/Sales Manager profiles and strict own-contract scope for Sales Experts. Sales list/detail/dashboard/receivables/Excel are aligned; IAM valid manual profiles follow the bounded new policy while malformed/disabled snapshots still deny. Seller names use the public IAM directory after contract authorization. Yellow contract rows use successful Sales audit corrections, including price-only changes and corrections applied from the operational form; internal-only form edits remain unmarked and are not exposed in the list. User creation now shows all job titles including Sales Manager. No schema/migration/dependency/operational data changes. 236 Sales/IAM and36 Web tests pass. Effective manager grants are validated during role/profile delegation; direct correction routes reject nonowner assignments. Scoped lint, full API/Web typechecks and production builds (Web62 routes) pass; final CI gates merge. User authorizes develop merge. See docs/tasks/SALES-SELLER-VISIBILITY-1014.md.
 
 ## ROLE-ACCESS-TEMPLATES-1014 — PC-A
 Persisted administrator-configured job role defaults through dedicated unassigned IAM roles using existing managed-access validation and transactional grants. User creation copies selected role screens/operations/restrictions into editable independent access. No hardcoded recommendation fallback; unconfigured roles start empty. Existing users are unchanged by template saves.24 focused IAM tests pass; scoped API lint passes. Local generated Contracts/Prisma types required refresh after newer develop changes. Full quality, typechecks, tests and builds gate authorized develop merge. No schema/migration/dependency/runtime change.
+
+## FINANCE-ONLY-CONTRACT-PROFIT-1014 — PC-A
+Removed purchase/profit output from Sales payment dialog. The existing per-currency actual-cost view is now in Finance inbox details for Sales receipt contracts. Existing finance and Sales branch/read authorization remains unchanged. No data, calculation, API, migration or dependency change. Focused tests and full CI gate authorized develop merge.
+
+Finance-only read clarification: profit uses an internal Sales-owned projection authorized by finance.read and the actual contract branch, without requiring Sales screen grants. Ordinary contract detail/identity permissions are unchanged.14 Web presentation tests and9 profit/HTTP/branch authorization tests pass; full CI gates merge.

@@ -91,7 +91,7 @@ describe('Sales dashboard overpayments', () => {
     const result = await service.dashboard(actor);
     expect(dashboardRows).toHaveBeenCalledWith({
       branchId: { in: ['branch'] },
-      OR: [{ ownerUserId: 'owner' }, { assignedUserId: 'owner' }],
+      ownerUserId: 'owner',
     });
     expect(result.data.outstanding).toEqual([
       { currencyCode: 'IRR', amount: '-25' },
@@ -184,7 +184,7 @@ describe('filtered receivables', () => {
         AND: [
           {
             branchId: { in: ['branch'] },
-            OR: [{ ownerUserId: 'owner' }, { assignedUserId: 'owner' }],
+            ownerUserId: 'owner',
           },
           { customerId: { in: [agencyId] } },
           { customerId: agencyId },
@@ -228,7 +228,7 @@ describe('filtered receivables', () => {
     );
     expect(dashboardRows).toHaveBeenCalledWith({
       branchId: { in: ['branch'] },
-      OR: [{ ownerUserId: 'owner' }, { assignedUserId: 'owner' }],
+      ownerUserId: 'owner',
     });
     expect(result.data.balances).toEqual([
       { currencyCode: 'IRR', amount: '80.25' },

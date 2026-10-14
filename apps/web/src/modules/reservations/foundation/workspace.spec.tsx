@@ -55,6 +55,8 @@ describe('reservations workspace access and states', () => {
       new URL('./workspace.module.css', import.meta.url),
       'utf8',
     );
+    expect(css).toContain('td:is(:nth-child(2), :nth-child(3))');
+    expect(css).not.toContain("tr[data-corrected='true'] td {");
     expect(css).toMatch(/data-corrected='true'[\s\S]*?#f3e8ff/);
     expect(css).toMatch(
       /:global\(\.dark\)[^{}]*data-corrected='true'[\s\S]*?#3b0764/,

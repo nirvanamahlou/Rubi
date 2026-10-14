@@ -1,3 +1,11 @@
+## CORRECTION-COLUMNS-1014 — PC-A — READY_FOR_REVIEW
+
+User requests purple correction background only on reservation columns two and three and develop merge. Reserve workspace.module.css and existing styling regression plus own status entries. Preserve sales-only correction source, note marker precedence and light/dark palettes. No API/schema/dependency/runtime changes.
+
+## SALES-CORRECTION-PURPLE-1014 — PC-A — IN_PROGRESS
+
+User requests purple for corrected-by-sales, not reservation operational edits, with develop merge. Reserve Sales reservation table audit projection and regression plus own status. The explicit SALES_PASSENGER_CORRECTION event drives the purple correctedAt marker; reservation form/general amendments do not. No schema/migration/dependency/runtime change.
+
 ## NOTIFICATION-USER-ISOLATION-1014 — PC-A — READY_FOR_REVIEW
 
 User requests notification privacy by user and permissions. Reserve notification-center, scoped storage model/tests and IAM access-context actor projection plus own status. Preserve recipient-scoped server operations; isolate browser cache by authenticated user/branch/permission scope and filter visible feeds by authorized destination. Central access-context lock bounded to exposing current actor and remounting notification center. Reserve Notifications controller/service/repository and existing tests for server-side current-route permission filtering before pagination/counting. No migration/dependency/runtime writes.
@@ -7533,11 +7541,26 @@ RESERVATION-CONTRACT-EDIT-1013 CI follow-up: full regression found the existing 
 
 COMPUTER_ID=PC-C; branch codex/pc-c-assistant-groq-test-1014 from develop f5651cc7. Owner placed local Groq key after agreeing to initial synthetic tests. Reserve new services/assistant/groq-provider.mjs, provider tests, fixed synthetic evaluation CLI and assistant own docs/README. No server/provider activation, real user/ERP data transfer, UI, dependencies, migration or permission change. Use fixed HTTPS endpoint, strict plan schema, bounded response/time, generic errors and no retries. Exact-head and postmerge CI required; key remains outside Git. No overlapping assistant source owner.
 
+## SALES-SELLER-VISIBILITY-1014 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-seller-visibility-1014 from origin/develop@dbdefcdf. User authorizes seller identity column, own-only Sales access, system-wide sales-manager read access with contract creation, common Reservations intake, and contract-only reservation amendment highlighting (internal form changes remain private), followed by develop merge. Reserve Sales API/Web/list/detail/export/dashboard permission tests, Reservations boundary regression tests and bounded IAM grant policy inspection; optional Sales summary sellerName/reservationContractChanged fields are produced by Sales and consumed compatibly by Web. Reserve bounded English labels and own status/task docs. No migration/dependency/operational data changes planned. Owner explicitly authorizes role-based scope for active Manager/Sales Manager and own-only Sales Experts, including valid manual profiles; malformed/disabled snapshots remain denied. Also reserve IAM permission resolver/tests, user-creation title selector, role-access proposals/tests, Sales repository audit projection and DECISIONS.md. Additionally reserve effective manager-grant delegation checks in iam.service.ts, user-access regression tests, own-only direct Sales correction guards/tests, and offline API/legacy English sync outputs. Source locks release with the frozen candidate. CI must pass before merge; existing hotel-room commit remains separate.
+
 ## ROLE-ACCESS-TEMPLATES-1014 — PC-A — IN_PROGRESS
 
 Reserve IAM role template commands/DTO/controller, user management editor and focused tests; user authorizes editable persisted job-role defaults and develop merge. Templates use unassigned dedicated IAM roles; user access remains an independent snapshot. Existing managed-access validation, administrator restriction, audit and transaction apply. No schema/dependency/migration/runtime change.
 
 ROLE-ACCESS-TEMPLATES-1014: PR849, implementation b4a406e2.24 IAM tests and scoped API/Web lint pass; production build passes CI. Preserve concurrent develop translations during integration. Source locks release with candidate; exact-head full CI gates authorized merge. No migration or local publication.
+
 ## SALES-ROW-ACTIONS-1014 — PC-A — IN_PROGRESS
 
 User requests the Sales contracts table correction action to stay on the same row as the other row operations. Reserve only `apps/web/src/modules/sales/components/sales-workspace.tsx`, its focused component test, and this bounded assignment/status entry. Four row actions (passenger correction, payments, contract PDF, travel documents) must render in one horizontal group; preserve permissions, labels, click behavior, responsive horizontal table scroll, and all contract data. No API/schema/migration/dependency/runtime change. User explicitly requests develop merge; push the branch and open a PR to develop after scoped validation; follow repository review requirements for final merge.
+
+## FINANCE-ONLY-CONTRACT-PROFIT-1014 — PC-A — IN_PROGRESS
+
+Reserve Sales payments profit removal, Finance inbox contract profit component placement and focused regressions. User authorizes develop merge. Existing finance.read and Sales branch/record read guards remain authoritative; no new grants, money calculation, API/schema/migration/dependency change. No overlapping active source lock found.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014:14 Sales/Finance presentation regressions and7 actual-profit/HTTP authorization tests pass. Profit is absent from Sales payments and available only in Finance Sales-receipt details; finance.read, contract scope and existing no-store behavior preserved. Source locks release with candidate; full exact-head quality/test/build/database CI required for authorized develop merge. No local rollout.
+
+FINANCE-ONLY-CONTRACT-PROFIT-1014 scope refinement: Sales-owned internal profit read projection uses finance.read plus actual contract branch scope, so Finance-only staff do not require Sales UI/contract-read grants. The ordinary Sales detail endpoint and identity visibility are unchanged; profit response contains only existing cost/profit facts. Reserve Sales service/profit service and permission regressions.
+
+Final validation:14 Web presentation tests and9 API cost/profit/Finance-only/branch-scope regressions pass. Ordinary Sales contract detail permission remains unchanged; only the internal profit source reads for authorized Finance staff. No calculation or financial data changes.

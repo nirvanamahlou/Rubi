@@ -1,3 +1,4 @@
+import { ContractProfit } from './contract-profit';
 import { HotelPurchaseSavings } from '@/modules/reservations/components/hotel-purchase-savings';
 import styles from './finance-inbox.module.css';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
@@ -1450,6 +1451,13 @@ export function FinanceInboxLiveWorkspace() {
                         </strong>
                       </div>
                     ))}
+                    {selected.source === 'SALES' &&
+                      selected.kind === 'RECEIPT_VERIFICATION' && (
+                        <ContractProfit
+                          key={selected.sourceContextReference}
+                          id={selected.sourceContextReference}
+                        />
+                      )}
                     {selected.hrReferral ? (
                       <div className="space-y-2">
                         {selected.hrReferral.response ? (

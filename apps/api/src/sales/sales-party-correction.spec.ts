@@ -57,6 +57,13 @@ function setup(overrides: Record<string, unknown> = {}) {
   return { service, tx, customers, crypto, database };
 }
 describe('contract counterparty correction', () => {
+  it('rejects a nonowner even if the contract was assigned to them', async () => {
+    const s = setup({ ownerUserId: 'other', assignedUserId: actor.userId });
+    await expect(s.service.correct('contract', input, actor)).rejects.toThrow(
+      'مجوز',
+    );
+    expect(s.tx.salesContract.updateMany).not.toHaveBeenCalled();
+  });
   it('moves buyer and payer together without replacing any contract-owned receipts', async () => {
     const s = setup();
     expect(await s.service.correct('contract', input, actor)).toEqual({
