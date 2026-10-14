@@ -160,12 +160,7 @@ export function voucherFormData(
 ) {
   const d = reservationFormData(intake, refs),
     v = intake.workflow.voucherSettings;
-  if (!v)
-    return {
-      ...d,
-      supplier: '0',
-      transfer: v.flags.transfer ? d.transfer : '-',
-    };
+  if (!v) return { ...d, supplier: '0' };
   const passengers = d.passengers
     .filter((p) => v.passengers.some((s) => s.id === p.id && s.selected))
     .map((p) => {
