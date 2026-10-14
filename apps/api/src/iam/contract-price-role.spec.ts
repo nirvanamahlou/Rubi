@@ -10,32 +10,28 @@ it.each([
   const service = new IamReservationsDirectory({
     client: {
       user: {
-        findUnique: vi
-          .fn()
-          .mockResolvedValue({
-            status: 'ACTIVE',
-            roles: [{ role: { isActive: true, code, name } }],
-          }),
+        findUnique: vi.fn().mockResolvedValue({
+          status: 'ACTIVE',
+          roles: [{ role: { isActive: true, code, name } }],
+        }),
       },
     },
   } as never);
   expect(await service.canCorrectContractPrice('u')).toBe(allowed);
 });
 it('denies inactive users and inactive roles', async () => {
-  const findUnique = vi
-    .fn()
-    .mockResolvedValue({
-      status: 'ACTIVE',
-      roles: [
-        {
-          role: {
-            isActive: false,
-            code: 'finance_staff',
-            name: 'کارشناس مالی',
-          },
+  const findUnique = vi.fn().mockResolvedValue({
+    status: 'ACTIVE',
+    roles: [
+      {
+        role: {
+          isActive: false,
+          code: 'finance_staff',
+          name: 'کارشناس مالی',
         },
-      ],
-    });
+      },
+    ],
+  });
   const service = new IamReservationsDirectory({
     client: { user: { findUnique } },
   } as never);

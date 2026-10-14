@@ -41,20 +41,18 @@ it('denies both direct read and write before querying when role is not authorize
 it('atomically records adjustment and audit without modifying receipts, and rejects stale versions', async () => {
   const tx = {
     salesContract: {
-      findFirst: vi
-        .fn()
-        .mockResolvedValue({
-          version: 2,
-          branchId: 'b',
-          status: 'IN_PROGRESS',
-          priceComponents: [
-            {
-              type: 'BASE',
-              currencyCode: 'IRR',
-              amount: new Prisma.Decimal('100'),
-            },
-          ],
-        }),
+      findFirst: vi.fn().mockResolvedValue({
+        version: 2,
+        branchId: 'b',
+        status: 'IN_PROGRESS',
+        priceComponents: [
+          {
+            type: 'BASE',
+            currencyCode: 'IRR',
+            amount: new Prisma.Decimal('100'),
+          },
+        ],
+      }),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     salesContractPriceComponent: { createMany: vi.fn() },
