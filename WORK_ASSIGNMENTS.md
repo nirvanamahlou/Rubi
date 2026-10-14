@@ -1,3 +1,9 @@
+## LOGOS-LOCALE-LOGIN-1014 — PC-A — READY_FOR_CI
+
+User authorizes retaining company logo images when switching to English, slightly larger login logos and develop merge. COMPUTER_ID=PC-A; branch codex/pc-a-logos-locale-login-1014 from current origin/develop. Reserve only login-company-logos.tsx, its new bilingual responsive rendering regression and bounded shared localized-image regression, plus own status entries. Preserve app-shell branding, existing image assets, localization/accessibility and login behavior. No API/schema/migration/dependency or runtime changes. No active overlapping login/image source lock found.
+
+LOGOS-LOCALE-LOGIN-1014 validation:53 login/localization/legal-entity regressions pass, including both images in fa/en desktop/mobile and unchanged image identity for all four existing company selections. Scoped lint passes; Web typecheck/build and exact-head CI gate merge. No new strings, asset changes or runtime deployment. Bounded source lock released with candidate.
+
 ## RESERVATION-TRANSFER-OUTPUT-1014 — PC-A — READY_FOR_CI
 
 Reserve Sales transfer-count draft/payload/contract output, Reservations shared form/PDF models/renderers, public reference consumers and issued-download controls/tests. Default transfer count adults+children with manual reduction; shared direction/count output and explicit NOTICE note; English airline/broker references; remove requested auxiliary print rows. Preserve historical output semantics and existing module public boundaries. Reserve bounded English overrides/offline sync and Sales domain transfer-count validation. No schema/dependency/migration or operational data edits. User authorizes tests and develop merge.
