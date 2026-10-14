@@ -51,6 +51,7 @@ import {
 import {
   calculateSalesBalances,
   passengerAgeYears,
+  passengerAgeCategory,
   SalesDomainError,
   salesFingerprint,
   sumSalesDecimals,
@@ -254,6 +255,10 @@ export function presentSalesContract(
       displayNameSnapshot: passenger.displayNameSnapshot,
       birthDate: passenger.birthDate.toISOString().slice(0, 10),
       ageCategory: passenger.ageCategory,
+      ...(passenger.childAgeBand === 'AGE_2_6' ||
+      passenger.childAgeBand === 'AGE_6_12'
+        ? { childAgeBand: passenger.childAgeBand }
+        : {}),
       ...(passenger.accommodationKind
         ? {
             accommodationKind:
@@ -1033,6 +1038,20 @@ export class SalesService {
       );
     input = {
       ...input,
+      passengers: input.passengers.map((passenger) => {
+        if (passenger.childAgeBand !== undefined) return passenger;
+        const before = row.passengers.find(
+          (p) => p.customerId === passenger.customerId,
+        );
+        const age =
+          categories?.[passenger.customerId] ??
+          passengerAgeCategory(passenger.birthDate, input.departureDate);
+        return age === 'CHD' &&
+          (before?.childAgeBand === 'AGE_2_6' ||
+            before?.childAgeBand === 'AGE_6_12')
+          ? { ...passenger, childAgeBand: before.childAgeBand }
+          : passenger;
+      }),
       paymentTerms:
         input.paymentTerms === undefined
           ? ((row.paymentTerms as unknown as SalesContractDetail['paymentTerms']) ??
@@ -1111,6 +1130,10 @@ export class SalesService {
         tickets: c.ticketSelections ?? [],
         hotel: c.hotelSelection ?? null,
         ages,
+        childAgeBands: c.passengers.map((p) => [
+          p.customerId,
+          p.childAgeBand ?? null,
+        ]),
         services: c.services.map((s) => ({
           clientKey: s.clientKey,
           kind: s.kind,
@@ -1133,6 +1156,7 @@ export class SalesService {
             services: previous.servicesDetail,
             ticketSelections: previous.ticketSelections,
             hotelSelection: previous.hotelSelection,
+            passengers: previous.passengersDetail,
           },
           Object.fromEntries(
             previous.passengersDetail.map((p) => [p.customerId, p.ageCategory]),
@@ -1153,6 +1177,7 @@ export class SalesService {
               customerId: p.customerId,
               displayNameSnapshot: p.displayNameSnapshot,
               ageCategory: categories[p.customerId]!,
+              ...(p.childAgeBand ? { childAgeBand: p.childAgeBand } : {}),
               serviceClientKeys: p.serviceClientKeys,
             })),
             serviceSelections: input.services,
@@ -1186,6 +1211,7 @@ export class SalesService {
                 categories: row.passengers.map((p) => ({
                   customerId: p.customerId,
                   ageCategory: p.ageCategory,
+                  childAgeBand: p.childAgeBand,
                 })),
               }),
             ) as Prisma.InputJsonValue,
@@ -1345,6 +1371,9 @@ export class SalesService {
         customerId: passenger.customerId,
         displayNameSnapshot: passenger.displayNameSnapshot,
         ageCategory: passenger.ageCategory,
+        ...(passenger.childAgeBand
+          ? { childAgeBand: passenger.childAgeBand }
+          : {}),
         serviceClientKeys: passenger.serviceClientKeys,
       })),
       ticketSelections: presented.ticketSelections,

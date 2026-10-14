@@ -6012,3 +6012,7 @@ CI/build gate the user-authorized develop merge.
 Validation passed: 14 action-panel tests, scoped ESLint, Web typecheck,
 changed-CSS formatting, and full Web production build (62 routes). No
 migration or dependency changes; exact-head GitHub checks remain required.
+
+## RESERVATION-PASSENGER-AGE-TABLE-1014 — PC-A — IN_PROGRESS
+
+Removed the duplicate category correction table from Reservations contract editing. Category, requested child bands (2–6/6–12), and accommodation can now be edited inside the existing passenger identity table. Sales remains owner of contract classification, with exact version/capacity/audit guards and separate customer identity permissions. Additive nullable childAgeBand migration; no live migration, backfill or runtime rollout. Focused tests and full CI gate the authorized develop merge.

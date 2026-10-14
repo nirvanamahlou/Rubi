@@ -78,6 +78,29 @@ const draft: SalesContractCreateRequest = {
 };
 
 describe('Sales contract domain', () => {
+  it('validates explicit child bands without changing birth dates and rejects them for other categories', () => {
+    const input = structuredClone(draft);
+    const person = input.passengers[0]!;
+    person.childAgeBand = 'AGE_2_6';
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'CHD' }),
+    ).not.toThrow();
+    person.childAgeBand = 'AGE_6_12';
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'CHD' }),
+    ).not.toThrow();
+    expect(person.birthDate).toBe('1990-01-01');
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'ADT' }),
+    ).toThrow('رده سنی کودک');
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'INF' }),
+    ).toThrow('رده سنی کودک');
+    person.childAgeBand = 'INVALID' as never;
+    expect(() =>
+      validateSalesContract(input, false, { [person.customerId]: 'CHD' }),
+    ).toThrow('رده سنی کودک');
+  });
   it.each([
     null,
     {},
