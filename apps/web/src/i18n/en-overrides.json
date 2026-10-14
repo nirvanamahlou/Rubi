@@ -2315,5 +2315,10 @@
   "ویرایش قرارداد": "Edit contract",
   "ویرایش مسافران": "Edit passengers",
   "یادداشت کارشناس": "Agent note",
-  "کشور تولد": "Country of birth"
+  "کشور تولد": "Country of birth",
+  "تنظیم دسترسی نقش‌ها": "Configure role access",
+  "ذخیره دسترسی نقش": "Save role access",
+  "دسترسی نقش ذخیره شد.": "Role access saved.",
+  "دسترسی‌های ذخیره‌شدهٔ نقش": "Saved role access defaults",
+  "انتخاب نقش": "Select role"
 }

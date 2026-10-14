@@ -5948,3 +5948,6 @@ RESERVATION-CONTRACT-EDIT-1013 handoff: PR842, branch `codex/pc-a-reservation-co
 ## ASSISTANT-GROQ-TEST-1014 — PC-C
 
 Synthetic-only Groq adapter, bounded strict-schema transport and fixed evaluation CLI prepared. Native63 tests pass. Live probe is blocked: HTTP403 from provider with and without key; no key validity or model quality claim. Runtime conversation stays disabled and no organizational data was sent. See docs/tasks/ASSISTANT-GROQ-TEST-1014.md. CI pending.
+
+## ROLE-ACCESS-TEMPLATES-1014 — PC-A
+Persisted administrator-configured job role defaults through dedicated unassigned IAM roles using existing managed-access validation and transactional grants. User creation copies selected role screens/operations/restrictions into editable independent access. No hardcoded recommendation fallback; unconfigured roles start empty. Existing users are unchanged by template saves.24 focused IAM tests pass; scoped API lint passes. Local generated Contracts/Prisma types required refresh after newer develop changes. Full quality, typechecks, tests and builds gate authorized develop merge. No schema/migration/dependency/runtime change.

@@ -1,3 +1,4 @@
+import { RoleTemplateDto } from './dto/role-template.dto';
 import {
   Body,
   Controller,
@@ -25,6 +26,24 @@ export class RolesController {
   constructor(@Inject(IamService) private readonly iam: IamService) {}
   @Get() @RequirePermissions('iam.roles.read') list() {
     return this.iam.listRolesAndBranches();
+  }
+  @Get('templates')
+  @RequirePermissions('iam.users.manage')
+  templates() {
+    return this.iam.listRoleTemplates();
+  }
+  @Post('templates')
+  @ApiBody({ type: RoleTemplateDto })
+  @RequirePermissions('iam.users.manage')
+  saveTemplate(
+    @Body() dto: RoleTemplateDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.iam.saveRoleTemplate(
+      dto,
+      request.actor,
+      requestMetadata(request),
+    );
   }
   @Post()
   @ApiBody({ type: CreateRoleDto })
