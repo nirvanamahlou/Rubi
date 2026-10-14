@@ -431,6 +431,7 @@ export function SalesWorkspace() {
                   {[
                     'شماره',
                     'مشتری',
+                    'فروشنده',
                     'شماره تلفن مشتری',
                     'مقصد',
                     'تاریخ بستن قرارداد',
@@ -454,7 +455,11 @@ export function SalesWorkspace() {
               <tbody>
                 {contracts.map((contract) => (
                   <tr
-                    className="group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]"
+                    className={
+                      contract.reservationContractChanged
+                        ? 'group border-t border-amber-300 bg-amber-100/70 transition-colors hover:bg-amber-100 dark:bg-amber-950/40'
+                        : 'group border-t border-border/70 transition-colors odd:bg-muted/[0.12] hover:bg-primary/[0.055]'
+                    }
                     key={contract.id}
                   >
                     <td className="px-4 py-3 font-bold first:pr-5">
@@ -462,6 +467,11 @@ export function SalesWorkspace() {
                         <FileText className="size-3.5" />
                         <span dir="ltr">{contract.contractNumber}</span>
                       </div>
+                      {contract.reservationContractChanged && (
+                        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                          اصلاح قرارداد توسط رزرواسیون
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -473,6 +483,7 @@ export function SalesWorkspace() {
                         </span>
                       </div>
                     </td>
+                    <td className="px-4 py-3">{contract.sellerName ?? '—'}</td>
                     <ContractListContactRouteDate contract={contract} />
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5 font-semibold text-foreground">

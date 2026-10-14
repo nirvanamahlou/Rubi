@@ -175,7 +175,7 @@ describe('manual access migration and enforcement', () => {
     expect(canViewRoute(codes, '/correspondence')).toBe(false);
   });
 
-  it('does not grant access from a title or re-narrow explicitly saved scope', () => {
+  it('enforces the sales expert own scope within a valid manual snapshot', () => {
     const profile = snapshot(
       manualSnapshotCodes({
         permissionCodes: ['sales.contracts.read.branch'],
@@ -189,7 +189,7 @@ describe('manual access migration and enforcement', () => {
         profile,
         role('sales_staff', ['sales.contracts.read.all']),
       ]),
-    ).toContain('sales.contracts.read.branch');
+    ).toContain('sales.contracts.read.own');
     expect(authenticatedPermissionCodes([profile])).not.toContain(
       'sales.contracts.read.all',
     );

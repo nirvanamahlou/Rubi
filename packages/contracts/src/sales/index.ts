@@ -260,6 +260,8 @@ export interface SalesBalance extends SalesMoney {
 }
 
 export interface SalesContractSummary {
+  sellerName?: string | null;
+  reservationContractChanged?: boolean;
   id: string;
   contractNumber: string;
   customerId: string;

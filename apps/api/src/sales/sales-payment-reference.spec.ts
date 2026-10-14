@@ -34,7 +34,7 @@ describe('Sales payment tracking references', () => {
         { search: 'TRACK-001' },
         {
           branchId: { in: ['branch'] },
-          OR: [{ ownerUserId: 'actor' }, { assignedUserId: 'actor' }],
+          ownerUserId: 'actor',
         },
         allowed,
       );
