@@ -31,7 +31,11 @@ export class NotificationsController {
   @Header('Cache-Control', 'private, no-store')
   @Header('Vary', 'Cookie')
   list(@Req() request: AuthenticatedRequest, @Query('limit') limit?: string) {
-    return this.service.list(request.actor.userId, limit);
+    return this.service.list(
+      request.actor.userId,
+      limit,
+      request.actor.permissions,
+    );
   }
 
   @Patch('read-all')

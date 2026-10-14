@@ -48,6 +48,7 @@ export class NotificationsService {
   async list(
     recipientUserId: string,
     requestedLimit?: string,
+    permissions?: readonly string[],
   ): Promise<NotificationListResponseV1> {
     const limit = requestedLimit ? Number(requestedLimit) : DEFAULT_LIMIT;
     if (!Number.isInteger(limit) || limit < 1 || limit > MAX_LIMIT) {
@@ -56,6 +57,7 @@ export class NotificationsService {
     const result = await this.repository.listForRecipient(
       recipientUserId,
       limit,
+      permissions,
     );
     return {
       data: result.rows.map(toItem),
