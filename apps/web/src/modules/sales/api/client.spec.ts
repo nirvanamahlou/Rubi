@@ -11,19 +11,17 @@ vi.mock('@/lib/auth-session', () => ({
 afterEach(() => vi.unstubAllGlobals());
 describe('sales API dashboard connection', () => {
   it('submits an immutable correction identity and retrieves exact history using authenticated uncached requests', async () => {
-    const fetch = vi
-      .fn()
-      .mockImplementation(
-        async () =>
-          new Response(
-            JSON.stringify({
-              version: 4,
-              id: 'operation',
-              items: [],
-              nextCursor: null,
-            }),
-          ),
-      );
+    const fetch = vi.fn().mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            version: 4,
+            id: 'operation',
+            items: [],
+            nextCursor: null,
+          }),
+        ),
+    );
     vi.stubGlobal('fetch', fetch);
     const input = {
       operationId: 'operation',
