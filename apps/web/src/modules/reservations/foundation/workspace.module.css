@@ -611,6 +611,11 @@
 
 /* Keep the notes marker visible when the request is selected. */
 .requestTable tbody tr td[data-has-note='true'] {
+  height: 32px;
+  line-height: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background: #ffe082;
   color: #422d00;
   border-color: #d5aa35;

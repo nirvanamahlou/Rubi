@@ -6012,3 +6012,6 @@ CI/build gate the user-authorized develop merge.
 Validation passed: 14 action-panel tests, scoped ESLint, Web typecheck,
 changed-CSS formatting, and full Web production build (62 routes). No
 migration or dependency changes; exact-head GitHub checks remain required.
+
+## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
+COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
