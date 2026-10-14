@@ -137,7 +137,10 @@ export function reservationFormData(
     ),
     flights: flights.map((f) => ({
       leg: f.direction,
-      airline: f.carrierNameSnapshot,
+      airline: text(
+        references[f.carrierNameSnapshot]?.attributes.englishName ||
+          f.carrierNameSnapshot,
+      ),
       number: f.serviceNumberSnapshot,
       date: reservationFormDate(f.departureAt, 'Asia/Tehran'),
       time: new Intl.DateTimeFormat('en-GB-u-ca-gregory', {
