@@ -1,3 +1,7 @@
+## PRICE-CORRECTION-SYNC-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales price correction service/tests, stable correction form lifecycle, Reservations inbox refresh consumer. User authorizes fixing repeated price sections, bounded per-currency corrections, current inbox refresh and develop merge. Preserve immutable audit, role/branch/CAS enforcement and receipts. No schema/migration/dependency or operational data changes. Existing Sales-owned table projection already calculates current totals; price-save signals and focus refresh update the inbox across tabs without copying prices into historical snapshots.
+
 ## 2026-10-14 — FINANCE-CONTRACT-PRICE-CORRECTION-1014 — PC-A
 
 Sales passenger-correction dialog includes rial and foreign contract-total correction authorized by the server only for active Finance/Manager roles. IAM manual-role precedence is respected; ordinary Sales users cannot read or write price correction data through this endpoint. Price changes append exact per-currency BASE/DISCOUNT adjustments, preserve receipts/purchases and record before/after audit under optimistic contract version checks. Existing balances derive the new total without changing payments. Currency codes are validated; invalid/stale/cross-branch requests are rejected. Nine focused role/Decimal/concurrency tests pass. No schema/migration or operational data/runtime changes; CI gates the requested develop merge.
@@ -6016,3 +6020,6 @@ migration or dependency changes; exact-head GitHub checks remain required.
 ## RESERVATION-PASSENGER-AGE-TABLE-1014 — PC-A — IN_PROGRESS
 
 Removed the duplicate category correction table from Reservations contract editing. Category, requested child bands (2–6/6–12), and accommodation can now be edited inside the existing passenger identity table. Sales remains owner of contract classification, with exact version/capacity/audit guards and separate customer identity permissions. Additive nullable childAgeBand migration; no live migration, backfill or runtime rollout. Focused tests and full CI gate the authorized develop merge.
+
+## COMPACT-YELLOW-1014 — PC-A — READY_FOR_REVIEW
+COMPUTER_ID=PC-A; branch codex/pc-a-compact-yellow-1014 from origin/develop@08b38e6f. Reserve Reservations request table CSS and Sales workspace contract button label. Keep noted cells single-line with fixed line height; rename PDF contract action to قرارداد. No data/API/schema/dependency changes. User authorizes develop merge after CI.
