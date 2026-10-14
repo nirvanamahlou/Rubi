@@ -146,3 +146,74 @@ it('shows five evidence-backed recommendations first and keeps the rest in a clo
   expect(html).toContain(assistantCopy.recordedPriority[0]);
   expect(html).toContain(assistantCopy.asOf[0]);
 });
+
+it('renders the daily report in overview and advisor without requiring a chat action', () => {
+  const report = {
+    version: 1 as const,
+    action: 'daily-summary' as const,
+    status: 'READY' as const,
+    scope: 'SELF' as const,
+    coverage: {
+      horizonDays: 7 as const,
+      limit: 30 as const,
+      includesOverdue: true as const,
+    },
+    counts: { visible: 1, overdue: 1, dueSoon: 0, assigned: 0 },
+    recommendations: [
+      {
+        followUpId: snapshot.followUps[0]!.id,
+        ruleId: 'OVERDUE_V1' as const,
+        priority: 'HIGH' as const,
+      },
+    ],
+    snapshot,
+  };
+  for (const view of ['overview', 'advisor'] as const) {
+    const html = renderToStaticMarkup(
+      <ExecutivePanels view={view} state="ready" report={report} />,
+    );
+    expect(html).toContain('Private synthetic follow-up');
+    expect(html).toContain(assistantCopy.dailyCoverage[0]);
+    expect(html).not.toContain(assistantCopy.noEstimate[0]);
+    for (const reportState of [
+      'loading',
+      'unavailable',
+      'forbidden',
+      'unauthenticated',
+    ] as const) {
+      const hidden = renderToStaticMarkup(
+        <ExecutivePanels
+          view={view}
+          state="ready"
+          report={report}
+          reportState={reportState}
+        />,
+      );
+      expect(hidden).not.toContain('Private synthetic follow-up');
+      expect(hidden).toContain(assistantCopy.states[reportState][0]);
+    }
+    const denied = renderToStaticMarkup(
+      <ExecutivePanels view={view} state="forbidden" report={report} />,
+    );
+    expect(denied).not.toContain('Private synthetic follow-up');
+  }
+});
+
+it('shows report source failure rather than invented finance values', () => {
+  const html = renderToStaticMarkup(
+    <ExecutivePanels
+      view="finance"
+      state="ready"
+      report={{
+        version: 1,
+        action: 'receivables-follow-up',
+        status: 'BLOCKED',
+        scope: 'NONE',
+        reason: 'RECEIVABLES_SOURCE_PENDING',
+        observedAt: snapshot.generatedAt,
+      }}
+    />,
+  );
+  expect(html).toContain(assistantCopy.receivablesSourceGate[0]);
+  expect(html).not.toContain(assistantCopy.noEstimate[0]);
+});

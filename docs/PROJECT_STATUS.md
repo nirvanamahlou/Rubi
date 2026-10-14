@@ -6043,3 +6043,7 @@ COMPUTER_ID=PC-A; reserve travel-workflow form/domain and voucher leader mount i
 
 ## VOUCHER-OUTPUT-1014 — PC-A — IN_PROGRESS
 COMPUTER_ID=PC-A; reserve voucher sheet/PDF/model, workflow note label and airline reference loading. Owner authorizes English airline names, clean voucher details, shared reservation footer, issuance notice and develop merge. No schema/dependency changes.
+
+## ASSISTANT-DETERMINISTIC-1014 — PC-C
+
+Inspected Reporting/Dashboard, accounting report APIs and existing assistant sources. Automatic evidence panels now connect overview/advisor to daily summary, sales to contract/CALL reports and finance to current contractual balances. Shared presentation retains scope, currency precision, provenance and incomplete/denied states. Accounting catalog producers remain pending; per-book reports need a defined aggregate scope, and travel demo gross-profit/conversion proxies are not substituted. News/scenario/forecast gates remain.37 assistant Web tests pass; local build/type and CI are in progress. See tasks/ASSISTANT-DETERMINISTIC-1014.md. No schema/API/provider/permission change.
