@@ -7,6 +7,7 @@ import type { AuthenticatedActor } from '@nora/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ProcurementPublicService } from '../../procurement/procurement-public.service';
 import { FinanceTicketCostService } from './finance-ticket-cost.service';
+import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 
 const enabled = process.env.NORA_RUN_FINANCE_POSTGRES_TESTS === '1';
 const databaseName = `nora_finance_test_${randomUUID().replaceAll('-', '')}`;
@@ -67,7 +68,7 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
     if (created && /^nora_finance_test_[a-f0-9]{32}$/.test(databaseName))
       await sql('postgres', `DROP DATABASE "${databaseName}" WITH (FORCE);`);
   }, 60000);
-  async function fixture() {
+  async function fixture(currencyCode = 'IRR') {
     const suffix = randomUUID();
     const user = await client.user.create({
       data: {
@@ -118,6 +119,7 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
     const service = new FinanceTicketCostService(
       { client } as never,
       new ProcurementPublicService({ client } as never),
+      new MasterProcurementDirectory({ client } as never),
     );
     const price = {
       version: 1 as const,
@@ -125,7 +127,7 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
       expectedCostVersion: 0,
       seatCount: 2,
       unitCost: '50',
-      currencyCode: 'IRR',
+      currencyCode,
     };
     const [cost, replay] = await Promise.all([
       service.recordCost(request.id, price, actor),
@@ -163,6 +165,50 @@ describe.skipIf(!enabled)('Finance ticket payment isolated PostgreSQL', () => {
       }),
     ).toBe(1);
     expect(results[0]!.remainingAmount).toBe('60');
+  });
+  it('persists a foreign supplier payment without an account and retains replay identity', async () => {
+    const f = await fixture('EUR');
+    const supplier = await client.masterSupplier.create({
+      data: {
+        code: randomUUID().slice(0, 32),
+        name: 'Synthetic paying supplier',
+        createdByUserId: f.actor.userId,
+        updatedByUserId: f.actor.userId,
+      },
+    });
+    const command = {
+      ...f.command,
+      accountId: null,
+      payingSupplierId: supplier.id,
+      exchangeRateToIrr: '600000',
+    };
+    const payment = await f.service.recordPayment(
+      f.request.id,
+      command,
+      f.actor,
+    );
+    expect(payment.remainingAmount).toBe('60');
+    expect(
+      await f.service.recordPayment(f.request.id, command, f.actor),
+    ).toEqual(payment);
+    const saved =
+      await client.financeTicketPurchasePaymentRevision.findUniqueOrThrow({
+        where: { id: command.operationId },
+      });
+    expect(saved.accountId).toBeNull();
+    expect(saved.payingSupplierId).toBe(supplier.id);
+    expect(saved.payingSupplierName).toBe('Synthetic paying supplier');
+    expect(saved.rialEquivalent.toString()).toBe('24000000');
+    await expect(
+      f.service.recordPayment(
+        f.request.id,
+        { ...command, payingSupplierId: randomUUID() },
+        f.actor,
+      ),
+    ).rejects.toThrow();
+    await expect(
+      client.masterSupplier.delete({ where: { id: supplier.id } }),
+    ).rejects.toThrow();
   });
   it('rejects a stale concurrent installment and replays a completed settlement', async () => {
     const f = await fixture();

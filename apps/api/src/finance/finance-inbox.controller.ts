@@ -48,6 +48,22 @@ export class FinanceInboxController {
     private readonly inbox: FinanceInboxService,
   ) {}
 
+  @Get('paying-suppliers')
+  @RequirePermissions('finance.payment.create')
+  @Header('Cache-Control', 'private, no-store')
+  async payingSuppliers(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+  ) {
+    const parsed = Number(page || '1');
+    return {
+      data: await this.inbox.payingSuppliers(
+        (search || '').slice(0, 160),
+        Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1,
+      ),
+    };
+  }
+
   @Get('transaction-history')
   @RequirePermissions('finance.read')
   @Header('Cache-Control', 'private, no-store')

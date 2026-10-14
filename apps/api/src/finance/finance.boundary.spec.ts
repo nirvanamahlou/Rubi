@@ -17,7 +17,17 @@ function productionSources(excludeComposition = false) {
 
 describe('finance foundation boundary', () => {
   it('contains domain/application ports and scoped finance inbox commands', () => {
-    const source = productionSources(true);
+    // Operational inbox composition may consume only these public owner APIs.
+    // All remaining private Master Data imports stay forbidden below.
+    const source = productionSources(true)
+      .replace(
+        "import { MasterProcurementDirectory } from '../master-data/master-procurement-directory';",
+        '',
+      )
+      .replace(
+        "import { MasterDataModule } from '../master-data/master-data.module';",
+        '',
+      );
     expect(source).toContain('FinanceCommandPort');
     expect(source).toContain('FinanceIntegrationPort');
     expect(source).toContain('JournalEntry');

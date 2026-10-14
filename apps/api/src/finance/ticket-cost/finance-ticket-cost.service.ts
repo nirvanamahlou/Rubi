@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { paymentSource } from '../payments/payment-source';
+import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
 import {
   BadRequestException,
   ConflictException,
@@ -6,6 +8,7 @@ import {
   Inject,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
@@ -33,6 +36,9 @@ export class FinanceTicketCostService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
     @Inject(ProcurementPublicService)
     private readonly procurement: ProcurementPublicService,
+    @Optional()
+    @Inject(MasterProcurementDirectory)
+    private readonly supplierDirectory?: MasterProcurementDirectory,
   ) {}
 
   async recordCost(
@@ -271,7 +277,8 @@ export class FinanceTicketCostService {
       (input.expectedPaymentVersion !== undefined &&
         (!Number.isSafeInteger(input.expectedPaymentVersion) ||
           input.expectedPaymentVersion < 0)) ||
-      !/^[0-9a-f-]{36}$/i.test(input.accountId ?? '') ||
+      (!/^[0-9a-f-]{36}$/i.test(input.accountId ?? '') &&
+        !/^[0-9a-f-]{36}$/i.test(input.payingSupplierId ?? '')) ||
       !/^[0-9a-f-]{36}$/i.test(input.paymentMethodId ?? '') ||
       (input.paymentReference?.length ?? 0) > 160
     )
@@ -325,7 +332,9 @@ export class FinanceTicketCostService {
             !actor.branchIds.includes(replay.cost.branchId) ||
             replay.costRevisionId !== input.costRevisionId ||
             replay.actorUserId !== actor.userId ||
-            replay.accountId !== input.accountId ||
+            replay.accountId !== (input.accountId || null) ||
+            (replay.payingSupplierId ?? null) !==
+              (input.payingSupplierId || null) ||
             replay.paymentMethodId !== input.paymentMethodId ||
             !replay.paidAmount.equals(amount) ||
             !replay.exchangeRateToIrr.equals(rate) ||
@@ -364,16 +373,14 @@ export class FinanceTicketCostService {
       });
       if (latest?.id !== cost.id)
         throw new ConflictException('نسخه قیمت خرید تغییر کرده است.');
-      const account = await tx.financeSettlementAccount.findFirst({
-        where: {
-          id: input.accountId,
-          branchId: request.branchId,
-          isActive: true,
-          currencyCode: cost.currencyCode,
-        },
-      });
-      if (!account)
-        throw new BadRequestException('حساب فعال هم‌ارز خرید یافت نشد.');
+      const { account, payingSupplierId, payingSupplierName } =
+        await paymentSource(
+          tx,
+          this.supplierDirectory,
+          input,
+          cost.currencyCode,
+          request.branchId,
+        );
       const method = await tx.masterPaymentMethod.findFirst({
         where: {
           id: input.paymentMethodId,
@@ -406,7 +413,9 @@ export class FinanceTicketCostService {
           costRevisionId: cost.id,
           version: (previous?.version ?? 0) + 1,
           status: remaining.isZero() ? 'PAID' : 'PARTIALLY_PAID',
-          accountId: account.id,
+          accountId: account?.id ?? null,
+          payingSupplierId,
+          payingSupplierName,
           paymentMethodId: method.id,
           paidAmount: amount,
           cumulativePaid: cumulative,

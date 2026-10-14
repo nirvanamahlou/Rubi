@@ -147,6 +147,15 @@ export const financeInboxApi = {
         '/finance/settlement-accounts',
       )
     ).data,
+  payingSuppliers: async (search: string, page = 1) =>
+    (
+      await apiRequest<{
+        data: { items: { id: string; name: string }[]; hasMore: boolean };
+      }>(
+        '/finance/paying-suppliers?' +
+          new URLSearchParams({ search, page: String(page) }).toString(),
+      )
+    ).data,
   methods: async () =>
     (
       await apiRequest<{ data: readonly FinancePaymentMethodOptionV1[] }>(

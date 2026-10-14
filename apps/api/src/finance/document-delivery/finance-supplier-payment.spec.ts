@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FinanceDeliveryService } from './finance-delivery.module';
 
-function fixture(amount = '100') {
+function fixture(amount = '100', currencyCode = 'IRR') {
   const createdAt = new Date('2026-09-13T12:00:00.000Z');
   const tx = {
     $queryRaw: vi.fn().mockResolvedValue([]),
@@ -13,7 +13,7 @@ function fixture(amount = '100') {
         id: 'purchase-1',
         intakeId: 'intake-1',
         amount: new Prisma.Decimal(amount),
-        currencyCode: 'IRR',
+        currencyCode,
         intake: { branchId: 'branch-a' },
       }),
     },
@@ -42,11 +42,56 @@ function fixture(amount = '100') {
   };
   return {
     tx,
-    service: new FinanceDeliveryService(database as never, {} as never),
+    service: new FinanceDeliveryService(
+      database as never,
+      {} as never,
+      {
+        supplier: vi.fn(async (id: string) => ({
+          id,
+          label: 'Paying supplier',
+          version: 1,
+        })),
+      } as never,
+    ),
   };
 }
 
 describe('Finance supplier payment', () => {
+  it('records a non-IRR installment against its paying supplier without an account', async () => {
+    const { service, tx } = fixture('100', 'TRY');
+    const payingSupplierId = '50000000-0000-4000-8000-000000000001';
+    const result = await service.updateSupplierPayment(
+      'intake-1',
+      'purchase-1',
+      {
+        expectedVersion: 0,
+        status: 'PAID',
+        payingSupplierId,
+        paymentMethodId: 'method-1',
+        paidAmount: '40',
+        exchangeRateToIrr: '2000',
+        transferAt: '2026-09-13T12:00:00.000Z',
+        reason: '',
+      },
+      'finance-user',
+      ['branch-a'],
+    );
+    expect(result).toMatchObject({
+      accountId: null,
+      accountTitle: 'Paying supplier',
+      remainingAmount: '60',
+    });
+    expect(tx.financeSettlementAccount.findFirst).not.toHaveBeenCalled();
+    expect(tx.financeSupplierPaymentRevision.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          accountId: null,
+          payingSupplierId,
+          payingSupplierName: 'Paying supplier',
+        }),
+      }),
+    );
+  });
   it('records a partial payment and returns the computed remainder', async () => {
     const { service, tx } = fixture();
     const result = await service.updateSupplierPayment(

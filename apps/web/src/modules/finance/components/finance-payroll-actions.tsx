@@ -11,6 +11,7 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { FinanceInboxApiError, apiRequest } from '../api/finance-inbox-api';
 import { FinanceHistoryPanel } from './finance-history-panel';
+import { PayingSupplierPicker } from './paying-supplier-picker';
 
 type Detail = {
   version: number;
@@ -48,6 +49,9 @@ export function FinancePayrollActions({
   const [reason, setReason] = useState('');
   const [amount, setAmount] = useState('');
   const [accountId, setAccountId] = useState('');
+  const [payingSupplierId, setPayingSupplierId] = useState('');
+  const foreignPayment =
+    Boolean(item.amount?.currencyCode) && item.amount?.currencyCode !== 'IRR';
   const [methodId, setMethodId] = useState('');
   const [reference, setReference] = useState('');
   const [error, setError] = useState('');
@@ -87,7 +91,8 @@ export function FinancePayrollActions({
         ...(action === 'PAY'
           ? {
               paidAmount: amount,
-              accountId,
+              accountId: foreignPayment ? null : accountId,
+              payingSupplierId: foreignPayment ? payingSupplierId : null,
               methodId,
               transferAt: new Date().toISOString(),
               paymentReference: reference,
@@ -199,29 +204,37 @@ export function FinancePayrollActions({
               onValueChange={setAmount}
             />
           </label>
-          <label>
-            حساب مبدأ
-            <select
-              className="block w-full rounded border p-2"
-              value={accountId}
+          {foreignPayment ? (
+            <PayingSupplierPicker
+              value={payingSupplierId}
+              onChange={setPayingSupplierId}
               disabled={busy || uncertain}
-              onChange={(event) => setAccountId(event.target.value)}
-            >
-              <option value="">انتخاب حساب</option>
-              {accounts
-                .filter(
-                  (account) =>
-                    account.branchId === item.branchReference &&
-                    account.currencyCode === item.amount?.currencyCode &&
-                    account.isActive,
-                )
-                .map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.title}
-                  </option>
-                ))}
-            </select>
-          </label>
+            />
+          ) : (
+            <label>
+              حساب مبدأ
+              <select
+                className="block w-full rounded border p-2"
+                value={accountId}
+                disabled={busy || uncertain}
+                onChange={(event) => setAccountId(event.target.value)}
+              >
+                <option value="">انتخاب حساب</option>
+                {accounts
+                  .filter(
+                    (account) =>
+                      account.branchId === item.branchReference &&
+                      account.currencyCode === item.amount?.currencyCode &&
+                      account.isActive,
+                  )
+                  .map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.title}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          )}
           <label>
             روش پرداخت
             <select
@@ -247,7 +260,12 @@ export function FinancePayrollActions({
             />
           </label>
           <Button
-            disabled={busy || !amount || !accountId || !methodId}
+            disabled={
+              busy ||
+              !amount ||
+              !(foreignPayment ? payingSupplierId : accountId) ||
+              !methodId
+            }
             onClick={() => void act('PAY')}
           >
             {busy ? 'در حال ثبت…' : 'ثبت پرداخت جزئی یا تسویه'}

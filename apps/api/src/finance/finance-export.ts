@@ -194,7 +194,7 @@ export async function financeExportSnapshot(
       column('زمان ثبت / انتقال (تهران)', 'DATE'),
       column('ارز'),
       column('مبلغ این نوبت', 'DECIMAL'),
-      column('حساب'),
+      column('حساب / تأمین‌کننده پرداخت‌کننده'),
       column('روش'),
       column('شماره پیگیری'),
       column('نوبت'),
