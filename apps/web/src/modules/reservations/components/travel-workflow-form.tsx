@@ -469,7 +469,9 @@ export function TravelWorkflowForm({
           <label>
             {action === 'رزرواسیون'
               ? 'توضیحات ارسال (اختیاری)'
-              : 'توضیح / دلیل عملیات'}
+              : action === 'Confirmation'
+                ? 'یادداشت'
+                : 'توضیح / دلیل عملیات'}
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}

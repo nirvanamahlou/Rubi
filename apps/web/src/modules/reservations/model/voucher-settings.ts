@@ -208,7 +208,9 @@ export function voucherFormData(
         '-'
       : '-',
     excursion: v.flags.excursion ? v.text.excursionDescription || '-' : '-',
-    notes: [v.text.stayNotes, v.text.remarks].filter(Boolean).join('\n'),
+    notes: intake.workflow.voucherIssued
+      ? intake.workflow.note
+      : [v.text.stayNotes, v.text.remarks].filter(Boolean).join('\n'),
     services: [
       v.flags.hotel ? 'HOTEL' : '',
       v.flags.transfer ? 'TRANSFER' : '',
