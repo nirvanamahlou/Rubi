@@ -1,3 +1,9 @@
+## CONTRACT-UUID-FALLBACK-1014 — PC-A — READY_FOR_CI
+
+User reports crypto.randomUUID unavailable while creating an agency-customer contract and authorizes fix/tests/develop merge. COMPUTER_ID=PC-A; branch codex/pc-a-contract-uuid-fallback-1014 from latest origin/develop. Reserve Sales contract submit identity and API create default key, focused client/form/helper-consumer tests and own status docs. Reuse existing browserRandomUuid helper without changing global crypto or its existing consumers. Preserve payload, branch/auth checks, stable retry keys and agency Customer mapping. No schema/migration/dependency/runtime or operational writes; unrelated Sales UUID paths remain outside scope.
+
+CONTRACT-UUID-FALLBACK-1014 validation:34 targeted tests pass for Sales API, contract form, agency-customer mapping and browser helper, including absent native randomUUID, caller-key reuse and branch rejection. Scoped lint, Web types/build and exact-head CI gate merge. Source reservation released with review candidate; no local rollout.
+
 ## LOGOS-LOCALE-LOGIN-1014 — PC-A — READY_FOR_CI
 
 User authorizes retaining company logo images when switching to English, slightly larger login logos and develop merge. COMPUTER_ID=PC-A; branch codex/pc-a-logos-locale-login-1014 from current origin/develop. Reserve only login-company-logos.tsx, its new bilingual responsive rendering regression and bounded shared localized-image regression, plus own status entries. Preserve app-shell branding, existing image assets, localization/accessibility and login behavior. No API/schema/migration/dependency or runtime changes. No active overlapping login/image source lock found.

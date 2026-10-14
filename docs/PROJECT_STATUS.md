@@ -1,3 +1,7 @@
+## 2026-10-14 — CONTRACT-UUID-FALLBACK-1014 — PC-A
+
+New-contract form submission and Sales API default request identity use the existing browserRandomUuid compatibility helper. LAN HTTP browsers lacking crypto.randomUUID can register agency/customer contracts without changing authentication, branch checks or payloads. The form retains its fingerprint-bound key across identical retries, preserving server idempotency. Targeted agency request/absent API/explicit retry key and form-consumer regressions gate the fix. No global crypto patch, schema/migration/dependency, operational data or local runtime changes; exact-head CI gates authorized develop merge.
+
 ## 2026-10-14 — LOGOS-LOCALE-LOGIN-1014 — PC-A
 
 Remove the English-only text replacement of login company logos; both languages now render the same real image assets through the localized Image wrapper. Increase login logo card height from176 to192px on desktop and112 to128px on mobile, with8px desktop and4px mobile containment padding so narrow screens also gain visible logo area. Preserve aspect ratio, localized accessibility and existing application brand selection. Bilingual responsive login and all-company image-identity regressions cover the fix. No API/schema/migration/dependency or local runtime changes; tests/build and exact-head CI gate the authorized develop merge.

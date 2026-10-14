@@ -1,4 +1,5 @@
 'use client';
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
@@ -233,7 +234,7 @@ export const salesApi = {
     ),
   async create(
     input: SalesContractCreateRequest,
-    idempotencyKey: string = crypto.randomUUID(),
+    idempotencyKey: string = browserRandomUuid(),
   ) {
     const baseUrl = getPublicApiBaseUrl();
     if (!baseUrl) throw new SalesApiError('نشانی API پیکربندی نشده است.', 0);
