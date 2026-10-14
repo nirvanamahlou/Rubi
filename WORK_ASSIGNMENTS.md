@@ -1,3 +1,7 @@
+## NOTIFICATION-USER-ISOLATION-1014 — PC-A — READY_FOR_REVIEW
+
+User requests notification privacy by user and permissions. Reserve notification-center, scoped storage model/tests and IAM access-context actor projection plus own status. Preserve recipient-scoped server operations; isolate browser cache by authenticated user/branch/permission scope and filter visible feeds by authorized destination. Central access-context lock bounded to exposing current actor and remounting notification center. Reserve Notifications controller/service/repository and existing tests for server-side current-route permission filtering before pagination/counting. No migration/dependency/runtime writes.
+
 ## RESERVATION-EDITOR-SECTIONS-1014 — PC-A — READY_FOR_REVIEW
 
 User authorizes airline selection, contract passenger age editing, form-only hotel age editing and compact nonduplicated reservation editor sections, followed by develop merge. Reserve reservation-contract-editor, reservation-sales-amendment, reservation-settings and focused tests plus scoped English labels. Reserve bounded optional carrierName presentation filter on Sales TicketOfferPicker consumed by Reservations. No migration/dependency/runtime changes. Preserve actual contract amendment validation and form-only hotel age overrides.

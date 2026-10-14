@@ -5,7 +5,7 @@ import type { MasterDataNotification } from '@/modules/master-data/api/client';
 import { describe, expect, it } from 'vitest';
 
 import type { ChangeNotification } from './change-notifications';
-import { mergeMasterDataFeed } from './notification-center';
+import { notificationScope, mergeMasterDataFeed } from './notification-center';
 
 describe('NotificationCenter integration contract', () => {
   const source = fs.readFileSync(
@@ -15,8 +15,8 @@ describe('NotificationCenter integration contract', () => {
 
   it('combines persistent server notifications with browser-local changes', () => {
     expect(source).toContain('notificationsApi.list()');
-    expect(source).toContain('serverItems.map(serverNotification)');
-    expect(source).toContain('localItems.map(localNotification)');
+    expect(source).toContain('.map(serverNotification)');
+    expect(source).toContain('.map(localNotification)');
     expect(source).toContain('NOTIFICATIONS_CHANGED_EVENT');
   });
 
@@ -97,4 +97,29 @@ describe('NotificationCenter Master Data feed', () => {
       href: '/master-data/accommodation?resource=hotels',
     });
   });
+});
+
+it('isolates browser cache across users, branches and permission changes', () => {
+  const actor = {
+    userId: 'a',
+    branchIds: ['b'],
+    permissions: ['documents.read'],
+  } as never;
+  expect(notificationScope(actor)).not.toBe(
+    notificationScope({ ...(actor as object), userId: 'other' } as never),
+  );
+  expect(notificationScope(actor)).not.toBe(
+    notificationScope({
+      userId: 'a',
+      branchIds: ['c'],
+      permissions: ['documents.read'],
+    } as never),
+  );
+  expect(notificationScope(actor)).not.toBe(
+    notificationScope({
+      userId: 'a',
+      branchIds: ['b'],
+      permissions: [],
+    } as never),
+  );
 });

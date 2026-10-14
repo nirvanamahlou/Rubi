@@ -1,5 +1,7 @@
 'use client';
 
+import { canViewRoute, type AuthenticatedActor } from '@nora/contracts';
+import { useAccessActor } from '@/modules/iam/access-context';
 import type { HrNotificationDto, NotificationItemV1 } from '@nora/contracts';
 import {
   Bell,
@@ -37,7 +39,6 @@ import {
 } from '../ui/overlays';
 import {
   CHANGE_NOTIFICATIONS_EVENT,
-  CHANGE_NOTIFICATIONS_STORAGE_KEY,
   createTrackedFetch,
   limitChangeNotifications,
   parseChangeNotifications,
@@ -45,22 +46,6 @@ import {
 } from './change-notifications';
 
 const SERVER_POLL_INTERVAL_MS = 45_000;
-const DISMISSED_AUDIT_KEY = `${CHANGE_NOTIFICATIONS_STORAGE_KEY}.dismissed-audit`;
-
-function readDismissedAuditIds(): Set<string> {
-  try {
-    const ids: unknown = JSON.parse(
-      window.localStorage.getItem(DISMISSED_AUDIT_KEY) ?? '[]',
-    );
-    return new Set(
-      Array.isArray(ids)
-        ? ids.filter((id): id is string => typeof id === 'string')
-        : [],
-    );
-  } catch {
-    return new Set();
-  }
-}
 
 interface CenterNotification {
   key: string;
@@ -78,32 +63,6 @@ function newNotificationId() {
   return typeof globalThis.crypto?.randomUUID === 'function'
     ? globalThis.crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function readStoredNotifications() {
-  try {
-    return parseChangeNotifications(
-      window.localStorage.getItem(CHANGE_NOTIFICATIONS_STORAGE_KEY),
-    );
-  } catch {
-    return [];
-  }
-}
-
-function writeStoredNotifications(
-  notifications: readonly ChangeNotification[],
-) {
-  const limited = limitChangeNotifications(notifications);
-  try {
-    window.localStorage.setItem(
-      CHANGE_NOTIFICATIONS_STORAGE_KEY,
-      JSON.stringify(limited),
-    );
-  } catch {
-    return limited;
-  }
-  window.dispatchEvent(new Event(CHANGE_NOTIFICATIONS_EVENT));
-  return limited;
 }
 
 function formatNotificationTime(value: string) {
@@ -170,6 +129,32 @@ function localNotification(item: ChangeNotification): CenterNotification {
 }
 
 export function NotificationCenter() {
+  const actor = useAccessActor();
+  if (!actor) return null;
+  return (
+    <ScopedNotificationCenter key={notificationScope(actor)} actor={actor} />
+  );
+}
+export function notificationScope(actor: AuthenticatedActor) {
+  return [
+    actor.userId,
+    [...actor.branchIds].sort().join(','),
+    [...actor.permissions].sort().join(','),
+  ].join(':');
+}
+function ScopedNotificationCenter({ actor }: { actor: AuthenticatedActor }) {
+  const CHANGE_NOTIFICATIONS_STORAGE_KEY =
+    'nora.notifications.scoped:' + notificationScope(actor);
+  const DISMISSED_AUDIT_KEY =
+    CHANGE_NOTIFICATIONS_STORAGE_KEY + '.dismissed-audit';
+  const {
+    readDismissedAuditIds,
+    readStoredNotifications,
+    writeStoredNotifications,
+  } = useMemo(
+    () => notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY),
+    [CHANGE_NOTIFICATIONS_STORAGE_KEY],
+  );
   const serverWrites = useRef(Promise.resolve());
   const pendingWrites = useRef(0);
   const feedVersion = useRef(0);
@@ -177,7 +162,7 @@ export function NotificationCenter() {
   const [serverItems, setServerItems] = useState<NotificationItemV1[]>([]);
   const [hrItems, setHrItems] = useState<HrNotificationDto[]>([]);
   const [hrError, setHrError] = useState<string | null>(null);
-  const [serverUnreadCount, setServerUnreadCount] = useState(0);
+  const [, setServerUnreadCount] = useState(0);
   const [serverLoading, setServerLoading] = useState(true);
   const [serverError, setServerError] = useState<string | null>(null);
   const [refreshingMasterData, setRefreshingMasterData] = useState(false);
@@ -239,39 +224,57 @@ export function NotificationCenter() {
   const notifications = useMemo<CenterNotification[]>(
     () =>
       [
-        ...serverItems.map(serverNotification),
-        ...localItems.map(localNotification),
+        ...serverItems
+          .filter(
+            (item) => !item.href || canViewRoute(actor.permissions, item.href),
+          )
+          .map(serverNotification),
+        ...localItems
+          .filter((item) => canViewRoute(actor.permissions, item.href))
+          .map(localNotification),
         ...pendingHrBellNotifications(hrItems),
       ].sort((left, right) => right.occurredAt.localeCompare(left.occurredAt)),
-    [localItems, serverItems, hrItems],
+    [localItems, serverItems, hrItems, actor.permissions],
   );
   const unreadCount = useMemo(
     () =>
-      serverUnreadCount +
+      serverItems.filter(
+        (item) =>
+          !item.isRead &&
+          item.href &&
+          canViewRoute(actor.permissions, item.href),
+      ).length +
       hrItems.filter((item) => !item.readAt).length +
-      localItems.filter((notification) => !notification.readAt).length,
-    [localItems, serverUnreadCount, hrItems],
+      localItems.filter(
+        (notification) =>
+          !notification.readAt &&
+          canViewRoute(actor.permissions, notification.href),
+      ).length,
+    [localItems, serverItems, hrItems, actor.permissions],
   );
 
-  const syncMasterDataFeed = useCallback(async (showProgress = false) => {
-    if (showProgress) setRefreshingMasterData(true);
-    try {
-      const response = await masterDataApi.notifications(60);
-      const next = writeStoredNotifications(
-        mergeMasterDataFeed(
-          readStoredNotifications(),
-          response.data,
-          readDismissedAuditIds(),
-        ),
-      );
-      setLocalItems(next);
-    } catch {
-      // The global center keeps local notifications available if Audit is
-      // temporarily unreachable or the current role cannot read Master Data.
-    } finally {
-      if (showProgress) setRefreshingMasterData(false);
-    }
-  }, []);
+  const syncMasterDataFeed = useCallback(
+    async (showProgress = false) => {
+      if (showProgress) setRefreshingMasterData(true);
+      try {
+        const response = await masterDataApi.notifications(60);
+        const next = writeStoredNotifications(
+          mergeMasterDataFeed(
+            readStoredNotifications(),
+            response.data,
+            readDismissedAuditIds(),
+          ),
+        );
+        setLocalItems(next);
+      } catch {
+        // The global center keeps local notifications available if Audit is
+        // temporarily unreachable or the current role cannot read Master Data.
+      } finally {
+        if (showProgress) setRefreshingMasterData(false);
+      }
+    },
+    [readDismissedAuditIds, readStoredNotifications, writeStoredNotifications],
+  );
 
   useEffect(() => {
     const refresh = () => void loadHr();
@@ -299,7 +302,7 @@ export function NotificationCenter() {
       window.removeEventListener(CHANGE_NOTIFICATIONS_EVENT, sync);
       window.removeEventListener('storage', syncStorage);
     };
-  }, []);
+  }, [readStoredNotifications, CHANGE_NOTIFICATIONS_STORAGE_KEY]);
 
   useEffect(() => {
     const initial = window.setTimeout(() => void loadServer(), 0);
@@ -338,7 +341,7 @@ export function NotificationCenter() {
     return () => {
       if (window.fetch === trackedFetch) window.fetch = originalFetch;
     };
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, readStoredNotifications, writeStoredNotifications]);
 
   useEffect(() => {
     if (!apiBaseUrl) return;
@@ -628,4 +631,55 @@ export function NotificationCenter() {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+function notificationStorage(CHANGE_NOTIFICATIONS_STORAGE_KEY: string) {
+  const DISMISSED_AUDIT_KEY =
+    CHANGE_NOTIFICATIONS_STORAGE_KEY + '.dismissed-audit';
+  function readDismissedAuditIds(): Set<string> {
+    try {
+      const ids: unknown = JSON.parse(
+        window.localStorage.getItem(DISMISSED_AUDIT_KEY) ?? '[]',
+      );
+      return new Set(
+        Array.isArray(ids)
+          ? ids.filter((id): id is string => typeof id === 'string')
+          : [],
+      );
+    } catch {
+      return new Set();
+    }
+  }
+
+  function readStoredNotifications() {
+    try {
+      return parseChangeNotifications(
+        window.localStorage.getItem(CHANGE_NOTIFICATIONS_STORAGE_KEY),
+      );
+    } catch {
+      return [];
+    }
+  }
+
+  function writeStoredNotifications(
+    notifications: readonly ChangeNotification[],
+  ) {
+    const limited = limitChangeNotifications(notifications);
+    try {
+      window.localStorage.setItem(
+        CHANGE_NOTIFICATIONS_STORAGE_KEY,
+        JSON.stringify(limited),
+      );
+    } catch {
+      return limited;
+    }
+    window.dispatchEvent(new Event(CHANGE_NOTIFICATIONS_EVENT));
+    return limited;
+  }
+
+  return {
+    readDismissedAuditIds,
+    readStoredNotifications,
+    writeStoredNotifications,
+  };
 }

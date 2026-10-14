@@ -1,3 +1,7 @@
+## 2026-10-14 — NOTIFICATION-USER-ISOLATION-1014 — PC-A
+
+Notification browser history is isolated by authenticated user, authorized branches and current permissions; legacy shared history is not imported. The center remounts on identity/scope changes and filters destination visibility. Server listing filters recipient rows against current route permissions before pagination and unread counting, preserving direct recipient-only personal notices and ownership checks for read/clear operations. No schema/migration or local activation. Focused access/notification tests, types/lint and CI validate the source candidate.
+
 ## 2026-10-14 — RESERVATION-EDITOR-SECTIONS-1014 — PC-A
 
 Reservation editing keeps party, flight, hotel, sale amounts, passenger editing, history and a single status-aware cancel/reopen section. Contract passenger categories are edited through the existing validated amendment command while identity editing remains available. Form age and hotel child bands stay form-only; duplicate form/correction/other sections are removed from the contract editor. Airline selection filters eligible flight replacements; manual flights retain their editable airline. No migration or local rollout.
