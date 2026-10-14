@@ -1,3 +1,7 @@
+## CORRECTION-COLUMNS-1014 — PC-A — READY_FOR_REVIEW
+
+User requests purple correction background only on reservation columns two and three and develop merge. Reserve workspace.module.css and existing styling regression plus own status entries. Preserve sales-only correction source, note marker precedence and light/dark palettes. No API/schema/dependency/runtime changes.
+
 ## SALES-CORRECTION-PURPLE-1014 — PC-A — IN_PROGRESS
 
 User requests purple for corrected-by-sales, not reservation operational edits, with develop merge. Reserve Sales reservation table audit projection and regression plus own status. The explicit SALES_PASSENGER_CORRECTION event drives the purple correctedAt marker; reservation form/general amendments do not. No schema/migration/dependency/runtime change.
