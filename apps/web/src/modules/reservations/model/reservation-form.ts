@@ -1,3 +1,19 @@
+export function englishOutputName(
+  value: string,
+  references: ReservationFormReferences,
+) {
+  const name = value.trim();
+  const match = Object.values(references).find((r) =>
+    [r.name, r.attributes.englishName, r.code].some(
+      (v) =>
+        typeof v === 'string' && v.trim().toLowerCase() === name.toLowerCase(),
+    ),
+  );
+  return typeof match?.attributes.englishName === 'string' &&
+    match.attributes.englishName.trim()
+    ? match.attributes.englishName.trim()
+    : value;
+}
 import { salesContractFlights } from '@nora/contracts';
 import type {
   MasterDataRecord,
@@ -101,6 +117,39 @@ export function reservationFormData(
     OTHER: 'OTHER',
   };
   return {
+    transfer: (() => {
+      const legs = services
+        .filter((s) => s.kind === 'TRANSFER')
+        .map((s) => {
+          const eligible = snapshot.passengerAssignments?.filter(
+            (p) =>
+              p.ageCategory !== 'INF' &&
+              p.serviceClientKeys.includes(s.clientKey),
+          ).length;
+          const saved = s.metadata?.passengerCount;
+          const count =
+            typeof saved === 'number' && Number.isFinite(saved)
+              ? Math.max(0, Math.min(eligible ?? saved, Math.trunc(saved)))
+              : (eligible ?? 0);
+          return {
+            direction:
+              s.metadata?.direction === 'RETURN'
+                ? 'RETURN ONLY'
+                : 'OUTBOUND ONLY',
+            count,
+          };
+        });
+      if (
+        legs.length === 2 &&
+        legs[0]!.direction !== legs[1]!.direction &&
+        legs[0]!.count === legs[1]!.count
+      )
+        return 'ROUND TRIP · ' + legs[0]!.count + ' PAX';
+      return (
+        legs.map((l) => l.direction + ' · ' + l.count + ' PAX').join(' / ') ||
+        '-'
+      );
+    })(),
     request: snapshot.contractNumber,
     issueDate: reservationFormDate(
       workflow.updatedAt ?? intake.receivedAt,
@@ -137,7 +186,7 @@ export function reservationFormData(
     ),
     flights: flights.map((f) => ({
       leg: f.direction,
-      airline: f.carrierNameSnapshot,
+      airline: englishOutputName(f.carrierNameSnapshot, references),
       number: f.serviceNumberSnapshot,
       date: reservationFormDate(f.departureAt, 'Asia/Tehran'),
       time: new Intl.DateTimeFormat('en-GB-u-ca-gregory', {

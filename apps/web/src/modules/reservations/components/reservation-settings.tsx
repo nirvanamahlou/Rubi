@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 import {
   Input,
+  Textarea,
   Select,
   SelectContent,
   SelectItem,
@@ -357,6 +358,16 @@ export function ReservationSettingsForm({
             ...draft,
             text: {
               ...draft.text,
+              arrivalAirline:
+                findReservationEditReference(
+                  draft.text.arrivalAirline ?? '',
+                  activeDirectory.options.airlines ?? [],
+                )?.label ?? draft.text.arrivalAirline,
+              departureAirline:
+                findReservationEditReference(
+                  draft.text.departureAirline ?? '',
+                  activeDirectory.options.airlines ?? [],
+                )?.label ?? draft.text.departureAirline,
               broker:
                 findReservationEditReference(
                   draft.text.broker ?? '',
@@ -582,6 +593,21 @@ export function ReservationSettingsForm({
         {(section === 'ALL' || section === 'OTHER') && textField('broker')}
         {showDocument && draft.brokerId && (
           <div className="grid gap-3">
+            {
+              <label className="grid gap-2">
+                یادداشت فرم رزرواسیون (NOTICE)
+                <Textarea
+                  value={draft.text.remarks || ''}
+                  maxLength={500}
+                  onChange={(event) =>
+                    update({
+                      ...draft,
+                      text: { ...draft.text, remarks: event.target.value },
+                    })
+                  }
+                />
+              </label>
+            }
             {saveButton}
             {past && (
               <Button variant="outline" onClick={() => setPast(undefined)}>
@@ -818,7 +844,9 @@ export function ReservationSettingsForm({
               ))}
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {sectionTextKeys.filter((key) => key !== 'broker').map(textField)}
+            {sectionTextKeys
+              .filter((key) => key !== 'broker' && key !== 'remarks')
+              .map(textField)}
           </div>
         </details>
         <p className={styles.operationalNotice}>

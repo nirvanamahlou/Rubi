@@ -2,6 +2,7 @@ import type { voucherNumberKeys, voucherFlagKeys } from '@nora/contracts';
 import { voucherTextKeys, type VoucherSettingsV1 } from '@nora/contracts';
 import {
   reservationFormData,
+  englishOutputName,
   reservationFormDate,
   reservationPassengerAgeLabel,
   type ReservationFormIntake,
@@ -163,6 +164,7 @@ export function voucherFormData(
     return {
       ...d,
       supplier: '0',
+      transfer: v.flags.transfer ? d.transfer : '-',
     };
   const passengers = d.passengers
     .filter((p) => v.passengers.some((s) => s.id === p.id && s.selected))
@@ -232,7 +234,7 @@ export function voucherFormData(
     infants: passengers.filter((p) => p.age === 'INF').length,
     flights: (['arrival', 'departure'] as const).map((prefix) => ({
       leg: prefix === 'arrival' ? 'OUTBOUND' : 'RETURN',
-      airline: v.text[`${prefix}Airline`] || '-',
+      airline: englishOutputName(v.text[`${prefix}Airline`] || '-', refs),
       number: v.text[`${prefix}Flight`] || '-',
       date: voucherDate(v.text[`${prefix}Date`]),
       time: v.text[`${prefix}Time`] || '-',
@@ -254,7 +256,7 @@ export function supplierFormData(
           },
           refs,
         ),
-        supplier: settings.text.broker?.trim() || '-',
+        supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }
     : { ...reservationFormData(intake, refs), leader: 'Persian' };

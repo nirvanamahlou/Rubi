@@ -108,6 +108,7 @@ export interface SalesFormState {
   customerOrganizationId?: string;
   firstPassengerIsCustomer?: boolean;
   businessOutput?: boolean;
+  transferPassengerCount?: number;
   passengerComposition: { adults: number; children: number; infants: number };
   outboundOffer?: TicketOfferV1 | undefined;
   returnOffer?: TicketOfferV1 | undefined;
@@ -935,6 +936,9 @@ export function salesPayload(
               ...(kind === 'FLIGHT'
                 ? state.serviceDetails?.[`${kind}-${direction}`]
                 : {}),
+              ...(kind === 'TRANSFER'
+                ? { passengerCount: salesTransferCount(state) }
+                : {}),
               direction,
               originId:
                 direction === 'OUTBOUND' ? state.originId : state.destinationId,
@@ -1272,4 +1276,12 @@ export function salesPayload(
     })),
     pricingNotes: state.pricingNotes || null,
   };
+}
+
+export function salesTransferCount(state: SalesFormState) {
+  const c = salesPassengerCounts(state);
+  const max = c.adults + c.children;
+  return state.transferPassengerCount === undefined
+    ? max
+    : Math.max(0, Math.min(max, Math.trunc(state.transferPassengerCount || 0)));
 }

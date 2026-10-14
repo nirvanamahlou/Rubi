@@ -1,4 +1,7 @@
 'use client';
+import { loadOutputReferences } from '../model/output-references';
+import { getPublicApiBaseUrl } from '@/lib/environment';
+
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
 import Image from '@/i18n/image';
 import { voucherFormData, supplierFormData } from '../model/voucher-settings';
@@ -36,11 +39,13 @@ export function useReservationFormReferences(
     hotel?.roomTypeId ? ['room-types', hotel.roomTypeId] : null,
     hotel?.mealServiceId ? ['meal-services', hotel.mealServiceId] : null,
   ].filter((entry): entry is string[] => !!entry);
-  const key = JSON.stringify(entries);
+  const key = JSON.stringify({ entries, requestId: intake.id });
   useEffect(() => {
     if (!active) return;
     let live = true;
-    const requested = JSON.parse(key) as [MasterDataResource, string][];
+    const requested = (
+      JSON.parse(key) as { entries: [MasterDataResource, string][] }
+    ).entries;
     void Promise.all(
       requested.map(async ([resource, id]) => {
         try {
@@ -50,25 +55,35 @@ export function useReservationFormReferences(
           return { id, data: undefined };
         }
       }),
-    ).then((results) => {
+    ).then(async (results) => {
+      const extra = await loadOutputReferences(async (path) => {
+        const response = await fetch(getPublicApiBaseUrl() + path, {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        return response.ok ? response.json() : {};
+      }, intake.id).catch(() => ({}));
       if (live)
         setLoaded({
           key,
-          references: Object.fromEntries(
-            results.flatMap((result) =>
-              result.data ? [[result.id, result.data]] : [],
+          references: {
+            ...extra,
+            ...Object.fromEntries(
+              results.flatMap((result) =>
+                result.data ? [[result.id, result.data]] : [],
+              ),
             ),
-          ),
+          },
           failed: results.some((result) => !result.data),
         });
     });
     return () => {
       live = false;
     };
-  }, [key, active]);
+  }, [key, active, intake.id]);
   return {
     references: loaded?.key === key ? loaded.references : {},
-    ready: !active || !entries.length || loaded?.key === key,
+    ready: !active || loaded?.key === key,
     failed: loaded?.key === key && loaded.failed,
   };
 }
@@ -319,15 +334,6 @@ export function ReservationFormSheet({
                     </tbody>
                   </table>
                 </div>
-                {settings && (
-                  <p className={styles.voucherDetails}>
-                    Country: {settings.text.country || '-'} · Website:{' '}
-                    {settings.text.website || '-'} · CUSTOM:{' '}
-                    {settings.numbers.customRooms} · Special room:{' '}
-                    {settings.flags.specialRoom ? 'YES' : 'NO'}
-                    {!voucher && <> · Broker: {settings.text.broker || '-'}</>}
-                  </p>
-                )}
               </>
             )}
             <Heading
@@ -338,43 +344,19 @@ export function ReservationFormSheet({
             <table className={styles.table}>
               <thead>
                 <tr>
-                  {voucher && <th>TRANSFER</th>}
+                  <th>TRANSFER</th>
                   <th>TOUR LEADER</th>
                   <th>EXCURSION</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  {voucher && (
-                    <td>
-                      Board: {settings?.text.transferBoard?.trim() || '-'}
-                    </td>
-                  )}
+                  <td>{data.transfer}</td>
                   <td dir="auto">{data.leader}</td>
                   <td dir="auto">{data.excursion}</td>
                 </tr>
               </tbody>
             </table>
-            {settings && (
-              <p className={styles.voucherDetails}>
-                Transfer:{' '}
-                {settings.flags.transfer
-                  ? [
-                      settings.text.transferKind,
-                      settings.text.transferBoard,
-                      settings.text.transferPhone,
-                    ]
-                      .filter(Boolean)
-                      .join(' / ') || '-'
-                  : '-'}{' '}
-                · Guide:{' '}
-                {settings.flags.tourLeader
-                  ? [settings.text.leaderLanguage, settings.text.leaderPhone]
-                      .filter(Boolean)
-                      .join(' / ') || '-'
-                  : '-'}
-              </p>
-            )}
             <Heading number="05" title="PASSENGERS" note="Passenger MANIFEST" />
             <table className={`${styles.table} ${styles.passengers}`}>
               <colgroup>
@@ -437,9 +419,7 @@ export function ReservationFormSheet({
               )}
               <div>
                 <span>
-                  {voucher
-                    ? 'Hotel voucher - present at check-in.'
-                    : 'Reservation request - subject to supplier confirmation.'}
+                  {voucher ? 'Hotel voucher - present at check-in.' : ''}
                 </span>
               </div>
               <b>

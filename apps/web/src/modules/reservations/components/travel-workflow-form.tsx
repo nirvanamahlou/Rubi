@@ -315,7 +315,7 @@ export function TravelWorkflowForm({
             </section>
           )}
           {(state.voucherIssued || hasSentReservationForm(state)) &&
-            state.voucherSettings?.leaderId &&
+            (state.voucherIssued || state.voucherSettings?.leaderId) &&
             !settingsDirty && (
               <TravelDocument
                 key={`${intake.id}:${state.version}`}
@@ -339,7 +339,6 @@ export function TravelWorkflowForm({
                     : {}),
                 },
               }}
-              historical
             />
             <Button variant="outline" onClick={() => setEditingForm(true)}>
               ویرایش تنظیمات فرم رزواسیون

@@ -227,7 +227,8 @@ it('renders voucher booking references and a separated summary without letterhea
   expect(html).not.toContain('SYNTHETIC BROKER');
   expect(html).toContain('<section class="bookingSection">');
   expect(html).toContain('ROOM TYPE');
-  expect(html).toContain('Board: BROKER BOARD');
+  expect(html).toContain('TRANSFER');
+  expect(html).not.toContain('Board: BROKER BOARD');
   expect(html).toContain('SYNTHETIC LEADER / +989000000000');
   expect(html).not.toContain('<th>LEG</th>');
   expect(html).not.toContain(
