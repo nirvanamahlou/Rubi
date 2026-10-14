@@ -103,3 +103,7 @@ inject a planner; prepared-actions.mjs shares existing read compositions with
 orchestrator.mjs. No real message or ERP data goes to a model. The separate Web
 conversation component is not mounted pending policy approval. See
 ../../docs/tasks/ASSISTANT-ORCHESTRATOR-1013.md for activation and pilot gates.
+
+## Groq synthetic evaluation — 2026-10-14
+
+A Groq adapter is available only through explicit trusted test injection; server.mjs does not load it. Use groq-synthetic-eval.mjs --synthetic-only with the local ignored key environment for fixed fictional cases. No arbitrary prompt or ERP client is included in that CLI. Provider access currently returns403 in this environment; live inference is not validated. Policy and activation gates remain closed. See ../../docs/tasks/ASSISTANT-GROQ-TEST-1014.md.
