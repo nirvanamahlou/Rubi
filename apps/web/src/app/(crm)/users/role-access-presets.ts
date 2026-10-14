@@ -231,7 +231,7 @@ profiles['مدیر فروش'] = {
         code !== 'sales.contracts.read.own' &&
         code !== 'sales.contracts.update.own',
     ),
-    'sales.contracts.read.branch',
+    'sales.contracts.read.all',
     'sales.contracts.update.branch',
     'sales.export',
     'sales.audit.read',
@@ -239,7 +239,7 @@ profiles['مدیر فروش'] = {
     'reporting.sales.read',
   ],
   reason:
-    'مدیریت قراردادهای همه کارشناسان در شعب مجاز، همراه گزارش فروش؛ بدون افزایش خودکار دسترسی خارج از شعب مجاز.',
+    'مشاهده قراردادهای همه فروشندگان سیستم، ثبت قرارداد و گزارش فروش؛ ویرایش قراردادها در شعب مجاز.',
 };
 export interface AssignablePermission {
   id: string;

@@ -39,6 +39,85 @@ function row(id: string): SalesContractRow {
   } as unknown as SalesContractRow;
 }
 describe('contract list route and buyer phone', () => {
+  it('projects sellers and flags only a reservation amendment applied to the contract', async () => {
+    const changed = row('changed'),
+      internal = row('internal'),
+      canonical = row('canonical');
+    canonical.reservationRequests = [
+      { idempotencyKey: 'amend-synthetic' },
+    ] as never;
+    changed.services = [
+      {
+        kind: 'HOTEL',
+        metadata: {
+          reservationFormAmendment: JSON.stringify({
+            version: 1,
+            targetContractVersion: 2,
+          }),
+        },
+      },
+    ] as never;
+    internal.services = [
+      {
+        kind: 'HOTEL',
+        metadata: {
+          internalForm: 'private details',
+          reservationFormAmendment: 'untrusted metadata is not an audit event',
+        },
+      },
+    ] as never;
+    const list = vi.fn().mockResolvedValue({
+      data: [changed, internal, canonical],
+      page: 1,
+      pageSize: 20,
+      total: 3,
+    });
+    const displayNames = vi
+      .fn()
+      .mockResolvedValue([{ id: 'owner', displayName: 'Synthetic Seller' }]);
+    const service = new SalesService(
+      {
+        list,
+        amendedContractIds: vi
+          .fn()
+          .mockResolvedValue([
+            { contractId: 'changed' },
+            { contractId: 'canonical' },
+          ]),
+      } as never,
+      {} as never,
+      {} as never,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      { displayNames } as never,
+    );
+    const result = await service.list(
+      {},
+      {
+        ...actor,
+        permissions: ['sales.contracts.read.all', 'sales.contracts.create'],
+      },
+    );
+    expect(list).toHaveBeenCalledWith({}, {}, false);
+    expect(result.data.map((item) => item.sellerName)).toEqual([
+      'Synthetic Seller',
+      'Synthetic Seller',
+      'Synthetic Seller',
+    ]);
+    expect(result.data.map((item) => item.reservationContractChanged)).toEqual([
+      true,
+      false,
+      true,
+    ]);
+    expect(JSON.stringify(result)).not.toContain('private details');
+    expect(JSON.stringify(result)).not.toContain('reservationFormAmendment');
+    expect(displayNames).toHaveBeenCalledWith(
+      ['owner', 'owner', 'owner'],
+      ['branch'],
+    );
+  });
   it('prefers the immutable buyer phone, resolves legacy contacts once and preserves scoped listing', async () => {
     const first = row('snapshot');
     first.buyerContact = { version: 1, encrypted: 'synthetic' };
@@ -89,7 +168,7 @@ describe('contract list route and buyer phone', () => {
       {},
       {
         branchId: { in: ['branch'] },
-        OR: [{ ownerUserId: 'owner' }, { assignedUserId: 'owner' }],
+        ownerUserId: 'owner',
       },
       false,
     );

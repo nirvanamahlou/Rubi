@@ -54,8 +54,7 @@ export class SalesOperationalAmendmentService {
       !(
         actor.permissions.includes('sales.contracts.update.branch') ||
         (actor.permissions.includes('sales.contracts.update.own') &&
-          (row.ownerUserId === actor.userId ||
-            row.assignedUserId === actor.userId))
+          row.ownerUserId === actor.userId)
       )
     )
       throw new ForbiddenException(

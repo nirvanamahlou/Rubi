@@ -146,7 +146,7 @@ describe('Sales XLSX download', () => {
               branchId: { in: ['b'] },
               ...(scope === 'own'
                 ? {
-                    OR: [{ ownerUserId: 'actor' }, { assignedUserId: 'actor' }],
+                    ownerUserId: 'actor',
                   }
                 : {}),
             },
@@ -237,16 +237,26 @@ it.each([
     'کارشناس فروش',
     {
       branchId: { in: ['branch'] },
-      OR: [{ ownerUserId: 'actor' }, { assignedUserId: 'actor' }],
+      ownerUserId: 'actor',
     },
   ],
-  ['مدیر فروش', { branchId: { in: ['branch'] } }],
+  ['مدیر فروش', {}],
 ])(
   'applies effective %s role scope to contract exports',
   async (name, expectedScope) => {
     const list = vi.fn().mockResolvedValue({ data: [], total: 0 });
     const dashboardRows = vi.fn().mockResolvedValue([]);
     const findById = vi.fn().mockResolvedValue({
+      ...sample,
+      passengers: [],
+      services: [],
+      payments: [],
+      priceComponents: [],
+      ticketSelections: [],
+      reservationRequests: [],
+      createdAt: new Date(sample.createdAt),
+      updatedAt: new Date(sample.updatedAt),
+      departureDate: new Date(sample.departureDate),
       branchId: 'outside',
       ownerUserId: 'other',
       assignedUserId: null,
@@ -275,14 +285,19 @@ it.each([
     await service.exportXlsx({}, actor);
     await service.dashboard(actor);
     expect(dashboardRows).toHaveBeenCalledWith(expectedScope);
-    await expect(service.detail('outside-contract', actor)).rejects.toThrow(
-      'قرارداد خارج',
-    );
+    if (name === 'مدیر فروش')
+      await expect(
+        service.detail('outside-contract', actor),
+      ).resolves.toMatchObject({ data: { branchId: 'outside' } });
+    else
+      await expect(service.detail('outside-contract', actor)).rejects.toThrow(
+        'قرارداد خارج',
+      );
     if (name === 'کارشناس فروش') {
       findById.mockResolvedValue({
         branchId: 'branch',
         ownerUserId: 'other',
-        assignedUserId: null,
+        assignedUserId: 'actor',
       });
       await expect(service.detail('colleague-contract', actor)).rejects.toThrow(
         'قرارداد خارج',

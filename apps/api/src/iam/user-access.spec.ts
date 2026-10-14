@@ -113,6 +113,68 @@ const access = {
   branchIds: [],
 };
 describe('independent managed user access', () => {
+  it.each(['مدیر', 'مدیر فروش'])(
+    'rejects assigning %s without its effective global Sales grants',
+    async (title) => {
+      const f = fixture();
+      await expect(
+        f.service.updateUserAccess(
+          'first',
+          { ...access, accessTitle: title },
+          actor,
+          {},
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(f.client.$transaction).not.toHaveBeenCalled();
+    },
+  );
+  it('allows an operator who already holds the effective manager grants to assign the profile', async () => {
+    const f = fixture();
+    await f.service.updateUserAccess(
+      'first',
+      { ...access, accessTitle: 'مدیر فروش' },
+      {
+        ...actor,
+        permissions: [
+          ...actor.permissions,
+          'sales.contracts.read.all',
+          'sales.contracts.create',
+        ],
+      },
+      {},
+    );
+    expect(f.client.role.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({ name: 'مدیر فروش' }),
+      }),
+    );
+  });
+  it('cannot obtain global Sales access by assigning an empty named manager role', async () => {
+    const f = fixture();
+    f.client.role.findMany.mockResolvedValue([
+      {
+        id: 'manager',
+        code: 'sales_manager',
+        name: 'مدیر فروش',
+        permissions: [],
+      },
+    ]);
+    await expect(
+      f.service.updateUserAccess('first', { roleIds: ['manager'] }, actor, {}),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(f.client.$transaction).not.toHaveBeenCalled();
+  });
+  it('cannot obtain global Sales access by creating a role named Sales Manager', async () => {
+    const f = fixture();
+    await expect(
+      f.service.createRole(
+        { code: 'manager-role', name: 'مدیر فروش', permissionIds: [] },
+        actor,
+        {},
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(f.client.auditEvent.create).not.toHaveBeenCalled();
+  });
   it('persists selected grants in a user-specific role and removes unchecked grants without changing another user', async () => {
     const f = fixture();
     await f.service.updateUserAccess('first', access, actor, {});
