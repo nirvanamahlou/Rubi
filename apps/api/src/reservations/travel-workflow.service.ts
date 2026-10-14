@@ -93,6 +93,18 @@ export class TravelWorkflowService {
       workflow: workflow ?? initialTravelWorkflow(),
     };
   }
+  async contractVersions(id: string, branchIds: readonly string[]) {
+    const intake = await this.detail(id, branchIds);
+    return this.database.client.reservationIntake.findMany({
+      where: {
+        contractId: intake.contractId,
+        branchId: { in: [...branchIds] },
+      },
+      orderBy: { contractVersion: 'desc' },
+      select: { id: true, contractVersion: true, receivedAt: true },
+      take: 100,
+    });
+  }
   async history(id: string, branchIds: readonly string[]) {
     await this.detail(id, branchIds);
     return this.database.client.reservationWorkflowRevision.findMany({

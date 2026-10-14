@@ -1,4 +1,7 @@
 'use client';
+import { ReservationPartyEditor } from './reservation-party-editor';
+import { ReservationPassengers } from '../passenger-files/passengers';
+import { TravelWorkflowForm } from './travel-workflow-form';
 
 import { useEffect, useState } from 'react';
 import type {
@@ -10,7 +13,7 @@ import type {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/form-controls';
 import { salesApi } from '@/modules/sales/api/client';
-import { ReservationSettings } from './reservation-settings';
+import { ReservationSalesAmendment } from './reservation-sales-amendment';
 import { travelRequest } from './travel-workflow-form';
 import styles from './reservation-contract-editor.module.css';
 
@@ -29,7 +32,9 @@ const sections = [
   'پرواز',
   'هتل',
   'سایر',
-  'مسافران',
+  'مبالغ فروش',
+  'ویرایش مسافران',
+  'فرم رزواسیون',
   'سوابق',
   'اصلاح قرارداد',
   'ابطال قرارداد',
@@ -143,13 +148,25 @@ export function ReservationContractEditor({
   contractNumber: string;
 }) {
   const [active, setActive] = useState<Section>('طرف قرارداد');
+  const [revision, setRevision] = useState(0);
   const [contract, setContract] = useState<SalesContractDetail>();
   const [intake, setIntake] = useState<WorkflowIntake>();
+  const [versions, setVersions] = useState<
+    { id: string; contractVersion: number; receivedAt: string }[]
+  >([]);
+  const [viewVersion, setViewVersion] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let mounted = true;
+    void travelRequest<{
+      data: { id: string; contractVersion: number; receivedAt: string }[];
+    }>(`reservations/requests/${requestId}/contract-versions`)
+      .then((r) => {
+        if (mounted) setVersions(r.data);
+      })
+      .catch(() => undefined);
     const loadContract = contractId
       ? salesApi.detail(contractId).then((result) => result.data)
       : Promise.resolve(undefined);
@@ -167,6 +184,12 @@ export function ReservationContractEditor({
         setContract(contractResult.value);
       if (intakeResult.status === 'fulfilled') setIntake(intakeResult.value);
       if (historyResult.status === 'fulfilled') setHistory(historyResult.value);
+      if (contractResult.status === 'rejected')
+        setError(
+          contractResult.reason instanceof Error
+            ? contractResult.reason.message
+            : 'اطلاعات قرارداد دریافت نشد.',
+        );
       if (intakeResult.status === 'rejected')
         setError(
           intakeResult.reason instanceof Error
@@ -177,20 +200,16 @@ export function ReservationContractEditor({
     return () => {
       mounted = false;
     };
-  }, [contractId, requestId]);
+  }, [contractId, requestId, revision]);
 
   const editSection =
-    active === 'طرف قرارداد'
-      ? 'PARTY'
-      : active === 'پرواز'
-        ? 'FLIGHT'
-        : active === 'هتل'
-          ? 'HOTEL'
-          : active === 'سایر'
-            ? 'OTHER'
-            : active === 'مسافران'
-              ? 'PASSENGERS'
-              : undefined;
+    active === 'پرواز'
+      ? 'FLIGHT'
+      : active === 'هتل'
+        ? 'HOTEL'
+        : active === 'سایر'
+          ? 'OTHER'
+          : undefined;
   const updateWorkflow = (workflow: TravelWorkflowStateV1) =>
     setIntake((current) =>
       current
@@ -207,7 +226,7 @@ export function ReservationContractEditor({
     <div className={styles.editor} dir="rtl">
       <header className={styles.header}>
         <div className={styles.headerCopy}>
-          <span className={styles.eyebrow}>فرم اصلاح رزواسیون</span>
+          <span className={styles.eyebrow}>ویرایش قرارداد</span>
           <div className={styles.titleLine}>
             <h2>اصلاح قرارداد</h2>
             <strong>{contractNumber}</strong>
@@ -250,22 +269,64 @@ export function ReservationContractEditor({
             {error}
           </p>
         )}
-        {editSection &&
-          (intake ? (
-            <ReservationSettings
-              intake={intake}
-              section={editSection}
-              {...(contract?.customerNameSnapshot
-                ? { partyName: contract.customerNameSnapshot }
-                : {})}
-              onSaved={updateWorkflow}
-              onDirty={() => undefined}
+        {active === 'طرف قرارداد' &&
+          (contract ? (
+            <ReservationPartyEditor
+              key={contract.version}
+              contract={contract}
+              onSaved={() => setRevision((v) => v + 1)}
             />
           ) : (
-            <p role="status">در حال دریافت اطلاعات قابل ویرایش…</p>
+            <p role="status">در حال دریافت اطلاعات طرف قرارداد…</p>
           ))}
+        {active === 'ویرایش مسافران' && (
+          <ReservationPassengers key={requestId} id={requestId} />
+        )}
+        {active === 'فرم رزواسیون' && (
+          <TravelWorkflowForm
+            key={requestId}
+            id={requestId}
+            action="رزرواسیون"
+          />
+        )}
+        {(editSection ||
+          active === 'اصلاح قرارداد' ||
+          active === 'مبالغ فروش') &&
+          contract && (
+            <ReservationSalesAmendment
+              key={active + contract.version}
+              contract={contract}
+              section={
+                active === 'اصلاح قرارداد'
+                  ? 'CORRECTION'
+                  : active === 'مبالغ فروش'
+                    ? 'PRICES'
+                    : editSection!
+              }
+              onSaved={() => setRevision((v) => v + 1)}
+            />
+          )}
         {active === 'سوابق' && (
           <div className={styles.history}>
+            <div className="flex flex-wrap gap-2">
+              {versions.map((v) => (
+                <Button
+                  key={v.id}
+                  variant="outline"
+                  onClick={() => setViewVersion(v.id)}
+                >
+                  مشاهده فرم نسخه {v.contractVersion}
+                </Button>
+              ))}
+            </div>
+            {viewVersion && (
+              <TravelWorkflowForm
+                key={viewVersion}
+                id={viewVersion}
+                action="رزرواسیون"
+                readOnly
+              />
+            )}
             {history.map((item) => (
               <article key={item.version}>
                 <strong>نسخه {item.version}</strong>
@@ -280,16 +341,6 @@ export function ReservationContractEditor({
             )}
           </div>
         )}
-        {active === 'اصلاح قرارداد' &&
-          (intake ? (
-            <ReservationSettings
-              intake={intake}
-              onSaved={updateWorkflow}
-              onDirty={() => undefined}
-            />
-          ) : (
-            <p role="status">در حال دریافت فرم اصلاح…</p>
-          ))}
         {active === 'ابطال قرارداد' &&
           (intake ? (
             <WorkflowCommand

@@ -473,6 +473,7 @@ export interface ReservationTableFlagV1 {
   actorName?: string | null | undefined;
 }
 export interface ReservationTableSummaryV1 {
+  contractPartyName?: string;
   createdAt: string;
   contractVersion: number;
   correctedAt: string | null;

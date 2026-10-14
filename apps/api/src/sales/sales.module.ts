@@ -1,3 +1,4 @@
+import { SalesPartyCorrectionService } from './sales-party-correction.service';
 import { SalesProfitService } from './sales-profit.service';
 import { FinanceTicketCostModule } from '../finance/finance-ticket-cost.module';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
@@ -37,6 +38,7 @@ import { SalesReservationDispatcher } from './sales-reservation-dispatcher';
   providers: [
     AuthGuard,
     SalesRepository,
+    SalesPartyCorrectionService,
     SalesAssistantConfirmationService,
     SalesBuyerContactCrypto,
     SalesService,

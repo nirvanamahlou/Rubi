@@ -28,6 +28,7 @@ import type {
   SalesAccommodationKind,
   AuthenticatedActor,
   SalesContractCreateRequest,
+  SalesContractAmendmentV1,
   SalesContractDetail,
   SalesContractListQuery,
   SalesContractPage,
@@ -943,6 +944,7 @@ export class SalesService {
     },
     actor: AuthenticatedActor,
     traceId?: string,
+    categories?: SalesContractAmendmentV1['passengerCategories'],
   ) {
     if (!Number.isInteger(input.version) || input.version < 1)
       throw new BadRequestException('نسخه معتبر قرارداد الزامی است.');
@@ -953,6 +955,49 @@ export class SalesService {
         message: 'قرارداد یافت نشد.',
       });
     this.assertUpdate(row, actor);
+    if (categories) {
+      if (!Array.isArray(input.passengers) || !Array.isArray(input.services))
+        throw new BadRequestException('اطلاعات اصلاح قرارداد معتبر نیست.');
+      if (
+        !has(actor, 'sales.contracts.confirm') ||
+        !has(actor, 'sales.reservation_request.create')
+      )
+        throw new ForbiddenException('مجوز تأیید و ارسال رزرو وجود ندارد.');
+      if (
+        typeof input.reason !== 'string' ||
+        !input.reason.trim() ||
+        input.reason.length > 500
+      )
+        throw new BadRequestException('دلیل اصلاح قرارداد الزامی است.');
+      if (
+        input.customerId !== row.customerId ||
+        (input.payerCustomerId ?? input.customerId) !==
+          (row.payerCustomerId ?? row.customerId)
+      )
+        throw new BadRequestException(
+          'طرف قرارداد را در بخش طرف قرارداد اصلاح کنید.',
+        );
+      if (
+        Object.keys(categories).length !== row.passengers.length ||
+        input.passengers.length !== row.passengers.length ||
+        row.passengers.some(
+          (p) =>
+            !['ADT', 'CHD', 'INF'].includes(categories[p.customerId] ?? '') ||
+            !input.passengers.some(
+              (n) =>
+                n.customerId === p.customerId &&
+                n.birthDate.slice(0, 10) ===
+                  p.birthDate.toISOString().slice(0, 10) &&
+                n.displayNameSnapshot === p.displayNameSnapshot,
+            ),
+        )
+      )
+        throw new BadRequestException(
+          'اطلاعات هویتی مسافران را در ویرایش مسافران اصلاح کنید.',
+        );
+      if (row.status === 'CANCELLED')
+        throw new ConflictException('قرارداد ابطال‌شده قابل اصلاح نیست.');
+    }
     if (row.paymentTerms != null && input.paymentTerms === null)
       throw new BadRequestException(
         'نوع فروش ذخیره‌شده قرارداد قابل حذف نیست.',
@@ -968,7 +1013,7 @@ export class SalesService {
     // Draft updates do not replace payment rows: validate the actual stored schedule.
     if (input.paymentTerms)
       input = { ...input, payments: row.payments.map(paymentInput) };
-    domainCall(() => validateSalesContract(input));
+    domainCall(() => validateSalesContract(input, false, categories));
     await this.assertTour(input, row.branchId);
     await this.assertHotelRoomCapacity(input, row.branchId);
     for (const passenger of row.passengers) {
@@ -1022,13 +1067,114 @@ export class SalesService {
                 : null,
           }
         : input;
-    domainCall(() => validateSalesContract(updateInput));
+    domainCall(() => validateSalesContract(updateInput, false, categories));
+    const previous = categories
+      ? presentSalesContract(row, undefined, this.buyerCrypto)
+      : undefined;
+    const execution = (
+      c: SalesContractCreateRequest,
+      ages: Readonly<Record<string, string>>,
+    ) =>
+      salesFingerprint({
+        originId: c.originId,
+        destinationId: c.destinationId,
+        departureDate: c.departureDate.slice(0, 10),
+        tickets: c.ticketSelections ?? [],
+        hotel: c.hotelSelection ?? null,
+        ages,
+        services: c.services.map((s) => ({
+          clientKey: s.clientKey,
+          kind: s.kind,
+          titleSnapshot: s.titleSnapshot,
+          status: s.status,
+          referenceId: s.referenceId,
+          metadata: s.metadata,
+        })),
+      });
+    const changedExecution =
+      categories &&
+      previous &&
+      execution(updateInput, categories) !==
+        execution(
+          {
+            ...updateInput,
+            originId: previous.originId,
+            destinationId: previous.destinationId,
+            departureDate: previous.departureDate,
+            services: previous.servicesDetail,
+            ticketSelections: previous.ticketSelections,
+            hotelSelection: previous.hotelSelection,
+          },
+          Object.fromEntries(
+            previous.passengersDetail.map((p) => [p.customerId, p.ageCategory]),
+          ),
+        );
+    const requestId = randomUUID();
+    const snapshot: SalesReservationRequestV1 | undefined =
+      changedExecution && categories
+        ? {
+            version: 1,
+            requestId,
+            contractId: id,
+            contractNumber: row.contractNumber,
+            contractVersion: input.version + 1,
+            customerId: row.customerId,
+            passengerIds: input.passengers.map((p) => p.customerId),
+            passengerAssignments: input.passengers.map((p) => ({
+              customerId: p.customerId,
+              displayNameSnapshot: p.displayNameSnapshot,
+              ageCategory: categories[p.customerId]!,
+              serviceClientKeys: p.serviceClientKeys,
+            })),
+            serviceSelections: input.services,
+            ticketSelections: input.ticketSelections ?? [],
+            selectedTicketOfferIds: (input.ticketSelections ?? []).map(
+              (t) => t.offerId,
+            ),
+            hotelSelection: input.hotelSelection ?? null,
+            createdAt: new Date().toISOString(),
+          }
+        : undefined;
     const changed = await this.repository.updateDraft(
       id,
       updateInput,
       input.version,
       customer.displayName,
       this.context(actor, row.branchId, traceId),
+      categories
+        ? {
+            categories,
+            snapshot: snapshot as unknown as Prisma.InputJsonValue | undefined,
+            requestId,
+            previousStatus: row.status,
+            reason: input.reason!.trim(),
+            before: JSON.parse(
+              JSON.stringify({
+                version: row.version,
+                tickets: row.ticketSelections,
+                hotel: row.hotelSelection,
+                prices: row.priceComponents,
+                categories: row.passengers.map((p) => ({
+                  customerId: p.customerId,
+                  ageCategory: p.ageCategory,
+                })),
+              }),
+            ) as Prisma.InputJsonValue,
+            reserve: async (tx) => {
+              if (!this.tickets.amend)
+                throw new ConflictException('اصلاح ظرفیت بلیت در دسترس نیست.');
+              await this.tickets.amend(
+                tx,
+                input.ticketSelections ?? [],
+                row.branchId,
+                id,
+                input.passengers.filter(
+                  (p) => categories[p.customerId] !== 'INF',
+                ).length,
+              );
+            },
+          }
+        : undefined,
     );
     if (!changed)
       throw new ConflictException({

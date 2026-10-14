@@ -4,6 +4,8 @@ import { localizedFetch } from '@/i18n/localized-fetch';
 import type {
   HotelRoomRateV1,
   SalesContractCreateRequest,
+  SalesContractAmendmentV1,
+  SalesContractPartyCorrectionV1,
   SalesContractProfitV1,
   SalesContractOutputV1,
   SalesContractDetail,
@@ -99,6 +101,16 @@ function queryString(query: SalesContractListQuery): string {
 }
 
 export const salesApi = {
+  amend: (id: string, input: SalesContractAmendmentV1) =>
+    request<{ data: SalesContractDetail }>(`/contracts/${id}/amend`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    }),
+  correctParty: (id: string, input: SalesContractPartyCorrectionV1) =>
+    request<{ data: { version: number } }>(
+      `/contracts/${encodeURIComponent(id)}/party`,
+      { method: 'PATCH', body: JSON.stringify(input) },
+    ),
   profit: (id: string) =>
     request<{ data: SalesContractProfitV1 }>(
       `/contracts/${encodeURIComponent(id)}/profit`,

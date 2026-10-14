@@ -1862,6 +1862,125 @@ export class TicketPublicService {
     return { available: unavailableOfferIds.length === 0, unavailableOfferIds };
   }
 
+  /** Public boundary: replace capacity in the same transaction as the Sales amendment. */
+  async amend(
+    tx: Prisma.TransactionClient,
+    selections: readonly SalesTicketSelectionInput[],
+    branchId: string,
+    contractId: string,
+    seatCount: number,
+  ) {
+    if (
+      !Number.isInteger(seatCount) ||
+      seatCount < 0 ||
+      (selections.length > 0 && seatCount < 1) ||
+      selections.length > 2 ||
+      new Set(selections.map((s) => s.direction)).size !== selections.length ||
+      new Set(selections.map((s) => s.offerId)).size !== selections.length
+    )
+      throw new BadRequestException('تعداد مسافر یا انتخاب بلیت معتبر نیست.');
+    const existing = await tx.ticketOfferCapacityAllocation.findMany({
+      where: { contractId },
+    });
+    const ids = [
+      ...new Set([
+        ...existing.map((a) => a.offerId),
+        ...selections.map((s) => s.offerId),
+      ]),
+    ].sort();
+    if (ids.length)
+      await tx.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "TicketPublishedOffer" WHERE "id" IN (${Prisma.join(ids)}) ORDER BY "id" FOR UPDATE`,
+      );
+    const offers = await tx.ticketPublishedOffer.findMany({
+      where: { id: { in: ids }, branchId },
+      include: {
+        capacityAllocations: { where: { status: 'ACTIVE' } },
+        capacityHolds: {
+          where: { status: 'ACTIVE', expiresAt: { gt: new Date() } },
+        },
+      },
+    });
+    for (const selection of selections) {
+      const offer = offers.find((o) => o.id === selection.offerId);
+      const previous = existing.find(
+        (a) => a.direction === selection.direction && a.status === 'ACTIVE',
+      );
+      const unchanged =
+        previous?.offerId === selection.offerId &&
+        previous.quantity === seatCount;
+      if (
+        !offer ||
+        (!unchanged &&
+          (offer.status !== 'ACTIVE' || offer.departureAt <= new Date())) ||
+        selection.originId !== offer.originId ||
+        selection.destinationId !== offer.destinationId ||
+        new Date(selection.departureAt).getTime() !==
+          offer.departureAt.getTime() ||
+        new Date(selection.arrivalAt).getTime() !== offer.arrivalAt.getTime() ||
+        selection.cabinClassCode !== offer.cabinClassCode ||
+        selection.carrierNameSnapshot !== offer.carrierName ||
+        selection.serviceNumberSnapshot !== offer.serviceNumber
+      )
+        throw new ConflictException(
+          'بلیط انتخاب‌شده تغییر کرده یا قابل رزرو نیست.',
+        );
+      const used =
+        offer.capacityAllocations
+          .filter((a) => a.contractId !== contractId)
+          .reduce((n, a) => n + a.quantity, 0) +
+        offer.capacityHolds.reduce((n, h) => n + h.quantity, 0);
+      if (!unchanged && offer.totalCapacity - used < seatCount)
+        throw new ConflictException(
+          'ظرفیت باقی‌مانده برای این تعداد نفر کافی نیست.',
+        );
+    }
+    const outbound = selections.find((s) => s.direction === 'OUTBOUND');
+    const returning = selections.find((s) => s.direction === 'RETURN');
+    if (
+      returning &&
+      outbound &&
+      (returning.originId !== outbound.destinationId ||
+        returning.destinationId !== outbound.originId ||
+        new Date(returning.departureAt) <= new Date(outbound.arrivalAt))
+    )
+      throw new BadRequestException('مسیر یا تاریخ بلیت برگشت معتبر نیست.');
+    const outboundOffer = offers.find((o) => o.id === outbound?.offerId);
+    const returnOffer = offers.find((o) => o.id === returning?.offerId);
+    if (
+      outboundOffer &&
+      returnOffer &&
+      !eligibleTicketReturn(outboundOffer, returnOffer)
+    )
+      throw new BadRequestException('مسیر یا تاریخ بلیت برگشت معتبر نیست.');
+    await tx.ticketOfferCapacityAllocation.updateMany({
+      where: {
+        contractId,
+        status: 'ACTIVE',
+        direction: { notIn: selections.map((s) => s.direction) },
+      },
+      data: { status: 'RELEASED', releasedAt: new Date() },
+    });
+    for (const selection of selections)
+      await tx.ticketOfferCapacityAllocation.upsert({
+        where: {
+          contractId_direction: { contractId, direction: selection.direction },
+        },
+        create: {
+          contractId,
+          direction: selection.direction,
+          offerId: selection.offerId,
+          quantity: seatCount,
+        },
+        update: {
+          offerId: selection.offerId,
+          quantity: seatCount,
+          status: 'ACTIVE',
+          releasedAt: null,
+        },
+      });
+  }
+
   /** Atomically reserves one seat per non-infant passenger for every selected direction. */
   async reserve(
     selections: readonly SalesTicketSelectionInput[],

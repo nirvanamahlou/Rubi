@@ -1,3 +1,4 @@
+import { SalesPartyCorrectionService } from './sales-party-correction.service';
 import 'reflect-metadata';
 import { afterAll, beforeAll, expect, it, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
@@ -34,6 +35,7 @@ beforeAll(async () => {
   const module = await Test.createTestingModule({
     controllers: [SalesController],
     providers: [
+      { provide: SalesPartyCorrectionService, useValue: {} },
       {
         provide: SalesProfitService,
         useValue: new SalesProfitService(

@@ -430,7 +430,12 @@ export class ReservationsPublicService {
           : {}),
       },
       include: intakeInclude,
-      orderBy: [{ receivedAt: 'desc' }, { id: 'asc' }],
+      distinct: ['contractId'],
+      orderBy: [
+        { contractVersion: 'desc' },
+        { receivedAt: 'desc' },
+        { id: 'asc' },
+      ],
       take: 100,
       skip: (page - 1) * 100,
     });

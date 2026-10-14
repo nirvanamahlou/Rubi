@@ -348,6 +348,17 @@ export class ReservationRequestsController {
       delivery: await this.delivery.read(id),
     };
   }
+  @Get(':id/contract-versions')
+  async contractVersions(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    return {
+      data: await this.workflow.contractVersions(id, req.actor.branchIds),
+    };
+  }
   @Get(':id/workflow/history')
   @Header('Cache-Control', 'private, no-store')
   async workflowHistory(
@@ -591,7 +602,10 @@ export class ReservationRequestsController {
         sellerName: salesOwnerUserId
           ? (names.get(salesOwnerUserId) ?? null)
           : null,
-        contractPartyName: parties.get(row.snapshot.customerId) ?? null,
+        contractPartyName:
+          summaries.get(row.contractId)?.contractPartyName ??
+          parties.get(row.snapshot.customerId) ??
+          null,
       })),
     };
   }

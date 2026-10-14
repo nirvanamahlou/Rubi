@@ -5923,3 +5923,8 @@ SALES-HOTEL-ROOM-CAPACITY-1013 validation: 23 Web/form/i18n regressions, 14 API 
 ## FLIGHT-LOAD-SCROLL-1013 — PC-A — READY_FOR_CI
 
 Flight load retains its result and detail regions after the first search while changed filters invalidate stale selections. Outbound/return viewports and detail panels have stable height; selected-row styling no longer changes border dimensions. Scroll anchoring and scroll chaining are disabled within the load panels. Existing route/return/date filtering is unchanged. Fifteen focused selection, rendering and flight-load model tests pass. Scoped lint and Web typecheck pass; full production build and PostgreSQL migration/seed gate pass in CI; exact-head CI gates the authorized develop merge. No API, migration, dependency or localhost runtime change.
+
+
+### PC-A — RESERVATION-CONTRACT-EDIT-1013 — 2026-10-14
+
+Implemented Sales-owned contract correction from Reservations: counterparty/contact changes with preserved receipt attribution; actual flight capacity, hotel, sale-price and age amendments; read-only passenger list with separate identity editor; issued reservation form and prior version viewing. Outbox-backed execution snapshots and atomic inventory changes preserve existing documents/payment evidence. No migration/dependency/local-runtime change. Validation and develop PR merge in progress.

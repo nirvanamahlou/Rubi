@@ -13,7 +13,11 @@ import type {
 import { AuditOutcome, Prisma, type SalesContractStatus } from '@nora/database';
 
 import { DatabaseService } from '../database/database.service';
-import { calculateSalesBalances, passengerAgeCategory } from './sales.domain';
+import {
+  calculateSalesBalances,
+  salesFingerprint,
+  passengerAgeCategory,
+} from './sales.domain';
 
 export const salesDetailInclude = {
   passengers: {
@@ -582,6 +586,15 @@ export class SalesRepository {
     version: number,
     customerNameSnapshot: string,
     actor: SalesActorContext,
+    amendment?: {
+      categories: Readonly<Record<string, 'ADT' | 'CHD' | 'INF'>>;
+      previousStatus?: SalesContractStatus;
+      snapshot: Prisma.InputJsonValue | undefined;
+      requestId: string;
+      reason: string;
+      before: Prisma.InputJsonValue;
+      reserve: (tx: Prisma.TransactionClient) => Promise<void>;
+    },
   ): Promise<boolean> {
     return this.database.client.$transaction(
       async (tx) => {
@@ -589,9 +602,17 @@ export class SalesRepository {
           where: {
             id,
             version,
-            status: { in: ['DRAFT', 'PENDING_CONFIRMATION'] },
+            status: amendment
+              ? { not: 'CANCELLED' }
+              : { in: ['DRAFT', 'PENDING_CONFIRMATION'] },
           },
           data: {
+            ...(amendment?.snapshot
+              ? {
+                  reservationStatus: 'QUEUED' as const,
+                  status: 'SENT_TO_RESERVATIONS' as const,
+                }
+              : {}),
             customerId: input.customerId,
             payerCustomerId: input.payerCustomerId ?? input.customerId,
             customerNameSnapshot:
@@ -628,6 +649,7 @@ export class SalesRepository {
           },
         });
         if (changed.count !== 1) return false;
+        if (amendment) await amendment.reserve(tx);
         await tx.salesContractHotelSelection.deleteMany({
           where: { contractId: id },
         });
@@ -671,10 +693,9 @@ export class SalesRepository {
               agreedPrices: { create: [...(passenger.agreedPrices ?? [])] },
               displayNameSnapshot: passenger.displayNameSnapshot,
               birthDate: startOfDay(passenger.birthDate),
-              ageCategory: passengerAgeCategory(
-                passenger.birthDate,
-                input.departureDate,
-              ),
+              ageCategory:
+                amendment?.categories[passenger.customerId] ??
+                passengerAgeCategory(passenger.birthDate, input.departureDate),
             },
           });
           await tx.salesPassengerServiceAllocation.createMany({
@@ -734,6 +755,28 @@ export class SalesRepository {
             currencyCode: item.currencyCode.toUpperCase(),
           })),
         });
+        if (amendment?.snapshot && amendment.previousStatus)
+          await tx.salesContractStatusHistory.create({
+            data: {
+              contractId: id,
+              fromStatus: amendment.previousStatus,
+              toStatus: 'SENT_TO_RESERVATIONS',
+              reason: amendment.reason,
+              changedByUserId: actor.userId,
+            },
+          });
+        if (amendment?.snapshot)
+          await tx.salesReservationRequest.create({
+            data: {
+              id: amendment.requestId,
+              contractId: id,
+              contractVersion: version + 1,
+              idempotencyKey: 'amend-' + amendment.requestId,
+              requestFingerprint: salesFingerprint(amendment.snapshot),
+              snapshot: amendment.snapshot,
+              createdByUserId: actor.userId,
+            },
+          });
         await tx.salesContractAuditEvent.create({
           data: {
             contractId: id,
@@ -741,8 +784,16 @@ export class SalesRepository {
             actorBranchId: actor.branchId,
             action: 'sales.contract.updated',
             outcome: AuditOutcome.SUCCESS,
+            ...(amendment ? { beforeSnapshot: amendment.before } : {}),
             afterSnapshot: json({
               version: version + 1,
+              ...(amendment
+                ? {
+                    reason: amendment.reason,
+                    correction: 'CONTRACT',
+                    requestId: amendment.requestId,
+                  }
+                : {}),
               customerId: input.customerId,
             }),
             traceId: actor.traceId ?? null,

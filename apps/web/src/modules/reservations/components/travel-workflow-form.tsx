@@ -75,11 +75,14 @@ const labels = {
 export function TravelWorkflowForm({
   id,
   action,
+  readOnly = false,
 }: {
   id: string;
   action: string;
+  readOnly?: boolean;
 }) {
   const [settingsDirty, setSettingsDirty] = useState(false);
+  const [editingForm, setEditingForm] = useState(false);
   const [leaderEditorOpen, setLeaderEditorOpen] = useState(false);
   const [intake, setIntake] = useState<WorkflowIntake>();
   const [delivery, setDelivery] = useState<TravelDeliveryAuthorizationV1>();
@@ -120,7 +123,7 @@ export function TravelWorkflowForm({
     };
   }, [id]);
   async function run(operation: TravelWorkflowCommandV1['action']) {
-    if (!intake || busy) return;
+    if (!intake || busy || readOnly) return;
     const operationNote = workflowOperationNote(operation, note);
     if (!operationNote) {
       setError('توضیح / دلیل عملیات را وارد کنید.');
@@ -158,6 +161,24 @@ export function TravelWorkflowForm({
   }
   if (!intake) return <p role="status">{error || 'در حال دریافت اطلاعات…'}</p>;
   const state = intake.workflow;
+  if (readOnly)
+    return (
+      <TravelDocument
+        historical
+        intake={{
+          ...intake,
+          workflow: {
+            ...intake.workflow,
+            ...(intake.workflow.sentSupplierFormSettings
+              ? {
+                  supplierFormSettings:
+                    intake.workflow.sentSupplierFormSettings,
+                }
+              : {}),
+          },
+        }}
+      />
+    );
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
   return (
     <div className="grid gap-4" dir="rtl">
@@ -304,24 +325,52 @@ export function TravelWorkflowForm({
             )}
         </>
       )}
-      {action === 'رزرواسیون' && (
-        <ReservationSettings
-          key={`${id}:${state.version}`}
-          intake={intake}
-          onDirty={() => setSettingsDirty(true)}
-          showDocument
-          onSaved={(workflow) => {
-            setIntake({
-              ...intake,
-              workflow,
-              ...(workflow.appliedContractVersion
-                ? { contractEditVersion: workflow.appliedContractVersion }
-                : {}),
-            });
-            setSettingsDirty(false);
-          }}
-        />
+      {action === 'رزرواسیون' &&
+        !editingForm &&
+        (state.sentSupplierFormSettings || state.voucherIssued) && (
+          <>
+            <TravelDocument
+              intake={{
+                ...intake,
+                workflow: {
+                  ...state,
+                  ...(state.sentSupplierFormSettings
+                    ? { supplierFormSettings: state.sentSupplierFormSettings }
+                    : {}),
+                },
+              }}
+              historical
+            />
+            <Button variant="outline" onClick={() => setEditingForm(true)}>
+              ویرایش تنظیمات فرم رزواسیون
+            </Button>
+          </>
+        )}
+      {action === 'رزرواسیون' && editingForm && (
+        <Button variant="outline" onClick={() => setEditingForm(false)}>
+          بازگشت به فرم صادرشده
+        </Button>
       )}
+      {action === 'رزرواسیون' &&
+        (editingForm ||
+          (!state.sentSupplierFormSettings && !state.voucherIssued)) && (
+          <ReservationSettings
+            key={`${id}:${state.version}`}
+            intake={intake}
+            onDirty={() => setSettingsDirty(true)}
+            showDocument
+            onSaved={(workflow) => {
+              setIntake({
+                ...intake,
+                workflow,
+                ...(workflow.appliedContractVersion
+                  ? { contractEditVersion: workflow.appliedContractVersion }
+                  : {}),
+              });
+              setSettingsDirty(false);
+            }}
+          />
+        )}
       {action === 'Confirmation' &&
         !closed &&
         hasSentReservationForm(state) && (

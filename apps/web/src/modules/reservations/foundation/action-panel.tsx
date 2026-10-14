@@ -114,7 +114,7 @@ export function ContractActionContent({
     );
   }
   if (action === 'اسامی مسافران')
-    return <ReservationPassengers key={request.id} id={request.id} />;
+    return <ReservationPassengers key={request.id} id={request.id} readOnly />;
   if (action === 'مدارک' || action === 'پیوست')
     return <ReservationFiles key={request.id} id={request.id} />;
   if (action === 'دریافت‌ها')

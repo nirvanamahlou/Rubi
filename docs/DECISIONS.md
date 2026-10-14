@@ -494,3 +494,10 @@ Add a bounded native-permission Sales-owned read API; independent assistant has 
 DB access and exposes only reconciled aggregates with explicit unavailable metrics.
 No money/net/refund or CRM cohort is inferred. See Phase1 task for source readiness,
 full accepted definitions, partial coverage and separate ERP runtime publication.
+
+
+## 2026-10-14 — Sales amendments from Reservations (PC-A)
+
+User explicitly requested actual flight/hotel/sale-price amendments, independent passenger identity editing and counterparty reassignment including existing debt and receipts. Sales remains the writer of the canonical contract. The additive party command changes buyer/payer together under Sales edit plus Finance receipt-approval permission, with encrypted contact audit; payment IDs, amounts, confirmations and bank/check evidence remain unchanged. The additive full amendment command uses optimistic versioning and a Serializable transaction; Ticket's public capacity method participates in that transaction and locks both old/new offers before replacing allocations. No cross-module table writes are performed by Sales.
+
+A changed execution selection or age category creates a new durable Sales reservation snapshot in the same transaction. Previously issued intake snapshots and operational revisions are retained and viewable from contract history. Price-only amendments retain the current operational intake. Newly amended operational selections return to the Reservations queue for review/issuance; previous documents are historical, not silently rewritten. Passenger identity remains Customers-owned; contract age correction does not alter birth dates. No schema or migration changes.
