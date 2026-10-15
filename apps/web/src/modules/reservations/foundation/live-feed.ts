@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { z } from 'zod';
 import { voucherActionAvailable } from '../model/voucher-readiness';
 import type { LoginResponse } from '@nora/contracts';
@@ -92,6 +93,15 @@ const snapshotSchema = z.object({
       singleRoomCount: z.number().int().nonnegative().optional(),
       doubleRoomCount: z.number().int().nonnegative().optional(),
       extraBedCount: z.number().int().nonnegative().optional(),
+      rooms: z
+        .array(
+          z.object({
+            adults: z.number().int().positive(),
+            childAges: z.array(z.number().int().min(0).max(14)),
+          }),
+        )
+        .max(50)
+        .optional(),
       checkInDate: z.string().refine(isCivilDate),
     })
     .nullable(),
@@ -206,6 +216,9 @@ export function decodeIntake(
         throw new ReservationFeedError('ERROR');
       seen.add(row.id);
       const snapshot = row.snapshot;
+      const roomSummary = snapshot.hotelSelection?.rooms?.length
+        ? salesHotelRoomSummary(snapshot.hotelSelection.rooms)
+        : undefined;
       const knownKinds = [
         'FLIGHT',
         'TRAIN',
@@ -331,14 +344,19 @@ export function decodeIntake(
         checkIn: snapshot.hotelSelection?.checkInDate,
         checkOut: snapshot.hotelSelection?.checkOutDate,
         roomCount:
-          row.arrangement?.roomCount ?? snapshot.hotelSelection?.roomCount,
+          roomSummary?.roomCount ??
+          row.arrangement?.roomCount ??
+          snapshot.hotelSelection?.roomCount,
         singleRooms:
+          roomSummary?.singleRoomCount ??
           row.arrangement?.singleRoomCount ??
           snapshot.hotelSelection?.singleRoomCount,
         doubleRooms:
+          roomSummary?.doubleRoomCount ??
           row.arrangement?.doubleRoomCount ??
           snapshot.hotelSelection?.doubleRoomCount,
         extraBeds:
+          roomSummary?.extraBedCount ??
           row.arrangement?.extraBedCount ??
           snapshot.hotelSelection?.extraBedCount,
         hotelRequested: ['REQUESTED', 'CONFIRMED'].includes(
