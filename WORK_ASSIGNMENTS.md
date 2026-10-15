@@ -7760,7 +7760,6 @@ COMPUTER_ID=PC-A; branch codex/pc-a-purchase-close-after-save-1015 from origin/d
 
 Validation: eight focused Purchase/Supply UI regressions pass, including the actual success callback closing selection, refreshing rows, preserving filters and removing reservationId. No premature close occurs before success. Scoped Web lint/typecheck and full CI/build gate merge. Frozen source scope released for unrelated subsequent work; no operational/runtime change.
 
-
 ## ASSISTANT-DASHBOARD-PAGES-1015 — PC-C — IN_PROGRESS
 
 User authorizes moving all six assistant views to Dashboard navigation and removing the main-sidebar entry. Base origin/develop@59722114; branch codex/pc-c-assistant-dashboard-pages-1015. Reserve Dashboard registry/workspace/tests, assistant route/workspace/floating link/tests, bounded navigation/messages/icons/AppShell presentation and shared IAM migrated-route alias/tests. Preserve existing assistant.executive access through six exact page aliases; other Dashboard and data authorization unchanged. No overlapping active reservation found; previous assistant work merged/released. No schema/migration/dependency/model changes. Legacy links redirect; dashboard filters must not imply filtering assistant data. Scoped checks, head/postmerge CI and authenticated localhost verification required.
