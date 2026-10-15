@@ -2526,5 +2526,6 @@
   "مبلغ اتاق": "Room price",
   "مجوز مشاهده اطلاعات بلیط وجود ندارد.": "Ticket document viewing permission is required.",
   "این اصلاح فقط در فرم رزواسیون ثبت می‌شود و قرارداد فروش را تغییر نمی‌دهد.": "This correction is saved only in the reservation form and does not change the sales contract.",
-  "فقط در فرم رزواسیون": "only in the reservation form"
+  "فقط در فرم رزواسیون": "only in the reservation form",
+  "مبلغ‌ها از قرارداد ثبت‌شده خوانده می‌شوند. فایل PDF را مستقیم دانلود کنید. این نسخه رسید پرداخت یا فاکتور رسمی مالیاتی نیست.": "Amounts come from the saved contract. Download the PDF directly. This copy is not a payment receipt or an official tax invoice."
 }
