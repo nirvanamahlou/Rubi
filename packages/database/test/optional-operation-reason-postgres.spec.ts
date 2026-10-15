@@ -26,7 +26,7 @@ describe.skipIf(process.env.OPTIONAL_OPERATION_REASON_TEST !== '1')(
           'utf8',
         );
         const constraint = old.match(
-          /ALTER TABLE "procurement_receipt_adjustment"\s+ADD CONSTRAINT "procurement_receipt_adjustment_delta_check" CHECK \([\s\S]*?\n  \);/,
+          /ALTER TABLE "procurement_receipt_adjustment"\s+ADD CONSTRAINT "procurement_receipt_adjustment_delta_check" CHECK \([\s\S]*?\n {2}\);/,
         )![0];
         await client.query(constraint);
         await client.query(
