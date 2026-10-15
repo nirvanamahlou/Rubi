@@ -42,6 +42,7 @@ import {
   type IntegrationSection,
 } from '../model';
 import { CatalogueEditor, type CatalogueEdit } from './catalogue-editor';
+import { BrandsDashboard } from './brands-dashboard';
 
 function errorMessage(error: unknown) {
   if (error instanceof IntegrationsApiError) {
@@ -85,7 +86,8 @@ export function IntegrationWorkspaceBody({
   const [branchId, setBranchId] = useState('');
   const [data, setData] = useState<IntegrationRegistryV1 | null>(null);
   const [adapters, setAdapters] = useState<IntegrationExistingAdapterV1[]>([]);
-  const [section, setSection] = useState<IntegrationSection>('overview');
+  const [section, setSection] = useState<IntegrationSection>('brands');
+  const [managingCatalogue, setManagingCatalogue] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -170,6 +172,7 @@ export function IntegrationWorkspaceBody({
   const system = data?.systems.find((row) => row.id === selectedSystem);
   function changeSection(next: IntegrationSection) {
     setSelectedSystem(null);
+    setManagingCatalogue(false);
     setSection(next);
     setListedOnly(false);
     setBrandFilter('');
@@ -189,6 +192,7 @@ export function IntegrationWorkspaceBody({
                 loadSequence.current += 1;
                 setData(null);
                 setSelectedSystem(null);
+                setManagingCatalogue(false);
                 setBrandFilter('');
                 setBranchId(event.target.value);
               }}
@@ -353,8 +357,28 @@ export function IntegrationWorkspaceBody({
                   </Card>
                 </>
               ) : null}
-              {section === 'brands' ? (
+              {section === 'brands' && !managingCatalogue ? (
+                <BrandsDashboard
+                  key={data.branchId}
+                  data={data}
+                  onOpen={setSelectedSystem}
+                  onSection={changeSection}
+                  onManage={() => setManagingCatalogue(true)}
+                />
+              ) : null}
+              {section === 'brands' && managingCatalogue ? (
                 <>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-bold">
+                      مدیریت فهرست برندها و سامانه‌ها
+                    </h2>
+                    <Button
+                      variant="outline"
+                      onClick={() => setManagingCatalogue(false)}
+                    >
+                      بازگشت به نمای برندها
+                    </Button>
+                  </div>
                   <div className="flex flex-wrap items-end gap-3">
                     <div className="min-w-48 flex-1">
                       <FormField
