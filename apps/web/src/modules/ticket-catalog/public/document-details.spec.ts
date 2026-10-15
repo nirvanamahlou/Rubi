@@ -33,6 +33,26 @@ const get = (patch = {}) =>
     }),
   );
 describe('saved ticket document facts', () => {
+  it('uses airport IATA rather than a generated master-data code', async () => {
+    const source = vi.fn(async (path: string) =>
+      Response.json({
+        data: path.includes('document-details')
+          ? details
+          : {
+              code: 'AIR-00042',
+              name: 'Airport',
+              attributes: {
+                cityId: path.includes('/ika') ? 'teh' : 'ayt',
+                iataCode: path.includes('/ika') ? 'ika' : 'ayt',
+                englishName: 'Selected airport',
+              },
+            },
+      }),
+    );
+    const facts = await readTicketDocumentFacts([flight], source);
+    expect(facts['offer-1']?.originAirport?.code).toBe('IKA');
+    expect(facts['offer-1']?.destinationAirport?.code).toBe('AYT');
+  });
   it('reads selected airports and the correct class baggage without replacing saved route facts', async () => {
     const before = { ...flight };
     const facts = await readTicketDocumentFacts([flight], get());

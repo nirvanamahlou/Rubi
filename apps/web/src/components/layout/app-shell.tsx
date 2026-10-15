@@ -1,4 +1,5 @@
 'use client';
+import { FloatingAssistant } from '@/modules/assistant/floating-assistant';
 
 import {
   AccessProvider,
@@ -730,6 +731,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <LegalEntityProvider>
         <PageBreadcrumbProvider>
           <AppShellContent>{children}</AppShellContent>
+          <FloatingAssistant />
         </PageBreadcrumbProvider>
       </LegalEntityProvider>
     </AccessProvider>

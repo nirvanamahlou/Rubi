@@ -181,6 +181,7 @@ it('allows a versioned reservation-form correction after voucher issuance', () =
     supplierStatus: 'CONFIRMED' as const,
     voucherIssued: true,
     voucherSettings: settings(),
+    note: 'VOUCHER NOTICE',
   };
   const correction = settings();
   correction.text.checkIn = '2026-10-02';
@@ -198,6 +199,7 @@ it('allows a versioned reservation-form correction after voucher issuance', () =
     ['p'],
   );
   expect(next.version).toBe(5);
+  expect(next.note).toBe('VOUCHER NOTICE');
   expect(next.voucherIssued).toBe(true);
   expect(next.supplierFormSettings?.text.checkIn).toBe('2026-10-02');
   expect(next.voucherSettings?.numbers.singleRooms).toBe(0);

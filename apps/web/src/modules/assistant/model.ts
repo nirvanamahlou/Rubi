@@ -1,4 +1,5 @@
 import { explainPersonal } from './recommendation-policy';
+import { readAssistant } from './session-read';
 import { z } from 'zod';
 
 export const assistantViews = [
@@ -644,11 +645,7 @@ export async function loadAssistantAction(
       '?' +
       new URLSearchParams(filters).toString()
     : '/api/assistant/actions/' + action;
-  const response = await fetch(path, {
-    credentials: 'same-origin',
-    cache: 'no-store',
-    signal,
-  });
+  const response = await readAssistant(path, signal);
   if (!response.ok)
     throw new Error(
       [400, 401, 403, 429].includes(response.status)
@@ -696,11 +693,7 @@ export type AssistantLoadState =
 export async function loadExecutiveSnapshot(
   signal: AbortSignal,
 ): Promise<{ state: AssistantLoadState; snapshot: ExecutiveSnapshot | null }> {
-  const response = await fetch('/api/assistant/executive', {
-    credentials: 'same-origin',
-    cache: 'no-store',
-    signal,
-  });
+  const response = await readAssistant('/api/assistant/executive', signal);
   if (!response.ok) {
     if (response.status === 401)
       return { state: 'unauthenticated', snapshot: null };

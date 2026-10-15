@@ -101,3 +101,47 @@ it('summarizes selected flights, hotel and the actual transfer detail keys witho
     expect(html).toContain(text);
   expect(html).not.toContain('999999999999');
 });
+
+it('renders a separate foreign agreed price for each room within the contract total', () => {
+  const html = renderToStaticMarkup(
+    <ContractTotalPrices
+      state={{
+        ...emptySalesForm,
+        serviceKinds: ['HOTEL'],
+        hotel: {
+          ...emptySalesForm.hotel,
+          rooms: [
+            {
+              ordinal: 1,
+              roomTypeId: 'a',
+              roomTypeNameSnapshot: 'Double',
+              adults: 2,
+              childAges: [],
+              agreedPrice: { currencyCode: 'USD', amount: '100.25' },
+            },
+            {
+              ordinal: 2,
+              roomTypeId: 'b',
+              roomTypeNameSnapshot: 'Single',
+              adults: 1,
+              childAges: [],
+              agreedPrice: { currencyCode: 'USD', amount: '60.50' },
+            },
+          ],
+        },
+        contractPrices: [{ currencyCode: 'USD', amount: '160.75' }],
+      }}
+      currencies={[
+        { code: 'USD', name: 'Dollar', status: 'active' },
+        { code: 'IRR', name: 'Rial', status: 'active' },
+      ]}
+      onRoomPricesChange={vi.fn()}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(html).toContain('aria-label="مبلغ اتاق 1"');
+  expect(html).toContain('aria-label="مبلغ اتاق 2"');
+  expect(html).toContain('100.25');
+  expect(html).toContain('60.50');
+  expect(html).toContain('160.75');
+});

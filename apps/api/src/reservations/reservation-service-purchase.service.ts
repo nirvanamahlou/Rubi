@@ -1,3 +1,4 @@
+import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
 import { ReservationHotelSavingsService } from './reservation-hotel-savings.service';
 import { createHash, randomUUID } from 'node:crypto';
@@ -29,11 +30,28 @@ const UUID =
 export function purchasableReservationService(
   snapshot: SalesReservationRequestV1,
   serviceClientKey: string,
-) {
+): SalesReservationRequestV1['serviceSelections'][number] | undefined {
   const selected = snapshot.serviceSelections.find(
     ({ clientKey }) => clientKey === serviceClientKey,
   );
   if (selected) return selected;
+  const ticket = snapshot.ticketSelections?.find(
+    (item) => item.serviceClientKey === serviceClientKey,
+  );
+  if (ticket)
+    return {
+      clientKey: serviceClientKey,
+      kind: 'FLIGHT' as const,
+      referenceId: ticket.offerId,
+      titleSnapshot: ticket.carrierNameSnapshot,
+    };
+  if (snapshot.selectedTicketOfferIds?.includes(serviceClientKey))
+    return {
+      clientKey: serviceClientKey,
+      kind: 'FLIGHT' as const,
+      referenceId: serviceClientKey,
+      titleSnapshot: 'Flight',
+    };
   const hotel = snapshot.hotelSelection;
   if (hotel?.serviceClientKey !== serviceClientKey) return undefined;
   return {
@@ -142,7 +160,6 @@ export function hotelPassengerPurchase(
   snapshot: SalesReservationRequestV1,
   serviceClientKey: string,
   prices: NonNullable<ReservationServicePurchaseInputV1['passengerPrices']>,
-  dates?: { checkIn?: string; checkOut?: string },
 ) {
   const hotel = snapshot.hotelSelection;
   if (!hotel || hotel.serviceClientKey !== serviceClientKey)
@@ -171,10 +188,7 @@ export function hotelPassengerPurchase(
     );
   let nights: number;
   try {
-    nights = hotelNights(
-      dates?.checkIn || hotel.checkInDate,
-      dates?.checkOut || hotel.checkOutDate,
-    );
+    nights = hotelNights(hotel.checkInDate, hotel.checkOutDate);
   } catch {
     throw new BadRequestException('تاریخ ورود و خروج هتل معتبر نیست.');
   }
@@ -211,6 +225,9 @@ export class ReservationServicePurchaseService {
     @Optional()
     @Inject(ReservationHotelSavingsService)
     private readonly savings?: ReservationHotelSavingsService,
+    @Optional()
+    @Inject(TicketPublicService)
+    private readonly tickets?: TicketPublicService,
   ) {}
 
   async recordBatch(
@@ -240,7 +257,6 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException('درخواست خرید قرارداد معتبر نیست.');
     const intake = await this.database.client.reservationIntake.findUnique({
       where: { id: intakeId },
-      include: { workflowRevisions: { orderBy: { version: 'desc' }, take: 1 } },
     });
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
@@ -283,17 +299,6 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
       );
-    const state = intake.workflowRevisions[0]?.state as
-      | { sentSupplierFormSettings?: { text?: Record<string, string> } }
-      | undefined;
-    const dates = {
-      ...(state?.sentSupplierFormSettings?.text?.checkIn
-        ? { checkIn: state.sentSupplierFormSettings.text.checkIn }
-        : {}),
-      ...(state?.sentSupplierFormSettings?.text?.checkOut
-        ? { checkOut: state.sentSupplierFormSettings.text.checkOut }
-        : {}),
-    };
     const prepared = await Promise.all(
       rows.map(async (row) => {
         const service = purchasableReservationService(
@@ -365,7 +370,6 @@ export class ReservationServicePurchaseService {
             snapshot,
             row.serviceClientKey,
             row.passengerPrices ?? [],
-            dates,
           );
           amount = pricing.amount;
           passengerPrices = pricing.passengerPrices as Prisma.InputJsonValue;
@@ -538,7 +542,6 @@ export class ReservationServicePurchaseService {
       );
     const intake = await this.database.client.reservationIntake.findUnique({
       where: { id: intakeId },
-      include: { workflowRevisions: { orderBy: { version: 'desc' }, take: 1 } },
     });
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
@@ -551,7 +554,21 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'خدمت انتخاب‌شده متعلق به این قرارداد نیست.',
       );
-    if (!['HOTEL', 'TRANSFER', 'INSURANCE'].includes(service.kind))
+    if (service.kind === 'FLIGHT') {
+      const ticket = snapshot.ticketSelections?.find(
+        (item) => item.serviceClientKey === service.clientKey,
+      );
+      const offerId = ticket?.offerId ?? service.referenceId;
+      const floating = offerId
+        ? (await this.tickets?.documentSupply(offerId, actor.branchIds)) ===
+          'FLOATING'
+        : service.metadata?.contractFlightVersion === 1;
+      if (!floating)
+        throw new BadRequestException(
+          'هزینه ظرفیت شرکت فقط یک‌بار برای کل پرواز ثبت می‌شود.',
+        );
+    }
+    if (!['HOTEL', 'TRANSFER', 'INSURANCE', 'FLIGHT'].includes(service.kind))
       throw new BadRequestException(
         'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
       );
@@ -559,27 +576,12 @@ export class ReservationServicePurchaseService {
       this.directory.brokerReference(input.supplierOrganizationId),
       this.directory.currencyReference(input.currencyCode),
     ]);
-    const state = intake.workflowRevisions[0]?.state as
-      | { sentSupplierFormSettings?: { text?: Record<string, string> } }
-      | undefined;
     const hotelPricing =
       service.kind === 'HOTEL'
         ? hotelPassengerPurchase(
             snapshot,
             service.clientKey,
             input.passengerPrices ?? [],
-            {
-              ...(state?.sentSupplierFormSettings?.text?.checkIn
-                ? {
-                    checkIn: state.sentSupplierFormSettings.text.checkIn,
-                  }
-                : {}),
-              ...(state?.sentSupplierFormSettings?.text?.checkOut
-                ? {
-                    checkOut: state.sentSupplierFormSettings.text.checkOut,
-                  }
-                : {}),
-            },
           )
         : null;
     if (

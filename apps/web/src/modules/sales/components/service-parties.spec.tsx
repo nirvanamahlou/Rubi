@@ -19,6 +19,17 @@ vi.mock('@/components/ui/form-controls', () => ({
     return <input value={String(props.value ?? '')} readOnly />;
   },
 }));
+vi.mock('./passenger-age-field', () => ({
+  PassengerAgeField: ({ label }: { label: string }) => (
+    <span
+      role="combobox"
+      aria-expanded={false}
+      aria-controls="room-age-options"
+    >
+      {label}
+    </span>
+  ),
+}));
 vi.mock('./searchable-reference', () => ({
   SearchableReference: (props: {
     label: string;
@@ -34,6 +45,7 @@ beforeEach(() => {
 });
 const state: SalesFormState = {
   ...emptySalesForm,
+  passengerComposition: { adults: 4, children: 2, infants: 0 },
   serviceKinds: ['FLIGHT', 'HOTEL', 'VISA'],
   visaComposition: { adults: 2, children: 1 },
   visaChildAges: [6],
@@ -71,18 +83,23 @@ it('shows independent room cards, visa child ages and compact responsive columns
   expect(html).toContain('اتاق 1');
   expect(html).toContain('اتاق 2');
   expect(html).toContain('lg:grid-cols-2');
-  expect(fixture.inputs.map((p) => p.value)).toEqual([
-    2, 1, 6, 2, 2, 1, 5, 1, 0,
-  ]);
+  expect(fixture.inputs.map((p) => p.value)).toEqual([2, 1, 6, 2, 2, 1, 1, 0]);
 });
 it('changing a room affects that room without changing the flight party', () => {
   const patch = vi.fn();
   renderToStaticMarkup(<ServiceParties {...props} patch={patch} />);
-  fixture.inputs[7]!.onChange({ target: { value: '2' } });
+  fixture.inputs[6]!.onChange({ target: { value: '2' } });
   const next = patch.mock.calls[0]![0];
   expect(next.passengerComposition).toBeUndefined();
   expect(next.hotel.rooms[0]).toEqual(state.hotel.rooms![0]);
   expect(next.hotel.rooms[1].adults).toBe(2);
+  expect(next.hotel).toMatchObject({
+    roomCount: 2,
+    singleRoomCount: 0,
+    doubleRoomCount: 2,
+    extraBedCount: 1,
+    occupancy: 5,
+  });
 });
 it('changing visa quantities clears stale applicants and creates each child age field', () => {
   const patch = vi.fn();
@@ -101,4 +118,27 @@ it('changing hotel removes the previous room products', () => {
   renderToStaticMarkup(<ServiceParties {...props} patch={patch} />);
   fixture.selects.find((s) => s.label === 'هتل')!.onChange('other');
   expect(patch.mock.calls[0]![0].hotel.rooms).toEqual([]);
+});
+
+it('caps each room at the remaining adults and children in the flight party', () => {
+  const patch = vi.fn();
+  const next = {
+    ...state,
+    visaComposition: { adults: 6, children: 2 },
+    passengerComposition: { adults: 6, children: 2, infants: 0 },
+    hotel: {
+      ...state.hotel,
+      rooms: [
+        { ...state.hotel.rooms![0]!, adults: 4, childAges: [5] },
+        { ...state.hotel.rooms![1]!, adults: 2, childAges: [7] },
+      ],
+    },
+  };
+  renderToStaticMarkup(
+    <ServiceParties {...props} state={next} patch={patch} />,
+  );
+  fixture.inputs[6]!.onChange({ target: { value: '9' } });
+  expect(patch.mock.calls[0]![0].hotel.rooms[1].adults).toBe(2);
+  fixture.inputs[7]!.onChange({ target: { value: '9' } });
+  expect(patch.mock.calls[1]![0].hotel.rooms[1].childAges).toEqual([7]);
 });

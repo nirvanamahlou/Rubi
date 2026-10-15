@@ -8,7 +8,8 @@ import {
   readTicketDocumentFacts,
   type TicketDocumentFacts,
 } from '@/modules/ticket-catalog/public/document-details';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { TicketFlightNumberEditor } from './ticket-flight-number-editor';
 import { createPortal, flushSync } from 'react-dom';
 import { useTravelLogo } from './travel-document';
 import type { ReservationIntakeV1, TravelBrandingV1 } from '@nora/contracts';
@@ -42,6 +43,20 @@ export function ReservationTickets({
   onClose: () => void;
 }) {
   const { logo, error: logoError } = useTravelLogo(branding);
+  const [flightNumbers, setFlightNumbers] = useState<Record<string, string>>(
+    {},
+  );
+  const [flightNumbersDirty, setFlightNumbersDirty] = useState(true);
+  const numberFlights = useMemo(
+    () => [
+      ...new Map(
+        reservationTickets(request.snapshot)
+          .flatMap((t) => t.offers)
+          .map((f) => [f.id, f]),
+      ).values(),
+    ],
+    [request.snapshot],
+  );
   const [documents, setDocuments] = useState<
     readonly ReservationTicketDocumentV1[]
   >(request.ticketDocuments ?? []);
@@ -90,27 +105,29 @@ export function ReservationTickets({
     null,
   );
   const [passengersReady, setPassengersReady] = useState('');
-  const tickets = reservationTickets(request.snapshot, passengerNames).map(
-    (ticket) => ({
-      ...ticket,
-      ...(documents.find((doc) => doc.customerId === ticket.passengerId)
-        ? {
-            eTicketNumber: documents.find(
-              (doc) => doc.customerId === ticket.passengerId,
-            )!.number,
-            issuedAt: documents.find(
-              (doc) => doc.customerId === ticket.passengerId,
-            )!.issuedAt,
-          }
-        : {}),
-      gender: passengerGender[ticket.passengerId] ?? null,
-      airlines: airlineMarks,
-      offers: ticket.offers.map((offer) => ({
-        ...offer,
-        ...(offer.offerId ? ticketFacts[offer.offerId] : {}),
-      })),
-    }),
-  );
+  const tickets = reservationTickets(
+    request.snapshot,
+    passengerNames,
+    flightNumbers,
+  ).map((ticket) => ({
+    ...ticket,
+    ...(documents.find((doc) => doc.customerId === ticket.passengerId)
+      ? {
+          eTicketNumber: documents.find(
+            (doc) => doc.customerId === ticket.passengerId,
+          )!.number,
+          issuedAt: documents.find(
+            (doc) => doc.customerId === ticket.passengerId,
+          )!.issuedAt,
+        }
+      : {}),
+    gender: passengerGender[ticket.passengerId] ?? null,
+    airlines: airlineMarks,
+    offers: ticket.offers.map((offer) => ({
+      ...offer,
+      ...(offer.offerId ? ticketFacts[offer.offerId] : {}),
+    })),
+  }));
   useEffect(() => {
     let active = true;
     const base = getPublicApiBaseUrl();
@@ -120,7 +137,7 @@ export function ReservationTickets({
       });
       return;
     }
-    void readTicketAirlineMarks(
+    const marksReady = readTicketAirlineMarks(
       reservationTickets(request.snapshot).flatMap((ticket) =>
         ticket.offers.map((offer) => offer.carrierName),
       ),
@@ -133,7 +150,8 @@ export function ReservationTickets({
       reservationTickets(request.snapshot).flatMap((ticket) => ticket.offers),
       (path) =>
         fetch(base + path, { credentials: 'include', cache: 'no-store' }),
-    ).then((facts) => {
+    ).then(async (facts) => {
+      await marksReady;
       if (active) {
         setTicketFacts(facts);
         void Promise.resolve().then(() => {
@@ -263,6 +281,7 @@ export function ReservationTickets({
     }
   }
   async function print(all: boolean) {
+    if (flightNumbersDirty) return;
     try {
       await ensureNumbers(all);
     } catch (error) {
@@ -295,6 +314,7 @@ export function ReservationTickets({
     }
   }
   async function download(all: boolean) {
+    if (flightNumbersDirty) return;
     const passengerId = all ? '' : ticket?.passengerId;
     if (downloading || (!all && !passengerId)) return;
     setDownloading(true);
@@ -358,6 +378,13 @@ export function ReservationTickets({
           </DialogDescription>
           {tickets.length ? (
             <>
+              <TicketFlightNumberEditor
+                requestId={request.id}
+                {...(salesContractId ? { salesContractId } : {})}
+                flights={numberFlights}
+                onSaved={setFlightNumbers}
+                onDirty={setFlightNumbersDirty}
+              />
               <div
                 className="flex flex-wrap gap-2"
                 role="group"
@@ -433,6 +460,7 @@ export function ReservationTickets({
                 <Button
                   disabled={
                     !ready ||
+                    flightNumbersDirty ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     downloading ||
@@ -445,6 +473,7 @@ export function ReservationTickets({
                 <Button
                   disabled={
                     !ready ||
+                    flightNumbersDirty ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     downloading
@@ -457,6 +486,7 @@ export function ReservationTickets({
                   variant="outline"
                   disabled={
                     !ready ||
+                    flightNumbersDirty ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     printing ||
@@ -470,6 +500,7 @@ export function ReservationTickets({
                   variant="outline"
                   disabled={
                     !ready ||
+                    flightNumbersDirty ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     printing

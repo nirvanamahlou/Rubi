@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { loadContractPrint } from '@/modules/sales/components/contract-output';
 import styles from './contract-pdf-preview.module.css';
 
@@ -46,9 +46,7 @@ function ContractPrintLoader({
   contractNumber: string;
   onRetry: () => void;
 }) {
-  const frame = useRef<HTMLIFrameElement>(null);
   const [html, setHtml] = useState('');
-  const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState(false);
   async function download() {
@@ -88,7 +86,6 @@ function ContractPrintLoader({
     void loadContractPrint(contractId)
       .then((result) => {
         if (active) {
-          setReady(false);
           setHtml(result.html);
         }
       })
@@ -104,13 +101,6 @@ function ContractPrintLoader({
       active = false;
     };
   }, [contractId]);
-
-  const print = () => {
-    const win = frame.current?.contentWindow;
-    if (!win) return;
-    win.focus();
-    win.print();
-  };
 
   return (
     <div className={styles.preview}>
@@ -138,21 +128,11 @@ function ContractPrintLoader({
       {html && (
         <>
           <iframe
-            ref={frame}
             title={`قرارداد ${contractNumber}`}
             srcDoc={html}
             sandbox="allow-same-origin allow-modals"
-            onLoad={() => setReady(true)}
             className={styles.frame}
           />
-          <button
-            type="button"
-            disabled={!ready}
-            onClick={print}
-            className={styles.download}
-          >
-            چاپ / ذخیره PDF
-          </button>
         </>
       )}
     </div>

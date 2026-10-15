@@ -84,11 +84,13 @@ export function defaultVoucherSettings(
         saved.text.contractPartyName ?? text.contractPartyName ?? '',
       leaderLanguage: saved.text.leaderLanguage || 'Persian',
     },
-    numbers: Object.fromEntries(
-      (Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]).map(
-        (key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]],
-      ),
-    ) as VoucherSettingsV1['numbers'],
+    numbers: h?.rooms?.length
+      ? defaults.numbers
+      : (Object.fromEntries(
+          (
+            Object.keys(defaults.numbers) as (keyof typeof defaults.numbers)[]
+          ).map((key) => [key, saved.numbers?.[key] ?? defaults.numbers[key]]),
+        ) as VoucherSettingsV1['numbers']),
     flags: Object.fromEntries(
       (Object.keys(defaults.flags) as (keyof typeof defaults.flags)[]).map(
         (key) => [key, saved.flags?.[key] ?? defaults.flags[key]],
@@ -192,11 +194,12 @@ export function voucherFormData(
     roomType: v.text.roomType || '-',
     checkIn: voucherDate(v.text.checkIn),
     checkOut: voucherDate(v.text.checkOut),
-    rooms:
-      v.numbers.singleRooms + v.numbers.doubleRooms + v.numbers.customRooms,
-    double: v.numbers.doubleRooms,
-    single: v.numbers.singleRooms,
-    extra: v.numbers.extraBeds,
+    rooms: d.roomBreakdown.length
+      ? d.rooms
+      : v.numbers.singleRooms + v.numbers.doubleRooms + v.numbers.customRooms,
+    double: d.roomBreakdown.length ? d.double : v.numbers.doubleRooms,
+    single: d.roomBreakdown.length ? d.single : v.numbers.singleRooms,
+    extra: d.roomBreakdown.length ? d.extra : v.numbers.extraBeds,
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: v.flags.tourLeader
       ? [v.text.leaderName, v.text.leaderPhone].filter(Boolean).join(' / ') ||
@@ -253,6 +256,9 @@ export function supplierFormData(
           },
           refs,
         ),
+        notes: [settings.text.stayNotes, settings.text.remarks]
+          .filter(Boolean)
+          .join('\n'),
         supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }

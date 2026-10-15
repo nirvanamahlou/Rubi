@@ -1,6 +1,14 @@
 import type { TicketCatalogPurchaseV1 } from './index';
 export interface TicketPurchaseInboxItemV1 {
   request: TicketCatalogPurchaseV1;
+  capacityCost?: {
+    purchasedSeats: number;
+    allocatedSeats: number;
+    unsoldSeats: number;
+    amount: string;
+    currencyCode: string;
+    status: 'REMAINING_CAPACITY' | 'FINAL_LOSS';
+  } | null;
   cost: {
     /** Timestamp of the latest recorded cost revision; absent in legacy responses. */
     createdAt?: string | null;

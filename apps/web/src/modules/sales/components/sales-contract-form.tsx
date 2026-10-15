@@ -1,4 +1,8 @@
 'use client';
+import {
+  salesRoomPartyError,
+  withRoomPriceTotals,
+} from '../model/sales-room-prices';
 import { ServiceParties } from './service-parties';
 
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
@@ -308,6 +312,13 @@ export function SalesContractForm() {
   ) =>
     setState((current) => {
       const patch = typeof update === 'function' ? update(current) : update;
+      if (
+        patch.hotel?.rooms &&
+        current.priceEntryMode === 'CONTRACT_TOTAL' &&
+        (current.hotel.rooms?.some((r) => r.agreedPrice) ||
+          patch.hotel.rooms.some((r) => r.agreedPrice))
+      )
+        patch.contractPrices = withRoomPriceTotals(current, patch.hotel.rooms);
       const changedRoute = [
         'originId',
         'originCountryId',
@@ -715,6 +726,7 @@ export function SalesContractForm() {
         state.originId !== state.destinationId &&
         state.serviceKinds.length &&
         passengerCounts.total > 0 &&
+        !salesRoomPartyError(state) &&
         (!state.serviceKinds.includes('VISA') ||
           Boolean(
             state.visaComposition &&
@@ -2053,6 +2065,9 @@ export function SalesContractForm() {
               <ContractTotalPrices
                 state={state}
                 currencies={references.currencies}
+                onRoomPricesChange={(rooms) =>
+                  patchState({ hotel: { ...state.hotel, rooms } })
+                }
                 onChange={(contractPrices) => patchState({ contractPrices })}
               />
               <InsuranceExtraSummary state={state} />
@@ -2169,6 +2184,9 @@ export function SalesContractForm() {
             <ContractTotalPrices
               state={state}
               currencies={references.currencies}
+              onRoomPricesChange={(rooms) =>
+                patchState({ hotel: { ...state.hotel, rooms } })
+              }
               onChange={(contractPrices) => patchState({ contractPrices })}
             />
             {state.serviceKinds.includes('FLIGHT') ? (

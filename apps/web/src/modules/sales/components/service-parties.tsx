@@ -1,4 +1,10 @@
 'use client';
+import { salesHotelRoomSummary } from '@nora/contracts';
+import { PassengerAgeField } from './passenger-age-field';
+import {
+  salesRoomPartyError,
+  roomPartyUsage,
+} from '../model/sales-room-prices';
 import { SearchableReference } from './searchable-reference';
 import { Input } from '@/components/ui/form-controls';
 import type { MasterDataRecord, HotelRoomRateV1 } from '@nora/contracts';
@@ -19,6 +25,23 @@ export function ServiceParties({
   rates: readonly HotelRoomRateV1[];
 }) {
   const rooms = state.hotel.rooms ?? [];
+  const limited = state.serviceKinds.includes('FLIGHT');
+  const party = salesPassengerCounts(state);
+  const partyError = salesRoomPartyError(state);
+  const used = roomPartyUsage(rooms);
+  const maxRooms = limited
+    ? Math.min(
+        50,
+        Math.max(
+          1,
+          rooms.length +
+            Math.max(
+              0,
+              Math.min(party.adults - used.adults, party.total - used.total),
+            ),
+        ),
+      )
+    : 50;
   const changeRooms = (next: typeof rooms) => {
     const ages = next.flatMap((r) => r.childAges);
     const composition = {
@@ -32,12 +55,8 @@ export function ServiceParties({
       hotel: {
         ...state.hotel,
         rooms: next,
-        roomCount: next.length,
+        ...salesHotelRoomSummary(next),
         roomTypeId: next[0]?.roomTypeId ?? '',
-        singleRoomCount: next.filter((r) => r.adults === 1).length,
-        doubleRoomCount: next.filter((r) => r.adults >= 2).length,
-        extraBedCount: 0,
-        occupancy: next.reduce((n, r) => n + r.adults + r.childAges.length, 0),
       },
       ...(!state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'TRANSFER')
         ? {
@@ -187,7 +206,7 @@ export function ServiceParties({
             <Input
               type="number"
               min={1}
-              max={50}
+              max={maxRooms}
               value={rooms.length || ''}
               disabled={!state.hotel.hotelId}
               onChange={(e) =>
@@ -196,7 +215,7 @@ export function ServiceParties({
                     {
                       length: Math.max(
                         1,
-                        Math.min(50, Number(e.target.value) || 1),
+                        Math.min(maxRooms, Number(e.target.value) || 1),
                       ),
                     },
                     (_, i) =>
@@ -212,12 +231,40 @@ export function ServiceParties({
               }
             />
           </label>
+          {partyError ? (
+            <p role="alert" className="text-sm text-destructive">
+              {partyError}
+            </p>
+          ) : null}
           <div className="grid gap-3 lg:grid-cols-2">
             {rooms.map((r, i) => {
               const update = (value: Partial<typeof r>) =>
                 changeRooms(
                   rooms.map((v, j) => (j === i ? { ...v, ...value } : v)),
                 );
+              const others = rooms.filter((_, j) => j !== i);
+              const othersUsed = roomPartyUsage(others);
+              const maxAdults = limited
+                ? Math.max(
+                    1,
+                    Math.min(
+                      20,
+                      Math.min(
+                        party.total - othersUsed.total - r.childAges.length,
+                        party.adults -
+                          othersUsed.adults -
+                          r.childAges.filter((a) => a !== null && a >= 12)
+                            .length,
+                      ),
+                    ),
+                  )
+                : 20;
+              const maxChildren = limited
+                ? Math.max(
+                    0,
+                    Math.min(20, party.total - othersUsed.total - r.adults),
+                  )
+                : 20;
               const rate = rates.find((v) => v.roomTypeId === r.roomTypeId);
               return (
                 <div
@@ -259,13 +306,13 @@ export function ServiceParties({
                       <Input
                         type="number"
                         min={1}
-                        max={20}
+                        max={maxAdults}
                         value={r.adults}
                         onChange={(e) =>
                           update({
                             adults: Math.max(
                               1,
-                              Math.min(20, Number(e.target.value) || 1),
+                              Math.min(maxAdults, Number(e.target.value) || 1),
                             ),
                           })
                         }
@@ -276,7 +323,7 @@ export function ServiceParties({
                       <Input
                         type="number"
                         min={0}
-                        max={20}
+                        max={maxChildren}
                         value={r.childAges.length}
                         onChange={(e) =>
                           update({
@@ -284,7 +331,10 @@ export function ServiceParties({
                               {
                                 length: Math.max(
                                   0,
-                                  Math.min(20, Number(e.target.value) || 0),
+                                  Math.min(
+                                    maxChildren,
+                                    Number(e.target.value) || 0,
+                                  ),
                                 ),
                               },
                               (_, j) => r.childAges[j] ?? null,
@@ -295,26 +345,44 @@ export function ServiceParties({
                     </label>
                   </div>
                   {r.childAges.map((age, j) => (
-                    <label key={j}>
-                      سن کودک {j + 1}
-                      <Input
-                        type="number"
-                        min={0}
-                        max={14}
-                        value={age ?? ''}
-                        onChange={(e) =>
-                          update({
-                            childAges: r.childAges.map((v, k) =>
-                              k === j
-                                ? e.target.value === ''
-                                  ? null
-                                  : Number(e.target.value)
-                                : v,
-                            ),
-                          })
-                        }
-                      />
-                    </label>
+                    <PassengerAgeField
+                      key={j}
+                      label={`سن کودک ${j + 1}`}
+                      value={age}
+                      includeInfants
+                      allowedAges={
+                        limited
+                          ? Array.from({ length: 15 }, (_, age) => age).filter(
+                              (age) => {
+                                const usage = roomPartyUsage(
+                                  rooms.map((room, ri) =>
+                                    ri === i
+                                      ? {
+                                          ...room,
+                                          childAges: room.childAges.filter(
+                                            (_, ci) => ci !== j,
+                                          ),
+                                        }
+                                      : room,
+                                  ),
+                                );
+                                return age >= 12
+                                  ? usage.adults < party.adults
+                                  : age < 2
+                                    ? usage.infants < party.infants
+                                    : usage.children < party.children;
+                              },
+                            )
+                          : undefined
+                      }
+                      onChange={(age) =>
+                        update({
+                          childAges: r.childAges.map((v, k) =>
+                            k === j ? age : v,
+                          ),
+                        })
+                      }
+                    />
                   ))}
                 </div>
               );

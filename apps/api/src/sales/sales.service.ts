@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
@@ -322,6 +323,14 @@ export function presentSalesContract(
           ...(row.hotelSelection.extraBedCount == null
             ? {}
             : { extraBedCount: row.hotelSelection.extraBedCount }),
+          ...(row.hotelSelection.rooms?.length
+            ? salesHotelRoomSummary(
+                row.hotelSelection.rooms.map((room) => ({
+                  adults: room.adults,
+                  childAges: room.childAges as number[],
+                })),
+              )
+            : {}),
           roomTypeId: row.hotelSelection.roomTypeId,
           ...(row.hotelSelection.rooms?.length
             ? {
@@ -331,6 +340,14 @@ export function presentSalesContract(
                   roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                   adults: room.adults,
                   childAges: room.childAges as number[],
+                  ...(room.agreedPrice
+                    ? {
+                        agreedPrice: room.agreedPrice as {
+                          amount: string;
+                          currencyCode: string;
+                        },
+                      }
+                    : {}),
                 })),
               }
             : {}),
@@ -436,10 +453,8 @@ export class SalesService {
         checkIn: hotel.checkInDate,
         checkOut: hotel.checkOutDate,
       });
-      if (!rate)
-        throw new BadRequestException(
-          'برای یکی از انواع اتاق، نرخ معتبر در بازه انتخاب‌شده وجود ندارد.',
-        );
+      // Match legacy selections: missing tariffs do not prohibit agreed prices.
+      if (!rate) continue;
       if (rate.occupancyRates) {
         if (
           !quoteHotelOccupancy(rate.occupancyRates, {

@@ -40,7 +40,7 @@ vi.mock('react', async (original) => ({
 }));
 vi.mock('./travel-workflow-form', () => ({ travelRequest: harness.request }));
 vi.mock('../model/voucher-settings', () => ({
-  defaultVoucherSettings: () => ({
+  defaultVoucherSettings: vi.fn(() => ({
     brokerId: 'broker-a',
     text: {
       broker: 'A',
@@ -49,7 +49,7 @@ vi.mock('../model/voucher-settings', () => ({
       leaderPhone: '',
     },
     flags: { tourLeader: false },
-  }),
+  })),
 }));
 const intake = {
   id: 'intake',
@@ -247,4 +247,36 @@ it('uses the sent form broker and locks its selector', () => {
   expect(
     elements(tree).find((node) => node.type === SearchCombobox)?.props.disabled,
   ).toBe(true);
+});
+
+it('initializes voucher content without copying supplier-form settings while retaining the confirmed broker', async () => {
+  const { defaultVoucherSettings } = await import('../model/voucher-settings');
+  vi.mocked(defaultVoucherSettings).mockClear();
+  const form = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      supplierFormSettings: {
+        text: {
+          hotel: 'FORM ONLY',
+          checkIn: '2026-10-10',
+          remarks: 'PRIVATE FORM NOTE',
+        },
+        numbers: { singleRooms: 9 },
+        passengers: [],
+      },
+      sentSupplierFormSettings: { brokerId: 'broker-b', text: { broker: 'B' } },
+    },
+  } as unknown as ReservationFormIntake;
+  VoucherLeaderEditor({ intake: form, onDirty: vi.fn(), onSaved: vi.fn() });
+  expect(defaultVoucherSettings).toHaveBeenCalledWith(form, {});
+  expect(
+    vi.mocked(defaultVoucherSettings).mock.calls[0]![0].workflow
+      .voucherSettings,
+  ).toBeUndefined();
+  expect(harness.states[0]).toMatchObject({
+    brokerId: 'broker-b',
+    text: { broker: 'B' },
+  });
+  expect(form.workflow.voucherSettings).toBeUndefined();
 });
