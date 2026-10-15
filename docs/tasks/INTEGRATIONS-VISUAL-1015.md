@@ -88,3 +88,14 @@ project policy; this work does not publish or merge automatically.
 Final full API typecheck passes after regenerating local declarations. Database
 package build also passes. Runtime baseline remains unchanged. Source edit locks
 are released with this handoff; future work requires a new reservation.
+
+## Explicit publication follow-up — 2026-10-15
+
+The user now authorizes committing/pushing this change, running hosted CI,
+creating a PR with base develop, and merging only after all checks pass. This is
+an explicit task-specific override of the earlier PC-D-Integration destination.
+Use the previously selected ehsandni account (60431015). Current develop was
+merged into the candidate; two status-document conflicts were resolved by
+retaining both independent histories. No runtime rollout or database operation
+is requested by this publication follow-up. Full CI must validate the synchronized
+candidate, including changes already owned and merged by the other computers.

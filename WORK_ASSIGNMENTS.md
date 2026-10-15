@@ -1,4 +1,6 @@
-## INTEGRATIONS-VISUAL-1015 — PC-D — LOCAL_RUNNING
+## INTEGRATIONS-VISUAL-1015 — PC-D — PUBLICATION_IN_PROGRESS
+
+Publication follow-up: the user explicitly authorizes Commit, Push, hosted CI, PR to develop and merge after all checks pass. This latest request supersedes the previous PC-D-Integration-only publication scope for this task. Acting GitHub account is ehsandni (60431015). Re-reserve only own task/status entries, candidate synchronization and bounded fixes found by CI/review. Preserve current local Docker runtime, all other owners and migration/dependency locks. Latest develop synchronized with independent task entries retained.
 
 Delivery: mockup-based dashboard, configurable four-system catalogue, four accessible metric dialogs, Jalali periods, comparison/activity/workflow areas and existing nine-section centre are running on local3100/4192. Existing public IAM actor hook is packaged correctly; authenticated localhost and127.0.0.1 browser checks pass.189 tests, scoped lint, Web/API typecheck, Web production build, database declaration build and runtime build pass. Four initial brands/systems initialized through the public audited command; no business-data seed or migration in this redesign. Actual external business metrics/sync/SSO remain unconnected. Bounded source locks released; no GitHub publication or merge. See docs/tasks/INTEGRATIONS-VISUAL-1015.md.
 
