@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { Client } from 'pg';
 import { describe, expect, it } from 'vitest';
 describe.skipIf(process.env.OPTIONAL_OPERATION_REASON_TEST !== '1')(
@@ -19,9 +20,9 @@ describe.skipIf(process.env.OPTIONAL_OPERATION_REASON_TEST !== '1')(
           'CREATE TABLE actors(id integer PRIMARY KEY); INSERT INTO actors VALUES (1); CREATE TABLE procurement_receipt_adjustment(id serial PRIMARY KEY, "actorUserId" integer NOT NULL REFERENCES actors(id), "receivedDelta" numeric NOT NULL, "acceptedDelta" numeric NOT NULL, "rejectedDelta" numeric NOT NULL, reason text NOT NULL)',
         );
         const old = readFileSync(
-          new URL(
+          resolve(
+            __dirname,
             '../prisma/migrations/20260913120000_procurement_receipt_adjustment_export/migration.sql',
-            import.meta.url,
           ),
           'utf8',
         );
@@ -40,9 +41,9 @@ describe.skipIf(process.env.OPTIONAL_OPERATION_REASON_TEST !== '1')(
         await client.query(insert, [1, 1, 0, 0, 'Recorded original reason']);
         await client.query(
           readFileSync(
-            new URL(
+            resolve(
+              __dirname,
               '../prisma/migrations/20261015123000_optional_operation_reason/migration.sql',
-              import.meta.url,
             ),
             'utf8',
           ),
