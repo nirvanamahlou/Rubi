@@ -8,8 +8,8 @@ import {
   readTicketDocumentFacts,
   type TicketDocumentFacts,
 } from '@/modules/ticket-catalog/public/document-details';
-import { useEffect, useMemo, useState } from 'react';
-import { TicketFlightNumberEditor } from './ticket-flight-number-editor';
+import { useEffect, useState } from 'react';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { createPortal, flushSync } from 'react-dom';
 import { useTravelLogo } from './travel-document';
 import type { ReservationIntakeV1, TravelBrandingV1 } from '@nora/contracts';
@@ -43,20 +43,9 @@ export function ReservationTickets({
   onClose: () => void;
 }) {
   const { logo, error: logoError } = useTravelLogo(branding);
-  const [flightNumbers, setFlightNumbers] = useState<Record<string, string>>(
-    {},
-  );
-  const [flightNumbersDirty, setFlightNumbersDirty] = useState(true);
-  const numberFlights = useMemo(
-    () => [
-      ...new Map(
-        reservationTickets(request.snapshot)
-          .flatMap((t) => t.offers)
-          .map((f) => [f.id, f]),
-      ).values(),
-    ],
-    [request.snapshot],
-  );
+  const canEdit =
+    useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
+  const flightNumbers = request.workflow.ticketFlightNumbers ?? {};
   const [documents, setDocuments] = useState<
     readonly ReservationTicketDocumentV1[]
   >(request.ticketDocuments ?? []);
@@ -242,29 +231,31 @@ export function ReservationTickets({
     const targets = all ? tickets : ticket ? [ticket] : [];
     const saved = [...documents];
     for (const target of targets) {
-      if (saved.some((doc) => doc.customerId === target.passengerId)) continue;
-      const choice = numberChoices.find(
-        (row) => row.customerId === target.passengerId,
+      const existing = saved.find(
+        (doc) => doc.customerId === target.passengerId,
       );
-      if (!choice)
-        throw new Error('اطلاعات شماره‌گذاری آماده نیست؛ دوباره تلاش کنید.');
-      if (
-        !choice.automatic &&
-        !/^[0-9]{6}$/.test(manualNumbers[target.passengerId] ?? '')
-      )
-        throw new Error(
-          `شماره شش‌رقمی بلیط ${target.passengerName} را وارد کنید.`,
-        );
+      const manual = manualNumbers[target.passengerId];
+      if (existing && (manual === undefined || manual === existing.number))
+        continue;
       const { data } = await travelRequest<{
         data: ReservationTicketDocumentV1;
       }>(`reservations/requests/${request.id}/ticket-documents`, {
         customerId: target.passengerId,
-        ...(!choice.automatic
-          ? { number: manualNumbers[target.passengerId] }
-          : {}),
+        ...(manual ? { number: manual } : {}),
+        ...(existing ? { expectedNumber: existing.number } : {}),
       });
-      saved.push(data);
-      flushSync(() => setDocuments([...saved]));
+      const previous = saved.findIndex(
+        (doc) => doc.customerId === data.customerId,
+      );
+      if (previous < 0) saved.push(data);
+      else saved[previous] = data;
+      flushSync(() => {
+        setDocuments([...saved]);
+        setManualNumbers((previous) => ({
+          ...previous,
+          [data.customerId]: data.number,
+        }));
+      });
     }
   }
   async function registerNumber() {
@@ -281,7 +272,6 @@ export function ReservationTickets({
     }
   }
   async function print(all: boolean) {
-    if (flightNumbersDirty) return;
     try {
       await ensureNumbers(all);
     } catch (error) {
@@ -314,7 +304,6 @@ export function ReservationTickets({
     }
   }
   async function download(all: boolean) {
-    if (flightNumbersDirty) return;
     const passengerId = all ? '' : ticket?.passengerId;
     if (downloading || (!all && !passengerId)) return;
     setDownloading(true);
@@ -378,13 +367,6 @@ export function ReservationTickets({
           </DialogDescription>
           {tickets.length ? (
             <>
-              <TicketFlightNumberEditor
-                requestId={request.id}
-                {...(salesContractId ? { salesContractId } : {})}
-                flights={numberFlights}
-                onSaved={setFlightNumbers}
-                onDirty={setFlightNumbersDirty}
-              />
               <div
                 className="flex flex-wrap gap-2"
                 role="group"
@@ -407,60 +389,48 @@ export function ReservationTickets({
               {ticket && (
                 <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3">
                   <span className="text-sm">E-Ticket No</span>
-                  {documents.find(
-                    (doc) => doc.customerId === ticket.passengerId,
-                  ) ? (
-                    <strong dir="ltr">
-                      {
-                        documents.find(
-                          (doc) => doc.customerId === ticket.passengerId,
-                        )!.number
-                      }
-                    </strong>
-                  ) : (
-                    <>
-                      {numberChoices.find(
-                        (row) => row.customerId === ticket.passengerId,
-                      )?.automatic ? (
-                        <span className="text-sm text-muted-foreground">
-                          شماره بلیط چارتر ظرفیت شرکت به‌صورت خودکار صادر
-                          می‌شود.
-                        </span>
-                      ) : (
-                        <input
-                          aria-label="شماره شش‌رقمی بلیط شناور"
-                          dir="ltr"
-                          inputMode="numeric"
-                          maxLength={6}
-                          placeholder="000000"
-                          className="rounded-lg border border-border bg-surface px-3 py-2"
-                          value={manualNumbers[ticket.passengerId] ?? ''}
-                          onChange={(event) =>
-                            setManualNumbers({
-                              ...manualNumbers,
-                              [ticket.passengerId]: event.target.value.replace(
-                                /[^0-9]/g,
-                                '',
-                              ),
-                            })
-                          }
-                        />
-                      )}
-                      <Button
-                        disabled={issuing || !numberChoices.length}
-                        onClick={() => void registerNumber()}
-                      >
-                        {issuing ? 'در حال ثبت…' : 'ثبت شماره و تاریخ صدور'}
-                      </Button>
-                    </>
-                  )}
+                  <input
+                    aria-label="E-Ticket No"
+                    dir="ltr"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder="خودکار"
+                    disabled={!canEdit || issuing}
+                    className="rounded-lg border border-border bg-surface px-3 py-2"
+                    value={
+                      manualNumbers[ticket.passengerId] ??
+                      documents.find(
+                        (doc) => doc.customerId === ticket.passengerId,
+                      )?.number ??
+                      ''
+                    }
+                    onChange={(event) =>
+                      setManualNumbers({
+                        ...manualNumbers,
+                        [ticket.passengerId]: event.target.value
+                          .replace(/[۰-۹]/g, (digit) =>
+                            String(digit.charCodeAt(0) - 1776),
+                          )
+                          .replace(/[٠-٩]/g, (digit) =>
+                            String(digit.charCodeAt(0) - 1632),
+                          )
+                          .replace(/[^0-9]/g, ''),
+                      })
+                    }
+                  />
+                  <Button
+                    disabled={!canEdit || issuing || !numberChoices.length}
+                    onClick={() => void registerNumber()}
+                  >
+                    {issuing ? 'در حال ثبت…' : 'ثبت شماره و تاریخ صدور'}
+                  </Button>
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
                 <Button
                   disabled={
                     !ready ||
-                    flightNumbersDirty ||
+                    issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     downloading ||
@@ -473,7 +443,7 @@ export function ReservationTickets({
                 <Button
                   disabled={
                     !ready ||
-                    flightNumbersDirty ||
+                    issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     downloading
@@ -486,7 +456,7 @@ export function ReservationTickets({
                   variant="outline"
                   disabled={
                     !ready ||
-                    flightNumbersDirty ||
+                    issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     printing ||
@@ -500,7 +470,7 @@ export function ReservationTickets({
                   variant="outline"
                   disabled={
                     !ready ||
-                    flightNumbersDirty ||
+                    issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
                     printing

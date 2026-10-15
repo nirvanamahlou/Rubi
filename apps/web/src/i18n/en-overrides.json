@@ -2572,5 +2572,7 @@
   "مشاهده پکیج‌های روز": "View daily packages",
   "مهلت ارسال پکیج پایان یافت؛ دوباره تلاش کنید.": "Package submission timed out; please try again.",
   "نوع سند پکیج در آرشیو اسناد آماده نیست.": "The package document type is not configured in the document archive.",
-  "فایل مسدود شده": "File blocked"
+  "فایل مسدود شده": "File blocked",
+  "شماره بلیط را با ۶ رقم انگلیسی وارد کنید.": "Enter a six-digit ticket number using English digits.",
+  "شماره بلیط تغییر کرده است؛ آخرین نسخه را دریافت کنید.": "The ticket number has changed; reload the latest version."
 }

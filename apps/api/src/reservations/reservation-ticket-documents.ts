@@ -25,7 +25,7 @@ export class ReservationTicketDocumentsService {
     @Inject(DatabaseService) private readonly db: DatabaseService,
     @Inject(TravelWorkflowService)
     private readonly workflow: TravelWorkflowService,
-    @Inject(TicketPublicService) private readonly catalog: TicketPublicService,
+    @Inject(TicketPublicService) _catalog: TicketPublicService,
     @Optional()
     @Inject(MasterTravelDirectory)
     private readonly directory?: MasterTravelDirectory,
@@ -114,13 +114,6 @@ export class ReservationTicketDocumentsService {
       intake.snapshot.serviceSelections,
       intake.snapshot.ticketSelections ?? [],
     );
-    const supplies = new Map<string, string | null>();
-    for (const flight of flights)
-      if (flight.offerId && !supplies.has(flight.offerId))
-        supplies.set(
-          flight.offerId,
-          await this.catalog.documentSupply(flight.offerId, actor.branchIds),
-        );
     return (intake.snapshot.passengerAssignments ?? [])
       .filter((p) => intake.snapshot.passengerIds.includes(p.customerId))
       .flatMap((p) => {
@@ -131,9 +124,7 @@ export class ReservationTicketDocumentsService {
         return [
           {
             customerId: p.customerId,
-            automatic: assigned.every(
-              (f) => !!f.offerId && supplies.get(f.offerId) === 'COMPANY',
-            ),
+            automatic: true,
             document:
               intake.ticketDocuments.find(
                 (d) => d.customerId === p.customerId,
@@ -144,7 +135,7 @@ export class ReservationTicketDocumentsService {
   }
   async issue(
     id: string,
-    input: { customerId?: unknown; number?: unknown },
+    input: { customerId?: unknown; number?: unknown; expectedNumber?: unknown },
     actor: AuthenticatedActor,
   ) {
     if (!actor.permissions.includes('reservations.documents.manage'))
@@ -156,20 +147,15 @@ export class ReservationTicketDocumentsService {
     );
     if (!choice)
       throw new BadRequestException('پرواز به این مسافر تخصیص ندارد.');
+    if (input.number !== undefined && typeof input.number !== 'string')
+      throw new BadRequestException(
+        'شماره بلیط را با ۶ رقم انگلیسی وارد کنید.',
+      );
     const supplied =
       typeof input.number === 'string' ? input.number.trim() : '';
-    if (choice.document) {
-      if (supplied && supplied !== choice.document.number)
-        throw new ConflictException(
-          'شماره قبلاً ثبت شده و قابل جایگزینی نیست.',
-        );
-      return choice.document;
-    }
-    if (choice.automatic && supplied)
-      throw new BadRequestException('شماره بلیط چارتر ظرفیت شرکت خودکار است.');
-    if (!choice.automatic && !/^[0-9]{6}$/.test(supplied))
+    if (supplied && !/^[0-9]{6}$/.test(supplied))
       throw new BadRequestException(
-        'شماره بلیط شناور را با ۶ رقم انگلیسی وارد کنید.',
+        'شماره بلیط را با ۶ رقم انگلیسی وارد کنید.',
       );
     return this.db.client.$transaction(async (tx) => {
       await tx.$queryRaw(
@@ -194,17 +180,51 @@ export class ReservationTicketDocumentsService {
         },
       });
       if (old) {
-        if (supplied && supplied !== old.number)
-          throw new ConflictException('شماره قبلاً ثبت شده است.');
+        if (supplied && supplied !== old.number) {
+          if (input.expectedNumber !== old.number)
+            throw new ConflictException(
+              'شماره بلیط تغییر کرده است؛ آخرین نسخه را دریافت کنید.',
+            );
+          if (
+            await tx.reservationTicketDocument.findUnique({
+              where: { number: supplied },
+            })
+          )
+            throw new ConflictException(
+              'این شماره بلیط قبلاً استفاده شده است.',
+            );
+          await tx.reservationTicketDocument.update({
+            where: { id: old.id },
+            data: {
+              number: supplied,
+              source: 'MANUAL',
+              actorUserId: actor.userId,
+            },
+          });
+          await tx.auditEvent.create({
+            data: {
+              actorUserId: actor.userId,
+              action: 'reservations.ticket_number.corrected',
+              entityType: 'ReservationTicketDocument',
+              entityId: old.id,
+              outcome: 'SUCCESS',
+              metadata: { previousNumber: old.number, number: supplied },
+            },
+          });
+        }
         return {
           customerId: old.customerId,
-          number: old.number,
-          source: old.source,
+          number: supplied || old.number,
+          source: supplied && supplied !== old.number ? 'MANUAL' : old.source,
           issuedAt: old.issuedAt.toISOString(),
         };
       }
       let number = supplied;
-      if (choice.automatic) {
+      if (input.expectedNumber)
+        throw new ConflictException(
+          'شماره بلیط تغییر کرده است؛ آخرین نسخه را دریافت کنید.',
+        );
+      if (!supplied) {
         do {
           const [seq] = await tx.$queryRaw<Array<{ value: bigint }>>(
             Prisma.sql`SELECT nextval('reservation_ticket_number_seq') AS value`,
@@ -224,7 +244,7 @@ export class ReservationTicketDocumentsService {
           intakeId: id,
           customerId: choice.customerId,
           number,
-          source: choice.automatic ? 'AUTO' : 'MANUAL',
+          source: supplied ? 'MANUAL' : 'AUTO',
           actorUserId: actor.userId,
         },
       });
