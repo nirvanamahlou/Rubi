@@ -15,6 +15,7 @@ import { flightDay } from '../model/exact-flight-dates';
 export function TicketOfferPicker({
   query,
   carrierName,
+  calendarSystem = 'persian',
   prepared,
   exactDay,
   allowedOfferIds,
@@ -30,6 +31,7 @@ export function TicketOfferPicker({
 }: {
   query: TicketOfferSearchV1;
   carrierName?: string | undefined;
+  calendarSystem?: 'persian' | 'gregorian';
   prepared?: PreparedTicketSearch | undefined;
   exactDay?: string | undefined;
   allowedOfferIds?: readonly string[] | undefined;
@@ -126,6 +128,7 @@ export function TicketOfferPicker({
             <TicketOfferCard
               key={offer.id}
               offer={offer}
+              calendarSystem={calendarSystem}
               selected={selectedId === offer.id}
               requiredSeats={requiredSeats}
               requireStandaloneFare={
