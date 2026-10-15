@@ -256,6 +256,9 @@ export function supplierFormData(
           },
           refs,
         ),
+        notes: [settings.text.stayNotes, settings.text.remarks]
+          .filter(Boolean)
+          .join('\n'),
         supplier: englishOutputName(settings.text.broker?.trim() || '-', refs),
         leader: settings.text.leaderLanguage?.trim() || 'Persian',
       }

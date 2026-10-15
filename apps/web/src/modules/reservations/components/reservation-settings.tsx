@@ -353,7 +353,7 @@ export function ReservationSettingsForm({
           action: 'SUPPLIER_FORM_SETTINGS',
           applyToContractAndVoucher: false,
           expectedVersion: currentVersion,
-          note: sectionLabels[section] + ' در فرم رزواسیون و مبنای خرید',
+          note: sectionLabels[section] + ' فقط در فرم رزواسیون',
           voucherSettings: {
             ...draft,
             text: {
@@ -850,8 +850,8 @@ export function ReservationSettingsForm({
           </div>
         </details>
         <p className={styles.operationalNotice}>
-          این اصلاح فقط در فرم رزواسیون و مبنای خرید ثبت می‌شود و قرارداد فروش
-          را تغییر نمی‌دهد.
+          این اصلاح فقط در فرم رزواسیون ثبت می‌شود و قرارداد فروش را تغییر
+          نمی‌دهد.
         </p>
         {!showDocument && saveButton}
       </fieldset>

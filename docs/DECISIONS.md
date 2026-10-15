@@ -1,3 +1,7 @@
+## SUPPLIER-FORM-ISOLATION-1015 — owner clarification (2026-10-15)
+
+Settings below the supplier reservation form are output-only. The owner explicitly limits their effect to that form, superseding earlier use of sent-form dates as a purchase basis. Voucher content defaults to the contract snapshot and its own saved settings, never a wholesale supplier-form copy. Hotel purchase nights use the contract snapshot for both per-passenger and formula paths. Broker identity continues to route supplier confirmation and voucher leader selection; it does not copy accommodation/passenger/content overrides. Existing issued files and booked purchases are not rewritten. Global contract-amendment editors remain separate and unchanged.
+
 ## MANUAL-USER-ACCESS-V3-1012 — authoritative individual grants
 
 The user's2026-10-12 instruction supersedes additive shared-role behavior for manually converted users. Their exclusive versioned snapshot is the sole effective grant source; existing shared memberships remain for history but cannot restore an unchecked grant. Titles are labels. New catalog controls default off. Conversion snapshots the current effective legacy scope and requires before/after equality, serializable concurrency and matching active runtime capabilities. Agency identity edits use verified organization/contract ownership and immutable names. No passenger login role is introduced. Details: docs/tasks/MANUAL-USER-ACCESS-V3-1012.md.
