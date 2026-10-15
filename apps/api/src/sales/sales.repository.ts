@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
   Inject,
@@ -533,6 +534,9 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
               ...(hotel.rooms?.length
                 ? {
@@ -780,6 +784,9 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
               ...(hotel.rooms?.length
                 ? {

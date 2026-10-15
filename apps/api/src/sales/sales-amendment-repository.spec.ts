@@ -172,3 +172,67 @@ it('persists each agreed room price inside the versioned contract amendment tran
     }),
   );
 });
+
+it('persists the room occupancy summary from products rather than stale submitted totals', async () => {
+  const { tx, repository } = setup();
+  const rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'a',
+      roomTypeNameSnapshot: 'Single',
+      adults: 1,
+      childAges: [],
+    },
+    {
+      ordinal: 2,
+      roomTypeId: 'b',
+      roomTypeNameSnapshot: 'Family',
+      adults: 2,
+      childAges: [6, 8],
+    },
+  ];
+  await repository.updateDraft(
+    'id',
+    {
+      ...input,
+      services: [
+        {
+          clientKey: 'hotel',
+          kind: 'HOTEL',
+          titleSnapshot: 'Hotel',
+        },
+      ],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'h',
+        hotelNameSnapshot: 'Hotel',
+        cityId: 'city',
+        checkInDate: '2099-01-01',
+        checkOutDate: '2099-01-03',
+        roomCount: 2,
+        singleRoomCount: 2,
+        doubleRoomCount: 0,
+        extraBedCount: 0,
+        roomTypeId: 'a',
+        occupancy: 5,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        rooms,
+      },
+    },
+    2,
+    'Synthetic',
+    { userId: 'u', branchId: 'b' },
+    amendment,
+  );
+  expect(tx.salesContractHotelSelection.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({
+        roomCount: 2,
+        singleRoomCount: 1,
+        doubleRoomCount: 1,
+        extraBedCount: 2,
+        occupancy: 5,
+      }),
+    }),
+  );
+});

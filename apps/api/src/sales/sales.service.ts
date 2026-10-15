@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
@@ -322,6 +323,14 @@ export function presentSalesContract(
           ...(row.hotelSelection.extraBedCount == null
             ? {}
             : { extraBedCount: row.hotelSelection.extraBedCount }),
+          ...(row.hotelSelection.rooms?.length
+            ? salesHotelRoomSummary(
+                row.hotelSelection.rooms.map((room) => ({
+                  adults: room.adults,
+                  childAges: room.childAges as number[],
+                })),
+              )
+            : {}),
           roomTypeId: row.hotelSelection.roomTypeId,
           ...(row.hotelSelection.rooms?.length
             ? {

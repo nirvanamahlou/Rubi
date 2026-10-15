@@ -93,6 +93,13 @@ it('changing a room affects that room without changing the flight party', () => 
   expect(next.passengerComposition).toBeUndefined();
   expect(next.hotel.rooms[0]).toEqual(state.hotel.rooms![0]);
   expect(next.hotel.rooms[1].adults).toBe(2);
+  expect(next.hotel).toMatchObject({
+    roomCount: 2,
+    singleRoomCount: 0,
+    doubleRoomCount: 2,
+    extraBedCount: 1,
+    occupancy: 5,
+  });
 });
 it('changing visa quantities clears stale applicants and creates each child age field', () => {
   const patch = vi.fn();

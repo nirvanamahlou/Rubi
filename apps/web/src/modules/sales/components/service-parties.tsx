@@ -1,4 +1,5 @@
 'use client';
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { PassengerAgeField } from './passenger-age-field';
 import {
   salesRoomPartyError,
@@ -54,12 +55,8 @@ export function ServiceParties({
       hotel: {
         ...state.hotel,
         rooms: next,
-        roomCount: next.length,
+        ...salesHotelRoomSummary(next),
         roomTypeId: next[0]?.roomTypeId ?? '',
-        singleRoomCount: next.filter((r) => r.adults === 1).length,
-        doubleRoomCount: next.filter((r) => r.adults >= 2).length,
-        extraBedCount: 0,
-        occupancy: next.reduce((n, r) => n + r.adults + r.childAges.length, 0),
       },
       ...(!state.serviceKinds.some((k) => k === 'FLIGHT' || k === 'TRANSFER')
         ? {

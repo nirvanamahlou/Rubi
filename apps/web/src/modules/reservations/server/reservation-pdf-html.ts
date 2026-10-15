@@ -103,7 +103,7 @@ export function reservationPdfHtml(
     ${
       data.roomBreakdown.length
         ? table(
-            ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'],
+            ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
             data.roomBreakdown
               .slice(0, 4)
               .map((r) => [
@@ -111,6 +111,7 @@ export function reservationPdfHtml(
                 r.roomType,
                 r.adults,
                 r.childAges.join(', ') || '-',
+                r.adults + r.childAges.length,
               ]),
           )
         : ''
@@ -129,12 +130,13 @@ export function reservationPdfHtml(
     .map(
       (rooms, index) =>
         `<article class="page" dir="ltr" data-reservation-form-page><header class="header"><h1>ROOM DETAILS</h1></header><p>${escape(data.request)} · ${escape(data.hotel)} · ${escape(data.checkIn)} / ${escape(data.checkOut)}</p>${table(
-          ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'],
+          ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
           rooms.map((r) => [
             r.ordinal,
             r.roomType,
             r.adults,
             r.childAges.join(', ') || '-',
+            r.adults + r.childAges.length,
           ]),
         )}<footer class="footer"><b>${pages.length + index + 1} / ${pageCount}</b></footer></article>`,
     )

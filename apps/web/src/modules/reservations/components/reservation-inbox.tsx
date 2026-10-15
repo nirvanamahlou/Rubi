@@ -1,4 +1,5 @@
 'use client';
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { EnglishHotelName } from './english-hotel-name';
@@ -76,6 +77,7 @@ export function initialDraft(request: ReservationIntakeV1): ArrangementDraft {
       hotel?.roomCount ??
       1,
     extraBedCount: current?.extraBedCount ?? hotel?.extraBedCount ?? 0,
+    ...(hotel?.rooms?.length ? salesHotelRoomSummary(hotel.rooms) : {}),
     hotelGuestCustomerIds:
       current?.hotelGuestCustomerIds ??
       (assigned.length ? assigned : request.snapshot.passengerIds),

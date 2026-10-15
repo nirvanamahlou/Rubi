@@ -326,11 +326,15 @@ export function ReservationFormSheet({
                   <table className={styles.table}>
                     <thead>
                       <tr>
-                        {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'].map(
-                          (t) => (
-                            <th key={t}>{t}</th>
-                          ),
-                        )}
+                        {[
+                          'ROOM',
+                          'ROOM TYPE',
+                          'ADULTS',
+                          'CHILD AGES',
+                          'GUESTS',
+                        ].map((t) => (
+                          <th key={t}>{t}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
@@ -340,6 +344,7 @@ export function ReservationFormSheet({
                           <td dir="auto">{r.roomType}</td>
                           <td>{r.adults}</td>
                           <td>{r.childAges.join(', ') || '-'}</td>
+                          <td>{r.adults + r.childAges.length}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -496,9 +501,11 @@ export function ReservationFormSheet({
           <table className={styles.table}>
             <thead>
               <tr>
-                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'].map((t) => (
-                  <th key={t}>{t}</th>
-                ))}
+                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'].map(
+                  (t) => (
+                    <th key={t}>{t}</th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
@@ -508,6 +515,7 @@ export function ReservationFormSheet({
                   <td dir="auto">{r.roomType}</td>
                   <td>{r.adults}</td>
                   <td>{r.childAges.join(', ') || '-'}</td>
+                  <td>{r.adults + r.childAges.length}</td>
                 </tr>
               ))}
             </tbody>

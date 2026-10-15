@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 export function englishOutputName(
   value: string,
   references: ReservationFormReferences,
@@ -54,6 +55,9 @@ export function reservationFormData(
 ) {
   const { snapshot, workflow } = intake;
   const hotel = snapshot.hotelSelection;
+  const roomSummary = hotel?.rooms?.length
+    ? salesHotelRoomSummary(hotel.rooms)
+    : undefined;
   const services = snapshot.serviceSelections;
   const flights = salesContractFlights(
     services,
@@ -174,7 +178,11 @@ export function reservationFormData(
     children6To12: 0,
     childrenUnclassified: passengers.filter((p) => p.age === 'CHD').length,
     infants: passengers.filter((p) => p.age === 'INF').length,
-    rooms: intake.arrangement?.roomCount ?? hotel?.roomCount ?? '-',
+    rooms:
+      roomSummary?.roomCount ??
+      intake.arrangement?.roomCount ??
+      hotel?.roomCount ??
+      '-',
     nights: Number.isInteger(nights) && nights > 0 ? nights : '-',
     leader: text(
       services.find((s) => typeof s.metadata?.tourLeader === 'string')?.metadata
@@ -224,10 +232,20 @@ export function reservationFormData(
     checkIn: reservationFormDate(hotel?.checkInDate),
     checkOut: reservationFormDate(hotel?.checkOutDate),
     double:
-      intake.arrangement?.doubleRoomCount ?? hotel?.doubleRoomCount ?? '-',
+      roomSummary?.doubleRoomCount ??
+      intake.arrangement?.doubleRoomCount ??
+      hotel?.doubleRoomCount ??
+      '-',
     single:
-      intake.arrangement?.singleRoomCount ?? hotel?.singleRoomCount ?? '-',
-    extra: intake.arrangement?.extraBedCount ?? hotel?.extraBedCount ?? '-',
+      roomSummary?.singleRoomCount ??
+      intake.arrangement?.singleRoomCount ??
+      hotel?.singleRoomCount ??
+      '-',
+    extra:
+      roomSummary?.extraBedCount ??
+      intake.arrangement?.extraBedCount ??
+      hotel?.extraBedCount ??
+      '-',
     passengers,
     notes: workflow.note || '',
     brand:
