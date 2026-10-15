@@ -6139,7 +6139,6 @@ ASSISTANT-CHAT-HEADING-1015 — PC-C: bounded post-rollout accessibility correct
 
 Successful service purchases in the Purchase/Supply inbox now invoke the existing close handler before refreshing the list and publishing its workflow-change event. This clears the selected form and removes only reservationId from direct-entry links, preserving filters. Failure and uncertain-save paths are unchanged. No API, schema, migration, dependency or live data/runtime change. Focused regressions and exact-head CI gate user-authorized develop merge.
 
-
 ## ASSISTANT-DASHBOARD-PAGES-1015 — PC-C — IN_PROGRESS
 
 User authorizes moving all six assistant views to Dashboard navigation and removing the main-sidebar entry. Base origin/develop@59722114; branch codex/pc-c-assistant-dashboard-pages-1015. Reserve Dashboard registry/workspace/tests, assistant route/workspace/floating link/tests, bounded navigation/messages/icons/AppShell presentation and shared IAM migrated-route alias/tests. Preserve existing assistant.executive access through six exact page aliases; other Dashboard and data authorization unchanged. No overlapping active reservation found; previous assistant work merged/released. No schema/migration/dependency/model changes. Legacy links redirect; dashboard filters must not imply filtering assistant data. Scoped checks, head/postmerge CI and authenticated localhost verification required.
