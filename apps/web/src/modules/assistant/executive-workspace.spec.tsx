@@ -210,3 +210,26 @@ it.each(['overview', 'sales', 'finance', 'advisor'] as const)(
     }
   },
 );
+
+describe('dashboard-embedded executive pages', () => {
+  it.each(assistantViews)(
+    'preserves %s content without duplicate navigation or chat',
+    (view) => {
+      const standalone = renderToStaticMarkup(
+        <ExecutivePanels view={view} state="ready" snapshot={snapshot} />,
+      );
+      const embedded = renderToStaticMarkup(
+        <ExecutivePanels
+          view={view}
+          state="ready"
+          snapshot={snapshot}
+          embedded
+        />,
+      );
+      expect(embedded).toContain(assistantCopy.views[view].title[0]);
+      expect(embedded).not.toContain('<nav');
+      expect(embedded).not.toContain('<textarea');
+      expect(embedded).toBe(standalone.replace(/<nav[\s\S]*?<\/nav>/, ''));
+    },
+  );
+});

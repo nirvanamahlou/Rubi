@@ -259,7 +259,7 @@ export function HotelGroupRates() {
                       </td>
                       <td>
                         <Lookup
-                          kind="organizations"
+                          kind="brokers"
                           label={`کارگزار ردیف ${i + 1}`}
                           value={r.broker}
                           onChange={(broker) => change(r.id, { broker })}

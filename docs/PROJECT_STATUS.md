@@ -4,6 +4,31 @@ Validation:231 targeted API tests,132 targeted Web tests, API/Web typechecks and
 
 COMPUTER_ID=PC-A; branch codex/pc-a-optional-operation-reasons-1015. Human owner explicitly requests optional change/action reasons across the entire application and develop merge. Reserve bounded cross-module API/Web reason validators, DTO defaults, reason-only submit gates/labels and focused tests across Sales, Reservations, Finance/Accounting, HR, Documents, Procurement, Master Data, B2B, Marketing, Customers, Customer Affairs and System/IAM. This authorization coordinates the shared policy for producers/consumers without transferring module ownership; preserve unrelated active scopes. Reserve central pure Contracts reason policy/export and bounded catalog translations. Sole Migration Owner for one forward migration relaxing only procurement receipt-adjustment reason nonempty check while retaining signed nonzero finite deltas, FKs and immutable audit history. No dependency changes or operational writes. Preserve actor/time/version evidence, permission/branch/maker-checker/expiry/idempotency checks and mandatory actual message contents; no fabricated human reason. Existing reason strings remain compatible; blank/missing reason normalizes to empty text.
 
+## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
+
+Hotel-rate manual and legacy selectors now consume the same active registered-broker directory as Reservations. Saving validates through the existing public brokerReference adapter, rejects inactive brokers and preserves validated legacy organization IDs. An additive registeredBrokerId FK plus XOR constraint keeps historical rows unchanged; API projections preserve the external brokerId contract for package pricing and purchase consumers. No data deletion or Master Data CRUD. Focused API74/Web122 and pack persistence5 tests pass; API/Web types pass. CI includes PostgreSQL temporary-table proof of legacy preservation, registered FK, uniqueness, exclusive source and delete restriction. User authorizes develop merge; apply migration before updated API/Web, no local3100 rollout in this task.
+
+## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI — 2026-10-15
+
+Publication follow-up: [PR889](https://github.com/nirvanamahlou/Rubi/pull/889), authored by ehsandni, targets develop under the user's explicit authorization. Full hosted CI and final review gate merge. The local handoff below predates publication.
+
+The supplied brand/system dashboard references are implemented in the existing
+Integrations centre. Editable catalogue, four metric drilldowns, Jalali periods,
+comparison, latest configuration activity and owner-flow explanation are live on
+local Docker3100/4192. The incomplete previous overlay omitted the existing IAM
+actor hook; the runtime dependency is now included and login/page rendering were
+verified on localhost and127.0.0.1 with the authorized administrator. Four initial
+brands/systems were initialized through the public audited registry command.
+
+189 tests pass; scoped lint, format, Web/API typecheck, Web production build,
+database declaration build and runtime compilation pass. Full API typechecking
+required regeneration of stale local Prisma artifacts, without database changes.
+24 runtime overlay files and unchanged runtime schema verified. No migration,
+new seed, permission grant, GitHub publication or merge. Real external metrics,
+webhook/sync and SSO remain dependent on external access and public owner
+contracts. Source reservation released. Details:
+[INTEGRATIONS-VISUAL-1015](tasks/INTEGRATIONS-VISUAL-1015.md).
+
 ## DOCUMENT-DOWNLOAD-ONLY-1015 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-document-download-only-1015. Reserve shared reservation/voucher TravelDocument, sales contract output and embedded contract preview plus existing regression expectations, bounded translations and own status docs. Remove browser print/Save-as-PDF buttons, print-only code and obsolete instructions; retain authenticated direct PDF downloads and previews. This covers all consumers of the shared components. No API/schema/dependency/migration/runtime changes. User requests implementation; PR to develop remains reviewable without unrequested merge. No overlapping active lock observed. Validation:29 existing document/download/PDF-route regressions passed, including download availability after issuance and removed print controls. Scoped lint/types and full CI build gate review. No live deployment.
@@ -6115,3 +6140,13 @@ ASSISTANT-FLOATING-CHAT-1015 validation:58 assistant/shared-session regression t
 Supplier reservation forms now accept separate-currency hotel purchase totals, automatically suggested from the selected broker's active rates for canonical room types, guest mix and contractual stay. Suggestions never fall back to another broker; unavailable quotes remain manual. Staff may edit or clear the display totals before issuing the form. Values are preserved in existing immutable supplier-form workflow JSON/CAS/history and printed in preview/PDF only for the reservation form; no Sale, actual purchase, profit or voucher amount is changed. Optional shared JSON field preserves older revisions. Broker changes reset old totals and stale requests cannot overwrite another broker. No schema/migration/dependency/live runtime changes. Targeted tests and full CI gate user-authorized develop merge.
 
 ASSISTANT-CHAT-HEADING-1015 — PC-C: bounded post-rollout accessibility correction in AssistantComposer and its regression only. Browser route announcer picked hidden chat H1 while navigating to profile. Floating composer now uses an accessible region label without a hidden H1; inline heading remains unchanged. No shared shell, API, permissions or dependency changes. Reserve own two files and status entries; require targeted test/build, exact-head and postmerge CI plus compatible runtime refresh.
+
+## PURCHASE-CLOSE-AFTER-SAVE-1015 — PC-A
+
+Successful service purchases in the Purchase/Supply inbox now invoke the existing close handler before refreshing the list and publishing its workflow-change event. This clears the selected form and removes only reservationId from direct-entry links, preserving filters. Failure and uncertain-save paths are unchanged. No API, schema, migration, dependency or live data/runtime change. Focused regressions and exact-head CI gate user-authorized develop merge.
+
+## ASSISTANT-DASHBOARD-PAGES-1015 — PC-C — IN_PROGRESS
+
+User authorizes moving all six assistant views to Dashboard navigation and removing the main-sidebar entry. Base origin/develop@59722114; branch codex/pc-c-assistant-dashboard-pages-1015. Reserve Dashboard registry/workspace/tests, assistant route/workspace/floating link/tests, bounded navigation/messages/icons/AppShell presentation and shared IAM migrated-route alias/tests. Preserve existing assistant.executive access through six exact page aliases; other Dashboard and data authorization unchanged. No overlapping active reservation found; previous assistant work merged/released. No schema/migration/dependency/model changes. Legacy links redirect; dashboard filters must not imply filtering assistant data. Scoped checks, head/postmerge CI and authenticated localhost verification required.
+
+ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/access Web tests pass (one existing projection test skipped), six new Dashboard integration renders and seven settings-consumer tests pass,14 Contracts access tests pass including duplicate-page rejection. Full Web TypeScript and production build (62 routes), scoped Web/Contracts ESLint and diff checks pass. All six original layouts are reused without the old tab strip; legacy links redirect to exact dashboard pages. Native assistant grants retained, unrelated Dashboard grants unchanged; query/report filters disabled for assistant sources. No API/schema/migration/provider change. Candidate source scope frozen and reservation released; exact-head/postmerge CI and local browser delivery remain gates.

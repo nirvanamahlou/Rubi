@@ -46,6 +46,7 @@ import Link from '@/components/access-link';
 import { Button } from '@/components/ui/button';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { useAccessPermissions } from '@/modules/iam/access-context';
+import { assistantDashboardHref } from './dashboard-location';
 import { assistantCopy as c, type AssistantText } from '@/i18n/assistant-copy';
 import {
   assistantViews,
@@ -1224,7 +1225,9 @@ export function ExecutivePanels({
   state = 'not-configured',
   snapshot = null,
   onRefresh,
+  embedded = false,
 }: {
+  embedded?: boolean;
   view: AssistantView;
   english?: boolean;
   state?: AssistantLoadState;
@@ -1237,22 +1240,24 @@ export function ExecutivePanels({
   const denied = state === 'forbidden' || state === 'unauthenticated';
   return (
     <div className={styles.workspace} dir={english ? 'ltr' : 'rtl'}>
-      <nav className={styles.tabs} aria-label={t(c.title)}>
-        {assistantViews.map((id) => {
-          const TabIcon = viewIcons[id];
-          return (
-            <Link
-              key={id}
-              href={`/assistant?view=${id}`}
-              aria-current={id === view ? 'page' : undefined}
-              className={id === view ? styles.activeTab : ''}
-            >
-              <TabIcon size={17} aria-hidden="true" />
-              <span>{t(c.views[id].label)}</span>
-            </Link>
-          );
-        })}
-      </nav>
+      {!embedded && (
+        <nav className={styles.tabs} aria-label={t(c.title)}>
+          {assistantViews.map((id) => {
+            const TabIcon = viewIcons[id];
+            return (
+              <Link
+                key={id}
+                href={assistantDashboardHref(id)}
+                aria-current={id === view ? 'page' : undefined}
+                className={id === view ? styles.activeTab : ''}
+              >
+                <TabIcon size={17} aria-hidden="true" />
+                <span>{t(c.views[id].label)}</span>
+              </Link>
+            );
+          })}
+        </nav>
+      )}
       <div className={styles.serviceStatus} role="status">
         <span
           className={
@@ -1360,7 +1365,13 @@ export function ExecutivePanels({
   );
 }
 
-export function ExecutiveWorkspace({ view }: { view: AssistantView }) {
+export function ExecutiveWorkspace({
+  view,
+  embedded = false,
+}: {
+  view: AssistantView;
+  embedded?: boolean;
+}) {
   const { language } = useSystemPreferences();
   const permissions = useAccessPermissions();
   const allowed = Array.isArray(permissions);
@@ -1392,6 +1403,7 @@ export function ExecutiveWorkspace({ view }: { view: AssistantView }) {
   }, []);
   return (
     <ExecutivePanels
+      embedded={embedded}
       view={view}
       english={language === 'en'}
       state={allowed ? result.state : 'forbidden'}
