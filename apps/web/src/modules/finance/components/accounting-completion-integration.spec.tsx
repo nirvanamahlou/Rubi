@@ -100,8 +100,6 @@ describe('prepared accounting screen integration', () => {
       ),
       'general-ledger/reports/chart-structure',
       'general-ledger/reports/journal-lines',
-      'general-ledger/year-end/nature-adjustment',
-      'general-ledger/year-end/final',
     ]);
     expect(routes.map((r) => r.route).sort()).toEqual([...expected].sort());
     for (const { route } of routes) {
@@ -116,7 +114,7 @@ describe('prepared accounting screen integration', () => {
     );
   });
   it('preserves existing closing/opening and connection settings handlers', () => {
-    for (const mode of ['closing', 'opening'])
+    for (const mode of ['closing', 'opening', 'final', 'nature-adjustment'])
       expect(render('general-ledger/year-end/' + mode)).toContain(
         `data-year-end="${mode}"`,
       );
@@ -138,11 +136,7 @@ describe('prepared accounting screen integration', () => {
         accountingParityDefinitions.find((i) => i.route === route)?.support,
       ).toBe('dependency');
     }
-    for (const route of [
-      'general-ledger/year-end/final',
-      'general-ledger/year-end/nature-adjustment',
-      'taxpayer-system/cancellation-invoice',
-    ])
+    for (const route of ['taxpayer-system/cancellation-invoice'])
       expect(
         accountingParityDefinitions.find((i) => i.route === route)?.support,
       ).toBe('dependency');

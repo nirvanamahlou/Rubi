@@ -30,7 +30,9 @@ export function emptyTaxValues(form: AccountingTaxForm): AccountingTaxValues {
         (field.kind === 'check'
           ? false
           : field.kind === 'decimal'
-            ? '0'
+            ? field.readOnly
+              ? ''
+              : '0'
             : field.kind === 'multi'
               ? []
               : ''),

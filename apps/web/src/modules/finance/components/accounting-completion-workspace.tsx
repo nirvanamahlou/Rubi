@@ -5,7 +5,6 @@ import { AccountingTaxWorkspace } from './accounting-tax-workspace';
 import { AccountingTaxpayerWorkspace } from './accounting-taxpayer-workspace';
 import { AccountingChartReport } from './accounting-chart-report';
 import { AccountingCompletionReport } from './accounting-completion-report';
-import { AccountingCompletionReadiness } from './accounting-completion-readiness';
 
 /** Dispatches prepared screens only after the workspace has loaded an authorized book. */
 export function AccountingCompletionWorkspace({
@@ -36,13 +35,6 @@ export function AccountingCompletionWorkspace({
       return <AccountingChartReport key={book.book.id} book={book} />;
     case 'journal-lines':
       return <AccountingCompletionReport key={book.book.id} book={book} />;
-    case 'readiness':
-      return (
-        <AccountingCompletionReadiness
-          key={`${book.book.id}:${route}`}
-          book={book}
-        />
-      );
     default:
       return null;
   }

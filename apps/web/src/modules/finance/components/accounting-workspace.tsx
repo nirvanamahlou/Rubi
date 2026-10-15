@@ -57,6 +57,11 @@ import { AccountingDocumentTransfer } from './accounting-document-transfer';
 import { AccountingDocumentTemplate } from './accounting-document-template';
 import { AccountingDocumentReorder } from './accounting-document-reorder';
 import { AccountingDocumentList } from './accounting-document-list';
+import { AccountingStatementList } from './accounting-statement-list';
+import { AccountingDashboard } from './accounting-dashboard';
+import { AccountingTaxpayerWorkspace } from './accounting-taxpayer-workspace';
+import { AccountingInternalReport } from './accounting-internal-report';
+import { internalAccountingReportKind } from '../accounting-internal-report-model';
 import { DocumentIconAction } from './accounting-document-filter';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/overlays';
 import { AccountingJournalLines } from './accounting-journal-lines';
@@ -111,6 +116,7 @@ const internalSections: readonly (readonly [string, string])[] = [
   ['general-ledger/documents/list', 'فهرست اسناد'],
 ] as const;
 const sections: readonly (readonly [string, string])[] = [
+  ['dashboard', 'داشبورد حسابداری'],
   ...accountingParityDefinitions.map(
     (definition) => [definition.route, definition.title] as const,
   ),
@@ -296,7 +302,12 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   const pending = useRef<{ signature: string; key: string } | null>(null);
   const section = pathname.replace(/^\/finance\/accounting\/?/, '');
   const refresh = async () => {
-    await queryClient.invalidateQueries({ queryKey: ['accounting'] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['accounting'] }),
+      queryClient.invalidateQueries({
+        queryKey: ['accounting-taxpayer-drafts', bookId],
+      }),
+    ]);
   };
 
   const set = (key: string, value: string | boolean) =>
@@ -404,6 +415,30 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         }}
       />
     );
+  else if (snapshot && section === 'dashboard')
+    content = <AccountingDashboard key={bookId} book={snapshot} />;
+  else if (snapshot && section === 'taxpayer-system/settings')
+    content = (
+      <>
+        <AccountingTaxpayerWorkspace
+          key={`${bookId}:secure-settings`}
+          book={snapshot}
+          route={section}
+        />
+        <details className="mt-5 rounded-xl border p-4">
+          <summary className="cursor-pointer font-bold">
+            درخواست‌های اتصال موجود
+          </summary>
+          <AccountingAdvancedWorkspace
+            key={`${bookId}:legacy-settings`}
+            book={snapshot}
+            section={section}
+            run={run}
+            busy={busy}
+          />
+        </details>
+      </>
+    );
   else if (snapshot && accountingCompletionRoute(section))
     content = (
       <AccountingCompletionWorkspace
@@ -412,6 +447,19 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         route={section}
       />
     );
+  else if (snapshot && internalAccountingReportKind(section))
+    content = (
+      <AccountingInternalReport
+        key={`${bookId}:${section}`}
+        book={snapshot}
+        kind={internalAccountingReportKind(section)!}
+      />
+    );
+  else if (
+    snapshot &&
+    section === 'general-ledger/reports/debit-credit-notices'
+  )
+    content = <AccountingStatementList key={bookId} book={snapshot} />;
   else if (snapshot && section === 'receipts-payments/reports')
     content = (
       <AccountingSourceWorkspace book={snapshot} run={run} busy={busy} />
@@ -647,6 +695,7 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
   else if (
     snapshot &&
     (section.endsWith('/documents/list') ||
+      section === 'general-ledger/reports/journal-browser' ||
       section === 'general-ledger/documents/lists/journals' ||
       section === 'general-ledger/documents/lists/revaluations' ||
       section.endsWith('/documents/review') ||
@@ -775,6 +824,8 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
     [
       'general-ledger/year-end/closing',
       'general-ledger/year-end/opening',
+      'general-ledger/year-end/final',
+      'general-ledger/year-end/nature-adjustment',
     ].includes(section)
   )
     content = (
@@ -782,7 +833,15 @@ function AccountingWorkspaceContent({ pathname }: { pathname: string }) {
         book={snapshot}
         run={run}
         busy={busy}
-        mode={section.endsWith('/opening') ? 'opening' : 'closing'}
+        mode={
+          section.endsWith('/opening')
+            ? 'opening'
+            : section.endsWith('/final')
+              ? 'final'
+              : section.endsWith('/nature-adjustment')
+                ? 'nature-adjustment'
+                : 'closing'
+        }
       />
     );
   else if (snapshot) {

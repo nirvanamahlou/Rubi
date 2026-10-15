@@ -12,7 +12,9 @@ export function accountingViewRows(root: HTMLElement): string[][] {
     HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
   >('input,textarea,select')) {
     if (
-      field.closest('[hidden], [role="toolbar"]') ||
+      field.closest(
+        '[hidden], [role="toolbar"], [data-accounting-sensitive="true"]',
+      ) ||
       ['hidden', 'password', 'button', 'submit', 'search'].includes(field.type)
     )
       continue;
@@ -37,7 +39,7 @@ export function accountingViewRows(root: HTMLElement): string[][] {
     rows.push([label.trim(), value]);
   }
   for (const table of root.querySelectorAll('table')) {
-    if (table.closest('[hidden]')) continue;
+    if (table.closest('[hidden], [data-accounting-sensitive="true"]')) continue;
     const headings = Array.from(table.tHead?.rows[0]?.cells ?? []);
     const excluded = new Set(
       headings.flatMap((cell, index) => {
@@ -52,6 +54,11 @@ export function accountingViewRows(root: HTMLElement): string[][] {
       const values = Array.from(row.cells)
         .filter((_, index) => !excluded.has(index))
         .map((cell) => {
+          if (
+            cell.closest('[data-accounting-sensitive="true"]') ||
+            cell.querySelector('[data-accounting-sensitive="true"]')
+          )
+            return '';
           const field = cell.querySelector<
             HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
           >(
