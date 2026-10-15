@@ -453,10 +453,8 @@ export class SalesService {
         checkIn: hotel.checkInDate,
         checkOut: hotel.checkOutDate,
       });
-      if (!rate)
-        throw new BadRequestException(
-          'برای یکی از انواع اتاق، نرخ معتبر در بازه انتخاب‌شده وجود ندارد.',
-        );
+      // Match legacy selections: missing tariffs do not prohibit agreed prices.
+      if (!rate) continue;
       if (rate.occupancyRates) {
         if (
           !quoteHotelOccupancy(rate.occupancyRates, {
