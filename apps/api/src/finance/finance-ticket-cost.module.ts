@@ -1,3 +1,4 @@
+import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import {
   BadRequestException,
   Body,
@@ -86,7 +87,12 @@ export class TicketPurchaseInboxController {
 }
 
 @Module({
-  imports: [IamModule, ProcurementModule, MasterDataModule],
+  imports: [
+    IamModule,
+    ProcurementModule,
+    MasterDataModule,
+    TicketRuntimeModule,
+  ],
   controllers: [FinanceTicketCostController, TicketPurchaseInboxController],
   providers: [AuthGuard, PermissionGuard, FinanceTicketCostService],
   exports: [FinanceTicketCostService],

@@ -1,4 +1,5 @@
 'use client';
+import { ReservationFloatingFlightPurchase } from './reservation-floating-flight-purchase';
 import { currencySymbol } from '@/lib/currency-symbol';
 import {
   HotelPurchaseSavingsPreview,
@@ -682,6 +683,15 @@ export function ReservationPurchaseDialog({
     <>
       {readOnly ? (
         <p>مجوز ثبت یا اصلاح خرید خدمات وجود ندارد.</p>
+      ) : category === 'FLIGHT' ? (
+        <ReservationFloatingFlightPurchase
+          request={request}
+          serviceClientKey={serviceClientKey}
+          onSaved={() => {
+            setRefresh((value) => value + 1);
+            onSaved?.();
+          }}
+        />
       ) : category === 'INSURANCE' ? (
         <ReservationInsurancePurchase
           key={request.purchaseVersion}
@@ -693,14 +703,34 @@ export function ReservationPurchaseDialog({
           }}
         />
       ) : (
-        <ReservationHotelPurchase
-          key={request.purchaseVersion}
-          request={request}
-          onSaved={() => {
-            setRefresh((value) => value + 1);
-            onSaved?.();
-          }}
-        />
+        <>
+          <ReservationHotelPurchase
+            key={request.purchaseVersion}
+            request={request}
+            onSaved={() => {
+              setRefresh((value) => value + 1);
+              onSaved?.();
+            }}
+          />
+          {request.snapshot.serviceSelections
+            .filter(
+              (service) =>
+                service.kind === 'FLIGHT' &&
+                (service.metadata?.purchaseSupplyType === 'FLOATING' ||
+                  service.metadata?.contractFlightVersion === 1),
+            )
+            .map((service) => (
+              <ReservationFloatingFlightPurchase
+                key={service.clientKey + ':' + request.purchaseVersion}
+                request={request}
+                serviceClientKey={service.clientKey}
+                onSaved={() => {
+                  setRefresh((value) => value + 1);
+                  onSaved?.();
+                }}
+              />
+            ))}
+        </>
       )}
     </>
   ) : (

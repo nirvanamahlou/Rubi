@@ -243,12 +243,14 @@ export function TicketPurchaseWorkspace({
                 <tr>
                   {[
                     'پرواز',
+                    'هزینه ظرفیت باقی‌مانده / زیان',
                     'تاریخ پرواز',
                     'تأمین‌کننده',
                     'صندلی خرید',
                     'قیمت هر صندلی',
                     'جمع خرید',
                     'مانده پرداخت',
+
                     'وضعیت',
                     'عملیات',
                   ].map((h) => (
@@ -265,6 +267,24 @@ export function TicketPurchaseWorkspace({
                     className="border-t hover:bg-muted/30"
                   >
                     <td className="p-3 font-semibold">{item.request.title}</td>
+                    <td className="p-3">
+                      {item.capacityCost ? (
+                        <>
+                          <span>
+                            {item.capacityCost.status === 'FINAL_LOSS'
+                              ? 'زیان قطعی'
+                              : 'هزینه ظرفیت باقی‌مانده'}
+                          </span>
+                          <div>
+                            {formatSalesMoney(item.capacityCost.amount)}{' '}
+                            {currencySymbol(item.capacityCost.currencyCode)} ·{' '}
+                            {item.capacityCost.unsoldSeats} seats
+                          </div>
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="p-3">
                       <bdi>{item.request.serviceDate ?? '—'}</bdi>
                     </td>

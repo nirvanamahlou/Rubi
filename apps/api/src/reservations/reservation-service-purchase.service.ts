@@ -1,3 +1,4 @@
+import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
 import { ReservationHotelSavingsService } from './reservation-hotel-savings.service';
 import { createHash, randomUUID } from 'node:crypto';
@@ -29,11 +30,28 @@ const UUID =
 export function purchasableReservationService(
   snapshot: SalesReservationRequestV1,
   serviceClientKey: string,
-) {
+): SalesReservationRequestV1['serviceSelections'][number] | undefined {
   const selected = snapshot.serviceSelections.find(
     ({ clientKey }) => clientKey === serviceClientKey,
   );
   if (selected) return selected;
+  const ticket = snapshot.ticketSelections?.find(
+    (item) => item.serviceClientKey === serviceClientKey,
+  );
+  if (ticket)
+    return {
+      clientKey: serviceClientKey,
+      kind: 'FLIGHT' as const,
+      referenceId: ticket.offerId,
+      titleSnapshot: ticket.carrierNameSnapshot,
+    };
+  if (snapshot.selectedTicketOfferIds?.includes(serviceClientKey))
+    return {
+      clientKey: serviceClientKey,
+      kind: 'FLIGHT' as const,
+      referenceId: serviceClientKey,
+      titleSnapshot: 'Flight',
+    };
   const hotel = snapshot.hotelSelection;
   if (hotel?.serviceClientKey !== serviceClientKey) return undefined;
   return {
@@ -211,6 +229,9 @@ export class ReservationServicePurchaseService {
     @Optional()
     @Inject(ReservationHotelSavingsService)
     private readonly savings?: ReservationHotelSavingsService,
+    @Optional()
+    @Inject(TicketPublicService)
+    private readonly tickets?: TicketPublicService,
   ) {}
 
   async recordBatch(
@@ -551,7 +572,21 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'خدمت انتخاب‌شده متعلق به این قرارداد نیست.',
       );
-    if (!['HOTEL', 'TRANSFER', 'INSURANCE'].includes(service.kind))
+    if (service.kind === 'FLIGHT') {
+      const ticket = snapshot.ticketSelections?.find(
+        (item) => item.serviceClientKey === service.clientKey,
+      );
+      const offerId = ticket?.offerId ?? service.referenceId;
+      const floating = offerId
+        ? (await this.tickets?.documentSupply(offerId, actor.branchIds)) ===
+          'FLOATING'
+        : service.metadata?.contractFlightVersion === 1;
+      if (!floating)
+        throw new BadRequestException(
+          'هزینه ظرفیت شرکت فقط یک‌بار برای کل پرواز ثبت می‌شود.',
+        );
+    }
+    if (!['HOTEL', 'TRANSFER', 'INSURANCE', 'FLIGHT'].includes(service.kind))
       throw new BadRequestException(
         'قیمت خرید بلیط هنگام تعریف بلیط در مدیریت بلیط ثبت و برای مالی ارسال می‌شود.',
       );

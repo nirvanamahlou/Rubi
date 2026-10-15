@@ -22,13 +22,17 @@ export class SalesProfitService {
     const { data: contract } = await this.sales.detailForProfit(id, actor);
     if (!actor.branchIds.includes(contract.branchId))
       throw new ForbiddenException('شعبه قرارداد در دسترس نیست.');
-    const [intake, tickets] = await Promise.all([
+    const [intake, tickets, companyOffers] = await Promise.all([
       this.reservations.contractPurchaseContext(id, contract.branchId),
       this.finance.recordedCostsForOffers(
         contract.ticketSelections.map((s) => s.offerId),
         contract.branchId,
       ),
+      this.finance.companyCapacityOfferIds?.(
+        contract.ticketSelections.map((selection) => selection.offerId),
+        contract.branchId,
+      ) ?? Promise.resolve([]),
     ]);
-    return { data: contractProfit(contract, intake, tickets) };
+    return { data: contractProfit(contract, intake, tickets, companyOffers) };
   }
 }
