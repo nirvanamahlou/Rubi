@@ -6067,3 +6067,9 @@ Inspected Reporting/Dashboard, accounting report APIs and existing assistant sou
 ## ASSISTANT-TAB-LAYOUT-1014 — PC-C
 
 Correct #871 presentation regression: the report/reportState conditional replaced all dedicated metrics and ViewContent with ActionEvidence, including during loading. Restore the original dedicated tabs and composer-only action execution; remove automatic tab action reads until evidence is mapped into individual widgets. Existing source gates and personal recommendations remain. Added four tab regressions across loading/ready/unavailable. No API/schema/dependency/provider change. Validation and CI pending.
+
+## PC-C — ASSISTANT-SESSION-RECOVERY-1015
+
+Amin browser verification reproduced session rotation racing assistant source reads: the normal ERP header refresh revokes the prior session during a snapshot, while assistant fetch did not recover401. Bounded assistant-only shared-session recovery and three-action verification in progress; no source data or access changes.
+
+ASSISTANT-SESSION-RECOVERY-1015 validation:54 assistant/shared-session tests passed, including the four fixed reads and filtered report recovery, failed refresh, retry cap,403 preservation and abort. Authenticated direct source verification: daily READY; sales PARTIAL only for CALL conversion permission; contractual balances PARTIAL for pending Finance/due/refund sources. Local generated Contracts output was refreshed after switching to current develop; full Web checks and exact-head CI remain pending. Candidate source scope frozen; bounded assistant source reservation released for other work.
