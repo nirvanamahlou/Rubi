@@ -1,3 +1,7 @@
+## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
+
+Hotel-rate manual and legacy selectors now consume the same active registered-broker directory as Reservations. Saving validates through the existing public brokerReference adapter, rejects inactive brokers and preserves validated legacy organization IDs. An additive registeredBrokerId FK plus XOR constraint keeps historical rows unchanged; API projections preserve the external brokerId contract for package pricing and purchase consumers. No data deletion or Master Data CRUD. Focused API74/Web122 and pack persistence5 tests pass; API/Web types pass. CI includes PostgreSQL temporary-table proof of legacy preservation, registered FK, uniqueness, exclusive source and delete restriction. User authorizes develop merge; apply migration before updated API/Web, no local3100 rollout in this task.
+
 ## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI — 2026-10-15
 
 Publication follow-up: [PR889](https://github.com/nirvanamahlou/Rubi/pull/889), authored by ehsandni, targets develop under the user's explicit authorization. Full hosted CI and final review gate merge. The local handoff below predates publication.
@@ -6130,6 +6134,10 @@ ASSISTANT-FLOATING-CHAT-1015 validation:58 assistant/shared-session regression t
 Supplier reservation forms now accept separate-currency hotel purchase totals, automatically suggested from the selected broker's active rates for canonical room types, guest mix and contractual stay. Suggestions never fall back to another broker; unavailable quotes remain manual. Staff may edit or clear the display totals before issuing the form. Values are preserved in existing immutable supplier-form workflow JSON/CAS/history and printed in preview/PDF only for the reservation form; no Sale, actual purchase, profit or voucher amount is changed. Optional shared JSON field preserves older revisions. Broker changes reset old totals and stale requests cannot overwrite another broker. No schema/migration/dependency/live runtime changes. Targeted tests and full CI gate user-authorized develop merge.
 
 ASSISTANT-CHAT-HEADING-1015 — PC-C: bounded post-rollout accessibility correction in AssistantComposer and its regression only. Browser route announcer picked hidden chat H1 while navigating to profile. Floating composer now uses an accessible region label without a hidden H1; inline heading remains unchanged. No shared shell, API, permissions or dependency changes. Reserve own two files and status entries; require targeted test/build, exact-head and postmerge CI plus compatible runtime refresh.
+
+## PURCHASE-CLOSE-AFTER-SAVE-1015 — PC-A
+
+Successful service purchases in the Purchase/Supply inbox now invoke the existing close handler before refreshing the list and publishing its workflow-change event. This clears the selected form and removes only reservationId from direct-entry links, preserving filters. Failure and uncertain-save paths are unchanged. No API, schema, migration, dependency or live data/runtime change. Focused regressions and exact-head CI gate user-authorized develop merge.
 
 
 ## ASSISTANT-DASHBOARD-PAGES-1015 — PC-C — IN_PROGRESS

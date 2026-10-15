@@ -1,4 +1,5 @@
 import { hotelRoomCapacityCombinations } from '@nora/contracts';
+import { hotelRateBrokerId } from './hotel-rate-broker-reference';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
   HotelRoomRateV1,
@@ -121,7 +122,7 @@ export class HotelPurchaseRatesPublicService {
             batchId: row.batchId,
             hotelId: row.hotelId,
             hotelName: row.hotelName,
-            brokerId: row.brokerId,
+            brokerId: hotelRateBrokerId(row),
             brokerName: row.brokerName,
             basePerNight: row.base.toString(),
             currencyCode: row.currency,

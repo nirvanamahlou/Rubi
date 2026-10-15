@@ -86,6 +86,7 @@ describe('versioned Reservations hotel rate packs', () => {
         hotelRatePackReference: vi.fn().mockResolvedValue({
           hotelName: 'Antalya hotel',
           brokerName: 'Broker',
+          brokerSource: 'BROKER',
         }),
       } as unknown as MasterTravelDirectory,
       {
@@ -100,6 +101,10 @@ describe('versioned Reservations hotel rate packs', () => {
     expect(createPack.mock.calls[0]![0].data.tourDepartureId).toBe(
       data.tourDepartureId,
     );
+    expect(createBatch.mock.calls[0]![0].data.rows.create[0]).toMatchObject({
+      brokerId: null,
+      registeredBrokerId: data.rows[0]!.brokerId,
+    });
     expect(createBatch.mock.calls[0]![0].data.tourDepartureId).toBe(
       data.tourDepartureId,
     );

@@ -1,3 +1,11 @@
+## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
+
+Reserve bounded .github/workflows/ci.yml database-gate test step only: connection-local temporary-table PostgreSQL regression proves preserved legacy rows, real registered-broker FK, XOR source check, uniqueness and delete restriction. No unrelated workflow changes.
+
+Additional sole migration/schema reservation: additive nullable registeredBrokerId FK on Reservations-owned group rates, nullable legacy organization brokerId retained, XOR check and separate unique keys. Existing rows unchanged; no Master Data CRUD or data conversion. Public adapters preserve the external brokerId contract. Reserve affected Reservations persistence/projections and focused migration tests. No overlapping active migration lock found; schema inverse relation only on MasterBroker.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-rate-brokers-1015. Reserve hotel-rate manual and legacy workspace broker selectors, focused regression tests, and bounded public MasterTravelDirectory.hotelRateReference adapter to reuse existing brokerReference (no Master Data CRUD changes). Producer is the existing public registered-broker directory consumed by Reservations; hotel-rate consumers use the same active broker IDs, retaining validated legacy organization references for existing data. One additive compatibility migration described above; no dependency or operational writes. User authorizes tests and develop merge; no overlapping source lock observed. Validation:74 focused API tests,122 Web tests and5 pack persistence tests passed; API/Web types passed after refreshing shared-contract builds. PostgreSQL FK/legacy preservation regression added to CI database gate; exact-head full quality/test/migration/build checks gate merge. Apply migration before API/Web rollout; no live deployment. Candidate source locks released, migration reservation remains until merge.
+
 ## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI
 
 Publication: https://github.com/nirvanamahlou/Rubi/pull/889 targets develop, authored by ehsandni. Full quality, full suite, PostgreSQL18 migration/seed and full production build gate merge. Earlier local-only statements below describe the pre-publication handoff.
@@ -7745,6 +7753,12 @@ RESERVATION-FORM-PURCHASE-PRICE-1015 candidate:22 API quote/settings regressions
 ASSISTANT-CHAT-HEADING-1015 — PC-C: bounded post-rollout accessibility correction in AssistantComposer and its regression only. Browser route announcer picked hidden chat H1 while navigating to profile. Floating composer now uses an accessible region label without a hidden H1; inline heading remains unchanged. No shared shell, API, permissions or dependency changes. Reserve own two files and status entries; require targeted test/build, exact-head and postmerge CI plus compatible runtime refresh.
 
 RESERVATION-FORM-PURCHASE-PRICE-1015 validation: API/Web lint, API/Web types and both production builds passed. Latest develop integration has only append-only status/assignment conflicts, resolved by retaining both task entries; no source conflict. Exact integrated-head CI gates final merge.
+
+## PURCHASE-CLOSE-AFTER-SAVE-1015 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-purchase-close-after-save-1015 from origin/develop@1ba19936. User authorizes closing the purchase entry form after a successful save in the Purchase/Supply inbox and develop merge. Reserve only reservation-purchases/workspace.tsx, its focused regression and own task/status entries; bounded UI-consumer fix, no Procurement-owned command change. Earlier flight allocation source scope is frozen/released; no overlapping active file owner found. Preserve list refresh, workflow events and deep-link filter cleanup through the existing close handler. Failure/uncertain requests must keep their draft open. No API/schema/migration/dependency/runtime or operational data change.
+
+Validation: eight focused Purchase/Supply UI regressions pass, including the actual success callback closing selection, refreshing rows, preserving filters and removing reservationId. No premature close occurs before success. Scoped Web lint/typecheck and full CI/build gate merge. Frozen source scope released for unrelated subsequent work; no operational/runtime change.
 
 
 ## ASSISTANT-DASHBOARD-PAGES-1015 — PC-C — IN_PROGRESS
