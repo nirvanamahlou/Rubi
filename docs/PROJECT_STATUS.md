@@ -2,6 +2,27 @@
 
 Hotel-rate manual and legacy selectors now consume the same active registered-broker directory as Reservations. Saving validates through the existing public brokerReference adapter, rejects inactive brokers and preserves validated legacy organization IDs. An additive registeredBrokerId FK plus XOR constraint keeps historical rows unchanged; API projections preserve the external brokerId contract for package pricing and purchase consumers. No data deletion or Master Data CRUD. Focused API74/Web122 and pack persistence5 tests pass; API/Web types pass. CI includes PostgreSQL temporary-table proof of legacy preservation, registered FK, uniqueness, exclusive source and delete restriction. User authorizes develop merge; apply migration before updated API/Web, no local3100 rollout in this task.
 
+## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI — 2026-10-15
+
+Publication follow-up: [PR889](https://github.com/nirvanamahlou/Rubi/pull/889), authored by ehsandni, targets develop under the user's explicit authorization. Full hosted CI and final review gate merge. The local handoff below predates publication.
+
+The supplied brand/system dashboard references are implemented in the existing
+Integrations centre. Editable catalogue, four metric drilldowns, Jalali periods,
+comparison, latest configuration activity and owner-flow explanation are live on
+local Docker3100/4192. The incomplete previous overlay omitted the existing IAM
+actor hook; the runtime dependency is now included and login/page rendering were
+verified on localhost and127.0.0.1 with the authorized administrator. Four initial
+brands/systems were initialized through the public audited registry command.
+
+189 tests pass; scoped lint, format, Web/API typecheck, Web production build,
+database declaration build and runtime compilation pass. Full API typechecking
+required regeneration of stale local Prisma artifacts, without database changes.
+24 runtime overlay files and unchanged runtime schema verified. No migration,
+new seed, permission grant, GitHub publication or merge. Real external metrics,
+webhook/sync and SSO remain dependent on external access and public owner
+contracts. Source reservation released. Details:
+[INTEGRATIONS-VISUAL-1015](tasks/INTEGRATIONS-VISUAL-1015.md).
+
 ## DOCUMENT-DOWNLOAD-ONLY-1015 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-document-download-only-1015. Reserve shared reservation/voucher TravelDocument, sales contract output and embedded contract preview plus existing regression expectations, bounded translations and own status docs. Remove browser print/Save-as-PDF buttons, print-only code and obsolete instructions; retain authenticated direct PDF downloads and previews. This covers all consumers of the shared components. No API/schema/dependency/migration/runtime changes. User requests implementation; PR to develop remains reviewable without unrequested merge. No overlapping active lock observed. Validation:29 existing document/download/PDF-route regressions passed, including download availability after issuance and removed print controls. Scoped lint/types and full CI build gate review. No live deployment.
@@ -6107,5 +6128,9 @@ User requests a fixed bottom-left assistant launcher throughout ERP with the exi
 Missing optional dated hotel tariffs no longer block the New Contract travel step, manual foreign agreed prices per room, or server save/confirmation. Known room capacities and occupancy tariffs remain checked independently for each room; missing child ages, guest/party mismatch, real room FKs and monetary validation remain unchanged. No schema/migration/dependency or operational runtime changes. Focused Sales Web/API regressions pass; full lint/types/build and exact-head CI gate the user-authorized develop merge.
 
 ASSISTANT-FLOATING-CHAT-1015 validation:58 assistant/shared-session regression tests, targeted lint, full Web TypeScript and production build passed. Registry/tools/native permissions, ERP APIs and database unchanged. Authenticated launcher renders only with an Actor; scope-key tests isolate user/permission/branch changes while preserving refreshed sessions. Common shell edits limited to import/mount. Candidate scope frozen and bounded source reservation released; remaining delivery checks are browser interaction, exact-head CI and local rollout.
+
+## RESERVATION-FORM-PURCHASE-PRICE-1015 — PC-A
+
+Supplier reservation forms now accept separate-currency hotel purchase totals, automatically suggested from the selected broker's active rates for canonical room types, guest mix and contractual stay. Suggestions never fall back to another broker; unavailable quotes remain manual. Staff may edit or clear the display totals before issuing the form. Values are preserved in existing immutable supplier-form workflow JSON/CAS/history and printed in preview/PDF only for the reservation form; no Sale, actual purchase, profit or voucher amount is changed. Optional shared JSON field preserves older revisions. Broker changes reset old totals and stale requests cannot overwrite another broker. No schema/migration/dependency/live runtime changes. Targeted tests and full CI gate user-authorized develop merge.
 
 ASSISTANT-CHAT-HEADING-1015 — PC-C: bounded post-rollout accessibility correction in AssistantComposer and its regression only. Browser route announcer picked hidden chat H1 while navigating to profile. Floating composer now uses an accessible region label without a hidden H1; inline heading remains unchanged. No shared shell, API, permissions or dependency changes. Reserve own two files and status entries; require targeted test/build, exact-head and postmerge CI plus compatible runtime refresh.

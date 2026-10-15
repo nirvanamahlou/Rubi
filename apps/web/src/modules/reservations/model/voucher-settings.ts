@@ -74,6 +74,11 @@ export function defaultVoucherSettings(
   };
   if (!saved) return defaults;
   return {
+    ...(saved.hotelPurchasePrices !== undefined
+      ? {
+          hotelPurchasePrices: saved.hotelPurchasePrices.map((p) => ({ ...p })),
+        }
+      : {}),
     ...(saved.brokerId ? { brokerId: saved.brokerId } : {}),
     ...(saved.leaderId ? { leaderId: saved.leaderId } : {}),
     text: {

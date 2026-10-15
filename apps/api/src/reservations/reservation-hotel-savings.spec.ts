@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   hotelReferencePurchase,
+  supplierHotelPurchasePrices,
   ReservationHotelSavingsService,
 } from './reservation-hotel-savings.service';
 import type {
@@ -51,6 +52,93 @@ function batch(
   } as unknown as PackageTourHotelPurchaseBatchV1;
 }
 describe('hotel reference purchase savings', () => {
+  it('sums heterogeneous rooms across all nights using the chosen broker purchase tariffs', () => {
+    const rates = batch('100');
+    rates.rows[0]!.brokerId = 'chosen';
+    const single = batch('60', 'USD', 1).rows[0]!.roomRates[0]!;
+    single.roomTypeId = 'single';
+    rates.rows[0]!.roomRates = [...rates.rows[0]!.roomRates, single];
+    const selected = {
+      ...snapshot,
+      hotelSelection: {
+        ...snapshot.hotelSelection!,
+        roomCount: 2,
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: 'room',
+            roomTypeNameSnapshot: 'Double',
+            adults: 2,
+            childAges: [],
+          },
+          {
+            ordinal: 2,
+            roomTypeId: 'single',
+            roomTypeNameSnapshot: 'Single',
+            adults: 1,
+            childAges: [],
+          },
+        ],
+      },
+    };
+    expect(
+      supplierHotelPurchasePrices(
+        [rates],
+        selected,
+        [30, 31, 32],
+        'chosen',
+        'BB',
+      ),
+    ).toEqual([{ amount: '320', currencyCode: 'USD' }]);
+  });
+  it('enforces supplier quote permission and branch before exposing purchase rates', async () => {
+    const findFirst = vi.fn().mockResolvedValue(null);
+    const service = new ReservationHotelSavingsService(
+      { client: { reservationIntake: { findFirst } } } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+    );
+    await expect(
+      service.supplierFormPrices('id', 'broker', {
+        permissions: [],
+        branchIds: ['branch'],
+      } as never),
+    ).rejects.toThrow();
+    expect(findFirst).not.toHaveBeenCalled();
+    await expect(
+      service.supplierFormPrices('id', 'broker', {
+        permissions: ['reservations.read'],
+        branchIds: ['branch'],
+      } as never),
+    ).rejects.toThrow();
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { id: 'id', branchId: { in: ['branch'] } },
+    });
+  });
+  it('quotes only the chosen broker, keeps currencies separate and leaves missing rates empty', () => {
+    const chosen = batch('100');
+    const other = batch('1');
+    const euro = batch('80', 'EUR');
+    chosen.rows[0]!.brokerId = 'chosen';
+    euro.rows[0]!.brokerId = 'chosen';
+    other.rows[0]!.brokerId = 'other';
+    expect(
+      supplierHotelPurchasePrices(
+        [other, chosen, euro],
+        snapshot,
+        [30, 31],
+        'chosen',
+        'BB',
+      ),
+    ).toEqual([
+      { amount: '200', currencyCode: 'USD' },
+      { amount: '160', currencyCode: 'EUR' },
+    ]);
+    expect(
+      supplierHotelPurchasePrices([other], snapshot, [30, 31], 'chosen', 'BB'),
+    ).toEqual([]);
+  });
   it('uses purchase not sale price and lowest complete matching quote', () => {
     expect(
       hotelReferencePurchase(
