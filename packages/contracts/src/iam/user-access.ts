@@ -1711,6 +1711,14 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     tab: 'notes',
   },
   {
+    id: 'workbench.tab.daily-packages',
+    group: 'workbench',
+    title: 'پکیج‌های روز',
+    route: '/workbench',
+    tab: 'daily-packages',
+    inheritFrom: 'workbench.home',
+  },
+  {
     id: 'workbench.tab.calendar',
     group: 'workbench',
     title: 'تقویم من',

@@ -2277,9 +2277,21 @@ export class DocumentsService {
     id: string,
     actor: AuthenticatedActor,
     metadata: DocumentRequestMetadata,
+    expectedSource?: {
+      sourceModule: string;
+      sourceEntityType: string;
+      sourceEntityId: string;
+    },
   ): Promise<DocumentFileDelivery> {
     const row = await this.findVisibleDetail(id, actor);
     if (!row || !row.currentVersion)
+      throw new NotFoundException('سند پیدا نشد.');
+    if (
+      expectedSource &&
+      (row.sourceModule !== expectedSource.sourceModule ||
+        row.sourceEntityType !== expectedSource.sourceEntityType ||
+        row.sourceEntityId !== expectedSource.sourceEntityId)
+    )
       throw new NotFoundException('سند پیدا نشد.');
     this.assertDomain(row.documentType.domain, actor.permissions);
     const sensitive =
