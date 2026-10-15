@@ -449,6 +449,21 @@ export function ReservationFormSheet({
               </tbody>
             </table>
             <Heading number="06" title="NOTICE" note="Notes & confirmation" />
+            {!voucher && !!settings?.hotelPurchasePrices?.length && (
+              <div
+                dir="ltr"
+                style={{
+                  padding: '6px 10px',
+                  border: '1px solid #c5d5e6',
+                  textAlign: 'center',
+                }}
+              >
+                <strong>HOTEL TOTAL: </strong>
+                {settings.hotelPurchasePrices
+                  .map((price) => `${price.amount} ${price.currencyCode}`)
+                  .join(' · ')}
+              </div>
+            )}
             <div className={voucher ? styles.voucherClosing : undefined}>
               <div className={styles.notice}>
                 <span>SPECIAL REQUESTS / REMARKS</span>
