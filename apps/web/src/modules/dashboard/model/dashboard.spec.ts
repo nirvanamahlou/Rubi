@@ -1,3 +1,4 @@
+import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-location';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -339,8 +340,11 @@ describe('dashboard registry', () => {
   });
 
   it('keeps summary pages focused and moves related analysis into sidebar subpages', () => {
-    expect(dashboardPages).toHaveLength(27);
+    expect(dashboardPages).toHaveLength(33);
     expect(dashboardNavigation).toEqual([
+      ...['overview', 'sales', 'finance', 'news', 'scenarios', 'advisor'].map(
+        (view) => ({ pageId: 'assistant-' + view }),
+      ),
       {
         pageId: 'executive-overview',
         children: [{ pageId: 'executive-growth-risk' }],
@@ -389,7 +393,7 @@ describe('dashboard registry', () => {
       item.pageId,
       ...(item.children?.map((child) => child.pageId) ?? []),
     ]);
-    expect(navigationIds).toHaveLength(25);
+    expect(navigationIds).toHaveLength(31);
     expect(navigationIds).not.toContain('tasks-automation');
     expect(navigationIds).not.toContain('documents-reports-data-quality');
     expect(dashboardPages.map((page) => page.id)).toEqual(
@@ -409,7 +413,9 @@ describe('dashboard registry', () => {
       expect(page.kpiIds.length).toBeLessThanOrEqual(6);
       expect(page.visualizations.length).toBeLessThanOrEqual(4);
     }
-    for (const pageId of navigationIds) {
+    for (const pageId of navigationIds.filter(
+      (id) => !assistantViewForDashboardPage(id),
+    )) {
       const page = dashboardPages.find((item) => item.id === pageId)!;
       expect(page.kpiIds.length).toBeLessThanOrEqual(6);
       expect(page.visualizations.length).toBeLessThanOrEqual(5);
@@ -417,7 +423,8 @@ describe('dashboard registry', () => {
     }
     for (const page of dashboardPages) {
       expect(page.technicalName).not.toBe('');
-      expect(page.visualizations.length).toBeGreaterThan(0);
+      if (!assistantViewForDashboardPage(page.id))
+        expect(page.visualizations.length).toBeGreaterThan(0);
       for (const visualization of page.visualizations) {
         expect(visualization.source.length).toBeGreaterThan(0);
         expect(visualization.drilldown).toMatch(/^\//);

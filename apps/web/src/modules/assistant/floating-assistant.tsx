@@ -15,6 +15,7 @@ import Link from '@/i18n/link';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { assistantCopy as c } from '@/i18n/assistant-copy';
+import { assistantDashboardHref } from './dashboard-location';
 import styles from './floating-assistant.module.css';
 
 const PreparedChat = dynamic(
@@ -88,7 +89,7 @@ function AssistantSession() {
               <p>{t(c.widgetSubtitle)}</p>
             </div>
             <Link
-              href="/assistant?view=overview"
+              href={assistantDashboardHref()}
               className={styles.headerButton}
               aria-label={t(c.widgetFullPanel)}
               title={t(c.widgetFullPanel)}

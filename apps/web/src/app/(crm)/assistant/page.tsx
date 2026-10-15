@@ -1,16 +1,13 @@
-import type { Metadata } from 'next';
-import { localizedMetadata } from '@/i18n/metadata';
-import { ExecutiveWorkspace } from '@/modules/assistant/executive-workspace';
+import { redirect } from 'next/navigation';
 import { assistantView } from '@/modules/assistant/model';
+import { assistantDashboardHref } from '@/modules/assistant/dashboard-location';
 
-export async function generateMetadata(): Promise<Metadata> {
-  return localizedMetadata({ title: 'دستیار هوشمند مدیرعامل' });
-}
+/** Preserve existing bookmarks while the complete workspace lives in Dashboard. */
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  return <ExecutiveWorkspace view={assistantView(params.view)} />;
+  redirect(assistantDashboardHref(assistantView(params.view)));
 }
