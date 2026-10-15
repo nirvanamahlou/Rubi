@@ -1,0 +1,80 @@
+import { moneyUnits, moneyDecimal } from '@nora/contracts';
+import type { SalesMoney } from '@nora/contracts';
+import type { SalesFormState } from './sales-form';
+export function roomPartyUsage(rooms: SalesFormState['hotel']['rooms']) {
+  const ages = (rooms ?? []).flatMap((r) => r.childAges);
+  return {
+    adults:
+      (rooms ?? []).reduce((n, r) => n + r.adults, 0) +
+      ages.filter((a) => a !== null && a >= 12).length,
+    children: ages.filter((a) => a !== null && a >= 2 && a < 12).length,
+    infants: ages.filter((a) => a !== null && a < 2).length,
+    total: (rooms ?? []).reduce((n, r) => n + r.adults + r.childAges.length, 0),
+  };
+}
+export function salesRoomPartyError(state: SalesFormState): string | null {
+  if (
+    !state.serviceKinds.includes('HOTEL') ||
+    !state.serviceKinds.includes('FLIGHT')
+  )
+    return null;
+  const used = roomPartyUsage(state.hotel.rooms);
+  const p = state.passengerComposition;
+  return used.adults > p.adults ||
+    used.children > p.children ||
+    used.infants > p.infants ||
+    used.total > p.adults + p.children + p.infants
+    ? 'مجموع بزرگسال و کودک اتاق‌ها نباید از تعداد مسافران پرواز بیشتر باشد.'
+    : null;
+}
+export function roomAgreedTotals(
+  rooms: SalesFormState['hotel']['rooms'],
+): SalesMoney[] {
+  const totals = new Map<string, bigint>();
+  for (const r of rooms ?? []) {
+    const p = r.agreedPrice;
+    if (
+      !p ||
+      !/^[A-Z]{3}$/.test(p.currencyCode) ||
+      !/^\d{1,18}(?:\.\d{1,4})?$/.test(p.amount)
+    )
+      continue;
+    totals.set(
+      p.currencyCode,
+      (totals.get(p.currencyCode) ?? 0n) + moneyUnits(p.amount),
+    );
+  }
+  return [...totals].map(([currencyCode, amount]) => ({
+    currencyCode,
+    amount: moneyDecimal(amount),
+  }));
+}
+export function withRoomPriceTotals(
+  state: SalesFormState,
+  rooms: SalesFormState['hotel']['rooms'],
+): SalesMoney[] {
+  const values = new Map(
+    (state.contractPrices ?? []).map((p) => [p.currencyCode, p.amount]),
+  );
+  const previous = new Map(
+    roomAgreedTotals(state.hotel.rooms).map((p) => [
+      p.currencyCode,
+      moneyUnits(p.amount),
+    ]),
+  );
+  const next = new Map(
+    roomAgreedTotals(rooms).map((p) => [p.currencyCode, moneyUnits(p.amount)]),
+  );
+  for (const code of new Set([...previous.keys(), ...next.keys()])) {
+    const old = values.get(code);
+    const current =
+      old && /^\d{1,18}(?:\.\d{1,4})?$/.test(old) ? moneyUnits(old) : 0n;
+    const amount =
+      current - (previous.get(code) ?? 0n) + (next.get(code) ?? 0n);
+    values.set(code, moneyDecimal(amount < 0n ? 0n : amount));
+  }
+  return [...values].map(([currencyCode, amount]) => ({
+    currencyCode,
+    amount,
+  }));
+}

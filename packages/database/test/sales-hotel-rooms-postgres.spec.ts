@@ -32,6 +32,15 @@ describe.skipIf(process.env.SALES_HOTEL_ROOMS_TEST !== '1')(
           ),
         );
         await db.query(
+          readFileSync(
+            resolve(
+              process.cwd(),
+              'prisma/migrations/20261015100000_sales_hotel_room_agreed_price/migration.sql',
+            ),
+            'utf8',
+          ),
+        );
+        await db.query(
           'INSERT INTO sales_contract_hotel_selections VALUES ($1)',
           [parent],
         );
@@ -53,6 +62,24 @@ describe.skipIf(process.env.SALES_HOTEL_ROOMS_TEST !== '1')(
           { ordinal: 1, adults: 2, child_ages: [5] },
           { ordinal: 2, adults: 1, child_ages: [] },
         ]);
+        expect(
+          (
+            await db.query(
+              'SELECT agreed_price FROM sales_contract_hotel_rooms',
+            )
+          ).rows.every((r) => r.agreed_price === null),
+        ).toBe(true);
+        await db.query(
+          'UPDATE sales_contract_hotel_rooms SET agreed_price=$1 WHERE ordinal=1',
+          [JSON.stringify({ amount: '100.1254', currencyCode: 'USD' })],
+        );
+        expect(
+          (
+            await db.query(
+              'SELECT agreed_price FROM sales_contract_hotel_rooms WHERE ordinal=1',
+            )
+          ).rows[0].agreed_price,
+        ).toEqual({ amount: '100.1254', currencyCode: 'USD' });
         await expect(
           db.query(insert, [parent, 1, single, 'Duplicate', 1, '[]']),
         ).rejects.toMatchObject({ code: '23505' });
