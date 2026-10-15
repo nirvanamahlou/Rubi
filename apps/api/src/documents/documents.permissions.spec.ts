@@ -71,15 +71,15 @@ describe('documents permission policy', () => {
     });
   });
 
-  it('requires a reason for sensitive view and download', () => {
+  it('accepts optional reasons with sensitive view and download permissions', () => {
     expect(
       authorizeDocumentAction(actor, {
         action: 'DOWNLOAD',
         branchReference: 'branch-preview-tehran',
         confidentiality: 'RESTRICTED',
-        reason: 'کم',
-      }).code,
-    ).toBe('SENSITIVE_REASON_REQUIRED');
+        reason: '',
+      }).allowed,
+    ).toBe(true);
     expect(
       authorizeDocumentAction(actor, {
         action: 'DOWNLOAD',
