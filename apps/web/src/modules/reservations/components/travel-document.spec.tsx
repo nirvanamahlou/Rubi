@@ -227,7 +227,8 @@ it('keeps direct download available on an issued reservation form', () => {
   };
   const html = renderToStaticMarkup(<TravelDocument intake={issued} />);
   expect(html).toContain('دانلود مستقیم PDF فرم رزرواسیون');
-  expect(html).toContain('چاپ / ذخیره PDF');
+  expect(html).not.toContain('چاپ / ذخیره PDF');
+  expect(html).not.toContain('Save as PDF');
   expect(html).not.toContain('Special room:');
   expect(html).not.toContain('Country:');
   expect(html).not.toContain('subject to supplier confirmation');
