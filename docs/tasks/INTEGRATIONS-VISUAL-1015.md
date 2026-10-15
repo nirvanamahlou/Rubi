@@ -39,3 +39,52 @@ or new seed. Preserve existing volumes, environment secrets and prior image.
 New branch is based on PC-D-Integration. Local Docker execution was explicitly
 authorized earlier. GitHub publication and merge remain subject to the current
 project policy; this work does not publish or merge automatically.
+
+## Verified delivery
+
+- Local commits: dfc1b9b8 restores the foundation; 9cf2e851 implements the visual
+  dashboard. No GitHub publication, hosted CI or merge.
+- 15 Web/model/route tests, 27 Integrations API tests and 147 shared-contract tests
+  pass (189 total). Scoped Web/API lint passes. Web typecheck and production build
+  pass. Formatting and whitespace checks completed for affected source.
+- Runtime image rubi-integrations-local:1015-visual,
+  sha256:7ccf6501cc156d672e7092c9fc605d477e5a3bfda4c2c5fe2b869646d5dcbe66.
+  Verifier confirms exactly 24 scoped overlay files and unchanged schema hash
+  d9bf235743f0fa10b751b356d0c651f0f098201bc62bcfb5238a945bf6076dad.
+  Existing supplier and site adapters remain intact. API/Web are healthy;
+  API health and login respond 200, anonymous registry access returns 401.
+- Authenticated localhost browser verified four initial editable brands/systems
+  via the public initialize command (registry version 1, HQ branch). Refresh
+  preserves four systems. This is configuration initialization, not business
+  sample data. No migration, new seed, role grant or credential change in this
+  redesign. The earlier local seed and administrator setup were user-authorized.
+- Four metric dialogs tested; Academy excluded from travel sales. Escape closes
+  and returns focus to the originating tile. Dedicated system settings and edit
+  form verified without changing the record. Persian current-month range starts
+  at 1 Mehr; shared calendar opens; reversed dates disable metric reports.
+- Light/dark layouts and 390x844 mobile dialog tested. Tables scroll inside the
+  dialog; viewport override reset and light theme restored.
+- Operational now: scoped catalogue, configurable brand/system/capability
+  management, initialization, lifecycle/version protection, audited settings,
+  navigable dashboard/metric details and the existing Integration section shell.
+- Ready for connection: the four systems and dashboard presentation. Business
+  counts, trends, operational queues, general event delivery/sync, external
+  management and SSO are not live. They require external documentation/access
+  and public owner-approved projections. No live external success is claimed.
+- Runtime build/activation/rollback receipts remain outside Git under
+  Rubi-runtime-local/integrations-visual-1015. Persistent start.ps1 points to the
+  new image; infrastructure volumes and previous image are retained.
+
+- Authenticated browser verification also passes at
+  http://127.0.0.1:3100/integrations, the user's original hostname. Local dev
+  origins are explicitly configured in the local image; no security policy in
+  application source was weakened. Screenshot: external runtime folder,
+  brands-dashboard.png. Existing administrator credentials were used, not changed.
+- The first full API typecheck found stale generated Prisma declarations for
+  existing Sales hotel rooms. Regenerated the isolated worktree's ignored Prisma
+  client and built database declarations from its existing schema using a dummy,
+  unreachable generation-only URL. No schema changes or database calls/migrations.
+
+Final full API typecheck passes after regenerating local declarations. Database
+package build also passes. Runtime baseline remains unchanged. Source edit locks
+are released with this handoff; future work requires a new reservation.

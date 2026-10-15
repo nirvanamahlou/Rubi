@@ -1,3 +1,22 @@
+## INTEGRATIONS-VISUAL-1015 — PC-D — LOCAL_RUNNING — 2026-10-15
+
+The supplied brand/system dashboard references are implemented in the existing
+Integrations centre. Editable catalogue, four metric drilldowns, Jalali periods,
+comparison, latest configuration activity and owner-flow explanation are live on
+local Docker3100/4192. The incomplete previous overlay omitted the existing IAM
+actor hook; the runtime dependency is now included and login/page rendering were
+verified on localhost and127.0.0.1 with the authorized administrator. Four initial
+brands/systems were initialized through the public audited registry command.
+
+189 tests pass; scoped lint, format, Web/API typecheck, Web production build,
+database declaration build and runtime compilation pass. Full API typechecking
+required regeneration of stale local Prisma artifacts, without database changes.
+24 runtime overlay files and unchanged runtime schema verified. No migration,
+new seed, permission grant, GitHub publication or merge. Real external metrics,
+webhook/sync and SSO remain dependent on external access and public owner
+contracts. Source reservation released. Details:
+[INTEGRATIONS-VISUAL-1015](tasks/INTEGRATIONS-VISUAL-1015.md).
+
 ## INTERNATIONAL-TICKET-CALENDAR-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-international-ticket-calendar-1014 from latest origin/develop. Reserve Sales ticket offer card/picker, New Contract date-display propagation and focused regressions plus own status entries. Foreign route cards must display Gregorian departure/arrival dates while keeping fixed Tehran 24-hour times and existing domestic behavior. No shared contract, schema, dependency, migration or local runtime changes. Prior service-party reservation is merged as PR875 and released. Validation:53 focused card/picker/form/model tests passed, including Gregorian departure/arrival and overnight rollover with unchanged Tehran24-hour times. Scoped lint and Web types gate PR; full CI verifies build.
