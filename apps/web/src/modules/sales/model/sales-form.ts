@@ -439,12 +439,10 @@ export function salesHotelCapacityError(
   if (state.hotel.rooms?.length) {
     for (const r of state.hotel.rooms) {
       const rate = roomRates.find((v) => v.roomTypeId === r.roomTypeId);
-      if (!rate)
-        return state.hotel.checkIn && state.hotel.checkOut
-          ? 'برای تمام اتاق‌ها باید نرخ معتبر انتخاب شود.'
-          : null;
       if (r.childAges.some((a) => a === null))
         return 'سن کودکان هر اتاق را تکمیل کنید.';
+      // A dated tariff is optional for a manually negotiated room price.
+      if (!rate) continue;
       if (
         rate.occupancyRates
           ? !quoteHotelOccupancy(rate.occupancyRates, {
