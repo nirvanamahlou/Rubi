@@ -599,6 +599,7 @@ function PurchaseHub() {
               serviceClientKey={selection.serviceClientKey}
               readOnly={!result?.meta.canRecord}
               onSaved={() => {
+                close();
                 setRevision((v) => v + 1);
                 window.dispatchEvent(new Event('reservation-workflow-changed'));
               }}
