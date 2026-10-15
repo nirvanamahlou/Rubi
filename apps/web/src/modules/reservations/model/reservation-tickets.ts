@@ -1,5 +1,8 @@
 import type { SalesReservationRequestV1 } from '@nora/contracts';
-import { salesContractFlights } from '@nora/contracts';
+import {
+  salesContractFlights,
+  reservationFlightOutputKey,
+} from '@nora/contracts';
 import type { FlightTicketSheetData } from '@/modules/sales/public/tickets';
 
 export type ReservationPdfTicket = Omit<FlightTicketSheetData, 'offers'> & {
@@ -19,6 +22,7 @@ export type ReservationPdfTicket = Omit<FlightTicketSheetData, 'offers'> & {
 export function reservationTickets(
   snapshot: SalesReservationRequestV1,
   passengerNames: Readonly<Record<string, string>> = {},
+  flightNumbers: Readonly<Record<string, string>> = {},
 ): ReservationPdfTicket[] {
   return (snapshot.passengerAssignments ?? [])
     .filter((p) => snapshot.passengerIds.includes(p.customerId))
@@ -45,7 +49,10 @@ export function reservationTickets(
         )
         .map((ticket) => ({
           offerId: ticket.offerId,
-          id: `${ticket.serviceClientKey}-${ticket.offerId ?? 'contract-only'}`,
+          id: reservationFlightOutputKey(
+            ticket.serviceClientKey,
+            ticket.offerId,
+          ),
           contractOnly: ticket.source === 'CONTRACT_ONLY',
           originId: ticket.originId,
           destinationId: ticket.destinationId,
@@ -53,7 +60,13 @@ export function reservationTickets(
           arrivalAt: ticket.arrivalAt,
           direction: ticket.direction,
           carrierName: ticket.carrierNameSnapshot,
-          serviceNumber: ticket.serviceNumberSnapshot,
+          serviceNumber:
+            flightNumbers[
+              reservationFlightOutputKey(
+                ticket.serviceClientKey,
+                ticket.offerId,
+              )
+            ] ?? ticket.serviceNumberSnapshot,
           cabinClassCode: ticket.cabinClassCode,
           businessOutput:
             flights.find(

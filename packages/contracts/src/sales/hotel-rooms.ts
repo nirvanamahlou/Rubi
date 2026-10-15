@@ -41,3 +41,27 @@ export function validSalesHotelRooms(rooms: unknown, count: number) {
     )
   );
 }
+
+/** Occupancy summary for ordered room products; no named sleeping assignment. */
+export function salesHotelRoomSummary(
+  rooms: readonly { adults: number; childAges: readonly unknown[] }[],
+) {
+  return rooms.reduce(
+    (summary, room) => {
+      const occupants = room.adults + room.childAges.length;
+      summary.roomCount += 1;
+      summary.singleRoomCount += occupants === 1 ? 1 : 0;
+      summary.doubleRoomCount += occupants >= 2 ? 1 : 0;
+      summary.extraBedCount += Math.max(0, occupants - 2);
+      summary.occupancy += occupants;
+      return summary;
+    },
+    {
+      roomCount: 0,
+      singleRoomCount: 0,
+      doubleRoomCount: 0,
+      extraBedCount: 0,
+      occupancy: 0,
+    },
+  );
+}

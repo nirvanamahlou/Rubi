@@ -1,4 +1,8 @@
 import { SalesOperationalAmendmentService } from '../sales/sales-operational-amendment.module';
+import {
+  salesContractFlights,
+  reservationFlightOutputKey,
+} from '@nora/contracts';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LegalEntitiesService } from '../legal-entities/legal-entities.service';
 import { MasterOrganizationDirectory } from '../master-data/master-organization-directory';
@@ -190,6 +194,14 @@ export class TravelWorkflowService {
           state,
           command,
           intake.snapshot.passengerIds,
+          command.action === 'TICKET_FLIGHT_NUMBERS'
+            ? salesContractFlights(
+                intake.snapshot.serviceSelections,
+                intake.snapshot.ticketSelections ?? [],
+              ).map((f) =>
+                reservationFlightOutputKey(f.serviceClientKey, f.offerId),
+              )
+            : [],
         );
       } catch (error) {
         throw new BadRequestException(

@@ -94,17 +94,19 @@ export async function GET(
         );
       }
     }
-    const allTickets = reservationTickets(intake.snapshot, passengerNames).map(
-      (ticket) => {
-        const doc = intake.ticketDocuments?.find(
-          (d) => d.customerId === ticket.passengerId,
-        );
-        return {
-          ...ticket,
-          ...(doc ? { eTicketNumber: doc.number, issuedAt: doc.issuedAt } : {}),
-        };
-      },
-    );
+    const allTickets = reservationTickets(
+      intake.snapshot,
+      passengerNames,
+      intake.workflow.ticketFlightNumbers,
+    ).map((ticket) => {
+      const doc = intake.ticketDocuments?.find(
+        (d) => d.customerId === ticket.passengerId,
+      );
+      return {
+        ...ticket,
+        ...(doc ? { eTicketNumber: doc.number, issuedAt: doc.issuedAt } : {}),
+      };
+    });
     const tickets = passengerId
       ? allTickets.filter((ticket) => ticket.passengerId === passengerId)
       : allTickets;

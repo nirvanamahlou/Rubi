@@ -170,3 +170,64 @@ it('uses only explicit sales corrections for the purple correction marker', asyn
     action: { in: ['SALES_PASSENGER_CORRECTION'] },
   });
 });
+
+it('matches unchanged room products even when old stored counts differ from their canonical summary', async () => {
+  const rooms = [
+    {
+      ordinal: 1,
+      roomTypeId: 'room',
+      roomTypeNameSnapshot: 'Family',
+      adults: 2,
+      childAges: [6],
+    },
+  ];
+  const hotel = {
+    hotelId: 'hotel',
+    roomTypeId: 'room',
+    roomCount: 1,
+    mealServiceId: null,
+    singleRoomCount: 0,
+    doubleRoomCount: 1,
+    extraBedCount: 0,
+    rooms,
+    checkInDate: new Date('2026-10-01'),
+    checkOutDate: new Date('2026-10-03'),
+  };
+  const row = {
+    hotelSelection: hotel,
+    passengers: [
+      {
+        customerId: 'guest',
+        birthDate: new Date('1990-10-02'),
+        allocations: [{ service: { clientKey: 'hotel-service' } }],
+      },
+    ],
+  };
+  const service = new SalesReservationTableService(
+    {
+      client: { salesContract: { findFirst: vi.fn().mockResolvedValue(row) } },
+    } as never,
+    {} as never,
+  );
+  const snapshot = {
+    contractId: 'contract',
+    hotelSelection: {
+      ...hotel,
+      rooms: structuredClone(rooms),
+      extraBedCount: 1,
+      serviceClientKey: 'hotel-service',
+      checkInDate: '2026-10-01',
+      checkOutDate: '2026-10-03',
+    },
+    passengerAssignments: [
+      { customerId: 'guest', serviceClientKeys: ['hotel-service'] },
+    ],
+  };
+  const actor = {
+    permissions: ['reservations.read'],
+    branchIds: ['branch'],
+  } as never;
+  expect(await service.hotelGuestAges(snapshot as never, actor)).toEqual([35]);
+  hotel.rooms[0]!.childAges = [8];
+  expect(await service.hotelGuestAges(snapshot as never, actor)).toBeNull();
+});

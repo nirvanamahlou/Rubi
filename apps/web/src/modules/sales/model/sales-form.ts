@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { salesRoomPartyError, roomAgreedTotals } from './sales-room-prices';
 import type { SalesHotelRoomV1 } from '@nora/contracts';
 import { validSalesHotelRooms } from '@nora/contracts';
@@ -1405,6 +1406,9 @@ export function salesPayload(
             singleRoomCount: state.hotel.singleRoomCount,
             doubleRoomCount: state.hotel.doubleRoomCount,
             extraBedCount: state.hotel.extraBedCount,
+            ...(state.hotel.rooms?.length
+              ? salesHotelRoomSummary(state.hotel.rooms)
+              : {}),
             roomTypeId:
               state.hotel.rooms?.[0]?.roomTypeId || state.hotel.roomTypeId,
             occupancy: salesHotelGuestIds(state).length,

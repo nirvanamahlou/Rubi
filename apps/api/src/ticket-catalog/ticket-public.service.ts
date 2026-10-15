@@ -232,7 +232,12 @@ export class TicketPublicService {
   }
 
   async documentDetails(id: string, actor: AuthenticatedActor) {
-    this.require(actor, 'ticket_catalog.read');
+    // Ticket output consumers need this minimal reference projection, not Catalog administration.
+    if (
+      !actor.permissions.includes('ticket_catalog.read') &&
+      !actor.permissions.includes('reservations.read')
+    )
+      throw new ForbiddenException('مجوز مشاهده اطلاعات بلیط وجود ندارد.');
     if (uuid.validate(id).error)
       throw new BadRequestException('شناسه بلیت معتبر نیست.');
     const row = await this.database.client.ticketPublishedOffer.findFirst({
