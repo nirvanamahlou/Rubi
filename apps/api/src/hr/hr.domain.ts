@@ -1,4 +1,3 @@
-import { isOptionalOperationReason } from '@nora/contracts';
 import type {
   AttendanceRecord,
   CandidateInterview,
@@ -281,6 +280,9 @@ export function makerChecker(makerUserId: string, checkerUserId: string): void {
       makerUserId !== checkerUserId,
     'FORBIDDEN',
   );
+}
+export function isOptionalOperationReason(reason: unknown): boolean {
+  return reason == null || typeof reason === 'string';
 }
 export function validateReason(reason: string): void {
   requireInvariant(

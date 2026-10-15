@@ -1,4 +1,3 @@
-import { isOptionalOperationReason } from '@nora/contracts';
 import type { HrResources, PersonnelDocument } from './hr.entities';
 import type {
   HrActor,
@@ -7,7 +6,7 @@ import type {
   HrTarget,
 } from './hr.policy';
 import { authorize } from './hr.policy';
-import { requireInvariant, utc } from './hr.domain';
+import { isOptionalOperationReason, requireInvariant, utc } from './hr.domain';
 
 export const HR_CONTRACT_VERSION = 'hr.proposal.v1' as const;
 export const HR_PERSISTENCE_STATUS = 'BLOCKED_FOR_MIGRATION_HANDOFF' as const;
