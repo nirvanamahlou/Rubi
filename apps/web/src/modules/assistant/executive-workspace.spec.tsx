@@ -64,6 +64,7 @@ describe('executive reference coverage and evidence states', () => {
     expect(html).toContain('tabindex="0"');
     expect(html).not.toContain('type="date"');
     expect(html).not.toContain('<select');
+    expect(html).not.toContain('<h1');
   });
   it('loads the shared workspace for an ordinary authenticated profile and denies a missing identity', () => {
     const ordinary = renderToStaticMarkup(
