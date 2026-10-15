@@ -223,3 +223,49 @@ it('keeps the Finance-only Sales projection branch-scoped before presentation', 
   ).rejects.toThrow();
   expect(findById).toHaveBeenCalledOnce();
 });
+
+it('charges four seats out of sixty only once from the capacity purchase', () => {
+  const four = {
+    ...contract,
+    passengersDetail: Array.from({ length: 4 }, () => ({
+      ageCategory: 'ADT',
+      serviceClientKeys: ['flight'],
+    })),
+  } as unknown as SalesContractDetail;
+  const cost = {
+    ...ticket,
+    supplyType: 'COMPANY',
+    seatCount: 60,
+    invoiceAmount: '600',
+    unitCost: '10',
+  };
+  const duplicate = {
+    ...intake,
+    servicePurchases: [
+      ...intake.servicePurchases!,
+      purchase('old-contract-flight', ['flight'], '999', 'USD'),
+    ],
+  } as ReservationIntakeV1;
+  const result = contractProfit(four, duplicate, [cost]);
+  expect(
+    result.costs.find((row) => row.source === 'FINANCE_TICKET')?.amount,
+  ).toBe('40');
+  expect(
+    result.costs.some((row) => row.referenceId === 'old-contract-flight'),
+  ).toBe(false);
+});
+
+it('does not accept a legacy per-contract company cost when the capacity invoice is missing', () => {
+  const legacy = {
+    ...intake,
+    servicePurchases: [
+      ...intake.servicePurchases!,
+      purchase('legacy-company', ['flight'], '999', 'USD'),
+    ],
+  } as ReservationIntakeV1;
+  const result = contractProfit(contract, legacy, [], ['offer']);
+  expect(result.costs.some((row) => row.referenceId === 'legacy-company')).toBe(
+    false,
+  );
+  expect(result.complete).toBe(false);
+});

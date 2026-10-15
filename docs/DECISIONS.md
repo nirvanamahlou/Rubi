@@ -512,3 +512,6 @@ authoritative. This is source policy only, not an operational grant migration.
 Role/profile producers must validate these effective Sales grants during assignment;
 the display title cannot bypass an operator's delegation boundary.
 See tasks/SALES-SELLER-VISIBILITY-1014.md.
+
+## 2026-10-15 — Flight purchase ownership and capacity cost allocation
+Owner explicitly approves this rule: floating flights are purchased against the individual contract/service using the Reservations service purchase revisions, supplier/currency FK, branch authorization, CAS and idempotency. Company capacity is purchased once for the seat block, with its total supplier invoice. Each contract consumes only its allocated non-infant seat fraction of that total; unsold seats are never charged to a sold contract. Until scheduled arrival the residual is remaining-capacity cost; after arrival it is final-loss evidence in the purchase read model. Currency totals remain separate. The read model does not post an additional journal or duplicate the invoice. Legacy unclassified supply is not inferred to be company or floating. Existing company contract-level costs cannot replace the known shared invoice source. This owner instruction supersedes the previous rule routing every flight purchase through the shared inventory queue.

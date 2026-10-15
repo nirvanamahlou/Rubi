@@ -196,6 +196,32 @@ export class TicketPublicService {
   }
 
   /** Reservations document numbering consumes only the assigned offer's supply type. */
+  async purchaseCapacityInventory(branchIds: readonly string[]) {
+    const rows = await this.database.client.ticketPublishedOffer.findMany({
+      where: { branchId: { in: [...branchIds] } },
+      select: {
+        id: true,
+        branchId: true,
+        supplyType: true,
+        departureAt: true,
+        arrivalAt: true,
+        totalCapacity: true,
+        capacityAllocations: {
+          where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+      },
+    });
+    return rows.map((row) => ({
+      ...row,
+      allocatedCapacity: row.capacityAllocations.reduce(
+        (sum, item) => sum + item.quantity,
+        0,
+      ),
+      capacityAllocations: undefined,
+    }));
+  }
+
   async documentSupply(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.ticketPublishedOffer.findFirst({
       where: { id, branchId: { in: [...branchIds] } },
