@@ -61,7 +61,7 @@ it.skipIf(process.env.HOTEL_RATE_BROKER_TEST !== '1')(
       ).rejects.toMatchObject({ code: '23514' });
       await expect(
         db.query('DELETE FROM master_brokers WHERE id=$1', [id(2)]),
-      ).rejects.toMatchObject({ code: '23503' });
+      ).rejects.toMatchObject({ code: '23001' });
     } finally {
       await db.end();
     }

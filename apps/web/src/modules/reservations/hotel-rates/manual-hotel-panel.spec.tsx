@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ManualHotelPanel, type ManualHotelRow } from './manual-hotel-panel';
+import type * as Controls from './controls';
 vi.mock('./controls', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./controls')>()),
+  ...(await importOriginal<typeof Controls>()),
   Lookup: ({ kind, label }: { kind: string; label: string }) => (
     <span data-source={kind}>{label}</span>
   ),
