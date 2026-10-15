@@ -20,7 +20,7 @@ window.PackageGeneratorModeLoader = (() => {
     'installment-assets.js',
     'installment-layouts.js',
     'installment.js',
-    'banner.js?v=20260928b',
+    'banner.js?v=20261015',
   ];
   const stickerSources = ['sticker-assets.js', 'sticker.js'];
   const header = document.querySelector('.app-header');
