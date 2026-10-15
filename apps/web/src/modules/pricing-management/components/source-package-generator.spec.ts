@@ -145,7 +145,10 @@ describe('source package generator archive', () => {
     expect(html).toContain('vendor/html2canvas.js');
     expect(html).toContain('vendor/jspdf.js');
     expect(html).toContain('mode-loader.js');
-    expect(loader).toContain("'banner.js?v=20260928b'");
+    expect(loader).toContain("'banner.js?v=20261015'");
+    expect(html.indexOf('daily-packages.js')).toBeLessThan(
+      html.indexOf('app.js?'),
+    );
     expect(loader).toContain("'sticker.js'");
     expect(html).toContain('editor-ui.js');
     expect(html).toContain('accept=".xlsx,.docx"');
