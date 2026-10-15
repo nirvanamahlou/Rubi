@@ -20,11 +20,14 @@ function setup(count = 1) {
         return { count };
       }),
     },
-    salesContractHotelSelection: { ...remove },
+    salesContractHotelSelection: { ...remove, create: vi.fn() },
     salesContractTicketSelection: { ...remove },
     salesPassengerServiceAllocation: { ...remove },
     salesContractPassenger: { ...remove },
-    salesContractService: { ...remove },
+    salesContractService: {
+      ...remove,
+      create: vi.fn(async () => ({ id: 'hotel-service' })),
+    },
     salesContractPriceComponent: { ...remove, createMany: vi.fn() },
     salesContractAuditEvent: { create: vi.fn() },
     salesReservationRequest: { create: vi.fn() },
@@ -127,4 +130,45 @@ describe('contract amendment transaction', () => {
       'data.reservationStatus',
     );
   });
+});
+
+it('persists each agreed room price inside the versioned contract amendment transaction', async () => {
+  const { repository, tx } = setup();
+  const room = {
+    ordinal: 1,
+    roomTypeId: 'room',
+    roomTypeNameSnapshot: 'Single',
+    adults: 1,
+    childAges: [],
+    agreedPrice: { amount: '125.1254', currencyCode: 'USD' },
+  };
+  await repository.updateDraft(
+    'id',
+    {
+      ...input,
+      services: [{ clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' }],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'hotel',
+        hotelNameSnapshot: 'Hotel',
+        cityId: 'b',
+        checkInDate: '2099-01-01',
+        checkOutDate: '2099-01-03',
+        roomCount: 1,
+        roomTypeId: 'room',
+        occupancy: 1,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        rooms: [room],
+      },
+    },
+    2,
+    'Synthetic',
+    { userId: 'u', branchId: 'b' },
+    amendment,
+  );
+  expect(tx.salesContractHotelSelection.create).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({ rooms: { create: [room] } }),
+    }),
+  );
 });

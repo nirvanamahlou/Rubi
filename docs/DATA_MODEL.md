@@ -823,3 +823,7 @@ SalesContractPassenger.childAgeBand is a nullable contract classification, AGE_2
 ### 2026-10-14 — Sales hotel room breakdown
 
 Optional SalesHotelSelectionInput.rooms carries ordered room products with canonical room-type UUID, name snapshot, adult count and child ages. Normalized sales_contract_hotel_rooms rows belong to Sales hotel selection, with a real room-type FK, unique(parent, ordinal), parent cascade and room-type delete restriction. Existing hotel summary fields remain for compatibility; selections without room rows retain legacy behavior. Room totals and actual ages must match the selected hotel guest identities. Independent visa counts/child ages use scalar service metadata and explicit passenger-service allocations.
+
+### 2026-10-15 — Room agreed sale allocation
+
+Sales room rows optionally store agreed_price JSON with a Decimal amount string and foreign currency code for the whole room stay. Legacy rows remain NULL. When room prices are present, all rooms must be priced; each currency subtotal must fit within the contract net total and is never added as a second price component. New Contract adjusts totals by the room-price delta, preserving amounts allocated to other services. Typed/restored room occupancy is bounded by the flight party and existing age bands; server guest identities must be selected from the flight party, and room composition must match actual hotel guest ages.

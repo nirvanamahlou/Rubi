@@ -4,11 +4,11 @@ import { useId } from 'react';
 import { FormField } from '@/components/ui/form-controls';
 import { SearchCombobox } from '@/components/ui/search-combobox';
 
-export function passengerAgeOptions(infant: boolean) {
+export function passengerAgeOptions(infant: boolean, includeInfants = false) {
   return [
     { value: '', label: 'انتخاب سن' },
-    ...Array.from({ length: infant ? 2 : 13 }, (_, i) => {
-      const age = infant ? i : i + 2;
+    ...Array.from({ length: infant ? 2 : includeInfants ? 15 : 13 }, (_, i) => {
+      const age = infant || includeInfants ? i : i + 2;
       return {
         value: String(age),
         label:
@@ -26,14 +26,21 @@ export function PassengerAgeField({
   value,
   onChange,
   infant = false,
+  includeInfants = false,
+  allowedAges,
 }: {
   label: string;
   value: number | null;
   onChange: (value: number | null) => void;
   infant?: boolean;
+  includeInfants?: boolean;
+  allowedAges?: readonly number[] | undefined;
 }) {
   const id = useId();
-  const options = passengerAgeOptions(infant);
+  const options = passengerAgeOptions(infant, includeInfants).filter(
+    (o) =>
+      o.value === '' || !allowedAges || allowedAges.includes(Number(o.value)),
+  );
   return (
     <FormField id={id} label={label}>
       <SearchCombobox
