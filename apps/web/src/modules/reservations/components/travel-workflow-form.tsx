@@ -125,10 +125,7 @@ export function TravelWorkflowForm({
   async function run(operation: TravelWorkflowCommandV1['action']) {
     if (!intake || busy || readOnly) return;
     const operationNote = workflowOperationNote(operation, note);
-    if (
-      !operationNote &&
-      !['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(operation)
-    ) {
+    if (operation === 'NOTE' && !operationNote) {
       setError('توضیح / دلیل عملیات را وارد کنید.');
       return;
     }

@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import type {
   CustomerConsentChannel,
   CustomerConsentRequest,
@@ -26,10 +27,10 @@ export type CustomerConsentValidationResult =
 export function buildCustomerConsentRequest(
   input: CustomerConsentInput,
 ): CustomerConsentValidationResult {
-  const reason = input.reason.trim();
-  if (reason.length < 3)
-    return { ok: false, message: 'دلیل رضایت باید حداقل ۳ نویسه باشد.' };
-  if (reason.length > 500)
+  const reason = (input.reason ?? '').trim();
+  if (!isOptionalOperationReason(reason))
+    return { ok: false, message: 'دلیل رضایت معتبر نیست.' };
+  if ((reason ?? '').length > 500)
     return { ok: false, message: 'دلیل رضایت نباید بیش از ۵۰۰ نویسه باشد.' };
   if (
     consentReasonEmail.test(reason) ||

@@ -30,3 +30,5 @@ export * from './package-pricing/hotel-shared-period';
 export type { AccountingTaxpayerSeller } from './accounting-taxpayer';
 export * from './accounting-taxpayer-catalog';
 export * from './accounting-taxpayer-draft';
+
+export * from './operation-reason';

@@ -894,7 +894,7 @@ export function LegacyInboxPreview() {
         <DialogContent dir="rtl">
           <DialogTitle>رد یا درخواست اصلاح</DialogTitle>
           <DialogDescription>
-            دلیل اجباری است و در نسخه عملیاتی به‌صورت پیام جدید و Audit ثبت
+            دلیل اختیاری است و در نسخه عملیاتی به‌صورت پیام جدید و Audit ثبت
             می‌شود.
           </DialogDescription>
           <div className="mt-4">

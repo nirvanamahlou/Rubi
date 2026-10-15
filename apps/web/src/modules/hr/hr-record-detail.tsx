@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { useEffect, useState } from 'react';
 import Link from '@/i18n/link';
 import { getHrResource, type HrRecordDto } from '@nora/contracts';
@@ -78,7 +80,10 @@ export function HrRecordDetail({
     [fileUrl],
   );
   const transition = async (status: string) => {
-    if ((status === 'ردشده' || status === 'لغوشده') && !reason.trim()) {
+    if (
+      (status === 'ردشده' || status === 'لغوشده') &&
+      !isOptionalOperationReason(reason)
+    ) {
       setError('دلیل رد یا لغو را وارد کنید.');
       return;
     }

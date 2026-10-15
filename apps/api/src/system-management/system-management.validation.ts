@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { BadRequestException } from '@nestjs/common';
 import type {
   SystemScope,
@@ -12,12 +13,11 @@ const sensitiveKeyPattern =
   /(password|passphrase|token|secret|cookie|authorization|cvv|card.?number|private.?key)/i;
 
 export function validReason(value: unknown): string {
-  if (typeof value !== 'string')
-    throw new BadRequestException('دلیل تغییر الزامی است.');
-  const reason = value.trim();
-  if (reason.length < 5 || reason.length > 1000)
-    throw new BadRequestException('دلیل تغییر باید بین ۵ تا ۱۰۰۰ نویسه باشد.');
-  return reason;
+  if (!isOptionalOperationReason(value, 1000))
+    throw new BadRequestException(
+      'دلیل تغییر باید متن حداکثر ۱۰۰۰ نویسه باشد.',
+    );
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 export function validIdentifier(value: unknown, label: string): string {

@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { randomUUID } from 'node:crypto';
 import { paymentSource } from './payments/payment-source';
 import { MasterProcurementDirectory } from '../master-data/master-procurement-directory';
@@ -715,8 +716,9 @@ export class FinanceInboxService {
       input?.version !== 1 ||
       !input.contractId ||
       !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
-      reason.length > 500 ||
-      (input.action === 'CORRECTION_REQUIRED' && !reason)
+      (reason ?? '').length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' &&
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('تصمیم مالی معتبر نیست.');
     const pending = await this.sales.financeInbox(actor);
@@ -820,8 +822,9 @@ export class FinanceInboxService {
       !Number.isSafeInteger(input.expectedVersion) ||
       input.expectedVersion < 0 ||
       !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
-      reason.length > 500 ||
-      (input.action === 'CORRECTION_REQUIRED' && !reason)
+      (reason ?? '').length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' &&
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('تصمیم فاکتور خرید معتبر نیست.');
     const source = await this.procurement.financeInvoiceSource(
@@ -925,7 +928,7 @@ export class FinanceInboxService {
       paidAmount.compare(DecimalValue.zero()) <= 0 ||
       exchangeRate.compare(DecimalValue.zero()) <= 0 ||
       Number.isNaN(transferAt.getTime()) ||
-      reason.length > 500 ||
+      (reason ?? '').length > 500 ||
       (input.paymentReference?.trim().length ?? 0) > 160
     )
       throw new BadRequestException('اطلاعات پرداخت فاکتور خرید معتبر نیست.');
@@ -1060,8 +1063,9 @@ export class FinanceInboxService {
       !Number.isSafeInteger(input.expectedVersion) ||
       input.expectedVersion < 1 ||
       !['APPROVE', 'CORRECTION_REQUIRED'].includes(input.action) ||
-      reason.length > 500 ||
-      (input.action === 'CORRECTION_REQUIRED' && !reason)
+      (reason ?? '').length > 500 ||
+      (input.action === 'CORRECTION_REQUIRED' &&
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('تصمیم اصلاح مالی مرجوعی معتبر نیست.');
     const status =

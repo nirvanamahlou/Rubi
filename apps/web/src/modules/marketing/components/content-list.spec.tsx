@@ -628,20 +628,20 @@ describe('real Documents library', () => {
     expect(state.values[3]).toEqual([]);
     expect(state.values[1]).toBe(1);
   });
-  it('rejects short or whitespace-only reasons before sending an archive request', async () => {
+  it('accepts empty reasons when archiving', async () => {
     seedLibrary();
     (find(library(), 'aria-label', 'حذف بروشور').props.onClick as () => void)();
-    state.values[8] = '  دو  ';
+    state.values[8] = '';
     const tree = library();
-    expect(find(tree, 'id', 'library-record-value').props.minLength).toBe(5);
+    expect(find(tree, 'id', 'library-record-value').props.minLength).toBe(0);
     await (
       tree.find((node) => node.type === 'form')!.props.onSubmit as (
         event: unknown,
       ) => void
     )({ preventDefault() {} });
-    expect(state.archive).not.toHaveBeenCalled();
-    expect(state.values[10]).toContain('۵ تا ۵۰۰');
-    expect(state.values[7]).not.toBeNull();
+    expect(state.archive).toHaveBeenCalled();
+    expect(state.values[10]).toBe('');
+    expect(state.values[7]).toBeNull();
   });
   it('retains library records and confirmation when the server rejects deletion', async () => {
     seedLibrary();

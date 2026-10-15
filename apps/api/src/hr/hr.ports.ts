@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import type { HrResources, PersonnelDocument } from './hr.entities';
 import type {
   HrActor,
@@ -156,7 +157,9 @@ export async function openPersonnelDocument(
 ): Promise<void> {
   authorize(actor, 'hr.documents.read', target);
   requireInvariant(link.employeeId === target.employeeId, 'FORBIDDEN');
-  requireInvariant(reason.trim().length >= 10 && reason.trim().length <= 500);
+  requireInvariant(
+    isOptionalOperationReason(reason) && (reason ?? '').trim().length <= 500,
+  );
   const file = await documents.inspect(actor, link.documentId);
   requireInvariant(
     file.id === link.documentId && file.authorized && file.scan === 'CLEAN',

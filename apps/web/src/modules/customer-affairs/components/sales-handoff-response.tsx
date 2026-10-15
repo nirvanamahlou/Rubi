@@ -187,7 +187,7 @@ export function SalesHandoffResponse({
               </>
             )}
             <FormField label="دلیل و نتیجه بررسی">
-              <Textarea name="reason" required minLength={3} maxLength={500} />
+              <Textarea name="reason" maxLength={500} />
             </FormField>
             {error && (
               <p role="alert" className="text-sm text-destructive">

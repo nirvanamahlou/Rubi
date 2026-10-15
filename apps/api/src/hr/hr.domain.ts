@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import type {
   AttendanceRecord,
   CandidateInterview,
@@ -282,7 +283,9 @@ export function makerChecker(makerUserId: string, checkerUserId: string): void {
   );
 }
 export function validateReason(reason: string): void {
-  requireInvariant(reason.trim().length >= 10 && reason.trim().length <= 500);
+  requireInvariant(
+    isOptionalOperationReason(reason) && (reason ?? '').trim().length <= 500,
+  );
 }
 export function transitionLeave(
   request: LeaveRequest,
