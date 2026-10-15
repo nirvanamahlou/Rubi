@@ -29,7 +29,7 @@ export const salesDetailInclude = {
   },
   services: { orderBy: { createdAt: 'asc' } },
   ticketSelections: { orderBy: { departureAt: 'asc' } },
-  hotelSelection: true,
+  hotelSelection: { include: { rooms: { orderBy: { ordinal: 'asc' } } } },
   priceComponents: { orderBy: { createdAt: 'asc' } },
   payments: { orderBy: { createdAt: 'asc' } },
   reservationRequests: { orderBy: { createdAt: 'desc' } },
@@ -534,6 +534,19 @@ export class SalesRepository {
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
               roomTypeId: hotel.roomTypeId,
+              ...(hotel.rooms?.length
+                ? {
+                    rooms: {
+                      create: hotel.rooms.map((room) => ({
+                        ordinal: room.ordinal,
+                        roomTypeId: room.roomTypeId,
+                        roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                        adults: room.adults,
+                        childAges: [...room.childAges],
+                      })),
+                    },
+                  }
+                : {}),
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,
@@ -765,6 +778,19 @@ export class SalesRepository {
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
               roomTypeId: hotel.roomTypeId,
+              ...(hotel.rooms?.length
+                ? {
+                    rooms: {
+                      create: hotel.rooms.map((room) => ({
+                        ordinal: room.ordinal,
+                        roomTypeId: room.roomTypeId,
+                        roomTypeNameSnapshot: room.roomTypeNameSnapshot,
+                        adults: room.adults,
+                        childAges: [...room.childAges],
+                      })),
+                    },
+                  }
+                : {}),
               mealServiceId: hotel.mealServiceId ?? null,
               occupancy: hotel.occupancy,
               inventoryStatus: hotel.inventoryStatus,

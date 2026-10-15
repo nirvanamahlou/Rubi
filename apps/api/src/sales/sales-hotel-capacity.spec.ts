@@ -244,3 +244,59 @@ describe('Sales hotel room capacity validation', () => {
     });
   });
 });
+
+describe('heterogeneous room validation', () => {
+  it('checks each selected room, rejects missing rates and does not multiply the first capacity', async () => {
+    const rooms = [
+      {
+        ordinal: 1,
+        roomTypeId: 'double',
+        roomTypeNameSnapshot: 'Double',
+        adults: 2,
+        childAges: [5],
+      },
+      {
+        ordinal: 2,
+        roomTypeId: 'single',
+        roomTypeNameSnapshot: 'Single',
+        adults: 1,
+        childAges: [],
+      },
+    ];
+    const input = {
+      hotelSelection: {
+        hotelId: 'hotel',
+        roomTypeId: 'double',
+        roomCount: 2,
+        rooms,
+        checkInDate: '2026-10-05',
+        checkOutDate: '2026-10-07',
+      },
+    } as unknown as SalesContractCreateRequest;
+    const lookup = vi.fn().mockImplementation(async ({ roomTypeId }) => ({
+      roomTypeName: roomTypeId,
+      maxAdults: roomTypeId === 'single' ? 1 : 2,
+      maxChildren2To6: 1,
+      maxChildren: 1,
+      maxChildren6To12: 0,
+      maxInfants: 0,
+    }));
+    const service = serviceWithRoomAvailability(lookup);
+    await expect(
+      service.assertHotelRoomCapacity(input, 'branch'),
+    ).resolves.toBeUndefined();
+    expect(lookup.mock.calls.map((c) => c[0].roomTypeId)).toEqual([
+      'double',
+      'single',
+    ]);
+    rooms[1]!.adults = 2;
+    await expect(
+      service.assertHotelRoomCapacity(input, 'branch'),
+    ).rejects.toThrow();
+    rooms[1]!.adults = 1;
+    lookup.mockResolvedValue(null);
+    await expect(
+      service.assertHotelRoomCapacity(input, 'branch'),
+    ).rejects.toThrow();
+  });
+});

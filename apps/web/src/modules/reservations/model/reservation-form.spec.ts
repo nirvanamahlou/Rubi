@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   reservationFormData,
+  reservationRoomAppendices,
   reservationPassengerPages,
   type ReservationFormIntake,
 } from './reservation-form';
@@ -94,4 +95,72 @@ describe('reservation reference form', () => {
     expect(pages.flat()).toEqual(people);
     expect(reservationPassengerPages([])).toEqual([[]]);
   });
+});
+
+it('shows transfer direction and excludes infants from the automatic quantity', () => {
+  const data = structuredClone(input);
+  data.snapshot.serviceSelections = [
+    { clientKey: 't', kind: 'TRANSFER', metadata: { direction: 'OUTBOUND' } },
+  ] as never;
+  data.snapshot.passengerAssignments = data.snapshot.passengerAssignments!.map(
+    (p) => ({ ...p, serviceClientKeys: ['t'] }),
+  );
+  expect(
+    reservationFormData(data as unknown as ReservationFormIntake).transfer,
+  ).toBe('OUTBOUND ONLY · 2 PAX');
+  data.snapshot.serviceSelections = [
+    {
+      clientKey: 't',
+      kind: 'TRANSFER',
+      metadata: { direction: 'RETURN', passengerCount: 1 },
+    },
+  ] as never;
+  expect(
+    reservationFormData(data as unknown as ReservationFormIntake).transfer,
+  ).toBe('RETURN ONLY · 1 PAX');
+});
+
+it('projects independent room types and child ages for reservation and voucher outputs', () => {
+  const next = {
+    ...input,
+    snapshot: {
+      ...input.snapshot,
+      hotelSelection: {
+        ...input.snapshot.hotelSelection!,
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: 'r',
+            roomTypeNameSnapshot: 'Double',
+            adults: 2,
+            childAges: [5],
+          },
+          {
+            ordinal: 2,
+            roomTypeId: 's',
+            roomTypeNameSnapshot: 'Single',
+            adults: 1,
+            childAges: [],
+          },
+        ],
+      },
+    },
+  };
+  expect(reservationFormData(next).roomBreakdown).toEqual([
+    { ordinal: 1, roomType: 'Double', adults: 2, childAges: [5] },
+    { ordinal: 2, roomType: 'Single', adults: 1, childAges: [] },
+  ]);
+});
+
+it('keeps large room lists on bounded appendix pages without losing or repeating room rows', () => {
+  const rooms = Array.from({ length: 50 }, (_, i) => ({
+    ordinal: i + 1,
+    roomType: 'Room ' + i,
+    adults: 1,
+    childAges: [],
+  }));
+  const pages = reservationRoomAppendices(rooms);
+  expect(pages.every((p) => p.length <= 12)).toBe(true);
+  expect([...rooms.slice(0, 4), ...pages.flat()]).toEqual(rooms);
+  expect(reservationRoomAppendices(rooms.slice(0, 4))).toEqual([]);
 });

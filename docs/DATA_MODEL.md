@@ -819,3 +819,7 @@ Unsafe formulas, invalid or duplicate organization identities still block import
 ## RESERVATION-PASSENGER-AGE-TABLE-1014 — Contract child age bands
 
 SalesContractPassenger.childAgeBand is a nullable contract classification, AGE_2_6 or AGE_6_12, permitted only for CHD passengers. It is independent from the actual birthDate in the customer identity and Sales snapshot. The additive migration adds no default/backfill and a CHECK constraint protects the allowed category/value combination. Legacy NULL rows remain valid. Sales amendments retain branch/version/audit/inventory guards and publish a new operational snapshot for category or band changes. Existing exact birth-date rate/insurance validations remain authoritative.
+
+### 2026-10-14 — Sales hotel room breakdown
+
+Optional SalesHotelSelectionInput.rooms carries ordered room products with canonical room-type UUID, name snapshot, adult count and child ages. Normalized sales_contract_hotel_rooms rows belong to Sales hotel selection, with a real room-type FK, unique(parent, ordinal), parent cascade and room-type delete restriction. Existing hotel summary fields remain for compatibility; selections without room rows retain legacy behavior. Room totals and actual ages must match the selected hotel guest identities. Independent visa counts/child ages use scalar service metadata and explicit passenger-service allocations.

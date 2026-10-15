@@ -1,4 +1,8 @@
-import { validateInsuranceExtras } from '@nora/contracts';
+import {
+  validSalesHotelRooms,
+  hotelAgeOn,
+  validateInsuranceExtras,
+} from '@nora/contracts';
 import {
   SALES_CHEQUE_FEE,
   salesChequeComponents,
@@ -350,6 +354,80 @@ export function validateSalesContract(
       'تعداد یا مسیر بلیت‌ها با قرارداد سازگار نیست.',
     );
   for (const service of input.services) {
+    if (
+      service.kind === 'VISA' &&
+      service.metadata?.applicantAdults !== undefined
+    ) {
+      const c = {
+        adults: Number(service.metadata.applicantAdults),
+        children: Number(service.metadata.applicantChildren),
+      };
+      const selected = input.passengers.filter((p) =>
+        p.serviceClientKeys.includes(service.clientKey),
+      );
+      const cats = selected.map(
+        (p) =>
+          categories[p.customerId] ??
+          passengerAgeCategory(p.birthDate, input.departureDate),
+      );
+      const ageText = service.metadata.applicantChildAges;
+      const ages =
+        typeof ageText === 'string'
+          ? ageText
+            ? ageText.split(',').map(Number)
+            : []
+          : null;
+      const actualAges = selected
+        .filter(
+          (p) =>
+            passengerAgeCategory(p.birthDate, input.departureDate) === 'CHD',
+        )
+        .map((p) => hotelAgeOn(p.birthDate, input.departureDate))
+        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      if (
+        !c ||
+        !Number.isInteger(c.adults) ||
+        !Number.isInteger(c.children) ||
+        c.adults < 0 ||
+        c.children < 0 ||
+        c.adults + c.children < 1 ||
+        selected.length !== c.adults + c.children ||
+        cats.filter((x) => x === 'ADT').length !== c.adults ||
+        cats.filter((x) => x === 'CHD').length !== c.children ||
+        !Array.isArray(ages) ||
+        ages.length !== c.children ||
+        actualAges.length !== ages.length ||
+        actualAges.some((a, i) => a !== [...ages].sort((a, b) => a - b)[i]) ||
+        ages.some(
+          (a) => !Number.isInteger(a) || Number(a) < 2 || Number(a) >= 12,
+        )
+      )
+        throw new SalesDomainError(
+          'SALES_SERVICE_INVALID',
+          'افراد متقاضی ویزا با تعداد درخواست‌شده هماهنگ نیستند.',
+        );
+    }
+    if (
+      service.kind === 'TRANSFER' &&
+      service.metadata?.passengerCount !== undefined
+    ) {
+      const count = service.metadata.passengerCount;
+      const max = input.passengers.filter(
+        (p) =>
+          (categories[p.customerId] ??
+            passengerAgeCategory(p.birthDate, input.departureDate)) !== 'INF',
+      ).length;
+      if (
+        typeof count !== 'number' ||
+        !Number.isInteger(count) ||
+        count < 0 ||
+        count > max
+      )
+        throw new SalesDomainError(
+          'SALES_SERVICE_INVALID',
+          'تعداد مسافران ترانسفر معتبر نیست.',
+        );
+    }
     const direction = service.metadata?.direction;
     if (
       direction &&
@@ -410,6 +488,34 @@ export function validateSalesContract(
     );
   if (input.hotelSelection) {
     const hotel = input.hotelSelection;
+    if (hotel.rooms !== undefined) {
+      if (!validSalesHotelRooms(hotel.rooms, hotel.roomCount))
+        throw new SalesDomainError(
+          'SALES_HOTEL_INVALID',
+          'ترکیب اتاق‌ها معتبر نیست.',
+        );
+      const guests = input.passengers.filter((p) =>
+        p.serviceClientKeys.includes(hotel.serviceClientKey),
+      );
+      const ages = guests.map((p) =>
+        hotelAgeOn(p.birthDate, hotel.checkInDate),
+      );
+      const expected = hotel.rooms
+        .flatMap((r) => [...Array(r.adults).fill(15), ...r.childAges])
+        .sort((a, b) => a - b);
+      const actual = ages
+        .map((a) => (a !== null && a >= 15 ? 15 : a))
+        .sort((a, b) => (a ?? -1) - (b ?? -1));
+      if (
+        hotel.roomTypeId !== hotel.rooms[0]?.roomTypeId ||
+        expected.length !== actual.length ||
+        expected.some((a, i) => a !== actual[i])
+      )
+        throw new SalesDomainError(
+          'SALES_HOTEL_INVALID',
+          'ترکیب و سن مهمانان با اتاق‌های انتخاب‌شده یکسان نیست.',
+        );
+    }
     if (
       !serviceKeys.has(hotel.serviceClientKey) ||
       hotel.cityId !== input.destinationId

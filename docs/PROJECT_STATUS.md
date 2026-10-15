@@ -1,3 +1,19 @@
+## SERVICE-PARTY-HOTEL-ROOMS-1014 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-service-party-hotel-rooms-1014 from origin/develop@3465556f. User authorizes service-specific traveler counts, hotel selection and per-room type/occupancy/child ages in first step, consistent contract/reservation/voucher outputs, tests and develop merge. Reserve Sales form/model/domain/repository/service, shared Sales input contracts, Reservations hotel capacity public consumers and form/PDF models/renderers; bounded translations and own task docs. Reserve sole additive migration/schema scope for normalized Sales hotel-room rows with parent/room-type FKs; no dependency lock or operational database/runtime writes. Legacy contracts remain readable. No active overlapping source/schema lock found in current assignments. Design: docs/tasks/SERVICE-PARTY-HOTEL-ROOMS-1014.md. Service traveler identities must remain explicit; User confirmed explicit visa-applicant selection in the passenger step.
+
+## 2026-10-14 — CONTRACT-UUID-FALLBACK-1014 — PC-A
+
+New-contract form submission and Sales API default request identity use the existing browserRandomUuid compatibility helper. LAN HTTP browsers lacking crypto.randomUUID can register agency/customer contracts without changing authentication, branch checks or payloads. The form retains its fingerprint-bound key across identical retries, preserving server idempotency. Targeted agency request/absent API/explicit retry key and form-consumer regressions gate the fix. No global crypto patch, schema/migration/dependency, operational data or local runtime changes; exact-head CI gates authorized develop merge.
+
+## 2026-10-14 — LOGOS-LOCALE-LOGIN-1014 — PC-A
+
+Remove the English-only text replacement of login company logos; both languages now render the same real image assets through the localized Image wrapper. Increase login logo card height from176 to192px on desktop and112 to128px on mobile, with8px desktop and4px mobile containment padding so narrow screens also gain visible logo area. Preserve aspect ratio, localized accessibility and existing application brand selection. Bilingual responsive login and all-company image-identity regressions cover the fix. No API/schema/migration/dependency or local runtime changes; tests/build and exact-head CI gate the authorized develop merge.
+
+## RESERVATION-TRANSFER-OUTPUT-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales transfer-count draft/payload/contract output, Reservations shared form/PDF models/renderers, public reference consumers and issued-download controls/tests. Default transfer count adults+children with manual reduction; shared direction/count output and explicit NOTICE note; English airline/broker references; remove requested auxiliary print rows. Preserve historical output semantics and existing module public boundaries. Reserve bounded English overrides/offline sync and Sales domain transfer-count validation. No schema/dependency/migration or operational data edits. User authorizes tests and develop merge.
+
 ## RESERVATION-FORM-SUBMIT-1014 — PC-A — READY_FOR_CI
 
 Reserve reservation settings/workflow form and submission helper/tests. Default current-company branding, require broker before save/send, one submit action showing issued form with persistent download/print controls. User authorizes tests and develop merge. No schema/dependency or operational writes.
@@ -6035,3 +6051,11 @@ COMPUTER_ID=PC-A; reserve travel-workflow form/domain and voucher leader mount i
 
 ## VOUCHER-OUTPUT-1014 — PC-A — IN_PROGRESS
 COMPUTER_ID=PC-A; reserve voucher sheet/PDF/model, workflow note label and airline reference loading. Owner authorizes English airline names, clean voucher details, shared reservation footer, issuance notice and develop merge. No schema/dependency changes.
+
+## ASSISTANT-DETERMINISTIC-1014 — PC-C
+
+Inspected Reporting/Dashboard, accounting report APIs and existing assistant sources. Automatic evidence panels now connect overview/advisor to daily summary, sales to contract/CALL reports and finance to current contractual balances. Shared presentation retains scope, currency precision, provenance and incomplete/denied states. Accounting catalog producers remain pending; per-book reports need a defined aggregate scope, and travel demo gross-profit/conversion proxies are not substituted. News/scenario/forecast gates remain.37 assistant Web tests pass; local build/type and CI are in progress. See tasks/ASSISTANT-DETERMINISTIC-1014.md. No schema/API/provider/permission change.
+
+## ASSISTANT-TAB-LAYOUT-1014 — PC-C
+
+Correct #871 presentation regression: the report/reportState conditional replaced all dedicated metrics and ViewContent with ActionEvidence, including during loading. Restore the original dedicated tabs and composer-only action execution; remove automatic tab action reads until evidence is mapped into individual widgets. Existing source gates and personal recommendations remain. Added four tab regressions across loading/ready/unavailable. No API/schema/dependency/provider change. Validation and CI pending.

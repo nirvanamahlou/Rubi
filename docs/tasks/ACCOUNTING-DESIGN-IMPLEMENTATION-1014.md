@@ -84,3 +84,8 @@
 فیلدهای حساس DOM با data-accounting-sensitive مشخص می‌شوند؛ استخراج عمومی Excel/PDF آن‌ها را کنار می‌گذارد و در چاپ صفحه پنهان‌اند. این حفاظت شامل textarea کلید خصوصی و گواهی نیز هست، نه فقط input رمز. آزمون، حفظ عنوان عمومی و حذف کلید خصوصی واردشده را همزمان کنترل می‌کند.
 
 بازبینی در host بومی جدا با sandbox واقعی read-only نیز تلاش شد، با شناسه01a13a6f-c30f-7df3-b7b3-ebb950ef9a19 و مدل درخواست‌شدهgpt-6-astra. نخستین فرمان فقط‌خواندنی rg پیش از اجرا با blocked by policy رد شد؛ هیچ فایل یا آزمونی توسط آن بازبین خوانده نشد و نتیجه پذیرش/انتشار صادر نشده است. مشکل زیرساخت، تأیید ایمنی کد یا ناتوانی مدل تلقی نمی‌شود. اثر این مانع، نگه‌داشتن نامزد در وضعیت پیش‌نویس بازبینی است؛ انتقال به develop و runtime3100 انجام نمی‌شود.
+
+
+## Release direction — 2026-10-15
+
+The user explicitly waived the worker-orchestrator release condition and requested merge. The earlier failed isolated review is historical evidence, not a current release gate. Repository exact-head CI remains mandatory. Finding statuses above remain unchanged; this milestone does not complete all 43 findings.

@@ -1,4 +1,7 @@
 'use client';
+import { ServiceParties } from './service-parties';
+
+import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { HotelRoomCapacity } from './hotel-room-capacity';
 import { salesHotelRoomOptions } from '../model/sales-hotel-room-options';
@@ -78,6 +81,7 @@ import {
   salesPassengerAgeLabel,
   salesPassengerCompositionMatches,
   salesPassengerCounts,
+  salesTransferCount,
   salesHotelGuestIds,
   salesHotelCapacityError,
   salesHotelOccupancyQuote,
@@ -319,6 +323,12 @@ export function SalesContractForm() {
           patch[key as keyof SalesFormState] !==
             current[key as keyof SalesFormState],
       );
+      const changedDestination = ['destinationId', 'destinationCountryId'].some(
+        (key) =>
+          key in patch &&
+          patch[key as keyof SalesFormState] !==
+            current[key as keyof SalesFormState],
+      );
       return hotelOccupancySaleDefaults(
         ticketOnlySaleDefaults(
           withFirstPassengerCustomer(
@@ -335,13 +345,19 @@ export function SalesContractForm() {
                       outboundOfferId: '',
                       returnOfferId: '',
                     },
-                    hotel: {
-                      ...current.hotel,
-                      hotelId: '',
-                      name: '',
-                      roomTypeId: '',
-                    },
-                    visaReferenceId: '',
+                    hotel: changedDestination
+                      ? {
+                          ...current.hotel,
+                          hotelId: '',
+                          name: '',
+                          roomTypeId: '',
+                          rooms: [],
+                          guestCustomerIds: undefined,
+                        }
+                      : (patch.hotel ?? current.hotel),
+                    visaReferenceId: changedDestination
+                      ? ''
+                      : current.visaReferenceId,
                   }
                 : {}),
             }),
@@ -351,6 +367,7 @@ export function SalesContractForm() {
           (room) =>
             room.roomTypeId === (patch.hotel ?? current.hotel).roomTypeId,
         ),
+        hotelRoomRates,
       );
     });
 
@@ -495,6 +512,25 @@ export function SalesContractForm() {
   const toggleService = (kind: SalesServiceKind) => {
     setDetailStep(0);
     patchState({
+      ...(kind === 'HOTEL'
+        ? {
+            hotel: {
+              ...state.hotel,
+              rooms: [],
+              roomTypeId: '',
+              guestCustomerIds: undefined,
+            },
+          }
+        : {}),
+      ...(kind === 'VISA'
+        ? {
+            visaComposition: state.visaComposition ?? {
+              adults: passengerCounts.adults,
+              children: passengerCounts.children,
+            },
+            visaApplicantIds: [],
+          }
+        : {}),
       serviceKinds: state.serviceKinds.includes(kind)
         ? state.serviceKinds.filter((item) => item !== kind)
         : [...state.serviceKinds, kind],
@@ -565,7 +601,11 @@ export function SalesContractForm() {
   const occupancyRoom = hotelRoomRates.find(
     (room) => room.roomTypeId === state.hotel.roomTypeId,
   );
-  const pricedState = hotelOccupancySaleDefaults(state, occupancyRoom);
+  const pricedState = hotelOccupancySaleDefaults(
+    state,
+    occupancyRoom,
+    hotelRoomRates,
+  );
   const passengerCounts = salesPassengerCounts(state);
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
@@ -675,7 +715,25 @@ export function SalesContractForm() {
         state.originId !== state.destinationId &&
         state.serviceKinds.length &&
         passengerCounts.total > 0 &&
+        (!state.serviceKinds.includes('VISA') ||
+          Boolean(
+            state.visaComposition &&
+            state.visaComposition.adults + state.visaComposition.children > 0 &&
+            (state.visaChildAges?.length ?? 0) ===
+              state.visaComposition.children &&
+            state.visaChildAges?.every(
+              (a) => a !== null && a >= 2 && a < 12,
+            ) !== false,
+          )) &&
         (!state.serviceKinds.includes('HOTEL') ||
+          Boolean(
+            state.hotel.rooms?.length &&
+            state.hotel.rooms.every(
+              (r) => r.roomTypeId && r.childAges.every((a) => a !== null),
+            ),
+          )) &&
+        (!state.serviceKinds.includes('HOTEL') ||
+          state.hotel.rooms?.length ||
           ((state.childAges?.length ?? 0) === passengerCounts.children &&
             (state.infantAges?.length ?? 0) === passengerCounts.infants &&
             [...(state.childAges ?? []), ...(state.infantAges ?? [])].every(
@@ -711,10 +769,21 @@ export function SalesContractForm() {
         salesPassengerCompositionMatches(state) &&
         (!state.serviceKinds.includes('HOTEL') || hotelGuestIds.length > 0) &&
         !hotelCapacityError &&
+        (!state.serviceKinds.includes('VISA') ||
+          Boolean(
+            state.visaComposition &&
+            state.visaApplicantIds?.length ===
+              state.visaComposition.adults + state.visaComposition.children,
+          )) &&
         state.passengers.every(
           ({ customerId }) =>
-            state.serviceKinds.some((kind) => kind !== 'HOTEL') ||
-            hotelGuestIds.includes(customerId),
+            state.serviceKinds.some(
+              (kind) => kind !== 'HOTEL' && kind !== 'VISA',
+            ) ||
+            (state.serviceKinds.includes('HOTEL') &&
+              hotelGuestIds.includes(customerId)) ||
+            (state.serviceKinds.includes('VISA') &&
+              Boolean(state.visaApplicantIds?.includes(customerId))),
         )
       );
     if (step === 3) return !finalStepError;
@@ -743,7 +812,7 @@ export function SalesContractForm() {
         payload.paymentTerms,
       );
       if (submission.current.fingerprint !== fingerprint)
-        submission.current = { fingerprint, key: crypto.randomUUID() };
+        submission.current = { fingerprint, key: browserRandomUuid() };
       const response = await salesApi.create(payload, submission.current.key);
       if (response.data.status !== 'SENT_TO_RESERVATIONS')
         await salesApi.confirm(response.data.id, response.data.version);
@@ -1003,6 +1072,29 @@ export function SalesContractForm() {
                           )}
                         </div>
                       ) : null}
+                      {kind === 'TRANSFER' &&
+                        state.serviceKinds.includes(kind) && (
+                          <label className="mt-3 grid gap-2">
+                            تعداد مسافران ترانسفر
+                            <Input
+                              type="number"
+                              min={0}
+                              max={
+                                salesPassengerCounts(state).adults +
+                                salesPassengerCounts(state).children
+                              }
+                              value={salesTransferCount(state)}
+                              onChange={(event) =>
+                                patchState({
+                                  ...state,
+                                  transferPassengerCount: Number(
+                                    event.target.value,
+                                  ),
+                                })
+                              }
+                            />
+                          </label>
+                        )}
                     </fieldset>
                   ))}
                 </div>
@@ -1035,7 +1127,8 @@ export function SalesContractForm() {
             )}
           </div>
         ) : null}
-        {step === 0 ? (
+        {step === 0 &&
+        state.serviceKinds.some((k) => k !== 'HOTEL' && k !== 'VISA') ? (
           <section className="mt-5 grid gap-3 border-t border-border pt-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -1121,6 +1214,15 @@ export function SalesContractForm() {
             </div>
           </section>
         ) : null}
+        {step === 0 && (
+          <ServiceParties
+            state={state}
+            patch={patchState}
+            hotels={selectableHotels}
+            roomTypes={selectableHotelRoomTypes}
+            rates={hotelRoomRates}
+          />
+        )}
         {step === 0 && state.serviceKinds.includes('FLIGHT') ? (
           <section
             aria-label="انتخاب تاریخ بلیط رفت و برگشت"
@@ -1447,33 +1549,50 @@ export function SalesContractForm() {
               state.serviceKinds.includes('HOTEL')) ? (
               <section className="grid gap-4 rounded-xl border p-4">
                 <div className="grid gap-4 md:grid-cols-3">
-                  <SearchableReference
-                    label="هتل"
-                    value={state.hotel.hotelId}
-                    options={selectableHotels}
-                    showAllOptionsOnOpen
-                    preferEnglishName
-                    onChange={(hotelId) =>
-                      patchState({
-                        hotel: {
-                          ...state.hotel,
-                          hotelId,
-                          roomTypeId: '',
-                          name:
-                            references.hotels.find(({ id }) => id === hotelId)
-                              ?.name ?? '',
-                        },
-                      })
-                    }
-                  />
-                  <ReferenceSelect
-                    label="نوع اتاق"
-                    value={state.hotel.roomTypeId}
-                    options={selectableHotelRoomTypes}
-                    onChange={(roomTypeId) =>
-                      patchState({ hotel: { ...state.hotel, roomTypeId } })
-                    }
-                  />
+                  {!state.hotel.rooms ? (
+                    <>
+                      <SearchableReference
+                        label="هتل"
+                        value={state.hotel.hotelId}
+                        options={selectableHotels}
+                        showAllOptionsOnOpen
+                        preferEnglishName
+                        onChange={(hotelId) =>
+                          patchState({
+                            hotel: {
+                              ...state.hotel,
+                              hotelId,
+                              roomTypeId: '',
+                              name:
+                                references.hotels.find(
+                                  ({ id }) => id === hotelId,
+                                )?.name ?? '',
+                            },
+                          })
+                        }
+                      />
+                      <ReferenceSelect
+                        label="نوع اتاق"
+                        value={state.hotel.roomTypeId}
+                        options={selectableHotelRoomTypes}
+                        onChange={(roomTypeId) =>
+                          patchState({ hotel: { ...state.hotel, roomTypeId } })
+                        }
+                      />
+                    </>
+                  ) : (
+                    <div className="md:col-span-3">
+                      <b>{state.hotel.name}</b>
+                      <p className="text-sm">
+                        {state.hotel.rooms
+                          .map(
+                            (r) =>
+                              `اتاق ${r.ordinal}: ${r.roomTypeNameSnapshot} · ${r.adults} بزرگسال · ${r.childAges.length} کودک`,
+                          )
+                          .join(' | ')}
+                      </p>
+                    </div>
+                  )}
                   <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs text-muted-foreground md:col-span-3">
                     <div className="grid gap-2 sm:grid-cols-2">
                       {hotelRoomRates.map((room) => (
@@ -1483,7 +1602,11 @@ export function SalesContractForm() {
                     {hotelRoomRates
                       .filter((room) => room.occupancyRates)
                       .map((room) => {
-                        const quote = salesHotelOccupancyQuote(state, room);
+                        const quote = salesHotelOccupancyQuote(
+                          state,
+                          room,
+                          hotelRoomRates,
+                        );
                         return (
                           <p key={room.roomTypeId}>
                             {room.roomTypeName}:{' '}
@@ -1580,89 +1703,93 @@ export function SalesContractForm() {
                       }
                     />
                   </FormField>
-                  <HotelCountField
-                    label="تعداد اتاق"
-                    hint="کل اتاق‌های درخواستی"
-                    unit="باب"
-                    min={1}
-                    value={state.hotel.roomCount}
-                    onChange={(roomCount) =>
-                      patchState({
-                        hotel: {
-                          ...state.hotel,
-                          roomCount: Math.max(1, roomCount),
-                          singleRoomCount: Math.min(
-                            state.hotel.singleRoomCount,
-                            Math.max(1, roomCount),
-                          ),
-                          doubleRoomCount: Math.min(
-                            state.hotel.doubleRoomCount,
-                            Math.max(
-                              0,
-                              Math.max(1, roomCount) -
+                  {!state.hotel.rooms ? (
+                    <>
+                      <HotelCountField
+                        label="تعداد اتاق"
+                        hint="کل اتاق‌های درخواستی"
+                        unit="باب"
+                        min={1}
+                        value={state.hotel.roomCount}
+                        onChange={(roomCount) =>
+                          patchState({
+                            hotel: {
+                              ...state.hotel,
+                              roomCount: Math.max(1, roomCount),
+                              singleRoomCount: Math.min(
                                 state.hotel.singleRoomCount,
-                            ),
-                          ),
-                        },
-                      })
-                    }
-                  />
-                  <HotelCountField
-                    label="یک‌تخته"
-                    hint="تعداد اتاق یک‌نفره"
-                    unit="باب"
-                    value={state.hotel.singleRoomCount}
-                    onChange={(singleRoomCount) =>
-                      patchState({
-                        hotel: {
-                          ...state.hotel,
-                          singleRoomCount: Math.min(
-                            singleRoomCount,
-                            state.hotel.roomCount,
-                          ),
-                          doubleRoomCount: Math.min(
-                            state.hotel.doubleRoomCount,
-                            Math.max(
-                              0,
-                              state.hotel.roomCount - singleRoomCount,
-                            ),
-                          ),
-                        },
-                      })
-                    }
-                  />
-                  <HotelCountField
-                    label="دوتخته"
-                    hint="تعداد اتاق دونفره"
-                    unit="باب"
-                    value={state.hotel.doubleRoomCount}
-                    onChange={(doubleRoomCount) =>
-                      patchState({
-                        hotel: {
-                          ...state.hotel,
-                          doubleRoomCount: Math.min(
-                            doubleRoomCount,
-                            Math.max(
-                              0,
-                              state.hotel.roomCount -
-                                state.hotel.singleRoomCount,
-                            ),
-                          ),
-                        },
-                      })
-                    }
-                  />
-                  <HotelCountField
-                    label="تخت اضافه"
-                    hint="نفر اضافه هتل"
-                    unit="نفر"
-                    value={state.hotel.extraBedCount}
-                    onChange={(extraBedCount) =>
-                      patchState({
-                        hotel: { ...state.hotel, extraBedCount },
-                      })
-                    }
-                  />
+                                Math.max(1, roomCount),
+                              ),
+                              doubleRoomCount: Math.min(
+                                state.hotel.doubleRoomCount,
+                                Math.max(
+                                  0,
+                                  Math.max(1, roomCount) -
+                                    state.hotel.singleRoomCount,
+                                ),
+                              ),
+                            },
+                          })
+                        }
+                      />
+                      <HotelCountField
+                        label="یک‌تخته"
+                        hint="تعداد اتاق یک‌نفره"
+                        unit="باب"
+                        value={state.hotel.singleRoomCount}
+                        onChange={(singleRoomCount) =>
+                          patchState({
+                            hotel: {
+                              ...state.hotel,
+                              singleRoomCount: Math.min(
+                                singleRoomCount,
+                                state.hotel.roomCount,
+                              ),
+                              doubleRoomCount: Math.min(
+                                state.hotel.doubleRoomCount,
+                                Math.max(
+                                  0,
+                                  state.hotel.roomCount - singleRoomCount,
+                                ),
+                              ),
+                            },
+                          })
+                        }
+                      />
+                      <HotelCountField
+                        label="دوتخته"
+                        hint="تعداد اتاق دونفره"
+                        unit="باب"
+                        value={state.hotel.doubleRoomCount}
+                        onChange={(doubleRoomCount) =>
+                          patchState({
+                            hotel: {
+                              ...state.hotel,
+                              doubleRoomCount: Math.min(
+                                doubleRoomCount,
+                                Math.max(
+                                  0,
+                                  state.hotel.roomCount -
+                                    state.hotel.singleRoomCount,
+                                ),
+                              ),
+                            },
+                          })
+                        }
+                      />
+                      <HotelCountField
+                        label="تخت اضافه"
+                        hint="نفر اضافه هتل"
+                        unit="نفر"
+                        value={state.hotel.extraBedCount}
+                        onChange={(extraBedCount) =>
+                          patchState({
+                            hotel: { ...state.hotel, extraBedCount },
+                          })
+                        }
+                      />
+                    </>
+                  ) : null}
                   <div className="rounded-xl border border-border bg-muted/30 p-3 sm:col-span-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-bold">ترکیب مسافران</p>
@@ -1736,6 +1863,42 @@ export function SalesContractForm() {
         ) : null}
         {step === 2 ? (
           <section className="mt-5 grid gap-4" aria-label="تخصیص خدمات مسافران">
+            {state.serviceKinds.includes('VISA') ? (
+              <fieldset className="grid gap-2 rounded-xl border p-4">
+                <legend>انتخاب متقاضیان ویزا</legend>
+                <p className="text-sm">
+                  تعداد انتخاب‌شده: {state.visaApplicantIds?.length ?? 0} /{' '}
+                  {(state.visaComposition?.adults ?? 0) +
+                    (state.visaComposition?.children ?? 0)}
+                </p>
+                {state.passengers.map((p) => (
+                  <label className="flex items-center gap-2" key={p.customerId}>
+                    <input
+                      type="checkbox"
+                      checked={
+                        state.visaApplicantIds?.includes(p.customerId) ?? false
+                      }
+                      onChange={() =>
+                        patchState({
+                          visaApplicantIds: state.visaApplicantIds?.includes(
+                            p.customerId,
+                          )
+                            ? state.visaApplicantIds.filter(
+                                (id) => id !== p.customerId,
+                              )
+                            : [...(state.visaApplicantIds ?? []), p.customerId],
+                        })
+                      }
+                    />
+                    {p.displayName} ·{' '}
+                    {salesPassengerAgeLabel(
+                      p.birthDate,
+                      salesTravelDate(state),
+                    )}
+                  </label>
+                ))}
+              </fieldset>
+            ) : null}
             {state.serviceKinds.includes('HOTEL') && state.passengers.length ? (
               <fieldset className="grid gap-3 rounded-xl border border-primary/20 bg-primary/[0.03] p-4">
                 <legend className="px-2 font-bold">اعضای اقامت هتل</legend>

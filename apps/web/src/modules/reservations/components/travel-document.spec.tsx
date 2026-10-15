@@ -185,3 +185,21 @@ it.each([false, true])(
     expect(html).not.toContain('niyayehseir.com');
   },
 );
+
+it('keeps direct download available on an issued reservation form', () => {
+  const issued = {
+    ...intake,
+    workflow: {
+      ...intake.workflow,
+      supplierStatus: 'REQUESTED' as const,
+      sentSupplierFormSettings: supplier,
+      supplierFormSettings: supplier,
+    },
+  };
+  const html = renderToStaticMarkup(<TravelDocument intake={issued} />);
+  expect(html).toContain('دانلود مستقیم PDF فرم رزرواسیون');
+  expect(html).toContain('چاپ / ذخیره PDF');
+  expect(html).not.toContain('Special room:');
+  expect(html).not.toContain('Country:');
+  expect(html).not.toContain('subject to supplier confirmation');
+});

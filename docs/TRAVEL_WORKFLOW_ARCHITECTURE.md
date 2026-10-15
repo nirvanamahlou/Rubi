@@ -256,3 +256,7 @@ A latest sale-destination commission of 100 percent disables publication for tha
 ## TICKET-PURCHASE-INBOX-1007 — superseding price-entry exception
 
 Per the owner's 2026-10-07 request, actual seat pricing belongs to the dedicated خرید و تأمین inbox. Ticket publication creates the existing offer-linked request, procurement.quote.manage prices it, and only then does it appear in Finance for supplier payment. Payment revisions and their public actual-cost source remain Finance-owned; Sales contract profit subtracts unit cost only for allocated passenger seats and keeps currencies separate. The older text assigning initial price entry to Finance is superseded for this flow. General Procurement domain ownership is unchanged; تنخواه is its requested menu label.
+
+### 2026-10-14 — Service parties and room products
+
+New Contract selects the hotel and each room product/occupancy in the route/services step. Flight and transfer share their party; visa requests carry independent adult/child counts and require explicit identity selection later. Each room is validated and quoted separately for every night through Reservations public rates; mixed types never multiply the primary room rate or capacity. Sales persists ordered room rows and includes them in reservation snapshots. Contract, reservation form and voucher render room type, adults and child ages per room without requiring a named sleeping assignment. Legacy inputs remain compatible; previously issued document snapshots remain immutable.

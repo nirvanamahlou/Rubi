@@ -36,9 +36,70 @@ export function hotelReferencePurchase(
   ages: readonly number[],
   currencyCode: string,
   board?: string,
-) {
+): { amount: string; batchId: string; brokerName: string } | null {
   const hotel = snapshot.hotelSelection;
   if (!hotel || !ages.length) return null;
+  if (hotel.rooms?.length) {
+    const expected = hotel.rooms
+      .flatMap((r) => [...Array(r.adults).fill(15), ...r.childAges])
+      .sort((a, b) => a - b);
+    const actual = ages.map((a) => (a >= 15 ? 15 : a)).sort((a, b) => a - b);
+    if (
+      expected.length !== actual.length ||
+      expected.some((a, i) => a !== actual[i])
+    )
+      return null;
+    const summary = { ...hotel };
+    delete summary.rooms;
+    delete summary.singleRoomCount;
+    delete summary.doubleRoomCount;
+    const candidates = batches.flatMap((batch) =>
+      [...new Set(batch.rows.map((r) => r.brokerName))].flatMap(
+        (brokerName) => {
+          const quotes = hotel.rooms!.map((room) =>
+            hotelReferencePurchase(
+              [
+                {
+                  ...batch,
+                  rows: batch.rows.filter((r) => r.brokerName === brokerName),
+                },
+              ],
+              {
+                ...snapshot,
+                hotelSelection: {
+                  ...summary,
+                  roomTypeId: room.roomTypeId,
+                  roomCount: 1,
+                  extraBedCount: 0,
+                },
+              },
+              [...Array(room.adults).fill(15), ...room.childAges],
+              currencyCode,
+              board,
+            ),
+          );
+          return quotes.every((q) => q !== null)
+            ? [
+                {
+                  amount: quotes
+                    .reduce((n, q) => n.add(q!.amount), new Prisma.Decimal(0))
+                    .toFixed(),
+                  batchId: batch.id,
+                  brokerName,
+                },
+              ]
+            : [];
+        },
+      ),
+    );
+    return (
+      candidates.sort(
+        (a, b) =>
+          new Prisma.Decimal(a.amount).cmp(b.amount) ||
+          a.batchId.localeCompare(b.batchId),
+      )[0] ?? null
+    );
+  }
   // Extra-bed placement is not captured per room; do not invent an allocation.
   if (hotel.extraBedCount) return null;
   const roomAdults =

@@ -1,3 +1,23 @@
+## SERVICE-PARTY-HOTEL-ROOMS-1014 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-service-party-hotel-rooms-1014 from origin/develop@3465556f. User authorizes service-specific traveler counts, hotel selection and per-room type/occupancy/child ages in first step, consistent contract/reservation/voucher outputs, tests and develop merge. Reserve Sales form/model/domain/repository/service, shared Sales input contracts, Reservations hotel capacity public consumers and form/PDF models/renderers; bounded translations and own task docs. Reserve sole additive migration/schema scope for normalized Sales hotel-room rows with parent/room-type FKs; no dependency lock or operational database/runtime writes. Legacy contracts remain readable. No active overlapping source/schema lock found in current assignments. Design: docs/tasks/SERVICE-PARTY-HOTEL-ROOMS-1014.md. Service traveler identities must remain explicit; User confirmed explicit visa-applicant selection in the passenger step.
+
+## CONTRACT-UUID-FALLBACK-1014 — PC-A — READY_FOR_CI
+
+User reports crypto.randomUUID unavailable while creating an agency-customer contract and authorizes fix/tests/develop merge. COMPUTER_ID=PC-A; branch codex/pc-a-contract-uuid-fallback-1014 from latest origin/develop. Reserve Sales contract submit identity and API create default key, focused client/form/helper-consumer tests and own status docs. Reuse existing browserRandomUuid helper without changing global crypto or its existing consumers. Preserve payload, branch/auth checks, stable retry keys and agency Customer mapping. No schema/migration/dependency/runtime or operational writes; unrelated Sales UUID paths remain outside scope.
+
+CONTRACT-UUID-FALLBACK-1014 validation:34 targeted tests pass for Sales API, contract form, agency-customer mapping and browser helper, including absent native randomUUID, caller-key reuse and branch rejection. Scoped lint, Web types/build and exact-head CI gate merge. Source reservation released with review candidate; no local rollout.
+
+## LOGOS-LOCALE-LOGIN-1014 — PC-A — READY_FOR_CI
+
+User authorizes retaining company logo images when switching to English, slightly larger login logos and develop merge. COMPUTER_ID=PC-A; branch codex/pc-a-logos-locale-login-1014 from current origin/develop. Reserve only login-company-logos.tsx, its new bilingual responsive rendering regression and bounded shared localized-image regression, plus own status entries. Preserve app-shell branding, existing image assets, localization/accessibility and login behavior. No API/schema/migration/dependency or runtime changes. No active overlapping login/image source lock found.
+
+LOGOS-LOCALE-LOGIN-1014 validation:53 login/localization/legal-entity regressions pass, including both images in fa/en desktop/mobile and unchanged image identity for all four existing company selections. Scoped lint passes; Web typecheck/build and exact-head CI gate merge. No new strings, asset changes or runtime deployment. Bounded source lock released with candidate.
+
+## RESERVATION-TRANSFER-OUTPUT-1014 — PC-A — READY_FOR_CI
+
+Reserve Sales transfer-count draft/payload/contract output, Reservations shared form/PDF models/renderers, public reference consumers and issued-download controls/tests. Default transfer count adults+children with manual reduction; shared direction/count output and explicit NOTICE note; English airline/broker references; remove requested auxiliary print rows. Preserve historical output semantics and existing module public boundaries. Reserve bounded English overrides/offline sync and Sales domain transfer-count validation. No schema/dependency/migration or operational data edits. User authorizes tests and develop merge.
+
 ## RESERVATION-FORM-SUBMIT-1014 — PC-A — READY_FOR_CI
 
 Reserve reservation settings/workflow form and submission helper/tests. Default current-company branding, require broker before save/send, one submit action showing issued form with persistent download/print controls. User authorizes tests and develop merge. No schema/dependency or operational writes.
@@ -7643,3 +7663,13 @@ COMPUTER_ID=PC-A; branch codex/pc-a-accounting-design-implementation-1014 from o
 ACCOUNTING-DESIGN-IMPLEMENTATION-1014 contract extension: reserve the single additive taxpayer catalogue/record export in packages/contracts/src/index.ts. Existing sanitized source catalogue moves byte-for-byte to the contracts package and Web re-exports it; API validates the same fields. No source values, credentials, dependency or schema change. Public draft persistence never sets official sent/accepted status.
 
 ACCOUNTING-DESIGN-IMPLEMENTATION-1014 scope clarification: user explicitly defers statutory/legal templates and requests internal reporting first (2026-10-14). Root remains sole writer; the worker-orchestrator skill requires independent read-only financial/security advice. Actual advisory accounting_risk_advice made no changes; its host declared unrestricted access, so no isolation/release approval is claimed. Source-field error pages and incomplete normalized transaction contracts remain documented blockers. Bounded new Accounting translations reserve en-overrides and generated API/legacy catalogues without removing concurrent entries. All year-end creation commands now require preview checksums and posted FINAL before OPEN, including calls omitting operation.
+
+## ASSISTANT-DETERMINISTIC-1014 — PC-C — IN_PROGRESS
+
+COMPUTER_ID=PC-C; branch codex/pc-c-assistant-deterministic-1014 from origin/develop@86c87667. User authorizes inspection of Reporting, Dashboard and other domain definitions and implementation of eligible non-LLM assistant views. Reserve assistant Web workspace, reusable evidence presentation and focused tests, assistant bilingual copy if needed and own documentation. Reuse existing authenticated action APIs without source/schema/permission changes. Prior assistant UI candidates merged; no overlapping active source lock found. Reporting accounting balances, due checks and cash position remain PENDING_CONNECTION; travel demo metrics cannot stand in for approved accounting or CALL conversion. Acceptance: automatic per-view action reads, fresh/empty/denied/error states, exact currency evidence, refresh cancellation, deterministic advisor, no LLM/data writes. Full CI gates develop merge; no migration or dependency lock.
+
+## ASSISTANT-TAB-LAYOUT-1014 — PC-C — IN_PROGRESS
+
+User reports #871 replaced dedicated tabs with prepared-action results. Reserve only assistant executive workspace and regression tests plus own documentation. Restore dedicated view layouts and composer-only prepared actions; do not retain automatic requests whose results have no mapped view widgets. Preserve source gates, native permissions and existing personal follow-ups. No API/schema/dependency change. Acceptance: all four tab layouts remain present, prepared-action output is confined to composer, targeted tests/lint/type/build and full CI before develop merge and localhost rollout.
+
+ACCOUNTING-DESIGN-IMPLEMENTATION-1014 release clarification (2026-10-15): user explicitly directs proceeding without worker-orchestrator and authorizes merge. Repository exact-head CI gates remain required. This is a partial internal-accounting milestone; statutory outputs remain deferred.
