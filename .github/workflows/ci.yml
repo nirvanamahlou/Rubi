@@ -200,6 +200,11 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
+      - name: Prove hotel rate broker compatibility and foreign keys
+        env:
+          HOTEL_RATE_BROKER_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/hotel-rate-broker-postgres.spec.ts
+
       - name: Prove Marketing CAS, replay and rollback atomicity
         env:
           NORA_RUN_MARKETING_POSTGRES_TESTS: '1'

@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ManualHotelPanel, type ManualHotelRow } from './manual-hotel-panel';
+vi.mock('./controls', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./controls')>()),
+  Lookup: ({ kind, label }: { kind: string; label: string }) => (
+    <span data-source={kind}>{label}</span>
+  ),
+}));
 const row: ManualHotelRow = {
   hotel: {
     id: 'h1',
@@ -65,6 +71,8 @@ describe('manual hotel coefficient tables', () => {
     expect(html).not.toContain('<select');
     expect(html).toContain('قیمت پایه Land View');
     expect(html).toContain('قیمت پایه Sea View');
+    expect(html).toContain('data-source="brokers"');
+    expect(html).not.toContain('data-source="organizations"');
   });
   it('shows inline room type creation only when Master Data access is available', () => {
     const props = {

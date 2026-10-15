@@ -204,23 +204,18 @@ export class MasterTravelDirectory {
   }
 
   async hotelRateReference(hotelId: string, brokerId: string) {
-    const [{ data: hotel }, { data: broker }] = await Promise.all([
+    const [{ data: hotel }, broker] = await Promise.all([
       this.master.detail('hotels', hotelId),
-      this.master.detail('organizations', brokerId),
+      this.brokerReference(brokerId),
     ]);
-    if (
-      hotel.status !== 'active' ||
-      broker.status !== 'active' ||
-      !String(broker.attributes.roleCodes ?? '')
-        .split(',')
-        .includes('BROKER')
-    )
+    if (hotel.status !== 'active')
       throw new BadRequestException(
         'هتل و کارگزار باید فعال و کارگزار دارای نقش مربوط باشد.',
       );
     return {
       hotelName: String(hotel.attributes.englishName || hotel.name),
       brokerName: broker.name,
+      brokerSource: broker.source,
     };
   }
 

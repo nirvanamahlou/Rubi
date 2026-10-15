@@ -2491,6 +2491,7 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
+  hotelGroupRates                  ReservationHotelGroupRate[]
   reservationServicePurchases      ReservationServicePurchase[]
   id                               String                       @id @default(uuid()) @db.Uuid
   organizationId                   String?                      @unique @db.Uuid
@@ -5273,7 +5274,8 @@ model ReservationHotelGroupRate {
   id                  String                                 @id @default(uuid()) @db.Uuid
   batchId             String                                 @db.Uuid
   hotelId             String                                 @db.Uuid
-  brokerId            String                                 @db.Uuid
+  brokerId            String?                                @db.Uuid
+  registeredBrokerId  String?                                @db.Uuid
   hotelName           String                                 @db.VarChar(300)
   brokerName          String                                 @db.VarChar(300)
   base                Decimal                                @db.Decimal(18, 2)
@@ -5282,9 +5284,11 @@ model ReservationHotelGroupRate {
   roomRates           ReservationHotelRoomRate[]
   batch               ReservationHotelRateBatch              @relation(fields: [batchId], references: [id], onDelete: Restrict)
   hotel               MasterHotel                            @relation(fields: [hotelId], references: [id], onDelete: Restrict)
-  broker              MasterOrganization                     @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  broker              MasterOrganization?                    @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  registeredBroker    MasterBroker?                          @relation(fields: [registeredBrokerId], references: [id], onDelete: Restrict)
 
   @@unique([batchId, hotelId, brokerId])
+  @@unique([batchId, hotelId, registeredBrokerId], map: "reservation_hotel_group_rates_batch_hotel_registered_key")
   @@index([hotelId, batchId])
   @@map("reservation_hotel_group_rates")
 }
