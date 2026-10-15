@@ -7339,6 +7339,10 @@ SELF access and snapshot preserved. Acceptance: pure source-backed projection,
 permission/empty/cap/window/cancel/duplicate tests, strict source validation,
 API/Web/service checks and exact-head CI before authorized develop merge.
 
+## PACKAGE-TEMPLATE-GALLERY-1012 — PC-B — READY_FOR_REVIEW
+
+Branch codex/pc-b-package-template-gallery-1012 from origin/develop@2de87ce4. Reserve only standalone Package Generator template assets/catalogue/editor and bounded app/index integration, focused Web tests, own task/status entries. Six supplied distinct templates: Vietnam, luxury Vietnam, China, Kish, Qeshm and Mashhad; duplicate Mashhad deduplicated. Existing Package Pricing field task source locks explicitly released; no overlapping static editor writer found. No shared contract, API, schema, migration, dependency, lockfile, IAM or operational-data changes.
+
 ## CORRESPONDENCE-WORKFLOWS-1012 — PC-A — READY_FOR_REVIEW
 
 Base origin/develop@2de87ce4; sole writer, no delegation. Reserve correspondence Web module/routes, additive SystemManagement-owned correspondence numbering service/controller/module registration, bounded Web/API English catalogue entries and own docs. No schema/migration/dependency change. Existing System numbering tables remain producer-owned; per-company yearly atomic sequence with actor-scoped idempotency and audit. Authenticated correspondence screen control applies. Incoming letters consume unchanged Documents upload dialog/API with original permissions and archive storage; internal remains empty. User requests three cards, automatic numbering without input, centered logos, editable administrative templates and recipient/sender. Reuse Rubi3100; human-authorized nirvanamahlou publication/develop merge after exact-head CI. No raw operational data in Git.
