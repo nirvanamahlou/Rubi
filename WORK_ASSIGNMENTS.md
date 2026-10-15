@@ -7771,3 +7771,4 @@ ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/acc
 ## LOGIN-REMOVE-HELPER-1015 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-login-remove-helper-1015 from origin/develop@541289b4. Reserve only apps/web/src/app/login/page.tsx and own append-only work/status entries. Remove the administrator-assigned username/password helper sentence as requested. No active overlapping login-page owner found. No authentication, API, schema, dependency or runtime change. User explicitly forbids develop merge; publish review branch only.
+LOGIN-REMOVE-HELPER-1015 complete: scoped ESLint, 20 existing login tests, Web typecheck and production build passed. Draft PR #895 is intentionally unmerged per user instruction. Source/doc locks released; local runtime unchanged.

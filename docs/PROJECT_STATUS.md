@@ -6147,4 +6147,4 @@ ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/acc
 
 ## LOGIN-REMOVE-HELPER-1015 — PC-A
 
-Removed the administrator-assigned username/password helper paragraph from the login page. Username/password fields and authentication behavior are unchanged. User explicitly requested no develop merge. No migration, dependency or local runtime update. Existing 20 login regressions and scoped ESLint passed; Web typecheck/build pending.
+Removed the administrator-assigned username/password helper paragraph from the login page. Username/password fields and authentication behavior are unchanged. User explicitly requested no develop merge. No migration, dependency or local runtime update. Existing 20 login regressions, scoped ESLint, Web typecheck and production build (62 routes) passed. Draft PR #895 remains unmerged; scoped locks released.
