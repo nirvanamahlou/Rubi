@@ -1,3 +1,7 @@
+## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
+
+Hotel-rate manual and legacy selectors now consume the same active registered-broker directory as Reservations. Saving validates through the existing public brokerReference adapter, rejects inactive brokers and preserves validated legacy organization IDs. An additive registeredBrokerId FK plus XOR constraint keeps historical rows unchanged; API projections preserve the external brokerId contract for package pricing and purchase consumers. No data deletion or Master Data CRUD. Focused API74/Web122 and pack persistence5 tests pass; API/Web types pass. CI includes PostgreSQL temporary-table proof of legacy preservation, registered FK, uniqueness, exclusive source and delete restriction. User authorizes develop merge; apply migration before updated API/Web, no local3100 rollout in this task.
+
 ## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI — 2026-10-15
 
 Publication follow-up: [PR889](https://github.com/nirvanamahlou/Rubi/pull/889), authored by ehsandni, targets develop under the user's explicit authorization. Full hosted CI and final review gate merge. The local handoff below predates publication.

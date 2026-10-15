@@ -1,3 +1,11 @@
+## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
+
+Reserve bounded .github/workflows/ci.yml database-gate test step only: connection-local temporary-table PostgreSQL regression proves preserved legacy rows, real registered-broker FK, XOR source check, uniqueness and delete restriction. No unrelated workflow changes.
+
+Additional sole migration/schema reservation: additive nullable registeredBrokerId FK on Reservations-owned group rates, nullable legacy organization brokerId retained, XOR check and separate unique keys. Existing rows unchanged; no Master Data CRUD or data conversion. Public adapters preserve the external brokerId contract. Reserve affected Reservations persistence/projections and focused migration tests. No overlapping active migration lock found; schema inverse relation only on MasterBroker.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-hotel-rate-brokers-1015. Reserve hotel-rate manual and legacy workspace broker selectors, focused regression tests, and bounded public MasterTravelDirectory.hotelRateReference adapter to reuse existing brokerReference (no Master Data CRUD changes). Producer is the existing public registered-broker directory consumed by Reservations; hotel-rate consumers use the same active broker IDs, retaining validated legacy organization references for existing data. One additive compatibility migration described above; no dependency or operational writes. User authorizes tests and develop merge; no overlapping source lock observed. Validation:74 focused API tests,122 Web tests and5 pack persistence tests passed; API/Web types passed after refreshing shared-contract builds. PostgreSQL FK/legacy preservation regression added to CI database gate; exact-head full quality/test/migration/build checks gate merge. Apply migration before API/Web rollout; no live deployment. Candidate source locks released, migration reservation remains until merge.
+
 ## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI
 
 Publication: https://github.com/nirvanamahlou/Rubi/pull/889 targets develop, authored by ehsandni. Full quality, full suite, PostgreSQL18 migration/seed and full production build gate merge. Earlier local-only statements below describe the pre-publication handoff.

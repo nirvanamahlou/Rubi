@@ -428,7 +428,7 @@ export function HotelCoefficients({
       </div>
       <div className={styles.hotelSettings}>
         <Lookup
-          kind="organizations"
+          kind="brokers"
           label="کارگزار هتل"
           value={row.broker}
           onChange={(broker) => onChange({ broker })}
