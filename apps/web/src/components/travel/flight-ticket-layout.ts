@@ -105,9 +105,10 @@ export function ticketPageHtml(
       ? String(cities[id])
       : (cities[id] as { name: string } | undefined)?.name || '—';
   const airline = airlines[offers[0]?.carrierName ?? ''];
+  const carrierName = (name: string) => airlines[name]?.name || name;
   const airlineMark = safeImage(airline?.logoDataUrl)
     ? `<img class="airline-logo" src="${airline!.logoDataUrl}" alt="${escape(airline!.name)}">`
-    : `<strong class="airline-name">${escape(offers[0]?.carrierName || 'AIRLINE')}</strong>`;
+    : `<strong class="airline-name">${escape(carrierName(offers[0]?.carrierName || 'AIRLINE'))}</strong>`;
   const title =
     data.ageCategory === 'INF'
       ? 'INF'
@@ -118,14 +119,18 @@ export function ticketPageHtml(
           : data.gender === 'F'
             ? 'MRS'
             : '';
-  const carrier = [airline?.code, offers[0]?.carrierName]
+  const carrier = [airline?.code, carrierName(offers[0]?.carrierName || '')]
     .filter(Boolean)
     .join(' — ');
   const documentInfo = `<section class="document-info"><div><span>E-Ticket No</span><strong>${escape(data.eTicketNumber || '')}</strong></div><div><span>AIRLINE</span><strong>${escape(carrier)}</strong></div><div><span>RLOC</span><strong>${escape(offers.map((offer) => `${city(offer.originId)} → ${city(offer.destinationId)}`).join(' / '))}</strong></div><div><span>DATE OF ISSUE</span><strong>${data.issuedAt && Number.isFinite(Date.parse(data.issuedAt)) ? day(data.issuedAt) : ''}</strong></div></section>`;
   const traveler = [title, data.passengerName].filter(Boolean).join(' ');
   const qr = ticketReferenceQr(data.contractNumber || '');
   const legs = offers
-    .map((offer, index) => {
+    .map((savedOffer, index) => {
+      const offer = {
+        ...savedOffer,
+        carrierName: carrierName(savedOffer.carrierName),
+      };
       const origin = city(offer.originId),
         destination = city(offer.destinationId);
       const direction =
@@ -164,6 +169,15 @@ export const ticketLayoutStyles = `
 .flight-ticket .leg-foot{display:grid;grid-template-columns:repeat(3,1fr);background:#f6fafc;border-top:1px solid #e2ebf2;min-height:14mm;padding:2.5mm 9mm;gap:4mm}.flight-ticket .leg-foot>div{display:flex;align-items:center;gap:4mm}.flight-ticket .leg-foot>div+div{border-left:1px solid #c8d8e4;padding-left:8mm}.flight-ticket .leg-foot p{margin:0}.flight-ticket .leg-foot span{display:block;font-size:7.5pt;margin-bottom:1mm}.flight-ticket .leg-foot strong{font-size:9pt;color:#0b2245}
 .flight-ticket footer{display:flex;justify-content:space-between;align-items:center;min-height:26mm;margin-top:1mm}.flight-ticket .ticket-qr{margin:0;padding:1mm;background:#f2f7fb;border-radius:2mm;width:25mm}.flight-ticket .ticket-qr svg{display:block;width:22mm;height:22mm}.flight-ticket .ticket-qr figcaption{font-size:5pt;text-align:center;overflow-wrap:anywhere}.flight-ticket .journey{position:relative;width:73mm;height:26mm}.flight-ticket .world{position:absolute;inset:0;width:100%;height:100%;color:#dce5eb;opacity:.85}.flight-ticket .journey span{position:absolute;right:2mm;bottom:1mm;color:#1396a5;font-family:"Segoe Script","Brush Script MT",cursive;font-style:italic;font-size:19pt;line-height:1;transform:rotate(-15deg);border-bottom:1px solid #1396a5;padding-bottom:2mm}.flight-ticket .ticket-note{font-size:8pt;font-weight:600;line-height:1.65;color:#244660;text-align:center;margin-top:2mm;padding:2mm 3mm;border-top:1px solid #d8e4ed}.ticket-note span{font-size:10pt;font-family:ReservationNazanin,"Segoe UI",sans-serif}.flight-ticket .draft{font-size:8pt;color:#a62d2d;border:1px dashed #a62d2d;text-align:center;padding:1mm;margin-bottom:2mm}
 `;
+// Identical vertical anchors for departure/arrival; center facts beneath the route arc.
+export const ticketAlignmentStyles = `
+.flight-ticket .route{align-items:start}
+.flight-ticket .place{align-self:stretch;min-height:35mm;justify-content:flex-start}
+.flight-ticket .destination{align-self:stretch;padding-top:0}
+.flight-ticket .flight-path{align-self:center;padding-top:0}
+.flight-ticket .path-plane{top:0;left:50%;transform:translateX(-50%) rotate(-5deg)}
+.flight-ticket .flight-facts{min-height:6mm;margin:2mm 0;font-size:9pt;text-align:center}
+`;
 export function ticketDocumentHtml(
   tickets: readonly TicketLayoutData[],
   cities: Readonly<Record<string, TicketLayoutCity>>,
@@ -185,5 +199,5 @@ export function ticketDocumentHtml(
       ),
     )
     .join('');
-  return `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><style>html,body{margin:0;background:white}${ticketLayoutStyles}</style></head><body>${pages}</body></html>`;
+  return `<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8"><style>html,body{margin:0;background:white}${ticketLayoutStyles}${ticketAlignmentStyles}</style></head><body>${pages}</body></html>`;
 }

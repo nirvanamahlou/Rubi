@@ -1,4 +1,5 @@
 import { validateVoucherSettings } from './voucher-settings';
+import { validateTicketFlightNumbers } from '@nora/contracts';
 import type {
   TravelWorkflowCommandV1,
   TravelWorkflowStateV1,
@@ -25,6 +26,7 @@ export function transitionTravelWorkflow(
   current: TravelWorkflowStateV1,
   command: TravelWorkflowCommandV1,
   passengerIds: readonly string[],
+  flightKeys: readonly string[] = [],
 ): TravelWorkflowStateV1 {
   if (
     !command ||
@@ -51,6 +53,7 @@ export function transitionTravelWorkflow(
       'VOUCHER_SETTINGS',
       'SUPPLIER_FORM_SETTINGS',
       'TABLE_STATUS',
+      'TICKET_FLIGHT_NUMBERS',
     ].includes(command.action)
   )
     throw new Error('این درخواست بسته شده است و قابل تغییر نیست.');
@@ -60,6 +63,12 @@ export function transitionTravelWorkflow(
     note: command.note.trim(),
   };
   switch (command.action) {
+    case 'TICKET_FLIGHT_NUMBERS':
+      next.ticketFlightNumbers = validateTicketFlightNumbers(
+        command.ticketFlightNumbers,
+        flightKeys,
+      );
+      break;
     case 'TABLE_STATUS': {
       const keys = [
         'visaRequested',
