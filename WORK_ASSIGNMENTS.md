@@ -7767,3 +7767,7 @@ User authorizes moving all six assistant views to Dashboard navigation and remov
 ASSISTANT-DASHBOARD-PAGES-1015 bounded consumer fix: remove the now-impossible assistant group exclusion from system-management-workspace.tsx; no settings or policy behavior changes.
 
 ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/access Web tests pass (one existing projection test skipped), six new Dashboard integration renders and seven settings-consumer tests pass,14 Contracts access tests pass including duplicate-page rejection. Full Web TypeScript and production build (62 routes), scoped Web/Contracts ESLint and diff checks pass. All six original layouts are reused without the old tab strip; legacy links redirect to exact dashboard pages. Native assistant grants retained, unrelated Dashboard grants unchanged; query/report filters disabled for assistant sources. No API/schema/migration/provider change. Candidate source scope frozen and reservation released; exact-head/postmerge CI and local browser delivery remain gates.
+
+## LOGIN-REMOVE-HELPER-1015 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-login-remove-helper-1015 from origin/develop@541289b4. Reserve only apps/web/src/app/login/page.tsx and own append-only work/status entries. Remove the administrator-assigned username/password helper sentence as requested. No active overlapping login-page owner found. No authentication, API, schema, dependency or runtime change. User explicitly forbids develop merge; publish review branch only.
