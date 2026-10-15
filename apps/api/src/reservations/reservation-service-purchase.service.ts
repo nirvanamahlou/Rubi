@@ -160,7 +160,6 @@ export function hotelPassengerPurchase(
   snapshot: SalesReservationRequestV1,
   serviceClientKey: string,
   prices: NonNullable<ReservationServicePurchaseInputV1['passengerPrices']>,
-  dates?: { checkIn?: string; checkOut?: string },
 ) {
   const hotel = snapshot.hotelSelection;
   if (!hotel || hotel.serviceClientKey !== serviceClientKey)
@@ -189,10 +188,7 @@ export function hotelPassengerPurchase(
     );
   let nights: number;
   try {
-    nights = hotelNights(
-      dates?.checkIn || hotel.checkInDate,
-      dates?.checkOut || hotel.checkOutDate,
-    );
+    nights = hotelNights(hotel.checkInDate, hotel.checkOutDate);
   } catch {
     throw new BadRequestException('تاریخ ورود و خروج هتل معتبر نیست.');
   }
@@ -261,7 +257,6 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException('درخواست خرید قرارداد معتبر نیست.');
     const intake = await this.database.client.reservationIntake.findUnique({
       where: { id: intakeId },
-      include: { workflowRevisions: { orderBy: { version: 'desc' }, take: 1 } },
     });
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
@@ -304,17 +299,6 @@ export class ReservationServicePurchaseService {
       throw new BadRequestException(
         'خدمات خرید باید دقیقاً با هتل و ترانسفرهای قرارداد منطبق باشند.',
       );
-    const state = intake.workflowRevisions[0]?.state as
-      | { sentSupplierFormSettings?: { text?: Record<string, string> } }
-      | undefined;
-    const dates = {
-      ...(state?.sentSupplierFormSettings?.text?.checkIn
-        ? { checkIn: state.sentSupplierFormSettings.text.checkIn }
-        : {}),
-      ...(state?.sentSupplierFormSettings?.text?.checkOut
-        ? { checkOut: state.sentSupplierFormSettings.text.checkOut }
-        : {}),
-    };
     const prepared = await Promise.all(
       rows.map(async (row) => {
         const service = purchasableReservationService(
@@ -386,7 +370,6 @@ export class ReservationServicePurchaseService {
             snapshot,
             row.serviceClientKey,
             row.passengerPrices ?? [],
-            dates,
           );
           amount = pricing.amount;
           passengerPrices = pricing.passengerPrices as Prisma.InputJsonValue;
@@ -559,7 +542,6 @@ export class ReservationServicePurchaseService {
       );
     const intake = await this.database.client.reservationIntake.findUnique({
       where: { id: intakeId },
-      include: { workflowRevisions: { orderBy: { version: 'desc' }, take: 1 } },
     });
     if (!intake || !actor.branchIds.includes(intake.branchId))
       throw new NotFoundException('درخواست رزرواسیون در دسترس نیست.');
@@ -594,27 +576,12 @@ export class ReservationServicePurchaseService {
       this.directory.brokerReference(input.supplierOrganizationId),
       this.directory.currencyReference(input.currencyCode),
     ]);
-    const state = intake.workflowRevisions[0]?.state as
-      | { sentSupplierFormSettings?: { text?: Record<string, string> } }
-      | undefined;
     const hotelPricing =
       service.kind === 'HOTEL'
         ? hotelPassengerPurchase(
             snapshot,
             service.clientKey,
             input.passengerPrices ?? [],
-            {
-              ...(state?.sentSupplierFormSettings?.text?.checkIn
-                ? {
-                    checkIn: state.sentSupplierFormSettings.text.checkIn,
-                  }
-                : {}),
-              ...(state?.sentSupplierFormSettings?.text?.checkOut
-                ? {
-                    checkOut: state.sentSupplierFormSettings.text.checkOut,
-                  }
-                : {}),
-            },
           )
         : null;
     if (

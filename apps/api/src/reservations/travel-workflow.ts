@@ -111,6 +111,7 @@ export function transitionTravelWorkflow(
       break;
     }
     case 'SUPPLIER_FORM_SETTINGS':
+      next.note = current.note;
       if (command.applyToContractAndVoucher)
         throw new Error(
           'اصلاح عملیاتی فقط در فرم رزواسیون ثبت می‌شود و قرارداد فروش را تغییر نمی‌دهد.',

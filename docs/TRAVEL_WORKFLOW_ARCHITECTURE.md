@@ -271,3 +271,7 @@ Owner explicitly approves this rule: floating flights are purchased against the 
 ### 2026-10-15 — Canonical room occupancy summaries
 
 For contracts with ordered room products, each room counts all recorded occupants (adults and listed children): one occupant is one single; two or more is one double, plus one extra for each occupant beyond two. Room totals are derived per room, never from the whole flight party. Sales writes and presents this summary; Reservations table, reservation form, voucher and contract derive the same counts even when legacy arrangement/settings are stale. Per-room type, adults, child ages and total occupants remain visible without a named sleeping assignment. Contracts without room rows retain their explicit legacy counts. This presentation rule does not change independently quoted per-room rates or issued document snapshots.
+
+### 2026-10-15 — Supplier form output isolation
+
+Only supplier-form settings affect the supplier form. Their hotel dates do not drive purchase totals; all hotel purchase paths use the contractual stay dates. Voucher defaults no longer inherit supplier-form content; its saved settings are independent. The sent broker remains the recipient for confirmation/leader workflow. Existing booked costs and issued document snapshots stay immutable. See SUPPLIER-FORM-ISOLATION-1015 in DECISIONS.md.
