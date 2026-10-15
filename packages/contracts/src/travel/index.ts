@@ -602,6 +602,8 @@ export const voucherFlagKeys = [
   'specialRoom',
 ] as const;
 export interface VoucherSettingsV1 {
+  /** Supplier-form display only; never posts a purchase or changes sale totals. */
+  hotelPurchasePrices?: { amount: string; currencyCode: string }[];
   /** Registered supplier and leader used for this immutable output revision. */
   brokerId?: string;
   leaderId?: string;
