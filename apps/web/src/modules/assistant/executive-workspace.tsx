@@ -212,10 +212,12 @@ export function AssistantComposer({
   t,
   denied,
   english = false,
+  floating = false,
 }: {
   t: Translate;
   denied: boolean;
   english?: boolean;
+  floating?: boolean;
 }) {
   const inputId = useId();
   const helpId = useId();
@@ -286,7 +288,10 @@ export function AssistantComposer({
     }
   };
   return (
-    <section className={styles.composer} aria-labelledby={inputId + '-title'}>
+    <section
+      className={`${styles.composer} ${floating ? styles.floatingComposer : ''}`}
+      aria-labelledby={inputId + '-title'}
+    >
       <h1 id={inputId + '-title'}>{t(c.composerTitle)}</h1>
       <form
         className={styles.composerForm}
@@ -352,7 +357,6 @@ export function AssistantComposer({
           </button>
         </div>
       </form>
-      {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
       <div className={styles.composerPrompts}>
         {prompts.map(([prompt, action]) => (
           <button
@@ -370,462 +374,494 @@ export function AssistantComposer({
           </button>
         ))}
       </div>
-      <div className={styles.composerFooter}>
-        <p id={helpId} className={styles.composerHint} role="status">
-          {t(notSubmitted ? c.messageNotSubmitted : c.fixedActions)}
-        </p>
-      </div>
-      {!denied && actionResult && 'filters' in actionResult && (
-        <div className={styles.composerHint}>
-          <p>
-            {t(c.filteredPeriod)}:{' '}
-            {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-              timeZone: 'Asia/Tehran',
-              dateStyle: 'medium',
-            }).format(new Date(actionResult.filters.startDate))}{' '}
-            —{' '}
-            {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-              timeZone: 'Asia/Tehran',
-              dateStyle: 'medium',
-            }).format(new Date(actionResult.filters.endDate))}
+      <div
+        className={styles.composerResponse}
+        role="region"
+        aria-label={t(c.widgetResponse)}
+        tabIndex={0}
+      >
+        {filterError && <p role="alert">{t(c.filterInvalid)}</p>}
+        <div className={styles.composerFooter}>
+          <p id={helpId} className={styles.composerHint} role="status">
+            {t(notSubmitted ? c.messageNotSubmitted : c.fixedActions)}
           </p>
-          {actionResult.action !== 'sales-analysis' && (
-            <p>{t(c.balanceAsOf)}</p>
-          )}
-          {actionResult.action === 'sales-analysis' &&
-            (actionResult.filters.originId ||
-              actionResult.filters.destinationId) && (
-              <p>{t(c.routeConversionUnavailable)}</p>
-            )}
         </div>
-      )}
-      {!denied && actionState && (
-        <p role="status" className={styles.composerHint}>
-          {t(c.states[actionState])}
-        </p>
-      )}
-      {!denied && actionResult?.status === 'BLOCKED' && (
-        <p role="status" className={styles.composerHint}>
-          {t(
-            actionResult.reason === 'SALES_SOURCE_UNAVAILABLE'
-              ? c.salesDefinitionGate
-              : c.receivablesSourceGate,
-          )}
-        </p>
-      )}
-      {!denied &&
-        actionResult?.status === 'BLOCKED' &&
-        (actionResult.action === 'sales-analysis' ||
-          actionResult.action === 'receivables-follow-up') &&
-        actionResult.failure && (
+        {!denied && actionResult && 'filters' in actionResult && (
+          <div className={styles.composerHint}>
+            <p>
+              {t(c.filteredPeriod)}:{' '}
+              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                timeZone: 'Asia/Tehran',
+                dateStyle: 'medium',
+              }).format(new Date(actionResult.filters.startDate))}{' '}
+              —{' '}
+              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                timeZone: 'Asia/Tehran',
+                dateStyle: 'medium',
+              }).format(new Date(actionResult.filters.endDate))}
+            </p>
+            {actionResult.action !== 'sales-analysis' && (
+              <p>{t(c.balanceAsOf)}</p>
+            )}
+            {actionResult.action === 'sales-analysis' &&
+              (actionResult.filters.originId ||
+                actionResult.filters.destinationId) && (
+                <p>{t(c.routeConversionUnavailable)}</p>
+              )}
+          </div>
+        )}
+        {!denied && actionState && (
           <p role="status" className={styles.composerHint}>
-            {t(c.sourceFailure[actionResult.failure])}
+            {t(c.states[actionState])}
           </p>
         )}
-      {!denied && actionResult?.action === 'daily-summary' && (
-        <div className={styles.actionResult}>
-          <h2>{t(c.dailyTitle)}</h2>
-          <p className={styles.composerHint}>
-            <time dateTime={actionResult.snapshot.generatedAt}>
-              {t(c.asOf)}:{' '}
-              {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-                timeZone: 'Asia/Tehran',
-              }).format(new Date(actionResult.snapshot.generatedAt))}
-            </time>
+        {!denied && actionResult?.status === 'BLOCKED' && (
+          <p role="status" className={styles.composerHint}>
+            {t(
+              actionResult.reason === 'SALES_SOURCE_UNAVAILABLE'
+                ? c.salesDefinitionGate
+                : c.receivablesSourceGate,
+            )}
           </p>
-          <p className={styles.composerHint}>{t(c.dailyCoverage)}</p>
-          {actionResult.snapshot.sources.some(
-            (source) => source.status === 'READY',
-          ) && (
-            <dl className={styles.actionCounts}>
-              {[
-                [c.visibleCount, actionResult.counts.visible],
-                [c.overdueCount, actionResult.counts.overdue],
-                [c.dueSoonCount, actionResult.counts.dueSoon],
-                [c.assignedCount, actionResult.counts.assigned],
-              ].map(([label, count]) => (
-                <div key={(label as AssistantText)[1]}>
-                  <dt>{t(label as AssistantText)}</dt>
-                  <dd>
-                    {new Intl.NumberFormat(english ? 'en-GB' : 'fa-IR').format(
-                      count as number,
-                    )}
-                  </dd>
-                </div>
-              ))}
-            </dl>
+        )}
+        {!denied &&
+          actionResult?.status === 'BLOCKED' &&
+          (actionResult.action === 'sales-analysis' ||
+            actionResult.action === 'receivables-follow-up') &&
+          actionResult.failure && (
+            <p role="status" className={styles.composerHint}>
+              {t(c.sourceFailure[actionResult.failure])}
+            </p>
           )}
-          <PersonalFollowUps
-            t={t}
-            snapshot={actionResult.snapshot}
-            english={english}
-          />
-          {actionResult.corporate && (
-            <section>
-              <h3>
-                {t(
-                  actionResult.version === 2 ? c.salesAnalysis : c.weeklySales,
-                )}
-              </h3>
-              <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
-              {actionResult.corporate.sales.status === 'READY' ? (
-                <>
-                  <p className={styles.composerHint}>
-                    {t(
-                      actionResult.version === 2
-                        ? c.filteredPeriod
-                        : c.currentPeriod,
-                    )}
-                    :{' '}
-                    {actionResult.corporate.sales.report.current.contractCount}{' '}
-                    /{' '}
-                    {t(
-                      actionResult.version === 2
-                        ? c.filteredPrevious
-                        : c.previousPeriod,
-                    )}
-                    :{' '}
-                    {actionResult.corporate.sales.report.previous.contractCount}
-                  </p>
-                  {[
-                    [
-                      'current',
-                      actionResult.version === 2
-                        ? c.filteredPeriod
-                        : c.currentPeriod,
-                    ],
-                    [
-                      'previous',
-                      actionResult.version === 2
-                        ? c.filteredPrevious
-                        : c.previousPeriod,
-                    ],
-                  ].map(([key, label]) => {
-                    const sales = actionResult.corporate!.sales;
-                    if (sales.status !== 'READY') return null;
-                    const period = sales.report[key as 'current' | 'previous'];
-                    const format = new Intl.DateTimeFormat(
-                      english ? 'en-GB' : 'fa-IR',
-                      { timeZone: 'Asia/Tehran', dateStyle: 'short' },
-                    );
-                    return (
-                      <p className={styles.composerHint} key={key as string}>
-                        {t(label as AssistantText)}:{' '}
-                        <time dateTime={period.startUtc}>
-                          {format.format(new Date(period.startUtc))}
-                        </time>{' '}
-                        —{' '}
-                        <time dateTime={period.endUtc}>
-                          {format.format(
-                            new Date(Date.parse(period.endUtc) - 1),
-                          )}
-                        </time>
-                      </p>
-                    );
-                  })}
-                  <SourceUpdated
-                    value={actionResult.corporate.sales.report.sourceUpdatedAt}
-                    english={english}
-                    t={t}
-                  />
-                  {[
-                    ...new Set([
-                      ...(
-                        actionResult.corporate.sales.report.current
-                          .contractAmountsBeforeRefunds ?? []
-                      ).map((row) => row.currencyCode),
-                      ...(
-                        actionResult.corporate.sales.report.previous
-                          .contractAmountsBeforeRefunds ?? []
-                      ).map((row) => row.currencyCode),
-                    ]),
-                  ]
-                    .sort()
-                    .map((currency) => {
-                      const report = actionResult.corporate!.sales;
-                      if (report.status !== 'READY') return null;
-                      const current =
-                        report.report.current.contractAmountsBeforeRefunds;
-                      const previous =
-                        report.report.previous.contractAmountsBeforeRefunds;
-                      return (
-                        <p className={styles.composerHint} key={currency}>
-                          {t(c.contractAmount)} —{' '}
-                          {t(
-                            actionResult.version === 2
-                              ? c.filteredPeriod
-                              : c.currentPeriod,
-                          )}
-                          :{' '}
-                          <bdi>
-                            {current
-                              ? (current.find(
-                                  (row) => row.currencyCode === currency,
-                                )?.amount ?? '0')
-                              : '—'}{' '}
-                            {currency}
-                          </bdi>
-                          {' / '}
-                          {t(
-                            actionResult.version === 2
-                              ? c.filteredPrevious
-                              : c.previousPeriod,
-                          )}
-                          :{' '}
-                          <bdi>
-                            {previous
-                              ? (previous.find(
-                                  (row) => row.currencyCode === currency,
-                                )?.amount ?? '0')
-                              : '—'}{' '}
-                            {currency}
-                          </bdi>
-                        </p>
-                      );
-                    })}
-                </>
-              ) : (
-                <p className={styles.composerHint}>
-                  {t(
-                    actionResult.corporate.sales.status === 'DENIED'
-                      ? c.states.forbidden
-                      : c.salesDefinitionGate,
-                  )}
-                </p>
-              )}
-              <h3>{t(c.contractBalances)}</h3>
-              <p className={styles.composerHint}>
-                {t(c.balanceRecommendationsDeferred)}
-              </p>
-              <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
-              {actionResult.corporate.balances.status === 'READY' && (
-                <SourceUpdated
-                  value={actionResult.corporate.balances.report.sourceUpdatedAt}
-                  english={english}
-                  t={t}
-                />
-              )}
-              {actionResult.corporate.balances.status === 'READY' ? (
-                actionResult.corporate.balances.report.totals.map((balance) => (
-                  <p className={styles.composerHint} key={balance.currencyCode}>
-                    {t(c.outstandingBalance)}:{' '}
-                    <bdi>
-                      {balance.outstanding}{' '}
-                      {currencySymbol(balance.currencyCode ?? '')}
-                    </bdi>
-                  </p>
-                ))
-              ) : (
-                <p className={styles.composerHint}>
-                  {t(
-                    actionResult.corporate.balances.status === 'DENIED'
-                      ? c.states.forbidden
-                      : c.receivablesSourceGate,
-                  )}
-                </p>
-              )}
-            </section>
-          )}
-        </div>
-      )}
-      {!denied &&
-        actionResult?.action === 'receivables-follow-up' &&
-        actionResult.status === 'PARTIAL' && (
+        {!denied && actionResult?.action === 'daily-summary' && (
           <div className={styles.actionResult}>
-            <h2>{t(c.contractBalances)}</h2>
-            <SourceUpdated
-              value={actionResult.report.sourceUpdatedAt}
-              english={english}
-              t={t}
-            />
-            <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
+            <h2>{t(c.dailyTitle)}</h2>
             <p className={styles.composerHint}>
-              {t(c.asOf)}:{' '}
-              <time dateTime={actionResult.report.observedAt}>
+              <time dateTime={actionResult.snapshot.generatedAt}>
+                {t(c.asOf)}:{' '}
                 {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
                   dateStyle: 'short',
                   timeStyle: 'short',
                   timeZone: 'Asia/Tehran',
-                }).format(new Date(actionResult.report.observedAt))}
+                }).format(new Date(actionResult.snapshot.generatedAt))}
               </time>
             </p>
-            {actionResult.report.totals.map((balance) => (
-              <dl className={styles.actionCounts} key={balance.currencyCode}>
+            <p className={styles.composerHint}>{t(c.dailyCoverage)}</p>
+            {actionResult.snapshot.sources.some(
+              (source) => source.status === 'READY',
+            ) && (
+              <dl className={styles.actionCounts}>
                 {[
-                  [c.contractAmount, balance.amount],
-                  [c.confirmedReceipts, balance.confirmedPaid],
-                  [c.pendingReceipts, balance.pendingFinance],
-                  [c.outstandingBalance, balance.outstanding],
-                ].map(([label, amount]) => (
+                  [c.visibleCount, actionResult.counts.visible],
+                  [c.overdueCount, actionResult.counts.overdue],
+                  [c.dueSoonCount, actionResult.counts.dueSoon],
+                  [c.assignedCount, actionResult.counts.assigned],
+                ].map(([label, count]) => (
                   <div key={(label as AssistantText)[1]}>
                     <dt>{t(label as AssistantText)}</dt>
                     <dd>
-                      <bdi>
-                        {amount as string}{' '}
-                        {currencySymbol(balance.currencyCode ?? '')}
-                      </bdi>
+                      {new Intl.NumberFormat(
+                        english ? 'en-GB' : 'fa-IR',
+                      ).format(count as number)}
                     </dd>
                   </div>
                 ))}
               </dl>
-            ))}
-            {actionResult.report.coverage.itemsTruncated && (
-              <p className={styles.composerHint}>{t(c.partialBalanceList)}</p>
             )}
-            {actionResult.report.items.map((item) => (
-              <p className={styles.composerHint} key={item.contractId}>
-                <bdi>{item.contractNumber}</bdi>:{' '}
-                {item.balances.map((balance) => (
-                  <bdi key={balance.currencyCode}>
-                    {' '}
-                    {balance.outstanding}{' '}
-                    {currencySymbol(balance.currencyCode ?? '')}{' '}
-                  </bdi>
-                ))}{' '}
-                <Link href={item.href}>{t(c.reviewContract)}</Link>
-              </p>
-            ))}
-          </div>
-        )}
-      {!denied &&
-        actionResult?.action === 'sales-analysis' &&
-        actionResult.status === 'PARTIAL' && (
-          <div className={styles.actionResult}>
-            <h2>
-              {t(actionResult.version === 2 ? c.salesAnalysis : c.weeklySales)}
-            </h2>
-            <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
-            <p className={styles.composerHint}>
-              {t(c.asOf)}:{' '}
-              <time dateTime={actionResult.report.observedAt}>
-                {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                  dateStyle: 'short',
-                  timeStyle: 'short',
-                  timeZone: 'Asia/Tehran',
-                }).format(new Date(actionResult.report.observedAt))}
-              </time>
-            </p>
-            <p className={styles.composerHint}>{t(c.salesMissing)}</p>
-            <SourceUpdated
-              value={actionResult.report.sourceUpdatedAt}
-              english={english}
+            <PersonalFollowUps
               t={t}
+              snapshot={actionResult.snapshot}
+              english={english}
             />
-            {actionResult.conversion?.status === 'READY' ? (
+            {actionResult.corporate && (
               <section>
-                <h3>{t(c.callConversion)}</h3>
-                <p className={styles.composerHint}>{t(c.callCoverage)}</p>
-                <SourceUpdated
-                  value={actionResult.conversion.report.sourceUpdatedAt}
-                  english={english}
-                  t={t}
-                />
-                {[
-                  actionResult.conversion.report.current,
-                  actionResult.conversion.report.previous,
-                ].map((period, index) => (
-                  <p className={styles.composerHint} key={period.startUtc}>
-                    {t(
-                      index === 0
-                        ? actionResult.version === 2
+                <h3>
+                  {t(
+                    actionResult.version === 2
+                      ? c.salesAnalysis
+                      : c.weeklySales,
+                  )}
+                </h3>
+                <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+                {actionResult.corporate.sales.status === 'READY' ? (
+                  <>
+                    <p className={styles.composerHint}>
+                      {t(
+                        actionResult.version === 2
                           ? c.filteredPeriod
-                          : c.currentPeriod
-                        : actionResult.version === 2
+                          : c.currentPeriod,
+                      )}
+                      :{' '}
+                      {
+                        actionResult.corporate.sales.report.current
+                          .contractCount
+                      }{' '}
+                      /{' '}
+                      {t(
+                        actionResult.version === 2
                           ? c.filteredPrevious
                           : c.previousPeriod,
-                    )}
-                    : {t(c.contactedLeads)} {period.contactedLeads} /{' '}
-                    {t(c.convertedLeads)} {period.convertedLeads} —{' '}
-                    <bdi>
-                      {period.conversionBasisPoints === null
-                        ? '—'
-                        : `${period.conversionBasisPoints / 100}%`}
-                    </bdi>
-                  </p>
-                ))}
-              </section>
-            ) : (
-              <p className={styles.composerHint}>{t(c.noConversionEvidence)}</p>
-            )}
-            {!actionResult.report.routeNamesComplete && (
-              <p className={styles.composerHint}>{t(c.missingCityNames)}</p>
-            )}
-            {[
-              [
-                actionResult.version === 2 ? c.filteredPeriod : c.currentPeriod,
-                actionResult.report.current,
-              ],
-              [
-                actionResult.version === 2
-                  ? c.filteredPrevious
-                  : c.previousPeriod,
-                actionResult.report.previous,
-              ],
-            ].map(([label, period]) => {
-              const value = period as typeof actionResult.report.current;
-              return (
-                <div key={(label as AssistantText)[1]}>
-                  <h3>{t(label as AssistantText)}</h3>
+                      )}
+                      :{' '}
+                      {
+                        actionResult.corporate.sales.report.previous
+                          .contractCount
+                      }
+                    </p>
+                    {[
+                      [
+                        'current',
+                        actionResult.version === 2
+                          ? c.filteredPeriod
+                          : c.currentPeriod,
+                      ],
+                      [
+                        'previous',
+                        actionResult.version === 2
+                          ? c.filteredPrevious
+                          : c.previousPeriod,
+                      ],
+                    ].map(([key, label]) => {
+                      const sales = actionResult.corporate!.sales;
+                      if (sales.status !== 'READY') return null;
+                      const period =
+                        sales.report[key as 'current' | 'previous'];
+                      const format = new Intl.DateTimeFormat(
+                        english ? 'en-GB' : 'fa-IR',
+                        { timeZone: 'Asia/Tehran', dateStyle: 'short' },
+                      );
+                      return (
+                        <p className={styles.composerHint} key={key as string}>
+                          {t(label as AssistantText)}:{' '}
+                          <time dateTime={period.startUtc}>
+                            {format.format(new Date(period.startUtc))}
+                          </time>{' '}
+                          —{' '}
+                          <time dateTime={period.endUtc}>
+                            {format.format(
+                              new Date(Date.parse(period.endUtc) - 1),
+                            )}
+                          </time>
+                        </p>
+                      );
+                    })}
+                    <SourceUpdated
+                      value={
+                        actionResult.corporate.sales.report.sourceUpdatedAt
+                      }
+                      english={english}
+                      t={t}
+                    />
+                    {[
+                      ...new Set([
+                        ...(
+                          actionResult.corporate.sales.report.current
+                            .contractAmountsBeforeRefunds ?? []
+                        ).map((row) => row.currencyCode),
+                        ...(
+                          actionResult.corporate.sales.report.previous
+                            .contractAmountsBeforeRefunds ?? []
+                        ).map((row) => row.currencyCode),
+                      ]),
+                    ]
+                      .sort()
+                      .map((currency) => {
+                        const report = actionResult.corporate!.sales;
+                        if (report.status !== 'READY') return null;
+                        const current =
+                          report.report.current.contractAmountsBeforeRefunds;
+                        const previous =
+                          report.report.previous.contractAmountsBeforeRefunds;
+                        return (
+                          <p className={styles.composerHint} key={currency}>
+                            {t(c.contractAmount)} —{' '}
+                            {t(
+                              actionResult.version === 2
+                                ? c.filteredPeriod
+                                : c.currentPeriod,
+                            )}
+                            :{' '}
+                            <bdi>
+                              {current
+                                ? (current.find(
+                                    (row) => row.currencyCode === currency,
+                                  )?.amount ?? '0')
+                                : '—'}{' '}
+                              {currency}
+                            </bdi>
+                            {' / '}
+                            {t(
+                              actionResult.version === 2
+                                ? c.filteredPrevious
+                                : c.previousPeriod,
+                            )}
+                            :{' '}
+                            <bdi>
+                              {previous
+                                ? (previous.find(
+                                    (row) => row.currencyCode === currency,
+                                  )?.amount ?? '0')
+                                : '—'}{' '}
+                              {currency}
+                            </bdi>
+                          </p>
+                        );
+                      })}
+                  </>
+                ) : (
                   <p className={styles.composerHint}>
-                    {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                      timeZone: 'Asia/Tehran',
-                    }).format(new Date(value.startUtc))}{' '}
-                    —{' '}
-                    {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
-                      timeZone: 'Asia/Tehran',
-                    }).format(new Date(new Date(value.endUtc).getTime() - 1))}
+                    {t(
+                      actionResult.corporate.sales.status === 'DENIED'
+                        ? c.states.forbidden
+                        : c.salesDefinitionGate,
+                    )}
                   </p>
-                  <dl className={styles.actionCounts}>
-                    <div>
-                      <dt>{t(c.contractsCount)}</dt>
+                )}
+                <h3>{t(c.contractBalances)}</h3>
+                <p className={styles.composerHint}>
+                  {t(c.balanceRecommendationsDeferred)}
+                </p>
+                <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
+                {actionResult.corporate.balances.status === 'READY' && (
+                  <SourceUpdated
+                    value={
+                      actionResult.corporate.balances.report.sourceUpdatedAt
+                    }
+                    english={english}
+                    t={t}
+                  />
+                )}
+                {actionResult.corporate.balances.status === 'READY' ? (
+                  actionResult.corporate.balances.report.totals.map(
+                    (balance) => (
+                      <p
+                        className={styles.composerHint}
+                        key={balance.currencyCode}
+                      >
+                        {t(c.outstandingBalance)}:{' '}
+                        <bdi>
+                          {balance.outstanding}{' '}
+                          {currencySymbol(balance.currencyCode ?? '')}
+                        </bdi>
+                      </p>
+                    ),
+                  )
+                ) : (
+                  <p className={styles.composerHint}>
+                    {t(
+                      actionResult.corporate.balances.status === 'DENIED'
+                        ? c.states.forbidden
+                        : c.receivablesSourceGate,
+                    )}
+                  </p>
+                )}
+              </section>
+            )}
+          </div>
+        )}
+        {!denied &&
+          actionResult?.action === 'receivables-follow-up' &&
+          actionResult.status === 'PARTIAL' && (
+            <div className={styles.actionResult}>
+              <h2>{t(c.contractBalances)}</h2>
+              <SourceUpdated
+                value={actionResult.report.sourceUpdatedAt}
+                english={english}
+                t={t}
+              />
+              <p className={styles.composerHint}>{t(c.balanceLimitations)}</p>
+              <p className={styles.composerHint}>
+                {t(c.asOf)}:{' '}
+                <time dateTime={actionResult.report.observedAt}>
+                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                    timeZone: 'Asia/Tehran',
+                  }).format(new Date(actionResult.report.observedAt))}
+                </time>
+              </p>
+              {actionResult.report.totals.map((balance) => (
+                <dl className={styles.actionCounts} key={balance.currencyCode}>
+                  {[
+                    [c.contractAmount, balance.amount],
+                    [c.confirmedReceipts, balance.confirmedPaid],
+                    [c.pendingReceipts, balance.pendingFinance],
+                    [c.outstandingBalance, balance.outstanding],
+                  ].map(([label, amount]) => (
+                    <div key={(label as AssistantText)[1]}>
+                      <dt>{t(label as AssistantText)}</dt>
                       <dd>
-                        {new Intl.NumberFormat(
-                          english ? 'en-GB' : 'fa-IR',
-                        ).format(value.contractCount)}
+                        <bdi>
+                          {amount as string}{' '}
+                          {currencySymbol(balance.currencyCode ?? '')}
+                        </bdi>
                       </dd>
                     </div>
-                    <div>
-                      <dt>{t(c.passengersCount)}</dt>
-                      <dd>
-                        {new Intl.NumberFormat(
-                          english ? 'en-GB' : 'fa-IR',
-                        ).format(value.passengerCount)}
-                      </dd>
-                    </div>
-                  </dl>
-                  {value.contractAmountsBeforeRefunds?.map((amount) => (
-                    <p
-                      className={styles.composerHint}
-                      key={amount.currencyCode}
-                    >
-                      {t(c.contractAmount)}:{' '}
+                  ))}
+                </dl>
+              ))}
+              {actionResult.report.coverage.itemsTruncated && (
+                <p className={styles.composerHint}>{t(c.partialBalanceList)}</p>
+              )}
+              {actionResult.report.items.map((item) => (
+                <p className={styles.composerHint} key={item.contractId}>
+                  <bdi>{item.contractNumber}</bdi>:{' '}
+                  {item.balances.map((balance) => (
+                    <bdi key={balance.currencyCode}>
+                      {' '}
+                      {balance.outstanding}{' '}
+                      {currencySymbol(balance.currencyCode ?? '')}{' '}
+                    </bdi>
+                  ))}{' '}
+                  <Link href={item.href}>{t(c.reviewContract)}</Link>
+                </p>
+              ))}
+            </div>
+          )}
+        {!denied &&
+          actionResult?.action === 'sales-analysis' &&
+          actionResult.status === 'PARTIAL' && (
+            <div className={styles.actionResult}>
+              <h2>
+                {t(
+                  actionResult.version === 2 ? c.salesAnalysis : c.weeklySales,
+                )}
+              </h2>
+              <p className={styles.composerHint}>{t(c.salesCoverage)}</p>
+              <p className={styles.composerHint}>
+                {t(c.asOf)}:{' '}
+                <time dateTime={actionResult.report.observedAt}>
+                  {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                    timeZone: 'Asia/Tehran',
+                  }).format(new Date(actionResult.report.observedAt))}
+                </time>
+              </p>
+              <p className={styles.composerHint}>{t(c.salesMissing)}</p>
+              <SourceUpdated
+                value={actionResult.report.sourceUpdatedAt}
+                english={english}
+                t={t}
+              />
+              {actionResult.conversion?.status === 'READY' ? (
+                <section>
+                  <h3>{t(c.callConversion)}</h3>
+                  <p className={styles.composerHint}>{t(c.callCoverage)}</p>
+                  <SourceUpdated
+                    value={actionResult.conversion.report.sourceUpdatedAt}
+                    english={english}
+                    t={t}
+                  />
+                  {[
+                    actionResult.conversion.report.current,
+                    actionResult.conversion.report.previous,
+                  ].map((period, index) => (
+                    <p className={styles.composerHint} key={period.startUtc}>
+                      {t(
+                        index === 0
+                          ? actionResult.version === 2
+                            ? c.filteredPeriod
+                            : c.currentPeriod
+                          : actionResult.version === 2
+                            ? c.filteredPrevious
+                            : c.previousPeriod,
+                      )}
+                      : {t(c.contactedLeads)} {period.contactedLeads} /{' '}
+                      {t(c.convertedLeads)} {period.convertedLeads} —{' '}
                       <bdi>
-                        {amount.amount}{' '}
-                        {currencySymbol(amount.currencyCode ?? '')}
+                        {period.conversionBasisPoints === null
+                          ? '—'
+                          : `${period.conversionBasisPoints / 100}%`}
                       </bdi>
                     </p>
                   ))}
-                  {value.routes.map((route) => (
-                    <p
-                      className={styles.composerHint}
-                      key={`${route.originId}:${route.destinationId}`}
-                    >
-                      {t(c.primaryRoute)}:{' '}
-                      <bdi>
-                        {route.originName ?? t(c.unknown)} →{' '}
-                        {route.destinationName ?? t(c.unknown)}
-                      </bdi>{' '}
-                      — {t(c.contractsCount)}: {route.contractCount} —{' '}
-                      {t(c.passengersCount)}: {route.passengerCount}
+                </section>
+              ) : (
+                <p className={styles.composerHint}>
+                  {t(c.noConversionEvidence)}
+                </p>
+              )}
+              {!actionResult.report.routeNamesComplete && (
+                <p className={styles.composerHint}>{t(c.missingCityNames)}</p>
+              )}
+              {[
+                [
+                  actionResult.version === 2
+                    ? c.filteredPeriod
+                    : c.currentPeriod,
+                  actionResult.report.current,
+                ],
+                [
+                  actionResult.version === 2
+                    ? c.filteredPrevious
+                    : c.previousPeriod,
+                  actionResult.report.previous,
+                ],
+              ].map(([label, period]) => {
+                const value = period as typeof actionResult.report.current;
+                return (
+                  <div key={(label as AssistantText)[1]}>
+                    <h3>{t(label as AssistantText)}</h3>
+                    <p className={styles.composerHint}>
+                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                        timeZone: 'Asia/Tehran',
+                      }).format(new Date(value.startUtc))}{' '}
+                      —{' '}
+                      {new Intl.DateTimeFormat(english ? 'en-GB' : 'fa-IR', {
+                        timeZone: 'Asia/Tehran',
+                      }).format(new Date(new Date(value.endUtc).getTime() - 1))}
                     </p>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                    <dl className={styles.actionCounts}>
+                      <div>
+                        <dt>{t(c.contractsCount)}</dt>
+                        <dd>
+                          {new Intl.NumberFormat(
+                            english ? 'en-GB' : 'fa-IR',
+                          ).format(value.contractCount)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>{t(c.passengersCount)}</dt>
+                        <dd>
+                          {new Intl.NumberFormat(
+                            english ? 'en-GB' : 'fa-IR',
+                          ).format(value.passengerCount)}
+                        </dd>
+                      </div>
+                    </dl>
+                    {value.contractAmountsBeforeRefunds?.map((amount) => (
+                      <p
+                        className={styles.composerHint}
+                        key={amount.currencyCode}
+                      >
+                        {t(c.contractAmount)}:{' '}
+                        <bdi>
+                          {amount.amount}{' '}
+                          {currencySymbol(amount.currencyCode ?? '')}
+                        </bdi>
+                      </p>
+                    ))}
+                    {value.routes.map((route) => (
+                      <p
+                        className={styles.composerHint}
+                        key={`${route.originId}:${route.destinationId}`}
+                      >
+                        {t(c.primaryRoute)}:{' '}
+                        <bdi>
+                          {route.originName ?? t(c.unknown)} →{' '}
+                          {route.destinationName ?? t(c.unknown)}
+                        </bdi>{' '}
+                        — {t(c.contractsCount)}: {route.contractCount} —{' '}
+                        {t(c.passengersCount)}: {route.passengerCount}
+                      </p>
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+      </div>
     </section>
   );
 }
@@ -1200,12 +1236,6 @@ export function ExecutivePanels({
   const denied = state === 'forbidden' || state === 'unauthenticated';
   return (
     <div className={styles.workspace} dir={english ? 'ltr' : 'rtl'}>
-      <AssistantComposer
-        key={denied ? 'denied' : 'active'}
-        t={t}
-        denied={denied}
-        english={english}
-      />
       <nav className={styles.tabs} aria-label={t(c.title)}>
         {assistantViews.map((id) => {
           const TabIcon = viewIcons[id];

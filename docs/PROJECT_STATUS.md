@@ -6090,6 +6090,12 @@ Amin browser verification reproduced session rotation racing assistant source re
 
 ASSISTANT-SESSION-RECOVERY-1015 validation:54 assistant/shared-session tests passed, including the four fixed reads and filtered report recovery, failed refresh, retry cap,403 preservation and abort. Authenticated direct source verification: daily READY; sales PARTIAL only for CALL conversion permission; contractual balances PARTIAL for pending Finance/due/refund sources. Local generated Contracts output was refreshed after switching to current develop; full Web checks and exact-head CI remain pending. Candidate source scope frozen; bounded assistant source reservation released for other work.
 
+## PC-C — ASSISTANT-FLOATING-CHAT-1015
+
+User requests a fixed bottom-left assistant launcher throughout ERP with the existing prepared actions inside its expandable chat. Implementing an authenticated app-shell mount, responsive non-modal window, lazy shared composer, actor/scope state isolation and keyboard handling. LLM/provider activation and domain access remain separately gated.
+
 ## ROOM-MANUAL-PRICE-VALIDATION-1015 — PC-A
 
 Missing optional dated hotel tariffs no longer block the New Contract travel step, manual foreign agreed prices per room, or server save/confirmation. Known room capacities and occupancy tariffs remain checked independently for each room; missing child ages, guest/party mismatch, real room FKs and monetary validation remain unchanged. No schema/migration/dependency or operational runtime changes. Focused Sales Web/API regressions pass; full lint/types/build and exact-head CI gate the user-authorized develop merge.
+
+ASSISTANT-FLOATING-CHAT-1015 validation:58 assistant/shared-session regression tests, targeted lint, full Web TypeScript and production build passed. Registry/tools/native permissions, ERP APIs and database unchanged. Authenticated launcher renders only with an Actor; scope-key tests isolate user/permission/branch changes while preserving refreshed sessions. Common shell edits limited to import/mount. Candidate scope frozen and bounded source reservation released; remaining delivery checks are browser interaction, exact-head CI and local rollout.

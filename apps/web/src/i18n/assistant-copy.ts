@@ -1,5 +1,14 @@
 export type AssistantText = readonly [string, string];
 export const assistantCopy = {
+  widgetOpen: ['بازکردن دستیار هوشمند', 'Open smart assistant'],
+  widgetClose: ['بستن دستیار هوشمند', 'Close smart assistant'],
+  widgetTitle: ['دستیار هوشمند نورا', 'Noura smart assistant'],
+  widgetSubtitle: [
+    'از همین صفحه درخواستتان را اجرا کنید',
+    'Run a request from this page',
+  ],
+  widgetFullPanel: ['بازکردن پنل کامل دستیار', 'Open full assistant workspace'],
+  widgetResponse: ['نتیجه درخواست', 'Request result'],
   conversationClarification: {
     ACTION: [
       'خلاصه امروز، تحلیل فروش یا مانده قراردادی را می‌خواهید؟',
