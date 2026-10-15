@@ -6,6 +6,7 @@ User authorizes airline English names, actual airport IATA codes, aligned destin
 
 - Shared ticket renderer uses the directory-resolved English airline name in header, metadata and each leg. Unavailable directory metadata never invents an airline or airport.
 - Public Ticket Catalog adapter reads selected airport references and their canonical IATA attributes, falling back only to a valid legacy three-letter airport record code. City codes are not substituted for airport codes; legacy flights without selected airports remain blank.
+- The minimal branch-scoped Catalog document-facts endpoint also accepts Reservations read permission. It exposes no fare/capacity fields and grants no Catalog write permission; missing or unauthorized offers remain forbidden.
 - Both place blocks share the same top anchor and minimum height; flight facts are centered under the route arc. Preview, browser print and server PDF share the layout styles.
 - Flight numbers default to each immutable Sales flight snapshot. Authorized Reservations users may save per-flight output overrides; E-Ticket numbering is unchanged.
 

@@ -2508,5 +2508,6 @@
   "مبالغ اتاق‌ها بخشی از مبلغ کل قرارداد هستند.": "Room prices are included in the contract total.",
   "ارز اتاق": "Room currency",
   "مبلغ توافق‌شدهٔ اتاق": "Agreed room price",
-  "مبلغ اتاق": "Room price"
+  "مبلغ اتاق": "Room price",
+  "مجوز مشاهده اطلاعات بلیط وجود ندارد.": "Ticket document viewing permission is required."
 }
