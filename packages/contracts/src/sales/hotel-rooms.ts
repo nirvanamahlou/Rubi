@@ -4,6 +4,7 @@ export interface SalesHotelRoomV1 {
   roomTypeNameSnapshot: string;
   adults: number;
   childAges: readonly number[];
+  agreedPrice?: { amount: string; currencyCode: string };
 }
 export function validSalesHotelRooms(rooms: unknown, count: number) {
   return (
@@ -22,6 +23,13 @@ export function validSalesHotelRooms(rooms: unknown, count: number) {
         typeof room.roomTypeNameSnapshot === 'string' &&
         room.roomTypeNameSnapshot.trim().length > 0 &&
         room.roomTypeNameSnapshot.length <= 240 &&
+        (room.agreedPrice === undefined ||
+          (room.agreedPrice !== null &&
+            typeof room.agreedPrice === 'object' &&
+            typeof room.agreedPrice.amount === 'string' &&
+            /^\d{1,18}(?:\.\d{1,4})?$/.test(room.agreedPrice.amount) &&
+            /^[A-Z]{3}$/.test(room.agreedPrice.currencyCode) &&
+            room.agreedPrice.currencyCode !== 'IRR')) &&
         Number.isInteger(room.adults) &&
         room.adults >= 1 &&
         room.adults <= 20 &&

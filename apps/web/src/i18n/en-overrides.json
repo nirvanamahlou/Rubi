@@ -2500,5 +2500,13 @@
   "شماره پرواز در بلیط": "Ticket flight numbers",
   "شماره از پرواز انتخاب‌شده پر می‌شود؛ ویرایش دستی فقط روی خروجی بلیط این قرارداد اعمال می‌شود.": "Numbers are filled from the selected flights; manual edits affect only this contract's ticket output.",
   "پیش از چاپ یا دانلود، شماره‌های پرواز را ذخیره کنید.": "Save flight numbers before printing or downloading.",
-  "ذخیره شماره‌های پرواز": "Save flight numbers"
+  "ذخیره شماره‌های پرواز": "Save flight numbers",
+  "مجموع بزرگسال و کودک اتاق‌ها نباید از تعداد مسافران پرواز بیشتر باشد.": "Room occupancy cannot exceed the flight passenger counts.",
+  "مبلغ توافق‌شدهٔ همهٔ اتاق‌ها را وارد کنید.": "Enter the agreed sale price for every room.",
+  "جمع مبالغ اتاق‌ها نباید از مبلغ کل قرارداد در همان ارز بیشتر باشد.": "Room prices cannot exceed the contract total in the same currency.",
+  "مبلغ توافق‌شدهٔ هر اتاق": "Agreed price per room",
+  "مبالغ اتاق‌ها بخشی از مبلغ کل قرارداد هستند.": "Room prices are included in the contract total.",
+  "ارز اتاق": "Room currency",
+  "مبلغ توافق‌شدهٔ اتاق": "Agreed room price",
+  "مبلغ اتاق": "Room price"
 }

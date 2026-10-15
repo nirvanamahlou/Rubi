@@ -543,6 +543,9 @@ export class SalesRepository {
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                         adults: room.adults,
                         childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
                       })),
                     },
                   }
@@ -787,6 +790,9 @@ export class SalesRepository {
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                         adults: room.adults,
                         childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
                       })),
                     },
                   }

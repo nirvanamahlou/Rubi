@@ -194,12 +194,14 @@ export class TravelWorkflowService {
           state,
           command,
           intake.snapshot.passengerIds,
-          salesContractFlights(
-            intake.snapshot.serviceSelections,
-            intake.snapshot.ticketSelections ?? [],
-          ).map((f) =>
-            reservationFlightOutputKey(f.serviceClientKey, f.offerId),
-          ),
+          command.action === 'TICKET_FLIGHT_NUMBERS'
+            ? salesContractFlights(
+                intake.snapshot.serviceSelections,
+                intake.snapshot.ticketSelections ?? [],
+              ).map((f) =>
+                reservationFlightOutputKey(f.serviceClientKey, f.offerId),
+              )
+            : [],
         );
       } catch (error) {
         throw new BadRequestException(

@@ -260,3 +260,7 @@ Per the owner's 2026-10-07 request, actual seat pricing belongs to the dedicated
 ### 2026-10-14 — Service parties and room products
 
 New Contract selects the hotel and each room product/occupancy in the route/services step. Flight and transfer share their party; visa requests carry independent adult/child counts and require explicit identity selection later. Each room is validated and quoted separately for every night through Reservations public rates; mixed types never multiply the primary room rate or capacity. Sales persists ordered room rows and includes them in reservation snapshots. Contract, reservation form and voucher render room type, adults and child ages per room without requiring a named sleeping assignment. Legacy inputs remain compatible; previously issued document snapshots remain immutable.
+
+### 2026-10-15 — Bounded room allocation and agreed room prices
+
+When a contract includes flights, room controls consume the remaining flight party across all rooms. The themed child-age selector only offers available flight age bands while preserving hotel under15 age semantics. Invalid restored/typed totals cannot continue, and the server checks the actual allocated guest identities. Price/payment includes one agreed foreign sale amount per room stay. Room amounts are allocations within the currency contract totals, not additional charges; edits/removal apply only the difference. Supplier reservation forms/vouchers continue to omit customer sale prices. One additive nullable room-price migration preserves existing rows.

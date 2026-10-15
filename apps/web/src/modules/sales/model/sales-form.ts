@@ -1,3 +1,4 @@
+import { salesRoomPartyError, roomAgreedTotals } from './sales-room-prices';
 import type { SalesHotelRoomV1 } from '@nora/contracts';
 import { validSalesHotelRooms } from '@nora/contracts';
 import { passengerSaleTotals } from './passenger-sale-totals';
@@ -208,6 +209,12 @@ export function contractSaleComponents(
       throw new Error('ارز مبلغ قرارداد باید معتبر و یکتا باشد.');
     totals.set(price.currencyCode, moneyUnits(price.amount));
   }
+  if (state.serviceKinds.includes('HOTEL'))
+    for (const price of roomAgreedTotals(state.hotel.rooms))
+      if (moneyUnits(price.amount) > (totals.get(price.currencyCode) ?? 0n))
+        throw new Error(
+          'جمع مبالغ اتاق‌ها نباید از مبلغ کل قرارداد در همان ارز بیشتر باشد.',
+        );
   for (const person of extras)
     totals.set(
       'IRR',
@@ -995,6 +1002,14 @@ export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
   state = withFirstPassengerCustomer(state);
+  const roomPartyError = salesRoomPartyError(state);
+  if (roomPartyError) throw new Error(roomPartyError);
+  if (
+    state.serviceKinds.includes('HOTEL') &&
+    state.priceEntryMode === 'CONTRACT_TOTAL' &&
+    state.hotel.rooms?.some((r) => !r.agreedPrice)
+  )
+    throw new Error('مبلغ توافق‌شدهٔ همهٔ اتاق‌ها را وارد کنید.');
   if (
     state.serviceKinds.includes('HOTEL') &&
     state.hotel.rooms &&
