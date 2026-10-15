@@ -290,9 +290,10 @@ export function AssistantComposer({
   return (
     <section
       className={`${styles.composer} ${floating ? styles.floatingComposer : ''}`}
-      aria-labelledby={inputId + '-title'}
+      aria-label={floating ? t(c.composerTitle) : undefined}
+      aria-labelledby={floating ? undefined : inputId + '-title'}
     >
-      <h1 id={inputId + '-title'}>{t(c.composerTitle)}</h1>
+      {!floating && <h1 id={inputId + '-title'}>{t(c.composerTitle)}</h1>}
       <form
         className={styles.composerForm}
         onSubmit={(event) => {
