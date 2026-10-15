@@ -88,6 +88,59 @@ export class HrSelfPerformanceService {
       deletedAt: null,
     };
     const today = localClockParts(new Date()).date;
+    const monthFormat = new Intl.DateTimeFormat('en-US-u-ca-persian', {
+      timeZone: 'Asia/Tehran',
+      year: 'numeric',
+      month: '2-digit',
+    });
+    const currentMonth = monthFormat.format(new Date());
+    // At most 31 calendar days; derive the Gregorian lower bound without a new calendar dependency.
+    let monthStart = new Date(`${today}T12:00:00Z`);
+    while (
+      monthFormat.format(new Date(monthStart.getTime() - 86400000)) ===
+      currentMonth
+    )
+      monthStart = new Date(monthStart.getTime() - 86400000);
+    const fromDate = monthStart.toISOString().slice(0, 10);
+    const monthlyRows = await this.database.client.hrRecord.findMany({
+      where: {
+        ...scope,
+        section: 'time',
+        tab: 'attendance',
+        AND: [
+          { values: { path: ['1'], gte: fromDate } },
+          { values: { path: ['1'], lte: today } },
+        ],
+      },
+      orderBy: [{ updatedAt: 'desc' }, { id: 'asc' }],
+      take: 1001,
+    });
+    if (monthlyRows.length > 1000)
+      throw new Error('Monthly attendance limit exceeded');
+    // One latest reviewed calculation per day; do not double-count superseded rows.
+    const days = new Map<string, Record<string, unknown>>();
+    for (const row of monthlyRows) {
+      const day = (row.values as string[])[1];
+      if (day && !days.has(day))
+        days.set(
+          day,
+          row.status === 'حاضر'
+            ? ((row.data ?? {}) as Record<string, unknown>)
+            : {},
+        );
+    }
+    const total = (key: string) => {
+      const values = [...days.values()].map((day) => day[key]);
+      return values.length &&
+        values.every(
+          (value) =>
+            typeof value === 'number' &&
+            Number.isSafeInteger(value) &&
+            value >= 0,
+        )
+        ? (values as number[]).reduce((sum, value) => sum + value, 0)
+        : null;
+    };
     const [leaves, shifts, payslips, balances, approvedLeaveCount, punches] =
       await Promise.all([
         this.database.client.hrRecord.findMany({
@@ -176,6 +229,15 @@ export class HrSelfPerformanceService {
         .map((values) => digits(values[2]!))
         .sort();
     return {
+      monthlyAttendance: {
+        period: new Intl.DateTimeFormat('fa-IR', {
+          timeZone: 'Asia/Tehran',
+          month: 'long',
+          year: 'numeric',
+        }).format(new Date()),
+        lateMinutes: total('lateMinutes'),
+        overtimeMinutes: total('overtimeMinutes'),
+      },
       approvedLeaveCount,
       todayAttendance: {
         date: today,
