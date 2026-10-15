@@ -29,8 +29,6 @@ const approvedRoutes = [
   'master-data',
 ] as const;
 
-const foundationRoutes = ['integrations'] as const;
-
 describe('main-route module foundation', () => {
   it('keeps every approved main route reviewable', () => {
     for (const route of approvedRoutes) {
@@ -45,12 +43,14 @@ describe('main-route module foundation', () => {
     expect(page).toContain("redirect('/workbench')");
   });
 
-  it('connects the remaining incomplete route to the shared workspace', () => {
-    for (const route of foundationRoutes) {
-      const page = readFileSync(resolve(crmRoot, route, 'page.tsx'), 'utf8');
-      expect(page).toContain('ModuleFoundationWorkspace');
-      expect(page).toContain(`foundationModules['${route}']`);
-    }
+  it('connects Integrations to its scoped configuration workspace', () => {
+    const page = readFileSync(
+      resolve(crmRoot, 'integrations/page.tsx'),
+      'utf8',
+    );
+    expect(page).toContain('IntegrationsWorkspace');
+    expect(page).not.toContain('ModuleFoundationWorkspace');
+    expect(page).not.toContain('foundationModules');
   });
 
   it('preserves connected workspaces and the Master Data hub-to-section flow', () => {

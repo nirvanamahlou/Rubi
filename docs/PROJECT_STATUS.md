@@ -1,3 +1,24 @@
+## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI — 2026-10-15
+
+Publication follow-up: [PR889](https://github.com/nirvanamahlou/Rubi/pull/889), authored by ehsandni, targets develop under the user's explicit authorization. Full hosted CI and final review gate merge. The local handoff below predates publication.
+
+The supplied brand/system dashboard references are implemented in the existing
+Integrations centre. Editable catalogue, four metric drilldowns, Jalali periods,
+comparison, latest configuration activity and owner-flow explanation are live on
+local Docker3100/4192. The incomplete previous overlay omitted the existing IAM
+actor hook; the runtime dependency is now included and login/page rendering were
+verified on localhost and127.0.0.1 with the authorized administrator. Four initial
+brands/systems were initialized through the public audited registry command.
+
+189 tests pass; scoped lint, format, Web/API typecheck, Web production build,
+database declaration build and runtime compilation pass. Full API typechecking
+required regeneration of stale local Prisma artifacts, without database changes.
+24 runtime overlay files and unchanged runtime schema verified. No migration,
+new seed, permission grant, GitHub publication or merge. Real external metrics,
+webhook/sync and SSO remain dependent on external access and public owner
+contracts. Source reservation released. Details:
+[INTEGRATIONS-VISUAL-1015](tasks/INTEGRATIONS-VISUAL-1015.md).
+
 ## DOCUMENT-DOWNLOAD-ONLY-1015 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-document-download-only-1015. Reserve shared reservation/voucher TravelDocument, sales contract output and embedded contract preview plus existing regression expectations, bounded translations and own status docs. Remove browser print/Save-as-PDF buttons, print-only code and obsolete instructions; retain authenticated direct PDF downloads and previews. This covers all consumers of the shared components. No API/schema/dependency/migration/runtime changes. User requests implementation; PR to develop remains reviewable without unrequested merge. No overlapping active lock observed. Validation:29 existing document/download/PDF-route regressions passed, including download availability after issuance and removed print controls. Scoped lint/types and full CI build gate review. No live deployment.
