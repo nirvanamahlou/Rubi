@@ -1,4 +1,6 @@
-## INTEGRATIONS-VISUAL-1015 — PC-D — LOCAL_RUNNING — 2026-10-15
+## INTEGRATIONS-VISUAL-1015 — PC-D — READY_FOR_CI — 2026-10-15
+
+Publication follow-up: [PR889](https://github.com/nirvanamahlou/Rubi/pull/889), authored by ehsandni, targets develop under the user's explicit authorization. Full hosted CI and final review gate merge. The local handoff below predates publication.
 
 The supplied brand/system dashboard references are implemented in the existing
 Integrations centre. Editable catalogue, four metric drilldowns, Jalali periods,
@@ -6122,5 +6124,9 @@ User requests a fixed bottom-left assistant launcher throughout ERP with the exi
 Missing optional dated hotel tariffs no longer block the New Contract travel step, manual foreign agreed prices per room, or server save/confirmation. Known room capacities and occupancy tariffs remain checked independently for each room; missing child ages, guest/party mismatch, real room FKs and monetary validation remain unchanged. No schema/migration/dependency or operational runtime changes. Focused Sales Web/API regressions pass; full lint/types/build and exact-head CI gate the user-authorized develop merge.
 
 ASSISTANT-FLOATING-CHAT-1015 validation:58 assistant/shared-session regression tests, targeted lint, full Web TypeScript and production build passed. Registry/tools/native permissions, ERP APIs and database unchanged. Authenticated launcher renders only with an Actor; scope-key tests isolate user/permission/branch changes while preserving refreshed sessions. Common shell edits limited to import/mount. Candidate scope frozen and bounded source reservation released; remaining delivery checks are browser interaction, exact-head CI and local rollout.
+
+## RESERVATION-FORM-PURCHASE-PRICE-1015 — PC-A
+
+Supplier reservation forms now accept separate-currency hotel purchase totals, automatically suggested from the selected broker's active rates for canonical room types, guest mix and contractual stay. Suggestions never fall back to another broker; unavailable quotes remain manual. Staff may edit or clear the display totals before issuing the form. Values are preserved in existing immutable supplier-form workflow JSON/CAS/history and printed in preview/PDF only for the reservation form; no Sale, actual purchase, profit or voucher amount is changed. Optional shared JSON field preserves older revisions. Broker changes reset old totals and stale requests cannot overwrite another broker. No schema/migration/dependency/live runtime changes. Targeted tests and full CI gate user-authorized develop merge.
 
 ASSISTANT-CHAT-HEADING-1015 — PC-C: bounded post-rollout accessibility correction in AssistantComposer and its regression only. Browser route announcer picked hidden chat H1 while navigating to profile. Floating composer now uses an accessible region label without a hidden H1; inline heading remains unchanged. No shared shell, API, permissions or dependency changes. Reserve own two files and status entries; require targeted test/build, exact-head and postmerge CI plus compatible runtime refresh.

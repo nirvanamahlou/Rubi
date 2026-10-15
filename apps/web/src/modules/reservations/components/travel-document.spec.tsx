@@ -35,6 +35,35 @@ supplier.text.broker = 'BROKER';
 intake.workflow.supplierFormSettings = supplier;
 
 describe('travel output branding and readiness', () => {
+  it('preserves edited purchase totals on reservation forms without publishing them on vouchers', () => {
+    const settings = {
+      ...supplier,
+      hotelPurchasePrices: [{ amount: '123.50', currencyCode: 'EUR' }],
+    };
+    const priced = {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        supplierFormSettings: settings,
+        voucherSettings: settings,
+      },
+    };
+    expect(
+      defaultVoucherSettings(
+        {
+          ...priced,
+          workflow: { ...priced.workflow, voucherSettings: settings },
+        },
+        {},
+      ).hotelPurchasePrices,
+    ).toEqual(settings.hotelPurchasePrices);
+    expect(renderToStaticMarkup(<TravelDocument intake={priced} />)).toContain(
+      '123.50 EUR',
+    );
+    expect(
+      renderToStaticMarkup(<TravelDocument intake={priced} voucher />),
+    ).not.toContain('123.50 EUR');
+  });
   it('places one supplier picker before the single reservation preview', () => {
     const html = renderToStaticMarkup(
       <ReservationSettingsForm

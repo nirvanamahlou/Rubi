@@ -99,3 +99,9 @@ merged into the candidate; two status-document conflicts were resolved by
 retaining both independent histories. No runtime rollout or database operation
 is requested by this publication follow-up. Full CI must validate the synchronized
 candidate, including changes already owned and merged by the other computers.
+
+PR: https://github.com/nirvanamahlou/Rubi/pull/889 (develop, ehsandni).
+Latest develop synchronization includes PR888 and retains all existing owner
+changes. Hosted full quality, full tests, PostgreSQL18 migration/seed and full
+production build must pass on the final synchronized candidate. The earlier
+local-only delivery notes are historical; the explicit follow-up governs release.

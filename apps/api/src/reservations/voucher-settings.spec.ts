@@ -22,6 +22,17 @@ const settings = (): VoucherSettingsV1 => ({
   ) as VoucherSettingsV1['flags'],
   passengers: [{ id: 'p', selected: true, roomType: 'DBL', age: 'ADL' }],
 });
+it('retains supplier form display prices exactly and rejects invalid/duplicate currencies', () => {
+  const value = settings();
+  value.hotelPurchasePrices = [{ amount: '120.50', currencyCode: 'EUR' }];
+  expect(validateVoucherSettings(value, ['p']).hotelPurchasePrices).toEqual(
+    value.hotelPurchasePrices,
+  );
+  value.hotelPurchasePrices.push({ amount: '10', currencyCode: 'EUR' });
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+  value.hotelPurchasePrices = [{ amount: '-1', currencyCode: 'EUR' }];
+  expect(() => validateVoucherSettings(value, ['p'])).toThrow();
+});
 it('validates settings and rejects foreign passengers, invalid dates and unselected groups', () => {
   const valid = settings();
   valid.text.contractPartyName = '  شرکت آزمایشی  ';
