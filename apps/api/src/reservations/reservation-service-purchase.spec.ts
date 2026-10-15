@@ -717,21 +717,19 @@ it('single hotel purchase uses contractual nights even after different form-only
   const db = {
     client: {
       reservationIntake: {
-        findUnique: vi
-          .fn()
-          .mockResolvedValue({
-            branchId: 'branch-1',
-            snapshot,
-            workflowRevisions: [
-              {
-                state: {
-                  sentSupplierFormSettings: {
-                    text: { checkIn: '2026-10-02', checkOut: '2026-10-10' },
-                  },
+        findUnique: vi.fn().mockResolvedValue({
+          branchId: 'branch-1',
+          snapshot,
+          workflowRevisions: [
+            {
+              state: {
+                sentSupplierFormSettings: {
+                  text: { checkIn: '2026-10-02', checkOut: '2026-10-10' },
                 },
               },
-            ],
-          }),
+            },
+          ],
+        }),
       },
       reservationServicePurchase: {
         findUnique: vi.fn().mockResolvedValue(null),
@@ -748,12 +746,10 @@ it('single hotel purchase uses contractual nights even after different form-only
     },
   };
   const directory = {
-    brokerReference: vi
-      .fn()
-      .mockResolvedValue({
-        id: valid.supplierOrganizationId,
-        name: 'Synthetic broker',
-      }),
+    brokerReference: vi.fn().mockResolvedValue({
+      id: valid.supplierOrganizationId,
+      name: 'Synthetic broker',
+    }),
     currencyReference: vi.fn().mockResolvedValue({ code: 'IRR' }),
   };
   const service = new ReservationServicePurchaseService(
