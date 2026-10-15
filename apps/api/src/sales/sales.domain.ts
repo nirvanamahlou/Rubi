@@ -1,4 +1,5 @@
 import {
+  moneyUnits,
   validSalesHotelRooms,
   hotelAgeOn,
   validateInsuranceExtras,
@@ -494,6 +495,60 @@ export function validateSalesContract(
           'SALES_HOTEL_INVALID',
           'ترکیب اتاق‌ها معتبر نیست.',
         );
+      const flightKeys = new Set(
+        input.services
+          .filter((s) => s.kind === 'FLIGHT')
+          .map((s) => s.clientKey),
+      );
+      if (flightKeys.size) {
+        const flightIds = new Set(
+          input.passengers
+            .filter((p) =>
+              p.serviceClientKeys.some((key) => flightKeys.has(key)),
+            )
+            .map((p) => p.customerId),
+        );
+        if (
+          input.passengers.some(
+            (p) =>
+              p.serviceClientKeys.includes(hotel.serviceClientKey) &&
+              !flightIds.has(p.customerId),
+          )
+        )
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'مجموع بزرگسال و کودک اتاق‌ها نباید از تعداد مسافران پرواز بیشتر باشد.',
+          );
+      }
+      if (hotel.rooms.some((r) => r.agreedPrice)) {
+        if (hotel.rooms.some((r) => !r.agreedPrice))
+          throw new SalesDomainError(
+            'SALES_HOTEL_INVALID',
+            'مبلغ توافق‌شدهٔ همهٔ اتاق‌ها را وارد کنید.',
+          );
+        const totals = new Map<string, bigint>();
+        for (const r of hotel.rooms) {
+          const p = r.agreedPrice!;
+          totals.set(
+            p.currencyCode,
+            (totals.get(p.currencyCode) ?? 0n) + moneyUnits(p.amount),
+          );
+        }
+        for (const [code, total] of totals) {
+          const contract = input.priceComponents
+            .filter((p) => p.currencyCode === code)
+            .reduce(
+              (n, p) =>
+                n + (p.type === 'DISCOUNT' ? -1n : 1n) * moneyUnits(p.amount),
+              0n,
+            );
+          if (total > contract)
+            throw new SalesDomainError(
+              'SALES_HOTEL_INVALID',
+              'جمع مبالغ اتاق‌ها نباید از مبلغ کل قرارداد در همان ارز بیشتر باشد.',
+            );
+        }
+      }
       const guests = input.passengers.filter((p) =>
         p.serviceClientKeys.includes(hotel.serviceClientKey),
       );

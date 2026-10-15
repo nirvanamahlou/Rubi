@@ -331,6 +331,14 @@ export function presentSalesContract(
                   roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                   adults: room.adults,
                   childAges: room.childAges as number[],
+                  ...(room.agreedPrice
+                    ? {
+                        agreedPrice: room.agreedPrice as {
+                          amount: string;
+                          currencyCode: string;
+                        },
+                      }
+                    : {}),
                 })),
               }
             : {}),
