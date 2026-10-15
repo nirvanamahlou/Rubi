@@ -6085,3 +6085,7 @@ Validation: targeted floating/insurance/transfer purchase and profit regressions
 Amin browser verification reproduced session rotation racing assistant source reads: the normal ERP header refresh revokes the prior session during a snapshot, while assistant fetch did not recover401. Bounded assistant-only shared-session recovery and three-action verification in progress; no source data or access changes.
 
 ASSISTANT-SESSION-RECOVERY-1015 validation:54 assistant/shared-session tests passed, including the four fixed reads and filtered report recovery, failed refresh, retry cap,403 preservation and abort. Authenticated direct source verification: daily READY; sales PARTIAL only for CALL conversion permission; contractual balances PARTIAL for pending Finance/due/refund sources. Local generated Contracts output was refreshed after switching to current develop; full Web checks and exact-head CI remain pending. Candidate source scope frozen; bounded assistant source reservation released for other work.
+
+## PC-C — ASSISTANT-FLOATING-CHAT-1015
+
+User requests a fixed bottom-left assistant launcher throughout ERP with the existing prepared actions inside its expandable chat. Implementing an authenticated app-shell mount, responsive non-modal window, lazy shared composer, actor/scope state isolation and keyboard handling. LLM/provider activation and domain access remain separately gated.
