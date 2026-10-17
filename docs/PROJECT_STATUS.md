@@ -6266,3 +6266,11 @@ Changed the shared destructive Button variant to a transparent background, red b
 ## HOTEL-REGISTERED-PERIODS-1017 — PC-A — REVIEW_CANDIDATE
 
 Added a read-only registered-hotel-period directory only in package building, available before choosing a tour. It shows hotel, authorized branch, city, broker, check-in/check-out, currency, pack type and saved version, with literal substring search, optional overlap dates, stable50-row pagination and refresh. Reservations public projection returns only latest active pack versions, including ordinary/departure/shared packs; no prices or passenger/contact data. City names resolve through the public Master Data reference and preserve inactive history. Package Pricing read permission and actor branch scope are enforced before querying. Targeted API/Web/permission tests, scoped lint and typechecks passed; real compiled SQL passed read-only PostgreSQL checks on the isolated preview clone, including current-version/archive exclusion, literal search and empty-page totals. API production build passed; full Web build and exact-head CI gate merge. No schema, migration, dependency or business-data writes. User authorizes only this new directory to merge; PR910 sale controls remain draft. Source/contracts frozen and released with candidate.3200 integration follows merge;3100 untouched.
+
+## 2026-10-17 — CONTRACT-REFERRAL-LABEL-1017 — PC-A
+
+New-contract referral heading now reads «نحوه آشنایی با ما», with English catalogue coverage. No field values, selection behavior, API or stored data changes. User authorizes develop merge; verification pending.
+
+
+Verification: 3 existing form tests, scoped ESLint, formatting and shared Contracts build passed. Full PR CI provides Web typecheck/build and suite gates before user-authorized merge.
+
