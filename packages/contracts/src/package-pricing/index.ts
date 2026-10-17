@@ -1,3 +1,4 @@
+import type { PackageRoomSaleOverrideV1 } from './room-sale-overrides';
 export * from './room-sale-overrides';
 import type { TourDepartureV1 } from '../travel/tours';
 import type { FinancePaidTicketCostV1 } from '../finance';
@@ -359,7 +360,7 @@ export interface PackageTourDraftAdjustmentV1 {
 }
 
 export interface PackageTourDraftSaveV1 {
-  roomSaleOverrides?: readonly import('./room-sale-overrides').PackageRoomSaleOverrideV1[];
+  roomSaleOverrides?: readonly PackageRoomSaleOverrideV1[];
   selectedHotelRateIds?: readonly string[];
   priceFields?: readonly PackageTourPriceFieldV1[];
   familyAdults?: number;
