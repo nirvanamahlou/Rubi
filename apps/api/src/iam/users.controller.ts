@@ -1,5 +1,7 @@
 import {
   Body,
+  Delete,
+  Headers,
   Controller,
   Get,
   ForbiddenException,
@@ -41,6 +43,15 @@ export class UsersController {
     @Inject(ManualUserAccessService)
     private readonly manual?: ManualUserAccessService,
   ) {}
+  @Delete(':id')
+  @RequirePermissions('iam.users.manage')
+  delete(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Headers('if-match') revision: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.manual!.delete(id, revision, req.actor);
+  }
   @Get(':id/manual-access')
   @RequirePermissions('iam.users.read')
   manualAccess(@Param('id', new ParseUUIDPipe()) id: string) {
