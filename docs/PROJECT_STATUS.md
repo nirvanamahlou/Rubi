@@ -1,3 +1,35 @@
+## PARTNER-360-IMPORT-1017 — PC-B — PARTIAL / FINANCE CONTRACT HANDOFF
+
+Supplier Provider ID is removed from the visible table; broker table already
+omits it. Supplier country/city now use scoped Master Data references beside the
+address. Meal/service creation hides its code and omits a blank code so the
+existing API generates it; stored edit/view codes are preserved. Both partner
+tabs now have Excel template/preview/import. Country/city share one cell and
+resolve to real active geography FKs. Opt-in partner writes atomically create
+or update the canonical organization, encrypted office/mobile/email contacts
+and primary address; retries skip existing imported identities without overwrite.
+Untouched contact edits retain their encrypted values. No schema/dependency change.
+
+All requested Agency360 commercial/financial features remain unimplemented:
+the role-safe storage already exists but public B2B paths allow only customer
+roles, and existing Finance preview is a Sales/customer projection, not supplier
+payables. User confirmed COUNTERPARTY_TO_US credit. The missing Finance-owned
+supplier/broker payable/payment/exposure public projection needs producer/consumer
+coordination with PC-A before implementing the complete dossier. No cosmetic 360
+or customer receivable data is substituted. This remains a partial delivery.
+
+Hotel logo reproduced through the authenticated UI on the explicitly local demo
+hotel: upload/attachment succeeds, preview stays quarantined because Linux cannot
+run the Windows Defender adapter. A standalone Windows host scan companion reuses
+the existing processor, encrypted storage and real Defender; the two hotel files
+became CLEAN through audited scan commands (no direct status edit). Preview now
+visibly renders the logo. Worker PID19688 runs for this Windows session; no API/Web
+container replacement or automatic reboot service installed. Details and evidence:
+docs/tasks/PARTNER-360-IMPORT-1017.md. Eight Web suites (86 tests), 52 policy/meal
+tests, 4 persistence tests, 7 antivirus/storage tests, 6 isolated PostgreSQL tests
+and 3 translation-coverage tests pass. Web/API types, API production build,
+scoped lint and formatting pass. Hosted CI publication is pending. No merge yet.
+
 ## FINANCE-PROFIT-LAYOUT-1017 — PC-A — READY_FOR_CI
 
 Receipt-verification contract-profit view is framed and spaced with RTL table headers, isolated LTR amounts, explicit currency codes, contained horizontal overflow, separate missing-cost warning and purchase evidence cards. Existing protected Sales profit read and all financial calculations remain unchanged; null profit is never displayed as zero.13 focused presentation, inbox, Sales-exclusion and English-coverage tests pass. Scoped lint/type and exact-head full CI gate user-authorized develop merge; no API/schema/dependency/data or local3100 changes.

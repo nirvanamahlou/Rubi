@@ -6,6 +6,24 @@ import { getReferenceFieldConfig } from './reference-fields';
 import { validateMasterDataDraft } from './validation';
 
 describe('supplier and broker form coverage', () => {
+  it('uses scoped master geography selectors beside the supplier address', () => {
+    expect(getReferenceFieldConfig('suppliers', 'countryId')).toMatchObject({
+      target: 'countries',
+      payload: 'id',
+      optional: true,
+    });
+    expect(getReferenceFieldConfig('suppliers', 'cityId')).toMatchObject({
+      target: 'cities',
+      payload: 'id',
+      scopeField: 'countryId',
+      optional: true,
+    });
+    const fields = getMasterDataDefinition('suppliers').fields.map(
+      (field) => field.key,
+    );
+    expect(fields.indexOf('countryId')).toBeLessThan(fields.indexOf('cityId'));
+    expect(fields.indexOf('cityId')).toBeLessThan(fields.indexOf('address'));
+  });
   it.each(['suppliers', 'brokers'] as const)(
     'offers the intended identity, contact and service fields for %s',
     (resource) => {
@@ -18,7 +36,12 @@ describe('supplier and broker form coverage', () => {
       if (resource === 'suppliers') {
         expect(fields).toContain('name');
         expect(fields).toEqual(
-          expect.arrayContaining(['address', 'primaryPhone']),
+          expect.arrayContaining([
+            'address',
+            'primaryPhone',
+            'countryId',
+            'cityId',
+          ]),
         );
         expect(fields).not.toContain('externalProviderReference');
         expect(fields).not.toEqual(

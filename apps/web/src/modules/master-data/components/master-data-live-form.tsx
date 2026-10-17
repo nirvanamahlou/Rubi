@@ -248,6 +248,9 @@ function GenericMasterDataLiveForm({
   const [logoChange, setLogoChange] = useState<MasterDataLogoChange>();
   const [saving, setSaving] = useState(false);
   const [supplierPhoneTouched, setSupplierPhoneTouched] = useState(false);
+  const [partnerContactTouched, setPartnerContactTouched] = useState<
+    ReadonlySet<string>
+  >(new Set());
   const readonly = mode === 'view';
   const focusRestore = useMasterDataDialogFocusRestore();
   const fields = getMasterDataFormFields(definition, mode).filter(
@@ -305,6 +308,14 @@ function GenericMasterDataLiveForm({
         definition.key === 'suppliers' && mode === 'edit'
           ? supplierEditValues(result.values, supplierPhoneTouched)
           : partnerPersistValues(definition.key, mode, record, result.values);
+      if (definition.key === 'suppliers') {
+        persistedValues.dossierVersion = '1';
+        persistedValues.dossierAddress = persistedValues.address ?? '';
+        if (mode === 'edit')
+          for (const key of ['dossierMobile', 'dossierEmail']) {
+            if (!partnerContactTouched.has(key)) delete persistedValues[key];
+          }
+      }
       await onPersist(persistedValues, logoChange);
     } catch (error) {
       setErrors({
@@ -418,6 +429,13 @@ function GenericMasterDataLiveForm({
                   definition.key === 'suppliers' &&
                   field.key === 'serviceCodes';
                 const updateValue = (value: string) => {
+                  if (
+                    field.key === 'dossierMobile' ||
+                    field.key === 'dossierEmail'
+                  )
+                    setPartnerContactTouched(
+                      (current) => new Set([...current, field.key]),
+                    );
                   if (
                     definition.key === 'suppliers' &&
                     field.key === 'primaryPhone'
@@ -613,7 +631,12 @@ function GenericMasterDataLiveForm({
                     }
                     id={controlId}
                     onChange={(event) => updateValue(event.target.value)}
-                    placeholder={field.placeholder}
+                    placeholder={
+                      field.key === 'dossierMobile' ||
+                      field.key === 'dossierEmail'
+                        ? String(record?.attributes[`${field.key}Masked`] ?? '')
+                        : field.placeholder
+                    }
                     readOnly={readonly}
                     required={Boolean(field.required)}
                     type={field.type}

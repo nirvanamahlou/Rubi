@@ -1,5 +1,6 @@
 import type { DisplayLanguage } from '../common/i18n/language';
 import { randomUUID } from 'node:crypto';
+import { preparePartnerDossier } from './partner-dossier.policy';
 import { brokerCityIds, brokerLeaderDrafts } from './broker-form.policy';
 import { columnFilterWhere } from './catalog-filters';
 import {
@@ -532,6 +533,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'logoFileReference',
   ],
   suppliers: [
+    'dossierVersion',
+    'dossierEmail',
+    'dossierMobile',
+    'dossierAddress',
+    'dossierImport',
     'name',
     'englishName',
     'address',
@@ -546,6 +552,11 @@ const allowedFields: Record<MasterDataResource, readonly string[]> = {
     'logoFileReference',
   ],
   brokers: [
+    'dossierVersion',
+    'dossierEmail',
+    'dossierMobile',
+    'dossierAddress',
+    'dossierImport',
     'cityIds',
     'boardText',
     'primaryPhone',
@@ -3660,6 +3671,18 @@ export class MasterDataService {
         };
         delete data.leaderDrafts;
       }
+    }
+    if (resource === 'suppliers' || resource === 'brokers') {
+      const dossier = preparePartnerDossier(values, this.contactCrypto);
+      for (const key of [
+        'dossierVersion',
+        'dossierEmail',
+        'dossierMobile',
+        'dossierAddress',
+        'dossierImport',
+      ])
+        delete data[key];
+      if (dossier) data.partnerDossier = dossier;
     }
     return data;
   }
