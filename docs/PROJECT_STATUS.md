@@ -6281,5 +6281,5 @@ Verification: 3 existing form tests, scoped ESLint, formatting and shared Contra
 
 ## 2026-10-17 — LOGIN-WHITE-BACKGROUND-1017 — PC-A
 
-Login page uses a plain white canvas and no longer mounts decorative background media. Existing logos, branding panel and authentication form remain. PR and local preview requested; no develop merge requested. No data/schema/API changes.
+Login page retains its plain white canvas and no decorative media. In the 2026-10-17 follow-up, both halves of the card share one continuous blue gradient; form labels, language controls and submit action use high-contrast colors while inputs remain white. Existing logos and authentication behavior remain. PR #917 is the review candidate; user authorizes develop merge after exact-head CI. No data/schema/API changes.
 

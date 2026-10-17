@@ -14,10 +14,18 @@ describe('login background', () => {
     'utf8',
   );
 
-  it('uses a white page background without mounting decorative media', () => {
+  it('uses a white page canvas without mounting decorative media', () => {
     expect(source).toContain('bg-white');
     expect(source).not.toContain('LoginBackgroundStory');
     expect(source).not.toContain('bg-sky-100');
+  });
+
+  it('uses the same continuous blue brand background behind both login panels', () => {
+    expect(source).toContain('bg-[linear-gradient(145deg,#123f8c,#092354)]');
+    expect(source).toContain('<LanguageSwitcher tone="inverse" />');
+    expect(
+      fs.readFileSync(path.resolve(__dirname, 'login-form.tsx'), 'utf8'),
+    ).toContain('bg-white text-blue-950 hover:bg-blue-50');
   });
 
   it('does not render the NOORA cloud or decorative wind layers', () => {

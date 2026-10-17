@@ -7915,6 +7915,6 @@ COMPUTER_ID=PC-A; branch codex/pc-a-remove-bottom-history-1017 from origin/devel
 
 ## LOGIN-WHITE-BACKGROUND-1017 — PC-A — IN_PROGRESS
 
-COMPUTER_ID=PC-A; branch codex/pc-a-login-white-background-1017 from latest origin/develop. Reserve login/page.tsx and existing page.spec.ts plus own docs. User requests white page background, PR and local preview; no develop merge authorization. No API/schema/dependency changes. Preserve login form, logos and blue branding panel. Preview Web3100 only; retain existing API and data.
+COMPUTER_ID=PC-A; branch codex/pc-a-login-white-background-1017 from origin/develop@877a7286; continuation of PR #917. Re-reserve login/page.tsx, login-form.tsx, i18n/language-switcher.tsx, existing page.spec.ts and own docs. User requests the login form panel to share the same blue background as the branding panel and explicitly authorizes develop merge after checks. Preserve the white outer page canvas, real logos, readable white labels, white input controls, authentication and existing clean no-decoration design. No API/schema/dependency/migration change; no runtime/data mutation.
 
-LOGIN-WHITE-BACKGROUND-1017 — READY_FOR_REVIEW:6 existing login/background/logo tests and scoped ESLint pass. Web production build/typecheck and local preview verification follow. Bounded source locks released at candidate; PR only, no develop merge authorization.
+LOGIN-WHITE-BACKGROUND-1017 previous candidate:6 existing login/background/logo tests and scoped ESLint pass. The source locks are re-reserved for the user's 2026-10-17 blue-panel follow-up; PR #917 will be updated and exact-head CI gates the explicitly authorized develop merge.
