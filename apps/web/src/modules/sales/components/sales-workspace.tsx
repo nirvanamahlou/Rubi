@@ -83,7 +83,9 @@ export function ContractListNumber({
       className="px-4 py-3 font-bold first:pr-5 whitespace-nowrap"
       title={
         contract.reservationContractChanged
-          ? `${contract.contractNumber} · اصلاح قرارداد توسط رزرواسیون`
+          ? [contract.contractNumber, 'اصلاح قرارداد توسط رزرواسیون'].join(
+              ' · ',
+            )
           : contract.contractNumber
       }
     >
