@@ -29,5 +29,9 @@ describe('assistant pages in dashboard', () => {
     expect(assistantViewForDashboardPage('executive-overview')).toBeNull();
     expect(assistantViewForDashboardPage('assistant-unknown')).toBeNull();
     expect(assistantViewForDashboardPage(null)).toBeNull();
+    expect(assistantViewForDashboardPage('assistant')).toBe('overview');
+    expect(assistantViewForDashboardPage('assistant', 'unknown')).toBe(
+      'overview',
+    );
   });
 });
