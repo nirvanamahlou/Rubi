@@ -1,8 +1,27 @@
 import { isValidElement, type ReactNode } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it, vi } from 'vitest';
 import { tourPriceFields, type PackageTourPriceFieldV1 } from '@nora/contracts';
 import { canonicalTestTree } from '@/i18n/test-tree';
 import { TourPriceFields } from './tour-price-fields';
+
+it('keeps every price-field delete icon readable without a solid red background', () => {
+  const html = renderToStaticMarkup(
+    <TourPriceFields value={tourPriceFields()} onChange={vi.fn()} />,
+  );
+  const buttons = [
+    ...html.matchAll(/<button\b[^>]*aria-label="حذف فیلد[^>]*>/g),
+  ];
+  expect(buttons).toHaveLength(4);
+  for (const [button] of buttons) {
+    expect(button).toContain('bg-transparent');
+    expect(button).toContain('text-destructive');
+    expect(button).toContain('border-destructive/30');
+    expect(button).not.toMatch(/(?:\s|")bg-destructive(?:\s|")/);
+    expect(button).not.toContain('text-white');
+  }
+  expect(html.match(/lucide-trash-2/g)).toHaveLength(4);
+});
 
 function props(node: ReactNode): Record<string, unknown>[] {
   if (Array.isArray(node)) return node.flatMap(props);
