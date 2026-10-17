@@ -1,3 +1,7 @@
+## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
+
+Reservations note/yellow cells now inherit the same height, line-height and nowrap metrics as ordinary cells, retaining note colors and titles. Sales corrected yellow rows no longer add a second paragraph beneath the contract number; correction explanation remains in its title and row color is unchanged. ContractOutputButton defaults to قرارداد, retaining all permissions, preview and authenticated PDF download behavior. Focused markup/style/label regressions, Web types/build and full exact-head CI gate user-authorized develop merge. No API, schema, migration, dependency, data or local3100 changes.
+
 ## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
 
 Hotel-rate manual and legacy selectors now consume the same active registered-broker directory as Reservations. Saving validates through the existing public brokerReference adapter, rejects inactive brokers and preserves validated legacy organization IDs. An additive registeredBrokerId FK plus XOR constraint keeps historical rows unchanged; API projections preserve the external brokerId contract for package pricing and purchase consumers. No data deletion or Master Data CRUD. Focused API74/Web122 and pack persistence5 tests pass; API/Web types pass. CI includes PostgreSQL temporary-table proof of legacy preservation, registered FK, uniqueness, exclusive source and delete restriction. User authorizes develop merge; apply migration before updated API/Web, no local3100 rollout in this task.

@@ -1,3 +1,7 @@
+## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-row-height-1017 from origin/develop@aacb79db. User requests equal yellow row heights, Contract action without PDF wording and develop merge. Reserve Reservations foundation table CSS and existing styling test; Sales workspace contract-number cell, ContractOutputButton default label and focused render tests; own docs. Prior COMPACT-YELLOW and SALES-ROW-ACTIONS candidates are ancestors of develop and released. Unify note-cell metrics with ordinary cells; retain yellow/correction markers and explanatory title without an extra Sales line. No API, permissions, schema/migration, dependency or operational runtime/data changes. Scoped ESLint passed. Regression tests compare corrected/plain markup, enforce common note-cell metrics and verify default/explicit contract labels; types/build and exact-head full CI gate authorized merge. Source locks released with candidate; no3100 deployment.
+
 ## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
 
 Reserve bounded .github/workflows/ci.yml database-gate test step only: connection-local temporary-table PostgreSQL regression proves preserved legacy rows, real registered-broker FK, XOR source check, uniqueness and delete restriction. No unrelated workflow changes.

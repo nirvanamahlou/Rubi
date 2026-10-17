@@ -70,6 +70,31 @@ export function ContractListContactRouteDate({
   );
 }
 
+export function ContractListNumber({
+  contract,
+}: {
+  contract: Pick<
+    SalesContractSummary,
+    'contractNumber' | 'reservationContractChanged'
+  >;
+}) {
+  return (
+    <td
+      className="px-4 py-3 font-bold first:pr-5 whitespace-nowrap"
+      title={
+        contract.reservationContractChanged
+          ? `${contract.contractNumber} · اصلاح قرارداد توسط رزرواسیون`
+          : contract.contractNumber
+      }
+    >
+      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
+        <FileText className="size-3.5" />
+        <span dir="ltr">{contract.contractNumber}</span>
+      </div>
+    </td>
+  );
+}
+
 export function hasContractDateFilter(query: SalesContractListQuery): boolean {
   return Boolean(
     query.createdFrom || query.createdTo || query.travelFrom || query.travelTo,
@@ -463,17 +488,7 @@ export function SalesWorkspace() {
                     }
                     key={contract.id}
                   >
-                    <td className="px-4 py-3 font-bold first:pr-5">
-                      <div className="inline-flex items-center gap-2 rounded-lg border border-primary/15 bg-primary/[0.055] px-2.5 py-1.5 text-primary shadow-sm">
-                        <FileText className="size-3.5" />
-                        <span dir="ltr">{contract.contractNumber}</span>
-                      </div>
-                      {contract.reservationContractChanged && (
-                        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
-                          اصلاح قرارداد توسط رزرواسیون
-                        </p>
-                      )}
-                    </td>
+                    <ContractListNumber contract={contract} />
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <span className="grid size-8 shrink-0 place-items-center rounded-full border border-sky-500/10 bg-sky-500/10 text-xs font-black text-sky-700 dark:text-sky-300">
