@@ -15,6 +15,9 @@ export function brokerFormValues(
     name: record?.name ?? '',
     englishName: String(record?.attributes.englishName ?? ''),
     primaryPhone: '',
+    dossierAddress: String(record?.attributes.dossierAddress ?? ''),
+    dossierMobile: '',
+    dossierEmail: '',
     boardText: String(record?.attributes.boardText ?? ''),
     countryId: String(record?.attributes.countryId ?? ''),
     cityIds: String(
@@ -55,6 +58,7 @@ export function brokerMutationValues(
   const result: Record<string, string> = {
     ...values,
     name: brokerName(values),
+    dossierVersion: '1',
   };
   if (record && !phoneTouched) delete result.primaryPhone;
   result.leaderDrafts = JSON.stringify({

@@ -59,7 +59,7 @@ export function MasterDataMealServiceForm({
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (disabled || pending.current) return;
-    const result = validateMealServiceForm(values);
+    const result = validateMealServiceForm(values, mode !== 'create');
     setErrors(result.errors);
     if (!result.success) return;
     pending.current = true;
@@ -101,40 +101,46 @@ export function MasterDataMealServiceForm({
               ['name', 'عنوان فارسی'],
               ['englishName', 'عنوان انگلیسی'],
             ] as const
-          ).map(([key, label]) => (
-            <FormField
-              key={key}
-              id={`meal-${key}`}
-              label={label}
-              required={key !== 'englishName'}
-              {...(errors[key] ? { error: errors[key] } : {})}
-            >
-              <Input
+          )
+            .filter(([key]) => mode !== 'create' || key !== 'code')
+            .map(([key, label]) => (
+              <FormField
+                key={key}
                 id={`meal-${key}`}
-                value={values[key] ?? ''}
-                disabled={disabled}
+                label={label}
                 required={key !== 'englishName'}
-                maxLength={key === 'code' ? 32 : 160}
-                dir={key === 'name' ? 'rtl' : 'ltr'}
-                list={key === 'code' ? 'meal-standard-codes' : undefined}
-                aria-invalid={Boolean(errors[key])}
-                aria-describedby={errors[key] ? `meal-${key}-error` : undefined}
-                onChange={(event) =>
-                  change(
-                    key,
-                    key === 'code'
-                      ? event.target.value.toUpperCase()
-                      : event.target.value,
-                  )
-                }
-              />
-            </FormField>
-          ))}
-          <datalist id="meal-standard-codes">
-            {mealServiceCodes.map((code) => (
-              <option key={code} value={code} />
+                {...(errors[key] ? { error: errors[key] } : {})}
+              >
+                <Input
+                  id={`meal-${key}`}
+                  value={values[key] ?? ''}
+                  disabled={disabled}
+                  required={key !== 'englishName'}
+                  maxLength={key === 'code' ? 32 : 160}
+                  dir={key === 'name' ? 'rtl' : 'ltr'}
+                  list={key === 'code' ? 'meal-standard-codes' : undefined}
+                  aria-invalid={Boolean(errors[key])}
+                  aria-describedby={
+                    errors[key] ? `meal-${key}-error` : undefined
+                  }
+                  onChange={(event) =>
+                    change(
+                      key,
+                      key === 'code'
+                        ? event.target.value.toUpperCase()
+                        : event.target.value,
+                    )
+                  }
+                />
+              </FormField>
             ))}
-          </datalist>
+          {mode !== 'create' ? (
+            <datalist id="meal-standard-codes">
+              {mealServiceCodes.map((code) => (
+                <option key={code} value={code} />
+              ))}
+            </datalist>
+          ) : null}
           {(
             [
               {

@@ -1,4 +1,5 @@
 import type { Prisma } from '@nora/database';
+import { persistPartnerDossier } from './partner-dossier.persistence';
 import { columnFilterWhere } from './catalog-filters';
 import {
   ConflictException,
@@ -372,7 +373,15 @@ function relations(resource: MasterDataResource): object | undefined {
     return { facilities: { include: { facility: true } } };
   if (resource === 'suppliers')
     return {
-      organization: true,
+      organization: {
+        include: {
+          contacts: {
+            where: { isActive: true },
+            select: { jobTitle: true, phoneMasked: true, emailMasked: true },
+          },
+          addresses: { where: { isPrimary: true, isActive: true }, take: 1 },
+        },
+      },
       primaryContact: {
         select: {
           id: true,
@@ -388,7 +397,15 @@ function relations(resource: MasterDataResource): object | undefined {
     };
   if (resource === 'brokers')
     return {
-      organization: true,
+      organization: {
+        include: {
+          contacts: {
+            where: { isActive: true },
+            select: { jobTitle: true, phoneMasked: true, emailMasked: true },
+          },
+          addresses: { where: { isPrimary: true, isActive: true }, take: 1 },
+        },
+      },
       primaryContact: {
         select: {
           id: true,
@@ -719,6 +736,25 @@ export function toMasterDataRecord(
         version: Number(leader.version),
         primaryPhoneMasked: leader.primaryPhoneMasked ?? null,
       })),
+    );
+  }
+  if (resource === 'suppliers' || resource === 'brokers') {
+    const contacts = (organization?.contacts ?? []) as Record<
+      string,
+      unknown
+    >[];
+    const addresses = (organization?.addresses ?? []) as Record<
+      string,
+      unknown
+    >[];
+    attributes.dossierMobileMasked = String(
+      contacts.find((c) => c.jobTitle === 'PARTNER_MOBILE')?.phoneMasked ?? '',
+    );
+    attributes.dossierEmailMasked = String(
+      contacts.find((c) => c.jobTitle === 'PARTNER_EMAIL')?.emailMasked ?? '',
+    );
+    attributes.dossierAddress = String(
+      addresses[0]?.addressLine ?? row.address ?? '',
     );
   }
   if (resource === 'travel-services') {
@@ -1227,6 +1263,33 @@ export class MasterDataRepository {
   ) {
     return this.database.client.$transaction(async (transaction) => {
       const createData = { ...data };
+      const dossier = createData.partnerDossier as
+        Record<string, unknown> | undefined;
+      delete createData.partnerDossier;
+      if (dossier && (resource === 'suppliers' || resource === 'brokers')) {
+        if (dossier.import === true) {
+          // Serialize retries of the same import identity without overwriting existing data.
+          const identity = `${resource}:${String(createData.name).normalize('NFKC').trim().toLowerCase()}:${createData.countryId}:${createData.cityId}`;
+          await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${identity}, 0))::text`;
+          const existing = await delegate(transaction, resource).findFirst({
+            where: {
+              name: { equals: String(createData.name), mode: 'insensitive' },
+              countryId: createData.countryId,
+              cityId: createData.cityId,
+            },
+            include: relations(resource),
+          });
+          if (existing) return { ...existing, dossierImportSkipped: true };
+        }
+        createData.organizationId = await persistPartnerDossier(
+          transaction,
+          resource,
+          createData,
+          dossier,
+          actorUserId,
+          actorBranchId,
+        );
+      }
       const brokerChanges = createData.brokerLeaderChanges;
       delete createData.brokerLeaderChanges;
       if (
@@ -1286,6 +1349,9 @@ export class MasterDataRepository {
     return this.database.client.$transaction(async (transaction) => {
       const model = delegate(transaction, resource);
       const writeData = { ...data };
+      const dossier = writeData.partnerDossier as
+        Record<string, unknown> | undefined;
+      delete writeData.partnerDossier;
       const brokerChanges = writeData.brokerLeaderChanges;
       delete writeData.brokerLeaderChanges;
       const before = await model.findUnique({
@@ -1300,6 +1366,17 @@ export class MasterDataRepository {
         data: { updatedByUserId: actorUserId, version: { increment: 1 } },
       });
       if (claimed.count !== 1) return null;
+
+      if (dossier && (resource === 'suppliers' || resource === 'brokers')) {
+        writeData.organizationId = await persistPartnerDossier(
+          transaction,
+          resource,
+          { ...before, ...writeData },
+          dossier,
+          actorUserId,
+          actorBranchId,
+        );
+      }
 
       let row = await model.update({
         where: { id },

@@ -405,4 +405,66 @@ describe.skipIf(!enabled)('partner forms on isolated PostgreSQL 18', () => {
     });
     expect(city.countryId).toBe(country.id);
   });
+
+  it.each(['suppliers', 'brokers'] as const)(
+    'atomically imports %s into an editable organization without an agency role and skips retries',
+    async (resource) => {
+      const city = await client.masterCity.findFirstOrThrow();
+      const values = {
+        name: `Imported QA ${resource}`,
+        countryId: city.countryId,
+        cityId: city.id,
+        ...(resource === 'brokers' ? { cityIds: city.id } : {}),
+        dossierVersion: '1',
+        dossierImport: 'true',
+        primaryPhone: plaintextPhone,
+        dossierMobile: '+12025550124',
+        dossierEmail: 'qa@example.test',
+      };
+      const imported = (await service.create(resource, values, actor)).data;
+      const organizationId = String(imported.attributes.organizationId);
+      const organization = await client.masterOrganization.findUniqueOrThrow({
+        where: { id: organizationId },
+        include: { roles: true, contacts: true, addresses: true },
+      });
+      expect(organization.legalName).toBe(values.name);
+      expect(organization.roles.map((role) => role.roleCode)).toEqual([
+        resource === 'suppliers' ? 'SUPPLIER' : 'BROKER',
+      ]);
+      expect(organization.contacts).toHaveLength(3);
+      expect(
+        organization.contacts.find((c) => c.jobTitle === 'PARTNER_EMAIL')
+          ?.emailEncrypted,
+      ).not.toBe('qa@example.test');
+      expect(organization.addresses[0]).toMatchObject({
+        countryId: city.countryId,
+        cityId: city.id,
+      });
+      const replay = (await service.create(resource, values, actor)).data;
+      expect(replay.id).toBe(imported.id);
+      expect(replay.attributes.dossierImportSkipped).toBe(true);
+      expect(
+        await client.masterOrganization.count({
+          where: { legalName: values.name },
+        }),
+      ).toBe(1);
+      const edited = (
+        await service.update(
+          resource,
+          imported.id,
+          {
+            name: values.name,
+            dossierVersion: '1',
+            dossierAddress: 'Updated QA office',
+          },
+          imported.version,
+          actor,
+        )
+      ).data;
+      expect(edited.attributes.dossierAddress).toBe('Updated QA office');
+      expect(edited.attributes.dossierEmailMasked).toBe(
+        imported.attributes.dossierEmailMasked,
+      );
+    },
+  );
 });
