@@ -7944,3 +7944,7 @@ DEFAULT-MANIFEST-UPPERCASE-1017 — READY_FOR_REVIEW:24 focused API tests, scope
 ## SALES-REMOVE-FOLLOWUPS-1017 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-remove-followups-1017. Reserve only Sales sales-workspace.tsx and own status entries. User authorizes removing the follow-up summary card (finance pending, reservations pending, settled) and develop merge. Preserve receivables, contract list, primary metrics and API/data contracts. No schema, migration, dependency or operational runtime change. Previous bounded Sales scopes are released; full CI gates merge.
+
+## ASSISTANT-EXPAND-WINDOW-1017 — PC-C — IN_PROGRESS
+
+User requests a matching outline assistant icon in Dashboard navigation and a chat-header enlarge/restore control. Reserve Dashboard workspace icon mapping/import, floating assistant component/CSS, two bilingual assistant-copy labels and own docs on codex/pc-c-assistant-expand-window-1017. PC-C; prior assistant scopes merged/released, no overlapping source lock found. Compact default retained; expanded640x680px bounded to viewport, draft/results preserved on resize, closing restores compact. No API/schema/provider/dependency changes. Existing tests, lint/types/build, browser desktop/mobile/toggle verification and full CI gate delivery.

@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { MessageCircle, Sparkles, X } from 'lucide-react';
+import { Maximize2, Minimize2, MessageCircle, Sparkles, X } from 'lucide-react';
 import type { AuthenticatedActor } from '@nora/contracts';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { useAccessActor } from '@/modules/iam/access-context';
@@ -50,6 +50,7 @@ function AssistantSession() {
   const english = language === 'en';
   const t = (text: readonly [string, string]) => text[english ? 1 : 0];
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const launcher = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
@@ -59,6 +60,7 @@ function AssistantSession() {
   }, [open]);
   const close = () => {
     setOpen(false);
+    setExpanded(false);
     launcher.current?.focus();
   };
   return (
@@ -67,6 +69,7 @@ function AssistantSession() {
         <section
           id={id}
           className={styles.panel}
+          data-expanded={expanded}
           hidden={!open}
           role="dialog"
           aria-modal={false}
@@ -86,6 +89,21 @@ function AssistantSession() {
               <h2 id={id + '-title'}>{t(c.widgetTitle)}</h2>
               <p>{t(c.widgetSubtitle)}</p>
             </div>
+            <button
+              type="button"
+              className={styles.headerButton}
+              onClick={() => setExpanded((value) => !value)}
+              aria-label={t(expanded ? c.widgetRestore : c.widgetExpand)}
+              title={t(expanded ? c.widgetRestore : c.widgetExpand)}
+              aria-pressed={expanded}
+              aria-controls={id}
+            >
+              {expanded ? (
+                <Minimize2 size={18} aria-hidden="true" />
+              ) : (
+                <Maximize2 size={18} aria-hidden="true" />
+              )}
+            </button>
             <button
               ref={closeButton}
               type="button"
