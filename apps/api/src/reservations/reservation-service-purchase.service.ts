@@ -1,3 +1,4 @@
+import { PurchaseFxService } from '../finance/purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
 import { ReservationHotelSavingsService } from './reservation-hotel-savings.service';
@@ -89,6 +90,7 @@ export function validateServicePurchase(
           'coveredServiceClientKeys',
           'transferUnitAmount',
           'pricingCalculation',
+          'purchaseRateToIrr',
         ].includes(key),
     ) ||
     (input.coveredServiceClientKeys !== undefined &&
@@ -228,6 +230,9 @@ export class ReservationServicePurchaseService {
     @Optional()
     @Inject(TicketPublicService)
     private readonly tickets?: TicketPublicService,
+    @Optional()
+    @Inject(PurchaseFxService)
+    private readonly purchaseFx?: PurchaseFxService,
   ) {}
 
   async recordBatch(
@@ -476,7 +481,7 @@ export class ReservationServicePurchaseService {
           );
         const batchId = randomUUID();
         for (const [index, item] of prepared.entries()) {
-          await tx.reservationServicePurchase.create({
+          const purchase = await tx.reservationServicePurchase.create({
             data: {
               intakeId,
               batchId,
@@ -503,6 +508,17 @@ export class ReservationServicePurchaseService {
               idempotencyKey: `${key}:${index}`,
               fingerprint,
             },
+          });
+          await this.purchaseFx?.capture(tx, {
+            reservationPurchaseId: purchase.id,
+            branchId: intake.branchId,
+            actorUserId: actor.userId,
+            currencyCode: item.row.currencyCode,
+            amount: item.amount.toString(),
+            ...(item.row.purchaseRateToIrr
+              ? { rateToIrr: item.row.purchaseRateToIrr }
+              : {}),
+            baselineAt: purchase.createdAt,
           });
         }
         return { version: 1 as const, data: { batchId } };
@@ -674,6 +690,17 @@ export class ReservationServicePurchaseService {
             idempotencyKey: key,
             fingerprint,
           },
+        });
+        await this.purchaseFx?.capture(tx, {
+          reservationPurchaseId: row.id,
+          branchId: intake.branchId,
+          actorUserId: actor.userId,
+          currencyCode: input.currencyCode,
+          amount: row.amount.toString(),
+          ...(input.purchaseRateToIrr
+            ? { rateToIrr: input.purchaseRateToIrr }
+            : {}),
+          baselineAt: row.createdAt,
         });
         return {
           version: 1 as const,

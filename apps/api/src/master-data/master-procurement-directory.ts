@@ -8,6 +8,33 @@ export class MasterProcurementDirectory {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
+  /** Approved operational reference only; never journal-posting authority. */
+  async purchaseRateToIrr(currencyCode: string, at = new Date()) {
+    for (const rateType of ['SELL', 'REFERENCE'] as const) {
+      const row = await this.database.client.masterDraftExchangeRate.findFirst({
+        where: {
+          fromCurrency: { code: currencyCode, isActive: true },
+          toCurrency: { code: 'IRR', isActive: true },
+          rateType,
+          status: 'APPROVED',
+          isActive: true,
+          validFrom: { lte: at },
+          observedAt: { lte: at },
+          approvedAt: { lte: at },
+          OR: [{ validTo: null }, { validTo: { gt: at } }],
+        },
+        orderBy: [{ validFrom: 'desc' }, { approvedAt: 'desc' }, { id: 'asc' }],
+        select: { rate: true, observedAt: true },
+      });
+      if (row)
+        return {
+          rateToIrr: row.rate.toDecimalPlaces(8).toString(),
+          source: 'SYSTEM_' + rateType,
+          observedAt: row.observedAt.toISOString(),
+        };
+    }
+    return null;
+  }
   branches(ids: string[]) {
     return this.database.client.branch.findMany({
       where: { id: { in: ids }, isActive: true },

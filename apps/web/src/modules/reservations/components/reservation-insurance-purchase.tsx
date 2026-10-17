@@ -1,5 +1,6 @@
 'use client';
-import { useRef, useState } from 'react';
+import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
+import { useCallback, useRef, useState } from 'react';
 import { moneyUnits, type ReservationIntakeV1 } from '@nora/contracts';
 import { Lookup, type Option } from '../hotel-rates/controls';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,12 @@ export function ReservationInsurancePurchase({
   const [currency, setCurrency] = useState<Option | null>(
     current ? { id: current.currencyCode, name: current.currencyCode } : null,
   );
+  const [fxRates, setFxRates] = useState<Record<string, string>>({});
+  const updateFx = useCallback(
+    (code: string, rate: string) =>
+      setFxRates((old) => ({ ...old, [code]: rate })),
+    [],
+  );
   const [amount, setAmount] = useState(current?.amount ?? '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -53,6 +60,9 @@ export function ReservationInsurancePurchase({
         supplierOrganizationId: supplier.id,
         amount,
         currencyCode: currency.id,
+        ...(fxRates[currency.id]
+          ? { purchaseRateToIrr: fxRates[currency.id] }
+          : {}),
       });
       if (attempt.current?.payload !== payload)
         attempt.current = { payload, key: crypto.randomUUID() };
@@ -118,6 +128,11 @@ export function ReservationInsurancePurchase({
         هزینه کل همه بیمه‌شدگان این قرارداد؛ برای محاسبه سود و ثبت در کارتابل
         مالی.
       </p>
+      <PurchaseFxRate
+        currencyCode={currency?.id ?? ''}
+        value={fxRates[currency?.id ?? ''] ?? ''}
+        onChange={updateFx}
+      />
       <Button type="button" disabled={busy} onClick={() => void save()}>
         ثبت خرید بیمه
       </Button>

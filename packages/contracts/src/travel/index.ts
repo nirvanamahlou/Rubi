@@ -357,6 +357,7 @@ export interface ReservationPassengerPurchasePriceV1 {
 }
 
 export interface ReservationServicePurchaseInputV1 {
+  purchaseRateToIrr?: string;
   pricingCalculation?: {
     baseAmount: string;
     factor: string;

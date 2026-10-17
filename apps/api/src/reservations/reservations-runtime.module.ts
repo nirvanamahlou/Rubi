@@ -1,3 +1,4 @@
+import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import {
   ReservationHotelSavingsService,
   ReservationHotelSavingsController,
@@ -643,6 +644,7 @@ export class ReservationRequestsController {
 }
 @Module({
   imports: [
+    PurchaseFxModule,
     FinanceTicketCostModule,
     SalesOperationalAmendmentModule,
     SalesReservationTableModule,

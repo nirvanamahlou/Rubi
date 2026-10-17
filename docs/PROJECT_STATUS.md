@@ -6185,3 +6185,7 @@ Chart header currency selectors now have a fixed112px width rather than stretchi
 ## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C
 
 Compact Telegram-style assistant composer: one-row input with bounded132px automatic growth, circular36px controls (32px floating),30px quick commands and a non-wrapping mobile input row. Existing fixed read-only requests retained.68 assistant tests passed; scoped lint/build and browser verification in progress. No API/provider/schema changes.
+
+## PURCHASE-FX-PROFIT-1017 — PC-A — IN_PROGRESS
+
+Adding fixed purchase-day approved SELL/REFERENCE rate snapshots with manual purchase-form override, a Finance-owned immutable true-FK snapshot table and paid-only currency variance. Reservations and ticket-cost producers capture atomically; Finance invoice approval captures the handoff-day reference. Inbox shows baseline/actual payment/gain-loss, grouped per currency; payment preview compares only the entered foreign portion. Missing legacy baseline or payment evidence stays unknown, with finance-authorized one-time manual capture. No GL postings or exchange-rate revaluation of unpaid balances; no double-counting in contract purchase profit. Source/type/build/CI checks underway; user authorizes develop merge after completion. No operational migration/runtime update.
