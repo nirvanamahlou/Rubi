@@ -2601,5 +2601,7 @@
   "دلیل رضایت معتبر نیست.": "The consent reason is invalid.",
   "دلیل صدور مجدد معتبر نیست.": "The reissue reason is invalid.",
   "دلیل عملیات معتبر نیست.": "The operation reason is invalid.",
-  "دلیل مشاهده را در صورت نیاز وارد کنید.": "Enter a viewing reason if needed."
+  "دلیل مشاهده را در صورت نیاز وارد کنید.": "Enter a viewing reason if needed.",
+  "شماره بلیط را با ۶ رقم انگلیسی وارد کنید.": "Enter a six-digit ticket number using English digits.",
+  "شماره بلیط تغییر کرده است؛ آخرین نسخه را دریافت کنید.": "The ticket number has changed; reload the latest version."
 }
