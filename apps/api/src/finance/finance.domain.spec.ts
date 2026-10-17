@@ -359,7 +359,7 @@ describe('finance domain foundation', () => {
     );
   });
 
-  it('requires reason, future expiry and a distinct second approver for exceptions', () => {
+  it('requires future expiry and a distinct second approver for exceptions', () => {
     const result = evaluateFinancialRelease(
       {
         fullySettled: false,
@@ -380,7 +380,7 @@ describe('finance domain foundation', () => {
     );
     expect(result.allowed).toBe(false);
     expect(result.status).toBe('BLOCKED');
-    expect(result.reasons).toHaveLength(4);
+    expect(result.reasons).toHaveLength(3);
     expect(result.requiresAudit).toBe(true);
   });
 

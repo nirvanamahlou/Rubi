@@ -155,8 +155,9 @@ describe('B2B authenticated runtime boundary', () => {
       .delete(endpoint)
       .set('Cookie', 'nora_access=test-only')
       .send({ branchId: id, version: 1 })
-      .expect(400);
-    expect(service.deleteRate).not.toHaveBeenCalled();
+      .expect(200);
+    expect(service.deleteRate).toHaveBeenCalledOnce();
+    service.deleteRate.mockClear();
     await request(app.getHttpServer())
       .delete(endpoint)
       .set('Cookie', 'nora_access=test-only')

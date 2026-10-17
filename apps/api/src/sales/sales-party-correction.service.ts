@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -33,9 +34,9 @@ export class SalesPartyCorrectionService {
       !input ||
       !Number.isSafeInteger(input.version) ||
       input.version < 1 ||
-      typeof input.reason !== 'string' ||
-      !input.reason.trim() ||
-      input.reason.trim().length > 500 ||
+      !isOptionalOperationReason(input.reason) ||
+      !isOptionalOperationReason(input.reason) ||
+      (input.reason ?? '').trim().length > 500 ||
       !/^[0-9a-f-]{36}$/i.test(input.customerId) ||
       input.transferFinancialHistory !== true
     )
@@ -113,7 +114,7 @@ export class SalesPartyCorrectionService {
             actorBranchId: row.branchId,
             action: 'sales.contract.updated',
             outcome: 'SUCCESS',
-            reason: input.reason.trim(),
+            reason: (input.reason ?? '').trim(),
             beforeSnapshot: {
               customerId: row.customerId,
               payerCustomerId: row.payerCustomerId,

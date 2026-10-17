@@ -183,9 +183,8 @@ export class CustomerConsentDto {
   @IsString() @MinLength(2) @MaxLength(120) source!: string;
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @MinLength(3)
   @MaxLength(500)
-  reason!: string;
+  reason = '';
   @IsOptional() @IsDateString() occurredAt?: string;
   @IsInt() @Min(1) version!: number;
 }
@@ -197,6 +196,6 @@ export class DuplicateCandidateDto {
 export class DuplicateReviewDto {
   @IsIn(['confirmed-distinct', 'merge-proposed'])
   status!: 'confirmed-distinct' | 'merge-proposed';
-  @IsString() @MinLength(3) @MaxLength(500) reason!: string;
+  @IsString() @MaxLength(500) reason = '';
   @Type(() => Number) @IsInt() @Min(1) version!: number;
 }

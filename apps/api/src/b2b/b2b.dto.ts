@@ -172,7 +172,6 @@ export class DeleteB2bRecordDto {
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @MinLength(5)
   @MaxLength(500)
-  reason!: string;
+  reason = '';
 }

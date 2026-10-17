@@ -718,7 +718,7 @@ export class CustomerRepository {
             channel: input.channel.toUpperCase() as CustomerConsentChannel,
             status: input.status.toUpperCase() as CustomerConsentStatus,
             source: input.source.trim(),
-            reason: input.reason.trim(),
+            reason: (input.reason ?? '').trim(),
             occurredAt: input.occurredAt
               ? new Date(input.occurredAt)
               : new Date(),

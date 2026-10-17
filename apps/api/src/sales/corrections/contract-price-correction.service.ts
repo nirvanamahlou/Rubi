@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   Injectable,
   Inject,
@@ -70,9 +71,9 @@ export class ContractPriceCorrectionService {
       !Array.isArray(value.totals) ||
       !value.totals.length ||
       value.totals.length > 10 ||
-      typeof value.reason !== 'string' ||
-      !value.reason.trim() ||
-      value.reason.length > 500 ||
+      !isOptionalOperationReason(value.reason) ||
+      !isOptionalOperationReason(value.reason) ||
+      (value.reason ?? '').length > 500 ||
       value.totals.some(
         (t) =>
           !t ||
@@ -169,7 +170,7 @@ export class ContractPriceCorrectionService {
           actorBranchId: row.branchId,
           action: 'FINANCE_CONTRACT_PRICE_CORRECTION',
           outcome: 'SUCCESS',
-          reason: value.reason.trim(),
+          reason: (value.reason ?? '').trim(),
           beforeSnapshot: { totals: before },
           afterSnapshot: { totals: value.totals, version: row.version + 1 },
         },

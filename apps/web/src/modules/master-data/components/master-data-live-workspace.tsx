@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { referenceDisplayName } from '@/i18n/reference-name';
 import { useDisplayLanguage } from '@/i18n/locale-context';
 
@@ -222,13 +224,13 @@ function GenericMasterDataWorkspace({
         ? 'دلیل تأیید نرخ را وارد کنید:'
         : 'دلیل رد نرخ را وارد کنید:',
     );
-    if (!reason?.trim()) return;
+    if (!isOptionalOperationReason(reason)) return;
     try {
       await masterDataApi.decideCurrencyRate(
         record.id,
         action,
         record.version,
-        reason.trim(),
+        (reason ?? '').trim(),
       );
       setNotice(action === 'approve' ? 'نرخ تأیید شد.' : 'نرخ رد شد.');
       await load();

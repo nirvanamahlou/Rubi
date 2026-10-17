@@ -1130,7 +1130,7 @@ export class SalesRepository {
         where: { id: payment.id },
         data: {
           status: 'FINANCE_REJECTED',
-          financeDecisionReason: event.reason.trim(),
+          financeDecisionReason: (event.reason ?? '').trim(),
           financeReviewedByUserId: event.reviewedByUserId,
           financeReviewedAt: new Date(event.reviewedAt),
         },
@@ -1142,7 +1142,7 @@ export class SalesRepository {
           actorBranchId: event.branchId,
           action: 'sales.payment.finance_correction_required',
           outcome: 'SUCCESS',
-          reason: event.reason.trim(),
+          reason: (event.reason ?? '').trim(),
           afterSnapshot: {
             paymentId: event.paymentId,
             status: 'FINANCE_REJECTED',

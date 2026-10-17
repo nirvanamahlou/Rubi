@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { ReservationPassengers } from '../passenger-files/passengers';
 import {
   PassengerAgeEditor,
@@ -593,7 +595,7 @@ export function ReservationSalesAmendment({
           />
         </label>
         <Button
-          disabled={busy || saved || !draft.reason?.trim()}
+          disabled={busy || saved || !isOptionalOperationReason(draft.reason)}
           onClick={() => void submit()}
         >
           {busy ? 'در حال ثبت…' : 'ثبت اصلاح قرارداد'}

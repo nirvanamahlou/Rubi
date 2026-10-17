@@ -646,7 +646,7 @@ export function FinanceInboxLiveWorkspace() {
           contractId: actionItem.sourceContextReference,
           action: actionKind,
           accountId: actionKind === 'APPROVE' ? accountId : null,
-          reason: reason.trim() || null,
+          reason: (reason ?? '').trim() || null,
           ...(actionKind === 'APPROVE' && issueDocumentDelivery
             ? {
                 documentDelivery: {
@@ -1956,14 +1956,10 @@ export function FinanceInboxLiveWorkspace() {
                 <label className="grid gap-2">
                   <span>
                     {actionKind === 'CORRECTION_REQUIRED'
-                      ? 'دلیل اصلاح (الزامی)'
+                      ? 'دلیل اصلاح (اختیاری)'
                       : 'توضیح مالی (اختیاری)'}
                   </span>
                   <Textarea
-                    required={
-                      actionKind === 'CORRECTION_REQUIRED' ||
-                      actionItem?.kind === 'HR_REFERRAL'
-                    }
                     maxLength={500}
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}

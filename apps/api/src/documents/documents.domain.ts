@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import type {
   DocumentArchiveRecord,
   DocumentAsset,
@@ -91,7 +92,7 @@ export function archiveDocument(input: {
       'Document is already archived.',
     );
   }
-  if (input.reason.trim().length < 5) {
+  if (!isOptionalOperationReason(input.reason)) {
     throw new DocumentsDomainError(
       'ARCHIVE_REASON_REQUIRED',
       'Archive reason must contain at least five characters.',
@@ -107,7 +108,7 @@ export function archiveDocument(input: {
     record: Object.freeze({
       documentId: input.asset.id,
       action: 'ARCHIVE',
-      reason: input.reason.trim(),
+      reason: (input.reason ?? '').trim(),
       actorReference: input.actorReference,
       occurredAt: input.occurredAt,
     }),
@@ -132,7 +133,7 @@ export function restoreDocument(input: {
       'Restore requires an explicit legal-hold workflow decision.',
     );
   }
-  if (input.reason.trim().length < 5) {
+  if (!isOptionalOperationReason(input.reason)) {
     throw new DocumentsDomainError(
       'RESTORE_REASON_REQUIRED',
       'Restore reason must contain at least five characters.',
@@ -148,7 +149,7 @@ export function restoreDocument(input: {
     record: Object.freeze({
       documentId: input.asset.id,
       action: 'RESTORE',
-      reason: input.reason.trim(),
+      reason: (input.reason ?? '').trim(),
       actorReference: input.actorReference,
       occurredAt: input.occurredAt,
     }),
