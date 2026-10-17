@@ -1,6 +1,5 @@
 'use client';
-import { currencySymbol } from '@/lib/currency-symbol';
-import { formatSalesMoney } from '@/components/ui/money-input';
+import { reservationFormPriceText } from '../model/reservation-form-price';
 import { loadOutputReferences } from '../model/output-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
@@ -302,12 +301,7 @@ export function ReservationFormSheet({
                 }}
               >
                 <strong>HOTEL TOTAL: </strong>
-                {settings.hotelPurchasePrices
-                  .map(
-                    (price) =>
-                      `${formatSalesMoney(price.amount)} ${currencySymbol(price.currencyCode)}`,
-                  )
-                  .join(' · ')}
+                {reservationFormPriceText(settings.hotelPurchasePrices)}
               </div>
             )}
             {(!settings || settings.flags.hotel) && (
