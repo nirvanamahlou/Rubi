@@ -1,3 +1,7 @@
+## FINANCE-PROFIT-LAYOUT-1017 — PC-A — READY_FOR_CI
+
+Receipt-verification contract-profit view is framed and spaced with RTL table headers, isolated LTR amounts, explicit currency codes, contained horizontal overflow, separate missing-cost warning and purchase evidence cards. Existing protected Sales profit read and all financial calculations remain unchanged; null profit is never displayed as zero.13 focused presentation, inbox, Sales-exclusion and English-coverage tests pass. Scoped lint/type and exact-head full CI gate user-authorized develop merge; no API/schema/dependency/data or local3100 changes.
+
 ## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
 
 Reservations note/yellow cells now inherit the same height, line-height and nowrap metrics as ordinary cells, retaining note colors and titles. Sales corrected yellow rows no longer add a second paragraph beneath the contract number; correction explanation remains in its title and row color is unchanged. ContractOutputButton defaults to قرارداد, retaining all permissions, preview and authenticated PDF download behavior. Focused markup/style/label regressions, Web types/build and full exact-head CI gate user-authorized develop merge. No API, schema, migration, dependency, data or local3100 changes.
