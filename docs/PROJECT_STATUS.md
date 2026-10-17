@@ -1,5 +1,8 @@
 ## PARTNER-360-IMPORT-1017 — PC-B — PARTIAL / FINANCE CONTRACT HANDOFF
 
+Published: Draft PR https://github.com/nirvanamahlou/Rubi/pull/912 targets develop;
+full hosted CI is running. The complete 360 request is not ready for merge.
+
 Supplier Provider ID is removed from the visible table; broker table already
 omits it. Supplier country/city now use scoped Master Data references beside the
 address. Meal/service creation hides its code and omits a blank code so the
@@ -28,7 +31,7 @@ container replacement or automatic reboot service installed. Details and evidenc
 docs/tasks/PARTNER-360-IMPORT-1017.md. Eight Web suites (86 tests), 52 policy/meal
 tests, 4 persistence tests, 7 antivirus/storage tests, 6 isolated PostgreSQL tests
 and 3 translation-coverage tests pass. Web/API types, API production build,
-scoped lint and formatting pass. Hosted CI publication is pending. No merge yet.
+scoped lint and formatting pass. No merge yet.
 
 ## FINANCE-PROFIT-LAYOUT-1017 — PC-A — READY_FOR_CI
 

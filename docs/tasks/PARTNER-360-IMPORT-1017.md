@@ -2,6 +2,8 @@
 
 The user requested direct execution without worker-orchestrator, and authorized
 push/merge. Do not present this unit as a complete Agency360 implementation.
+Published as Draft PR https://github.com/nirvanamahlou/Rubi/pull/912 to develop;
+hosted CI is running and merge remains held for the unfinished 360 scope.
 
 ## Implemented
 
