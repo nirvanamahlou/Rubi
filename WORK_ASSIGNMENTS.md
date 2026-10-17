@@ -7812,6 +7812,13 @@ ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access 
 
 TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pass (17 tests; optional external database test skipped). Full production build and PostgreSQL18 migration/seed CI gates pass after preserving both sides of develop documentation/translation conflicts. Existing saved flight details are fetched read-only for preview; no flight-number editor remains. Source scope frozen and bounded locks released. Full quality/test CI gates still precede the user-authorized merge. No local runtime update.
 
+## HR-STATUS-RENDER-FIX-1017 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; base `origin/develop@0a235b21`; branch `codex/pc-b-hr-status-render-fix-1017`.
+- Scope: HR status presentation, employee status filter, focused tests and this work item's status documentation. No API contract, schema, migration, dependency/lockfile, permission or business-data changes.
+- Trigger: the live Chrome console reports `TypeError: status.replace is not a function` in `HrStatus`, causing the `/hr` error boundary to replace the workspace. Normalize unexpected status values at the display boundary and verify the live route.
+- Result: unexpected status values render as safe text and receive a neutral tone; the employees filter uses the same normalization. The live Chrome page now renders the employee table instead of the HR error boundary. 57 focused tests, Web typecheck, scoped lint, formatting and Web production build (62 routes) pass; no migration or persisted data changes. A rebuilt Web image is deployed locally for persistence across container recreation.
+
 ## DASHBOARD-CURRENCY-WIDTH-1017 — PC-C — IN_PROGRESS
 
 User requests compact currency selectors in all Dashboard chart headers. Branch codex/pc-c-dashboard-currency-width-1017 from develop2246f4a0. Reserve only Dashboard workspace currency-trigger classes and own status entries; previous assistant scope released. Use fixed112px width instead of minimum width, preserving chart data, selection behavior and calendar controls. No API/schema/dependency changes. Scoped lint/type/build and existing Dashboard tests, browser sizing check, full CI and localhost delivery.
