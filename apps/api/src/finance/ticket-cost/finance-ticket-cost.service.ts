@@ -166,7 +166,9 @@ export class FinanceTicketCostService {
               invoice: invoice.toString(),
               currencyCode: input.currencyCode,
               expectedCostVersion: input.expectedCostVersion,
-              purchaseRateToIrr: input.purchaseRateToIrr ?? null,
+              ...(input.purchaseRateToIrr !== undefined
+                ? { purchaseRateToIrr: input.purchaseRateToIrr }
+                : {}),
             }),
           )
           .digest('hex')
