@@ -1,4 +1,5 @@
 'use client';
+import { BrokerPurchases } from '@/modules/finance/components/broker-purchases';
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
   MasterDataDateRangeFilter,
@@ -626,6 +627,9 @@ export function MasterDataSuppliersWorkspace() {
             ))}
           </MasterDataDetailSection>
         ) : null}
+        {kind === 'broker' && (
+          <BrokerPurchases key={record.id} id={record.id} />
+        )}
         <MasterDataDetailSection title="خلاصه همکاری">
           <MasterDataDetailItem
             label="وضعیت همکاری"

@@ -1,4 +1,6 @@
 'use client';
+import { ContractProfit } from '@/modules/finance/components/contract-profit';
+import { useAccessPermissions } from '@/modules/iam/access-context';
 import { ReservationFloatingFlightPurchase } from './reservation-floating-flight-purchase';
 import { currencySymbol } from '@/lib/currency-symbol';
 import {
@@ -193,6 +195,8 @@ export function ReservationHotelPurchase({
   request: PurchaseRequest;
   onSaved: () => void;
 }) {
+  const canReadProfit =
+    useAccessPermissions()?.includes('finance.read') === true;
   const services = reservationPurchaseServices(request.snapshot);
   const hotel = services.find((service) => service.kind === 'HOTEL');
   const transfers = services.filter((service) => service.kind === 'TRANSFER');
@@ -418,6 +422,12 @@ export function ReservationHotelPurchase({
   return (
     <div className="mt-4 space-y-4 rounded-xl border bg-muted/20 p-4">
       <div>
+        {canReadProfit && (
+          <ContractProfit
+            key={request.purchaseVersion ?? 0}
+            id={request.contractId}
+          />
+        )}
         <h3 className="font-bold">
           درخواست خرید قرارداد {request.snapshot.contractNumber}
         </h3>

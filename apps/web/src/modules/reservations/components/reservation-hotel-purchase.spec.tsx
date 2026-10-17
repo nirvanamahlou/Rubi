@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { AccessPermissionsProvider } from '@/modules/iam/access-context';
 import type {
   ReservationIntakeV1,
   TravelWorkflowStateV1,
@@ -18,11 +19,27 @@ import {
 const request = (workflow?: TravelWorkflowStateV1) =>
   ({
     id: 'request',
-    snapshot: { serviceSelections: [] },
+    snapshot: { serviceSelections: [], passengerIds: [] },
     workflow,
   }) as unknown as ReservationIntakeV1 & {
     workflow?: TravelWorkflowStateV1;
   };
+
+it('shows contract purchase margin in the purchase form only for finance', () => {
+  const render = (permissions: string[]) =>
+    renderToStaticMarkup(
+      <AccessPermissionsProvider value={permissions}>
+        <ReservationHotelPurchase
+          request={{ ...request(), contractId: 'synthetic-contract' }}
+          onSaved={() => undefined}
+        />
+      </AccessPermissionsProvider>,
+    );
+  expect(render(['reservations.read'])).not.toContain(
+    'هزینه خرید و سود قرارداد',
+  );
+  expect(render(['finance.read'])).toContain('هزینه خرید و سود قرارداد');
+});
 
 it('shows the frozen supplier form as the purchase-price context', () => {
   const settings = {
