@@ -8,10 +8,13 @@ import {
   USER_ACCESS_DENY_CONTROLS,
   manualSectionForScreen,
   type ManualAccessSelection,
+  screenPermission,
+  denyPermission,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import styles from './user-management.module.css';
+import { sectionAccess, changeSectionAccess } from './section-access';
 import { permissionInSection, permissionLabel } from './access-permissions';
 
 interface Snapshot {
@@ -21,6 +24,11 @@ interface Snapshot {
   selection: ManualAccessSelection;
 }
 interface Props {
+  templates?: Array<{
+    id: string;
+    name: string;
+    permissions: Array<{ permission: { code: string } }>;
+  }>;
   userId: string;
   canManage: boolean;
   options: {
@@ -41,6 +49,7 @@ export function ManualAccessEditor({
   controlLabel,
   request,
   onSaved,
+  templates = [],
 }: Props) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [search, setSearch] = useState('');
@@ -140,6 +149,75 @@ export function ManualAccessEditor({
       />
       <fieldset disabled={!canManage || busy} className="grid gap-3">
         <label>
+          انتخاب نقش
+          <select
+            aria-label="انتخاب نقش کاربر"
+            value={
+              templates.some((r) => r.name === snapshot.title)
+                ? snapshot.title
+                : ''
+            }
+            onChange={(event) => {
+              const role = templates.find((r) => r.name === event.target.value);
+              if (!role) return;
+              const codes = role.permissions.map((p) => p.permission.code);
+              const replace = (
+                current: string[],
+                available: string[],
+                wanted: string[],
+              ) => [
+                ...new Set([
+                  ...current.filter((id) => !available.includes(id)),
+                  ...wanted.filter((id) => available.includes(id)),
+                ]),
+              ];
+              const native = options.permissions.map((p) => p.code);
+              const screens = options.canAssignAll
+                ? USER_ACCESS_SCREENS.map((s) => s.id)
+                : options.assignableScreenIds;
+              const controls = options.canAssignAll
+                ? USER_ACCESS_DENY_CONTROLS.map((c) => c.id)
+                : options.assignableControlIds;
+              setSnapshot({
+                ...snapshot,
+                title: role.name,
+                selection: {
+                  permissionCodes: replace(
+                    selection.permissionCodes,
+                    native,
+                    codes.filter((c) => !c.startsWith('ui.')),
+                  ),
+                  screenIds: replace(
+                    selection.screenIds,
+                    screens,
+                    USER_ACCESS_SCREENS.filter((s) =>
+                      codes.includes(screenPermission(s.id)),
+                    ).map((s) => s.id),
+                  ),
+                  allowedControlIds: replace(
+                    selection.allowedControlIds,
+                    controls,
+                    USER_ACCESS_DENY_CONTROLS.filter(
+                      (c) =>
+                        !codes.includes(denyPermission(c.id)) &&
+                        (c.kind === 'field' ||
+                          c.id.startsWith('master-data.resource.') ||
+                          codes.includes(screenPermission(c.id))),
+                    ).map((c) => c.id),
+                  ),
+                },
+              });
+            }}
+          >
+            <option value="">دسترسی اختصاصی / انتخاب نقش</option>
+            {templates.map((role) => (
+              <option key={role.id} value={role.name}>
+                {role.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
           عنوان شغلی
           <Input
             value={snapshot.title}
@@ -199,6 +277,34 @@ export function ManualAccessEditor({
               })),
             },
           ];
+          // Parent selection is deliberately independent of the search filter.
+          const section = sectionAccess(id, options);
+          const {
+            screenIds: allScreens,
+            permissionCodes: allPermissions,
+            allowedControlIds: allControls,
+          } = section;
+          const total =
+            allScreens.length + allPermissions.length + allControls.length;
+          const count =
+            allScreens.filter((x) => selection.screenIds.includes(x)).length +
+            allPermissions.filter((x) => selection.permissionCodes.includes(x))
+              .length +
+            allControls.filter((x) => selection.allowedControlIds.includes(x))
+              .length;
+          function toggleSection(checked: boolean) {
+            setSnapshot((current) => {
+              if (!current) return current;
+              return {
+                ...current,
+                selection: changeSectionAccess(
+                  current.selection,
+                  section,
+                  checked,
+                ),
+              };
+            });
+          }
           return (
             <details
               key={id}
@@ -206,6 +312,20 @@ export function ManualAccessEditor({
               open={search.trim() ? true : undefined}
             >
               <summary className="cursor-pointer p-4 font-bold">
+                <input
+                  type="checkbox"
+                  aria-label={'انتخاب کل بخش ' + title}
+                  checked={total > 0 && count === total}
+                  aria-checked={
+                    count > 0 && count < total ? 'mixed' : count === total
+                  }
+                  disabled={!total}
+                  ref={(node) => {
+                    if (node) node.indeterminate = count > 0 && count < total;
+                  }}
+                  onClick={(event) => event.stopPropagation()}
+                  onChange={(event) => toggleSection(event.target.checked)}
+                />{' '}
                 {title}
               </summary>
               <div className="grid gap-4 p-4">
