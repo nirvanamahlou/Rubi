@@ -6326,6 +6326,10 @@ New-contract referral heading now reads «نحوه آشنایی با ما», wit
 Verification: 3 existing form tests, scoped ESLint, formatting and shared Contracts build passed. Full PR CI provides Web typecheck/build and suite gates before user-authorized merge.
 
 
+## 2026-10-17 — LOGIN-WHITE-BACKGROUND-1017 — PC-A
+
+Login page retains its plain white canvas and no decorative media. In the 2026-10-17 follow-up, both halves of the card share one continuous blue gradient; form labels, language controls and submit action use high-contrast colors while inputs remain white. Existing logos and authentication behavior remain. PR #917 is the review candidate; user authorizes develop merge after exact-head CI. No data/schema/API changes.
+
 Verification:24 focused API tests, scoped ESLint and formatting passed. Full CI required before develop merge.
 
 
