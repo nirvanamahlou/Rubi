@@ -55,3 +55,19 @@ Database Designer tooling ran on bounded current/target schemas; its migration
 generator fails internally serializing Column. Prisma validation/generated types
 and actual disposable PostgreSQL migrations/constraint tests are authoritative.
 No unsupported tool result is represented as successful migration validation.
+
+Hosted c2aadf46 passes full quality (format/lint/types), full production build,
+all migrations/repeated seed, and24 disposable PostgreSQL scenarios (including
+new rate exactness/CAS/constraints and retained-role FK). Full Web run had3202
+passes,7 pre-existing skips and two failures: missing85 English labels and the
+old currency field-list expectation. Both are corrected, without relaxing gates.
+New actual Finance projection concurrency assertion uses25 parallel reads; this
+is correctness coverage, not a claimed25-user performance/SLO certification.
+Broader local Web tests exhausted RAM and a later local full seed timed out;
+those runs remain failed/unexecuted, not successes. Browser access was denied
+by tool policy; the user accepts performing the final visual check after rollout.
+No alternate browser, token extraction or security workaround is used.
+
+Fresh local database backup verified at
+C:/Users/admin/.codex/backups/partner360-usd-1017/database-before.dump (2449 archive
+entries); private previous runtime settings remain beside it outside Git.

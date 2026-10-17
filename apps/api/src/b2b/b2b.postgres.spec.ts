@@ -857,6 +857,14 @@ describe.skipIf(!enabled)(
         { currencyCode: 'IRR', purchases: '100', paid: '20', balance: '80' },
       ]);
       expect(supplier.creditDirection).toBe('COUNTERPARTY_TO_US');
+      const concurrentReads = await Promise.all(
+        Array.from({ length: 25 }, () =>
+          service.read(organizationId, 'SUPPLIER', branchId, actor),
+        ),
+      );
+      expect(
+        concurrentReads.every((row) => row.totals[0]?.balance === '80'),
+      ).toBe(true);
       const brokerCase = await service.read(
         organizationId,
         'BROKER',

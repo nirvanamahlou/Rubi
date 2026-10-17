@@ -85,7 +85,14 @@ describe('master data catalog', () => {
   it('defines the complete financial reference resources', () => {
     expect(
       getMasterDataDefinition('currencies').fields.map((field) => field.key),
-    ).toEqual(['code', 'name', 'englishName', 'symbol', 'decimalDigits']);
+    ).toEqual([
+      'code',
+      'name',
+      'englishName',
+      'symbol',
+      'unitsPerUsd',
+      'decimalDigits',
+    ]);
     expect(
       getMasterDataDefinition('bank-branches').fields.map((field) => field.key),
     ).toEqual([
