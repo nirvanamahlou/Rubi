@@ -377,7 +377,7 @@ export class ProcurementOperations {
         {
           quotationId: quotation.id,
           singleSource: input.singleSource,
-          reason: input.reason,
+          reason: input.reason ?? '',
         },
         actor,
       )) as { id: string };

@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { validReturnWindow } from '@nora/contracts';
 // Phase A pure proposal; mirrored in Web until a shared-contract handoff.
 // No persistence, permission grant, provider call or transaction guarantee.
@@ -553,7 +554,10 @@ function history(
   actor: string,
   reason: string,
 ) {
-  ensure(actor.trim() && reason.trim(), 'ثبت‌کننده و دلیل تغییر لازم است.');
+  ensure(
+    actor.trim() && isOptionalOperationReason(reason),
+    'ثبت‌کننده یا دلیل تغییر معتبر نیست.',
+  );
   return { version, action, at: utc(at), actor, reason };
 }
 export function createProduct(

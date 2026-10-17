@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { useEffect, useState } from 'react';
 import type {
   CustomerSummary,
@@ -72,14 +74,20 @@ export function ReservationPartyEditor({
     setSearch(false);
   }
   async function save() {
-    if (busy || directoryBusy || !ready || !customerId || !reason.trim())
+    if (
+      busy ||
+      directoryBusy ||
+      !ready ||
+      !customerId ||
+      !isOptionalOperationReason(reason)
+    )
       return;
     setBusy(true);
     setError('');
     try {
       await salesApi.correctParty(contract.id, {
         version: contract.version,
-        reason: reason.trim(),
+        reason: (reason ?? '').trim(),
         customerId,
         buyerContact: kind === 'person' ? contact : null,
         transferFinancialHistory: true,
@@ -201,7 +209,7 @@ export function ReservationPartyEditor({
           <Textarea
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            required
+
             maxLength={500}
           />
         </label>
@@ -209,7 +217,10 @@ export function ReservationPartyEditor({
           با ثبت، بدهی و دریافت‌های این قرارداد به طرف حساب انتخاب‌شده منتقل
           می‌شوند؛ سابقهٔ دریافت‌ها حفظ می‌شود.
         </p>
-        <Button type="submit" disabled={!customerId || !reason.trim()}>
+        <Button
+          type="submit"
+          disabled={!customerId || !isOptionalOperationReason(reason)}
+        >
           {busy ? 'در حال ذخیره…' : 'ثبت اصلاح طرف قرارداد'}
         </Button>
       </fieldset>

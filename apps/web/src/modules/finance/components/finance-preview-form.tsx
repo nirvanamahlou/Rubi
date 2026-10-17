@@ -462,7 +462,6 @@ export function FinancePreviewForm({
             description="Reason برای Audit اجباری است."
             id="finance-description"
             label="شرح و دلیل"
-            required
           >
             <Textarea
               disabled={readOnly}

@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
 import { Optional } from '@nestjs/common';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
@@ -547,8 +548,8 @@ export class ReservationsPublicService {
       !input.hotelGuestCustomerIds.every(
         (value) => typeof value === 'string',
       ) ||
-      !input.reason?.trim() ||
-      input.reason.trim().length > 500
+      !isOptionalOperationReason(input.reason) ||
+      (input.reason ?? '').trim().length > 500
     )
       throw new BadRequestException('ترکیب اتاق یا دلیل تغییر معتبر نیست.');
     const guestIds = [...new Set(input.hotelGuestCustomerIds)];
@@ -591,7 +592,7 @@ export class ReservationsPublicService {
           doubleRoomCount: input.doubleRoomCount,
           extraBedCount: input.extraBedCount,
           hotelGuestCustomerIds: guestIds,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           updatedByUserId: userId,
         },
       });

@@ -149,7 +149,7 @@ describe('documents workspace contract', () => {
   it('submits record operations as forms with visible Persian validation', () => {
     expect(bulkDialogSource).toContain('<form');
     expect(bulkDialogSource).toContain('type="submit"');
-    expect(bulkDialogSource).toContain('حداقل ۵ نویسه');
+    expect(bulkDialogSource).toContain('اختیاری');
     expect(deleteDialogSource).toContain('<form');
     expect(deleteDialogSource).toContain('type="submit"');
     expect(deleteDialogSource).toContain('کد آرشیو واردشده');

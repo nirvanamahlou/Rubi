@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import type {
   SLAState,
   TicketPriority,
@@ -226,7 +227,7 @@ export function validateTicketReopen(
     return { allowed: false, reason: 'CONCURRENT_MODIFICATION' };
   if (context.reopenCount >= context.maxReopenCount)
     return { allowed: false, reason: 'TICKET_REOPEN_LIMIT_REACHED' };
-  if (request.note.trim().length < 5)
+  if (!isOptionalOperationReason(request.note, 500))
     return { allowed: false, reason: 'TICKET_REOPEN_NOTE_REQUIRED' };
   return { allowed: true, reason: null };
 }
@@ -239,6 +240,6 @@ export function validateTicketClosure(input: {
   return (
     input.status === 'RESOLVED' &&
     input.resolutionOutcome.trim().length >= 5 &&
-    input.closeReason.trim().length >= 3
+    isOptionalOperationReason(input.closeReason, 1000)
   );
 }

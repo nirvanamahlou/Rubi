@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -361,8 +362,8 @@ export class CurrencyRateService {
     actor: AuthenticatedActor,
     requestedBranch?: string,
   ) {
-    const normalizedReason = reason.trim();
-    if (!normalizedReason)
+    const normalizedReason = (reason ?? '').trim();
+    if (!isOptionalOperationReason(normalizedReason))
       throw new BadRequestException('دلیل تصمیم الزامی است.');
     return this.database.client.$transaction(async (tx) => {
       const before = await tx.masterDraftExchangeRate.findUnique({

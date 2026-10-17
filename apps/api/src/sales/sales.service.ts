@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
@@ -1068,9 +1069,9 @@ export class SalesService {
       )
         throw new ForbiddenException('مجوز تأیید و ارسال رزرو وجود ندارد.');
       if (
-        typeof input.reason !== 'string' ||
-        !input.reason.trim() ||
-        input.reason.length > 500
+        !isOptionalOperationReason(input.reason) ||
+        !isOptionalOperationReason(input.reason) ||
+        (input.reason ?? '').length > 500
       )
         throw new BadRequestException('دلیل اصلاح قرارداد الزامی است.');
       if (
@@ -1514,7 +1515,8 @@ export class SalesService {
   ) {
     if (!has(actor, 'sales.contracts.cancel'))
       throw new ForbiddenException('مجوز لغو قرارداد وجود ندارد.');
-    if (!reason?.trim()) throw new BadRequestException('دلیل لغو الزامی است.');
+    if (!isOptionalOperationReason(reason))
+      throw new BadRequestException('دلیل لغو الزامی است.');
     if (!Number.isInteger(version) || version < 1)
       throw new BadRequestException('نسخه معتبر قرارداد الزامی است.');
     const row = await this.repository.findById(id);
@@ -1529,7 +1531,7 @@ export class SalesService {
       version,
       ['DRAFT', 'PENDING_CONFIRMATION', 'CONFIRMED', 'SENT_TO_RESERVATIONS'],
       'CANCELLED',
-      reason.trim(),
+      (reason ?? '').trim(),
       this.context(actor, row.branchId, traceId),
     );
     if (!changed)

@@ -131,7 +131,7 @@ function qualificationReport(value: Record<string, unknown> | null) {
         ...new Set(
           value.reasons
             .filter((reason): reason is string => typeof reason === 'string')
-            .map((reason) => reason.trim())
+            .map((reason) => (reason ?? '').trim())
             .filter(Boolean),
         ),
       ]
@@ -1059,8 +1059,7 @@ export function DetailPanel({
               <FormField label="دلیل اقدام">
                 <Textarea
                   name="reason"
-                  required
-                  minLength={3}
+
                   maxLength={500}
                 />
               </FormField>

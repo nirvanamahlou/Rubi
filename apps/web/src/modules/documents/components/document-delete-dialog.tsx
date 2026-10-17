@@ -1,4 +1,5 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
 
 import type { DocumentListItemV1 } from '@nora/contracts';
 import { Trash2 } from 'lucide-react';
@@ -37,8 +38,8 @@ export function DocumentDeleteDialog({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (reason.trim().length < 5) {
-      setValidationError('دلیل حذف را با حداقل ۵ نویسه وارد کنید.');
+    if (!isOptionalOperationReason(reason)) {
+      setValidationError('دلیل حذف معتبر نیست.');
       return;
     }
     if (confirmation.trim() !== document.archiveCode) {
@@ -46,7 +47,7 @@ export function DocumentDeleteDialog({
       return;
     }
     setValidationError('');
-    await onConfirm(reason.trim());
+    await onConfirm((reason ?? '').trim());
   }
 
   return (
@@ -70,14 +71,14 @@ export function DocumentDeleteDialog({
             title={`حذف «${document.title}»`}
             tone="error"
           />
-          <FormField id="delete-document-reason" label="دلیل حذف" required>
+          <FormField id="delete-document-reason" label="دلیل حذف">
             <Textarea
               id="delete-document-reason"
               onChange={(event) => {
                 setValidationError('');
                 setReason(event.target.value);
               }}
-              placeholder="دلیل حذف دائمی را بنویسید (حداقل ۵ نویسه)"
+              placeholder="دلیل حذف دائمی را بنویسید (اختیاری)"
               value={reason}
             />
           </FormField>

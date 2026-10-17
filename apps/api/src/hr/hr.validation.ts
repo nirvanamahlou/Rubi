@@ -22,7 +22,12 @@ export function text(
   max = 160,
   optional = false,
 ): string {
-  if (optional && (value === undefined || value === '')) return '';
+  optional ||= label === 'دلیل' || label === 'علت';
+  if (
+    optional &&
+    (value == null || (typeof value === 'string' && !value.trim()))
+  )
+    return '';
   if (
     typeof value !== 'string' ||
     !value.trim() ||

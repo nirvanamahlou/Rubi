@@ -1,4 +1,5 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
 
 import type { DocumentBulkActionV1 } from '@nora/contracts';
 import { ListChecks } from 'lucide-react';
@@ -43,13 +44,13 @@ export function DocumentBulkActionsDialog({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const normalizedReason = reason.trim();
+    const normalizedReason = (reason ?? '').trim();
     if (!count) {
       setValidationError('حداقل یک سند را انتخاب کنید.');
       return;
     }
-    if (normalizedReason.length < 5) {
-      setValidationError('دلیل عملیات را با حداقل ۵ نویسه وارد کنید.');
+    if (!isOptionalOperationReason(normalizedReason)) {
+      setValidationError('دلیل عملیات معتبر نیست.');
       return;
     }
     setValidationError('');
@@ -94,14 +95,14 @@ export function DocumentBulkActionsDialog({
               </SelectContent>
             </Select>
           </FormField>
-          <FormField id="bulk-action-reason" label="دلیل عملیات" required>
+          <FormField id="bulk-action-reason" label="دلیل عملیات">
             <Textarea
               id="bulk-action-reason"
               onChange={(event) => {
                 setValidationError('');
                 setReason(event.target.value);
               }}
-              placeholder="دلیل این تغییر را بنویسید (حداقل ۵ نویسه)"
+              placeholder="دلیل این تغییر را بنویسید (اختیاری)"
               value={reason}
             />
           </FormField>

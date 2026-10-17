@@ -194,7 +194,7 @@ describe('Customers HTTP integration', () => {
     );
   });
 
-  it.each(['', ' ', '\t', '\n', 'x'.repeat(501)])(
+  it.each(['x'.repeat(501)])(
     'rejects invalid consent reason at the HTTP boundary (%j)',
     async (reason) => {
       await request(app.getHttpServer())

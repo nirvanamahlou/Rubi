@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import { paymentSource } from '../payments/payment-source';
 import {
@@ -105,7 +106,7 @@ export class FinancePayrollService {
     if (
       !transition ||
       (['CORRECTION_REQUIRED', 'REJECT', 'RESUBMIT'].includes(action) &&
-        !reason)
+        !isOptionalOperationReason(reason))
     )
       throw new BadRequestException('عملیات یا علت معتبر نیست.');
     if (

@@ -2281,7 +2281,7 @@ export class AccountingService {
           periodId,
           typeId: template?.voucherTypeId ?? p.typeId,
           documentDate: asOf,
-          description: v.text(p.reason, 2000, true),
+          description: v.text(p.reason, 2000),
           lines: rows,
         },
         undefined,
@@ -2794,7 +2794,7 @@ export class AccountingService {
         );
       if (kind === 'account-mappings') {
         v.date(attributes.effectiveFrom);
-        v.text(attributes.reason, 2000, true);
+        v.text(attributes.reason, 2000);
         let raw: unknown;
         try {
           raw = JSON.parse(String(attributes.rows));
@@ -4235,7 +4235,7 @@ export class AccountingService {
         v.invalid('شناسه تکراری سند مجاز نیست.');
       const periodId = v.uuid(p.periodId)!,
         documentDate = v.date(p.documentDate)!,
-        reason = v.text(p.reason, 2000, true),
+        reason = v.text(p.reason, 2000),
         period = await tx.accountingPeriod.findFirst({
           where: { id: periodId, bookId, status: 'OPEN' },
         });
@@ -4425,7 +4425,7 @@ export class AccountingService {
             documentDate,
             typeId: journal.typeId,
             makerId: actor.userId,
-            description: v.text(p.reason, 2000, true),
+            description: v.text(p.reason, 2000),
             reversalOfId: id,
             sourceKey: `REVERSE:${id}`,
             attributes: { reversalSourceKey: journal.sourceKey ?? '' },
@@ -4457,7 +4457,7 @@ export class AccountingService {
           journalVersion: reversal.version,
           newPeriodId: reversal.periodId,
           newDocumentDate: reversal.documentDate,
-          reason: v.text(p.reason, 2000, true),
+          reason: v.text(p.reason, 2000),
         });
         return reversal;
       }
