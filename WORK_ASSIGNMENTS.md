@@ -1,5 +1,7 @@
 ## PARTNER-360-COMPLETE-1017 — PC-B — IN_PROGRESS
 
+Final full-suite boundary check identified that the new Finance-owned persistence producer belongs in a leaf adapter, not the domain-only Finance root. Move only this unit's producer to finance/partners, retaining the existing public module barrel; preserve the existing boundary assertions and add a focused no-cross-owner-table regression. No gate exemption or private table access is introduced.
+
 English catalogue synchronization also regenerates the standalone package-editor catalogue through the existing script; preserve its source/output parity. Final30 focused Web coverage/catalogue/rate/client tests pass. Publish the next reviewed head to PR922 and require all checks before merge; no standalone catalogue behavior or dependency change.
 
 Reserve additive English catalogue entries and API offline catalogue synchronization for new partner/rate labels/errors, plus the existing currency catalogue field-list assertion. Full CI identified missing translations and the expected new field; no coverage gate is relaxed. Full production build, quality/type/lint and the24-scenario PostgreSQL gate passed on c2aadf46; full Web suite has3202 passing, two failing (translation coverage/catalogue assertion) and seven existing skips. Browser observation is policy-blocked; user accepts manual visual verification after rollout, without bypassing that restriction.
