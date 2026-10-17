@@ -7786,3 +7786,5 @@ COMPUTER_ID=PC-B; branch codex/pc-b-performance-extra-cards-1015 from origin/dev
 PERFORMANCE-EXTRA-CARDS-1015 scope clarification: the user confirms HR as the source and explicitly requests commission/debit/credit cards only for now, with separate manual definitions later. Preserve nulls until approved source fields exist; no manual-edit workflow added by inference.
 
 Validation:25 focused API/Web/i18n tests pass, scoped ESLint and formatting pass, Contracts/API/Web typechecks and Web production build (62 routes) pass. No migration or live upload/runtime change. Bounded source reservation releases with review candidate; CI/PR review remain gates.
+
+TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pass (17 tests; optional external database test skipped). Full production build and PostgreSQL18 migration/seed CI gates pass after preserving both sides of develop documentation/translation conflicts. Existing saved flight details are fetched read-only for preview; no flight-number editor remains. Source scope frozen and bounded locks released. Full quality/test CI gates still precede the user-authorized merge. No local runtime update.
