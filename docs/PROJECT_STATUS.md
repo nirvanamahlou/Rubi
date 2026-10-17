@@ -6191,3 +6191,8 @@ LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR 
 ## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C
 
 Compact Telegram-style assistant composer: one-row input with bounded132px automatic growth, circular36px controls (32px floating),30px quick commands and a non-wrapping mobile input row. Existing fixed read-only requests retained.68 assistant tests passed; scoped lint/build and browser verification in progress. No API/provider/schema changes.
+
+
+## ASSISTANT-COMPACT-WINDOW-1017 — PC-C
+
+Floating chat window reduced to360x420px with viewport limits and a smaller header; full-workspace shortcut removed. Existing scrollable results, close behavior and language placement retained. Validation in progress. No API/schema/provider changes.

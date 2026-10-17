@@ -7821,3 +7821,7 @@ LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR 
 ## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C — IN_PROGRESS
 
 User requests Telegram-like compact chat input and buttons. Reserve assistant executive-workspace composer markup/styles and own documentation on codex/pc-c-assistant-compact-composer-1017. PC-C; base develop1e21a21c. Prior source scopes merged/released; no overlapping composer owner. Acceptance: single-line initial input, bounded automatic growth, circular equal-size icon controls, compact quick commands, RTL/LTR and mobile fit, existing read-only command behavior. No API/provider/schema/dependency changes. Existing assistant tests, lint/type/build, browser verification and full CI gate delivery.
+
+## ASSISTANT-COMPACT-WINDOW-1017 — PC-C — IN_PROGRESS
+
+User requests a smaller floating chat window and removal of the full-workspace shortcut. Reserve floating-assistant.tsx/module.css and own documentation on codex/pc-c-assistant-compact-window-1017; PC-C. Prior assistant work merged/released; no overlapping owner. Target360x420px bounded by viewport, compact header, preserved scrolling/close/locale placement. No API/provider/schema/dependency changes. Existing assistant tests, lint/type/build, browser geometry and CI gates required.
