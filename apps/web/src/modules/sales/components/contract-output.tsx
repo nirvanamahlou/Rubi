@@ -73,7 +73,7 @@ export async function loadContractPrint(id: string) {
 export function ContractOutputButton({
   contractId,
   className,
-  label = 'خروجی قرارداد / PDF',
+  label = 'قرارداد',
 }: {
   contractId: string;
   className?: string;

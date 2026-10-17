@@ -1,3 +1,9 @@
+## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
+
+Bounded consumer compatibility: reserve only Organizations organization-sales-documents.spec.tsx label expectation for the shared Sales-owned action. No Organizations runtime/API behavior changes. Reuse existing translated correction text rather than introducing a prefixed Persian catalogue key.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-row-height-1017 from origin/develop@aacb79db. User requests equal yellow row heights, Contract action without PDF wording and develop merge. Reserve Reservations foundation table CSS and existing styling test; Sales workspace contract-number cell, ContractOutputButton default label and focused render tests; own docs. Prior COMPACT-YELLOW and SALES-ROW-ACTIONS candidates are ancestors of develop and released. Unify note-cell metrics with ordinary cells; retain yellow/correction markers and explanatory title without an extra Sales line. No API, permissions, schema/migration, dependency or operational runtime/data changes. Scoped ESLint passed. Regression tests compare corrected/plain markup, enforce common note-cell metrics and verify default/explicit contract labels; types/build and exact-head full CI gate authorized merge. Source locks released with candidate; no3100 deployment.
+
 ## OPTIONAL-OPERATION-REASONS-1015 — PC-A — READY_FOR_CI
 
 Validation:231 targeted API tests,132 targeted Web tests, API/Web typechecks and isolated PostgreSQL reason-check migration passed. 149 shared-contract tests and scoped lint passed. Full production build, PostgreSQL migration/seed and quality gates passed in CI; final test rerun follows HR domain boundary correction and optional-reason expectation updates. PR #894 requires all final-head checks before authorized merge. Source locks released with candidate. No operational migration or deployment.

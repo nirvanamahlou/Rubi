@@ -1,3 +1,7 @@
+## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
+
+Reservations note/yellow cells now inherit the same height, line-height and nowrap metrics as ordinary cells, retaining note colors and titles. Sales corrected yellow rows no longer add a second paragraph beneath the contract number; correction explanation remains in its title and row color is unchanged. ContractOutputButton defaults to قرارداد, retaining all permissions, preview and authenticated PDF download behavior. Focused markup/style/label regressions, Web types/build and full exact-head CI gate user-authorized develop merge. No API, schema, migration, dependency, data or local3100 changes.
+
 ## OPTIONAL-OPERATION-REASONS-1015 — PC-A — READY_FOR_CI
 
 Validation:231 targeted API tests,132 targeted Web tests, API/Web typechecks and isolated PostgreSQL reason-check migration passed. 149 shared-contract tests and scoped lint passed. Full production build, PostgreSQL migration/seed and quality gates passed in CI; final test rerun follows HR domain boundary correction and optional-reason expectation updates. PR #894 requires all final-head checks before authorized merge. Source locks released with candidate. No operational migration or deployment.
