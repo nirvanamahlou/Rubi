@@ -100,6 +100,12 @@ export type WorkbenchPerformanceSectionV1<T> =
   | { status: 'forbidden' | 'error'; message: string };
 
 export interface WorkbenchHrPerformanceV1 {
+  /** Current Persian month, from reviewed HR attendance. Null means no reliable measurement. */
+  monthlyAttendance?: {
+    period: string;
+    lateMinutes: number | null;
+    overtimeMinutes: number | null;
+  };
   approvedLeaveCount?: number;
   todayAttendance?: {
     date: string;

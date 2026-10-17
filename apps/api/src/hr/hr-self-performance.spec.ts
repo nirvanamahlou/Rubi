@@ -38,7 +38,76 @@ function fixture() {
   };
 }
 describe('HR self performance public projection', () => {
+  it('sums reviewed own attendance in the current Persian month without duplicate days', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-15T12:00:00Z'));
+    try {
+      const f = fixture();
+      f.client.hrRecord.findMany.mockImplementation(async (query) =>
+        query.where.tab === 'attendance'
+          ? [
+              {
+                status: 'حاضر',
+                values: ['User', '2026-10-15'],
+                data: { lateMinutes: 0, overtimeMinutes: 90 },
+              },
+              {
+                status: 'حاضر',
+                values: ['User', '2026-10-15'],
+                data: { lateMinutes: 999, overtimeMinutes: 999 },
+              },
+              {
+                status: 'حاضر',
+                values: ['User', '2026-10-14'],
+                data: { lateMinutes: 15, overtimeMinutes: 0 },
+              },
+            ]
+          : [],
+      );
+      const result = await f.service.get(actor);
+      expect(result.monthlyAttendance).toMatchObject({
+        lateMinutes: 15,
+        overtimeMinutes: 90,
+      });
+      const query = f.client.hrRecord.findMany.mock.calls.find(
+        ([q]) => q.where.tab === 'attendance',
+      )![0];
+      expect(query.where).toMatchObject({
+        employeeId: 'employee',
+        branchId: { in: ['allowed'] },
+        AND: [
+          { values: { path: ['1'], gte: '2026-09-23' } },
+          { values: { path: ['1'], lte: '2026-10-15' } },
+        ],
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+  it('distinguishes missing attendance measurements from a real zero', async () => {
+    const f = fixture();
+    expect((await f.service.get(actor)).monthlyAttendance).toMatchObject({
+      lateMinutes: null,
+      overtimeMinutes: null,
+    });
+    f.client.hrRecord.findMany.mockImplementation(async (query) =>
+      query.where.tab === 'attendance'
+        ? [
+            {
+              status: 'حاضر',
+              values: ['User', '2026-10-15'],
+              data: { lateMinutes: 0, overtimeMinutes: null },
+            },
+          ]
+        : [],
+    );
+    expect((await f.service.get(actor)).monthlyAttendance).toMatchObject({
+      lateMinutes: 0,
+      overtimeMinutes: null,
+    });
+  });
   it('rejects accounts without HR access before reading a personnel record', async () => {
+    // Authorization precedes all employee/monthly attendance queries.
     const f = fixture();
     await expect(
       f.service.get({ ...actor, permissions: [] }),
@@ -117,7 +186,7 @@ describe('HR self performance public projection', () => {
     const f = fixture();
     const result = await f.service.get({ ...actor, permissions: ['hr.read'] });
     expect(result.payslipVisible).toBe(false);
-    expect(f.client.hrRecord.findMany).toHaveBeenCalledTimes(3);
+    expect(f.client.hrRecord.findMany).toHaveBeenCalledTimes(4);
   });
   it('queries job actions only by the signed-in actor and current branches', async () => {
     const f = fixture();
