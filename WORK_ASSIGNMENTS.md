@@ -1,3 +1,7 @@
+## AIRCRAFT-SAVE-ACCESS-1017 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-aircraft-save-access-1017 from origin/develop. User authorizes bounded aircraft-save permission repair and develop merge. Reserve only transportStatus routing in MasterDataService.assertResourceMutationAccess and focused transport-form regressions, plus own status entries. Explicit cross-owner scope is limited to this guard; preserve PC-B partner dossier/import work and all other service methods. Transport status remains protected by existing transportStatusData validation and master_data.status.manage; editable-field denies remain enforced.68 API service/transport/permission tests pass, including manual-access create/update, denied field/resource, absent status permission and invalid status. No schema, migration, dependency, permission grants or operational data/runtime changes. Source lock released with frozen candidate; exact-head CI gates merge.
+
 ## PARTNER-360-IMPORT-1017 — PC-B — IN_PROGRESS
 
 2026-10-17 continuation: human explicitly authorizes merge of PR912 and connection coordination. Reserve the stale SSR partner-form expectation leaf test: supplier geography/contact controls must now be present, as requested. Preserve all gates; synchronize latest develop and merge only after final-head CI succeeds. PC-A is not an accessible local Codex thread; request the Finance public producer handoff on the repository PR instead of editing another owner's active source without coordination.

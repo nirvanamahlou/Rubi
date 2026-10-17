@@ -3697,7 +3697,13 @@ export class MasterDataService {
     const denied = changedDeniedFields(
       actor.permissions,
       `field.master-data.${resource}`,
-      values,
+      // Transport status has its own validator and status-management permission.
+      // It is not an editable-field control in the IAM field catalogue.
+      isMasterTransportFormResource(resource)
+        ? Object.fromEntries(
+            Object.entries(values).filter(([key]) => key !== 'transportStatus'),
+          )
+        : values,
       current,
     );
     if (denied.length)

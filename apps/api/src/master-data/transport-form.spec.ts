@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   MASTER_TRANSPORT_FORM_RESOURCES,
+  MANUAL_ACCESS_VERSION,
+  allowAccessControl,
+  denyPermission,
   type AuthenticatedActor,
 } from '@nora/contracts';
 import { transportStatusData } from './transport-form.policy';
@@ -34,6 +37,113 @@ const base = {
 };
 
 describe('transport forms policy and API compatibility', () => {
+  const aircraftValues = {
+    englishName: 'Airbus A320-200',
+    manufacturerModel: 'Airbus / A320-200',
+    displayOrder: '0',
+    transportStatus: 'ACTIVE',
+  };
+  const manualActor: AuthenticatedActor = {
+    ...actor,
+    permissions: [
+      ...actor.permissions,
+      MANUAL_ACCESS_VERSION,
+      ...[
+        'master-data.resource.aircraft-types',
+        'field.master-data.aircraft-types.englishName',
+        'field.master-data.aircraft-types.manufacturerModel',
+        'field.master-data.aircraft-types.displayOrder',
+      ].map(allowAccessControl),
+    ],
+  };
+
+  function aircraftService() {
+    const repository = {
+      codeExists: vi.fn().mockResolvedValue(false),
+      find: vi.fn().mockResolvedValue(base),
+      create: vi.fn().mockResolvedValue(base),
+      update: vi.fn().mockResolvedValue(base),
+    };
+    return {
+      repository,
+      service: new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      ),
+    };
+  }
+
+  it('creates and updates aircraft with manual field grants and independently authorized status', async () => {
+    const { service, repository } = aircraftService();
+    await service.create('aircraft-types', aircraftValues, manualActor);
+    await service.update('aircraft-types', id, aircraftValues, 1, manualActor);
+    expect(repository.create).toHaveBeenCalledWith(
+      'aircraft-types',
+      expect.objectContaining({
+        manufacturer: 'Airbus',
+        model: 'A320-200',
+        isActive: true,
+      }),
+      id,
+      id,
+    );
+    expect(repository.update).toHaveBeenCalledWith(
+      'aircraft-types',
+      id,
+      expect.objectContaining({ model: 'A320-200', isActive: true }),
+      1,
+      id,
+      id,
+    );
+  });
+
+  it('still rejects status writes without status-management permission before persistence', async () => {
+    const { service, repository } = aircraftService();
+    const limited = {
+      ...manualActor,
+      permissions: manualActor.permissions.filter(
+        (p) => p !== 'master_data.status.manage',
+      ),
+    };
+    await expect(
+      service.create('aircraft-types', aircraftValues, limited),
+    ).rejects.toThrow('مجوز مدیریت وضعیت');
+    await expect(
+      service.update('aircraft-types', id, aircraftValues, 1, limited),
+    ).rejects.toThrow('مجوز مدیریت وضعیت');
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('retains explicit field denies, resource denies and invalid-status validation', async () => {
+    const { service, repository } = aircraftService();
+    for (const control of [
+      'field.master-data.aircraft-types.englishName',
+      'master-data.resource.aircraft-types',
+    ]) {
+      await expect(
+        service.create('aircraft-types', aircraftValues, {
+          ...manualActor,
+          permissions: [...manualActor.permissions, denyPermission(control)],
+        }),
+      ).rejects.toThrow('محدود');
+      await expect(
+        service.update('aircraft-types', id, aircraftValues, 1, {
+          ...manualActor,
+          permissions: [...manualActor.permissions, denyPermission(control)],
+        }),
+      ).rejects.toThrow('محدود');
+    }
+    await expect(
+      service.create(
+        'aircraft-types',
+        { ...aircraftValues, transportStatus: 'INVALID' },
+        manualActor,
+      ),
+    ).rejects.toThrow('وضعیت حمل‌ونقل معتبر نیست');
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
   it('exports every transport form with the server-side review filter and rejects malformed filters', async () => {
     const repository = {
       list: vi.fn().mockResolvedValue({ rows: [], total: 0 }),
