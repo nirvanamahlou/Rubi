@@ -1,3 +1,17 @@
+## INTEGRATIONS-SITE-ONBOARDING-1017 — PC-D — READY_FOR_REVIEW
+
+Direct Add website and existing-site setup run locally on Docker Web3100/API4192,
+image `rubi-integrations-local:1017-site-onboarding-v2`. Brand selection/inline
+creation, generated internal codes and optional connection metadata use the
+existing branch-scoped registry, native IAM, CAS and audited owner writes.
+Four systems remain; Academy is EDUCATION; no sample site/URL was saved.
+Local tests pass:18 Web,45 API,147 contracts. Scoped lint/format/i18n,
+Web/API typechecks/builds and interactive desktop/mobile/light/dark checks pass.
+No schema/migration/dependency/seed or external connectivity change. All external
+sites remain ready for connection pending real documentation/access.
+Branch `codex/pc-d-integrations-site-onboarding-1017` stays local; no new push,
+hosted CI, PR or merge. See [delivery and rollback constraints](tasks/INTEGRATIONS-SITE-ONBOARDING-1017.md).
+
 ## INTERNATIONAL-TICKET-CALENDAR-1014 — PC-A — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-A; branch codex/pc-a-international-ticket-calendar-1014 from latest origin/develop. Reserve Sales ticket offer card/picker, New Contract date-display propagation and focused regressions plus own status entries. Foreign route cards must display Gregorian departure/arrival dates while keeping fixed Tehran 24-hour times and existing domestic behavior. No shared contract, schema, dependency, migration or local runtime changes. Prior service-party reservation is merged as PR875 and released. Validation:53 focused card/picker/form/model tests passed, including Gregorian departure/arrival and overnight rollover with unchanged Tehran24-hour times. Scoped lint and Web types gate PR; full CI verifies build.
