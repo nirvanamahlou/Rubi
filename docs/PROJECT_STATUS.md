@@ -6175,3 +6175,8 @@ Consolidated the assistant into one final Dashboard navigation item, retaining a
 
 
 ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access tests passed;13 focused assertions rechecked after integration. Scoped Web/Contracts ESLint and both source/compatible-local production builds passed. Original tabs now share page=assistant, with legacy aliases retained; one final navigation entry and language-directed floating positions. Services4000/4300/4301 return HTTP200 and Web3000 serves the authenticated login redirect. Browser verification after Amin login and latest-head/postmerge CI remain delivery gates. No schema/API/provider changes. Source scope frozen and released.
+
+
+## DASHBOARD-CURRENCY-WIDTH-1017 — PC-C
+
+Chart header currency selectors now have a fixed112px width rather than stretching from an intrinsic input width. Shared form controls and calendar selectors unchanged. Validation in progress; no data/API/schema changes.

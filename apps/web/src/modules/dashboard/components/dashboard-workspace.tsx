@@ -3270,7 +3270,7 @@ function ProjectionSlot({
                 >
                   <SelectTrigger
                     aria-label={`واحد پول نمودار ${title}`}
-                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[9px] font-bold"
+                    className="h-7 w-28 min-w-0 border-border/80 bg-background px-2 text-[9px] font-bold"
                     data-dashboard-visual-currency-selector
                   >
                     <CircleDollarSign aria-hidden="true" className="size-3.5" />
