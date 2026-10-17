@@ -1,4 +1,8 @@
 {
+  "تاریخ خرید": "Purchase date",
+  "خریدی ثبت نشده است.": "No purchases have been recorded.",
+  "خریدهای ثبت‌شده برای کارگزار": "Recorded broker purchases",
+  "دریافت خریدهای کارگزار ناموفق بود.": "Could not load broker purchases.",
   "خرید پرواز شناور را برای قرارداد مربوط ثبت کنید.": "Record the floating flight purchase against its individual contract.",
   "خرید ظرفیت شرکت باید برای تمام صندلی‌های همان خرید ثبت شود.": "Company capacity purchase must cover all seats of that purchase.",
   "هزینه ظرفیت شرکت فقط یک‌بار برای کل پرواز ثبت می‌شود.": "Company capacity is purchased once for the entire flight.",

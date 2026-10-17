@@ -1,4 +1,8 @@
 import {
+  BrokerPurchaseHistory,
+  BrokerPurchaseHistoryController,
+} from './broker-purchase-history';
+import {
   ReservationHotelSavingsService,
   ReservationHotelSavingsController,
 } from './reservation-hotel-savings.service';
@@ -679,6 +683,7 @@ export class ReservationRequestsController {
     TicketRuntimeModule,
   ],
   controllers: [
+    BrokerPurchaseHistoryController,
     ReservationHotelSavingsController,
     ReservationRequestsController,
     ReservationPassengerFilesController,
@@ -686,6 +691,7 @@ export class ReservationRequestsController {
     ReservationManifestBatchController,
   ],
   providers: [
+    BrokerPurchaseHistory,
     ReservationHotelSavingsService,
     ReservationTicketDocumentsService,
     AuthGuard,

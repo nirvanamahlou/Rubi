@@ -6203,6 +6203,10 @@ LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR 
 
 Compact Telegram-style assistant composer: one-row input with bounded132px automatic growth, circular36px controls (32px floating),30px quick commands and a non-wrapping mobile input row. Existing fixed read-only requests retained.68 assistant tests passed; scoped lint/build and browser verification in progress. No API/provider/schema changes.
 
+## CONTRACT-PURCHASE-PROFIT-1017 — PC-A — READY_FOR_CI
+
+User authorizes coordination, contract profit/loss completion, persisted broker purchase-profile display and develop merge. FX producer boundaries coordinated in WORK_ASSIGNMENTS; no schema/contracts/capture-hook overlap. Finance-only profit consumer added to purchase form, shared-service return-flight cost omission corrected, protected branch-scoped latest-revision broker purchase history added through a public read endpoint. No operational writes, migration or runtime changes. Validation and final CI pending; see tasks/CONTRACT-PURCHASE-PROFIT-1017.md.
+
 
 ## ASSISTANT-COMPACT-WINDOW-1017 — PC-C
 

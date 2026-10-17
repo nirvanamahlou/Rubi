@@ -64,6 +64,39 @@ const ticket = {
   currencyCode: 'USD',
 };
 describe('actual contract package margin', () => {
+  it('includes both legs sharing one service and keeps profit unknown until both costs exist', () => {
+    const shared = {
+      ...contract,
+      servicesDetail: [contract.servicesDetail[0]!],
+      hotelSelection: null,
+      priceComponents: [
+        {
+          type: 'BASE' as const,
+          title: 'Sale',
+          amount: '100',
+          currencyCode: 'USD',
+        },
+      ],
+      ticketSelections: [
+        ...contract.ticketSelections,
+        { ...contract.ticketSelections[0]!, offerId: 'return-offer' },
+      ],
+    };
+    const costs = [
+      { ...ticket, unitCost: '10' },
+      { ...ticket, id: 'return-cost', offerId: 'return-offer', unitCost: '20' },
+    ];
+    const complete = contractProfit(shared, null, costs);
+    expect(complete.costs).toHaveLength(2);
+    expect(complete.totals[0]).toMatchObject({
+      salesAmount: '100',
+      purchaseAmount: '60',
+      profitAmount: '40',
+    });
+    const incomplete = contractProfit(shared, null, [costs[0]!]);
+    expect(incomplete.complete).toBe(false);
+    expect(incomplete.totals[0]?.profitAmount).toBeNull();
+  });
   it('allocates each flight total to the sold adult/child seats, rounds once and keeps infant and other contracts out', () => {
     const priced = {
       ...ticket,
