@@ -1,3 +1,19 @@
+## INTEGRATIONS-ACCESS-1017 — PC-D — LOCAL_COMPLETE
+
+Native user administration now exposes the Integrations connection module,
+registry editing field and existing settings-management operation in the
+Integrations section for both new and existing users. Selecting permissions
+retains the same native IAM operation, explicit manual controls and branch
+checks; no user grant or shared role is automatically changed. The local ehsan
+administrator already has access; all options and the Add website dialog are
+verified in the browser. 231 contract/API/IAM/Web tests, scoped lint/format,
+Contracts build/types and the Web production build (62 routes with TypeScript)
+pass. Local API image 1017-access and Web image 1017-access-v2 are healthy;
+existing registry version 2 and all infrastructure/data are retained. No schema,
+migration, seed, dependency or external connection change. This source branch
+includes PR909 as a prerequisite; no new remote publication is performed. See
+[local access repair](tasks/INTEGRATIONS-ACCESS-1017.md).
+
 ## INTEGRATIONS-SITE-ONBOARDING-1017 — PC-D — READY_FOR_REVIEW
 
 Direct Add website and existing-site setup run locally on Docker Web3100/API4192,

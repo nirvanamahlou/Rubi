@@ -2302,7 +2302,7 @@ export function canViewScreen(
   if (!screen || !hasGroupPermission(permissions, screen.group)) return false;
   if (!hasAccessControl(permissions, id)) return false;
   // New controls inherit the actual old route decision, not a newly required grant.
-  if (id.startsWith('system.module.'))
+  if (id.startsWith('system.module.') && screen.group === 'system')
     return USER_ACCESS_SCREENS.some(
       (candidate) =>
         candidate.group === 'system' &&

@@ -310,6 +310,48 @@ describe('Integration configuration boundary', () => {
       ForbiddenException,
     );
   });
+  it('accepts selectable manual controls while preserving native operation and branch checks', async () => {
+    const { service, settings } = fixture();
+    const selection = {
+      permissionCodes: ['system.settings.manage'],
+      screenIds: ['integrations.home', 'system.module.integrations'],
+      allowedControlIds: [
+        'system.module.integrations',
+        'field.system-settings.integrations.registry',
+      ],
+    };
+    const manualActor = {
+      ...actor,
+      permissions: manualSnapshotCodes(
+        selection,
+      ) as AuthenticatedActor['permissions'],
+    };
+    expect(service.canManage(manualActor)).toBe(true);
+    expect((await service.initialize(manualActor, branchId)).initialized).toBe(
+      true,
+    );
+    for (const removed of [
+      'system.settings.manage',
+      'ui.screen.integrations.home',
+      'ui.screen.system.module.integrations',
+      'ui.allow.system.module.integrations',
+      'ui.allow.field.system-settings.integrations.registry',
+    ]) {
+      const denied = {
+        ...manualActor,
+        permissions: manualActor.permissions.filter((p) => p !== removed),
+      };
+      expect(service.canManage(denied)).toBe(false);
+      await expect(service.initialize(denied, branchId)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    }
+    settings.writeSetting.mockClear();
+    await expect(
+      service.initialize(manualActor, randomUUID()),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(settings.writeSetting).not.toHaveBeenCalled();
+  });
   it('allows multiple systems per brand and configurable capability keys', async () => {
     const { service } = fixture();
     const first = await service.initialize(actor, branchId);
@@ -504,3 +546,4 @@ describe('Integration configuration boundary', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
+import { manualSnapshotCodes } from '../iam/manual-access-policy';
