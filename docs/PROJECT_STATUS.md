@@ -1,3 +1,18 @@
+## LOCAL-DEVELOP-3100-1017 — PC-B — DONE
+
+Local3100 and API4192 now run exact latest merged develop@8a380e104285db15ae93944f738dd631ba1aff48,
+including PR912 and PR913. Full develop CI passed before rollout. Both containers
+are healthy; the public runtime metadata returns the exact SHA. Authenticated
+supplier page shows Excel import, updated geography/contact form and no Provider
+ID column. Existing DB records and encrypted Documents storage are preserved;
+before/after core counts match. Two pending merged migrations applied after a
+verified private DB backup;156 migrations are applied. No new migration/schema,
+dependency, business-data seed or operational import was created. Original dirty
+primary checkout and all other services/ports remain untouched. Real Defender
+companion is active for this Windows session; no reboot service was installed.
+Rollback/evidence details: docs/tasks/LOCAL-DEVELOP-3100-1017.md. Unmerged PR910
+and the still-unimplemented full partner360/Finance connection are not included.
+
 ## PARTNER-360-IMPORT-1017 — PC-B — PARTIAL / FINANCE CONTRACT HANDOFF
 
 Published: PR https://github.com/nirvanamahlou/Rubi/pull/912 targets develop.
