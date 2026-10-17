@@ -4,7 +4,6 @@ import { NativeSearchSelect } from '@/components/ui/native-search-select';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   MANUAL_ACCESS_SECTIONS,
-  manualSectionForPermission,
   manualSectionForScreen,
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
@@ -20,6 +19,7 @@ import { getPublicApiBaseUrl } from '@/lib/environment';
 import { refreshAuthenticatedSession } from '@/lib/auth-session';
 import { AccessGroupCard } from './access-group-card';
 import { ManualAccessEditor } from './manual-access-editor';
+import { permissionInSection, permissionLabel } from './access-permissions';
 import styles from './user-management.module.css';
 
 import { RoleAccessProposal } from './role-access-proposal';
@@ -82,6 +82,9 @@ const customerFieldLabels: Record<string, string> = {
   acquaintanceMethodId: 'نحوه آشنایی',
 };
 function accessControlLabel(control: { id: string; title: string }) {
+  if (control.id === 'field.system-settings.integrations.registry')
+    return 'ویرایش برندها، سامانه‌ها و مشخصات سایت';
+  if (control.id === 'system.module.integrations') return control.title;
   if (control.id.startsWith('field.customers.')) {
     const field = control.id.slice('field.customers.'.length);
     return `مشتری · ${customerFieldLabels[field] ?? field}`;
@@ -708,9 +711,8 @@ export function UserManagement() {
                                   .toLocaleLowerCase('fa'),
                               ),
                         );
-                        const permissions = options.permissions.filter(
-                          (p) =>
-                            manualSectionForPermission(p.code) === group.id,
+                        const permissions = options.permissions.filter((p) =>
+                          permissionInSection(p.code, group.id),
                         );
                         const allowedScreens = screens.filter((s) =>
                           options.assignableScreenIds.includes(s.id),
@@ -830,7 +832,7 @@ export function UserManagement() {
                               {permissions.map((p) => (
                                 <Check
                                   key={p.id}
-                                  label={`${p.name}${inheritedCodes.includes(p.code) ? ' — ارث‌رسیده از نقش' : ''}`}
+                                  label={`${permissionLabel(p, group.id)}${inheritedCodes.includes(p.code) ? ' — ارث‌رسیده از نقش' : ''}`}
                                   checked={permissionIds.includes(p.id)}
                                   disabled={
                                     editingLegacy ||

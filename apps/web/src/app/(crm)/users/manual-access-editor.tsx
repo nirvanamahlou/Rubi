@@ -6,13 +6,13 @@ import {
   MANUAL_NEW_PERMISSIONS,
   USER_ACCESS_SCREENS,
   USER_ACCESS_DENY_CONTROLS,
-  manualSectionForPermission,
   manualSectionForScreen,
   type ManualAccessSelection,
 } from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import styles from './user-management.module.css';
+import { permissionInSection, permissionLabel } from './access-permissions';
 
 interface Snapshot {
   revision: string;
@@ -158,8 +158,8 @@ export function ManualAccessEditor({
           );
           const permissions = options.permissions.filter(
             (p) =>
-              manualSectionForPermission(p.code) === id &&
-              (sectionMatch || match(p.name)),
+              permissionInSection(p.code, id) &&
+              (sectionMatch || match(permissionLabel(p, id))),
           );
           const controls = USER_ACCESS_DENY_CONTROLS.filter(
             (c) =>
@@ -185,7 +185,7 @@ export function ManualAccessEditor({
               title: 'عملیات و اطلاعات حساس',
               values: permissions.map((p) => ({
                 id: p.code,
-                label: p.name,
+                label: permissionLabel(p, id),
                 allowed: true,
               })),
             },

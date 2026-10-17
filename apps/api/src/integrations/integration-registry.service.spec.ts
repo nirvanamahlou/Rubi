@@ -11,7 +11,10 @@ import type {
   SystemSettingV1,
 } from '@nora/contracts';
 import { IntegrationRegistryService } from './integration-registry.service';
-import { validateIntegrationCatalogue } from './integration-registry.validation';
+import {
+  integrationPublicUrl,
+  validateIntegrationCatalogue,
+} from './integration-registry.validation';
 
 const branchId = randomUUID();
 const actor: AuthenticatedActor = {
@@ -68,6 +71,143 @@ const command = (
 });
 
 describe('Integration configuration boundary', () => {
+  it.each([
+    'http://example.com',
+    'https://127.0.0.1',
+    'https://2130706433',
+    'https://0x7f000001',
+    'https://[::1]',
+    'https://host.local',
+    'https://host.internal',
+    'https://localhost',
+    'https://user:pass@example.com',
+    'https://example.com?token=value',
+    'https://example.com?',
+    'https://example.com#value',
+    'https://example.com#',
+    'https://example.com:8443',
+    'https://example.com/private/token/value',
+  ])('rejects unsafe or credential-bearing setup URL %s', (value) => {
+    expect(() => integrationPublicUrl(value)).toThrow(BadRequestException);
+  });
+  it('normalizes public URL identity and preserves setup when an older client omits it', async () => {
+    const { service } = fixture();
+    const first = await service.initialize(actor, branchId);
+    const setup = {
+      websiteUrl: 'https://SITE.example.com:443/',
+      environment: 'SANDBOX',
+      protocol: 'REST',
+      authentication: 'API_KEY',
+    };
+    const next = await service.write(
+      actor,
+      branchId,
+      command(first, {
+        systems: first.systems.map((row, index) =>
+          index === 0 ? { ...row, setup } : row,
+        ),
+      }),
+    );
+    expect(next.systems[0]!.setup?.websiteUrl).toBe('https://site.example.com');
+    const legacySystems = next.systems.map((row) => {
+      const legacy = { ...row };
+      delete legacy.setup;
+      return legacy;
+    });
+    const saved = await service.write(
+      actor,
+      branchId,
+      command(next, { systems: legacySystems }),
+    );
+    expect(saved.systems[0]!.setup).toEqual(next.systems[0]!.setup);
+    const cleared = await service.write(
+      actor,
+      branchId,
+      command(saved, {
+        systems: saved.systems.map((row, index) =>
+          index === 0
+            ? {
+                ...row,
+                setup: {
+                  environment: 'SANDBOX',
+                  protocol: 'UNDECIDED',
+                  authentication: 'UNDECIDED',
+                },
+              }
+            : row,
+        ),
+      }),
+    );
+    expect(cleared.systems[0]!.setup).not.toHaveProperty('websiteUrl');
+  });
+  it('rejects duplicate normalized sites and unknown credential fields', async () => {
+    const { service } = fixture();
+    const first = await service.initialize(actor, branchId);
+    const setup = {
+      websiteUrl: 'https://site.example.com/',
+      environment: 'SANDBOX',
+      protocol: 'REST',
+      authentication: 'API_KEY',
+    };
+    await expect(
+      service.write(
+        actor,
+        branchId,
+        command(first, {
+          systems: first.systems.map((row) => ({ ...row, setup })),
+        }),
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.write(
+        actor,
+        branchId,
+        command(first, {
+          systems: first.systems.map((row, index) =>
+            index === 0
+              ? { ...row, setup: { ...setup, credential: 'never-store-this' } }
+              : row,
+          ),
+        }),
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+  it('checks duplicate sites after preserving metadata omitted by a legacy client', async () => {
+    const { service, settings } = fixture();
+    const initial = await service.initialize(actor, branchId);
+    const setup = {
+      websiteUrl: 'https://site.example.com',
+      environment: 'SANDBOX',
+      protocol: 'UNDECIDED',
+      authentication: 'UNDECIDED',
+    };
+    const saved = await service.write(
+      actor,
+      branchId,
+      command(initial, {
+        systems: initial.systems.map((row, index) =>
+          index === 0 ? { ...row, setup } : row,
+        ),
+      }),
+    );
+    settings.writeSetting.mockClear();
+    await expect(
+      service.write(
+        actor,
+        branchId,
+        command(saved, {
+          systems: saved.systems.map((row, index) => {
+            if (index === 1) return { ...row, setup };
+            const legacy = { ...row };
+            delete legacy.setup;
+            return legacy;
+          }),
+        }),
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(settings.writeSetting).not.toHaveBeenCalled();
+    expect((await service.read(actor, branchId)).version).toBe(saved.version);
+  });
   it('does not create records or invent zero measurements on GET', async () => {
     const { service, settings } = fixture();
     expect(await service.read(actor, branchId)).toMatchObject({
@@ -169,6 +309,48 @@ describe('Integration configuration boundary', () => {
     await expect(service.initialize(profile, branchId)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+  });
+  it('accepts selectable manual controls while preserving native operation and branch checks', async () => {
+    const { service, settings } = fixture();
+    const selection = {
+      permissionCodes: ['system.settings.manage'],
+      screenIds: ['integrations.home', 'system.module.integrations'],
+      allowedControlIds: [
+        'system.module.integrations',
+        'field.system-settings.integrations.registry',
+      ],
+    };
+    const manualActor = {
+      ...actor,
+      permissions: manualSnapshotCodes(
+        selection,
+      ) as AuthenticatedActor['permissions'],
+    };
+    expect(service.canManage(manualActor)).toBe(true);
+    expect((await service.initialize(manualActor, branchId)).initialized).toBe(
+      true,
+    );
+    for (const removed of [
+      'system.settings.manage',
+      'ui.screen.integrations.home',
+      'ui.screen.system.module.integrations',
+      'ui.allow.system.module.integrations',
+      'ui.allow.field.system-settings.integrations.registry',
+    ]) {
+      const denied = {
+        ...manualActor,
+        permissions: manualActor.permissions.filter((p) => p !== removed),
+      };
+      expect(service.canManage(denied)).toBe(false);
+      await expect(service.initialize(denied, branchId)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    }
+    settings.writeSetting.mockClear();
+    await expect(
+      service.initialize(manualActor, randomUUID()),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(settings.writeSetting).not.toHaveBeenCalled();
   });
   it('allows multiple systems per brand and configurable capability keys', async () => {
     const { service } = fixture();
@@ -364,3 +546,4 @@ describe('Integration configuration boundary', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
+import { manualSnapshotCodes } from '../iam/manual-access-policy';
