@@ -6341,3 +6341,7 @@ COMPUTER_ID=PC-A; branch codex/pc-a-sales-remove-followups-1017. Reserve only Sa
 ## ASSISTANT-EXPAND-WINDOW-1017 — PC-C
 
 Dashboard assistant uses the same Lucide outline rendering path as peer pages, with a dedicated Sparkles icon. Chat header gains bilingual expand/restore control; compact default preserved and expanded bounds fit viewport. Draft/results remain mounted during resizing; close resets size. Validation in progress; no API/schema/provider changes.
+
+## USER-ROLE-CASCADE-DELETE-1017 — PC-B
+
+Direct owner-requested implementation without Worker Orchestrator: full section selection includes operations and explicit field/resource controls; reusable named role templates populate editable new/existing-user ticks on explicit selection. Existing accounts are not backfilled or altered by template saves. Administrator Delete sits beside activation and enforces current revision, self/last-manager protection, transactional audit/row locks and rejection of all dependent history.155 IAM API tests pass (four existing isolated-DB skips), plus focused section regressions; complete Web/type/lint/final-head CI remain delivery gates. No schema/dependency/operational-data/runtime changes. See docs/tasks/USER-ROLE-CASCADE-DELETE-1017.md.

@@ -95,6 +95,109 @@ export class ManualUserAccessService {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
+  async delete(userId: string, revision: string, actor: AuthenticatedActor) {
+    if (typeof revision !== 'string' || !/^[a-f0-9]{64}$/.test(revision))
+      throw new BadRequestException('نسخهٔ معتبر دسترسی برای حذف لازم است.');
+    if (userId === actor.userId)
+      throw new ConflictException('حذف حساب جاری مجاز نیست.');
+    return this.database.client.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext('iam-administrator-membership'))::text`;
+        // FK insertions and concurrent account mutations cannot race the dependency check.
+        await tx.$queryRaw`SELECT id FROM iam_users WHERE id IN (${userId}::uuid, ${actor.userId}::uuid) ORDER BY id FOR UPDATE`;
+        const operator = await tx.user.findUnique({
+          where: { id: actor.userId },
+          include: manualUserInclude,
+        });
+        // Permanent deletion is intentionally restricted to a live canonical administrator.
+        if (
+          operator?.status !== 'ACTIVE' ||
+          !authenticatedPermissionCodes(operator.roles).includes(
+            'iam.users.manage',
+          ) ||
+          !operator.roles.some(
+            ({ role }) => role.isActive && role.code === 'administrator',
+          )
+        )
+          throw new ForbiddenException(
+            'حذف کاربر فقط برای مدیر سامانه مجاز است.',
+          );
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          include: {
+            ...manualUserInclude,
+            _count: true,
+            hrEmployee: { select: { id: true } },
+            b2bOrganizationUser: true,
+          },
+        });
+        if (!user) throw new NotFoundException('کاربر پیدا نشد.');
+        const scoped = {
+          ...user,
+          b2bOrganizationUser: await readB2bAccessSnapshot(tx, userId),
+        };
+        if (manualAccessRevision(scoped) !== revision)
+          throw new ConflictException(
+            'دسترسی کاربر تغییر کرده است؛ دوباره بارگذاری کنید.',
+          );
+        const accounts = await tx.user.findMany({
+          where: { status: 'ACTIVE' },
+          include: manualUserInclude,
+        });
+        const isManager = (entry: (typeof accounts)[number]) => {
+          const codes = authenticatedPermissionCodes(entry.roles);
+          return (
+            codes.includes('iam.users.read') &&
+            codes.includes('iam.users.manage') &&
+            canViewScreen(codes, 'system.users')
+          );
+        };
+        if (
+          user.status === 'ACTIVE' &&
+          ((isManager(user) &&
+            !accounts.some(
+              (entry) => entry.id !== userId && isManager(entry),
+            )) ||
+            (user.roles.some(
+              ({ role }) => role.isActive && role.code === 'administrator',
+            ) &&
+              !accounts.some(
+                (entry) =>
+                  entry.id !== userId &&
+                  entry.roles.some(
+                    ({ role }) =>
+                      role.isActive && role.code === 'administrator',
+                  ),
+              )))
+        )
+          throw new ConflictException('حذف آخرین مدیر فعال مجاز نیست.');
+        const owned = new Set(['roles', 'branches', 'sessions']);
+        if (
+          user.hrEmployee ||
+          user.b2bOrganizationUser ||
+          Object.entries(user._count).some(
+            ([key, count]) => !owned.has(key) && count > 0,
+          )
+        )
+          throw new ConflictException(
+            'این کاربر سابقه یا اطلاعات وابسته دارد؛ برای حفظ سوابق، از غیرفعال‌سازی استفاده کنید.',
+          );
+        await tx.auditEvent.create({
+          data: {
+            actorUserId: actor.userId,
+            action: 'iam.user.delete',
+            entityType: 'User',
+            entityId: userId,
+            outcome: 'SUCCESS',
+          },
+        });
+        await tx.user.delete({ where: { id: userId } });
+        return { success: true };
+      },
+      { timeout: 30_000 },
+    );
+  }
+
   async read(userId: string) {
     const user = await this.database.client.user.findUnique({
       where: { id: userId },

@@ -1117,7 +1117,13 @@ export class IamService implements IamStepUpPort {
         'Only system administrators can configure role defaults.',
       );
     const profile = await this.managedAccess(
-      { ...dto, manualAccessV3: true },
+      {
+        ...dto,
+        ...(dto.accessTitle !== undefined
+          ? { accessTitle: dto.accessTitle.trim() }
+          : {}),
+        manualAccessV3: true,
+      },
       actor,
     );
     if (!profile || !Array.isArray(dto.deniedControlIds))
@@ -1126,16 +1132,25 @@ export class IamService implements IamStepUpPort {
       );
     const key =
       'template-job-' +
-      USER_JOB_TITLES.indexOf(
+      (USER_JOB_TITLES.includes(
         profile.title as (typeof USER_JOB_TITLES)[number],
-      );
-    const id = await this.database.client.$transaction(async (tx) =>
-      this.personalAccessRole(
-        tx,
-        key,
-        { ...profile, deniedControlIds: dto.deniedControlIds! },
-        actor,
-      ),
+      )
+        ? USER_JOB_TITLES.indexOf(
+            profile.title as (typeof USER_JOB_TITLES)[number],
+          )
+        : createHash('sha256')
+            .update(profile.title)
+            .digest('hex')
+            .slice(0, 32));
+    const id = await this.database.client.$transaction(
+      async (tx) =>
+        this.personalAccessRole(
+          tx,
+          key,
+          { ...profile, deniedControlIds: dto.deniedControlIds! },
+          actor,
+        ),
+      { timeout: 60_000 },
     );
     await this.audit(
       actor.userId,
@@ -1983,9 +1998,12 @@ export class IamService implements IamStepUpPort {
     }
     if (
       !dto.accessTitle ||
-      !USER_JOB_TITLES.includes(
-        dto.accessTitle as (typeof USER_JOB_TITLES)[number],
-      ) ||
+      (!dto.manualAccessV3 &&
+        !USER_JOB_TITLES.includes(
+          dto.accessTitle as (typeof USER_JOB_TITLES)[number],
+        )) ||
+      !dto.accessTitle.trim() ||
+      dto.accessTitle.length > 80 ||
       !Array.isArray(dto.permissionIds) ||
       !Array.isArray(dto.screenIds) ||
       (dto.roleIds?.length ?? 0)
