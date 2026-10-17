@@ -7912,3 +7912,9 @@ CONTRACT-REFERRAL-LABEL-1017 — READY_FOR_REVIEW: 3 existing SalesPeopleSheet t
 ## REMOVE-BOTTOM-HISTORY-1017 — PC-A — READY_FOR_CI
 
 COMPUTER_ID=PC-A; branch codex/pc-a-remove-bottom-history-1017 from origin/develop@8a380e10. User requests removal of the standalone bottom correction-history button in Reservations and develop merge. Reserve only foundation/workspace.tsx, its focused rendering regression and own docs. Preserve history records, the Notes action's protected history and notification correction deep links. No API, permissions, schema/migration, dependency, operational data or runtime changes; prior target scopes merged/released. Validation:40 workspace/action-panel tests and scoped lint passed. A selected canonical contract no longer renders the bottom trigger, while Notes and deep-link entry points remain. Web types and exact-head full CI gate authorized develop merge; no3100 deployment. Bounded source locks released with candidate.
+
+## LOGIN-WHITE-BACKGROUND-1017 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-login-white-background-1017 from latest origin/develop. Reserve login/page.tsx and existing page.spec.ts plus own docs. User requests white page background, PR and local preview; no develop merge authorization. No API/schema/dependency changes. Preserve login form, logos and blue branding panel. Preview Web3100 only; retain existing API and data.
+
+LOGIN-WHITE-BACKGROUND-1017 — READY_FOR_REVIEW:6 existing login/background/logo tests and scoped ESLint pass. Web production build/typecheck and local preview verification follow. Bounded source locks released at candidate; PR only, no develop merge authorization.

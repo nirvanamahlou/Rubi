@@ -6278,3 +6278,8 @@ New-contract referral heading now reads «نحوه آشنایی با ما», wit
 
 Verification: 3 existing form tests, scoped ESLint, formatting and shared Contracts build passed. Full PR CI provides Web typecheck/build and suite gates before user-authorized merge.
 
+
+## 2026-10-17 — LOGIN-WHITE-BACKGROUND-1017 — PC-A
+
+Login page uses a plain white canvas and no longer mounts decorative background media. Existing logos, branding panel and authentication form remain. PR and local preview requested; no develop merge requested. No data/schema/API changes.
+
