@@ -79,7 +79,7 @@ describe('Procurement lifecycle operation forms', () => {
     ).toContain('تاریخ مرجوعی');
     expect(
       validateOrderFollowUp('RETURN', { ...fields, reason: ' ' }, documents),
-    ).toContain('توضیحات');
+    ).toBe('');
     expect(validateOrderFollowUp('RETURN', fields, [])).toContain(
       'مدرک مرجوعی',
     );

@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import { paymentSource } from '../payments/payment-source';
 import { MasterProcurementDirectory } from '../../master-data/master-procurement-directory';
@@ -235,9 +236,10 @@ export class FinanceDeliveryService {
       !Number.isSafeInteger(command.expectedVersion) ||
       command.expectedVersion < 0 ||
       !['PAID', 'REJECTED'].includes(command.status) ||
-      (command.reason !== undefined && typeof command.reason !== 'string') ||
+      (command.reason !== undefined &&
+        !isOptionalOperationReason(command.reason)) ||
       (command.reason?.trim().length ?? 0) > 500 ||
-      (!paid && !command.reason?.trim()) ||
+      (!paid && !isOptionalOperationReason(command.reason)) ||
       (paid &&
         ((!command.accountId && !command.payingSupplierId) ||
           !command.paymentMethodId ||
@@ -426,8 +428,8 @@ export class FinanceDeliveryService {
       !['AFTER_RECEIPT', 'FULL_SETTLEMENT', 'MANAGER_EXCEPTION'].includes(
         basis,
       ) ||
-      !reason ||
-      reason.length > 500
+      !isOptionalOperationReason(reason) ||
+      (reason ?? '').length > 500
     )
       throw new BadRequestException('مجوز تحویل مدارک مشتری معتبر نیست.');
     if (
@@ -560,9 +562,9 @@ export class FinanceDeliveryService {
       !Number.isSafeInteger(command.expectedVersion) ||
       command.expectedVersion < 0 ||
       typeof command.approved !== 'boolean' ||
-      typeof command.reason !== 'string' ||
-      !command.reason.trim() ||
-      command.reason.trim().length > 500
+      !isOptionalOperationReason(command.reason) ||
+      !isOptionalOperationReason(command.reason) ||
+      (command.reason ?? '').trim().length > 500
     )
       throw new BadRequestException(
         'وضعیت، نسخه و دلیل تحویل مدارک معتبر نیست.',
@@ -638,7 +640,7 @@ export class FinanceDeliveryService {
           intakeId,
           version: command.expectedVersion + 1,
           approved: command.approved,
-          reason: command.reason.trim(),
+          reason: (command.reason ?? '').trim(),
           actorUserId,
         },
       });
@@ -653,7 +655,7 @@ export class FinanceDeliveryService {
           title: command.approved
             ? 'مجوز تحویل مدارک صادر شد'
             : 'مجوز تحویل مدارک لغو شد',
-          message: command.reason.trim(),
+          message: (command.reason ?? '').trim(),
           entityType: 'sales_contract',
           entityId: contractId,
           href: '/sales',

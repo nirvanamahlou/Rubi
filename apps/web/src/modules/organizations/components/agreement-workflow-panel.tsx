@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -1084,7 +1086,7 @@ export function AgreementWorkflowPanel({
       referenceCheckFailed
     )
       return;
-    if (currentAction.reason.trim().length < 3) {
+    if (!isOptionalOperationReason(currentAction.reason)) {
       setDialogError('توضیح ارسال یا نتیجه بررسی را وارد کنید.');
       return;
     }

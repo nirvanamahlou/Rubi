@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import type { FinanceRequestStatus } from '@nora/contracts';
 
 import { DecimalValue, FinanceDomainError } from './finance.money';
@@ -227,7 +228,7 @@ export function validateRequestDecision(input: {
   status: Extract<FinanceRequestStatus, 'REJECTED' | 'CORRECTION_REQUIRED'>;
   reason: string;
 }): void {
-  if (input.reason.trim().length < 10) {
+  if (!isOptionalOperationReason(input.reason)) {
     throw new FinanceDomainError(
       'DECISION_REASON_REQUIRED',
       'Reject and correction decisions require a detailed reason.',

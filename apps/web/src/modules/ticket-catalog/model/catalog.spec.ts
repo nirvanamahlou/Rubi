@@ -615,7 +615,7 @@ describe('Versioning and lifecycle', () => {
         '',
         inventory,
       ),
-    ).toThrow();
+    ).not.toThrow();
   });
   it('guards allocated cancellation/schedule changes and capacity snapshots', () => {
     const held = applyAllocation(

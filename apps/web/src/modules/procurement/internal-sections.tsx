@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { uiConfirm } from '@/i18n/dialogs';
 
@@ -1543,7 +1545,7 @@ function ApprovalForm({
             <Button
               variant="destructive"
               disabled={
-                !reason.trim() ||
+                !isOptionalOperationReason(reason) ||
                 !bootstrap.permissions.includes('procurement.request.cancel') ||
                 !bootstrap.permissions.includes('procurement.assign')
               }

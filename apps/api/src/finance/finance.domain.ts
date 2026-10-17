@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   hasFinancePermission,
   type CheckDirection,
@@ -452,14 +453,15 @@ export function evaluateFinancialRelease(
       status: 'BLOCKED',
       allowed: true,
       reasons: [
-        request.reason.trim() || 'Financial conditions are not satisfied.',
+        (request.reason ?? '').trim() ||
+          'Financial conditions are not satisfied.',
       ],
       requiresAudit: true,
     };
   }
 
   if (request.basis === 'MANAGER_EXCEPTION') {
-    if (request.reason.trim().length < 10)
+    if (!isOptionalOperationReason(request.reason))
       reasons.push('Exception requires a detailed reason.');
     if (!request.secondApproverReference?.trim())
       reasons.push('Exception requires a second approver.');

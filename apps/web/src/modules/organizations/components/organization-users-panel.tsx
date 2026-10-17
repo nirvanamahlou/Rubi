@@ -349,8 +349,6 @@ export function OrganizationUsersPanel({
           <label className="field sm:col-span-2">
             دلیل ثبت یا تغییر دسترسی
             <Textarea
-              required
-              minLength={5}
               maxLength={500}
               value={editor.draft.reason}
               onChange={(e) => set({ reason: e.target.value })}

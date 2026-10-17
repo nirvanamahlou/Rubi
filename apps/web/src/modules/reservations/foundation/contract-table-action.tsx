@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { useState } from 'react';
 import {
   Dialog,
@@ -37,12 +39,16 @@ export function ContractTableAction({
       );
   const label = cancel ? 'ابطال قرارداد' : 'اصلاح قرارداد';
   async function cancelContract() {
-    if (!row.contractId || !reason.trim()) return;
+    if (!row.contractId || !isOptionalOperationReason(reason)) return;
     setBusy(true);
     setError('');
     try {
       const { data } = await salesApi.detail(row.contractId);
-      await salesApi.cancel(row.contractId, data.version, reason.trim());
+      await salesApi.cancel(
+        row.contractId,
+        data.version,
+        (reason ?? '').trim(),
+      );
       window.dispatchEvent(new Event('reservation-workflow-changed'));
       setOpen(false);
     } catch (e) {
@@ -91,7 +97,7 @@ export function ContractTableAction({
                 />
               </label>
               <Button
-                disabled={busy || !reason.trim()}
+                disabled={busy || !isOptionalOperationReason(reason)}
                 onClick={() => void cancelContract()}
               >
                 ثبت ابطال قرارداد

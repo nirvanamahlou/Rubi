@@ -156,7 +156,7 @@ describe('Customer Operations workspace boundaries', () => {
   });
 
   it.each(['', ' ', '\t', '\n', 'ab'])(
-    'rejects an empty or too-short consent reason (%j)',
+    'accepts an optional or short consent reason (%j)',
     (reason) => {
       expect(
         buildCustomerConsentRequest({
@@ -166,7 +166,7 @@ describe('Customer Operations workspace boundaries', () => {
           reason,
           version: 1,
         }),
-      ).toMatchObject({ ok: false });
+      ).toMatchObject({ ok: true });
     },
   );
 

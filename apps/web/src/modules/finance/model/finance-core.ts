@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 export type InboxRequestKind = 'RECEIPT_VERIFICATION' | 'PAYMENT_REQUEST';
 export type InboxRequestStatus =
   | 'NEW'
@@ -461,7 +462,7 @@ export function validateFinanceActionDraft(
 }
 
 export function validateFinanceDecision(reason: string): string | null {
-  return reason.trim().length >= 10
+  return isOptionalOperationReason(reason)
     ? null
-    : 'دلیل رد یا درخواست اصلاح حداقل ده نویسه لازم دارد.';
+    : 'دلیل رد یا درخواست اصلاح معتبر نیست.';
 }
