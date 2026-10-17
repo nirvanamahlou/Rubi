@@ -39,6 +39,27 @@ function row(id = 'test-request'): RequestView {
   };
 }
 describe('reservations workspace access and states', () => {
+  it('does not show a standalone bottom history button for a selected contract', () => {
+    const html = renderToStaticMarkup(
+      <ReservationOperationsWorkspace
+        state="SUCCESS"
+        rows={[
+          { ...row(), contractId: '10000000-0000-4000-8000-000000000001' },
+        ]}
+        access={access}
+        now={now}
+        initialSection="inbox"
+      />,
+    );
+    expect(html).not.toContain('سوابق اصلاح قرارداد');
+    expect(html).toContain('توضیحات');
+    const source = readFileSync(
+      new URL('./workspace.tsx', import.meta.url),
+      'utf8',
+    );
+    expect(source).toContain('<ContractCorrectionDeepLink />');
+    expect(source).not.toContain('ContractCorrectionHistoryButton');
+  });
   it('marks corrected contracts with text and purple light/dark queue styling', () => {
     const html = renderToStaticMarkup(
       <ReservationOperationsWorkspace
