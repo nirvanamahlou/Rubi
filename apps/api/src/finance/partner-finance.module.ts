@@ -110,7 +110,13 @@ export class FinancePartnerService implements FinancePartnerExposurePortV1 {
     // A legacy organization-only purchase carries no role. Adding another role
     // must not silently reclassify history or advertise extra available credit.
     const ambiguousPurchases = refs.ambiguousOrganizationRole
-      ? role === 'SUPPLIER' ? reservationSources : await this.reservations.partnerFinanceSources(branchId, organizationId, null)
+      ? role === 'SUPPLIER'
+        ? reservationSources
+        : await this.reservations.partnerFinanceSources(
+            branchId,
+            organizationId,
+            null,
+          )
       : [];
     const operational =
       await this.database.client.financeOperationalRequest.findMany({
@@ -229,22 +235,24 @@ export class FinancePartnerService implements FinancePartnerExposurePortV1 {
           };
         }),
       totals: partnerFinanceTotals(purchases, payments),
-      reconciliationRequired: [...new Set([
-        ...ambiguousPurchases.map(row => row.id),
-        ...purchases
-          .filter(
-            (row) =>
-              !row.current && payments.some((p) => p.purchaseId === row.id),
-          )
-          .map((row) => row.id),
-        // Standalone operational payments have no purchase allocation. Never
-        // deduct them from another ledger or advertise available credit.
-        ...operational
-          .filter(
-            (row) => row.status === 'PAID' || row.status === 'PARTIALLY_PAID',
-          )
-          .map((row) => row.id),
-      ])],
+      reconciliationRequired: [
+        ...new Set([
+          ...ambiguousPurchases.map((row) => row.id),
+          ...purchases
+            .filter(
+              (row) =>
+                !row.current && payments.some((p) => p.purchaseId === row.id),
+            )
+            .map((row) => row.id),
+          // Standalone operational payments have no purchase allocation. Never
+          // deduct them from another ledger or advertise available credit.
+          ...operational
+            .filter(
+              (row) => row.status === 'PAID' || row.status === 'PARTIALLY_PAID',
+            )
+            .map((row) => row.id),
+        ]),
+      ],
     };
   }
 }
