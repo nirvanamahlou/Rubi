@@ -1,7 +1,10 @@
 ## PARTNER-360-IMPORT-1017 — PC-B — PARTIAL / FINANCE CONTRACT HANDOFF
 
-Published: Draft PR https://github.com/nirvanamahlou/Rubi/pull/912 targets develop;
-full hosted CI is running. The complete 360 request is not ready for merge.
+Published: PR https://github.com/nirvanamahlou/Rubi/pull/912 targets develop.
+User now authorizes merge of the completed slice after final-head CI; the full
+360 request remains unfinished. Stale SSR geography-absence expectations were
+updated and strengthened;23 focused form/import tests pass. The Finance producer
+handoff request is registered for PC-A in PR912 comment6232679806.
 
 Supplier Provider ID is removed from the visible table; broker table already
 omits it. Supplier country/city now use scoped Master Data references beside the

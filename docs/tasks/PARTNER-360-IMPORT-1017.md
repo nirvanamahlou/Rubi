@@ -2,8 +2,9 @@
 
 The user requested direct execution without worker-orchestrator, and authorized
 push/merge. Do not present this unit as a complete Agency360 implementation.
-Published as Draft PR https://github.com/nirvanamahlou/Rubi/pull/912 to develop;
-hosted CI is running and merge remains held for the unfinished 360 scope.
+Published as PR https://github.com/nirvanamahlou/Rubi/pull/912 to develop.
+The user now explicitly authorizes merging the completed identity/import/logo
+slice after final-head CI, while the full 360 remains unfinished.
 
 ## Implemented
 
@@ -33,7 +34,9 @@ Finance preview currently projects customer sales receipts; it must not be
 reused for partner payables. Credit direction is confirmed by the user:
 COUNTERPARTY_TO_US (they extend credit to our company).
 
-Proposed producer/consumer handoff (not yet approved/implemented): PC-A Finance
+Producer/consumer handoff authorized by the user and requested from PC-A at
+https://github.com/nirvanamahlou/Rubi/pull/912#issuecomment-6232679806
+(producer implementation/acceptance is still outstanding): PC-A Finance
 publishes branch/permission-scoped supplier/broker payments, payable statement,
 settlement and exposure snapshots through a public service/port; PC-B B2B
 consumes these for SUPPLIER/BROKER roles. Preserve current AGENCY behavior and
@@ -86,4 +89,8 @@ no real business record was changed.
 - Translation coverage: 3 passed.
 - Web/API types, API production build, scoped lint and formatting pass after
   refreshing generated Prisma declarations (no live migration).
-- Full hosted CI and complete 360 remain outstanding. No merge confirmed.
+- Full CI initially failed one stale SSR test requiring the newly requested
+  country/city controls to be absent. Updated it to prove those controls,
+  their position before address, and mobile/email controls.23 focused
+  partner-form/import regressions pass. Final-head CI and complete 360 remain
+  outstanding. No merge confirmed yet.
