@@ -177,6 +177,34 @@ export function TravelWorkflowForm({
       />
     );
   const closed = state.voucherIssued || state.supplierStatus === 'CANCELLED';
+  if (
+    action === 'رزرواسیون' &&
+    !editingForm &&
+    (state.sentSupplierFormSettings || state.voucherIssued)
+  )
+    return (
+      <div className="grid gap-3" dir="rtl">
+        <Button
+          variant="outline"
+          disabled={busy || state.supplierStatus === 'CANCELLED'}
+          onClick={() => setEditingForm(true)}
+        >
+          اصلاح
+        </Button>
+        <TravelDocument
+          downloadLabel="دانلود"
+          intake={{
+            ...intake,
+            workflow: {
+              ...state,
+              ...(state.sentSupplierFormSettings
+                ? { supplierFormSettings: state.sentSupplierFormSettings }
+                : {}),
+            },
+          }}
+        />
+      </div>
+    );
   return (
     <div className="grid gap-4" dir="rtl">
       <p role="status">
@@ -322,26 +350,6 @@ export function TravelWorkflowForm({
             )}
         </>
       )}
-      {action === 'رزرواسیون' &&
-        !editingForm &&
-        (state.sentSupplierFormSettings || state.voucherIssued) && (
-          <>
-            <TravelDocument
-              intake={{
-                ...intake,
-                workflow: {
-                  ...state,
-                  ...(state.sentSupplierFormSettings
-                    ? { supplierFormSettings: state.sentSupplierFormSettings }
-                    : {}),
-                },
-              }}
-            />
-            <Button variant="outline" onClick={() => setEditingForm(true)}>
-              ویرایش تنظیمات فرم رزواسیون
-            </Button>
-          </>
-        )}
       {action === 'رزرواسیون' && editingForm && (
         <Button variant="outline" onClick={() => setEditingForm(false)}>
           بازگشت به فرم صادرشده
