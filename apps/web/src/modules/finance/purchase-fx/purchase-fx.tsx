@@ -39,7 +39,7 @@ export function PurchaseFxRate({
 }: {
   currencyCode: string;
   value: string;
-  onChange: (currency: string, value: string) => void;
+  onChange: (currency: string, value: string, suggested?: boolean) => void;
 }) {
   const [error, setError] = useState('');
   useEffect(() => {
@@ -49,7 +49,7 @@ export function PurchaseFxRate({
       'purchase-fx-quote?currency=' + encodeURIComponent(currencyCode),
     )
       .then((data) => {
-        if (active && data) onChange(currencyCode, data.rateToIrr);
+        if (active && data) onChange(currencyCode, data.rateToIrr, true);
       })
       .catch((cause) => {
         if (active)

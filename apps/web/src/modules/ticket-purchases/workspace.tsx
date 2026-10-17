@@ -60,8 +60,10 @@ export function TicketPurchaseWorkspace({
     [priceError, setPriceError] = useState('');
   const [fxRates, setFxRates] = useState<Record<string, string>>({});
   const updateFx = useCallback(
-    (code: string, rate: string) =>
-      setFxRates((old) => ({ ...old, [code]: rate })),
+    (code: string, rate: string, suggested = false) =>
+      setFxRates((old) =>
+        suggested && old[code] ? old : { ...old, [code]: rate },
+      ),
     [],
   );
   const frozen = useRef<FinanceTicketCostCommandV1 | null>(null);
@@ -116,6 +118,7 @@ export function TicketPurchaseWorkspace({
   function open(item: TicketPurchaseInboxItemV1) {
     frozen.current = null;
     setSelected(item);
+    setFxRates({});
     setSeats(String(item.cost?.seatCount ?? item.request.seatCount ?? ''));
     setPricingMode('TOTAL');
     setUnit(item.cost?.invoiceAmount ?? '');
