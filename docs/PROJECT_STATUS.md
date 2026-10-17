@@ -1,4 +1,4 @@
-## PARTNER-360-COMPLETE-1017 — PC-B — IN_PROGRESS
+## PARTNER-360-COMPLETE-1017 — PC-B — READY_FOR_CI
 
 Product owner delegates the bounded supplier/broker360 Finance producer to PC-B, with COUNTERPARTY_TO_US credit and25 concurrent staff. PR922 implements role-safe dossier sections and actual payable/payment/request projections plus optional editable unitsPerUsd reference metadata (1USD=N units, not transaction FX). Hosted full quality/types/build and24 disposable PostgreSQL scenarios pass on c2aadf46;30 final focused Web regressions pass after fixing English coverage and the changed currency catalogue assertion. Full final-head CI, authorized merge and rollout remain pending. Browser tool access is policy-blocked; user accepts manual final visual verification. Fresh database/runtime backup is verified outside Git; no operational migration or deployment has occurred. See docs/tasks/PARTNER-360-COMPLETE-1017.md; other Finance ownership is unchanged.
 ## AIRCRAFT-SAVE-ACCESS-1017 — PC-A — READY_FOR_CI

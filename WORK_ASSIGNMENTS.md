@@ -1,4 +1,6 @@
-## PARTNER-360-COMPLETE-1017 — PC-B — IN_PROGRESS
+## PARTNER-360-COMPLETE-1017 — PC-B — READY_FOR_CI
+
+Implementation candidate is complete; public Finance adapter now lives in its Finance-owned leaf and existing root boundary checks remain enforced.20 final Finance boundary/projection tests,30 translation/currency/client tests and22 additional focused Web tests pass; local API builds pass.24 PostgreSQL scenarios pass in hosted CI, including25 parallel real Finance reads. Latest develop IAM changes are preserved and generated translations are combined from both authoritative sources. All exact-final-head gates must still succeed before authorized merge/rollout. These bounded source/schema/Migration reservations release when PR922 merges; no general Finance ownership transfer. Final runtime evidence will be recorded on PR922 after rollout, not inferred from this candidate checkpoint. Browser visual QA is explicitly delegated back to the user after policy denial.
 
 Final full-suite boundary check identified that the new Finance-owned persistence producer belongs in a leaf adapter, not the domain-only Finance root. Move only this unit's producer to finance/partners, retaining the existing public module barrel; preserve the existing boundary assertions and add a focused no-cross-owner-table regression. No gate exemption or private table access is introduced.
 

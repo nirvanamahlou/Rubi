@@ -1,4 +1,4 @@
-# Partner360 completion — PC-B — in progress
+# Partner360 and manual USD rate — PC-B — final candidate
 
 The product owner explicitly authorizes PC-B to implement the bounded Finance
 producer as well as the supplier/broker dossier consumer. Other Finance owners
@@ -19,7 +19,8 @@ Source starts from origin/develop@877a7286. No schema/dependency lock is taken
 at reservation; inspect current owners before any schema need is implemented.
 Push/review/green exact-head CI/merge precede a backed-up local3100 rollout.
 
-Implementation and verification are not yet complete; do not mark delivered.
+Implementation is present in PR922; do not mark the runtime delivered until all
+exact-head CI gates, authorized merge and backed-up rollout have been verified.
 
 ## Current candidate and acceptance gates
 
