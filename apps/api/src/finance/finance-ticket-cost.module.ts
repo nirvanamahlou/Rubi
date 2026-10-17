@@ -1,3 +1,4 @@
+import { PurchaseFxModule } from './purchase-fx/purchase-fx.service';
 import { TicketRuntimeModule } from '../ticket-catalog/ticket-runtime.module';
 import {
   BadRequestException,
@@ -88,6 +89,7 @@ export class TicketPurchaseInboxController {
 
 @Module({
   imports: [
+    PurchaseFxModule,
     IamModule,
     ProcurementModule,
     MasterDataModule,

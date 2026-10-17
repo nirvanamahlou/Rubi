@@ -1,4 +1,6 @@
 'use client';
+import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
+
 import { ContractProfit } from '@/modules/finance/components/contract-profit';
 import { useAccessPermissions } from '@/modules/iam/access-context';
 import { ReservationFloatingFlightPurchase } from './reservation-floating-flight-purchase';
@@ -9,7 +11,7 @@ import {
 } from './hotel-purchase-savings';
 import { ReservationInsurancePurchase } from './reservation-insurance-purchase';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   hotelNights,
   moneyDecimal,
@@ -283,6 +285,14 @@ export function ReservationHotelPurchase({
       );
     else setCombinedTransfer((row) => ({ ...row, ...patch }));
   };
+  const [fxRates, setFxRates] = useState<Record<string, string>>({});
+  const updateFx = useCallback(
+    (code: string, rate: string, suggested = false) =>
+      setFxRates((old) =>
+        suggested && old[code] ? old : { ...old, [code]: rate },
+      ),
+    [],
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const attempt = useRef<{ payload: string; key: string } | null>(null);
@@ -345,6 +355,9 @@ export function ReservationHotelPurchase({
           supplierOrganizationId: hotelSupplier.id,
           amount: hotelTotal,
           currencyCode: hotelCurrency.id,
+          ...(fxRates[hotelCurrency.id]
+            ? { purchaseRateToIrr: fxRates[hotelCurrency.id] }
+            : {}),
           pricingCalculation: { baseAmount: hotelBase, factor: hotelFactor },
         });
       }
@@ -364,6 +377,9 @@ export function ReservationHotelPurchase({
             supplierOrganizationId: supplier.id,
             amount: transferTotals[index]!,
             currencyCode: draft.currency.id,
+            ...(fxRates[draft.currency.id]
+              ? { purchaseRateToIrr: fxRates[draft.currency.id] }
+              : {}),
             pricingCalculation: {
               baseAmount: draft.price,
               factor: draft.count,
@@ -620,6 +636,14 @@ export function ReservationHotelPurchase({
               جمع درخواست خرید: {formatSalesMoney(totalOf(amounts))}{' '}
               {currencySymbol(code)}
             </p>
+          ))}
+          {[...totals.keys()].map((code) => (
+            <PurchaseFxRate
+              key={code}
+              currencyCode={code}
+              value={fxRates[code] ?? ''}
+              onChange={updateFx}
+            />
           ))}
           <Button
             type="button"

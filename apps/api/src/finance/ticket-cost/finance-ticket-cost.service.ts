@@ -1,3 +1,4 @@
+import { PurchaseFxService } from '../purchase-fx/purchase-fx.service';
 import { TicketPublicService } from '../../ticket-catalog/ticket-public.service';
 import { moneyUnits, moneyDecimal } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
@@ -44,6 +45,9 @@ export class FinanceTicketCostService {
     @Optional()
     @Inject(TicketPublicService)
     private readonly tickets?: TicketPublicService,
+    @Optional()
+    @Inject(PurchaseFxService)
+    private readonly purchaseFx?: PurchaseFxService,
   ) {}
 
   async recordCost(
@@ -162,6 +166,9 @@ export class FinanceTicketCostService {
               invoice: invoice.toString(),
               currencyCode: input.currencyCode,
               expectedCostVersion: input.expectedCostVersion,
+              ...(input.purchaseRateToIrr !== undefined
+                ? { purchaseRateToIrr: input.purchaseRateToIrr }
+                : {}),
             }),
           )
           .digest('hex')
@@ -220,6 +227,17 @@ export class FinanceTicketCostService {
           reason,
           actorUserId: actor.userId,
         },
+      });
+      await this.purchaseFx?.capture(tx, {
+        ticketCostId: row.id,
+        branchId: row.branchId,
+        actorUserId: actor.userId,
+        currencyCode: row.currencyCode,
+        amount: row.invoiceAmount.toString(),
+        ...(input.purchaseRateToIrr
+          ? { rateToIrr: input.purchaseRateToIrr }
+          : {}),
+        baselineAt: row.createdAt,
       });
       return this.costSnapshot(row);
     });

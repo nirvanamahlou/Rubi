@@ -200,6 +200,11 @@ jobs:
           pnpm --filter @nora/database db:seed
           pnpm --filter @nora/database db:seed
 
+      - name: Prove immutable purchase FX snapshots
+        env:
+          PURCHASE_FX_TEST: '1'
+        run: pnpm --filter @nora/database exec vitest run test/purchase-fx-postgres.spec.ts
+
       - name: Prove hotel rate broker compatibility and foreign keys
         env:
           HOTEL_RATE_BROKER_TEST: '1'

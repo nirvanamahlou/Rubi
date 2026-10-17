@@ -1,3 +1,4 @@
+import { PurchaseFxService } from './purchase-fx/purchase-fx.service';
 import { isOptionalOperationReason } from '@nora/contracts';
 import { randomUUID } from 'node:crypto';
 import { paymentSource } from './payments/payment-source';
@@ -70,6 +71,9 @@ export class FinanceInboxService {
     @Optional()
     @Inject(MasterProcurementDirectory)
     private readonly supplierDirectory?: MasterProcurementDirectory,
+    @Optional()
+    @Inject(PurchaseFxService)
+    private readonly purchaseFx?: PurchaseFxService,
   ) {}
 
   history(query: FinanceHistoryQueryV1, actor: AuthenticatedActor) {
@@ -567,7 +571,9 @@ export class FinanceInboxService {
     return {
       version: 1,
       generatedAt: new Date().toISOString(),
-      items,
+      items: this.purchaseFx
+        ? await this.purchaseFx.enrich(items, actor)
+        : items,
       sources: [
         ...sources,
         {
@@ -579,6 +585,79 @@ export class FinanceInboxService {
         },
       ],
     };
+  }
+
+  purchaseFxQuote(currency: string, actor: AuthenticatedActor) {
+    if (
+      !actor.branchIds.length ||
+      !actor.permissions.some((p) =>
+        [
+          'finance.read',
+          'procurement.quote.manage',
+          'reservations.hotel_purchase.write',
+        ].includes(p),
+      )
+    )
+      throw new ForbiddenException();
+    return this.purchaseFx?.quote(currency) ?? null;
+  }
+  async capturePurchaseFx(
+    referenceId: string,
+    rateToIrr: string,
+    actor: AuthenticatedActor,
+  ) {
+    if (!actor.permissions.includes('finance.payment.create'))
+      throw new ForbiddenException();
+    const inbox = await this.list(actor);
+    const item = inbox.items.find(
+      (i) =>
+        i.reservationPurchase?.lines.some(
+          (p) => p.purchaseId === referenceId,
+        ) ||
+        (i.ticketPurchase && i.sourceContextReference === referenceId) ||
+        (i.id.startsWith('purchases:invoice:') &&
+          i.sourceReference === referenceId),
+    );
+    if (!item || !this.purchaseFx)
+      throw new NotFoundException('خرید ارزی مجاز یافت نشد.');
+    if (!actor.branchIds.includes(item.branchReference))
+      throw new ForbiddenException();
+    const line = item.reservationPurchase?.lines.find(
+      (p) => p.purchaseId === referenceId,
+    );
+    const amount = line?.amount ?? item.amount?.amount;
+    const currencyCode = line?.currencyCode ?? item.amount?.currencyCode;
+    if (!amount || !currencyCode || currencyCode === 'IRR')
+      throw new BadRequestException('ارز خرید معتبر نیست.');
+    return this.database.client.$transaction(async (tx) => {
+      let invoiceRevisionId: string | undefined;
+      if (item.id.startsWith('purchases:invoice:')) {
+        const revision = await tx.financeProcurementInvoiceRevision.findFirst({
+          where: {
+            sourceId: referenceId,
+            sourceVersion: item.sourceVersion,
+            branchId: item.branchReference,
+          },
+          orderBy: { version: 'asc' },
+        });
+        if (!revision)
+          throw new BadRequestException('ابتدا خرید را تأیید کنید.');
+        invoiceRevisionId = revision.id;
+      }
+      return this.purchaseFx!.capture(tx, {
+        ...(line
+          ? { reservationPurchaseId: referenceId }
+          : item.ticketPurchase
+            ? { ticketCostId: referenceId }
+            : { invoiceRevisionId: invoiceRevisionId! }),
+        branchId: item.branchReference,
+        actorUserId: actor.userId,
+        currencyCode,
+        amount,
+        rateToIrr,
+        baselineAt: new Date(item.createdAt),
+      });
+    });
   }
 
   async listSettlementAccounts(
@@ -870,6 +949,15 @@ export class FinanceInboxService {
             actorUserId: actor.userId,
           },
         });
+        if (input.action === 'APPROVE')
+          await this.purchaseFx?.capture(tx, {
+            invoiceRevisionId: row.id,
+            branchId: source.branchId,
+            actorUserId: actor.userId,
+            currencyCode: source.currencyCode,
+            amount: source.amount,
+            baselineAt: new Date(source.handoffCreatedAt),
+          });
         const applied = await this.procurement.applyFinanceResult(
           {
             contract: 'finance.procurement-result.v1',

@@ -14,6 +14,9 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock('react', async (original) => ({
   ...(await original<typeof ReactModule>()),
+  useCallback(callback: unknown) {
+    return callback;
+  },
   useState(initial: unknown) {
     const index = state.index++;
     if (!(index in state.values))

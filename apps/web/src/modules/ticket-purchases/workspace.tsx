@@ -1,6 +1,7 @@
 'use client';
+import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
 import { currencySymbol } from '@/lib/currency-symbol';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from '@/i18n/link';
 import {
   ArrowLeft,
@@ -57,6 +58,14 @@ export function TicketPurchaseWorkspace({
     [busy, setBusy] = useState(false),
     [uncertain, setUncertain] = useState(false),
     [priceError, setPriceError] = useState('');
+  const [fxRates, setFxRates] = useState<Record<string, string>>({});
+  const updateFx = useCallback(
+    (code: string, rate: string, suggested = false) =>
+      setFxRates((old) =>
+        suggested && old[code] ? old : { ...old, [code]: rate },
+      ),
+    [],
+  );
   const frozen = useRef<FinanceTicketCostCommandV1 | null>(null);
   useEffect(() => {
     let live = true;
@@ -109,6 +118,7 @@ export function TicketPurchaseWorkspace({
   function open(item: TicketPurchaseInboxItemV1) {
     frozen.current = null;
     setSelected(item);
+    setFxRates({});
     setSeats(String(item.cost?.seatCount ?? item.request.seatCount ?? ''));
     setPricingMode('TOTAL');
     setUnit(item.cost?.invoiceAmount ?? '');
@@ -127,6 +137,7 @@ export function TicketPurchaseWorkspace({
       seatCount: Number(seats),
       ...(pricingMode === 'TOTAL' ? { totalCost: unit } : { unitCost: unit }),
       currencyCode: currency,
+      ...(fxRates[currency] ? { purchaseRateToIrr: fxRates[currency] } : {}),
     };
     try {
       await ticketPurchaseApi.price(selected.request.id, frozen.current);
@@ -438,6 +449,11 @@ export function TicketPurchaseWorkspace({
                   {total ? formatSalesMoney(total) : '—'} {currency}
                 </strong>
               </div>
+              <PurchaseFxRate
+                currencyCode={currency}
+                value={fxRates[currency] ?? ''}
+                onChange={updateFx}
+              />
             </fieldset>
             {priceError && (
               <p role="alert" className="text-sm text-destructive">

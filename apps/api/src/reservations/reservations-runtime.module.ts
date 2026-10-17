@@ -1,3 +1,4 @@
+import { PurchaseFxModule } from '../finance/purchase-fx/purchase-fx.service';
 import {
   BrokerPurchaseHistory,
   BrokerPurchaseHistoryController,
@@ -668,6 +669,7 @@ export class ReservationRequestsController {
 }
 @Module({
   imports: [
+    PurchaseFxModule,
     FinanceTicketCostModule,
     SalesOperationalAmendmentModule,
     SalesReservationTableModule,
