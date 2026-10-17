@@ -1,3 +1,4 @@
+import { PurchaseFxModule } from './purchase-fx/purchase-fx.service';
 import { AccountingController } from './accounting/accounting.controller';
 import { AccountingTaxController } from './accounting/accounting-tax.controller';
 import { AccountingTaxService } from './accounting/accounting-tax.service';
@@ -26,6 +27,7 @@ import { FinanceTicketCostModule } from './finance-ticket-cost.module';
 
 @Module({
   imports: [
+    PurchaseFxModule,
     IamModule,
     NotificationsModule,
     DocumentsModule,

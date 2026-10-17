@@ -25,6 +25,7 @@ function fixture(automatic = true) {
           ? [{ locked: 1 }]
           : Promise.reject(new Error('Cannot deserialize PostgreSQL void')),
     ),
+    auditEvent: { create: vi.fn(async () => ({})) },
     reservationIntake: {
       findFirst: vi.fn(async () => ({ workflowRevisions: [] })),
     },
@@ -45,6 +46,7 @@ function fixture(automatic = true) {
                 r.customerId === where.intakeId_customerId?.customerId,
           ) ?? null,
       ),
+      update: vi.fn(async () => ({})),
       create: vi.fn(
         async ({ data }: { data: Omit<(typeof rows)[number], 'issuedAt'> }) => {
           const row = { ...data, issuedAt: new Date('2026-10-01T08:00:00Z') };
@@ -86,11 +88,9 @@ describe('persisted ticket numbering', () => {
     expect(a.issuedAt).toBe('2026-10-01T08:00:00.000Z');
     expect(tx.reservationTicketDocument.create).toHaveBeenCalledTimes(1);
   });
-  it('requires a valid manual number for floating tickets and rejects an existing global number', async () => {
+  it('validates manual floating numbers and rejects an existing global number', async () => {
     const { service } = fixture(false);
-    await expect(
-      service.issue('a', { customerId: 'passenger' }, actor),
-    ).rejects.toThrow('۶ رقم');
+
     await expect(
       service.issue('a', { customerId: 'passenger', number: '12345' }, actor),
     ).rejects.toThrow('۶ رقم');
@@ -117,11 +117,9 @@ describe('persisted ticket numbering', () => {
       (await service.issue('a', { customerId: 'passenger' }, actor)).number,
     ).toBe('100001');
   });
-  it('rejects manual replacement of a company number, unauthorized actors and canceled intakes', async () => {
+  it('rejects unauthorized actors and canceled intakes', async () => {
     const { service, tx } = fixture();
-    await expect(
-      service.issue('a', { customerId: 'passenger', number: '123456' }, actor),
-    ).rejects.toThrow('خودکار');
+
     await expect(
       service.issue(
         'a',
@@ -137,6 +135,44 @@ describe('persisted ticket numbering', () => {
     ).rejects.toThrow('ابطال');
     expect(tx.reservationTicketDocument.create).not.toHaveBeenCalled();
   });
+  it('generates floating numbers and permits audited manual corrections with optimistic concurrency', async () => {
+    const { service, tx } = fixture(false);
+    const issued = await service.issue('a', { customerId: 'passenger' }, actor);
+    expect(issued.number).toBe('100000');
+    await expect(
+      service.issue(
+        'a',
+        { customerId: 'passenger', number: '123456', expectedNumber: '999999' },
+        actor,
+      ),
+    ).rejects.toThrow('تغییر');
+    const corrected = await service.issue(
+      'a',
+      { customerId: 'passenger', number: '123456', expectedNumber: '100000' },
+      actor,
+    );
+    expect(corrected.number).toBe('123456');
+    expect(corrected.issuedAt).toBe(issued.issuedAt);
+    expect(tx.auditEvent.create).toHaveBeenCalledTimes(1);
+    expect(tx.reservationTicketDocument.update).toHaveBeenCalledTimes(1);
+  });
+  it('accepts a manual company number and rejects duplicate corrections', async () => {
+    const { service, rows, tx } = fixture();
+    await service.issue(
+      'a',
+      { customerId: 'passenger', number: '123456' },
+      actor,
+    );
+    rows.push({ ...rows[0]!, intakeId: 'other', number: '654321' });
+    await expect(
+      service.issue(
+        'a',
+        { customerId: 'passenger', number: '654321', expectedNumber: '123456' },
+        actor,
+      ),
+    ).rejects.toThrow('قبلاً');
+    expect(tx.reservationTicketDocument.update).not.toHaveBeenCalled();
+  });
   it('does not allocate a number for an unassigned passenger', async () => {
     const { service, tx } = fixture();
     await expect(
@@ -149,9 +185,9 @@ describe('persisted ticket numbering', () => {
 describe('ticket supply numbering choices', () => {
   it.each([
     ['COMPANY', true],
-    ['FLOATING', false],
-    ['API', false],
-    [null, false],
+    ['FLOATING', true],
+    ['API', true],
+    [null, true],
   ])('uses saved %s supply for automatic=%s', async (supply, automatic) => {
     const catalog = { documentSupply: vi.fn().mockResolvedValue(supply) };
     const workflow = {
@@ -183,10 +219,7 @@ describe('ticket supply numbering choices', () => {
     expect(await service.choices('intake', actor)).toEqual([
       { customerId: 'passenger', automatic, document: null },
     ]);
-    expect(catalog.documentSupply).toHaveBeenCalledWith(
-      'offer',
-      actor.branchIds,
-    );
+    expect(catalog.documentSupply).not.toHaveBeenCalled();
   });
 });
 

@@ -1,3 +1,6 @@
+import { isOptionalOperationReason } from '@nora/contracts';
+import { TicketPublicService } from '../ticket-catalog/ticket-public.service';
+import { Optional } from '@nestjs/common';
 import { hotelPurchaseSavingsEvidence } from '@nora/contracts';
 import {
   parsePurchaseQuery,
@@ -225,6 +228,9 @@ function present(
 export class ReservationsPublicService {
   constructor(
     @Inject(DatabaseService) private readonly database: DatabaseService,
+    @Optional()
+    @Inject(TicketPublicService)
+    private readonly tickets?: TicketPublicService,
   ) {}
 
   async receive(
@@ -287,7 +293,60 @@ export class ReservationsPublicService {
       include: intakeInclude,
     });
     if (!row) throw new NotFoundException('درخواست در دسترس نیست.');
-    return present(row);
+    const result = present(row);
+    const types = await Promise.all(
+      (result.snapshot.ticketSelections ?? []).map(
+        async (ticket) =>
+          [
+            ticket.serviceClientKey,
+            await this.tickets?.documentSupply(ticket.offerId, branchIds),
+          ] as const,
+      ),
+    );
+    for (const offerId of result.snapshot.selectedTicketOfferIds ?? []) {
+      if (
+        result.snapshot.ticketSelections?.some(
+          (ticket) => ticket.offerId === offerId,
+        )
+      )
+        continue;
+      const existing = result.snapshot.serviceSelections.find(
+        (service) =>
+          service.kind === 'FLIGHT' && service.referenceId === offerId,
+      );
+      types.push([
+        existing?.clientKey ?? offerId,
+        await this.tickets?.documentSupply(offerId, branchIds),
+      ] as const);
+    }
+    const purchaseServices = [...result.snapshot.serviceSelections];
+    result.snapshot = {
+      ...result.snapshot,
+      serviceSelections: purchaseServices,
+    };
+    for (const [key, type] of types) {
+      const existing = result.snapshot.serviceSelections.find(
+        (service) => service.clientKey === key,
+      );
+      if (existing)
+        existing.metadata = {
+          ...existing.metadata,
+          purchaseSupplyType: type ?? 'UNKNOWN',
+        };
+      else {
+        const ticket = result.snapshot.ticketSelections?.find(
+          (item) => item.serviceClientKey === key,
+        );
+        purchaseServices.push({
+          clientKey: key,
+          kind: 'FLIGHT',
+          referenceId: ticket?.offerId ?? key,
+          titleSnapshot: ticket?.carrierNameSnapshot ?? 'Flight',
+          metadata: { purchaseSupplyType: type ?? 'UNKNOWN' },
+        });
+      }
+    }
+    return result;
   }
 
   /** Service-level filters and ordering run before pagination; branch scope is repeated at hydration. */
@@ -311,12 +370,16 @@ export class ReservationsPublicService {
       } as PurchaseInboxSummary,
     };
     if (!branchIds.length) return { data: [], meta };
+    const inventory = await this.tickets?.purchaseCapacityInventory(branchIds);
+    const floatingOfferIds = inventory
+      ?.filter((offer) => offer.supplyType === 'FLOATING')
+      .map((offer) => offer.id);
     const [summary] = await this.database.client.$queryRaw<
       PurchaseInboxSummary[]
-    >(purchaseSelectionSql(branchIds, q, flights, true));
+    >(purchaseSelectionSql(branchIds, q, flights, true, floatingOfferIds));
     if (summary) meta.summary = summary;
     const selected = await this.database.client.$queryRaw<PurchaseServiceRow[]>(
-      purchaseSelectionSql(branchIds, q, flights),
+      purchaseSelectionSql(branchIds, q, flights, false, floatingOfferIds),
     );
     const services = selected.slice(0, 25);
     if (!services.length) return { data: [], meta };
@@ -330,7 +393,11 @@ export class ReservationsPublicService {
     });
     const authorized = new Set(rows.map((row) => row.id));
     return {
-      data: rows.map(present),
+      data: this.tickets
+        ? await Promise.all(
+            rows.map((row) => this.purchaseContext(row.id, branchIds)),
+          )
+        : rows.map(present),
       meta: {
         ...meta,
         services: services.filter((s) => authorized.has(s.id)),
@@ -481,8 +548,8 @@ export class ReservationsPublicService {
       !input.hotelGuestCustomerIds.every(
         (value) => typeof value === 'string',
       ) ||
-      !input.reason?.trim() ||
-      input.reason.trim().length > 500
+      !isOptionalOperationReason(input.reason) ||
+      (input.reason ?? '').trim().length > 500
     )
       throw new BadRequestException('ترکیب اتاق یا دلیل تغییر معتبر نیست.');
     const guestIds = [...new Set(input.hotelGuestCustomerIds)];
@@ -525,7 +592,7 @@ export class ReservationsPublicService {
           doubleRoomCount: input.doubleRoomCount,
           extraBedCount: input.extraBedCount,
           hotelGuestCustomerIds: guestIds,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           updatedByUserId: userId,
         },
       });

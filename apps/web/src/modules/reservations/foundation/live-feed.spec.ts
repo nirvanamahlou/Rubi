@@ -374,3 +374,44 @@ it('marks notes from either the sales snapshot or reservation revisions', () => 
     }),
   ).toBe(true);
 });
+
+it('derives canonical room counts despite stale arrangement and summary fields', () => {
+  const source = intake();
+  const rows = decodeIntake(
+    envelope([
+      {
+        ...source,
+        snapshot: {
+          ...source.snapshot,
+          hotelSelection: {
+            hotelNameSnapshot: 'Demo',
+            checkInDate: '2026-10-01',
+            roomCount: 8,
+            singleRoomCount: 8,
+            doubleRoomCount: 0,
+            extraBedCount: 0,
+            rooms: [
+              { adults: 1, childAges: [] },
+              { adults: 1, childAges: [7] },
+              { adults: 3, childAges: [4] },
+            ],
+          },
+        },
+        arrangement: {
+          roomCount: 9,
+          singleRoomCount: 9,
+          doubleRoomCount: 0,
+          extraBedCount: 0,
+          updatedAt: '2026-09-09T10:00:00Z',
+        },
+      } as never,
+    ]),
+    session,
+  );
+  expect(rows[0]).toMatchObject({
+    roomCount: 3,
+    singleRooms: 1,
+    doubleRooms: 2,
+    extraBeds: 2,
+  });
+});

@@ -47,7 +47,6 @@ import {
   contractPurchaseServices,
   servicePurchase,
   flightPurchase,
-  flightOfferId,
   type PurchaseCategory,
 } from './model';
 import { loadPurchaseInbox, type PurchaseInbox } from './api';
@@ -197,14 +196,11 @@ function PurchaseHub() {
     router.replace('/ticket-purchases' + (next.size ? '?' + next : ''));
   }
   function open(request: ReservationIntakeV1, service: SalesServiceInput) {
-    if (service.kind === 'FLIGHT') {
-      navigate('FLIGHT', filter, flightOfferId(request, service));
-    } else
-      setSelection({
-        id: request.id,
-        kind: service.kind as PurchaseCategory,
-        serviceClientKey: service.clientKey,
-      });
+    setSelection({
+      id: request.id,
+      kind: service.kind as PurchaseCategory,
+      serviceClientKey: service.clientKey,
+    });
   }
   function close() {
     setSelection(null);
@@ -603,6 +599,7 @@ function PurchaseHub() {
               serviceClientKey={selection.serviceClientKey}
               readOnly={!result?.meta.canRecord}
               onSaved={() => {
+                close();
                 setRevision((v) => v + 1);
                 window.dispatchEvent(new Event('reservation-workflow-changed'));
               }}

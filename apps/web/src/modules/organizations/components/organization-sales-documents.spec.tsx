@@ -40,7 +40,8 @@ describe('organization Sales artifacts', () => {
       />,
     );
     expect(html).toContain('SC-100');
-    expect(html).toContain('خروجی قرارداد / PDF');
+    expect(html).toContain('>قرارداد</button>');
+    expect(html).not.toContain('خروجی قرارداد / PDF');
     expect(html).toContain('مدارک مسافر · تأیید مالی');
     expect(html).toContain('رسیدهای پرداخت');
     expect(html).not.toContain('آپلود رسید');

@@ -1,4 +1,9 @@
 'use client';
+import { PurchaseFxRate } from '@/modules/finance/purchase-fx/purchase-fx';
+
+import { ContractProfit } from '@/modules/finance/components/contract-profit';
+import { useAccessPermissions } from '@/modules/iam/access-context';
+import { ReservationFloatingFlightPurchase } from './reservation-floating-flight-purchase';
 import { currencySymbol } from '@/lib/currency-symbol';
 import {
   HotelPurchaseSavingsPreview,
@@ -6,7 +11,7 @@ import {
 } from './hotel-purchase-savings';
 import { ReservationInsurancePurchase } from './reservation-insurance-purchase';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   hotelNights,
   moneyDecimal,
@@ -192,6 +197,8 @@ export function ReservationHotelPurchase({
   request: PurchaseRequest;
   onSaved: () => void;
 }) {
+  const canReadProfit =
+    useAccessPermissions()?.includes('finance.read') === true;
   const services = reservationPurchaseServices(request.snapshot);
   const hotel = services.find((service) => service.kind === 'HOTEL');
   const transfers = services.filter((service) => service.kind === 'TRANSFER');
@@ -278,6 +285,14 @@ export function ReservationHotelPurchase({
       );
     else setCombinedTransfer((row) => ({ ...row, ...patch }));
   };
+  const [fxRates, setFxRates] = useState<Record<string, string>>({});
+  const updateFx = useCallback(
+    (code: string, rate: string, suggested = false) =>
+      setFxRates((old) =>
+        suggested && old[code] ? old : { ...old, [code]: rate },
+      ),
+    [],
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const attempt = useRef<{ payload: string; key: string } | null>(null);
@@ -340,6 +355,9 @@ export function ReservationHotelPurchase({
           supplierOrganizationId: hotelSupplier.id,
           amount: hotelTotal,
           currencyCode: hotelCurrency.id,
+          ...(fxRates[hotelCurrency.id]
+            ? { purchaseRateToIrr: fxRates[hotelCurrency.id] }
+            : {}),
           pricingCalculation: { baseAmount: hotelBase, factor: hotelFactor },
         });
       }
@@ -359,6 +377,9 @@ export function ReservationHotelPurchase({
             supplierOrganizationId: supplier.id,
             amount: transferTotals[index]!,
             currencyCode: draft.currency.id,
+            ...(fxRates[draft.currency.id]
+              ? { purchaseRateToIrr: fxRates[draft.currency.id] }
+              : {}),
             pricingCalculation: {
               baseAmount: draft.price,
               factor: draft.count,
@@ -417,6 +438,12 @@ export function ReservationHotelPurchase({
   return (
     <div className="mt-4 space-y-4 rounded-xl border bg-muted/20 p-4">
       <div>
+        {canReadProfit && (
+          <ContractProfit
+            key={request.purchaseVersion ?? 0}
+            id={request.contractId}
+          />
+        )}
         <h3 className="font-bold">
           درخواست خرید قرارداد {request.snapshot.contractNumber}
         </h3>
@@ -610,6 +637,14 @@ export function ReservationHotelPurchase({
               {currencySymbol(code)}
             </p>
           ))}
+          {[...totals.keys()].map((code) => (
+            <PurchaseFxRate
+              key={code}
+              currencyCode={code}
+              value={fxRates[code] ?? ''}
+              onChange={updateFx}
+            />
+          ))}
           <Button
             type="button"
             disabled={
@@ -682,6 +717,15 @@ export function ReservationPurchaseDialog({
     <>
       {readOnly ? (
         <p>مجوز ثبت یا اصلاح خرید خدمات وجود ندارد.</p>
+      ) : category === 'FLIGHT' ? (
+        <ReservationFloatingFlightPurchase
+          request={request}
+          serviceClientKey={serviceClientKey}
+          onSaved={() => {
+            setRefresh((value) => value + 1);
+            onSaved?.();
+          }}
+        />
       ) : category === 'INSURANCE' ? (
         <ReservationInsurancePurchase
           key={request.purchaseVersion}
@@ -693,14 +737,34 @@ export function ReservationPurchaseDialog({
           }}
         />
       ) : (
-        <ReservationHotelPurchase
-          key={request.purchaseVersion}
-          request={request}
-          onSaved={() => {
-            setRefresh((value) => value + 1);
-            onSaved?.();
-          }}
-        />
+        <>
+          <ReservationHotelPurchase
+            key={request.purchaseVersion}
+            request={request}
+            onSaved={() => {
+              setRefresh((value) => value + 1);
+              onSaved?.();
+            }}
+          />
+          {request.snapshot.serviceSelections
+            .filter(
+              (service) =>
+                service.kind === 'FLIGHT' &&
+                (service.metadata?.purchaseSupplyType === 'FLOATING' ||
+                  service.metadata?.contractFlightVersion === 1),
+            )
+            .map((service) => (
+              <ReservationFloatingFlightPurchase
+                key={service.clientKey + ':' + request.purchaseVersion}
+                request={request}
+                serviceClientKey={service.clientKey}
+                onSaved={() => {
+                  setRefresh((value) => value + 1);
+                  onSaved?.();
+                }}
+              />
+            ))}
+        </>
       )}
     </>
   ) : (

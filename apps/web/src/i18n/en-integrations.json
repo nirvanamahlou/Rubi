@@ -1,7 +1,4 @@
 {
-  "مدیریت تنظیمات اتصال سایت‌ها": "Manage website connection settings",
-  "ویرایش برندها، سامانه‌ها و مشخصات سایت": "Edit brands, systems and website details",
-  "ایجاد و ویرایش برندها، سامانه‌ها و سایت‌ها (مدیریت تنظیمات)": "Create and edit brands, systems and websites (settings management)",
   "آخرین تغییر ثبت‌شده تنظیمات": "Latest recorded configuration change",
   "آکادمی از فروش مستقیم سفر جداست": "Academy activity is separate from direct travel sales",
   "آماده اتصال": "Ready for connection setup",
@@ -181,6 +178,9 @@
   "واحد مسئول": "Responsible unit",
   "وضعیت دریافت": "Receiving status",
   "هر برند می‌تواند چند سامانه داشته باشد؛ وضعیت اتصال مستقل از وضعیت فهرست است.": "Each brand can have multiple systems. Connection status is independent of catalogue status.",
+  "مدیریت تنظیمات اتصال سایت‌ها": "Manage website connection settings",
+  "ویرایش برندها، سامانه‌ها و مشخصات سایت": "Edit brands, systems and website details",
+  "ایجاد و ویرایش برندها، سامانه‌ها و سایت‌ها (مدیریت تنظیمات)": "Create and edit brands, systems and websites (settings management)",
   "آماده‌سازی اتصال": "Connection setup",
   "اختیاری؛ نشانی عمومی HTTPS بدون رمز یا توکن": "Optional public HTTPS address without passwords or tokens",
   "ادامه تنظیمات": "Continue setup",

@@ -24,7 +24,7 @@ import {
 import type { HrPreviewDataset } from './hr-preview-data';
 import { cellText, recordKey } from './hr-data-utils';
 import { reportCellText } from './hr-report-text';
-import { hrStatusTone } from './hr-presentation';
+import { hrStatusText, hrStatusTone } from './hr-presentation';
 import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import ui from './hr-unified.module.css';
 
@@ -45,11 +45,12 @@ export const HrButton = ({
   </Button>
 );
 
-export function HrStatus({ children }: { children: string }) {
+export function HrStatus({ children }: { children: unknown }) {
+  const label = hrStatusText(children);
   return (
-    <span className={ui.status} data-tone={hrStatusTone(children)}>
+    <span className={ui.status} data-tone={hrStatusTone(label)}>
       <span aria-hidden="true" />
-      {children}
+      {label}
     </span>
   );
 }
@@ -334,7 +335,6 @@ export function HrTable({
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="bg-destructive text-white hover:bg-destructive/85 hover:text-white"
                             aria-label={`حذف ${cellText(row[1]) || cellText(row[0])}`}
                             disabled={busy}
                             onClick={() => onDelete(index)}

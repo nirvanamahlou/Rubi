@@ -94,6 +94,36 @@ beforeEach(() => {
 });
 
 describe('reservation ticket PDF', () => {
+  it('loads persisted output flight-number overrides into the downloaded PDF', async () => {
+    const saved = structuredClone(intake);
+    saved.workflow.ticketFlightNumbers = { 'flight-offer': 'B9 4599' };
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) =>
+        Response.json({
+          data: url.endsWith('/workflow')
+            ? saved
+            : url.includes('/master-data/airlines?')
+              ? []
+              : url.endsWith('/passengers')
+                ? []
+                : {
+                    name: 'Synthetic City',
+                    attributes: { englishName: 'CITY' },
+                  },
+        }),
+      ),
+    );
+    expect(
+      (await GET(request(), { params: Promise.resolve({ id }) })).status,
+    ).toBe(200);
+    const html = renderer.mock.calls[0]?.[0] as string;
+    expect(html).toContain('B9 4599');
+    expect(html).not.toContain('<span>TEST-01</span>');
+    expect(intake.snapshot.ticketSelections?.[0]?.serviceNumberSnapshot).toBe(
+      'TEST-01',
+    );
+  });
   it('downloads authorized saved ticket data as a private PDF', async () => {
     const fetcher = vi
       .fn()

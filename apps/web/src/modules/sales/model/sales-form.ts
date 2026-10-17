@@ -1,3 +1,5 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
+import { salesRoomPartyError, roomAgreedTotals } from './sales-room-prices';
 import type { SalesHotelRoomV1 } from '@nora/contracts';
 import { validSalesHotelRooms } from '@nora/contracts';
 import { passengerSaleTotals } from './passenger-sale-totals';
@@ -208,6 +210,12 @@ export function contractSaleComponents(
       throw new Error('ارز مبلغ قرارداد باید معتبر و یکتا باشد.');
     totals.set(price.currencyCode, moneyUnits(price.amount));
   }
+  if (state.serviceKinds.includes('HOTEL'))
+    for (const price of roomAgreedTotals(state.hotel.rooms))
+      if (moneyUnits(price.amount) > (totals.get(price.currencyCode) ?? 0n))
+        throw new Error(
+          'جمع مبالغ اتاق‌ها نباید از مبلغ کل قرارداد در همان ارز بیشتر باشد.',
+        );
   for (const person of extras)
     totals.set(
       'IRR',
@@ -428,15 +436,14 @@ export function salesHotelCapacityError(
   state: SalesFormState,
   roomRates: readonly HotelRoomRateV1[],
 ): string | null {
+  if (!state.serviceKinds.includes('HOTEL')) return null;
   if (state.hotel.rooms?.length) {
     for (const r of state.hotel.rooms) {
       const rate = roomRates.find((v) => v.roomTypeId === r.roomTypeId);
-      if (!rate)
-        return state.hotel.checkIn && state.hotel.checkOut
-          ? 'برای تمام اتاق‌ها باید نرخ معتبر انتخاب شود.'
-          : null;
       if (r.childAges.some((a) => a === null))
         return 'سن کودکان هر اتاق را تکمیل کنید.';
+      // A dated tariff is optional for a manually negotiated room price.
+      if (!rate) continue;
       if (
         rate.occupancyRates
           ? !quoteHotelOccupancy(rate.occupancyRates, {
@@ -995,6 +1002,14 @@ export function salesPayload(
   state: SalesFormState,
 ): SalesContractCreateRequest {
   state = withFirstPassengerCustomer(state);
+  const roomPartyError = salesRoomPartyError(state);
+  if (roomPartyError) throw new Error(roomPartyError);
+  if (
+    state.serviceKinds.includes('HOTEL') &&
+    state.priceEntryMode === 'CONTRACT_TOTAL' &&
+    state.hotel.rooms?.some((r) => !r.agreedPrice)
+  )
+    throw new Error('مبلغ توافق‌شدهٔ همهٔ اتاق‌ها را وارد کنید.');
   if (
     state.serviceKinds.includes('HOTEL') &&
     state.hotel.rooms &&
@@ -1390,6 +1405,9 @@ export function salesPayload(
             singleRoomCount: state.hotel.singleRoomCount,
             doubleRoomCount: state.hotel.doubleRoomCount,
             extraBedCount: state.hotel.extraBedCount,
+            ...(state.hotel.rooms?.length
+              ? salesHotelRoomSummary(state.hotel.rooms)
+              : {}),
             roomTypeId:
               state.hotel.rooms?.[0]?.roomTypeId || state.hotel.roomTypeId,
             occupancy: salesHotelGuestIds(state).length,

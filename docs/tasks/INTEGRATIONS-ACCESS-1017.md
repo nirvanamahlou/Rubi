@@ -63,3 +63,10 @@ restart is needed. Only Rubi API/Web are eligible for local recreation.
 - No destructive operation, seed, migration, role or user access mutation.
   Existing registry version 2 remains unchanged; no external request or provider
   connection claim is introduced.
+
+## Updated delivery direction
+
+The user explicitly requests integration with latest develop, CI and merge after
+all checks pass. PR909 now targets develop. The integration merge preserves
+all current develop sources, shared translation keys and both task histories.
+No local Docker or operational database change is part of this delivery.

@@ -48,6 +48,26 @@ export class FinanceInboxController {
     private readonly inbox: FinanceInboxService,
   ) {}
 
+  @Get('purchase-fx-quote')
+  @Header('Cache-Control', 'private, no-store')
+  async purchaseFxQuote(
+    @Query('currency') currency: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return { data: await this.inbox.purchaseFxQuote(currency, req.actor) };
+  }
+  @Post('purchase-fx/:id')
+  @RequirePermissions('finance.read', 'finance.payment.create')
+  async purchaseFxCapture(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() input: { rateToIrr: string },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return {
+      data: await this.inbox.capturePurchaseFx(id, input?.rateToIrr, req.actor),
+    };
+  }
+
   @Get('paying-suppliers')
   @RequirePermissions('finance.payment.create')
   @Header('Cache-Control', 'private, no-store')

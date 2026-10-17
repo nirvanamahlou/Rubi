@@ -246,7 +246,7 @@ describe('Sales hotel room capacity validation', () => {
 });
 
 describe('heterogeneous room validation', () => {
-  it('checks each selected room, rejects missing rates and does not multiply the first capacity', async () => {
+  it('checks each known room capacity and permits manual pricing without dated rates on save and confirmation', async () => {
     const rooms = [
       {
         ordinal: 1,
@@ -297,6 +297,18 @@ describe('heterogeneous room validation', () => {
     lookup.mockResolvedValue(null);
     await expect(
       service.assertHotelRoomCapacity(input, 'branch'),
-    ).rejects.toThrow();
+    ).resolves.toBeUndefined();
+    await expect(
+      service.assertPresentedHotelRoomCapacity({
+        branchId: 'branch',
+        hotelSelection: input.hotelSelection,
+      } as SalesContractDetail),
+    ).resolves.toBeUndefined();
+    lookup.mockImplementation(async ({ roomTypeId }) =>
+      roomTypeId === 'double' ? null : { maxAdults: 0, maxChildren: 0 },
+    );
+    await expect(
+      service.assertHotelRoomCapacity(input, 'branch'),
+    ).rejects.toThrow('ظرفیت یکی از اتاق‌ها کافی نیست.');
   });
 });

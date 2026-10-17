@@ -333,8 +333,8 @@ export class DocumentUpdateDto {
 
 export class DocumentArchiveActionDto {
   @IsString()
-  @Length(5, 500)
-  reason!: string;
+  @Length(0, 500)
+  reason = '';
 
   @Type(() => Number)
   @IsInt()
@@ -356,6 +356,6 @@ export class DocumentBulkActionDto {
   action!: 'MARK_INCOMPLETE' | 'MARK_COMPLETE' | 'ARCHIVE' | 'RESTORE';
 
   @IsString()
-  @Length(5, 500)
-  reason!: string;
+  @Length(0, 500)
+  reason = '';
 }

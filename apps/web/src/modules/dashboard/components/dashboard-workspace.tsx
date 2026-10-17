@@ -1,4 +1,7 @@
 'use client';
+import { ExecutiveWorkspace } from '@/modules/assistant/executive-workspace';
+import { assistantViewForDashboardPage } from '@/modules/assistant/dashboard-location';
+import { useRouteAccess } from '@/modules/iam/access-context';
 import { currencySymbol, currencySymbols } from '@/lib/currency-symbol';
 
 import { useQuery } from '@tanstack/react-query';
@@ -3267,7 +3270,7 @@ function ProjectionSlot({
                 >
                   <SelectTrigger
                     aria-label={`واحد پول نمودار ${title}`}
-                    className="h-7 min-w-28 border-border/80 bg-background px-2 text-[9px] font-bold"
+                    className="h-7 w-28 min-w-0 border-border/80 bg-background px-2 text-[9px] font-bold"
                     data-dashboard-visual-currency-selector
                   >
                     <CircleDollarSign aria-hidden="true" className="size-3.5" />
@@ -3493,6 +3496,8 @@ function DashboardSidebar({
 }) {
   const [dateCalendarSystem, setDateCalendarSystem] =
     useState<CalendarSystem>('persian');
+  const canNavigate = useRouteAccess();
+  const assistantPage = assistantViewForDashboardPage(activePageId);
   const activePage = dashboardPageById.get(activePageId);
   const activeFiltersTitle = activePage
     ? `فیلترهای ${activePage.title}`
@@ -3557,6 +3562,7 @@ function DashboardSidebar({
             <LayoutDashboard aria-hidden="true" className="size-4" />
           </Button>
           <Button
+            disabled={!!assistantPage}
             aria-label="نمایش فیلترها"
             className="size-10 w-full p-0"
             onClick={() => onPanelChange('filters')}
@@ -3587,6 +3593,7 @@ function DashboardSidebar({
             صفحه‌ها
           </button>
           <button
+            disabled={!!assistantPage}
             aria-selected={activePanel === 'filters'}
             className={cn(
               'min-h-10 whitespace-nowrap rounded-xl px-2 text-[11px] font-black leading-5 tracking-tight outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -3605,89 +3612,94 @@ function DashboardSidebar({
 
       {activePanel === 'workspace' ? (
         <nav aria-labelledby="dashboard-pages-title" className="space-y-1 p-2">
-          {dashboardNavigation.map((item) => {
-            const page = dashboardPageById.get(item.pageId);
-            if (!page) return null;
-            const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
-            const hasChildren = Boolean(item.children?.length);
-            const expanded = expandedGroups.has(item.pageId);
-            const branchActive =
-              activePageId === item.pageId ||
-              Boolean(
-                item.children?.some((child) => child.pageId === activePageId),
-              );
+          {dashboardNavigation
+            .filter((item) => canNavigate('/dashboard?page=' + item.pageId))
+            .map((item) => {
+              const page = dashboardPageById.get(item.pageId);
+              if (!page) return null;
+              const Icon = navigationIcons[item.pageId] ?? LayoutDashboard;
+              const hasChildren = Boolean(item.children?.length);
+              const expanded = expandedGroups.has(item.pageId);
+              const branchActive =
+                activePageId === item.pageId ||
+                Boolean(
+                  item.children?.some((child) => child.pageId === activePageId),
+                );
 
-            return (
-              <div key={item.pageId}>
-                <div className="flex items-center gap-1">
-                  <button
-                    aria-current={
-                      activePageId === item.pageId ? 'page' : undefined
-                    }
-                    aria-label={collapsed ? page.title : undefined}
-                    className={cn(
-                      'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                      collapsed ? 'justify-center px-2' : 'gap-3 px-3',
-                      branchActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-foreground hover:bg-muted',
-                    )}
-                    onClick={() => onPageSelect(item.pageId)}
-                    title={collapsed ? page.title : undefined}
-                    type="button"
-                  >
-                    <Icon aria-hidden="true" className="size-[18px] shrink-0" />
-                    {collapsed ? null : (
-                      <span className="min-w-0 flex-1">{page.title}</span>
-                    )}
-                  </button>
-                  {hasChildren && !collapsed ? (
+              return (
+                <div key={item.pageId}>
+                  <div className="flex items-center gap-1">
                     <button
-                      aria-expanded={expanded}
-                      aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
-                      className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                      onClick={() => onGroupToggle(item.pageId)}
+                      aria-current={
+                        activePageId === item.pageId ? 'page' : undefined
+                      }
+                      aria-label={collapsed ? page.title : undefined}
+                      className={cn(
+                        'flex min-h-11 min-w-0 flex-1 items-center rounded-xl text-start text-sm font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                        collapsed ? 'justify-center px-2' : 'gap-3 px-3',
+                        branchActive
+                          ? 'bg-primary text-primary-foreground shadow-sm'
+                          : 'text-foreground hover:bg-muted',
+                      )}
+                      onClick={() => onPageSelect(item.pageId)}
+                      title={collapsed ? page.title : undefined}
                       type="button"
                     >
-                      <ChevronDown
+                      <Icon
                         aria-hidden="true"
-                        className={cn(
-                          'size-4 transition-transform',
-                          expanded && 'rotate-180',
-                        )}
+                        className="size-[18px] shrink-0"
                       />
+                      {collapsed ? null : (
+                        <span className="min-w-0 flex-1">{page.title}</span>
+                      )}
                     </button>
+                    {hasChildren && !collapsed ? (
+                      <button
+                        aria-expanded={expanded}
+                        aria-label={`${expanded ? 'بستن' : 'بازکردن'} زیرصفحه‌های ${page.title}`}
+                        className="grid size-10 shrink-0 place-items-center rounded-xl text-muted-foreground outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        onClick={() => onGroupToggle(item.pageId)}
+                        type="button"
+                      >
+                        <ChevronDown
+                          aria-hidden="true"
+                          className={cn(
+                            'size-4 transition-transform',
+                            expanded && 'rotate-180',
+                          )}
+                        />
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {hasChildren && expanded && !collapsed ? (
+                    <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
+                      {item.children?.map((child) => {
+                        const childPage = dashboardPageById.get(child.pageId);
+                        if (!childPage) return null;
+                        const selected = child.pageId === activePageId;
+                        return (
+                          <button
+                            aria-current={selected ? 'page' : undefined}
+                            className={cn(
+                              'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+                              selected
+                                ? 'bg-primary/10 text-primary'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                            )}
+                            key={child.pageId}
+                            onClick={() => onPageSelect(child.pageId)}
+                            type="button"
+                          >
+                            {childPage.title}
+                          </button>
+                        );
+                      })}
+                    </div>
                   ) : null}
                 </div>
-
-                {hasChildren && expanded && !collapsed ? (
-                  <div className="me-5 mt-1 space-y-1 border-e border-border pe-3">
-                    {item.children?.map((child) => {
-                      const childPage = dashboardPageById.get(child.pageId);
-                      if (!childPage) return null;
-                      const selected = child.pageId === activePageId;
-                      return (
-                        <button
-                          aria-current={selected ? 'page' : undefined}
-                          className={cn(
-                            'flex min-h-10 w-full items-center rounded-lg px-3 text-start text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                            selected
-                              ? 'bg-primary/10 text-primary'
-                              : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-                          )}
-                          key={child.pageId}
-                          onClick={() => onPageSelect(child.pageId)}
-                          type="button"
-                        >
-                          {childPage.title}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
+              );
+            })}
         </nav>
       ) : null}
 
@@ -3919,9 +3931,14 @@ export function DashboardWorkspace() {
   } | null>(null);
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
+  const assistantPage = assistantViewForDashboardPage(
+    filters.page,
+    searchParams.get('view'),
+  );
   const activePage =
-    dashboardPages.find((page) => page.id === filters.page) ??
-    dashboardPages[0]!;
+    dashboardPages.find(
+      (page) => page.id === (assistantPage ? 'assistant' : filters.page),
+    ) ?? dashboardPages[0]!;
   const ActivePageIcon = navigationIcons[activePage.id] ?? LayoutDashboard;
   const activePageHeaderTheme =
     dashboardHeaderThemeByPageId[activePage.id] ??
@@ -3955,7 +3972,7 @@ export function DashboardWorkspace() {
         visualIds: activePage.visualizations.map((item) => item.id),
         signal,
       }),
-    enabled: !dateRangeError,
+    enabled: !assistantPage && !dateRangeError,
     staleTime: 30_000,
   });
 
@@ -4022,6 +4039,7 @@ export function DashboardWorkspace() {
     });
   };
   const selectPage = (pageId: string) => {
+    setSidebarPanel('workspace');
     const supportedFilters = new Set(dashboardPageFilterKeys[pageId] ?? []);
     const clearHiddenFilters = Object.fromEntries(
       (Object.keys(defaultDashboardFilters) as Array<keyof DashboardFilters>)
@@ -4060,39 +4078,41 @@ export function DashboardWorkspace() {
       data-dashboard-workspace
       style={{ overflowAnchor: 'none' }}
     >
-      <section aria-live="polite">
-        {query.isError ? (
-          <ErrorState
-            title="خطا در دریافت Dashboard"
-            description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
-            action={
-              <Button onClick={refreshDashboard} variant="outline">
-                تلاش دوباره
-              </Button>
-            }
-          />
-        ) : null}
-        {query.data?.state === 'forbidden' ? (
-          <EmptyState
-            icon={LockKeyhole}
-            title="دسترسی مجاز نیست"
-            description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
-          />
-        ) : null}
-        {query.data?.state === 'empty' ? (
-          <EmptyState
-            title="داده‌ای در این دامنه نیست"
-            description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
-          />
-        ) : null}
-        {query.data?.state === 'stale' ? (
-          <Alert
-            title="داده ممکن است قدیمی باشد"
-            description={query.data.message}
-            tone="warning"
-          />
-        ) : null}
-      </section>
+      {!assistantPage && (
+        <section aria-live="polite">
+          {query.isError ? (
+            <ErrorState
+              title="خطا در دریافت Dashboard"
+              description="هیچ دادهٔ قدیمی یا حدسی نمایش داده نمی‌شود."
+              action={
+                <Button onClick={refreshDashboard} variant="outline">
+                  تلاش دوباره
+                </Button>
+              }
+            />
+          ) : null}
+          {query.data?.state === 'forbidden' ? (
+            <EmptyState
+              icon={LockKeyhole}
+              title="دسترسی مجاز نیست"
+              description="Permission snapshot این کاربر اجازه مشاهدهٔ داده را نمی‌دهد."
+            />
+          ) : null}
+          {query.data?.state === 'empty' ? (
+            <EmptyState
+              title="داده‌ای در این دامنه نیست"
+              description="Projection معتبر پاسخ خالی داده است؛ فیلترها را بررسی کنید."
+            />
+          ) : null}
+          {query.data?.state === 'stale' ? (
+            <Alert
+              title="داده ممکن است قدیمی باشد"
+              description={query.data.message}
+              tone="warning"
+            />
+          ) : null}
+        </section>
+      )}
 
       <section
         aria-label="فضای صفحه‌های داشبورد"
@@ -4105,7 +4125,7 @@ export function DashboardWorkspace() {
       >
         <DashboardSidebar
           activePageId={activePage.id}
-          activePanel={sidebarPanel}
+          activePanel={assistantPage ? 'workspace' : sidebarPanel}
           collapsed={sidebarCollapsed}
           dateRangeError={dateRangeError}
           expandedGroups={expandedGroups}
@@ -4124,159 +4144,163 @@ export function DashboardWorkspace() {
           onRefresh={refreshDashboard}
         />
 
-        <div className="min-w-0 space-y-5">
-          <section aria-labelledby="active-dashboard-page-title">
-            <div className="space-y-4">
-              <header
-                className={cn(
-                  'relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5',
-                  activePageHeaderTheme,
-                )}
-              >
-                <Image
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none object-cover object-right opacity-100 dark:hidden"
-                  fill
-                  quality={45}
-                  sizes="(min-width: 1024px) 72vw, 100vw"
-                  src={activePageHeaderLightArtwork}
-                />
-                <Image
-                  alt=""
-                  aria-hidden="true"
-                  className="pointer-events-none hidden object-cover object-right dark:block dark:opacity-95"
-                  data-dashboard-dark-header-artwork
-                  fill
-                  quality={55}
-                  sizes="(min-width: 1024px) 72vw, 100vw"
-                  src={activePageHeaderDarkArtwork}
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/25 via-surface/10 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl"
-                />
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]"
-                >
-                  <ActivePageIcon className="size-44 stroke-[1.15] sm:size-52" />
-                </span>
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent"
-                />
-                <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
-                  <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
-                    <ActivePageIcon aria-hidden="true" className="size-5" />
-                  </span>
-                  <h2
-                    id="active-dashboard-page-title"
-                    className="text-2xl font-black tracking-tight text-foreground sm:text-3xl"
-                  >
-                    {activePage.title}
-                  </h2>
-                  <p
-                    className="mt-1 text-xs font-bold tracking-wide text-primary"
-                    dir="ltr"
-                  >
-                    {activePage.technicalName}
-                  </p>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                    {activePage.description}
-                  </p>
-                </div>
-              </header>
-
-              {activePageKpis.length > 0 ? (
-                <div
+        {assistantPage ? (
+          <ExecutiveWorkspace view={assistantPage} />
+        ) : (
+          <div className="min-w-0 space-y-5">
+            <section aria-labelledby="active-dashboard-page-title">
+              <div className="space-y-4">
+                <header
                   className={cn(
-                    'grid grid-cols-1 gap-3',
-                    kpiGridColumns(activePageKpis.length),
+                    'relative isolate overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-bl p-4 shadow-sm sm:p-5',
+                    activePageHeaderTheme,
                   )}
-                  data-dashboard-kpi-count={activePageKpis.length}
                 >
-                  {activePageKpis.map((item) => (
-                    <KpiCard
-                      key={item.id}
-                      definition={item}
-                      featured
-                      loading={query.isPending}
-                      metric={query.data?.metrics[item.id]}
-                      selected={filters.widget === item.id}
-                      onSelect={() =>
-                        updateFilters({
-                          widget: filters.widget === item.id ? null : item.id,
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-              ) : (
-                <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
-                  برای این صفحه هنوز KPI تأییدشده‌ای در Projection عمومی منتشر
-                  نشده است.
-                </p>
-              )}
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none object-cover object-right opacity-100 dark:hidden"
+                    fill
+                    quality={45}
+                    sizes="(min-width: 1024px) 72vw, 100vw"
+                    src={activePageHeaderLightArtwork}
+                  />
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none hidden object-cover object-right dark:block dark:opacity-95"
+                    data-dashboard-dark-header-artwork
+                    fill
+                    quality={55}
+                    sizes="(min-width: 1024px) 72vw, 100vw"
+                    src={activePageHeaderDarkArtwork}
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-l from-surface/25 via-surface/10 to-transparent dark:from-surface/45 dark:via-surface/20 dark:to-surface/5"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -end-14 -top-14 size-40 rounded-full bg-primary/10 blur-3xl"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -start-16 bottom-0 size-32 rounded-full bg-cyan-400/10 blur-3xl"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -bottom-10 -end-2 text-primary/[0.055] dark:text-primary/[0.12]"
+                  >
+                    <ActivePageIcon className="size-44 stroke-[1.15] sm:size-52" />
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-10 bottom-0 h-px bg-gradient-to-l from-transparent via-primary/25 to-transparent"
+                  />
+                  <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
+                    <span className="mb-2 grid size-10 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/15 shadow-sm">
+                      <ActivePageIcon aria-hidden="true" className="size-5" />
+                    </span>
+                    <h2
+                      id="active-dashboard-page-title"
+                      className="text-2xl font-black tracking-tight text-foreground sm:text-3xl"
+                    >
+                      {activePage.title}
+                    </h2>
+                    <p
+                      className="mt-1 text-xs font-bold tracking-wide text-primary"
+                      dir="ltr"
+                    >
+                      {activePage.technicalName}
+                    </p>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                      {activePage.description}
+                    </p>
+                  </div>
+                </header>
 
-              {activePage.visualizations.length ? (
-                <div className="grid items-stretch gap-3 xl:grid-cols-2">
-                  {activePage.visualizations.map((visualization, index) => (
-                    <ProjectionSlot
-                      visualId={visualization.id}
-                      wide={dashboardVisualIsWide(
-                        activePage.visualizations,
-                        index,
-                      )}
-                      key={visualization.id}
-                      kind={visualization.kind}
-                      title={visualization.title}
-                      description={visualization.description}
-                      decision={visualization.openDecision}
-                      drilldown={visualization.drilldown}
-                      onOpenReportConfiguration={openReportConfiguration}
-                      onTrendCalendarSystemChange={setTrendCalendarSystem}
-                      permission={visualization.permission}
-                      range={filters.range}
-                      loading={query.isPending}
-                      source={visualization.source}
-                      trendCalendarSystem={trendCalendarSystem}
-                      data={query.data?.visuals[visualization.id]}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </section>
+                {activePageKpis.length > 0 ? (
+                  <div
+                    className={cn(
+                      'grid grid-cols-1 gap-3',
+                      kpiGridColumns(activePageKpis.length),
+                    )}
+                    data-dashboard-kpi-count={activePageKpis.length}
+                  >
+                    {activePageKpis.map((item) => (
+                      <KpiCard
+                        key={item.id}
+                        definition={item}
+                        featured
+                        loading={query.isPending}
+                        metric={query.data?.metrics[item.id]}
+                        selected={filters.widget === item.id}
+                        onSelect={() =>
+                          updateFilters({
+                            widget: filters.widget === item.id ? null : item.id,
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl bg-muted/50 p-3 text-sm text-muted-foreground">
+                    برای این صفحه هنوز KPI تأییدشده‌ای در Projection عمومی منتشر
+                    نشده است.
+                  </p>
+                )}
 
-          {selectedKpi ? (
-            <KpiDefinitionPanel
-              definition={selectedKpi}
-              metric={query.data?.metrics[selectedKpi.id]}
-              onClose={() => updateFilters({ widget: null })}
-              onOpenReportConfiguration={openReportConfiguration}
-            />
-          ) : null}
+                {activePage.visualizations.length ? (
+                  <div className="grid items-stretch gap-3 xl:grid-cols-2">
+                    {activePage.visualizations.map((visualization, index) => (
+                      <ProjectionSlot
+                        visualId={visualization.id}
+                        wide={dashboardVisualIsWide(
+                          activePage.visualizations,
+                          index,
+                        )}
+                        key={visualization.id}
+                        kind={visualization.kind}
+                        title={visualization.title}
+                        description={visualization.description}
+                        decision={visualization.openDecision}
+                        drilldown={visualization.drilldown}
+                        onOpenReportConfiguration={openReportConfiguration}
+                        onTrendCalendarSystemChange={setTrendCalendarSystem}
+                        permission={visualization.permission}
+                        range={filters.range}
+                        loading={query.isPending}
+                        source={visualization.source}
+                        trendCalendarSystem={trendCalendarSystem}
+                        data={query.data?.visuals[visualization.id]}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </section>
 
-          {reportConfigurationState ? (
-            <ReportingWorkspace
-              configurationOnly
-              initialFilterState={reportConfigurationState}
-              key={JSON.stringify(reportConfigurationState)}
-              onConfigurationOpenChange={(open) => {
-                if (!open) setReportConfigurationCode(null);
-              }}
-            />
-          ) : null}
-        </div>
+            {selectedKpi ? (
+              <KpiDefinitionPanel
+                definition={selectedKpi}
+                metric={query.data?.metrics[selectedKpi.id]}
+                onClose={() => updateFilters({ widget: null })}
+                onOpenReportConfiguration={openReportConfiguration}
+              />
+            ) : null}
+
+            {reportConfigurationState ? (
+              <ReportingWorkspace
+                configurationOnly
+                initialFilterState={reportConfigurationState}
+                key={JSON.stringify(reportConfigurationState)}
+                onConfigurationOpenChange={(open) => {
+                  if (!open) setReportConfigurationCode(null);
+                }}
+              />
+            ) : null}
+          </div>
+        )}
       </section>
     </div>
   );

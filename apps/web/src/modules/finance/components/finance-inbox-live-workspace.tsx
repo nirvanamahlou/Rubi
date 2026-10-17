@@ -1,3 +1,9 @@
+import { useAccessPermissions } from '@/modules/iam/access-context';
+import {
+  PurchaseFxSummary,
+  PurchaseFxCapture,
+  PurchaseFxPaymentPreview,
+} from '../purchase-fx/purchase-fx';
 import { currencySymbol } from '@/lib/currency-symbol';
 import { ContractProfit } from './contract-profit';
 import { HotelPurchaseSavings } from '@/modules/reservations/components/hotel-purchase-savings';
@@ -129,6 +135,8 @@ function sourceTone(source: FinanceInboxSource) {
 }
 
 export function FinanceInboxLiveWorkspace() {
+  const canPay =
+    useAccessPermissions()?.includes('finance.payment.create') ?? false;
   const ticketCommand = useRef<FinanceTicketPaymentCommandV1 | null>(null);
   const [paymentUncertain, setPaymentUncertain] = useState(false);
   const submitting = useRef(false);
@@ -646,7 +654,7 @@ export function FinanceInboxLiveWorkspace() {
           contractId: actionItem.sourceContextReference,
           action: actionKind,
           accountId: actionKind === 'APPROVE' ? accountId : null,
-          reason: reason.trim() || null,
+          reason: (reason ?? '').trim() || null,
           ...(actionKind === 'APPROVE' && issueDocumentDelivery
             ? {
                 documentDelivery: {
@@ -1260,6 +1268,7 @@ export function FinanceInboxLiveWorkspace() {
                       {money(item)}
                     </p>
                   </div>
+                  <PurchaseFxSummary entries={item.purchaseFx} />
                   {item.ticketPurchase ? (
                     <p className="mt-2 text-xs text-muted-foreground">
                       تعداد صندلی:{' '}
@@ -1300,6 +1309,15 @@ export function FinanceInboxLiveWorkspace() {
               <DialogContent dir="rtl" className={styles.requestDialog}>
                 <DialogTitle className="pe-10">فرم درخواست مالی</DialogTitle>
                 <DialogDescription>{selected.title}</DialogDescription>
+                <PurchaseFxSummary entries={selected.purchaseFx} />
+                {canPay &&
+                  selected.purchaseFx?.map((entry) => (
+                    <PurchaseFxCapture
+                      key={entry.referenceId}
+                      entry={entry}
+                      onSaved={() => setRevision((v) => v + 1)}
+                    />
+                  ))}
                 <Card
                   id="finance-request-details"
                   className="scroll-mt-24 overflow-hidden p-0"
@@ -1856,6 +1874,18 @@ export function FinanceInboxLiveWorkspace() {
                       />
                     </label>
                   ) : null}
+                  <PurchaseFxPaymentPreview
+                    amount={paidAmount}
+                    actualRate={exchangeRate}
+                    baselineRate={
+                      actionItem?.purchaseFx?.find(
+                        (entry) =>
+                          entry.referenceId === actionItem.sourceReference ||
+                          entry.referenceId ===
+                            actionItem.sourceContextReference,
+                      )?.rateToIrr ?? null
+                    }
+                  />
                   <label className="grid gap-2">
                     <span>تاریخ و ساعت پرداخت</span>
                     <DatePicker
@@ -1956,14 +1986,10 @@ export function FinanceInboxLiveWorkspace() {
                 <label className="grid gap-2">
                   <span>
                     {actionKind === 'CORRECTION_REQUIRED'
-                      ? 'دلیل اصلاح (الزامی)'
+                      ? 'دلیل اصلاح (اختیاری)'
                       : 'توضیح مالی (اختیاری)'}
                   </span>
                   <Textarea
-                    required={
-                      actionKind === 'CORRECTION_REQUIRED' ||
-                      actionItem?.kind === 'HR_REFERRAL'
-                    }
                     maxLength={500}
                     value={reason}
                     onChange={(event) => setReason(event.target.value)}

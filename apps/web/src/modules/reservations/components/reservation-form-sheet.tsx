@@ -1,4 +1,5 @@
 'use client';
+import { reservationFormPriceText } from '../model/reservation-form-price';
 import { loadOutputReferences } from '../model/output-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
@@ -288,6 +289,21 @@ export function ReservationFormSheet({
                 ))}
               </tbody>
             </table>
+            {!voucher && !!settings?.hotelPurchasePrices?.length && (
+              <div
+                dir="ltr"
+                style={{
+                  padding: '8px 10px',
+                  border: '1px solid #c5d5e6',
+                  textAlign: 'center',
+                  background: '#eef4fa',
+                  fontWeight: 700,
+                }}
+              >
+                <strong>HOTEL TOTAL: </strong>
+                {reservationFormPriceText(settings.hotelPurchasePrices)}
+              </div>
+            )}
             {(!settings || settings.flags.hotel) && (
               <>
                 <Heading
@@ -326,11 +342,15 @@ export function ReservationFormSheet({
                   <table className={styles.table}>
                     <thead>
                       <tr>
-                        {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'].map(
-                          (t) => (
-                            <th key={t}>{t}</th>
-                          ),
-                        )}
+                        {[
+                          'ROOM',
+                          'ROOM TYPE',
+                          'ADULTS',
+                          'CHILD AGES',
+                          'GUESTS',
+                        ].map((t) => (
+                          <th key={t}>{t}</th>
+                        ))}
                       </tr>
                     </thead>
                     <tbody>
@@ -340,6 +360,7 @@ export function ReservationFormSheet({
                           <td dir="auto">{r.roomType}</td>
                           <td>{r.adults}</td>
                           <td>{r.childAges.join(', ') || '-'}</td>
+                          <td>{r.adults + r.childAges.length}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -496,9 +517,11 @@ export function ReservationFormSheet({
           <table className={styles.table}>
             <thead>
               <tr>
-                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'].map((t) => (
-                  <th key={t}>{t}</th>
-                ))}
+                {['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'].map(
+                  (t) => (
+                    <th key={t}>{t}</th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
@@ -508,6 +531,7 @@ export function ReservationFormSheet({
                   <td dir="auto">{r.roomType}</td>
                   <td>{r.adults}</td>
                   <td>{r.childAges.join(', ') || '-'}</td>
+                  <td>{r.adults + r.childAges.length}</td>
                 </tr>
               ))}
             </tbody>

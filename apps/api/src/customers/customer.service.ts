@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   BadRequestException,
   ConflictException,
@@ -81,8 +82,8 @@ const consentReasonSecret =
   /\b(?:bearer\s+\S+|(?:api[_-]?key|password|secret|token)\s*[:=]\s*\S+)/i;
 
 function consentReason(value: string): string {
-  const reason = value.trim();
-  if (reason.length < 3 || reason.length > 500)
+  const reason = (value ?? '').trim();
+  if (!isOptionalOperationReason(reason) || (reason ?? '').length > 500)
     throw new BadRequestException({
       code: 'CUSTOMER_CONSENT_REASON_INVALID',
       message: 'دلیل رضایت باید بین ۳ تا ۵۰۰ نویسه باشد.',
@@ -449,7 +450,7 @@ export class CustomerService {
       row.id,
       actor.userId,
       row.ownerBranchId,
-      reason,
+      reason ?? '',
       traceId,
     );
     return { ...detail, contacts, nationalId, passportNumber };
@@ -885,7 +886,7 @@ export class CustomerService {
       actor.branchIds,
       input.status === 'active',
       input.version,
-      input.reason.trim(),
+      (input.reason ?? '').trim(),
       actor.userId,
       branchOf(actor, requestedBranch),
       traceId,
@@ -1103,7 +1104,7 @@ export class CustomerService {
       id,
       [branchId],
       input.status,
-      input.reason.trim(),
+      (input.reason ?? '').trim(),
       input.version,
       actor.userId,
       branchId,
@@ -1118,7 +1119,7 @@ export class CustomerService {
               duplicateCandidateId: row.id,
               sourceCustomerId: row.sourceCustomerId,
               targetCustomerId: row.candidateCustomerId,
-              reason: input.reason,
+              reason: input.reason ?? '',
               status: 'proposed' as const,
             }
           : null,

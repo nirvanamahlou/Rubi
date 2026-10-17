@@ -1,5 +1,10 @@
 'use client';
+import {
+  salesRoomPartyError,
+  withRoomPriceTotals,
+} from '../model/sales-room-prices';
 import { ServiceParties } from './service-parties';
+import { salesPassengerStepError } from '../model/sales-passenger-step';
 
 import { browserRandomUuid } from '@/lib/browser-random-uuid';
 import { currencySymbol } from '@/lib/currency-symbol';
@@ -79,7 +84,6 @@ import {
   salesPayload,
   salesSteps,
   salesPassengerAgeLabel,
-  salesPassengerCompositionMatches,
   salesPassengerCounts,
   salesTransferCount,
   salesHotelGuestIds,
@@ -308,6 +312,13 @@ export function SalesContractForm() {
   ) =>
     setState((current) => {
       const patch = typeof update === 'function' ? update(current) : update;
+      if (
+        patch.hotel?.rooms &&
+        current.priceEntryMode === 'CONTRACT_TOTAL' &&
+        (current.hotel.rooms?.some((r) => r.agreedPrice) ||
+          patch.hotel.rooms.some((r) => r.agreedPrice))
+      )
+        patch.contractPrices = withRoomPriceTotals(current, patch.hotel.rooms);
       const changedRoute = [
         'originId',
         'originCountryId',
@@ -609,6 +620,11 @@ export function SalesContractForm() {
   const passengerCounts = salesPassengerCounts(state);
   const hotelCapacityError = salesHotelCapacityError(state, hotelRoomRates);
   const hotelGuestIds = salesHotelGuestIds(state);
+  const passengerStepError = salesPassengerStepError(
+    state,
+    peopleDirty,
+    hotelCapacityError,
+  );
   const updatePassengerCount = (
     kind: keyof SalesFormState['passengerComposition'],
     value: number,
@@ -715,6 +731,7 @@ export function SalesContractForm() {
         state.originId !== state.destinationId &&
         state.serviceKinds.length &&
         passengerCounts.total > 0 &&
+        !salesRoomPartyError(state) &&
         (!state.serviceKinds.includes('VISA') ||
           Boolean(
             state.visaComposition &&
@@ -759,33 +776,7 @@ export function SalesContractForm() {
         return Boolean(state.insurancePlan) && insuranceReady;
       return true;
     }
-    if (step === 2)
-      return (
-        Boolean(state.customerId) &&
-        !peopleDirty &&
-        Boolean(salesTravelDate(state)) &&
-        state.passengers.length > 0 &&
-        state.passengers.every((item) => item.birthDate) &&
-        salesPassengerCompositionMatches(state) &&
-        (!state.serviceKinds.includes('HOTEL') || hotelGuestIds.length > 0) &&
-        !hotelCapacityError &&
-        (!state.serviceKinds.includes('VISA') ||
-          Boolean(
-            state.visaComposition &&
-            state.visaApplicantIds?.length ===
-              state.visaComposition.adults + state.visaComposition.children,
-          )) &&
-        state.passengers.every(
-          ({ customerId }) =>
-            state.serviceKinds.some(
-              (kind) => kind !== 'HOTEL' && kind !== 'VISA',
-            ) ||
-            (state.serviceKinds.includes('HOTEL') &&
-              hotelGuestIds.includes(customerId)) ||
-            (state.serviceKinds.includes('VISA') &&
-              Boolean(state.visaApplicantIds?.includes(customerId))),
-        )
-      );
+    if (step === 2) return passengerStepError === null;
     if (step === 3) return !finalStepError;
     return true;
   })();
@@ -2011,21 +2002,7 @@ export function SalesContractForm() {
                 role="status"
                 className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900"
               >
-                {!state.customerId
-                  ? 'مشتری قرارداد را مشخص کنید.'
-                  : !state.passengers.length
-                    ? 'حداقل یک مسافر اضافه کنید.'
-                    : peopleDirty
-                      ? 'اطلاعات جدول را با دکمه «ثبت و تأیید افراد» تأیید کنید.'
-                      : !state.passengers.every((item) => item.birthDate) ||
-                          !salesTravelDate(state)
-                        ? 'تاریخ تولد مسافران و تاریخ سفر را کامل کنید.'
-                        : !salesPassengerCompositionMatches(state)
-                          ? 'تعداد و رده سنی مسافران باید با ترکیب ثبت‌شده در مرحله اول یکسان باشد.'
-                          : state.serviceKinds.includes('HOTEL') &&
-                              hotelGuestIds.length === 0
-                            ? 'حداقل یک مهمان برای هتل انتخاب کنید.'
-                            : 'هر مسافر باید حداقل یک خدمت انتخاب‌شده داشته باشد.'}
+                {passengerStepError}
               </p>
             ) : null}
           </section>
@@ -2053,6 +2030,9 @@ export function SalesContractForm() {
               <ContractTotalPrices
                 state={state}
                 currencies={references.currencies}
+                onRoomPricesChange={(rooms) =>
+                  patchState({ hotel: { ...state.hotel, rooms } })
+                }
                 onChange={(contractPrices) => patchState({ contractPrices })}
               />
               <InsuranceExtraSummary state={state} />
@@ -2169,6 +2149,9 @@ export function SalesContractForm() {
             <ContractTotalPrices
               state={state}
               currencies={references.currencies}
+              onRoomPricesChange={(rooms) =>
+                patchState({ hotel: { ...state.hotel, rooms } })
+              }
               onChange={(contractPrices) => patchState({ contractPrices })}
             />
             {state.serviceKinds.includes('FLIGHT') ? (

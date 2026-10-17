@@ -96,7 +96,6 @@ export function HrLeaveGrant({
         <label>
           <RequiredFieldLabel required>دلیل تخصیص</RequiredFieldLabel>
           <input
-            required
             value={reason}
             onChange={(event) => setReason(event.target.value)}
           />

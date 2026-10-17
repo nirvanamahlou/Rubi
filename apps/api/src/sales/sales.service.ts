@@ -1,3 +1,5 @@
+import { isOptionalOperationReason } from '@nora/contracts';
+import { salesHotelRoomSummary } from '@nora/contracts';
 import type { DisplayLanguage } from '../common/i18n/language';
 import { IamFinanceDirectory } from '../iam/iam-finance-directory';
 import { expectedTicketSale } from './sales-ticket-quote';
@@ -322,6 +324,14 @@ export function presentSalesContract(
           ...(row.hotelSelection.extraBedCount == null
             ? {}
             : { extraBedCount: row.hotelSelection.extraBedCount }),
+          ...(row.hotelSelection.rooms?.length
+            ? salesHotelRoomSummary(
+                row.hotelSelection.rooms.map((room) => ({
+                  adults: room.adults,
+                  childAges: room.childAges as number[],
+                })),
+              )
+            : {}),
           roomTypeId: row.hotelSelection.roomTypeId,
           ...(row.hotelSelection.rooms?.length
             ? {
@@ -331,6 +341,14 @@ export function presentSalesContract(
                   roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                   adults: room.adults,
                   childAges: room.childAges as number[],
+                  ...(room.agreedPrice
+                    ? {
+                        agreedPrice: room.agreedPrice as {
+                          amount: string;
+                          currencyCode: string;
+                        },
+                      }
+                    : {}),
                 })),
               }
             : {}),
@@ -436,10 +454,8 @@ export class SalesService {
         checkIn: hotel.checkInDate,
         checkOut: hotel.checkOutDate,
       });
-      if (!rate)
-        throw new BadRequestException(
-          'برای یکی از انواع اتاق، نرخ معتبر در بازه انتخاب‌شده وجود ندارد.',
-        );
+      // Match legacy selections: missing tariffs do not prohibit agreed prices.
+      if (!rate) continue;
       if (rate.occupancyRates) {
         if (
           !quoteHotelOccupancy(rate.occupancyRates, {
@@ -1053,9 +1069,9 @@ export class SalesService {
       )
         throw new ForbiddenException('مجوز تأیید و ارسال رزرو وجود ندارد.');
       if (
-        typeof input.reason !== 'string' ||
-        !input.reason.trim() ||
-        input.reason.length > 500
+        !isOptionalOperationReason(input.reason) ||
+        !isOptionalOperationReason(input.reason) ||
+        (input.reason ?? '').length > 500
       )
         throw new BadRequestException('دلیل اصلاح قرارداد الزامی است.');
       if (
@@ -1499,7 +1515,8 @@ export class SalesService {
   ) {
     if (!has(actor, 'sales.contracts.cancel'))
       throw new ForbiddenException('مجوز لغو قرارداد وجود ندارد.');
-    if (!reason?.trim()) throw new BadRequestException('دلیل لغو الزامی است.');
+    if (!isOptionalOperationReason(reason))
+      throw new BadRequestException('دلیل لغو الزامی است.');
     if (!Number.isInteger(version) || version < 1)
       throw new BadRequestException('نسخه معتبر قرارداد الزامی است.');
     const row = await this.repository.findById(id);
@@ -1514,7 +1531,7 @@ export class SalesService {
       version,
       ['DRAFT', 'PENDING_CONFIRMATION', 'CONFIRMED', 'SENT_TO_RESERVATIONS'],
       'CANCELLED',
-      reason.trim(),
+      (reason ?? '').trim(),
       this.context(actor, row.branchId, traceId),
     );
     if (!changed)

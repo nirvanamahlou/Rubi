@@ -417,8 +417,6 @@ export function AgencyRatesPanel({
           <label className="field sm:col-span-2">
             دلیل حذف
             <Textarea
-              required
-              minLength={5}
               maxLength={500}
               value={reason}
               onChange={(e) => setReason(e.target.value)}

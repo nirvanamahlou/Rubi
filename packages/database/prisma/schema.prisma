@@ -30,6 +30,7 @@ enum AuditOutcome {
 }
 
 model User {
+  purchaseFxSnapshots                              FinancePurchaseFxSnapshot[]
   accountingFxMade                                 AccountingFxSnapshot[]                    @relation("AccountingFxMaker")
   accountingFxApproved                             AccountingFxSnapshot[]                    @relation("AccountingFxApprover")
   accountingCommands                               AccountingCommand[]
@@ -244,6 +245,7 @@ model RolePermission {
 }
 
 model Branch {
+  purchaseFxSnapshots                 FinancePurchaseFxSnapshot[]
   accountingBooks                     AccountingBook[]
   financeOperationalRequests          FinanceOperationalRequest[]
   financeReminderPolicy               FinanceReminderPolicy?
@@ -2491,6 +2493,7 @@ model MasterHotelImportSession {
 }
 
 model MasterBroker {
+  hotelGroupRates                  ReservationHotelGroupRate[]
   reservationServicePurchases      ReservationServicePurchase[]
   id                               String                       @id @default(uuid()) @db.Uuid
   organizationId                   String?                      @unique @db.Uuid
@@ -4425,6 +4428,7 @@ model ProcurementTicketPurchaseRequest {
  * Finance-owned immutable rates; legacy catalog estimates never count as confirmed costs.
  */
 model FinanceTicketPurchaseCostRevision {
+  purchaseFxSnapshots      FinancePurchaseFxSnapshot[]
   outboundTourPublications PackagePricingTourPublishedVersion[]   @relation("TourPricingOutboundCost")
   returnTourPublications   PackagePricingTourPublishedVersion[]   @relation("TourPricingReturnCost")
   id                       String                                 @id @default(uuid()) @db.Uuid
@@ -4701,32 +4705,33 @@ model FinanceReminderDelivery {
 }
 
 model FinanceProcurementInvoiceRevision {
-  payingSupplierName  String?                   @db.VarChar(200)
-  paymentCurrencyCode String?                   @db.VarChar(3)
-  payingSupplierId    String?                   @db.Uuid
-  payingSupplier      MasterSupplier?           @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
-  id                  String                    @id @default(uuid()) @db.Uuid
-  sourceId            String                    @db.Uuid
+  purchaseFxSnapshots FinancePurchaseFxSnapshot[]
+  payingSupplierName  String?                     @db.VarChar(200)
+  paymentCurrencyCode String?                     @db.VarChar(3)
+  payingSupplierId    String?                     @db.Uuid
+  payingSupplier      MasterSupplier?             @relation(fields: [payingSupplierId], references: [id], onDelete: Restrict)
+  id                  String                      @id @default(uuid()) @db.Uuid
+  sourceId            String                      @db.Uuid
   sourceVersion       Int
-  branchId            String                    @db.Uuid
+  branchId            String                      @db.Uuid
   version             Int
-  status              String                    @db.VarChar(40)
-  accountId           String?                   @db.Uuid
-  paymentMethodId     String?                   @db.Uuid
-  paidAmount          Decimal?                  @db.Decimal(24, 4)
-  exchangeRateToIrr   Decimal?                  @db.Decimal(24, 8)
-  rialEquivalent      Decimal?                  @db.Decimal(24, 4)
-  cumulativePaid      Decimal                   @default(0) @db.Decimal(24, 4)
-  remainingAmount     Decimal                   @db.Decimal(24, 4)
-  transferAt          DateTime?                 @db.Timestamptz(3)
-  paymentReference    String?                   @db.VarChar(160)
-  reason              String                    @default("") @db.VarChar(500)
-  actorUserId         String                    @db.Uuid
-  createdAt           DateTime                  @default(now()) @db.Timestamptz(3)
-  branch              Branch                    @relation(fields: [branchId], references: [id], onDelete: Restrict)
-  account             FinanceSettlementAccount? @relation(fields: [accountId], references: [id], onDelete: Restrict)
-  paymentMethod       MasterPaymentMethod?      @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
-  actor               User                      @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+  status              String                      @db.VarChar(40)
+  accountId           String?                     @db.Uuid
+  paymentMethodId     String?                     @db.Uuid
+  paidAmount          Decimal?                    @db.Decimal(24, 4)
+  exchangeRateToIrr   Decimal?                    @db.Decimal(24, 8)
+  rialEquivalent      Decimal?                    @db.Decimal(24, 4)
+  cumulativePaid      Decimal                     @default(0) @db.Decimal(24, 4)
+  remainingAmount     Decimal                     @db.Decimal(24, 4)
+  transferAt          DateTime?                   @db.Timestamptz(3)
+  paymentReference    String?                     @db.VarChar(160)
+  reason              String                      @default("") @db.VarChar(500)
+  actorUserId         String                      @db.Uuid
+  createdAt           DateTime                    @default(now()) @db.Timestamptz(3)
+  branch              Branch                      @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  account             FinanceSettlementAccount?   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  paymentMethod       MasterPaymentMethod?        @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  actor               User                        @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
 
   @@unique([sourceId, version])
   @@index([branchId, status, createdAt])
@@ -4736,6 +4741,7 @@ model FinanceProcurementInvoiceRevision {
 }
 
 model ReservationServicePurchase {
+  purchaseFxSnapshots      FinancePurchaseFxSnapshot[]
   id                       String                           @id @default(uuid()) @db.Uuid
   batchId                  String?                          @db.Uuid
   coveredServiceClientKeys Json?
@@ -5273,7 +5279,8 @@ model ReservationHotelGroupRate {
   id                  String                                 @id @default(uuid()) @db.Uuid
   batchId             String                                 @db.Uuid
   hotelId             String                                 @db.Uuid
-  brokerId            String                                 @db.Uuid
+  brokerId            String?                                @db.Uuid
+  registeredBrokerId  String?                                @db.Uuid
   hotelName           String                                 @db.VarChar(300)
   brokerName          String                                 @db.VarChar(300)
   base                Decimal                                @db.Decimal(18, 2)
@@ -5282,9 +5289,11 @@ model ReservationHotelGroupRate {
   roomRates           ReservationHotelRoomRate[]
   batch               ReservationHotelRateBatch              @relation(fields: [batchId], references: [id], onDelete: Restrict)
   hotel               MasterHotel                            @relation(fields: [hotelId], references: [id], onDelete: Restrict)
-  broker              MasterOrganization                     @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  broker              MasterOrganization?                    @relation(fields: [brokerId], references: [id], onDelete: Restrict)
+  registeredBroker    MasterBroker?                          @relation(fields: [registeredBrokerId], references: [id], onDelete: Restrict)
 
   @@unique([batchId, hotelId, brokerId])
+  @@unique([batchId, hotelId, registeredBrokerId], map: "reservation_hotel_group_rates_batch_hotel_registered_key")
   @@index([hotelId, batchId])
   @@map("reservation_hotel_group_rates")
 }
@@ -7506,6 +7515,7 @@ model AccountingAccountGroupDetail {
 }
 
 model SalesContractHotelRoom {
+  agreedPrice          Json?                       @map("agreed_price") @db.JsonB
   id                   String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   hotelSelectionId     String                      @map("hotel_selection_id") @db.Uuid
   ordinal              Int
@@ -7519,4 +7529,27 @@ model SalesContractHotelRoom {
   @@unique([hotelSelectionId, ordinal])
   @@index([roomTypeId])
   @@map("sales_contract_hotel_rooms")
+}
+
+model FinancePurchaseFxSnapshot {
+  id                    String                             @id @default(uuid()) @db.Uuid
+  reservationPurchaseId String?                            @unique @db.Uuid
+  ticketCostId          String?                            @unique @db.Uuid
+  invoiceRevisionId     String?                            @unique @db.Uuid
+  branchId              String                             @db.Uuid
+  actorUserId           String                             @db.Uuid
+  currencyCode          String                             @db.VarChar(3)
+  foreignAmount         Decimal                            @db.Decimal(24, 4)
+  rateToIrr             Decimal                            @db.Decimal(24, 8)
+  source                String                             @db.VarChar(32)
+  baselineAt            DateTime                           @db.Timestamptz(3)
+  createdAt             DateTime                           @default(now()) @db.Timestamptz(3)
+  reservationPurchase   ReservationServicePurchase?        @relation(fields: [reservationPurchaseId], references: [id], onDelete: Restrict)
+  ticketCost            FinanceTicketPurchaseCostRevision? @relation(fields: [ticketCostId], references: [id], onDelete: Restrict)
+  invoiceRevision       FinanceProcurementInvoiceRevision? @relation(fields: [invoiceRevisionId], references: [id], onDelete: Restrict)
+  branch                Branch                             @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  actor                 User                               @relation(fields: [actorUserId], references: [id], onDelete: Restrict)
+
+  @@index([branchId, baselineAt])
+  @@map("finance_purchase_fx_snapshots")
 }

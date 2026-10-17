@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
@@ -321,8 +322,8 @@ export class PackageTourPricingService {
       input?.version !== 1 ||
       !Number.isSafeInteger(input.expectedDraftVersion) ||
       input.expectedDraftVersion < 1 ||
-      !input.reason?.trim() ||
-      input.reason.trim().length > 500
+      !isOptionalOperationReason(input.reason) ||
+      (input.reason ?? '').trim().length > 500
     )
       throw new BadRequestException(
         'دلیل و نسخه پیش‌نویس برای انتشار لازم است.',
@@ -626,7 +627,7 @@ export class PackageTourPricingService {
           draftVersion: draft.version,
           tourVersion: grid.tour.version,
           sourceFingerprint: fingerprint,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           outboundCostRevisionId: outbound.costRevisionId,
           returnCostRevisionId: returning?.costRevisionId ?? null,
           adultFlightSale: draft.adultFlightSale,

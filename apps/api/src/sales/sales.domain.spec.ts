@@ -749,3 +749,51 @@ describe('hotel room party integrity', () => {
     ).toThrow();
   });
 });
+
+describe('room agreed sale prices', () => {
+  it('keeps legacy rooms and requires valid foreign amounts within the contract total', () => {
+    const id = '10000000-0000-4000-8000-000000000010';
+    const base: SalesContractCreateRequest = {
+      ...draft,
+      services: [{ clientKey: 'hotel', kind: 'HOTEL', titleSnapshot: 'Hotel' }],
+      ticketSelections: [],
+      passengers: [{ ...draft.passengers[0]!, serviceClientKeys: ['hotel'] }],
+      hotelSelection: {
+        serviceClientKey: 'hotel',
+        hotelId: 'hotel',
+        hotelNameSnapshot: 'Hotel',
+        cityId: draft.destinationId,
+        checkInDate: '2026-10-01',
+        checkOutDate: '2026-10-03',
+        roomCount: 1,
+        roomTypeId: id,
+        occupancy: 1,
+        inventoryStatus: 'NEEDS_RESERVATION_CONFIRMATION',
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: id,
+            roomTypeNameSnapshot: 'Single',
+            adults: 1,
+            childAges: [],
+          },
+        ],
+      },
+    };
+    const hotel = base.hotelSelection!;
+    const priced = (amount: string, currencyCode = 'USD') => ({
+      ...base,
+      hotelSelection: {
+        ...hotel,
+        rooms: [{ ...hotel.rooms![0]!, agreedPrice: { amount, currencyCode } }],
+      },
+    });
+    expect(() => validateSalesContract(base)).not.toThrow();
+    expect(() => validateSalesContract(priced('200.50'))).not.toThrow();
+    expect(() => validateSalesContract(priced('200.51'))).toThrow(
+      'جمع مبالغ اتاق‌ها',
+    );
+    expect(() => validateSalesContract(priced('-10'))).toThrow();
+    expect(() => validateSalesContract(priced('10', 'IRR'))).toThrow();
+  });
+});

@@ -1,3 +1,4 @@
+import { salesHotelRoomSummary } from '@nora/contracts';
 import { SalesBuyerContactCrypto } from './sales-buyer-contact.crypto';
 import {
   Inject,
@@ -533,6 +534,9 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
               ...(hotel.rooms?.length
                 ? {
@@ -543,6 +547,9 @@ export class SalesRepository {
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                         adults: room.adults,
                         childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
                       })),
                     },
                   }
@@ -777,6 +784,9 @@ export class SalesRepository {
               singleRoomCount: hotel.singleRoomCount ?? 0,
               doubleRoomCount: hotel.doubleRoomCount ?? hotel.roomCount,
               extraBedCount: hotel.extraBedCount ?? 0,
+              ...(hotel.rooms?.length
+                ? salesHotelRoomSummary(hotel.rooms)
+                : {}),
               roomTypeId: hotel.roomTypeId,
               ...(hotel.rooms?.length
                 ? {
@@ -787,6 +797,9 @@ export class SalesRepository {
                         roomTypeNameSnapshot: room.roomTypeNameSnapshot,
                         adults: room.adults,
                         childAges: [...room.childAges],
+                        ...(room.agreedPrice
+                          ? { agreedPrice: { ...room.agreedPrice } }
+                          : {}),
                       })),
                     },
                   }
@@ -1117,7 +1130,7 @@ export class SalesRepository {
         where: { id: payment.id },
         data: {
           status: 'FINANCE_REJECTED',
-          financeDecisionReason: event.reason.trim(),
+          financeDecisionReason: (event.reason ?? '').trim(),
           financeReviewedByUserId: event.reviewedByUserId,
           financeReviewedAt: new Date(event.reviewedAt),
         },
@@ -1129,7 +1142,7 @@ export class SalesRepository {
           actorBranchId: event.branchId,
           action: 'sales.payment.finance_correction_required',
           outcome: 'SUCCESS',
-          reason: event.reason.trim(),
+          reason: (event.reason ?? '').trim(),
           afterSnapshot: {
             paymentId: event.paymentId,
             status: 'FINANCE_REJECTED',

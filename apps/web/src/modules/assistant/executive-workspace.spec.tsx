@@ -8,6 +8,7 @@ import {
   type ExecutiveSnapshot,
 } from './model';
 import {
+  AssistantComposer,
   ExecutivePanels,
   ExecutiveWorkspace,
   PersonalFollowUps,
@@ -49,6 +50,22 @@ const snapshot: ExecutiveSnapshot = {
   },
 };
 describe('executive reference coverage and evidence states', () => {
+  it('keeps prepared requests in the compact chat without manual filters', () => {
+    const html = renderToStaticMarkup(
+      <AssistantComposer t={(text) => text[0]} denied={false} floating />,
+    );
+    for (const label of [
+      assistantCopy.quickDaily,
+      assistantCopy.quickSales,
+      assistantCopy.quickReceivables,
+    ]) {
+      expect(html).toContain(label[0]);
+    }
+    expect(html).toContain('tabindex="0"');
+    expect(html).not.toContain('type="date"');
+    expect(html).not.toContain('<select');
+    expect(html).not.toContain('<h1');
+  });
   it('loads the shared workspace for an ordinary authenticated profile and denies a missing identity', () => {
     const ordinary = renderToStaticMarkup(
       <AccessPermissionsProvider value={[]}>
@@ -193,3 +210,26 @@ it.each(['overview', 'sales', 'finance', 'advisor'] as const)(
     }
   },
 );
+
+describe('dashboard-embedded executive pages', () => {
+  it.each(assistantViews)(
+    'preserves %s content without duplicate navigation or chat',
+    (view) => {
+      const standalone = renderToStaticMarkup(
+        <ExecutivePanels view={view} state="ready" snapshot={snapshot} />,
+      );
+      const embedded = renderToStaticMarkup(
+        <ExecutivePanels
+          view={view}
+          state="ready"
+          snapshot={snapshot}
+          embedded
+        />,
+      );
+      expect(embedded).toContain(assistantCopy.views[view].title[0]);
+      expect(embedded).not.toContain('<nav');
+      expect(embedded).not.toContain('<textarea');
+      expect(embedded).toBe(standalone.replace(/<nav[\s\S]*?<\/nav>/, ''));
+    },
+  );
+});

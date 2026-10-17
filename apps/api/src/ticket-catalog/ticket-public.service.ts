@@ -196,6 +196,32 @@ export class TicketPublicService {
   }
 
   /** Reservations document numbering consumes only the assigned offer's supply type. */
+  async purchaseCapacityInventory(branchIds: readonly string[]) {
+    const rows = await this.database.client.ticketPublishedOffer.findMany({
+      where: { branchId: { in: [...branchIds] } },
+      select: {
+        id: true,
+        branchId: true,
+        supplyType: true,
+        departureAt: true,
+        arrivalAt: true,
+        totalCapacity: true,
+        capacityAllocations: {
+          where: { status: 'ACTIVE' },
+          select: { quantity: true },
+        },
+      },
+    });
+    return rows.map((row) => ({
+      ...row,
+      allocatedCapacity: row.capacityAllocations.reduce(
+        (sum, item) => sum + item.quantity,
+        0,
+      ),
+      capacityAllocations: undefined,
+    }));
+  }
+
   async documentSupply(id: string, branchIds: readonly string[]) {
     const row = await this.database.client.ticketPublishedOffer.findFirst({
       where: { id, branchId: { in: [...branchIds] } },
@@ -206,7 +232,12 @@ export class TicketPublicService {
   }
 
   async documentDetails(id: string, actor: AuthenticatedActor) {
-    this.require(actor, 'ticket_catalog.read');
+    // Ticket output consumers need this minimal reference projection, not Catalog administration.
+    if (
+      !actor.permissions.includes('ticket_catalog.read') &&
+      !actor.permissions.includes('reservations.read')
+    )
+      throw new ForbiddenException('مجوز مشاهده اطلاعات بلیط وجود ندارد.');
     if (uuid.validate(id).error)
       throw new BadRequestException('شناسه بلیت معتبر نیست.');
     const row = await this.database.client.ticketPublishedOffer.findFirst({

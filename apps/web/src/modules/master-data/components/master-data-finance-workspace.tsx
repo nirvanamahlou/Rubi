@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { useMasterDataColumnFilters } from './master-data-column-filters';
 import {
   MasterDataDateRangeFilter,
@@ -584,13 +586,13 @@ export function MasterDataFinanceWorkspace() {
     const reason = window.prompt(
       action === 'approve' ? 'دلیل تأیید نرخ:' : 'دلیل رد نرخ:',
     );
-    if (!reason?.trim()) return;
+    if (!isOptionalOperationReason(reason)) return;
     try {
       await masterDataApi.decideCurrencyRate(
         row.id,
         action,
         row.version,
-        reason.trim(),
+        (reason ?? '').trim(),
       );
       setNotice(action === 'approve' ? 'نرخ تأیید شد.' : 'نرخ رد شد.');
       await load();

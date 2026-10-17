@@ -151,6 +151,13 @@ const configs: Partial<
     },
   },
   suppliers: {
+    countryId: { target: 'countries', payload: 'id', optional: true },
+    cityId: {
+      target: 'cities',
+      payload: 'id',
+      optional: true,
+      scopeField: 'countryId',
+    },
     serviceCodes: {
       target: 'travel-services',
       payload: 'code',

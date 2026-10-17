@@ -26,3 +26,59 @@ describe('shared authenticated assistant visibility (not data authorization)', (
     expect(canViewScreen([], 'unknown.future.screen')).toBe(false);
   });
 });
+
+describe('migrated assistant dashboard pages', () => {
+  const views = [
+    'overview',
+    'sales',
+    'finance',
+    'news',
+    'scenarios',
+    'advisor',
+  ];
+  it.each(views)(
+    'preserves original access for %s without granting other dashboard pages',
+    (view) => {
+      for (const permissions of [
+        [],
+        ['ui.profile'],
+        ['ui.manual.v3'],
+        ['ui.manual.v3', 'ui.screen.assistant.executive'],
+        [
+          'ui.manual.v3',
+          'ui.screen.assistant.executive',
+          'ui.deny.assistant.executive',
+        ],
+      ]) {
+        expect(
+          canViewRoute(permissions, '/dashboard?page=assistant&view=' + view),
+        ).toBe(canViewRoute(permissions, '/assistant'));
+        expect(
+          canViewRoute(permissions, '/dashboard?page=assistant-' + view),
+        ).toBe(canViewRoute(permissions, '/assistant'));
+      }
+      expect(canViewRoute([], '/dashboard?page=executive-overview')).toBe(
+        false,
+      );
+      expect(canViewRoute([], '/dashboard?page=assistant-unknown')).toBe(false);
+      expect(canViewRoute([], '/dashboard/other?page=assistant-' + view)).toBe(
+        false,
+      );
+    },
+  );
+});
+
+it('rejects conflicting page selectors instead of authorizing a different dashboard', () => {
+  expect(
+    canViewRoute(
+      [],
+      '/dashboard?page=executive-overview&page=assistant-overview',
+    ),
+  ).toBe(false);
+  expect(
+    canViewRoute(
+      [],
+      '/dashboard?page=assistant-overview&page=executive-overview',
+    ),
+  ).toBe(false);
+});

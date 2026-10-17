@@ -1,0 +1,5 @@
+.daily-output-actions { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.daily-package-publish { width: 100%; padding: 10px 16px; border: 1px solid #b9d4f9; border-radius: 10px; background: #eaf2ff; color: #174f9f; font: inherit; font-weight: 700; cursor: pointer; }
+.daily-package-publish:hover:not(:disabled) { background: #dbeaff; }
+.daily-package-publish:disabled { opacity: .55; cursor: wait; }
+.daily-package-publish[hidden] { display: none; }

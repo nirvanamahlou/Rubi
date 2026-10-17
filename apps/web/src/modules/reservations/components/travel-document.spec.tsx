@@ -35,6 +35,35 @@ supplier.text.broker = 'BROKER';
 intake.workflow.supplierFormSettings = supplier;
 
 describe('travel output branding and readiness', () => {
+  it('preserves edited purchase totals on reservation forms without publishing them on vouchers', () => {
+    const settings = {
+      ...supplier,
+      hotelPurchasePrices: [{ amount: '123.50', currencyCode: 'EUR' }],
+    };
+    const priced = {
+      ...intake,
+      workflow: {
+        ...intake.workflow,
+        supplierFormSettings: settings,
+        voucherSettings: settings,
+      },
+    };
+    expect(
+      defaultVoucherSettings(
+        {
+          ...priced,
+          workflow: { ...priced.workflow, voucherSettings: settings },
+        },
+        {},
+      ).hotelPurchasePrices,
+    ).toEqual(settings.hotelPurchasePrices);
+    expect(renderToStaticMarkup(<TravelDocument intake={priced} />)).toContain(
+      '123.50 €',
+    );
+    expect(
+      renderToStaticMarkup(<TravelDocument intake={priced} voucher />),
+    ).not.toContain('123.50 €');
+  });
   it('places one supplier picker before the single reservation preview', () => {
     const html = renderToStaticMarkup(
       <ReservationSettingsForm
@@ -198,7 +227,8 @@ it('keeps direct download available on an issued reservation form', () => {
   };
   const html = renderToStaticMarkup(<TravelDocument intake={issued} />);
   expect(html).toContain('دانلود مستقیم PDF فرم رزرواسیون');
-  expect(html).toContain('چاپ / ذخیره PDF');
+  expect(html).not.toContain('چاپ / ذخیره PDF');
+  expect(html).not.toContain('Save as PDF');
   expect(html).not.toContain('Special room:');
   expect(html).not.toContain('Country:');
   expect(html).not.toContain('subject to supplier confirmation');

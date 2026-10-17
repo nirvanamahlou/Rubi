@@ -1,4 +1,5 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
 
 import {
   Activity,
@@ -287,7 +288,7 @@ export function DocumentDetailDialog({
                         document.currentVersion.scanStatus !== 'CLEAN' ||
                         ((document.confidentiality === 'CONFIDENTIAL' ||
                           document.confidentiality === 'RESTRICTED') &&
-                          downloadReason.trim().length < 5)
+                          !isOptionalOperationReason(downloadReason, 500))
                       }
                       onClick={() => {
                         if (document.requiresStepUpVerification) {

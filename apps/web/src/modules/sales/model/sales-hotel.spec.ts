@@ -40,6 +40,63 @@ const selected = (): SalesFormState =>
   });
 
 describe('combined flight and hotel details', () => {
+  it('allows linked rooms without tariffs before pricing and preserves independent foreign prices', () => {
+    const state: SalesFormState = {
+      ...selected(),
+      passengerComposition: { adults: 2, children: 1, infants: 0 },
+      hotel: {
+        ...selected().hotel,
+        hotelId: 'hotel',
+        roomTypeId: '11111111-1111-4111-8111-111111111111',
+        roomCount: 2,
+        rooms: [
+          {
+            ordinal: 1,
+            roomTypeId: '11111111-1111-4111-8111-111111111111',
+            roomTypeNameSnapshot: 'Double',
+            adults: 1,
+            childAges: [5],
+          },
+          {
+            ordinal: 2,
+            roomTypeId: '22222222-2222-4222-8222-222222222222',
+            roomTypeNameSnapshot: 'Single',
+            adults: 1,
+            childAges: [],
+          },
+        ],
+      },
+    };
+    expect(salesHotelValid(state)).toBe(true);
+    expect(salesHotelCapacityError(state, [])).toBeNull();
+    state.hotel.rooms![0]!.agreedPrice = {
+      amount: '120.50',
+      currencyCode: 'EUR',
+    };
+    state.hotel.rooms![1]!.agreedPrice = { amount: '90', currencyCode: 'USD' };
+    expect(salesHotelCapacityError(state, [])).toBeNull();
+    expect(
+      salesPayload(state).hotelSelection?.rooms?.map((r) => r.agreedPrice),
+    ).toEqual([
+      { amount: '120.50', currencyCode: 'EUR' },
+      { amount: '90', currencyCode: 'USD' },
+    ]);
+    expect(
+      salesHotelCapacityError(state, [
+        {
+          roomTypeId: state.hotel.rooms![1]!.roomTypeId,
+          roomTypeName: 'Single',
+          factor: '1',
+          maxAdults: 0,
+          maxChildren: 0,
+        },
+      ]),
+    ).toBe('ظرفیت یا نرخ یکی از اتاق‌ها با ترکیب مهمانان هماهنگ نیست.');
+    state.hotel.rooms![0]!.childAges = [null];
+    expect(salesHotelCapacityError(state, [])).toBe(
+      'سن کودکان هر اتاق را تکمیل کنید.',
+    );
+  });
   it('shows room types linked to the selected hotel before a dated rate exists', () => {
     const record = (
       id: string,

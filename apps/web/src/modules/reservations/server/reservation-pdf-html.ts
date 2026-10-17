@@ -1,4 +1,5 @@
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
+import { reservationFormPriceText } from '../model/reservation-form-price';
 import { supplierFormData, voucherFormData } from '../model/voucher-settings';
 import {
   reservationPassengerPages,
@@ -96,6 +97,7 @@ export function reservationPdfHtml(
       'summary',
     )}
     </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
+    ${!voucher && settings?.hotelPurchasePrices?.length ? `<div dir="ltr" style="padding:8px 10px;border:1px solid #c5d5e6;text-align:center;background:#eef4fa;font-weight:700"><strong>HOTEL TOTAL: </strong>${escape(reservationFormPriceText(settings.hotelPurchasePrices))}</div>` : ''}
     ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
       ['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'],
       [[data.hotel, data.destination, data.stars, data.meal, data.roomType]],
@@ -103,7 +105,7 @@ export function reservationPdfHtml(
     ${
       data.roomBreakdown.length
         ? table(
-            ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'],
+            ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
             data.roomBreakdown
               .slice(0, 4)
               .map((r) => [
@@ -111,6 +113,7 @@ export function reservationPdfHtml(
                 r.roomType,
                 r.adults,
                 r.childAges.join(', ') || '-',
+                r.adults + r.childAges.length,
               ]),
           )
         : ''
@@ -129,12 +132,13 @@ export function reservationPdfHtml(
     .map(
       (rooms, index) =>
         `<article class="page" dir="ltr" data-reservation-form-page><header class="header"><h1>ROOM DETAILS</h1></header><p>${escape(data.request)} · ${escape(data.hotel)} · ${escape(data.checkIn)} / ${escape(data.checkOut)}</p>${table(
-          ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES'],
+          ['ROOM', 'ROOM TYPE', 'ADULTS', 'CHILD AGES', 'GUESTS'],
           rooms.map((r) => [
             r.ordinal,
             r.roomType,
             r.adults,
             r.childAges.join(', ') || '-',
+            r.adults + r.childAges.length,
           ]),
         )}<footer class="footer"><b>${pages.length + index + 1} / ${pageCount}</b></footer></article>`,
     )

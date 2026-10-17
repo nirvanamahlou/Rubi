@@ -27,7 +27,7 @@ export class SaveB2bOrganizationUserDto implements B2bOrganizationUserInput {
   @IsIn(B2B_DOSSIER_SECTIONS.map((s) => s.id), { each: true })
   sections!: B2bDossierSection[];
   @IsBoolean() isActive!: boolean;
-  @IsString() @MinLength(5) @MaxLength(500) reason!: string;
+  @IsString() @MaxLength(500) reason = '';
   @IsOptional() @IsInt() @Min(1) version?: number;
 }
 export class CreateB2bOrganizationUserDto extends SaveB2bOrganizationUserDto {

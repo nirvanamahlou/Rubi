@@ -78,5 +78,5 @@ export class CurrencyRateListDto {
 
 export class CurrencyRateDecisionDto {
   @IsInt() @Min(1) expectedVersion!: number;
-  @IsString() @MaxLength(500) reason!: string;
+  @IsString() @MaxLength(500) reason = '';
 }
