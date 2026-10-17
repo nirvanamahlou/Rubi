@@ -427,7 +427,7 @@ export function SalesPeopleSheet({
       </div>
       <div className="grid gap-2 rounded-xl border border-primary/15 bg-primary/[0.03] p-3 sm:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] sm:items-end">
         <div>
-          <p className="font-bold">نحوه آشنایی با آژانس</p>
+          <p className="font-bold">نحوه آشنایی با ما</p>
         </div>
         <SalesThemedSelect
           label="نحوه آشنایی برای کل قرارداد"
