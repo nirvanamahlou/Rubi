@@ -6220,3 +6220,7 @@ Floating chat window reduced to360x420px with viewport limits and a smaller head
 ## DASHBOARD-BASE-BACKGROUND-1017 — PC-C
 
 Dashboard canvas now inherits the shared ERP background token in light and dark themes, with its dedicated grid/gradient removed. Existing cards/charts/sidebar retain their presentation. Validation in progress; no API/schema/dependency changes.
+
+## DELETE-BUTTON-OUTLINE-1017 — PC-A — REVIEW_CANDIDATE
+
+Changed the shared destructive Button variant to a transparent background, red border/text and a subtle hover fill in both themes. Removed HR's solid-red override and switched Documents delete confirmation from hard-coded red fill to the shared variant. Delete icons and accessible names, disabled/loading/focus behavior and all command/permission/confirmation logic remain unchanged. Five focused render/interaction tests pass, including all four pricing-field delete buttons from the user's image. Scoped lint/typecheck and exact-head full CI/build gate the user-authorized develop merge. User explicitly limits this merge to delete styling; package-sale PR910 remains draft/unmerged. No schema/API/migration/dependency or operational data changes. Source scopes frozen and released with candidate.
