@@ -76,5 +76,9 @@ Operational: local catalogue registration, setup metadata editing, access checks
 version control and native audited storage. Ready for connection: every external
 website. Actual adapters, network health, sync, credentials and SSO still depend
 on genuine provider documentation/access and owner-module contracts. No external
-connectivity, KPI, booking or payment success is fabricated. No new push, hosted
-CI, PR, merge or production deployment was performed.
+connectivity, KPI, booking or payment success is fabricated. The user then
+authorized pushing the branch, running hosted CI, and opening a PR to
+`PC-D-Integration`; merge is authorized only after all checks and required
+review pass. Root Dockerfile now builds both Web and API, while CI runs for this
+base branch. Local Compose remains limited to this task image and existing
+services; no production deployment is authorized.

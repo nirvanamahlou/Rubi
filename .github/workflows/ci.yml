@@ -5,11 +5,13 @@ on:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   pull_request:
     branches:
       - main
       - develop
+      - PC-D-Integration
       - 'codex/pc-*'
   workflow_dispatch:
 

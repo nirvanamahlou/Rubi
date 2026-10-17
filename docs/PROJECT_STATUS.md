@@ -9,8 +9,9 @@ Local tests pass:18 Web,45 API,147 contracts. Scoped lint/format/i18n,
 Web/API typechecks/builds and interactive desktop/mobile/light/dark checks pass.
 No schema/migration/dependency/seed or external connectivity change. All external
 sites remain ready for connection pending real documentation/access.
-Branch `codex/pc-d-integrations-site-onboarding-1017` stays local; no new push,
-hosted CI, PR or merge. See [delivery and rollback constraints](tasks/INTEGRATIONS-SITE-ONBOARDING-1017.md).
+The root Dockerfile builds both Web and API, and CI includes the
+`PC-D-Integration` target. The user authorized push, hosted CI and a PR to that
+branch; merge requires every check green and required review. See [delivery and rollback constraints](tasks/INTEGRATIONS-SITE-ONBOARDING-1017.md).
 
 ## INTERNATIONAL-TICKET-CALENDAR-1014 — PC-A — READY_FOR_REVIEW
 
