@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 const sections = [
   {
-    title: 'مدیریت قیمت',
+    title: 'بستن پکیج',
     description:
       'محاسبه قیمت فروش، تنظیم سود و کمیسیون، ذخیره پیش‌نویس و انتشار نسخه قیمت پکیج.',
     href: '/sales/pricing/management',

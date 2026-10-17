@@ -302,9 +302,22 @@ it('persists dynamic fields, canonicalizes deleted defaults, and reads them back
     },
   ];
   const saved = await service.save(
-    { ...saveInput, priceFields, selectedHotelRateIds: ['rate-1'] },
+    {
+      ...saveInput,
+      priceFields,
+      selectedHotelRateIds: ['rate-1'],
+      roomSaleOverrides: [
+        {
+          hotelRateId: 'rate-1',
+          roomCode: 'double',
+          currencyCode: 'EUR',
+          amount: '235.20',
+        },
+      ],
+    },
     actor,
   );
+  expect(saved.roomSaleOverrides?.[0]?.amount).toBe('235.20');
   expect(saved.priceFields).toEqual(priceFields);
   expect(saved.selectedHotelRateIds).toEqual(['rate-1']);
   expect(saved.adultFlightSale).toBe('0');
@@ -316,6 +329,7 @@ it('persists dynamic fields, canonicalizes deleted defaults, and reads them back
     { ...saveInput, expectedVersion: 1 },
     actor,
   );
+  expect(legacySave.roomSaleOverrides).toEqual(saved.roomSaleOverrides);
   expect(legacySave.priceFields).toEqual(priceFields);
   expect(legacySave.selectedHotelRateIds).toEqual(['rate-1']);
   expect(legacySave.adultFlightSale).toBe('0');
@@ -379,6 +393,14 @@ it('publishes only selected per-person compositions with source metadata and kee
     updatedByUserId: 'other',
     currencyCode: 'EUR',
     selectedHotelRateIds: ['rate-1'],
+    roomSaleOverrides: [
+      {
+        hotelRateId: 'rate-1',
+        roomCode: 'double',
+        currencyCode: 'EUR',
+        amount: '650',
+      },
+    ],
     adultFlightSale: new Prisma.Decimal(100),
     childFlightSale: new Prisma.Decimal(50),
     businessUplift: new Prisma.Decimal(0),
@@ -463,7 +485,7 @@ it('publishes only selected per-person compositions with source metadata and kee
     result.roomPrices.find((price) => price.roomCode === 'double'),
   ).toMatchObject({
     hotelPurchase: '500',
-    packageSale: '600.00',
+    packageSale: '650.00',
     roomTypeName: 'double',
   });
   expect(

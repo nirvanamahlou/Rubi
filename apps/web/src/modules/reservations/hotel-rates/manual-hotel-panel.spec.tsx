@@ -64,10 +64,11 @@ describe('manual hotel coefficient tables', () => {
       'Land View',
       'Sea View',
       'قیمت خرید',
-      'قیمت فروش',
       'ردهٔ سنی هر کودک',
     ])
       expect(html).toContain(text);
+    expect(html).not.toContain('قیمت فروش');
+    expect(html).not.toContain('تغییر گروهی فروش');
     expect(html).toContain('role="combobox"');
     expect(html).not.toContain('<select');
     expect(html).toContain('قیمت پایه Land View');
