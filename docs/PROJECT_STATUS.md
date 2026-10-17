@@ -6200,3 +6200,8 @@ Compact Telegram-style assistant composer: one-row input with bounded132px autom
 ## ASSISTANT-COMPACT-WINDOW-1017 — PC-C
 
 Floating chat window reduced to360x420px with viewport limits and a smaller header; full-workspace shortcut removed. Existing scrollable results, close behavior and language placement retained. Validation in progress. No API/schema/provider changes.
+
+
+## DASHBOARD-BASE-BACKGROUND-1017 — PC-C
+
+Dashboard canvas now inherits the shared ERP background token in light and dark themes, with its dedicated grid/gradient removed. Existing cards/charts/sidebar retain their presentation. Validation in progress; no API/schema/dependency changes.
