@@ -7794,3 +7794,10 @@ PERFORMANCE-EXTRA-CARDS-1015 scope clarification: the user confirms HR as the so
 Validation:25 focused API/Web/i18n tests pass, scoped ESLint and formatting pass, Contracts/API/Web typechecks and Web production build (62 routes) pass. No migration or live upload/runtime change. Bounded source reservation releases with review candidate; CI/PR review remain gates.
 
 TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pass (17 tests; optional external database test skipped). Full production build and PostgreSQL18 migration/seed CI gates pass after preserving both sides of develop documentation/translation conflicts. Existing saved flight details are fetched read-only for preview; no flight-number editor remains. Source scope frozen and bounded locks released. Full quality/test CI gates still precede the user-authorized merge. No local runtime update.
+
+## HR-STATUS-RENDER-FIX-1017 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; base `origin/develop@0a235b21`; branch `codex/pc-b-hr-status-render-fix-1017`.
+- Scope: HR status presentation, employee status filter, focused tests and this work item's status documentation. No API contract, schema, migration, dependency/lockfile, permission or business-data changes.
+- Trigger: the live Chrome console reports `TypeError: status.replace is not a function` in `HrStatus`, causing the `/hr` error boundary to replace the workspace. Normalize unexpected status values at the display boundary and verify the live route.
+- Result: unexpected status values render as safe text and receive a neutral tone; the employees filter uses the same normalization. The live Chrome page now renders the employee table instead of the HR error boundary. 57 focused tests, Web typecheck, scoped lint, formatting and Web production build (62 routes) pass; no migration or persisted data changes. The live container source is patched for immediate use and must be rebuilt from this branch for durable deployment.
