@@ -37,6 +37,13 @@ import {
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
 import { TourPriceFields } from './tour-price-fields';
+import { HotelRegisteredPeriods } from './hotel-registered-periods';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/overlays';
 import {
   tourPriceFields,
   tourPriceFieldValues,
@@ -110,6 +117,7 @@ export function TourPricingWorkspace() {
   const [selectedHotelRateIds, setSelectedHotelRateIds] = useState<string[]>(
     [],
   );
+  const [showPeriods, setShowPeriods] = useState(false);
   const [showGenerator, setShowGenerator] = useState(false);
   const [familyAdults, setFamilyAdults] = useState('2');
   const [familyChildren, setFamilyChildren] = useState('0');
@@ -548,6 +556,34 @@ export function TourPricingWorkspace() {
         title="مدیریت پکیج تور"
         description="قیمت خرید هتل‌های همان نوبت تور را ببینید، قیمت فروش هر گزینه هتل و پرواز را تنظیم کنید و نسخه قیمت را برای انتشار آماده کنید."
       />
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          disabled={!session}
+          onClick={() => setShowPeriods(true)}
+        >
+          بازه‌های ثبت‌شدهٔ هتل‌ها
+        </Button>
+      </div>
+      <Dialog open={showPeriods} onOpenChange={setShowPeriods}>
+        <DialogContent
+          dir="rtl"
+          className="max-w-6xl max-h-[90vh] overflow-y-auto"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <DialogTitle>بازه‌های ثبت‌شدهٔ هتل‌ها</DialogTitle>
+          </div>
+          <DialogDescription>
+            بازه‌های بسته‌های فعال هتل، بر اساس آخرین نسخهٔ ثبت‌شده.
+          </DialogDescription>
+          {showPeriods && session ? (
+            <HotelRegisteredPeriods
+              session={session}
+              initialBranchId={grid?.tour.branchId ?? ''}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
       {notice ? <Alert title="وضعیت قیمت‌گذاری" description={notice} /> : null}
       <TourWorkspace mode="departures" compact />
 

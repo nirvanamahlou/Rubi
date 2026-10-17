@@ -280,6 +280,20 @@ export class MasterTravelDirectory {
     return { code: currency.code, name: currency.name };
   }
 
+  /** Historical rate metadata can refer to inactive cities; never mutates them. */
+  async hotelRatePeriodCityNames(ids: readonly string[]) {
+    return Promise.all(
+      [...new Set(ids)].map(async (id) => {
+        const { data } = await this.master.detail('cities', id);
+        return {
+          id: data.id,
+          name: data.name,
+          englishName: String(data.attributes.englishName ?? ''),
+        };
+      }),
+    );
+  }
+
   async cityReference(cityId: string) {
     const { data } = await this.master.detail('cities', cityId);
     if (data.status !== 'active')
