@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
 import type { HrRecordDto } from '@nora/contracts';
 import { persianDateToIso } from './hr-dates';
-import { hrStatusTone } from './hr-presentation';
+import { hrStatusText, hrStatusTone } from './hr-presentation';
+import { HrStatus } from './hr-controls';
 import { sourceForRecord } from './hr-record-source';
 
 describe('HR presentation boundaries', () => {
@@ -16,6 +18,18 @@ describe('HR presentation boundaries', () => {
     expect(hrStatusTone('تأیید نشده')).toBe('warning');
     expect(hrStatusTone('تکمیل‌شده')).toBe('success');
     expect(hrStatusTone('پیش‌نویس')).toBe('neutral');
+  });
+
+  it('keeps malformed saved status values from crashing HR rendering', () => {
+    expect(hrStatusText({ label: 'در انتظار تأیید' })).toBe('در انتظار تأیید');
+    expect(hrStatusTone({ label: 'در انتظار تأیید' })).toBe('warning');
+    expect(hrStatusText({ label: 3 })).toBe('نامشخص');
+    expect(hrStatusTone({ label: 3 })).toBe('neutral');
+    expect(hrStatusText(null)).toBe('نامشخص');
+    expect(hrStatusTone(null)).toBe('neutral');
+    expect(
+      renderToStaticMarkup(HrStatus({ children: { label: 3 } })),
+    ).toContain('نامشخص');
   });
 
   it('preserves ISO date-only values and converts localized Persian dates consistently', () => {

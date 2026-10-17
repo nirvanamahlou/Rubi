@@ -70,7 +70,12 @@ describe('actual contract package margin', () => {
       servicesDetail: [contract.servicesDetail[0]!],
       hotelSelection: null,
       priceComponents: [
-        { type: 'BASE' as const, amount: '100', currencyCode: 'USD' },
+        {
+          type: 'BASE' as const,
+          title: 'Sale',
+          amount: '100',
+          currencyCode: 'USD',
+        },
       ],
       ticketSelections: [
         ...contract.ticketSelections,

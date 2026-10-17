@@ -7812,6 +7812,13 @@ ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access 
 
 TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pass (17 tests; optional external database test skipped). Full production build and PostgreSQL18 migration/seed CI gates pass after preserving both sides of develop documentation/translation conflicts. Existing saved flight details are fetched read-only for preview; no flight-number editor remains. Source scope frozen and bounded locks released. Full quality/test CI gates still precede the user-authorized merge. No local runtime update.
 
+## HR-STATUS-RENDER-FIX-1017 — PC-B — READY_FOR_REVIEW
+
+- COMPUTER_ID=PC-B; base `origin/develop@0a235b21`; branch `codex/pc-b-hr-status-render-fix-1017`.
+- Scope: HR status presentation, employee status filter, focused tests and this work item's status documentation. No API contract, schema, migration, dependency/lockfile, permission or business-data changes.
+- Trigger: the live Chrome console reports `TypeError: status.replace is not a function` in `HrStatus`, causing the `/hr` error boundary to replace the workspace. Normalize unexpected status values at the display boundary and verify the live route.
+- Result: unexpected status values render as safe text and receive a neutral tone; the employees filter uses the same normalization. The live Chrome page now renders the employee table instead of the HR error boundary. 57 focused tests, Web typecheck, scoped lint, formatting and Web production build (62 routes) pass; no migration or persisted data changes. A rebuilt Web image is deployed locally for persistence across container recreation.
+
 ## DASHBOARD-CURRENCY-WIDTH-1017 — PC-C — IN_PROGRESS
 
 User requests compact currency selectors in all Dashboard chart headers. Branch codex/pc-c-dashboard-currency-width-1017 from develop2246f4a0. Reserve only Dashboard workspace currency-trigger classes and own status entries; previous assistant scope released. Use fixed112px width instead of minimum width, preserving chart data, selection behavior and calendar controls. No API/schema/dependency changes. Scoped lint/type/build and existing Dashboard tests, browser sizing check, full CI and localhost delivery.
@@ -7822,8 +7829,24 @@ LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR 
 
 User requests Telegram-like compact chat input and buttons. Reserve assistant executive-workspace composer markup/styles and own documentation on codex/pc-c-assistant-compact-composer-1017. PC-C; base develop1e21a21c. Prior source scopes merged/released; no overlapping composer owner. Acceptance: single-line initial input, bounded automatic growth, circular equal-size icon controls, compact quick commands, RTL/LTR and mobile fit, existing read-only command behavior. No API/provider/schema/dependency changes. Existing assistant tests, lint/type/build, browser verification and full CI gate delivery.
 
-## CONTRACT-PURCHASE-PROFIT-1017 — PC-A — IN_PROGRESS
+## CONTRACT-PURCHASE-PROFIT-1017 — PC-A — READY_FOR_CI
 
 User explicitly authorizes coordination with PURCHASE-FX-PROFIT-1017, completion of contract sales minus actual flight/hotel/transfer purchases for Finance, broker-profile purchase history and develop merge. Branch codex/pc-a-contract-purchase-profit-1017 from origin/develop@44b09949, separate clean worktree. Coordination sent to the Reservations thread owner of active FX work; do not modify its schema, Finance/Travel contracts or purchase-fx leaf. Reserve bounded Sales profit projection/tests, Finance consumer presentation, public Reservations purchase readers and broker purchase-history consumer as needed after ownership coordination. Preserve currencies, missing-cost unknown state, source de-duplication, branch/permission/CAS and real broker identities. No operational data/runtime/dependency changes; no migration reserved. Shared producer boundaries require recorded coordination before modification.
 
 Coordination accepted in FX owner's WORK_ASSIGNMENTS: runtime module shared edits limited to independent broker-history controller/provider imports and arrays; FX imports/capture hooks/contracts/schema remain untouched. Broker-profile consumer only uses a protected Reservations leaf read API. Reserve bounded MasterData profile import/render slot, existing Finance ContractProfit component consumer and own new Finance broker history component. User explicitly authorizes this cross-module consumer integration; domain ownership stays unchanged.
+
+## ASSISTANT-COMPACT-WINDOW-1017 — PC-C — IN_PROGRESS
+
+User requests a smaller floating chat window and removal of the full-workspace shortcut. Reserve floating-assistant.tsx/module.css and own documentation on codex/pc-c-assistant-compact-window-1017; PC-C. Prior assistant work merged/released; no overlapping owner. Target360x420px bounded by viewport, compact header, preserved scrolling/close/locale placement. No API/provider/schema/dependency changes. Existing assistant tests, lint/type/build, browser geometry and CI gates required.
+
+## FINANCE-PROFIT-LAYOUT-1017 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-finance-profit-layout-1017. Reserve Finance receipt-verification ContractProfit component, scoped presentation module CSS and focused tests plus own docs. User requests framed readable RTL profit/purchase view and develop merge. Preserve all profit computations, currency separation, incomplete/null states and read permissions; no API, accounting, schema, dependency or operational writes. Prior related presentation scopes are merged; no overlapping active target lock observed. Validation:13 focused view/inbox/Sales-exclusion/English-coverage tests passed. Currency rows have semantic headers, isolated LTR numeric amounts and codes, padded/bordered cells, locally contained narrow-screen scroll and separately framed incomplete-cost warning and cost evidence. Large/negative/null amounts are preserved. Scoped lint/types and exact-head full quality/test/build/database CI gate merge. No local3100 deployment; bounded source locks released with candidate.
+
+## DASHBOARD-BASE-BACKGROUND-1017 — PC-C — IN_PROGRESS
+
+User requests Dashboard canvas match the base background of all ERP panels. Reserve only two Dashboard-workspace rules in shared globals.css and own documentation on codex/pc-c-dashboard-base-background-1017; PC-C. Prior assistant scope merged/released; no overlapping global-style owner. Inherit shared background token and remove grid/gradient in light/dark; retain chart/card/sidebar presentation. No API/schema/dependency changes. Existing Dashboard tests, lint/type/build, visual light/dark comparison and CI gates required.
+
+CI follow-up: reserve only reservation-transfer-mode.spec.tsx permission-hook mock, preserving all existing leg/supplier assertions in its direct-call interaction harness. Correct missing title in the new synthetic price fixture. Twenty API/twelve initial Web tests and scoped lint/offline English sync pass; hosted production build and PostgreSQL gate passed at2f1b7a02. Local compilation passed but duplicate local full checks stopped for host memory pressure; exact final-head CI remains required. Integration retains concurrent Assistant/Dashboard documentation unchanged.
+
+CONTRACT-PURCHASE-PROFIT-1017 candidate frozen:20 API tests and13 Web tests pass including the integrated transfer interaction harness. Scoped lint, formatting/offline English sync pass; hosted clean production build and PostgreSQL gate passed on initial head. Own source reservations released for final exact-head CI and explicitly authorized merge. Preserve independent FX producer work; no live deployment.
