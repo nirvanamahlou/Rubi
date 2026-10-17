@@ -77,7 +77,10 @@ export class B2bOrganizationUserRepository {
           entityType: 'B2bOrganizationUser',
           entityId: row.id,
           ...(before ? { beforeSnapshot: snapshot(before) } : {}),
-          afterSnapshot: { record: snapshot(row), reason: input.reason.trim() },
+          afterSnapshot: {
+            record: snapshot(row),
+            reason: (input.reason ?? '').trim(),
+          },
         },
       });
       return row;

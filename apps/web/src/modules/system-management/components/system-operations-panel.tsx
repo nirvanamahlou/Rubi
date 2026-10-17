@@ -397,8 +397,8 @@ export function SystemOperationsPanel() {
                 <option>FULL</option>
               </NativeSearchSelect>
             </FormField>
-            <FormField label="دلیل درخواست" required>
-              <Textarea name="reason" required />
+            <FormField label="دلیل درخواست">
+              <Textarea name="reason" />
             </FormField>
             <Button disabled={saving === 'backup'} type="submit">
               ثبت درخواست امن Backup
@@ -415,8 +415,8 @@ export function SystemOperationsPanel() {
             <FormField label="شناسه خروجی ناموفق" required>
               <Input name="exportId" placeholder="UUID خروجی گزارش" required />
             </FormField>
-            <FormField label="دلیل تلاش مجدد" required>
-              <Textarea name="reason" required />
+            <FormField label="دلیل تلاش مجدد">
+              <Textarea name="reason" />
             </FormField>
             <Button
               disabled={saving === 'retry-reporting-export'}
@@ -481,8 +481,8 @@ export function SystemOperationsPanel() {
                 ))}
               </NativeSearchSelect>
             </FormField>
-            <FormField label="دلیل" required>
-              <Textarea name="reason" required />
+            <FormField label="دلیل">
+              <Textarea name="reason" />
             </FormField>
             <label className="flex items-start gap-2 text-xs leading-5">
               <input name="confirmCurrentSession" type="checkbox" /> اگر نشست

@@ -497,7 +497,7 @@ export class B2bService {
       id: rateId,
       expectedVersion: dto.version,
       actorUserId: actor.userId,
-      reason: dto.reason,
+      reason: dto.reason ?? '',
     });
     return { data: { id: rateId, deleted: true } };
   }

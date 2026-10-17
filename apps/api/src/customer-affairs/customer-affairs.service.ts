@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { HrDirectoryService } from '../hr/hr-directory.service';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { createdDateFilter } from './customer-affairs-date-filter';
@@ -689,7 +690,7 @@ export class CustomerAffairsService {
         code: 'LEAD_TRANSITION_INVALID',
         message: 'تغییر مرحله مجاز نیست.',
       });
-    if (input.stage === 'LOST' && !input.lostReason)
+    if (input.stage === 'LOST' && !isOptionalOperationReason(input.lostReason))
       throw new BadRequestException('دلیل از دست رفتن الزامی است.');
     const result = await this.repository.transaction(async (tx) => {
       const changed = await tx.customerAffairsLead.updateMany({
@@ -724,7 +725,7 @@ export class CustomerAffairsService {
           entityType: 'LEAD',
           entityId: id,
           action: 'TRANSITION',
-          reason: input.reason,
+          reason: input.reason ?? '',
           version: row.version,
           beforeSnapshot: json({ stage: current.stage }),
           afterSnapshot: json({ stage: row.stage }),
@@ -964,7 +965,7 @@ export class CustomerAffairsService {
           entityType: 'HANDOFF',
           entityId: handoffId,
           action: input.status,
-          reason: input.reason,
+          reason: input.reason ?? '',
           version: handoff.packageVersion,
           afterSnapshot: json({
             status: input.status,
@@ -1328,7 +1329,7 @@ export class CustomerAffairsService {
           entityType: 'TICKET',
           entityId: id,
           action: 'TRANSITION',
-          reason: input.reason,
+          reason: input.reason ?? '',
           version: updated.version,
           beforeSnapshot: json({ status: current.status }),
           afterSnapshot: json({ status: updated.status }),
@@ -1578,7 +1579,7 @@ export class CustomerAffairsService {
       !input.resolutionOutcome?.trim()
     )
       throw new BadRequestException('نتیجه رسیدگی الزامی است.');
-    if (action === 'CLOSE' && !input.closeReason?.trim())
+    if (action === 'CLOSE' && !isOptionalOperationReason(input.closeReason))
       throw new BadRequestException('دلیل بستن الزامی است.');
     const now = new Date();
     await this.repository.transaction(async (tx) => {
@@ -1653,7 +1654,7 @@ export class CustomerAffairsService {
           entityType: 'TICKET',
           entityId: id,
           action,
-          reason: input.reason,
+          reason: input.reason ?? '',
           version: updated.version,
           beforeSnapshot: json({
             status: current.status,

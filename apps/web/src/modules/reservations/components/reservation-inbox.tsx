@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { salesHotelRoomSummary } from '@nora/contracts';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -184,7 +186,7 @@ export function ReservationInbox() {
     draft.roomCount > 0 &&
     draft.singleRoomCount + draft.doubleRoomCount <= draft.roomCount &&
     draft.hotelGuestCustomerIds.length > 0 &&
-    draft.reason.trim().length > 0;
+    isOptionalOperationReason(draft.reason);
 
   return (
     <div className="grid gap-4">

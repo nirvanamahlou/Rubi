@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { validateVoucherSettings } from './voucher-settings';
 import { validateTicketFlightNumbers } from '@nora/contracts';
 import type {
@@ -35,10 +36,8 @@ export function transitionTravelWorkflow(
   )
     throw new Error('نسخه تغییر کرده است؛ اطلاعات را دوباره دریافت کنید.');
   if (
-    typeof command.note !== 'string' ||
-    (!command.note.trim() &&
-      !['CONFIRM_SUPPLIER', 'ISSUE_VOUCHER'].includes(command.action)) ||
-    command.note.trim().length > 500
+    !isOptionalOperationReason(command.note, 500) ||
+    (command.action === 'NOTE' && !command.note?.trim())
   )
     throw new Error('دلیل عملیات را تا ۵۰۰ نویسه وارد کنید.');
   if (
@@ -60,7 +59,7 @@ export function transitionTravelWorkflow(
   const next = {
     ...current,
     version: current.version + 1,
-    note: command.note.trim(),
+    note: (command.note ?? '').trim(),
   };
   switch (command.action) {
     case 'TICKET_FLIGHT_NUMBERS':
@@ -134,7 +133,7 @@ export function transitionTravelWorkflow(
         throw new Error('حداکثر تعداد یادداشت‌ها ثبت شده است.');
       next.reservationNotes = [
         ...(current.reservationNotes ?? []),
-        command.note.trim(),
+        (command.note ?? '').trim(),
       ];
       next.note = current.note;
       break;

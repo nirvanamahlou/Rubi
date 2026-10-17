@@ -25,6 +25,7 @@ export function text(
   max = 1000,
   optional = false,
 ): string {
+  optional ||= field === 'reason';
   if (optional && (value === undefined || value === null)) return '';
   requireRule(
     typeof value === 'string' &&

@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { useEffect, useRef, useState } from 'react';
 import type {
@@ -171,14 +173,14 @@ export function FinancePayrollActions({
         {manage && ['NEW', 'UNDER_REVIEW'].includes(status) ? (
           <>
             <Button
-              disabled={busy || !reason.trim()}
+              disabled={busy || !isOptionalOperationReason(reason)}
               variant="outline"
               onClick={() => void act('CORRECTION_REQUIRED')}
             >
               برگشت با علت
             </Button>
             <Button
-              disabled={busy || !reason.trim()}
+              disabled={busy || !isOptionalOperationReason(reason)}
               variant="outline"
               onClick={() => void act('REJECT')}
             >
@@ -188,7 +190,7 @@ export function FinancePayrollActions({
         ) : null}
         {manage && status === 'CORRECTION_REQUIRED' ? (
           <Button
-            disabled={busy || !reason.trim()}
+            disabled={busy || !isOptionalOperationReason(reason)}
             onClick={() => void act('RESUBMIT')}
           >
             بازارسال توسط درخواست‌کننده

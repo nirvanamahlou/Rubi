@@ -865,7 +865,7 @@ export class DocumentsRepository {
           actorBranchId: input.actorBranchId,
           action: input.action,
           outcome: AuditOutcome.SUCCESS,
-          reason: input.reason,
+          reason: input.reason ?? '',
           ipSummary: input.ipSummary,
           userAgentSummary: input.userAgentSummary,
         },
@@ -922,7 +922,7 @@ export class DocumentsRepository {
                 : 'documents.restore'
               : 'documents.completion.update',
             outcome: AuditOutcome.SUCCESS,
-            reason: input.reason,
+            reason: input.reason ?? '',
             ipSummary: input.ipSummary,
             userAgentSummary: input.userAgentSummary,
           },

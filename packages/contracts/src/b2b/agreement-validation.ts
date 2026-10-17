@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '../operation-reason';
 import {
   B2B_SERVICE_CODES,
   B2B_AGREEMENT_TYPES,
@@ -69,8 +70,9 @@ export function b2bAgreementTermsIssue(
   )
     return 'زمان پاسخ‌گویی باید بین ۱ تا ۷۲۰ ساعت باشد.';
   if (
-    terms.changeReason.length > 500 ||
-    (terms.changeReason.trim() && terms.changeReason.trim().length < 3)
+    (terms.changeReason ?? '').length > 500 ||
+    ((terms.changeReason ?? '').trim() &&
+      !isOptionalOperationReason(terms.changeReason))
   )
     return 'دلیل ثبت یا تغییر شرایط باید حداقل ۳ و حداکثر ۵۰۰ نویسه باشد.';
   if (

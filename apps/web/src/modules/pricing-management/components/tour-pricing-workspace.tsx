@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { currencySymbol } from '@/lib/currency-symbol';
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
@@ -495,7 +497,13 @@ export function TourPricingWorkspace() {
   }
 
   async function publishDraft() {
-    if (!session || !draft || saving || !publishReason.trim()) return;
+    if (
+      !session ||
+      !draft ||
+      saving ||
+      !isOptionalOperationReason(publishReason)
+    )
+      return;
     setSaving(true);
     setCostError('');
     try {
@@ -504,7 +512,7 @@ export function TourPricingWorkspace() {
         {
           version: 1,
           expectedDraftVersion: draft.draftVersion,
-          reason: publishReason.trim(),
+          reason: (publishReason ?? '').trim(),
         },
         session,
       );
@@ -922,7 +930,7 @@ export function TourPricingWorkspace() {
               saving ||
               unsaved ||
               !draft ||
-              !publishReason.trim() ||
+              !isOptionalOperationReason(publishReason) ||
               draft.lastEditorUserId === session?.user.id ||
               !!grid?.missingFlightOfferIds.length ||
               invalidSale ||

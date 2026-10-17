@@ -4770,5 +4770,21 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "ثبت‌کننده یا دلیل تغییر معتبر نیست.": "The actor or change reason is invalid.",
+  "دلیل اختیاری است و در نسخه عملیاتی به‌صورت پیام جدید و Audit ثبت می‌شود.": "The reason is optional and is recorded as a new message and audit entry.",
+  "دلیل اختیاری است؛ انقضای UTC، تاییدکننده دوم متفاوت و Audit کامل لازم است.": "The reason is optional; UTC expiry, a distinct second approver and a complete audit are required.",
+  "دلیل اصلاح (اختیاری)": "Correction reason (optional)",
+  "دلیل این تغییر را بنویسید (اختیاری)": "Enter a reason for this change (optional)",
+  "دلیل باید متن حداکثر ۱۲۰ نویسه باشد.": "The reason must be text of at most 120 characters.",
+  "دلیل تغییر باید متن حداکثر ۱۰۰۰ نویسه باشد.": "The change reason must be text of at most 1,000 characters.",
+  "دلیل حذف (اختیاری)": "Deletion reason (optional)",
+  "دلیل حذف اختیاری است؛ حداکثر ۵۰۰ نویسه.": "The deletion reason is optional; maximum 500 characters.",
+  "دلیل حذف دائمی را بنویسید (اختیاری)": "Enter a reason for permanent deletion (optional)",
+  "دلیل حذف معتبر نیست.": "The deletion reason is invalid.",
+  "دلیل رد یا درخواست اصلاح معتبر نیست.": "The rejection or correction reason is invalid.",
+  "دلیل رضایت معتبر نیست.": "The consent reason is invalid.",
+  "دلیل صدور مجدد معتبر نیست.": "The reissue reason is invalid.",
+  "دلیل عملیات معتبر نیست.": "The operation reason is invalid.",
+  "دلیل مشاهده را در صورت نیاز وارد کنید.": "Enter a viewing reason if needed."
 }

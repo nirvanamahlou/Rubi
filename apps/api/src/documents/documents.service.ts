@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   createHash,
   randomBytes,
@@ -1597,7 +1598,7 @@ export class DocumentsService {
       expectedStatus: 'ACTIVE',
       nextStatus: 'ARCHIVED',
       action: 'documents.archive',
-      reason: dto.reason.trim(),
+      reason: (dto.reason ?? '').trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
       ownerUserId: row.ownerUserId,
@@ -1638,7 +1639,7 @@ export class DocumentsService {
       expectedStatus: 'ARCHIVED',
       nextStatus: 'ACTIVE',
       action: 'documents.restore',
-      reason: dto.reason.trim(),
+      reason: (dto.reason ?? '').trim(),
       actorUserId: actor.userId,
       actorBranchId: row.branchId,
       ownerUserId: row.ownerUserId,
@@ -1694,7 +1695,7 @@ export class DocumentsService {
       const updatedCount = await this.repository.bulkAction({
         rows,
         action: dto.action,
-        reason: dto.reason.trim(),
+        reason: (dto.reason ?? '').trim(),
         actorUserId: actor.userId,
         ipSummary: summarizeIp(metadata.ipAddress),
         userAgentSummary: summarizeUserAgent(metadata.userAgent),
@@ -1729,7 +1730,7 @@ export class DocumentsService {
         'سند دارای توقف حقوقی است و حذف دائمی آن مجاز نیست.',
       );
     }
-    if (dto.reason.trim().length < 5) {
+    if (!isOptionalOperationReason(dto.reason)) {
       throw new BadRequestException('دلیل حذف دائمی الزامی است.');
     }
     if (row.version !== dto.version) {
@@ -2303,7 +2304,7 @@ export class DocumentsService {
       actor.permissions.includes('documents.download') &&
       (!sensitive ||
         (actor.permissions.includes('documents.sensitive.download') &&
-          (metadata.sensitiveReason?.trim().length ?? 0) >= 5)) &&
+          isOptionalOperationReason(metadata.sensitiveReason, 500))) &&
       row.archiveStatus === 'ACTIVE' &&
       row.currentVersion.scanStatus === 'CLEAN';
     const confidentialAccessAllowed = await this.hasConfidentialAccess(
@@ -2415,7 +2416,7 @@ export class DocumentsService {
     const sensitiveAllowed =
       !sensitive ||
       (actor.permissions.includes('documents.sensitive.read') &&
-        (metadata.sensitiveReason?.trim().length ?? 0) >= 5);
+        isOptionalOperationReason(metadata.sensitiveReason, 500));
     const previewable = previewableImageMimeTypes.has(
       row.currentVersion.detectedMimeType,
     );

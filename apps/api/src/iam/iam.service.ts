@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import {
   USER_JOB_TITLES,
   USER_ACCESS_SCREENS,
@@ -2295,10 +2296,9 @@ export class IamService implements IamStepUpPort {
       );
   }
   private validAdministrativeReason(value: string) {
-    const reason = value?.trim();
-    if (!reason || reason.length < 5 || reason.length > 120)
-      throw new BadRequestException('دلیل باید بین ۵ تا ۱۲۰ نویسه باشد.');
-    return reason;
+    if (!isOptionalOperationReason(value, 120))
+      throw new BadRequestException('دلیل باید متن حداکثر ۱۲۰ نویسه باشد.');
+    return (value ?? '').trim();
   }
   private maskIp(value: string | null) {
     if (!value) return null;

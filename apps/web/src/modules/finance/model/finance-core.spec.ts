@@ -167,8 +167,9 @@ describe('finance inbox validation', () => {
     }
   });
 
-  it('requires detailed rejection and correction reasons', () => {
-    expect(validateFinanceDecision('کوتاه')).not.toBeNull();
+  it('accepts optional rejection and correction reasons', () => {
+    expect(validateFinanceDecision('')).toBeNull();
+    expect(validateFinanceDecision('کوتاه')).toBeNull();
     expect(validateFinanceDecision('دلیل کامل برای برگشت درخواست')).toBeNull();
   });
 });
