@@ -24,7 +24,7 @@ describe.skipIf(process.env.PURCHASE_FX_TEST !== '1')(
         for (const table of [
           'ReservationServicePurchase',
           'FinanceTicketPurchaseCostRevision',
-          'FinanceProcurementInvoiceRevision',
+          'finance_procurement_invoice_revisions',
           'branches',
           'iam_users',
         ])

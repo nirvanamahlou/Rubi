@@ -2,7 +2,7 @@ CREATE TABLE "finance_purchase_fx_snapshots" (
   "id" UUID NOT NULL,
   "reservationPurchaseId" UUID UNIQUE REFERENCES "ReservationServicePurchase"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "ticketCostId" UUID UNIQUE REFERENCES "FinanceTicketPurchaseCostRevision"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
-  "invoiceRevisionId" UUID UNIQUE REFERENCES "FinanceProcurementInvoiceRevision"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  "invoiceRevisionId" UUID UNIQUE REFERENCES "finance_procurement_invoice_revisions"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "branchId" UUID NOT NULL REFERENCES "branches"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "actorUserId" UUID NOT NULL REFERENCES "iam_users"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   "currencyCode" VARCHAR(3) NOT NULL,
