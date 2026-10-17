@@ -15,6 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type {
+  HotelRegisteredPeriodsQueryV1,
   PackageListQueryV1,
   PackageBannerTemplateCreateInputV1,
   PackagePriceVersionCreateInputV1,
@@ -37,6 +38,16 @@ export class PackagePricingController {
     @Inject(PackagePricingService)
     private readonly pricing: PackagePricingService,
   ) {}
+
+  @Get('hotel-registered-periods')
+  @Header('Cache-Control', 'private, no-store')
+  @RequirePermissions('package_pricing.read')
+  hotelRegisteredPeriods(
+    @Query() query: HotelRegisteredPeriodsQueryV1,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.pricing.hotelRegisteredPeriods(query, req.actor);
+  }
 
   @Get('tour-departures')
   @Header('Cache-Control', 'private, no-store')

@@ -1,3 +1,4 @@
+export * from './hotel-registered-periods';
 import type { TourDepartureV1 } from '../travel/tours';
 import type { FinancePaidTicketCostV1 } from '../finance';
 

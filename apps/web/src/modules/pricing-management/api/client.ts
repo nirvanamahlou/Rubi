@@ -2,6 +2,8 @@
 import { localizedFetch } from '@/i18n/localized-fetch';
 
 import type {
+  HotelRegisteredPeriodsPageV1,
+  HotelRegisteredPeriodsQueryV1,
   LoginResponse,
   PackageBannerFormat,
   PackageListQueryV1,
@@ -108,6 +110,16 @@ function queryString(query: PackageListQueryV1) {
 
 export const packagePricingApi = {
   session,
+  hotelRegisteredPeriods: (
+    query: HotelRegisteredPeriodsQueryV1,
+    activeSession: LoginResponse,
+  ): Promise<HotelRegisteredPeriodsPageV1> => {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') params.set(key, String(value));
+    });
+    return request('/hotel-registered-periods?' + params, activeSession);
+  },
   list: (
     query: PackageListQueryV1,
     activeSession: LoginResponse,
