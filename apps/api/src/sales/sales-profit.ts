@@ -93,10 +93,14 @@ export function contractProfit(
       });
     covered.add(hotel.serviceClientKey);
   }
+  const flightCoverage = new Map<string, boolean>();
   for (const selection of contract.ticketSelections) {
     if (covered.has(selection.serviceClientKey)) continue;
     const cost = ticketCosts.find((row) => row.offerId === selection.offerId);
-    if (!cost) continue;
+    if (!cost) {
+      flightCoverage.set(selection.serviceClientKey, false);
+      continue;
+    }
     const assigned = contract.passengersDetail.filter((p) =>
       p.serviceClientKeys.includes(selection.serviceClientKey),
     );
@@ -131,8 +135,10 @@ export function contractProfit(
       amount: moneyDecimal(amount),
       currencyCode: cost.currencyCode,
     });
-    covered.add(selection.serviceClientKey);
+    if (!flightCoverage.has(selection.serviceClientKey))
+      flightCoverage.set(selection.serviceClientKey, true);
   }
+  for (const [key, complete] of flightCoverage) if (complete) covered.add(key);
   const missingServiceKeys = services
     .filter((s) => !covered.has(s.clientKey))
     .map((s) => s.clientKey);
