@@ -6186,3 +6186,8 @@ ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access 
 Chart header currency selectors now have a fixed112px width rather than stretching from an intrinsic input width. Shared form controls and calendar selectors unchanged. Validation in progress; no data/API/schema changes.
 
 LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR #895 merge to develop; this supersedes the earlier review-only instruction. Login code is unchanged by integration; both independent status histories are retained.
+
+
+## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C
+
+Compact Telegram-style assistant composer: one-row input with bounded132px automatic growth, circular36px controls (32px floating),30px quick commands and a non-wrapping mobile input row. Existing fixed read-only requests retained.68 assistant tests passed; scoped lint/build and browser verification in progress. No API/provider/schema changes.
