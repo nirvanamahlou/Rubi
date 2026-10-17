@@ -20,6 +20,17 @@ export interface IntegrationSystemConfigV1 extends IntegrationBrandConfigV1 {
   kind: string;
   businessDomain: IntegrationBusinessDomain;
   capabilityCodes: string[];
+  /** Nonsecret setup intent, never evidence of an operational connection. */
+  setup?: IntegrationSiteSetupV1;
+}
+
+export interface IntegrationSiteSetupV1 {
+  websiteUrl?: string;
+  apiBaseUrl?: string;
+  documentationUrl?: string;
+  environment: 'SANDBOX' | 'PRODUCTION';
+  protocol: 'UNDECIDED' | 'REST' | 'WEBHOOK' | 'MANUAL';
+  authentication: 'UNDECIDED' | 'API_KEY' | 'OAUTH2' | 'HMAC' | 'NONE';
 }
 
 export interface IntegrationCatalogueConfigV1 {

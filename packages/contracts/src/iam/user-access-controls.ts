@@ -75,6 +75,7 @@ export const SYSTEM_SETTING_EDITABLE_KEYS = [
   'master.import',
   'master.rates',
   'master.providers',
+  'integrations.registry',
 ] as const;
 
 export interface UserAccessControl {
@@ -111,7 +112,7 @@ export const USER_ACCESS_FIELD_CONTROLS: readonly UserAccessControl[] = [
   ...SYSTEM_SETTING_EDITABLE_KEYS.map((key) => ({
     id: `field.system-settings.${key}`,
     kind: 'field' as const,
-    group: 'system',
+    group: key === 'integrations.registry' ? 'integrations' : 'system',
     title: `تنظیم · ${key}`,
   })),
 ];
@@ -282,6 +283,13 @@ const queryViews = (
 
 export const ADDITIVE_USER_ACCESS_SCREENS: readonly AdditiveUserAccessScreen[] =
   [
+    {
+      id: 'system.module.integrations',
+      group: 'integrations',
+      title: 'مدیریت تنظیمات اتصال سایت‌ها',
+      route: '/integrations',
+      inheritFrom: 'integrations.home',
+    },
     {
       id: 'ticket-purchases.home',
       group: 'procurement',
