@@ -11,10 +11,7 @@ import {
 } from './reservation-table';
 
 import { Suspense, useState } from 'react';
-import {
-  ContractCorrectionDeepLink,
-  ContractCorrectionHistoryButton,
-} from '../components/contract-correction-history';
+import { ContractCorrectionDeepLink } from '../components/contract-correction-history';
 import { ContractActionPanel } from './action-panel';
 import { DatePicker } from '@/components/ui/date-picker';
 import {
@@ -866,9 +863,6 @@ export function ReservationOperationsWorkspace({
             request={selected}
           />
         )}
-        {selected?.contractId ? (
-          <ContractCorrectionHistoryButton contractId={selected.contractId} />
-        ) : null}
       </div>
       <Suspense fallback={null}>
         <ContractCorrectionDeepLink />

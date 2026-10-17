@@ -7908,3 +7908,7 @@ HOTEL-REGISTERED-PERIODS-1017 reference boundary extension: reserve one additive
 COMPUTER_ID=PC-A; branch codex/pc-a-contract-referral-label-1017 from origin/develop@8a380e10. Reserve sales-people-sheet.tsx heading and one English catalogue entry, plus own status notes. User authorizes develop merge. Presentation only; no schema, API, dependencies or business data changes.
 
 CONTRACT-REFERRAL-LABEL-1017 — READY_FOR_REVIEW: 3 existing SalesPeopleSheet tests, scoped ESLint, Prettier and Contracts build pass. Source locks released at candidate; full CI gates authorized develop merge. No migration or runtime change.
+
+## REMOVE-BOTTOM-HISTORY-1017 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-remove-bottom-history-1017 from origin/develop@8a380e10. User requests removal of the standalone bottom correction-history button in Reservations and develop merge. Reserve only foundation/workspace.tsx, its focused rendering regression and own docs. Preserve history records, the Notes action's protected history and notification correction deep links. No API, permissions, schema/migration, dependency, operational data or runtime changes; prior target scopes merged/released. Validation:40 workspace/action-panel tests and scoped lint passed. A selected canonical contract no longer renders the bottom trigger, while Notes and deep-link entry points remain. Web types and exact-head full CI gate authorized develop merge; no3100 deployment. Bounded source locks released with candidate.

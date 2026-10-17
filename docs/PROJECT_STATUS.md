@@ -1,3 +1,7 @@
+## REMOVE-BOTTOM-HISTORY-1017 — PC-A — READY_FOR_CI
+
+Removed only the standalone correction-history button below the Reservations action panel. Protected history remains available through Notes and notification correction deep links; no evidence or records deleted.40 workspace/action-panel regressions and scoped lint pass. Types and exact-head full CI gate user-authorized develop merge. No API/schema/dependency/runtime or operational data changes.
+
 ## PARTNER-360-IMPORT-1017 — PC-B — PARTIAL / FINANCE CONTRACT HANDOFF
 
 Published: PR https://github.com/nirvanamahlou/Rubi/pull/912 targets develop.
