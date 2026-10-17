@@ -4824,5 +4824,7 @@
   "Tagها": "Tags",
   "Timezone باید شناسه معتبر IANA باشد.": "Timezone must be a valid IANA identifier.",
   "version برای ویرایش آدرس الزامی است.": "version is required to edit the address.",
-  "version برای ویرایش الزامی است.": "version is required for editing."
+  "version برای ویرایش الزامی است.": "version is required for editing.",
+  "روش یا محیط اتصال معتبر نیست.": "Invalid connection method or environment.",
+  "نشانی باید HTTPS عمومی و بدون اطلاعات ورود، پارامتر یا بخش خصوصی باشد.": "Use a public HTTPS URL without credentials, query parameters or fragments."
 }

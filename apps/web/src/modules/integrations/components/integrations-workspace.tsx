@@ -17,6 +17,7 @@ import {
   Cable,
   ChevronLeft,
   Globe2,
+  Plus,
   RefreshCw,
   Settings2,
 } from 'lucide-react';
@@ -43,6 +44,12 @@ import {
 } from '../model';
 import { CatalogueEditor, type CatalogueEdit } from './catalogue-editor';
 import { BrandsDashboard } from './brands-dashboard';
+import { SiteRegistrationDialog } from './site-registration-dialog';
+import {
+  authenticationLabels,
+  environmentLabels,
+  protocolLabels,
+} from '../site-registration';
 
 function errorMessage(error: unknown) {
   if (error instanceof IntegrationsApiError) {
@@ -92,6 +99,9 @@ export function IntegrationWorkspaceBody({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(false);
   const [edit, setEdit] = useState<CatalogueEdit | null>(null);
+  const [siteForm, setSiteForm] = useState<{
+    system?: IntegrationSystemConfigV1;
+  } | null>(null);
   const [selectedSystem, setSelectedSystem] = useState<string | null>(null);
   const [brandFilter, setBrandFilter] = useState('');
   const [listedOnly, setListedOnly] = useState(false);
@@ -154,7 +164,7 @@ export function IntegrationWorkspaceBody({
     };
   }, [load]);
 
-  async function save(input?: IntegrationRegistryWriteV1) {
+  async function persist(input?: IntegrationRegistryWriteV1) {
     setBusy(true);
     setError('');
     try {
@@ -163,11 +173,20 @@ export function IntegrationWorkspaceBody({
         : await integrationsApi.initialize(branchId);
       setData(next);
       setEdit(null);
+      return true;
     } catch (cause) {
       setError(errorMessage(cause));
+      return false;
     } finally {
       setBusy(false);
     }
+  }
+  async function save(input?: IntegrationRegistryWriteV1) {
+    await persist(input);
+  }
+  function openSite(system?: IntegrationSystemConfigV1) {
+    setError('');
+    setSiteForm(system ? { system } : {});
   }
   const system = data?.systems.find((row) => row.id === selectedSystem);
   function changeSection(next: IntegrationSection) {
@@ -187,7 +206,7 @@ export function IntegrationWorkspaceBody({
             <NativeSearchSelect
               aria-label="شعبه مجاز"
               value={branchId}
-              disabled={busy || !!edit}
+              disabled={busy || !!edit || !!siteForm}
               onChange={(event) => {
                 loadSequence.current += 1;
                 setData(null);
@@ -212,6 +231,16 @@ export function IntegrationWorkspaceBody({
             >
               <RefreshCw className="size-4" />
             </Button>
+            {data?.canManage ? (
+              <Button
+                type="button"
+                disabled={busy || !!edit || !!siteForm}
+                onClick={() => openSite()}
+              >
+                <Plus className="size-4" />
+                افزودن سایت
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -251,6 +280,22 @@ export function IntegrationWorkspaceBody({
       {branchId && !data && !error ? <Skeleton className="h-72" /> : null}
       {data ? (
         <>
+          {siteForm ? (
+            <SiteRegistrationDialog
+              data={data}
+              {...(siteForm.system ? { system: siteForm.system } : {})}
+              busy={busy}
+              error={error}
+              onClose={() => setSiteForm(null)}
+              onSave={async (input, id) => {
+                if (await persist(input)) {
+                  setSiteForm(null);
+                  setSelectedSystem(id);
+                  setManagingCatalogue(false);
+                }
+              }}
+            />
+          ) : null}
           {!data.initialized ? (
             <Alert
               title="فهرست اولیه هنوز ذخیره نشده است"
@@ -289,6 +334,7 @@ export function IntegrationWorkspaceBody({
               data={data}
               onBack={() => setSelectedSystem(null)}
               onEdit={() => setEdit({ kind: 'system', record: system })}
+              onSetup={() => openSite(system)}
             />
           ) : (
             <>
@@ -364,6 +410,7 @@ export function IntegrationWorkspaceBody({
                   onOpen={setSelectedSystem}
                   onSection={changeSection}
                   onManage={() => setManagingCatalogue(true)}
+                  {...(data.canManage ? { onCreate: () => openSite() } : {})}
                 />
               ) : null}
               {section === 'brands' && managingCatalogue ? (
@@ -434,7 +481,7 @@ export function IntegrationWorkspaceBody({
                         <Button
                           type="button"
                           disabled={!!edit || !data.brands.length}
-                          onClick={() => setEdit({ kind: 'system' })}
+                          onClick={() => openSite()}
                         >
                           افزودن سامانه
                         </Button>
@@ -755,11 +802,13 @@ function SystemDetail({
   data,
   onBack,
   onEdit,
+  onSetup,
 }: {
   system: IntegrationSystemConfigV1;
   data: IntegrationRegistryV1;
   onBack: () => void;
   onEdit: () => void;
+  onSetup: () => void;
 }) {
   const [area, setArea] = useState('settings');
   return (
@@ -811,9 +860,46 @@ function SystemDetail({
             فروش مستقیم سفر: {systemSalesState(system)}
           </p>
           {data.canManage ? (
-            <Button type="button" className="w-fit" onClick={onEdit}>
-              ویرایش سامانه
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" onClick={onSetup}>
+                راه‌اندازی سایت
+              </Button>
+              <Button type="button" variant="outline" onClick={onEdit}>
+                ویرایش سامانه
+              </Button>
+            </div>
+          ) : null}
+          {system.setup ? (
+            <div className="grid gap-3 rounded-xl border border-border p-4 text-sm">
+              <h3 className="font-bold">مشخصات راه‌اندازی</h3>
+              {system.setup.websiteUrl ? (
+                <p>
+                  نشانی سایت:{' '}
+                  <bdi className="break-all">{system.setup.websiteUrl}</bdi>
+                </p>
+              ) : null}
+              <p>محیط اتصال: {environmentLabels[system.setup.environment]}</p>
+              <p>روش ارتباط: {protocolLabels[system.setup.protocol]}</p>
+              <p>
+                روش احراز هویت:{' '}
+                {authenticationLabels[system.setup.authentication]}
+              </p>
+              {system.setup.apiBaseUrl ? (
+                <p>
+                  نشانی پایه API:{' '}
+                  <bdi className="break-all">{system.setup.apiBaseUrl}</bdi>
+                </p>
+              ) : null}
+              {system.setup.documentationUrl ? (
+                <p>
+                  مستندات اتصال:{' '}
+                  <bdi className="break-all">
+                    {system.setup.documentationUrl}
+                  </bdi>
+                </p>
+              ) : null}
+              <Badge className="w-fit">ارتباط هنوز تأیید نشده است</Badge>
+            </div>
           ) : null}
         </>
       ) : (

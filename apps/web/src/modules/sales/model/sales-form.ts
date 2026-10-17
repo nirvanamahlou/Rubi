@@ -436,6 +436,7 @@ export function salesHotelCapacityError(
   state: SalesFormState,
   roomRates: readonly HotelRoomRateV1[],
 ): string | null {
+  if (!state.serviceKinds.includes('HOTEL')) return null;
   if (state.hotel.rooms?.length) {
     for (const r of state.hotel.rooms) {
       const rate = roomRates.find((v) => v.roomTypeId === r.roomTypeId);

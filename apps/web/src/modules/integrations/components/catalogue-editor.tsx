@@ -82,6 +82,7 @@ export function CatalogueEditor({
           form.get('businessDomain'),
         ) as IntegrationSystemConfigV1['businessDomain'],
         capabilityCodes: capabilities,
+        ...(edit.record?.setup ? { setup: edit.record.setup } : {}),
       };
       config.systems = edit.record
         ? config.systems.map((item) => (item.id === row.id ? row : item))

@@ -1,3 +1,47 @@
+## AIRCRAFT-SAVE-ACCESS-1017 — PC-A — READY_FOR_CI
+
+Aircraft forms submit transportStatus, which is governed by the separate status-management policy but absent from IAM editable-field controls. Manual-access actors were rejected before that policy ran. Route only this transport workflow key outside generic field checks; retain status permission, status-value validation, resource access and explicit editable-field denies.68 API service/transport/permission regressions pass, including manual-access create/update and negative permission/value checks; scoped lint/format pass. No migration, data changes or deployment. Full exact-head CI gates user-authorized develop merge.
+
+## INTEGRATIONS-DEVELOP-DELIVERY-1017 — PC-D — VALIDATING
+
+User explicitly requests these existing site-onboarding and IAM access changes on latest develop, hosted CI and merge after all checks pass. This latest instruction authorizes develop as the delivery target for PR909. Merge origin/develop@c025c16e into the task branch, preserving concurrent sources and both coordination histories. Integrations add/add conflicts are the already merged PR889 foundation plus the bounded onboarding additions; preserve new setup metadata, permission catalogue and both translation sets. No operational database or runtime change. Branch protections remain required.
+
+## INTEGRATIONS-ACCESS-1017 — PC-D — READY_FOR_REVIEW
+
+Native user administration now exposes the Integrations connection module,
+registry editing field and existing settings-management operation in the
+Integrations section for both new and existing users. Selecting permissions
+retains the same native IAM operation, explicit manual controls and branch
+checks; no user grant or shared role is automatically changed. The local ehsan
+administrator already has access; all options and the Add website dialog are
+verified in the browser. 231 contract/API/IAM/Web tests, scoped lint/format,
+Contracts build/types and the Web production build (62 routes with TypeScript)
+pass. Local API image 1017-access and Web image 1017-access-v2 are healthy;
+existing registry version 2 and all infrastructure/data are retained. No schema,
+migration, seed, dependency or external connection change. The access commit is
+included in PR909 (#909) to avoid duplicating the website implementation;
+hosted CI and review are pending on the updated head. See
+[local access repair](tasks/INTEGRATIONS-ACCESS-1017.md).
+
+## INTEGRATIONS-SITE-ONBOARDING-1017 — PC-D — READY_FOR_REVIEW
+
+Direct Add website and existing-site setup run locally on Docker Web3100/API4192,
+image `rubi-integrations-local:1017-site-onboarding-v2`. Brand selection/inline
+creation, generated internal codes and optional connection metadata use the
+existing branch-scoped registry, native IAM, CAS and audited owner writes.
+Four systems remain; Academy is EDUCATION; no sample site/URL was saved.
+Local tests pass:18 Web,45 API,147 contracts. Scoped lint/format/i18n,
+Web/API typechecks/builds and interactive desktop/mobile/light/dark checks pass.
+No schema/migration/dependency/seed or external connectivity change. All external
+sites remain ready for connection pending real documentation/access.
+The root Dockerfile builds both Web and API, and CI includes the
+`PC-D-Integration` target. The user authorized push, hosted CI and a PR to that
+branch; merge requires every check green and required review. See [delivery and rollback constraints](tasks/INTEGRATIONS-SITE-ONBOARDING-1017.md).
+
+## PASSENGER-SERVICES-1017 — PC-A — READY_FOR_CI / AUTHORIZED SERVER ROLLOUT
+
+Passenger-step continuation and its warning now use one reason function. Valid shared-service passengers proceed; stale unselected hotel fields cannot block flight-only contracts. Selected hotel capacity and missing visa-applicant errors show their actual cause instead of the generic unassigned-service warning. Actual unassigned passengers, identity confirmation and server domain validation remain enforced.60 Web/model/form/English regressions and49 API domain tests pass; lint/types/format pass. User explicitly requests current develop plus this fix on94.184.46.9 after full exact-head CI. No source schema/migration/dependency changes; no pending migrations versus current8a380e10. Rollout builds a separate pinned API/Web/worker image, encrypts and validates database/document backups, retains old image/config for rollback and preserves data volumes, private configuration, nginx and users. No seed or database replacement.
+
 ## REMOVE-BOTTOM-HISTORY-1017 — PC-A — READY_FOR_CI
 
 Removed only the standalone correction-history button below the Reservations action panel. Protected history remains available through Notes and notification correction deep links; no evidence or records deleted.40 workspace/action-panel regressions and scoped lint pass. Types and exact-head full CI gate user-authorized develop merge. No API/schema/dependency/runtime or operational data changes.
@@ -6283,3 +6327,14 @@ Verification: 3 existing form tests, scoped ESLint, formatting and shared Contra
 
 Login page retains its plain white canvas and no decorative media. In the 2026-10-17 follow-up, both halves of the card share one continuous blue gradient; form labels, language controls and submit action use high-contrast colors while inputs remain white. Existing logos and authentication behavior remain. PR #917 is the review candidate; user authorizes develop merge after exact-head CI. No data/schema/API changes.
 
+Verification:24 focused API tests, scoped ESLint and formatting passed. Full CI required before develop merge.
+
+
+## SALES-REMOVE-FOLLOWUPS-1017 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-remove-followups-1017. Reserve only Sales sales-workspace.tsx and own status entries. User authorizes removing the follow-up summary card (finance pending, reservations pending, settled) and develop merge. Preserve receivables, contract list, primary metrics and API/data contracts. No schema, migration, dependency or operational runtime change. Previous bounded Sales scopes are released; full CI gates merge.
+
+
+## ASSISTANT-EXPAND-WINDOW-1017 — PC-C
+
+Dashboard assistant uses the same Lucide outline rendering path as peer pages, with a dedicated Sparkles icon. Chat header gains bilingual expand/restore control; compact default preserved and expanded bounds fit viewport. Draft/results remain mounted during resizing; close resets size. Validation in progress; no API/schema/provider changes.

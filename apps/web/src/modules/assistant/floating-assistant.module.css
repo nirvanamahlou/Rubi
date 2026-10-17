@@ -47,6 +47,10 @@
   background: #0d2445;
   box-shadow: 0 14px 48px #07152e55;
 }
+.panel[data-expanded='true'] {
+  width: min(640px, calc(100vw - 40px));
+  height: min(680px, calc(100dvh - 120px));
+}
 .panel[hidden] {
   display: none;
 }
@@ -122,5 +126,9 @@
     width: calc(100vw - 24px);
     bottom: 68px;
     height: min(420px, calc(100dvh - 104px));
+  }
+  .panel[data-expanded='true'] {
+    width: calc(100vw - 24px);
+    height: calc(100dvh - 104px);
   }
 }
