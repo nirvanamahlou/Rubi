@@ -1,3 +1,7 @@
+## PARTNER-360-COMPLETE-1017 — PC-B — IN_PROGRESS
+
+Product owner explicitly delegates the bounded supplier/broker360 Finance producer to PC-B, with COUNTERPARTY_TO_US credit and25 concurrent staff as the test workload. Ownership/producer/consumer scope is reserved in WORK_ASSIGNMENTS and MODULE_OWNERSHIP; other Finance ownership is unchanged. Role-aware B2B profiles/contracts/rates and the Finance-owned operational payable projection are being implemented.65 focused API and42 Web regressions passed at the first checkpoint; final type/build, PostgreSQL, cross-role/branch/replay, browser, CI/merge and local3100 rollout are still pending. No operational migration/data/runtime change has been performed.
+
 ## REMOVE-BOTTOM-HISTORY-1017 — PC-A — READY_FOR_CI
 
 Removed only the standalone correction-history button below the Reservations action panel. Protected history remains available through Notes and notification correction deep links; no evidence or records deleted.40 workspace/action-panel regressions and scoped lint pass. Types and exact-head full CI gate user-authorized develop merge. No API/schema/dependency/runtime or operational data changes.
