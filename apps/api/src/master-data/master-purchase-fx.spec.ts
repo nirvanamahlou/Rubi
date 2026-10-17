@@ -3,12 +3,10 @@ import { Prisma } from '@nora/database';
 import { MasterProcurementDirectory } from './master-procurement-directory';
 describe('public purchase FX reference', () => {
   it('reads only an approved active direct SELL quote valid and approved at the purchase instant', async () => {
-    const findFirst = vi
-      .fn()
-      .mockResolvedValue({
-        rate: new Prisma.Decimal('123456.123456789'),
-        observedAt: new Date('2026-10-17T00:00:00Z'),
-      });
+    const findFirst = vi.fn().mockResolvedValue({
+      rate: new Prisma.Decimal('123456.123456789'),
+      observedAt: new Date('2026-10-17T00:00:00Z'),
+    });
     const directory = new MasterProcurementDirectory({
       client: { masterDraftExchangeRate: { findFirst } },
     } as never);

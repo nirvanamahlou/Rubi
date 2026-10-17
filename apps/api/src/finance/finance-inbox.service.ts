@@ -620,6 +620,8 @@ export class FinanceInboxService {
     );
     if (!item || !this.purchaseFx)
       throw new NotFoundException('خرید ارزی مجاز یافت نشد.');
+    if (!actor.branchIds.includes(item.branchReference))
+      throw new ForbiddenException();
     const line = item.reservationPurchase?.lines.find(
       (p) => p.purchaseId === referenceId,
     );

@@ -42,6 +42,7 @@ it('uses only branch-scoped payments through the displayed Finance revision, exc
   };
   const service = new PurchaseFxService(db as never, {} as never);
   const item = {
+    id: 'reservations:purchase',
     kind: 'PAYMENT_REQUEST',
     sourceVersion: 1,
     createdAt: '2026-10-17T00:00:00Z',
