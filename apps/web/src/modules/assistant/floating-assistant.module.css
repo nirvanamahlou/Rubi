@@ -38,8 +38,8 @@
   bottom: 76px;
   display: flex;
   flex-direction: column;
-  width: min(420px, calc(100vw - 40px));
-  height: min(650px, calc(100dvh - 120px));
+  width: min(360px, calc(100vw - 40px));
+  height: min(420px, calc(100dvh - 120px));
   overflow: hidden;
   border: 1px solid #365679;
   border-radius: 22px;
@@ -55,7 +55,7 @@
   align-items: center;
   flex-shrink: 0;
   gap: 8px;
-  padding: 14px 12px;
+  padding: 10px 12px;
   border-bottom: 1px solid #365679;
   background: linear-gradient(120deg, #07152e, #173a65);
 }
@@ -121,6 +121,6 @@
   .panel {
     width: calc(100vw - 24px);
     bottom: 68px;
-    height: min(620px, calc(100dvh - 104px));
+    height: min(420px, calc(100dvh - 104px));
   }
 }

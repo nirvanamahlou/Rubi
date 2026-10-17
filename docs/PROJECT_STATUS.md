@@ -1,3 +1,7 @@
+## FINANCE-PROFIT-LAYOUT-1017 — PC-A — READY_FOR_CI
+
+Receipt-verification contract-profit view is framed and spaced with RTL table headers, isolated LTR amounts, explicit currency codes, contained horizontal overflow, separate missing-cost warning and purchase evidence cards. Existing protected Sales profit read and all financial calculations remain unchanged; null profit is never displayed as zero.13 focused presentation, inbox, Sales-exclusion and English-coverage tests pass. Scoped lint/type and exact-head full CI gate user-authorized develop merge; no API/schema/dependency/data or local3100 changes.
+
 ## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
 
 Reservations note/yellow cells now inherit the same height, line-height and nowrap metrics as ordinary cells, retaining note colors and titles. Sales corrected yellow rows no longer add a second paragraph beneath the contract number; correction explanation remains in its title and row color is unchanged. ContractOutputButton defaults to قرارداد, retaining all permissions, preview and authenticated PDF download behavior. Focused markup/style/label regressions, Web types/build and full exact-head CI gate user-authorized develop merge. No API, schema, migration, dependency, data or local3100 changes.
@@ -6155,6 +6159,10 @@ User authorizes moving all six assistant views to Dashboard navigation and remov
 
 ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/access Web tests pass (one existing projection test skipped), six new Dashboard integration renders and seven settings-consumer tests pass,14 Contracts access tests pass including duplicate-page rejection. Full Web TypeScript and production build (62 routes), scoped Web/Contracts ESLint and diff checks pass. All six original layouts are reused without the old tab strip; legacy links redirect to exact dashboard pages. Native assistant grants retained, unrelated Dashboard grants unchanged; query/report filters disabled for assistant sources. No API/schema/migration/provider change. Candidate source scope frozen and reservation released; exact-head/postmerge CI and local browser delivery remain gates.
 
+## LOGIN-REMOVE-HELPER-1015 — PC-A
+
+Removed the administrator-assigned username/password helper paragraph from the login page. Username/password fields and authentication behavior are unchanged. User explicitly requested no develop merge. No migration, dependency or local runtime update. Existing 20 login regressions, scoped ESLint, Web typecheck and production build (62 routes) passed. Draft PR #895 remains unmerged; scoped locks released.
+
 
 ## 2026-10-15 — Workbench daily packages — PC-B — READY_FOR_REVIEW
 
@@ -6167,6 +6175,9 @@ Removed the flight-number override editor from Reservations issued tickets. All 
 ## 2026-10-15 — PERFORMANCE-EXTRA-CARDS-1015 — PC-B
 
 Added six Workbench performance cards: lateness, commission, debit balance, credit balance, overtime and work shortfall. HR's self-only projection adds optional current Persian-month attendance totals, scoped by authenticated employee/branch and latest daily review; missing/invalid measurements are null rather than zero. Commission/debit/credit remain empty per the user's explicit clarification that separate manual entry will be defined later. Full work shortfall has no authoritative current HR calculation and is not inferred from early departure or payroll deductions. No Finance-owned query, schema/migration, dependency, live data or runtime change.
+## 2026-10-17 — HR-STATUS-RENDER-FIX-1017 — READY_FOR_REVIEW
+
+The HR employee page crashed after bootstrap because `HrStatus` called `.replace` on a non-string status value. Status presentation now accepts unexpected values safely, and the employee table/filter share the same display normalization. The live Chrome employee list on port 3100 was verified after the hotfix; 57 focused HR tests, Web typecheck, scoped lint, formatting and Web production build (62 routes) pass. No schema, migration, API contract, permission or business-data change. A rebuilt Web image is deployed locally for persistence across container recreation.
 
 
 ## ASSISTANT-SINGLE-DASHBOARD-1017 — PC-C
@@ -6181,6 +6192,12 @@ ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access 
 
 Chart header currency selectors now have a fixed112px width rather than stretching from an intrinsic input width. Shared form controls and calendar selectors unchanged. Validation in progress; no data/API/schema changes.
 
+## RESERVATION-ISSUED-FORM-1017 — PC-A
+
+Supplier reservation form currency inputs consume all active Master Data currency pages, preserving already-saved inactive codes without inventing choices. Contractual hotel purchase totals are visible beside hotel information with exact separate-currency symbols. Issued forms open the sent settings snapshot with only Edit/Download actions; full settings remain available through explicit Edit, while tickets/vouchers/history and immutable supplier PDF selection remain unchanged. No API/schema/migration/dependency/live data/runtime change. Focused tests and full CI gate user-authorized develop merge.
+
+LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR #895 merge to develop; this supersedes the earlier review-only instruction. Login code is unchanged by integration; both independent status histories are retained.
+
 
 ## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C
 
@@ -6189,3 +6206,13 @@ Compact Telegram-style assistant composer: one-row input with bounded132px autom
 ## PURCHASE-FX-PROFIT-1017 — PC-A — IN_PROGRESS
 
 Adding fixed purchase-day approved SELL/REFERENCE rate snapshots with manual purchase-form override, a Finance-owned immutable true-FK snapshot table and paid-only currency variance. Reservations and ticket-cost producers capture atomically; Finance invoice approval captures the handoff-day reference. Inbox shows baseline/actual payment/gain-loss, grouped per currency; payment preview compares only the entered foreign portion. Missing legacy baseline or payment evidence stays unknown, with finance-authorized one-time manual capture. No GL postings or exchange-rate revaluation of unpaid balances; no double-counting in contract purchase profit. Source/type/build/CI checks underway; user authorizes develop merge after completion. No operational migration/runtime update.
+
+
+## ASSISTANT-COMPACT-WINDOW-1017 — PC-C
+
+Floating chat window reduced to360x420px with viewport limits and a smaller header; full-workspace shortcut removed. Existing scrollable results, close behavior and language placement retained. Validation in progress. No API/schema/provider changes.
+
+
+## DASHBOARD-BASE-BACKGROUND-1017 — PC-C
+
+Dashboard canvas now inherits the shared ERP background token in light and dark themes, with its dedicated grid/gradient removed. Existing cards/charts/sidebar retain their presentation. Validation in progress; no API/schema/dependency changes.

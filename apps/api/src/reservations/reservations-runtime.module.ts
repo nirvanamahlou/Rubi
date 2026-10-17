@@ -201,6 +201,27 @@ export class ReservationRequestsController {
     return this.directory!.voucherBrokers(search.slice(0, 100), pageNumber);
   }
 
+  @Get(':id/voucher-currencies')
+  @Header('Cache-Control', 'private, no-store')
+  async voucherCurrencies(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+    @Query('page') page = '1',
+  ) {
+    if (!req.actor.permissions.includes('reservations.read'))
+      throw new ForbiddenException();
+    await this.workflow.detail(id, req.actor.branchIds);
+    const pageNumber = Number(page);
+    if (
+      !Number.isSafeInteger(pageNumber) ||
+      pageNumber < 1 ||
+      pageNumber > 1000
+    )
+      throw new BadRequestException('صفحه معتبر نیست.');
+    if (!this.directory) throw new NotFoundException();
+    return this.directory.voucherCurrencies(pageNumber);
+  }
+
   @Get(':id/voucher-brokers/:brokerId/leaders')
   @Header('Cache-Control', 'private, no-store')
   async voucherLeaders(

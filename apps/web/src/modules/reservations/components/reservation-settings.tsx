@@ -1,4 +1,8 @@
 'use client';
+import {
+  ReservationCurrencySelect,
+  useReservationCurrencies,
+} from './reservation-currencies';
 import { useEffect, useRef, useState } from 'react';
 import {
   voucherTextKeys,
@@ -185,6 +189,7 @@ export function ReservationSettingsForm({
       settings.text.contractPartyName = partyName;
     return settings;
   });
+  const currencyDirectory = useReservationCurrencies(intake.id);
   const [directory, setDirectory] = useState<{
     key: string;
     options: Partial<
@@ -615,6 +620,9 @@ export function ReservationSettingsForm({
           </p>
           {priceLoading && <p>در حال دریافت نرخ خرید…</p>}
           {priceError && <p role="alert">{priceError}</p>}
+          {currencyDirectory.error && (
+            <p role="alert">{currencyDirectory.error}</p>
+          )}
           {(draft.hotelPurchasePrices?.length
             ? draft.hotelPurchasePrices
             : [{ amount: '', currencyCode: '' }]
@@ -641,13 +649,12 @@ export function ReservationSettingsForm({
               </label>
               <label>
                 ارز
-                <Input
-                  aria-label={`ارز هتل ${index + 1}`}
-                  dir="ltr"
-                  maxLength={3}
+                <ReservationCurrencySelect
+                  label={`ارز هتل ${index + 1}`}
                   value={price.currencyCode}
-                  disabled={priceLoading}
-                  onChange={(event) => {
+                  currencies={currencyDirectory.currencies}
+                  disabled={priceLoading || currencyDirectory.loading}
+                  onChange={(currencyCode) => {
                     const prices = [
                       ...(draft.hotelPurchasePrices?.length
                         ? draft.hotelPurchasePrices
@@ -655,7 +662,7 @@ export function ReservationSettingsForm({
                     ];
                     prices[index] = {
                       ...price,
-                      currencyCode: event.target.value.toUpperCase(),
+                      currencyCode,
                     };
                     update({ ...draft, hotelPurchasePrices: prices });
                   }}

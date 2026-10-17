@@ -32,6 +32,7 @@ import { selectedHrDataset, useHrRowSelection } from './hr-row-selection';
 import { hrReferenceOptions } from './hr-form-model';
 import { useHrReferenceData } from './hr-reference-data';
 import { useHrFormReferences } from './hr-directory-picker';
+import { hrStatusText } from './hr-presentation';
 import { hrDisplayDate } from './hr-dates';
 
 export function employeeDataset(
@@ -59,7 +60,7 @@ export function employeeDataset(
       item.grade,
       item.manager,
       hrDisplayDate(item.startedAtValue),
-      item.status,
+      hrStatusText(item.status),
     ]),
     recordIds: employees.map((item) => item.id),
     versions: employees.map((item) => item.version),
@@ -288,7 +289,7 @@ export function HrEmployees({
           (!branch ||
             (item.organizationBranchId || item.branchId) === branch) &&
           (!unit || item.unit === unit) &&
-          (!status || item.status === status) &&
+          (!status || hrStatusText(item.status) === status) &&
           (!query ||
             normalizeHrText(
               `${item.name} ${item.personnelCode} ${item.position}`,
@@ -350,7 +351,11 @@ export function HrEmployees({
             >
               <option value="">همه وضعیت‌ها</option>
               {Array.from(
-                new Set(store.data!.employees.map((item) => item.status)),
+                new Set(
+                  store.data!.employees.map((item) =>
+                    hrStatusText(item.status),
+                  ),
+                ),
               ).map((item) => (
                 <option key={item}>{item}</option>
               ))}

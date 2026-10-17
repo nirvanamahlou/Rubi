@@ -247,7 +247,7 @@ header[data-nora-active-company]:not([data-nora-active-company='ALL'])
 /* Ocean Executive palette is scoped to the dashboard surface. Reports and
    other modules continue to use the shared application theme. */
 [data-dashboard-workspace] {
-  --background: #f8fafc;
+  --background: inherit;
   --foreground: #0f172a;
   --surface: #ffffff;
   --muted: #eef4fb;
@@ -264,14 +264,7 @@ header[data-nora-active-company]:not([data-nora-active-company='ALL'])
   --destructive: #be123c;
   background: var(--background);
   color: var(--foreground);
-  background-image:
-    radial-gradient(circle at 92% 0%, rgb(37 99 235 / 0.06), transparent 24rem),
-    linear-gradient(rgb(148 163 184 / 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(148 163 184 / 0.035) 1px, transparent 1px);
-  background-size:
-    auto,
-    28px 28px,
-    28px 28px;
+  background-image: none;
   border-radius: 1.25rem;
 }
 
@@ -347,7 +340,7 @@ header[data-nora-active-company]:not([data-nora-active-company='ALL'])
 }
 
 .dark [data-dashboard-workspace] {
-  --background: #0b1220;
+  --background: inherit;
   --foreground: #f8fafc;
   --surface: #111c2e;
   --muted: #17253a;
@@ -362,14 +355,7 @@ header[data-nora-active-company]:not([data-nora-active-company='ALL'])
   --popover: #111c2e;
   --popover-foreground: #f8fafc;
   --destructive: #fb7185;
-  background-image:
-    radial-gradient(
-      circle at 92% 0%,
-      rgb(96 165 250 / 0.09),
-      transparent 24rem
-    ),
-    linear-gradient(rgb(148 163 184 / 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(148 163 184 / 0.03) 1px, transparent 1px);
+  background-image: none;
 }
 
 .dark [data-dashboard-visual] {
