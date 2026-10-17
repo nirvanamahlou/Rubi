@@ -113,11 +113,7 @@ export function DocumentDeleteDialog({
             >
               انصراف
             </Button>
-            <Button
-              className="bg-red-600 text-white hover:bg-red-700"
-              disabled={submitting}
-              type="submit"
-            >
+            <Button variant="destructive" disabled={submitting} type="submit">
               <Trash2 aria-hidden="true" className="size-4" />
               {submitting ? 'در حال حذف…' : 'حذف دائمی'}
             </Button>
