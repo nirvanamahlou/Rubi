@@ -43,6 +43,7 @@ import {
   RotateCcw,
   Search,
   ShieldAlert,
+  Sparkles,
   Ticket,
   UserRoundCog,
   UserCheck,
@@ -854,6 +855,7 @@ function dashboardVisualIsWide(
 }
 
 const navigationIcons: Record<string, LucideIcon> = {
+  assistant: Sparkles,
   'executive-overview': LayoutDashboard,
   'executive-growth-risk': Gauge,
   'commercial-performance': BriefcaseBusiness,

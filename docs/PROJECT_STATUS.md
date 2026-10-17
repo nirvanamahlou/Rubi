@@ -6328,3 +6328,8 @@ Verification: 3 existing form tests, scoped ESLint, formatting and shared Contra
 ## SALES-REMOVE-FOLLOWUPS-1017 — PC-A — IN_PROGRESS
 
 COMPUTER_ID=PC-A; branch codex/pc-a-sales-remove-followups-1017. Reserve only Sales sales-workspace.tsx and own status entries. User authorizes removing the follow-up summary card (finance pending, reservations pending, settled) and develop merge. Preserve receivables, contract list, primary metrics and API/data contracts. No schema, migration, dependency or operational runtime change. Previous bounded Sales scopes are released; full CI gates merge.
+
+
+## ASSISTANT-EXPAND-WINDOW-1017 — PC-C
+
+Dashboard assistant uses the same Lucide outline rendering path as peer pages, with a dedicated Sparkles icon. Chat header gains bilingual expand/restore control; compact default preserved and expanded bounds fit viewport. Draft/results remain mounted during resizing; close resets size. Validation in progress; no API/schema/provider changes.
