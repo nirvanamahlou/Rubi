@@ -6282,3 +6282,6 @@ New-contract referral heading now reads «نحوه آشنایی با ما», wit
 
 Verification: 3 existing form tests, scoped ESLint, formatting and shared Contracts build passed. Full PR CI provides Web typecheck/build and suite gates before user-authorized merge.
 
+
+Verification:24 focused API tests, scoped ESLint and formatting passed. Full CI required before develop merge.
+
