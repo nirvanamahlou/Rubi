@@ -7810,3 +7810,7 @@ TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pas
 ## DASHBOARD-CURRENCY-WIDTH-1017 — PC-C — IN_PROGRESS
 
 User requests compact currency selectors in all Dashboard chart headers. Branch codex/pc-c-dashboard-currency-width-1017 from develop2246f4a0. Reserve only Dashboard workspace currency-trigger classes and own status entries; previous assistant scope released. Use fixed112px width instead of minimum width, preserving chart data, selection behavior and calendar controls. No API/schema/dependency changes. Scoped lint/type/build and existing Dashboard tests, browser sizing check, full CI and localhost delivery.
+
+## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C — IN_PROGRESS
+
+User requests Telegram-like compact chat input and buttons. Reserve assistant executive-workspace composer markup/styles and own documentation on codex/pc-c-assistant-compact-composer-1017. PC-C; base develop1e21a21c. Prior source scopes merged/released; no overlapping composer owner. Acceptance: single-line initial input, bounded automatic growth, circular equal-size icon controls, compact quick commands, RTL/LTR and mobile fit, existing read-only command behavior. No API/provider/schema/dependency changes. Existing assistant tests, lint/type/build, browser verification and full CI gate delivery.
