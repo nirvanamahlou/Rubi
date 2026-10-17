@@ -224,6 +224,12 @@ export function AssistantComposer({
   const helpId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState('');
+  useEffect(() => {
+    const field = input.current;
+    if (!field) return;
+    field.style.height = 'auto';
+    field.style.height = `${Math.min(field.scrollHeight, 132)}px`;
+  }, [draft]);
 
   const [filterError, setFilterError] = useState(false);
   const [notSubmitted, setNotSubmitted] = useState(false);
@@ -309,7 +315,7 @@ export function AssistantComposer({
           aria-describedby={helpId}
           placeholder={t(c.composerPlaceholder)}
           className={styles.composerInput}
-          rows={2}
+          rows={1}
           maxLength={4000}
           value={draft}
           disabled={denied}

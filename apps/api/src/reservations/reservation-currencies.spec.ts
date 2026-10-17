@@ -3,19 +3,17 @@ import { ReservationRequestsController } from './reservations-runtime.module';
 import { MasterTravelDirectory } from '../master-data/master-travel-directory';
 
 it('publishes only active master-data currency reference fields', async () => {
-  const list = vi
-    .fn()
-    .mockResolvedValue({
-      data: [
-        {
-          id: 'currency',
-          code: 'EUR',
-          name: 'Euro',
-          attributes: { unrelated: 'private' },
-        },
-      ],
-      meta: { total: 1 },
-    });
+  const list = vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 'currency',
+        code: 'EUR',
+        name: 'Euro',
+        attributes: { unrelated: 'private' },
+      },
+    ],
+    meta: { total: 1 },
+  });
   const directory = new MasterTravelDirectory({ list } as never);
   expect(await directory.voucherCurrencies(2)).toEqual({
     data: [{ id: 'currency', code: 'EUR', name: 'Euro' }],

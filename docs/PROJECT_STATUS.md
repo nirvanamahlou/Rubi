@@ -6184,3 +6184,8 @@ Chart header currency selectors now have a fixed112px width rather than stretchi
 ## RESERVATION-ISSUED-FORM-1017 — PC-A
 
 Supplier reservation form currency inputs consume all active Master Data currency pages, preserving already-saved inactive codes without inventing choices. Contractual hotel purchase totals are visible beside hotel information with exact separate-currency symbols. Issued forms open the sent settings snapshot with only Edit/Download actions; full settings remain available through explicit Edit, while tickets/vouchers/history and immutable supplier PDF selection remain unchanged. No API/schema/migration/dependency/live data/runtime change. Focused tests and full CI gate user-authorized develop merge.
+
+
+## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C
+
+Compact Telegram-style assistant composer: one-row input with bounded132px automatic growth, circular36px controls (32px floating),30px quick commands and a non-wrapping mobile input row. Existing fixed read-only requests retained.68 assistant tests passed; scoped lint/build and browser verification in progress. No API/provider/schema changes.
