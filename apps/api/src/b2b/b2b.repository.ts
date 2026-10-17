@@ -8,6 +8,7 @@ import type {
   AgencyOperationalStatus,
   B2bAgreementStatus,
   B2bAgreedRateKind,
+  B2bCooperationRole,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
 
@@ -54,27 +55,36 @@ export class B2bRepository {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
 
-  findProfile(organizationId: string, branchId: string) {
+  findProfile(
+    organizationId: string,
+    branchId: string,
+    role: B2bCooperationRole = 'AGENCY',
+  ) {
     return this.database.client.agencyOperationalProfile.findUnique({
       where: {
         organizationId_branchId_role: {
           organizationId,
           branchId,
-          role: 'AGENCY',
+          role,
         },
       },
       include: profileInclude,
     });
   }
 
-  listRates(organizationId: string, branchId: string) {
+  listRates(
+    organizationId: string,
+    branchId: string,
+    role: B2bCooperationRole = 'AGENCY',
+  ) {
     return this.database.client.b2bAgencyAgreedRate.findMany({
-      where: { profile: { organizationId, branchId, role: 'AGENCY' } },
+      where: { profile: { organizationId, branchId, role } },
       orderBy: [{ validFrom: 'desc' }, { title: 'asc' }],
     });
   }
 
   async upsertProfile(input: {
+    role?: B2bCooperationRole;
     organizationId: string;
     branchId: string;
     accountManagerUserId?: string | null;
@@ -90,7 +100,7 @@ export class B2bRepository {
           organizationId_branchId_role: {
             organizationId: input.organizationId,
             branchId: input.branchId,
-            role: 'AGENCY',
+            role: input.role ?? 'AGENCY',
           },
         },
       });
@@ -114,6 +124,7 @@ export class B2bRepository {
           data: {
             organizationId: input.organizationId,
             branchId: input.branchId,
+            role: input.role ?? 'AGENCY',
             accountManagerUserId: input.accountManagerUserId ?? null,
             status: input.status,
             isActive: input.status !== 'ENDED',
@@ -395,6 +406,7 @@ export class B2bRepository {
   }
 
   async deleteRate(input: {
+    role?: B2bCooperationRole;
     organizationId: string;
     branchId: string;
     id: string;
@@ -409,7 +421,7 @@ export class B2bRepository {
           profile: {
             organizationId: input.organizationId,
             branchId: input.branchId,
-            role: 'AGENCY',
+            role: input.role ?? 'AGENCY',
           },
         },
       });

@@ -108,8 +108,14 @@ export class B2bController {
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-branch-id') branchId: string,
+    @Query('role') role: B2bCooperationRole = 'AGENCY',
   ) {
-    return this.service.profileDetails(organizationId, request.actor, branchId);
+    return this.service.profileDetails(
+      organizationId,
+      request.actor,
+      branchId,
+      role,
+    );
   }
 
   @Get(':organizationId/agreed-rates')
@@ -118,8 +124,9 @@ export class B2bController {
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-branch-id') branchId: string,
+    @Query('role') role: B2bCooperationRole = 'AGENCY',
   ) {
-    return this.service.rates(organizationId, request.actor, branchId);
+    return this.service.rates(organizationId, request.actor, branchId, role);
   }
 
   @Put(':organizationId/agreed-rates/:rateId')
@@ -255,11 +262,13 @@ export class B2bController {
     @Param('organizationId', new ParseUUIDPipe()) organizationId: string,
     @Req() request: AuthenticatedRequest,
     @Headers('x-branch-id') branchId?: string,
+    @Query('role') role: B2bCooperationRole = 'AGENCY',
   ) {
     return this.service.agencyWorkspace(
       organizationId,
       request.actor,
       branchId,
+      role,
     );
   }
 

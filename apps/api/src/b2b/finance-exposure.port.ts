@@ -8,6 +8,9 @@ import type {
 export const FINANCE_PARTY_EXPOSURE_PORT = Symbol(
   'FINANCE_PARTY_EXPOSURE_PORT_V1',
 );
+export const FINANCE_PARTNER_EXPOSURE_PORT = Symbol.for(
+  'FINANCE_PARTNER_EXPOSURE_PORT_V1',
+);
 
 @Injectable()
 export class UnavailableFinanceExposureAdapter implements FinancePartyExposurePortV1 {

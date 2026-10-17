@@ -7,9 +7,11 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  Optional,
 } from '@nestjs/common';
 import type {
   AuthenticatedActor,
+  B2bCooperationRole,
   B2bAgencyAgreedRateV1,
   B2bAgencyAgreementV1,
   B2bAgencyCreditPolicyV1,
@@ -17,6 +19,7 @@ import type {
   B2bAgencyWorkspaceV1,
   B2bAgencyProfileDetailsV1,
   FinancePartyExposurePortV1,
+  FinancePartnerExposurePortV1,
   IamPermissionCode,
 } from '@nora/contracts';
 import { Prisma } from '@nora/database';
@@ -33,7 +36,11 @@ import type {
 import { IamService } from '../iam/iam.service';
 import { B2bRepository } from './b2b.repository';
 import { B2bAgreementDocuments } from './b2b-agreement-documents';
-import { FINANCE_PARTY_EXPOSURE_PORT } from './finance-exposure.port';
+import {
+  FINANCE_PARTY_EXPOSURE_PORT,
+  FINANCE_PARTNER_EXPOSURE_PORT,
+} from './finance-exposure.port';
+import { b2bCreditDirection } from '@nora/contracts';
 
 function branchOf(actor: AuthenticatedActor, requested?: string): string {
   const branchId = requested ?? actor.branchIds[0];
@@ -197,17 +204,25 @@ export class B2bService {
     @Inject(B2bAgreementDocuments)
     private readonly agreementDocuments: B2bAgreementDocuments,
     @Inject(IamService) private readonly iam: IamService,
+    @Optional()
+    @Inject(FINANCE_PARTNER_EXPOSURE_PORT)
+    private readonly partnerExposure?: FinancePartnerExposurePortV1,
   ) {}
 
   async profileDetails(
     organizationId: string,
     actor: AuthenticatedActor,
     requestedBranch?: string,
+    role: B2bCooperationRole = 'AGENCY',
   ): Promise<{ data: B2bAgencyProfileDetailsV1 }> {
     requirePermissions(actor, 'b2b.agency.read');
     const branchId = branchOf(actor, requestedBranch);
-    await this.agency(organizationId);
-    const profile = await this.repository.findProfile(organizationId, branchId);
+    await this.agency(organizationId, role);
+    const profile = await this.repository.findProfile(
+      organizationId,
+      branchId,
+      role,
+    );
     return {
       data: {
         profile: profile ? profileRecord(profile) : null,
@@ -231,14 +246,15 @@ export class B2bService {
     organizationId: string,
     actor: AuthenticatedActor,
     requestedBranch?: string,
+    role: B2bCooperationRole = 'AGENCY',
   ) {
     requirePermissions(actor, 'b2b.rate.read');
     const branchId = branchOf(actor, requestedBranch);
-    await this.agency(organizationId);
+    await this.agency(organizationId, role);
     return {
-      data: (await this.repository.listRates(organizationId, branchId)).map(
-        rateRecord,
-      ),
+      data: (
+        await this.repository.listRates(organizationId, branchId, role)
+      ).map(rateRecord),
     };
   }
 
@@ -246,6 +262,7 @@ export class B2bService {
     organizationId: string,
     actor: AuthenticatedActor,
     requestedBranch?: string,
+    role: B2bCooperationRole = 'AGENCY',
   ): Promise<{ data: B2bAgencyWorkspaceV1 }> {
     requirePermissions(
       actor,
@@ -255,26 +272,42 @@ export class B2bService {
       'b2b.rate.read',
     );
     const branchId = branchOf(actor, requestedBranch);
-    const organization = await this.agency(organizationId);
+    const organization = await this.agency(organizationId, role);
     const [primaryAddress, row] = await Promise.all([
       this.organizations.primaryAddress(organizationId),
-      this.repository.findProfile(organizationId, branchId),
+      this.repository.findProfile(organizationId, branchId, role),
     ]);
     const creditPolicy = row?.creditPolicies?.[0]
       ? creditRecord(row.creditPolicies[0])
       : null;
     const financeExposure = creditPolicy
-      ? await this.financeExposure.getPartyExposure({
-          organizationId,
-          branchId,
-          currencyCode: creditPolicy.currencyCode,
-        })
+      ? role === 'SUPPLIER' || role === 'BROKER'
+        ? ((actor.permissions.includes('finance.read')
+            ? await this.partnerExposure?.getPartnerExposure(
+                {
+                  organizationId,
+                  branchId,
+                  role,
+                  currencyCode: creditPolicy.currencyCode,
+                },
+                actor,
+              )
+            : undefined) ?? {
+            status: 'UNAVAILABLE' as const,
+            reason: 'FINANCE_PORT_UNAVAILABLE' as const,
+          })
+        : await this.financeExposure.getPartyExposure({
+            organizationId,
+            branchId,
+            currencyCode: creditPolicy.currencyCode,
+          })
       : {
           status: 'UNAVAILABLE' as const,
           reason: 'NO_EXPOSURE_SNAPSHOT' as const,
         };
     return {
       data: {
+        creditDirection: b2bCreditDirection(role),
         organization,
         primaryAddress,
         profile: row ? profileRecord(row) : null,
@@ -293,7 +326,7 @@ export class B2bService {
   ) {
     requirePermissions(actor, 'b2b.agency.manage');
     branchOf(actor, dto.branchId);
-    const organization = await this.agency(organizationId);
+    const organization = await this.agency(organizationId, dto.role);
     if (!organization.isActive)
       throw new ConflictException({
         code: 'B2B_ORGANIZATION_INACTIVE',
@@ -310,6 +343,7 @@ export class B2bService {
         'مدیر حساب باید کاربر فعال و عضو همین شعبه باشد.',
       );
     const row = await this.repository.upsertProfile({
+      role: dto.role ?? 'AGENCY',
       organizationId,
       branchId,
       ...(dto.accountManagerUserId !== undefined
@@ -342,6 +376,7 @@ export class B2bService {
       dto.branchId,
       actor,
       true,
+      dto.role,
     );
     if (dto.documentReference)
       await this.agreementDocuments.assertDraftReference(
@@ -373,7 +408,7 @@ export class B2bService {
     requirePermissions(actor, 'b2b.credit.manage');
     branchOf(actor, dto.branchId);
     assertDateRange(dto.effectiveFrom, dto.expiresAt);
-    await this.profile(organizationId, dto.branchId, actor);
+    await this.profile(organizationId, dto.branchId, actor, false, dto.role);
     throw new ConflictException({
       code: 'B2B_CREDIT_APPROVAL_REQUIRED',
       message:
@@ -403,6 +438,7 @@ export class B2bService {
       dto.branchId,
       actor,
       true,
+      dto.role,
     );
     if ((dto.isActive ?? true) && profile.status !== 'ACTIVE')
       throw new ConflictException(
@@ -444,6 +480,7 @@ export class B2bService {
       dto.branchId,
       actor,
       true,
+      dto.role,
     );
     assertDateRange(dto.validFrom, dto.validTo);
     const value = new Prisma.Decimal(dto.value);
@@ -490,8 +527,9 @@ export class B2bService {
   ) {
     requirePermissions(actor, 'b2b.rate.manage');
     const branchId = branchOf(actor, dto.branchId);
-    await this.agency(organizationId);
+    await this.agency(organizationId, dto.role);
     await this.repository.deleteRate({
+      role: dto.role ?? 'AGENCY',
       organizationId,
       branchId,
       id: rateId,
@@ -502,9 +540,16 @@ export class B2bService {
     return { data: { id: rateId, deleted: true } };
   }
 
-  private async agency(organizationId: string) {
+  private async agency(
+    organizationId: string,
+    role: B2bCooperationRole = 'AGENCY',
+  ) {
+    if (!['AGENCY', 'CORPORATE_CUSTOMER', 'SUPPLIER', 'BROKER'].includes(role))
+      throw new BadRequestException('نقش همکاری معتبر نیست.');
     const organization =
-      await this.organizations.agencyReference(organizationId);
+      role === 'AGENCY'
+        ? await this.organizations.agencyReference(organizationId)
+        : await this.organizations.cooperationReference(organizationId, role);
     if (!organization)
       throw new NotFoundException('سازمان دارای نقش آژانس یافت نشد.');
     return organization;
@@ -515,15 +560,20 @@ export class B2bService {
     requestedBranch: string,
     actor: AuthenticatedActor,
     allowUnderReview = false,
+    role: B2bCooperationRole = 'AGENCY',
   ) {
     const branchId = branchOf(actor, requestedBranch);
-    const organization = await this.agency(organizationId);
+    const organization = await this.agency(organizationId, role);
     if (!organization.isActive)
       throw new ConflictException({
         code: 'B2B_ORGANIZATION_INACTIVE',
         message: 'سازمان غیرفعال است.',
       });
-    const profile = await this.repository.findProfile(organizationId, branchId);
+    const profile = await this.repository.findProfile(
+      organizationId,
+      branchId,
+      role,
+    );
     if (!profile)
       throw new NotFoundException('ابتدا پروفایل عملیاتی آژانس را ثبت کنید.');
     if (

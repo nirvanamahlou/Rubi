@@ -399,6 +399,12 @@ export const masterDataCatalog: readonly MasterDataCatalogItem[] = [
       },
       { key: 'symbol', label: 'نماد نمایشی', type: 'text', placeholder: '﷼' },
       {
+        key: 'unitsPerUsd',
+        label: 'نرخ دستی هر ۱ دلار (واحد همین ارز)',
+        type: 'number',
+        placeholder: 'مثال برای ریال: 2700000',
+      },
+      {
         key: 'decimalDigits',
         label: 'تعداد رقم اعشار',
         type: 'number',

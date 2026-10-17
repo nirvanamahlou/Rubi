@@ -45,7 +45,9 @@ export class B2bActivityService {
       !(await this.organizations.cooperationReference(
         org,
         'CORPORATE_CUSTOMER',
-      ))
+      )) &&
+      !(await this.organizations.cooperationReference(org, 'SUPPLIER')) &&
+      !(await this.organizations.cooperationReference(org, 'BROKER'))
     )
       throw new NotFoundException('پرونده سازمان پیدا نشد.');
     const window = activityWindow(query);
