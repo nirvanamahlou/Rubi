@@ -7,7 +7,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 RUN DATABASE_URL=postgresql://rubi_local:rubi_local_dev@postgres:5432/rubi pnpm db:generate
 
-RUN pnpm exec turbo run build --filter=@nora/api
+RUN pnpm exec turbo run build --filter=@nora/api --filter=@nora/web
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /workspace

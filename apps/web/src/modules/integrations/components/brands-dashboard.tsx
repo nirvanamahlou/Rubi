@@ -114,11 +114,13 @@ export function BrandsDashboard({
   onOpen,
   onSection,
   onManage,
+  onCreate,
 }: {
   data: IntegrationRegistryV1;
   onOpen: (id: string) => void;
   onSection: (section: IntegrationSection) => void;
   onManage: () => void;
+  onCreate?: () => void;
 }) {
   const [period, setPeriod] = useState<PeriodKey>('month');
   const [range, setRange] = useState(() => periodRange('month'));
@@ -250,9 +252,12 @@ export function BrandsDashboard({
             <Database />
             <h3>فهرست سامانه‌ها آماده تکمیل است</h3>
             <p>
-              فهرست اولیه را ایجاد کنید یا سامانه‌های خود را از مدیریت فهرست
-              اضافه کنید.
+              سایت خود را مستقیم ثبت کنید؛ می‌توانید اطلاعات اتصال را بعداً
+              تکمیل کنید.
             </p>
+            {onCreate ? (
+              <Button onClick={onCreate}>ثبت اولین سایت</Button>
+            ) : null}
           </div>
         )}
         <div className={styles.catalogueSummary}>
