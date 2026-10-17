@@ -6317,3 +6317,10 @@ New-contract referral heading now reads «نحوه آشنایی با ما», wit
 
 
 Verification: 3 existing form tests, scoped ESLint, formatting and shared Contracts build passed. Full PR CI provides Web typecheck/build and suite gates before user-authorized merge.
+
+
+
+
+## SALES-REMOVE-FOLLOWUPS-1017 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-sales-remove-followups-1017. Reserve only Sales sales-workspace.tsx and own status entries. User authorizes removing the follow-up summary card (finance pending, reservations pending, settled) and develop merge. Preserve receivables, contract list, primary metrics and API/data contracts. No schema, migration, dependency or operational runtime change. Previous bounded Sales scopes are released; full CI gates merge.
