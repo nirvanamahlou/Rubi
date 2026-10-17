@@ -9,13 +9,11 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { ArrowUpLeft, MessageCircle, Sparkles, X } from 'lucide-react';
+import { MessageCircle, Sparkles, X } from 'lucide-react';
 import type { AuthenticatedActor } from '@nora/contracts';
-import Link from '@/i18n/link';
 import { useSystemPreferences } from '@/components/system-preferences-provider';
 import { useAccessActor } from '@/modules/iam/access-context';
 import { assistantCopy as c } from '@/i18n/assistant-copy';
-import { assistantDashboardHref } from './dashboard-location';
 import styles from './floating-assistant.module.css';
 
 const PreparedChat = dynamic(
@@ -88,14 +86,6 @@ function AssistantSession() {
               <h2 id={id + '-title'}>{t(c.widgetTitle)}</h2>
               <p>{t(c.widgetSubtitle)}</p>
             </div>
-            <Link
-              href={assistantDashboardHref()}
-              className={styles.headerButton}
-              aria-label={t(c.widgetFullPanel)}
-              title={t(c.widgetFullPanel)}
-            >
-              <ArrowUpLeft size={18} aria-hidden="true" />
-            </Link>
             <button
               ref={closeButton}
               type="button"
