@@ -3931,10 +3931,14 @@ export function DashboardWorkspace() {
   } | null>(null);
   const legalEntity = useLegalEntityContext();
   const selection = legalEntity.context?.selection ?? null;
+  const assistantPage = assistantViewForDashboardPage(
+    filters.page,
+    searchParams.get('view'),
+  );
   const activePage =
-    dashboardPages.find((page) => page.id === filters.page) ??
-    dashboardPages[0]!;
-  const assistantPage = assistantViewForDashboardPage(activePage.id);
+    dashboardPages.find(
+      (page) => page.id === (assistantPage ? 'assistant' : filters.page),
+    ) ?? dashboardPages[0]!;
   const ActivePageIcon = navigationIcons[activePage.id] ?? LayoutDashboard;
   const activePageHeaderTheme =
     dashboardHeaderThemeByPageId[activePage.id] ??
@@ -4141,7 +4145,7 @@ export function DashboardWorkspace() {
         />
 
         {assistantPage ? (
-          <ExecutiveWorkspace view={assistantPage} embedded />
+          <ExecutiveWorkspace view={assistantPage} />
         ) : (
           <div className="min-w-0 space-y-5">
             <section aria-labelledby="active-dashboard-page-title">

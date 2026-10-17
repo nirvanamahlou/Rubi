@@ -51,6 +51,9 @@ describe('migrated assistant dashboard pages', () => {
         ],
       ]) {
         expect(
+          canViewRoute(permissions, '/dashboard?page=assistant&view=' + view),
+        ).toBe(canViewRoute(permissions, '/assistant'));
+        expect(
           canViewRoute(permissions, '/dashboard?page=assistant-' + view),
         ).toBe(canViewRoute(permissions, '/assistant'));
       }

@@ -6167,3 +6167,11 @@ Removed the flight-number override editor from Reservations issued tickets. All 
 ## 2026-10-15 — PERFORMANCE-EXTRA-CARDS-1015 — PC-B
 
 Added six Workbench performance cards: lateness, commission, debit balance, credit balance, overtime and work shortfall. HR's self-only projection adds optional current Persian-month attendance totals, scoped by authenticated employee/branch and latest daily review; missing/invalid measurements are null rather than zero. Commission/debit/credit remain empty per the user's explicit clarification that separate manual entry will be defined later. Full work shortfall has no authoritative current HR calculation and is not inferred from early departure or payroll deductions. No Finance-owned query, schema/migration, dependency, live data or runtime change.
+
+
+## ASSISTANT-SINGLE-DASHBOARD-1017 — PC-C
+
+Consolidated the assistant into one final Dashboard navigation item, retaining all six original internal tabs and legacy page links. Floating launcher/window follows UI language: Persian left, English right, including mobile safe areas. Shared route alias preserves existing assistant screen access. No API/schema/provider or business-data changes.130 Web tests and14 access tests passed; full build/type/lint, CI and localhost verification pending.
+
+
+ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access tests passed;13 focused assertions rechecked after integration. Scoped Web/Contracts ESLint and both source/compatible-local production builds passed. Original tabs now share page=assistant, with legacy aliases retained; one final navigation entry and language-directed floating positions. Services4000/4300/4301 return HTTP200 and Web3000 serves the authenticated login redirect. Browser verification after Amin login and latest-head/postmerge CI remain delivery gates. No schema/API/provider changes. Source scope frozen and released.

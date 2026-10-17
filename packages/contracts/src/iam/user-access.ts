@@ -2452,9 +2452,10 @@ export function canViewRoute(
   };
   if (
     url.pathname === '/dashboard' &&
-    ['overview', 'sales', 'finance', 'news', 'scenarios', 'advisor'].some(
-      (view) => url.searchParams.get('page') === 'assistant-' + view,
-    )
+    (url.searchParams.get('page') === 'assistant' ||
+      ['overview', 'sales', 'finance', 'news', 'scenarios', 'advisor'].some(
+        (view) => url.searchParams.get('page') === 'assistant-' + view,
+      ))
   ) {
     return canViewScreen(permissions, 'assistant.executive');
   }
