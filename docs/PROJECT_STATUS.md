@@ -1,3 +1,7 @@
+## AIRCRAFT-SAVE-ACCESS-1017 — PC-A — READY_FOR_CI
+
+Aircraft forms submit transportStatus, which is governed by the separate status-management policy but absent from IAM editable-field controls. Manual-access actors were rejected before that policy ran. Route only this transport workflow key outside generic field checks; retain status permission, status-value validation, resource access and explicit editable-field denies.68 API service/transport/permission regressions pass, including manual-access create/update and negative permission/value checks; scoped lint/format pass. No migration, data changes or deployment. Full exact-head CI gates user-authorized develop merge.
+
 ## INTEGRATIONS-DEVELOP-DELIVERY-1017 — PC-D — VALIDATING
 
 User explicitly requests these existing site-onboarding and IAM access changes on latest develop, hosted CI and merge after all checks pass. This latest instruction authorizes develop as the delivery target for PR909. Merge origin/develop@c025c16e into the task branch, preserving concurrent sources and both coordination histories. Integrations add/add conflicts are the already merged PR889 foundation plus the bounded onboarding additions; preserve new setup metadata, permission catalogue and both translation sets. No operational database or runtime change. Branch protections remain required.
