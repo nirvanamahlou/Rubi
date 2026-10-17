@@ -1,3 +1,7 @@
+## PASSENGER-SERVICES-1017 — PC-A — READY_FOR_CI / AUTHORIZED SERVER ROLLOUT
+
+Passenger-step continuation and its warning now use one reason function. Valid shared-service passengers proceed; stale unselected hotel fields cannot block flight-only contracts. Selected hotel capacity and missing visa-applicant errors show their actual cause instead of the generic unassigned-service warning. Actual unassigned passengers, identity confirmation and server domain validation remain enforced.60 Web/model/form/English regressions and49 API domain tests pass; lint/types/format pass. User explicitly requests current develop plus this fix on94.184.46.9 after full exact-head CI. No source schema/migration/dependency changes; no pending migrations versus current8a380e10. Rollout builds a separate pinned API/Web/worker image, encrypts and validates database/document backups, retains old image/config for rollback and preserves data volumes, private configuration, nginx and users. No seed or database replacement.
+
 ## REMOVE-BOTTOM-HISTORY-1017 — PC-A — READY_FOR_CI
 
 Removed only the standalone correction-history button below the Reservations action panel. Protected history remains available through Notes and notification correction deep links; no evidence or records deleted.40 workspace/action-panel regressions and scoped lint pass. Types and exact-head full CI gate user-authorized develop merge. No API/schema/dependency/runtime or operational data changes.
