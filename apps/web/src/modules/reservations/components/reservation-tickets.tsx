@@ -1,6 +1,9 @@
 'use client';
 import { travelRequest } from './travel-workflow-form';
-import type { ReservationTicketDocumentV1 } from '@nora/contracts';
+import type {
+  ReservationTicketDocumentV1,
+  TravelWorkflowStateV1,
+} from '@nora/contracts';
 import { readTicketAirlineMarks } from '@/modules/ticket-catalog/public/airline-marks';
 import type { TicketLayoutAirline } from '@/components/travel/flight-ticket-layout';
 
@@ -45,7 +48,11 @@ export function ReservationTickets({
   const { logo, error: logoError } = useTravelLogo(branding);
   const canEdit =
     useAccessPermissions()?.includes('reservations.documents.manage') ?? false;
-  const flightNumbers = request.workflow.ticketFlightNumbers ?? {};
+  const [flightNumbers, setFlightNumbers] = useState<Record<string, string>>(
+    {},
+  );
+  const [flightNumbersReady, setFlightNumbersReady] = useState('');
+  const flightContextKey = `${request.id}:${salesContractId ?? ''}`;
   const [documents, setDocuments] = useState<
     readonly ReservationTicketDocumentV1[]
   >(request.ticketDocuments ?? []);
@@ -156,6 +163,30 @@ export function ReservationTickets({
   const [names, setNames] = useState<Record<string, string>>({});
   const [ready, setReady] = useState(false);
   const [warning, setWarning] = useState('');
+  useEffect(() => {
+    let active = true;
+    void travelRequest<{ data: { workflow: TravelWorkflowStateV1 } }>(
+      salesContractId
+        ? `sales/contracts/${salesContractId}/travel-documents`
+        : `reservations/requests/${request.id}/workflow`,
+    )
+      .then(({ data }) => {
+        if (!active) return;
+        setFlightNumbers(data.workflow.ticketFlightNumbers ?? {});
+        setFlightNumbersReady(flightContextKey);
+      })
+      .catch((cause: unknown) => {
+        if (active)
+          setWarning(
+            cause instanceof Error
+              ? cause.message
+              : 'دریافت شماره پرواز ناموفق بود.',
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [request.id, salesContractId, flightContextKey]);
   const [printAll, setPrintAll] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -430,6 +461,7 @@ export function ReservationTickets({
                 <Button
                   disabled={
                     !ready ||
+                    flightNumbersReady !== flightContextKey ||
                     issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
@@ -443,6 +475,7 @@ export function ReservationTickets({
                 <Button
                   disabled={
                     !ready ||
+                    flightNumbersReady !== flightContextKey ||
                     issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
@@ -456,6 +489,7 @@ export function ReservationTickets({
                   variant="outline"
                   disabled={
                     !ready ||
+                    flightNumbersReady !== flightContextKey ||
                     issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
@@ -470,6 +504,7 @@ export function ReservationTickets({
                   variant="outline"
                   disabled={
                     !ready ||
+                    flightNumbersReady !== flightContextKey ||
                     issuing ||
                     factsReady !== request ||
                     passengersReady !== request.id ||
