@@ -25,7 +25,6 @@ import Link from '@/i18n/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
-import { MoneyInput } from '@/components/ui/money-input';
 import {
   Alert,
   Badge,
@@ -37,6 +36,11 @@ import {
 } from '@/components/ui/surfaces';
 import { packagePricingApi } from '../api/client';
 import { TourPriceFields } from './tour-price-fields';
+import { PackageRoomSales } from './package-room-sales';
+import {
+  applyPackageRoomSales,
+  type PackageRoomSaleOverrideV1,
+} from '@nora/contracts';
 import {
   tourPriceFields,
   tourPriceFieldValues,
@@ -110,6 +114,9 @@ export function TourPricingWorkspace() {
   const [selectedHotelRateIds, setSelectedHotelRateIds] = useState<string[]>(
     [],
   );
+  const [roomSaleOverrides, setRoomSaleOverrides] = useState<
+    PackageRoomSaleOverrideV1[]
+  >([]);
   const [showGenerator, setShowGenerator] = useState(false);
   const [familyAdults, setFamilyAdults] = useState('2');
   const [familyChildren, setFamilyChildren] = useState('0');
@@ -179,6 +186,7 @@ export function TourPricingWorkspace() {
 
   function applyDraft(value: PackageTourDraftV1 | null) {
     setDraft(value);
+    setRoomSaleOverrides([...(value?.roomSaleOverrides ?? [])]);
     setSelectedHotelRateIds([...(value?.selectedHotelRateIds ?? [])]);
     setShowGenerator(false);
     setAdjustments(
@@ -252,6 +260,7 @@ export function TourPricingWorkspace() {
     setBatchId('');
     setCostError('');
     setAdjustments({});
+    setRoomSaleOverrides([]);
     setDraft(null);
     setPublications([]);
     setPublicationId('');
@@ -320,10 +329,11 @@ export function TourPricingWorkspace() {
   }, [batch]);
   const tablePrices = (
     row: PackageTourHotelPurchaseBatchV1['rows'][number],
+    withOverrides = true,
   ) => {
     if (!batch || !grid) return [];
     try {
-      return buildHotelPackageTable({
+      const prices = buildHotelPackageTable({
         row,
         checkIn: grid.tour.startsOn,
         checkOut: grid.tour.endsOn,
@@ -360,6 +370,16 @@ export function TourPricingWorkspace() {
             : grid.flightPurchaseCosts,
         },
       });
+      return withOverrides
+        ? prices.map((price) =>
+            applyPackageRoomSales(
+              price,
+              roomSaleOverrides,
+              commissionMode,
+              commissionMode === 'percent' ? commission || '0' : '0',
+            ),
+          )
+        : prices;
     } catch {
       return [];
     }
@@ -406,6 +426,8 @@ export function TourPricingWorkspace() {
   })();
   const unsaved =
     !draft ||
+    JSON.stringify(roomSaleOverrides) !==
+      JSON.stringify(draft.roomSaleOverrides ?? []) ||
     JSON.stringify([...selectedHotelRateIds].sort()) !==
       JSON.stringify([...(draft.selectedHotelRateIds ?? [])].sort()) ||
     JSON.stringify(priceFields) !== JSON.stringify(tourPriceFields(draft)) ||
@@ -452,6 +474,21 @@ export function TourPricingWorkspace() {
           expectedVersion: draft?.draftVersion ?? 0,
           priceFields,
           selectedHotelRateIds,
+          roomSaleOverrides: roomSaleOverrides.filter(
+            (item) =>
+              selectedHotelRateIds.includes(item.hotelRateId) &&
+              batch.rows.some(
+                (row) =>
+                  row.id === item.hotelRateId &&
+                  tablePrices(row, false).some(
+                    (price) =>
+                      price.roomCode === item.roomCode &&
+                      price.currencyAmounts.some(
+                        (part) => part.currencyCode === item.currencyCode,
+                      ),
+                  ),
+              ),
+          ),
           tourDepartureId: grid.tour.id,
           batchId: batch.id,
           currencyCode: batch.currencyCode,
@@ -712,149 +749,24 @@ export function TourPricingWorkspace() {
                 </label>
               ))}
             </div>
-            <div className="overflow-x-auto rounded-xl border border-border">
-              <table className="w-full min-w-[800px] text-sm">
-                <thead className="bg-muted/80">
-                  <tr>
-                    <th className="p-3 text-right">هتل / کارگزار</th>
-                    {tableColumns.map(([code, title]) => (
-                      <th className="p-3 text-right" key={code}>
-                        {title}
-                      </th>
-                    ))}
-                    <th className="p-3 text-right">تغییر قیمت هتل</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {batch.rows
-                    .filter((row) => selectedHotelRateIds.includes(row.id))
-                    .map((row) => {
-                      const adjustment =
-                        adjustments[row.id] ?? defaultAdjustment();
-                      const prices = tablePrices(row);
-                      return (
-                        <tr key={row.id} className="border-t border-border">
-                          <td className="p-3">
-                            <strong className="block">{row.hotelName}</strong>
-                            <span className="text-xs text-muted-foreground">
-                              {row.brokerName}
-                            </span>
-                          </td>
-                          {tableColumns.map(([code]) => {
-                            const price = prices.find(
-                              (item) => item.roomCode === code,
-                            );
-                            return (
-                              <td className="p-3" key={code}>
-                                {price ? (
-                                  <>
-                                    <strong className="block text-primary">
-                                      {displayAmounts(
-                                        price.currencyAmounts,
-                                        'sale',
-                                      )}
-                                    </strong>
-                                    <span className="block text-xs text-muted-foreground">
-                                      {price.roomTypeName} · {price.board}
-                                    </span>
-                                    {price.childAgeMin === undefined ? null : (
-                                      <span className="text-xs">
-                                        {price.childAgeMin}–
-                                        {price.childAgeMaxExclusive} سال
-                                      </span>
-                                    )}
-                                  </>
-                                ) : (
-                                  <span className="text-muted-foreground">
-                                    تعرفه کامل موجود نیست
-                                  </span>
-                                )}
-                              </td>
-                            );
-                          })}
-                          <td className="min-w-64 p-3">
-                            <div className="flex gap-1">
-                              <NativeSearchSelect
-                                aria-label={'جهت تغییر قیمت ' + row.hotelName}
-                                className="h-9 rounded-lg border border-input bg-surface px-1"
-                                onChange={(event) =>
-                                  setAdjustments((current) => ({
-                                    ...current,
-                                    [row.id]: {
-                                      ...adjustment,
-                                      direction: event.target
-                                        .value as Adjustment['direction'],
-                                    },
-                                  }))
-                                }
-                                value={adjustment.direction}
-                              >
-                                <option value="increase">افزایش</option>
-                                <option value="decrease">کاهش</option>
-                              </NativeSearchSelect>
-                              <NativeSearchSelect
-                                aria-label={'نوع تغییر قیمت ' + row.hotelName}
-                                className="h-9 rounded-lg border border-input bg-surface px-1"
-                                onChange={(event) =>
-                                  setAdjustments((current) => ({
-                                    ...current,
-                                    [row.id]: {
-                                      ...adjustment,
-                                      mode: event.target
-                                        .value as Adjustment['mode'],
-                                    },
-                                  }))
-                                }
-                                value={adjustment.mode}
-                              >
-                                <option value="percent">٪</option>
-                                <option value="fixed">
-                                  {currencySymbol(
-                                    row.currencyCode ?? batch.currencyCode,
-                                  )}
-                                </option>
-                              </NativeSearchSelect>
-                              {adjustment.mode === 'fixed' ? (
-                                <MoneyInput
-                                  aria-label={
-                                    'مقدار تغییر قیمت ' + row.hotelName
-                                  }
-                                  className="h-9 min-w-20"
-                                  onValueChange={(value) =>
-                                    setAdjustments((current) => ({
-                                      ...current,
-                                      [row.id]: { ...adjustment, value },
-                                    }))
-                                  }
-                                  value={adjustment.value}
-                                />
-                              ) : (
-                                <Input
-                                  aria-label={
-                                    'درصد تغییر قیمت ' + row.hotelName
-                                  }
-                                  className="h-9 min-w-20"
-                                  inputMode="decimal"
-                                  onChange={(event) =>
-                                    setAdjustments((current) => ({
-                                      ...current,
-                                      [row.id]: {
-                                        ...adjustment,
-                                        value: event.target.value,
-                                      },
-                                    }))
-                                  }
-                                  value={adjustment.value}
-                                />
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
+            <PackageRoomSales
+              rows={batch.rows
+                .filter((row) => selectedHotelRateIds.includes(row.id))
+                .map((row) => ({
+                  id: row.id,
+                  hotelName: row.hotelName,
+                  brokerName: row.brokerName,
+                  prices: tablePrices(row, false),
+                }))}
+              overrides={roomSaleOverrides}
+              onChange={setRoomSaleOverrides}
+              disabled={
+                saving ||
+                !session?.user.permissions.includes(
+                  'package_pricing.period.manage',
+                )
+              }
+            />
             {invalidSale && !invalidFields ? (
               <Alert title="قیمت فروش معتبر نیست." />
             ) : null}

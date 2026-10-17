@@ -113,7 +113,6 @@ export function SavedPackHotelPrices({
                             <th>قیمت پایهٔ اتاق</th>
                             <th>ضریب</th>
                             <th>قیمت خرید</th>
-                            <th>قیمت فروش</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -124,10 +123,6 @@ export function SavedPackHotelPrices({
                               <td>{rate.manualPricing?.coefficient ?? '—'}</td>
                               <td dir="ltr">
                                 {rate.amount}{' '}
-                                {currencySymbol(rate.currencyCode ?? '')}
-                              </td>
-                              <td dir="ltr">
-                                {rate.saleAmount ?? rate.amount}{' '}
                                 {currencySymbol(rate.currencyCode ?? '')}
                               </td>
                             </tr>

@@ -6220,3 +6220,7 @@ Floating chat window reduced to360x420px with viewport limits and a smaller head
 ## DASHBOARD-BASE-BACKGROUND-1017 — PC-C
 
 Dashboard canvas now inherits the shared ERP background token in light and dark themes, with its dedicated grid/gradient removed. Existing cards/charts/sidebar retain their presentation. Validation in progress; no API/schema/dependency changes.
+
+## HOTEL-SALES-PACKAGE-PREVIEW-1017 — PC-A — PREVIEW_VALIDATION
+
+Removed sale checkboxes, sale inputs and bulk markup/discount controls from manual hotel purchase rates and saved-pack purchase displays. Preserved previously saved purchase and legacy sale metadata. Added independently persisted per-person package sale overrides with composition selection, repeated percentage/fixed changes, direct manual cell edits, exact currency arithmetic and recalculated commissions/profit. Draft/API and immutable publication consume the same shared arithmetic; unrelated hotel purchase rows are not updated. Additive nullable JSON draft metadata follows the existing price-fields snapshot convention with validated canonical decimal strings and currency codes; no rate-history backfill. Targeted calculation, purchase-edit, selection and draft/publication tests pass. Preview uses cloned rubi_package_preview_1017 database and API4200/Web3200; main rubi database and3100 are unchanged. Type/build and authenticated user review remain delivery gates. No develop merge authorized for this candidate.
