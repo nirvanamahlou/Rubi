@@ -7781,3 +7781,7 @@ COMPUTER_ID=PC-B; branch codex/pc-b-performance-extra-cards-1015 from origin/dev
 PERFORMANCE-EXTRA-CARDS-1015 scope clarification: the user confirms HR as the source and explicitly requests commission/debit/credit cards only for now, with separate manual definitions later. Preserve nulls until approved source fields exist; no manual-edit workflow added by inference.
 
 Validation:25 focused API/Web/i18n tests pass, scoped ESLint and formatting pass, Contracts/API/Web typechecks and Web production build (62 routes) pass. No migration or live upload/runtime change. Bounded source reservation releases with review candidate; CI/PR review remain gates.
+
+## ASSISTANT-SINGLE-DASHBOARD-1017 — PC-C — IN_PROGRESS
+
+User requests one assistant Dashboard page with original internal tabs, last in navigation; English floating chat on the right. Branch codex/pc-c-assistant-single-dashboard-1017 from origin/develop@aacb79db. Reserve assistant location/tests/floating CSS, Dashboard registry/workspace/tests, bounded IAM route alias/tests and own documentation. Previous scope released; no overlapping active lock. Preserve legacy links and permissions. No API/schema/provider changes. Acceptance: one final menu item, six tabs, RTL/LTR positioning, tests/types/build, CI and localhost.
