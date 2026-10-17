@@ -335,7 +335,6 @@ export function HrTable({
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="bg-destructive text-white hover:bg-destructive/85 hover:text-white"
                             aria-label={`حذف ${cellText(row[1]) || cellText(row[0])}`}
                             disabled={busy}
                             onClick={() => onDelete(index)}
