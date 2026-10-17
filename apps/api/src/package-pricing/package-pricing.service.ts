@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash } from 'node:crypto';
 import {
   BadRequestException,
@@ -526,7 +527,7 @@ export class PackagePricingService {
       .min(1)
       .max(100)
       .validate(rawRules, { convert: false });
-    if (result.error || !reason.trim())
+    if (result.error || !isOptionalOperationReason(reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const rules = result.value as PackagePricingRuleInputV1[];
     return this.database.client.$transaction(async (tx) => {
@@ -571,7 +572,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPeriod',
           entityId: periodId,
           entityVersion: version,
-          reason: reason.trim(),
+          reason: (reason ?? '').trim(),
           afterSnapshot: json(rules),
           traceId: traceId ?? null,
         },
@@ -606,7 +607,10 @@ export class PackagePricingService {
       throw new NotFoundException({ code: 'PACKAGE_NOT_FOUND' });
     if (packageRow.version !== input.expectedPackageVersion)
       throw new ConflictException({ code: 'CONCURRENT_MODIFICATION' });
-    if (!/^[A-Z]{3}$/.test(input.outputCurrencyCode) || !input.reason.trim())
+    if (
+      !/^[A-Z]{3}$/.test(input.outputCurrencyCode) ||
+      !isOptionalOperationReason(input.reason)
+    )
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const period = departure.periods.find(
       ({ id }) => id === input.pricingPeriodId,
@@ -683,7 +687,7 @@ export class PackagePricingService {
             ? json(resolved.fxSnapshot)
             : Prisma.JsonNull,
           createdByUserId: actor.userId,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           passengerPrices: {
             create: input.passengerMultipliers.map((item) => ({
               category: item.category,
@@ -715,7 +719,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPriceVersion',
           entityId: price.id,
           entityVersion: version,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           afterSnapshot: json(breakdown),
           traceId: traceId ?? null,
         },
@@ -735,7 +739,7 @@ export class PackagePricingService {
     actor: AuthenticatedActor,
     traceId?: string,
   ) {
-    if (!input.reason.trim())
+    if (!isOptionalOperationReason(input.reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const record =
       await this.database.client.packagePricingPriceVersion.findFirst({
@@ -799,7 +803,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPriceVersion',
           entityId: priceVersionId,
           entityVersion: input.expectedPriceVersion,
-          reason: input.reason.trim(),
+          reason: (input.reason ?? '').trim(),
           traceId: traceId ?? null,
         },
       });
@@ -815,7 +819,7 @@ export class PackagePricingService {
     actor: AuthenticatedActor,
     reason: string,
   ) {
-    if (!reason.trim())
+    if (!isOptionalOperationReason(reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const row = await this.database.client.packagePricingPackage.findFirst({
       where: { id: packageId, branchId: { in: actor.branchIds } },
@@ -850,7 +854,7 @@ export class PackagePricingService {
     reason: string,
     traceId?: string,
   ) {
-    if (!reason.trim())
+    if (!isOptionalOperationReason(reason))
       throw new BadRequestException({ code: 'PACKAGE_VALIDATION_FAILED' });
     const row = await this.database.client.packagePricingPackage.findFirst({
       where: { id: packageId, branchId: { in: actor.branchIds } },
@@ -879,7 +883,7 @@ export class PackagePricingService {
           entityType: 'PackagePricingPackage',
           entityId: packageId,
           entityVersion: expectedVersion + 1,
-          reason: reason.trim(),
+          reason: (reason ?? '').trim(),
           beforeSnapshot: json({ status: row.status, version: row.version }),
           afterSnapshot: json({
             status: 'STOPPED',

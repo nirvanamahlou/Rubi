@@ -132,6 +132,6 @@ describe('finance accounting invariants', () => {
     ).toThrowError(/exceed/);
     expect(() =>
       validateRequestDecision({ status: 'REJECTED', reason: 'کوتاه' }),
-    ).toThrowError(/reason/);
+    ).not.toThrow();
   });
 });

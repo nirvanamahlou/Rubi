@@ -4,6 +4,14 @@
   bottom: max(20px, env(safe-area-inset-bottom));
   z-index: 45;
 }
+.widget[dir='ltr'] {
+  left: auto;
+  right: max(20px, env(safe-area-inset-right));
+}
+.widget[dir='ltr'] .panel {
+  left: auto;
+  right: 0;
+}
 .launcher {
   display: grid;
   place-items: center;
@@ -102,6 +110,9 @@
   .widget {
     left: max(12px, env(safe-area-inset-left));
     bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .widget[dir='ltr'] {
+    right: max(12px, env(safe-area-inset-right));
   }
   .launcher {
     width: 56px;

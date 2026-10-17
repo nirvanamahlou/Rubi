@@ -1711,6 +1711,14 @@ export const USER_ACCESS_SCREENS: readonly UserAccessScreen[] = [
     tab: 'notes',
   },
   {
+    id: 'workbench.tab.daily-packages',
+    group: 'workbench',
+    title: 'پکیج‌های روز',
+    route: '/workbench',
+    tab: 'daily-packages',
+    inheritFrom: 'workbench.home',
+  },
+  {
     id: 'workbench.tab.calendar',
     group: 'workbench',
     title: 'تقویم من',
@@ -2444,9 +2452,10 @@ export function canViewRoute(
   };
   if (
     url.pathname === '/dashboard' &&
-    ['overview', 'sales', 'finance', 'news', 'scenarios', 'advisor'].some(
-      (view) => url.searchParams.get('page') === 'assistant-' + view,
-    )
+    (url.searchParams.get('page') === 'assistant' ||
+      ['overview', 'sales', 'finance', 'news', 'scenarios', 'advisor'].some(
+        (view) => url.searchParams.get('page') === 'assistant-' + view,
+      ))
   ) {
     return canViewScreen(permissions, 'assistant.executive');
   }

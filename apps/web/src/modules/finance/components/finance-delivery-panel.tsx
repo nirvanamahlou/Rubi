@@ -1,4 +1,5 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
 
 import {
   CheckCircle2,
@@ -120,8 +121,8 @@ export function FinanceDeliveryPanel() {
 
   async function submitDecision() {
     if (!selected || busy) return;
-    if (!reason.trim()) {
-      setError('دلیل عملیات برای ثبت در Audit الزامی است.');
+    if (!isOptionalOperationReason(reason)) {
+      setError('دلیل عملیات معتبر نیست.');
       return;
     }
     setBusy(true);
@@ -133,7 +134,7 @@ export function FinanceDeliveryPanel() {
           expectedVersion: selected.delivery.version,
           approved: !selected.delivery.approved,
           basis,
-          reason: reason.trim(),
+          reason: (reason ?? '').trim(),
           secondApproverReference:
             basis === 'MANAGER_EXCEPTION'
               ? secondApproverReference.trim() || null
@@ -389,7 +390,6 @@ export function FinanceDeliveryPanel() {
             <label className="grid gap-2">
               <span>دلیل ثبت‌شونده در Audit</span>
               <Input
-                required
                 maxLength={500}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}

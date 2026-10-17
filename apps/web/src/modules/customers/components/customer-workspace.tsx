@@ -2531,7 +2531,7 @@ export function CustomerDrawer({
                       value={consentSource}
                     />
                   </FormField>
-                  <FormField id="consent-reason" label="دلیل" required>
+                  <FormField id="consent-reason" label="دلیل">
                     <Input
                       id="consent-reason"
                       maxLength={500}

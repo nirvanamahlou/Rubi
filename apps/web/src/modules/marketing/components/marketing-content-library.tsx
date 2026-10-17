@@ -1,6 +1,9 @@
 'use client';
 
-import type { DocumentListItemV1 } from '@nora/contracts';
+import {
+  isOptionalOperationReason,
+  type DocumentListItemV1,
+} from '@nora/contracts';
 import {
   ChevronLeft,
   ChevronRight,
@@ -106,10 +109,7 @@ export function MarketingContentLibrary({
   };
   const submit = async () => {
     if (!editor || busy) return;
-    if (
-      editor.mode === 'delete' &&
-      (value.trim().length < 5 || value.trim().length > 500)
-    ) {
+    if (editor.mode === 'delete' && !isOptionalOperationReason(value, 500)) {
       setMutationError('دلیل حذف باید بین ۵ تا ۵۰۰ نویسه باشد.');
       return;
     }
@@ -333,16 +333,18 @@ export function MarketingContentLibrary({
           >
             <FormField
               id="library-record-value"
-              label={editor?.mode === 'delete' ? 'دلیل حذف' : 'عنوان محتوا'}
+              label={
+                editor?.mode === 'delete' ? 'دلیل حذف (اختیاری)' : 'عنوان محتوا'
+              }
+              required={editor?.mode !== 'delete'}
               {...(editor?.mode === 'delete'
-                ? { description: 'دلیل حذف را بین ۵ تا ۵۰۰ نویسه وارد کنید.' }
+                ? { description: 'دلیل حذف اختیاری است؛ حداکثر ۵۰۰ نویسه.' }
                 : {})}
-              required
             >
               <Input
                 id="library-record-value"
-                required
-                minLength={editor?.mode === 'delete' ? 5 : 2}
+                required={editor?.mode !== 'delete'}
+                minLength={editor?.mode === 'delete' ? 0 : 2}
                 maxLength={editor?.mode === 'delete' ? 500 : undefined}
                 value={value}
                 disabled={busy}

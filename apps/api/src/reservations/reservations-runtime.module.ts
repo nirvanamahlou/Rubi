@@ -263,7 +263,8 @@ export class ReservationRequestsController {
   @Header('Cache-Control', 'private, no-store')
   async issueTicketDocument(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() input: { customerId?: unknown; number?: unknown },
+    @Body()
+    input: { customerId?: unknown; number?: unknown; expectedNumber?: unknown },
     @Req() req: AuthenticatedRequest,
   ) {
     return { data: await this.ticketDocuments!.issue(id, input, req.actor) };

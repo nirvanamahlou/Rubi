@@ -8,6 +8,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
+  isOptionalOperationReason,
   LEGAL_ENTITY_CODES,
   LEGAL_ENTITY_CONTEXT_ALL,
   type AuthenticatedActor,
@@ -152,13 +153,12 @@ const hasPrismaCode = (error: unknown, code: string): boolean =>
   (error as { code?: unknown }).code === code;
 
 const normalizeReissueReason = (reason: unknown): string => {
-  const normalized = typeof reason === 'string' ? reason.trim() : '';
-  if (normalized.length < 3 || normalized.length > 500)
+  if (!isOptionalOperationReason(reason, 500))
     throw new BadRequestException({
       code: 'REISSUE_REASON_REQUIRED',
-      message: 'دلیل صدور مجدد باید بین ۳ تا ۵۰۰ نویسه معنادار باشد.',
+      message: 'دلیل صدور مجدد معتبر نیست.',
     });
-  return normalized;
+  return typeof reason === 'string' ? reason.trim() : '';
 };
 
 function safeAudit(row: EntityRow | null) {

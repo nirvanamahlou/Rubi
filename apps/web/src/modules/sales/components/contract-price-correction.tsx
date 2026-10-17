@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
@@ -115,7 +117,7 @@ export function ContractPriceCorrection({
         </label>
       </fieldset>
       <Button
-        disabled={busy || saved || !reason.trim()}
+        disabled={busy || saved || !isOptionalOperationReason(reason)}
         onClick={() => void save()}
       >
         {busy ? 'در حال ثبت…' : saved ? 'ثبت شد' : 'ثبت مبلغ کل قرارداد'}

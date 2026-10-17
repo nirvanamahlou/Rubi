@@ -1645,7 +1645,7 @@ describe('DocumentsService security and persistence flow', () => {
     expect(storage.openQuarantined).not.toHaveBeenCalled();
   });
 
-  it('requires a meaningful reason before previewing a sensitive image', async () => {
+  it('accepts an empty reason with sensitive preview permission', async () => {
     const previewActor: AuthenticatedActor = {
       ...actor,
       permissions: [
@@ -1660,15 +1660,14 @@ describe('DocumentsService security and persistence flow', () => {
     repository.appendAudit.mockResolvedValue({});
 
     await expect(
-      service.preview(row().id, previewActor, { sensitiveReason: 'کم' }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+      service.preview(row().id, previewActor, { sensitiveReason: '' }),
+    ).resolves.toBeDefined();
     expect(repository.appendAudit).toHaveBeenCalledWith(
       expect.objectContaining({
-        outcome: 'FAILURE',
-        reason: 'PREVIEW_POLICY_DENIED',
+        outcome: 'SUCCESS',
       }),
     );
-    expect(storage.openQuarantined).not.toHaveBeenCalled();
+    expect(storage.openQuarantined).toHaveBeenCalled();
   });
 
   it('updates editable metadata and the incomplete flag with optimistic locking', async () => {

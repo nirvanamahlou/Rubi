@@ -1,4 +1,6 @@
 'use client';
+import { isOptionalOperationReason } from '@nora/contracts';
+
 import { uiConfirm } from '@/i18n/dialogs';
 
 import {
@@ -861,7 +863,7 @@ export function RequestDetail({
               can('procurement.order.cancel') && (
                 <Button
                   variant="outline"
-                  disabled={!reason.trim()}
+                  disabled={!isOptionalOperationReason(reason)}
                   onClick={() => {
                     if (
                       uiConfirm(
@@ -901,7 +903,7 @@ export function RequestDetail({
                 <Button
                   variant="destructive"
                   disabled={
-                    !reason.trim() ||
+                    !isOptionalOperationReason(reason) ||
                     !can('procurement.request.cancel') ||
                     !can('procurement.assign')
                   }
@@ -923,7 +925,7 @@ export function RequestDetail({
               can('procurement.request.cancel') && (
                 <Button
                   variant="outline"
-                  disabled={!reason.trim()}
+                  disabled={!isOptionalOperationReason(reason)}
                   onClick={() => {
                     if (uiConfirm('درخواست با دلیل واردشده لغو شود؟'))
                       void command({ action: 'CANCEL', reason });

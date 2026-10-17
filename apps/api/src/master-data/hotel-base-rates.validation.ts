@@ -29,7 +29,7 @@ const schema = Joi.object({
     .uppercase()
     .pattern(/^[A-Z]{3}$/)
     .required(),
-  reason: Joi.string().trim().min(3).max(500).required(),
+  reason: Joi.string().trim().max(500).allow('').default(''),
   expectedVersion: Joi.number().integer().min(1),
   rows: Joi.array()
     .min(1)

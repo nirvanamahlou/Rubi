@@ -1,3 +1,13 @@
+## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
+
+Reservations note/yellow cells now inherit the same height, line-height and nowrap metrics as ordinary cells, retaining note colors and titles. Sales corrected yellow rows no longer add a second paragraph beneath the contract number; correction explanation remains in its title and row color is unchanged. ContractOutputButton defaults to قرارداد, retaining all permissions, preview and authenticated PDF download behavior. Focused markup/style/label regressions, Web types/build and full exact-head CI gate user-authorized develop merge. No API, schema, migration, dependency, data or local3100 changes.
+
+## OPTIONAL-OPERATION-REASONS-1015 — PC-A — READY_FOR_CI
+
+Validation:231 targeted API tests,132 targeted Web tests, API/Web typechecks and isolated PostgreSQL reason-check migration passed. 149 shared-contract tests and scoped lint passed. Full production build, PostgreSQL migration/seed and quality gates passed in CI; final test rerun follows HR domain boundary correction and optional-reason expectation updates. PR #894 requires all final-head checks before authorized merge. Source locks released with candidate. No operational migration or deployment.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-optional-operation-reasons-1015. Human owner explicitly requests optional change/action reasons across the entire application and develop merge. Reserve bounded cross-module API/Web reason validators, DTO defaults, reason-only submit gates/labels and focused tests across Sales, Reservations, Finance/Accounting, HR, Documents, Procurement, Master Data, B2B, Marketing, Customers, Customer Affairs and System/IAM. This authorization coordinates the shared policy for producers/consumers without transferring module ownership; preserve unrelated active scopes. Reserve central pure Contracts reason policy/export and bounded catalog translations. Sole Migration Owner for one forward migration relaxing only procurement receipt-adjustment reason nonempty check while retaining signed nonzero finite deltas, FKs and immutable audit history. No dependency changes or operational writes. Preserve actor/time/version evidence, permission/branch/maker-checker/expiry/idempotency checks and mandatory actual message contents; no fabricated human reason. Existing reason strings remain compatible; blank/missing reason normalizes to empty text.
+
 ## HOTEL-RATE-BROKERS-1015 — PC-A — READY_FOR_CI
 
 Hotel-rate manual and legacy selectors now consume the same active registered-broker directory as Reservations. Saving validates through the existing public brokerReference adapter, rejects inactive brokers and preserves validated legacy organization IDs. An additive registeredBrokerId FK plus XOR constraint keeps historical rows unchanged; API projections preserve the external brokerId contract for package pricing and purchase consumers. No data deletion or Master Data CRUD. Focused API74/Web122 and pack persistence5 tests pass; API/Web types pass. CI includes PostgreSQL temporary-table proof of legacy preservation, registered FK, uniqueness, exclusive source and delete restriction. User authorizes develop merge; apply migration before updated API/Web, no local3100 rollout in this task.
@@ -6148,3 +6158,31 @@ ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/acc
 ## LOGIN-REMOVE-HELPER-1015 — PC-A
 
 Removed the administrator-assigned username/password helper paragraph from the login page. Username/password fields and authentication behavior are unchanged. User explicitly requested no develop merge. No migration, dependency or local runtime update. Existing 20 login regressions, scoped ESLint, Web typecheck and production build (62 routes) passed. Draft PR #895 remains unmerged; scoped locks released.
+
+
+## 2026-10-15 — Workbench daily packages — PC-B — READY_FOR_REVIEW
+
+Added «پکیج‌های روز» immediately after Performance. Package/Banner generator send actions above PNG publish the final multi-page PDF into the existing Documents archive under a fixed branch/source and authenticated author. Same-branch users can select today or an earlier Tehran day, browse paginated results and view/download inside Workbench. The same-origin frame bridge validates PDF size/type and locks repeated clicks; normal document validation, antivirus, audit and confidentiality gates remain. Additive download source revalidation prevents changed-source delivery.61 focused tests, scoped lint/typechecks and production builds pass; CI/PR review remain. No schema/migration, dependency, live data upload or runtime rollout. See [task](tasks/WORKBENCH-DAILY-PACKAGES-1015.md).
+
+## TICKET-NUMBER-CORRECTION-1015 — PC-A
+
+Removed the flight-number override editor from Reservations issued tickets. All assigned passengers now receive a unique six-digit automatic e-ticket number when registering/exporting with no manual number; all flight supplies allow manual entry and correction. Existing numbers replay unchanged. Corrections require the current expected number, remain globally unique under existing PostgreSQL locks, preserve original UTC issue time and record actor/previous/new number in transactional audit. Existing flight details and PDF output continue to use saved workflow flight numbers. No schema/migration/dependency or live data/runtime change.17 numbering/report tests and three i18n coverage checks pass; full production build and PostgreSQL18 CI gates pass on the final integrated source. Full quality/test CI remains the merge gate. User authorizes develop merge; unrelated login PR895 remains unmerged. Bounded source scope released.
+
+## 2026-10-15 — PERFORMANCE-EXTRA-CARDS-1015 — PC-B
+
+Added six Workbench performance cards: lateness, commission, debit balance, credit balance, overtime and work shortfall. HR's self-only projection adds optional current Persian-month attendance totals, scoped by authenticated employee/branch and latest daily review; missing/invalid measurements are null rather than zero. Commission/debit/credit remain empty per the user's explicit clarification that separate manual entry will be defined later. Full work shortfall has no authoritative current HR calculation and is not inferred from early departure or payroll deductions. No Finance-owned query, schema/migration, dependency, live data or runtime change.
+
+
+## ASSISTANT-SINGLE-DASHBOARD-1017 — PC-C
+
+Consolidated the assistant into one final Dashboard navigation item, retaining all six original internal tabs and legacy page links. Floating launcher/window follows UI language: Persian left, English right, including mobile safe areas. Shared route alias preserves existing assistant screen access. No API/schema/provider or business-data changes.130 Web tests and14 access tests passed; full build/type/lint, CI and localhost verification pending.
+
+
+ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access tests passed;13 focused assertions rechecked after integration. Scoped Web/Contracts ESLint and both source/compatible-local production builds passed. Original tabs now share page=assistant, with legacy aliases retained; one final navigation entry and language-directed floating positions. Services4000/4300/4301 return HTTP200 and Web3000 serves the authenticated login redirect. Browser verification after Amin login and latest-head/postmerge CI remain delivery gates. No schema/API/provider changes. Source scope frozen and released.
+
+
+## DASHBOARD-CURRENCY-WIDTH-1017 — PC-C
+
+Chart header currency selectors now have a fixed112px width rather than stretching from an intrinsic input width. Shared form controls and calendar selectors unchanged. Validation in progress; no data/API/schema changes.
+
+LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR #895 merge to develop; this supersedes the earlier review-only instruction. Login code is unchanged by integration; both independent status histories are retained.

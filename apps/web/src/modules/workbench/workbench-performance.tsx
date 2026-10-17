@@ -7,6 +7,7 @@ import type {
   WorkbenchHrPerformanceRecordV1,
   WorkbenchMonthlySalesPeriodV1,
   WorkbenchSalesPerformanceV1,
+  WorkbenchHrPerformanceV1,
 } from '@nora/contracts';
 import {
   CalendarDays,
@@ -17,6 +18,12 @@ import {
   LogIn,
   LogOut,
   BriefcaseBusiness,
+  Clock3,
+  Coins,
+  TrendingDown,
+  TrendingUp,
+  Timer,
+  TimerOff,
 } from 'lucide-react';
 import { Alert, Badge, Button, Card, Skeleton } from '@/components/ui';
 import { workbenchPersonalApi } from './workbench-personal-api';
@@ -195,6 +202,7 @@ export function WorkbenchPerformance() {
               tone="border-amber-500/20 bg-amber-500/10"
             />
           </div>
+          <PerformanceExtraCards hr={hr} />
           <div className="grid gap-5 lg:grid-cols-2">
             <Card className="space-y-5 p-6">
               <div className="flex items-center justify-between gap-3">
@@ -356,6 +364,70 @@ export function WorkbenchPerformance() {
         </>
       )}
     </section>
+  );
+}
+
+export function PerformanceExtraCards({
+  hr,
+}: {
+  hr: WorkbenchHrPerformanceV1 | null;
+}) {
+  const month = hr?.monthlyAttendance;
+  const duration = (minutes: number | null | undefined) =>
+    minutes == null
+      ? '—'
+      : `${number(Math.floor(minutes / 60))} ساعت و ${number(minutes % 60)} دقیقه`;
+  const attendanceHint = month
+    ? `${month.period} · روزهای محاسبه‌شده و بررسی‌شده منابع انسانی`
+    : 'اطلاعات حضور ماه دریافت نشده است';
+  return (
+    <div
+      className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+      aria-label="جزئیات کارکرد و مالی من"
+    >
+      <Metric
+        label="تأخیر"
+        value={duration(month?.lateMinutes)}
+        hint={attendanceHint}
+        icon={<Clock3 />}
+        tone="border-orange-500/20 bg-orange-500/10"
+      />
+      <Metric
+        label="پورسانت"
+        value="—"
+        hint="پورسانت تأییدشده به عملکرد متصل نشده است"
+        icon={<Coins />}
+        tone="border-emerald-500/20 bg-emerald-500/10"
+      />
+      <Metric
+        label="بدهکاری"
+        value="—"
+        hint="مانده بدهکاری شخصی به عملکرد متصل نشده است"
+        icon={<TrendingDown />}
+        tone="border-rose-500/20 bg-rose-500/10"
+      />
+      <Metric
+        label="بستانکاری"
+        value="—"
+        hint="مانده بستانکاری شخصی به عملکرد متصل نشده است"
+        icon={<TrendingUp />}
+        tone="border-sky-500/20 bg-sky-500/10"
+      />
+      <Metric
+        label="اضافه‌کاری"
+        value={duration(month?.overtimeMinutes)}
+        hint={attendanceHint}
+        icon={<Timer />}
+        tone="border-violet-500/20 bg-violet-500/10"
+      />
+      <Metric
+        label="کسری کار"
+        value="—"
+        hint="کسری کار تأییدشده به عملکرد متصل نشده است"
+        icon={<TimerOff />}
+        tone="border-amber-500/20 bg-amber-500/10"
+      />
+    </div>
   );
 }
 

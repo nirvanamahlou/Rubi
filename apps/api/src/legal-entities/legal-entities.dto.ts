@@ -79,9 +79,7 @@ export class ReissueDocumentDto {
   @IsUUID() originalIssueId!: string;
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsString()
-  @MinLength(3)
   @MaxLength(500)
-  @Matches(/\S/)
-  reason!: string;
+  reason = '';
   @IsOptional() @Matches(/^[0-9a-f]{64}$/) fileHash?: string;
 }

@@ -11,6 +11,8 @@ import { DocumentsController } from './documents.controller';
 import { DocumentsRepository } from './documents.repository';
 import { DocumentsScanProcessor } from './documents.scan-processor';
 import { DocumentsService } from './documents.service';
+import { DocumentsDailyPackagesService } from './documents-daily-packages.service';
+import { DocumentsDailyPackagesRepository } from './documents-daily-packages.repository';
 import { LocalDocumentStorage } from './documents.storage';
 
 @Module({
@@ -22,9 +24,15 @@ import { LocalDocumentStorage } from './documents.storage';
     DocumentsRepository,
     DocumentsScanProcessor,
     DocumentsService,
+    DocumentsDailyPackagesService,
+    DocumentsDailyPackagesRepository,
     LocalDocumentStorage,
     WindowsDefenderAntivirus,
   ],
-  exports: [DocumentsService, LocalDocumentStorage],
+  exports: [
+    DocumentsService,
+    DocumentsDailyPackagesService,
+    LocalDocumentStorage,
+  ],
 })
 export class DocumentsModule {}

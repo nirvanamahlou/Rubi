@@ -1,5 +1,4 @@
 import { assistantCopy } from '@/i18n/assistant-copy';
-import { assistantViews } from '@/modules/assistant/model';
 import {
   employeeCommercialKpis,
   employeeCommercialSource,
@@ -2785,18 +2784,17 @@ export const dashboardPages: readonly DashboardPageDefinition[] = [
       : page;
   }),
   ...dashboardDetailPages,
-  ...assistantViews.map((view) => ({
-    id: `assistant-${view}`,
-    title: assistantCopy.views[view].label[0],
-    technicalName: assistantCopy.views[view].label[1],
-    description: assistantCopy.views[view].description[0],
+  {
+    id: 'assistant',
+    title: 'دستیار هوشمند',
+    technicalName: 'AI Assistant',
+    description: assistantCopy.views.overview.description[0],
     kpiIds: [],
     visualizations: [],
-  })),
+  },
 ];
 
 export const dashboardNavigation: readonly DashboardNavigationItem[] = [
-  ...assistantViews.map((view) => ({ pageId: `assistant-${view}` })),
   {
     pageId: 'executive-overview',
     children: [{ pageId: 'executive-growth-risk' }],
@@ -2840,6 +2838,7 @@ export const dashboardNavigation: readonly DashboardNavigationItem[] = [
       { pageId: 'employee-sales-quality' },
     ],
   },
+  { pageId: 'assistant' },
 ] as const;
 
 export const dashboardOpenDecisions = [

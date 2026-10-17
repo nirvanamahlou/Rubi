@@ -1,3 +1,4 @@
+import { isOptionalOperationReason } from '@nora/contracts';
 import { createHash, randomUUID } from 'node:crypto';
 
 import {
@@ -1449,7 +1450,7 @@ export class HrService {
         );
       if (
         cancel &&
-        (!providedData?.reason ||
+        (!isOptionalOperationReason(providedData?.reason) ||
           input.values !== undefined ||
           input.parentId !== undefined ||
           input.effectiveAt !== undefined)
@@ -1655,7 +1656,7 @@ export class HrService {
       input.reason === undefined
         ? undefined
         : validate.text(input.reason, 'دلیل', 1000);
-    if (state === 'ENDED' && !reason)
+    if (state === 'ENDED' && !isOptionalOperationReason(reason))
       throw new BadRequestException('دلیل پایان قرارداد الزامی است.');
     if (
       input.signedDocumentId &&
