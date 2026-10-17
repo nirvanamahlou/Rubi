@@ -620,6 +620,7 @@ describe.skipIf(!enabled)(
         data: {
           code: 'QA-ROLE-FK',
           legalName: 'Synthetic party',
+          displayName: 'Synthetic party',
           createdByUserId: actorUserId,
           updatedByUserId: actorUserId,
           roles: {
