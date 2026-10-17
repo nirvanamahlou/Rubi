@@ -72,11 +72,17 @@ export class PurchaseFxService {
     const baselineAt = input.baselineAt ?? new Date();
     let quote = input.rateToIrr
       ? { rateToIrr: input.rateToIrr, source: 'MANUAL' }
-      : await this.directory.purchaseRateToIrr(input.currencyCode, baselineAt);
+      : await this.directory.purchaseRateToIrr(
+          input.currencyCode,
+          baselineAt,
+          tx,
+        );
     if (input.rateToIrr) {
-      const reference = await this.directory
-        .purchaseRateToIrr(input.currencyCode, baselineAt)
-        .catch(() => null);
+      const reference = await this.directory.purchaseRateToIrr(
+        input.currencyCode,
+        baselineAt,
+        tx,
+      );
       if (
         reference &&
         new Prisma.Decimal(reference.rateToIrr).equals(input.rateToIrr)
@@ -190,7 +196,15 @@ export class PurchaseFxService {
                   p.sourceId === entry.id &&
                   p.sourceVersion === item.sourceVersion,
               );
+        const paymentVersion =
+          item.reservationPurchase?.lines.find(
+            (line) => line.purchaseId === entry.id,
+          )?.financeVersion ??
+          item.ticketPurchase?.paymentCount ??
+          item.financeVersion ??
+          0;
         const evidence = payments
+          .filter((p) => p.version <= paymentVersion)
           .filter((p) => p.paidAmount !== null && p.rialEquivalent !== null)
           .map((p) => ({
             paidAmount: p.paidAmount!.toString(),
@@ -208,7 +222,8 @@ export class PurchaseFxService {
             snap?.rateToIrr.toString() ?? null,
             evidence,
           ),
-          ...(evidence.length !== payments.length
+          ...(evidence.length !==
+          payments.filter((p) => p.version <= paymentVersion).length
             ? {
                 actualPaidEquivalent: null,
                 realizedGainLoss: null,

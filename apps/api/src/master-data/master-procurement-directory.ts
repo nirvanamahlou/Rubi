@@ -9,9 +9,15 @@ export class MasterProcurementDirectory {
     @Inject(DatabaseService) private readonly database: DatabaseService,
   ) {}
   /** Approved operational reference only; never journal-posting authority. */
-  async purchaseRateToIrr(currencyCode: string, at = new Date()) {
+  async purchaseRateToIrr(
+    currencyCode: string,
+    at = new Date(),
+    transaction?: Prisma.TransactionClient,
+  ) {
     for (const rateType of ['SELL', 'REFERENCE'] as const) {
-      const row = await this.database.client.masterDraftExchangeRate.findFirst({
+      const row = await (
+        transaction ?? this.database.client
+      ).masterDraftExchangeRate.findFirst({
         where: {
           fromCurrency: { code: currencyCode, isActive: true },
           toCurrency: { code: 'IRR', isActive: true },

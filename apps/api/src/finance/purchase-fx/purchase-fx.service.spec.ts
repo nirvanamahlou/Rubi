@@ -41,6 +41,7 @@ describe('immutable purchase-day FX capture', () => {
     expect(directory.purchaseRateToIrr).toHaveBeenCalledWith(
       'EUR',
       input.baselineAt,
+      tx,
     );
     tx.financePurchaseFxSnapshot.findFirst.mockResolvedValue({
       ...result,
