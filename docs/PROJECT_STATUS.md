@@ -6155,6 +6155,10 @@ User authorizes moving all six assistant views to Dashboard navigation and remov
 
 ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/access Web tests pass (one existing projection test skipped), six new Dashboard integration renders and seven settings-consumer tests pass,14 Contracts access tests pass including duplicate-page rejection. Full Web TypeScript and production build (62 routes), scoped Web/Contracts ESLint and diff checks pass. All six original layouts are reused without the old tab strip; legacy links redirect to exact dashboard pages. Native assistant grants retained, unrelated Dashboard grants unchanged; query/report filters disabled for assistant sources. No API/schema/migration/provider change. Candidate source scope frozen and reservation released; exact-head/postmerge CI and local browser delivery remain gates.
 
+## LOGIN-REMOVE-HELPER-1015 — PC-A
+
+Removed the administrator-assigned username/password helper paragraph from the login page. Username/password fields and authentication behavior are unchanged. User explicitly requested no develop merge. No migration, dependency or local runtime update. Existing 20 login regressions, scoped ESLint, Web typecheck and production build (62 routes) passed. Draft PR #895 remains unmerged; scoped locks released.
+
 
 ## 2026-10-15 — Workbench daily packages — PC-B — READY_FOR_REVIEW
 
@@ -6184,6 +6188,8 @@ Chart header currency selectors now have a fixed112px width rather than stretchi
 ## RESERVATION-ISSUED-FORM-1017 — PC-A
 
 Supplier reservation form currency inputs consume all active Master Data currency pages, preserving already-saved inactive codes without inventing choices. Contractual hotel purchase totals are visible beside hotel information with exact separate-currency symbols. Issued forms open the sent settings snapshot with only Edit/Download actions; full settings remain available through explicit Edit, while tickets/vouchers/history and immutable supplier PDF selection remain unchanged. No API/schema/migration/dependency/live data/runtime change. Focused tests and full CI gate user-authorized develop merge.
+
+LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR #895 merge to develop; this supersedes the earlier review-only instruction. Login code is unchanged by integration; both independent status histories are retained.
 
 
 ## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C

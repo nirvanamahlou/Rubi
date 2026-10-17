@@ -7780,6 +7780,11 @@ ASSISTANT-DASHBOARD-PAGES-1015 bounded consumer fix: remove the now-impossible a
 
 ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/access Web tests pass (one existing projection test skipped), six new Dashboard integration renders and seven settings-consumer tests pass,14 Contracts access tests pass including duplicate-page rejection. Full Web TypeScript and production build (62 routes), scoped Web/Contracts ESLint and diff checks pass. All six original layouts are reused without the old tab strip; legacy links redirect to exact dashboard pages. Native assistant grants retained, unrelated Dashboard grants unchanged; query/report filters disabled for assistant sources. No API/schema/migration/provider change. Candidate source scope frozen and reservation released; exact-head/postmerge CI and local browser delivery remain gates.
 
+## LOGIN-REMOVE-HELPER-1015 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-login-remove-helper-1015 from origin/develop@541289b4. Reserve only apps/web/src/app/login/page.tsx and own append-only work/status entries. Remove the administrator-assigned username/password helper sentence as requested. No active overlapping login-page owner found. No authentication, API, schema, dependency or runtime change. User explicitly forbids develop merge; publish review branch only.
+LOGIN-REMOVE-HELPER-1015 complete: scoped ESLint, 20 existing login tests, Web typecheck and production build passed. Draft PR #895 is intentionally unmerged per user instruction. Source/doc locks released; local runtime unchanged.
+
 ## WORKBENCH-DAILY-PACKAGES-1015 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-daily-packages-1015` from current origin/develop. Reserve Workbench daily-package API/Web, the new bounded Documents daily-package service and module export, generator export/host bridge, additive Workbench contracts and one Workbench screen entry, tests/i18n and own status entries. Existing PC-B generator presentation reservations are released; Sales pricing is not edited. Producer/consumer compatibility and scope are documented in docs/tasks/WORKBENCH-DAILY-PACKAGES-1015.md. No schema/migration, dependency/lockfile, permission grant or operational-data/runtime mutation. Deliver a reviewable PR to develop; no new merge authorization is inferred from this request.
@@ -7817,7 +7822,9 @@ COMPUTER_ID=PC-A; branch codex/pc-a-reservation-issued-form-1017 from origin/dev
 
 Permission-boundary refinement: direct master-data listing requires master_data.read. Reserve additive MasterTravelDirectory.voucherCurrencies public read and Reservations request-scoped voucher-currencies endpoint/controller tests; Web consumes this endpoint with reservations.read plus actual request branch authorization. Producer Master Data returns only active id/code/name; consumer Reservations paginates with bounded page. No IAM grant, foreign-table query or existing API contract change. Public-directory scope is bounded to this read; earlier source reservations released.
 
-Validation:21 API directory/permission/voucher regressions pass;21 targeted Web currency/issued-form/settings/output checks pass. Translation inventory labels pass; one local 30-second catalogue check timed out under host contention and is rerun alone. Scoped API/Web lint/types and exact-head full test/build/database CI gate the authorized merge. Source scope frozen/released for unrelated work; no migration or live rollout.
+Validation:21 API directory/permission/voucher regressions pass;21 targeted Web currency/issued-form/settings/output checks pass. All three translation coverage checks pass on the isolated rerun. Scoped API/Web ESLint and TypeScript pass after refreshing generated Prisma types. Full production builds and PostgreSQL CI pass; integrated-head full quality/tests remain the merge gate. Source scope frozen/released for unrelated work; no migration or live rollout.
+
+LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR #895 merge to develop; this supersedes the earlier review-only instruction. Login code is unchanged by integration; both independent status histories are retained.
 
 ## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C — IN_PROGRESS
 
