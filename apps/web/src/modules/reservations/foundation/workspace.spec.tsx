@@ -415,6 +415,18 @@ describe('reservation search submission and filter combinations', () => {
 });
 
 it('marks only the second cell of noted requests, including the initially selected row', () => {
+  const css = readFileSync(
+    new URL('./workspace.module.css', import.meta.url),
+    'utf8',
+  );
+  const ordinary = css.match(/\.requestTable td \{([^}]+)\}/)![1]!;
+  const noted = css.match(
+    /\.requestTable tbody tr td\[data-has-note='true'\] \{([^}]+)\}/,
+  )![1]!;
+  expect(ordinary).toContain('height: 32px');
+  expect(ordinary).toContain('line-height: 20px');
+  expect(ordinary).toContain('white-space: nowrap');
+  expect(noted).not.toMatch(/(?:height|line-height|padding|white-space):/);
   const html = renderToStaticMarkup(
     <ReservationOperationsWorkspace
       state="SUCCESS"

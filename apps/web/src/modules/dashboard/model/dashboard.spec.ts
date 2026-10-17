@@ -340,11 +340,8 @@ describe('dashboard registry', () => {
   });
 
   it('keeps summary pages focused and moves related analysis into sidebar subpages', () => {
-    expect(dashboardPages).toHaveLength(33);
+    expect(dashboardPages).toHaveLength(28);
     expect(dashboardNavigation).toEqual([
-      ...['overview', 'sales', 'finance', 'news', 'scenarios', 'advisor'].map(
-        (view) => ({ pageId: 'assistant-' + view }),
-      ),
       {
         pageId: 'executive-overview',
         children: [{ pageId: 'executive-growth-risk' }],
@@ -388,12 +385,13 @@ describe('dashboard registry', () => {
           { pageId: 'employee-sales-quality' },
         ],
       },
+      { pageId: 'assistant' },
     ]);
     const navigationIds = dashboardNavigation.flatMap((item) => [
       item.pageId,
       ...(item.children?.map((child) => child.pageId) ?? []),
     ]);
-    expect(navigationIds).toHaveLength(31);
+    expect(navigationIds).toHaveLength(26);
     expect(navigationIds).not.toContain('tasks-automation');
     expect(navigationIds).not.toContain('documents-reports-data-quality');
     expect(dashboardPages.map((page) => page.id)).toEqual(

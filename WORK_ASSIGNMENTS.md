@@ -1,3 +1,9 @@
+## CONTRACT-ROW-HEIGHT-1017 — PC-A — READY_FOR_CI
+
+Bounded consumer compatibility: reserve only Organizations organization-sales-documents.spec.tsx label expectation for the shared Sales-owned action. No Organizations runtime/API behavior changes. Reuse existing translated correction text rather than introducing a prefixed Persian catalogue key.
+
+COMPUTER_ID=PC-A; branch codex/pc-a-contract-row-height-1017 from origin/develop@aacb79db. User requests equal yellow row heights, Contract action without PDF wording and develop merge. Reserve Reservations foundation table CSS and existing styling test; Sales workspace contract-number cell, ContractOutputButton default label and focused render tests; own docs. Prior COMPACT-YELLOW and SALES-ROW-ACTIONS candidates are ancestors of develop and released. Unify note-cell metrics with ordinary cells; retain yellow/correction markers and explanatory title without an extra Sales line. No API, permissions, schema/migration, dependency or operational runtime/data changes. Scoped ESLint passed. Regression tests compare corrected/plain markup, enforce common note-cell metrics and verify default/explicit contract labels; types/build and exact-head full CI gate authorized merge. Source locks released with candidate; no3100 deployment.
+
 ## OPTIONAL-OPERATION-REASONS-1015 — PC-A — READY_FOR_CI
 
 Validation:231 targeted API tests,132 targeted Web tests, API/Web typechecks and isolated PostgreSQL reason-check migration passed. 149 shared-contract tests and scoped lint passed. Full production build, PostgreSQL migration/seed and quality gates passed in CI; final test rerun follows HR domain boundary correction and optional-reason expectation updates. PR #894 requires all final-head checks before authorized merge. Source locks released with candidate. No operational migration or deployment.
@@ -7774,6 +7780,11 @@ ASSISTANT-DASHBOARD-PAGES-1015 bounded consumer fix: remove the now-impossible a
 
 ASSISTANT-DASHBOARD-PAGES-1015 validation:124 assistant/dashboard/navigation/access Web tests pass (one existing projection test skipped), six new Dashboard integration renders and seven settings-consumer tests pass,14 Contracts access tests pass including duplicate-page rejection. Full Web TypeScript and production build (62 routes), scoped Web/Contracts ESLint and diff checks pass. All six original layouts are reused without the old tab strip; legacy links redirect to exact dashboard pages. Native assistant grants retained, unrelated Dashboard grants unchanged; query/report filters disabled for assistant sources. No API/schema/migration/provider change. Candidate source scope frozen and reservation released; exact-head/postmerge CI and local browser delivery remain gates.
 
+## LOGIN-REMOVE-HELPER-1015 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-login-remove-helper-1015 from origin/develop@541289b4. Reserve only apps/web/src/app/login/page.tsx and own append-only work/status entries. Remove the administrator-assigned username/password helper sentence as requested. No active overlapping login-page owner found. No authentication, API, schema, dependency or runtime change. User explicitly forbids develop merge; publish review branch only.
+LOGIN-REMOVE-HELPER-1015 complete: scoped ESLint, 20 existing login tests, Web typecheck and production build passed. Draft PR #895 is intentionally unmerged per user instruction. Source/doc locks released; local runtime unchanged.
+
 ## WORKBENCH-DAILY-PACKAGES-1015 — PC-B — READY_FOR_REVIEW
 
 COMPUTER_ID=PC-B; branch `codex/pc-b-workbench-daily-packages-1015` from current origin/develop. Reserve Workbench daily-package API/Web, the new bounded Documents daily-package service and module export, generator export/host bridge, additive Workbench contracts and one Workbench screen entry, tests/i18n and own status entries. Existing PC-B generator presentation reservations are released; Sales pricing is not edited. Producer/consumer compatibility and scope are documented in docs/tasks/WORKBENCH-DAILY-PACKAGES-1015.md. No schema/migration, dependency/lockfile, permission grant or operational-data/runtime mutation. Deliver a reviewable PR to develop; no new merge authorization is inferred from this request.
@@ -7793,6 +7804,12 @@ PERFORMANCE-EXTRA-CARDS-1015 scope clarification: the user confirms HR as the so
 
 Validation:25 focused API/Web/i18n tests pass, scoped ESLint and formatting pass, Contracts/API/Web typechecks and Web production build (62 routes) pass. No migration or live upload/runtime change. Bounded source reservation releases with review candidate; CI/PR review remain gates.
 
+## ASSISTANT-SINGLE-DASHBOARD-1017 — PC-C — IN_PROGRESS
+
+User requests one assistant Dashboard page with original internal tabs, last in navigation; English floating chat on the right. Branch codex/pc-c-assistant-single-dashboard-1017 from origin/develop@aacb79db. Reserve assistant location/tests/floating CSS, Dashboard registry/workspace/tests, bounded IAM route alias/tests and own documentation. Previous scope released; no overlapping active lock. Preserve legacy links and permissions. No API/schema/provider changes. Acceptance: one final menu item, six tabs, RTL/LTR positioning, tests/types/build, CI and localhost.
+
+ASSISTANT-SINGLE-DASHBOARD-1017 validation:130 Web tests and14 Contracts access tests passed;13 focused assertions rechecked after integration. Scoped Web/Contracts ESLint and both source/compatible-local production builds passed. Original tabs now share page=assistant, with legacy aliases retained; one final navigation entry and language-directed floating positions. Services4000/4300/4301 return HTTP200 and Web3000 serves the authenticated login redirect. Authenticated Amin browser verification passed: final menu entry, internal tabs, return from native Dashboard, English-right/Persian-left chat and all three commands. Exact integrated-head/postmerge CI remain delivery gates. No schema/API/provider changes. Source scope frozen and released.
+
 TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pass (17 tests; optional external database test skipped). Full production build and PostgreSQL18 migration/seed CI gates pass after preserving both sides of develop documentation/translation conflicts. Existing saved flight details are fetched read-only for preview; no flight-number editor remains. Source scope frozen and bounded locks released. Full quality/test CI gates still precede the user-authorized merge. No local runtime update.
 
 ## HR-STATUS-RENDER-FIX-1017 — PC-B — READY_FOR_REVIEW
@@ -7800,4 +7817,21 @@ TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pas
 - COMPUTER_ID=PC-B; base `origin/develop@0a235b21`; branch `codex/pc-b-hr-status-render-fix-1017`.
 - Scope: HR status presentation, employee status filter, focused tests and this work item's status documentation. No API contract, schema, migration, dependency/lockfile, permission or business-data changes.
 - Trigger: the live Chrome console reports `TypeError: status.replace is not a function` in `HrStatus`, causing the `/hr` error boundary to replace the workspace. Normalize unexpected status values at the display boundary and verify the live route.
-- Result: unexpected status values render as safe text and receive a neutral tone; the employees filter uses the same normalization. The live Chrome page now renders the employee table instead of the HR error boundary. 57 focused tests, Web typecheck, scoped lint, formatting and Web production build (62 routes) pass; no migration or persisted data changes. The live container source is patched for immediate use and must be rebuilt from this branch for durable deployment.
+- Result: unexpected status values render as safe text and receive a neutral tone; the employees filter uses the same normalization. The live Chrome page now renders the employee table instead of the HR error boundary. 57 focused tests, Web typecheck, scoped lint, formatting and Web production build (62 routes) pass; no migration or persisted data changes. A rebuilt Web image is deployed locally for persistence across container recreation.
+## DASHBOARD-CURRENCY-WIDTH-1017 — PC-C — IN_PROGRESS
+
+User requests compact currency selectors in all Dashboard chart headers. Branch codex/pc-c-dashboard-currency-width-1017 from develop2246f4a0. Reserve only Dashboard workspace currency-trigger classes and own status entries; previous assistant scope released. Use fixed112px width instead of minimum width, preserving chart data, selection behavior and calendar controls. No API/schema/dependency changes. Scoped lint/type/build and existing Dashboard tests, browser sizing check, full CI and localhost delivery.
+
+LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR #895 merge to develop; this supersedes the earlier review-only instruction. Login code is unchanged by integration; both independent status histories are retained.
+
+## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C — IN_PROGRESS
+
+User requests Telegram-like compact chat input and buttons. Reserve assistant executive-workspace composer markup/styles and own documentation on codex/pc-c-assistant-compact-composer-1017. PC-C; base develop1e21a21c. Prior source scopes merged/released; no overlapping composer owner. Acceptance: single-line initial input, bounded automatic growth, circular equal-size icon controls, compact quick commands, RTL/LTR and mobile fit, existing read-only command behavior. No API/provider/schema/dependency changes. Existing assistant tests, lint/type/build, browser verification and full CI gate delivery.
+
+## ASSISTANT-COMPACT-WINDOW-1017 — PC-C — IN_PROGRESS
+
+User requests a smaller floating chat window and removal of the full-workspace shortcut. Reserve floating-assistant.tsx/module.css and own documentation on codex/pc-c-assistant-compact-window-1017; PC-C. Prior assistant work merged/released; no overlapping owner. Target360x420px bounded by viewport, compact header, preserved scrolling/close/locale placement. No API/provider/schema/dependency changes. Existing assistant tests, lint/type/build, browser geometry and CI gates required.
+
+## FINANCE-PROFIT-LAYOUT-1017 — PC-A — READY_FOR_CI
+
+COMPUTER_ID=PC-A; branch codex/pc-a-finance-profit-layout-1017. Reserve Finance receipt-verification ContractProfit component, scoped presentation module CSS and focused tests plus own docs. User requests framed readable RTL profit/purchase view and develop merge. Preserve all profit computations, currency separation, incomplete/null states and read permissions; no API, accounting, schema, dependency or operational writes. Prior related presentation scopes are merged; no overlapping active target lock observed. Validation:13 focused view/inbox/Sales-exclusion/English-coverage tests passed. Currency rows have semantic headers, isolated LTR numeric amounts and codes, padded/bordered cells, locally contained narrow-screen scroll and separately framed incomplete-cost warning and cost evidence. Large/negative/null amounts are preserved. Scoped lint/types and exact-head full quality/test/build/database CI gate merge. No local3100 deployment; bounded source locks released with candidate.
