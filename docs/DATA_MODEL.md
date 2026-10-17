@@ -1,3 +1,21 @@
+## Partner360 and manual USD reference rate — 2026-10-17
+
+MasterCurrency.unitsPerUsd is nullable Decimal(24,10), exposed as a decimal string
+through existing Master Data v1 attributes. It means1USD=N record-currency units;
+IRR is rials, not tomans. Positive finite values only; USD itself must equal1.
+Omission preserves, blank clears, CAS/audit remains mandatory. No automatic FX
+snapshot, financial approval, existing transaction or historical rate is changed.
+
+Existing B2B organization/branch/role unique identity now accepts SUPPLIER and
+BROKER separately from AGENCY/CORPORATE_CUSTOMER. Credit flows COUNTERPARTY_TO_US.
+New Finance requests may reference actual MasterOrganization plus its supported
+role through restrictive FKs and a pair CHECK. Legacy free-text parties remain
+unlinked; never backfill by name. The composite lookup starts with organization,
+role and branch. Existing role rows survive identity edits; referenced roles
+cannot be removed. Immutable payment revisions stay in Finance; purchases are
+read through Reservations/Procurement public producers, with per-currency Decimal
+totals, invoice-version ownership and fail-closed reconciliation.
+
 ## Flight total purchase allocation (FLIGHT-TOTAL-CONTRACT-COST-1013)
 
 No storage change: the existing invoiceAmount stores the exact whole-flight purchase; unitCost is its four-decimal per-seat display equivalent. The additive totalCost command is mutually exclusive with unitCost; existing unit commands remain valid. Finance's public recorded-cost projection adds seatCount and invoiceAmount. Sales uses exact invoice × assigned seat count / purchased seat count, rounded once per contract/flight; legacy age-specific records retain prior behavior. Total and unit command retries use the existing canonical invoice/seat fingerprint, CAS and payment lock. Settled-cost publication policy is unchanged.

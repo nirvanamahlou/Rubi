@@ -15,6 +15,7 @@ const values = {
   symbol: '$',
   decimalDigits: '2',
   displayOrder: '0',
+  unitsPerUsd: '',
 };
 const record: MasterDataRecord = {
   id: 'currency-test',
@@ -41,6 +42,41 @@ const quote = {
 };
 
 describe('currency form', () => {
+  it('preserves an editable decimal USD rate and rejects invalid/self rates', () => {
+    expect(
+      validateCurrencyForm({
+        ...values,
+        code: 'IRR',
+        unitsPerUsd: '2700000.1234567890',
+      }).success,
+    ).toBe(true);
+    expect(
+      currencyFormValues({
+        ...record,
+        attributes: { ...record.attributes, unitsPerUsd: '1' },
+      }).unitsPerUsd,
+    ).toBe('1');
+    for (const rate of [
+      '0',
+      '-1',
+      'NaN',
+      'Infinity',
+      '1e4',
+      '1.12345678901',
+      '100000000000000',
+    ]) {
+      expect(
+        validateCurrencyForm({ ...values, code: 'IRR', unitsPerUsd: rate })
+          .errors.unitsPerUsd,
+      ).toBeDefined();
+    }
+    expect(
+      validateCurrencyForm({ ...values, unitsPerUsd: '2' }).errors.unitsPerUsd,
+    ).toBeDefined();
+    expect(
+      validateCurrencyForm({ ...values, unitsPerUsd: '1.0000000000' }).success,
+    ).toBe(true);
+  });
   it('contains currency metadata without display policy or financial rate fields', () => {
     expect(currencyFormValues(record)).toEqual({ ...values, code: 'USD' });
     expect(currencyFormValues().decimalDigits).toBe('2');

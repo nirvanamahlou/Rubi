@@ -1,5 +1,23 @@
 # مرز ماژول‌ها
 
+## Partner360 bounded public composition — 2026-10-17
+
+Master Data owns supplier/broker identity and explicit audited legacy dossier
+connection. B2B owns role/branch-scoped cooperation profiles, signatories,
+versioned contracts/approvals, credit/guarantees and agreed rates. Finance owns
+the received-credit payable projection and actual financial requests/payments;
+it consumes ReservationsPublicService.partnerFinanceSources and
+ProcurementPublicService.partnerFinanceSources instead of their tables.
+FinancePartnerExposurePortV1 is the only B2B balance reader for partners; agency
+customer receivables are never reused. Manual USD metadata remains Master Data
+reference information, not a Finance rate approval or transaction conversion.
+
+Organization -> OrganizationRole -> FinanceOperationalRequest is the real
+counterparty link; branch/role/permission guards apply before source queries.
+Paid unallocated requests and replaced paid obligations require reconciliation,
+not a fabricated zero/available credit. Operational approvals/payments continue
+through the existing Finance workflow; no bank transfer is executed by the dossier.
+
 > انتقال مالکیت توسعه در2026-10-12: حسابداری (همه لایه‌ها) به PC-B واگذار شد؛
 > سایر Finance/Treasury نزد PC-A باقی است. مالکیت دامنه‌ای داده‌ها و مرز سرویس‌ها
 > تغییر نکرده است. مرجع قطعی جزئیات: [MODULE_OWNERSHIP.md](MODULE_OWNERSHIP.md).

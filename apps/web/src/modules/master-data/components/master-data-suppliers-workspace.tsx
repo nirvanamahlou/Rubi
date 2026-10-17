@@ -84,6 +84,7 @@ import {
 } from './master-data-profile-details';
 import { MasterDataLogoCell } from './master-data-logo-cell';
 import { PartnerExcelDialog } from './partner-excel-dialog';
+import { PartnerDossier } from '@/modules/organizations/components/partner-dossier';
 
 type SupplierTab = 'suppliers' | 'brokers' | 'collaboration';
 type RequestState = 'loading' | 'ready' | 'error' | 'forbidden';
@@ -1051,6 +1052,23 @@ export function MasterDataSuppliersWorkspace() {
       <Alert description="دسترسی این بخش محدود شده است." title="دسترسی محدود" />
     );
   }
+
+  if (
+    profileOpen &&
+    selected &&
+    (selected.resource === 'suppliers' || selected.resource === 'brokers')
+  )
+    return (
+      <PartnerDossier
+        key={`${selected.resource}:${selected.id}`}
+        partner={selected}
+        onClose={() => {
+          setProfileOpen(false);
+          void load();
+          void loadSummary();
+        }}
+      />
+    );
 
   return (
     <div className="space-y-5">

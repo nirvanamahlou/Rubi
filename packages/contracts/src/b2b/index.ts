@@ -11,11 +11,13 @@ import type {
   DocumentConfidentialityCode,
   DocumentScanStatusCode,
 } from '../documents';
+import type { B2bCooperationRole } from './agreement-workflow';
 
 export const B2B_CONTRACT_VERSION = 1 as const;
 export * from './agreement-workflow';
 export * from './agreement-validation';
 export * from './phone-verification';
+export * from './partner-finance';
 export const B2B_API_PREFIX = '/api/v1/b2b' as const;
 
 export type AgencyOperationalStatus =
@@ -31,7 +33,7 @@ export interface B2bAgencyProfileV1 {
   id: string;
   organizationId: string;
   branchId: string;
-  role?: 'AGENCY' | 'CORPORATE_CUSTOMER';
+  role?: B2bCooperationRole;
   accountManagerUserId: string | null;
   status: AgencyOperationalStatus;
   displayOrder: number;
@@ -101,6 +103,7 @@ export type B2bFinanceExposureV1 =
     };
 
 export interface B2bAgencyWorkspaceV1 {
+  creditDirection?: 'COUNTERPARTY_TO_US' | 'US_TO_COUNTERPARTY';
   organization: {
     id: string;
     code: string;
@@ -130,6 +133,7 @@ export interface B2bAgencyWorkspaceV1 {
 }
 
 export interface UpsertB2bAgencyProfileRequestV1 {
+  role?: B2bCooperationRole;
   branchId: string;
   accountManagerUserId?: string | null;
   status?: AgencyOperationalStatus;
@@ -138,6 +142,7 @@ export interface UpsertB2bAgencyProfileRequestV1 {
 }
 
 export interface CreateB2bAgencyAgreementRequestV1 {
+  role?: B2bCooperationRole;
   branchId: string;
   title: string;
   documentReference?: string | null;
@@ -148,6 +153,7 @@ export interface CreateB2bAgencyAgreementRequestV1 {
 }
 
 export interface UpsertB2bAgencyCreditPolicyRequestV1 {
+  role?: B2bCooperationRole;
   branchId: string;
   creditLimit: string;
   currencyCode: string;
@@ -158,6 +164,7 @@ export interface UpsertB2bAgencyCreditPolicyRequestV1 {
 }
 
 export interface CreateB2bAgencyAgreedRateRequestV1 {
+  role?: B2bCooperationRole;
   branchId: string;
   serviceReference: string;
   title: string;
@@ -174,6 +181,7 @@ export interface UpdateB2bAgencyAgreedRateRequestV1 extends CreateB2bAgencyAgree
 }
 
 export interface B2bRecordDeleteRequestV1 {
+  role?: B2bCooperationRole;
   branchId: string;
   version: number;
   reason: string;

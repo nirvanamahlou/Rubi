@@ -10,6 +10,7 @@ import {
 import * as Joi from 'joi';
 import type {
   AuthenticatedActor,
+  PartnerPurchaseSourceV1,
   ProcurementFinanceSourceV1,
   ProcurementFinanceCorrectionResultV1,
   ProcurementFinanceCorrectionSourceV1,
@@ -243,6 +244,75 @@ export class ProcurementPublicService {
         orderBy: [{ serviceDate: 'asc' }, { createdAt: 'asc' }],
       });
     return rows.map((row) => this.toTicketPurchase(row));
+  }
+
+  /** Finance reads the immutable, already-matched invoice source via this boundary. */
+  async partnerFinanceSources(branchId: string, supplierId: string) {
+    const rows = await this.database.client.procurementFinanceHandoff.findMany({
+      where: { procurementFinanceHandoffRequestid: { branchId } },
+      select: { payload: true, createdAt: true, status: true },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 10001,
+    });
+    if (rows.length > 10000)
+      throw new ConflictException('گزارش مالی از سقف خواندن امن بیشتر است.');
+    const latest = new Map<
+      string,
+      { value: ProcurementFinanceSourceV1; at: Date; status: string }
+    >();
+    const mine = new Map<
+      string,
+      {
+        value: ProcurementFinanceSourceV1;
+        at: Date;
+        status: string;
+        versions: number[];
+      }
+    >();
+    for (const row of rows) {
+      const value = row.payload as unknown as ProcurementFinanceSourceV1;
+      if (value.branchId !== branchId) continue;
+      const before = latest.get(value.sourceId);
+      if (!before || before.value.sourceVersion < value.sourceVersion)
+        latest.set(value.sourceId, {
+          value,
+          at: row.createdAt,
+          status: row.status,
+        });
+      if (value.supplier.id === supplierId) {
+        const previous = mine.get(value.sourceId);
+        const versions = [
+          ...new Set([...(previous?.versions ?? []), value.sourceVersion]),
+        ];
+        if (!previous || previous.value.sourceVersion <= value.sourceVersion)
+          mine.set(value.sourceId, {
+            value,
+            at: row.createdAt,
+            status: row.status,
+            versions,
+          });
+        else previous.versions = versions;
+      }
+    }
+    return [...mine.values()].map(
+      ({ value, at, status, versions }) =>
+        ({
+          id: value.sourceId,
+          source: 'PROCUREMENT',
+          sourceVersion: value.sourceVersion,
+          title: 'فاکتور خرید',
+          reference: value.orderId,
+          amount: value.amount,
+          currencyCode: value.currencyCode,
+          createdAt: at.toISOString(),
+          dueAt: value.dueAt,
+          current:
+            status !== 'CANCELLED' &&
+            latest.get(value.sourceId)?.value.sourceVersion ===
+              value.sourceVersion,
+          ownedVersions: versions,
+        }) satisfies PartnerPurchaseSourceV1,
+    );
   }
 
   /** Finance reads the immutable, already-matched invoice source via this boundary. */

@@ -2,12 +2,16 @@
 import { NativeSearchSelect } from '@/components/ui/native-search-select';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { B2bAgencyProfileDetailsV1 } from '@nora/contracts';
+import type {
+  B2bAgencyProfileDetailsV1,
+  B2bCooperationRole,
+} from '@nora/contracts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/form-controls';
 import { agencyClient } from '../api/agency-client';
 import { DossierFormDialog } from './dossier-form-dialog';
 import { useDossierBranch } from './use-dossier-branch';
+import { B2B_COOPERATION_LABELS } from '@nora/contracts';
 
 const statusLabels = {
   ACTIVE: 'فعال',
@@ -18,10 +22,13 @@ const statusLabels = {
 export function AgencyProfilePanel({
   organizationId,
   onReviewCooperation,
+  role = 'AGENCY',
 }: {
   organizationId: string;
   onReviewCooperation?: () => void;
+  role?: B2bCooperationRole;
 }) {
+  const entityLabel = B2B_COOPERATION_LABELS[role];
   const { branches, branchId, setBranchId, permissions, sessionError } =
     useDossierBranch();
   const [details, setDetails] = useState<B2bAgencyProfileDetailsV1>();
@@ -45,6 +52,7 @@ export function AgencyProfilePanel({
       const response = await agencyClient.profileDetails(
         organizationId,
         branchId,
+        role,
       );
       if (current === sequence.current) setDetails(response.data);
     } catch (caught) {
@@ -59,7 +67,7 @@ export function AgencyProfilePanel({
     } finally {
       if (current === sequence.current) setLoading(false);
     }
-  }, [organizationId, branchId]);
+  }, [organizationId, branchId, role]);
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => {
@@ -125,7 +133,7 @@ export function AgencyProfilePanel({
                 </b>
               </div>
               <div className="summary-row">
-                <span>مسئول پیگیری آژانس (مدیر حساب)</span>
+                <span>مسئول پیگیری {entityLabel} (مدیر حساب)</span>
                 <b>
                   {manager?.displayName ??
                     (profile?.accountManagerUserId
@@ -161,15 +169,16 @@ export function AgencyProfilePanel({
             title={
               profile
                 ? 'ویرایش مدیر حساب و پروفایل'
-                : 'ثبت پروفایل همکاری آژانس'
+                : `ثبت پروفایل همکاری ${entityLabel}`
             }
-            description="کارمند مسئول ارتباط و پیگیری این آژانس را از کاربران فعال شعبه داخلی مسئول همکاری انتخاب کنید."
+            description={`کارمند مسئول ارتباط و پیگیری این ${entityLabel} را از کاربران فعال شعبه داخلی مسئول همکاری انتخاب کنید.`}
             onClose={() => {
               setEditor(undefined);
               void load();
             }}
             onSave={async () => {
               await agencyClient.upsertProfile(organizationId, {
+                role,
                 branchId,
                 accountManagerUserId: editor.manager || null,
                 status: profile?.status ?? 'UNDER_REVIEW',
@@ -179,7 +188,7 @@ export function AgencyProfilePanel({
             }}
           >
             <label className="field">
-              مسئول پیگیری آژانس (مدیر حساب)
+              مسئول پیگیری {entityLabel} (مدیر حساب)
               <NativeSearchSelect
                 className="input"
                 value={editor.manager}

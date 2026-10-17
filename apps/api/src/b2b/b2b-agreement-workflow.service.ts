@@ -166,7 +166,7 @@ export class B2bAgreementWorkflowService {
       throw new ForbiddenException(
         'شعبه انتخاب‌شده در دامنه دسترسی کاربر نیست.',
       );
-    if (!['AGENCY', 'CORPORATE_CUSTOMER'].includes(role))
+    if (!['AGENCY', 'CORPORATE_CUSTOMER', 'SUPPLIER', 'BROKER'].includes(role))
       throw new BadRequestException('نقش همکاری معتبر نیست.');
     return { organizationId, branchId, role };
   }
