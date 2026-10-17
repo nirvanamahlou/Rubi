@@ -34,6 +34,20 @@ export class MasterTravelDirectory {
       meta: result.meta,
     };
   }
+  async voucherCurrencies(page: number) {
+    const result = await this.master.list('currencies', {
+      search: '',
+      page,
+      pageSize: 100,
+      status: 'active',
+      sortBy: 'name',
+      sortDirection: 'asc',
+    });
+    return {
+      data: result.data.map(({ id, code, name }) => ({ id, code, name })),
+      meta: result.meta,
+    };
+  }
 
   /** Registered broker contacts for a permission-scoped voucher workflow. */
   voucherLeaders(brokerId: string) {

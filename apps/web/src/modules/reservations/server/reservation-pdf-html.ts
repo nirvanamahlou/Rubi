@@ -1,4 +1,5 @@
 import { reservationFormFooterHtml } from '../model/reservation-form-footer';
+import { reservationFormPriceText } from '../model/reservation-form-price';
 import { supplierFormData, voucherFormData } from '../model/voucher-settings';
 import {
   reservationPassengerPages,
@@ -96,6 +97,7 @@ export function reservationPdfHtml(
       'summary',
     )}
     </section>${heading('02', 'FLIGHT INFORMATION', 'Departure & return · Tehran time')}${table(['AIRLINE', 'FLIGHT NO.', 'DATE', 'TIME'], data.flights.length ? data.flights.map((f) => [f.airline, f.number, f.date, f.time]) : [['-', '-', '-', '-']])}
+    ${!voucher && settings?.hotelPurchasePrices?.length ? `<div dir="ltr" style="padding:8px 10px;border:1px solid #c5d5e6;text-align:center;background:#eef4fa;font-weight:700"><strong>HOTEL TOTAL: </strong>${escape(reservationFormPriceText(settings.hotelPurchasePrices))}</div>` : ''}
     ${heading('03', 'HOTEL INFORMATION', 'Accommodation')}${table(
       ['HOTEL', 'CITY', 'STAR', 'SERVICE', 'ROOM TYPE'],
       [[data.hotel, data.destination, data.stars, data.meal, data.roomType]],

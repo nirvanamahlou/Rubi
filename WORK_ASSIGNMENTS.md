@@ -7823,6 +7823,18 @@ TICKET-NUMBER-CORRECTION-1015 validation: final numbering/report regressions pas
 
 User requests compact currency selectors in all Dashboard chart headers. Branch codex/pc-c-dashboard-currency-width-1017 from develop2246f4a0. Reserve only Dashboard workspace currency-trigger classes and own status entries; previous assistant scope released. Use fixed112px width instead of minimum width, preserving chart data, selection behavior and calendar controls. No API/schema/dependency changes. Scoped lint/type/build and existing Dashboard tests, browser sizing check, full CI and localhost delivery.
 
+## RESERVATION-ISSUED-FORM-1017 — PC-A — IN_PROGRESS
+
+COMPUTER_ID=PC-A; branch codex/pc-a-reservation-issued-form-1017 from origin/develop@1e21a21c. User authorizes reference-backed currency selection, visible saved purchase amounts on supplier reservation forms, issued-form preview with only Edit/Download actions, and develop merge. Reserve reservation-settings.tsx/new bounded currency directory helper, travel-workflow-form.tsx, travel-document.tsx, reservation-form-sheet.tsx and focused tests; bounded English labels/generated catalogues and own docs. Existing Master Data currency read API is consumed without producer change. Preserve sentSupplierFormSettings immutable preview/PDF snapshots, revisions, issuer guards, other ticket/voucher flows and old saved inactive currency values. Prior supplier price/editor work released; no overlapping active source lock found. No schema/migration/dependency/API/operational data/runtime change.
+
+RESERVATION-ISSUED-FORM-1017 PDF parity scope extension: the standalone supplier PDF HTML renderer had no hotelPurchasePrices output. Reserve reservation-pdf-html.ts, its existing regression suite, and a pure shared reservation-form price formatter consumed by preview/PDF. Add the exact saved separate-currency amount beside hotel information in both outputs; keep voucher prices absent and HTML escaping intact. No PDF runtime, dependencies, schema or business-money changes.
+
+RESERVATION-ISSUED-FORM-1017 PDF validation:31 preview/PDF regressions pass, including exact large separate-currency totals, supplier-only amounts and sent-versus-unsent download selection. Scoped PDF lint and final integrated-head CI gate merge.
+
+Permission-boundary refinement: direct master-data listing requires master_data.read. Reserve additive MasterTravelDirectory.voucherCurrencies public read and Reservations request-scoped voucher-currencies endpoint/controller tests; Web consumes this endpoint with reservations.read plus actual request branch authorization. Producer Master Data returns only active id/code/name; consumer Reservations paginates with bounded page. No IAM grant, foreign-table query or existing API contract change. Public-directory scope is bounded to this read; earlier source reservations released.
+
+Validation:21 API directory/permission/voucher regressions pass;21 targeted Web currency/issued-form/settings/output checks pass. All three translation coverage checks pass on the isolated rerun. Scoped API/Web ESLint and TypeScript pass after refreshing generated Prisma types. Full production builds and PostgreSQL CI pass; integrated-head full quality/tests remain the merge gate. Source scope frozen/released for unrelated work; no migration or live rollout.
+
 LOGIN-REMOVE-HELPER-1015 update (2026-10-17): user now explicitly authorizes PR #895 merge to develop; this supersedes the earlier review-only instruction. Login code is unchanged by integration; both independent status histories are retained.
 
 ## ASSISTANT-COMPACT-COMPOSER-1017 — PC-C — IN_PROGRESS

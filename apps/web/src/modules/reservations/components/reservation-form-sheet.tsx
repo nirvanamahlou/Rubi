@@ -1,4 +1,5 @@
 'use client';
+import { reservationFormPriceText } from '../model/reservation-form-price';
 import { loadOutputReferences } from '../model/output-references';
 import { getPublicApiBaseUrl } from '@/lib/environment';
 
@@ -288,6 +289,21 @@ export function ReservationFormSheet({
                 ))}
               </tbody>
             </table>
+            {!voucher && !!settings?.hotelPurchasePrices?.length && (
+              <div
+                dir="ltr"
+                style={{
+                  padding: '8px 10px',
+                  border: '1px solid #c5d5e6',
+                  textAlign: 'center',
+                  background: '#eef4fa',
+                  fontWeight: 700,
+                }}
+              >
+                <strong>HOTEL TOTAL: </strong>
+                {reservationFormPriceText(settings.hotelPurchasePrices)}
+              </div>
+            )}
             {(!settings || settings.flags.hotel) && (
               <>
                 <Heading
@@ -449,21 +465,6 @@ export function ReservationFormSheet({
               </tbody>
             </table>
             <Heading number="06" title="NOTICE" note="Notes & confirmation" />
-            {!voucher && !!settings?.hotelPurchasePrices?.length && (
-              <div
-                dir="ltr"
-                style={{
-                  padding: '6px 10px',
-                  border: '1px solid #c5d5e6',
-                  textAlign: 'center',
-                }}
-              >
-                <strong>HOTEL TOTAL: </strong>
-                {settings.hotelPurchasePrices
-                  .map((price) => `${price.amount} ${price.currencyCode}`)
-                  .join(' · ')}
-              </div>
-            )}
             <div className={voucher ? styles.voucherClosing : undefined}>
               <div className={styles.notice}>
                 <span>SPECIAL REQUESTS / REMARKS</span>

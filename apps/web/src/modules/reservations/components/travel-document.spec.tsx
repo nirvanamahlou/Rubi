@@ -58,11 +58,11 @@ describe('travel output branding and readiness', () => {
       ).hotelPurchasePrices,
     ).toEqual(settings.hotelPurchasePrices);
     expect(renderToStaticMarkup(<TravelDocument intake={priced} />)).toContain(
-      '123.50 EUR',
+      '123.50 €',
     );
     expect(
       renderToStaticMarkup(<TravelDocument intake={priced} voucher />),
-    ).not.toContain('123.50 EUR');
+    ).not.toContain('123.50 €');
   });
   it('places one supplier picker before the single reservation preview', () => {
     const html = renderToStaticMarkup(

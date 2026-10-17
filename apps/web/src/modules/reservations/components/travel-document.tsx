@@ -65,12 +65,14 @@ export function TravelDocument({
   historical = false,
   previewSettings,
   dirty = false,
+  downloadLabel,
 }: {
   intake: ReservationIntakeV1 & { workflow: TravelWorkflowStateV1 };
   voucher?: boolean;
   historical?: boolean;
   previewSettings?: VoucherSettingsV1 | undefined;
   dirty?: boolean;
+  downloadLabel?: string;
 }) {
   const { logo, error } = useTravelLogo(intake.workflow.branding);
   const [printError, setPrintError] = useState('');
@@ -160,9 +162,8 @@ export function TravelDocument({
         >
           {downloading
             ? 'در حال آماده‌سازی PDF…'
-            : voucher
-              ? 'دانلود واچر'
-              : 'دانلود مستقیم PDF فرم رزرواسیون'}
+            : (downloadLabel ??
+              (voucher ? 'دانلود واچر' : 'دانلود مستقیم PDF فرم رزرواسیون'))}
         </Button>
       )}
       {formReferences.failed && (
