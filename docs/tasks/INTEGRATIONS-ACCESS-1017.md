@@ -3,7 +3,10 @@
 COMPUTER_ID=PC-D. User delegates the bounded repair of missing site-management
 access options in native user administration. IAM ownership stays PC-A.
 Branch `codex/pc-d-integrations-access-1017` starts from PC-D-Integration and
-includes PR909 as an explicit prerequisite; no new publication is authorized.
+includes PR909 as an explicit prerequisite. The user now authorizes push and
+merge after all hosted checks pass and a review is approved. Since PR909 already
+contains the website implementation this access fix serves, publish the fix as
+a fast-forward update to PR909 rather than opening a duplicate full-feature PR.
 
 Integrations already requires the existing native `system.settings.manage`
 operation, its route, module control and registry field control, plus an assigned

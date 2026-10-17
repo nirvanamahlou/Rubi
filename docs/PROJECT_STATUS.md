@@ -1,4 +1,4 @@
-## INTEGRATIONS-ACCESS-1017 — PC-D — LOCAL_COMPLETE
+## INTEGRATIONS-ACCESS-1017 — PC-D — READY_FOR_REVIEW
 
 Native user administration now exposes the Integrations connection module,
 registry editing field and existing settings-management operation in the
@@ -10,8 +10,9 @@ verified in the browser. 231 contract/API/IAM/Web tests, scoped lint/format,
 Contracts build/types and the Web production build (62 routes with TypeScript)
 pass. Local API image 1017-access and Web image 1017-access-v2 are healthy;
 existing registry version 2 and all infrastructure/data are retained. No schema,
-migration, seed, dependency or external connection change. This source branch
-includes PR909 as a prerequisite; no new remote publication is performed. See
+migration, seed, dependency or external connection change. The access commit is
+included in PR909 (#909) to avoid duplicating the website implementation;
+hosted CI and review are pending on the updated head. See
 [local access repair](tasks/INTEGRATIONS-ACCESS-1017.md).
 
 ## INTEGRATIONS-SITE-ONBOARDING-1017 — PC-D — READY_FOR_REVIEW
